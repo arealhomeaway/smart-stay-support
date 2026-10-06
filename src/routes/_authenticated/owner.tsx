@@ -205,6 +205,12 @@ function OwnerHubBody({
   };
 
   const { program, properties, reviews, badges, alerts, tickets, snapshot } = data;
+  const { yearTotals = [], generalMinutes = 0, propertySpecificMinutes = 0 } = data as unknown as {
+    yearTotals?: { year: string; minutes: number }[];
+    generalMinutes?: number;
+    propertySpecificMinutes?: number;
+  };
+  const hrs = (m: number) => Math.round((m / 60) * 10) / 10;
 
   const { home: homeParam } = Route.useSearch();
   const selectedHomeId =
@@ -418,18 +424,20 @@ function OwnerHubBody({
                 <p className="mt-1 text-xs text-muted-foreground">
                   Program period ends {snapshot.endsOn ? usDate(snapshot.endsOn) : "December 31"}
                 </p>
-                {properties.filter((p) => p.inclusionStatus === "included" && p.windowStart).length > 1 ? (
-                  <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground" aria-label="Hours counted per home">
-                    {properties
-                      .filter((p) => p.inclusionStatus === "included" && p.windowStart)
-                      .map((p) => (
-                        <li key={p.propertyId}>
-                          {p.name}: {Math.round(((p.windowMinutes ?? 0) / 60) * 10) / 10} hrs (from {usDate(p.windowStart!)})
+                <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground" aria-label="Participation breakdown">
+                  {yearTotals.length > 1
+                    ? yearTotals.map((y) => (
+                        <li key={y.year}>
+                          {y.year} participation year: {hrs(y.minutes)} hrs
                         </li>
-                      ))}
-                    <li>Homes overlap — your total counts each activity once.</li>
-                  </ul>
-                ) : null}
+                      ))
+                    : null}
+                  <li>Tagged to a home: {hrs(propertySpecificMinutes)} hrs · General: {hrs(generalMinutes)} hrs</li>
+                  {properties.filter((p) => p.inclusionStatus === "included").length > 1 ? (
+                    <li>Your homes for the same year share one total; each activity counts once.</li>
+                  ) : null}
+                  <li>Progress toward more than 100 hours — not a tax qualification result.</li>
+                </ul>
                 {preview ? null : <ReportDownloads />}
               </div>
             </div>
