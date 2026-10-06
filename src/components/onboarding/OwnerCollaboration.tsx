@@ -27,7 +27,7 @@ import {
   type ResourceInput,
   type ResponseType,
 } from "@/lib/v2-workflow.functions";
-import { beginUploadFn, completeUploadFn } from "@/lib/attachments.functions";
+import { attachmentUrlFn, beginUploadFn, completeUploadFn } from "@/lib/attachments.functions";
 import { MAX_FILE_BYTES, OVERSIZE_LINK_MESSAGE, validateFile } from "@/lib/attachments";
 
 const LINK_TYPES = { video: "Video", document: "Document", reference: "Reference", other: "Other" } as const;
@@ -98,6 +98,20 @@ function OwnerPriorityControl({ o }: { o: CollabOpp }) {
 export function OpportunityDetail({ o, files }: { o: CollabOpp; files: CollabData["files"] }) {
   const openRes = useServerFn(opportunityResourceUrl);
   const ownerDocs = files.filter((f) => f.workItemId === o.id);
+  const fileUrl = useServerFn(attachmentUrlFn);
+  // Homeowner-submitted files stay openable after the Opportunity is complete;
+  // the shared attachment rule decides access — opening never reopens work.
+  const openOwnerDoc = async (documentId: string, download: boolean) => {
+    const w = window.open("", "_blank");
+    try {
+      const r = await fileUrl({ data: { documentId, download } });
+      if (w) w.location.href = r.url;
+      else window.location.href = r.url;
+    } catch (e) {
+      w?.close();
+      toast.error(e instanceof Error ? e.message : "Resolve could not open that file.");
+    }
+  };
   return (
     <div className="space-y-2 text-sm">
       <dl className="grid gap-x-4 gap-y-1 text-xs text-muted-foreground sm:grid-cols-4">
@@ -159,7 +173,29 @@ export function OpportunityDetail({ o, files }: { o: CollabOpp; files: CollabDat
       {ownerDocs.length ? (
         <div>
           <p className="text-xs font-medium">Homeowner documentation</p>
-          <ul className="mt-1 space-y-0.5 text-xs">{ownerDocs.map((f) => <li key={f.id}>{f.title} · {when(f.uploadedAt)}</li>)}</ul>
+          <ul className="mt-1 space-y-0.5 text-xs">
+            {ownerDocs.map((f) => (
+              <li key={f.id} className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 text-primary underline-offset-2 hover:underline"
+                  onClick={() => openOwnerDoc(f.id, false)}
+                >
+                  <FileText className="h-3.5 w-3.5" aria-hidden />
+                  {f.title}
+                </button>
+                <span className="text-muted-foreground">· {when(f.uploadedAt)}</span>
+                <button
+                  type="button"
+                  className="text-muted-foreground underline-offset-2 hover:underline"
+                  aria-label={`Download ${f.title}`}
+                  onClick={() => openOwnerDoc(f.id, true)}
+                >
+                  Download
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
     </div>
