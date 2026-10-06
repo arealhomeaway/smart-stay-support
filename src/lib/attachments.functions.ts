@@ -55,6 +55,12 @@ export const attachmentUrlFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const m = await import("@/lib/attachments.server");
     const viewer = await m.loadViewer(context.supabase, context.userId);
+    // Staff must also see the file record through their own permissions, so
+    // backend record restrictions (e.g. test accounts: demo only) apply to files.
+    if (m.isStaff(viewer)) {
+      const own = await context.supabase.from("documents").select("id").eq("id", data.documentId).maybeSingle();
+      if (own.error || !own.data) throw new Error("You do not have access to this record.");
+    }
     return m.signedFileUrl(viewer, data.documentId, data.download ?? false);
   });
 
