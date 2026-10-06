@@ -23,6 +23,9 @@ import {
   hoursFromMinutes,
   participationWindowEnd,
   inParticipationWindow,
+  propertyParticipationWindow,
+  propertyWindowMinutes,
+  combinedWindowMinutes,
 } from "./owner-participation";
 
 export type ReportEntry = {
@@ -46,6 +49,8 @@ export type ReportEntry = {
   opportunity: string;
   /** Receipt or photo the homeowner attached when logging this entry. */
   evidence: string;
+  /** "Property-specific" when tagged to a home, otherwise "General". */
+  scope: "Property-specific" | "General";
 };
 
 export type ReportAction = {
@@ -91,13 +96,22 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
   const opportunities = new Map(agg.reviews.map((r) => [r.id, r] as const));
 
   const superseded = new Set(agg.entries.filter((e) => e.superseded).map((e) => e.id));
+  // Each included home counts from its own confirmed closing through Dec 31
+  // of that year. An entry is "in period" when it falls inside any of them.
+  const homeWindows = agg.includedProperties
+    .filter((x) => x.closingConfirmed && x.closingDate)
+    .map((x) => ({ name: x.name, closingDate: x.closingDate as string, w: propertyParticipationWindow(x.closingDate)! }));
+  const inAnyWindow = (date: string) =>
+    homeWindows.length
+      ? date <= today && homeWindows.some((h) => date >= h.w.start && date <= h.w.end)
+      : inParticipationWindow(date, startedOn, endsOn, today);
 
   const entries: ReportEntry[] = agg.entries.map((e) => {
     const isSuperseded = superseded.has(e.id);
     const opp = e.review_id ? opportunities.get(e.review_id) : undefined;
     // Logged time counts immediately; only a later correction replaces it.
     const counts = !isSuperseded;
-    const inPeriod = inParticipationWindow(e.entry_date, startedOn, endsOn, today);
+    const inPeriod = inAnyWindow(e.entry_date);
     return {
       id: e.id,
       date: e.entry_date,
@@ -118,6 +132,7 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
       source: opp ? sourceLabel(opp.source_type) : "Legacy / Unlinked",
       opportunity: opp ? opp.title : "",
       evidence: e.attachment_path ? e.attachment_path.split("/").pop()! : "",
+      scope: e.propertyIds.length ? "Property-specific" : "General",
     };
   });
 
@@ -139,7 +154,19 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
     ),
     outsidePeriodMinutes: combinedMinutes(outsidePeriod.filter((e) => e.counts)),
     sharedEntries: countable.filter((e) => e.shared).length,
+    generalMinutes: combinedMinutes(countable.filter((e) => e.scope === "General")),
+    propertySpecificMinutes: combinedMinutes(countable.filter((e) => e.scope === "Property-specific")),
   };
+  const windowRows = countable.map((e) => ({ entry_date: e.date, minutes: e.minutes }));
+  // Informational per-home totals; the combined total is never their sum.
+  const homeTotals = homeWindows.map((h) => ({
+    name: h.name,
+    windowStart: h.w.start,
+    windowEnd: h.w.end,
+    hours: hoursFromMinutes(propertyWindowMinutes(windowRows, h.closingDate, today)),
+  }));
+  const combinedCheck = combinedWindowMinutes(windowRows, homeWindows.map((h) => h.closingDate), today);
+
 
   // Participation actions: approvals, returns and revisions. These are a
   // record of what happened — they never add hours on the owner's behalf.
@@ -184,6 +211,8 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
       totalDays: agg.snapshot.totalDays,
     },
     properties: agg.includedProperties.map((x) => ({ name: x.name, address: x.address })),
+    homeTotals,
+    combinedWindowHours: hoursFromMinutes(homeWindows.length ? combinedCheck : totals.reportedMinutes),
     totals: {
       ...totals,
       reportedHours: hoursFromMinutes(totals.reportedMinutes),
@@ -192,6 +221,8 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
       returnedHours: hoursFromMinutes(totals.returnedMinutes),
       supersededHours: hoursFromMinutes(totals.supersededMinutes),
       outsidePeriodHours: hoursFromMinutes(totals.outsidePeriodMinutes),
+      generalHours: hoursFromMinutes(totals.generalMinutes),
+      propertySpecificHours: hoursFromMinutes(totals.propertySpecificMinutes),
     },
     entries: inPeriod,
     outsidePeriod,
@@ -204,6 +235,7 @@ const NOTES = [
   "Reported hours are the homeowner's own record of participation, entered manually by the homeowner. ARHA does not certify or approve these hours.",
   "Entries replaced by a correction, and entries returned for a data-quality question, are excluded from the total.",
   "An activity shared across several homes is counted once in the combined total; the homes are listed for attribution only.",
+  "Each home counts every recorded activity (tagged to any home or General) dated from its confirmed closing through December 31 of that year. Home totals overlap; the combined total counts each activity once and is never their sum.",
   "Every hour is the homeowner's own record, entered manually. Approvals and revisions are logged as actions and never create hours.",
   "This report is an operational record of reported participation. It is not a tax certification and not a guarantee of any tax treatment.",
 ];
@@ -226,6 +258,7 @@ export function reportCsv(report: OwnerReport) {
     "within_program_period",
     "note",
     "evidence_file",
+    "entry_scope",
     "record_type",
     "record_id",
     "response_recorded_at",
@@ -251,6 +284,7 @@ export function reportCsv(report: OwnerReport) {
       e.inPeriod ? "yes" : "no",
       e.reason,
       e.evidence,
+      e.scope,
       "time_entry",
       e.id,
       "",
@@ -279,6 +313,7 @@ export function reportCsv(report: OwnerReport) {
       receipt.inPeriod ? "yes" : "no",
       "Response history only; no participation hours added.",
       "",
+      "",
       "review_response",
       receipt.id,
       receipt.createdAt,
@@ -295,7 +330,12 @@ export function reportCsv(report: OwnerReport) {
     `# Owner,${report.program.ownerName}`,
     `# Program period,${report.program.startedOn ?? "not started"} to ${report.program.endsOn ?? "n/a"}`,
     `# Figures as of,${report.generatedAt}`,
-    `# Reported hours,${report.totals.reportedHours}`,
+    `# Combined hours (each activity once),${report.totals.reportedHours}`,
+    `# Property-specific line items (hours),${report.totals.propertySpecificHours}`,
+    `# General line items (hours),${report.totals.generalHours}`,
+    ...report.homeTotals.map(
+      (h) => `# Home window total — ${h.name.replace(/,/g, " ")} (${h.windowStart} to ${h.windowEnd}),${h.hours}`,
+    ),
     `# Awaiting review hours,${report.totals.pendingHours}`,
     `# Returned hours (not counted),${report.totals.returnedHours}`,
     `# Superseded hours (not counted),${report.totals.supersededHours}`,
@@ -418,9 +458,9 @@ export async function reportPdf(report: OwnerReport) {
   heading("Totals");
   const totals: [string, string, string][] = [
     [
-      "Reported hours",
+      "Combined hours",
       `${report.totals.reportedHours}`,
-      "Approved entries plus entries awaiting review",
+      "All recorded activities in the period, each counted once",
     ],
     [
       "Returned entries",
@@ -443,6 +483,21 @@ export async function reportPdf(report: OwnerReport) {
     text(label, { size: 9.5, f: bold });
     text(`${value} hrs`, { size: 9.5, f: bold, x: 210 });
     text(note, { size: 8.5, color: MUTED, x: 275 });
+  }
+  space(14);
+  text("Of which General", { size: 9.5 });
+  text(`${report.totals.generalHours} hrs`, { size: 9.5, x: 210 });
+  text("Not tagged to a home", { size: 8.5, color: MUTED, x: 275 });
+  if (report.homeTotals.length) {
+    heading("Home window totals (overlapping — not added together)");
+    for (const h of report.homeTotals) {
+      space(14);
+      text(h.name, { size: 9.5, f: bold });
+      text(`${h.hours} hrs`, { size: 9.5, f: bold, x: 210 });
+      text(`${h.windowStart} to ${h.windowEnd}`, { size: 8.5, color: MUTED, x: 275 });
+    }
+    space(14);
+    text(`Combined total, each activity counted once: ${report.totals.reportedHours} hrs`, { size: 9.5, f: bold });
   }
 
   heading("Participation detail");
