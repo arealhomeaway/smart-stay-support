@@ -230,10 +230,32 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
             </ul>
           </SortableContext>
         </DndContext>
+        {!stages.length && stageNames.length ? (
+          <div className="rounded-md border border-dashed border-border p-3 text-sm">
+            <p className="text-muted-foreground">
+              This plan's stages ({stageNames.join(", ")}) came from an older import and can't be renamed or reordered yet.
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              className="mt-2"
+              disabled={stageM.isPending}
+              onClick={async () => {
+                // Creates one editable stage per existing stage name, in current order. Steps keep their stage.
+                for (const name of stageNames) await saveStage({ data: { templateId, name, active: true } });
+                toast.success("Stages are now editable.");
+                refresh();
+              }}
+            >
+              Make these stages editable
+            </Button>
+          </div>
+        ) : null}
         <div className="mt-2 flex gap-2">
           <Input value={newStage} onChange={(e) => setNewStage(e.target.value)} placeholder="New stage name" className="h-8" />
           <Button size="sm" variant="outline" disabled={newStage.trim().length < 2} onClick={() => { stageM.mutate({ name: newStage.trim(), active: true }); setNewStage(""); }}>Add stage</Button>
         </div>
+        <p className="mt-2 text-xs text-muted-foreground">To change the order of steps, drag them by the handle in the step list further down this page.</p>
       </div>
 
       <div className="space-y-3">
