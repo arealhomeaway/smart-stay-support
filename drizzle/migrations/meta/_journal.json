@@ -981,6 +981,13 @@
       "when": 1791327439120,
       "tag": "0139_synthetic_demo_only_completed_records",
       "breakpoints": true
+    },
+    {
+      "idx": 140,
+      "version": "7",
+      "when": 1791327457441,
+      "tag": "0140_synthetic_guard_completed_records_read",
+      "breakpoints": true
     }
   ]
 }
