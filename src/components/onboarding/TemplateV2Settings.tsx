@@ -27,6 +27,7 @@ import {
   reorderTemplateStages,
   roleLabel,
   saveTemplateStage,
+  materializeTemplateStages,
   saveTemplateStepV2,
   type OpportunityContent,
 } from "@/lib/v2-workflow.functions";
@@ -174,6 +175,7 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
   const qc = useQueryClient();
   const read = useServerFn(readTemplateV2);
   const saveStage = useServerFn(saveTemplateStage);
+  const materialize = useServerFn(materializeTemplateStages);
   const reorder = useServerFn(reorderTemplateStages);
   const saveStep = useServerFn(saveTemplateStepV2);
   const publish = useServerFn(publishTemplateVersion);
