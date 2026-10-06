@@ -78,3 +78,59 @@ export function matchesOnboardingLens(p: ProjectSummary, lens: Lens, viewer?: Hu
       return true;
   }
 }
+
+/**
+ * #25 "Needs My Attention" — two separate views built only from existing
+ * records; nothing here creates work or deadlines.
+ * - mine: gate/stage reviews awaiting this person, plus homes where an open
+ *   Task assigned to them is past its existing due date.
+ * - oversight (Director permissions only): homes already flagged blocked or
+ *   at risk, or with handoff corrections / deficiency Tasks open.
+ * Owner completions are never blockers here.
+ */
+export type AttentionTask = {
+  property_id: string;
+  assigned_to: string | null;
+  status: string;
+  due_on?: string | null;
+  archived_at?: string | null;
+};
+
+export function needsMyAttention(
+  projects: ProjectSummary[],
+  tasks: AttentionTask[],
+  viewer: HubViewer,
+  isDirector: boolean,
+  today = new Date().toISOString().slice(0, 10),
+) {
+  const active = projects.filter((p) => p.stage !== "live");
+  const overdue = new Map<string, number>();
+  for (const t of tasks) {
+    if (!viewer.userId || t.assigned_to !== viewer.userId) continue;
+    if (t.status === "complete" || t.archived_at) continue;
+    if (!t.due_on || t.due_on >= today) continue;
+    overdue.set(t.property_id, (overdue.get(t.property_id) ?? 0) + 1);
+  }
+  const mine = active
+    .map((p) => ({
+      project: p,
+      review: awaitingMyReview(p, viewer),
+      overdueTasks: overdue.get(p.property.id) ?? 0,
+    }))
+    .filter((r) => r.review || r.overdueTasks > 0);
+  const oversight = isDirector
+    ? active
+        .map((p) => ({
+          project: p,
+          reasons: [
+            ...(p.risk.level === "blocked" || p.risk.level === "at_risk" ? p.risk.reasons : []),
+            ...(p.property.lifecycle_status === "handoff_corrections" || p.stageCorrectionCount > 0
+              ? ["Handoff corrections open"]
+              : []),
+            ...(p.blockers.some((b) => b.kind === "correction") ? ["Deficiency Task open"] : []),
+          ],
+        }))
+        .filter((r) => r.reasons.length > 0)
+    : [];
+  return { mine, oversight };
+}
