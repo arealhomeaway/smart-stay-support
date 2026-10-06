@@ -242,8 +242,12 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
               disabled={stageM.isPending}
               onClick={async () => {
                 // Creates one editable stage per existing stage name, in current order. Steps keep their stage.
-                for (const name of stageNames) await saveStage({ data: { templateId, name, active: true } });
-                toast.success("Stages are now editable.");
+                try {
+                  await materialize({ data: { templateId, names: stageNames } });
+                  toast.success("Stages are now editable.");
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : "The stages could not be converted. Nothing was changed.");
+                }
                 refresh();
               }}
             >
