@@ -37,6 +37,9 @@ type Stage = { id: string; name: string; sort_order: number; active: boolean };
 type Step = Awaited<ReturnType<typeof readTemplateV2>>["steps"][number];
 type StepInput = {
   stepId: string;
+  title: string;
+  detail: string | null;
+  breezewayTemplateId: string | null;
   functionalRole: string | null;
   isRequired: boolean;
   blocksHandoff: boolean;
@@ -305,7 +308,7 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
                       <span className="text-xs text-muted-foreground">{roleLabel(s.functional_role)}</span>
                       {!s.is_required ? <Badge variant="outline">Optional</Badge> : null}
                       {s.blocks_handoff ? <Badge variant="outline">Blocks handoff</Badge> : null}
-                      {s.opportunity ? <Badge variant="secondary">Owner Opportunity</Badge> : null}
+                      {s.breezeway_template_id ? <Badge variant="outline">Breezeway</Badge> : null}{s.opportunity ? <Badge variant="secondary">Owner Opportunity</Badge> : null}
                     </button>
                   </li>
                 ))}
