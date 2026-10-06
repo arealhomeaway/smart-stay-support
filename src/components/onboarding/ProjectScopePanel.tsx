@@ -666,7 +666,7 @@ function ScopeDialog({
           {v.modules.includes("active_owner") && (
             <p className="text-xs text-muted-foreground">
               {moduleLabel("active_owner")}: this property will be enrolled for participation. The
-              90-day clock is not started here.
+              participation is enabled from the Active Owner program.
             </p>
           )}
 

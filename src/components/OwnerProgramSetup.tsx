@@ -33,7 +33,7 @@ export function OwnerProgramSetup({
   );
   const [onboardingLead, setOnboardingLead] = useState(program.onboardingLead ?? "");
   const [operationsLead, setOperationsLead] = useState(program.operationsLead ?? "");
-  const [dfyConfirmed, setDfyConfirmed] = useState(program.dfyConfirmed);
+  const [dfyConfirmed] = useState(program.dfyConfirmed);
   const [internalNotes, setInternalNotes] = useState(program.internalNotes ?? "");
   const [error, setError] = useState<string | null>(null);
   const stale = reviewedVersion !== version;
@@ -126,20 +126,10 @@ export function OwnerProgramSetup({
           disabled={mutation.isPending}
         />
       </label>
-      <label className="flex items-center gap-2 text-sm">
-        <input
-          type="checkbox"
-          checked={dfyConfirmed}
-          onChange={(event) => setDfyConfirmed(event.target.checked)}
-          disabled={mutation.isPending}
-        />
-        DFY has confirmed these properties run as one combined program.
-      </label>
       {stale && (
         <div className="space-y-2" role="status">
           <p>
-            The program changed. Your draft is retained. Review current enrollment, leads and DFY
-            confirmation before saving.
+            The program changed. Your draft is retained. Review current enrollment and leads before saving.
           </p>
           <p>
             Current onboarding lead:{" "}
@@ -154,7 +144,6 @@ export function OwnerProgramSetup({
           <p className="whitespace-pre-line">
             Current internal notes: {program.internalNotes || "None"}
           </p>
-          <p>Current DFY confirmation: {program.dfyConfirmed ? "Confirmed" : "Not confirmed"}.</p>
           <Button
             type="button"
             variant="outline"

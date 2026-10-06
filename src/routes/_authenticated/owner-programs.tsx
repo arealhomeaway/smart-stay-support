@@ -280,7 +280,7 @@ function ProgramsBoard() {
             <Plus className="size-4" /> Create a program
           </span>
         }
-        description="A program starts as a draft. Closing dates never start the clock on their own — a team member activates it once every home has closed and DFY has confirmed the arrangement."
+        description="A program starts as a draft. Link the homeowner’s account, confirm each home’s actual closing, then enable participation. Each home counts hours from its closing through December 31."
         bodyClassName="grid gap-4 md:grid-cols-4"
       >
         <div className="space-y-2 md:col-span-2">
