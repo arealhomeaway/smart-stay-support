@@ -30,3 +30,4 @@
 - Demo flag is re-read after hydration; pages wait for `demoReady`. Why: reloads keep demo context.
 - Post-handoff onboarding visibility: Operations reads completed onboarding Tasks/findings/files only via DB `read_completed_onboarding_records` + `can_read_completed_onboarding_document` (staff-only, completed Tasks, operational file categories), rendered read-only by `CompletedOnboardingRecords`. Why: one source, no Ops writes.
 - Vendor sourcing/dispatch/execution rules: see `src/lib/AGENTS.md`.
+- Active Owner hours: each home counts entries dated from its confirmed closing through Dec 31 of that year (`propertyWindowMinutes`); combined total counts each entry once (`combinedWindowMinutes`); DB `log_owner_time_entry` only accepts dates inside some home's window; enabling participation (`activate_owner_program`) has no DFY/Day-One gate and staff link accounts via `staff_link_owner_account`. Why: one counting rule, no double count, no extra approval gate.

@@ -18,3 +18,12 @@
 - [x] #27 stage titles not editable — fixed in preview (old-import plans); step drag exists further down
 - [ ] #25 Needs My Attention on onboarding hub — layout decision for Emily
 - [ ] #26 task view options — suggestion; Module explained
+
+## Stabilization pass (Emily, Oct 6 20:48 UTC)
+- [x] 1. Staff-led link (no invite), DFY + Day One removed, homes don't wait on others (migration 0135, UI)
+- [x] 2. Per-home closing→Dec 31 windows; combined counted once (DB logging + pure helpers)
+- [~] 2b. Show per-home window totals on Owner Hub / report / CSV general-vs-property split
+- [~] 3. Closing: confirmed enrollment fills blank actual closing (Foxtail done); Victor 3915 W 104th 9/23 vs 9/24 needs Emily
+- [ ] 4. #24 workflow, #27 verify, owner return nav, #25 Needs My Attention, internal-Task→owner-approval root cause
+- [ ] 5. Synthetic accounts: backend demo-only restriction
+- [ ] 6. Focused browser walkthrough; 7. release summary
