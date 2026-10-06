@@ -23,7 +23,6 @@ import {
   hoursFromMinutes,
   participationWindowEnd,
   inParticipationWindow,
-  propertyParticipationWindow,
   participationYears,
   participationYearTotals,
 } from "./owner-participation";
