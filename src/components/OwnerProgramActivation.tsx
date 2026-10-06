@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { CalendarClock } from "lucide-react";
@@ -12,8 +12,6 @@ import {
 import { ACTIVATABLE_STATUSES, PROGRAM_STATUS_META } from "@/lib/owner-participation";
 import { usCalendarDate } from "@/lib/dates";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -37,7 +35,6 @@ export function OwnerProgramActivation(props: Props) {
 function ActivationFacts({ snapshot }: { snapshot: OwnerActivationDraft }) {
   return (
     <div className="space-y-2 text-sm">
-      <p>DFY confirmation: {snapshot.dfyConfirmed ? "Confirmed" : "Not confirmed"}</p>
       <p className="font-medium">Included properties</p>
       {snapshot.properties.length ? (
         <ul className="list-disc space-y-1 pl-5">
@@ -46,7 +43,7 @@ function ActivationFacts({ snapshot }: { snapshot: OwnerActivationDraft }) {
               {property.name} —{" "}
               {property.closingConfirmed && property.closingDate
                 ? `closing confirmed ${usCalendarDate(property.closingDate)}`
-                : "closing not confirmed"}
+                : "closing not confirmed yet — counts once confirmed"}
             </li>
           ))}
         </ul>
@@ -62,7 +59,6 @@ function OwnerProgramActivationForm({ context, initialStartDate, onRefresh }: Pr
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<OwnerActivationDraft | null>(null);
   const [error, setError] = useState("");
-  const dateId = useId();
   const available =
     !context.startedOn && ACTIVATABLE_STATUSES.some((status) => status === context.status);
   const stale = !!draft && draft.expectedVersion !== context.reportVersion;
@@ -77,7 +73,7 @@ function OwnerProgramActivationForm({ context, initialStartDate, onRefresh }: Pr
       }),
     onSuccess: () => {
       setDraft(null);
-      toast.success("Program activated. Participation runs from closing through December 31.");
+      toast.success("Participation enabled. The homeowner can now record hours.");
       onRefresh();
       void queryClient.invalidateQueries({ queryKey: ["owner-home"] });
       void queryClient.invalidateQueries({ queryKey: ["owner-report"] });
@@ -98,10 +94,10 @@ function OwnerProgramActivationForm({ context, initialStartDate, onRefresh }: Pr
           setError("");
         }}
       >
-        <CalendarClock className="size-4" /> Review activation
+        <CalendarClock className="size-4" /> Enable participation
       </Button>
       <p className="text-xs text-muted-foreground">
-        Requires DFY confirmation and a confirmed closing on every included home.
+        Needs at least one included home with a confirmed actual closing. Other homes start counting when their own closing is confirmed.
       </p>
       <Dialog
         open={!!draft}
@@ -111,10 +107,10 @@ function OwnerProgramActivationForm({ context, initialStartDate, onRefresh }: Pr
       >
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Activate the Active Owner program</DialogTitle>
+            <DialogTitle>Enable owner participation</DialogTitle>
             <DialogDescription>
-              Activation starts one clock for all included properties. Adding homes later will not
-              reset it.
+              Each home counts recorded hours from its confirmed closing through December 31 of that
+              year. Adding homes later never resets anything.
             </DialogDescription>
           </DialogHeader>
           {draft && (
@@ -131,8 +127,8 @@ function OwnerProgramActivationForm({ context, initialStartDate, onRefresh }: Pr
               {stale && (
                 <div role="status" className="space-y-3 rounded-md border p-3">
                   <p className="text-sm">
-                    The program changed. Your start date has been retained. Review the current
-                    details before activating.
+                    The program changed. Review the current
+                    details first.
                   </p>
                   <ActivationFacts snapshot={captureOwnerActivation(context, draft.startedOn)} />
                   <p className="text-sm">
@@ -157,26 +153,9 @@ function OwnerProgramActivationForm({ context, initialStartDate, onRefresh }: Pr
               )}
               {!available && (
                 <p role="status" className="text-sm">
-                  This program is no longer available for activation. Its existing clock is
-                  preserved.
+                  Participation is already enabled for this program.
                 </p>
               )}
-              <div className="space-y-1">
-                <Label htmlFor={dateId}>Day one (required)</Label>
-                <Input
-                  id={dateId}
-                  name="programStartDate"
-                  type="date"
-                  required
-                  max={new Date().toISOString().slice(0, 10)}
-                  disabled={mutation.isPending}
-                  value={draft.startedOn}
-                  onChange={(event) => {
-                    setDraft({ ...draft, startedOn: event.target.value });
-                    setError("");
-                  }}
-                />
-              </div>
               {error && (
                 <p role="alert" className="text-sm text-destructive">
                   {error}
@@ -192,7 +171,7 @@ function OwnerProgramActivationForm({ context, initialStartDate, onRefresh }: Pr
                   Cancel
                 </Button>
                 <Button type="submit" disabled={mutation.isPending || stale || !available}>
-                  {mutation.isPending ? "Activating…" : "Activate program"}
+                  {mutation.isPending ? "Enabling…" : "Enable participation"}
                 </Button>
               </DialogFooter>
             </form>
