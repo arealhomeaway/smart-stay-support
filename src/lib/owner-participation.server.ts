@@ -19,6 +19,9 @@ import {
   countableParticipationEntries,
   inParticipationWindow,
   hoursFromMinutes,
+  propertyParticipationWindow,
+  propertyWindowMinutes,
+  combinedWindowMinutes,
   ownerGoalMet,
   progressSnapshot,
   parseReviewPhotos,
@@ -115,6 +118,9 @@ export type ProgramPropertyRow = {
   /** Informational only — never used in the combined total. */
   directMinutes: number;
   sharedMinutes: number;
+  windowStart?: string | null;
+  windowEnd?: string | null;
+  windowMinutes?: number;
 };
 
 /** Distinct-entry total. The only legitimate way to add up program hours. */
@@ -324,6 +330,11 @@ export async function loadProgramAggregate(
       overdueDecisions: overdue.length,
       directMinutes: direct.reduce((n, e) => n + e.minutes, 0),
       sharedMinutes: shared.reduce((n, e) => n + e.minutes, 0),
+      // This home's own window (confirmed closing → Dec 31 of that year). It
+      // counts every activity in the window, whatever home it was tagged to.
+      windowStart: l.closing_confirmed ? (propertyParticipationWindow(l.closing_date)?.start ?? null) : null,
+      windowEnd: l.closing_confirmed ? (propertyParticipationWindow(l.closing_date)?.end ?? null) : null,
+      windowMinutes: l.closing_confirmed ? propertyWindowMinutes(countable, l.closing_date) : 0,
     };
   });
 
@@ -337,6 +348,12 @@ export async function loadProgramAggregate(
   );
   // Nothing here ever adds, estimates or credits time on the owner's behalf.
   const reported = combinedMinutes(countable);
+  // Combined owner total under the per-home rule: each activity once if it
+  // falls in any included home's window. Never the sum of home totals.
+  const windowedMinutes = combinedWindowMinutes(
+    countable,
+    included.filter((x) => x.closingConfirmed).map((x) => x.closingDate),
+  );
   const onboardingMinutes = combinedMinutes(countable.filter((e) => e.phase === "onboarding"));
   // Logged time counts immediately — there is no review, approval or return state.
   const approvedMinutes = reported;
@@ -380,6 +397,7 @@ export async function loadProgramAggregate(
     entries: entryRows.map((e) => ({ ...e, superseded: supersededIds.has(e.id) })),
     badges: badges.data ?? [],
     reportedMinutes: reported,
+    windowedMinutes,
     approvedMinutes,
     pendingReviewMinutes,
     returnedMinutes,

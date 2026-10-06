@@ -27,6 +27,7 @@ import {
   reorderTemplateStages,
   roleLabel,
   saveTemplateStage,
+  materializeTemplateStages,
   saveTemplateStepV2,
   type OpportunityContent,
 } from "@/lib/v2-workflow.functions";
@@ -174,6 +175,7 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
   const qc = useQueryClient();
   const read = useServerFn(readTemplateV2);
   const saveStage = useServerFn(saveTemplateStage);
+  const materialize = useServerFn(materializeTemplateStages);
   const reorder = useServerFn(reorderTemplateStages);
   const saveStep = useServerFn(saveTemplateStepV2);
   const publish = useServerFn(publishTemplateVersion);
@@ -242,8 +244,12 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
               disabled={stageM.isPending}
               onClick={async () => {
                 // Creates one editable stage per existing stage name, in current order. Steps keep their stage.
-                for (const name of stageNames) await saveStage({ data: { templateId, name, active: true } });
-                toast.success("Stages are now editable.");
+                try {
+                  await materialize({ data: { templateId, names: stageNames } });
+                  toast.success("Stages are now editable.");
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : "The stages could not be converted. Nothing was changed.");
+                }
                 refresh();
               }}
             >

@@ -104,6 +104,31 @@ export const saveTemplateStage = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/**
+ * Older imported plans keep stage names only on their steps. Converts every
+ * missing stage name into an editable stage in one statement (all or none),
+ * in the given order; existing stages are never duplicated and steps keep
+ * their stage and order.
+ */
+export const materializeTemplateStages = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ templateId: z.string().uuid(), names: z.array(z.string().trim().min(1).max(80)).min(1).max(50) }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const sb = context.supabase;
+    const existing = await sb.from("onboarding_template_stages").select("name").eq("template_id", data.templateId);
+    fail(existing.error);
+    const have = new Set((existing.data ?? []).map((r) => r.name));
+    const names = [...new Set(data.names)].filter((n) => !have.has(n));
+    if (!names.length) return { ok: true, created: 0 };
+    const { error } = await sb.from("onboarding_template_stages").insert(
+      names.map((name, i) => ({ template_id: data.templateId, name, active: true, sort_order: (have.size + i + 1) * 10 })),
+    );
+    fail(error);
+    return { ok: true, created: names.length };
+  });
+
 export const reorderTemplateStages = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ templateId: z.string().uuid(), stageIds: z.array(z.string().uuid()).min(1).max(50) }).parse(d))

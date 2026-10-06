@@ -418,6 +418,18 @@ function OwnerHubBody({
                 <p className="mt-1 text-xs text-muted-foreground">
                   Program period ends {snapshot.endsOn ? usDate(snapshot.endsOn) : "December 31"}
                 </p>
+                {properties.filter((p) => p.inclusionStatus === "included" && p.windowStart).length > 1 ? (
+                  <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground" aria-label="Hours counted per home">
+                    {properties
+                      .filter((p) => p.inclusionStatus === "included" && p.windowStart)
+                      .map((p) => (
+                        <li key={p.propertyId}>
+                          {p.name}: {Math.round(((p.windowMinutes ?? 0) / 60) * 10) / 10} hrs (from {usDate(p.windowStart!)})
+                        </li>
+                      ))}
+                    <li>Homes overlap — your total counts each activity once.</li>
+                  </ul>
+                ) : null}
                 {preview ? null : <ReportDownloads />}
               </div>
             </div>
@@ -503,6 +515,7 @@ function OwnerHubBody({
           onQueueChange={(q) => void navigate({ search: (prev) => { const { queue: _q, ...rest } = prev; return q ? { ...rest, queue: q } : rest; } })}
           onBackToDashboard={() => void navigate({ search: (prev) => { const { queue: _q, view: _v, opportunity: _o, ...rest } = prev; return rest; } })}
           focusId={search.opportunity ?? null}
+          onCloseDetail={() => void navigate({ search: (prev) => { const { opportunity: _o, ...rest } = prev; return rest; }, replace: true })}
           homes={ownerHomes}
           selectedHomeId={selectedHomeId}
           readOnly={preview}
