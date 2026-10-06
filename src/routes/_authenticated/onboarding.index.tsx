@@ -220,7 +220,6 @@ function Hub() {
   const scoped = applyTestDataFilter(projects, showTest, (p) => p.property);
   const viewer = { userId, reviewCapabilities: data.reviewCapabilities };
   const activeProjects = scoped.filter((p) => p.stage !== "live");
-  const myDecisions = activeProjects.filter((p) => awaitingMyReview(p, viewer));
   const atRisk = activeProjects.filter(
     (p) => p.risk.level === "at_risk" || p.risk.level === "blocked",
   );
