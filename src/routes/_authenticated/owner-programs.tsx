@@ -911,8 +911,9 @@ function ProgramDetail({
               )
             }
           >
-            <KeyRound className="size-4" /> Issue invite code
+            <KeyRound className="size-4" /> Issue invite code (optional)
           </Button>
+          <StaffLinkOwner programId={programId} defaultEmail={row.ownerEmail ?? ""} onDone={() => void detail.refetch()} />
           <Button size="sm" variant="outline" onClick={() => void downloadReport()}>
             <FileText className="size-4" /> Participation report
           </Button>
@@ -1269,4 +1270,49 @@ function RoadmapCatalog({ templates, loading }: { templates: TaskTemplate[]; loa
 function SupervisorContactAlerts() {
   const { isSupervisor } = useRole();
   return isSupervisor ? <OwnerContactAlerts /> : null;
+}
+
+function StaffLinkOwner({
+  programId,
+  defaultEmail,
+  onDone,
+}: {
+  programId: string;
+  defaultEmail: string;
+  onDone: () => void;
+}) {
+  const link = useServerFn(staffLinkOwnerAccount);
+  const [email, setEmail] = useState(defaultEmail);
+  const [busy, setBusy] = useState(false);
+  return (
+    <form
+      className="flex items-center gap-2"
+      onSubmit={async (event) => {
+        event.preventDefault();
+        setBusy(true);
+        try {
+          const res = await link({ data: { programId, email } });
+          toast.success(`Linked ${res.name}. They see this program at their next sign-in.`);
+          onDone();
+        } catch (failure) {
+          toast.error(failure instanceof Error ? failure.message : "Could not link the account.");
+        } finally {
+          setBusy(false);
+        }
+      }}
+    >
+      <Input
+        type="email"
+        required
+        aria-label="Homeowner sign-in email"
+        placeholder="Homeowner sign-in email"
+        className="h-8 w-56"
+        value={email}
+        onChange={(event) => setEmail(event.target.value)}
+      />
+      <Button size="sm" type="submit" disabled={busy}>
+        {busy ? "Linking…" : "Link homeowner account"}
+      </Button>
+    </form>
+  );
 }
