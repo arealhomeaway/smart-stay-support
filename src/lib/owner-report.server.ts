@@ -23,9 +23,8 @@ import {
   hoursFromMinutes,
   participationWindowEnd,
   inParticipationWindow,
-  propertyParticipationWindow,
-  propertyWindowMinutes,
-  combinedWindowMinutes,
+  participationYears,
+  participationYearTotals,
 } from "./owner-participation";
 
 export type ReportEntry = {
@@ -96,14 +95,16 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
   const opportunities = new Map(agg.reviews.map((r) => [r.id, r] as const));
 
   const superseded = new Set(agg.entries.filter((e) => e.superseded).map((e) => e.id));
-  // Each included home counts from its own confirmed closing through Dec 31
-  // of that year. An entry is "in period" when it falls inside any of them.
-  const homeWindows = agg.includedProperties
+  // Homes closing in the same calendar year share one participation total.
+  // An entry is "in period" when dated in a participation year (General and
+  // pre-closing entries included), up to today.
+  const closings = agg.includedProperties
     .filter((x) => x.closingConfirmed && x.closingDate)
-    .map((x) => ({ name: x.name, closingDate: x.closingDate as string, w: propertyParticipationWindow(x.closingDate)! }));
+    .map((x) => x.closingDate as string);
+  const years = participationYears(closings);
   const inAnyWindow = (date: string) =>
-    homeWindows.length
-      ? date <= today && homeWindows.some((h) => date >= h.w.start && date <= h.w.end)
+    years.length
+      ? date <= today && years.includes(date.slice(0, 4))
       : inParticipationWindow(date, startedOn, endsOn, today);
 
   const entries: ReportEntry[] = agg.entries.map((e) => {
@@ -158,15 +159,10 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
     propertySpecificMinutes: combinedMinutes(countable.filter((e) => e.scope === "Property-specific")),
   };
   const windowRows = countable.map((e) => ({ entry_date: e.date, minutes: e.minutes }));
-  // Informational per-home totals; the combined total is never their sum.
-  const homeTotals = homeWindows.map((h) => ({
-    name: h.name,
-    windowStart: h.w.start,
-    windowEnd: h.w.end,
-    hours: hoursFromMinutes(propertyWindowMinutes(windowRows, h.closingDate, today)),
+  const yearTotals = participationYearTotals(windowRows, closings, today).map((y) => ({
+    year: y.year,
+    hours: hoursFromMinutes(y.minutes),
   }));
-  const combinedCheck = combinedWindowMinutes(windowRows, homeWindows.map((h) => h.closingDate), today);
-
 
   // Participation actions: approvals, returns and revisions. These are a
   // record of what happened — they never add hours on the owner's behalf.
@@ -211,8 +207,8 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
       totalDays: agg.snapshot.totalDays,
     },
     properties: agg.includedProperties.map((x) => ({ name: x.name, address: x.address })),
-    homeTotals,
-    combinedWindowHours: hoursFromMinutes(homeWindows.length ? combinedCheck : totals.reportedMinutes),
+    yearTotals,
+    combinedWindowHours: hoursFromMinutes(totals.reportedMinutes),
     totals: {
       ...totals,
       reportedHours: hoursFromMinutes(totals.reportedMinutes),
@@ -333,9 +329,8 @@ export function reportCsv(report: OwnerReport) {
     `# Combined hours (each activity once),${report.totals.reportedHours}`,
     `# Property-specific line items (hours),${report.totals.propertySpecificHours}`,
     `# General line items (hours),${report.totals.generalHours}`,
-    ...report.homeTotals.map(
-      (h) => `# Home window total — ${h.name.replace(/,/g, " ")} (${h.windowStart} to ${h.windowEnd}),${h.hours}`,
-    ),
+    ...report.yearTotals.map((y) => `# Shared participation total — ${y.year} (each activity once),${y.hours}`),
+    `# Progress toward more than 100 hours; not a tax qualification result`,
     `# Awaiting review hours,${report.totals.pendingHours}`,
     `# Returned hours (not counted),${report.totals.returnedHours}`,
     `# Superseded hours (not counted),${report.totals.supersededHours}`,
@@ -488,16 +483,16 @@ export async function reportPdf(report: OwnerReport) {
   text("Of which General", { size: 9.5 });
   text(`${report.totals.generalHours} hrs`, { size: 9.5, x: 210 });
   text("Not tagged to a home", { size: 8.5, color: MUTED, x: 275 });
-  if (report.homeTotals.length) {
-    heading("Home window totals (overlapping — not added together)");
-    for (const h of report.homeTotals) {
+  if (report.yearTotals.length) {
+    heading("Shared participation total by calendar year");
+    for (const y of report.yearTotals) {
       space(14);
-      text(h.name, { size: 9.5, f: bold });
-      text(`${h.hours} hrs`, { size: 9.5, f: bold, x: 210 });
-      text(`${h.windowStart} to ${h.windowEnd}`, { size: 8.5, color: MUTED, x: 275 });
+      text(`${y.year} participation year`, { size: 9.5, f: bold });
+      text(`${y.hours} hrs`, { size: 9.5, f: bold, x: 210 });
+      text("All homes closing that year; each activity once", { size: 8.5, color: MUTED, x: 275 });
     }
     space(14);
-    text(`Combined total, each activity counted once: ${report.totals.reportedHours} hrs`, { size: 9.5, f: bold });
+    text("Progress toward more than 100 hours. Not a tax qualification result.", { size: 8.5, color: MUTED });
   }
 
   heading("Participation detail");

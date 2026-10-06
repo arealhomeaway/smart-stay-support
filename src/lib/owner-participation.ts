@@ -553,6 +553,13 @@ export function combinedWindowMinutes(
     .reduce((sum, e) => sum + (e.minutes ?? 0), 0);
 }
 
+/**
+ * Participation year rule (DFY guidance, Oct 6 2026): an owner's Active Owner
+ * homes closing in the same calendar year are tracked as one group. Every
+ * activity dated in that calendar year — tagged to any home, General, or
+ * before a home's closing — counts once toward the shared total. Different
+ * calendar years stay separate. Closing dates remain factual records.
+ */
 export function inParticipationWindow(
   date: string,
   startedOn: string | null | undefined,
@@ -560,7 +567,28 @@ export function inParticipationWindow(
   today = new Date().toISOString().slice(0, 10),
 ) {
   const end = participationWindowEnd(startedOn, endsOn);
-  return !!startedOn && !!end && date >= startedOn && date <= end && date <= today;
+  if (!startedOn || !end || date > today) return false;
+  const y = date.slice(0, 4);
+  return y >= startedOn.slice(0, 4) && y <= end.slice(0, 4);
+}
+
+/** Calendar years that have at least one confirmed closing. */
+export function participationYears(closingDates: (string | null | undefined)[]) {
+  return [...new Set(closingDates.filter((d): d is string => !!d && /^\d{4}/.test(d)).map((d) => d.slice(0, 4)))].sort();
+}
+
+/** Shared group total per participation year; each activity counted once. */
+export function participationYearTotals(
+  entries: { entry_date: string; minutes: number }[],
+  closingDates: (string | null | undefined)[],
+  today = new Date().toISOString().slice(0, 10),
+) {
+  return participationYears(closingDates).map((year) => ({
+    year,
+    minutes: entries
+      .filter((e) => e.entry_date.slice(0, 4) === year && e.entry_date <= today)
+      .reduce((n, e) => n + (e.minutes ?? 0), 0),
+  }));
 }
 
 /** Use counted minutes, never rounded display hours, to decide completion. */
