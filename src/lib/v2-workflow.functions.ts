@@ -53,7 +53,7 @@ export const readTemplateV2 = createServerFn({ method: "POST" })
       sb.from("onboarding_template_stages").select("id, name, sort_order, active").eq("template_id", data.templateId).order("sort_order"),
       sb
         .from("onboarding_template_tasks")
-        .select("id, title, stage, sort_order, functional_role, is_required, blocks_handoff, is_active, module, opportunity, offset_days, schedule_anchor, owner_dependency")
+        .select("id, title, detail, breezeway_template_id, stage, sort_order, functional_role, is_required, blocks_handoff, is_active, module, opportunity, offset_days, schedule_anchor, owner_dependency")
         .eq("template_id", data.templateId)
         .order("sort_order"),
       sb.from("onboarding_template_versions").select("id, version, published_at").eq("template_id", data.templateId).order("version", { ascending: false }),
@@ -150,6 +150,9 @@ export const saveTemplateStepV2 = createServerFn({ method: "POST" })
     z
       .object({
         stepId: z.string().uuid(),
+        title: z.string().trim().min(3).max(200).optional(),
+        detail: z.string().trim().max(5000).nullable().optional(),
+        breezewayTemplateId: z.string().trim().max(80).nullable().optional(),
         functionalRole: z.string().trim().max(60).nullable(),
         isRequired: z.boolean(),
         blocksHandoff: z.boolean(),
@@ -165,6 +168,9 @@ export const saveTemplateStepV2 = createServerFn({ method: "POST" })
     const { error } = await context.supabase
       .from("onboarding_template_tasks")
       .update({
+        ...(data.title ? { title: data.title } : {}),
+        ...(data.detail !== undefined ? { detail: data.detail } : {}),
+        ...(data.breezewayTemplateId !== undefined ? { breezeway_template_id: data.breezewayTemplateId || null } : {}),
         functional_role: data.functionalRole || null,
         role: data.functionalRole ? roleLabel(data.functionalRole) : null,
         is_required: data.isRequired,
