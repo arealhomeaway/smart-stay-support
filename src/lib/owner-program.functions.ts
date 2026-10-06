@@ -303,3 +303,34 @@ export const saveOwnerProgramRule = createServerFn({ method: "POST" })
     await assertSupervisor(context.supabase, context.userId);
     return updateProgramRule(context.supabase, context.userId, data);
   });
+
+/**
+ * Staff-led homeowner setup: link an existing homeowner sign-in (found by its
+ * email) to this program. No invite code; history records the staff actor.
+ */
+export const staffLinkOwnerAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({ programId: z.string().uuid(), email: z.string().trim().email().max(254) })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { data: rows, error: findError } = await context.supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .ilike("email", data.email.toLowerCase())
+      .limit(2);
+    if (findError) throw new Error(findError.message);
+    if (!rows?.length)
+      throw new Error(
+        "No sign-in exists for that email yet. Add the homeowner on the Team page first (Homeowner access), then link here.",
+      );
+    if (rows.length > 1) throw new Error("More than one account uses that email. Ask an admin to review.");
+    const { error } = await context.supabase.rpc("staff_link_owner_account", {
+      _program_id: data.programId,
+      _user_id: rows[0]!.id,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true as const, name: rows[0]!.full_name ?? rows[0]!.email };
+  });

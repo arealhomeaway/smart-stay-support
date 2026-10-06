@@ -946,6 +946,13 @@
       "when": 1791242443327,
       "tag": "0134_can_approve_spending_rpc",
       "breakpoints": true
+    },
+    {
+      "idx": 135,
+      "version": "7",
+      "when": 1791319873869,
+      "tag": "0135_owner_participation_stabilization",
+      "breakpoints": true
     }
   ]
 }

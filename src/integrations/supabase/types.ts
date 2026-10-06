@@ -14817,6 +14817,10 @@ export type Database = {
         Returns: undefined
       }
       staff_assignable: { Args: { _user_id: string }; Returns: boolean }
+      staff_link_owner_account: {
+        Args: { _program_id: string; _user_id: string }
+        Returns: string
+      }
       start_optional_opportunity: {
         Args: { _property_id: string; _template_id: string }
         Returns: string

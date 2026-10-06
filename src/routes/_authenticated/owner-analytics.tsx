@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/owner-analytics")({
       {
         name: "description",
         content:
-          "Staff and executive view of the 90-day Active Owner programs: reported hours against the 105-hour operating target, pace, review backlog and CSV export.",
+          "Staff and executive view of Active Owner programs: reported hours against the 105-hour operating target, pace, review backlog and CSV export.",
       },
       { property: "og:title", content: "Active Owner analytics — Resolve" },
       {

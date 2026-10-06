@@ -235,7 +235,7 @@ function EnrollActiveOwner({ propertyId, name }: { propertyId: string; name: str
     <div className="surface space-y-2 p-4">
       <p className="text-sm font-medium">Is this an Active Owner home?</p>
       <p className="text-sm text-muted-foreground">
-        Standard is the default. Enrolling creates a draft participation program — the 90-day clock
+        Standard is the default. Enrolling creates a draft participation program — participation
         only starts when you activate it.
       </p>
       <Button size="sm" variant="outline" onClick={() => run.mutate()} disabled={run.isPending}>
@@ -473,7 +473,7 @@ function OwnerRezImport({
                 <span>
                   <span className="block font-medium">This is an Active Owner home</span>
                   <span className="block text-xs text-muted-foreground">
-                    Creates a draft participation program. The 90-day clock only starts when it is
+                    Creates a draft participation program. Participation counts only once it is
                     activated.
                   </span>
                 </span>
