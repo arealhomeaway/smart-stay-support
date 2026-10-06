@@ -16,7 +16,7 @@ import { Chip } from "@/components/ui/page";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { stateChip } from "@/lib/semantic";
 import { useRole } from "@/hooks/useRole";
-import { FINANCE_REVIEW_LABEL, QB_REFERENCE_NOTE, RESPONSIBILITY_LABEL, docReadiness, missingDocumentation, money, type FinanceReview, type Responsibility } from "@/lib/expenses";
+import { FINANCE_REVIEW_LABEL, QB_REFERENCE_NOTE, RESPONSIBILITY_LABEL, docReadiness, missingDocumentation, money, type ServerAuthorization, type FinanceReview, type Responsibility } from "@/lib/expenses";
 import {
   DISPOSITION_LABEL,
   PERIOD_READINESS_LABEL,
@@ -183,6 +183,13 @@ function ItemCard({ item, period, current, canDecide, onOpen, onDone }: {
   const blockers = itemBlockers(item);
   const needsTreatment = needsRecoveryTreatment(item);
   const [disp, setDisp] = useState<Disposition>("include");
+  // The backend authorization verdict is authoritative (linked Work Order approval, seats, exceptions).
+  const authQ = useQuery({
+    queryKey: ["expense-authorization", item.id],
+    queryFn: async () => ((await supabase.rpc("expense_authorization_status", { _expense: item.id })).data ?? null) as ServerAuthorization | null,
+  });
+  const docMissing = missingDocumentation(item, null, authQ.data ?? { required: false, ok: true, reason: "" });
+  const docReady = docMissing.length === 0;
   const [ownerDesc, setOwnerDesc] = useState("");
   const [note, setNote] = useState("");
   const [deferTo, setDeferTo] = useState("");
@@ -207,7 +214,7 @@ function ItemCard({ item, period, current, canDecide, onOpen, onDone }: {
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" className="font-medium underline-offset-2 hover:underline" onClick={onOpen}>{item.payee ?? "Expense"} · {money(item.amount)}</button>
         {item.is_estimate ? <Chip className={stateChip("waiting")}>Estimate</Chip> : null}
-        <Chip className={docReadiness(item) === "ready" ? stateChip("done") : stateChip("waiting")}>{docReadiness(item) === "ready" ? "Documentation ready" : "Documentation missing"}</Chip>
+        <Chip className={docReady ? stateChip("done") : stateChip("waiting")}>{docReady ? "Documentation ready" : "Documentation missing"}</Chip>
         <Chip className={item.finance_review === "reviewed" ? stateChip("done") : stateChip("waiting")}>{FINANCE_REVIEW_LABEL[item.finance_review as FinanceReview] ?? item.finance_review}</Chip>
         {current_here ? <Chip className={stateChip("active")}>{DISPOSITION_LABEL[current!.disposition as Disposition]}</Chip> : <Chip className={stateChip("info")}>No disposition yet</Chip>}
       </div>
@@ -249,10 +256,10 @@ function ItemCard({ item, period, current, canDecide, onOpen, onDone }: {
           <Input aria-label="Internal note" placeholder={disp === "hold" ? "What the hold is waiting on (internal)" : disp === "exclude" ? "Reason for exclusion (internal)" : "Internal note"} value={note} onChange={(e) => setNote(e.target.value)} />
           {disp === "exclude" ? <Input aria-label="Exclusion treatment" placeholder="Recorded financial treatment" value={excl} onChange={(e) => setExcl(e.target.value)} /> : null}
           {disp === "include" && needsTreatment ? <Input aria-label="Recovery treatment" placeholder="Finance treatment of the outstanding recovery / open claim" value={recTreat} onChange={(e) => setRecTreat(e.target.value)} /> : null}
-          {disp === "include" && docReadiness(item) !== "ready" ? (
-            <p className="text-xs text-destructive sm:col-span-2" role="status">Include is unavailable: documentation is incomplete — missing {missingDocumentation(item).join(", ")}. Hold it until Operations supplies the missing facts.</p>
+          {disp === "include" && !docReady ? (
+            <p className="text-xs text-destructive sm:col-span-2" role="status">Include is unavailable: documentation is incomplete — missing {docMissing.join(", ")}. Hold it until Operations supplies the missing facts.</p>
           ) : null}
-          <Button size="sm" className="sm:col-span-2" disabled={save.isPending || (disp === "include" && docReadiness(item) !== "ready")} onClick={() => save.mutate()}>Record disposition</Button>
+          <Button size="sm" className="sm:col-span-2" disabled={save.isPending || (disp === "include" && (!docReady || authQ.isLoading))} onClick={() => save.mutate()}>Record disposition</Button>
         </div>
       ) : (
         <p className="text-[11px] text-muted-foreground">Only Finance records statement treatment. Operations supplies facts through clarification Tasks.</p>
