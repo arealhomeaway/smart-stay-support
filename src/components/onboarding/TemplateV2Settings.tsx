@@ -71,6 +71,10 @@ function SortableStage({ stage, onRename, onToggle }: { stage: Stage; onRename: 
 const emptyOpp: OpportunityContent = { title: "", what: "", why: "", how: "", resources: [], ways_to_document: "", suggested_minutes: null };
 
 function StepDialog({ step, onClose, onSave, saving }: { step: Step; onClose: () => void; onSave: (v: StepInput) => void; saving: boolean }) {
+  const [title, setTitle] = useState(step.title);
+  const [detail, setDetail] = useState(step.detail ?? "");
+  const [useBreezeway, setUseBreezeway] = useState(Boolean(step.breezeway_template_id));
+  const [bzTemplate, setBzTemplate] = useState(step.breezeway_template_id ?? "");
   const [role, setRole] = useState(step.functional_role ?? "none");
   const [required, setRequired] = useState(step.is_required);
   const [blocking, setBlocking] = useState(step.blocks_handoff);
@@ -88,6 +92,11 @@ function StepDialog({ step, onClose, onSave, saving }: { step: Step; onClose: ()
         <DialogHeader>
           <DialogTitle>{step.title}</DialogTitle>
         </DialogHeader>
+        <div className="space-y-2">
+          <div className="space-y-1"><Label htmlFor="ttl">Internal Task title</Label><Input id="ttl" value={title} onChange={(e) => setTitle(e.target.value)} /></div>
+          <div className="space-y-1"><Label htmlFor="det">Internal description and instructions</Label><Textarea id="det" rows={6} className="resize-y" value={detail} onChange={(e) => setDetail(e.target.value)} /></div>
+          <p className="text-xs text-muted-foreground">Internal only. Homeowners never see this text; their wording is set separately below.</p>
+        </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
             <Label>Assigned role</Label>
@@ -106,6 +115,7 @@ function StepDialog({ step, onClose, onSave, saving }: { step: Step; onClose: ()
           <div className="space-y-1">
             <Label htmlFor="mod">Module (optional)</Label>
             <Input id="mod" value={module} onChange={(e) => setModule(e.target.value)} placeholder="e.g. furnishing, pool" />
+            <p className="text-xs text-muted-foreground">A label for grouping and filtering. It does not turn this step on or off; which features apply to a home is set in that home's project scope.</p>
           </div>
           <div className="space-y-1">
             <Label>Needs from the homeowner</Label>
@@ -123,6 +133,19 @@ function StepDialog({ step, onClose, onSave, saving }: { step: Step; onClose: ()
           </div>
         </div>
 
+        <div className="mt-2 space-y-2 rounded-md border border-border p-3">
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <Switch checked={useBreezeway} onCheckedChange={setUseBreezeway} /> Use Breezeway for this Task
+          </label>
+          {useBreezeway ? (
+            <div className="space-y-1">
+              <Label htmlFor="bz">Breezeway template ID</Label>
+              <Input id="bz" value={bzTemplate} onChange={(e) => setBzTemplate(e.target.value)} />
+              <p className="text-xs text-muted-foreground">Saving never creates a Breezeway task. Staff still send it deliberately from the Task.</p>
+            </div>
+          ) : null}
+        </div>
+
         <div className="mt-2 space-y-3 rounded-md border border-border p-3">
           <label className="flex items-center gap-2 text-sm font-medium">
             <Switch checked={eligible} onCheckedChange={setEligible} /> Active Owner Opportunity
@@ -130,7 +153,7 @@ function StepDialog({ step, onClose, onSave, saving }: { step: Step; onClose: ()
           {eligible ? (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground">
-                Homeowners see this as an Opportunity. It is separate from the internal Task and never blocks it.
+                Homeowners see this wording as an Opportunity once staff publish it. Saving never publishes. Its completion or reopening never changes the internal Task or handoff.
               </p>
               <div className="space-y-1"><Label>Opportunity title</Label><Input value={opp.title} onChange={(e) => set("title", e.target.value)} /></div>
               <div className="space-y-1"><Label>What you'll do</Label><Textarea rows={5} className="resize-y" value={opp.what} onChange={(e) => set("what", e.target.value)} /></div>
@@ -148,10 +171,13 @@ function StepDialog({ step, onClose, onSave, saving }: { step: Step; onClose: ()
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button
-            disabled={saving || (eligible && opp.title.trim().length < 3)}
+            disabled={saving || title.trim().length < 3 || (eligible && opp.title.trim().length < 3) || (useBreezeway && !bzTemplate.trim())}
             onClick={() =>
               onSave({
                 stepId: step.id,
+                title: title.trim(),
+                detail: detail.trim() || null,
+                breezewayTemplateId: useBreezeway ? bzTemplate.trim() : null,
                 functionalRole: role === "none" ? null : role,
                 isRequired: required,
                 blocksHandoff: blocking,
