@@ -118,6 +118,9 @@ export type ProgramPropertyRow = {
   /** Informational only — never used in the combined total. */
   directMinutes: number;
   sharedMinutes: number;
+  windowStart?: string | null;
+  windowEnd?: string | null;
+  windowMinutes?: number;
 };
 
 /** Distinct-entry total. The only legitimate way to add up program hours. */

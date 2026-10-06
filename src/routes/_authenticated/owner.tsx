@@ -424,7 +424,7 @@ function OwnerHubBody({
                       .filter((p) => p.inclusionStatus === "included" && p.windowStart)
                       .map((p) => (
                         <li key={p.propertyId}>
-                          {p.name}: {Math.round((p.windowMinutes / 60) * 10) / 10} hrs (from {usDate(p.windowStart!)})
+                          {p.name}: {Math.round(((p.windowMinutes ?? 0) / 60) * 10) / 10} hrs (from {usDate(p.windowStart!)})
                         </li>
                       ))}
                     <li>Homes overlap — your total counts each activity once.</li>
