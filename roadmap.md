@@ -29,3 +29,4 @@
 - [ ] 4b. Owner hour entry on demo programs is blocked by design (owners cannot log on demo programs) — decision needed for connected owner walkthrough
 - [x] 5. Synthetic accounts demo-only in backend (0138–0142); 7 unused disabled; qa.um.manager Finance Lead seat removed
 - [x] 6/7. Focused checks + release summary delivered Oct 6
+- [ ] Remaining Oct 6 pass: #26 Task/Breezeway/Opportunity choices, demo walkthroughs (#24/#25/#27/#26/nav/hours), #18–19 reconciliation
