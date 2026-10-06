@@ -995,6 +995,13 @@
       "when": 1791327564914,
       "tag": "0141_synthetic_accounts_demo_only_all_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 142,
+      "version": "7",
+      "when": 1791327647063,
+      "tag": "0142_synthetic_guard_owner_completions",
+      "breakpoints": true
     }
   ]
 }
