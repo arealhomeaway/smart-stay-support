@@ -1,5 +1,11 @@
 # Roadmap (checkpoint Oct 6 2026)
 
+## STABILIZATION — all feature work paused (Oct 6). Audit: docs/agent/stabilization-audit-2026-10-06.md
+- [ ] A. Linders blocked: remove DFY gate + separate Day one from activation (awaiting Emily's go-ahead)
+- [ ] B. Verify #24 with onboarding-role synthetic account; decide demo-account access to real-home files
+- [ ] C. Owner return-navigation browser walk
+- [ ] D. Verify #27; #25/#26 decisions
+
 ## Paused — outstanding acceptance work
 - [ ] Vendor-only Ticket view (vendor currently reads every field on its assigned Ticket) + vendor browser check. Vendor test login stays disabled.
 - [ ] Ops browser checks: vacant-home survey, Routine Control submission, negative-review follow-up (reporter unconfirmed).
