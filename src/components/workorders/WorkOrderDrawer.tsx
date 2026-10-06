@@ -718,6 +718,15 @@ export function WorkOrderDrawer({
                     ] ?? "Pending"}
                   </Chip>
                   {canApproveSpending && workOrder.supervisor_approval_status === "pending" ? (
+                    <div className="space-y-2">
+                    <Textarea
+                      rows={2}
+                      aria-label="Supervisor decision note"
+                      disabled={readOnly}
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                      placeholder="Why this amount is approved or declined."
+                    />
                     <div className="flex flex-wrap gap-2">
                       <Button
                         size="sm"
@@ -734,6 +743,7 @@ export function WorkOrderDrawer({
                       >
                         Decline
                       </Button>
+                    </div>
                     </div>
                   ) : workOrder.supervisor_approval_status === "pending" ? (
                     <p className="text-xs text-muted-foreground" data-testid="spending-approval-authority">
