@@ -245,7 +245,7 @@ function splitDecided(actions: OwnerOnboardingAction[]) {
   return {
     pending: actions.filter((a) => a.status === "pending"),
     decided: actions
-      .filter((a) => a.status !== "pending")
+      .filter((a) => a.status === "approved" || a.status === "declined" || a.status === "changes_requested")
       .slice(0, 6),
   };
 }
