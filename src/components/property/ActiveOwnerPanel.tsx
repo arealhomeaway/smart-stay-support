@@ -30,6 +30,7 @@ import {
 } from "@/lib/owner-program.functions";
 import { startOnboardingProjectFn } from "@/lib/onboarding.functions";
 import { defaultModules } from "@/lib/onboarding-scope";
+import { ActualClosingCorrection } from "./ActualClosingCorrection";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Draft — not started",
@@ -268,6 +269,7 @@ export function ActiveOwnerPanel({
           )}
         </div>
       )}
+      <ActualClosingCorrection propertyId={propertyId} />
     </SectionCard>
   );
 }
