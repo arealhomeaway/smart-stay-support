@@ -19,9 +19,7 @@ import {
   countableParticipationEntries,
   inParticipationWindow,
   hoursFromMinutes,
-  propertyParticipationWindow,
-  propertyWindowMinutes,
-  combinedWindowMinutes,
+  participationYearTotals,
   ownerGoalMet,
   progressSnapshot,
   parseReviewPhotos,
@@ -118,9 +116,6 @@ export type ProgramPropertyRow = {
   /** Informational only — never used in the combined total. */
   directMinutes: number;
   sharedMinutes: number;
-  windowStart?: string | null;
-  windowEnd?: string | null;
-  windowMinutes?: number;
 };
 
 /** Distinct-entry total. The only legitimate way to add up program hours. */
@@ -330,11 +325,6 @@ export async function loadProgramAggregate(
       overdueDecisions: overdue.length,
       directMinutes: direct.reduce((n, e) => n + e.minutes, 0),
       sharedMinutes: shared.reduce((n, e) => n + e.minutes, 0),
-      // This home's own window (confirmed closing → Dec 31 of that year). It
-      // counts every activity in the window, whatever home it was tagged to.
-      windowStart: l.closing_confirmed ? (propertyParticipationWindow(l.closing_date)?.start ?? null) : null,
-      windowEnd: l.closing_confirmed ? (propertyParticipationWindow(l.closing_date)?.end ?? null) : null,
-      windowMinutes: l.closing_confirmed ? propertyWindowMinutes(countable, l.closing_date) : 0,
     };
   });
 
@@ -348,12 +338,15 @@ export async function loadProgramAggregate(
   );
   // Nothing here ever adds, estimates or credits time on the owner's behalf.
   const reported = combinedMinutes(countable);
-  // Combined owner total under the per-home rule: each activity once if it
-  // falls in any included home's window. Never the sum of home totals.
-  const windowedMinutes = combinedWindowMinutes(
+  // Shared participation total per calendar year (homes closing in the same
+  // year are grouped automatically). Each activity counts once; General and
+  // pre-closing entries in that year are included. Never a sum across homes.
+  const yearTotals = participationYearTotals(
     countable,
     included.filter((x) => x.closingConfirmed).map((x) => x.closingDate),
   );
+  const windowedMinutes = yearTotals.reduce((n, y) => n + y.minutes, 0);
+  const generalMinutes = combinedMinutes(countable.filter((e) => e.propertyIds.length === 0));
   const onboardingMinutes = combinedMinutes(countable.filter((e) => e.phase === "onboarding"));
   // Logged time counts immediately — there is no review, approval or return state.
   const approvedMinutes = reported;
@@ -398,6 +391,9 @@ export async function loadProgramAggregate(
     badges: badges.data ?? [],
     reportedMinutes: reported,
     windowedMinutes,
+    yearTotals,
+    generalMinutes,
+    propertySpecificMinutes: windowedMinutes - generalMinutes,
     approvedMinutes,
     pendingReviewMinutes,
     returnedMinutes,
