@@ -515,6 +515,7 @@ function OwnerHubBody({
           onQueueChange={(q) => void navigate({ search: (prev) => { const { queue: _q, ...rest } = prev; return q ? { ...rest, queue: q } : rest; } })}
           onBackToDashboard={() => void navigate({ search: (prev) => { const { queue: _q, view: _v, opportunity: _o, ...rest } = prev; return rest; } })}
           focusId={search.opportunity ?? null}
+          onCloseDetail={() => void navigate({ search: (prev) => { const { opportunity: _o, ...rest } = prev; return rest; }, replace: true })}
           homes={ownerHomes}
           selectedHomeId={selectedHomeId}
           readOnly={preview}

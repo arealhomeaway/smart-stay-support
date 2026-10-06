@@ -202,11 +202,14 @@ export function OwnerOpportunities({
   queue = null,
   onQueueChange,
   onBackToDashboard,
+  onCloseDetail,
 }: {
   /** Dashboard card filter applied to the ARHA Opportunities (full page only). */
   queue?: OwnerQueue | null;
   onQueueChange?: (q: OwnerQueue | null) => void;
   onBackToDashboard?: () => void;
+  /** Clears a direct-link focus so closing returns to the same list and filters. */
+  onCloseDetail?: () => void;
   focusId?: string | null;
   onLogHours?: (activity: string, propertyId: string | null) => void;
   readOnly?: boolean;
@@ -396,7 +399,7 @@ export function OwnerOpportunities({
 
       <OpportunityDetail
         item={opened}
-        onClose={() => setOpenId(null)}
+        onClose={() => { setOpenId(null); onCloseDetail?.(); }}
         readOnly={readOnly}
         homes={homes}
         blockedReason={blockedReason}
