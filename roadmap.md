@@ -23,7 +23,8 @@
 - [x] 1. Staff-led link (no invite), DFY + Day One removed, homes don't wait on others (migration 0135, UI)
 - [x] 2. Per-home closing→Dec 31 windows; combined counted once (DB logging + pure helpers)
 - [~] 2b. Show per-home window totals on Owner Hub / report / CSV general-vs-property split
-- [~] 3. Closing: confirmed enrollment fills blank actual closing (Foxtail done); Victor 3915 W 104th 9/23 vs 9/24 needs Emily
+- [x] 3. Closing: Director/Manager-only `correct_actual_closing` (migrations 0136–0137, live), history + audit, discrepancy shown on home panel; 3915 W 104th left unchanged for a Director/Manager
+- [ ] 3b. Browser check of closing correction (Manager allowed, admin-only/onboarding refused)
 - [ ] 4. #24 workflow, #27 verify, owner return nav, #25 Needs My Attention, internal-Task→owner-approval root cause
 - [ ] 5. Synthetic accounts: backend demo-only restriction
 - [ ] 6. Focused browser walkthrough; 7. release summary
