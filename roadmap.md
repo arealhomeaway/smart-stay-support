@@ -1,16 +1,14 @@
-# Roadmap — Guided Ticket launch
-- [x] Stage Notion vendor CSV into Needs Review; Transitional Review, reminders, Breezeway matching, coverage report
-- [x] Emergency Only behavior — frozen for this release
-- [x] Import clean vendor subset (76) for Ticket QA; 192 remain in Needs Review
-- [x] End-to-end guided Ticket QA + fixes for dead ends and repeated prompts
-- [x] Final Ticket UX cleanup pass (Carlton Landing, help question, vendor cards, Waiting on Vendor, WO evidence, one guest card, 10 guides)
-- [ ] Publish guided Tickets + vendor rules — waiting on user review
-- [ ] Leadership Import/Skip of the remaining 192 staged vendors — after launch
-- [ ] Buckland pending-activation race (webhook vs nightly scan)
-- [x] Close vendor/onboarding acceptance pass (Micah own-account check of DEMO — Handoff Role QA Cottage stays on launch list)
-- [x] Claims workflow: gates, waivers, Finance ledger, payer/deadlines — synthetic acceptance passed
-- [x] Claims corrections: routed waivers, Finance treatment before closure, demo alert isolation + audited retraction, correction fix
-- [x] Claims Finance browser acceptance (qa.um.manager re-enabled for the check, then disabled again)
-- [ ] Pod supervisor per home — no assignment exists in Resolve yet; waivers fall back to Operations Supervisor seat
-- [x] Claims correction pass closed
-- [x] Statement Readiness (Finance): dispositions, Finance Lead expense-review sign-off, re-review on change — synthetic acceptance done
+# Roadmap (checkpoint Oct 6 2026)
+
+## Paused — outstanding acceptance work
+- [ ] Vendor-only Ticket view (vendor currently reads every field on its assigned Ticket) + vendor browser check. Vendor test login stays disabled.
+- [ ] Ops browser checks: vacant-home survey, Routine Control submission, negative-review follow-up (reporter unconfirmed).
+- [ ] Own-account checks: James (Finance Lead review action — read-only inspection steps do NOT replace it), Emily (reopen with reason), Micah (accept Handoff Role QA Cottage). James/Micah demo access kept.
+- [ ] Breezeway controlled test (target/owner/cleanup), KD Accounting account, vendor Telegram confirmations.
+- [ ] Help #21 awaiting Kati's confirmation.
+
+## Kati tickets #24–27
+- [x] #24 homeowner file not openable — fixed in preview, awaiting publish + review notes
+- [x] #27 stage titles not editable — fixed in preview (old-import plans); step drag exists further down
+- [ ] #25 Needs My Attention on onboarding hub — layout decision for Emily
+- [ ] #26 task view options — suggestion; Module explained
