@@ -18,7 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { LoadingPage, PageHero, SectionCard } from "@/components/ui/page";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { usDate } from "@/lib/dates";
-import { awaitingMyReview } from "@/lib/onboarding-hub";
+import { awaitingMyReview, needsMyAttention } from "@/lib/onboarding-hub";
 import { lifecycleStageMeta, withinDays, type ProjectSummary } from "@/lib/onboarding-lifecycle";
 import { cn } from "@/lib/utils";
 import heroImage from "@/assets/hero-arha-property.jpg";
@@ -355,27 +355,96 @@ function Hub() {
       </div>
       {lens !== "all" ? (
         <>
+          <NeedsMyAttention
+            projects={activeProjects}
+            tasks={data.tasks as never}
+            viewer={viewer}
+            isDirector={Boolean(data.reviewCapabilities.can_review_stages || data.reviewCapabilities.kati_review)}
+            originToken={originToken}
+          />
           <OnboardingActivityFeed />
-          <SectionCard
-            tone={myDecisions.length > 0 ? "critical" : "default"}
-            title="Needs my attention"
-            description="Items that need your decision or action."
-            bodyClassName="space-y-1.5"
-          >
-            {myDecisions.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                You are clear. Nothing needs your decision or action right now.
-              </p>
-            ) : (
-              myDecisions.map((p) => (
-                <DecisionRow key={p.property.id} project={p} originToken={originToken} />
-              ))
-            )}
-          </SectionCard>
 
         </>
       ) : null}
     </div>
+  );
+}
+
+/** #25: two separate views below the property list, from existing records only. */
+function NeedsMyAttention({
+  projects,
+  tasks,
+  viewer,
+  isDirector,
+  originToken,
+}: {
+  projects: ProjectSummary[];
+  tasks: Parameters<typeof needsMyAttention>[1];
+  viewer: Parameters<typeof needsMyAttention>[2];
+  isDirector: boolean;
+  originToken?: string | undefined;
+}) {
+  const [view, setView] = useState<"mine" | "oversight">("mine");
+  const { mine, oversight } = needsMyAttention(projects, tasks, viewer, isDirector);
+  const tab = (key: "mine" | "oversight", label: string, n: number) => (
+    <button
+      type="button"
+      onClick={() => setView(key)}
+      aria-pressed={view === key}
+      className={cn(
+        "rounded-md border px-2.5 py-1 text-xs font-medium",
+        view === key ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground",
+      )}
+    >
+      {label} ({n})
+    </button>
+  );
+  const rowLink = (p: ProjectSummary, line: string) => (
+    <Link
+      key={p.property.id}
+      to="/onboarding/$propertyId"
+      params={{ propertyId: p.property.id }}
+      search={(originToken ? { from: originToken } : undefined) as never}
+      className="block rounded-md border px-3 py-2 text-sm transition hover:bg-muted/40"
+    >
+      <span className="font-medium">{p.property.name}</span>
+      <span className="block text-xs text-muted-foreground">{line}</span>
+    </Link>
+  );
+  return (
+    <SectionCard
+      tone={mine.length > 0 ? "critical" : "default"}
+      title="Needs my attention"
+      description={
+        view === "mine"
+          ? "Handoff and stage reviews waiting on you, and your Tasks past their due date."
+          : "Homes already flagged blocked or at risk, or with handoff corrections or deficiency Tasks open."
+      }
+      bodyClassName="space-y-1.5"
+    >
+      <div className="flex flex-wrap gap-2 pb-1">
+        {tab("mine", "My action items", mine.length)}
+        {isDirector ? tab("oversight", "Director oversight", oversight.length) : null}
+      </div>
+      {view === "mine" ? (
+        mine.length === 0 ? (
+          <p className="text-sm text-muted-foreground">You are clear. Nothing needs your decision or action right now.</p>
+        ) : (
+          mine.map((r) =>
+            rowLink(
+              r.project,
+              [r.review ? "Review waiting on you" : null, r.overdueTasks ? `${r.overdueTasks} of your Tasks past due` : null]
+                .filter(Boolean)
+                .join(" · "),
+            ),
+          )
+        )
+      ) : oversight.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No team work needs oversight right now.</p>
+      ) : (
+        oversight.map((r) => rowLink(r.project, r.reasons.join(" · ")))
+      )}
+    </SectionCard>
   );
 }
 
