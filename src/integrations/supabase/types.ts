@@ -13830,6 +13830,7 @@ export type Database = {
         Args: { _actor_id: string; _input: Json }
         Returns: Json
       }
+      can_correct_actual_closing: { Args: never; Returns: boolean }
       can_manage_credentials: { Args: { _user_id: string }; Returns: boolean }
       can_read_completed_onboarding_document: {
         Args: { _document_id: string }
@@ -14017,6 +14018,10 @@ export type Database = {
       confirm_vendor_telegram: {
         Args: { _org: string; _status: string }
         Returns: undefined
+      }
+      correct_actual_closing: {
+        Args: { _new_date: string; _property_id: string; _reason: string }
+        Returns: Json
       }
       correct_cleaner_exposure: {
         Args: {
