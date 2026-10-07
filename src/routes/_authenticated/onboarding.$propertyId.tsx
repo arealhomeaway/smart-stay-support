@@ -44,6 +44,7 @@ import { OperationsContextPanel } from "@/components/onboarding/OperationsContex
 import { ProjectScopePanel } from "@/components/onboarding/ProjectScopePanel";
 import { ProjectTeamPanel } from "@/components/onboarding/ProjectTeamPanel";
 import { PropertyOpportunitiesPanel } from "@/components/onboarding/PropertyOpportunitiesPanel";
+import { PlanCsvButton } from "@/components/onboarding/PlanCsvButton";
 import { independentReadinessForTasks } from "@/lib/onboarding-independent-readiness";
 import { FinancialPanel } from "@/components/onboarding/FinancialPanel";
 import { BudgetPanel } from "@/components/onboarding/BudgetPanel";
