@@ -44,6 +44,7 @@ import { OperationsContextPanel } from "@/components/onboarding/OperationsContex
 import { ProjectScopePanel } from "@/components/onboarding/ProjectScopePanel";
 import { ProjectTeamPanel } from "@/components/onboarding/ProjectTeamPanel";
 import { PropertyOpportunitiesPanel } from "@/components/onboarding/PropertyOpportunitiesPanel";
+import { PlanCsvButton } from "@/components/onboarding/PlanCsvButton";
 import { independentReadinessForTasks } from "@/lib/onboarding-independent-readiness";
 import { FinancialPanel } from "@/components/onboarding/FinancialPanel";
 import { BudgetPanel } from "@/components/onboarding/BudgetPanel";
@@ -579,6 +580,7 @@ function PropertyWorkspace() {
         </TabsContent>
 
         <TabsContent value="work" className="space-y-5">
+          <div className="flex justify-end"><PlanCsvButton propertyId={current.id} /></div>
           <div className="flex flex-wrap items-center justify-end gap-3">
             <NewTaskDialog
               propertyId={current.id}

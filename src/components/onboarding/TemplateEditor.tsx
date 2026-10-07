@@ -27,6 +27,7 @@ import { GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PlanCsvButton } from "@/components/onboarding/PlanCsvButton";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
@@ -359,7 +360,7 @@ export function TemplateEditor({ templateId }: { templateId: string }) {
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-3">
         <div>
-          <CardTitle className="text-base">{data.name}</CardTitle>
+          <CardTitle className="flex flex-wrap items-center gap-2 text-base">{data.name} <PlanCsvButton templateId={templateId} /></CardTitle>
           <CardDescription>
             {data.steps.length} step{data.steps.length === 1 ? "" : "s"}. Every home this plan is
             applied to gets these steps, in this order, with these deadlines. Drag a step by its
