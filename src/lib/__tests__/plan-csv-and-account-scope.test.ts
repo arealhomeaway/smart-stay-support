@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, it as test } from "bun:test";
 import { csvCell, orderPlan, toCsv } from "../plan-csv";
 import { accountScope } from "../onboarding-account-scope";
 
