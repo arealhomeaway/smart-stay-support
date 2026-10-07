@@ -1,4 +1,5 @@
 /** CSV building for onboarding plan and template exports. Pure; Excel-safe. */
+import { ONBOARDING_STAGES } from "./onboarding";
 
 export function csvCell(v: unknown): string {
   if (v === null || v === undefined) return "";
@@ -16,10 +17,14 @@ export function toCsv(header: string[], rows: unknown[][]): string {
 type StageRef = { name: string; sort_order: number | null };
 type TaskLike = { stage: string | null; sort_order: number | null; title: string };
 
-/** Existing stage order (template stages first by sort order, then unknown stages in appearance order), then Task order. */
+/** Stage order: saved template stages, then the standard phase order, then any other stage in appearance order; then Task order. */
 export function orderPlan<T extends TaskLike>(tasks: T[], stages: StageRef[]): { task: T; stageNo: number; taskNo: number }[] {
   const order = new Map<string, number>();
   [...stages].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)).forEach((s) => order.set(s.name, order.size));
+  // Plans without saved stages use the standard phase order shown on screen
+  // (Post contract, Phase 1…6, then the Master stages), never database order.
+  const used = new Set(tasks.map((t) => t.stage ?? ""));
+  for (const s of ONBOARDING_STAGES) if (used.has(s.value) && !order.has(s.value)) order.set(s.value, order.size);
   for (const t of tasks) if (!order.has(t.stage ?? "")) order.set(t.stage ?? "", order.size);
   const sorted = [...tasks].sort(
     (a, b) => order.get(a.stage ?? "")! - order.get(b.stage ?? "")! || (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.title.localeCompare(b.title),
