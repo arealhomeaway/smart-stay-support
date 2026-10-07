@@ -109,8 +109,9 @@ function OwnerProgramActivationForm({ context, initialStartDate, onRefresh }: Pr
           <DialogHeader>
             <DialogTitle>Enable owner participation</DialogTitle>
             <DialogDescription>
-              Each home counts recorded hours from its confirmed closing through December 31 of that
-              year. Adding homes later never resets anything.
+              Every activity dated in the calendar year of a confirmed closing counts once — including
+              General and pre-closing activities. The closing date is a fact, not a cutoff. Adding homes
+              later never resets anything.
             </DialogDescription>
           </DialogHeader>
           {draft && (

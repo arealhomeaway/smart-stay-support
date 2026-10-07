@@ -231,7 +231,7 @@ const NOTES = [
   "Reported hours are the homeowner's own record of participation, entered manually by the homeowner. ARHA does not certify or approve these hours.",
   "Entries replaced by a correction, and entries returned for a data-quality question, are excluded from the total.",
   "An activity shared across several homes is counted once in the combined total; the homes are listed for attribution only.",
-  "Each home counts every recorded activity (tagged to any home or General) dated from its confirmed closing through December 31 of that year. Home totals overlap; the combined total counts each activity once and is never their sum.",
+  "Each home counts every recorded activity (tagged to any home or General) dated in the calendar year of a confirmed closing, including General and pre-closing activities. Home totals overlap; the combined total counts each activity once and is never their sum.",
   "Every hour is the homeowner's own record, entered manually. Approvals and revisions are logged as actions and never create hours.",
   "This report is an operational record of reported participation. It is not a tax certification and not a guarantee of any tax treatment.",
 ];

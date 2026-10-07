@@ -224,7 +224,7 @@ function EvidenceBody({ propertyId, workItemId }: { propertyId: string; workItem
   return (
     <div className="space-y-2">
       {files.some((f) => f.workItemId === o.id) ? null : <p className="text-xs text-muted-foreground">No files attached.</p>}
-      <OpportunityDetail o={o} files={files} />
+      <OpportunityDetail o={o} files={files} readOnly />
     </div>
   );
 }

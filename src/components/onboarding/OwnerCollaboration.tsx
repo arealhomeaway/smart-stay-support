@@ -95,7 +95,7 @@ function OwnerPriorityControl({ o }: { o: CollabOpp }) {
   );
 }
 
-export function OpportunityDetail({ o, files }: { o: CollabOpp; files: CollabData["files"] }) {
+export function OpportunityDetail({ o, files, readOnly = false }: { o: CollabOpp; files: CollabData["files"]; readOnly?: boolean }) {
   const openRes = useServerFn(opportunityResourceUrl);
   const ownerDocs = files.filter((f) => f.workItemId === o.id);
   const fileUrl = useServerFn(attachmentUrlFn);
@@ -153,13 +153,14 @@ export function OpportunityDetail({ o, files }: { o: CollabOpp; files: CollabDat
           </ul>
         </div>
       ) : null}
-      <OwnerPriorityControl o={o} />
+      {readOnly ? null : <OwnerPriorityControl o={o} />}
       {o.status !== "draft" ? (
         <OwnerConversation
           workItemId={o.id}
           status={o.status}
           legacy={o.owner_response}
           viewer="staff"
+          readOnly={readOnly}
           refreshKeys={[["owner-collaboration", o.property_id], ["onboarding"]]}
         />
       ) : null}
