@@ -512,47 +512,6 @@ export function participationWindowEnd(
   return endsOn && /^\d{4}-\d{2}-\d{2}/.test(endsOn) ? endsOn.slice(0, 10) : lastDay;
 }
 
-/** One home's window: its confirmed closing through December 31 of that year. */
-export function propertyParticipationWindow(closingDate: string | null | undefined) {
-  if (!closingDate || !/^\d{4}-\d{2}-\d{2}/.test(closingDate)) return null;
-  return { start: closingDate.slice(0, 10), end: `${closingDate.slice(0, 4)}-12-31` };
-}
-
-/**
- * Hours counted for one home: every recorded activity (tagged to any home or
- * general) dated inside that home's window. Informational per home; the
- * owner's combined total counts each activity once and is never this sum.
- */
-export function propertyWindowMinutes(
-  entries: { entry_date: string; minutes: number }[],
-  closingDate: string | null | undefined,
-  today = new Date().toISOString().slice(0, 10),
-) {
-  const w = propertyParticipationWindow(closingDate);
-  if (!w) return 0;
-  return entries
-    .filter((e) => e.entry_date >= w.start && e.entry_date <= w.end && e.entry_date <= today)
-    .reduce((sum, e) => sum + (e.minutes ?? 0), 0);
-}
-
-/** Combined owner total: each activity once if it falls inside any home's window. */
-export function combinedWindowMinutes(
-  entries: { entry_date: string; minutes: number }[],
-  closingDates: (string | null | undefined)[],
-  today = new Date().toISOString().slice(0, 10),
-) {
-  const windows = closingDates.map(propertyParticipationWindow).filter(Boolean) as {
-    start: string;
-    end: string;
-  }[];
-  return entries
-    .filter(
-      (e) =>
-        e.entry_date <= today && windows.some((w) => e.entry_date >= w.start && e.entry_date <= w.end),
-    )
-    .reduce((sum, e) => sum + (e.minutes ?? 0), 0);
-}
-
 /**
  * Participation year rule (DFY guidance, Oct 6 2026): an owner's Active Owner
  * homes closing in the same calendar year are tracked as one group. Every
