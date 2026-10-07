@@ -579,6 +579,7 @@ function PropertyWorkspace() {
         </TabsContent>
 
         <TabsContent value="work" className="space-y-5">
+          <div className="flex justify-end"><PlanCsvButton propertyId={current.id} /></div>
           <div className="flex flex-wrap items-center justify-end gap-3">
             <NewTaskDialog
               propertyId={current.id}
