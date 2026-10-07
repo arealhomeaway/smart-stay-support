@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SectionCard } from "@/components/ui/page";
 import {
-  createOnboardingAccountInvite,
+  createOnboardingAccount,
   listOnboardingAccounts,
   setOnboardingAccountActive,
 } from "@/lib/onboarding-accounts.functions";
@@ -23,18 +23,23 @@ const KEY = ["onboarding-accounts"];
 export function OnboardingAccountsPanel() {
   const qc = useQueryClient();
   const list = useServerFn(listOnboardingAccounts);
-  const invite = useServerFn(createOnboardingAccountInvite);
+  const createAccount = useServerFn(createOnboardingAccount);
   const setActive = useServerFn(setOnboardingAccountActive);
   const q = useQuery({ queryKey: KEY, queryFn: () => list() });
-  const [form, setForm] = useState({ name: "", email: "", role: "onboarding" as "onboarding" | "owner", sendEmail: true });
+  const [form, setForm] = useState({ name: "", email: "", role: "onboarding" as "onboarding" | "owner", sendSetupEmail: false });
   const [issued, setIssued] = useState<string | null>(null);
 
   const create = useMutation({
-    mutationFn: () => invite({ data: form }),
+    mutationFn: () => createAccount({ data: form }),
     onSuccess: (r) => {
-      setIssued(r.code);
-      toast.success(r.emailed ? "Invitation emailed." : "Invitation created. Share the code with them yourself.");
-      setForm({ name: "", email: "", role: form.role, sendEmail: true });
+      setIssued(form.email);
+      toast.success(
+        r.setupEmail === "sent" ? "Account created and a set-password email was sent." :
+        r.setupEmail === "failed" ? "Account created. The set-password email could not be sent — they can use Forgot password." :
+        "Account created. They set their password with Forgot password on the sign-in page.",
+      );
+      setForm({ name: "", email: "", role: form.role, sendSetupEmail: false });
+      void qc.invalidateQueries({ queryKey: KEY });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -53,7 +58,7 @@ export function OnboardingAccountsPanel() {
   return (
     <SectionCard
       title="Onboarding and homeowner accounts"
-      description="Invite new Onboarding staff or homeowners, and turn sign-in off or on. Turning sign-in off keeps their completed work, files and history; it does not remove them from Project Teams."
+      description="Create sign-in accounts for Onboarding staff or homeowners, and turn sign-in off or on. Turning sign-in off keeps their completed work, files and history; it does not remove them from Project Teams."
     >
       <form
         className="grid gap-3 rounded-md border p-3 sm:grid-cols-2"
@@ -69,15 +74,15 @@ export function OnboardingAccountsPanel() {
           </select>
         </div>
         <label className="flex items-end gap-2 pb-2 text-sm">
-          <Checkbox checked={form.sendEmail} onCheckedChange={(c) => setForm({ ...form, sendEmail: c === true })} />
-          Email the invitation now
+          <Checkbox checked={form.sendSetupEmail} onCheckedChange={(c) => setForm({ ...form, sendSetupEmail: c === true })} />
+          Email them a link to set their password
         </label>
         <div className="sm:col-span-2 flex flex-wrap items-center gap-3">
-          <Button type="submit" size="sm" disabled={create.isPending || !form.name || !form.email}>Create invitation</Button>
-          {issued ? <span className="text-sm">Invite code: <span className="font-mono font-medium">{issued}</span></span> : null}
+          <Button type="submit" size="sm" disabled={create.isPending || !form.name || !form.email}>Create account</Button>
+          {issued ? <span className="text-sm">Created: <span className="font-medium">{issued}</span></span> : null}
         </div>
         <p className="sm:col-span-2 text-xs text-muted-foreground">
-          They sign up with this email and enter the code. For a homeowner, then link their account on the Active Owner program.
+          No invite code. If the email already has an account, select that account instead. For a homeowner, next use Link homeowner account on their Active Owner program, then Enable participation; they just sign in.
         </p>
       </form>
 

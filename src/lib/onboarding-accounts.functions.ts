@@ -1,6 +1,6 @@
 /**
  * Onboarding Director account management, limited to Onboarding staff and
- * homeowner accounts. Reuses the existing invite and sign-in mechanisms; never
+ * homeowner accounts. Creates accounts directly (no invite code) with the existing sign-in; never
  * grants admin, manager, Operations, Finance or seat access. Every change is
  * audited under the real staff actor.
  */
@@ -63,46 +63,64 @@ export const listOnboardingAccounts = createServerFn({ method: "POST" })
     return { people: await loadScoped() };
   });
 
-/** Issue an existing-style invite limited to Onboarding or homeowner access. */
-export const createOnboardingAccountInvite = createServerFn({ method: "POST" })
+/**
+ * Directly create an Onboarding staff or homeowner sign-in account (no invite
+ * code). Refuses any email that already has an account, so nobody is ever
+ * duplicated. The account starts with an unknown random password; the person
+ * signs in by setting their own password (optional setup email, or "Forgot
+ * password" on the sign-in page). Homeowners are then linked on the Active
+ * Owner program with "Link homeowner account".
+ */
+export const createOnboardingAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z.object({
       role: z.enum(DIRECTOR_CREATABLE_ROLES),
       email: z.string().trim().toLowerCase().email().max(255),
       name: z.string().trim().min(2).max(120),
-      sendEmail: z.boolean().default(true),
+      sendSetupEmail: z.boolean().default(false),
     }).parse(d),
   )
   .handler(async ({ context, data }) => {
     await assertDirectorOrAdmin(context as unknown as Ctx);
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
-    const { sendInviteEmail } = await import("./team-invites.server");
+    const { applyRole } = await import("./access.server");
     const { writeAudit } = await import("./audit.server");
     const existing = await db.from("profiles").select("id").ilike("email", data.email).maybeSingle();
-    if (existing.data) throw new Error("An account with this email already exists. Use it instead of creating another.");
-    const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    const part = () => Array.from({ length: 4 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
-    const expires = new Date(Date.now() + 30 * 864e5).toISOString();
-    for (let i = 0; i < 5; i++) {
-      const code = `${part()}-${part()}`;
-      const ins = await db.from("team_invites").insert({
-        code, role: data.role, invitee_email: data.email, invitee_name: data.name,
-        note: "Issued by the Onboarding Director", expires_at: expires, created_by: context.userId,
-      }).select("id, code, expires_at").maybeSingle();
-      if (ins.error && ins.error.code === "23505") continue;
-      if (ins.error || !ins.data) throw new Error(ins.error?.message ?? "Could not create the invitation.");
-      const emailed = data.sendEmail
-        ? await sendInviteEmail({ email: data.email, name: data.name, role: data.role, code: ins.data.code, note: "", expiresAt: ins.data.expires_at })
-        : false;
-      await writeAudit({
-        actorId: context.userId, actorLabel: null, action: "user.invite_issued_by_onboarding_director",
-        entityType: "team_invite", entityId: ins.data.id, entityLabel: data.email,
-        after: { role: data.role, emailed: Boolean(emailed) },
-      });
-      return { ok: true as const, code: ins.data.code, emailed: Boolean(emailed) };
+    if (existing.data) throw new Error("An account with this email already exists. Select it instead of creating another.");
+    const { data: created, error } = await db.auth.admin.createUser({
+      email: data.email,
+      password: crypto.randomUUID() + crypto.randomUUID(),
+      email_confirm: true,
+      user_metadata: { full_name: data.name },
+    });
+    if (error || !created.user) {
+      if (/already|registered|exists/i.test(error?.message ?? ""))
+        throw new Error("An account with this email already exists. Select it instead of creating another.");
+      throw new Error("Could not create the account. Please try again.");
     }
-    throw new Error("Could not generate an invitation. Please try again.");
+    await applyRole(created.user.id, data.role);
+    // Reserved test domains never receive mail.
+    const testAddress = /@(resolve-test\.invalid|[^@]+\.(invalid|test|example))$/i.test(data.email);
+    let setupEmail: "sent" | "not_requested" | "skipped_test_address" | "failed" = "not_requested";
+    if (data.sendSetupEmail && testAddress) setupEmail = "skipped_test_address";
+    else if (data.sendSetupEmail) {
+      const { getRequest } = await import("@tanstack/react-start/server");
+      const req = getRequest();
+      const origin = req?.headers.get("origin") || (req ? new URL(req.url).origin : "");
+      const { createClient } = await import("@supabase/supabase-js");
+      const pub = createClient(process.env["SUPABASE_URL"]!, process.env["SUPABASE_PUBLISHABLE_KEY"]!, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const r = await pub.auth.resetPasswordForEmail(data.email, { redirectTo: `${origin}/reset-password` });
+      setupEmail = r.error ? "failed" : "sent";
+    }
+    await writeAudit({
+      actorId: context.userId, actorLabel: null, action: "user.created_by_onboarding_director",
+      entityType: "user", entityId: created.user.id, entityLabel: data.email,
+      after: { role: data.role, method: "direct_staff_creation", setup_email: setupEmail },
+    });
+    return { ok: true as const, userId: created.user.id, setupEmail };
   });
 
 /** Turn sign-in off or on for an in-scope account. Never deletes the person or their work. */
