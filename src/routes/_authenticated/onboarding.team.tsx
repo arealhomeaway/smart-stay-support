@@ -23,6 +23,7 @@ import {
   setOnboardingDirector,
   setProjectRoleAssignee,
 } from "@/lib/onboarding-team.functions";
+import { OnboardingAccountsPanel } from "@/components/onboarding/OnboardingAccountsPanel";
 
 export const Route = createFileRoute("/_authenticated/onboarding/team")({
   head: () => ({
@@ -157,8 +158,10 @@ function OnboardingTeamPage() {
         ))}
       </SectionCard>
 
+      {data.canEdit ? <OnboardingAccountsPanel /> : null}
+
       <p className="text-xs text-muted-foreground">
-        Need to invite someone new to Resolve? An administrator can do that from{" "}
+        Operations, Finance, supervisor and administrator accounts are managed by an administrator from{" "}
         {canOpen("/team") ? (
           <Link to="/team" className="underline">Executive Administration</Link>
         ) : (
