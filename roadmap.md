@@ -30,3 +30,11 @@
 - [x] 5. Synthetic accounts demo-only in backend (0138–0142); 7 unused disabled; qa.um.manager Finance Lead seat removed
 - [x] 6/7. Focused checks + release summary delivered Oct 6
 - [ ] Browser checks on demo records (hours, #24, #25, #27, #26, owner nav) — not run; #26 built, #18–19 compared, 9 approvals listed
+
+## Oct 7 (Emily)
+- [x] Linders activation facts + wording fix (activation stores first closing/Dec 31; hours are calendar-year based)
+- [x] Direct staff account creation (no invite code) for Onboarding Director
+- [x] Evidence window open/download browser check (onboarding role); made window view-only
+- [ ] Account-management browser check (admin synthetic; Director seat blocker)
+- [ ] CSV: export → edit → import as NEW template (preview, row errors, no statuses/assignments), browser round trip on demo plan
+- [ ] Complete release contents list
