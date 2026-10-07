@@ -151,3 +151,58 @@ export const reorderTemplateStepFn = createServerFn({ method: "POST" })
     const { reorderTemplateStep } = await import("./onboarding-template-admin.server");
     return reorderTemplateStep(context.supabase, context.userId, data);
   });
+
+/**
+ * CSV → NEW template. Preview never writes. Save creates a brand-new template
+ * through the existing create path (same leadership check and audit), then its
+ * stages and Tasks. Never touches existing templates, property plans, owner
+ * Opportunities or Breezeway. A failed save removes the half-made template.
+ */
+export const importTemplateCsvFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({
+      name: z.string().trim().min(3).max(120),
+      csv: z.string().min(1).max(2_000_000),
+      save: z.boolean().default(false),
+    }).parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { parseTemplateCsv } = await import("./plan-csv-import");
+    const preview = parseTemplateCsv(data.csv);
+    if (!data.save || preview.errors.length) return { preview, templateId: null as string | null };
+    const sb = context.supabase;
+    const { createOnboardingTemplate } = await import("./onboarding-template-admin.server");
+    const created = await createOnboardingTemplate(sb, context.userId, {
+      name: data.name,
+      description: "Imported from CSV.",
+    });
+    try {
+      const st = await sb.from("onboarding_template_stages").insert(
+        preview.stages.map((s) => ({ template_id: created.id, name: s.name, sort_order: s.order * 10, active: true })),
+      );
+      if (st.error) throw st.error;
+      const rows = preview.stages.flatMap((s) => s.tasks).map((t) => ({
+        template_id: created.id, stage: t.stage, title: t.title, detail: t.detail, role: t.role,
+        functional_role: t.functionalRole, schedule_anchor: t.scheduleAnchor, offset_days: t.offsetDays,
+        is_required: t.isRequired, blocks_handoff: t.blocksHandoff, evidence_required: t.evidenceRequired,
+        requires_owner_approval: t.requiresOwnerApproval, owner_dependency: t.ownerDependency,
+        module: t.module, breezeway_template_id: t.breezewayTemplateId, opportunity: t.opportunity,
+        sort_order: t.sortOrder, is_active: true,
+      }));
+      const ins = await sb.from("onboarding_template_tasks").insert(rows as never);
+      if (ins.error) throw ins.error;
+    } catch (e) {
+      await sb.from("onboarding_template_tasks").delete().eq("template_id", created.id);
+      await sb.from("onboarding_template_stages").delete().eq("template_id", created.id);
+      await sb.from("onboarding_templates").delete().eq("id", created.id);
+      throw new Error(`The template could not be saved: ${e instanceof Error ? e.message : "unknown error"}. Nothing was kept.`);
+    }
+    const { writeAudit } = await import("./audit.server");
+    await writeAudit({
+      actorId: context.userId, action: "onboarding_template_imported_csv", entityType: "onboarding_template",
+      entityId: created.id, entityLabel: data.name,
+      after: { stages: preview.stages.length, tasks: preview.taskCount, ignored_columns: preview.ignoredColumns },
+    });
+    return { preview, templateId: created.id };
+  });

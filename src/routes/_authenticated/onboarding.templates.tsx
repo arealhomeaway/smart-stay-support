@@ -6,6 +6,7 @@ import { useShellPageLabel } from "@/components/nav/ShellNav";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { TemplateCsvImport } from "@/components/onboarding/TemplateCsvImport";
 import { useState } from "react";
 import { toast } from "sonner";
 import { CopyPlus, LayoutTemplate, Star, Trash2, X } from "lucide-react";
@@ -160,9 +161,12 @@ function TemplatesPage() {
         title="Onboarding templates"
         description="The plan a new home is set up from. Edit the ARHA plan directly, or build another one alongside it."
         actions={
-          <Button onClick={() => setNewOpen(true)}>
-            <CopyPlus className="mr-1 h-4 w-4" /> New template
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <TemplateCsvImport onCreated={(id) => { refresh(); setSelected(id); }} />
+            <Button onClick={() => setNewOpen(true)}>
+              <CopyPlus className="mr-1 h-4 w-4" /> New template
+            </Button>
+          </div>
         }
       />
 

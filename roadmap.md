@@ -35,6 +35,8 @@
 - [x] Linders activation facts + wording fix (activation stores first closing/Dec 31; hours are calendar-year based)
 - [x] Direct staff account creation (no invite code) for Onboarding Director
 - [x] Evidence window open/download browser check (onboarding role); made window view-only
-- [ ] Account-management browser check (admin synthetic; Director seat blocker)
-- [ ] CSV: export → edit → import as NEW template (preview, row errors, no statuses/assignments), browser round trip on demo plan
-- [ ] Complete release contents list
+- [ ] Account-management browser check — BLOCKED: Director seat is held only by real Kati; both synthetic admins are signed-in-off
+- [x] CSV import as NEW template built + tested
+- [ ] CSV import save + reopen-and-edit browser check — same blocker (needs Onboarding Director/supervisor actor)
+- [ ] Template CSV browser download — same blocker
+- [x] Complete release contents list
