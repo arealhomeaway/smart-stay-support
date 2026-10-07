@@ -228,7 +228,7 @@ function ProgramsBoard() {
         title="Owner participation programs"
         description={
           <>
-            Each homeowner runs one program from closing through December 31 with a single combined goal of{" "}
+            Each homeowner runs one program per closing calendar year (General and pre-closing activities included) with a single combined goal of{" "}
             <span className="font-medium text-foreground">{OWNER_GOAL_LABEL.toLowerCase()}</span> of
             self-reported participation. {COMBINED_TOTAL_NOTICE}
           </>
@@ -281,7 +281,7 @@ function ProgramsBoard() {
             <Plus className="size-4" /> Create a program
           </span>
         }
-        description="A program starts as a draft. Link the homeowner’s account, confirm each home’s actual closing, then enable participation. Each home counts hours from its closing through December 31."
+        description="A program starts as a draft. Link the homeowner’s account, confirm each home’s actual closing, then enable participation. Hours count for the whole calendar year of a confirmed closing — including General and pre-closing activities — and each activity counts once."
         bodyClassName="grid gap-4 md:grid-cols-4"
       >
         <div className="space-y-2 md:col-span-2">
