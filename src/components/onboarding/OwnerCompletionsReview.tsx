@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { EmptyState, LoadingRows } from "@/components/ui/page";
 import { usDate } from "@/lib/dates";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { OpportunityDetail, useOwnerCollaboration } from "@/components/onboarding/OwnerCollaboration";
 
 export type CompletionRow = {
   work_item_id: string;
@@ -92,6 +94,7 @@ export function OwnerCompletionsReview({ demoMode, propertyId }: { demoMode: boo
 function CompletionCard({ row: r }: { row: CompletionRow }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [viewing, setViewing] = useState(false);
   const [note, setNote] = useState("");
   const [feedback, setFeedback] = useState("");
   const [taskId, setTaskId] = useState("");
@@ -154,9 +157,9 @@ function CompletionCard({ row: r }: { row: CompletionRow }) {
         </p>
       ) : null}
       <div className="mt-2 flex flex-wrap gap-2">
-        <Link to="/onboarding/$propertyId" params={{ propertyId: r.property_id }} search={{ tab: "work", ...(r.source_task_id ? { task: r.source_task_id } : {}) } as never} className="text-xs font-medium text-primary hover:underline">
+        <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => setViewing(true)}>
           Open evidence and thread
-        </Link>
+        </button>
         <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => setOpen((v) => !v)}>
           {open ? "Cancel" : "Record review"}
         </button>
@@ -187,6 +190,41 @@ function CompletionCard({ row: r }: { row: CompletionRow }) {
           </div>
         </div>
       ) : null}
+      <EvidenceDialog open={viewing} onClose={() => setViewing(false)} propertyId={r.property_id} workItemId={r.work_item_id} title={r.title} />
     </li>
+  );
+}
+
+/**
+ * Read-only view of one owner Opportunity: conversation and attachments.
+ * Opening it never reopens the Opportunity, changes hours or records a review;
+ * closing it leaves the review list exactly where it was.
+ */
+function EvidenceDialog({ open, onClose, propertyId, workItemId, title }: { open: boolean; onClose: () => void; propertyId: string; workItemId: string; title: string }) {
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>Owner conversation and evidence. Viewing does not change the Opportunity or your review.</DialogDescription>
+        </DialogHeader>
+        {open ? <EvidenceBody propertyId={propertyId} workItemId={workItemId} /> : null}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EvidenceBody({ propertyId, workItemId }: { propertyId: string; workItemId: string }) {
+  const q = useOwnerCollaboration(propertyId);
+  if (q.isLoading) return <LoadingRows />;
+  if (q.error) return <p className="text-sm text-destructive">This Opportunity could not be loaded.</p>;
+  const o = q.data?.opportunities.find((x) => x.id === workItemId);
+  if (!o) return <p className="text-sm text-muted-foreground">This Opportunity is not available to you.</p>;
+  const files = q.data?.files ?? [];
+  return (
+    <div className="space-y-2">
+      {files.some((f) => f.workItemId === o.id) ? null : <p className="text-xs text-muted-foreground">No files attached.</p>}
+      <OpportunityDetail o={o} files={files} />
+    </div>
   );
 }
