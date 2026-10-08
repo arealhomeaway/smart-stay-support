@@ -31,7 +31,6 @@ import {
   ownerTaskRoadmap,
   removeOwnerProgramProperty,
   seedOwnerRoadmap,
-  startOwnerProgram,
   staffLinkOwnerAccount,
 } from "@/lib/owner-program.functions";
 import { DECISION_PATHS, PHASE_LABELS, type TaskTemplate } from "@/lib/owner-program";
@@ -179,10 +178,8 @@ function ProgramsBoard() {
   const qc = useQueryClient();
   const load = useServerFn(ownerPrograms);
   const loadRoadmap = useServerFn(ownerTaskRoadmap);
-  const enroll = useServerFn(startOwnerProgram);
 
   const [selected, setSelected] = useState<string | null>(null);
-  const [propertyId, setPropertyId] = useState("");
 
   const { demoMode } = useDemo();
   // Staff can look at the non-production QA/demo programs without leaving
@@ -198,21 +195,6 @@ function ProgramsBoard() {
   const rows = (programs.data?.rows ?? []) as ProgramRow[];
   const available = programs.data?.available ?? [];
   const invalidate = () => void qc.invalidateQueries({ queryKey: ["owner-programs"] });
-
-  const create = useMutation({
-    mutationFn: () => enroll({ data: { propertyId } }),
-    onSuccess: (r) => {
-      toast.success(
-        r.alreadyExists
-          ? "That home is already in a program."
-          : "Draft program created. Confirm closing, then activate.",
-      );
-      setPropertyId("");
-      setSelected(r.programId);
-      invalidate();
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
 
   const attention = rows
     .map((r) => ({ row: r, flag: attentionReason(r) }))
@@ -304,7 +286,7 @@ function ProgramsBoard() {
       ) : rows.length === 0 ? (
         <EmptyState
           title={viewingDemo ? "No QA / demo programs yet." : "No participation programs yet."}
-          hint="Pick a property above and create a draft program to start a homeowner's program."
+          hint="Open a home and choose Active Owner to start a homeowner's program."
         />
       ) : (
         <div className="space-y-3">
