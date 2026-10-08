@@ -24,11 +24,17 @@ export const WELCOME_PLACEHOLDERS = [
   "{{property_display_name}}",
   "{{portal_sign_in_link}}",
   "{{welcome_video_section}}",
+  "{{hours_logging_note}}",
 ] as const;
 
-/** Emily Jimenez's draft (Oct 8, 2026). Proposed wording — not yet approved for sending. */
+/** Emily Jimenez's supplied draft (Oct 8, 2026) plus the approved timing clarification. Not yet approved for sending. */
+export const HOURS_NOTE_LOCKED =
+  "Your portal is ready to explore. You can begin logging participation hours once your property’s actual closing date is confirmed and that date has arrived. Once logging opens, you can also record earlier activities from that calendar year.";
+export const HOURS_NOTE_OPEN =
+  "Your portal is ready to explore, and participation hour logging is already open. You can also record earlier activities from this calendar year.";
+
 export const DEFAULT_WELCOME: OwnerWelcomeTemplate = {
-  subject: "Welcome to the Active Owner program",
+  subject: "Welcome to your ARHA Active Owner portal",
   body: `Hi {{owner_first_name}},
 
 Welcome to the Active Owner program! Your Resolve portal is ready for {{property_display_name}}.
@@ -37,15 +43,17 @@ This is where you can review Opportunities from our team, share feedback and doc
 
 Open your portal: {{portal_sign_in_link}}
 
-Sign in using the email address you provided to ARHA. If you haven't set a password yet, select Forgot password? on the sign-in page and follow the email instructions.
+Sign in using the email address you provided to ARHA. If you haven’t set a password yet, select Forgot password? on the sign-in page and follow the email instructions.
 
-Once you're signed in:
+{{hours_logging_note}}
+
+Once you’re signed in:
 
 Review the Opportunities available to you.
 
 Record your participation with the activity date, time spent and a short description.
 
-Identify the property involved, or choose General for participation that isn't tied to one home.
+Identify the property involved, or choose General for participation that isn’t tied to one home.
 
 Record each activity once, even when it relates to more than one property.
 
@@ -53,7 +61,7 @@ Record each activity once, even when it relates to more than one property.
 
 Our team will continue coordinating onboarding and will use your Opportunities to keep you involved along the way. If you need help getting started, contact your onboarding Project Manager.
 
-We're glad to be working with you!
+We’re glad to be working with you!
 
 The A Real Home Away Onboarding Team`,
   video: null,
@@ -98,7 +106,7 @@ export function propertyDisplayName(names: string[]) {
 /** Final subject and body. With no video, the placeholder line disappears entirely. */
 export function renderWelcome(
   tpl: Pick<OwnerWelcomeTemplate, "subject" | "body">,
-  input: { ownerName: string | null; propertyNames: string[]; portalLink: string; videoLink: string | null },
+  input: { ownerName: string | null; propertyNames: string[]; portalLink: string; videoLink: string | null; hoursOpen?: boolean },
 ) {
   const videoSection = input.videoLink ? `Watch a short welcome video: ${input.videoLink}` : "";
   const fill = (s: string) =>
@@ -106,7 +114,8 @@ export function renderWelcome(
       .replaceAll("{{owner_first_name}}", firstName(input.ownerName))
       .replaceAll("{{property_display_name}}", propertyDisplayName(input.propertyNames))
       .replaceAll("{{portal_sign_in_link}}", input.portalLink)
-      .replaceAll("{{welcome_video_section}}", videoSection);
+      .replaceAll("{{welcome_video_section}}", videoSection)
+      .replaceAll("{{hours_logging_note}}", input.hoursOpen ? HOURS_NOTE_OPEN : HOURS_NOTE_LOCKED);
   const body = fill(tpl.body)
     .split("\n")
     .join("\n")
