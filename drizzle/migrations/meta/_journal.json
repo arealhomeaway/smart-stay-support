@@ -1030,6 +1030,13 @@
       "when": 1791470881950,
       "tag": "0146_enroll_active_owner_demo_link_fix",
       "breakpoints": true
+    },
+    {
+      "idx": 147,
+      "version": "7",
+      "when": 1791473029894,
+      "tag": "0147_owner_hours_open_on_arrived_closing",
+      "breakpoints": true
     }
   ]
 }

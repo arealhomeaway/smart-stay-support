@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { enrollActiveOwner } from "@/lib/owner-welcome.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -262,6 +263,7 @@ function OwnerRezImport({
   const runImport = useServerFn(importOwnerRezPropertyFn);
   const loadOwner = useServerFn(ownerRezOwnerPreviewFn);
   const enrollOwner = useServerFn(startOwnerProgram);
+  const enrollActive = useServerFn(enrollActiveOwner);
   const startProject = useServerFn(startOnboardingProjectFn);
 
   const { data, isLoading } = useQuery({
@@ -310,9 +312,14 @@ function OwnerRezImport({
       let enrolled = false;
       if (wantsActiveOwner) {
         try {
-          await enrollOwner({
-            data: { propertyId, ownerName: owner.name || "", ownerEmail: owner.email || "" },
-          });
+          // One enrollment engine: link the homeowner and queue the welcome when an email is known.
+          const email = owner.email.trim();
+          if (owner.name.trim().length >= 2 && /\S+@\S+\.\S+/.test(email)) {
+            await enrollActive({ data: { propertyId, name: owner.name.trim(), email } });
+          } else {
+            await enrollOwner({ data: { propertyId, ownerName: owner.name || "", ownerEmail: email } });
+            problems.push("Active Owner: add the homeowner's name and email on the home page to link their account and queue the welcome.");
+          }
           enrolled = true;
         } catch (e) {
           problems.push(
