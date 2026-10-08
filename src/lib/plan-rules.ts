@@ -30,7 +30,7 @@ export function isPlanAnchor(v: unknown): v is PlanAnchor {
 
 function parse(iso: string) {
   const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d));
+  return new Date(Date.UTC(y ?? 1970, (m ?? 1) - 1, d ?? 1));
 }
 const fmt = (d: Date) => d.toISOString().slice(0, 10);
 

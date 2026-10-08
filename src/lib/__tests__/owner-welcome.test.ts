@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { DEFAULT_WELCOME, readWelcomeTemplate, renderWelcome, unknownPlaceholders } from "../owner-welcome";
 
 const base = { ownerName: "Matthew Linder", propertyNames: ["1399 Foxtail"], portalLink: "https://x/owner" };
