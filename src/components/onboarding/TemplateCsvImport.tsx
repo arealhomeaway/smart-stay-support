@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { importTemplateCsvFn } from "@/lib/onboarding-template-admin.functions";
 import type { ImportPreview } from "@/lib/plan-csv-import";
+import { describeCondition, describeRule } from "@/lib/plan-rules";
 
 /** Upload an edited Resolve CSV to create a NEW template. Preview first; nothing existing changes. */
 export function TemplateCsvImport({ onCreated }: { onCreated: (id: string) => void }) {
@@ -94,7 +95,9 @@ export function TemplateCsvImport({ onCreated }: { onCreated: (id: string) => vo
                             {t.title}
                             <span className="text-muted-foreground">
                               {t.functionalRole || t.role ? ` · ${t.functionalRole ?? t.role}` : ""}
-                              {t.scheduleAnchor ? ` · ${Math.abs(t.offsetDays ?? 0)}d ${(t.offsetDays ?? 0) < 0 ? "before" : "after"} ${t.scheduleAnchor.replace(/_/g, " ")}` : ""}
+                              {t.scheduleAnchor ? ` · ${describeRule(t.scheduleAnchor, t.offsetDays, t.offsetUnit)}` : ""}
+                              {t.condition ? ` · ${describeCondition(t.condition)}` : ""}
+                              {t.description || t.doneWhen || t.videoUrl ? " · has guidance" : ""}
                               {t.blocksHandoff ? " · blocks handoff" : ""}{t.evidenceRequired ? " · evidence" : ""}
                               {t.opportunity ? " · owner Opportunity text" : ""}{t.breezewayTemplateId ? " · Breezeway template" : ""}
                             </span>
