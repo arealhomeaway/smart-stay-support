@@ -112,7 +112,7 @@ export function emailText(heading: string, body: string, action?: { label: strin
 }
 
 export type SendEmailResult =
-  { status: "sent"; error: null } | { status: "skipped" | "failed"; error: string };
+  { status: "sent"; error: null } | { status: "skipped" | "failed"; error: string; deliveryUncertain?: boolean };
 
 type SendInput = {
   to: string;
@@ -130,6 +130,8 @@ type SendInput = {
   ticketId?: string | null;
   /** A saved onboarding attempt owns recovery after an uncertain provider response. */
   singleAttempt?: boolean;
+  /** Welcome-only: preserve ambiguous transport outcomes without changing other callers. */
+  preserveUncertainty?: boolean;
   /** The record this message belongs to, so it shows in that record's history. */
   entity?: { type: string; id: string } | null;
   /** The written message, kept with the delivery record. */
@@ -300,6 +302,7 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
 
   let attempts = 0;
   let lastError = "Email failed";
+  let deliveryUncertain = false;
   // The allowlist builds this path. There is no fallback mailbox and no /me.
   let path: string;
   try {
@@ -327,7 +330,7 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
     return { status: "failed", error };
   }
 
-  const attemptLimit = input.singleAttempt ? 1 : MAX_ATTEMPTS;
+  const attemptLimit = input.singleAttempt || input.preserveUncertainty ? 1 : MAX_ATTEMPTS;
   while (attempts < attemptLimit) {
     attempts++;
     try {
@@ -363,6 +366,8 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
         return { status: "sent", error: null };
       }
 
+      // A timeout or gateway/server failure cannot prove that the downstream send was rejected.
+      if (input.preserveUncertainty && (res.status === 408 || res.status >= 500)) deliveryUncertain = true;
       const detail = await res.text();
       console.error(`Outlook sendMail failed [${res.status}] ${path}: ${detail}`);
       lastError = `Mail provider [${res.status}]: ${detail.slice(0, 300)}`;
@@ -375,6 +380,7 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
           : 500 * 2 ** (attempts - 1),
       );
     } catch (err) {
+      if (input.preserveUncertainty) deliveryUncertain = true;
       lastError = err instanceof Error ? err.message : "Email failed";
       if (attempts >= attemptLimit) break;
       await sleep(500 * 2 ** (attempts - 1));
@@ -391,5 +397,6 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
     attempts,
     error: lastError,
   });
-  return { status: "failed", error: lastError };
+  return { status: "failed", error: lastError, ...(deliveryUncertain ? { deliveryUncertain: true } : {}) };
 }
+

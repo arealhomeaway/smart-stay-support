@@ -516,6 +516,8 @@ function ProgramDetail({
 }) {
   const programId = row.id;
   const qc = useQueryClient();
+  // Adding a home enrolls it: Onboarding Director seat or Platform Owner only.
+  const canEnroll = useRole().can("active_owner_enroll");
   const loadDetail = useServerFn(ownerProgramDetail);
   const seed = useServerFn(seedOwnerRoadmap);
   const addProperty = useServerFn(addOwnerProgramProperty);
@@ -696,6 +698,7 @@ function ProgramDetail({
             );
           })}
         </div>
+        {canEnroll ? (
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-56 space-y-2">
             <Label>Add another home</Label>
@@ -752,6 +755,7 @@ function ProgramDetail({
             Add property
           </Button>
         </div>
+        ) : null}
         {enrollmentVersion &&
           detail.data &&
           enrollmentVersion !== detail.data.activationVersion && (

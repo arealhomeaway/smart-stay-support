@@ -74,6 +74,7 @@ type Hub = Awaited<ReturnType<typeof getPropertyHubFn>>;
 
 function PropertyHubPage() {
   const { propertyId } = Route.useParams();
+  const { can } = useRole();
   const load = useServerFn(getPropertyHubFn);
   const q = useQuery({
     queryKey: ["property-hub", propertyId],
@@ -169,6 +170,7 @@ function PropertyHubPage() {
             propertyId={propertyId}
             propertyName={hub.property.name}
             canManage={hub.viewer.supervisor}
+            canEnroll={can("active_owner_enroll")}
             lifecycleStatus={hub.property.lifecycleStatus ?? null}
           />
         </div>

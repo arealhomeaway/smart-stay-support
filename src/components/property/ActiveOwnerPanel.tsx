@@ -47,11 +47,14 @@ export function ActiveOwnerPanel({
   propertyId,
   propertyName,
   canManage,
+  canEnroll = false,
   lifecycleStatus = null,
 }: {
   propertyId: string;
   propertyName: string;
   canManage: boolean;
+  /** Onboarding Director seat or Platform Owner: enroll / finish Active Owner setup. */
+  canEnroll?: boolean;
   /** The home's lifecycle, so enrolment can offer to start onboarding too. */
   lifecycleStatus?: string | null;
 }) {
@@ -177,7 +180,7 @@ export function ActiveOwnerPanel({
               <dd className="numeric font-medium">{row.openTasks}</dd>
             </div>
           </dl>
-          {canManage && !row.ownerLinked ? (
+          {canEnroll && !row.ownerLinked ? (
             <ActiveOwnerEnrollForm
               finishing
               propertyId={propertyId}
@@ -250,9 +253,15 @@ export function ActiveOwnerPanel({
             {propertyName} is a standard home. Enrolling links the homeowner and queues their welcome. Hour logging
             opens automatically once an actual closing is confirmed and has arrived.
           </p>
-          {canManage ? (
+          {canManage || canEnroll ? (
             <div className="space-y-3">
-              <ActiveOwnerEnrollForm propertyId={propertyId} propertyName={propertyName} onDone={refresh} />
+              {canEnroll ? (
+                <ActiveOwnerEnrollForm propertyId={propertyId} propertyName={propertyName} onDone={refresh} />
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  The Onboarding Director or a Platform Owner enrolls homes in Active Owner.
+                </p>
+              )}
               <Button
                 variant="outline"
                 onClick={() => startOnboarding.mutate()}
@@ -263,7 +272,7 @@ export function ActiveOwnerPanel({
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              A supervisor can enroll this home in the program.
+              The Onboarding Director or a Platform Owner can enroll this home in the program.
             </p>
           )}
         </div>

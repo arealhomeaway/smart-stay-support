@@ -43,8 +43,8 @@ export const startOwnerProgram = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
-    const { assertEnrollmentAuthority, createProgram } = await import("./owner-program.server");
-    await assertEnrollmentAuthority(context.supabase, context.userId);
+    const { assertActiveOwnerEnrollAuthority, createProgram } = await import("./owner-program.server");
+    await assertActiveOwnerEnrollAuthority(context.supabase, context.userId);
     return createProgram(context.supabase, context.userId, data);
   });
 
@@ -62,8 +62,8 @@ export const addOwnerProgramProperty = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
-    const { assertEnrollmentAuthority, addProgramProperty } = await import("./owner-program.server");
-    await assertEnrollmentAuthority(context.supabase, context.userId);
+    const { assertActiveOwnerEnrollAuthority, addProgramProperty } = await import("./owner-program.server");
+    await assertActiveOwnerEnrollAuthority(context.supabase, context.userId);
     return addProgramProperty(context.supabase, context.userId, data);
   });
 

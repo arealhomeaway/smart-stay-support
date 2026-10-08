@@ -21,14 +21,14 @@ function db(review: "draft" | "approved", rows: Row[]) {
       maybeSingle: async () => {
         if (name === "app_settings") return { data: { value: { subject: "S", body: "Hello there, a body long enough", video: null, version: 3, review } } };
         if (name === "profiles") return { data: { full_name: "Demo Owner" } };
-        return { data: match()[0] ?? null };
+        return { data: match()[0] ? { ...match()[0] } : null };
       },
-      limit: async () => ({ data: match() }),
+      limit: async () => ({ data: match().map((r) => ({ ...r })) }),
       then: (res: (v: unknown) => void) => {
         if (name === "owner_program_properties") return res({ data: [] });
         const hit = match();
         if (patch) hit.forEach((r) => Object.assign(r, patch));
-        return res({ data: hit, error: null });
+        return res({ data: hit.map((r) => ({ ...r })), error: null });
       },
     };
     return q;

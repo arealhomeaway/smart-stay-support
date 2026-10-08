@@ -13893,6 +13893,7 @@ export type Database = {
         }
         Returns: string
       }
+      active_owner_may_act: { Args: { _is_demo: boolean }; Returns: boolean }
       add_business_days: { Args: { _d: string; _n: number }; Returns: string }
       add_manual_cleaner_clean: {
         Args: {
@@ -14594,6 +14595,10 @@ export type Database = {
           _record_id: string
         }
         Returns: undefined
+      }
+      reconcile_owner_welcome: {
+        Args: { _id: string; _outcome: string; _reason: string }
+        Returns: Json
       }
       record_claim_finance_treatment: {
         Args: {

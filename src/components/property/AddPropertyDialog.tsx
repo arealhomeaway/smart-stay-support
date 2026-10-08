@@ -129,7 +129,7 @@ function OutcomePanel({
 }) {
   const p = result.property;
   const { can } = useRole();
-  const mayEnroll = can("owner_programs");
+  const mayEnroll = can("active_owner_enroll");
   const heading =
     result.status === "duplicate"
       ? "Already in Resolve"
@@ -238,7 +238,7 @@ function OwnerRezImport({
   const [isDemo, setIsDemo] = useState(false);
   const [activeOwner, setActiveOwner] = useState(false);
   const { can } = useRole();
-  const mayEnroll = can("owner_programs");
+  const mayEnroll = can("active_owner_enroll");
   const [owner, setOwner] = useState({ name: "", email: "", phone: "" });
   const [milestones, setMilestones] = useState<Milestones>(emptyMilestones);
   const search = useServerFn(searchOwnerRezPropertiesFn);

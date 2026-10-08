@@ -106,6 +106,9 @@ export type Capability =
   | "str_participation_report"
   // Finance workspace: Finance seats, Director of Operations and Platform Owners.
   | "finance_workspace"
+  // Active Owner enrollment, welcome Retry and uncertain-delivery Reconcile:
+  // the Onboarding Director seat and Platform Owners only (never Supervisor alone).
+  | "active_owner_enroll"
   | "view_as";
 
 // Creating a ticket is internal-staff work. Vendors and homeowners never get it.
@@ -164,6 +167,7 @@ export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
     "view_as",
     "str_participation_report",
     "finance_workspace",
+    "active_owner_enroll",
   ],
   manager: SUPERVISOR_CAPS,
   onboarding: [...STAFF_BASE, "onboarding_workspace", "handoff_request"],
@@ -193,6 +197,7 @@ export const ONBOARDING_DIRECTOR_CAPS: Capability[] = [
   "owner_programs",
   "owner_oversight",
   "homeowner_directory",
+  "active_owner_enroll",
 ];
 
 export function capabilitiesFor(roles: AppRole[], seats: AccessSeats = {}): Set<Capability> {
