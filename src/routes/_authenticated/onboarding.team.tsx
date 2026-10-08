@@ -24,6 +24,7 @@ import {
   setProjectRoleAssignee,
 } from "@/lib/onboarding-team.functions";
 import { OnboardingAccountsPanel } from "@/components/onboarding/OnboardingAccountsPanel";
+import { WelcomeEmailEditor } from "@/components/onboarding/WelcomeEmailEditor";
 
 export const Route = createFileRoute("/_authenticated/onboarding/team")({
   head: () => ({
@@ -159,6 +160,7 @@ function OnboardingTeamPage() {
       </SectionCard>
 
       {data.canEdit ? <OnboardingAccountsPanel /> : null}
+      <WelcomeEmailEditor />
 
       <p className="text-xs text-muted-foreground">
         Operations, Finance, supervisor and administrator accounts are managed by an administrator from{" "}

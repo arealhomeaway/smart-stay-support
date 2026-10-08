@@ -53,6 +53,7 @@ import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/t
 import { Route as AuthenticatedTeamQueueRouteImport } from './routes/_authenticated/team-queue'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
 import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome'
+import { Route as AuthenticatedWelcomeVideoRouteImport } from './routes/_authenticated/welcome-video'
 import { Route as AuthenticatedWorkOrdersRouteImport } from './routes/_authenticated/work-orders'
 import { Route as GuestFeedbackIndexRouteImport } from './routes/guest-feedback.index'
 import { Route as GuestFeedbackTokenRouteImport } from './routes/guest-feedback.$token'
@@ -334,6 +335,12 @@ const AuthenticatedWelcomeRoute = AuthenticatedWelcomeRouteImport.update({
   path: '/welcome',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedWelcomeVideoRoute =
+  AuthenticatedWelcomeVideoRouteImport.update({
+    id: '/welcome-video',
+    path: '/welcome-video',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedWorkOrdersRoute = AuthenticatedWorkOrdersRouteImport.update({
   id: '/work-orders',
   path: '/work-orders',
@@ -652,6 +659,7 @@ export interface FileRoutesByFullPath {
   '/team-queue': typeof AuthenticatedTeamQueueRoute
   '/vendors': typeof AuthenticatedVendorsRouteWithChildren
   '/welcome': typeof AuthenticatedWelcomeRoute
+  '/welcome-video': typeof AuthenticatedWelcomeVideoRoute
   '/work-orders': typeof AuthenticatedWorkOrdersRouteWithChildren
   '/guest-feedback/$token': typeof GuestFeedbackTokenRoute
   '/guest-feedback/': typeof GuestFeedbackIndexRoute
@@ -739,6 +747,7 @@ export interface FileRoutesByTo {
   '/team': typeof AuthenticatedTeamRoute
   '/team-queue': typeof AuthenticatedTeamQueueRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
+  '/welcome-video': typeof AuthenticatedWelcomeVideoRoute
   '/guest-feedback/$token': typeof GuestFeedbackTokenRoute
   '/guest-feedback': typeof GuestFeedbackIndexRoute
   '/claims/closed': typeof AuthenticatedClaimsClosedRoute
@@ -832,6 +841,7 @@ export interface FileRoutesById {
   '/_authenticated/team-queue': typeof AuthenticatedTeamQueueRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRouteWithChildren
   '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute
+  '/_authenticated/welcome-video': typeof AuthenticatedWelcomeVideoRoute
   '/_authenticated/work-orders': typeof AuthenticatedWorkOrdersRouteWithChildren
   '/guest-feedback/$token': typeof GuestFeedbackTokenRoute
   '/guest-feedback/': typeof GuestFeedbackIndexRoute
@@ -926,6 +936,7 @@ export interface FileRouteTypes {
     | '/team-queue'
     | '/vendors'
     | '/welcome'
+    | '/welcome-video'
     | '/work-orders'
     | '/guest-feedback/$token'
     | '/guest-feedback/'
@@ -1013,6 +1024,7 @@ export interface FileRouteTypes {
     | '/team'
     | '/team-queue'
     | '/welcome'
+    | '/welcome-video'
     | '/guest-feedback/$token'
     | '/guest-feedback'
     | '/claims/closed'
@@ -1105,6 +1117,7 @@ export interface FileRouteTypes {
     | '/_authenticated/team-queue'
     | '/_authenticated/vendors'
     | '/_authenticated/welcome'
+    | '/_authenticated/welcome-video'
     | '/_authenticated/work-orders'
     | '/guest-feedback/$token'
     | '/guest-feedback/'
@@ -1482,6 +1495,13 @@ declare module '@tanstack/react-router' {
       path: '/welcome'
       fullPath: '/welcome'
       preLoaderRoute: typeof AuthenticatedWelcomeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/welcome-video': {
+      id: '/_authenticated/welcome-video'
+      path: '/welcome-video'
+      fullPath: '/welcome-video'
+      preLoaderRoute: typeof AuthenticatedWelcomeVideoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/work-orders': {
@@ -1980,6 +2000,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTeamQueueRoute: typeof AuthenticatedTeamQueueRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRouteWithChildren
   AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
+  AuthenticatedWelcomeVideoRoute: typeof AuthenticatedWelcomeVideoRoute
   AuthenticatedWorkOrdersRoute: typeof AuthenticatedWorkOrdersRouteWithChildren
   AuthenticatedPropertyPropertyIdRoute: typeof AuthenticatedPropertyPropertyIdRoute
   AuthenticatedTicketsTicketIdRoute: typeof AuthenticatedTicketsTicketIdRoute
@@ -2031,6 +2052,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTeamQueueRoute: AuthenticatedTeamQueueRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRouteWithChildren,
   AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
+  AuthenticatedWelcomeVideoRoute: AuthenticatedWelcomeVideoRoute,
   AuthenticatedWorkOrdersRoute: AuthenticatedWorkOrdersRouteWithChildren,
   AuthenticatedPropertyPropertyIdRoute: AuthenticatedPropertyPropertyIdRoute,
   AuthenticatedTicketsTicketIdRoute: AuthenticatedTicketsTicketIdRoute,
