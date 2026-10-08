@@ -185,3 +185,23 @@ export const welcomeVideoUrl = createServerFn({ method: "POST" })
     const { data } = await db.storage.from("owner-welcome-media").createSignedUrl(tpl.video.path, 60 * 60);
     return { url: data?.signedUrl ?? null };
   });
+
+/** Supervisors / Onboarding Director: put a failed welcome back in the queue. */
+export const retryWelcome = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }) => {
+    const ctx = context as unknown as Ctx;
+    const [dir, adm, mgr] = await Promise.all([
+      ctx.supabase.rpc("is_onboarding_director", { _user_id: ctx.userId }),
+      ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: "admin" }),
+      ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: "manager" }),
+    ]);
+    if (dir.data !== true && adm.data !== true && mgr.data !== true) throw new Error("Only a supervisor or the Onboarding Director can retry a welcome.");
+    const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
+    const { retryOwnerWelcome } = await import("./owner-welcome.server");
+    const { writeAudit } = await import("./audit.server");
+    const r = await retryOwnerWelcome(db, data.id);
+    if (r.requeued) await writeAudit({ actorId: ctx.userId, actorLabel: null, action: "owner_welcome.retry", entityType: "owner_welcome_message", entityId: data.id, entityLabel: null });
+    return r;
+  });
