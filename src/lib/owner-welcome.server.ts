@@ -5,6 +5,7 @@
  * sending so a second pass can never double up.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { businessToday } from "./owner-hours-eligibility";
 import { OWNER_WELCOME_KEY, readWelcomeTemplate, renderWelcome } from "./owner-welcome";
 
 const APP_ORIGIN = "https://smart-stay-support.lovable.app";
@@ -28,7 +29,7 @@ export async function welcomeContext(db: SupabaseClient, programId: string, owne
     db.from("profiles").select("full_name").eq("id", ownerUserId).maybeSingle(),
     db
       .from("owner_program_properties")
-      .select("properties(name, address)")
+      .select("closing_confirmed, closing_date, properties(name, address)")
       .eq("program_id", programId)
       .eq("inclusion_status", "included")
       .is("archived_at", null),
@@ -36,7 +37,10 @@ export async function welcomeContext(db: SupabaseClient, programId: string, owne
   const names = ((homes.data ?? []) as unknown as { properties: { name: string | null; address: string | null } | null }[])
     .map((h) => h.properties?.name || h.properties?.address || "")
     .filter(Boolean);
-  return { ownerName: (profile.data as { full_name?: string } | null)?.full_name ?? null, propertyNames: names };
+  const today = businessToday();
+  const hoursOpen = ((homes.data ?? []) as unknown as { closing_confirmed: boolean; closing_date: string | null }[])
+    .some((h) => h.closing_confirmed && !!h.closing_date && h.closing_date <= today);
+  return { ownerName: (profile.data as { full_name?: string } | null)?.full_name ?? null, propertyNames: names, hoursOpen };
 }
 
 export async function drainOwnerWelcomes(db: SupabaseClient, limit = 20) {
