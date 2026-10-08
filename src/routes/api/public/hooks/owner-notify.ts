@@ -33,7 +33,10 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
           const staff = await drainStaffNotifications(supabaseAdmin);
           // Messages someone scheduled for later go out on the same pass.
           const scheduled = await drainScheduledEmails();
-          return Response.json({ ...delivery, progress, deadlines, staff, scheduled });
+          // Active Owner welcomes: only once the wording is approved.
+          const { drainOwnerWelcomes } = await import("@/lib/owner-welcome.server");
+          const welcomes = await drainOwnerWelcomes(supabaseAdmin);
+          return Response.json({ ...delivery, progress, deadlines, staff, scheduled, welcomes });
         } catch (err) {
           return Response.json(
             { ok: false, error: err instanceof Error ? err.message : "Delivery failed" },

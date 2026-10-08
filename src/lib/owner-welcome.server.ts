@@ -76,7 +76,8 @@ export async function drainOwnerWelcomes(db: SupabaseClient, limit = 20) {
       purpose: "owner_welcome",
       entity: { type: "owner_program", id: row.program_id },
       bodyText: msg.body,
-    } as never);
+      singleAttempt: true,
+    });
     await db.from("owner_welcome_messages").update({
       status: result.status === "sent" ? "sent" : "failed",
       error_message: result.status === "sent" ? null : (result.error ?? "Delivery failed"),
