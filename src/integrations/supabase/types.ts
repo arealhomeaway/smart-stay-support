@@ -8415,6 +8415,85 @@ export type Database = {
           },
         ]
       }
+      owner_welcome_messages: {
+        Row: {
+          attempts: number
+          body: string | null
+          error_message: string | null
+          id: string
+          is_demo: boolean
+          owner_user_id: string
+          program_id: string
+          property_id: string | null
+          queued_at: string
+          queued_by: string | null
+          recipient: string
+          sent_at: string | null
+          status: string
+          subject: string | null
+          template_version: number | null
+          video_url: string | null
+        }
+        Insert: {
+          attempts?: number
+          body?: string | null
+          error_message?: string | null
+          id?: string
+          is_demo?: boolean
+          owner_user_id: string
+          program_id: string
+          property_id?: string | null
+          queued_at?: string
+          queued_by?: string | null
+          recipient: string
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          template_version?: number | null
+          video_url?: string | null
+        }
+        Update: {
+          attempts?: number
+          body?: string | null
+          error_message?: string | null
+          id?: string
+          is_demo?: boolean
+          owner_user_id?: string
+          program_id?: string
+          property_id?: string | null
+          queued_at?: string
+          queued_by?: string | null
+          recipient?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          template_version?: number | null
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_welcome_messages_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "owner_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_welcome_messages_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "owner_welcome_messages_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       playbook_approvals: {
         Row: {
           actor_id: string | null
@@ -14137,6 +14216,10 @@ export type Database = {
           _task_id: string
         }
         Returns: string
+      }
+      enroll_active_owner: {
+        Args: { _owner_user_id: string; _property_id: string }
+        Returns: Json
       }
       expense_authorization_status: {
         Args: { _expense: string }

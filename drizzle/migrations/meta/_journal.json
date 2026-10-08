@@ -1016,6 +1016,13 @@
       "when": 1791470232258,
       "tag": "0144_plan_editor_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 145,
+      "version": "7",
+      "when": 1791470802883,
+      "tag": "0145_active_owner_setup_and_welcome",
+      "breakpoints": true
     }
   ]
 }
