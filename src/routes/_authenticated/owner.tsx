@@ -16,6 +16,7 @@ import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { Celebrate } from "@/components/ui/feedback";
 import { useRole } from "@/hooks/useRole";
 import { usCalendarDate, usDate, usDateTime } from "@/lib/dates";
+import { homeClosingArrived, hoursBlockedMessage, ownerHoursEligibility } from "@/lib/owner-hours-eligibility";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -280,17 +281,11 @@ function OwnerHubBody({
     );
   const closeoutVisible = Boolean(program.completedAt) || snapshot.daysLeft <= 30;
 
-  // Participation time only counts once the program itself has started, so the
-  // portal says so plainly instead of letting the homeowner hit a refusal.
-  const canLogHours =
-    !preview &&
-    ["active", "target_reached"].includes(program.status) &&
-    Boolean(program.startedOn);
-  const logHoursBlockedReason = canLogHours
-    ? null
-    : program.completedAt
-      ? "Your program closed on December 31, so no further hours can be added."
-      : "Your Active Owner program has not started yet. Hours can be logged as soon as your ARHA team activates it — usually at closing.";
+  // Hour entry opens automatically once any home's confirmed closing has
+  // arrived (Chicago business date); the server enforces the same rule.
+  const hoursState = ownerHoursEligibility(program, properties);
+  const canLogHours = !preview && hoursState.eligible;
+  const logHoursBlockedReason = canLogHours ? null : hoursBlockedMessage(hoursState, (d) => usCalendarDate(d));
 
   // The onboarding task behind an attention item carries the instructions,
   // links and shared files the homeowner needs to actually work it.
@@ -463,11 +458,7 @@ function OwnerHubBody({
         phase={ownerPhase}
         properties={properties
           .filter(
-            (p) =>
-              p.inclusionStatus === "included" &&
-              p.closingConfirmed &&
-              !!p.closingDate &&
-              p.closingDate <= new Date().toISOString().slice(0, 10),
+            (p) => homeClosingArrived(p),
           )
           .map((p) => ({ id: p.propertyId, name: p.name }))}
         onDone={() => {
