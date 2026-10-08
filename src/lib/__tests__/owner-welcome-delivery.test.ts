@@ -52,22 +52,22 @@ it("demo welcomes are never picked up", async () => {
 
 it("a failure stays visible as failed and is not resent on the next pass", async () => {
   sent.length = 0; sendResult = { status: "failed", error: "Mailbox down" };
-  const rows = [row()];
+  const rows: Row[] = [row()];
   await drainOwnerWelcomes(db("approved", rows));
-  expect(rows[0].status).toBe("failed");
-  expect(rows[0].error_message).toBe("Mailbox down");
+  expect(rows[0]!.status).toBe("failed");
+  expect(rows[0]!.error_message).toBe("Mailbox down");
   await drainOwnerWelcomes(db("approved", rows));
   expect(sent.length).toBe(1);
 });
 
 it("retry re-queues only a confirmed failure, once", async () => {
-  const rows = [row({ status: "failed" })];
+  const rows: Row[] = [row({ status: "failed" })];
   expect((await retryOwnerWelcome(db("approved", rows), "w1")).requeued).toBe(true);
-  expect(rows[0].status).toBe("queued");
+  expect(rows[0]!.status).toBe("queued");
   sendResult = { status: "sent" }; sent.length = 0;
   await drainOwnerWelcomes(db("approved", rows));
   expect(sent.length).toBe(1);
-  expect(rows[0].status).toBe("sent");
+  expect(rows[0]!.status).toBe("sent");
 });
 
 it("an uncertain 'sending' row is never re-queued", async () => {
