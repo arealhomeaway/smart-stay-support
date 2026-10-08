@@ -87,6 +87,14 @@ export function TemplateCsvImport({ onCreated }: { onCreated: (id: string) => vo
                     {preview.ignoredColumns.length ? ` · ignored columns: ${preview.ignoredColumns.join(", ")}` : ""}
                   </p>
                 )}
+                {preview.warnings?.length ? (
+                  <div className="rounded-md border border-border p-2 text-xs">
+                    <p className="font-medium">Saved as written, but please check ({preview.warnings.length})</p>
+                    <ul className="mt-1 space-y-0.5 text-muted-foreground">
+                      {preview.warnings.map((w, i) => <li key={i}>Row {w.row}: {w.message}</li>)}
+                    </ul>
+                  </div>
+                ) : null}
                 <ol className="space-y-2" aria-label="Template preview">
                   {preview.stages.map((s) => (
                     <li key={s.name} className="rounded-md border p-2">
