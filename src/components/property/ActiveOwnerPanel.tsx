@@ -1,3 +1,4 @@
+import { ActiveOwnerEnrollForm } from "./ActiveOwnerEnrollForm";
 /**
  * Active Owner participation, on the home's own page.
  *
@@ -26,7 +27,6 @@ import {
   ownerProgramDetail,
   ownerPrograms,
   setOwnerProgramStatus,
-  startOwnerProgram,
 } from "@/lib/owner-program.functions";
 import { startOnboardingProjectFn } from "@/lib/onboarding.functions";
 import { defaultModules } from "@/lib/onboarding-scope";
@@ -58,7 +58,6 @@ export function ActiveOwnerPanel({
   const qc = useQueryClient();
   const loadPrograms = useServerFn(ownerPrograms);
   const loadDetail = useServerFn(ownerProgramDetail);
-  const enrollFn = useServerFn(startOwnerProgram);
   const statusFn = useServerFn(setOwnerProgramStatus);
   const startProjectFn = useServerFn(startOnboardingProjectFn);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
@@ -86,14 +85,6 @@ export function ActiveOwnerPanel({
     void qc.invalidateQueries({ queryKey: ["owner-program-detail"] });
   };
 
-  const enroll = useMutation({
-    mutationFn: () => enrollFn({ data: { propertyId, ownerName: "", ownerEmail: "" } }),
-    onSuccess: () => {
-      toast.success(`${propertyName} is enrolled in the Active Owner program.`);
-      refresh();
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
 
   // Enrolment records participation; this is what actually gives the team work
   // to do — it moves the home into the onboarding pipeline with its task plan.
@@ -186,6 +177,16 @@ export function ActiveOwnerPanel({
               <dd className="numeric font-medium">{row.openTasks}</dd>
             </div>
           </dl>
+          {canManage && !row.ownerLinked ? (
+            <ActiveOwnerEnrollForm
+              finishing
+              propertyId={propertyId}
+              propertyName={propertyName}
+              initialName={row.ownerName && row.ownerName !== "Owner link unresolved" ? row.ownerName : ""}
+              initialEmail={row.ownerEmail ?? ""}
+              onDone={refresh}
+            />
+          ) : null}
           {canManage && CHANGEABLE.includes(row.status) ? (
             <div className="flex flex-wrap items-center gap-2">
               <Select
@@ -246,14 +247,12 @@ export function ActiveOwnerPanel({
       ) : (
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            {propertyName} is a standard home. Enrolling creates a draft Active Owner program for
-            it; participation runs from the closing date to December 31.
+            {propertyName} is a standard home. Enrolling links the homeowner and queues their welcome. Hour logging
+            opens automatically once an actual closing is confirmed and has arrived.
           </p>
           {canManage ? (
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={() => enroll.mutate()} disabled={enroll.isPending}>
-                {enroll.isPending ? "Enrolling…" : "Enroll in Active Owner"}
-              </Button>
+            <div className="space-y-3">
+              <ActiveOwnerEnrollForm propertyId={propertyId} propertyName={propertyName} onDone={refresh} />
               <Button
                 variant="outline"
                 onClick={() => startOnboarding.mutate()}

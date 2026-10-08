@@ -31,7 +31,6 @@ import {
   ownerTaskRoadmap,
   removeOwnerProgramProperty,
   seedOwnerRoadmap,
-  startOwnerProgram,
   staffLinkOwnerAccount,
 } from "@/lib/owner-program.functions";
 import { DECISION_PATHS, PHASE_LABELS, type TaskTemplate } from "@/lib/owner-program";
@@ -179,10 +178,8 @@ function ProgramsBoard() {
   const qc = useQueryClient();
   const load = useServerFn(ownerPrograms);
   const loadRoadmap = useServerFn(ownerTaskRoadmap);
-  const enroll = useServerFn(startOwnerProgram);
 
   const [selected, setSelected] = useState<string | null>(null);
-  const [propertyId, setPropertyId] = useState("");
 
   const { demoMode } = useDemo();
   // Staff can look at the non-production QA/demo programs without leaving
@@ -198,21 +195,6 @@ function ProgramsBoard() {
   const rows = (programs.data?.rows ?? []) as ProgramRow[];
   const available = programs.data?.available ?? [];
   const invalidate = () => void qc.invalidateQueries({ queryKey: ["owner-programs"] });
-
-  const create = useMutation({
-    mutationFn: () => enroll({ data: { propertyId } }),
-    onSuccess: (r) => {
-      toast.success(
-        r.alreadyExists
-          ? "That home is already in a program."
-          : "Draft program created. Confirm closing, then activate.",
-      );
-      setPropertyId("");
-      setSelected(r.programId);
-      invalidate();
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
 
   const attention = rows
     .map((r) => ({ row: r, flag: attentionReason(r) }))
@@ -276,42 +258,10 @@ function ProgramsBoard() {
       )}
 
 
-      <SectionCard
-        title={
-          <span className="flex items-center gap-2">
-            <Plus className="size-4" /> Create a program
-          </span>
-        }
-        description="A program starts as a draft. Link the homeowner’s account, confirm each home’s actual closing, then enable participation. Hours count for the whole calendar year of a confirmed closing — including General and pre-closing activities — and each activity counts once."
-        bodyClassName="grid gap-4 md:grid-cols-4"
-      >
-        <div className="space-y-2 md:col-span-2">
-          <Label>First property</Label>
-          <Select value={propertyId} onValueChange={setPropertyId}>
-            <SelectTrigger>
-              <SelectValue
-                placeholder={available.length ? "Choose a home" : "Every active home is enrolled"}
-              />
-            </SelectTrigger>
-            <SelectContent>
-              {available.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.name}
-                  {p.location ? ` · ${p.location}` : ""}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <p className="text-sm text-muted-foreground md:col-span-2">
-          Enrollment uses the canonical Owner already linked to the selected Property.
-        </p>
-        <div className="flex items-end md:col-span-4">
-          <Button onClick={() => create.mutate()} disabled={!propertyId || create.isPending}>
-            {create.isPending ? "Creating…" : "Create draft program"}
-          </Button>
-        </div>
-      </SectionCard>
+      <p className="text-sm text-muted-foreground">
+        To enroll a home, open it and choose Active Owner — setup links the homeowner and queues
+        their welcome in one step.
+      </p>
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3">
         <div>
@@ -336,7 +286,7 @@ function ProgramsBoard() {
       ) : rows.length === 0 ? (
         <EmptyState
           title={viewingDemo ? "No QA / demo programs yet." : "No participation programs yet."}
-          hint="Pick a property above and create a draft program to start a homeowner's program."
+          hint="Open a home and choose Active Owner to start a homeowner's program."
         />
       ) : (
         <div className="space-y-3">

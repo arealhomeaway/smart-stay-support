@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   getWelcomeAdmin,
   previewWelcome,
+  retryWelcome,
   saveWelcomeTemplate,
   welcomeVideoUploadSlot,
 } from "@/lib/owner-welcome.functions";
@@ -29,6 +30,12 @@ export function WelcomeEmailEditor() {
   const save = useServerFn(saveWelcomeTemplate);
   const slot = useServerFn(welcomeVideoUploadSlot);
   const preview = useServerFn(previewWelcome);
+  const retryFn = useServerFn(retryWelcome);
+  const retry = useMutation({
+    mutationFn: (id: string) => retryFn({ data: { id } }),
+    onSuccess: () => { toast.success("Welcome put back in the queue."); void qc.invalidateQueries({ queryKey: ["owner-welcome"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
   const q = useQuery({ queryKey: ["owner-welcome"], queryFn: () => load() });
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -139,6 +146,10 @@ export function WelcomeEmailEditor() {
               <p key={r.id} className="text-muted-foreground">
                 {r.recipient} · {STATUS[r.status] ?? r.status} · {usDate(r.sent_at ?? r.queued_at)}
                 {r.template_version ? ` · v${r.template_version}` : ""}{r.error_message ? ` · ${r.error_message}` : ""}
+                {r.status === "failed" && !r.is_demo ? (
+                  <Button variant="link" size="sm" className="h-auto px-2" disabled={retry.isPending} onClick={() => retry.mutate(r.id)}>Retry</Button>
+                ) : null}
+                {r.status === "sending" ? " · result uncertain — check the mailbox before retrying" : ""}
               </p>
             ))}
           </div>

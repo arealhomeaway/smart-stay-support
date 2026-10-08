@@ -63,10 +63,21 @@ export const enrollActiveOwner = createServerFn({ method: "POST" })
         email_confirm: true,
         user_metadata: { full_name: data.name },
       });
-      if (res.error || !res.data.user) throw new Error("Could not create the homeowner account. Please try again.");
-      userId = res.data.user.id;
-      created = true;
-      await applyRole(userId, "owner");
+      if (res.error || !res.data.user) {
+        // A concurrent save may have just created it — reuse, never duplicate.
+        const again = await db.from("profiles").select("id").ilike("email", data.email).maybeSingle();
+        if (!again.data) throw new Error("Could not create the homeowner account. Please try again.");
+        userId = (again.data as { id: string }).id;
+      } else {
+        userId = res.data.user.id;
+        created = true;
+      }
+      const has = await db.from("user_roles").select("role").eq("user_id", userId!);
+      const roleList = (has.data ?? []).map((r) => String(r.role));
+      if (roleList.some((r) => r !== "owner")) throw new Error("That email belongs to a staff account. Use the homeowner's own email.");
+      if (!roleList.includes("owner")) await applyRole(userId!, "owner");
+    }
+    if (created) {
       await writeAudit({
         actorId: ctx.userId, actorLabel: null, action: "user.created_for_active_owner",
         entityType: "user", entityId: userId!, entityLabel: data.email,
@@ -173,4 +184,24 @@ export const welcomeVideoUrl = createServerFn({ method: "POST" })
     if (tpl.video.kind === "link") return { url: tpl.video.url };
     const { data } = await db.storage.from("owner-welcome-media").createSignedUrl(tpl.video.path, 60 * 60);
     return { url: data?.signedUrl ?? null };
+  });
+
+/** Supervisors / Onboarding Director: put a failed welcome back in the queue. */
+export const retryWelcome = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }) => {
+    const ctx = context as unknown as Ctx;
+    const [dir, adm, mgr] = await Promise.all([
+      ctx.supabase.rpc("is_onboarding_director", { _user_id: ctx.userId }),
+      ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: "admin" }),
+      ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: "manager" }),
+    ]);
+    if (dir.data !== true && adm.data !== true && mgr.data !== true) throw new Error("Only a supervisor or the Onboarding Director can retry a welcome.");
+    const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
+    const { retryOwnerWelcome } = await import("./owner-welcome.server");
+    const { writeAudit } = await import("./audit.server");
+    const r = await retryOwnerWelcome(db, data.id);
+    if (r.requeued) await writeAudit({ actorId: ctx.userId, actorLabel: null, action: "owner_welcome.retry", entityType: "owner_welcome_message", entityId: data.id, entityLabel: null });
+    return r;
   });

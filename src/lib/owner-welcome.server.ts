@@ -92,3 +92,24 @@ export async function drainOwnerWelcomes(db: SupabaseClient, limit = 20) {
   }
   return { considered: (due ?? []).length, sent };
 }
+
+/**
+ * Staff retry of a confirmed failure: moves only a failed, non-demo, real-address
+ * welcome back to queued. A row left "sending" (uncertain provider result) is
+ * never re-queued here, so nothing is sent blindly twice.
+ */
+export async function retryOwnerWelcome(db: SupabaseClient, id: string) {
+  const { data: row } = await db.from("owner_welcome_messages").select("id, status, is_demo, recipient").eq("id", id).maybeSingle();
+  const r = row as { status: string; is_demo: boolean; recipient: string } | null;
+  if (!r) throw new Error("Welcome not found.");
+  if (r.is_demo) throw new Error("Demo welcomes are never sent.");
+  if (TEST_ADDRESS.test(r.recipient)) throw new Error("Test addresses are never emailed.");
+  if (r.status !== "failed") throw new Error("Only a welcome that was not delivered can be retried.");
+  const { data: moved } = await db
+    .from("owner_welcome_messages")
+    .update({ status: "queued", error_message: null } as never)
+    .eq("id", id)
+    .eq("status", "failed")
+    .select("id");
+  return { requeued: Boolean(moved?.length) };
+}
