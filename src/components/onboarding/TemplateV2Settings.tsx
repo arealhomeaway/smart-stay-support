@@ -40,6 +40,7 @@ import {
   describeCondition,
   describeRule,
   readCondition,
+  stepApplies,
   type ConditionClause,
   type OffsetUnit,
 } from "@/lib/plan-rules";
@@ -283,6 +284,8 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
   const [stages, setStages] = useState<Stage[]>([]);
   const [newStage, setNewStage] = useState("");
   const [editing, setEditing] = useState<Step | null>(null);
+  const [pvFurnishing, setPvFurnishing] = useState("full_furnishing");
+  const [pvModules, setPvModules] = useState<string[]>([]);
   useEffect(() => setStages(q.data?.stages ?? []), [q.data?.stages]);
 
   const stageM = useMutation({ mutationFn: (d: { stageId?: string; name: string; active: boolean }) => saveStage({ data: { templateId, ...d } }), onSuccess: refresh, onError: onErr });
@@ -387,6 +390,36 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
           );
         })}
       </div>
+
+      <details className="rounded-md border border-border p-3 text-sm">
+        <summary className="cursor-pointer font-medium">Preview which steps a home would get</summary>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <Select value={pvFurnishing} onValueChange={setPvFurnishing}>
+            <SelectTrigger className="w-60" aria-label="Furnishing"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {CONDITION_OPTIONS.filter((o) => o.field === "furnishing_scope").map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          {CONDITION_OPTIONS.filter((o) => o.field === "module").map((o) => {
+            const on = pvModules.includes(o.value);
+            return (
+              <button type="button" key={o.value} aria-pressed={on} onClick={() => setPvModules((m) => (on ? m.filter((x) => x !== o.value) : [...m, o.value]))}
+                className={"rounded-full border px-2.5 py-1 text-xs " + (on ? "border-primary bg-primary/10" : "border-border text-muted-foreground")}>{o.label}</button>
+            );
+          })}
+        </div>
+        {(() => {
+          const live = steps.filter((s) => s.is_active);
+          const out = live.filter((s) => !stepApplies(readCondition(s.condition).condition, { furnishing_scope: pvFurnishing, modules: pvModules }));
+          return (
+            <div className="mt-2 text-xs text-muted-foreground">
+              <p>{live.length - out.length} of {live.length} active steps would be created.</p>
+              {out.length ? <p className="mt-1">Left out: {out.map((s) => s.title).join("; ")}</p> : null}
+              <p className="mt-1">Homes get the last published version, so publish after changing conditions. Plans already created are not changed.</p>
+            </div>
+          );
+        })()}
+      </details>
 
       {editing ? <StepDialog step={editing} saving={stepM.isPending} onClose={() => setEditing(null)} onSave={(v) => stepM.mutate(v)} /> : null}
     </section>
