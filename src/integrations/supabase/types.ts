@@ -6519,7 +6519,9 @@ export type Database = {
           created_at: string
           created_by: string | null
           depends_on: string[]
+          description: string | null
           detail: string | null
+          done_when: string | null
           due_on: string | null
           due_on_overridden: boolean
           due_on_source: string | null
@@ -6540,6 +6542,7 @@ export type Database = {
           requires_owner_approval: boolean
           schedule_anchor: string | null
           schedule_offset_days: number | null
+          schedule_offset_unit: string
           sort_order: number
           stage: string
           status: string
@@ -6547,6 +6550,7 @@ export type Database = {
           template_task_id: string | null
           title: string
           updated_at: string
+          video_url: string | null
         }
         Insert: {
           archived_at?: string | null
@@ -6562,7 +6566,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           depends_on?: string[]
+          description?: string | null
           detail?: string | null
+          done_when?: string | null
           due_on?: string | null
           due_on_overridden?: boolean
           due_on_source?: string | null
@@ -6583,6 +6589,7 @@ export type Database = {
           requires_owner_approval?: boolean
           schedule_anchor?: string | null
           schedule_offset_days?: number | null
+          schedule_offset_unit?: string
           sort_order?: number
           stage?: string
           status?: string
@@ -6590,6 +6597,7 @@ export type Database = {
           template_task_id?: string | null
           title: string
           updated_at?: string
+          video_url?: string | null
         }
         Update: {
           archived_at?: string | null
@@ -6605,7 +6613,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           depends_on?: string[]
+          description?: string | null
           detail?: string | null
+          done_when?: string | null
           due_on?: string | null
           due_on_overridden?: boolean
           due_on_source?: string | null
@@ -6626,6 +6636,7 @@ export type Database = {
           requires_owner_approval?: boolean
           schedule_anchor?: string | null
           schedule_offset_days?: number | null
+          schedule_offset_unit?: string
           sort_order?: number
           stage?: string
           status?: string
@@ -6633,6 +6644,7 @@ export type Database = {
           template_task_id?: string | null
           title?: string
           updated_at?: string
+          video_url?: string | null
         }
         Relationships: [
           {
@@ -6720,7 +6732,9 @@ export type Database = {
           breezeway_template_id: string | null
           condition: Json | null
           created_at: string
+          description: string | null
           detail: string | null
+          done_when: string | null
           evidence_required: boolean
           functional_role: string | null
           id: string
@@ -6728,6 +6742,7 @@ export type Database = {
           is_required: boolean
           module: string | null
           offset_days: number | null
+          offset_unit: string
           opportunity: Json | null
           owner_approval_when_active_owner: boolean
           owner_dependency: string | null
@@ -6741,13 +6756,16 @@ export type Database = {
           template_id: string
           title: string
           updated_at: string
+          video_url: string | null
         }
         Insert: {
           blocks_handoff?: boolean
           breezeway_template_id?: string | null
           condition?: Json | null
           created_at?: string
+          description?: string | null
           detail?: string | null
+          done_when?: string | null
           evidence_required?: boolean
           functional_role?: string | null
           id?: string
@@ -6755,6 +6773,7 @@ export type Database = {
           is_required?: boolean
           module?: string | null
           offset_days?: number | null
+          offset_unit?: string
           opportunity?: Json | null
           owner_approval_when_active_owner?: boolean
           owner_dependency?: string | null
@@ -6768,13 +6787,16 @@ export type Database = {
           template_id: string
           title: string
           updated_at?: string
+          video_url?: string | null
         }
         Update: {
           blocks_handoff?: boolean
           breezeway_template_id?: string | null
           condition?: Json | null
           created_at?: string
+          description?: string | null
           detail?: string | null
+          done_when?: string | null
           evidence_required?: boolean
           functional_role?: string | null
           id?: string
@@ -6782,6 +6804,7 @@ export type Database = {
           is_required?: boolean
           module?: string | null
           offset_days?: number | null
+          offset_unit?: string
           opportunity?: Json | null
           owner_approval_when_active_owner?: boolean
           owner_dependency?: string | null
@@ -6795,6 +6818,7 @@ export type Database = {
           template_id?: string
           title?: string
           updated_at?: string
+          video_url?: string | null
         }
         Relationships: [
           {
@@ -13790,6 +13814,7 @@ export type Database = {
         }
         Returns: string
       }
+      add_business_days: { Args: { _d: string; _n: number }; Returns: string }
       add_manual_cleaner_clean: {
         Args: {
           _date: string
@@ -14253,6 +14278,14 @@ export type Database = {
         Returns: boolean
       }
       owner_str_reports: { Args: never; Returns: Json }
+      plan_due_from_rule: {
+        Args: { _anchor: string; _offset: number; _unit: string }
+        Returns: string
+      }
+      plan_step_applies: {
+        Args: { _condition: Json; _furnishing: string; _modules: string[] }
+        Returns: boolean
+      }
       post_owner_request_message: {
         Args: { _body: string; _id: string }
         Returns: string

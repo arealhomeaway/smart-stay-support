@@ -42,14 +42,25 @@ export const PLAN_HEADER = [
   "Assigned role", "Assigned person", "Status", "Due date", "Due rule",
   "Required", "Blocks handoff", "Evidence required", "Owner approval", "Owner dependency",
   "Module", "Breezeway template", "Owner Opportunity", "Owner-facing title", "Owner-facing what", "Owner-facing why", "Owner-facing how",
+  "Description", "Done when", "Video link", "Conditions",
 ];
 
 type Opp = { title?: string; what?: string; why?: string; how?: string } | null | undefined;
 
-export function dueRule(anchor: string | null | undefined, offset: number | null | undefined) {
+const ANCHOR_WORDS: Record<string, string> = {
+  project_created: "project created",
+  planned_closing: "planned closing",
+  actual_closing: "actual closing",
+  actual_access: "actual access",
+  target_handoff: "target handoff",
+};
+
+/** "3 business day(s) before planned closing"; calendar rules keep the older "3 day(s) …" wording. */
+export function dueRule(anchor: string | null | undefined, offset: number | null | undefined, unit: string | null = "calendar") {
   if (!anchor) return "";
   const n = offset ?? 0;
-  return `${Math.abs(n)} day(s) ${n < 0 ? "before" : "after"} ${anchor.replace(/_/g, " ")}`;
+  const word = unit === "business" ? "business day(s)" : "day(s)";
+  return `${Math.abs(n)} ${word} ${n < 0 ? "before" : "after"} ${ANCHOR_WORDS[anchor] ?? anchor.replace(/_/g, " ")}`;
 }
 
 export function planRow(input: {
@@ -57,13 +68,15 @@ export function planRow(input: {
   role: string | null; person: string | null; status: string | null; dueOn: string | null; anchor: string | null; offset: number | null;
   required: boolean | null; blocksHandoff: boolean | null; evidence: boolean | null; ownerApproval: boolean | null; ownerDependency: string | null;
   module: string | null; breezeway: string | null; opportunity: Opp;
+  unit?: string | null; description?: string | null; doneWhen?: string | null; videoUrl?: string | null; conditions?: string;
 }): unknown[] {
   const yn = (b: boolean | null) => (b === null || b === undefined ? "" : b ? "Yes" : "No");
   const o = input.opportunity;
   return [
     input.plan, input.stageNo, input.stage, input.taskNo, input.title, input.detail,
-    input.role, input.person, input.status, input.dueOn, dueRule(input.anchor, input.offset),
+    input.role, input.person, input.status, input.dueOn, dueRule(input.anchor, input.offset, input.unit ?? "calendar"),
     yn(input.required), yn(input.blocksHandoff), yn(input.evidence), yn(input.ownerApproval), input.ownerDependency,
     input.module, input.breezeway, o ? "Yes" : "No", o?.title ?? "", o?.what ?? "", o?.why ?? "", o?.how ?? "",
+    input.description ?? "", input.doneWhen ?? "", input.videoUrl ?? "", input.conditions ?? "",
   ];
 }

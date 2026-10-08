@@ -14,8 +14,35 @@ import { PLAN_HEADER } from "./plan-csv";
 
 export const IMPORT_IGNORED_COLUMNS = ["Plan", "Assigned person", "Status", "Due date"] as const;
 export const IMPORT_REQUIRED_COLUMNS = ["Stage", "Task"] as const;
-const ANCHORS = { "planned closing": "planned_closing", "actual closing": "actual_closing", "actual access": "actual_access" } as const;
-const FUNCTIONAL_ROLES = new Set(["onboarding_director", "onboarding_project_manager", "utilities", "design_staging"]);
+import { conditionFromCsv, type StepCondition } from "./plan-rules";
+const ANCHORS = {
+  "planned closing": "planned_closing",
+  "actual closing": "actual_closing",
+  "actual access": "actual_access",
+  "confirmed access date": "actual_access",
+  "project created": "project_created",
+  "target handoff": "target_handoff",
+} as const;
+/** Code → label of the onboarding roles a template step may name. */
+const ROLE_LABELS: Record<string, string> = {
+  onboarding_director: "Director of Onboarding",
+  onboarding_manager: "Onboarding Manager",
+  onboarding_project_manager: "Project Manager",
+  utilities: "Onboarding Utilities Coordinator",
+  lead_designer: "Lead Designer",
+  designer: "Designer",
+  staging_team: "Staging Team",
+  design_staging: "Design & Staging (older steps)",
+};
+function roleCode(v: string): string | null | "invalid" {
+  const s = v.trim();
+  if (!s || s.toLowerCase() === "unassigned") return null;
+  if (ROLE_LABELS[s]) return s;
+  const hit = Object.entries(ROLE_LABELS).find(([, label]) => label.toLowerCase() === s.toLowerCase());
+  // Older exports wrote these labels.
+  const legacy: Record<string, string> = { "onboarding project manager": "onboarding_project_manager", "onboarding director": "onboarding_director", utilities: "utilities", design: "design_staging" };
+  return hit?.[0] ?? legacy[s.toLowerCase()] ?? "invalid";
+}
 const DEPENDENCIES = new Set(["none", "information", "feedback", "acknowledge", "business_decision"]);
 
 export type ImportedTask = {
@@ -27,6 +54,11 @@ export type ImportedTask = {
   functionalRole: string | null;
   scheduleAnchor: string | null;
   offsetDays: number | null;
+  offsetUnit: "calendar" | "business";
+  description: string | null;
+  doneWhen: string | null;
+  videoUrl: string | null;
+  condition: StepCondition;
   isRequired: boolean;
   blocksHandoff: boolean;
   evidenceRequired: boolean;
@@ -56,13 +88,13 @@ function yesNo(v: string, row: number, col: string, errors: ImportPreview["error
 /** Undo the export's spreadsheet formula guard. */
 const unguard = (s: string) => (/^'[=+\-@]/.test(s) ? s.slice(1) : s);
 
-export function parseDueRule(v: string): { anchor: string; offset: number } | null | "invalid" {
+export function parseDueRule(v: string): { anchor: string; offset: number; unit: "calendar" | "business" } | null | "invalid" {
   const s = v.trim().toLowerCase();
   if (!s) return null;
-  const m = /^(\d+)\s*day\(?s?\)?\s+(before|after)\s+(planned closing|actual closing|actual access)$/.exec(s);
+  const m = /^(\d+)\s*(business\s+)?day\(?s?\)?\s+(before|after)\s+(planned closing|actual closing|actual access|confirmed access date|project created|target handoff)$/.exec(s);
   if (!m) return "invalid";
   const n = Number(m[1]);
-  return { anchor: ANCHORS[m[3] as keyof typeof ANCHORS], offset: m[2] === "before" ? -n : n };
+  return { anchor: ANCHORS[m[4] as keyof typeof ANCHORS], offset: m[3] === "before" ? -n : n, unit: m[2] ? "business" : "calendar" };
 }
 
 export function parseTemplateCsv(text: string): ImportPreview {
@@ -102,8 +134,14 @@ export function parseTemplateCsv(text: string): ImportPreview {
     const toN = to ? Number(to) : NaN;
     if (to && !Number.isFinite(toN)) errors.push({ row, message: `Task order must be a number (found "${to}").` });
     const rule = parseDueRule(get(r, "Due rule"));
-    if (rule === "invalid") errors.push({ row, message: `Due rule must look like "3 day(s) after planned closing" (found "${get(r, "Due rule")}").` });
+    if (rule === "invalid") errors.push({ row, message: `Due rule must look like "3 business day(s) before planned closing" — anchors: project created, planned closing, actual access, target handoff (found "${get(r, "Due rule")}").` });
     const roleRaw = get(r, "Assigned role");
+    const role = roleCode(roleRaw);
+    if (role === "invalid") errors.push({ row, message: `Assigned role "${roleRaw}" is not one of: ${Object.values(ROLE_LABELS).join(", ")}.` });
+    const cond = conditionFromCsv(get(r, "Conditions"));
+    if (cond.error) errors.push({ row, message: cond.error });
+    const video = get(r, "Video link");
+    if (video && !/^https:\/\//.test(video)) errors.push({ row, message: `Video link must start with https:// (found "${video}").` });
     const dep = get(r, "Owner dependency").toLowerCase().replace(/\s+/g, "_");
     if (dep && !DEPENDENCIES.has(dep)) errors.push({ row, message: `Owner dependency "${get(r, "Owner dependency")}" is not one of: none, information, feedback, acknowledge, business_decision.` });
     const opp = yesNo(get(r, "Owner Opportunity"), row, "Owner Opportunity", errors, false);
@@ -112,10 +150,15 @@ export function parseTemplateCsv(text: string): ImportPreview {
     tasks.push({
       row, stage, title,
       detail: get(r, "Internal instructions") || null,
-      role: roleRaw && !FUNCTIONAL_ROLES.has(roleRaw) ? roleRaw : null,
-      functionalRole: FUNCTIONAL_ROLES.has(roleRaw) ? roleRaw : null,
+      role: role && role !== "invalid" ? ROLE_LABELS[role]! : null,
+      functionalRole: role && role !== "invalid" ? role : null,
       scheduleAnchor: rule && rule !== "invalid" ? rule.anchor : null,
       offsetDays: rule && rule !== "invalid" ? rule.offset : null,
+      offsetUnit: rule && rule !== "invalid" ? rule.unit : "calendar",
+      description: get(r, "Description") || null,
+      doneWhen: get(r, "Done when") || null,
+      videoUrl: video || null,
+      condition: cond.condition,
       isRequired: yesNo(get(r, "Required"), row, "Required", errors, true),
       blocksHandoff: yesNo(get(r, "Blocks handoff"), row, "Blocks handoff", errors, false),
       evidenceRequired: yesNo(get(r, "Evidence required"), row, "Evidence required", errors, false),

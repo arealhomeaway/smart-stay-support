@@ -32,6 +32,17 @@ import {
   type OpportunityContent,
 } from "@/lib/v2-workflow.functions";
 import { OWNER_DEPENDENCIES, type OwnerDependency } from "@/lib/owner-dependency";
+import {
+  CONDITION_OPTIONS,
+  PLAN_ANCHORS,
+  anchorLabel,
+  clauseLabel,
+  describeCondition,
+  describeRule,
+  readCondition,
+  type ConditionClause,
+  type OffsetUnit,
+} from "@/lib/plan-rules";
 
 type Stage = { id: string; name: string; sort_order: number; active: boolean };
 type Step = Awaited<ReturnType<typeof readTemplateV2>>["steps"][number];
@@ -47,6 +58,12 @@ type StepInput = {
   ownerDependency: OwnerDependency;
   module: string | null;
   offsetDays: number | null;
+  scheduleAnchor: string | null;
+  offsetUnit: OffsetUnit;
+  description: string | null;
+  doneWhen: string | null;
+  videoUrl: string | null;
+  condition: { all: ConditionClause[] } | null;
   opportunity: OpportunityContent | null;
 };
 
@@ -85,6 +102,17 @@ function StepDialog({ step, onClose, onSave, saving }: { step: Step; onClose: ()
   const [module, setModule] = useState(step.module ?? "");
   const [dependency, setDependency] = useState<OwnerDependency>((step.owner_dependency as OwnerDependency | null) ?? "none");
   const [offset, setOffset] = useState(step.offset_days == null ? "" : String(step.offset_days));
+  const [anchor, setAnchor] = useState<string>(step.schedule_anchor ?? "actual_access");
+  const [unit, setUnit] = useState<OffsetUnit>((step.offset_unit as OffsetUnit | null) ?? "calendar");
+  const [description, setDescription] = useState(step.description ?? "");
+  const [doneWhen, setDoneWhen] = useState(step.done_when ?? "");
+  const [videoUrl, setVideoUrl] = useState(step.video_url ?? "");
+  const stored = readCondition(step.condition);
+  const [clauses, setClauses] = useState<ConditionClause[]>(stored.condition?.all ?? []);
+  const toggleClause = (c: ConditionClause) =>
+    setClauses((cur) => (cur.some((x) => x.field === c.field && x.value === c.value) ? cur.filter((x) => !(x.field === c.field && x.value === c.value)) : [...cur, c]));
+  const offsetNum = offset.trim() === "" || Number.isNaN(Number(offset)) ? null : Math.round(Number(offset));
+  const videoOk = !videoUrl.trim() || /^https:\/\//.test(videoUrl.trim());
   const [eligible, setEligible] = useState(Boolean(step.opportunity));
   const [opp, setOpp] = useState<OpportunityContent>(step.opportunity ?? { ...emptyOpp, title: step.title });
   const set = (k: keyof OpportunityContent, v: string) => setOpp((o) => ({ ...o, [k]: v }));
@@ -97,8 +125,11 @@ function StepDialog({ step, onClose, onSave, saving }: { step: Step; onClose: ()
         </DialogHeader>
         <div className="space-y-2">
           <div className="space-y-1"><Label htmlFor="ttl">Internal Task title</Label><Input id="ttl" value={title} onChange={(e) => setTitle(e.target.value)} /></div>
-          <div className="space-y-1"><Label htmlFor="det">Internal description and instructions</Label><Textarea id="det" rows={6} className="resize-y" value={detail} onChange={(e) => setDetail(e.target.value)} /></div>
-          <p className="text-xs text-muted-foreground">Internal only. Homeowners never see this text; their wording is set separately below.</p>
+          <div className="space-y-1"><Label htmlFor="desc">Description <span className="font-normal text-muted-foreground">— what the step is and why it matters</span></Label><Textarea id="desc" rows={3} className="resize-y" value={description} onChange={(e) => setDescription(e.target.value)} /></div>
+          <div className="space-y-1"><Label htmlFor="det">Instructions <span className="font-normal text-muted-foreground">— how to do it</span></Label><Textarea id="det" rows={6} className="resize-y" value={detail} onChange={(e) => setDetail(e.target.value)} /></div>
+          <div className="space-y-1"><Label htmlFor="done">Done when <span className="font-normal text-muted-foreground">— what finished looks like (guidance, not an approval step)</span></Label><Textarea id="done" rows={2} className="resize-y" value={doneWhen} onChange={(e) => setDoneWhen(e.target.value)} /></div>
+          <div className="space-y-1"><Label htmlFor="vid">Video link</Label><Input id="vid" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://…" />{!videoOk ? <p className="text-xs text-destructive">The link must start with https://</p> : null}</div>
+          <p className="text-xs text-muted-foreground">All four are optional and internal only. Homeowners never see them; their wording is set separately below.</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
@@ -111,14 +142,46 @@ function StepDialog({ step, onClose, onSave, saving }: { step: Step; onClose: ()
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="off">Due (business days from access date)</Label>
-            <Input id="off" inputMode="numeric" value={offset} onChange={(e) => setOffset(e.target.value)} placeholder="No due date rule" />
+          <div className="space-y-1 sm:col-span-2">
+            <Label>Due date rule</Label>
+            <div className="flex flex-wrap gap-2">
+              <Input id="off" aria-label="Days" inputMode="numeric" className="w-24" value={offset} onChange={(e) => setOffset(e.target.value)} placeholder="Days" />
+              <Select value={unit} onValueChange={(v) => setUnit(v as OffsetUnit)}>
+                <SelectTrigger className="w-40" aria-label="Day type"><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="business">Business days</SelectItem><SelectItem value="calendar">Calendar days</SelectItem></SelectContent>
+              </Select>
+              <Select value={anchor} onValueChange={setAnchor}>
+                <SelectTrigger className="w-52" aria-label="From"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {PLAN_ANCHORS.map((a) => <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>)}
+                  {anchor === "actual_closing" ? <SelectItem value="actual_closing">{anchorLabel("actual_closing")}</SelectItem> : null}
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {describeRule(offsetNum === null ? null : anchor, offsetNum, unit)}. Use a negative number for "before". Business days are Monday–Friday; no holidays are skipped. Leave days empty for no rule. A missing anchor date leaves the Task undated.
+            </p>
           </div>
           <div className="space-y-1">
             <Label htmlFor="mod">Module (optional)</Label>
             <Input id="mod" value={module} onChange={(e) => setModule(e.target.value)} placeholder="e.g. furnishing, pool" />
-            <p className="text-xs text-muted-foreground">A label for grouping and filtering. It does not turn this step on or off; which features apply to a home is set in that home's project scope.</p>
+            <p className="text-xs text-muted-foreground">A label for grouping and filtering only. Use "Include this step only when" to make a step conditional.</p>
+          </div>
+          <div className="space-y-1 sm:col-span-2 rounded-md border border-border p-3">
+            <Label>Include this step only when</Label>
+            <div className="mt-1 flex flex-wrap gap-2">
+              {CONDITION_OPTIONS.map((o) => {
+                const on = clauses.some((c) => c.field === o.field && c.value === o.value);
+                return (
+                  <button type="button" key={o.field + o.value} aria-pressed={on} onClick={() => toggleClause({ field: o.field, value: o.value })}
+                    className={"rounded-full border px-2.5 py-1 text-xs " + (on ? "border-primary bg-primary/10 text-foreground" : "border-border text-muted-foreground")}>
+                    {o.label}
+                  </button>
+                );
+              })}
+            </div>
+            {stored.unknown.length ? <p className="mt-1 text-xs text-destructive">Unrecognized stored condition: {stored.unknown.map(clauseLabel).join(", ")}. It stays until you remove it.</p> : null}
+            <p className="mt-1 text-xs text-muted-foreground">{describeCondition(clauses.length ? { all: clauses } : null)}. Read from the home's project scope when its plan is created; existing plans are not changed.</p>
           </div>
           <div className="space-y-1">
             <Label>Needs from the homeowner</Label>
@@ -174,7 +237,7 @@ function StepDialog({ step, onClose, onSave, saving }: { step: Step; onClose: ()
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button
-            disabled={saving || title.trim().length < 3 || (eligible && opp.title.trim().length < 3) || (useBreezeway && !bzTemplate.trim())}
+            disabled={saving || !videoOk || title.trim().length < 3 || (eligible && opp.title.trim().length < 3) || (useBreezeway && !bzTemplate.trim())}
             onClick={() =>
               onSave({
                 stepId: step.id,
@@ -187,7 +250,13 @@ function StepDialog({ step, onClose, onSave, saving }: { step: Step; onClose: ()
                 isActive: active,
                 ownerDependency: dependency,
                 module: module.trim() || null,
-                offsetDays: offset.trim() === "" || Number.isNaN(Number(offset)) ? null : Math.round(Number(offset)),
+                offsetDays: offsetNum,
+                scheduleAnchor: offsetNum === null ? null : anchor,
+                offsetUnit: unit,
+                description: description.trim() || null,
+                doneWhen: doneWhen.trim() || null,
+                videoUrl: videoUrl.trim() || null,
+                condition: clauses.length ? { all: clauses } : null,
                 opportunity: eligible ? opp : null,
               })
             }
@@ -309,6 +378,7 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
                       {!s.is_required ? <Badge variant="outline">Optional</Badge> : null}
                       {s.blocks_handoff ? <Badge variant="outline">Blocks handoff</Badge> : null}
                       {s.breezeway_template_id ? <Badge variant="outline">Breezeway</Badge> : null}{s.opportunity ? <Badge variant="secondary">Owner Opportunity</Badge> : null}
+                      {readCondition(s.condition).condition ? <Badge variant="outline">{describeCondition(readCondition(s.condition).condition)}</Badge> : null}
                     </button>
                   </li>
                 ))}

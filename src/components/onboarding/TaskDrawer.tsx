@@ -540,10 +540,28 @@ export function TaskDrawer({
           </p>
         )}
 
+        {task.description && (
+          <section>
+            <p className="eyebrow">Description</p>
+            <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{task.description}</p>
+          </section>
+        )}
         {task.detail && (
           <section>
             <p className="eyebrow">Instructions</p>
             <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{task.detail}</p>
+          </section>
+        )}
+        {task.done_when && (
+          <section>
+            <p className="eyebrow">Done when</p>
+            <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{task.done_when}</p>
+          </section>
+        )}
+        {task.video_url && /^https:\/\//.test(task.video_url) && (
+          <section>
+            <p className="eyebrow">Video</p>
+            <a href={task.video_url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-sm text-primary underline-offset-4 hover:underline">Watch the how-to video</a>
           </section>
         )}
 

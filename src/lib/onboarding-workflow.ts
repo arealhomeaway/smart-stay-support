@@ -23,6 +23,10 @@ export type WorkflowTask = {
   stage: string;
   title: string;
   detail: string | null;
+  /** Optional plan guidance copied from the template step (#30). */
+  description?: string | null;
+  done_when?: string | null;
+  video_url?: string | null;
   assigned_to: string | null;
   assigned_seat: string | null;
   due_on: string | null;

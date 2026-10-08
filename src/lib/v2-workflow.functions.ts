@@ -11,12 +11,16 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const FUNCTIONAL_ROLES = [
-  { code: "onboarding_project_manager", label: "Onboarding Project Manager" },
-  { code: "onboarding_director", label: "Onboarding Director" },
+  { code: "onboarding_director", label: "Director of Onboarding" },
+  { code: "onboarding_manager", label: "Onboarding Manager" },
+  { code: "onboarding_project_manager", label: "Project Manager" },
+  { code: "utilities", label: "Onboarding Utilities Coordinator" },
+  { code: "lead_designer", label: "Lead Designer" },
+  { code: "designer", label: "Designer" },
+  { code: "staging_team", label: "Staging Team" },
+  { code: "design_staging", label: "Design & Staging (older steps)" },
   { code: "director_ops", label: "Operations Director" },
   { code: "property_coordinator", label: "Property Coordinator" },
-  { code: "utilities", label: "Utilities" },
-  { code: "design_staging", label: "Design" },
   { code: "owner", label: "Owner" },
 ] as const;
 
@@ -53,7 +57,7 @@ export const readTemplateV2 = createServerFn({ method: "POST" })
       sb.from("onboarding_template_stages").select("id, name, sort_order, active").eq("template_id", data.templateId).order("sort_order"),
       sb
         .from("onboarding_template_tasks")
-        .select("id, title, detail, breezeway_template_id, stage, sort_order, functional_role, is_required, blocks_handoff, is_active, module, opportunity, offset_days, schedule_anchor, owner_dependency")
+        .select("id, title, detail, breezeway_template_id, stage, sort_order, functional_role, is_required, blocks_handoff, is_active, module, opportunity, offset_days, offset_unit, schedule_anchor, owner_dependency, description, done_when, video_url, condition")
         .eq("template_id", data.templateId)
         .order("sort_order"),
       sb.from("onboarding_template_versions").select("id, version, published_at").eq("template_id", data.templateId).order("version", { ascending: false }),
@@ -159,12 +163,26 @@ export const saveTemplateStepV2 = createServerFn({ method: "POST" })
         isActive: z.boolean(),
         ownerDependency: z.enum(["none", "information", "feedback", "acknowledge", "business_decision"]).optional(),
         module: z.string().trim().max(60).nullable(),
-        offsetDays: z.number().int().min(-90).max(365).nullable(),
+        offsetDays: z.number().int().min(-260).max(365).nullable(),
+        scheduleAnchor: z.enum(["project_created", "planned_closing", "actual_access", "target_handoff", "actual_closing"]).nullable().optional(),
+        offsetUnit: z.enum(["calendar", "business"]).optional(),
+        description: z.string().trim().max(5000).nullable().optional(),
+        doneWhen: z.string().trim().max(5000).nullable().optional(),
+        videoUrl: z.string().trim().max(1000).regex(/^https:\/\//, "Video link must start with https://").nullable().optional(),
+        condition: z
+          .object({ all: z.array(z.object({ field: z.enum(["furnishing_scope", "module"]), value: z.string().max(60) })).max(10) })
+          .nullable()
+          .optional(),
         opportunity: opportunitySchema,
       })
       .parse(d),
   )
   .handler(async ({ context, data }) => {
+    if (data.condition) {
+      const { isKnownClause } = await import("./plan-rules");
+      const bad = data.condition.all.find((c) => !isKnownClause(c));
+      if (bad) throw new Error(`Unsupported condition ${bad.field}=${bad.value}.`);
+    }
     const { error } = await context.supabase
       .from("onboarding_template_tasks")
       .update({
@@ -179,7 +197,12 @@ export const saveTemplateStepV2 = createServerFn({ method: "POST" })
         ...(data.ownerDependency ? { owner_dependency: data.ownerDependency === "none" ? null : data.ownerDependency } : {}),
         module: data.module || null,
         offset_days: data.offsetDays,
-        schedule_anchor: data.offsetDays === null ? null : "actual_access",
+        schedule_anchor: data.offsetDays === null ? null : (data.scheduleAnchor ?? "actual_access"),
+        ...(data.offsetUnit ? { offset_unit: data.offsetUnit } : {}),
+        ...(data.description !== undefined ? { description: data.description || null } : {}),
+        ...(data.doneWhen !== undefined ? { done_when: data.doneWhen || null } : {}),
+        ...(data.videoUrl !== undefined ? { video_url: data.videoUrl || null } : {}),
+        ...(data.condition !== undefined ? { condition: data.condition?.all.length ? data.condition : null } : {}),
         opportunity: data.opportunity,
       })
       .eq("id", data.stepId);
