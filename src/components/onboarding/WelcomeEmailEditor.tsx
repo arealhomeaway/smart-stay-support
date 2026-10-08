@@ -55,7 +55,10 @@ export function WelcomeEmailEditor() {
   });
 
   async function upload(file: File) {
-    if (file.size > 250 * 1024 * 1024) return toast.error("Videos must be 250 MB or smaller.");
+    if (file.size > 250 * 1024 * 1024) {
+      toast.error("Videos must be 250 MB or smaller.");
+      return;
+    }
     setUploading(true);
     try {
       const s = await slot({ data: { name: file.name, size: file.size } });

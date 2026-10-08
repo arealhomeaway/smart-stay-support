@@ -63,13 +63,13 @@ export const enrollActiveOwner = createServerFn({ method: "POST" })
         email_confirm: true,
         user_metadata: { full_name: data.name },
       });
-      if (res.error || !res.user) throw new Error("Could not create the homeowner account. Please try again.");
-      userId = res.user.id;
+      if (res.error || !res.data.user) throw new Error("Could not create the homeowner account. Please try again.");
+      userId = res.data.user.id;
       created = true;
       await applyRole(userId, "owner");
       await writeAudit({
         actorId: ctx.userId, actorLabel: null, action: "user.created_for_active_owner",
-        entityType: "user", entityId: userId, entityLabel: data.email,
+        entityType: "user", entityId: userId!, entityLabel: data.email,
         after: { role: "owner", method: "active_owner_setup", property_id: data.propertyId },
       });
     }

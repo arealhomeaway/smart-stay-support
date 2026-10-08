@@ -33,7 +33,7 @@ export async function welcomeContext(db: SupabaseClient, programId: string, owne
       .eq("inclusion_status", "included")
       .is("archived_at", null),
   ]);
-  const names = ((homes.data ?? []) as { properties: { name: string | null; address: string | null } | null }[])
+  const names = ((homes.data ?? []) as unknown as { properties: { name: string | null; address: string | null } | null }[])
     .map((h) => h.properties?.name || h.properties?.address || "")
     .filter(Boolean);
   return { ownerName: (profile.data as { full_name?: string } | null)?.full_name ?? null, propertyNames: names };
