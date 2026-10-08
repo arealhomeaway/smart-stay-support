@@ -1,3 +1,4 @@
+import { ActiveOwnerEnrollForm } from "./ActiveOwnerEnrollForm";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { enrollActiveOwner } from "@/lib/owner-welcome.functions";
@@ -209,39 +210,20 @@ function OutcomePanel({
  * instead of discovering later that the home was never enrolled.
  */
 function EnrollActiveOwner({ propertyId, name }: { propertyId: string; name: string }) {
-  const enroll = useServerFn(startOwnerProgram);
   const [enrolled, setEnrolled] = useState(false);
-  const run = useMutation({
-    mutationFn: () => enroll({ data: { propertyId, ownerName: "", ownerEmail: "" } }),
-    onSuccess: () => {
-      setEnrolled(true);
-      toast.success(`${name} is enrolled in the Active Owner program.`);
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
   if (enrolled) {
     return (
       <div className="surface space-y-1 p-4 text-sm">
-        <p className="font-medium">Enrolled in the Active Owner program</p>
-        <p className="text-muted-foreground">
-          The program is a draft. Activate it, and add the homeowner&apos;s details, on the home
-          page or the program record.
-        </p>
+        <p className="font-medium">Active Owner setup saved</p>
+        <p className="text-muted-foreground">The homeowner is linked and their welcome is queued.</p>
       </div>
     );
   }
-
   return (
     <div className="surface space-y-2 p-4">
       <p className="text-sm font-medium">Is this an Active Owner home?</p>
-      <p className="text-sm text-muted-foreground">
-        Standard is the default. Enrolling creates a draft participation program — participation
-        only starts when you activate it.
-      </p>
-      <Button size="sm" variant="outline" onClick={() => run.mutate()} disabled={run.isPending}>
-        {run.isPending ? "Enrolling…" : "Enroll in Active Owner"}
-      </Button>
+      <p className="text-sm text-muted-foreground">Standard is the default. Add the homeowner to enroll.</p>
+      <ActiveOwnerEnrollForm propertyId={propertyId} propertyName={name} onDone={() => setEnrolled(true)} />
     </div>
   );
 }
