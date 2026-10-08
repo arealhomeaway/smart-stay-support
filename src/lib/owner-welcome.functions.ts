@@ -108,7 +108,9 @@ export const getWelcomeAdmin = createServerFn({ method: "POST" })
       .select("id, recipient, status, queued_at, sent_at, error_message, is_demo, template_version, program_id")
       .order("queued_at", { ascending: false })
       .limit(25);
-    return { template: tpl, canEdit: await isEditor(ctx), recent: recent ?? [] };
+    const canEdit = await isEditor(ctx);
+    const manager = await ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: "manager" });
+    return { template: tpl, canEdit, canManageDelivery: canEdit || manager.data === true, recent: recent ?? [] };
   });
 
 export const saveWelcomeTemplate = createServerFn({ method: "POST" })
@@ -204,4 +206,22 @@ export const retryWelcome = createServerFn({ method: "POST" })
     const r = await retryOwnerWelcome(db, data.id);
     if (r.requeued) await writeAudit({ actorId: ctx.userId, actorLabel: null, action: "owner_welcome.retry", entityType: "owner_welcome_message", entityId: data.id, entityLabel: null });
     return r;
+  });
+
+
+/** Reconciliation is authorized and audited atomically in the database. */
+export const reconcileWelcome = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    id: z.string().uuid(),
+    outcome: z.enum(["delivered", "not_delivered"]),
+    reason: z.string().trim().min(5).max(1000),
+  }).parse(d))
+  .handler(async ({ context, data }) => {
+    const ctx = context as unknown as Ctx;
+    const { data: result, error } = await ctx.supabase.rpc("reconcile_owner_welcome" as never, {
+      _id: data.id, _outcome: data.outcome, _reason: data.reason,
+    } as never);
+    if (error) throw new Error(error.message);
+    return result;
   });

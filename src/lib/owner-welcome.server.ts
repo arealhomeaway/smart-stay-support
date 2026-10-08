@@ -81,13 +81,14 @@ export async function drainOwnerWelcomes(db: SupabaseClient, limit = 20) {
       entity: { type: "owner_program", id: row.program_id },
       bodyText: msg.body,
       singleAttempt: true,
+      preserveUncertainty: true,
     });
     await db.from("owner_welcome_messages").update({
-      status: result.status === "sent" ? "sent" : "failed",
-      error_message: result.status === "sent" ? null : (result.error ?? "Delivery failed"),
+      status: result.status === "sent" ? "sent" : result.deliveryUncertain ? "sending" : "failed",
+      error_message: result.status === "sent" ? null : `${result.deliveryUncertain ? "Delivery uncertain: " : ""}${result.error ?? "Delivery failed"}`,
       sent_at: result.status === "sent" ? new Date().toISOString() : null,
       subject: msg.subject, body: msg.body, template_version: tpl.version, video_url: videoLink,
-    } as never).eq("id", row.id);
+    } as never).eq("id", row.id).eq("status", "sending").eq("attempts", row.attempts + 1);
     if (result.status === "sent") sent += 1;
   }
   return { considered: (due ?? []).length, sent };
@@ -113,3 +114,4 @@ export async function retryOwnerWelcome(db: SupabaseClient, id: string) {
     .select("id");
   return { requeued: Boolean(moved?.length) };
 }
+

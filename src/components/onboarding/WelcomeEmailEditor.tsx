@@ -14,6 +14,7 @@ import {
   getWelcomeAdmin,
   previewWelcome,
   retryWelcome,
+  reconcileWelcome,
   saveWelcomeTemplate,
   welcomeVideoUploadSlot,
 } from "@/lib/owner-welcome.functions";
@@ -30,6 +31,13 @@ export function WelcomeEmailEditor() {
   const save = useServerFn(saveWelcomeTemplate);
   const slot = useServerFn(welcomeVideoUploadSlot);
   const preview = useServerFn(previewWelcome);
+  const reconcileFn = useServerFn(reconcileWelcome);
+  const [reconcileReasons, setReconcileReasons] = useState<Record<string, string>>({});
+  const reconcile = useMutation({
+    mutationFn: (data: { id: string; outcome: "delivered" | "not_delivered"; reason: string }) => reconcileFn({ data }),
+    onSuccess: () => { toast.success("Delivery reconciliation recorded. Nothing was sent."); void qc.invalidateQueries({ queryKey: ["owner-welcome"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
   const retryFn = useServerFn(retryWelcome);
   const retry = useMutation({
     mutationFn: (id: string) => retryFn({ data: { id } }),
@@ -81,7 +89,7 @@ export function WelcomeEmailEditor() {
   }
 
   if (!q.data) return null;
-  const { template, canEdit, recent } = q.data;
+  const { template, canEdit, canManageDelivery, recent } = q.data;
   const typos = unknownPlaceholders(`${subject}\n${body}`);
 
   return (
@@ -143,14 +151,29 @@ export function WelcomeEmailEditor() {
           <div className="space-y-1 text-sm">
             <p className="font-medium">Recent welcomes</p>
             {recent.map((r) => (
-              <p key={r.id} className="text-muted-foreground">
+              <div key={r.id} className="text-muted-foreground">
                 {r.recipient} · {STATUS[r.status] ?? r.status} · {usDate(r.sent_at ?? r.queued_at)}
                 {r.template_version ? ` · v${r.template_version}` : ""}{r.error_message ? ` · ${r.error_message}` : ""}
-                {r.status === "failed" && !r.is_demo ? (
+                {canManageDelivery && r.status === "failed" && !r.is_demo ? (
                   <Button variant="link" size="sm" className="h-auto px-2" disabled={retry.isPending} onClick={() => retry.mutate(r.id)}>Retry</Button>
                 ) : null}
-                {r.status === "sending" ? " · result uncertain — check the mailbox before retrying" : ""}
-              </p>
+                {r.status === "sending" ? " · sending or result uncertain — do not resend" : ""}
+                {canManageDelivery && r.status === "sending" && r.error_message?.startsWith("Delivery uncertain: ") && !r.is_demo ? (
+                  <div className="space-y-2 rounded border p-2">
+                    <Label htmlFor={`reconcile-${r.id}`}>Mailbox/provider evidence confirming delivery or non-delivery</Label>
+                    <Input id={`reconcile-${r.id}`} value={reconcileReasons[r.id] ?? ""} maxLength={1000}
+                      onChange={(e) => setReconcileReasons((v) => ({ ...v, [r.id]: e.target.value }))} />
+                    <p className="text-xs">An absent message alone may not prove non-delivery. Record the evidence before choosing an outcome.</p>
+                    {(["delivered", "not_delivered"] as const).map((outcome) => (
+                      <Button key={outcome} variant="outline" size="sm"
+                        disabled={reconcile.isPending || (reconcileReasons[r.id] ?? "").trim().length < 5}
+                        onClick={() => reconcile.mutate({ id: r.id, outcome, reason: reconcileReasons[r.id] ?? "" })}>
+                        {outcome === "delivered" ? "Delivery confirmed" : "Non-delivery confirmed"}
+                      </Button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             ))}
           </div>
         )}
@@ -158,3 +181,4 @@ export function WelcomeEmailEditor() {
     </SectionCard>
   );
 }
+
