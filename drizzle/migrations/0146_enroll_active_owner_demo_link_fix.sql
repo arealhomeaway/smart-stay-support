@@ -1,0 +1,41 @@
+CREATE OR REPLACE FUNCTION public.enroll_active_owner(_property_id uuid, _owner_user_id uuid)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE r jsonb; pid uuid; program public.owner_programs; account_email text; activated boolean := false;
+  welcome_id uuid; has_confirmed boolean;
+BEGIN
+  IF auth.uid() IS NULL OR NOT (coalesce(public.has_role(auth.uid(),'admin'),false) OR coalesce(public.has_role(auth.uid(),'manager'),false) OR coalesce(public.is_onboarding_director(auth.uid()),false)) THEN
+    RAISE EXCEPTION 'Only a supervisor or the Onboarding Director can set up an Active Owner.';
+  END IF;
+  SELECT email INTO account_email FROM auth.users WHERE id=_owner_user_id AND deleted_at IS NULL;
+  IF account_email IS NULL THEN RAISE EXCEPTION 'Choose an enabled homeowner account.'; END IF;
+  r := public.create_owner_program(_property_id);
+  pid := (r->>'programId')::uuid;
+  SELECT * INTO program FROM public.owner_programs WHERE id=pid;
+  IF program.owner_user_id IS DISTINCT FROM _owner_user_id THEN
+    IF program.is_demo THEN
+      PERFORM public.link_demo_owner_account(pid, _owner_user_id, 'Active Owner setup');
+    ELSE
+      PERFORM public.staff_link_owner_account(pid, _owner_user_id);
+    END IF;
+    SELECT * INTO program FROM public.owner_programs WHERE id=pid;
+  END IF;
+  IF program.status <> 'active' AND program.activated_at IS NULL THEN
+    SELECT EXISTS(SELECT 1 FROM owner_program_properties e WHERE e.program_id=pid AND e.inclusion_status='included'
+      AND e.archived_at IS NULL AND e.closing_confirmed AND e.closing_date IS NOT NULL) INTO has_confirmed;
+    IF has_confirmed THEN
+      PERFORM public.activate_owner_program(pid, program.report_version, NULL);
+      activated := true;
+    END IF;
+  END IF;
+  INSERT INTO public.owner_welcome_messages(program_id, owner_user_id, property_id, recipient, status, queued_by, is_demo)
+  VALUES (pid, _owner_user_id, _property_id, account_email, CASE WHEN program.is_demo THEN 'held_demo' ELSE 'queued' END, auth.uid(), program.is_demo)
+  ON CONFLICT (program_id, owner_user_id) DO NOTHING RETURNING id INTO welcome_id;
+  IF welcome_id IS NOT NULL THEN
+    INSERT INTO public.owner_program_events(program_id, property_id, kind, summary, actor_id, detail)
+    VALUES (pid, _property_id, 'welcome_queued', 'Welcome email queued after Active Owner setup.', auth.uid(),
+      jsonb_build_object('welcomeId', welcome_id, 'demo', program.is_demo));
+  END IF;
+  SELECT * INTO program FROM public.owner_programs WHERE id=pid;
+  RETURN jsonb_build_object('programId', pid, 'alreadyEnrolled', coalesce((r->>'alreadyExists')::boolean,false),
+    'participationOpen', program.status='active', 'activatedNow', activated, 'welcomeQueued', welcome_id IS NOT NULL);
+END $$;
