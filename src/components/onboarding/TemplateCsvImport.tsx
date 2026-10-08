@@ -52,8 +52,10 @@ export function TemplateCsvImport({ onCreated }: { onCreated: (id: string) => vo
               <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
                 <li><b>Required:</b> Stage, Task. Keep the export’s header row exactly; unknown columns are refused.</li>
                 <li><b>Order:</b> Stage order (number) sets stage order; Task order (number) sets order inside a stage. Blank = file order.</li>
-                <li><b>Edit freely:</b> Internal instructions, Assigned role (a team role such as onboarding_project_manager, utilities, design_staging, onboarding_director, or a free-text role), Module, Breezeway template.</li>
-                <li><b>Due rule:</b> like “3 day(s) after planned closing” / “2 day(s) before actual closing” / “… actual access”, or blank.</li>
+                <li><b>Edit freely:</b> Description, Internal instructions, Done when, Video link (https:// only), Module, Breezeway template.</li>
+                <li><b>Assigned role:</b> Director of Onboarding, Onboarding Manager, Project Manager, Onboarding Utilities Coordinator, Lead Designer, Designer, Staging Team, or blank. Other names are refused.</li>
+                <li><b>Due rule:</b> like “3 business day(s) before planned closing” or “2 day(s) after actual access”. Anchors: project created, planned closing, actual access, target handoff. Blank = no rule.</li>
+                <li><b>Conditions:</b> blank (every home) or e.g. “furnishing_scope=full_furnishing; module=pool” — all must hold. Unknown values are refused.</li>
                 <li><b>Yes/No:</b> Required, Blocks handoff, Evidence required, Owner approval, Owner Opportunity.</li>
                 <li><b>Owner dependency:</b> none, information, feedback, acknowledge or business_decision.</li>
                 <li><b>Owner Opportunity = Yes</b> needs an Owner-facing title (what/why/how optional). It is saved as template text only — nothing is sent.</li>
