@@ -63,10 +63,21 @@ export const enrollActiveOwner = createServerFn({ method: "POST" })
         email_confirm: true,
         user_metadata: { full_name: data.name },
       });
-      if (res.error || !res.data.user) throw new Error("Could not create the homeowner account. Please try again.");
-      userId = res.data.user.id;
-      created = true;
-      await applyRole(userId, "owner");
+      if (res.error || !res.data.user) {
+        // A concurrent save may have just created it — reuse, never duplicate.
+        const again = await db.from("profiles").select("id").ilike("email", data.email).maybeSingle();
+        if (!again.data) throw new Error("Could not create the homeowner account. Please try again.");
+        userId = (again.data as { id: string }).id;
+      } else {
+        userId = res.data.user.id;
+        created = true;
+      }
+      const has = await db.from("user_roles").select("role").eq("user_id", userId!);
+      const roleList = (has.data ?? []).map((r) => String(r.role));
+      if (roleList.some((r) => r !== "owner")) throw new Error("That email belongs to a staff account. Use the homeowner's own email.");
+      if (!roleList.includes("owner")) await applyRole(userId!, "owner");
+    }
+    if (created) {
       await writeAudit({
         actorId: ctx.userId, actorLabel: null, action: "user.created_for_active_owner",
         entityType: "user", entityId: userId!, entityLabel: data.email,
