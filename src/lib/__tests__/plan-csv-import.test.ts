@@ -33,7 +33,7 @@ describe("template CSV import", () => {
     expect(parseTemplateCsv("Stage,Task,Colour\nA,B,red\n").errors[0]!.message).toContain("Colour");
   });
   it("parses due rules", () => {
-    expect(parseDueRule("3 day(s) after planned closing")).toEqual({ anchor: "planned_closing", offset: 3 });
+    expect(parseDueRule("3 day(s) after planned closing")).toEqual({ anchor: "planned_closing", offset: 3, unit: "calendar" });
     expect(parseDueRule("tomorrow")).toBe("invalid");
   });
 });

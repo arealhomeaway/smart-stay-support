@@ -53,8 +53,10 @@ describe("CSV round-trip of the new step fields", () => {
     expect(t.functionalRole).toBe("lead_designer");
     expect(t.condition?.all.length).toBe(2);
   });
-  it("refuses an unknown role instead of dropping it", () => {
-    const csv = "Stage,Task,Assigned role\r\nP1,Do it,Chief Wizard\r\n";
-    expect(parseTemplateCsv(csv).errors.some((e) => e.message.includes("Chief Wizard"))).toBe(true);
+  it("keeps an unknown role as a label and explains it instead of dropping it", () => {
+    const p = parseTemplateCsv("Stage,Task,Assigned role\r\nP1,Do it,Chief Wizard\r\n");
+    expect(p.stages[0]!.tasks[0]!.role).toBe("Chief Wizard");
+    expect(p.stages[0]!.tasks[0]!.functionalRole).toBeNull();
+    expect(p.warnings.some((w) => w.message.includes("Chief Wizard"))).toBe(true);
   });
 });

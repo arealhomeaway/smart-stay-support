@@ -40,7 +40,14 @@ function roleCode(v: string): string | null | "invalid" {
   if (ROLE_LABELS[s]) return s;
   const hit = Object.entries(ROLE_LABELS).find(([, label]) => label.toLowerCase() === s.toLowerCase());
   // Older exports wrote these labels.
-  const legacy: Record<string, string> = { "onboarding project manager": "onboarding_project_manager", "onboarding director": "onboarding_director", utilities: "utilities", design: "design_staging" };
+  const legacy: Record<string, string> = {
+    "onboarding project manager": "onboarding_project_manager",
+    "assigned project manager": "onboarding_project_manager",
+    "onboarding director": "onboarding_director",
+    "utilities coordinator": "utilities",
+    utilities: "utilities",
+    design: "design_staging",
+  };
   return hit?.[0] ?? legacy[s.toLowerCase()] ?? "invalid";
 }
 const DEPENDENCIES = new Set(["none", "information", "feedback", "acknowledge", "business_decision"]);
@@ -72,6 +79,8 @@ export type ImportedTask = {
 export type ImportPreview = {
   stages: { name: string; order: number; tasks: ImportedTask[] }[];
   errors: { row: number; message: string }[];
+  /** Kept, but explained: values Resolve stores without acting on. */
+  warnings: { row: number; message: string }[];
   ignoredColumns: string[];
   taskCount: number;
 };
@@ -99,14 +108,15 @@ export function parseDueRule(v: string): { anchor: string; offset: number; unit:
 
 export function parseTemplateCsv(text: string): ImportPreview {
   const errors: ImportPreview["errors"] = [];
+  const warnings: ImportPreview["warnings"] = [];
   const rows = parseCsv(text.replace(/^\uFEFF/, "")).filter((r) => r.some((c) => c.trim() !== ""));
-  if (rows.length === 0) return { stages: [], errors: [{ row: 1, message: "The file is empty." }], ignoredColumns: [], taskCount: 0 };
+  if (rows.length === 0) return { stages: [], errors: [{ row: 1, message: "The file is empty." }], warnings, ignoredColumns: [], taskCount: 0 };
   const header = rows[0]!.map((h) => h.trim());
   const idx = (name: string) => header.findIndex((h) => h.toLowerCase() === name.toLowerCase());
   for (const c of IMPORT_REQUIRED_COLUMNS) if (idx(c) < 0) errors.push({ row: 1, message: `Missing the "${c}" column.` });
   const unknown = header.filter((h) => h && !PLAN_HEADER.some((p) => p.toLowerCase() === h.toLowerCase()));
   if (unknown.length) errors.push({ row: 1, message: `Unknown column(s): ${unknown.join(", ")}. Use the columns from a Resolve export.` });
-  if (errors.length) return { stages: [], errors, ignoredColumns: [], taskCount: 0 };
+  if (errors.length) return { stages: [], errors, warnings, ignoredColumns: [], taskCount: 0 };
   const get = (r: string[], name: string) => { const i = idx(name); return i >= 0 ? unguard((r[i] ?? "").trim()) : ""; };
 
   const stageOrder = new Map<string, number>();
@@ -137,7 +147,8 @@ export function parseTemplateCsv(text: string): ImportPreview {
     if (rule === "invalid") errors.push({ row, message: `Due rule must look like "3 business day(s) before planned closing" — anchors: project created, planned closing, actual access, target handoff (found "${get(r, "Due rule")}").` });
     const roleRaw = get(r, "Assigned role");
     const role = roleCode(roleRaw);
-    if (role === "invalid") errors.push({ row, message: `Assigned role "${roleRaw}" is not one of: ${Object.values(ROLE_LABELS).join(", ")}.` });
+    // Older plans carry free-text roles; they are kept as a label but cannot be resolved from the project team.
+    if (role === "invalid") warnings.push({ row, message: `Assigned role "${roleRaw}" is not an onboarding team role, so it is kept as a label only and no one will be assigned automatically.` });
     const cond = conditionFromCsv(get(r, "Conditions"));
     if (cond.error) errors.push({ row, message: cond.error });
     const video = get(r, "Video link");
@@ -150,7 +161,7 @@ export function parseTemplateCsv(text: string): ImportPreview {
     tasks.push({
       row, stage, title,
       detail: get(r, "Internal instructions") || null,
-      role: role && role !== "invalid" ? ROLE_LABELS[role]! : null,
+      role: role === "invalid" ? roleRaw : role ? ROLE_LABELS[role]! : null,
       functionalRole: role && role !== "invalid" ? role : null,
       scheduleAnchor: rule && rule !== "invalid" ? rule.anchor : null,
       offsetDays: rule && rule !== "invalid" ? rule.offset : null,
@@ -180,5 +191,5 @@ export function parseTemplateCsv(text: string): ImportPreview {
     return { name, order: si + 1, tasks: list.map(({ taskOrder: _t, ...t }) => ({ ...t, sortOrder: (n += 10) })) };
   });
   const ignoredColumns = IMPORT_IGNORED_COLUMNS.filter((c) => idx(c) >= 0);
-  return { stages, errors: errors.sort((a, b) => a.row - b.row), ignoredColumns, taskCount: tasks.length };
+  return { stages, errors: errors.sort((a, b) => a.row - b.row), warnings, ignoredColumns, taskCount: tasks.length };
 }
