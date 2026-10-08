@@ -19,6 +19,28 @@ async function isEditor({ supabase, userId }: Ctx) {
   ]);
   return dir.data === true || adm.data === true;
 }
+/**
+ * Active Owner enrollment, welcome Retry and Reconcile: Onboarding Director
+ * seat or Platform Owner. A Supervisor (manager) role alone is not enough.
+ * Same set as welcome editing today, kept as its own rule so they can diverge.
+ */
+export async function isActiveOwnerAuthority(ctx: Ctx) {
+  const [dir, adm] = await Promise.all([
+    ctx.supabase.rpc("is_onboarding_director", { _user_id: ctx.userId }),
+    ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: "admin" }),
+  ]);
+  if (dir.error || adm.error) throw new Error("Could not verify your access level.");
+  return dir.data === true || adm.data === true;
+}
+/**
+ * Same authority, plus the demo-only rule for synthetic test accounts:
+ * they may act on demo records only. Decided by DB active_owner_may_act.
+ */
+export async function mayActOnRecord(ctx: Ctx, isDemo: boolean) {
+  const r = await ctx.supabase.rpc("active_owner_may_act" as never, { _is_demo: isDemo } as never);
+  if (r.error) throw new Error("Could not verify your access level.");
+  return r.data === true;
+}
 async function assertEditor(ctx: Ctx) {
   if (!(await isEditor(ctx))) throw new Error("Only the Onboarding Director can edit the welcome email.");
 }
@@ -34,14 +56,14 @@ export const enrollActiveOwner = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const ctx = context as unknown as Ctx;
-    const [dir, adm, mgr] = await Promise.all([
-      ctx.supabase.rpc("is_onboarding_director", { _user_id: ctx.userId }),
-      ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: "admin" }),
-      ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: "manager" }),
-    ]);
-    if (dir.data !== true && adm.data !== true && mgr.data !== true)
-      throw new Error("Only a supervisor or the Onboarding Director can set up an Active Owner.");
+    if (!(await isActiveOwnerAuthority(ctx)))
+      throw new Error("Only the Onboarding Director or a Platform Owner can set up an Active Owner.");
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
+    // Check the home before any account work, so a refused caller creates nothing.
+    const home = await db.from("properties").select("is_demo").eq("id", data.propertyId).maybeSingle();
+    if (!home.data) throw new Error("Home not found.");
+    if (!(await mayActOnRecord(ctx, (home.data as { is_demo: boolean | null }).is_demo === true)))
+      throw new Error("Test accounts can only set up Active Owner on demo homes.");
     const { applyRole } = await import("./access.server");
     const { writeAudit } = await import("./audit.server");
 
@@ -108,7 +130,9 @@ export const getWelcomeAdmin = createServerFn({ method: "POST" })
       .select("id, recipient, status, queued_at, sent_at, error_message, is_demo, template_version, program_id")
       .order("queued_at", { ascending: false })
       .limit(25);
-    return { template: tpl, canEdit: await isEditor(ctx), recent: recent ?? [] };
+    const canEdit = await isEditor(ctx);
+    const canManageDelivery = await isActiveOwnerAuthority(ctx);
+    return { template: tpl, canEdit, canManageDelivery, recent: recent ?? [] };
   });
 
 export const saveWelcomeTemplate = createServerFn({ method: "POST" })
@@ -186,22 +210,42 @@ export const welcomeVideoUrl = createServerFn({ method: "POST" })
     return { url: data?.signedUrl ?? null };
   });
 
-/** Supervisors / Onboarding Director: put a failed welcome back in the queue. */
+/** Onboarding Director / Platform Owner: put a failed welcome back in the queue. */
 export const retryWelcome = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const ctx = context as unknown as Ctx;
-    const [dir, adm, mgr] = await Promise.all([
-      ctx.supabase.rpc("is_onboarding_director", { _user_id: ctx.userId }),
-      ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: "admin" }),
-      ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: "manager" }),
-    ]);
-    if (dir.data !== true && adm.data !== true && mgr.data !== true) throw new Error("Only a supervisor or the Onboarding Director can retry a welcome.");
+    if (!(await isActiveOwnerAuthority(ctx)))
+      throw new Error("Only the Onboarding Director or a Platform Owner can retry a welcome.");
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
     const { retryOwnerWelcome } = await import("./owner-welcome.server");
     const { writeAudit } = await import("./audit.server");
+    const row = await db.from("owner_welcome_messages").select("is_demo").eq("id", data.id).maybeSingle();
+    if (!row.data) throw new Error("Welcome not found.");
+    if (!(await mayActOnRecord(ctx, (row.data as { is_demo: boolean | null }).is_demo === true)))
+      throw new Error("Test accounts cannot retry real welcome deliveries.");
     const r = await retryOwnerWelcome(db, data.id);
     if (r.requeued) await writeAudit({ actorId: ctx.userId, actorLabel: null, action: "owner_welcome.retry", entityType: "owner_welcome_message", entityId: data.id, entityLabel: null });
     return r;
+  });
+
+
+/** Reconciliation is authorized and audited atomically in the database. */
+export const reconcileWelcome = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    id: z.string().uuid(),
+    outcome: z.enum(["delivered", "not_delivered"]),
+    reason: z.string().trim().min(5).max(1000),
+  }).parse(d))
+  .handler(async ({ context, data }) => {
+    const ctx = context as unknown as Ctx;
+    if (!(await isActiveOwnerAuthority(ctx)))
+      throw new Error("Only the Onboarding Director or a Platform Owner can reconcile a welcome.");
+    const { data: result, error } = await ctx.supabase.rpc("reconcile_owner_welcome" as never, {
+      _id: data.id, _outcome: data.outcome, _reason: data.reason,
+    } as never);
+    if (error) throw new Error(error.message);
+    return result;
   });

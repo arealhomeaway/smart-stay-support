@@ -62,6 +62,20 @@ export async function assertEnrollmentAuthority(supabase: Client, userId: string
   }
 }
 
+/**
+ * Enrolling a home (new program or adding a home): Onboarding Director seat or
+ * Platform Owner only. Other program management keeps assertEnrollmentAuthority.
+ */
+export async function assertActiveOwnerEnrollAuthority(supabase: Client, userId: string) {
+  const [admin, director] = await Promise.all([
+    supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
+    supabase.rpc("is_onboarding_director", { _user_id: userId }),
+  ]);
+  if (admin.error || director.error) throw new Error("Could not verify your access level.");
+  if (!admin.data && !director.data)
+    throw new Error("Only the Onboarding Director or a Platform Owner can enroll a home in Active Owner.");
+}
+
 function locationOf(p: { city: string | null; state: string | null }) {
   return [p.city, p.state].filter(Boolean).join(", ");
 }

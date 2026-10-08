@@ -129,3 +129,13 @@ export function unknownPlaceholders(text: string) {
   const found = text.match(/\{\{[^}]+\}\}/g) ?? [];
   return [...new Set(found.filter((t) => !(WELCOME_PLACEHOLDERS as readonly string[]).includes(t)))];
 }
+
+/** Date shown on a welcome row. Never invents a sent time. */
+export function welcomeDateLabel(
+  r: { status: string; sent_at: string | null; queued_at: string | null },
+  fmt: (d: string) => string,
+) {
+  if (r.sent_at) return `Sent ${fmt(r.sent_at)}`;
+  if (r.status === "sent") return "Exact sent time unknown";
+  return r.queued_at ? `Queued ${fmt(r.queued_at)}` : "Queued";
+}
