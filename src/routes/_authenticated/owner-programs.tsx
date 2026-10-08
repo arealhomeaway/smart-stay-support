@@ -1,4 +1,5 @@
 import { OwnerProgramSetup } from "@/components/OwnerProgramSetup";
+import { ActiveOwnerSetupCard } from "@/components/ActiveOwnerSetupCard";
 import { ownerAttention as attentionReason } from "@/lib/owner-attention";
 import { EmptyState, LoadingPage, PageHeader, SectionCard, StatTile } from "@/components/ui/page";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
@@ -274,6 +275,8 @@ function ProgramsBoard() {
           ))}
         </SectionCard>
       )}
+
+      <ActiveOwnerSetupCard homes={available} />
 
       <SectionCard
         title={

@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { importTemplateCsvFn } from "@/lib/onboarding-template-admin.functions";
 import type { ImportPreview } from "@/lib/plan-csv-import";
+import { describeCondition, describeRule } from "@/lib/plan-rules";
 
 /** Upload an edited Resolve CSV to create a NEW template. Preview first; nothing existing changes. */
 export function TemplateCsvImport({ onCreated }: { onCreated: (id: string) => void }) {
@@ -51,8 +52,10 @@ export function TemplateCsvImport({ onCreated }: { onCreated: (id: string) => vo
               <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
                 <li><b>Required:</b> Stage, Task. Keep the export’s header row exactly; unknown columns are refused.</li>
                 <li><b>Order:</b> Stage order (number) sets stage order; Task order (number) sets order inside a stage. Blank = file order.</li>
-                <li><b>Edit freely:</b> Internal instructions, Assigned role (a team role such as onboarding_project_manager, utilities, design_staging, onboarding_director, or a free-text role), Module, Breezeway template.</li>
-                <li><b>Due rule:</b> like “3 day(s) after planned closing” / “2 day(s) before actual closing” / “… actual access”, or blank.</li>
+                <li><b>Edit freely:</b> Description, Internal instructions, Done when, Video link (https:// only), Module, Breezeway template.</li>
+                <li><b>Assigned role:</b> Director of Onboarding, Onboarding Manager, Project Manager, Onboarding Utilities Coordinator, Lead Designer, Designer, Staging Team, or blank. Other names are refused.</li>
+                <li><b>Due rule:</b> like “3 business day(s) before planned closing” or “2 day(s) after actual access”. Anchors: project created, planned closing, actual access, target handoff. Blank = no rule.</li>
+                <li><b>Conditions:</b> blank (every home) or e.g. “furnishing_scope=full_furnishing; module=pool” — all must hold. Unknown values are refused.</li>
                 <li><b>Yes/No:</b> Required, Blocks handoff, Evidence required, Owner approval, Owner Opportunity.</li>
                 <li><b>Owner dependency:</b> none, information, feedback, acknowledge or business_decision.</li>
                 <li><b>Owner Opportunity = Yes</b> needs an Owner-facing title (what/why/how optional). It is saved as template text only — nothing is sent.</li>
@@ -84,6 +87,14 @@ export function TemplateCsvImport({ onCreated }: { onCreated: (id: string) => vo
                     {preview.ignoredColumns.length ? ` · ignored columns: ${preview.ignoredColumns.join(", ")}` : ""}
                   </p>
                 )}
+                {preview.warnings?.length ? (
+                  <div className="rounded-md border border-border p-2 text-xs">
+                    <p className="font-medium">Saved as written, but please check ({preview.warnings.length})</p>
+                    <ul className="mt-1 space-y-0.5 text-muted-foreground">
+                      {preview.warnings.map((w, i) => <li key={i}>Row {w.row}: {w.message}</li>)}
+                    </ul>
+                  </div>
+                ) : null}
                 <ol className="space-y-2" aria-label="Template preview">
                   {preview.stages.map((s) => (
                     <li key={s.name} className="rounded-md border p-2">
@@ -94,7 +105,9 @@ export function TemplateCsvImport({ onCreated }: { onCreated: (id: string) => vo
                             {t.title}
                             <span className="text-muted-foreground">
                               {t.functionalRole || t.role ? ` · ${t.functionalRole ?? t.role}` : ""}
-                              {t.scheduleAnchor ? ` · ${Math.abs(t.offsetDays ?? 0)}d ${(t.offsetDays ?? 0) < 0 ? "before" : "after"} ${t.scheduleAnchor.replace(/_/g, " ")}` : ""}
+                              {t.scheduleAnchor ? ` · ${describeRule(t.scheduleAnchor, t.offsetDays, t.offsetUnit)}` : ""}
+                              {t.condition ? ` · ${describeCondition(t.condition)}` : ""}
+                              {t.description || t.doneWhen || t.videoUrl ? " · has guidance" : ""}
                               {t.blocksHandoff ? " · blocks handoff" : ""}{t.evidenceRequired ? " · evidence" : ""}
                               {t.opportunity ? " · owner Opportunity text" : ""}{t.breezewayTemplateId ? " · Breezeway template" : ""}
                             </span>

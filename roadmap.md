@@ -41,3 +41,18 @@
 - [x] CSV stage order fixed (standard phase order when no saved stages)
 - [x] Retired per-home closing-window helpers; report note = tagged breakdown only
 - [x] Complete release contents list
+
+## Oct 8 — Controlled Onboarding Stabilization + Plan Editor (Emily; prompt user-uploads Resolve_-_Controlled_Onboarding_Stabilization)
+First group (authorized):
+- [ ] Scope→component map + capability table (7 onboarding roles)
+- [ ] #30 four step fields (description/instructions/done when/video) → Task + CSV
+- [ ] #31 relative due dates (4 anchors, ± business days, overrides preserved)
+- [ ] #40 assignment roles resolved from project team, gaps visible
+- [ ] #42 conditional steps (Furnishing Package + Pool example), CSV round-trip, preview
+- [ ] Active Owner setup: one-select enrollment, duplicate-safe, auto-queued welcome (#32/#38/#39 portions); Linders via supported staff action
+- [ ] #38 inactive-state: no "0 days remain", no unusable Start
+- [ ] Editable welcome email + optional video (Emily's draft = proposed, unreviewed); delivery status/retry/version stored
+- [ ] OwnerRez search failure for 8219 — diagnose
+- [ ] Sofia Alvarez account check (no duplicate)
+- [ ] Kati checklist update
+Next groups (ledger only, not started): #35–37, #41/#44–45, #33–34/#43 external, rest of #39

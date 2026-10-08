@@ -189,6 +189,8 @@ export const importTemplateCsvFn = createServerFn({ method: "POST" })
         requires_owner_approval: t.requiresOwnerApproval, owner_dependency: t.ownerDependency,
         module: t.module, breezeway_template_id: t.breezewayTemplateId, opportunity: t.opportunity,
         sort_order: t.sortOrder, is_active: true,
+        offset_unit: t.offsetUnit, description: t.description, done_when: t.doneWhen, video_url: t.videoUrl,
+        condition: t.condition,
       }));
       const ins = await sb.from("onboarding_template_tasks").insert(rows as never);
       if (ins.error) throw ins.error;
