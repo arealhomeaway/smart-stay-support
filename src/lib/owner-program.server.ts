@@ -14,7 +14,6 @@ import { type DecisionPath, type ProgramPhase, type TaskTemplate } from "./owner
 import {
   aggregateParticipationPeriod,
   countedParticipationEntries,
-  countsTowardParticipation,
   hoursFromMinutes,
   ownerGoalMet,
   REPORT_DISCLAIMER,
