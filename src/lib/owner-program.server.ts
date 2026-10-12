@@ -153,7 +153,7 @@ export async function loadPrograms(supabase: Client, demo = false) {
       supabase
         .from("owner_program_properties")
         .select(
-          "id, program_id, property_id, inclusion_status, launch_status, coverage_status, last_owner_activity_at, properties(name, nickname)",
+          "id, program_id, property_id, inclusion_status, closing_date, closing_confirmed, launch_status, coverage_status, last_owner_activity_at, properties(name, nickname)",
         ),
       supabase
         .from("owner_reviews")
@@ -191,9 +191,17 @@ export async function loadPrograms(supabase: Client, demo = false) {
       (l) => l.program_id === p.id && l.inclusion_status === "included",
     );
     const myReviews = (reviews.data ?? []).filter((r) => r.program_id === p.id);
-    const myEntries = countableParticipationEntries(
+    const myEntries = countedParticipationEntries(
       (entries.data ?? []).filter((entry) => entry.program_id === p.id),
-    ).filter((entry) => inParticipationWindow(entry.entry_date, p.started_on, p.ends_on, today));
+      {
+        closingDates: myLinks
+          .filter((l) => l.closing_confirmed && l.closing_date)
+          .map((l) => l.closing_date),
+        startedOn: p.started_on,
+        endsOn: p.ends_on,
+      },
+      today,
+    );
     const reported = combinedMinutes(myEntries);
     const snapshot = progressSnapshot({
       status: p.status as ProgramStatus,
@@ -487,10 +495,7 @@ export async function loadProgramDetail(supabase: Client, programId: string) {
 export function completionChecklist(agg: Awaited<ReturnType<typeof loadProgramAggregate>>) {
   const included = agg.includedProperties;
   const openTasks = agg.reviews.filter((r) => !["answered", "closed"].includes(r.status));
-  const entriesAttributed = countableParticipationEntries(agg.entries)
-    .filter((entry) =>
-      inParticipationWindow(entry.entry_date, agg.program.startedOn, agg.program.endsOn),
-    )
+  const entriesAttributed = countedParticipationEntries(agg.entries, aggregateParticipationPeriod(agg))
     .every((entry) => entry.activity.trim().length > 0);
   return {
     hoursMet: agg.goalMet,
@@ -572,10 +577,7 @@ export function buildProgramReportSnapshot(
   responses: OwnerResponseReceipt[] = [],
 ) {
   const countedEntryIds = new Set(
-    countableParticipationEntries(agg.entries)
-      .filter((entry) =>
-        inParticipationWindow(entry.entry_date, agg.program.startedOn, agg.program.endsOn),
-      )
+    countedParticipationEntries(agg.entries, aggregateParticipationPeriod(agg))
       .map((entry) => entry.id),
   );
   const nameOf = (id: string) =>

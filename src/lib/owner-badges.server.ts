@@ -31,10 +31,7 @@ export function earnedBadges(agg: ProgramAggregate): { code: string; rule: strin
   const out: { code: string; rule: string }[] = [];
   const entries = [
     ...new Map(
-      countableParticipationEntries(agg.entries)
-        .filter((e) =>
-          inParticipationWindow(e.entry_date, agg.program.startedOn, agg.program.endsOn),
-        )
+      countedParticipationEntries(agg.entries, aggregateParticipationPeriod(agg))
         .map((e) => [e.id, e]),
     ).values(),
   ];
@@ -52,7 +49,7 @@ export function earnedBadges(agg: ProgramAggregate): { code: string; rule: strin
     (r) =>
       CLOSED.has(r.status) &&
       r.responded_at &&
-      inParticipationWindow(r.responded_at.slice(0, 10), agg.program.startedOn, agg.program.endsOn),
+      countsTowardParticipation(r.responded_at.slice(0, 10), aggregateParticipationPeriod(agg)),
   );
   const add = (code: string, rule: string) => out.push({ code, rule });
 

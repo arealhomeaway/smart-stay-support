@@ -588,3 +588,17 @@ export function countedParticipationEntries<
     countsTowardParticipation(e.entry_date, period, today),
   );
 }
+
+/** Participation period of a loaded program aggregate. */
+export function aggregateParticipationPeriod(agg: {
+  program: { startedOn: string | null; endsOn: string | null };
+  includedProperties: { closingDate: string | null; closingConfirmed: boolean }[];
+}): ParticipationPeriod {
+  return {
+    closingDates: agg.includedProperties
+      .filter((x) => x.closingConfirmed && x.closingDate)
+      .map((x) => x.closingDate),
+    startedOn: agg.program.startedOn,
+    endsOn: agg.program.endsOn,
+  };
+}
