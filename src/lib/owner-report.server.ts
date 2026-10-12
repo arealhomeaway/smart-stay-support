@@ -102,7 +102,6 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
   const closings = agg.includedProperties
     .filter((x) => x.closingConfirmed && x.closingDate)
     .map((x) => x.closingDate as string);
-  const years = participationYears(closings);
   const period = aggregateParticipationPeriod(agg);
   const inAnyWindow = (date: string) => countsTowardParticipation(date, period, today);
 
