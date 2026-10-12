@@ -186,7 +186,7 @@ it("staff program total, close-out checklist and report snapshot = 530", async (
 });
 
 it("staff programs list total = 530", async () => {
-  const rows = await loadPrograms(database() as never);
+  const { rows } = await loadPrograms(database() as never);
   const row = rows.find((r) => r.id === PROGRAM)!;
   expect(row.reportedMinutes).toBe(MINUTES);
 });
