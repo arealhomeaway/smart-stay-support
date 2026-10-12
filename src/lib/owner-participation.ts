@@ -554,3 +554,37 @@ export function participationYearTotals(
 export function ownerGoalMet(reportedMinutes: number): boolean {
   return Number.isFinite(reportedMinutes) && reportedMinutes >= OWNER_GOAL_HOURS * 60;
 }
+
+/** Inputs that establish an owner's participation period. */
+export type ParticipationPeriod = {
+  /** Closing dates of included homes whose closing is confirmed. */
+  closingDates: (string | null | undefined)[];
+  startedOn: string | null | undefined;
+  endsOn?: string | null;
+};
+
+/**
+ * The one counting rule for every surface (portal, staff, analytics, badges,
+ * CSV, PDF). Confirmed closings establish the participation years: any
+ * activity dated in such a year, up to today, counts — no activation or
+ * started_on needed. Only without a confirmed closing does started_on act as
+ * the fallback window; with neither, nothing counts.
+ */
+export function countsTowardParticipation(
+  date: string,
+  period: ParticipationPeriod,
+  today = new Date().toISOString().slice(0, 10),
+) {
+  const years = participationYears(period.closingDates);
+  if (years.length) return date <= today && years.includes(date.slice(0, 4));
+  return inParticipationWindow(date, period.startedOn, period.endsOn, today);
+}
+
+/** Effective entries (corrections replace originals) that count in the period. */
+export function countedParticipationEntries<
+  T extends { id: string; amends_entry_id: string | null; entry_date: string },
+>(entries: T[], period: ParticipationPeriod, today = new Date().toISOString().slice(0, 10)): T[] {
+  return countableParticipationEntries(entries).filter((e) =>
+    countsTowardParticipation(e.entry_date, period, today),
+  );
+}
