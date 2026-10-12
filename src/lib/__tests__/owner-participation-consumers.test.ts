@@ -132,7 +132,7 @@ function database() {
       const section = { reviews: [], entries: ENTRIES, badges: [], events: EVENTS }[
         args._section as "entries"
       ] as Record<string, unknown>[] | undefined;
-      return query((section ?? []).map((item) => ({ id: item.id, item })));
+      return query((section ?? []).map((item) => ({ id: item["id"], item })));
     },
   };
 }
@@ -176,7 +176,7 @@ it("owner portal total (homeowner read path) = 530", async () => {
 it("staff program total, close-out checklist and report snapshot = 530", async () => {
   const agg = await loadProgramAggregate(database() as never, PROGRAM);
   expect(agg.reportedMinutes).toBe(MINUTES);
-  const checklist = completionChecklist(agg) as Record<string, unknown>;
+  const checklist = completionChecklist(agg);
   expect(checklist.entriesAttributed).toBe(true);
   const snapshot = buildProgramReportSnapshot(agg);
   expect(snapshot.totals.combinedHours).toBe(HOURS);
@@ -185,10 +185,10 @@ it("staff program total, close-out checklist and report snapshot = 530", async (
   expect(counted.length).toBe(7);
 });
 
-it("staff programs list total = 530", async () => {
+it("staff programs list total = 530 (8.83 h)", async () => {
   const { rows } = await loadPrograms(database() as never);
   const row = rows.find((r) => r.id === PROGRAM)!;
-  expect(row.reportedMinutes).toBe(MINUTES);
+  expect(row.reportedHours).toBe(HOURS);
 });
 
 it("analytics total = 530 (8.83 h, 7 entries)", async () => {
@@ -225,6 +225,6 @@ it("PDF: same 530 total; prior-year response marked outside the period", async (
   const report = await buildOwnerReport(database() as never, PROGRAM);
   const text = await pdfText(await reportPdf(report));
   expect(text).toContain(String(HOURS));
-  expect(text).toMatch(/2025-06-02[^\n]*Outside program period/);
-  expect(text).not.toMatch(/2026-10-08[^\n]*Outside program period/);
+  expect(/2025-06-02[^\n]*Outside program period/.test(text)).toBe(true);
+  expect(/2026-10-08[^\n]*Outside program period/.test(text)).toBe(false);
 });
