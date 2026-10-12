@@ -24,7 +24,6 @@ import {
   participationWindowEnd,
   aggregateParticipationPeriod,
   countsTowardParticipation,
-  participationYears,
   participationYearTotals,
 } from "./owner-participation";
 
