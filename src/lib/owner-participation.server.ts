@@ -18,7 +18,6 @@ import {
   benchmarkHours,
   countedParticipationEntries,
   type ParticipationPeriod,
-  inParticipationWindow,
   hoursFromMinutes,
   participationYearTotals,
   ownerGoalMet,

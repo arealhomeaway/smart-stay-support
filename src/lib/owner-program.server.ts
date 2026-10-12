@@ -12,8 +12,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
 import { type DecisionPath, type ProgramPhase, type TaskTemplate } from "./owner-program";
 import {
-  countableParticipationEntries,
-  inParticipationWindow,
+  aggregateParticipationPeriod,
+  countedParticipationEntries,
+  countsTowardParticipation,
   hoursFromMinutes,
   ownerGoalMet,
   REPORT_DISCLAIMER,

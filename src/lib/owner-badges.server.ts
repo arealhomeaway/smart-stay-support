@@ -12,8 +12,9 @@ import {
   programLengthDays,
   hoursFromMinutes,
   ownerGoalMet,
-  countableParticipationEntries,
-  inParticipationWindow,
+  aggregateParticipationPeriod,
+  countedParticipationEntries,
+  countsTowardParticipation,
   participationWindowEnd,
 } from "./owner-participation";
 import { type Client, type ProgramAggregate } from "./owner-participation.server";
