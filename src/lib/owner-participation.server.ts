@@ -16,8 +16,8 @@ import { readOwnerProgram, readOwnerProgramProperties } from "./owner-program-re
 import type { Database } from "@/integrations/supabase/types";
 import {
   benchmarkHours,
-  countableParticipationEntries,
-  inParticipationWindow,
+  countedParticipationEntries,
+  type ParticipationPeriod,
   hoursFromMinutes,
   participationYearTotals,
   ownerGoalMet,
@@ -270,9 +270,20 @@ export async function loadProgramAggregate(
     };
   });
 
-  const inPeriod = (entry: EntryRow) =>
-    inParticipationWindow(entry.entry_date, p.started_on, p.ends_on);
-  const countable = countableParticipationEntries(entryRows).filter(inPeriod);
+  const period: ParticipationPeriod = {
+    closingDates: (links.data ?? [])
+      .filter(
+        (l) =>
+          l.inclusion_status === "included" &&
+          !("current_access" in l && l.current_access === false) &&
+          l.closing_confirmed &&
+          l.closing_date,
+      )
+      .map((l) => l.closing_date),
+    startedOn: p.started_on,
+    endsOn: p.ends_on,
+  };
+  const countable = countedParticipationEntries(entryRows, period);
   const today = new Date().toISOString().slice(0, 10);
 
   const properties: ProgramPropertyRow[] = (links.data ?? []).map((l) => {

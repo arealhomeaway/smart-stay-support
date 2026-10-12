@@ -14,7 +14,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import {
   hoursFromMinutes,
-  inParticipationWindow,
+  countedParticipationEntries,
   progressSnapshot,
   OPERATING_TARGET_HOURS,
   OWNER_GOAL_HOURS,
@@ -134,7 +134,7 @@ export async function loadOwnerAnalytics(
       .in("program_id", ids),
     supabase
       .from("owner_program_properties")
-      .select("program_id, inclusion_status")
+      .select("program_id, inclusion_status, closing_date, closing_confirmed")
       .in("program_id", ids),
   ]);
   if (entries.error) throw entries.error;
@@ -155,14 +155,19 @@ export async function loadOwnerAnalytics(
 
   const metrics: OwnerProgramMetric[] = rows.map((p) => {
     const mine = byProgram.get(p.id) ?? [];
-    const superseded = new Set(
-      mine.map((e) => e.amends_entry_id).filter((id): id is string => Boolean(id)),
-    );
-    const inPeriod = (e: { entry_date: string }) =>
-      inParticipationWindow(e.entry_date, p.started_on, p.ends_on);
-    const countable = mine.filter(
-      (e) => inPeriod(e) && !superseded.has(e.id),
-    );
+    const countable = countedParticipationEntries(mine, {
+      closingDates: (links.data ?? [])
+        .filter(
+          (l) =>
+            l.program_id === p.id &&
+            l.inclusion_status === "included" &&
+            l.closing_confirmed &&
+            l.closing_date,
+        )
+        .map((l) => l.closing_date),
+      startedOn: p.started_on,
+      endsOn: p.ends_on,
+    });
     const reported = combinedMinutes(countable);
     // No hour review: everything logged counts.
     const approved = reported;

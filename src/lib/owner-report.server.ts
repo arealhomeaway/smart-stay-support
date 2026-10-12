@@ -22,8 +22,8 @@ import { loadProgramAggregate, combinedMinutes } from "./owner-participation.ser
 import {
   hoursFromMinutes,
   participationWindowEnd,
-  inParticipationWindow,
-  participationYears,
+  aggregateParticipationPeriod,
+  countsTowardParticipation,
   participationYearTotals,
 } from "./owner-participation";
 
@@ -101,11 +101,8 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
   const closings = agg.includedProperties
     .filter((x) => x.closingConfirmed && x.closingDate)
     .map((x) => x.closingDate as string);
-  const years = participationYears(closings);
-  const inAnyWindow = (date: string) =>
-    years.length
-      ? date <= today && years.includes(date.slice(0, 4))
-      : inParticipationWindow(date, startedOn, endsOn, today);
+  const period = aggregateParticipationPeriod(agg);
+  const inAnyWindow = (date: string) => countsTowardParticipation(date, period, today);
 
   const entries: ReportEntry[] = agg.entries.map((e) => {
     const isSuperseded = superseded.has(e.id);
@@ -174,7 +171,7 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
       propertyName: receipt.propertyId
         ? (propNames.get(receipt.propertyId) ?? "Previously enrolled property")
         : "Program opportunity",
-      inPeriod: inParticipationWindow(receipt.createdAt.slice(0, 10), startedOn, endsOn, today),
+      inPeriod: countsTowardParticipation(receipt.createdAt.slice(0, 10), period, today),
     }),
   );
   const retainedReviewIds = new Set(responses.map((receipt) => receipt.reviewId));
