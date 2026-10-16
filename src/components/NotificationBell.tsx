@@ -134,7 +134,7 @@ export function NotificationBell({
             </Button>
           )}
         </div>
-        <ScrollArea className="max-h-96">
+        <div className="max-h-[min(24rem,70vh)] overflow-y-auto overscroll-contain">
           <NotificationList
             items={rows.map((r) => ({ ...r, urgent: r.priority === "urgent" }))}
             onOpen={(row) => {
@@ -148,7 +148,7 @@ export function NotificationBell({
               }
             }}
           />
-        </ScrollArea>
+        </div>
       </PopoverContent>
     </Popover>
   );

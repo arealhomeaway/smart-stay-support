@@ -172,9 +172,13 @@ function PropertyWorkspace() {
       return data === true;
     },
   });
-  const [openTaskId, setOpenTaskId] = useState<string | null>(
-    () => ("task" in search && typeof search.task === "string" ? search.task : null),
-  );
+  const linkedTask = "task" in search && typeof search.task === "string" ? search.task : null;
+  const [openTaskId, setOpenTaskId] = useState<string | null>(linkedTask);
+  // A notification opened while already on this page changes only the link;
+  // follow it so the Task it points at actually opens.
+  useEffect(() => {
+    if (linkedTask) setOpenTaskId(linkedTask);
+  }, [linkedTask, propertyId]);
   const [queueFilter, setQueueFilter] = useState<PropertyQueueFilter>(() =>
     search.workFilter === "blocked" ? "waiting" : "open",
   );
