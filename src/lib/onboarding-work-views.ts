@@ -138,6 +138,7 @@ export function parseWorkspaceSearch(search: {
         : ("all" as WorkFilter),
     ...(typeof search.from === "string" ? { from: search.from } : {}),
     ...(typeof search.task === "string" ? { task: search.task } : {}),
+    ...(typeof search.opp === "string" ? { opp: search.opp } : {}),
   };
 }
 

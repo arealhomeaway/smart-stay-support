@@ -3,7 +3,7 @@
  * workspace. Shares the editor and status view with the Task drawer's Owner
  * collaboration section. Opportunity status never controls the internal Task.
  */
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { GripVertical, Plus, Sparkles } from "lucide-react";
