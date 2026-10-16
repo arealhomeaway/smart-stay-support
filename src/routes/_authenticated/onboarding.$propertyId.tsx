@@ -8,7 +8,7 @@ import {
 import { createFileRoute, Link, Navigate, notFound } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { CheckCircle2, CircleAlert, Plus, XCircle } from "lucide-react";
 import { Chip, EmptyState, LoadingPage, PageHeader, ProgressRing } from "@/components/ui/page";
@@ -172,9 +172,13 @@ function PropertyWorkspace() {
       return data === true;
     },
   });
-  const [openTaskId, setOpenTaskId] = useState<string | null>(
-    () => ("task" in search && typeof search.task === "string" ? search.task : null),
-  );
+  const linkedTask = "task" in search && typeof search.task === "string" ? search.task : null;
+  const [openTaskId, setOpenTaskId] = useState<string | null>(linkedTask);
+  // A notification opened while already on this page changes only the link;
+  // follow it so the Task it points at actually opens.
+  useEffect(() => {
+    if (linkedTask) setOpenTaskId(linkedTask);
+  }, [linkedTask, propertyId]);
   const [queueFilter, setQueueFilter] = useState<PropertyQueueFilter>(() =>
     search.workFilter === "blocked" ? "waiting" : "open",
   );

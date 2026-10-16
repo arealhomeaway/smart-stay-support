@@ -5,7 +5,6 @@ import { Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDemo } from "@/components/DemoProvider";
 import { allowsInApp, readPreferences } from "@/lib/notification-preferences";
 import { NotificationList } from "@/components/notifications/NotificationList";
@@ -134,7 +133,7 @@ export function NotificationBell({
             </Button>
           )}
         </div>
-        <ScrollArea className="max-h-96">
+        <div className="max-h-[min(24rem,70vh)] overflow-y-auto overscroll-contain">
           <NotificationList
             items={rows.map((r) => ({ ...r, urgent: r.priority === "urgent" }))}
             onOpen={(row) => {
@@ -148,7 +147,7 @@ export function NotificationBell({
               }
             }}
           />
-        </ScrollArea>
+        </div>
       </PopoverContent>
     </Popover>
   );

@@ -1044,6 +1044,13 @@
       "when": 1791496030828,
       "tag": "0148_owner_welcome_reconciliation",
       "breakpoints": true
+    },
+    {
+      "idx": 149,
+      "version": "7",
+      "when": 1792158156999,
+      "tag": "0149_onboarding_notifications_email_and_director",
+      "breakpoints": true
     }
   ]
 }
