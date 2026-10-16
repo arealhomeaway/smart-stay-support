@@ -8,7 +8,7 @@ import {
 import { createFileRoute, Link, Navigate, notFound } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { CheckCircle2, CircleAlert, Plus, XCircle } from "lucide-react";
 import { Chip, EmptyState, LoadingPage, PageHeader, ProgressRing } from "@/components/ui/page";
