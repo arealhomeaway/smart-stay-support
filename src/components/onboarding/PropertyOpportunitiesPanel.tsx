@@ -100,6 +100,14 @@ export function PropertyOpportunitiesPanel({
   });
   const program = (programs.data?.rows ?? []).find((p) => p.properties.some((h) => h.id === propertyId));
   const q = useOwnerCollaboration(propertyId);
+  // A notification link names one Opportunity: expand it and bring it into
+  // view once the list has loaded, so the alert lands on the item itself.
+  useEffect(() => {
+    if (!openId) return;
+    if (!(q.data?.opportunities ?? []).some((o) => o.id === openId)) return;
+    setExpanded(openId);
+    document.getElementById(`opp-${openId}`)?.scrollIntoView({ block: "center" });
+  }, [openId, q.data]);
   const qc = useQueryClient();
   const reorderFn = useServerFn(reorderArhaOpportunities);
   const [localOrder, setLocalOrder] = useState<string[] | null>(null);
@@ -148,7 +156,7 @@ export function PropertyOpportunitiesPanel({
             ? "Review the homeowner's response."
             : `Waiting for ${ownerFirst} to ${types.length ? types.join(" / ").toLowerCase() : "respond"}.`;
     return (
-    <li key={o.id} className="rounded-lg border border-border p-3">
+    <li key={o.id} id={`opp-${o.id}`} className="rounded-lg border border-border p-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex min-w-0 items-start gap-2">
         {handle}
