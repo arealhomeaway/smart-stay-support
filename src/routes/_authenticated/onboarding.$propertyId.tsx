@@ -173,6 +173,7 @@ function PropertyWorkspace() {
     },
   });
   const linkedTask = "task" in search && typeof search.task === "string" ? search.task : null;
+  const linkedOpp = "opp" in search && typeof search.opp === "string" ? search.opp : null;
   const [openTaskId, setOpenTaskId] = useState<string | null>(linkedTask);
   // A notification opened while already on this page changes only the link;
   // follow it so the Task it points at actually opens.
@@ -580,7 +581,9 @@ function PropertyWorkspace() {
             )}
           </section>
 
-          {activeOwner ? <PropertyOpportunitiesPanel propertyId={current.id} /> : null}
+          {activeOwner ? (
+            <PropertyOpportunitiesPanel propertyId={current.id} openId={linkedOpp} />
+          ) : null}
         </TabsContent>
 
         <TabsContent value="work" className="space-y-5">
