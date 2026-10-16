@@ -77,7 +77,14 @@ function preview(text: string | null | undefined) {
   return t ? t : null;
 }
 
-export function PropertyOpportunitiesPanel({ propertyId }: { propertyId: string }) {
+export function PropertyOpportunitiesPanel({
+  propertyId,
+  openId,
+}: {
+  propertyId: string;
+  /** Opportunity a notification links to — expanded and scrolled into view. */
+  openId?: string | null;
+}) {
   const loadPrograms = useServerFn(ownerPrograms);
   const [editing, setEditing] = useState<CollabOpp | "new" | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
