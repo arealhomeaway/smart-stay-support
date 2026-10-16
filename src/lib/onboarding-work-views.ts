@@ -113,6 +113,7 @@ export function parseWorkspaceSearch(search: {
   workFilter?: unknown;
   from?: unknown;
   task?: unknown;
+  opp?: unknown;
 }) {
   // Older links used nine tabs; send each to the tab that now holds it.
   const aliases: Record<string, string> = {
