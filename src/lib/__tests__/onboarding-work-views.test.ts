@@ -67,6 +67,15 @@ describe("work attention views", () => {
       workFilter: "all",
     });
   });
+  it("keeps the linked Task and Opportunity ids from notification links", () => {
+    expect(parseWorkspaceSearch({ tab: "work", task: "t-1", opp: "o-1" })).toEqual({
+      tab: "work",
+      workFilter: "all",
+      task: "t-1",
+      opp: "o-1",
+    });
+    expect(parseWorkspaceSearch({ opp: 42 })).toEqual({ tab: "overview", workFilter: "all" });
+  });
   it("orders one property queue with workable steps before waiting and finished work", () => {
     const ready = view("ready", "ready", "2026-09-16");
     const overdue = view("overdue", "in_progress", "2026-09-10", true);
