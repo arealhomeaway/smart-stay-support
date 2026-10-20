@@ -1,0 +1,48 @@
+-- NOT APPLIED. Adds audit storage; needs release approval, never applies a schedule.
+CREATE TABLE public.email_job_runs (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(), started_at timestamptz NOT NULL DEFAULT now(),
+ finished_at timestamptz, parts jsonb NOT NULL DEFAULT '{}', email_counts jsonb NOT NULL DEFAULT '{}',
+ errors jsonb NOT NULL DEFAULT '[]'
+);
+GRANT ALL ON public.email_job_runs TO service_role;
+ALTER TABLE public.email_job_runs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.email_log ADD COLUMN IF NOT EXISTS email_job_run_id uuid REFERENCES public.email_job_runs(id);
+ALTER TABLE public.email_log ADD COLUMN IF NOT EXISTS email_job_part text;
+ALTER TABLE public.owner_notifications ADD COLUMN IF NOT EXISTS email_job_run_id uuid REFERENCES public.email_job_runs(id);
+CREATE OR REPLACE FUNCTION public.begin_email_job_run() RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
+DECLARE result uuid;
+BEGIN
+ PERFORM pg_advisory_xact_lock(82401020);
+ IF EXISTS(SELECT 1 FROM public.email_job_runs WHERE finished_at IS NULL) THEN
+   RAISE EXCEPTION 'An unfinished email run exists; staff review required, never automatic retry';
+ END IF;
+ INSERT INTO public.email_job_runs DEFAULT VALUES RETURNING id INTO result; RETURN result;
+END $$;
+CREATE OR REPLACE FUNCTION public.record_email_job_part(_run_id uuid,_part text,_result jsonb,_errors jsonb)
+RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp AS $$
+ UPDATE public.email_job_runs SET parts=parts || jsonb_build_object(_part,_result),errors=_errors
+ WHERE id=_run_id AND finished_at IS NULL;
+$$;
+CREATE OR REPLACE FUNCTION public.finish_email_job_run(_run_id uuid,_errors jsonb)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
+DECLARE counts jsonb; result jsonb;
+BEGIN
+ SELECT coalesce(jsonb_object_agg(part,n),'{}') INTO counts FROM
+   (SELECT email_job_part AS part,count(*) AS n FROM public.email_log
+     WHERE email_job_run_id=_run_id AND status='sent' GROUP BY email_job_part) s;
+ UPDATE public.email_job_runs SET finished_at=now(),errors=_errors,email_counts=counts WHERE id=_run_id AND finished_at IS NULL;
+ SELECT to_jsonb(r) INTO result FROM public.email_job_runs r WHERE id=_run_id; RETURN result;
+END $$;
+REVOKE ALL ON FUNCTION public.begin_email_job_run(),public.record_email_job_part(uuid,text,jsonb,jsonb),public.finish_email_job_run(uuid,jsonb) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.begin_email_job_run(),public.record_email_job_part(uuid,text,jsonb,jsonb),public.finish_email_job_run(uuid,jsonb) TO service_role;
+-- Pass-owned progress notifications must not race the existing instant-email callback.
+CREATE OR REPLACE FUNCTION private.suppress_job_instant_email() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+ IF NEW.email_job_run_id IS NOT NULL THEN
+   -- Only the synchronous pass drains these rows. The normal callback sees skipped on INSERT.
+   -- Do not use this trigger: callback suppression must be integrated into the existing
+   -- dispatch_owner_notification_email IF condition during release tooling, preserving its key.
+   RETURN NEW;
+ END IF;
+ RETURN NEW;
+END $$;
