@@ -54,7 +54,7 @@ export async function sweepDeadlineAlerts(supabase: Client, now = new Date()) {
       .not("assigned_to", "is", null),
     supabase
       .from("claims")
-      .select("id, ref, title, stage, assigned_to, deadline_on, is_demo")
+      .select("id, title, stage, assigned_to, deadline_on, is_demo")
       .not("assigned_to", "is", null)
       .not("deadline_on", "is", null),
   ]);

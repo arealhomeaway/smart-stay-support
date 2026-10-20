@@ -26,3 +26,12 @@ it("records errors and never runs subsequent parts after failure", async () => {
   ]);
   expect(result.ok).toBe(false); expect(result.errors).toEqual(["owner: provider failed"]); expect(subsequent).toBe(0);
 });
+it("does not finish a run whose part audit failed", async () => {
+  const calls: string[] = [];
+  const db = { rpc: async (name: string) => { calls.push(name); return { data: "run-1", error: name === "record_email_job_part" ? "audit failed" : null }; } };
+  await expect(runEmailJob(db as never, [{ name: "staff", run: async () => ({ emailed: 0 }) }])).rejects.toThrow("unfinished run retained");
+  expect(calls).toEqual(["begin_email_job_run", "record_email_job_part"]);
+});
+it("treats a part's explicit failure as a failed run", async () => {
+  expect((await runEmailJob(database() as never, [{ name: "owner", run: async () => ({ ok: false }) }])).ok).toBe(false);
+});
