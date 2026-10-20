@@ -56,7 +56,7 @@ function actionLabel(kind: string) {
 }
 
 /** Sends every staff notification still waiting on email. Safe to run on a schedule. */
-export async function drainStaffNotifications(supabase: Client, limit = 50, delivery?: Delivery) {
+export async function drainStaffNotifications(supabase: Client, limit = 50, delivery?: Delivery, jobRunId?: string) {
   const { data, error } = await supabase
     .from("staff_notifications")
     .select("id, user_id, kind, title, body, link_path, priority, email_attempts, is_demo")
@@ -155,6 +155,9 @@ export async function drainStaffNotifications(supabase: Client, limit = 50, deli
       subject: row.priority === "urgent" ? `Action needed — ${row.title}` : row.title,
       html: emailShell(row.title, row.body, { label: actionLabel(row.kind), url }, "staff"),
       purpose: `staff_${row.kind}`,
+      isDemo: row.is_demo,
+      entity: { type: "staff_notification", id: row.id },
+      ...(jobRunId ? { jobRunId, jobPart: "staff" } : {}),
     });
 
     const attempts = (row.email_attempts ?? 0) + 1;

@@ -13,6 +13,7 @@
  */
 
 import { authorizedMailbox, sendMailPath } from "./mailbox-allowlist.server";
+import { verifyEmailSafety } from "./email-safety.server";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/microsoft_outlook";
 
@@ -115,6 +116,9 @@ export type SendEmailResult =
   { status: "sent"; error: null } | { status: "skipped" | "failed"; error: string; deliveryUncertain?: boolean };
 
 type SendInput = {
+  isDemo?: boolean;
+  jobRunId?: string;
+  jobPart?: string;
   to: string;
   subject: string;
   html: string;
@@ -143,12 +147,15 @@ type SendInput = {
 
 const MAX_ATTEMPTS = 3;
 const RETRYABLE = new Set([408, 429, 500, 502, 503, 504]);
+class EmailAuditError extends Error {}
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function logDelivery(entry: {
+  jobRunId?: string;
+  jobPart?: string;
   recipient: string;
   subject: string;
   purpose: string;
@@ -168,7 +175,7 @@ async function logDelivery(entry: {
 }) {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.from("email_log").insert({
+    const saved = await supabaseAdmin.from("email_log").insert({
       recipient: entry.recipient,
       subject: entry.subject.slice(0, 300),
       purpose: entry.purpose,
@@ -191,9 +198,12 @@ async function logDelivery(entry: {
         contentType: a.contentType,
       })),
       sent_at: entry.status === "sent" ? new Date().toISOString() : null,
-    });
+      ...(entry.jobRunId ? { email_job_run_id: entry.jobRunId, email_job_part: entry.jobPart ?? null } : {}),
+    } as never);
+    if (saved.error) throw new Error("Email delivery audit could not be recorded.");
   } catch (err) {
     console.error("Could not write to email_log:", err);
+    if (entry.jobRunId) throw new EmailAuditError("Email delivery audit unavailable; stop the run and review before retrying.");
   }
 }
 
@@ -204,6 +214,18 @@ async function logDelivery(entry: {
 export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
   const purpose = input.purpose ?? "general";
   const to = input.to?.trim() ?? "";
+
+  const safetyError = await verifyEmailSafety(input);
+  if (safetyError) {
+    await logDelivery({
+      recipient: to, subject: input.subject, purpose,
+      replyTo: input.replyTo ?? null, ticketId: input.ticketId ?? null,
+      entity: input.entity ?? null, sentBy: input.sentBy ?? null,
+      status: "skipped", attempts: 0, error: safetyError,
+      ...(input.jobRunId ? { jobRunId: input.jobRunId, jobPart: input.jobPart ?? "unknown" } : {}),
+    });
+    return { status: "skipped", error: safetyError };
+  }
 
   if (!isEmailAddress(to)) {
     const error = "That is not a valid email address.";
@@ -360,6 +382,7 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
           bcc: input.bcc ?? [],
           attachments: input.attachments ?? [],
           status: "sent",
+          ...(input.jobRunId ? { jobRunId: input.jobRunId, jobPart: input.jobPart ?? "unknown" } : {}),
           attempts,
           error: null,
         });
@@ -380,6 +403,7 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
           : 500 * 2 ** (attempts - 1),
       );
     } catch (err) {
+      if (err instanceof EmailAuditError) throw err;
       if (input.preserveUncertainty) deliveryUncertain = true;
       lastError = err instanceof Error ? err.message : "Email failed";
       if (attempts >= attemptLimit) break;
@@ -394,6 +418,7 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
     replyTo,
     ticketId: input.ticketId ?? null,
     status: "failed",
+    ...(input.jobRunId ? { jobRunId: input.jobRunId, jobPart: input.jobPart ?? "unknown" } : {}),
     attempts,
     error: lastError,
   });

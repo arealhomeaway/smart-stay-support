@@ -277,7 +277,7 @@ export async function parkScheduledEmail(email: ParkedEmail, sentBy: string) {
  * Sends every parked message whose time has come. Safe to run repeatedly —
  * a row is claimed before it is sent, so a second pass never doubles up.
  */
-export async function drainScheduledEmails(now = new Date()) {
+export async function drainScheduledEmails(now = new Date(), jobRunId?: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { sendEmail, emailShell } = await import("./email.server");
 
@@ -289,6 +289,7 @@ export async function drainScheduledEmails(now = new Date()) {
     .limit(25);
 
   let sent = 0;
+  const notes: string[] = [];
   for (const row of (due ?? []) as unknown as Record<string, unknown>[]) {
     // Claim it first: only the pass that flips it off "scheduled" may send it.
     const { data: claimed } = await supabaseAdmin
@@ -316,18 +317,20 @@ export async function drainScheduledEmails(now = new Date()) {
       bodyText: body,
       sentBy: (row["sent_by"] as string | null) ?? null,
       templateId: (row["template_id"] as string | null) ?? null,
+      ...(jobRunId ? { jobRunId, jobPart: "scheduled" } : {}),
     });
 
     // sendEmail writes its own delivery record; this row becomes its receipt.
     await supabaseAdmin
       .from("email_log")
       .update({
-        status: result.status === "sent" ? "sent" : "failed",
+        status: result.status,
         error_message: result.error ?? null,
         sent_at: result.status === "sent" ? new Date().toISOString() : null,
       } as never)
       .eq("id", String(row["id"]));
     if (result.status === "sent") sent += 1;
+    if (result.status === "failed") notes.push(result.error);
   }
-  return { considered: (due ?? []).length, sent };
+  return { considered: (due ?? []).length, sent, notes };
 }

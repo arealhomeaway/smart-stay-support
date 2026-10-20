@@ -43,7 +43,7 @@ export async function welcomeContext(db: SupabaseClient, programId: string, owne
   return { ownerName: (profile.data as { full_name?: string } | null)?.full_name ?? null, propertyNames: names, hoursOpen };
 }
 
-export async function drainOwnerWelcomes(db: SupabaseClient, limit = 20) {
+export async function drainOwnerWelcomes(db: SupabaseClient, limit = 20, jobRunId?: string) {
   const tpl = await loadWelcomeTemplate(db);
   if (tpl.review !== "approved") return { considered: 0, sent: 0, waiting: "wording_not_approved" as const };
   const { data: due } = await db
@@ -55,6 +55,7 @@ export async function drainOwnerWelcomes(db: SupabaseClient, limit = 20) {
     .limit(limit);
   const { sendEmail, emailShell } = await import("./email.server");
   let sent = 0;
+  const notes: string[] = [];
   for (const row of (due ?? []) as { id: string; program_id: string; owner_user_id: string; recipient: string; attempts: number }[]) {
     const { data: claimed } = await db
       .from("owner_welcome_messages")
@@ -82,6 +83,7 @@ export async function drainOwnerWelcomes(db: SupabaseClient, limit = 20) {
       bodyText: msg.body,
       singleAttempt: true,
       preserveUncertainty: true,
+      ...(jobRunId ? { jobRunId, jobPart: "welcomes" } : {}),
     });
     await db.from("owner_welcome_messages").update({
       status: result.status === "sent" ? "sent" : result.deliveryUncertain ? "sending" : "failed",
@@ -90,8 +92,9 @@ export async function drainOwnerWelcomes(db: SupabaseClient, limit = 20) {
       subject: msg.subject, body: msg.body, template_version: tpl.version, video_url: videoLink,
     } as never).eq("id", row.id).eq("status", "sending").eq("attempts", row.attempts + 1);
     if (result.status === "sent") sent += 1;
+    if (result.status === "failed") notes.push(result.error);
   }
-  return { considered: (due ?? []).length, sent };
+  return { considered: (due ?? []).length, sent, notes };
 }
 
 /**

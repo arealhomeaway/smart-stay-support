@@ -54,7 +54,7 @@ export async function sweepDeadlineAlerts(supabase: Client, now = new Date()) {
       .not("assigned_to", "is", null),
     supabase
       .from("claims")
-      .select("id, ref, title, stage, assigned_to, deadline_on, is_demo")
+      .select("id, title, stage, assigned_to, deadline_on, is_demo")
       .not("assigned_to", "is", null)
       .not("deadline_on", "is", null),
   ]);
@@ -119,7 +119,7 @@ export async function sweepDeadlineAlerts(supabase: Client, now = new Date()) {
       // not mark the actor nullable, but the function accepts NULL.
       _actor_id: null as unknown as string,
       // Urgent items earn an email; the rest stay in the in-app inbox.
-      _email: alert.priority === "urgent",
+      _email: !alert.isDemo && alert.priority === "urgent",
       _is_demo: alert.isDemo,
     });
     if (error) notes.push(error.message);

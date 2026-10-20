@@ -1,4 +1,5 @@
 # src/lib rules
+- Outbound email must pass email-safety.server.ts plus the database email_delivery_allowed guard before provider access; email-job.server.ts records synchronous pass results and stops on audit/errors. Why: demo/test sends fail closed and timed-out calls remain auditable.
 - Vendor sourcing/dispatch: candidates, append-only contact attempts and visits live in work_order_vendor_candidates/_contact_attempts/_visits; rules only in src/lib/vendor-sourcing.ts (authority via evaluateAuthority); DB trigger wo_authorization_snapshot marks approval stale on scope/amount change and gates Breezeway handoff; one request key per Work Order; demo handoffs simulated. Why: acceptance, authorization, dispatch, completion stay separate facts, no duplicate external tasks.
 - Vendor execution: vendor changes only via Work Order candidate acceptance; Telegram tri-state (unknown until staff confirm); Breezeway handoff saved as uncertain before the call and never retried until reconciled; estimates never count as invoiced or pass Finance review. Why: no silent vendor swaps, no duplicate external tasks.
 

@@ -8,35 +8,33 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const token = request.headers.get("apikey") ?? "";
-        const expected =
-          process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"] ?? "";
-        if (!expected || token !== expected) {
+        const token = request.headers.get("x-cron-secret") ?? "";
+        if (!token) {
           return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
         }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const verified = await supabaseAdmin.rpc("cleaner_verify_cron_token", { _token: token });
+        if (verified.error || verified.data !== true)
+          return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
         const { drainOwnerAlerts } = await import("@/lib/owner-notify.server");
         const { drainStaffNotifications } = await import("@/lib/staff-notify.server");
         const { evaluateAllPrograms } = await import("@/lib/owner-progress-alerts.server");
         const { sweepDeadlineAlerts } = await import("@/lib/deadline-alerts.server");
         const { drainScheduledEmails } = await import("@/lib/email-composer.server");
+        const { drainOwnerWelcomes } = await import("@/lib/owner-welcome.server");
+        const { runEmailJob } = await import("@/lib/email-job.server");
 
         try {
-          // Pace is evaluated first so anything new is delivered in the same pass.
-          const progress = await evaluateAllPrograms(supabaseAdmin);
-          // Clocks that ran out since the last pass: SLA, vendor dispatch,
-          // claim deadlines. Written before the drain so they go out with it.
-          const deadlines = await sweepDeadlineAlerts(supabaseAdmin);
-          const delivery = await drainOwnerAlerts(supabaseAdmin);
-          // Staff email fan-out rides the same five-minute pass.
-          const staff = await drainStaffNotifications(supabaseAdmin);
-          // Messages someone scheduled for later go out on the same pass.
-          const scheduled = await drainScheduledEmails();
-          // Active Owner welcomes: only once the wording is approved.
-          const { drainOwnerWelcomes } = await import("@/lib/owner-welcome.server");
-          const welcomes = await drainOwnerWelcomes(supabaseAdmin);
-          return Response.json({ ...delivery, progress, deadlines, staff, scheduled, welcomes });
+          const result = await runEmailJob(supabaseAdmin, [
+            { name: "progress", run: (id) => evaluateAllPrograms(supabaseAdmin, id) },
+            { name: "deadlines_and_vendor_reminders", run: () => sweepDeadlineAlerts(supabaseAdmin) },
+            { name: "owner", run: (id) => drainOwnerAlerts(supabaseAdmin, 50, undefined, id) },
+            { name: "staff", run: (id) => drainStaffNotifications(supabaseAdmin, 50, undefined, id) },
+            { name: "scheduled", run: (id) => drainScheduledEmails(new Date(), id) },
+            { name: "welcomes", run: (id) => drainOwnerWelcomes(supabaseAdmin, 20, id) },
+          ]);
+          return Response.json(result, { status: result.ok ? 200 : 500 });
         } catch (err) {
           return Response.json(
             { ok: false, error: err instanceof Error ? err.message : "Delivery failed" },
