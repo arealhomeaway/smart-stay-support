@@ -147,6 +147,7 @@ type SendInput = {
 
 const MAX_ATTEMPTS = 3;
 const RETRYABLE = new Set([408, 429, 500, 502, 503, 504]);
+class EmailAuditError extends Error {}
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -202,7 +203,7 @@ async function logDelivery(entry: {
     if (saved.error) throw new Error("Email delivery audit could not be recorded.");
   } catch (err) {
     console.error("Could not write to email_log:", err);
-    if (entry.jobRunId) throw new Error("Email delivery audit unavailable; stop the run and review before retrying.");
+    if (entry.jobRunId) throw new EmailAuditError("Email delivery audit unavailable; stop the run and review before retrying.");
   }
 }
 
@@ -402,6 +403,7 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
           : 500 * 2 ** (attempts - 1),
       );
     } catch (err) {
+      if (err instanceof EmailAuditError) throw err;
       if (input.preserveUncertainty) deliveryUncertain = true;
       lastError = err instanceof Error ? err.message : "Email failed";
       if (attempts >= attemptLimit) break;
