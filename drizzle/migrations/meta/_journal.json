@@ -1058,6 +1058,13 @@
       "when": 1792504577919,
       "tag": "0150_resume_existing_owner_notify_schedule",
       "breakpoints": true
+    },
+    {
+      "idx": 151,
+      "version": "7",
+      "when": 1792508992857,
+      "tag": "0151_0152_email_delivery_allowed_function",
+      "breakpoints": true
     }
   ]
 }
