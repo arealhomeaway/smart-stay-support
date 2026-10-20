@@ -29,8 +29,8 @@ Authentication uses the existing server-only stored-token method already used by
 
 ## Prepared migrations and command — NOT APPLIED
 
-1. `0152_email_delivery_safety.sql`: final record/account checks plus owner-notification source trigger. No backfill/schedule. A release prerequisite: without its RPC the new shared sender intentionally refuses delivery, including live messages.
-2. `0153_email_job_run_audit.sql`: audit storage, attribution fields, guarded run RPCs, and suppression of immediate callbacks for scheduled-run alerts. This is more than demo blocking and therefore cannot be applied under the current DB authorization.
+1. `0156_superseded_email_delivery_safety.sql`: final record/account checks plus owner-notification source trigger. No backfill/schedule. A release prerequisite: without its RPC the new shared sender intentionally refuses delivery, including live messages.
+2. `0155_email_job_run_audit.sql`: audit storage, attribution fields, guarded run RPCs, and suppression of immediate callbacks for scheduled-run alerts. This is more than demo blocking and therefore cannot be applied under the current DB authorization.
 3. `recreate-schedule.sql`: exact `deliver-owner-alerts`, `*/5 * * * *`, stored token lookup, empty body, 120000-ms wait. NOT RUN. Refuses any matching endpoint job (including inactive) so a future operator must inspect/reuse an existing job rather than blindly recreate it.
 
 ## Verification

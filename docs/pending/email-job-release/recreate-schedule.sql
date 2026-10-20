@@ -1,3 +1,4 @@
+-- Prerequisites: applied safety function 0151; trigger 0154_block_demo_owner_notification_trigger.sql; audit 0155_email_job_run_audit.sql; approved app release. Combined 0156 is superseded.
 -- PREPARED ONLY. Never run before safety/audit migrations and the app release are approved.
 -- Uses the same existing private-token lookup as str-cleaner-time-nightly; no key value copied.
 -- Check cron.job for matching endpoint first; refuse to create a duplicate.

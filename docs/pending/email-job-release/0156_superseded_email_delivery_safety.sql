@@ -1,4 +1,4 @@
--- NOT APPLIED. Release prerequisite: safety only, no schedule or data backfill.
+-- SUPERSEDED: DO NOT APPLY this combined historical file. Function applied as 0151_0152_email_delivery_allowed_function; trigger is separately prepared in 0154_block_demo_owner_notification_trigger.sql.
 CREATE OR REPLACE FUNCTION public.email_delivery_allowed(
  _recipients text[], _entity_type text DEFAULT NULL, _entity_id uuid DEFAULT NULL,
  _ticket_id uuid DEFAULT NULL, _actor_id uuid DEFAULT NULL

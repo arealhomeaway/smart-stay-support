@@ -1,4 +1,4 @@
--- NOT APPLIED. Step 2 of 0152 (trigger only). Function part applied Oct 20 as 0151_0152_email_delivery_allowed_function.
+-- APPLIED Oct 20 as 0154_block_demo_owner_notification_delivery. Do not re-apply. Function part applied as 0151_0152_email_delivery_allowed_function.
 -- Defense at the source for every owner-notification producer, without editing existing records.
 CREATE OR REPLACE FUNCTION private.block_demo_owner_notification_delivery() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
