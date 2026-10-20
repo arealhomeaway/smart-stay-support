@@ -13,7 +13,7 @@ async function isolatedRun(run: () => Promise<void>) {
   const connection = process.env["MICROSOFT_OUTLOOK_API_KEY"];
   process.env["LOVABLE_API_KEY"] = "fake-unit-test-key";
   process.env["MICROSOFT_OUTLOOK_API_KEY"] = "fake-unit-test-connection";
-  globalThis.fetch = mock(async () => { deliveries++; return new Response(null, { status: 202 }); }) as typeof fetch;
+  globalThis.fetch = (async () => { deliveries++; return new Response(null, { status: 202 }); }) as typeof fetch;
   records.length = 0; deliveries = 0; auditFails = false;
   try { await run(); } finally {
     globalThis.fetch = originalFetch;
