@@ -1,5 +1,7 @@
 # Email job repair — built, not released
 
+> **Superseded status — Oct 20 release prep:** See `RELEASE-PREP.md` for the current results, release list and blockers. The schedule note filename now matches its unchanged journal entry. Full suite: 1,535 passed / 0 failed / 5 skipped (234 fresh processes). Real-schema inspection found and repaired the missing `handoff` mapping in prepared 0152. Real-database rollback-only execution remains NOT VERIFIED: available read/write tools do not support schema-changing rollback transactions, and migration tooling would apply changes. Neither migration was applied. Historical results below are retained, not current release authorization.
+
 ## Safety and release status
 
 No project database changes, publish, schedule changes, provider sends, resends, account/seat changes or secret changes were performed in this repair. The `deliver-owner-alerts` job remains absent/off. Temporary PostgreSQL tests used an independent local disposable instance, not the shared backend.
