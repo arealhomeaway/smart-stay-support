@@ -3,7 +3,7 @@
 ## Oct 20 — Approved demo-alert trigger only
 - [x] Renumber pending trigger/audit/superseded combined files; migration journal untouched.
 - [x] Inspect firing order: existing email callback is AFTER INSERT; no BEFORE network triggers.
-- [ ] Apply only trigger, insert one demo item, verify 60-second no-send window, watch natural real alerts up to 10 minutes.
+- [x] Applied 0154_block_demo_owner_notification_delivery; demo row bf3bdb31-e482-4c29-b608-3faf27964a5a corrected to demo/skipped/skipped; no email or network request after 60 seconds. Natural real-alert watch 15:53:09–16:03:21 UTC: none; real delivery remains unverified.
 
 ## Oct 20 — Approved release preparation (no publish, schedules, sends, or retained DB changes)
 - [x] Restore journal/file match; indices/tags unique, no missing files; sole unjournaled Opportunity SQL is a comment-only placeholder.
