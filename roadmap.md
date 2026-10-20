@@ -1,10 +1,10 @@
 # Roadmap (checkpoint Oct 6 2026)
 
 ## Oct 20 — Email job safety repair (build/test only; no publish or schedule changes)
-- [ ] Block demo/test email at progress source and shared sender; verify every pass component with isolated tests.
-- [ ] Prepare unapplied run-audit migration and longer-wait recreation command; no database writes authorized except blocking sends.
-- [ ] Resolve duplicate migration numbering through supported tooling (journal edits prohibited).
-- [ ] Full tests, automatic type/build checks, read-only first-pass forecast and release/rollback report.
+- [x] Block demo/test email at progress source and shared sender; isolated safety/sender tests, no provider calls.
+- [x] Prepare unapplied safety/run-audit migrations and longer-wait recreation command; no shared database writes.
+- [ ] Migration journal correction BLOCKED: supported tool applies migrations; metadata-only tooling required, hand edits prohibited. Schedule note renamed 0151; stale 0150 journal tag must be corrected before release.
+- [x] Full test inventory in fresh processes (1529 pass/0 fail/5 skip), automatic type/build OK, read-only forecast and release/rollback report in docs/pending/email-job-release/README.md.
 
 ## STABILIZATION — all feature work paused (Oct 6). Audit: docs/agent/stabilization-audit-2026-10-06.md
 - [ ] A. Linders blocked: remove DFY gate + separate Day one from activation (awaiting Emily's go-ahead)
