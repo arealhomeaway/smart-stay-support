@@ -198,7 +198,7 @@ async function logDelivery(entry: {
       })),
       sent_at: entry.status === "sent" ? new Date().toISOString() : null,
       ...(entry.jobRunId ? { email_job_run_id: entry.jobRunId, email_job_part: entry.jobPart ?? null } : {}),
-    });
+    } as never);
   } catch (err) {
     console.error("Could not write to email_log:", err);
   }
@@ -354,6 +354,7 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
     attempts++;
     try {
       const res = await fetch(`${GATEWAY_URL}${path}`, {
+        signal: AbortSignal.timeout(20000),
         method: "POST",
         headers: {
           Authorization: `Bearer ${cfg.lovableKey}`,

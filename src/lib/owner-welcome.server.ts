@@ -55,6 +55,7 @@ export async function drainOwnerWelcomes(db: SupabaseClient, limit = 20, jobRunI
     .limit(limit);
   const { sendEmail, emailShell } = await import("./email.server");
   let sent = 0;
+  const notes: string[] = [];
   for (const row of (due ?? []) as { id: string; program_id: string; owner_user_id: string; recipient: string; attempts: number }[]) {
     const { data: claimed } = await db
       .from("owner_welcome_messages")
@@ -91,8 +92,9 @@ export async function drainOwnerWelcomes(db: SupabaseClient, limit = 20, jobRunI
       subject: msg.subject, body: msg.body, template_version: tpl.version, video_url: videoLink,
     } as never).eq("id", row.id).eq("status", "sending").eq("attempts", row.attempts + 1);
     if (result.status === "sent") sent += 1;
+    if (result.status === "failed") notes.push(result.error);
   }
-  return { considered: (due ?? []).length, sent };
+  return { considered: (due ?? []).length, sent, notes };
 }
 
 /**

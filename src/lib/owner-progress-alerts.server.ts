@@ -170,7 +170,7 @@ export async function evaluateProgramAlerts(supabase: Client, programId: string,
       email_status: !isDemo && agg.program.notifyEmail ? "pending" : "skipped",
       sms_status: "skipped",
       ...(jobRunId ? { email_job_run_id: jobRunId } : {}),
-    });
+    } as never);
     if (insert.error) continue;
 
     await supabase.from("owner_alert_log").insert({
