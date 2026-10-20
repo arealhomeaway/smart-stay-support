@@ -1,9 +1,14 @@
 # Roadmap (checkpoint Oct 6 2026)
 
+## Oct 20 — Approved release preparation (no publish, schedules, sends, or retained DB changes)
+- [ ] Restore journal/file match; inspect unjournaled migration implications.
+- [ ] Validate prepared SQL against real schema; execute rollback-only tests only through a supported transactional tool.
+- [ ] Fix only demonstrated defects, run fresh-process suite, check automatic build, refresh forecast and ordered release/rollback list.
+
 ## Oct 20 — Email job safety repair (build/test only; no publish or schedule changes)
 - [x] Block demo/test email at progress source and shared sender; isolated safety/sender tests, no provider calls.
 - [x] Prepare unapplied safety/run-audit migrations and longer-wait recreation command; no shared database writes.
-- [ ] Migration journal correction BLOCKED: supported tool applies migrations; metadata-only tooling required, hand edits prohibited. Schedule note renamed 0151; stale 0150 journal tag must be corrected before release.
+- [x] Restored schedule note to the existing 0150 journal tag without modifying managed metadata; unjournaled Opportunity file still requires release handling.
 - [x] Full test inventory in fresh processes (1529 pass/0 fail/5 skip), automatic type/build OK, read-only forecast and release/rollback report in docs/pending/email-job-release/README.md.
 
 ## STABILIZATION — all feature work paused (Oct 6). Audit: docs/agent/stabilization-audit-2026-10-06.md
