@@ -14218,6 +14218,16 @@ export type Database = {
         }
         Returns: string
       }
+      email_delivery_allowed: {
+        Args: {
+          _actor_id?: string
+          _entity_id?: string
+          _entity_type?: string
+          _recipients: string[]
+          _ticket_id?: string
+        }
+        Returns: boolean
+      }
       enroll_active_owner: {
         Args: { _owner_user_id: string; _property_id: string }
         Returns: Json
