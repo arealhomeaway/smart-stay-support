@@ -1,0 +1,9 @@
+-- Emily Jimenez approved resuming the existing five-minute email job on 2026-10-20.
+-- Existing job: deliver-owner-alerts (jobid 1), schedule */5 * * * *.
+-- No second owner-notify-every-5-min job is created because the matching job exists.
+-- Endpoint and existing credential-bearing command remain unchanged.
+-- Operational activation is applied separately through the database data-change tool:
+-- SELECT cron.alter_job(1, active := true);
+-- Emergency stop authorized for errors, over 10 first-pass emails, or unexpected external recipients:
+-- SELECT cron.unschedule(1);
+-- This migration records the schedule decision only; it contains no credentials and changes no schema.
