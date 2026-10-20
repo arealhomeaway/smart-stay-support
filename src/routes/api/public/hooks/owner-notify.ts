@@ -8,14 +8,15 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const token = request.headers.get("apikey") ?? "";
-        const expected =
-          process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"] ?? "";
-        if (!expected || token !== expected) {
+        const token = request.headers.get("x-cron-secret") ?? "";
+        if (!token) {
           return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
         }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const verified = await supabaseAdmin.rpc("cleaner_verify_cron_token", { _token: token });
+        if (verified.error || verified.data !== true)
+          return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
         const { drainOwnerAlerts } = await import("@/lib/owner-notify.server");
         const { drainStaffNotifications } = await import("@/lib/staff-notify.server");
         const { evaluateAllPrograms } = await import("@/lib/owner-progress-alerts.server");

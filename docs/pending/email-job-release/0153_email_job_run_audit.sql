@@ -35,14 +35,11 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.begin_email_job_run(),public.record_email_job_part(uuid,text,jsonb,jsonb),public.finish_email_job_run(uuid,jsonb) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.begin_email_job_run(),public.record_email_job_part(uuid,text,jsonb,jsonb),public.finish_email_job_run(uuid,jsonb) TO service_role;
--- Pass-owned progress notifications must not race the existing instant-email callback.
-CREATE OR REPLACE FUNCTION private.suppress_job_instant_email() RETURNS trigger LANGUAGE plpgsql AS $$
+-- Preserve the existing callback URL/key verbatim in the database; do not copy its value to source.
+DO $patch$
+DECLARE def text; anchor text := 'IF NEW.email_status = ''pending'' AND NOT coalesce(NEW.is_demo,false) THEN';
 BEGIN
- IF NEW.email_job_run_id IS NOT NULL THEN
-   -- Only the synchronous pass drains these rows. The normal callback sees skipped on INSERT.
-   -- Do not use this trigger: callback suppression must be integrated into the existing
-   -- dispatch_owner_notification_email IF condition during release tooling, preserving its key.
-   RETURN NEW;
- END IF;
- RETURN NEW;
-END $$;
+ def := pg_get_functiondef('private.dispatch_owner_notification_email()'::regprocedure);
+ IF position(anchor IN def)=0 THEN RAISE EXCEPTION 'Owner callback definition changed; stop release'; END IF;
+ EXECUTE replace(def,anchor,'IF NEW.email_job_run_id IS NULL AND NEW.email_status = ''pending'' AND NOT coalesce(NEW.is_demo,false) THEN');
+END $patch$;
