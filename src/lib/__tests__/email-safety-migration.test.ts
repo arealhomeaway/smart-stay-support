@@ -1,7 +1,7 @@
 import { expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
 
-const sql = readFileSync(new URL("../../../docs/pending/email-job-release/0152_email_delivery_safety.sql", import.meta.url), "utf8");
+const sql = readFileSync(new URL("../../../docs/pending/email-job-release/0156_superseded_email_delivery_safety.sql", import.meta.url), "utf8");
 const mappings = new Map(Array.from(sql.matchAll(/WHEN '([^']+)' THEN '([^']+)'/g), ([, entity, table]) => [entity, table]));
 
 it("maps Handoff staff notification sources to their canonical records", () => {

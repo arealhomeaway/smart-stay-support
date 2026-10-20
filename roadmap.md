@@ -1,5 +1,10 @@
 # Roadmap (checkpoint Oct 6 2026)
 
+## Oct 20 — Approved demo-alert trigger only
+- [x] Renumber pending trigger/audit/superseded combined files; migration journal untouched.
+- [x] Inspect firing order: existing email callback is AFTER INSERT; no BEFORE network triggers.
+- [ ] Apply only trigger, insert one demo item, verify 60-second no-send window, watch natural real alerts up to 10 minutes.
+
 ## Oct 20 — Approved release preparation (no publish, schedules, sends, or retained DB changes)
 - [x] Restore journal/file match; indices/tags unique, no missing files; sole unjournaled Opportunity SQL is a comment-only placeholder.
 - [ ] Real-database rollback execution BLOCKED: available read tool is SELECT-only, data tool is DML-only, migration tool commits schema changes. Real schema/preconditions/anchor inspected; test scripts prepared, not executed.

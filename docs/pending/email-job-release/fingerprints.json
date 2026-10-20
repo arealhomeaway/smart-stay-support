@@ -1,16 +1,16 @@
 {
-  "docs/pending/email-job-release/0152_email_delivery_safety.sql": "e589ee32e21b0582b311f35923183fa35794b1f40974d0bccd2bb206fd9c6edd",
-  "docs/pending/email-job-release/0153_email_job_run_audit.sql": "aee896679223a0818bcc3acab95eefa9f5b9457fe63de7074d50e1572c8db233",
-  "docs/pending/email-job-release/README.md": "c46677d352c84cc6daed35cccb324b5d8c2e5372fbfa69d9f4b9c850943c6985",
-  "docs/pending/email-job-release/RELEASE-PREP.md": "63ab203b4168801a92d6a727bf96c891e0e24f5a8f88b39792f56d1433b3ed93",
-  "docs/pending/email-job-release/recreate-schedule.sql": "4348bb8097f0652168972431aa6db6a303ca01def9341a5713693d9317f9da38",
-  "docs/pending/email-job-release/test-0152-rollback.sql": "5c2f163d9ef689227130368b59b63030c8bd5af7de881dd34692cd0c734d5187",
-  "docs/pending/email-job-release/test-0153-rollback.sql": "bddf498c21e46be7fed96afaae1cfdf5648121028ea0fcf34c16c0389e3c9a02",
+  "docs/pending/email-job-release/0156_superseded_email_delivery_safety.sql": "e2fd2240439ecb2ae245a6c8c62f896b1ed193198c395905c8462bd02e387a14",
+  "docs/pending/email-job-release/0155_email_job_run_audit.sql": "aee896679223a0818bcc3acab95eefa9f5b9457fe63de7074d50e1572c8db233",
+  "docs/pending/email-job-release/README.md": "ad2ca41b2f24d3cafb7fddcf3fe0270708a2430e5c45d1a6cd39dcfdf30a0563",
+  "docs/pending/email-job-release/RELEASE-PREP.md": "2e54063c5aa9287a1427896e53dedd1fbdfe5bffedcb38edd9e6f1f522c0228d",
+  "docs/pending/email-job-release/recreate-schedule.sql": "38eb44795b72017523335909ab4759bf64e4400308e27ee0522bc46cc72c00d5",
+  "docs/pending/email-job-release/test-0156-rollback.sql": "5c2f163d9ef689227130368b59b63030c8bd5af7de881dd34692cd0c734d5187",
+  "docs/pending/email-job-release/test-0155-rollback.sql": "bddf498c21e46be7fed96afaae1cfdf5648121028ea0fcf34c16c0389e3c9a02",
   "drizzle/migrations/0150_resume_existing_owner_notify_schedule.sql": "103a57dbee0c255bd7d1e51b5d6e9575f85b2c06121e90b3167a080fc276bc85",
-  "roadmap.md": "b0b203fc8ce80695867b00c7cc538225f3f4f9627527b2232c9d6a9306a4fe43",
+  "roadmap.md": "5e8dfcde0fe6ee7c5ce6d1a07762f1df06679d8a07fb437246af843fb166cff7",
   "src/lib/AGENTS.md": "15bffec679d8a063be59b9a622fa10e97df842191d91a6402fda4630cab7fe8d",
   "src/lib/__tests__/email-job.test.ts": "a5d9370a9ec8d35c3f66c85550e52feac936608b6ad8b39b9b79a1d1fd2e5407",
-  "src/lib/__tests__/email-safety-migration.test.ts": "946db37e80165d50f92a45036a65a034243cd5c1aa24a7ff7a8e156d88e1ffcc",
+  "src/lib/__tests__/email-safety-migration.test.ts": "80f4ecc1105aff2cf32096905bd4e4e986adccbfd52ed5fbb3cd85f84275a55b",
   "src/lib/__tests__/email-safety.test.ts": "a34ec5df8acff1c71d3505922e7cc7b48ddb1d138c621f8b43ff5c7e7594f8e5",
   "src/lib/__tests__/email-sender-boundary.test.ts": "49b4eba14d0245cf12382b33cf7c9e1fcd8a011926ff33c051ad093be4f94846",
   "src/lib/__tests__/owner-progress-demo.test.ts": "96e8f1c44a7e7dea9f35a34f3734dfc840ce9ec7ffe90e4e2aa3842f074e680a",
@@ -23,5 +23,6 @@
   "src/lib/owner-progress-alerts.server.ts": "58617db8627ca1330bedc76d2684df12eaac7d3a42445ed7ae44b8bb85b0e3e2",
   "src/lib/owner-welcome.server.ts": "e140ee32bb0614091a13fe41d19123e2cb58030553d2901ea24c89c13452b8fa",
   "src/lib/staff-notify.server.ts": "1631fb3525623997a2c08c6b3b1ca5f3674320e1700b40462398e5c3322575d6",
-  "src/routes/api/public/hooks/owner-notify.ts": "9c4a5a790bece1d3c02c670351bc50fbbc6dd39b75f43d2a0d2cdddc3d0e3d0c"
+  "src/routes/api/public/hooks/owner-notify.ts": "9c4a5a790bece1d3c02c670351bc50fbbc6dd39b75f43d2a0d2cdddc3d0e3d0c",
+  "docs/pending/email-job-release/0154_block_demo_owner_notification_trigger.sql": "1acfac8a567972b687e63cea4e8b4c2aed8533165c6db27eb2a93827b801fbb8"
 }

@@ -1,3 +1,5 @@
+> **Oct 20 Step 2 update:** The safety function is applied as `0151_0152_email_delivery_allowed_function`; all 11 prior function checks passed and temporary EXECUTE permission was revoked. Pending trigger: `0154_block_demo_owner_notification_trigger.sql`. Pending audit: `0155_email_job_run_audit.sql` (formerly 0153, NOT authorized). Combined `0156_superseded_email_delivery_safety.sql` is historical and MUST NOT be applied. Earlier preparation evidence below is historical, not current authorization.
+
 # Emily — email job release preparation
 
 **Prepared only — NOT approved or ready to release.** No publishing, migration application, database writes, schedules, provider calls, emails, retries, accounts, seats or secrets were changed. All database calls in this preparation were read-only SELECT queries. There were therefore no database test transactions to roll back.
@@ -6,7 +8,7 @@
 
 The available database read tool permits SELECT only; the data-change tool permits insert/update/delete only. Schema changes require the migration tool, which applies them and is not a rollback-only test runner. The sandbox's restricted database role cannot execute these functions or schema changes. No attempt was made to bypass these restrictions. **Step 2's actual application/function-call tests and Step 3's real-database retest are Not verified.**
 
-Two exact-file test scripts are prepared beside this report: `test-0152-rollback.sql` and `test-0153-rollback.sql`. Each has its own BEGIN, SET LOCAL lock_timeout='3s', SET LOCAL statement_timeout='30s', exact prepared migration contents, assertions and final ROLLBACK. A privileged transaction-capable runner must stop on any error and roll back/disconnect even if the batch aborts; it must not use migration tooling. Scripts insert/update only the new email_job_runs audit table, never notification/email_log rows, and contain no network/schedule calls.
+Two exact-file test scripts are prepared beside this report: `test-0156-rollback.sql` and `test-0155-rollback.sql`. Each has its own BEGIN, SET LOCAL lock_timeout='3s', SET LOCAL statement_timeout='30s', exact prepared migration contents, assertions and final ROLLBACK. A privileged transaction-capable runner must stop on any error and roll back/disconnect even if the batch aborts; it must not use migration tooling. Scripts insert/update only the new email_job_runs audit table, never notification/email_log rows, and contain no network/schedule calls.
 
 ## 1. Migration log restored
 
@@ -65,12 +67,12 @@ James has an enabled canonical account and ARHA profile address; absent preferen
 
 ## 5. Ordered release list — future approval required
 
-### 1. Apply prepared 0152
+### 1. Safety function applied; apply only separate 0154 trigger under Step 2 approval
 Changes: service-only email_delivery_allowed record/account/domain guard, private source guard and owner-notification demo/test suppression trigger; added Handoff mapping. No backfill, schedule or retained test records.
 
 Undo: safest operational rollback is keep schedule off and retain the safety guard. If an approved correction is needed, replace the affected function/trigger through a corrective migration; do not remove demo protections to resume delivery. No destructive teardown script is prepared/authorized.
 
-### 2. Apply prepared 0153
+### 2. Apply prepared 0155 audit (formerly 0153; separate approval required)
 Changes: email_job_runs, email_log run/part attribution columns, owner_notifications run ID, guarded start/part/finish RPCs; modifies the existing owner callback only to suppress immediate callbacks for run-attributed alerts, preserving stored URL/key.
 
 Undo: keep schedule off; preserve audit table/columns/history. A reviewed corrective migration can restore the prior callback condition if needed while retaining 0152 protections; never drop audit objects/data. Interrupted unfinished runs require staff review, not blind retry. Capture prior function definition securely at release without exposing credential-bearing contents.
