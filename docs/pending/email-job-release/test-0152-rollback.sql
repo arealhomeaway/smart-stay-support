@@ -32,6 +32,7 @@ BEGIN
     WHEN 'property' THEN 'properties' WHEN 'work_order' THEN 'work_orders'
     WHEN 'onboarding_task' THEN 'onboarding_tasks' WHEN 'work_item' THEN 'work_items'
     WHEN 'help_ticket' THEN 'help_tickets' WHEN 'approval' THEN 'approvals'
+    WHEN 'handoff' THEN 'handoffs'
     WHEN 'claim' THEN 'claims' WHEN 'vendor_org' THEN 'vendor_orgs'
     WHEN 'onboarding_project' THEN 'onboarding_projects' WHEN 'owner_review' THEN 'owner_reviews'
     WHEN 'financial_request' THEN 'financial_requests' ELSE NULL END;
