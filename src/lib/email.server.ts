@@ -174,7 +174,7 @@ async function logDelivery(entry: {
 }) {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.from("email_log").insert({
+    const saved = await supabaseAdmin.from("email_log").insert({
       recipient: entry.recipient,
       subject: entry.subject.slice(0, 300),
       purpose: entry.purpose,
@@ -199,8 +199,10 @@ async function logDelivery(entry: {
       sent_at: entry.status === "sent" ? new Date().toISOString() : null,
       ...(entry.jobRunId ? { email_job_run_id: entry.jobRunId, email_job_part: entry.jobPart ?? null } : {}),
     } as never);
+    if (saved.error) throw new Error("Email delivery audit could not be recorded.");
   } catch (err) {
     console.error("Could not write to email_log:", err);
+    if (entry.jobRunId) throw new Error("Email delivery audit unavailable; stop the run and review before retrying.");
   }
 }
 
@@ -354,7 +356,6 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
     attempts++;
     try {
       const res = await fetch(`${GATEWAY_URL}${path}`, {
-        signal: AbortSignal.timeout(20000),
         method: "POST",
         headers: {
           Authorization: `Bearer ${cfg.lovableKey}`,

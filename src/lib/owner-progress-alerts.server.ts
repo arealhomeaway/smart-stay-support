@@ -171,7 +171,7 @@ export async function evaluateProgramAlerts(supabase: Client, programId: string,
       sms_status: "skipped",
       ...(jobRunId ? { email_job_run_id: jobRunId } : {}),
     } as never);
-    if (insert.error) continue;
+    if (insert.error) throw insert.error;
 
     await supabase.from("owner_alert_log").insert({
       program_id: programId,

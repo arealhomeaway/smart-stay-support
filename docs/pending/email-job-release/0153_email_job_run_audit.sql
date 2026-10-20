@@ -19,18 +19,22 @@ BEGIN
  INSERT INTO public.email_job_runs DEFAULT VALUES RETURNING id INTO result; RETURN result;
 END $$;
 CREATE OR REPLACE FUNCTION public.record_email_job_part(_run_id uuid,_part text,_result jsonb,_errors jsonb)
-RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp AS $$
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
+BEGIN
  UPDATE public.email_job_runs SET parts=parts || jsonb_build_object(_part,_result),errors=_errors
  WHERE id=_run_id AND finished_at IS NULL;
+ IF NOT FOUND THEN RAISE EXCEPTION 'Run is missing or already finished'; END IF;
+END
 $$;
 CREATE OR REPLACE FUNCTION public.finish_email_job_run(_run_id uuid,_errors jsonb)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
 DECLARE counts jsonb; result jsonb;
 BEGIN
- SELECT coalesce(jsonb_object_agg(part,n),'{}') INTO counts FROM
+ SELECT '{"progress":0,"deadlines_and_vendor_reminders":0,"owner":0,"staff":0,"scheduled":0,"welcomes":0}'::jsonb || coalesce(jsonb_object_agg(part,n),'{}') INTO counts FROM
    (SELECT email_job_part AS part,count(*) AS n FROM public.email_log
      WHERE email_job_run_id=_run_id AND status='sent' GROUP BY email_job_part) s;
  UPDATE public.email_job_runs SET finished_at=now(),errors=_errors,email_counts=counts WHERE id=_run_id AND finished_at IS NULL;
+ IF NOT FOUND THEN RAISE EXCEPTION 'Run is missing or already finished'; END IF;
  SELECT to_jsonb(r) INTO result FROM public.email_job_runs r WHERE id=_run_id; RETURN result;
 END $$;
 REVOKE ALL ON FUNCTION public.begin_email_job_run(),public.record_email_job_part(uuid,text,jsonb,jsonb),public.finish_email_job_run(uuid,jsonb) FROM PUBLIC,anon,authenticated;

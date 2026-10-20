@@ -14,6 +14,8 @@ export async function runEmailJob(db: SupabaseClient, parts: Part[]) {
     try {
       const result = await part.run(runId);
       results[part.name] = result;
+      if (result && typeof result === "object" && "ok" in result && result.ok === false)
+        errors.push(`${part.name}: reported an unsuccessful result`);
       if (result && typeof result === "object" && "notes" in result && Array.isArray(result.notes)) {
         errors.push(...result.notes.map((note) => `${part.name}: ${String(note)}`));
       }
@@ -24,8 +26,7 @@ export async function runEmailJob(db: SupabaseClient, parts: Part[]) {
       _run_id: runId, _part: part.name, _result: results[part.name] ?? null, _errors: errors,
     } as never);
     if (saved.error) {
-      errors.push("Run audit failed; remaining work stopped.");
-      break;
+      throw new Error("Run audit failed; unfinished run retained and remaining work stopped. Do not retry automatically.");
     }
     if (errors.length) break;
   }
