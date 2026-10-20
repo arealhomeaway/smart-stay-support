@@ -1065,6 +1065,20 @@
       "when": 1792508992857,
       "tag": "0151_0152_email_delivery_allowed_function",
       "breakpoints": true
+    },
+    {
+      "idx": 152,
+      "version": "7",
+      "when": 1792509383954,
+      "tag": "0152_temp_grant_email_delivery_allowed_test",
+      "breakpoints": true
+    },
+    {
+      "idx": 153,
+      "version": "7",
+      "when": 1792509414756,
+      "tag": "0153_revoke_temp_email_delivery_allowed_test",
+      "breakpoints": true
     }
   ]
 }
