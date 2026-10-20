@@ -135,7 +135,10 @@ export function candidateAlerts(agg: ProgramAggregate): Candidate[] {
  * Evaluates one program and queues any owner alert that is due. Returns the
  * alert kinds sent.
  */
-export async function evaluateProgramAlerts(supabase: Client, programId: string) {
+export async function evaluateProgramAlerts(supabase: Client, programId: string, jobRunId?: string) {
+  const context = await supabase.from("owner_programs").select("is_demo").eq("id", programId).single();
+  if (context.error || !context.data) throw new Error("Program delivery context unavailable.");
+  const isDemo = context.data.is_demo !== false;
   const agg = await loadProgramAggregate(supabase, programId);
   if (!["active", "target_reached"].includes(agg.program.status)) return { sent: [] as string[] };
 
@@ -163,8 +166,10 @@ export async function evaluateProgramAlerts(supabase: Client, programId: string)
       title: c.title,
       body: c.body,
       action_path: "/owner",
-      email_status: agg.program.notifyEmail ? "pending" : "skipped",
+      is_demo: isDemo,
+      email_status: !isDemo && agg.program.notifyEmail ? "pending" : "skipped",
       sms_status: "skipped",
+      ...(jobRunId ? { email_job_run_id: jobRunId } : {}),
     });
     if (insert.error) continue;
 
@@ -289,7 +294,7 @@ export async function syncCoverageAlerts(supabase: Client, agg: ProgramAggregate
 }
 
 /** Runs the daily evaluation across every active program. */
-export async function evaluateAllPrograms(supabase: Client) {
+export async function evaluateAllPrograms(supabase: Client, jobRunId?: string) {
   const programs = await supabase
     .from("owner_programs")
     .select("id")
@@ -297,13 +302,15 @@ export async function evaluateAllPrograms(supabase: Client) {
   if (programs.error) throw programs.error;
 
   let sent = 0;
+  const notes: string[] = [];
   for (const p of programs.data ?? []) {
     try {
-      const result = await evaluateProgramAlerts(supabase, p.id);
+      const result = await evaluateProgramAlerts(supabase, p.id, jobRunId);
       sent += result.sent.length;
     } catch (err) {
       console.error("progress alert evaluation failed", p.id, err);
+      notes.push(err instanceof Error ? err.message : "Progress evaluation failed");
     }
   }
-  return { programs: (programs.data ?? []).length, sent };
+  return { programs: (programs.data ?? []).length, sent, notes };
 }

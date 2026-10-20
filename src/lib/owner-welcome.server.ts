@@ -43,7 +43,7 @@ export async function welcomeContext(db: SupabaseClient, programId: string, owne
   return { ownerName: (profile.data as { full_name?: string } | null)?.full_name ?? null, propertyNames: names, hoursOpen };
 }
 
-export async function drainOwnerWelcomes(db: SupabaseClient, limit = 20) {
+export async function drainOwnerWelcomes(db: SupabaseClient, limit = 20, jobRunId?: string) {
   const tpl = await loadWelcomeTemplate(db);
   if (tpl.review !== "approved") return { considered: 0, sent: 0, waiting: "wording_not_approved" as const };
   const { data: due } = await db
@@ -82,6 +82,7 @@ export async function drainOwnerWelcomes(db: SupabaseClient, limit = 20) {
       bodyText: msg.body,
       singleAttempt: true,
       preserveUncertainty: true,
+      ...(jobRunId ? { jobRunId, jobPart: "welcomes" } : {}),
     });
     await db.from("owner_welcome_messages").update({
       status: result.status === "sent" ? "sent" : result.deliveryUncertain ? "sending" : "failed",

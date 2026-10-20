@@ -119,7 +119,7 @@ export async function sweepDeadlineAlerts(supabase: Client, now = new Date()) {
       // not mark the actor nullable, but the function accepts NULL.
       _actor_id: null as unknown as string,
       // Urgent items earn an email; the rest stay in the in-app inbox.
-      _email: alert.priority === "urgent",
+      _email: !alert.isDemo && alert.priority === "urgent",
       _is_demo: alert.isDemo,
     });
     if (error) notes.push(error.message);

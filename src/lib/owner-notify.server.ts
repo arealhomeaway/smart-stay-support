@@ -46,6 +46,7 @@ async function sendEmail(
   // The wording wrapper the onboarding director controls. The facts stay ours.
   copy?: { copy: OwnerEmailCopy; ownerName: string | null } | null,
   context?: { url: string; propertyName: string | null; item: string | null },
+  notification?: { id: string; isDemo: boolean; jobRunId?: string },
 ) {
   const { sendEmail: send, emailShell } = await import("./email.server");
   const { refTag } = await import("./intake.server");
@@ -77,6 +78,8 @@ async function sendEmail(
     ),
     purpose: "owner_alert",
     ticketId: ticketId ?? null,
+    ...(notification ? { entity: { type: "owner_notification", id: notification.id }, isDemo: notification.isDemo } : {}),
+    ...(notification?.jobRunId ? { jobRunId: notification.jobRunId, jobPart: "owner" } : {}),
   });
 }
 
@@ -93,7 +96,7 @@ export function channelStatus() {
  * Sends every alert still waiting on a channel. Safe to run on a schedule.
  * Pass `onlyId` to deliver one notification the moment it is created.
  */
-export async function drainOwnerAlerts(supabase: Client, limit = 50, onlyId?: string) {
+export async function drainOwnerAlerts(supabase: Client, limit = 50, onlyId?: string, jobRunId?: string) {
   let query = supabase
     .from("owner_notifications")
     .select(
@@ -213,6 +216,7 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50, onlyId?: st
               ownerName: program?.owner_name ?? null,
             },
             { url: ownerLink(row.action_path), propertyName, item },
+            { id: row.id, isDemo: row.is_demo, ...(jobRunId ? { jobRunId } : {}) },
           );
           patch.email_status = result.status;
           if (result.error) patch.delivery_error = result.error;

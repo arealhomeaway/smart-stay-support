@@ -13,6 +13,7 @@
  */
 
 import { authorizedMailbox, sendMailPath } from "./mailbox-allowlist.server";
+import { verifyEmailSafety } from "./email-safety.server";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/microsoft_outlook";
 
@@ -115,6 +116,9 @@ export type SendEmailResult =
   { status: "sent"; error: null } | { status: "skipped" | "failed"; error: string; deliveryUncertain?: boolean };
 
 type SendInput = {
+  isDemo?: boolean;
+  jobRunId?: string;
+  jobPart?: string;
   to: string;
   subject: string;
   html: string;
@@ -149,6 +153,8 @@ function sleep(ms: number) {
 }
 
 async function logDelivery(entry: {
+  jobRunId?: string;
+  jobPart?: string;
   recipient: string;
   subject: string;
   purpose: string;
@@ -191,6 +197,7 @@ async function logDelivery(entry: {
         contentType: a.contentType,
       })),
       sent_at: entry.status === "sent" ? new Date().toISOString() : null,
+      ...(entry.jobRunId ? { email_job_run_id: entry.jobRunId, email_job_part: entry.jobPart ?? null } : {}),
     });
   } catch (err) {
     console.error("Could not write to email_log:", err);
@@ -204,6 +211,18 @@ async function logDelivery(entry: {
 export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
   const purpose = input.purpose ?? "general";
   const to = input.to?.trim() ?? "";
+
+  const safetyError = await verifyEmailSafety(input);
+  if (safetyError) {
+    await logDelivery({
+      recipient: to, subject: input.subject, purpose,
+      replyTo: input.replyTo ?? null, ticketId: input.ticketId ?? null,
+      entity: input.entity ?? null, sentBy: input.sentBy ?? null,
+      status: "skipped", attempts: 0, error: safetyError,
+      ...(input.jobRunId ? { jobRunId: input.jobRunId, jobPart: input.jobPart ?? "unknown" } : {}),
+    });
+    return { status: "skipped", error: safetyError };
+  }
 
   if (!isEmailAddress(to)) {
     const error = "That is not a valid email address.";
@@ -360,6 +379,7 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
           bcc: input.bcc ?? [],
           attachments: input.attachments ?? [],
           status: "sent",
+          ...(input.jobRunId ? { jobRunId: input.jobRunId, jobPart: input.jobPart ?? "unknown" } : {}),
           attempts,
           error: null,
         });
@@ -394,6 +414,7 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
     replyTo,
     ticketId: input.ticketId ?? null,
     status: "failed",
+    ...(input.jobRunId ? { jobRunId: input.jobRunId, jobPart: input.jobPart ?? "unknown" } : {}),
     attempts,
     error: lastError,
   });

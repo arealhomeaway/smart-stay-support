@@ -277,7 +277,7 @@ export async function parkScheduledEmail(email: ParkedEmail, sentBy: string) {
  * Sends every parked message whose time has come. Safe to run repeatedly —
  * a row is claimed before it is sent, so a second pass never doubles up.
  */
-export async function drainScheduledEmails(now = new Date()) {
+export async function drainScheduledEmails(now = new Date(), jobRunId?: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { sendEmail, emailShell } = await import("./email.server");
 
@@ -316,6 +316,7 @@ export async function drainScheduledEmails(now = new Date()) {
       bodyText: body,
       sentBy: (row["sent_by"] as string | null) ?? null,
       templateId: (row["template_id"] as string | null) ?? null,
+      ...(jobRunId ? { jobRunId, jobPart: "scheduled" } : {}),
     });
 
     // sendEmail writes its own delivery record; this row becomes its receipt.
