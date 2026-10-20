@@ -28,3 +28,5 @@
 - Finance expense, Property Activity file and review-identity rules: see `src/lib/AGENTS.md`.
 - Vendor sourcing/dispatch/execution rules: see `src/lib/AGENTS.md`.
 - Active Owner hours/enablement rules: see `drizzle/AGENTS.md`.
+
+- Owner notification delivery safety is enforced by the BEFORE INSERT/UPDATE block_demo_owner_notification_delivery trigger, before the AFTER INSERT network callback; demo/test alerts remain in-app only. Why: every producer shares one pre-delivery guard.
