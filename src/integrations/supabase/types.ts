@@ -3251,6 +3251,33 @@ export type Database = {
           },
         ]
       }
+      email_job_runs: {
+        Row: {
+          email_counts: Json
+          errors: Json
+          finished_at: string | null
+          id: string
+          parts: Json
+          started_at: string
+        }
+        Insert: {
+          email_counts?: Json
+          errors?: Json
+          finished_at?: string | null
+          id?: string
+          parts?: Json
+          started_at?: string
+        }
+        Update: {
+          email_counts?: Json
+          errors?: Json
+          finished_at?: string | null
+          id?: string
+          parts?: Json
+          started_at?: string
+        }
+        Relationships: []
+      }
       email_log: {
         Row: {
           attachments: Json
@@ -3259,6 +3286,8 @@ export type Database = {
           body: string | null
           cc: string[]
           created_at: string
+          email_job_part: string | null
+          email_job_run_id: string | null
           entity_id: string | null
           entity_type: string | null
           error_message: string | null
@@ -3284,6 +3313,8 @@ export type Database = {
           body?: string | null
           cc?: string[]
           created_at?: string
+          email_job_part?: string | null
+          email_job_run_id?: string | null
           entity_id?: string | null
           entity_type?: string | null
           error_message?: string | null
@@ -3309,6 +3340,8 @@ export type Database = {
           body?: string | null
           cc?: string[]
           created_at?: string
+          email_job_part?: string | null
+          email_job_run_id?: string | null
           entity_id?: string | null
           entity_type?: string | null
           error_message?: string | null
@@ -3328,6 +3361,13 @@ export type Database = {
           to_additional?: string[]
         }
         Relationships: [
+          {
+            foreignKeyName: "email_log_email_job_run_id_fkey"
+            columns: ["email_job_run_id"]
+            isOneToOne: false
+            referencedRelation: "email_job_runs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "email_log_template_id_fkey"
             columns: ["template_id"]
@@ -7412,6 +7452,7 @@ export type Database = {
           created_at: string
           delivered_at: string | null
           delivery_error: string | null
+          email_job_run_id: string | null
           email_status: string
           id: string
           is_demo: boolean
@@ -7431,6 +7472,7 @@ export type Database = {
           created_at?: string
           delivered_at?: string | null
           delivery_error?: string | null
+          email_job_run_id?: string | null
           email_status?: string
           id?: string
           is_demo?: boolean
@@ -7450,6 +7492,7 @@ export type Database = {
           created_at?: string
           delivered_at?: string | null
           delivery_error?: string | null
+          email_job_run_id?: string | null
           email_status?: string
           id?: string
           is_demo?: boolean
@@ -7464,6 +7507,13 @@ export type Database = {
           title?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "owner_notifications_email_job_run_id_fkey"
+            columns: ["email_job_run_id"]
+            isOneToOne: false
+            referencedRelation: "email_job_runs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "owner_notifications_program_id_fkey"
             columns: ["program_id"]
@@ -13935,6 +13985,7 @@ export type Database = {
         Args: { _actor_id: string; _input: Json }
         Returns: Json
       }
+      begin_email_job_run: { Args: never; Returns: string }
       can_correct_actual_closing: { Args: never; Returns: boolean }
       can_manage_credentials: { Args: { _user_id: string }; Returns: boolean }
       can_read_completed_onboarding_document: {
@@ -14234,6 +14285,10 @@ export type Database = {
       }
       expense_authorization_status: {
         Args: { _expense: string }
+        Returns: Json
+      }
+      finish_email_job_run: {
+        Args: { _errors: Json; _run_id: string }
         Returns: Json
       }
       has_role: {
@@ -14621,6 +14676,10 @@ export type Database = {
       }
       record_claim_leadership_decision: {
         Args: { _claim_id: string; _decision: string }
+        Returns: undefined
+      }
+      record_email_job_part: {
+        Args: { _errors: Json; _part: string; _result: Json; _run_id: string }
         Returns: undefined
       }
       record_onboarding_stage_capture: {
