@@ -1,9 +1,9 @@
 # Roadmap (checkpoint Oct 6 2026)
 
 ## Oct 20 — Approved release preparation (no publish, schedules, sends, or retained DB changes)
-- [ ] Restore journal/file match; inspect unjournaled migration implications.
-- [ ] Validate prepared SQL against real schema; execute rollback-only tests only through a supported transactional tool.
-- [ ] Fix only demonstrated defects, run fresh-process suite, check automatic build, refresh forecast and ordered release/rollback list.
+- [x] Restore journal/file match; indices/tags unique, no missing files; sole unjournaled Opportunity SQL is a comment-only placeholder.
+- [ ] Real-database rollback execution BLOCKED: available read tool is SELECT-only, data tool is DML-only, migration tool commits schema changes. Real schema/preconditions/anchor inspected; test scripts prepared, not executed.
+- [x] Fixed proven missing Handoff mapping in prepared 0152; 1535 pass/0 fail/5 skip in 234 fresh processes; automatic build OK; refreshed forecast and ordered release/rollback report prepared.
 
 ## Oct 20 — Email job safety repair (build/test only; no publish or schedule changes)
 - [x] Block demo/test email at progress source and shared sender; isolated safety/sender tests, no provider calls.
