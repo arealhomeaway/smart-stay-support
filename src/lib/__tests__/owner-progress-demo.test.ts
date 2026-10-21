@@ -1,4 +1,8 @@
-import { expect, it, mock } from "bun:test";
+import { afterAll, expect, it, mock } from "bun:test";
+
+// mock.module is process-global: restore it so sibling test files that import
+// the real owner-participation.server (e.g. owner-response-report) are unaffected.
+afterAll(() => mock.restore());
 let demo = true;
 const inserted: Record<string, unknown>[] = [];
 mock.module("../owner-participation.server", () => ({
