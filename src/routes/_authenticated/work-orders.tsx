@@ -6,17 +6,17 @@ import { useRole } from "@/hooks/useRole";
 export const Route = createFileRoute("/_authenticated/work-orders")({
   head: () => ({
     meta: [
-      { title: "Work orders — Resolve" },
+      { title: "Work Orders — Resolve" },
       {
         name: "description",
         content:
           "Maintenance execution at ARHA: emergency mitigation, quotes, owner approval authority, warranty routing, vendor commitments and closure evidence.",
       },
-      { property: "og:title", content: "Work orders — Resolve" },
+      { property: "og:title", content: "Work Orders — Resolve" },
       {
         property: "og:description",
         content:
-          "ARHA maintenance work orders with derived authority, warranty routing and closure gates.",
+          "ARHA maintenance Work Orders with derived authority, warranty routing and closure gates.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -25,11 +25,11 @@ export const Route = createFileRoute("/_authenticated/work-orders")({
   component: () => (
     // Same capability the navigation uses, so nobody can reach by URL a
     // portal Resolve does not show them.
-    <RequireCapability capability="work_orders_internal" title="Work orders">
+    <RequireCapability capability="work_orders_internal" title="Work Orders">
       <WorkOrdersLayout />
     </RequireCapability>
   ),
-  errorComponent: () => <p className="text-muted-foreground">Work orders could not be loaded.</p>,
+  errorComponent: () => <p className="text-muted-foreground">Work Orders could not be loaded.</p>,
 });
 
 function WorkOrdersLayout() {

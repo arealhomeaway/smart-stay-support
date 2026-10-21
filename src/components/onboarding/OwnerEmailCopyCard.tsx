@@ -35,7 +35,7 @@ const SAMPLE = {
   },
   alert: {
     title: "Property work update",
-    body: "A property matter was recorded for your home. Open your owner portal to review it.",
+    body: "We recorded an update about your home. Open your owner portal to review it.",
   },
 };
 

@@ -2,7 +2,7 @@
  * The one shared status vocabulary for Resolve.
  *
  * Every lens uses these badges so a state means the same thing — and looks the
- * same — on Home, in a queue, on a ticket, on a work order and in Oversight.
+ * same — on Home, in a queue, on a ticket, on a Work Order and in Oversight.
  * Colour never carries the meaning on its own: each badge is a dot plus a word.
  *
  * Pure presentation. No data access, no permissions, no routing.

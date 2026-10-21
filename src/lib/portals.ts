@@ -106,7 +106,7 @@ export const PORTAL_REGISTRY: PortalDefinition[] = [
   {
     id: "executive",
     name: "Executive Oversight",
-    audience: "Platform Owners",
+    audience: "Admins",
     description:
       "Monitor company health, departmental performance, operational risks, vendor performance, homeowner experience, financial indicators, and cross-department accountability.",
     icon: Gauge,

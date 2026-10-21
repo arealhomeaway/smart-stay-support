@@ -29,7 +29,7 @@ export function RequireCapability({
         <ShieldAlert className="mx-auto size-8 text-muted-foreground" />
         <h1 className="font-display text-xl font-semibold">{title}</h1>
         <p className="text-sm text-muted-foreground">
-          Ask a Platform Owner or Supervisor if you need this added to your role.
+          Ask a Admin or Supervisor if you need this added to your role.
         </p>
         <Button asChild variant="outline">
           <Link to={landing as never}>Back to my work</Link>

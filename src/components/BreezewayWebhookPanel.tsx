@@ -30,7 +30,7 @@ const OUTCOME_LABELS: Record<string, string> = {
   invalid: "Ignored — unusable payload",
   // Not a signature check: this is our own authenticated re-read of the task
   // against the Breezeway API failing or returning nothing.
-  verify_failed: "Dropped — Breezeway work order lookup failed",
+  verify_failed: "Dropped — Breezeway Work Order lookup failed",
   // The write to our own event log failed (not a Breezeway or auth problem).
   // Never reported as processed/duplicate/etc. when this happens.
   persist_failed: "Not recorded — database write failed",
@@ -50,7 +50,7 @@ function Verdict({ ok, children }: { ok: boolean; children: React.ReactNode }) {
 }
 
 /**
- * Admin controls for the single Breezeway work order webhook used by the Fitzgerald
+ * Admin controls for the single Breezeway Work Order webhook used by the Fitzgerald
  * pilot. The receiver's secret path is never shown here — only the host.
  */
 export function BreezewayWebhookPanel() {
@@ -118,7 +118,7 @@ export function BreezewayWebhookPanel() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Antenna className="h-4 w-4" /> Breezeway work order webhook (pilot)
+              <Antenna className="h-4 w-4" /> Breezeway Work Order webhook (pilot)
             </CardTitle>
             <CardDescription>
               One subscription, company-wide delivery. Only tasks for the approved beta properties
@@ -249,7 +249,7 @@ export function BreezewayWebhookPanel() {
               <p className="font-medium">Live deliveries: {status.liveTotal}</p>
               {status.liveTotal === 0 ? (
                 <p className="text-muted-foreground">
-                  Nothing delivered yet. Waiting for a naturally occurring Breezeway work order
+                  Nothing delivered yet. Waiting for a naturally occurring Breezeway Work Order
                   event.
                 </p>
               ) : (

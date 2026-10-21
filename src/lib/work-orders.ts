@@ -1012,7 +1012,7 @@ export function matchesManagerFilter(
   }
 }
 
-/** Homes with more than one work order inside the window. */
+/** Homes with more than one Work Order inside the window. */
 export function repeatMaintenanceProperties(
   rows: Array<{ property_id?: string | null; created_at?: string | null }>,
   days = 90,

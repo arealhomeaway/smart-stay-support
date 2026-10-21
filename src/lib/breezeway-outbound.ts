@@ -25,7 +25,7 @@ export const OUTBOUND_PILOT_HOME_ID = "1473933";
 /**
  * Breezeway's own department enum, exactly as the create-task API accepts it.
  * Sending anything else (the old "cleaning"/"other") is silently dropped by
- * Breezeway, so the work order arrives with no department at all.
+ * Breezeway, so the Work Order arrives with no department at all.
  */
 export const BREEZEWAY_DEPARTMENTS = [
   "housekeeping",

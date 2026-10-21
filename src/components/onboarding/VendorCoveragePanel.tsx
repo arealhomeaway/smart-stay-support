@@ -48,7 +48,7 @@ export function VendorCoveragePanel({ propertyId }: { propertyId: string }) {
           <CardDescription>
             Who can work at this home
             {data.zip ? ` (ZIP ${data.zip})` : ""} — cleared vendors first, with pricing tier and a
-            backup. Look-up only; dispatch still happens from the work order.
+            backup. Look-up only; dispatch still happens from the Work Order.
           </CardDescription>
         </div>
         <Input

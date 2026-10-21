@@ -12,7 +12,7 @@ import {
 } from "@/lib/taxonomy";
 
 describe("operational taxonomy", () => {
-  it("resolves historic free-text work order categories onto trades", () => {
+  it("resolves historic free-text Work Order categories onto trades", () => {
     expect(normalizeTrade("Handyman")?.value).toBe("handyman");
     expect(normalizeTrade("maintenance")?.value).toBe("handyman");
     expect(normalizeTrade("Roof")?.value).toBe("roofing");

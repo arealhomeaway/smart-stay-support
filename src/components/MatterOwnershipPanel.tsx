@@ -212,7 +212,7 @@ export function MatterOwnershipPanel({
               Auto-assigned
             </Badge>
           )}
-          {ticket.pending_handoff_to && <Badge variant="outline">Handoff pending</Badge>}
+          {ticket.pending_handoff_to && <Badge variant="outline">Reassignment pending</Badge>}
           {ticket.escalation_level && <Badge variant="danger">Escalated</Badge>}
           {ticket.archived_at && <Badge variant="outline">Archived</Badge>}
         </div>

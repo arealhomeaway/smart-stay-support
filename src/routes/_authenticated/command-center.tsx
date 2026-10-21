@@ -39,7 +39,7 @@ export const Route = createFileRoute("/_authenticated/command-center")({
     ],
   }),
   component: () => (
-    <RequireCapability capability="command_center" title="Command center is for Platform Owners">
+    <RequireCapability capability="command_center" title="Command center is for Admins">
       <CommandCenter />
     </RequireCapability>
   ),
@@ -90,7 +90,7 @@ function CommandCenter() {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Platform Owner"
+        eyebrow="Admin"
         title="Executive Command Center"
         description="Exceptions first. Every figure is calculated from live Resolve records — nothing is estimated. Where a source doesn't exist yet, the metric says so and names what's missing."
       />

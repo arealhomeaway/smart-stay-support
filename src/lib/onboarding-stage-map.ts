@@ -79,7 +79,7 @@ const RULES: { stage: MasterStage; match: RegExp }[] = [
   {
     stage: "fieldwork_setup_review",
     match:
-      /\b(work order|install|inspection|staging|stage decor|clean|paint|carpet|landscap|pest|assembly|unbox|linens|repair work)\b/i,
+      /\b(Work Order|install|inspection|staging|stage decor|clean|paint|carpet|landscap|pest|assembly|unbox|linens|repair work)\b/i,
   },
   // The handoff meeting and everything around it.
   {

@@ -121,7 +121,7 @@ function normalizeDate(value: string | null | undefined) {
 /* ------------------------------------------------------------------ */
 
 /**
- * Mirrors CURRENT Breezeway work orders for one verified property.
+ * Mirrors CURRENT Breezeway Work Orders for one verified property.
  * Read-only against Breezeway; nothing is written back and no Ticket is made.
  */
 export async function syncPropertyWorkOrders(
@@ -208,7 +208,7 @@ export async function syncPropertyWorkOrders(
   return { ok: true, synced: tasks.length, removed: (stale.data ?? []).length };
 }
 
-/** Mirrored current work orders for one property. Never calls Breezeway. */
+/** Mirrored current Work Orders for one property. Never calls Breezeway. */
 export async function listPropertyWorkOrders(propertyId: string): Promise<BreezewayWorkOrder[]> {
   const db = await admin();
   const { data, error } = await db
@@ -216,7 +216,7 @@ export async function listPropertyWorkOrders(propertyId: string): Promise<Breeze
     .select(SELECT)
     .eq("property_id", propertyId)
     .order("scheduled_date", { ascending: true, nullsFirst: false });
-  if (error) throw new Error("Could not read the Breezeway work orders.");
+  if (error) throw new Error("Could not read the Breezeway Work Orders.");
   return ((data ?? []) as unknown as Row[]).map((r) => toWorkOrder(r));
 }
 
@@ -243,14 +243,14 @@ type RawComment = {
 };
 
 /**
- * Pulls Breezeway comments for one mirrored work order and deduplicates them
+ * Pulls Breezeway comments for one mirrored Work Order and deduplicates them
  * on the external comment id. A comment never creates a Ticket.
  */
 export async function syncWorkOrderComments(
   workOrderId: string,
 ): Promise<{ ok: boolean; message?: string; added: number; total: number }> {
   const wo = await getWorkOrder(workOrderId);
-  if (!wo) return { ok: false, message: "That work order is not in Resolve.", added: 0, total: 0 };
+  if (!wo) return { ok: false, message: "That Work Order is not in Resolve.", added: 0, total: 0 };
 
   let raw: RawComment[] = [];
   try {
@@ -362,10 +362,10 @@ export async function replyToWorkOrder(
   authorUserId: string,
 ): Promise<{ ok: boolean; message?: string; identityMode?: "staff" | "integration" }> {
   const wo = await getWorkOrder(workOrderId);
-  if (!wo) return { ok: false, message: "That work order is not in Resolve." };
+  if (!wo) return { ok: false, message: "That Work Order is not in Resolve." };
   if (!(await outboundEnabled()))
     return { ok: false, message: "Breezeway writes are switched off." };
-  if (!wo.propertyId) return { ok: false, message: "That work order has no Resolve property." };
+  if (!wo.propertyId) return { ok: false, message: "That Work Order has no Resolve property." };
   const gate = await propertyWriteEligibility(wo.propertyId);
   if (!gate.eligible) return { ok: false, message: gate.reason ?? "Property not eligible." };
 
@@ -462,9 +462,9 @@ function photoUrl(p: RawPhoto) {
 }
 
 /**
- * Mirrors the photos on one work order. Breezeway returns them on the task
+ * Mirrors the photos on one Work Order. Breezeway returns them on the task
  * payload (`GET /task/{id}`), so this is the per-task read rather than a
- * portfolio sweep — Operations opens a work order, and its photos are there.
+ * portfolio sweep — Operations opens a Work Order, and its photos are there.
  *
  * Uploading INTO Breezeway IS available and implemented below in
  * `uploadWorkOrderPhoto` (multipart POST /task/{id}/photos). An earlier audit
@@ -474,7 +474,7 @@ export async function syncWorkOrderPhotos(
   workOrderId: string,
 ): Promise<{ ok: boolean; message?: string; photos: number }> {
   const wo = await getWorkOrder(workOrderId);
-  if (!wo) return { ok: false, message: "That work order is not in Resolve.", photos: 0 };
+  if (!wo) return { ok: false, message: "That Work Order is not in Resolve.", photos: 0 };
 
   let raw: RawPhoto[] = [];
   try {
@@ -571,7 +571,7 @@ type UploadResult =
   | { ok: false; message: string };
 
 /**
- * Uploads ONE photo to the Breezeway task behind a mirrored work order.
+ * Uploads ONE photo to the Breezeway task behind a mirrored Work Order.
  *
  * Confirmed by Breezeway and verified live against our own account:
  *   POST /public/inventory/v1/task/{task_id}/photos
@@ -593,11 +593,11 @@ export async function uploadWorkOrderPhoto(
   actorLabel: string,
 ): Promise<UploadResult> {
   const wo = await getWorkOrder(workOrderId);
-  if (!wo) return { ok: false, message: "That work order is not in Resolve." };
+  if (!wo) return { ok: false, message: "That Work Order is not in Resolve." };
   if (!(await outboundEnabled()))
     return { ok: false, message: "Breezeway writes are switched off." };
-  if (!wo.propertyId) return { ok: false, message: "That work order has no Resolve property." };
-  if (!wo.breezewayTaskId) return { ok: false, message: "That work order has no Breezeway task." };
+  if (!wo.propertyId) return { ok: false, message: "That Work Order has no Resolve property." };
+  if (!wo.breezewayTaskId) return { ok: false, message: "That Work Order has no Breezeway task." };
   const gate = await propertyWriteEligibility(wo.propertyId);
   if (!gate.eligible)
     return { ok: false, message: gate.reason ?? "Property not eligible for Breezeway writes." };
@@ -765,9 +765,9 @@ async function outboundEnabled() {
 
 async function guard(workOrderId: string) {
   const wo = await getWorkOrder(workOrderId);
-  if (!wo) return { error: "That work order is not in Resolve." as const };
+  if (!wo) return { error: "That Work Order is not in Resolve." as const };
   if (!(await outboundEnabled())) return { error: "Breezeway writes are switched off." as const };
-  if (!wo.propertyId) return { error: "That work order has no Resolve property." as const };
+  if (!wo.propertyId) return { error: "That Work Order has no Resolve property." as const };
   const gate = await propertyWriteEligibility(wo.propertyId);
   if (!gate.eligible) return { error: gate.reason ?? "Property not eligible." };
   return { wo };
@@ -791,7 +791,7 @@ export async function updateWorkOrder(
   if ("error" in g) return { ok: false, message: g.error };
   const wo = g.wo!;
   const name = (patch.name ?? wo.name ?? "").trim();
-  if (!name) return { ok: false, message: "A work order needs a name." };
+  if (!name) return { ok: false, message: "A Work Order needs a name." };
   try {
     await breezewayRequest(`/task/${wo.breezewayTaskId}`, {
       method: "PATCH",
@@ -910,7 +910,7 @@ export async function refreshWorkOrder(
 
 /**
  * Deliberate escalation: turn a Breezeway-originated Work Order into a Resolve
- * Ticket. Never automatic — a mirrored work order or a vendor comment on its
+ * Ticket. Never automatic — a mirrored Work Order or a vendor comment on its
  * own is not a Ticket.
  */
 export async function linkWorkOrderToTicket(
@@ -922,7 +922,7 @@ export async function linkWorkOrderToTicket(
     .from("breezeway_work_orders")
     .update({ linked_ticket_id: ticketId, needs_attention: false } as never)
     .eq("id", workOrderId);
-  if (error) return { ok: false, message: "Could not link that work order to the ticket." };
+  if (error) return { ok: false, message: "Could not link that Work Order to the ticket." };
   return { ok: true };
 }
 
@@ -933,7 +933,7 @@ export async function acknowledgeWorkOrder(workOrderId: string): Promise<Lifecyc
     .from("breezeway_work_orders")
     .update({ needs_attention: false } as never)
     .eq("id", workOrderId);
-  return error ? { ok: false, message: "Could not update that work order." } : { ok: true };
+  return error ? { ok: false, message: "Could not update that Work Order." } : { ok: true };
 }
 
 /** Staged portfolio read. Bounded per pass so a portfolio sync is never a burst. */

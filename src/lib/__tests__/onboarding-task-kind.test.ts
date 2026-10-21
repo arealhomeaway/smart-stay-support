@@ -10,7 +10,7 @@ describe("what kind of work a step is", () => {
   });
 
   it("treats a dispatched job as vendor work and offers Breezeway", () => {
-    const step = { title: "Create work order for installation of locks" };
+    const step = { title: "Create Work Order for installation of locks" };
     expect(taskKind(step)).toBe("vendor");
     expect(showsBreezeway(step)).toBe(true);
   });

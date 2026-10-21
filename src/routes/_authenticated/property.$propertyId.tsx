@@ -731,7 +731,7 @@ function OperationsTab({ hub }: { hub: Hub }) {
         <CardContent className="space-y-2 text-sm">
           {ops.workOrders.length === 0 ? (
             <p className="text-muted-foreground">
-              No work orders have been dispatched for this home.
+              No Work Orders have been dispatched for this home.
             </p>
           ) : (
             ops.workOrders.map((w) => (

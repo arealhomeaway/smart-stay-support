@@ -213,7 +213,7 @@ function PropertiesPage() {
                 variant={showTest ? "secondary" : "ghost"}
                 onClick={() => setParam({ test: showTest ? undefined : true })}
               >
-                {showTest ? "Hide" : "Show"} QA / test homes ({testCount})
+                {showTest ? "Hide" : "Show"} practice homes ({testCount})
               </Button>
             )}
             <AddPropertyDialog />

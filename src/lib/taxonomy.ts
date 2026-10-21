@@ -2,7 +2,7 @@
  * Operational taxonomy — one shared category list.
  *
  * Tickets, Work Orders, Claims and Vendors all used to keep their own list of
- * "categories": the ticket list was coded (`maintenance`), the work order list
+ * "categories": the ticket list was coded (`maintenance`), the Work Order list
  * was free text (`Handyman`), the vendor list was a third set of labels. That
  * drift is why the same job read differently on three screens.
  *
@@ -208,7 +208,7 @@ export function tradeLabel(raw: string | null | undefined): string {
   return raw?.trim() ? String(raw) : "No trade set";
 }
 
-/** The category a work order inherits from its trade. */
+/** The category a Work Order inherits from its trade. */
 export function categoryForTrade(raw: string | null | undefined): CategoryCode | null {
   return normalizeTrade(raw)?.category ?? null;
 }
@@ -221,7 +221,7 @@ export const FIELD_GUIDANCE: Record<string, string> = {
   "ticket.category": "What kind of work this is. Pick the home's problem, not who will fix it.",
   "ticket.priority": "P1 urgent and unsafe, P2 same day, P3 planned. Supervisors set this.",
   "workOrder.trade": "The skill the vendor needs. The category is set from this for you.",
-  "workOrder.category": "Set from the trade — shown so tickets and work orders read the same.",
+  "workOrder.category": "Set from the trade — shown so tickets and Work Orders read the same.",
   "workOrder.phase": "Permanent fixes the problem. Mitigation only stops it getting worse.",
   "claim.type": "Who we are recovering the money from. Sets the evidence checklist.",
   "claim.category": "What kind of work caused the loss, using the same list as tickets.",

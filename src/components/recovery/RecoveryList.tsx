@@ -164,7 +164,7 @@ export function RecoveryRowCard({
               <StatusBadge tone="escalated">{OUTSIDE_POLICY_BADGE}</StatusBadge>
             ) : null}
             {overdue ? <StatusBadge tone="waiting">Guest update due</StatusBadge> : null}
-            {handoffPending(recovery) ? <Chip>Handoff not accepted</Chip> : null}
+            {handoffPending(recovery) ? <Chip>Reassignment not accepted</Chip> : null}
           </div>
           <p className="mt-1 text-sm font-medium text-foreground/90">
             {nextAction(recovery, { requirements })}

@@ -4,7 +4,7 @@
  * Month view answers "what is committed this month"; the timeline answers
  * "what is coming next". Conflicts — the same vendor or the same home booked
  * twice on one day — are derived from the schedule itself and shown where the
- * booking is, and every entry opens the work order it belongs to.
+ * booking is, and every entry opens the Work Order it belongs to.
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -189,14 +189,14 @@ function WorkOrderCalendar() {
       ) : timeline.length === 0 ? (
         <EmptyState
           title="Nothing scheduled from today onward"
-          hint="Set a schedule or a vendor arrival time on an open work order to see it here."
+          hint="Set a schedule or a vendor arrival time on an open Work Order to see it here."
         />
       ) : (
         timeline.map(({ day, entries: dayEntries }) => (
           <SectionCard
             key={day}
             title={usDate(day)}
-            description={`${dayEntries.length} work order${dayEntries.length === 1 ? "" : "s"}`}
+            description={`${dayEntries.length} Work Order${dayEntries.length === 1 ? "" : "s"}`}
           >
             <div className="space-y-2">
               {dayEntries.map((entry) => (
@@ -215,7 +215,7 @@ function WorkOrderCalendar() {
       {waiting.length > 0 ? (
         <SectionCard
           title="Waiting for a date"
-          description="Open work orders with neither a planned schedule nor a confirmed vendor arrival."
+          description="Open Work Orders with neither a planned schedule nor a confirmed vendor arrival."
         >
           <div className="space-y-1">
             {waiting.map((row) => (

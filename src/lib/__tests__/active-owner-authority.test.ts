@@ -2,9 +2,9 @@ import { describe, expect, it as test } from "bun:test";
 import { can } from "../permissions";
 
 // Approved boundary (Emily Jimenez, 8 Oct 2026): Active Owner enrollment,
-// welcome Retry and Reconcile = Onboarding Director seat or Platform Owner.
+// welcome Retry and Reconcile = Onboarding Director seat or Admin.
 describe("Active Owner authority", () => {
-  test("Platform Owner may enroll", () => {
+  test("Admin may enroll", () => {
     expect(can(["admin"], "active_owner_enroll")).toBe(true);
   });
   test("Onboarding Director seat may enroll", () => {

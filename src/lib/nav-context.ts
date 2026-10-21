@@ -101,12 +101,12 @@ export function rememberScroll(token: string, scrollY: number) {
 
 /** The natural parent collection for a record opened from a cold, direct link. */
 export const NATURAL_PARENTS = {
-  ticket: { label: "My work", href: "/tickets" },
+  ticket: { label: "My Work", href: "/tickets" },
   property: { label: "Properties", href: "/properties" },
   lead: { label: "Leads", href: "/leads" },
   claim: { label: "Claims", href: "/claims" },
   recovery: { label: "Guest refunds & credits", href: "/recovery" },
-  routine: { label: "Routine work", href: "/routines" },
+  routine: { label: "Routine Work", href: "/routines" },
   onboarding: { label: "Director hub", href: "/onboarding" },
 } as const;
 

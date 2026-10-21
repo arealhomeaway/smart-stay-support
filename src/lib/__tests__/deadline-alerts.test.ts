@@ -104,7 +104,7 @@ describe("missed vendor dispatch", () => {
     expect(alerts[0]!.linkPath).toBe("/work-orders?open=late");
   });
 
-  it("leaves closed work orders alone", () => {
+  it("leaves closed Work Orders alone", () => {
     expect(
       vendorDispatchAlerts([wo({ id: "x", closed_at: minutesFromNow(-10), vendor_eta_at: minutesFromNow(-200) })], NOW),
     ).toEqual([]);

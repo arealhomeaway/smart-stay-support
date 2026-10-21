@@ -47,7 +47,7 @@ export type CreateOutboundInput = OutboundSource & {
   templateId?: number | null;
   /** Breezeway person ids to assign. Only ids from Breezeway's own directory. */
   assigneeIds?: number[];
-  /** Free-text note recording which Resolve evidence supports this work order. */
+  /** Free-text note recording which Resolve evidence supports this Work Order. */
   resolveEvidenceNote?: string | null;
 };
 

@@ -14,11 +14,11 @@ import { fileURLToPath } from "url";
  * from the viewer's edit permission (`!canEdit`), never from
  * `workOrder.closed_at`. So once a Work Order was actually closed (a real
  * "Work order closed" event in history), every field and button gated on
- * `readOnly` — including "Close work order" itself — stayed enabled,
+ * `readOnly` — including "Close Work Order" itself — stayed enabled,
  * because closing never flips `readOnly` to true. "Vendor says complete"
  * itself never touches `closed_at` (see
  * work-order-vendor-complete-does-not-close.test.ts); the closed state
- * seen in that acceptance round came from an explicit "Close work order"
+ * seen in that acceptance round came from an explicit "Close Work Order"
  * click, and the leftover-active Close button is what made it look like
  * more clicks were still doing something.
  */
@@ -31,7 +31,7 @@ describe("WorkOrderDrawer — closed state and available actions stay consistent
     expect(src).toContain("const readOnly = permissionReadOnly || Boolean(workOrder.closed_at);");
   });
 
-  it("Close work order is disabled by that same readOnly, so it can't stay active on a closed record", () => {
+  it("Close Work Order is disabled by that same readOnly, so it can't stay active on a closed record", () => {
     expect(src).toContain("disabled={readOnly || save.isPending || !canClose(workOrder, reqs)}");
   });
 

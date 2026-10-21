@@ -15,7 +15,7 @@ const here = dirname(fileURLToPath(import.meta.url));
  * Why both halves matter: the create mutation has to hand its new Work
  * Order's id back to onSuccess (mutationFn returns it), and onSuccess has
  * to feed that id into the same onOpenWorkOrderIdChange callback "Open
- * work order" already uses to drive the drawer — dropping either half
+ * Work Order" already uses to drive the drawer — dropping either half
  * silently regresses back to "nothing opens after Open another work
  * order". (That id now lives on the Ticket page, not this panel — see
  * ticket-work-order-panel-open-id-survives-stage-change.test.ts — but the

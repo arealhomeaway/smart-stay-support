@@ -1,4 +1,4 @@
-/** The work orders this employee is responsible for right now. */
+/** The Work Orders this employee is responsible for right now. */
 import { createFileRoute } from "@tanstack/react-router";
 import { EmptyState, LoadingRows, PageHeader } from "@/components/ui/page";
 import {
@@ -32,9 +32,9 @@ function MyWorkOrders() {
   return (
     <div className="space-y-5">
       <PageHeader
-        eyebrow="Work orders"
+        eyebrow="Work Orders"
         title="Mine"
-        description="Work orders you own. Waiting on a vendor, an owner or a warranty does not hand this to anyone else."
+        description="Work Orders you own. Waiting on a vendor, an owner or a warranty does not hand this to anyone else."
       />
       {workOrders.isLoading ? (
         <LoadingRows />
@@ -46,7 +46,7 @@ function MyWorkOrders() {
           requirements={requirements.data ?? new Map<string, RequirementLike[]>()}
           propertyNames={propertyNames.data ?? new Map()}
           canEdit={!readOnly}
-          originLabel="My work orders"
+          originLabel="My Work Orders"
         />
       )}
     </div>

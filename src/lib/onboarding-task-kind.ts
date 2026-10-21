@@ -10,17 +10,17 @@ export type TaskKind = "document" | "vendor" | "utility" | "homeowner" | "purcha
 
 const DOCUMENT = /document|hoa|covenant|permit|agreement|pma|report|form|file|records?|contract|insurance|save |store /i;
 const VENDOR =
-  /work order|handyman|vendor|installer|cleaner|inspection|painting|landscap|carpet|assembly|staging|install/i;
+  /Work Order|handyman|vendor|installer|cleaner|inspection|painting|landscap|carpet|assembly|staging|install/i;
 const UTILITY = /electric|gas service|water\/sewer|trash|internet|cox|utilit|meter/i;
 const HOMEOWNER = /owner|mood board|approval|approve|walkthrough w\/? owner/i;
 const PURCHASE = /purchase|order |amazon|essentials list|warehouse|pick list/i;
 
 /** Breezeway only belongs on steps that dispatch field work. */
-const BREEZEWAY = /breezeway|work order/i;
+const BREEZEWAY = /breezeway|Work Order/i;
 
 export function taskKind(input: { title: string; detail?: string | null }): TaskKind {
   const title = input.title ?? "";
-  // Order matters: a "work order for repairs" is vendor work even though the
+  // Order matters: a "Work Order for repairs" is vendor work even though the
   // word "report" may appear in its instructions.
   if (VENDOR.test(title)) return "vendor";
   if (UTILITY.test(title)) return "utility";

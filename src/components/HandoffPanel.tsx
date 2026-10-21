@@ -128,7 +128,7 @@ export function HandoffPanel({
       !form.next_action.trim() && "next required action",
     ].filter(Boolean);
     if (missing.length) {
-      toast.error(`A valid handoff needs: ${missing.join(", ")}.`);
+      toast.error(`A valid reassignment needs: ${missing.join(", ")}.`);
       return;
     }
     setSaving(true);
@@ -161,19 +161,19 @@ export function HandoffPanel({
         })
         .eq("id", ticket.id);
       await log(
-        `Handoff requested to ${labelFor(
+        `Reassignment requested to ${labelFor(
           (roles ?? []).map((r) => ({ value: r.code, label: r.name })),
           form.to_role_code,
         )}. Not complete until accepted — you remain accountable.`,
         "handoff_requested",
       );
-      toast.success("Handoff requested. You stay accountable until it is accepted.");
+      toast.success("Reassignment requested. You stay accountable until it is accepted.");
       setOpen(false);
       setForm({ ...form, summary: "", actions_completed: "", current_status: "", risks: "" });
       await refetch();
       await onChanged();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not send the handoff");
+      toast.error(err instanceof Error ? err.message : "Could not send the reassignment");
     } finally {
       setSaving(false);
     }
@@ -207,15 +207,15 @@ export function HandoffPanel({
         assignment_note: null,
       })
       .eq("id", ticket.id);
-    await log("Handoff accepted — ownership of the next action transferred.", "handoff_accepted");
+    await log("Reassignment accepted — ownership of the next action transferred.", "handoff_accepted");
     await refetch();
     await onChanged();
-    toast.success("Handoff accepted.");
+    toast.success("Reassignment accepted.");
   }
 
   async function reject(handoffId: string) {
     if (!rejectReason.trim()) {
-      toast.error("A rejected handoff must include a reason.");
+      toast.error("A rejected reassignment must include a reason.");
       return;
     }
     const { error } = await supabase
@@ -235,14 +235,14 @@ export function HandoffPanel({
       .update({ handoff_status: "rejected", pending_handoff_to: null })
       .eq("id", ticket.id);
     await log(
-      `Handoff rejected: ${rejectReason.trim()} — returned to the original owner.`,
+      `Reassignment rejected: ${rejectReason.trim()} — returned to the original owner.`,
       "handoff_rejected",
     );
     setRejecting(null);
     setRejectReason("");
     await refetch();
     await onChanged();
-    toast.success("Handoff rejected and returned.");
+    toast.success("Reassignment rejected and returned.");
   }
 
   const roleName = (code: string | null) =>
@@ -256,10 +256,10 @@ export function HandoffPanel({
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
-          <ArrowRightLeft className="size-4" /> Handoffs
+          <ArrowRightLeft className="size-4" /> Reassignments
         </CardTitle>
         <CardDescription>
-          Tagging someone is not a handoff. It is not complete until the receiver accepts it — until
+          Tagging someone is not a reassignment. It is not complete until the receiver accepts it — until
           then you remain accountable.
         </CardDescription>
       </CardHeader>
@@ -304,14 +304,14 @@ export function HandoffPanel({
             </div>
             {h.priority === "p1" && (
               <p className="flex items-center gap-2 text-xs font-medium text-danger">
-                <ShieldAlert className="size-3.5" /> Unaccepted P1 handoff — the Operations
+                <ShieldAlert className="size-3.5" /> Unaccepted P1 reassignment — the Operations
                 Supervisor is notified.
               </p>
             )}
             {rejecting === h.id ? (
               <div className="space-y-2">
                 <Input
-                  placeholder="Why are you rejecting this handoff?"
+                  placeholder="Why are you rejecting this reassignment?"
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
                 />
@@ -334,7 +334,7 @@ export function HandoffPanel({
                 <div className="flex gap-2">
                   {!(currentUserId && currentUserId === h.from_user) && (
                     <Button size="sm" onClick={() => accept(h.id, h.from_user)}>
-                      Accept handoff
+                      Accept reassignment
                     </Button>
                   )}
                   <Button size="sm" variant="outline" onClick={() => setRejecting(h.id)}>
@@ -407,7 +407,7 @@ export function HandoffPanel({
               </div>
 
               <div className="space-y-1.5">
-                <Label>Reason for the handoff</Label>
+                <Label>Reason for the reassignment</Label>
                 <Select
                   value={form.handoff_type}
                   onValueChange={(v) => setForm({ ...form, handoff_type: v })}
@@ -498,7 +498,7 @@ export function HandoffPanel({
 
               <div className="flex gap-2">
                 <Button onClick={submit} disabled={saving}>
-                  {saving ? "Sending…" : "Request handoff"}
+                  {saving ? "Sending…" : "Request reassignment"}
                 </Button>
                 <Button variant="ghost" onClick={() => setOpen(false)}>
                   Cancel

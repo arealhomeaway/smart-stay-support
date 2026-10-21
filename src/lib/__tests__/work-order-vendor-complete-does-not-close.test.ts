@@ -38,7 +38,7 @@ describe("Vendor says complete does not close the Work Order", () => {
     );
   });
 
-  it("explicit Close work order is still required: even with every other requirement satisfied, closed_at absent means not closed", () => {
+  it("explicit Close Work Order is still required: even with every other requirement satisfied, closed_at absent means not closed", () => {
     const fullyDocumented = {
       ...vendorCompleteOnly,
       evidence_complete: true,

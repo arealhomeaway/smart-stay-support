@@ -66,7 +66,7 @@ export type QueueTab = "mine" | "team" | "unassigned" | "escalated" | "closed" |
  */
 export const QUEUE_TABS: { value: QueueTab; label: string; hint: string; supervisory?: boolean }[] =
   [
-    { value: "mine", label: "My work", hint: "Tickets you own or must act on next." },
+    { value: "mine", label: "My Work", hint: "Tickets you own or must act on next." },
     { value: "unassigned", label: "Unclaimed", hint: "Open tickets nobody has picked up." },
     { value: "team", label: "Everyone's work", hint: "Every open ticket across the portfolio." },
     { value: "closed", label: "Closed", hint: "Resolved and closed tickets." },

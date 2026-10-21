@@ -10,7 +10,7 @@
  *
  * Resolve stays the source of truth. Breezeway never changes anything here,
  * and a fresh request key per composed request makes a double-click or a
- * retry incapable of producing two work orders.
+ * retry incapable of producing two Work Orders.
  */
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -200,9 +200,9 @@ export function BreezewayTaskPanel({
         </CardTitle>
         <CardDescription>
           {latest
-            ? "With Breezeway for field scheduling. Resolve keeps the work order; Breezeway does the field work."
+            ? "With Breezeway for field scheduling. Resolve keeps the Work Order; Breezeway does the field work."
             : eligibility.eligible
-              ? "Optional — sends this ticket's work order to Breezeway for field-team scheduling."
+              ? "Optional — sends this ticket's Work Order to Breezeway for field-team scheduling."
               : `Dispatch to Breezeway is unavailable for this property. ${eligibility.reason ?? ""}`}
         </CardDescription>
       </CardHeader>
@@ -270,7 +270,7 @@ export function BreezewayTaskPanel({
         {eligibility.eligible && unresolved ? (
           <p className="text-xs text-warning-foreground">
             An earlier request for this record is still open. Sending is paused until it is
-            resolved, so a duplicate work order cannot be created.
+            resolved, so a duplicate Work Order cannot be created.
           </p>
         ) : null}
       </CardContent>
@@ -279,7 +279,7 @@ export function BreezewayTaskPanel({
         open={open}
         onOpenChange={setOpen}
         title="Dispatch to Breezeway"
-        subtitle="Optional — sends this ticket's work order externally for field scheduling. You keep the ticket either way."
+        subtitle="Optional — sends this ticket's Work Order externally for field scheduling. You keep the ticket either way."
       >
         <div className="space-y-5 text-sm">
           <SpecialHandlingNotice propertyId={propertyId} moment="maintenance" />
@@ -452,7 +452,7 @@ export function BreezewayTaskPanel({
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
         title="Dispatch to Breezeway now?"
-        description="This uses the work order already open on this ticket, or opens one if none exists yet, and sends it to Breezeway for field-team scheduling — it can't be recalled once sent."
+        description="This uses the Work Order already open on this ticket, or opens one if none exists yet, and sends it to Breezeway for field-team scheduling — it can't be recalled once sent."
         footer={
           <>
             <Button variant="outline" onClick={() => setConfirmOpen(false)}>

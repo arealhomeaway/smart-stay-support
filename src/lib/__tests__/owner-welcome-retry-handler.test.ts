@@ -123,14 +123,14 @@ describe("retryWelcome handler (executed)", () => {
     expect(rows[REAL]?.["status"]).toBe("queued");
     expect(audits.length).toBe(1);
   });
-  test("Platform Owner: allowed", async () => {
+  test("Admin: allowed", async () => {
     as("admin");
     expect(await retry()).toEqual({ requeued: true });
   });
   for (const who of ["supervisor", "opsdir", "pm", "owner"]) {
     test(`${who}: refused, nothing changed`, async () => {
       as(who);
-      await expect(retry()).rejects.toThrow("Only the Onboarding Director or a Platform Owner");
+      await expect(retry()).rejects.toThrow("Only the Onboarding Director or a Admin");
       expect(rows[REAL]?.["status"]).toBe("failed");
       expect(audits.length).toBe(0);
     });
@@ -168,7 +168,7 @@ describe("enrollActiveOwner handler (executed): demo-only rule for test accounts
   });
   test("Supervisor: refused before any account is created", async () => {
     as("supervisor");
-    await expect(enroll(REAL)).rejects.toThrow("Only the Onboarding Director or a Platform Owner");
+    await expect(enroll(REAL)).rejects.toThrow("Only the Onboarding Director or a Admin");
     expect(created.length).toBe(0);
   });
   test("Onboarding Director: real home allowed", async () => {

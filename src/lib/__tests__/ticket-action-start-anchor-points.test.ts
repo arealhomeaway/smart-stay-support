@@ -11,7 +11,7 @@ import { fileURLToPath } from "url";
  *    function before writing its own audit row.
  *  - the wrapped setOpenWorkOrderId: both creating and explicitly opening
  *    a Work Order call this (TicketWorkOrderPanel's onOpenWorkOrderIdChange
- *    prop), whether the action is a create or an "Open work order" click.
+ *    prop), whether the action is a create or an "Open Work Order" click.
  *
  * This is a source-level regression guard (see the other __tests__ files —
  * this repo has no DOM rendering harness) against either anchor point

@@ -53,7 +53,7 @@ export function ActiveOwnerPanel({
   propertyId: string;
   propertyName: string;
   canManage: boolean;
-  /** Onboarding Director seat or Platform Owner: enroll / finish Active Owner setup. */
+  /** Onboarding Director seat or Admin: enroll / finish Active Owner setup. */
   canEnroll?: boolean;
   /** The home's lifecycle, so enrolment can offer to start onboarding too. */
   lifecycleStatus?: string | null;
@@ -259,7 +259,7 @@ export function ActiveOwnerPanel({
                 <ActiveOwnerEnrollForm propertyId={propertyId} propertyName={propertyName} onDone={refresh} />
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  The Onboarding Director or a Platform Owner enrolls homes in Active Owner.
+                  The Onboarding Director or a Admin enrolls homes in Active Owner.
                 </p>
               )}
               <Button
@@ -272,7 +272,7 @@ export function ActiveOwnerPanel({
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              The Onboarding Director or a Platform Owner can enroll this home in the program.
+              The Onboarding Director or a Admin can enroll this home in the program.
             </p>
           )}
         </div>

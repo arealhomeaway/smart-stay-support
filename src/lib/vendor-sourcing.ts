@@ -78,7 +78,7 @@ export type AuthorizationState = {
   reason: string;
 };
 
-/** Spending authorization for this work order, via the unchanged authority ladder. */
+/** Spending authorization for this Work Order, via the unchanged authority ladder. */
 export function authorizationState(wo: DispatchWorkOrder): AuthorizationState {
   const v = evaluateAuthority(wo);
   const who = v.ownerApprovalRequired ? "owner" : v.supervisorApprovalRequired ? "supervisor" : null;

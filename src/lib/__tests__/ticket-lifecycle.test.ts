@@ -93,7 +93,7 @@ describe("waiting always has a dependency, a reason and a future date", () => {
 });
 
 describe("dispatch needs somewhere to dispatch to", () => {
-  it("refuses dispatch with no work order", () => {
+  it("refuses dispatch with no Work Order", () => {
     const v = validateTicketTransition("dispatched", { ...base, requiresFieldWork: true });
     expect(v.ok).toBe(false);
     if (!v.ok) expect(v.exception).toBe("dispatch_prerequisites");

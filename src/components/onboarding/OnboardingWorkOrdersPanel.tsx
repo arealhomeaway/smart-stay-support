@@ -29,9 +29,9 @@ export function OnboardingWorkOrdersPanel({ propertyId }: { propertyId: string }
     return orders.filter((o) => o.route === filter);
   }, [data, filter]);
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Loading work orders…</p>;
+  if (isLoading) return <p className="text-sm text-muted-foreground">Loading Work Orders…</p>;
   if (error || !data)
-    return <p className="text-sm text-muted-foreground">Work orders could not be loaded.</p>;
+    return <p className="text-sm text-muted-foreground">Work Orders could not be loaded.</p>;
 
   const counts = data.counts;
   const tabs: { id: Filter; label: string }[] = [

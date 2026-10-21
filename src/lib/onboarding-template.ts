@@ -4,7 +4,7 @@
  * Source of truth: the ARHA onboarding project plan (9211 Fitzgerald Dr,
  * project 1217419174626397 — 150 tasks across 7 phases) plus the Breezeway
  * workflow export, which supplies the New House Setup work-order template IDs
- * referenced by the "create work order" tasks. Nothing here is inferred:
+ * referenced by the "create Work Order" tasks. Nothing here is inferred:
  * titles, phases, roles, instructions and subtasks are copied from the export,
  * duplicates are removed, and a schedule anchor/offset is attached ONLY where
  * the source instructions state the timing in writing (for example "within 10
@@ -49,7 +49,7 @@ export type TemplateTask = {
   /** Only present when the source instructions document the timing. */
   anchor?: "planned_closing" | "actual_closing" | "actual_access";
   offsetDays?: number;
-  /** Breezeway "New House Setup" template that fulfils this work order. */
+  /** Breezeway "New House Setup" template that fulfils this Work Order. */
   breezewayTemplateId?: string;
   subtasks?: string[];
   /** Free-form step tags. "active_owner" marks work the homeowner does. */
@@ -114,7 +114,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     key: "post_contract_create_work_order_for_vendor_to_attend_inspect",
     stage: "post_contract",
     title:
-      "Create work order for Vendor to attend the assessment appointment and conduct home assessment",
+      "Create Work Order for Vendor to attend the assessment appointment and conduct home assessment",
     role: "Project Manager",
     detail:
       "Information: \n The Realtor, Handyman and the professional home inspector will attend this appointment. The professional home inspector will conduct his inspection, but the Realtor and the Handyman will do their own walkthroughs to assess the property for any cosmetic/safety concerns that ARHA needs to address. The Designer will be available via Telegram during this time and the Project Manager will video conference with the Realtor during the inspection to ask questions while the Realtor and Handyman are on the premises.\n\n This is the only time ARHA will be able to see the property in person prior to our buyer's purchase of the property, so this is an important appointment. We need to be able to identify any home improvements/repairs that are necessary and quickly obtain estimates for them. \n\nInstruction:\n Send a Telegram message to the property Telegram group and …",
@@ -125,10 +125,10 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "post_contract_create_a_work_order_for_vendor_to_measure_for_",
     stage: "post_contract",
-    title: "Create a work order for Vendor to measure for custom blinds (if applicable)",
+    title: "Create a Work Order for Vendor to measure for custom blinds (if applicable)",
     role: "Project Manager",
     detail:
-      "Instructions:\n Please schedule a work order using the New House Setup - Measure Windows for Custom Blinds template in Breezeway.",
+      "Instructions:\n Please schedule a Work Order using the New House Setup - Measure Windows for Custom Blinds template in Breezeway.",
     blocksHandoff: false,
     breezewayTemplateId: "200966",
     sortOrder: 70,
@@ -207,7 +207,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Request repair estimates from handyman and other vendors (if applicable)",
     role: "Project Manager",
     detail:
-      "Instructions:\n Review the completed work order from the home assessment. \n NOTE: If the assessment indicates a home alarm system is present CREATE A TASK to request realtor obtain setup instructions at close. \n\n Create a new work order in Breezeway for the handyman assigned to the project, and request repair estimates for all of the improvements/repairs identified during the ARHA home assessment. (These include the repairs recommended by the handyman and improvements/repairs recommended by the designer.) Indicate in the work order that the estimate should be broken out by job, and that it should be returned to the project manager within 24-48 hours.\n\n Notify the handyman via Telegram that you are requesting an estimate for repairs and have created a work order that is due on _________ date.\n\n If you need estimates from additional outside vendors (like a flooring or …",
+      "Instructions:\n Review the completed Work Order from the home assessment. \n NOTE: If the assessment indicates a home alarm system is present CREATE A TASK to request realtor obtain setup instructions at close. \n\n Create a new Work Order in Breezeway for the handyman assigned to the project, and request repair estimates for all of the improvements/repairs identified during the ARHA home assessment. (These include the repairs recommended by the handyman and improvements/repairs recommended by the designer.) Indicate in the Work Order that the estimate should be broken out by job, and that it should be returned to the project manager within 24-48 hours.\n\n Notify the handyman via Telegram that you are requesting an estimate for repairs and have created a Work Order that is due on _________ date.\n\n If you need estimates from additional outside vendors (like a flooring or …",
     blocksHandoff: false,
     sortOrder: 140,
   },
@@ -241,10 +241,10 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase1_inspection_create_work_order_to_meet_cox_installer",
     stage: "phase1_inspection",
-    title: "Create work order to meet Cox installer",
+    title: "Create Work Order to meet Cox installer",
     role: "Utilities Coordinator",
     detail:
-      "Instructions:\n Please create a work order for a handyman to meet the cable installer. Use the Breezeway template: New House Setup - Meet Cox Installer. \n Please add the project manager's email address to the first line of the work order. \n\nThe below text is included in the Breezeway template \n\nPROJECT MANAGER EMAIL: \n\nPlease be at the house to meet the Cox installer. If given a choice, please have modem placed in an inconspicuous location at the property. Below are the requested locations, in order of preference:\n\n1.) Hall/entry/master closet\n2.) Secondary bedroom on the dresser \n3.) Livingroom mantle\n\nPlease notify the project manager if a line is run outside and not yet buried. \n\nThank you!",
+      "Instructions:\n Please create a Work Order for a handyman to meet the cable installer. Use the Breezeway template: New House Setup - Meet Cox Installer. \n Please add the project manager's email address to the first line of the Work Order. \n\nThe below text is included in the Breezeway template \n\nPROJECT MANAGER EMAIL: \n\nPlease be at the house to meet the Cox installer. If given a choice, please have modem placed in an inconspicuous location at the property. Below are the requested locations, in order of preference:\n\n1.) Hall/entry/master closet\n2.) Secondary bedroom on the dresser \n3.) Livingroom mantle\n\nPlease notify the project manager if a line is run outside and not yet buried. \n\nThank you!",
     blocksHandoff: true,
     breezewayTemplateId: "134120",
     subtasks: ["Split Wi-Fi into Two Networks & Update Name/Password"],
@@ -505,27 +505,27 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "CREATE WORK ORDERS FOR SETUP, BUT DO NOT ASSIGN UNTIL AFTER CLOSING",
     role: "Project Manager",
     detail:
-      "Instructions:\n Begin setting up and scheduling the next series of work orders in the project plan, but DO NOT assign them to a resource until after the property sales transaction has closed.\n\n Once closing has been verified, work orders for In-Garage Delivery Setup have been assigned, and all inventory has been purchased, then these work orders for repairs/improvements, cleaning, setting out essentials, and staging can be assigned.",
+      "Instructions:\n Begin setting up and scheduling the next series of Work Orders in the project plan, but DO NOT assign them to a resource until after the property sales transaction has closed.\n\n Once closing has been verified, Work Orders for In-Garage Delivery Setup have been assigned, and all inventory has been purchased, then these Work Orders for repairs/improvements, cleaning, setting out essentials, and staging can be assigned.",
     blocksHandoff: true,
     sortOrder: 430,
   },
   {
     key: "phase3_work_orders_create_work_order_to_pick_up_keys_from_po",
     stage: "phase3_work_orders",
-    title: "Create work order to pick up keys from post office, if necessary",
+    title: "Create Work Order to pick up keys from post office, if necessary",
     role: "Project Manager",
     detail:
-      "Instructions:\n\n1.) Ask the Realtor if the home's mailbox is owned by the USPS. If so, find out if the keys will be available at the title company at closing or if someone needs to pick them up from the post office.\n\n2.) If needed, create a work order to have someone pick up the keys from the servicing post office following closing. They may need the following documents to show the post office:\n Packet from the title company\n Deed of sale\n Management agreement\n Their ID",
+      "Instructions:\n\n1.) Ask the Realtor if the home's mailbox is owned by the USPS. If so, find out if the keys will be available at the title company at closing or if someone needs to pick them up from the post office.\n\n2.) If needed, create a Work Order to have someone pick up the keys from the servicing post office following closing. They may need the following documents to show the post office:\n Packet from the title company\n Deed of sale\n Management agreement\n Their ID",
     blocksHandoff: true,
     sortOrder: 440,
   },
   {
     key: "phase3_work_orders_create_work_order_for_pre_work_inspection",
     stage: "phase3_work_orders",
-    title: "Create work order for Pre-Work Inspection",
+    title: "Create Work Order for Pre-Work Inspection",
     role: "Project Manager",
     detail:
-      "Instructions:\n Please create and schedule a work order in Breezeway to have the Pre-Work Inspection done at the property.\n\n Use the New House Setup - Pre-Work Inspection template in Breezeway, which contains the directions below\n\n (This template is found under the Inspection department)\n\n This should occur the same day as the lock and security package installation (Ring cameras, myQ, etc)",
+      "Instructions:\n Please create and schedule a Work Order in Breezeway to have the Pre-Work Inspection done at the property.\n\n Use the New House Setup - Pre-Work Inspection template in Breezeway, which contains the directions below\n\n (This template is found under the Inspection department)\n\n This should occur the same day as the lock and security package installation (Ring cameras, myQ, etc)",
     blocksHandoff: true,
     // Source rule is relative to another task ("same day as the lock and
     // security package installation"), not to closing or access. Task-relative
@@ -536,10 +536,10 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase3_work_orders_create_work_order_for_standard_inspection",
     stage: "phase3_work_orders",
-    title: "Create work order for Standard Inspection",
+    title: "Create Work Order for Standard Inspection",
     role: "Project Manager",
     detail:
-      "Instructions:\n Please create and schedule a work order in Breezeway to have the Standard Inspection done at the property.\n\n Use the New House Setup - Standard Inspection template in Breezeway, which contains the directions below\n\n (This template is found under the Inspection department)\n\n This should occur within 10 calendar days of closing on the property.",
+      "Instructions:\n Please create and schedule a Work Order in Breezeway to have the Standard Inspection done at the property.\n\n Use the New House Setup - Standard Inspection template in Breezeway, which contains the directions below\n\n (This template is found under the Inspection department)\n\n This should occur within 10 calendar days of closing on the property.",
     blocksHandoff: true,
     anchor: "actual_closing",
     offsetDays: 10,
@@ -549,10 +549,10 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase3_work_orders_create_work_order_for_final_inspection",
     stage: "phase3_work_orders",
-    title: "Create work order for Final Inspection",
+    title: "Create Work Order for Final Inspection",
     role: "Project Manager",
     detail:
-      "Instructions:\n Please create and schedule a work order in Breezeway to have the final inspection done at the property.\n\n Use the New House Setup - Final Inspection template in Breezeway, which contains the directions below\n\n (This template is found under the Inspection department)\n\n This should occur after property is complete, prior to handing off to Operations.",
+      "Instructions:\n Please create and schedule a Work Order in Breezeway to have the final inspection done at the property.\n\n Use the New House Setup - Final Inspection template in Breezeway, which contains the directions below\n\n (This template is found under the Inspection department)\n\n This should occur after property is complete, prior to handing off to Operations.",
     blocksHandoff: true,
     breezewayTemplateId: "208328",
     sortOrder: 470,
@@ -560,7 +560,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase3_work_orders_create_work_order_for_installation_of_loc",
     stage: "phase3_work_orders",
-    title: "Create work order for installation of locks",
+    title: "Create Work Order for installation of locks",
     role: "Project Manager",
     blocksHandoff: true,
     breezewayTemplateId: "157686",
@@ -569,7 +569,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase3_work_orders_create_work_order_for_installation_of_rin",
     stage: "phase3_work_orders",
-    title: "Create work order for installation of Ring doorbell",
+    title: "Create Work Order for installation of Ring doorbell",
     role: "Project Manager",
     blocksHandoff: true,
     breezewayTemplateId: "158054",
@@ -578,10 +578,10 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase3_work_orders_create_a_work_order_to_place_surveillance",
     stage: "phase3_work_orders",
-    title: "Create a work order to place surveillance signs and hedge delivery box",
+    title: "Create a Work Order to place surveillance signs and hedge delivery box",
     role: "Project Manager",
     detail:
-      'INSTRUCTIONS:\nUse the Breezeway template "New House Setup - Place surveillance signs / hedge box" to create a work order for the handyman to place these items at the home.',
+      'INSTRUCTIONS:\nUse the Breezeway template "New House Setup - Place surveillance signs / hedge box" to create a Work Order for the handyman to place these items at the home.',
     blocksHandoff: true,
     breezewayTemplateId: "185394",
     sortOrder: 500,
@@ -589,10 +589,10 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase3_work_orders_create_work_order_to_schedule_cleaner_to_",
     stage: "phase3_work_orders",
-    title: "Create work order to schedule cleaner to press curtains",
+    title: "Create Work Order to schedule cleaner to press curtains",
     role: "Project Manager",
     detail:
-      'Instructions:\n Please create and schedule a work order in Breezeway to have the curtain panels pressed at the home.\n\n Use the New House Setup - Press Curtains template in Breezeway, which contains the directions below. \n\n Please indicate the quantities of 108-inch panels and 96-inch panels in the work order (pls see the template verbiage below). This information can be found in the window coverings instructions from the Design Plan.\n\n Please also attached to the work order a PDF of the window coverings instructions from the Design Plan so that the presser will know which curtain lengths to use on each window..\n\nINSTRUCTIONS ON BREEZEWAY TEMPLATE:\nPlease locate the following curtain panels at the home: \n\nQty: # 108" panels, # 96" panels\n\nPlease press curtains and hang them according to the instructions attached. \n\nThank you for your help!',
+      'Instructions:\n Please create and schedule a Work Order in Breezeway to have the curtain panels pressed at the home.\n\n Use the New House Setup - Press Curtains template in Breezeway, which contains the directions below. \n\n Please indicate the quantities of 108-inch panels and 96-inch panels in the Work Order (pls see the template verbiage below). This information can be found in the window coverings instructions from the Design Plan.\n\n Please also attached to the Work Order a PDF of the window coverings instructions from the Design Plan so that the presser will know which curtain lengths to use on each window..\n\nINSTRUCTIONS ON BREEZEWAY TEMPLATE:\nPlease locate the following curtain panels at the home: \n\nQty: # 108" panels, # 96" panels\n\nPlease press curtains and hang them according to the instructions attached. \n\nThank you for your help!',
     blocksHandoff: true,
     breezewayTemplateId: "147792",
     sortOrder: 510,
@@ -610,20 +610,20 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase3_work_orders_create_work_order_for_home_repairs_if_nec",
     stage: "phase3_work_orders",
-    title: "Create work order for home repairs (if necessary)",
+    title: "Create Work Order for home repairs (if necessary)",
     role: "Project Manager",
     detail:
-      "Reference: the Resolve vendor directory.\n\nInstructions:\n Please create and schedule work orders in Breezeway for any approved home repairs.\n\n We do not have templates regarding repairs, because every home requires something different. When creating a work order, please keep in mind the following:\n Be specific in your instructions to the contractor.\n Try to use bullet points to make instructions easier to read.\n Attach reference photos w/ or w/o markups whenever you think they will be helpful.\n\n As you create work orders, you may group similar jobs within work orders (like different painting tasks, or different outdoor tasks). One exception is furniture assembly tasks. Please do not group any furniture assembly tasks on work orders with any other tasks. (Furniture assembly tasks are classed …",
+      "Reference: the Resolve vendor directory.\n\nInstructions:\n Please create and schedule Work Orders in Breezeway for any approved home repairs.\n\n We do not have templates regarding repairs, because every home requires something different. When creating a Work Order, please keep in mind the following:\n Be specific in your instructions to the contractor.\n Try to use bullet points to make instructions easier to read.\n Attach reference photos w/ or w/o markups whenever you think they will be helpful.\n\n As you create Work Orders, you may group similar jobs within Work Orders (like different painting tasks, or different outdoor tasks). One exception is furniture assembly tasks. Please do not group any furniture assembly tasks on Work Orders with any other tasks. (Furniture assembly tasks are classed …",
     blocksHandoff: false,
     sortOrder: 530,
   },
   {
     key: "phase3_work_orders_create_work_order_for_painting_if_necessa",
     stage: "phase3_work_orders",
-    title: "Create work order for painting (if necessary)",
+    title: "Create Work Order for painting (if necessary)",
     role: "Project Manager",
     detail:
-      "Instructions:\n Please create and schedule work orders in Breezeway for any approved painting.\n\n We do not have templates regarding painting, because every home requires something different. When creating a work order, please keep in mind the following:\n Be specific in your instructions to the contractor.\n Try to use bullet points to make instructions easier to read.\n Attach reference photos w/ or w/o markups whenever you think they will be helpful.\n\n As you create work orders, you may group similar jobs within work orders (like different painting tasks, or different outdoor tasks). One exception is furniture assembly tasks. Please do not group any furniture assembly tasks on work orders with any other tasks. (Furniture assembly tasks are classed differently than other jobs, and the home buyer pays us for them differently)\n\n Please ask the senior project manager if you have any questions.",
+      "Instructions:\n Please create and schedule Work Orders in Breezeway for any approved painting.\n\n We do not have templates regarding painting, because every home requires something different. When creating a Work Order, please keep in mind the following:\n Be specific in your instructions to the contractor.\n Try to use bullet points to make instructions easier to read.\n Attach reference photos w/ or w/o markups whenever you think they will be helpful.\n\n As you create Work Orders, you may group similar jobs within Work Orders (like different painting tasks, or different outdoor tasks). One exception is furniture assembly tasks. Please do not group any furniture assembly tasks on Work Orders with any other tasks. (Furniture assembly tasks are classed differently than other jobs, and the home buyer pays us for them differently)\n\n Please ask the senior project manager if you have any questions.",
     blocksHandoff: false,
     breezewayTemplateId: "134124",
     sortOrder: 540,
@@ -631,10 +631,10 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase3_work_orders_create_work_order_s_for_installation_of_c",
     stage: "phase3_work_orders",
-    title: "Create work order(s) for installation of curtain rods",
+    title: "Create Work Order(s) for installation of curtain rods",
     role: "Project Manager",
     detail:
-      'Instructions:\n Please create and schedule a work order in Breezeway to have the curtain rods installed at the property.\n\n Use the New House Setup - Install Curtain Rods template in Breezeway, which contains the directions below.\n\n Please attached the grid from the window coverings instructions in the Design Plan to the work order so that handyman will know which curtain rod to install for each window. \n\nCURTAIN ROD INSTALLATION INSTRUCTIONS:\n*Utilize the drywall anchors delivered to you (or the home) for installation.\n\n*Please see the attached image for guidance on how to hang the curtain rods. (You may need to click "Download" in your browser to view it.)\n\n*Please see the attached chart for information regarding which windows will need curtain rods and which length of rod to install. If you have any questions, please contact your project manager.\n\n*Please hang the …',
+      'Instructions:\n Please create and schedule a Work Order in Breezeway to have the curtain rods installed at the property.\n\n Use the New House Setup - Install Curtain Rods template in Breezeway, which contains the directions below.\n\n Please attached the grid from the window coverings instructions in the Design Plan to the Work Order so that handyman will know which curtain rod to install for each window. \n\nCURTAIN ROD INSTALLATION INSTRUCTIONS:\n*Utilize the drywall anchors delivered to you (or the home) for installation.\n\n*Please see the attached image for guidance on how to hang the curtain rods. (You may need to click "Download" in your browser to view it.)\n\n*Please see the attached chart for information regarding which windows will need curtain rods and which length of rod to install. If you have any questions, please contact your project manager.\n\n*Please hang the …',
     blocksHandoff: true,
     breezewayTemplateId: "134115",
     sortOrder: 550,
@@ -642,10 +642,10 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase3_work_orders_create_work_order_to_install_carbon_monox",
     stage: "phase3_work_orders",
-    title: "Create work order to install carbon monoxide detector",
+    title: "Create Work Order to install carbon monoxide detector",
     role: "Project Manager",
     detail:
-      "Instructions:\n1.) Create a work order to install the carbon monoxide detector shipped to the home as part of the Essentials order.\n\n2.) Use the New House Setup - Install Carbon Monoxide Detector template in Breezeway.",
+      "Instructions:\n1.) Create a Work Order to install the carbon monoxide detector shipped to the home as part of the Essentials order.\n\n2.) Use the New House Setup - Install Carbon Monoxide Detector template in Breezeway.",
     blocksHandoff: true,
     breezewayTemplateId: "208329",
     sortOrder: 560,
@@ -653,20 +653,20 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase3_work_orders_create_work_order_for_landscaping_if_nece",
     stage: "phase3_work_orders",
-    title: "Create work order for landscaping (if necessary)",
+    title: "Create Work Order for landscaping (if necessary)",
     role: "Project Manager",
     detail:
-      "Instructions:\n Please create and schedule work orders in Breezeway for any approved landscaping.\n\n We do not have templates regarding landscaping, because every home requires something different. When creating a work order, please keep in mind the following:\n Be specific in your instructions to the contractor.\n Try to use bullet points to make instructions easier to read.\n Attach reference photos w/ or w/o markups whenever you think they will be helpful.\n\n As you create work orders, you may group similar jobs within work orders (like different painting tasks, or different outdoor tasks). One exception is furniture assembly tasks. Please do not group any furniture assembly tasks on work orders with any other tasks. (Furniture assembly tasks are classed differently than other jobs, and the home buyer pays us for them differently)\n\n Assess the sod at home if necessary; …",
+      "Instructions:\n Please create and schedule Work Orders in Breezeway for any approved landscaping.\n\n We do not have templates regarding landscaping, because every home requires something different. When creating a Work Order, please keep in mind the following:\n Be specific in your instructions to the contractor.\n Try to use bullet points to make instructions easier to read.\n Attach reference photos w/ or w/o markups whenever you think they will be helpful.\n\n As you create Work Orders, you may group similar jobs within Work Orders (like different painting tasks, or different outdoor tasks). One exception is furniture assembly tasks. Please do not group any furniture assembly tasks on Work Orders with any other tasks. (Furniture assembly tasks are classed differently than other jobs, and the home buyer pays us for them differently)\n\n Assess the sod at home if necessary; …",
     blocksHandoff: false,
     sortOrder: 570,
   },
   {
     key: "phase3_work_orders_create_work_order_for_assembly_of_boxed_f",
     stage: "phase3_work_orders",
-    title: "Create work order for assembly of boxed furniture",
+    title: "Create Work Order for assembly of boxed furniture",
     role: "Project Manager",
     detail:
-      "Instructions:\n Please create and schedule a work order in Breezeway to have the boxed furniture items assembled at the property.\n\n Use the New House Setup - Assemble Boxed Furniture template in Breezeway, which contains the directions below.\n\n Please attach a list of boxed furniture items from the pick list to the work order.\n\n Please request the handyman take photos of all assembled items.\n\n Please request handyman notify project manager if any boxed furniture items are missing.\n\nIMPORTANT INSTRUCTIONS FOR PROJECT MANAGER: \n* Please send the handyman a PDF listing of the boxed furniture for the home. \n* Please do not send the Smartsheet link. \n\n*Please assemble, in the order stated below, any boxed furniture that has arrived via transport or shipping. (Pls retain all shipping boxes until items can be checked for damage to ensure we do not need to return ship …",
+      "Instructions:\n Please create and schedule a Work Order in Breezeway to have the boxed furniture items assembled at the property.\n\n Use the New House Setup - Assemble Boxed Furniture template in Breezeway, which contains the directions below.\n\n Please attach a list of boxed furniture items from the pick list to the Work Order.\n\n Please request the handyman take photos of all assembled items.\n\n Please request handyman notify project manager if any boxed furniture items are missing.\n\nIMPORTANT INSTRUCTIONS FOR PROJECT MANAGER: \n* Please send the handyman a PDF listing of the boxed furniture for the home. \n* Please do not send the Smartsheet link. \n\n*Please assemble, in the order stated below, any boxed furniture that has arrived via transport or shipping. (Pls retain all shipping boxes until items can be checked for damage to ensure we do not need to return ship …",
     blocksHandoff: true,
     breezewayTemplateId: "134112",
     sortOrder: 580,
@@ -674,10 +674,10 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase3_work_orders_create_work_order_for_installation_of_tv_",
     stage: "phase3_work_orders",
-    title: "Create work order for installation of TV mounts",
+    title: "Create Work Order for installation of TV mounts",
     role: "Project Manager",
     detail:
-      "Time installation to coincide with placement of furniture and arrival of TVs, as it is easier to center the TV mounts on the wall when these items are present.\n\nInstructions:\n Please create and schedule a work order in Breezeway to have the TVs mounted at the property.\n\n Use the New House Setup - Install TV Mounts template in Breezeway, which contains the directions below.\n\n Please attach the TV mount instructions from the Design Plan to the work order.\n\nTV MOUNT INSTRUCTIONS:\nPlease include TV mount instructions from the Design Plan Project in this work order.",
+      "Time installation to coincide with placement of furniture and arrival of TVs, as it is easier to center the TV mounts on the wall when these items are present.\n\nInstructions:\n Please create and schedule a Work Order in Breezeway to have the TVs mounted at the property.\n\n Use the New House Setup - Install TV Mounts template in Breezeway, which contains the directions below.\n\n Please attach the TV mount instructions from the Design Plan to the Work Order.\n\nTV MOUNT INSTRUCTIONS:\nPlease include TV mount instructions from the Design Plan Project in this Work Order.",
     blocksHandoff: true,
     breezewayTemplateId: "157687",
     sortOrder: 590,
@@ -685,20 +685,20 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase3_work_orders_create_work_order_for_unboxing_washing_di",
     stage: "phase3_work_orders",
-    title: "Create work order for unboxing / washing dishes / setting out essentials",
+    title: "Create Work Order for unboxing / washing dishes / setting out essentials",
     role: "Project Manager",
     detail:
-      "Instructions:\n Please create and schedule a work order in Breezeway to have the dishes washed and essentials set out at the property.\n\n Use the New House Setup - Setting out Essentials template in Breezeway, which contains a Requirements section that provides the below directions.\n\nKitchen\n wash dishes, silverware, utensils, cutting boards, strainers, pots and pans, bowls and baking dishes in dishwasher\n wash coffee carafe by hand\n remove packing materials from chopper, crock pot, coffee maker, etc.\n unbox kitchen trash can and put empty liner inside\n put kitchen towels, oven mitts and dish cloths in a drawer\n put foil, saran wrap, parchment paper, zip locks and chip clips in a drawer or on a shelf in pantry\n put together lazy susan and put spices on/near it\n put a Mrs. Meyer's dish soap, hand soap and scrub brush on kitchen counter (put extras in supply closet)\n put …",
+      "Instructions:\n Please create and schedule a Work Order in Breezeway to have the dishes washed and essentials set out at the property.\n\n Use the New House Setup - Setting out Essentials template in Breezeway, which contains a Requirements section that provides the below directions.\n\nKitchen\n wash dishes, silverware, utensils, cutting boards, strainers, pots and pans, bowls and baking dishes in dishwasher\n wash coffee carafe by hand\n remove packing materials from chopper, crock pot, coffee maker, etc.\n unbox kitchen trash can and put empty liner inside\n put kitchen towels, oven mitts and dish cloths in a drawer\n put foil, saran wrap, parchment paper, zip locks and chip clips in a drawer or on a shelf in pantry\n put together lazy susan and put spices on/near it\n put a Mrs. Meyer's dish soap, hand soap and scrub brush on kitchen counter (put extras in supply closet)\n put …",
     blocksHandoff: true,
     sortOrder: 600,
   },
   {
     key: "phase3_work_orders_create_work_order_to_unbox_and_clean_prim",
     stage: "phase3_work_orders",
-    title: "Create work order to unbox and clean primary dishware",
+    title: "Create Work Order to unbox and clean primary dishware",
     role: "Project Manager",
     detail:
-      "Instructions: \n1.) Create work order for handyman to unbox the primary dishware and wash items in the dishwasher (this is done in advance of staging to help the staging team, if possible)\n\n2.) Use the New House Setup - Unbox/Clean Primary Dishware template in Breezeway. \n\n3.) These specific items include:\n Dishes, silverware, utensils, cutting boards, strainers, pots and pans, bowls and baking dishes in dishwasher\n wash coffee carafe by hand\n remove packing materials from chopper, crock pot, coffee maker, etc.",
+      "Instructions: \n1.) Create Work Order for handyman to unbox the primary dishware and wash items in the dishwasher (this is done in advance of staging to help the staging team, if possible)\n\n2.) Use the New House Setup - Unbox/Clean Primary Dishware template in Breezeway. \n\n3.) These specific items include:\n Dishes, silverware, utensils, cutting boards, strainers, pots and pans, bowls and baking dishes in dishwasher\n wash coffee carafe by hand\n remove packing materials from chopper, crock pot, coffee maker, etc.",
     blocksHandoff: true,
     breezewayTemplateId: "209640",
     sortOrder: 610,
@@ -706,10 +706,10 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase3_work_orders_create_work_order_for_washing_linens_and_",
     stage: "phase3_work_orders",
-    title: "Create work order for washing linens and making beds before staging",
+    title: "Create Work Order for washing linens and making beds before staging",
     role: "Project Manager",
     detail:
-      "Instructions:\n Please create and schedule a work order in Breezeway to have the linens washed and beds made at the property.\n\n Use the New House Setup - Make Beds template in Breezeway, which contains the below instructions. \n\nPLEASE WASH SHEETS AND TOWELS:\n Sheets: # king set and # queen sets. Please fold sheets and place in sheet boxes\n\n Towels: Bath towels, hand towels, kitchen towels, wash cloths and dish cloths. Please fold towels and put in a zippered case\n\nWASH DUVET COVERS (at house) AND MAKE BEDS:\n1. zipper encasement\n2. mattress pad\n3. sheets\n4. duvet (or comforter) inside duvet cover (put on duvet after it is fresh from the dryer and wrinkle free or steam duvet cover on bed)\n5. 4 pillows inside zippered encasements and pillow cases",
+      "Instructions:\n Please create and schedule a Work Order in Breezeway to have the linens washed and beds made at the property.\n\n Use the New House Setup - Make Beds template in Breezeway, which contains the below instructions. \n\nPLEASE WASH SHEETS AND TOWELS:\n Sheets: # king set and # queen sets. Please fold sheets and place in sheet boxes\n\n Towels: Bath towels, hand towels, kitchen towels, wash cloths and dish cloths. Please fold towels and put in a zippered case\n\nWASH DUVET COVERS (at house) AND MAKE BEDS:\n1. zipper encasement\n2. mattress pad\n3. sheets\n4. duvet (or comforter) inside duvet cover (put on duvet after it is fresh from the dryer and wrinkle free or steam duvet cover on bed)\n5. 4 pillows inside zippered encasements and pillow cases",
     blocksHandoff: true,
     breezewayTemplateId: "134129",
     sortOrder: 620,
@@ -727,10 +727,10 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase3_work_orders_create_work_order_for_staging_decor",
     stage: "phase3_work_orders",
-    title: "Create work order for staging decor",
+    title: "Create Work Order for staging decor",
     role: "Project Manager",
     detail:
-      "Instructions:\n Please create and schedule a work order in Breezeway to have the decor staged at the property.\n\n Use the New House Setup - Stage Decor template in Breezeway, which contains the below instructions. \n\n Please provide staging team with a PUBLIC PDF copy of the decor pick list (reformatted to remove the order #s, retailer names, price).\n\n Please do not send the Smartsheet link to the staging team",
+      "Instructions:\n Please create and schedule a Work Order in Breezeway to have the decor staged at the property.\n\n Use the New House Setup - Stage Decor template in Breezeway, which contains the below instructions. \n\n Please provide staging team with a PUBLIC PDF copy of the decor pick list (reformatted to remove the order #s, retailer names, price).\n\n Please do not send the Smartsheet link to the staging team",
     blocksHandoff: true,
     breezewayTemplateId: "146399",
     sortOrder: 640,
@@ -738,10 +738,10 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase3_work_orders_create_work_order_to_set_up_roku_tvs",
     stage: "phase3_work_orders",
-    title: "Create work order to set up Roku TVs",
+    title: "Create Work Order to set up Roku TVs",
     role: "Project Manager",
     detail:
-      "Instructions:\n Please create and schedule a work order in Breezeway to have the two Roku TVs activated at the property.\n\n Use the New House Setup - Setting Up Roku TVs template in Breezeway, which contains the directions below.\n\n Please also attach the window coverings instructions in the Design Plan to the work order so that handyman will know which curtain rod to install for each window.",
+      "Instructions:\n Please create and schedule a Work Order in Breezeway to have the two Roku TVs activated at the property.\n\n Use the New House Setup - Setting Up Roku TVs template in Breezeway, which contains the directions below.\n\n Please also attach the window coverings instructions in the Design Plan to the Work Order so that handyman will know which curtain rod to install for each window.",
     blocksHandoff: true,
     breezewayTemplateId: "158476",
     sortOrder: 650,
@@ -749,10 +749,10 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase3_work_orders_create_work_orders_for_unboxing_inventory",
     stage: "phase3_work_orders",
-    title: "Create work orders for unboxing inventory/checking for damage",
+    title: "Create Work Orders for unboxing inventory/checking for damage",
     role: "Project Manager",
     detail:
-      "Instructions:\n Please create and schedule 2 work orders in Breezeway to have deliveries unboxed and inventoried at the property by the handyman. The first work order should be scheduled approximately halfway through the inventory delivery process, and the second should be scheduled at the end (for example - if boxed inventory is scheduled to arrive at the property for the next 12 days, you might schedule the first inventory to occur at Day 5 or 6 and the second to occur at Day 11 or 12).\n\n Use the New House Setup - Unbox Deliveries / Check for Damage template in Breezeway, which contains the directions below.\n\n \n\nTEXT IN BREEZEWAY WORK ORDER:\nProject Manager Name: \nProject Manager Email:\n\n1.) Please move the garage deliveries into the home and unbox them. (The boxed furniture items can remain in the garage and boxed until they are assembled.) \n\n2.) As you are …",
+      "Instructions:\n Please create and schedule 2 Work Orders in Breezeway to have deliveries unboxed and inventoried at the property by the handyman. The first Work Order should be scheduled approximately halfway through the inventory delivery process, and the second should be scheduled at the end (for example - if boxed inventory is scheduled to arrive at the property for the next 12 days, you might schedule the first inventory to occur at Day 5 or 6 and the second to occur at Day 11 or 12).\n\n Use the New House Setup - Unbox Deliveries / Check for Damage template in Breezeway, which contains the directions below.\n\n \n\nTEXT IN BREEZEWAY WORK ORDER:\nProject Manager Name: \nProject Manager Email:\n\n1.) Please move the garage deliveries into the home and unbox them. (The boxed furniture items can remain in the garage and boxed until they are assembled.) \n\n2.) As you are …",
     blocksHandoff: true,
     breezewayTemplateId: "187225",
     sortOrder: 660,
@@ -898,7 +898,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase4_purchasing_asap_assign_work_orders_for_security_insta",
     stage: "phase4_purchasing",
-    title: "ASAP - Assign work orders for security installation and connection",
+    title: "ASAP - Assign Work Orders for security installation and connection",
     role: "Project Manager",
     detail:
       'Please include the task "Connect Yale Locks" as a QC for installer to ensure the app is working. \n PM or Onboarding Manager should confirm the address shows up on the Yale app following the install.',
@@ -911,7 +911,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "ASAP - Purchase large furniture items for the home and schedule delivery",
     role: "Project Manager",
     detail:
-      "Instructions:\n1.) Order large furniture items from vendor (Living Spaces), and schedule delivery.\n2.) Notify setup contractor of the scheduled delivery date and schedule work order to meet the delivery.\n\nWhich Card to Use for Company Purchases\nFollow this guide any time you're making a purchase on behalf of ARHA. Use the correct card based on the vendor, then log every expense — no exceptions.\n\n🛒 Wayfair\n Use Josh's credit card — card number is in the Telegram thread.\n📦 Amazon\n Use Kati's Amazon AMEX ending in 1130.\n🌐 All Other Websites\n Use your personal Ramp card.",
+      "Instructions:\n1.) Order large furniture items from vendor (Living Spaces), and schedule delivery.\n2.) Notify setup contractor of the scheduled delivery date and schedule Work Order to meet the delivery.\n\nWhich Card to Use for Company Purchases\nFollow this guide any time you're making a purchase on behalf of ARHA. Use the correct card based on the vendor, then log every expense — no exceptions.\n\n🛒 Wayfair\n Use Josh's credit card — card number is in the Telegram thread.\n📦 Amazon\n Use Kati's Amazon AMEX ending in 1130.\n🌐 All Other Websites\n Use your personal Ramp card.",
     blocksHandoff: true,
     sortOrder: 810,
   },
@@ -928,10 +928,10 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase4_purchasing_create_work_order_to_meet_furniture_delive",
     stage: "phase4_purchasing",
-    title: "Create work order to meet furniture delivery",
+    title: "Create Work Order to meet furniture delivery",
     role: "Project Manager",
     detail:
-      "Instructions:\n Please utilize the New House Setup - Meet Furniture Delivery template in Breezeway to create a work order. *\n Also attach the 3D Floorplans from the Design Plan to the work order. Label the bedrooms in the floorplan so that the handyman will know which room is which. Also indicate which bedroom furnishings belong in each bedroom.\n Lastly, attach a list of the furniture items that are being delivered, along with pictures, from the furnishings pick list. \n\n(Directions in the template)\nPROCEDURE FOR MEETING FURNITURE DELIVERIES:\n Direct the placement of furniture according to the 3D renderings\n Immediately review the order information provided by the project manager against what was delivered and notify project manager if any items are missing\n Check for damages, notify the delivery driver and send photos to project manager\n Remove packing material and …",
+      "Instructions:\n Please utilize the New House Setup - Meet Furniture Delivery template in Breezeway to create a Work Order. *\n Also attach the 3D Floorplans from the Design Plan to the Work Order. Label the bedrooms in the floorplan so that the handyman will know which room is which. Also indicate which bedroom furnishings belong in each bedroom.\n Lastly, attach a list of the furniture items that are being delivered, along with pictures, from the furnishings pick list. \n\n(Directions in the template)\nPROCEDURE FOR MEETING FURNITURE DELIVERIES:\n Direct the placement of furniture according to the 3D renderings\n Immediately review the order information provided by the project manager against what was delivered and notify project manager if any items are missing\n Check for damages, notify the delivery driver and send photos to project manager\n Remove packing material and …",
     blocksHandoff: true,
     breezewayTemplateId: "134123",
     sortOrder: 830,
@@ -949,10 +949,10 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase4_purchasing_create_work_order_for_supply_box_assembly",
     stage: "phase4_purchasing",
-    title: "Create work order for supply box assembly",
+    title: "Create Work Order for supply box assembly",
     role: "Project Manager",
     detail:
-      "Instructions:\n1.) Purchase items for the supply/storage box and send them to the home. Items can be found on the Closet Storage Supplies list in the Amazon Business Prime account\n\nStorage Box Inventory: \n Portable file box\n 4 spare Roku TV Remotes (1 in the top and 3 in the box) \n 4 spare garage door openers. Please make sure to program them before putting them in the box \n 16 spare batteries for each of the following: AA and AAA. (5 in the top and 11 in the box) \n 4 spare batteries 9V (1 in top and 3 in the box) \n 8 standard light bulbs \n 1 spare backup key for the fireplace (if home has a fireplace and it doesn't have a switch) \n 2 bedroom/bathroom emergency keys (1 flat and 1 pointed)\n\n2.) Create a work order for the contractor who is working the home setup to put together the box, according to the list above, and place it in the master bedroom closet.",
+      "Instructions:\n1.) Purchase items for the supply/storage box and send them to the home. Items can be found on the Closet Storage Supplies list in the Amazon Business Prime account\n\nStorage Box Inventory: \n Portable file box\n 4 spare Roku TV Remotes (1 in the top and 3 in the box) \n 4 spare garage door openers. Please make sure to program them before putting them in the box \n 16 spare batteries for each of the following: AA and AAA. (5 in the top and 11 in the box) \n 4 spare batteries 9V (1 in top and 3 in the box) \n 8 standard light bulbs \n 1 spare backup key for the fireplace (if home has a fireplace and it doesn't have a switch) \n 2 bedroom/bathroom emergency keys (1 flat and 1 pointed)\n\n2.) Create a Work Order for the contractor who is working the home setup to put together the box, according to the list above, and place it in the master bedroom closet.",
     blocksHandoff: true,
     breezewayTemplateId: "590801",
     sortOrder: 850,
@@ -1002,10 +1002,10 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase4_purchasing_create_work_order_to_meet_appliance_delive",
     stage: "phase4_purchasing",
-    title: "Create work order to meet appliance delivery",
+    title: "Create Work Order to meet appliance delivery",
     role: "Project Manager",
     detail:
-      "Instructions:\nUtilize the New House Setup - Meet Appliance Delivery & Test Appliances template in Breezeway.\n\n If utilizing Metro Appliance - no one is required to be present for delivery. \n If someone is present during delivery, please have them check and test the appliances as indicated below.\n If no one is present during delivery, please create a work order for someone to check and test the appliances soon after delivery. (Usually this will be a handyman or cleaner/stager.) \n\n(Directions included on template)\nPROCEDURE FOR CHECKING/TESTING APPLIANCES\n Immediately check for damage, notify delivery driver and send photos to project manager\n Run a test load in the washer\n Run refrigerator water/ice through recommended cycles\n Remove packing materials\n Place manuals in supply closet (top shelf)",
+      "Instructions:\nUtilize the New House Setup - Meet Appliance Delivery & Test Appliances template in Breezeway.\n\n If utilizing Metro Appliance - no one is required to be present for delivery. \n If someone is present during delivery, please have them check and test the appliances as indicated below.\n If no one is present during delivery, please create a Work Order for someone to check and test the appliances soon after delivery. (Usually this will be a handyman or cleaner/stager.) \n\n(Directions included on template)\nPROCEDURE FOR CHECKING/TESTING APPLIANCES\n Immediately check for damage, notify delivery driver and send photos to project manager\n Run a test load in the washer\n Run refrigerator water/ice through recommended cycles\n Remove packing materials\n Place manuals in supply closet (top shelf)",
     blocksHandoff: true,
     breezewayTemplateId: "134119",
     sortOrder: 900,
@@ -1022,10 +1022,10 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase4_purchasing_assign_all_home_improvement_cleaning_stagi",
     stage: "phase4_purchasing",
-    title: "Assign all home improvement, cleaning, staging and landscaping work orders",
+    title: "Assign all home improvement, cleaning, staging and landscaping Work Orders",
     role: "Project Manager",
     detail:
-      "Reference: the Resolve vendor directory.\n Add assignee names to previously-created work orders\n Verify dates on work orders to ensure work will occur in sequence that makes sense\n Ensure that work orders contain all instructions and supplemental attachments to assist vendor in completing the assigned task(s) successfully.",
+      "Reference: the Resolve vendor directory.\n Add assignee names to previously-created Work Orders\n Verify dates on Work Orders to ensure work will occur in sequence that makes sense\n Ensure that Work Orders contain all instructions and supplemental attachments to assist vendor in completing the assigned task(s) successfully.",
     blocksHandoff: true,
     sortOrder: 920,
   },
@@ -1076,15 +1076,15 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Check for garage door remotes",
     role: "Project Manager",
     detail:
-      "Instructions:\n Check the completed lock installation work order to confirm the # of garage door remotes present at the property.\n\n If property does not have at least two programmed garage door remotes, order additional remotes (so that there are two - they do not have to be the same brand).\n\n Create a work order to have the handyman program any new remotes",
+      "Instructions:\n Check the completed lock installation Work Order to confirm the # of garage door remotes present at the property.\n\n If property does not have at least two programmed garage door remotes, order additional remotes (so that there are two - they do not have to be the same brand).\n\n Create a Work Order to have the handyman program any new remotes",
     blocksHandoff: true,
-    subtasks: ["Order additional remotes", "Create work order for handyman to program remotes"],
+    subtasks: ["Order additional remotes", "Create Work Order for handyman to program remotes"],
     sortOrder: 970,
   },
   {
     key: "phase4_purchasing_create_work_order_to_have_someone_place_ma",
     stage: "phase4_purchasing",
-    title: "Create work order to have someone place mattresses on beds",
+    title: "Create Work Order to have someone place mattresses on beds",
     role: "Project Manager",
     detail:
       "This task is necessary only if mattresses arrive before the beds are delivered, and if no one has placed the mattresses on the beds yet.",
@@ -1094,10 +1094,10 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase4_purchasing_order_supplies_create_work_orders_indicate",
     stage: "phase4_purchasing",
-    title: "Order supplies/create work orders indicated in Pre-Work Inspection results",
+    title: "Order supplies/create Work Orders indicated in Pre-Work Inspection results",
     role: "Project Manager",
     detail:
-      "1.) Check the Pre-Work Inspection record for this home in Resolve.\n\n2.) Order air filters in the size(s) and quantity(ies) indicated on the Master File. Order a 5-year water filter for the fridge, if it is not new\n\n3.) Ship these items to the property for installation by the handyman.\n\n4.) Create work orders to have the air and water filters installed by the handyman.\n\n5.) After confirming information is accurate, please send a message to the Onboarding Manager to inform them that we can add the information to the Properties Information Database.",
+      "1.) Check the Pre-Work Inspection record for this home in Resolve.\n\n2.) Order air filters in the size(s) and quantity(ies) indicated on the Master File. Order a 5-year water filter for the fridge, if it is not new\n\n3.) Ship these items to the property for installation by the handyman.\n\n4.) Create Work Orders to have the air and water filters installed by the handyman.\n\n5.) After confirming information is accurate, please send a message to the Onboarding Manager to inform them that we can add the information to the Properties Information Database.",
     blocksHandoff: true,
     sortOrder: 990,
   },
@@ -1212,10 +1212,10 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase5_monitor_create_a_work_order_for_handyman_to_pick_up_s",
     stage: "phase5_monitor",
-    title: "Create a work order for handyman to pick up surveillance signs",
+    title: "Create a Work Order for handyman to pick up surveillance signs",
     role: "Project Manager",
     detail:
-      "INSTRUCTIONS:\nCreate a work order for the handyman to remove the surveillance signs, Ring stick up camera and hedge delivery box (if applicable) at least one day prior to marketing photos.",
+      "INSTRUCTIONS:\nCreate a Work Order for the handyman to remove the surveillance signs, Ring stick up camera and hedge delivery box (if applicable) at least one day prior to marketing photos.",
     blocksHandoff: true,
     sortOrder: 1110,
   },
@@ -1366,7 +1366,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase6_handoff_ensure_all_work_orders_are_reviewed_approved_",
     stage: "phase6_handoff",
-    title: "Ensure all work orders are reviewed/approved in Breezeway",
+    title: "Ensure all Work Orders are reviewed/approved in Breezeway",
     role: "Project Manager",
     blocksHandoff: true,
     sortOrder: 1270,
