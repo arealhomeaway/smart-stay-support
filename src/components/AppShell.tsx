@@ -6,11 +6,9 @@ import {
   Building2,
   CalendarCheck,
   CircleHelp,
-  ClipboardCheck,
   ClipboardList,
   Gauge,
   HardHat,
-  Handshake,
   History,
   Home,
   KeyRound,
@@ -21,15 +19,12 @@ import {
   Plus,
   PlugZap,
   ShieldAlert,
-  Sparkles,
   UserPlus,
   Users,
-  HeartHandshake,
   Wrench,
   ReceiptText,
   Workflow,
   Timer,
-  ShieldCheck,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -58,6 +53,7 @@ import { GlobalSearch, type SearchTarget } from "@/components/GlobalSearch";
 import { RouteProgress } from "@/components/nav/RouteProgress";
 import { useAmbientOrigin } from "@/components/nav/NavContext";
 import { ShellNav, ShellNavProvider } from "@/components/nav/ShellNav";
+import { GroupTabs } from "@/components/nav/GroupTabs";
 import { readOrigin } from "@/lib/nav-context";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -81,9 +77,9 @@ import { parseOperationsSearch } from "@/lib/operations-view-state";
 import { DEPARTMENTS, departmentFor } from "@/lib/shell-nav";
 
 const ONBOARDING_ICONS: Record<string, typeof Home> = {
-  Dashboard: Home,
+  "Onboarding Home": Home,
   Properties: Building2,
-  "My Work": ClipboardList,
+  "My Tasks": ClipboardList,
   Team: Users,
   "Workflow Templates": Workflow,
   "Utilities & Accounts": PlugZap,
@@ -113,71 +109,17 @@ type NavGroup = { label: string; items: NavItem[] };
 // Frontline navigation follows the working day, not the data model: what needs
 // me, my work, the properties I look after, and how to report something.
 // Everything supervisory or administrative is a separate, capability-gated
-// group so a coordinator never navigates the app's architecture.
+// group so a coordinator never navigates the app's architecture. Grouped
+// destinations (Work Map, Routine Work, Vendors, Refunds & Credits…) live as
+// top-of-page tabs on their group — see PAGE_TAB_GROUPS in lib/shell-nav.ts.
 const frontlineGroup: NavGroup = {
   label: "My day",
   items: [
     { to: "/dashboard", label: "Home", icon: Home, tour: "dashboard" },
-    { to: "/tickets", label: "My work", icon: ClipboardList, tour: "tickets" },
+    { to: "/tickets", label: "My Work", icon: ClipboardList, tour: "tickets" },
     // Coverage overlaps all day and the next available person still has to
     // handle the work, so the shared queue is open to every coordinator.
     { to: "/team-queue", label: "Team Queue", icon: Users, tour: "team-queue" },
-    {
-      to: "/map",
-      label: "Work Map",
-      icon: MapPinned,
-      tour: "map",
-      capability: "work_orders_internal",
-    },
-    {
-      to: "/availability-finder",
-      label: "Availability Finder",
-      icon: MapPinned,
-      tour: "availability-finder",
-      capability: "work_orders_internal",
-    },
-    {
-      to: "/inquiry-sources",
-      label: "Inquiry Sources",
-      icon: MapPinned,
-      tour: "inquiry-sources",
-      capability: "work_orders_internal",
-    },
-    {
-      to: "/work-orders",
-      label: "Work orders",
-      icon: Wrench,
-      tour: "work-orders",
-      capability: "work_orders_internal",
-    },
-    {
-      to: "/routines",
-      label: "Routine work",
-      icon: ClipboardCheck,
-      tour: "routines",
-      capability: "routines",
-    },
-    // Frontline/team workflows — PCs and operations staff perform this work
-    // directly. Supervisors may oversee it, but it is not supervisor-owned,
-    // so it lives here rather than under Supervision. Gated on claims_work,
-    // matching what /claims and /recovery already require to open — the nav
-    // item used to require the stricter claims_oversight, which hid it from
-    // tech/onboarding roles that could already reach the page by URL.
-    {
-      to: "/claims",
-      label: "Claims",
-      icon: ReceiptText,
-      tour: "claims",
-      capability: "claims_work",
-    },
-    {
-      to: "/recovery",
-      label: "Guest refunds & credits",
-      icon: HeartHandshake,
-      tour: "recovery",
-      capability: "claims_work",
-    },
-
     {
       to: "/properties",
       label: "Properties",
@@ -186,18 +128,37 @@ const frontlineGroup: NavGroup = {
       capability: "properties",
     },
     {
+      to: "/work-orders",
+      label: "Work Orders",
+      icon: Wrench,
+      tour: "work-orders",
+      capability: "work_orders_internal",
+    },
+    // Frontline/team workflows — PCs and operations staff perform this work
+    // directly. Gated on claims_work, matching what /claims and /recovery
+    // already require to open.
+    {
+      to: "/claims",
+      label: "Guest Claims & Refunds",
+      icon: ReceiptText,
+      tour: "claims",
+      capability: "claims_work",
+    },
+    {
+      to: "/inquiry-sources",
+      label: "Inquiry Sources",
+      icon: MapPinned,
+      tour: "inquiry-sources",
+      capability: "work_orders_internal",
+    },
+    // Kept in the sidebar: the top-bar "Record work" button hides on every
+    // /tickets page, so removing this item would strand people there.
+    {
       to: "/tickets/new",
       label: "Record work",
       icon: Plus,
       tour: "report",
       capability: "ticket_create",
-    },
-    {
-      to: "/str-dispatch-check",
-      label: "STR cleaner check",
-      icon: ShieldCheck,
-      tour: "str-dispatch-check",
-      capability: "cleaner_dispatch_check",
     },
   ],
 };
@@ -205,13 +166,7 @@ const frontlineGroup: NavGroup = {
 const navGroups: NavGroup[] = [
   frontlineGroup,
   {
-    label: "Guest & reservations",
-    items: [
-      { to: "/leads", label: "Leads", icon: UserPlus, tour: "leads", capability: "leads_work" },
-    ],
-  },
-  {
-    label: "Supervision",
+    label: "Oversight",
     items: [
       {
         to: "/oversight",
@@ -227,14 +182,29 @@ const navGroups: NavGroup[] = [
         tour: "onboarding",
         capability: "onboarding_workspace",
       },
+      {
+        to: "/owner-oversight",
+        label: "Program Oversight",
+        icon: KeyRound,
+        tour: "owner-oversight",
+        capability: "owner_oversight",
+      },
+      {
+        to: "/quarterly",
+        label: "Quarterly Reviews",
+        icon: CalendarCheck,
+        tour: "quarterly",
+        capability: "vendor_admin",
+        flag: "quarterly_reviews",
+      },
     ],
   },
   {
-    label: "Operations",
+    label: "Team",
     items: [
       {
         to: "/team",
-        label: "Team & coverage",
+        label: "Team & Coverage",
         icon: Users,
         tour: "team",
         capability: "user_management",
@@ -246,17 +216,10 @@ const navGroups: NavGroup[] = [
         tour: "playbooks",
         capability: "playbooks_edit",
       },
-      {
-        to: "/coach",
-        label: "Ask the Coach",
-        icon: Sparkles,
-        tour: "coach",
-        capability: "coaching",
-      },
     ],
   },
   {
-    label: "Programs",
+    label: "Owners & Programs",
     items: [
       {
         to: "/owner-programs",
@@ -266,112 +229,25 @@ const navGroups: NavGroup[] = [
         capability: "owner_programs",
       },
       {
-        to: "/owner-oversight",
-        label: "Program oversight",
-        icon: KeyRound,
-        tour: "owner-oversight",
-        capability: "owner_oversight",
-      },
-      {
         to: "/homeowners",
         label: "Homeowners",
         icon: Users,
         tour: "homeowners",
         capability: "homeowner_directory",
       },
-      {
-        to: "/vendors",
-        label: "Vendor Hub",
-        icon: Handshake,
-        tour: "vendors",
-        capability: "vendor_directory",
-      },
-      {
-        to: "/quarterly",
-        label: "Quarterly reviews",
-        icon: CalendarCheck,
-        tour: "quarterly",
-        capability: "vendor_admin",
-        flag: "quarterly_reviews",
-      },
+      { to: "/leads", label: "Leads", icon: UserPlus, tour: "leads", capability: "leads_work" },
     ],
   },
-  {
-    label: "Insight",
-    items: [
-      {
-        to: "/command-center",
-        label: "Executive view",
-        icon: Gauge,
-        tour: "command-center",
-        capability: "command_center",
-      },
-      {
-        to: "/analytics",
-        label: "Analytics",
-        icon: BarChart3,
-        tour: "analytics",
-        capability: "analytics",
-      },
-      {
-        to: "/owner-analytics",
-        label: "Owner participation",
-        icon: KeyRound,
-        tour: "owner-analytics",
-        capability: "owner_programs",
-      },
-      {
-        to: "/cleaner-hours",
-        label: "STR cleaner time",
-        icon: Timer,
-        tour: "cleaner-hours",
-        capability: "cleaner_hours",
-      },
-      {
-        to: "/finance",
-        label: "Finance",
-        icon: ReceiptText,
-        tour: "finance",
-        capability: "finance_workspace",
-      },
-    ],
-  },
-  {
-    label: "Administration",
-    items: [
-      {
-        to: "/integrations",
-        label: "Integrations",
-        icon: PlugZap,
-        tour: "integrations",
-        capability: "integrations",
-      },
-      {
-        to: "/audit",
-        label: "Audit history",
-        icon: History,
-        tour: "audit",
-        capability: "audit_history",
-      },
-      {
-        to: "/help-tickets",
-        label: "Help tickets",
-        icon: CircleHelp,
-        tour: "help-tickets",
-        capability: "audit_history",
-      },
-    ],
-  },
-  {
-    label: "Support",
-    items: [{ to: "/welcome", label: "Help", icon: CircleHelp, tour: "help" }],
-  },
+  // "Reports" and "Admin" are single sidebar items that open the first page
+  // the person can open; the rest of each group appears as top-of-page tabs.
+  // They are computed inside the component because the target depends on
+  // this person's capabilities.
 ];
 
 const vendorGroups: NavGroup[] = [
   {
     label: "My company",
-    items: [{ to: "/vendor", label: "My work orders", icon: HardHat, tour: "vendor" }],
+    items: [{ to: "/vendor", label: "My Work Orders", icon: HardHat, tour: "vendor" }],
   },
 ];
 // Homeowner navigation is data-driven (their homes) and page-section based, so
@@ -507,20 +383,50 @@ export function AppShell({ children }: { children: ReactNode }) {
                 ]
               : []),
           ]
-        : navGroups
-            .map((g) => ({
-              ...g,
-              items: g.items.filter(
-                (i) =>
-                  canOpen(i.to) &&
-                  (!i.capability ||
-                    can(i.capability) ||
-                    (i.capability === "leads_work" && seat.isGuestExperience)) &&
-                  (!i.supervisorOnly || isSupervisor) &&
-                  (!i.flag || flagEnabled(i.flag)),
-              ),
-            }))
-            .filter((g) => g.items.length > 0);
+        : (() => {
+            const visible = navGroups
+              .map((g) => ({
+                ...g,
+                items: g.items.filter(
+                  (i) =>
+                    canOpen(i.to) &&
+                    (!i.capability ||
+                      can(i.capability) ||
+                      (i.capability === "leads_work" && seat.isGuestExperience)) &&
+                    (!i.supervisorOnly || isSupervisor) &&
+                    (!i.flag || flagEnabled(i.flag)),
+                ),
+              }))
+              .filter((g) => g.items.length > 0);
+            // One sidebar item per grouped area; the group's other pages are
+            // top-of-page tabs (PAGE_TAB_GROUPS). The item opens the first
+            // page this person can open.
+            const firstOpen = (candidates: { to: string; capability: Capability; icon: typeof Home }[]) =>
+              candidates.find((c) => can(c.capability) && canOpen(c.to));
+            const reports = firstOpen([
+              { to: "/analytics", capability: "analytics", icon: BarChart3 },
+              { to: "/owner-analytics", capability: "owner_programs", icon: KeyRound },
+              { to: "/cleaner-hours", capability: "cleaner_hours", icon: Timer },
+              { to: "/finance", capability: "finance_workspace", icon: ReceiptText },
+              { to: "/command-center", capability: "command_center", icon: Gauge },
+            ]);
+            if (reports)
+              visible.push({
+                label: "Reports",
+                items: [{ to: reports.to, label: "Reports", icon: reports.icon, tour: "reports" }],
+              });
+            const admin = firstOpen([
+              { to: "/integrations", capability: "integrations", icon: PlugZap },
+              { to: "/audit", capability: "audit_history", icon: History },
+              { to: "/help-tickets", capability: "audit_history", icon: CircleHelp },
+            ]);
+            if (admin)
+              visible.push({
+                label: "Admin",
+                items: [{ to: admin.to, label: "Admin", icon: admin.icon, tour: "admin" }],
+              });
+            return visible;
+          })();
 
   const workspace = vendorMode
     ? "Vendor Portal"
@@ -709,6 +615,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <ShellNavProvider>
               {(pageLabel) => (
                 <>
+                  {!ownerMode && !vendorMode && <GroupTabs />}
                   {!ownerMode && !vendorMode && (
                     <ShellNav pageLabel={pageLabel} hideDepartmentMenu={onboardingOnly && departmentFor(pathname)?.key !== "active-owner"} />
                   )}

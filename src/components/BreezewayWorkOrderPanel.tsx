@@ -3,7 +3,7 @@
  *
  * This is a mirror of work Breezeway is executing — not Resolve Tickets. The
  * distinction is deliberate and stays visible: every card is badged "Breezeway"
- * and closing one here closes the Breezeway work order only. A Resolve Ticket
+ * and closing one here closes the Breezeway Work Order only. A Resolve Ticket
  * keeps its own closure requirements.
  */
 import { useRef, useState } from "react";
@@ -88,7 +88,7 @@ function CommentThread({ workOrderId }: { workOrderId: string }) {
     <div className="space-y-3 rounded-md border border-border/60 bg-muted/30 p-3">
       {data?.notice && <p className="text-xs text-muted-foreground">{data.notice}</p>}
       {comments.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No comments on this work order yet.</p>
+        <p className="text-xs text-muted-foreground">No comments on this Work Order yet.</p>
       ) : (
         <ul className="space-y-2">
           {comments.map((c) => (
@@ -202,7 +202,7 @@ function PhotoStrip({ workOrderId, writable }: { workOrderId: string; writable: 
         <Skeleton className="h-20 w-full" />
       ) : photos.length === 0 ? (
         <p className="text-xs text-muted-foreground">
-          {data?.notice ?? "No photos on this work order yet."}
+          {data?.notice ?? "No photos on this Work Order yet."}
         </p>
       ) : (
         <>
@@ -220,7 +220,7 @@ function PhotoStrip({ workOrderId, writable }: { workOrderId: string; writable: 
                   src={p.url}
                   alt={
                     p.caption ??
-                    `Breezeway work order photo${p.uploader ? ` from ${p.uploader}` : ""}`
+                    `Breezeway Work Order photo${p.uploader ? ` from ${p.uploader}` : ""}`
                   }
                   className="size-24 rounded object-cover"
                   loading="lazy"
@@ -298,7 +298,7 @@ function WorkOrderCard({ order, writable }: { order: BreezewayWorkOrder; writabl
     onError: () => toast.error("Could not reach Breezeway."),
   });
 
-  // Deliberate escalation: a mirrored work order is not a Ticket until someone
+  // Deliberate escalation: a mirrored Work Order is not a Ticket until someone
   // says so. The new Ticket is auto-routed to the Property Operations queue.
   const promote = useServerFn(escalateWorkOrderToTicketFn);
   const escalate = useMutation({
@@ -408,7 +408,7 @@ function WorkOrderCard({ order, writable }: { order: BreezewayWorkOrder; writabl
           subjectId={order.id}
           attachTo={{ entityType: "property", entityId: order.propertyId }}
           propertyId={order.propertyId}
-          title="Evidence for this work order"
+          title="Evidence for this Work Order"
           description="Resolve's own proof that the work is done. Checked against the same standard everywhere."
         />
       )}
@@ -442,10 +442,10 @@ export function BreezewayWorkOrderPanel({ propertyId }: { propertyId: string }) 
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2">
         <div>
-          <CardTitle className="text-base">Breezeway work orders</CardTitle>
+          <CardTitle className="text-base">Breezeway Work Orders</CardTitle>
           <CardDescription>
             Current Breezeway work at this home. Resolve stays the source of truth — closing here
-            closes the Breezeway work order only.
+            closes the Breezeway Work Order only.
           </CardDescription>
         </div>
         <Button variant="outline" size="sm" onClick={() => void refresh()} disabled={refreshing}>
@@ -459,7 +459,7 @@ export function BreezewayWorkOrderPanel({ propertyId }: { propertyId: string }) 
           <p className="text-muted-foreground">
             {data?.mappingState === "verified"
               ? "No current Breezeway work at this home."
-              : "This home is not verified against Breezeway, so no work orders are mirrored."}
+              : "This home is not verified against Breezeway, so no Work Orders are mirrored."}
           </p>
         ) : (
           data!.workOrders.map((o) => (

@@ -34,7 +34,7 @@ import {
 import type { WorkOrderRow } from "@/lib/work-order-types";
 
 export function useWorkOrders() {
-  // Demo work orders belong to the demo lens only: live queues, counts and
+  // Demo Work Orders belong to the demo lens only: live queues, counts and
   // supervisor views never mix the two.
   const { demoMode } = useDemo();
   return useQuery({
@@ -148,7 +148,7 @@ export function WorkOrderRowCard({
         work_order_id: workOrder.id,
         author_id: userId,
         event_type: "assignment",
-        body: "Assigned to self from the work order queue",
+        body: "Assigned to self from the Work Order queue",
         is_demo: workOrder.is_demo,
       });
     },
@@ -225,7 +225,7 @@ export function WorkOrderListSection({
   requirements,
   propertyNames,
   canEdit,
-  originLabel = "Work orders",
+  originLabel = "Work Orders",
 }: {
   workOrders: WorkOrderRow[];
   requirements: Map<string, RequirementLike[]>;
@@ -238,7 +238,7 @@ export function WorkOrderListSection({
   const [openId, setOpenId] = useState<string | null>(null);
   const people = useStaffDirectory().data ?? [];
   const propertyPhotos = useWorkOrderPropertyPhotos().data ?? new Map<string, string | null>();
-  // Recording a checkpoint can move a work order out of the section it was
+  // Recording a checkpoint can move a Work Order out of the section it was
   // opened from; the workspace stays on the job being worked.
   const lastOpen = useRef<WorkOrderRow | null>(null);
   const fromList = workOrders.find((w) => w.id === openId) ?? null;

@@ -10,7 +10,7 @@ describe("work entry owner relevance", () => {
     expect(ownerSectionRelevant({ entry_kind: "maintenance", estimated_cost: 120, insurance_risk: "no" }).relevant).toBe(false);
     expect(ownerSectionRelevant({ entry_kind: "maintenance", estimated_cost: 350, insurance_risk: "no" }).relevant).toBe(false);
   });
-  it("over threshold by estimate or work order cost: shown", () => {
+  it("over threshold by estimate or Work Order cost: shown", () => {
     expect(ownerSectionRelevant({ entry_kind: "maintenance", estimated_cost: 351 }).relevant).toBe(true);
     expect(ownerSectionRelevant({ entry_kind: "maintenance" }, [500]).relevant).toBe(true);
   });

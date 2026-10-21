@@ -221,7 +221,7 @@ export function viewTask(
     markers.push({
       key: "bw",
       label: "BW",
-      explain: "This step is fulfilled by a Breezeway New House Setup work order.",
+      explain: "This step is fulfilled by a Breezeway New House Setup Work Order.",
     });
   }
   if (template) {
@@ -368,7 +368,7 @@ export function whyThisTaskExists(view: TaskView, all: WorkflowTask[]): string[]
   }
 
   if (template?.breezewayTemplateId) {
-    lines.push("Fulfilled by a Breezeway New House Setup work order.");
+    lines.push("Fulfilled by a Breezeway New House Setup Work Order.");
   }
 
   if (task.blocks_handoff) {

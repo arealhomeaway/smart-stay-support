@@ -21,7 +21,7 @@ async function isEditor({ supabase, userId }: Ctx) {
 }
 /**
  * Active Owner enrollment, welcome Retry and Reconcile: Onboarding Director
- * seat or Platform Owner. A Supervisor (manager) role alone is not enough.
+ * seat or Admin. A Supervisor (manager) role alone is not enough.
  * Same set as welcome editing today, kept as its own rule so they can diverge.
  */
 export async function isActiveOwnerAuthority(ctx: Ctx) {
@@ -57,7 +57,7 @@ export const enrollActiveOwner = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const ctx = context as unknown as Ctx;
     if (!(await isActiveOwnerAuthority(ctx)))
-      throw new Error("Only the Onboarding Director or a Platform Owner can set up an Active Owner.");
+      throw new Error("Only the Onboarding Director or a Admin can set up an Active Owner.");
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
     // Check the home before any account work, so a refused caller creates nothing.
     const home = await db.from("properties").select("is_demo").eq("id", data.propertyId).maybeSingle();
@@ -210,14 +210,14 @@ export const welcomeVideoUrl = createServerFn({ method: "POST" })
     return { url: data?.signedUrl ?? null };
   });
 
-/** Onboarding Director / Platform Owner: put a failed welcome back in the queue. */
+/** Onboarding Director / Admin: put a failed welcome back in the queue. */
 export const retryWelcome = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const ctx = context as unknown as Ctx;
     if (!(await isActiveOwnerAuthority(ctx)))
-      throw new Error("Only the Onboarding Director or a Platform Owner can retry a welcome.");
+      throw new Error("Only the Onboarding Director or a Admin can retry a welcome.");
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
     const { retryOwnerWelcome } = await import("./owner-welcome.server");
     const { writeAudit } = await import("./audit.server");
@@ -242,7 +242,7 @@ export const reconcileWelcome = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const ctx = context as unknown as Ctx;
     if (!(await isActiveOwnerAuthority(ctx)))
-      throw new Error("Only the Onboarding Director or a Platform Owner can reconcile a welcome.");
+      throw new Error("Only the Onboarding Director or a Admin can reconcile a welcome.");
     const { data: result, error } = await ctx.supabase.rpc("reconcile_owner_welcome" as never, {
       _id: data.id, _outcome: data.outcome, _reason: data.reason,
     } as never);

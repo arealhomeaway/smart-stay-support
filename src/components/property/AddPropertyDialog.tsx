@@ -471,7 +471,7 @@ function OwnerRezImport({
 
             <label className="flex items-center gap-2 text-sm">
               <Checkbox checked={isDemo} onCheckedChange={(v) => setIsDemo(v === true)} />
-              Mark as a QA / test home (kept out of production reporting)
+              Practice home (hidden from reports)
             </label>
 
             <Button
@@ -696,7 +696,7 @@ function ManualForm({
       <MilestoneFields value={milestones} onChange={setMilestones} />
       <label className="flex items-center gap-2 text-sm">
         <Checkbox checked={isDemo} onCheckedChange={(v) => setIsDemo(v === true)} />
-        Mark as a QA / test home (kept out of production reporting)
+        Practice home (hidden from reports)
       </label>
       <Button type="submit" className="w-full" disabled={save.isPending}>
         {save.isPending ? "Saving…" : "Create property"}

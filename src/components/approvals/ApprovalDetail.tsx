@@ -5,7 +5,7 @@
  * decision was waiting but not what home it belonged to, which ticket raised
  * it, what the amount was, or who decided it. Every approval in Resolve is the
  * same canonical record, so this reads that record and resolves the things it
- * points at — property, ticket, work order, requester, approver — into one
+ * points at — property, ticket, Work Order, requester, approver — into one
  * coherent view.
  */
 import { useQuery } from "@tanstack/react-query";
@@ -144,7 +144,7 @@ export function ApprovalDetail({
           <PeekRow label="Requested" value={relativeTime(a.created_at)} />
           <PeekRow
             label="Approver"
-            value={q.data?.approver ?? (a.approver_role ? `${a.approver_role} seat` : "Unrouted")}
+            value={q.data?.approver ?? (a.approver_role ? `${a.approver_role}` : "Unrouted")}
           />
           <PeekRow
             label="Decision"

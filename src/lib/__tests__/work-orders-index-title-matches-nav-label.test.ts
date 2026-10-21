@@ -18,12 +18,12 @@ describe("work-orders.index.tsx — the page title identifies the workspace, lik
   const here = dirname(fileURLToPath(import.meta.url));
   const src = readFileSync(join(here, "../../routes/_authenticated/work-orders.index.tsx"), "utf8");
 
-  it('PageHeader title reads "Work orders" — matching the sidebar nav label exactly', () => {
-    expect(src).toContain('title="Work orders"');
+  it('PageHeader title reads "Work Orders" — matching the sidebar nav label exactly', () => {
+    expect(src).toContain('title="Work Orders"');
   });
 
   it("no longer hides the workspace name in a small eyebrow behind an unrelated title", () => {
-    expect(src).not.toContain('eyebrow="Work orders"');
+    expect(src).not.toContain('eyebrow="Work Orders"');
     expect(src).not.toContain('title="Today"');
   });
 });

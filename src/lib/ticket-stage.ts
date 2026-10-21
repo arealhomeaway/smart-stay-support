@@ -88,7 +88,7 @@ export function repairIsPossible(
  * A vendor saying the job is done ("Vendor says complete", `vendor_completed_at`)
  * is an internal Work Order milestone, not a Ticket-visible one: closure
  * evidence, final cost and guest notification can all still stand between
- * that and "Close work order". Only `closed_at` — the Work Order actually
+ * that and "Close Work Order". Only `closed_at` — the Work Order actually
  * closed — may advance the Ticket to Verify. `vendor_status === "completed"`
  * is kept as a second, independent signal: the older on-ticket vendor
  * dispatch field, predating the Work Order model, unaffected by this rule.

@@ -291,7 +291,7 @@ export async function createOwnerMatter(
   if (error) throw error;
   const matter = data?.[0];
   if (!matter?.ticket_id || !Number.isFinite(matter.ref)) {
-    throw new Error("The property matter was not confirmed. Refresh before trying again.");
+    throw new Error("The home update was not confirmed. Refresh before trying again.");
   }
   return { ok: true as const, ticketId: matter.ticket_id, ref: matter.ref };
 }

@@ -4,7 +4,7 @@
  * Before this module each surface enforced its own rules: Current Work checked
  * closure evidence, the Waiting sheet checked a review date, and the supervisor
  * status menu checked nothing at all — so a supervisor could set "Dispatched"
- * with no work order, "Waiting" with no dependency, or "Resolved" with no
+ * with no Work Order, "Waiting" with no dependency, or "Resolved" with no
  * summary. Every write now runs through `validateTicketTransition`, and the only
  * way past a rule is a *named* exception that a privileged role must justify.
  *
@@ -76,7 +76,7 @@ export function isTerminal(status: string) {
 
 /** Named exceptions. A privileged role may use one, with a written reason. */
 export const LIFECYCLE_EXCEPTIONS = {
-  dispatch_prerequisites: "Dispatch without a recorded work order",
+  dispatch_prerequisites: "Dispatch without a recorded Work Order",
   guest_confirmation_prerequisites: "Await guest confirmation without recorded guest contact",
   closure_requirements: "Resolve without the required closure evidence",
   closure_qa: "Close without a review",
@@ -92,7 +92,7 @@ export type LifecycleFacts = {
   status: string;
   /** Field/vendor work is part of this ticket, so dispatch means something. */
   requiresFieldWork: boolean;
-  /** A work order, Breezeway task or vendor assignment exists. */
+  /** A Work Order, Breezeway task or vendor assignment exists. */
   hasDispatchObject: boolean;
   /** Somebody or somewhere to send it to. */
   hasDispatchDestination: boolean;
@@ -193,7 +193,7 @@ export function validateTicketTransition(
       if (!facts.hasDispatchObject)
         return fail(
           "dispatch_no_work_order",
-          "Create the repair / work order first — dispatch records where the work went.",
+          "Create the repair / Work Order first — dispatch records where the work went.",
           "dispatch_prerequisites",
         );
       if (!facts.hasDispatchDestination)

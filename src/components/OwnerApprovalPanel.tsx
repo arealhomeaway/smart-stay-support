@@ -313,7 +313,7 @@ function AccountApprovals({
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <ClipboardCheck className="h-4 w-4" aria-hidden="true" />
-          Decisions for your approval
+          Your approvals
         </CardTitle>
         <CardDescription>
           Each item shows what is being approved. Your name, the time and any note you add are

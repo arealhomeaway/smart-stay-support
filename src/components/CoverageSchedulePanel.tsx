@@ -293,7 +293,7 @@ function WeekCalendar({
                     {SEAT_LABELS[role.code] ?? role.name}
                   </span>
                   <span className="truncate text-xs text-muted-foreground">
-                    {holder ?? <span className="text-danger">Seat unfilled</span>}
+                    {holder ?? <span className="text-danger">No one assigned</span>}
                     {pending && <span className="text-warning"> · invite pending</span>}
                     {role.available === false && (
                       <span className="text-warning"> · unavailable</span>
@@ -423,7 +423,7 @@ function SeatsCard({
                 <div>
                   <p className="font-medium">{SEAT_LABELS[role.code] ?? role.name}</p>
                   <p className="text-muted-foreground">
-                    {role.current_seat_name ?? <span className="text-danger">Seat unfilled</span>}
+                    {role.current_seat_name ?? <span className="text-danger">No one assigned</span>}
                   </p>
                   {role.current_seat_name && !role.current_seat_holder && (
                     <p className="text-warning">
@@ -522,7 +522,7 @@ function SeatsCard({
                 ) : (
                   <div className="flex flex-wrap gap-2">
                     <Button size="sm" variant="secondary" onClick={() => setOpen(role.code)}>
-                      Manage seat &amp; schedule
+                      Manage coverage
                     </Button>
                     <Button
                       size="sm"

@@ -46,7 +46,7 @@ export type BreezewayWorkOrderComment = {
   postedAt: string | null;
 };
 
-/** A photo attached to a Breezeway work order, mirrored for viewing in Resolve. */
+/** A photo attached to a Breezeway Work Order, mirrored for viewing in Resolve. */
 export type BreezewayWorkOrderPhoto = {
   id: string;
   breezewayPhotoId: number | null;

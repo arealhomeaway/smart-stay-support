@@ -2,7 +2,7 @@
  * Breezeway-origin Ticket routing (server-only).
  *
  * Scope, deliberately narrow:
- *   - A NEW Ticket created out of a Breezeway work order follows the real
+ *   - A NEW Ticket created out of a Breezeway Work Order follows the real
  *     coverage model: overnight on-call, then the Team B / Property Operations
  *     weighted queue, then the approved cross-team triage role, then an
  *     ON-DUTY Operations Supervisor, then unassigned (surfaced in Oversight).
@@ -203,8 +203,8 @@ export type EscalateResult =
   | { ok: false; message: string };
 
 /**
- * Creates ONE Resolve Ticket from a mirrored Breezeway work order and applies
- * Team B routing. Idempotent per work order: if the work order is already
+ * Creates ONE Resolve Ticket from a mirrored Breezeway Work Order and applies
+ * Team B routing. Idempotent per Work Order: if the Work Order is already
  * linked to a ticket, that ticket is returned and its ownership is untouched.
  */
 export async function createTicketFromWorkOrder(
@@ -215,9 +215,9 @@ export async function createTicketFromWorkOrder(
   const db = await admin();
   const { getWorkOrder, linkWorkOrderToTicket } = await import("./breezeway-workorders.server");
   const wo = await getWorkOrder(workOrderId);
-  if (!wo) return { ok: false, message: "That work order is not in Resolve." };
+  if (!wo) return { ok: false, message: "That Work Order is not in Resolve." };
   if (!wo.propertyId)
-    return { ok: false, message: "Link the work order to a Resolve property first." };
+    return { ok: false, message: "Link the Work Order to a Resolve property first." };
   if (wo.linkedTicketId) {
     const { data } = await db
       .from("tickets")
@@ -235,7 +235,7 @@ export async function createTicketFromWorkOrder(
         ticketId: t.id,
         ref: t.ref,
         assignedTo: t.current_action_owner,
-        note: "This work order already has a Ticket. Ownership was left as it is.",
+        note: "This Work Order already has a Ticket. Ownership was left as it is.",
       };
     }
   }

@@ -148,7 +148,7 @@ function Scorecard() {
         description="Thoroughness is worth the most — finish the job, don't just stop the leak."
       >
         <div className="space-y-1 text-sm text-muted-foreground">
-          <p>Every completed work order starts at 10 points.</p>
+          <p>Every completed Work Order starts at 10 points.</p>
           <p>Thoroughness moves your score the most, then communication and timeliness.</p>
           <p>
             +10 for complete photo evidence, +8 for finishing inside the window, +6 for taking
@@ -160,7 +160,7 @@ function Scorecard() {
 
       {s.recent.length > 0 && (
         <div className="space-y-3">
-          <SectionBand title="Recent scored work orders" />
+          <SectionBand title="Recent scored Work Orders" />
           <div className="space-y-1.5">
             {s.recent.map((r) => (
               <div

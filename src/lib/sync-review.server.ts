@@ -91,7 +91,7 @@ export async function detectAllDrift(): Promise<DriftItem[]> {
     for (const row of rows ?? []) {
       tickets.set(row.id, { status: row.status, scheduled: null });
     }
-    // The visit date lives on the Resolve work order, not the ticket.
+    // The visit date lives on the Resolve Work Order, not the ticket.
     const { data: wos } = await supabaseAdmin
       .from("work_orders")
       .select("ticket_id, scheduled_for")

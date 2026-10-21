@@ -160,7 +160,7 @@ export function WorkOrderDrawer({
   const [reassignTo, setReassignTo] = useState("");
 
   /*
-   * Every unsaved value belongs to one work order. QA found a quote typed on
+   * Every unsaved value belongs to one Work Order. QA found a quote typed on
    * one job still sitting in the box after opening another, so the workspace
    * clears itself whenever the record it is showing changes — belt and braces
    * alongside the caller remounting it by id.
@@ -1229,7 +1229,7 @@ export function WorkOrderDrawer({
                 })
               }
             >
-              Close work order
+              Close Work Order
             </Button>
             {workOrder.closed_at && isSupervisor ? (
               <Button
@@ -1283,7 +1283,7 @@ export function WorkOrderDrawer({
           ) : null}
           <p className="text-muted-foreground">
             {workOrder.recovery_id ? "Linked to a guest refund or credit." : "No guest refund or credit linked."}{" "}
-            {workOrder.claim_id ? "Linked to a claim." : "No claim linked."} A work order fixes the
+            {workOrder.claim_id ? "Linked to a claim." : "No claim linked."} A Work Order fixes the
             home; a recovery gives the guest something back; a claim recovers the cost from someone
             else. Link one only when it is genuinely running.
           </p>

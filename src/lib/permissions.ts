@@ -17,10 +17,10 @@
 export type AppRole = "admin" | "manager" | "onboarding" | "tech" | "vendor" | "owner";
 
 export const ROLE_LABELS: Record<AppRole, string> = {
-  admin: "Platform Owner",
+  admin: "Admin",
   manager: "Supervisor",
   onboarding: "Onboarding staff",
-  tech: "Staff",
+  tech: "Property Coordinator",
   vendor: "Vendor",
   owner: "Homeowner",
 };
@@ -172,7 +172,7 @@ export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
   manager: SUPERVISOR_CAPS,
   onboarding: [...STAFF_BASE, "onboarding_workspace", "handoff_request"],
   // Operations coordinators can see current guest/tenant contact details, the
-  // shared Team Queue, and the work orders attached to what they are running.
+  // shared Team Queue, and the Work Orders attached to what they are running.
   tech: [...STAFF_BASE, "guest_contact", "work_orders_internal", "cleaner_dispatch_check", "vendor_directory"],
 
   vendor: [],

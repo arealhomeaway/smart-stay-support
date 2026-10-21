@@ -264,7 +264,7 @@ function Dashboard() {
       {sampleQueue && (
         <p className="rounded-lg border border-border bg-secondary/40 px-3 py-2 text-sm text-muted-foreground">
           You are previewing the {role.identityLabel} view. Nothing is assigned to your own account
-          here, so this is a sample of the work this seat handles — not one person&apos;s real
+          here, so this is a sample of the work this role handles — not one person&apos;s real
           queue.
         </p>
       )}

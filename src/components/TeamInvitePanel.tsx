@@ -28,11 +28,11 @@ import { usDate } from "@/lib/dates";
 type InviteRole = "admin" | "manager" | "onboarding" | "tech" | "vendor" | "owner";
 
 const ROLE_LABEL: Record<InviteRole, string> = {
-  admin: "Platform Owner — everything, including roles and settings",
+  admin: "Admin — everything, including roles and settings",
   manager: "Supervisor — oversight, analytics and handoff review",
   onboarding: "Onboarding staff — pre-handoff work and readiness",
   tech: "Staff — their own assigned work",
-  vendor: "Vendor — only their dispatched work orders",
+  vendor: "Vendor — only their dispatched Work Orders",
   owner: "Homeowner — their own enrolled home",
 };
 
@@ -116,10 +116,9 @@ Your access is set the moment the code is redeemed. Codes are single-use and exp
           <Ticket className="size-4" /> Invite codes
         </CardTitle>
         <CardDescription>
-          Issue a single-use code for a new coordinator, supervisor or vendor. Codes are not emailed
-          yet — copy the invite message and send it to them yourself. They create an account on the
-          normal login screen, then enter the code at <span className="font-mono">/join</span> to
-          set their access. Codes expire after 30 days.
+          Create a code for a new team member or vendor and send it to them yourself
+          (codes are not emailed). They sign up, then enter the code to get their access.
+          Each code works once and expires after 30 days.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

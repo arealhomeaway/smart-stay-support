@@ -12,7 +12,7 @@ import type { Database } from "@/integrations/supabase/types";
 async function assertStaff(supabase: SupabaseClient<Database>, userId: string) {
   const { data, error } = await supabase.rpc("is_staff", { _user_id: userId });
   if (error) throw new Error("Could not verify your access level.");
-  if (!data) throw new Error("Only Resolve staff can work with Breezeway work orders.");
+  if (!data) throw new Error("Only Resolve staff can work with Breezeway Work Orders.");
 }
 
 function uuid(value: unknown, label = "record") {
@@ -21,7 +21,7 @@ function uuid(value: unknown, label = "record") {
   return id;
 }
 
-/** Mirrored work orders for one property, optionally refreshed from Breezeway first. */
+/** Mirrored Work Orders for one property, optionally refreshed from Breezeway first. */
 export const propertyWorkOrders = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { propertyId: string; refresh?: boolean }) => ({
@@ -46,11 +46,11 @@ export const propertyWorkOrders = createServerFn({ method: "POST" })
     };
   });
 
-/** Comment thread for one work order, pulled fresh from Breezeway. */
+/** Comment thread for one Work Order, pulled fresh from Breezeway. */
 export const workOrderComments = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { workOrderId: string; refresh?: boolean }) => ({
-    workOrderId: uuid(input?.workOrderId, "work order"),
+    workOrderId: uuid(input?.workOrderId, "Work Order"),
     refresh: input?.refresh !== false,
   }))
   .handler(async ({ data, context }) => {
@@ -67,7 +67,7 @@ export const workOrderComments = createServerFn({ method: "POST" })
 export const replyToWorkOrderFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { workOrderId: string; body: string }) => ({
-    workOrderId: uuid(input?.workOrderId, "work order"),
+    workOrderId: uuid(input?.workOrderId, "Work Order"),
     body: String(input?.body ?? "")
       .trim()
       .slice(0, 4000),
@@ -88,15 +88,15 @@ export const replyToWorkOrderFn = createServerFn({ method: "POST" })
     );
   });
 
-/** close / reopen / approve / acknowledge on the Breezeway work order only. */
+/** close / reopen / approve / acknowledge on the Breezeway Work Order only. */
 export const workOrderLifecycle = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { workOrderId: string; action: string }) => {
     const action = String(input?.action ?? "");
     if (!["close", "reopen", "approve", "acknowledge"].includes(action)) {
-      throw new Error("Unknown work order action.");
+      throw new Error("Unknown Work Order action.");
     }
-    return { workOrderId: uuid(input?.workOrderId, "work order"), action };
+    return { workOrderId: uuid(input?.workOrderId, "Work Order"), action };
   })
   .handler(async ({ data, context }) => {
     await assertStaff(context.supabase, context.userId);
@@ -123,7 +123,7 @@ export const updateWorkOrderFn = createServerFn({ method: "POST" })
       priority?: string;
       scheduledDate?: string | null;
     }) => ({
-      workOrderId: uuid(input?.workOrderId, "work order"),
+      workOrderId: uuid(input?.workOrderId, "Work Order"),
       name: input?.name ? String(input.name).slice(0, 200) : undefined,
       description: input?.description ? String(input.description).slice(0, 4000) : undefined,
       priority: input?.priority ? String(input.priority).slice(0, 40) : undefined,
@@ -139,11 +139,11 @@ export const updateWorkOrderFn = createServerFn({ method: "POST" })
     return updateWorkOrder(workOrderId, patch);
   });
 
-/** Photos on one work order, refreshed from the per-task Breezeway read. */
+/** Photos on one Work Order, refreshed from the per-task Breezeway read. */
 export const workOrderPhotos = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { workOrderId: string; refresh?: boolean }) => ({
-    workOrderId: uuid(input?.workOrderId, "work order"),
+    workOrderId: uuid(input?.workOrderId, "Work Order"),
     refresh: input?.refresh !== false,
   }))
   .handler(async ({ data, context }) => {
@@ -169,7 +169,7 @@ export const syncBreezewayPeopleFn = createServerFn({ method: "POST" })
   });
 
 /**
- * Uploads one photo to the Breezeway task behind a mirrored work order.
+ * Uploads one photo to the Breezeway task behind a mirrored Work Order.
  *
  * FormData input: the browser sends the raw file, so nothing is base64-inflated.
  * The client sends a Resolve work-order UUID only — the Breezeway task id is
@@ -182,7 +182,7 @@ export const uploadWorkOrderPhotoFn = createServerFn({ method: "POST" })
     const file = input.get("file");
     if (!(file instanceof File)) throw new Error("Choose a photo first.");
     return {
-      workOrderId: uuid(input.get("workOrderId"), "work order"),
+      workOrderId: uuid(input.get("workOrderId"), "Work Order"),
       // Only ever true when the staff member explicitly ticked the box.
       includeInTaskReport: String(input.get("includeInTaskReport") ?? "") === "true",
       file,
@@ -209,13 +209,13 @@ export const uploadWorkOrderPhotoFn = createServerFn({ method: "POST" })
   });
 
 /**
- * Deliberate escalation: create a Resolve Ticket from a Breezeway work order
+ * Deliberate escalation: create a Resolve Ticket from a Breezeway Work Order
  * and auto-route it to the Property Operations (Team B) queue.
  */
 export const escalateWorkOrderToTicketFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { workOrderId: string; priority?: string }) => ({
-    workOrderId: uuid(input?.workOrderId, "work order"),
+    workOrderId: uuid(input?.workOrderId, "Work Order"),
     priority: ["p1", "p2", "p3"].includes(String(input?.priority)) ? String(input?.priority) : "p3",
   }))
   .handler(async ({ data, context }) => {

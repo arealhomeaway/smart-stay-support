@@ -7,10 +7,10 @@ import { fileURLToPath } from "url";
  * Root cause of the reported defect: "clicking Vendor says complete
  * dismisses/closes the Work Order drawer/window" on the Work Orders page.
  *
- * That page (work-orders.index.tsx) groups work orders into bucket
+ * That page (work-orders.index.tsx) groups Work Orders into bucket
  * sections (needs_action, waiting_vendor, evidence_missing, ...) and only
  * renders a bucket's <SectionCard> when it has rows. Recording "Vendor
- * says complete" moves a work order from e.g. "waiting_vendor" into
+ * says complete" moves a Work Order from e.g. "waiting_vendor" into
  * "evidence_missing" — a real, correct bucket transition. If that work
  * order was the only one left in its old bucket, the old bucket's row
  * count drops to zero and its section stops rendering.
@@ -27,7 +27,7 @@ import { fileURLToPath } from "url";
  * This repo has no DOM rendering harness (see the other __tests__ files
  * — every one tests a plain function or, like this one, guards the
  * wiring at the source level), so this is a regression guard against the
- * fix reverting: the "open work order id" must live at the page, resolved
+ * fix reverting: the "open Work Order id" must live at the page, resolved
  * against the full, bucket-independent list, not inside a per-bucket
  * component that the page can stop rendering.
  */

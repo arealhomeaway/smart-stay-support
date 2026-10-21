@@ -83,16 +83,16 @@ describe("resolveDemoMode — entering, opening records in, and exiting the demo
   });
 });
 
-describe("previewIdentityLabel — a Platform Owner previewing a seat reads as that seat", () => {
+describe("previewIdentityLabel — a Admin previewing a seat reads as that seat", () => {
   it("shows the real identity when not previewing", () => {
     expect(
       previewIdentityLabel({
         previewing: false,
         previewSeat: "director_ops",
         previewRoleLabel: "Manager",
-        actualLabel: "Platform Owner",
+        actualLabel: "Admin",
       }),
-    ).toBe("Platform Owner");
+    ).toBe("Admin");
   });
 
   it("shows the seat label over the shared permission role — Director never reads as Supervisor", () => {
@@ -101,7 +101,7 @@ describe("previewIdentityLabel — a Platform Owner previewing a seat reads as t
         previewing: true,
         previewSeat: "director_ops",
         previewRoleLabel: "Manager",
-        actualLabel: "Platform Owner",
+        actualLabel: "Admin",
       }),
     ).toBe("Director of Operations");
   });
@@ -112,7 +112,7 @@ describe("previewIdentityLabel — a Platform Owner previewing a seat reads as t
         previewing: true,
         previewSeat: "ops_supervisor",
         previewRoleLabel: "Manager",
-        actualLabel: "Platform Owner",
+        actualLabel: "Admin",
       }),
     ).toBe("Operations Supervisor");
   });
@@ -123,7 +123,7 @@ describe("previewIdentityLabel — a Platform Owner previewing a seat reads as t
         previewing: true,
         previewSeat: null,
         previewRoleLabel: "Technician",
-        actualLabel: "Platform Owner",
+        actualLabel: "Admin",
       }),
     ).toBe("Technician");
   });
@@ -134,8 +134,8 @@ describe("previewIdentityLabel — a Platform Owner previewing a seat reads as t
         previewing: true,
         previewSeat: null,
         previewRoleLabel: null,
-        actualLabel: "Platform Owner",
+        actualLabel: "Admin",
       }),
-    ).toBe("Platform Owner");
+    ).toBe("Admin");
   });
 });

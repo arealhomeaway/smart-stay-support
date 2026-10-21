@@ -26,7 +26,7 @@ const vendor = {
   created_at: "2026-09-21T10:00:00Z",
 };
 
-describe("onboarding work orders", () => {
+describe("onboarding Work Orders", () => {
   it("says plainly where a Breezeway job is tracked and what state it is in", () => {
     const o = shapeBreezewayOrder(pushed);
     expect(o.route).toBe("breezeway");

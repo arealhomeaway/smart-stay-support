@@ -92,7 +92,7 @@ export function useTicketWorkOrders(ticketId: string) {
 
 const EMERGENCY_OPTIONS = Object.keys(EMERGENCY_REASON_LABELS) as EmergencyReason[];
 
-// Trades come from the shared catalog so a work order, a ticket and a vendor
+// Trades come from the shared catalog so a Work Order, a ticket and a vendor
 // all read the same way. See src/lib/taxonomy.ts.
 const CATEGORIES = TRADES;
 
@@ -253,18 +253,18 @@ export function TicketWorkOrderPanel({
       await qc.invalidateQueries({ queryKey: ticketWorkOrdersQueryKey(ticket.id) });
       qc.invalidateQueries({ queryKey: ["ticket", ticket.id] });
       // Stay on this Ticket route — open the new Work Order in the same
-      // drawer "Open work order" already uses, rather than sending anyone
+      // drawer "Open Work Order" already uses, rather than sending anyone
       // to the Work Orders index to find it.
       onOpenWorkOrderIdChange(newWorkOrderId);
       toast.success("Work order opened");
     },
     onError: (e: Error) => {
-      // One open work order per ticket (work_orders_one_open_per_ticket) —
+      // One open Work Order per ticket (work_orders_one_open_per_ticket) —
       // this fires only if two attempts raced, since the button below is
       // already hidden whenever an open one exists.
       if (e.message.includes("work_orders_one_open_per_ticket")) {
         toast.error(
-          "This ticket already has an open work order — close it before opening another.",
+          "This ticket already has an open Work Order — close it before opening another.",
         );
         qc.invalidateQueries({ queryKey: ticketWorkOrdersQueryKey(ticket.id) });
         return;
@@ -338,7 +338,7 @@ export function TicketWorkOrderPanel({
               ) : null}
 
               <Button size="sm" variant="outline" onClick={() => onOpenWorkOrderIdChange(wo.id)}>
-                Open work order
+                Open Work Order
               </Button>
             </div>
           );
@@ -346,7 +346,7 @@ export function TicketWorkOrderPanel({
 
         {readOnly || hasOpenOrder ? null : !open ? (
           <Button size="lg" className="w-full" onClick={() => setOpen(true)}>
-            {existing.length ? "Open another work order" : "Open a work order"}
+            {existing.length ? "Open another Work Order" : "Open a Work Order"}
           </Button>
         ) : (
           <div className="space-y-3 rounded-md border p-3">
@@ -444,7 +444,7 @@ export function TicketWorkOrderPanel({
                 disabled={create.isPending || blockedByEmergency}
                 onClick={() => create.mutate()}
               >
-                Open work order
+                Open Work Order
               </Button>
               <Button variant="ghost" onClick={() => setOpen(false)}>
                 Cancel

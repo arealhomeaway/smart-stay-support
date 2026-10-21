@@ -49,13 +49,13 @@ export const Route = createFileRoute("/_authenticated/onboarding/my-work")({
   validateSearch: validateMyWorkSearch,
   head: () => ({
     meta: [
-      { title: "My onboarding work — Resolve" },
+      { title: "My Tasks — Resolve" },
       {
         name: "description",
         content:
           "Every onboarding task assigned to you across homes, grouped into overdue, today, upcoming, blocked and waiting on review.",
       },
-      { property: "og:title", content: "My onboarding work — Resolve" },
+      { property: "og:title", content: "My Tasks — Resolve" },
       {
         property: "og:description",
         content: "Your onboarding tasks across every home in one list.",
@@ -266,7 +266,7 @@ function MyWork() {
     <div className="space-y-5">
       <PageHeader
         eyebrow="Onboarding"
-        title="My work"
+        title="My Tasks"
         description="Onboarding tasks assigned to you across every home, in the order they need attention."
       />
 

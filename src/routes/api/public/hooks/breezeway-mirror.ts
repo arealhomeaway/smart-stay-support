@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 /**
  * Scheduled Breezeway mirror refresh.
  *
- * Keeps Resolve's copy of current Breezeway work — work orders, their photos
+ * Keeps Resolve's copy of current Breezeway work — Work Orders, their photos
  * and the people directory — close to live for the verified portfolio, so a
  * coordinator opening a home does not have to wait on a cold read. Webhooks
  * still do the fast, per-task updating; this sweep catches anything a webhook

@@ -479,7 +479,7 @@ export function TaskDrawer({
           <section className="space-y-2 rounded-lg border border-primary/40 bg-primary/5 p-4">
             <p className="font-medium">Dispatch to a vendor</p>
             <p className="text-xs text-muted-foreground">
-              Send this job to Breezeway, or track a non-Breezeway vendor under Work orders on the
+              Send this job to Breezeway, or track a non-Breezeway vendor under Work Orders on the
               Property &amp; Financial tab.
             </p>
             <BreezewayTaskPanel
@@ -495,7 +495,7 @@ export function TaskDrawer({
         {/*
          * Finishing comes last. Anything that unblocks the step stays at the
          * top where it is read first; the card that closes the step sits at the
-         * bottom, after the instructions, so the drawer reads in work order.
+         * bottom, after the instructions, so the drawer reads in Work Order.
          */}
         {action && !finishesStep && guidedCard}
 

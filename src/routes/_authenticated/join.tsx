@@ -40,7 +40,7 @@ function JoinPage() {
     onSuccess: (res) => {
       toast.success(
         res.pendingSeatAssignment
-          ? "Your account access is set. A platform administrator must still assign your leadership seat."
+          ? "Your account access is set. An admin will finish setting up your access."
           : "Your access is set. Welcome to Resolve.",
         { duration: res.pendingSeatAssignment ? 15000 : 4000 },
       );

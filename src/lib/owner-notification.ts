@@ -12,12 +12,12 @@ export function ownerNotificationText(row: {
   if (row.kind === "ticket_p1")
     return {
       title: "Urgent property work update",
-      body: "An urgent matter was recorded for your property. Open your owner portal to review the owner-safe context and any action required.",
+      body: "We recorded an urgent update about your property. Open your owner portal to review the owner-safe context and any action required.",
     };
   if (row.kind === "ticket_resolved")
     return {
       title: "Property work marked resolved",
-      body: "A property matter was marked resolved. Open your owner portal to review its recorded status and available owner-safe outcome information.",
+      body: "An update about your property was marked resolved. Open your owner portal to review its recorded status and available owner-safe outcome information.",
     };
   return {
     title: row.kind === "review_ready" ? "Participation opportunity ready" : "Property work update",

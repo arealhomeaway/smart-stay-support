@@ -69,7 +69,7 @@ export async function createTeamInvite(
 }
 
 const ROLE_LABEL: Record<string, string> = {
-  admin: "Platform Owner",
+  admin: "Admin",
   manager: "Supervisor",
   tech: "Staff",
   onboarding: "Onboarding",

@@ -21,10 +21,10 @@ export const Route = createFileRoute("/_authenticated/vendor/$ticketId")({
       {
         name: "description",
         content:
-          "Access details, required steps and sign-off for a work order dispatched by A Real Home Away.",
+          "Access details, required steps and sign-off for a Work Order dispatched by A Real Home Away.",
       },
       { property: "og:title", content: "Work order details | Resolve vendor portal" },
-      { property: "og:description", content: "Everything you need on site for this work order." },
+      { property: "og:description", content: "Everything you need on site for this Work Order." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -76,13 +76,13 @@ function VendorJob() {
         .update({ vendor_status: "accepted", vendor_accepted_at: new Date().toISOString() })
         .eq("id", ticketId);
       if (error) throw error;
-      await logActivity("Vendor accepted the work order and is on the way.");
+      await logActivity("Vendor accepted the Work Order and is on the way.");
     },
     onSuccess: () => {
       toast.success("Thanks — the team can see you're on it.");
       void refresh();
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not accept the work order"),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not accept the Work Order"),
   });
 
   const toggleStep = useMutation({
@@ -158,7 +158,7 @@ function VendorJob() {
           hint="This job is not assigned to you, or it has been reassigned. Reach out to your coordinator if you think that's wrong."
           action={
             <Button asChild variant="outline">
-              <Link to="/vendor">Back to my work orders</Link>
+              <Link to="/vendor">Back to my Work Orders</Link>
             </Button>
           }
         />
@@ -376,7 +376,7 @@ function VendorJob() {
       </SectionCard>
 
       <div className="space-y-3">
-        <SectionBand title="History on this work order" />
+        <SectionBand title="History on this Work Order" />
         {(job.data?.activity ?? []).length === 0 ? (
           <p className="text-sm text-muted-foreground">Nothing logged yet.</p>
         ) : (

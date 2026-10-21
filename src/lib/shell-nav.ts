@@ -37,9 +37,9 @@ export const DEPARTMENTS: Department[] = [
     home: "/onboarding",
     match: (p) => p === "/onboarding" || p.startsWith("/onboarding/"),
     links: [
-      { label: "Dashboard", to: "/onboarding", exact: true },
+      { label: "Onboarding Home", to: "/onboarding", exact: true },
       { label: "Properties", to: "/onboarding", search: { lens: "all" }, exact: true },
-      { label: "My Work", to: "/onboarding/my-work" },
+      { label: "My Tasks", to: "/onboarding/my-work" },
       { label: "Owner Completions", to: "/onboarding/owner-completions" },
       { label: "Team", to: "/onboarding/team" },
       { label: "Workflow Templates", to: "/onboarding/templates", capability: "onboarding_templates" },
@@ -91,9 +91,91 @@ export function departmentFor(pathname: string): Department | null {
   return DEPARTMENTS.find((d) => d.match(pathname)) ?? null;
 }
 
+/**
+ * Page groups shown as a top-of-page tab bar (the same pattern the Active
+ * Owner and Vendors departments already use). One sidebar item opens the
+ * first page of a group; every page in the group shows the same tabs, and
+ * each tab is shown only to people who can open that page. Paths already
+ * owned by a DEPARTMENTS menu (Onboarding, Active Owner, Vendors, STR
+ * cleaner time) are deliberately excluded so the two never stack.
+ */
+export type PageTabGroup = {
+  key: string;
+  match: (pathname: string) => boolean;
+  tabs: DepartmentLink[];
+};
+
+export const PAGE_TAB_GROUPS: PageTabGroup[] = [
+  {
+    key: "my-work",
+    match: (p) => p.startsWith("/tickets") || p === "/routines" || p === "/str-dispatch-check",
+    tabs: [
+      { label: "My Work", to: "/tickets", exact: true },
+      { label: "Routine Work", to: "/routines", capability: "routines" },
+      { label: "STR Cleaner Check", to: "/str-dispatch-check", capability: "cleaner_dispatch_check" },
+    ],
+  },
+  {
+    key: "properties",
+    match: (p) =>
+      p === "/properties" || p.startsWith("/property/") || p === "/map" || p === "/availability-finder",
+    tabs: [
+      { label: "Properties", to: "/properties", capability: "properties" },
+      { label: "Work Map", to: "/map", capability: "work_orders_internal" },
+      { label: "Availability Finder", to: "/availability-finder", capability: "work_orders_internal" },
+    ],
+  },
+  {
+    key: "work-orders",
+    match: (p) => p === "/work-orders" || p.startsWith("/work-orders/"),
+    tabs: [
+      { label: "Work Orders", to: "/work-orders", capability: "work_orders_internal" },
+      { label: "Vendors", to: "/vendors", capability: "vendor_directory" },
+    ],
+  },
+  {
+    key: "claims",
+    match: (p) => p.startsWith("/claims") || p.startsWith("/recovery"),
+    tabs: [
+      { label: "Claims", to: "/claims", capability: "claims_work" },
+      { label: "Refunds & Credits", to: "/recovery", capability: "claims_work" },
+    ],
+  },
+  {
+    key: "reports",
+    match: (p) =>
+      ["/analytics", "/ops-analytics", "/owner-analytics", "/finance", "/command-center"].some(
+        (r) => p === r || p.startsWith(r + "/"),
+      ),
+    tabs: [
+      { label: "Analytics", to: "/analytics", capability: "analytics" },
+      { label: "Owner Participation", to: "/owner-analytics", capability: "owner_programs" },
+      { label: "STR Cleaner Time", to: "/cleaner-hours", capability: "cleaner_hours" },
+      { label: "Finance", to: "/finance", capability: "finance_workspace" },
+      { label: "Executive View", to: "/command-center", capability: "command_center" },
+    ],
+  },
+  {
+    key: "admin",
+    match: (p) =>
+      ["/integrations", "/audit", "/help-tickets", "/oversight-access-log"].some(
+        (r) => p === r || p.startsWith(r + "/"),
+      ),
+    tabs: [
+      { label: "Integrations", to: "/integrations", capability: "integrations" },
+      { label: "Audit History", to: "/audit", capability: "audit_history" },
+      { label: "Help Tickets", to: "/help-tickets", capability: "audit_history" },
+    ],
+  },
+];
+
+export function pageTabGroupFor(pathname: string): PageTabGroup | null {
+  return PAGE_TAB_GROUPS.find((g) => g.match(pathname)) ?? null;
+}
+
 /** Last path segment → page label for department sub-pages. */
 const SUBPAGE_LABELS: Record<string, string> = {
-  "/onboarding/my-work": "My Work",
+  "/onboarding/my-work": "My Tasks",
   "/onboarding/owner-completions": "Owner Completions",
   "/onboarding/team": "Team",
   "/onboarding/templates": "Workflow Templates",

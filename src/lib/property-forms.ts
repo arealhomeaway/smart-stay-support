@@ -36,12 +36,12 @@ export const FORM_DEFS: FormDef[] = [
     source: "breezeway",
     patterns: [/initial property assessment/i, /conduct home assessment/i, /new house setup form results/i],
   },
-  { key: "pre_work", label: "Pre-work", source: "breezeway", patterns: [/pre-?work review/i, /work order for pre-?work inspection/i] },
+  { key: "pre_work", label: "Pre-work", source: "breezeway", patterns: [/pre-?work review/i, /Work Order for pre-?work inspection/i] },
   {
     key: "standard",
     label: "Standard",
     source: "breezeway",
-    patterns: [/standard installation/i, /work order for standard inspection/i, /review the standard inspection results/i],
+    patterns: [/standard installation/i, /Work Order for standard inspection/i, /review the standard inspection results/i],
   },
   { key: "mid_project", label: "Mid-project review", source: "resolve_task", patterns: [/mid[- ]project review/i] },
   {

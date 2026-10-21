@@ -484,7 +484,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
         {[
           {
             id: "group-decisions",
-            label: "Decisions needed",
+            label: "Owner approvals",
             count: decisions.reduce((n, sec) => n + sec.rows.length, 0),
           },
           {
@@ -534,7 +534,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
       <div className="space-y-3">
         <GroupSection
           id="group-decisions"
-          title="Decisions needed"
+          title="Owner approvals"
           count={decisions.reduce((n, sec) => n + sec.rows.length, 0)}
         >
           {decisions.map((section) => (

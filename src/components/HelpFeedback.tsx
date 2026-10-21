@@ -3,13 +3,21 @@
  * future Resolve page inherits it. Reports about Resolve itself — never an
  * Operations ticket.
  */
-import { useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { CircleHelp, Paperclip, X } from "lucide-react";
+import { CircleHelp, Paperclip, Sparkles, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useRole } from "@/hooks/useRole";
 import {
   Dialog,
   DialogContent,
@@ -30,7 +38,7 @@ export function portalForPath(path: string): string {
   if (path.startsWith("/owner-") || path.startsWith("/homeowners")) return "Active Owner (staff)";
   if (path.startsWith("/owner")) return "Active Owner";
   if (path.startsWith("/vendor/") || path === "/vendor" || path.startsWith("/vendor.")) return "Vendor";
-  if (path.startsWith("/vendors") || path.startsWith("/quarterly")) return "Vendor Hub";
+  if (path.startsWith("/vendors") || path.startsWith("/quarterly")) return "Vendors";
   if (/^\/(integrations|audit|help-tickets|team|account)/.test(path)) return "Administration";
   if (/^\/(leads)/.test(path)) return "Guest & reservations";
   if (/^\/(command-center|analytics|ops-analytics)/.test(path)) return "Insight";
@@ -57,6 +65,7 @@ function pageContext(pathname: string, search: Record<string, unknown>) {
 export function HelpFeedbackButton() {
   const loc = useRouterState({ select: (s) => s.location });
   const submit = useServerFn(submitHelpTicket);
+  const { can } = useRole();
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<"issue" | "suggestion" | null>(null);
   const [text, setText] = useState("");
@@ -111,20 +120,41 @@ export function HelpFeedbackButton() {
   return (
     <>
       <TooltipProvider delayDuration={200}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              size="icon"
-              variant="outline"
-              aria-label="Help & Feedback"
-              onClick={() => setOpen(true)}
-              className="fixed bottom-4 right-4 z-40 size-11 rounded-full shadow-md print:hidden"
-            >
-              <CircleHelp className="size-5" aria-hidden="true" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="left">Help & Feedback</TooltipContent>
-        </Tooltip>
+        <DropdownMenu>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  aria-label="Help & Feedback"
+                  className="fixed bottom-4 right-4 z-40 size-11 rounded-full shadow-md print:hidden"
+                >
+                  <CircleHelp className="size-5" aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
+            </TooltipTrigger>
+            <TooltipContent side="left">Help & Feedback</TooltipContent>
+          </Tooltip>
+          <DropdownMenuContent side="top" align="end" className="mb-2 w-56">
+            {can("coaching") && (
+              <DropdownMenuItem asChild>
+                <Link to="/coach">
+                  <Sparkles className="size-4" aria-hidden="true" /> Ask the Coach
+                </Link>
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem asChild>
+              <Link to="/welcome">
+                <CircleHelp className="size-4" aria-hidden="true" /> Help & guides
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => setOpen(true)}>
+              <Paperclip className="size-4" aria-hidden="true" /> Report a problem or suggestion
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </TooltipProvider>
       <Dialog open={open} onOpenChange={(o) => !busy && setOpen(o)}>
         <DialogContent className="sm:max-w-lg">

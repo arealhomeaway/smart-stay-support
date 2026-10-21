@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 import { PersonAvatar } from "@/components/PersonAvatar";
 
 export type ActivityKind =
-  | "repair" /* work order / vendor work — amber */
+  | "repair" /* Work Order / vendor work — amber */
   | "escalation" /* coral */
   | "approval" /* review, decision — lavender */
   | "completed" /* sage */

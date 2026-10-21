@@ -68,8 +68,8 @@ export const ONBOARDING_STAGES = [
   { value: "post_contract", label: "Post contract — pre-inspection" },
   { value: "phase1_inspection", label: "Phase 1 — Inspection / repair estimates" },
   { value: "phase2_estimates", label: "Phase 2 — Estimates & installation purchases" },
-  { value: "phase3_work_orders", label: "Phase 3 — Plan / schedule work orders" },
-  { value: "phase4_purchasing", label: "Phase 4 — Purchasing / finalize work orders" },
+  { value: "phase3_work_orders", label: "Phase 3 — Plan / schedule Work Orders" },
+  { value: "phase4_purchasing", label: "Phase 4 — Purchasing / finalize Work Orders" },
   { value: "phase5_monitor", label: "Phase 5 — Monitor repairs / setup / staging" },
   { value: "phase6_handoff", label: "Phase 6 — Cost analysis / photos / handoff" },
   // The Master Onboarding sequence — 26 steps across these 8 stages. Legacy

@@ -71,7 +71,7 @@ function WorkOrdersHome() {
   const propertyNames = useWorkOrderPropertyNames();
   const propertyPhotos = useWorkOrderPropertyPhotos().data ?? new Map<string, string | null>();
   const people = useStaffDirectory().data ?? [];
-  const originToken = useAmbientOrigin("Work orders");
+  const originToken = useAmbientOrigin("Work Orders");
   const { readOnly } = useRole();
 
   const reqMap = requirements.data ?? new Map<string, RequirementLike[]>();
@@ -138,8 +138,8 @@ function WorkOrdersHome() {
   return (
     <div className="space-y-5">
       <PageHeader
-        title="Work orders"
-        description="Today's queue — maintenance execution, ordered by what is still unresolved. Work orders start on the ticket where the issue was reported."
+        title="Work Orders"
+        description="Today's queue — maintenance execution, ordered by what is still unresolved. Work Orders start on the ticket where the issue was reported."
       />
 
       <SegmentedControl
@@ -164,13 +164,13 @@ function WorkOrdersHome() {
           tone="critical"
         />
         <StatTile label="Waiting on owner" value={buckets.get("waiting_owner")?.length ?? 0} />
-        <StatTile label="Open work orders" value={open.length} />
+        <StatTile label="Open Work Orders" value={open.length} />
         <StatTile label="Committed spend, open" value={money(committed)} />
       </div>
 
       {workOrders.isError ? (
         <EmptyState
-          title="Work orders could not be loaded"
+          title="Work Orders could not be loaded"
           hint="Try again before relying on this schedule."
           action={<Button onClick={() => void workOrders.refetch()}>Try again</Button>}
         />
@@ -178,21 +178,21 @@ function WorkOrdersHome() {
         <LoadingRows />
       ) : open.length === 0 && (buckets.get("closed")?.length ?? 0) === 0 ? (
         <EmptyState
-          title="No work orders open"
+          title="No Work Orders open"
           hint="Create one from the ticket where the maintenance issue was reported."
         />
       ) : view === "scheduled" ? (
         scheduled.size === 0 ? (
           <EmptyState
-            title="No work orders scheduled"
-            hint="Set a schedule or vendor arrival time on an open work order to see it here."
+            title="No Work Orders scheduled"
+            hint="Set a schedule or vendor arrival time on an open Work Order to see it here."
           />
         ) : (
           [...scheduled.entries()].map(([date, rows]) => (
             <SectionCard
               key={date}
               title={usDate(date)}
-              description={`${rows.length} work order${rows.length === 1 ? "" : "s"}`}
+              description={`${rows.length} Work Order${rows.length === 1 ? "" : "s"}`}
             >
               <div className="space-y-2">{rows.map(renderRow)}</div>
             </SectionCard>

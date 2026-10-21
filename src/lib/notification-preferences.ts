@@ -42,7 +42,7 @@ export const NOTIFICATION_CATEGORIES: CategoryMeta[] = [
   },
   {
     key: "work_orders",
-    label: "Work orders and closure checks",
+    label: "Work Orders and closure checks",
     description: "Vendor work and the checks before a job is closed.",
   },
 ];

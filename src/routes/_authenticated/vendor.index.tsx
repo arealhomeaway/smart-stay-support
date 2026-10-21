@@ -12,16 +12,16 @@ export const Route = createFileRoute("/_authenticated/vendor/")({
   component: VendorQueue,
   head: () => ({
     meta: [
-      { title: "My work orders | Resolve vendor portal" },
+      { title: "My Work Orders | Resolve vendor portal" },
       {
         name: "description",
         content:
-          "Every work order A Real Home Away has dispatched to you, with the access details, safety steps and sign-off you need on site.",
+          "Every Work Order A Real Home Away has dispatched to you, with the access details, safety steps and sign-off you need on site.",
       },
-      { property: "og:title", content: "My work orders | Resolve vendor portal" },
+      { property: "og:title", content: "My Work Orders | Resolve vendor portal" },
       {
         property: "og:description",
-        content: "Your dispatched work orders, access notes and required steps in one place.",
+        content: "Your dispatched Work Orders, access notes and required steps in one place.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -82,7 +82,7 @@ function VendorQueue() {
     <div className="mx-auto max-w-3xl space-y-6">
       <PageHeader
         eyebrow="Vendor portal"
-        title="My work orders"
+        title="My Work Orders"
         description="Everything A Real Home Away has sent your way. Open a job for the address, access details and the steps we need finished before it can be closed."
         actions={
           showScorecard ? (
@@ -159,7 +159,7 @@ function VendorQueue() {
 
       {done.length > 0 && (
         <div className="space-y-3">
-          <SectionBand title="Recently finished" hint="Your last completed work orders." />
+          <SectionBand title="Recently finished" hint="Your last completed Work Orders." />
           <div className="space-y-1.5">
             {done.slice(0, 10).map((job) => {
               const property = job.properties as { name: string } | null;

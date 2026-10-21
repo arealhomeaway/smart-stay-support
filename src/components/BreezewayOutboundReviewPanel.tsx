@@ -91,7 +91,7 @@ export function BreezewayOutboundReviewPanel() {
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="grid gap-1.5">
-                <Label htmlFor={`bz-id-${row.id}`}>Breezeway work order id (if it exists)</Label>
+                <Label htmlFor={`bz-id-${row.id}`}>Breezeway Work Order id (if it exists)</Label>
                 <Input
                   id={`bz-id-${row.id}`}
                   inputMode="numeric"

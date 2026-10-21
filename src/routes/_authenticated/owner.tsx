@@ -536,7 +536,7 @@ function OwnerHubBody({
 
       <div id="owner-decisions" className="scroll-mt-24">
       <SectionCard
-        title="Decisions & approvals"
+        title="Your approvals"
         description="Approvals and property decisions your ARHA team has sent you."
       >
         <div className="space-y-5">

@@ -86,13 +86,13 @@ import {
 export const Route = createFileRoute("/_authenticated/owner-programs")({
   head: () => ({
     meta: [
-      { title: "Owner participation programs — Resolve Operations" },
+      { title: "Active Owner — Resolve" },
       {
         name: "description",
         content:
           "Run the Active Owner Participation Program: enroll homes, activate one combined clock, follow pace benchmarks and generate the owner's participation report.",
       },
-      { property: "og:title", content: "Owner participation programs — Resolve Operations" },
+      { property: "og:title", content: "Active Owner — Resolve" },
       {
         property: "og:description",
         content: "One owner, one program window (closing date → December 31), one combined participation record.",
@@ -207,7 +207,7 @@ function ProgramsBoard() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Active Owner"
-        title="Owner participation programs"
+        title="Active Owner"
         description={
           <>
             Each homeowner runs one program per closing calendar year (General and pre-closing activities included) with a single combined goal of{" "}
@@ -266,7 +266,7 @@ function ProgramsBoard() {
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3">
         <div>
           <p className="text-sm font-medium">
-            {viewingDemo ? "Showing QA / demo programs" : "Showing live programs"}
+            {viewingDemo ? "Showing practice programs" : "Showing live programs"}
           </p>
           <p className="text-xs text-muted-foreground">
             Demo programs are non-production and excluded from live metrics. Use them to preview the
@@ -276,7 +276,7 @@ function ProgramsBoard() {
         {!demoMode && (
           <Button size="sm" variant="outline" onClick={() => setShowDemo(!showDemo)}>
             <FlaskConical className="size-4" />
-            {showDemo ? "Show live programs" : "Show QA / demo programs"}
+            {showDemo ? "Show live programs" : "Show practice programs"}
           </Button>
         )}
       </div>
@@ -285,7 +285,7 @@ function ProgramsBoard() {
         <Skeleton className="h-64 w-full" />
       ) : rows.length === 0 ? (
         <EmptyState
-          title={viewingDemo ? "No QA / demo programs yet." : "No participation programs yet."}
+          title={viewingDemo ? "No practice programs yet." : "No participation programs yet."}
           hint="Open a home and choose Active Owner to start a homeowner's program."
         />
       ) : (

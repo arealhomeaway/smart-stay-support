@@ -37,13 +37,13 @@ import { isBlocked } from "@/lib/team-queue";
 export const Route = createFileRoute("/_authenticated/tickets/")({
   head: () => ({
     meta: [
-      { title: "Tickets queue — Resolve Operations" },
+      { title: "My Work — Resolve" },
       {
         name: "description",
         content:
           "One searchable queue for every guest, owner and maintenance ticket across the A Real Home Away portfolio, with live response clocks.",
       },
-      { property: "og:title", content: "Tickets queue — Resolve Operations" },
+      { property: "og:title", content: "My Work — Resolve" },
       {
         property: "og:description",
         content: "My work, team queue, unassigned and escalated tickets in one place.",
@@ -175,7 +175,7 @@ function TicketsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="My work"
+        title="My Work"
         description={activeTab?.hint}
         actions={
           <div className="flex flex-wrap gap-2">

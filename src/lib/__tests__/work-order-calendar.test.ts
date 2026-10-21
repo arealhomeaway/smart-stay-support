@@ -24,8 +24,8 @@ function wo(over: Partial<WorkOrderRow> & { id: string }): WorkOrderRow {
   } as unknown as WorkOrderRow;
 }
 
-describe("work order calendar", () => {
-  it("keeps only dated, open work orders and prefers the vendor arrival", () => {
+describe("Work Order calendar", () => {
+  it("keeps only dated, open Work Orders and prefers the vendor arrival", () => {
     const entries = scheduleEntries([
       wo({ id: "a", scheduled_for: "2026-09-10" }),
       wo({ id: "b", scheduled_for: "2026-09-10", vendor_eta_at: "2026-09-12T15:00:00.000Z" }),

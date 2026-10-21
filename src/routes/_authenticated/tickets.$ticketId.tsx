@@ -779,11 +779,11 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     }
     await log(
       "repair",
-      "Guest says the repair did not fix the issue — reopened for a new work order.",
+      "Guest says the repair did not fix the issue — reopened for a new Work Order.",
       "repair_reported_incomplete",
     );
     await refresh();
-    toast.success("Reopened — open a new work order when ready.");
+    toast.success("Reopened — open a new Work Order when ready.");
   }
 
   /* ---------------- where this ticket is in the work ---------------- */
@@ -888,7 +888,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             : stage === "repair"
               ? (ticket as { repair_reported_incomplete_at?: string | null })
                   .repair_reported_incomplete_at
-                ? "Guest says it's not fixed — open a new work order."
+                ? "Guest says it's not fixed — open a new Work Order."
                 : "Decide whether this needs a field repair."
               : stage === "closure"
                 ? closureReady
@@ -1375,7 +1375,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                 <div className="mt-2 space-y-3">
                   <h2 className="text-xl font-semibold">Does this need a field repair?</h2>
                   <p className="text-sm text-muted-foreground">
-                    Opening a work order is how Resolve tracks the repair — cost, approval and
+                    Opening a Work Order is how Resolve tracks the repair — cost, approval and
                     vendor. Sending it to a field team is a later, optional step.
                   </p>
                   {role.can("work_orders_internal") ? (
@@ -1762,7 +1762,7 @@ function MoreActions({
         <SheetHeader>
           <SheetTitle>More actions</SheetTitle>
           <SheetDescription>
-            Assignment, handoff, escalation and the lanes that are not open.
+            Assignment, reassignment, escalation and the lanes that are not open.
           </SheetDescription>
         </SheetHeader>
         <div className="space-y-4 px-4 pb-8">

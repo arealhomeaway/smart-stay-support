@@ -83,7 +83,7 @@ export function CompanyHealthPanel({ data }: { data: CommandCenter }) {
                   <li>A department score is the average of the KPIs that could be computed.</li>
                   <li>
                     Company health is the average of the department scores. Weights are equal until
-                    a Platform Owner approves a weighting, which is why the score reads{" "}
+                    a Admin approves a weighting, which is why the score reads{" "}
                     <strong>Provisional</strong>.
                   </li>
                   <li>Missing data is excluded and reported, never counted as healthy.</li>

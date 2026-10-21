@@ -127,7 +127,7 @@ export function ProgressSteps({
  * A brief, tasteful milestone moment.
  *
  * Reserved for work that genuinely finished: a ticket closed, a review
- * completed, a work order finished, an onboarding stage cleared, a home going
+ * completed, a Work Order finished, an onboarding stage cleared, a home going
  * live. Never for an ordinary save. The burst fades on its own; the sentence
  * that explains what happens next stays.
  */
