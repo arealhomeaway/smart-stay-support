@@ -18,9 +18,7 @@ import { readOwnerParticipation } from "./owner-participation-reader.server";
 import { ownerReportAction } from "./owner-report-action";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import type { Client } from "./owner-participation.server";
-// Imported lazily inside buildOwnerReport: a static binding would freeze at
-// module-eval time, which makes tests order-dependent when a sibling test file
-// registers a temporary mock for owner-participation.server.
+import { loadProgramAggregate, combinedMinutes } from "./owner-participation.server";
 import {
   hoursFromMinutes,
   participationWindowEnd,
@@ -83,7 +81,6 @@ function fileName(base: string, ext: string) {
 
 /** Owner-visible report model. Internal notes and other owners never appear. */
 export async function buildOwnerReport(supabase: Client, programId: string) {
-  const { loadProgramAggregate, combinedMinutes } = await import("./owner-participation.server");
   const agg = await loadProgramAggregate(supabase, programId, { ownerView: true });
   const p = agg.program;
 
