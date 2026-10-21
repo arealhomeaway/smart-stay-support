@@ -64,7 +64,7 @@ describe("AppShell — Simplification Pass 1 sidebar structure", () => {
     expect(src).not.toContain('to: "/coach"');
     expect(src).not.toContain('to: "/welcome"');
     const help = readFileSync(join(here, "../../components/HelpFeedback.tsx"), "utf8");
-    expect(help).toContain('to: "/coach"');
-    expect(help).toContain('to: "/welcome"');
+    expect(help).toContain('to="/coach"');
+    expect(help).toContain('to="/welcome"');
   });
 });
