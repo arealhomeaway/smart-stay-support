@@ -1,8 +1,9 @@
 import { afterAll, expect, it, mock } from "bun:test";
 
-// mock.module is process-global and mock.restore() does not undo it, so load
-// the real module first and re-register it after this file's tests — sibling
-// files (e.g. owner-response-report) must import the real implementation.
+// This file is named zz-* on purpose: bun's mock.module is process-global and
+// cannot be undone reliably, so this file must sort AFTER every sibling that
+// imports the real owner-participation.server (e.g. owner-response-report).
+// The real module is still re-registered after these tests as a safeguard.
 const realParticipation = await import("../owner-participation.server");
 afterAll(() => mock.module("../owner-participation.server", () => realParticipation));
 let demo = true;
