@@ -15,4 +15,4 @@
 - [x] Spending approval + Supervisor wording
 - [x] Revert onboarding-template.ts to 464897d7
 - [x] Builder-word fixes
-- [ ] Tests, typecheck, build
+- [x] Tests, typecheck, build
