@@ -707,7 +707,7 @@ export function WorkOrderDrawer({
                   disabled={readOnly || requestSupervisorApproval.isPending}
                   onClick={() => requestSupervisorApproval.mutate()}
                 >
-                  Request supervisor approval
+                  Request spending approval
                 </Button>
               ) : (
                 <div className="space-y-2">
