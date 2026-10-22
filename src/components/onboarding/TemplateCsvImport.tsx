@@ -55,7 +55,7 @@ export function TemplateCsvImport({ onCreated }: { onCreated: (id: string) => vo
                 <li><b>Edit freely:</b> Description, Internal instructions, Done when, Video link (https:// only), Module, Breezeway template.</li>
                 <li><b>Assigned role:</b> Director of Onboarding, Onboarding Manager, Project Manager, Onboarding Utilities Coordinator, Lead Designer, Designer, Staging Team, or blank. Other names are refused.</li>
                 <li><b>Due rule:</b> like “3 business day(s) before planned closing” or “2 day(s) after actual access”. Anchors: project created, planned closing, actual access, target handoff. Blank = no rule.</li>
-                <li><b>Conditions:</b> blank (every home) or e.g. “furnishing_scope=full_furnishing; module=pool” — all must hold. Unknown values are refused.</li>
+                <li><b>Conditions:</b> leave blank to include the Task on every home. To limit it, name the setting and its value, for example only fully furnished homes that have a pool: <span className="font-mono">furnishing_scope=full_furnishing; module=pool</span>. Separate several with a semicolon; every one must be true. Settings or values Resolve does not recognize are refused.</li>
                 <li><b>Yes/No:</b> Required, Blocks handoff, Evidence required, Owner approval, Owner Opportunity.</li>
                 <li><b>Owner dependency:</b> none, information, feedback, acknowledge or business_decision.</li>
                 <li><b>Owner Opportunity = Yes</b> needs an Owner-facing title (what/why/how optional). It is saved as template text only — nothing is sent.</li>
