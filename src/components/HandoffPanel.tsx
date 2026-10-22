@@ -375,7 +375,7 @@ export function HandoffPanel({
                     onValueChange={(v) => setForm({ ...form, to_role_code: v })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Which seat takes the next action?" />
+                      <SelectValue placeholder="Who takes the next action?" />
                     </SelectTrigger>
                     <SelectContent>
                       {(roles ?? []).map((r) => (

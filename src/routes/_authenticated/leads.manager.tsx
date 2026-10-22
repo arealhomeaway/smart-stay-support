@@ -74,7 +74,7 @@ function Manager() {
     <div className="space-y-5">
       <PageHeader
         eyebrow="Tenant leads"
-        title="Manager view"
+        title="Supervisor view"
         description="Where the pipeline is leaking, who is carrying what, and what the data actually shows."
       />
 
@@ -121,7 +121,7 @@ function Manager() {
           </div>
 
           <SectionCard
-            title="Needs a manager's eyes"
+            title="Needs a Supervisor's eyes"
             description="Overdue follow-ups, unassigned leads and approaching move-ins with no property match."
             tone={needsAttention.length ? "critical" : "default"}
           >

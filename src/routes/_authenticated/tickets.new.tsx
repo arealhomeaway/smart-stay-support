@@ -1205,7 +1205,7 @@ export function NewTicketForm({
                       onValueChange={(v) => setForm({ ...form, functional_role_code: v })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Which seat owns this process?" />
+                        <SelectValue placeholder="Which role owns this?" />
                       </SelectTrigger>
                       <SelectContent>
                         {(roles ?? []).map((r) => (
@@ -1218,10 +1218,10 @@ export function NewTicketForm({
                     {role && (
                       <p className="text-xs text-muted-foreground">
                         {role.current_seat_holder
-                          ? `Currently held by ${role.current_seat_name ?? "an unassigned seat"}`
+                          ? `Currently held by ${role.current_seat_name ?? "no one yet"}`
                           : role.current_seat_name
                             ? `${role.current_seat_name} — invitation pending, so this seat is not yet routable`
-                            : "This seat is unassigned"}{" "}
+                            : "No one is assigned"}{" "}
                         · {role.coverage_window}
                       </p>
                     )}
