@@ -617,7 +617,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <>
                   {!ownerMode && !vendorMode && <GroupTabs />}
                   {!ownerMode && !vendorMode && (
-                    <ShellNav pageLabel={pageLabel} hideDepartmentMenu={onboardingOnly && departmentFor(pathname)?.key !== "active-owner"} />
+                    <ShellNav pageLabel={pageLabel} hideDepartmentMenu={
+                      (onboardingOnly && departmentFor(pathname)?.key !== "active-owner") ||
+                      // Vendors already shows the same views as its own page tabs.
+                      departmentFor(pathname)?.key === "vendors"
+                    } />
                   )}
                   <TicketDrawerHost>{children}</TicketDrawerHost>
                 </>

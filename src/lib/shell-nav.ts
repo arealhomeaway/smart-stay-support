@@ -127,7 +127,8 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
   },
   {
     key: "work-orders",
-    match: (p) => p === "/work-orders" || p.startsWith("/work-orders/"),
+    match: (p) =>
+        p === "/work-orders" || p.startsWith("/work-orders/") || p === "/vendors" || p.startsWith("/vendors/"),
     tabs: [
       { label: "Work Orders", to: "/work-orders", capability: "work_orders_internal" },
       { label: "Vendors", to: "/vendors", capability: "vendor_directory" },
@@ -144,7 +145,15 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
   {
     key: "reports",
     match: (p) =>
-      ["/analytics", "/ops-analytics", "/owner-analytics", "/finance", "/command-center"].some(
+      [
+        "/analytics",
+        "/ops-analytics",
+        "/owner-analytics",
+        "/cleaner-hours",
+        "/str-participation-report",
+        "/finance",
+        "/command-center",
+      ].some(
         (r) => p === r || p.startsWith(r + "/"),
       ),
     tabs: [
