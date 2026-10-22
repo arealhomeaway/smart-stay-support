@@ -78,10 +78,10 @@ export function CleaningRegionsPanel() {
                 }
               >
                 <SelectTrigger className="w-64">
-                  <SelectValue placeholder="Choose a manager" />
+                  <SelectValue placeholder="Choose a Supervisor" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={UNASSIGNED}>No manager assigned</SelectItem>
+                  <SelectItem value={UNASSIGNED}>No Supervisor assigned</SelectItem>
                   {staff.map((person) => (
                     <SelectItem key={person.id} value={person.id}>
                       {person.name}

@@ -207,7 +207,7 @@ export function evaluateAuthority(input: WorkOrderLike): AuthorityVerdict {
   if (amount > threshold && input.contractual_exception) {
     return {
       level: "supervisor",
-      label: "Supervisor approval",
+      label: "Spending approval",
       reason: `${money(amount)} exceeds ${money(threshold)}, but a recorded contractual exception applies, so a supervisor approves and the homeowner is told afterwards.`,
       ownerApprovalRequired: false,
       supervisorApprovalRequired: true,
@@ -234,7 +234,7 @@ export function evaluateAuthority(input: WorkOrderLike): AuthorityVerdict {
 
   return {
     level: "supervisor",
-    label: "Supervisor approval",
+    label: "Spending approval",
     reason: `${money(amount)} falls between ${money(supThreshold)} and ${money(threshold)}, so a supervisor approves before work starts and the homeowner is told afterwards.`,
     ownerApprovalRequired: false,
     supervisorApprovalRequired: true,
@@ -574,7 +574,7 @@ export function nextAction(wo: WorkOrderLike, now = new Date()): string {
     if (sup === "pending") return "Waiting on the supervisor's decision on this amount.";
     if (sup === "declined")
       return "Supervisor declined — record the alternative before going further.";
-    return "Request supervisor approval for this amount, then tell the homeowner once it is authorised.";
+    return "Request spending approval for this amount, then tell the homeowner once it is authorised.";
   }
   if (verdict.ownerFyiRequired && supervisorApproved(wo) && !wo.owner_fyi_at && !wo.closed_at) {
     return "Approved — send the homeowner the FYI that this work is going ahead.";
@@ -622,7 +622,7 @@ export function closureBlockers(
     blockers.push("Owner approval for this repair is not documented.");
   }
   if (verdict.supervisorApprovalRequired && !supervisorApproved(wo)) {
-    blockers.push("Supervisor approval for this amount is not documented.");
+    blockers.push("Spending approval for this amount is not documented.");
   }
   if (verdict.mitigationOnly && !wo.emergency_reason) {
     blockers.push("Record the emergency exception — reason, scope, amount and evidence.");

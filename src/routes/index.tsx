@@ -215,7 +215,7 @@ function Overview() {
           </div>
           <p className="mt-6 text-sm text-muted-foreground">
             Leadership and finance workspaces show up on their own for the people who hold that
-            access. Portal missing after sign-in? Ask a Admin &mdash; not a group chat.
+            access. Portal missing after sign-in? Ask an Admin &mdash; not a group chat.
           </p>
         </section>
       </main>

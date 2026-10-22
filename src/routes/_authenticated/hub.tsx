@@ -96,7 +96,7 @@ function Hub() {
           <EmptyState
             className="mt-10 border border-border bg-card"
             title="No portal is assigned to you yet"
-            hint="Ask a Admin or your supervisor to give you access, then sign in again."
+            hint="Ask an Admin or your supervisor to give you access, then sign in again."
           />
         ) : (
           <>

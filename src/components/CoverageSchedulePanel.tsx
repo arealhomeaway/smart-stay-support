@@ -162,7 +162,7 @@ export function CoverageSchedulePanel() {
             <span className="font-semibold">Manage seats, schedules and on-call</span>
             <span className="block text-sm text-muted-foreground">
               {canEdit
-                ? "Change a seat holder, a recurring shift, a temporary override or the overnight roster."
+                ? "Change who covers a role, a recurring shift, a temporary override or the overnight roster."
                 : "View the seat holders, recurring shifts and the overnight roster."}
             </span>
           </span>

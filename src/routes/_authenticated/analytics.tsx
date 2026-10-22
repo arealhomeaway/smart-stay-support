@@ -740,7 +740,7 @@ function Analytics() {
             tone={s.commsMissed.length > 0 ? "attention" : "positive"}
           />
           <StatTile
-            label="Closed but never QA'd"
+            label="Closed without a quality check"
             value={s.qaPending}
             tone={s.qaPending > 0 ? "attention" : "positive"}
           />

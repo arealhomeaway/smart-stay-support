@@ -12,6 +12,7 @@ import {
   uncoveredCategories,
   type CoverageVendor,
 } from "@/lib/vendor-coverage";
+import { VENDOR_STATUS_LABELS, type VendorStatus } from "@/lib/vendors";
 import { getPropertyVendorCoverage } from "@/lib/vendor-coverage.functions";
 
 const money = (n: number | null) =>
@@ -78,7 +79,7 @@ export function VendorCoveragePanel({ propertyId }: { propertyId: string }) {
                     <span className="font-medium">{v.name}</span>
                     <Chip>{PRIORITY_LABEL[v.coveragePriority] ?? v.coveragePriority}</Chip>
                     {v.tier && <Chip>Tier {v.tier}</Chip>}
-                    {v.status !== "approved" && <Chip>Not cleared ({v.status})</Chip>}
+                    {v.status !== "approved" && <Chip>Not cleared ({VENDOR_STATUS_LABELS[v.status as VendorStatus] ?? v.status})</Chip>}
                     {v.excluded && <Chip>Excluded at this home</Chip>}
                     {v.emergencyAvailable && <Chip>After hours</Chip>}
                   </div>

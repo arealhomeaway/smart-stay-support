@@ -73,7 +73,7 @@ export async function assertActiveOwnerEnrollAuthority(supabase: Client, userId:
   ]);
   if (admin.error || director.error) throw new Error("Could not verify your access level.");
   if (!admin.data && !director.data)
-    throw new Error("Only the Onboarding Director or a Admin can enroll a home in Active Owner.");
+    throw new Error("Only the Onboarding Director or an Admin can enroll a home in Active Owner.");
 }
 
 function locationOf(p: { city: string | null; state: string | null }) {

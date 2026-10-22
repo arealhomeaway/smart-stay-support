@@ -116,9 +116,10 @@ Your access is set the moment the code is redeemed. Codes are single-use and exp
           <Ticket className="size-4" /> Invite codes
         </CardTitle>
         <CardDescription>
-          Create a code for a new team member or vendor and send it to them yourself
-          (codes are not emailed). They sign up, then enter the code to get their access.
-          Each code works once and expires after 30 days.
+          Create a code for a new team member or vendor. Email it with the Email code button, or
+          copy the invite and send it yourself. They sign up, then enter the code to get their
+          access. Each code works once and expires after 30 days. To add Onboarding staff or
+          homeowners, use Onboarding &gt; Team instead.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

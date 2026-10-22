@@ -130,7 +130,7 @@ describe("retryWelcome handler (executed)", () => {
   for (const who of ["supervisor", "opsdir", "pm", "owner"]) {
     test(`${who}: refused, nothing changed`, async () => {
       as(who);
-      await expect(retry()).rejects.toThrow("Only the Onboarding Director or a Admin");
+      await expect(retry()).rejects.toThrow("Only the Onboarding Director or an Admin");
       expect(rows[REAL]?.["status"]).toBe("failed");
       expect(audits.length).toBe(0);
     });
@@ -168,7 +168,7 @@ describe("enrollActiveOwner handler (executed): demo-only rule for test accounts
   });
   test("Supervisor: refused before any account is created", async () => {
     as("supervisor");
-    await expect(enroll(REAL)).rejects.toThrow("Only the Onboarding Director or a Admin");
+    await expect(enroll(REAL)).rejects.toThrow("Only the Onboarding Director or an Admin");
     expect(created.length).toBe(0);
   });
   test("Onboarding Director: real home allowed", async () => {

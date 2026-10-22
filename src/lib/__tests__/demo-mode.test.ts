@@ -83,7 +83,7 @@ describe("resolveDemoMode — entering, opening records in, and exiting the demo
   });
 });
 
-describe("previewIdentityLabel — a Admin previewing a seat reads as that seat", () => {
+describe("previewIdentityLabel — an Admin previewing a seat reads as that seat", () => {
   it("shows the real identity when not previewing", () => {
     expect(
       previewIdentityLabel({

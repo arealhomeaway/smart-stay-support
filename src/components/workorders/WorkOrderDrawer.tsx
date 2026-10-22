@@ -88,11 +88,11 @@ function approvalChipLabel(
     verdict.supervisorApprovalRequired &&
     (wo.supervisor_approval_status ?? "not_required") === "not_required"
   )
-    return "Supervisor approval not requested yet";
+    return "Spending approval not requested yet";
   if (verdict.supervisorApprovalRequired && wo.supervisor_approval_status === "pending")
-    return "Waiting on supervisor approval";
+    return "Waiting on spending approval";
   if (wo.supervisor_approval_status === "approved" && !verdict.ownerApprovalRequired)
-    return "Supervisor approved";
+    return "Spending approved";
   if (verdict.ownerApprovalRequired && wo.approval_status === "not_required")
     return "Owner approval not requested yet";
   return (
@@ -396,7 +396,7 @@ export function WorkOrderDrawer({
     onSuccess: () => {
       refresh();
       qc.invalidateQueries({ queryKey: ["approvals"] });
-      toast.success("Supervisor approval requested");
+      toast.success("Spending approval requested");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -697,7 +697,7 @@ export function WorkOrderDrawer({
         {verdict.supervisorApprovalRequired ? (
           <>
             <section className="space-y-3">
-              <h3 className="font-display text-sm font-semibold">Supervisor approval</h3>
+              <h3 className="font-display text-sm font-semibold">Spending approval</h3>
               <p className="text-xs text-muted-foreground">{verdict.reason}</p>
 
               {!workOrder.supervisor_approval_id ? (
@@ -707,7 +707,7 @@ export function WorkOrderDrawer({
                   disabled={readOnly || requestSupervisorApproval.isPending}
                   onClick={() => requestSupervisorApproval.mutate()}
                 >
-                  Request supervisor approval
+                  Request spending approval
                 </Button>
               ) : (
                 <div className="space-y-2">

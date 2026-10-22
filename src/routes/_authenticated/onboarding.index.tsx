@@ -301,7 +301,7 @@ function Hub() {
 
       <div className="space-y-4">
         {/* Source records are an administrator reconciliation tool, not daily
-            Onboarding work — only a Admin sees them, and only on the
+            Onboarding work — only an Admin sees them, and only on the
             full Properties list. */}
         {lens === "all" && isAdmin ? (
           <div className="flex justify-end">

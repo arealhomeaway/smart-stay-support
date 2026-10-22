@@ -70,7 +70,7 @@ function DemoHome() {
         <EmptyState
           className="mt-10 border border-border bg-card"
           title="No portal is assigned to you yet"
-          hint="Ask a Admin for access, then sign in again."
+          hint="Ask an Admin for access, then sign in again."
         />
       ) : (
         <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">

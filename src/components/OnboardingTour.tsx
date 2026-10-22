@@ -53,7 +53,7 @@ const steps: TourStep[] = [
     target: '[data-tour="team"]',
     route: "/team",
     title: "Seats & coverage",
-    body: "Work routes to permanent seats, not people. Set who holds each seat and who covers lunch, and routing keeps working when someone steps away.",
+    body: "Work goes to roles, not people. Choose who covers each role and who covers lunch, so work keeps moving when someone steps away.",
   },
   {
     target: '[data-tour="properties"]',

@@ -259,7 +259,7 @@ export function ActiveOwnerPanel({
                 <ActiveOwnerEnrollForm propertyId={propertyId} propertyName={propertyName} onDone={refresh} />
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  The Onboarding Director or a Admin enrolls homes in Active Owner.
+                  The Onboarding Director or an Admin enrolls homes in Active Owner.
                 </p>
               )}
               <Button
@@ -272,7 +272,7 @@ export function ActiveOwnerPanel({
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              The Onboarding Director or a Admin can enroll this home in the program.
+              The Onboarding Director or an Admin can enroll this home in the program.
             </p>
           )}
         </div>

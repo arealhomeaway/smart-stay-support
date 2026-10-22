@@ -32,7 +32,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/claims/manager")({
   component: () => (
-    <RequireCapability capability="claims_oversight" title="Manager view">
+    <RequireCapability capability="claims_oversight" title="Supervisor view">
       <ClaimsManager />
     </RequireCapability>
   ),
@@ -83,7 +83,7 @@ function ClaimsManager() {
     <div className="space-y-5">
       <PageHeader
         eyebrow="Claims"
-        title="Manager view"
+        title="Supervisor view"
         description="Exposure across every open recovery, and the claims most likely to be lost through delay."
       />
 
