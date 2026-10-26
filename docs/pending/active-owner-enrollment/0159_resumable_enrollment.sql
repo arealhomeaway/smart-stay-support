@@ -24,6 +24,16 @@ BEGIN
  EXECUTE source;
 END $$;
 
+-- Existing add-home action: enrollment authority can add an expected-closing home to the same Owner's active program.
+DO $$
+DECLARE source text;
+BEGIN
+ SELECT pg_get_functiondef('public.change_owner_program(uuid,uuid,text,uuid,date,jsonb,text,text,text)'::regprocedure) INTO source;
+ IF position('Adding a Property after activation requires an administrator and its confirmed closing date.' IN source)=0 THEN RAISE EXCEPTION 'Add-home baseline changed.'; END IF;
+ source:=replace(source,'IF program.started_on IS NOT NULL AND (NOT public.has_role(actor,''admin'') OR _closing_date IS NULL) THEN','IF program.started_on IS NOT NULL AND NOT private.is_active_owner_authority(actor) THEN');
+ EXECUTE source;
+END $$;
+
 CREATE OR REPLACE FUNCTION public.active_owner_enrollment_step(_request_id uuid,_step text,_input jsonb,_account_id uuid DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
 DECLARE run public.active_owner_enrollment_runs; home public.properties; owner public.property_owners;
@@ -69,6 +79,10 @@ BEGIN
  IF _step='prepare' THEN RETURN jsonb_build_object('programId',run.program_id); END IF;
  IF _step NOT IN ('account','enrollment','closing','activation','onboarding','operating','welcome') THEN RAISE EXCEPTION 'Unknown enrollment step.'; END IF;
  IF run.checkpoints ? _step THEN RETURN run.checkpoints->_step; END IF;
+ IF _step<>'account' AND NOT run.checkpoints ? CASE _step WHEN 'enrollment' THEN 'account' WHEN 'closing' THEN 'enrollment'
+   WHEN 'activation' THEN 'closing' WHEN 'onboarding' THEN 'activation' WHEN 'operating' THEN 'onboarding' ELSE 'operating' END THEN
+  RAISE EXCEPTION 'Finish the preceding enrollment step before continuing.';
+ END IF;
  IF _step='account' THEN
   IF NOT EXISTS(SELECT 1 FROM profiles WHERE id=_account_id AND lower(email)=lower(_input->>'email')) THEN RAISE EXCEPTION 'The login does not match this email.'; END IF;
   UPDATE active_owner_enrollment_runs SET account_id=_account_id WHERE id=run.id;
@@ -81,7 +95,11 @@ BEGIN
    -- Existing enrollment/link action, not a separate program creator. Prevent early queue until final step.
    receipt:=public.create_owner_program(home.id);
    SELECT * INTO p FROM owner_programs WHERE id=(receipt->>'programId')::uuid FOR UPDATE;
-   PERFORM public.staff_link_owner_account(p.id, _account_id);
+   IF home.is_demo THEN
+    IF NOT private.demo_owner_link_ok(_account_id,p.id) THEN RAISE EXCEPTION 'Link this practice account through the existing demo owner action first.'; END IF;
+   ELSE
+    PERFORM public.staff_link_owner_account(p.id, _account_id);
+   END IF;
    UPDATE active_owner_enrollment_runs SET program_id=p.id WHERE id=run.id;
    UPDATE property_owners SET name=trim(_input->>'name'),email=lower(trim(_input->>'email')) WHERE id=owner.id;
    INSERT INTO owner_program_events(program_id,kind,summary,actor_id,detail) VALUES(p.id,'owner_enrollment_details','Homeowner enrollment details saved.',auth.uid(),jsonb_build_object('requestId',run.id,'previousName',owner.name,'previousEmail',owner.email));
@@ -99,7 +117,8 @@ BEGIN
     UPDATE owner_program_properties SET closing_date=date_value,closing_confirmed=(home.actual_closing_on IS NOT NULL) WHERE program_id=p.id AND property_id=home.id;
     INSERT INTO owner_program_events(program_id,kind,summary,actor_id,detail) VALUES(p.id,'enrollment_closing_saved','Expected or confirmed closing date recorded during enrollment.',auth.uid(),jsonb_build_object('propertyId',home.id,'previous',previous,'date',date_value,'reason',_input->>'reason','requestId',run.id));
     INSERT INTO audit_log(actor_id,action,entity_type,entity_id,before_value,after_value) VALUES(auth.uid(),'owner.enrollment_closing','property',home.id,to_jsonb(home),jsonb_build_object('date',date_value,'confirmed',home.actual_closing_on IS NOT NULL,'requestId',run.id));
-    seeded:=public.change_owner_program(p.id,p.report_version,'settings',_settings=>jsonb_build_object('onboardingLead',_input->'onboardingLead','operationsLead',_input->'operationsLead','internalNotes',_input->>'notes'));
+    SELECT * INTO p FROM owner_programs WHERE id=run.program_id FOR UPDATE;
+    seeded:=public.change_owner_program(p.id,p.report_version,'settings',_settings=>jsonb_build_object('onboardingLead',_input->'onboardingLead','operationsLead',_input->'operationsLead','dfyConfirmed',p.dfy_confirmed,'internalNotes',_input->>'notes'));
    ELSIF _step='activation' THEN
     IF p.status NOT IN ('active','target_reached') THEN PERFORM public.activate_owner_program(p.id,p.report_version,NULL); END IF;
    ELSIF _step IN ('onboarding','operating') THEN

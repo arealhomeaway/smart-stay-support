@@ -80,7 +80,7 @@ export async function drainOwnerWelcomes(db: SupabaseClient, limit = 20, jobRunI
         continue;
       }
     }
-    const msg = renderWelcome(tpl, { ...ctx, portalLink: PORTAL_LINK, videoLink, setPasswordLink });
+    const msg = renderWelcome(tpl, { ...ctx, portalLink: PORTAL_LINK, videoLink, ...(setPasswordLink ? { setPasswordLink } : {}) });
     if (TEST_ADDRESS.test(row.recipient)) {
       await db.from("owner_welcome_messages").update({
         status: "failed", error_message: "Test address — never emailed.", subject: msg.subject, body: msg.body,
