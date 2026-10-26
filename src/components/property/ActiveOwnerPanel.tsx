@@ -180,7 +180,7 @@ export function ActiveOwnerPanel({
               <dd className="numeric font-medium">{row.openTasks}</dd>
             </div>
           </dl>
-          {canEnroll && !row.ownerLinked ? (
+          {canEnroll && (!row.ownerLinked || row.status === "draft") ? (
             <ActiveOwnerEnrollForm
               finishing
               propertyId={propertyId}
@@ -221,8 +221,7 @@ export function ActiveOwnerPanel({
                 {changeStatus.isPending ? "Saving…" : "Update status"}
               </Button>
               <p className="w-full text-xs text-muted-foreground">
-                Activating the program and adding the homeowner&apos;s details happen on the
-                program record.
+                Finish Active Owner setup here to link the homeowner, activate participation and release Opportunities.
               </p>
             </div>
           ) : null}
@@ -250,8 +249,7 @@ export function ActiveOwnerPanel({
       ) : (
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            {propertyName} is a standard home. Enrolling links the homeowner and queues their welcome. Hour logging
-            opens automatically once an actual closing is confirmed and has arrived.
+            {propertyName} is a standard home. Enrollment links the homeowner, opens participation and prepares their welcome.
           </p>
           {canManage || canEnroll ? (
             <div className="space-y-3">

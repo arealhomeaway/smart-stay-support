@@ -27,7 +27,7 @@ export type HoursHome = {
 };
 
 export type HoursEligibility =
-  | { eligible: true; openedOn: string }
+  | { eligible: true; openedOn: string | null }
   | { eligible: false; reason: "closed" | "paused" | "closing_future" | "no_confirmed_closing"; closingOn?: string };
 
 export function ownerHoursEligibility(
@@ -37,20 +37,15 @@ export function ownerHoursEligibility(
 ): HoursEligibility {
   if (program.completedAt || program.status === "completed") return { eligible: false, reason: "closed" };
   if (program.status === "paused") return { eligible: false, reason: "paused" };
-  const confirmed = homes
-    .filter((h) => h.inclusionStatus === "included" && h.closingConfirmed && h.closingDate)
-    .map((h) => h.closingDate as string)
-    .sort();
-  const arrived = confirmed.filter((d) => d <= today);
-  if (arrived.length) return { eligible: true, openedOn: arrived[0]! };
-  const next = confirmed.find((d) => d > today);
-  if (next) return { eligible: false, reason: "closing_future", closingOn: next };
-  return { eligible: false, reason: "no_confirmed_closing" };
+  if (["closed", "complete"].includes(program.status)) return { eligible: false, reason: "closed" };
+  const dates = homes.filter((h) => h.inclusionStatus === "included" && h.closingDate)
+    .map((h) => h.closingDate).filter((d): d is string => Boolean(d)).sort();
+  return { eligible: true, openedOn: dates[0] ?? null };
 }
 
 /** Home is taggable on an entry once its own confirmed closing has arrived. */
 export function homeClosingArrived(h: HoursHome, today: string = businessToday()) {
-  return h.inclusionStatus === "included" && !!h.closingConfirmed && !!h.closingDate && h.closingDate <= today;
+  return h.inclusionStatus === "included";
 }
 
 export function hoursBlockedMessage(e: HoursEligibility, formatDate: (d: string) => string): string | null {
@@ -61,8 +56,8 @@ export function hoursBlockedMessage(e: HoursEligibility, formatDate: (d: string)
     case "paused":
       return "Your program is paused. Contact your ARHA team to resume logging.";
     case "closing_future":
-      return `Your portal is ready to explore. Hour logging opens on ${formatDate(e.closingOn!)}, your confirmed closing date.`;
+      return "You can record your participation hours once enrolled, including before closing.";
     default:
-      return "Your portal is ready to explore. Hour logging opens once your property's actual closing date is confirmed and that date has arrived.";
+      return "You can record your participation hours once enrolled, including before closing.";
   }
 }
