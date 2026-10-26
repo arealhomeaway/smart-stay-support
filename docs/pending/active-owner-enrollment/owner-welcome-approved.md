@@ -9,7 +9,7 @@ Tokens: `{{owner_first_name}}`, `{{property_display_name}}`, `{{portal_sign_in_l
 ```text
 Hi {{owner_first_name}},
 
-Welcome to the Active Owner Program! We're so excited to have you and {{property_display_name}} with us.
+Welcome to the Active Owner Program! We're so excited to have you with us, and we can't wait to get started on {{property_display_name}}.
 
 Your owner portal is where everything lives. It's where you'll see your activities, track your participation hours, and keep up with what's happening at your home.
 
