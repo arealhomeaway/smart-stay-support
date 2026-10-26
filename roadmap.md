@@ -25,3 +25,8 @@
 - [x] Synthetic unit tests and automatic typecheck/build verification (1546 pass, 5 skip)
 - [ ] Isolated database and signed-in enrollment acceptance: blocked because required SQL is deliberately unapplied and shared live writes are forbidden
 - [x] Tests, typecheck, build
+
+## Oct 26 follow-up (approved, no publish)
+- [ ] A. One summary notification + email per Opportunity release batch (pending SQL file)
+- [ ] B. Held-welcome note + Send setup link on enrollment confirmation
+- [ ] C. Ticket #57: template step window defaults + Blocks handoff note, tests
