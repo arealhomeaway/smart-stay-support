@@ -25,11 +25,12 @@ export const WELCOME_PLACEHOLDERS = [
   "{{portal_sign_in_link}}",
   "{{welcome_video_section}}",
   "{{hours_logging_note}}",
+  "{{set_password_link}}",
 ] as const;
 
 /** Emily Jimenez's supplied draft (Oct 8, 2026) plus the approved timing clarification. Not yet approved for sending. */
 export const HOURS_NOTE_LOCKED =
-  "Your portal is ready to explore. You can begin logging participation hours once your property’s actual closing date is confirmed and that date has arrived. Once logging opens, you can also record earlier activities from that calendar year.";
+  "You can log participation hours once enrolled, including before closing. Record each activity once, using the date you did it.";
 export const HOURS_NOTE_OPEN =
   "Your portal is ready to explore, and participation hour logging is already open. You can also record earlier activities from this calendar year.";
 
@@ -43,7 +44,7 @@ This is where you can review Opportunities from our team, share feedback and doc
 
 Open your portal: {{portal_sign_in_link}}
 
-Sign in using the email address you provided to ARHA. If you haven’t set a password yet, select Forgot password? on the sign-in page and follow the email instructions.
+Sign in using the email address you provided to ARHA. Set or update your password securely: {{set_password_link}}
 
 {{hours_logging_note}}
 
@@ -106,7 +107,7 @@ export function propertyDisplayName(names: string[]) {
 /** Final subject and body. With no video, the placeholder line disappears entirely. */
 export function renderWelcome(
   tpl: Pick<OwnerWelcomeTemplate, "subject" | "body">,
-  input: { ownerName: string | null; propertyNames: string[]; portalLink: string; videoLink: string | null; hoursOpen?: boolean },
+  input: { ownerName: string | null; propertyNames: string[]; portalLink: string; videoLink: string | null; hoursOpen?: boolean; setPasswordLink?: string },
 ) {
   const videoSection = input.videoLink ? `Watch a short welcome video: ${input.videoLink}` : "";
   const fill = (s: string) =>
@@ -114,6 +115,7 @@ export function renderWelcome(
       .replaceAll("{{owner_first_name}}", firstName(input.ownerName))
       .replaceAll("{{property_display_name}}", propertyDisplayName(input.propertyNames))
       .replaceAll("{{portal_sign_in_link}}", input.portalLink)
+      .replaceAll("{{set_password_link}}", input.setPasswordLink ?? "[Secure password link added when the approved welcome is delivered]")
       .replaceAll("{{welcome_video_section}}", videoSection)
       .replaceAll("{{hours_logging_note}}", input.hoursOpen ? HOURS_NOTE_OPEN : HOURS_NOTE_LOCKED);
   const body = fill(tpl.body)

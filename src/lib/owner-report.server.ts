@@ -99,7 +99,7 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
   // An entry is "in period" when dated in a participation year (General and
   // pre-closing entries included), up to today.
   const closings = agg.includedProperties
-    .filter((x) => x.closingConfirmed && x.closingDate)
+    .filter((x) => x.closingDate)
     .map((x) => x.closingDate as string);
   const period = aggregateParticipationPeriod(agg);
   const inAnyWindow = (date: string) => countsTowardParticipation(date, period, today);

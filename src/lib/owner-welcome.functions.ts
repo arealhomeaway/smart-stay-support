@@ -9,6 +9,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { OWNER_WELCOME_KEY, readWelcomeTemplate, renderWelcome } from "./owner-welcome";
+import { enrollmentInput } from "./active-owner-enrollment";
 
 type Ctx = { supabase: import("@supabase/supabase-js").SupabaseClient; userId: string };
 
@@ -47,13 +48,7 @@ async function assertEditor(ctx: Ctx) {
 
 export const enrollActiveOwner = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({
-      propertyId: z.string().uuid(),
-      email: z.string().trim().toLowerCase().email().max(255),
-      name: z.string().trim().min(2).max(120),
-    }).parse(d),
-  )
+  .inputValidator((d: unknown) => enrollmentInput.parse(d))
   .handler(async ({ context, data }) => {
     const ctx = context as unknown as Ctx;
     if (!(await isActiveOwnerAuthority(ctx)))
@@ -64,58 +59,34 @@ export const enrollActiveOwner = createServerFn({ method: "POST" })
     if (!home.data) throw new Error("Home not found.");
     if (!(await mayActOnRecord(ctx, (home.data as { is_demo: boolean | null }).is_demo === true)))
       throw new Error("Test accounts can only set up Active Owner on demo homes.");
-    const { applyRole } = await import("./access.server");
-    const { writeAudit } = await import("./audit.server");
+    const { enrollFully } = await import("./active-owner-enrollment.server");
+    return enrollFully(db, ctx.supabase, ctx.userId, data);
+  });
 
-    // Reuse an existing account for this email; create one only if none exists.
-    let userId: string | null = null;
-    let created = false;
-    const existing = await db.from("profiles").select("id").ilike("email", data.email).maybeSingle();
-    if (existing.data) {
-      userId = (existing.data as { id: string }).id;
-      const roles = await db.from("user_roles").select("role").eq("user_id", userId);
-      const list = (roles.data ?? []).map((r) => String(r.role));
-      if (list.some((r) => r !== "owner"))
-        throw new Error("That email belongs to a staff account. Use the homeowner's own email.");
-      if (!list.includes("owner")) await applyRole(userId, "owner");
-    } else {
-      const res = await db.auth.admin.createUser({
-        email: data.email,
-        password: crypto.randomUUID() + crypto.randomUUID(),
-        email_confirm: true,
-        user_metadata: { full_name: data.name },
-      });
-      if (res.error || !res.data.user) {
-        // A concurrent save may have just created it — reuse, never duplicate.
-        const again = await db.from("profiles").select("id").ilike("email", data.email).maybeSingle();
-        if (!again.data) throw new Error("Could not create the homeowner account. Please try again.");
-        userId = (again.data as { id: string }).id;
-      } else {
-        userId = res.data.user.id;
-        created = true;
-      }
-      const has = await db.from("user_roles").select("role").eq("user_id", userId!);
-      const roleList = (has.data ?? []).map((r) => String(r.role));
-      if (roleList.some((r) => r !== "owner")) throw new Error("That email belongs to a staff account. Use the homeowner's own email.");
-      if (!roleList.includes("owner")) await applyRole(userId!, "owner");
-    }
-    if (created) {
-      await writeAudit({
-        actorId: ctx.userId, actorLabel: null, action: "user.created_for_active_owner",
-        entityType: "user", entityId: userId!, entityLabel: data.email,
-        after: { role: "owner", method: "active_owner_setup", property_id: data.propertyId },
-      });
-    }
-
-    // Enrollment, link, activation and welcome happen together as the staff member.
-    const { data: r, error } = await ctx.supabase.rpc("enroll_active_owner" as never, {
-      _property_id: data.propertyId, _owner_user_id: userId,
-    } as never);
-    if (error) throw new Error(error.message);
-    return { ...(r as Record<string, unknown>), accountCreated: created } as {
-      programId: string; alreadyEnrolled: boolean; participationOpen: boolean;
-      activatedNow: boolean; welcomeQueued: boolean; accountCreated: boolean;
-    };
+/** Read-only prefill and account/program notice for the same enrollment window. */
+export const activeOwnerEnrollmentContext = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ propertyId: z.string().uuid(), email: z.string().trim().email().optional() }).parse(d))
+  .handler(async ({ context, data }) => {
+    const ctx = context as unknown as Ctx;
+    if (!(await isActiveOwnerAuthority(ctx))) throw new Error("Only the Onboarding Director or an Admin can enroll.");
+    const home = await ctx.supabase.from("properties").select("owner_record_id,actual_closing_on,planned_closing_on,is_demo").eq("id", data.propertyId).single();
+    if (home.error || !home.data?.owner_record_id) throw new Error("Link this home to its homeowner record before enrolling.");
+    if (!(await mayActOnRecord(ctx, home.data.is_demo === true))) throw new Error("Test accounts can only enroll practice homes.");
+    const owner = await ctx.supabase.from("property_owners").select("id,name,email,active").eq("id", home.data.owner_record_id).single();
+    if (owner.error || !owner.data?.active) throw new Error("This homeowner record needs to be active before enrollment.");
+    const programs = await ctx.supabase.from("owner_programs").select("id,status,onboarding_lead,operations_lead,internal_notes")
+      .eq("owner_record_id", owner.data.id).eq("is_demo", home.data.is_demo).is("archived_at", null).not("status", "in", "(closed,completed,complete)");
+    if (programs.error) throw new Error("Could not check existing enrollment.");
+    if ((programs.data?.length ?? 0) > 1) throw new Error("This homeowner has conflicting programs. Review them before enrollment.");
+    const choices = await ctx.supabase.rpc("owner_program_staff_choices");
+    if (choices.error) throw new Error("Could not load available leads.");
+    const profile = await ctx.supabase.from("profiles").select("id").ilike("email", data.email ?? owner.data.email ?? "").maybeSingle();
+    if (profile.error) throw new Error("Could not check the homeowner login.");
+    return { owner: owner.data, actualClosing: home.data.actual_closing_on as string | null,
+      closingDate: (home.data.actual_closing_on ?? home.data.planned_closing_on) as string | null,
+      program: programs.data?.[0] ?? null, accountExists: Boolean(profile.data),
+      staffChoices: (choices.data ?? []) as { id: string; label: string }[] };
   });
 
 export const getWelcomeAdmin = createServerFn({ method: "POST" })

@@ -76,6 +76,10 @@ export const Route = createFileRoute("/_authenticated/owner")({
         name: "description",
         content: "Your participation, your homes, and what needs your attention — in one place.",
       },
+      { property: "og:title", content: "Your home — Resolve Active Owner" },
+      { property: "og:description", content: "Your ARHA homes, participation and Opportunities in one place." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: OwnerHub,
@@ -281,8 +285,7 @@ function OwnerHubBody({
     );
   const closeoutVisible = Boolean(program.completedAt) || snapshot.daysLeft <= 30;
 
-  // Hour entry opens automatically once any home's confirmed closing has
-  // arrived (Chicago business date); the server enforces the same rule.
+  // Enrollment opens hour entry; the server preserves owner and program-state checks.
   const hoursState = ownerHoursEligibility(program, properties);
   const canLogHours = !preview && hoursState.eligible;
   const logHoursBlockedReason = canLogHours ? null : hoursBlockedMessage(hoursState, (d) => usCalendarDate(d));
@@ -472,6 +475,9 @@ function OwnerHubBody({
           <p className="font-medium">Logging hours is not open yet</p>
           <p className="mt-1 text-muted-foreground">{logHoursBlockedReason}</p>
         </div>
+      ) : null}
+      {!preview && hoursState.eligible && !properties.some((p) => p.inclusionStatus === "included" && p.closingDate) ? (
+        <p className="text-sm text-muted-foreground">Your hours are saved and visible. They will be grouped by closing year once a closing date is recorded.</p>
       ) : null}
 
       {targetReached ? (
