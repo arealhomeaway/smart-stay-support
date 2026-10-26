@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { completeOpportunity, handoffLocked } from "../template-step-dialog";
 
 describe("Help Ticket #57 — template step window", () => {
