@@ -79,8 +79,8 @@ BEGIN
  IF _step='prepare' THEN RETURN jsonb_build_object('programId',run.program_id); END IF;
  IF _step NOT IN ('account','enrollment','closing','activation','onboarding','operating','welcome') THEN RAISE EXCEPTION 'Unknown enrollment step.'; END IF;
  IF run.checkpoints ? _step THEN RETURN run.checkpoints->_step; END IF;
- IF _step<>'account' AND NOT run.checkpoints ? CASE _step WHEN 'enrollment' THEN 'account' WHEN 'closing' THEN 'enrollment'
-   WHEN 'activation' THEN 'closing' WHEN 'onboarding' THEN 'activation' WHEN 'operating' THEN 'onboarding' ELSE 'operating' END THEN
+ IF _step<>'account' AND NOT (run.checkpoints ? (CASE _step WHEN 'enrollment' THEN 'account' WHEN 'closing' THEN 'enrollment'
+   WHEN 'activation' THEN 'closing' WHEN 'onboarding' THEN 'activation' WHEN 'operating' THEN 'onboarding' ELSE 'operating' END)) THEN
   RAISE EXCEPTION 'Finish the preceding enrollment step before continuing.';
  END IF;
  IF _step='account' THEN
@@ -124,7 +124,7 @@ BEGIN
     INSERT INTO owner_program_events(program_id,kind,summary,actor_id,detail) VALUES(p.id,'enrollment_closing_saved','Expected or confirmed closing date recorded during enrollment.',auth.uid(),jsonb_build_object('propertyId',home.id,'previous',previous,'date',date_value,'reason',_input->>'reason','requestId',run.id));
     INSERT INTO audit_log(actor_id,action,entity_type,entity_id,before_value,after_value) VALUES(auth.uid(),'owner.enrollment_closing','property',home.id,to_jsonb(home),jsonb_build_object('date',date_value,'confirmed',home.actual_closing_on IS NOT NULL,'requestId',run.id));
     SELECT * INTO p FROM owner_programs WHERE id=run.program_id FOR UPDATE;
-    seeded:=public.change_owner_program(p.id,p.report_version,'settings',_settings=>jsonb_build_object('onboardingLead',_input->'onboardingLead','operationsLead',_input->'operationsLead','dfyConfirmed',p.dfy_confirmed,'internalNotes',_input->>'notes'));
+    seeded:=public.change_owner_program(p.id,p.report_version,'settings',_settings=>jsonb_build_object('onboardingLead',_input->'onboardingLead','operationsLead',_input->'operationsLead','dfyConfirmed',coalesce(p.dfy_confirmed,false),'internalNotes',_input->>'notes'));
    ELSIF _step='activation' THEN
     IF p.status NOT IN ('active','target_reached') THEN PERFORM public.activate_owner_program(p.id,p.report_version,NULL); END IF;
    ELSIF _step IN ('onboarding','operating') THEN

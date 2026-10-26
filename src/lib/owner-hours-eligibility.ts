@@ -43,7 +43,7 @@ export function ownerHoursEligibility(
   return { eligible: true, openedOn: dates[0] ?? null };
 }
 
-/** Home is taggable on an entry once its own confirmed closing has arrived. */
+/** Every currently included home is taggable, including before closing. */
 export function homeClosingArrived(h: HoursHome, today: string = businessToday()) {
   return h.inclusionStatus === "included";
 }
