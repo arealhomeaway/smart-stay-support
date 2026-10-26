@@ -151,8 +151,17 @@ Nothing applied or run. Current active catalog: **22 onboarding templates per ho
 | RL / Galveston |0|10|22|None|
 | Niles / Buckland |22|10|0|None|
 
-Each newly opened Opportunity can create the existing homeowner bell/email alert. All four programs currently have email notifications enabled: up to 32, 54, 32 and 32 respectively (150 total). Delivery is asynchronous and must be approved separately before executing this script. It does not queue welcome emails. No W104th closing change, account changes or hours changes. Re-read counts before release because this manifest is time-sensitive.
+Notification effect (requires 0160): each program gets exactly ONE homeowner summary — one bell alert and, where the program has email on, one email through the existing owner-alert job and its demo/test safety check. No per-Opportunity alerts.
+
+| Program | Summary alerts | Summary emails | Wording |
+|---|---:|---:|---|
+| Linder / 1399 Foxtail | 1 | 1 | "We added 32 activities to your portal for 1399 Foxtail…" |
+| VP / Fitzgerald and W104th | 1 | 1 | "We added 54 activities … for both homes" |
+| RL / Galveston | 1 | 1 | "We added 32 activities …" |
+| Niles / Buckland | 1 | 1 | "We added 32 activities …" |
+
+Total: 4 alerts, at most 4 emails (previously up to 150). Counts are re-read when run; a program with nothing new gets no summary. It does not queue welcome emails. No W104th closing change, account changes or hours changes. Re-read counts before release because this manifest is time-sensitive.
 
 ## Pending SQL
 
-0157 changes only hours eligibility/write-date gate. 0158 adds Admin closing correction authority. 0159 adds retry receipts, expected-date activation and existing add-home action compatibility. All staged here, outside automatic migration history; none applied. Database execution and notifications require isolated acceptance testing first.
+0157 changes only hours eligibility/write-date gate. 0158 adds Admin closing correction authority. 0160 adds the one-summary-per-release-batch rule (must be applied before 0159 and the repair script). 0159 adds retry receipts, expected-date activation and existing add-home action compatibility. All staged here, outside automatic migration history; none applied. Database execution and notifications require isolated acceptance testing first.

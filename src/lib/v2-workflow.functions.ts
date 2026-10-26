@@ -57,7 +57,7 @@ export const readTemplateV2 = createServerFn({ method: "POST" })
       sb.from("onboarding_template_stages").select("id, name, sort_order, active").eq("template_id", data.templateId).order("sort_order"),
       sb
         .from("onboarding_template_tasks")
-        .select("id, title, detail, breezeway_template_id, stage, sort_order, functional_role, is_required, blocks_handoff, is_active, module, opportunity, offset_days, offset_unit, schedule_anchor, owner_dependency, description, done_when, video_url, condition")
+        .select("id, title, detail, breezeway_template_id, stage, sort_order, functional_role, is_required, blocks_handoff, is_active, module, opportunity, offset_days, offset_unit, schedule_anchor, owner_dependency, description, done_when, video_url, condition, requires_owner_approval, tags")
         .eq("template_id", data.templateId)
         .order("sort_order"),
       sb.from("onboarding_template_versions").select("id, version, published_at").eq("template_id", data.templateId).order("version", { ascending: false }),

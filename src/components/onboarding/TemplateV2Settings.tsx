@@ -44,6 +44,7 @@ import {
   type ConditionClause,
   type OffsetUnit,
 } from "@/lib/plan-rules";
+import { HANDOFF_LOCK_NOTE, completeOpportunity, handoffLocked } from "@/lib/template-step-dialog";
 
 type Stage = { id: string; name: string; sort_order: number; active: boolean };
 type Step = Awaited<ReturnType<typeof readTemplateV2>>["steps"][number];
@@ -98,7 +99,8 @@ function StepDialog({ step, onClose, onSave, saving }: { step: Step; onClose: ()
   const [bzTemplate, setBzTemplate] = useState(step.breezeway_template_id ?? "");
   const [role, setRole] = useState(step.functional_role ?? "none");
   const [required, setRequired] = useState(step.is_required);
-  const [blocking, setBlocking] = useState(step.blocks_handoff);
+  const lockHandoff = handoffLocked(step);
+  const [blocking, setBlocking] = useState(lockHandoff ? false : step.blocks_handoff);
   const [active, setActive] = useState(step.is_active);
   const [module, setModule] = useState(step.module ?? "");
   const [dependency, setDependency] = useState<OwnerDependency>((step.owner_dependency as OwnerDependency | null) ?? "none");
@@ -115,7 +117,7 @@ function StepDialog({ step, onClose, onSave, saving }: { step: Step; onClose: ()
   const offsetNum = offset.trim() === "" || Number.isNaN(Number(offset)) ? null : Math.round(Number(offset));
   const videoOk = !videoUrl.trim() || /^https:\/\//.test(videoUrl.trim());
   const [eligible, setEligible] = useState(Boolean(step.opportunity));
-  const [opp, setOpp] = useState<OpportunityContent>(step.opportunity ?? { ...emptyOpp, title: step.title });
+  const [opp, setOpp] = useState<OpportunityContent>(step.opportunity ? completeOpportunity(step.opportunity, step.title) : { ...emptyOpp, title: step.title });
   const set = (k: keyof OpportunityContent, v: string) => setOpp((o) => ({ ...o, [k]: v }));
 
   return (
@@ -195,7 +197,8 @@ function StepDialog({ step, onClose, onSave, saving }: { step: Step; onClose: ()
           </div>
           <div className="flex flex-col justify-end gap-2 text-sm">
             <label className="flex items-center gap-2"><Switch checked={required} onCheckedChange={setRequired} /> Required</label>
-            <label className="flex items-center gap-2"><Switch checked={blocking} onCheckedChange={setBlocking} /> Blocks handoff</label>
+            <label className="flex items-center gap-2"><Switch checked={blocking} disabled={lockHandoff} onCheckedChange={setBlocking} /> Blocks handoff</label>
+            {lockHandoff ? <p className="text-xs text-muted-foreground">{HANDOFF_LOCK_NOTE}</p> : null}
             <label className="flex items-center gap-2"><Switch checked={active} onCheckedChange={setActive} /> Active in this plan</label>
           </div>
         </div>

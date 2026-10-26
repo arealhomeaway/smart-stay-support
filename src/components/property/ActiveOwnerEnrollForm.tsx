@@ -10,6 +10,26 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { activeOwnerEnrollmentContext, enrollActiveOwner } from "@/lib/owner-welcome.functions";
 import { enrollmentInput, type EnrollmentReceipt } from "@/lib/active-owner-enrollment";
+import { sendTeammateAccountEmail } from "@/lib/access.functions";
+
+export const HELD_WELCOME_NOTE =
+  "Welcome email held until the wording is approved. Use Send setup link so the homeowner can sign in.";
+
+/** While the branded welcome is held, the existing Admin "Send setup link" action, unchanged. */
+export function HeldWelcomeSetupLink({ accountId }: { accountId: string }) {
+  const send = useServerFn(sendTeammateAccountEmail);
+  const m = useMutation({
+    mutationFn: () => send({ data: { userId: accountId, kind: "setup" } }),
+    onSuccess: () => toast.success("Setup link sent."),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not send"),
+  });
+  return <div className="space-y-2 rounded-md border border-border p-3 text-sm">
+    <p>{HELD_WELCOME_NOTE}</p>
+    <Button size="sm" variant="outline" disabled={m.isPending || m.isSuccess} onClick={() => m.mutate()}>
+      {m.isPending ? "Sending…" : m.isSuccess ? "Setup link sent" : "Send setup link"}
+    </Button>
+  </div>;
+}
 
 export const activeOwnerDetailsOk = (name: string, email: string) =>
   name.trim().length >= 2 && /\S+@\S+\.\S+/.test(email.trim());
@@ -63,6 +83,7 @@ function EnrollmentFields({ propertyId, context, onDone, close }: {
       {step.detail ? <p className="text-destructive">{step.detail}</p> : null}
     </li>)}</ol>
     {receipt.complete ? <p className="text-sm">{receipt.onboardingAdded} onboarding and {receipt.operatingAdded} operating Opportunities added.</p> : null}
+    {receipt.complete && receipt.welcomeHeld && receipt.accountId ? <HeldWelcomeSetupLink accountId={receipt.accountId} /> : null}
     <Button onClick={() => receipt.complete ? close() : run.mutate()} disabled={run.isPending}>{receipt.complete ? "Done" : run.isPending ? "Retrying…" : "Retry"}</Button>
   </div>;
   return <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); run.mutate(); }}>
