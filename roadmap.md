@@ -27,6 +27,6 @@
 - [x] Tests, typecheck, build
 
 ## Oct 26 follow-up (approved, no publish)
-- [ ] A. One summary notification + email per Opportunity release batch (pending SQL file)
-- [ ] B. Held-welcome note + Send setup link on enrollment confirmation
-- [ ] C. Ticket #57: template step window defaults + Blocks handoff note, tests
+- [x] A. One summary notification + email per Opportunity release batch (pending SQL file)
+- [x] B. Held-welcome note + Send setup link on enrollment confirmation
+- [x] C. Ticket #57: template step window defaults + Blocks handoff note, tests
