@@ -18,9 +18,10 @@
 
 ## One-step Active Owner enrollment (Oct 26; files only, no live writes)
 - [x] Read-only generic account email trace; hosted sender/content not verified
-- [ ] One enrollment window and resumable canonical action
-- [ ] Immediate owner hours and Admin closing migrations, not applied
-- [ ] Four-program Opportunity repair script and exact dry-run inventory
-- [ ] Held branded password-link welcome preparation
-- [ ] Synthetic tests and automatic build verification
+- [x] One enrollment window and resumable canonical action built; live execution blocked until pending SQL approved
+- [x] Immediate owner hours and Admin closing migrations staged, not applied
+- [x] Four-program Opportunity repair script and exact read-only inventory staged, not run
+- [x] Held branded password-link welcome preparation
+- [x] Synthetic unit tests and automatic typecheck/build verification (1546 pass, 5 skip)
+- [ ] Isolated database and signed-in enrollment acceptance: blocked because required SQL is deliberately unapplied and shared live writes are forbidden
 - [x] Tests, typecheck, build

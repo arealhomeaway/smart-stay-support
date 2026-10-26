@@ -81,6 +81,7 @@ export async function drainOwnerWelcomes(db: SupabaseClient, limit = 20, jobRunI
       }
     }
     const msg = renderWelcome(tpl, { ...ctx, portalLink: PORTAL_LINK, videoLink, ...(setPasswordLink ? { setPasswordLink } : {}) });
+    const auditBody = setPasswordLink ? msg.body.replaceAll(setPasswordLink, "[Secure password link omitted]") : msg.body;
     if (TEST_ADDRESS.test(row.recipient)) {
       await db.from("owner_welcome_messages").update({
         status: "failed", error_message: "Test address — never emailed.", subject: msg.subject, body: msg.body,
@@ -94,7 +95,7 @@ export async function drainOwnerWelcomes(db: SupabaseClient, limit = 20, jobRunI
       html: emailShell(msg.subject, msg.body, { label: "Open your portal", url: PORTAL_LINK }, "owner" as never),
       purpose: "owner_welcome",
       entity: { type: "owner_program", id: row.program_id },
-      bodyText: msg.body,
+      bodyText: auditBody,
       singleAttempt: true,
       preserveUncertainty: true,
       ...(jobRunId ? { jobRunId, jobPart: "welcomes" } : {}),
@@ -103,7 +104,7 @@ export async function drainOwnerWelcomes(db: SupabaseClient, limit = 20, jobRunI
       status: result.status === "sent" ? "sent" : result.deliveryUncertain ? "sending" : "failed",
       error_message: result.status === "sent" ? null : `${result.deliveryUncertain ? "Delivery uncertain: " : ""}${result.error ?? "Delivery failed"}`,
       sent_at: result.status === "sent" ? new Date().toISOString() : null,
-      subject: msg.subject, body: msg.body, template_version: tpl.version, video_url: videoLink,
+      subject: msg.subject, body: auditBody, template_version: tpl.version, video_url: videoLink,
     } as never).eq("id", row.id).eq("status", "sending").eq("attempts", row.attempts + 1);
     if (result.status === "sent") sent += 1;
     if (result.status === "failed") notes.push(result.error);
