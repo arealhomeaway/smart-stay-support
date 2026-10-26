@@ -1,9 +1,9 @@
 -- APPROVAL ONLY — DO NOT RUN until Emily approves the exact manifest and notifications.
 -- Run as the approving Admin/Onboarding Director's authenticated session, not an anonymous service role.
--- No closing-date/account/hour/welcome changes. Defaults to ROLLBACK for review.
+-- Requires 0160 applied first. No closing-date/account/hour/welcome changes. Defaults to ROLLBACK for review.
 BEGIN;
 DO $$
-DECLARE id uuid; p public.owner_programs; r jsonb;
+DECLARE id uuid; p public.owner_programs; r jsonb; opened int;
 BEGIN
  IF auth.uid() IS NULL OR NOT (public.has_role(auth.uid(),'admin') OR public.is_onboarding_director(auth.uid())) THEN RAISE EXCEPTION 'An approving Admin or Onboarding Director is required.'; END IF;
  FOREACH id IN ARRAY ARRAY[
@@ -27,7 +27,11 @@ BEGIN
   SELECT * INTO p FROM owner_programs WHERE owner_programs.id=id;
   r:=public.change_owner_program(p.id,p.report_version,'seed_roadmap',_phase=>'ongoing');
   -- Open only prepared template Opportunities. Completed/manual records and internal Tasks untouched.
+  -- Batch release (needs 0160): no per-Opportunity alerts; exactly one summary per program.
+  PERFORM public.owner_release_batch_begin();
   UPDATE owner_reviews SET status='awaiting_owner' WHERE program_id=p.id AND status='prepared' AND template_id IS NOT NULL;
+  GET DIAGNOSTICS opened = ROW_COUNT;
+  PERFORM public.owner_release_summary(p.id, opened, NULL);
  END LOOP;
 END $$;
 ROLLBACK;

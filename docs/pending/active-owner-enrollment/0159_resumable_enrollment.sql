@@ -1,4 +1,4 @@
--- APPROVAL ONLY: NOT APPLIED. Run after 0157 and 0158. No live seed/data fixes here.
+-- APPROVAL ONLY: NOT APPLIED. Run after 0157, 0158 and 0160. No live seed/data fixes here.
 CREATE TABLE public.active_owner_enrollment_runs (
  id uuid PRIMARY KEY, actor_id uuid NOT NULL, property_id uuid NOT NULL,
  input jsonb NOT NULL, account_id uuid, program_id uuid, checkpoints jsonb NOT NULL DEFAULT '{}'::jsonb,
@@ -36,7 +36,7 @@ END $$;
 
 CREATE OR REPLACE FUNCTION public.active_owner_enrollment_step(_request_id uuid,_step text,_input jsonb,_account_id uuid DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
-DECLARE run public.active_owner_enrollment_runs; home public.properties; owner public.property_owners;
+DECLARE opened int; prior int; run public.active_owner_enrollment_runs; home public.properties; owner public.property_owners;
  p public.owner_programs; date_value date; receipt jsonb; seeded jsonb; previous jsonb; phase_value text; template public.owner_task_templates;
 BEGIN
  IF auth.uid() IS NULL OR NOT (public.has_role(auth.uid(),'admin') OR public.is_onboarding_director(auth.uid())) THEN
@@ -131,9 +131,18 @@ BEGIN
     phase_value:=CASE WHEN _step='onboarding' THEN 'onboarding' ELSE 'ongoing' END;
     seeded:=public.change_owner_program(p.id,p.report_version,'seed_roadmap',_phase=>phase_value);
     -- Existing release creates prepared participation Opportunities. Open only these templates; Finance/internal Tasks unchanged.
+    -- Batch release (0160): per-Opportunity alerts suppressed; one summary for the whole enrollment after the operating step.
+    PERFORM public.owner_release_batch_begin();
     UPDATE owner_reviews SET status='awaiting_owner' WHERE program_id=p.id AND status='prepared' AND phase=phase_value AND template_id IS NOT NULL
      AND (phase_value='ongoing' OR property_id=home.id);
-    receipt:=jsonb_build_object('programId',p.id,'added',coalesce((seeded->>'added')::int,0));
+    GET DIAGNOSTICS opened = ROW_COUNT;
+    IF _step='operating' THEN
+     prior:=coalesce((run.checkpoints->'onboarding'->>'opened')::int,0);
+     PERFORM public.owner_release_summary(p.id, prior+opened, ARRAY[home.id]);
+    ELSE
+     PERFORM set_config('resolve.owner_release_batch','off',true);
+    END IF;
+    receipt:=jsonb_build_object('programId',p.id,'added',coalesce((seeded->>'added')::int,0),'opened',opened);
    ELSIF _step='welcome' THEN
     PERFORM public.enroll_active_owner(home.id,_account_id);
     receipt:=jsonb_build_object('programId',p.id,'held',coalesce((SELECT value->>'review' FROM app_settings WHERE key='owner_welcome_template'),'draft')<>'approved');

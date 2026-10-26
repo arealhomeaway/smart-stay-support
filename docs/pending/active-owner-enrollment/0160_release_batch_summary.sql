@@ -41,6 +41,9 @@ CREATE OR REPLACE FUNCTION public.owner_release_summary(_program_id uuid, _count
 DECLARE prog record; names text[]; homes text; nid uuid;
 BEGIN
  PERFORM set_config('resolve.owner_release_batch','off',true);
+ IF auth.uid() IS NULL OR NOT (public.has_role(auth.uid(),'admin') OR public.is_onboarding_director(auth.uid())) THEN
+  RAISE EXCEPTION 'Only an Admin or Onboarding Director can release Opportunities.';
+ END IF;
  IF coalesce(_count,0)<=0 THEN RETURN NULL; END IF;
  SELECT p.* INTO prog FROM owner_programs p JOIN property_owners o ON o.id=p.owner_record_id AND o.active
  WHERE p.id=_program_id AND p.status IN ('pending','active','target_reached') AND p.archived_at IS NULL AND NOT p.is_demo;
@@ -61,6 +64,7 @@ BEGIN
 END $$;
 
 REVOKE ALL ON FUNCTION public.owner_release_batch_begin() FROM PUBLIC, anon;
-REVOKE ALL ON FUNCTION public.owner_release_summary(uuid,int,uuid[]) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.owner_release_summary(uuid,int,uuid[]) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.owner_release_summary(uuid,int,uuid[]) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.owner_release_batch_begin() TO authenticated;
--- owner_release_summary is called only from SECURITY DEFINER release functions (0159) and the approved repair script.
+-- Callable only by an Admin or Onboarding Director (checked inside); used by 0159 and the repair script.
