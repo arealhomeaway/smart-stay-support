@@ -1,4 +1,4 @@
-# Roadmap — Simplification Pass 1 (approved, build+test only, NO publish)
+# Roadmap — approved build work, NO publish
 
 - [x] Grouped top tabs (My Work / Properties / Work Orders / Claims / Reports / Admin) via PAGE_TAB_GROUPS + GroupTabs; Record work retained (top action hidden on /tickets)
 - [x] Sidebar regrouped in AppShell; Ask the Coach + Help moved into Help & Feedback dropdown
@@ -15,4 +15,12 @@
 - [x] Spending approval + Supervisor wording
 - [x] Revert onboarding-template.ts to 464897d7
 - [x] Builder-word fixes
+
+## One-step Active Owner enrollment (Oct 26; files only, no live writes)
+- [x] Read-only generic account email trace; hosted sender/content not verified
+- [ ] One enrollment window and resumable canonical action
+- [ ] Immediate owner hours and Admin closing migrations, not applied
+- [ ] Four-program Opportunity repair script and exact dry-run inventory
+- [ ] Held branded password-link welcome preparation
+- [ ] Synthetic tests and automatic build verification
 - [x] Tests, typecheck, build
