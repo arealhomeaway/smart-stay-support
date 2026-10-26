@@ -33,6 +33,7 @@ export async function enrollFully(db: SupabaseClient, actor: SupabaseClient, act
         if (!id) throw new Error("Could not create the homeowner login. Please retry.");
       }
       // Return the created identity even if role/audit checkpoint fails; never hide an orphaned login.
+      try {
       await checkpoint("account", id);
       const roles = await db.from("user_roles").select("role").eq("user_id", id);
       if (roles.error) throw new Error("Could not verify the homeowner's access.");
@@ -42,6 +43,11 @@ export async function enrollFully(db: SupabaseClient, actor: SupabaseClient, act
       if (created) await writeAudit({ actorId, actorLabel: null, action: "user.created_for_active_owner",
         entityType: "user", entityId: id, entityLabel: input.email,
         after: { role: "owner", method: "active_owner_setup", property_id: input.propertyId } });
+      } catch (error) {
+        const problem = new Error(error instanceof Error ? error.message : "The login exists but setup needs attention.");
+        Object.assign(problem, { accountId: id });
+        throw problem;
+      }
       return { id, created };
     },
     step: (step, id) => checkpoint(step, id),

@@ -49,6 +49,7 @@ export async function runEnrollment(ops: {
       }
       step.status = "done";
     } catch (error) {
+      if (error instanceof Error && "accountId" in error && typeof error.accountId === "string") receipt.accountId = error.accountId;
       step.status = "failed";
       step.detail = error instanceof Error ? error.message : "Could not finish this step. Please retry.";
       return receipt;
