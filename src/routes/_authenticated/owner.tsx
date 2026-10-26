@@ -281,8 +281,7 @@ function OwnerHubBody({
     );
   const closeoutVisible = Boolean(program.completedAt) || snapshot.daysLeft <= 30;
 
-  // Hour entry opens automatically once any home's confirmed closing has
-  // arrived (Chicago business date); the server enforces the same rule.
+  // Enrollment opens hour entry; the server preserves owner and program-state checks.
   const hoursState = ownerHoursEligibility(program, properties);
   const canLogHours = !preview && hoursState.eligible;
   const logHoursBlockedReason = canLogHours ? null : hoursBlockedMessage(hoursState, (d) => usCalendarDate(d));
@@ -472,6 +471,9 @@ function OwnerHubBody({
           <p className="font-medium">Logging hours is not open yet</p>
           <p className="mt-1 text-muted-foreground">{logHoursBlockedReason}</p>
         </div>
+      ) : null}
+      {!preview && hoursState.eligible && !properties.some((p) => p.inclusionStatus === "included" && p.closingDate) ? (
+        <p className="text-sm text-muted-foreground">Your hours are saved and visible. They will be grouped by closing year once a closing date is recorded.</p>
       ) : null}
 
       {targetReached ? (

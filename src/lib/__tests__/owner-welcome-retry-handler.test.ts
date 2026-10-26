@@ -63,6 +63,7 @@ mock.module("@supabase/supabase-js", () => ({
       if (name === "is_onboarding_director") return { data: !!people[a["_user_id"] as string]?.director, error: null };
       if (name === "has_role") return { data: !!people[a["_user_id"] as string]?.roles.includes(a["_role"] as string), error: null };
       if (name === "enroll_active_owner") { enrollCalls.push(a); return { data: { programId: "p" }, error: null }; }
+      if (name === "active_owner_enrollment_step") { enrollCalls.push(a); return { data: { programId: "p", added: 0, held: true }, error: null }; }
       if (name === "active_owner_may_act") return { data: authority && (!p!.synthetic || a["_is_demo"] === true), error: null };
       return { data: null, error: new Error("unexpected rpc " + name) };
     },
@@ -153,7 +154,7 @@ describe("retryWelcome handler (executed)", () => {
 });
 
 const enroll = (propertyId: string) =>
-  enrollActiveOwner({ data: { propertyId, name: "Pat Example", email: "pat@home.com" } } as never);
+  enrollActiveOwner({ data: { requestId: crypto.randomUUID(), ownerRecordId: REAL, closingDate: "2026-11-10", propertyId, name: "Pat Example", email: "pat@home.com" } } as never);
 describe("enrollActiveOwner handler (executed): demo-only rule for test accounts", () => {
   test("test account with Director seat: real home refused before any account is created", async () => {
     as("qadir");
@@ -164,7 +165,7 @@ describe("enrollActiveOwner handler (executed): demo-only rule for test accounts
   test("test account with Director seat: demo home still allowed", async () => {
     as("qadir");
     await enroll(DEMO);
-    expect(enrollCalls.length).toBe(1);
+    expect(enrollCalls.length).toBe(8);
   });
   test("Supervisor: refused before any account is created", async () => {
     as("supervisor");
@@ -174,6 +175,6 @@ describe("enrollActiveOwner handler (executed): demo-only rule for test accounts
   test("Onboarding Director: real home allowed", async () => {
     as("dir");
     await enroll(REAL);
-    expect(enrollCalls.length).toBe(1);
+    expect(enrollCalls.length).toBe(8);
   });
 });
