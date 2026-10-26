@@ -354,7 +354,7 @@ export async function loadProgramAggregate(
   // pre-closing entries in that year are included. Never a sum across homes.
   const yearTotals = participationYearTotals(
     countable,
-    included.filter((x) => x.closingConfirmed).map((x) => x.closingDate),
+    included.map((x) => x.closingDate),
   );
   const windowedMinutes = yearTotals.reduce((n, y) => n + y.minutes, 0);
   const generalMinutes = combinedMinutes(countable.filter((e) => e.propertyIds.length === 0));

@@ -41,13 +41,13 @@ describe("participation counting period", () => {
     expect(sum(countedParticipationEntries(linderShaped, draftPeriod, TODAY))).toBe(530);
   });
 
-  it("2. future-only closing: hours stay locked; no counting loosened", () => {
+  it("2. future-only closing opens logging; future entries still never count", () => {
     const elig = ownerHoursEligibility(
       { status: "draft" },
       [{ inclusionStatus: "included", closingConfirmed: true, closingDate: "2026-11-01" }],
       TODAY,
     );
-    expect(elig).toEqual({ eligible: false, reason: "closing_future", closingOn: "2026-11-01" });
+    expect(elig).toEqual({ eligible: true, openedOn: "2026-11-01" });
     // A future-dated entry never counts, even in the closing year.
     expect(countsTowardParticipation("2026-11-02", { closingDates: ["2026-11-01"], startedOn: null }, TODAY)).toBe(false);
   });
@@ -92,7 +92,7 @@ describe("participation counting period", () => {
     expect(countedParticipationEntries(linderShaped, period, TODAY)).toEqual([]);
   });
 
-  it("10. aggregate period: unconfirmed closings are ignored; badges use the same count", () => {
+  it("10. expected closing years count without waiting for confirmation", () => {
     const agg = {
       program: { id: "p", status: "draft", startedOn: null, endsOn: null },
       entries: linderShaped.map((r) => ({ ...r, review_status: "submitted" })),
@@ -104,7 +104,7 @@ describe("participation counting period", () => {
       badges: [],
     } as unknown as ProgramAggregate;
     const period = aggregateParticipationPeriod(agg);
-    expect(period.closingDates).toEqual(["2026-10-06"]);
+    expect(period.closingDates).toEqual(["2026-10-06", "2025-01-01"]);
     expect(sum(countedParticipationEntries(agg.entries, period, TODAY))).toBe(530);
     expect(earnedBadges(agg).map((b) => b.code)).toContain("first_step");
   });

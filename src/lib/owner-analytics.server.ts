@@ -161,7 +161,6 @@ export async function loadOwnerAnalytics(
           (l) =>
             l.program_id === p.id &&
             l.inclusion_status === "included" &&
-            l.closing_confirmed &&
             l.closing_date,
         )
         .map((l) => l.closing_date),

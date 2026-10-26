@@ -5,7 +5,6 @@
  * sending so a second pass can never double up.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { businessToday } from "./owner-hours-eligibility";
 import { OWNER_WELCOME_KEY, readWelcomeTemplate, renderWelcome } from "./owner-welcome";
 
 const APP_ORIGIN = "https://smart-stay-support.lovable.app";
@@ -37,9 +36,7 @@ export async function welcomeContext(db: SupabaseClient, programId: string, owne
   const names = ((homes.data ?? []) as unknown as { properties: { name: string | null; address: string | null } | null }[])
     .map((h) => h.properties?.name || h.properties?.address || "")
     .filter(Boolean);
-  const today = businessToday();
-  const hoursOpen = ((homes.data ?? []) as unknown as { closing_confirmed: boolean; closing_date: string | null }[])
-    .some((h) => h.closing_confirmed && !!h.closing_date && h.closing_date <= today);
+  const hoursOpen = (homes.data ?? []).length > 0;
   return { ownerName: (profile.data as { full_name?: string } | null)?.full_name ?? null, propertyNames: names, hoursOpen };
 }
 
@@ -66,7 +63,24 @@ export async function drainOwnerWelcomes(db: SupabaseClient, limit = 20, jobRunI
     if (!claimed?.length) continue;
     const ctx = await welcomeContext(db, row.program_id, row.owner_user_id);
     const videoLink = videoLinkFor(tpl);
-    const msg = renderWelcome(tpl, { ...ctx, portalLink: PORTAL_LINK, videoLink });
+    let setPasswordLink: string | undefined;
+    if (tpl.body.includes("{{set_password_link}}")) {
+      const { verifyEmailSafety } = await import("./email-safety.server");
+      const blocked = await verifyEmailSafety({ to: row.recipient, entity: { type: "owner_program", id: row.program_id } }, db);
+      if (blocked) {
+        await db.from("owner_welcome_messages").update({ status: "failed", error_message: blocked } as never).eq("id", row.id);
+        continue;
+      }
+      // Generates a recovery link only after approval, claim and safety; never sends an auth email.
+      const link = await db.auth.admin.generateLink({ type: "recovery", email: row.recipient,
+        options: { redirectTo: `${APP_ORIGIN}/reset-password` } });
+      setPasswordLink = link.data?.properties?.action_link;
+      if (link.error || !setPasswordLink || !setPasswordLink.startsWith("https://")) {
+        await db.from("owner_welcome_messages").update({ status: "failed", error_message: "Could not prepare the secure password link." } as never).eq("id", row.id);
+        continue;
+      }
+    }
+    const msg = renderWelcome(tpl, { ...ctx, portalLink: PORTAL_LINK, videoLink, setPasswordLink });
     if (TEST_ADDRESS.test(row.recipient)) {
       await db.from("owner_welcome_messages").update({
         status: "failed", error_message: "Test address — never emailed.", subject: msg.subject, body: msg.body,

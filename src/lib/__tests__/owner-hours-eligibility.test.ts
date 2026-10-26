@@ -4,11 +4,11 @@ import { businessToday, ownerHoursEligibility } from "../owner-hours-eligibility
 const draft = { status: "draft" };
 const home = (closingDate: string | null, closingConfirmed = true) => ({ inclusionStatus: "included", closingDate, closingConfirmed });
 
-it("refuses with a reason when no actual closing is confirmed", () => {
-  expect(ownerHoursEligibility(draft, [home("2026-10-01", false)], "2026-10-08")).toEqual({ eligible: false, reason: "no_confirmed_closing" });
+it("enrollment opens hours before closing confirmation", () => {
+  expect(ownerHoursEligibility(draft, [home("2026-10-01", false)], "2026-10-08")).toEqual({ eligible: true, openedOn: "2026-10-01" });
 });
-it("refuses a confirmed closing in the future", () => {
-  expect(ownerHoursEligibility(draft, [home("2026-10-09")], "2026-10-08")).toEqual({ eligible: false, reason: "closing_future", closingOn: "2026-10-09" });
+it("opens before a future closing date", () => {
+  expect(ownerHoursEligibility(draft, [home("2026-10-09")], "2026-10-08")).toEqual({ eligible: true, openedOn: "2026-10-09" });
 });
 it("opens on the closing day itself with no activation step", () => {
   expect(ownerHoursEligibility(draft, [home("2026-10-08")], "2026-10-08").eligible).toBe(true);

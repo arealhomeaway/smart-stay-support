@@ -596,7 +596,7 @@ export function aggregateParticipationPeriod(agg: {
 }): ParticipationPeriod {
   return {
     closingDates: agg.includedProperties
-      .filter((x) => x.closingConfirmed && x.closingDate)
+      .filter((x) => x.closingDate)
       .map((x) => x.closingDate),
     startedOn: agg.program.startedOn,
     endsOn: agg.program.endsOn,
