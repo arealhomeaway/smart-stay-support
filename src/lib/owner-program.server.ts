@@ -195,7 +195,7 @@ export async function loadPrograms(supabase: Client, demo = false) {
       (entries.data ?? []).filter((entry) => entry.program_id === p.id),
       {
         closingDates: myLinks
-          .filter((l) => l.closing_confirmed && l.closing_date)
+          .filter((l) => l.closing_date)
           .map((l) => l.closing_date),
         startedOn: p.started_on,
         endsOn: p.ends_on,
