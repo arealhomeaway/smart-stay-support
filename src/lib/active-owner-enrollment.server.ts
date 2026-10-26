@@ -14,8 +14,6 @@ export async function enrollFully(db: SupabaseClient, actor: SupabaseClient, act
   return runEnrollment({
     prepare: async () => { await checkpoint("prepare"); },
     account: async () => {
-      const { applyRole } = await import("./access.server");
-      const { writeAudit } = await import("./audit.server");
       async function find() {
         const r = await db.from("profiles").select("id").ilike("email", input.email).maybeSingle();
         if (r.error) throw new Error("Could not check the homeowner login.");
@@ -39,10 +37,7 @@ export async function enrollFully(db: SupabaseClient, actor: SupabaseClient, act
       if (roles.error) throw new Error("Could not verify the homeowner's access.");
       const list = (roles.data ?? []).map((r) => String(r.role));
       assertOwnerAccountRoles(list);
-      if (!list.includes("owner")) await applyRole(id, "owner");
-      if (created) await writeAudit({ actorId, actorLabel: null, action: "user.created_for_active_owner",
-        entityType: "user", entityId: id, entityLabel: input.email,
-        after: { role: "owner", method: "active_owner_setup", property_id: input.propertyId } });
+      // Role assignment and audit occur under the guarded, atomic account checkpoint.
       } catch (error) {
         const problem = new Error(error instanceof Error ? error.message : "The login exists but setup needs attention.");
         Object.assign(problem, { accountId: id });

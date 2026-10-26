@@ -85,6 +85,12 @@ BEGIN
  END IF;
  IF _step='account' THEN
   IF NOT EXISTS(SELECT 1 FROM profiles WHERE id=_account_id AND lower(email)=lower(_input->>'email')) THEN RAISE EXCEPTION 'The login does not match this email.'; END IF;
+  PERFORM 1 FROM auth.users WHERE id=_account_id AND deleted_at IS NULL AND (banned_until IS NULL OR banned_until<=now()) FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'An enabled homeowner login is required.'; END IF;
+  IF EXISTS(SELECT 1 FROM user_roles WHERE user_id=_account_id AND role<>'owner') THEN RAISE EXCEPTION 'Staff logins cannot be used for homeowners.'; END IF;
+  INSERT INTO user_roles(user_id,role) VALUES(_account_id,'owner') ON CONFLICT(user_id,role) DO NOTHING;
+  INSERT INTO audit_log(actor_id,action,entity_type,entity_id,after_value)
+   VALUES(auth.uid(),'owner.enrollment_login','user',_account_id,jsonb_build_object('requestId',run.id,'propertyId',home.id,'role','owner'));
   UPDATE active_owner_enrollment_runs SET account_id=_account_id WHERE id=run.id;
   receipt:=jsonb_build_object('programId',run.program_id);
  ELSE

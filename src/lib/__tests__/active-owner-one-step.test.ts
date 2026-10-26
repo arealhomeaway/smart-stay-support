@@ -44,7 +44,7 @@ describe("one-step Active Owner", () => {
     expect(() => assertOwnerAccountRoles(["owner"])).not.toThrow();
   });
   it("same-year second home shares one activity total without duplicating it", () => {
-    expect(participationYearTotals([{ id: "entry", entry_date: "2026-02-01", minutes: 60, amends_entry_id: null }], ["2026-10-06", "2026-11-10"], "2026-10-26")).toEqual([{ year: "2026", minutes: 60 }]);
+    expect(participationYearTotals([{ entry_date: "2026-02-01", minutes: 60 }], ["2026-10-06", "2026-11-10"], "2026-10-26")).toEqual([{ year: "2026", minutes: 60 }]);
   });
   it("different-year second home keeps totals separate", () => {
     expect(participationYearTotals([{ entry_date: "2026-02-01", minutes: 60 }, { entry_date: "2027-01-02", minutes: 30 }], ["2026-10-06", "2027-11-10"], "2027-12-31")).toEqual([{ year: "2026", minutes: 60 }, { year: "2027", minutes: 30 }]);

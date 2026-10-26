@@ -276,7 +276,6 @@ export async function loadProgramAggregate(
         (l) =>
           l.inclusion_status === "included" &&
           !("current_access" in l && l.current_access === false) &&
-          l.closing_confirmed &&
           l.closing_date,
       )
       .map((l) => l.closing_date),
