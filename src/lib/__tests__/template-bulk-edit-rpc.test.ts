@@ -167,7 +167,7 @@ describe("Workflow Template bulk edit database action (isolated PostgreSQL)", ()
       "_offset_days := 7",
       "_schedule_anchor := 'target_handoff'",
     ], [template, [ids.a]]);
-    expect((await db.query<Record<string, unknown>>("SELECT * FROM public.onboarding_tasks WHERE id = $1", [ids.other])).rows[0]).toMatchObject({
+    expect((await db.query<Record<string, unknown>>("SELECT id, template_task_id, title, due_on::text AS due_on FROM public.onboarding_tasks WHERE id = $1", [ids.other])).rows[0]).toMatchObject({
       title: "Live home task",
       due_on: "2026-11-01",
     });
