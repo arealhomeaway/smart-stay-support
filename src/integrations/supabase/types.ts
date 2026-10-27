@@ -14860,6 +14860,7 @@ export type Database = {
         Args: { _property_id: string }
         Returns: string[]
       }
+      handoff_open_items: { Args: { _property_id: string }; Returns: Json }
       handoff_step_for_task: { Args: { _task_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -15023,6 +15024,15 @@ export type Database = {
         Returns: string
       }
       owner_str_reports: { Args: never; Returns: Json }
+      perform_handoff_step: {
+        Args: {
+          _booking_block?: boolean
+          _items: Json
+          _project_id: string
+          _step: string
+        }
+        Returns: undefined
+      }
       plan_due_from_rule: {
         Args: { _anchor: string; _offset: number; _unit: string }
         Returns: string
