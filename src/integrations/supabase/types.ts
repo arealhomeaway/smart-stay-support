@@ -14427,6 +14427,11 @@ export type Database = {
         Args: { _actor_id?: string; _property_id: string }
         Returns: boolean
       }
+      owner_release_batch_begin: { Args: never; Returns: undefined }
+      owner_release_summary: {
+        Args: { _count: number; _program_id: string; _property_ids: string[] }
+        Returns: string
+      }
       owner_str_reports: { Args: never; Returns: Json }
       plan_due_from_rule: {
         Args: { _anchor: string; _offset: number; _unit: string }

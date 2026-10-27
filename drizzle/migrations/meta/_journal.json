@@ -1114,6 +1114,13 @@
       "when": 1793060130624,
       "tag": "0158_0158_admin_closing_authority",
       "breakpoints": true
+    },
+    {
+      "idx": 159,
+      "version": "7",
+      "when": 1793060165515,
+      "tag": "0159_0160_release_batch_summary",
+      "breakpoints": true
     }
   ]
 }
