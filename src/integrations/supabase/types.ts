@@ -5240,6 +5240,190 @@ export type Database = {
           },
         ]
       }
+      handoff_carryovers: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          category: string
+          due_on: string
+          id: string
+          is_demo: boolean
+          item_key: string
+          note: string
+          owner_role: string
+          project_id: string
+          property_id: string
+          requirement_id: string | null
+          task_ids: string[]
+          ticket_id: string | null
+          title: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          category: string
+          due_on: string
+          id?: string
+          is_demo?: boolean
+          item_key: string
+          note?: string
+          owner_role: string
+          project_id: string
+          property_id: string
+          requirement_id?: string | null
+          task_ids?: string[]
+          ticket_id?: string | null
+          title: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          category?: string
+          due_on?: string
+          id?: string
+          is_demo?: boolean
+          item_key?: string
+          note?: string
+          owner_role?: string
+          project_id?: string
+          property_id?: string
+          requirement_id?: string | null
+          task_ids?: string[]
+          ticket_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "handoff_carryovers_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "handoff_carryovers_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "handoff_carryovers_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "handoff_carryovers_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "handoff_requirements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "handoff_carryovers_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "handoff_carryovers_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      handoff_link_suggestions: {
+        Row: {
+          confidence: string
+          confirmed_at: string | null
+          confirmed_by: string | null
+          id: string
+          requirement_id: string
+          template_step_id: string
+        }
+        Insert: {
+          confidence: string
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          id?: string
+          requirement_id: string
+          template_step_id: string
+        }
+        Update: {
+          confidence?: string
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          id?: string
+          requirement_id?: string
+          template_step_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "handoff_link_suggestions_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "handoff_requirements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "handoff_link_suggestions_template_step_id_fkey"
+            columns: ["template_step_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_template_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      handoff_requirements: {
+        Row: {
+          category: string
+          code: string
+          done_when: string
+          id: string
+          name: string
+          notes: string
+          proof_needed: string
+          sort_order: number
+          status: string
+          template_step_ids: string[]
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          code: string
+          done_when?: string
+          id?: string
+          name: string
+          notes?: string
+          proof_needed?: string
+          sort_order?: number
+          status?: string
+          template_step_ids?: string[]
+          tier: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          code?: string
+          done_when?: string
+          id?: string
+          name?: string
+          notes?: string
+          proof_needed?: string
+          sort_order?: number
+          status?: string
+          template_step_ids?: string[]
+          tier?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       handoff_reviews: {
         Row: {
           created_at: string
@@ -5297,6 +5481,91 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      handoff_standard_history: {
+        Row: {
+          action: string
+          actor_id: string
+          actor_name: string
+          created_at: string
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          requirement_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          actor_name: string
+          created_at?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          requirement_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          actor_name?: string
+          created_at?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          requirement_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "handoff_standard_history_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "handoff_requirements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      handoff_step_history: {
+        Row: {
+          actor_id: string
+          booking_block: boolean
+          booking_block_at: string | null
+          created_at: string
+          id: string
+          is_demo: boolean
+          items: Json
+          project_id: string
+          step: string
+        }
+        Insert: {
+          actor_id: string
+          booking_block?: boolean
+          booking_block_at?: string | null
+          created_at?: string
+          id?: string
+          is_demo?: boolean
+          items: Json
+          project_id: string
+          step: string
+        }
+        Update: {
+          actor_id?: string
+          booking_block?: boolean
+          booking_block_at?: string | null
+          created_at?: string
+          id?: string
+          is_demo?: boolean
+          items?: Json
+          project_id?: string
+          step?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "handoff_step_history_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_projects"
             referencedColumns: ["id"]
           },
         ]
@@ -5509,6 +5778,61 @@ export type Database = {
           work_item_id?: string | null
         }
         Relationships: []
+      }
+      home_handoff_decisions: {
+        Row: {
+          actor_id: string
+          created_at: string
+          id: string
+          is_demo: boolean
+          property_id: string
+          reason: string
+          requirement_id: string
+          state: string
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          id?: string
+          is_demo?: boolean
+          property_id: string
+          reason: string
+          requirement_id: string
+          state: string
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          id?: string
+          is_demo?: boolean
+          property_id?: string
+          reason?: string
+          requirement_id?: string
+          state?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_handoff_decisions_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "home_handoff_decisions_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_handoff_decisions_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "handoff_requirements"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       inquiry_sources: {
         Row: {
@@ -14208,6 +14532,7 @@ export type Database = {
         Returns: Json
       }
       can_correct_actual_closing: { Args: never; Returns: boolean }
+      can_edit_handoff_standard: { Args: never; Returns: boolean }
       can_edit_owner_library: { Args: { _uid: string }; Returns: boolean }
       can_manage_credentials: { Args: { _user_id: string }; Returns: boolean }
       can_read_completed_onboarding_document: {
@@ -14392,6 +14717,7 @@ export type Database = {
         }
         Returns: string
       }
+      confirm_handoff_suggestion: { Args: { _id: string }; Returns: undefined }
       confirm_statement_reconciliation: {
         Args: {
           _exception_resolution?: string
@@ -14738,6 +15064,7 @@ export type Database = {
         Args: { _property_id: string }
         Returns: Json
       }
+      read_handoff_standard: { Args: never; Returns: Json }
       read_onboarding_assignment_authority: {
         Args: never
         Returns: {
@@ -15228,6 +15555,7 @@ export type Database = {
         }
         Returns: string
       }
+      save_handoff_requirement: { Args: { _value: Json }; Returns: string }
       save_owner_alert_preferences: {
         Args: {
           _email: boolean

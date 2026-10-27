@@ -1184,6 +1184,13 @@
       "when": 1793143502003,
       "tag": "0168_released_activity_conversations_0169",
       "breakpoints": true
+    },
+    {
+      "idx": 169,
+      "version": "7",
+      "when": 1793143653422,
+      "tag": "0169_handoff_standard_schema_0170",
+      "breakpoints": true
     }
   ]
 }
