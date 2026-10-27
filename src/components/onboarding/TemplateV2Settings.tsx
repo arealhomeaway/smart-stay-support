@@ -470,6 +470,20 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
       </details>
 
       {editing ? <StepDialog step={editing} saving={stepM.isPending} onClose={() => setEditing(null)} onSave={(v) => stepM.mutate(v)} /> : null}
+      {bulkOpen ? (
+        <TemplateBulkEditDialog
+          templateId={templateId}
+          steps={steps}
+          stages={stageNames}
+          selectedIds={selectedIds}
+          onClose={() => setBulkOpen(false)}
+          onSaved={() => {
+            setBulkOpen(false);
+            setSelectedIds([]);
+            refresh();
+          }}
+        />
+      ) : null}
     </section>
   );
 }
