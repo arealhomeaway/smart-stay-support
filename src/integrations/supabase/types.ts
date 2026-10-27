@@ -14031,6 +14031,25 @@ export type Database = {
         Returns: Json
       }
       begin_email_job_run: { Args: never; Returns: string }
+      bulk_update_onboarding_home_tasks: {
+        Args: {
+          _blocks_handoff?: boolean
+          _due_on?: string
+          _is_required?: boolean
+          _offset_unit?: string
+          _property_id: string
+          _role?: string
+          _set_blocks_handoff?: boolean
+          _set_due_on?: boolean
+          _set_is_required?: boolean
+          _set_offset_unit?: boolean
+          _set_role?: boolean
+          _set_stage?: boolean
+          _stage?: string
+          _task_ids: string[]
+        }
+        Returns: Json
+      }
       bulk_update_onboarding_template_steps: {
         Args: {
           _blocks_handoff?: boolean
