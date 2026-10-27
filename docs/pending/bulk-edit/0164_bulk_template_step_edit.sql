@@ -194,23 +194,24 @@ BEGIN
       OR (_set_blocks_handoff AND s.blocks_handoff IS DISTINCT FROM _blocks_handoff)
       OR (_set_stage AND s.stage IS DISTINCT FROM _stage)
     )
-  ), numbered AS (
+  ), moving AS (
     SELECT c.*,
-      CASE WHEN _set_stage AND c.stage IS DISTINCT FROM _stage THEN
-        COALESCE((
-          SELECT max(t.sort_order)
-          FROM public.onboarding_template_tasks t
-          WHERE t.template_id = _template_id
-            AND t.stage = _stage
-            AND NOT EXISTS (
-              SELECT 1 FROM changed x
-              WHERE x.id = t.id AND x.stage IS DISTINCT FROM _stage
-            )
-        ), 0) + row_number() OVER (ORDER BY c.sort_order, c.id) * 10
-      END AS new_sort_order
+      COALESCE((
+        SELECT max(t.sort_order)
+        FROM public.onboarding_template_tasks t
+        WHERE t.template_id = _template_id
+          AND t.stage = _stage
+          AND NOT EXISTS (
+            SELECT 1 FROM changed x
+            WHERE x.id = t.id AND x.stage IS DISTINCT FROM _stage
+          )
+      ), 0) + row_number() OVER (ORDER BY c.sort_order, c.id) * 10 AS new_sort_order
     FROM changed c
+    WHERE _set_stage AND c.stage IS DISTINCT FROM _stage
   )
-  SELECT * FROM numbered;
+  SELECT c.*, m.new_sort_order
+  FROM changed c
+  LEFT JOIN moving m ON m.id = c.id;
 
   SELECT count(*) INTO _changed_count FROM bulk_template_effective;
 
