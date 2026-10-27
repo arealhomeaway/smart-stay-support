@@ -1,36 +1,60 @@
-Read-only findings: guest-journey video (nothing changed)
+# Onboarding portal UX inventory (read-only, source-based)
 
-1. The Opportunity
-- It comes from the Optional Library template "Review your property's guest journey" (id 6256028b-d625-4f74-8753-a414e72e018d).
-- No video is stored anywhere: the helpful-link URL is empty, no video field is set, and no file is attached. Library items have no video field at all.
-- Dana is Dana Syska (Niles/Buckland program). She has not started this Opportunity, so she only sees the library card.
-- Only one real home has started it: the Linders' 1399 Foxtail (item 57d4f162…, open). Its copy has no link either.
-- What reads as a video is the cover photo (an entryway with a suitcase). There is nothing to play.
+Nothing was changed. Counts come from the code, not from live screens. Anything that depends on role or data is marked Not verified.
 
-2. Why it won't play
-- There is no video link in the system, so there was nothing to check with curl.
-- Even with a link, the homeowner portal does not play videos. It shows a "Helpful link" that opens in a new tab. Uploaded files open through a short-lived private link in a new tab, and the browser plays the MP4 there.
+## 1. Screen by screen
+| Screen | Sections in order | Actions on load | Filters | Shown twice |
+|---|---|---|---|---|
+| Home | Header, owner-review count, Onboarding properties, Upcoming handoffs, Needs my attention, activity | 11 (12 for Director) + row actions | 4 | Same properties in 3 lists |
+| Properties | Search/test toggle/lenses, property cards, Workload by PM (collapsed) | Not verified | 2-3 | No |
+| My Tasks | Due/overdue, This week, Blocked/Waiting, Later (collapsed) | 0 fixed + row actions | 3-4 | No |
+| Owner Completions | To review / All, cards | 2 + 3 per card | 2 | No |
+| Team | Roles needing a person, Director, role cards, Primary PM by home, accounts, Welcome email | Depends on data | 0 | No |
+| Templates (list) | Templates, owner-email copy | 1 + 1-4 per template | 0 | No |
+| Template (open) | Plan settings, Stages, step list, preview, **older step editor** | Grows with steps | 0 | **2 Close buttons, 2 editors for the same steps** |
+| Utilities & Accounts | Status chips, search/service/test, homes, service cards | 2 per card | 3-4 | No |
+| Project header | 5 tabs | 5 + permission-based | 0 | No |
+| Overview | Summary/health, Dates, Team/Providers, Needs attention (5), Owner items | Depends on data | 0 | Dates shown as text and as editing controls |
+| Tasks tab | CSV, New Task, Owner completions, notices, queue | 2 + filters + rows | 2 + queue filters | No |
+| Property Details | 12 panels (facts through findings) | Not verified | 0 | Not verified |
+| Handoff | Ready for Operations, Operations acceptance | Depends on state | 0 | No |
+| Files & History | Photos, documents, history, retired Tasks | Not verified | 0 | No |
+| Task drawer | Status, guidance, evidence, assignment/dates/notes/history | Depends on Task type | 0 | No |
+No screen uses column tables. Nested Property Details tables: Not verified.
 
-3. Can Resolve host it today
-- File storage is private and accepts files up to 250 MB, so the 129 MB file fits.
-- But the Optional Library editor only has "Helpful link URL". There is no upload option.
-- Per-home Task files exist, but that means one upload per home and they don't carry over to library items.
-- Hosting it in Resolve for every owner would take a code change.
+## 2. Duplication across screens
+- Tasks appear on 4 screens: Home (per-home attention), My Tasks (mine, quick-complete), Overview (top 5), Tasks tab (full list, bulk edit). Each behaves differently.
+- Owner Completions page and the Tasks tab use the same review cards. The Tasks tab shows one home only.
+- Assignment happens in 3 places: Team (who is eligible, plus Primary PM), Project Team (people on this home), Task drawer (one Task). The controls look alike but do different things.
+- Status appears in 5 forms: health/progress, queue counts, owner-review badges, lifecycle selector, handoff steps.
 
-4. Recommended fix: option (b), no code change
-- Upload the video to YouTube as Unlisted, or to Vimeo as "Anyone with the link".
-- In Resolve, open Active Owner → Optional Library → "Review your property's guest journey" → Edit.
-- Paste the link into "Helpful link URL", set the label to "Watch: Understanding your property's guest journey", and save.
-- Owners tap it and it plays in the YouTube or Vimeo player, on phones too.
-- Option (c), a SharePoint/OneDrive "anyone" link, often asks for a sign-in or forces a download, and some company settings block it. Not reliable.
-- Option (a), uploading into Resolve, isn't supported today.
+## 3. Developer language (suggested wording)
+- Templates: "Published version {n}" / "Publish new version" -> "Last published {date}" / "Publish changes"
+- Template step: "A missing anchor date leaves the Task undated." -> "If the reference date isn't entered yet, this task won't have a due date."
+- Template step: "Module (optional)" -> "Category (optional)"
+- Older editor: "active_owner, design" and "Tag a step active_owner..." -> a "Completed by homeowner" checkbox
+- Source records (Admin): "Source databases", "source: … · database ID …" -> "Connected systems", "System: {name}"
+- "external-sync workflow control is off" -> "Automatic imports are turned off."
+- Owner preview "· {kind}", Financial "Kind", asset "{name} · {kind}" -> "Item type" / "Expense type" / friendly equipment name
+- Welcome email: "Demo — never sent" -> "Test email — not sent"; "e.g. Mood boards v2" -> "For example, updated mood boards"
+- Bulk edit: "homeowner or Active Owner Tasks were left as non-blocking" -> "homeowner tasks still won't delay handoff"
+- Not found as visible text in the code: seat, pool (as a staffing word), V2, snapshot, offset, schedule_anchor, functional role, owner_dependency, QA. Wording that comes from saved data: Not verified.
 
-5. Existing Opportunities
-- Starting an Opportunity copies the template at that moment. Changing the template only affects Opportunities started afterward.
-- Dana hasn't started hers, so she will see the link.
-- The Linders' started copy will not update. Adding the link there needs a separate, approved per-home change.
+## 4. Densest screens (ranked by reading the code; Not verified)
+1. Property Details: 12 panels. Hide scope/lifecycle, finance, owner preview and assessment history behind toggles.
+2. Open template: two editors plus stage settings. Keep one editor and put publish/history under Setup.
+3. Team: staffing, accounts and welcome email together. Move Accounts and Welcome email to their own tabs.
+4. Tasks tab: owner reviews plus queue, CSV export, New Task and bulk edit. Put CSV and bulk edit under "More" and shrink owner reviews to a count.
+5. Task drawer: work, reassignment, exceptions, evidence and history. Put reassignment and history in a details section.
 
-Not verified
-- Dana's live screen.
-- That her portal shows only Niles/Buckland homes.
-- That the Library editor accepts YouTube links on save.
+## 5. Leftovers
+- `/onboarding/transitions` has no menu link. `/onboarding/properties` only redirects.
+- Old stage names are still shown ("Post contract — pre-inspection", "Phase 1–6") alongside Stage 1–8. The older editor still offers them.
+- The older template editor still appears directly under the new one.
+- The Handoff tab uses the two-step handoff. Whether old release buttons can still be reached elsewhere: Not verified. Pipeline Forecast / Project Portfolio are marked retired.
+
+## Not verified
+Live screens by role, exact element counts, wording from saved data, nested table columns.
+
+## Next step (needs your approval)
+No changes are proposed in this plan. If you approve, the next pass would be a read-only check in the browser, signed in as Director, PM and Admin, to confirm these counts.
