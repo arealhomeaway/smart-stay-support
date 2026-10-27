@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery as useIndexQuery } from "@tanstack/react-query";
 import { libraryVideoPlaybackUrl, listLibraryVideoIndex } from "@/lib/library-video.functions";
 import { msUntilRefresh } from "@/lib/library-video";
 
@@ -37,7 +36,7 @@ export function VideoElement({
 /** Which library items have a video this person may watch. */
 export function useLibraryVideoIndex() {
   const list = useServerFn(listLibraryVideoIndex);
-  const q = useIndexQuery({ queryKey: ["library-video-index"], queryFn: () => list(), staleTime: 60_000 });
+  const q = useQuery({ queryKey: ["library-video-index"], queryFn: () => list(), staleTime: 60_000 });
   return new Map((q.data ?? []).map((v) => [v.libraryId, v]));
 }
 
