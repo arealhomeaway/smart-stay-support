@@ -50,6 +50,7 @@ import { TaskOwnerCollaboration } from "@/components/onboarding/OwnerCollaborati
 import { TaskOwnerDependency } from "@/components/onboarding/TaskOwnerDependency";
 import { DEPENDENCY_RESPONSE_TYPE, dependencyWaitingLabel, effectiveDependency } from "@/lib/owner-dependency";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
+import { LinkedStepFiles } from "@/components/onboarding/LinkedStepFiles";
 import { TaskStageTrail } from "@/components/onboarding/TaskStageTrail";
 import { EmailComposer } from "@/components/EmailComposer";
 import { GuidedActionCard } from "@/components/GuidedActionCard";
@@ -637,6 +638,7 @@ export function TaskDrawer({
             title={uploadTitle(kind)}
             description={uploadHint(kind)}
           />
+          <LinkedStepFiles taskId={task.id} canManage={canManageTask && !disabled} />
         </section>
 
         <TaskOwnerDependency task={task} canManage={canManageTask && !disabled} />
