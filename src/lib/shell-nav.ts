@@ -43,6 +43,7 @@ export const DEPARTMENTS: Department[] = [
       { label: "Owner Completions", to: "/onboarding/owner-completions" },
       { label: "Team", to: "/onboarding/team" },
       { label: "Workflow Templates", to: "/onboarding/templates", capability: "onboarding_templates" },
+      { label: "Handoff standard", to: "/onboarding/handoff-standard" },
       { label: "Utilities & Accounts", to: "/onboarding/utilities" },
     ],
   },
@@ -188,6 +189,7 @@ const SUBPAGE_LABELS: Record<string, string> = {
   "/onboarding/owner-completions": "Owner Completions",
   "/onboarding/team": "Team",
   "/onboarding/templates": "Workflow Templates",
+  "/onboarding/handoff-standard": "Handoff standard",
   "/onboarding/utilities": "Utilities & Accounts",
   "/onboarding/transitions": "Transitions",
   "/owner-oversight": "Program oversight",
@@ -204,7 +206,7 @@ const ONBOARDING_TABS: Record<string, string> = {
   files: "Files & History",
 };
 
-const RESERVED_ONBOARDING = new Set(["properties", "my-work", "team", "templates", "utilities", "transitions"]);
+const RESERVED_ONBOARDING = new Set(["properties", "my-work", "team", "templates", "handoff-standard", "utilities", "transitions"]);
 
 /**
  * Build the breadcrumb trail for a location. `propertyName` is the resolved
