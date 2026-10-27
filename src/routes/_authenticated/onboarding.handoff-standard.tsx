@@ -1,0 +1,3 @@
+import {createFileRoute} from "@tanstack/react-router";
+import {HandoffStandardEditor} from "@/components/onboarding/HandoffStandardEditor";
+export const Route=createFileRoute('/_authenticated/onboarding/handoff-standard')({head:()=>({meta:[{title:'Handoff standard | Resolve'},{name:'description',content:'The shared, editable Onboarding and Operations handoff standard.'},{property:'og:title',content:'Handoff standard | Resolve'},{property:'og:description',content:'Review handoff requirements, proof and confirmed template links.'},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary'}]}),component:HandoffStandardEditor});
