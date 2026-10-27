@@ -14031,6 +14031,26 @@ export type Database = {
         Returns: Json
       }
       begin_email_job_run: { Args: never; Returns: string }
+      bulk_update_onboarding_template_steps: {
+        Args: {
+          _blocks_handoff?: boolean
+          _functional_role?: string
+          _is_required?: boolean
+          _offset_days?: number
+          _offset_unit?: string
+          _schedule_anchor?: string
+          _set_blocks_handoff?: boolean
+          _set_due_rule?: boolean
+          _set_functional_role?: boolean
+          _set_is_required?: boolean
+          _set_offset_unit?: boolean
+          _set_stage?: boolean
+          _stage?: string
+          _step_ids: string[]
+          _template_id: string
+        }
+        Returns: Json
+      }
       can_correct_actual_closing: { Args: never; Returns: boolean }
       can_manage_credentials: { Args: { _user_id: string }; Returns: boolean }
       can_read_completed_onboarding_document: {
