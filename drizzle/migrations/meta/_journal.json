@@ -1142,6 +1142,13 @@
       "when": 1793110933154,
       "tag": "0162_program_activity_release",
       "breakpoints": true
+    },
+    {
+      "idx": 163,
+      "version": "7",
+      "when": 1793118936508,
+      "tag": "0163_bulk_template_step_edit",
+      "breakpoints": true
     }
   ]
 }
