@@ -6,6 +6,7 @@ CREATE ROLE authenticated;
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT nullif(current_setting('test.actor',true),'')::uuid $$;
 CREATE FUNCTION public.has_role(uuid,text) RETURNS boolean LANGUAGE sql AS $$ SELECT current_setting('test.role',true)=$2 $$;
 CREATE FUNCTION public.is_onboarding_director(uuid) RETURNS boolean LANGUAGE sql AS $$ SELECT current_setting('test.role',true)='onboarding_director' $$;
+CREATE FUNCTION private.is_synthetic_account() RETURNS boolean LANGUAGE sql AS $$ SELECT coalesce(current_setting('test.synthetic',true),'false')='true' $$;
 CREATE TABLE owner_programs(id uuid PRIMARY KEY,status text,report_version uuid,owner_user_id uuid,is_demo boolean DEFAULT false);
 CREATE TABLE properties(id uuid PRIMARY KEY,name text,nickname text);
 CREATE TABLE owner_program_properties(program_id uuid,property_id uuid,inclusion_status text,archived_at timestamptz,closing_date date);

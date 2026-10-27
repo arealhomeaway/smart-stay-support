@@ -15,7 +15,7 @@ const receiptSchema = z.object({
 
 export async function programActivityRelease(
   supabase: SupabaseClient<Database>, userId: string,
-  input: { programId: string; expectedVersion: string; preview: boolean; expectedCount?: number },
+  input: { programId: string; expectedVersion: string; preview: boolean; expectedCount?: number | undefined },
 ) {
   await assertActiveOwnerEnrollAuthority(supabase, userId);
   // Narrow adapter for approval-only SQL; generated types change only when it is applied.

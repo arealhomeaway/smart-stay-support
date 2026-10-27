@@ -16,7 +16,6 @@ import {
   Home,
   KeyRound,
   Plus,
-  Route as RouteIcon,
   UserCheck,
 } from "lucide-react";
 import { toast } from "sonner";

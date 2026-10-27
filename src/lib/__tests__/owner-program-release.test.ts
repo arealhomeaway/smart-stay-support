@@ -17,7 +17,7 @@ async function preview() {
   return result.rows[0]?.receipt;
 }
 async function execute(count: number, currentVersion = version) {
-  return (await db.query<{ receipt: { added: number; opened: number; summaryId: string | null } }>(
+  return (await db.query<{ receipt: { programId: string; added: number; opened: number; summaryId: string | null } }>(
     "SELECT release_owner_program_activities($1,$2,false,$3) AS receipt", [program, currentVersion, count])).rows[0]?.receipt;
 }
 async function count(table: string) {

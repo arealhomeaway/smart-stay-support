@@ -12,6 +12,9 @@ BEGIN
  END IF;
  -- Retain canonical identity, demo, lifecycle, version and locking checks.
  p:=private.owner_lifecycle_program(_program_id,_expected_version,true);
+ IF coalesce(private.is_synthetic_account(),false) AND NOT p.is_demo THEN
+  RAISE EXCEPTION 'Test accounts can only release demo activities.';
+ END IF;
  IF p.status NOT IN ('draft','active','target_reached') THEN
   RAISE EXCEPTION 'This program must be draft or active before releasing activities.';
  END IF;

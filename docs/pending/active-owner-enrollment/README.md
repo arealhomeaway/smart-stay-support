@@ -164,4 +164,10 @@ Total: 4 alerts, at most 4 emails (previously up to 150). Counts are re-read whe
 
 ## Pending SQL
 
+### Oct 27 permanent release button (code only, not published)
+
+`0163_program_activity_release.sql` is pending and not applied. It adds a caller-authenticated preview/execute RPC, used by the existing program release action. Admin and Onboarding Director only. Preview counts missing active templates plus existing prepared template Opportunities; execution checks that count and version, activates a draft with an existing closing date, seeds both phases through canonical actions, opens prepared templates, and queues one summary. An empty repeat writes nothing. It does not touch welcomes, closings, accounts or hours. Demo/test safeguards and canonical authority checks remain. The 4-program script has not run; this permanent action replaces the need for a one-off execution path.
+
+The new action cannot run until 0163 is separately approved/applied and the code is published. Its PostgreSQL tests use only an isolated in-memory fixture with no delivery providers.
+
 0157 changes only hours eligibility/write-date gate. 0158 adds Admin closing correction authority. 0160 adds the one-summary-per-release-batch rule (must be applied before 0159 and the repair script). 0159 adds retry receipts, expected-date activation and existing add-home action compatibility. All staged here, outside automatic migration history; none applied. Database execution and notifications require isolated acceptance testing first.

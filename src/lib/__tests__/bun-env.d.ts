@@ -14,6 +14,8 @@ declare module "bun:test" {
     skip(name: string, fn: () => void | Promise<void>): void;
   };
   export function beforeEach(fn: () => void | Promise<void>): void;
+  export function beforeAll(fn: () => void | Promise<void>): void;
+  export function afterAll(fn: () => void | Promise<void>): void;
   export function afterEach(fn: () => void | Promise<void>): void;
 
   /** Only the matchers this test suite actually calls. */
