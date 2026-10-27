@@ -1100,6 +1100,34 @@
       "when": 1792528372765,
       "tag": "0156_recreate_deliver_owner_alerts_schedule",
       "breakpoints": true
+    },
+    {
+      "idx": 157,
+      "version": "7",
+      "when": 1793060098672,
+      "tag": "0157_0157_hours_at_enrollment",
+      "breakpoints": true
+    },
+    {
+      "idx": 158,
+      "version": "7",
+      "when": 1793060130624,
+      "tag": "0158_0158_admin_closing_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 159,
+      "version": "7",
+      "when": 1793060165515,
+      "tag": "0159_0160_release_batch_summary",
+      "breakpoints": true
+    },
+    {
+      "idx": 160,
+      "version": "7",
+      "when": 1793060295349,
+      "tag": "0160_0159_resumable_enrollment",
+      "breakpoints": true
     }
   ]
 }

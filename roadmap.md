@@ -30,3 +30,8 @@
 - [x] A. One summary notification + email per Opportunity release batch (pending SQL file)
 - [x] B. Held-welcome note + Send setup link on enrollment confirmation
 - [x] C. Ticket #57: template step window defaults + Blocks handoff note, tests
+
+## Release Part 1 (Oct 27, done)
+- [x] Publish confirmed: live build index-DmxmHkXp.js (Pass 1, enrollment window, #57 fix)
+- [x] Applied 0157, 0158, 0160, 0159 with fingerprints + undo files in docs/pending/active-owner-enrollment/undo/
+- [ ] Part 2 (separate go-ahead): repair-four-real-programs.sql, 0162, 0161
