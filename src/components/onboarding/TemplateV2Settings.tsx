@@ -334,7 +334,6 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
     onSuccess: () => { toast.success("Step saved."); setEditing(null); refresh(); void sourcesQ.refetch(); },
     onError: onErr,
   });
-  const _unusedStepM = useMutation({ mutationFn: (d: StepInput) => saveStep({ data: d }), onSuccess: () => { toast.success("Step saved."); setEditing(null); refresh(); }, onError: onErr });
   const publishM = useMutation({ mutationFn: () => publish({ data: { templateId } }), onSuccess: () => { toast.success("New version published. Homes already started keep their version."); refresh(); }, onError: onErr });
 
   if (q.isLoading) return <p className="text-sm text-muted-foreground">Loading plan settings…</p>;
