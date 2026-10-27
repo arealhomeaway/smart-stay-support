@@ -37,8 +37,8 @@ BEGIN
  ON CONFLICT(project_id,item_key) DO UPDATE SET task_ids=excluded.task_ids,title=excluded.title,category=excluded.category,owner_role=excluded.owner_role,due_on=excluded.due_on,note=excluded.note RETURNING * INTO _carry;
  IF _step='accepted' AND _carry.ticket_id IS NULL THEN
  -- Same ordinary insert path as NewTicketForm. Auto-assignment, notifications, work-item sync and closure guards remain attached.
- INSERT INTO public.tickets(property_id,title,description,status,priority,category,entry_kind,record_type,functional_role_code,due_at,source_channel,source_reference,created_by,record_owner,accountable_owner,reported_at,is_demo)
- VALUES(pr.property_id,'Carry-over: '||_carry.title,coalesce(_carry.note,'')||E'\nSource: Onboarding handoff\nRequirement: '||coalesce(_carry.requirement_id::text,'none')||E'\nTasks: '||array_to_string(_carry.task_ids,','),'open','p3','other','ops_ticket','active_task',_carry.owner_role,_carry.due_on::timestamp AT TIME ZONE 'America/Chicago','other','Onboarding handoff: '||_carry.id,auth.uid(),auth.uid(),auth.uid(),now(),coalesce(_demo,false)) RETURNING id INTO _ticket;
+ INSERT INTO public.tickets(property_id,title,description,status,priority,category,entry_kind,record_type,functional_role_code,due_at,source_channel,source_reference,created_by,record_owner,accountable_owner,reported_at,guest_in_residence,initiator_type,is_demo)
+ VALUES(pr.property_id,'Carry-over: '||_carry.title,coalesce(_carry.note,'')||E'\nSource: Onboarding handoff\nRequirement: '||coalesce(_carry.requirement_id::text,'none')||E'\nTasks: '||array_to_string(_carry.task_ids,','),'open','p3','other','ops','active_task',_carry.owner_role,_carry.due_on::timestamp AT TIME ZONE 'America/Chicago','other','Onboarding handoff: '||_carry.id,auth.uid(),auth.uid(),auth.uid(),now(),false,'staff',coalesce(_demo,false)) RETURNING id INTO _ticket;
  INSERT INTO public.ticket_activity(ticket_id,actor_id,event_type,note) VALUES(_ticket,auth.uid(),'created','Carry-over accepted from Onboarding.');
  UPDATE public.handoff_carryovers SET ticket_id=_ticket,accepted_at=now(),accepted_by=auth.uid() WHERE id=_carry.id;
  END IF;
