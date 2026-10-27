@@ -23,7 +23,7 @@ function putWithProgress(url: string, file: File, mime: string, onProgress: (pct
     xhr.open("PUT", url);
     xhr.setRequestHeader("content-type", mime);
     xhr.setRequestHeader("x-upsert", "false");
-    const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+    const key = import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY'] as string | undefined;
     if (key) xhr.setRequestHeader("apikey", key);
     xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100)); };
     xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(xhr.status === 413 ? "That file is larger than storage allows." : "The upload did not finish. Please try again.")));
@@ -59,7 +59,7 @@ export function LibraryVideoSection({ libraryId, poster }: { libraryId: string; 
       if (!check.ok) throw new Error(check.reason);
       setPct(0);
       const t = await begin({ data: { libraryId, fileName: file.name, type: check.mime, size: file.size } });
-      const base = import.meta.env.VITE_SUPABASE_URL as string;
+      const base = import.meta.env['VITE_SUPABASE_URL'] as string;
       const url = `${base}/storage/v1/object/upload/sign/${t.bucket}/${t.path}?token=${encodeURIComponent(t.token)}`;
       await putWithProgress(url, file, t.mime, setPct);
       await complete({ data: { libraryId, path: t.path, mime: t.mime, size: file.size, label: shownLabel } });
