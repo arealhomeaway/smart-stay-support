@@ -58,7 +58,7 @@ BEGIN
  SELECT * INTO r FROM public.owner_reviews WHERE id=_id AND archived_at IS NULL;
  _staff:=public.is_onboarding_staff(auth.uid()) OR public.is_staff(auth.uid());
  SELECT owner_user_id INTO _owner FROM public.owner_programs WHERE id=r.program_id;
- IF auth.uid() IS NULL OR r.id IS NULL OR r.status='prepared' OR NOT public.active_owner_may_act(coalesce(r.is_demo,false)) THEN RAISE EXCEPTION 'This activity is not available.'; END IF;
+ IF auth.uid() IS NULL OR r.id IS NULL OR r.status='prepared' OR (_staff AND NOT public.active_owner_may_act(coalesce(r.is_demo,false))) OR (coalesce(private.is_synthetic_account(),false) AND NOT coalesce(r.is_demo,false)) THEN RAISE EXCEPTION 'This activity is not available.'; END IF;
  IF (_author_type IN ('staff','system') AND NOT _staff) OR (_author_type='homeowner' AND (auth.uid() IS DISTINCT FROM _owner OR _staff)) THEN RAISE EXCEPTION 'Conversation author is not permitted.'; END IF;
  IF _event IS NOT NULL AND (_author_type<>'system' OR _event NOT IN ('resolved','reopened')) THEN RAISE EXCEPTION 'Invalid conversation event.'; END IF;
  INSERT INTO public.owner_request_messages(review_id,property_id,program_id,task_id,author_id,author_type,author_name,event,body,is_demo)
