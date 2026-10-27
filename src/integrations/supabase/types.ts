@@ -6527,6 +6527,57 @@ export type Database = {
           },
         ]
       }
+      onboarding_task_file_links: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          origin: string
+          property_id: string
+          receiving_task_id: string
+          removed_at: string | null
+          removed_by: string | null
+          source_task_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          origin: string
+          property_id: string
+          receiving_task_id: string
+          removed_at?: string | null
+          removed_by?: string | null
+          source_task_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          origin?: string
+          property_id?: string
+          receiving_task_id?: string
+          removed_at?: string | null
+          removed_by?: string | null
+          source_task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_task_file_links_receiving_task_id_fkey"
+            columns: ["receiving_task_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_task_file_links_source_task_id_fkey"
+            columns: ["source_task_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       onboarding_task_stage_history: {
         Row: {
           assigned_seat: string | null
@@ -6825,6 +6876,7 @@ export type Database = {
           requires_owner_approval: boolean
           role: string | null
           schedule_anchor: string | null
+          show_files_from: string[]
           sort_order: number
           stage: string
           subtasks: string[]
@@ -6856,6 +6908,7 @@ export type Database = {
           requires_owner_approval?: boolean
           role?: string | null
           schedule_anchor?: string | null
+          show_files_from?: string[]
           sort_order?: number
           stage: string
           subtasks?: string[]
@@ -6887,6 +6940,7 @@ export type Database = {
           requires_owner_approval?: boolean
           role?: string | null
           schedule_anchor?: string | null
+          show_files_from?: string[]
           sort_order?: number
           stage?: string
           subtasks?: string[]
@@ -15105,6 +15159,10 @@ export type Database = {
       set_demo_staff_access: {
         Args: { _on: boolean; _reason: string; _user: string }
         Returns: undefined
+      }
+      set_onboarding_task_file_sources: {
+        Args: { _source_ids: string[]; _task_id: string }
+        Returns: number
       }
       set_owner_attention: {
         Args: { _id: string; _on: boolean }
