@@ -46,3 +46,9 @@
 - [x] Template-only selection and bulk edit window with leave-as-is defaults
 - [x] Pending all-or-nothing database action and audit history, not applied
 - [x] Isolated tests, full suite, typecheck and production build; no live template writes
+
+## Option A: bulk edit one home's onboarding plan (approved, no publish)
+- [x] Selection + bulk window on home plan (open Tasks only)
+- [x] Pending all-or-nothing DB action + undo in docs/pending/home-plan-bulk-edit/ (not applied)
+- [x] Isolated tests, full suite, typecheck, build
+- [ ] Follow-up (not built): single-Task "return to automatic date" action

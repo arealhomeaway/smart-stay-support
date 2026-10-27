@@ -624,6 +624,11 @@ function PropertyWorkspace() {
             onSelect={(task) => setOpenTaskId(task.id)}
             release={release}
             voided={data.retiredTasks ?? []}
+            bulk={
+              canEdit && !life.locked
+                ? { propertyId: current.id, homeName: current.name, onSaved: () => void refresh() }
+                : undefined
+            }
           />
         </TabsContent>
 

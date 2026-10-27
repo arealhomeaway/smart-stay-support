@@ -513,3 +513,62 @@ export const setOnboardingProgramTypeFn = createServerFn({ method: "POST" })
     const { setOnboardingProgramType } = await import("./onboarding-program-type.server");
     return setOnboardingProgramType(context.supabase, context.userId, data);
   });
+
+/**
+ * Bulk edits on one home's open Tasks use one pending database action so the
+ * completed-Task refusal, stage locks, writes and per-Task history all commit
+ * or roll back together. Status, title and Opportunities are never touched.
+ */
+export const bulkUpdateHomeTasksFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        propertyId: z.string().uuid(),
+        taskIds: z.array(z.string().uuid()).min(1).max(500),
+        patch: z
+          .object({
+            dueOn: z.string().date().optional(),
+            offsetUnit: z.enum(["calendar", "business"]).optional(),
+            role: z.string().min(1).max(60).nullable().optional(),
+            isRequired: z.boolean().optional(),
+            blocksHandoff: z.boolean().optional(),
+            stage: z.string().trim().min(1).max(40).optional(),
+          })
+          .refine((p) => Object.values(p).some((v) => v !== undefined), "Choose at least one change."),
+      })
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    type BulkRpc = (name: string, args: Record<string, unknown>) => Promise<{
+      data: {
+        changed: number;
+        skipped: { taskId: string; title: string; reason: string }[];
+        auditRecorded: boolean;
+        blockingBefore: number;
+        blockingAfter: number;
+      } | null;
+      error: { message: string } | null;
+    }>;
+    const rpc = context.supabase.rpc as unknown as BulkRpc;
+    const p = data.patch;
+    const result = await rpc("bulk_update_onboarding_home_tasks", {
+      _property_id: data.propertyId,
+      _task_ids: data.taskIds,
+      _set_due_on: p.dueOn !== undefined,
+      _due_on: p.dueOn ?? null,
+      _set_offset_unit: p.offsetUnit !== undefined,
+      _offset_unit: p.offsetUnit ?? null,
+      _set_role: p.role !== undefined,
+      _role: p.role ?? null,
+      _set_is_required: p.isRequired !== undefined,
+      _is_required: p.isRequired ?? null,
+      _set_blocks_handoff: p.blocksHandoff !== undefined,
+      _blocks_handoff: p.blocksHandoff ?? null,
+      _set_stage: p.stage !== undefined,
+      _stage: p.stage ?? null,
+    });
+    if (result.error) throw new Error(result.error.message);
+    if (!result.data) throw new Error("The bulk edit did not return a result. Nothing was saved.");
+    return result.data;
+  });

@@ -1,6 +1,11 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, CircleAlert, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { HomeTaskBulkEditDialog } from "@/components/onboarding/HomeTaskBulkEditDialog";
+import { homeTaskSelectable, type HomeBulkTask } from "@/lib/home-task-bulk-edit";
+import { stageLabel } from "@/lib/onboarding";
 import { Chip } from "@/components/ui/page";
 import type { Person } from "@/components/onboarding/WorkflowTable";
 import { stateChip } from "@/lib/semantic";
@@ -31,6 +36,7 @@ export function PropertyWorkQueue({
   onSelect,
   release,
   voided = [],
+  bulk,
 }: {
   tasks: WorkflowTask[];
   people: Person[];
@@ -43,7 +49,36 @@ export function PropertyWorkQueue({
   release?: ReleaseContext;
   /** Voided Tasks — kept on record, never counted as work. */
   voided?: { id: string; title: string; archived_at: string; exception_reason: string | null }[];
+  /** Present only for people who can edit this home's Tasks; the server re-checks. */
+  bulk?: { propertyId: string; homeName: string; onSaved: () => void } | undefined;
 }) {
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const bulkTasks = tasks as unknown as HomeBulkTask[];
+  const selectableIds = useMemo(
+    () => new Set(bulkTasks.filter(homeTaskSelectable).map((t) => t.id)),
+    [bulkTasks],
+  );
+  const stages = useMemo(
+    () => [...new Set(bulkTasks.filter((t) => !t.archived_at).map((t) => t.stage))],
+    [bulkTasks],
+  );
+  // Drop anything that completed or disappeared since it was ticked.
+  useEffect(() => {
+    setSelected((prev) => {
+      const next = new Set([...prev].filter((id) => selectableIds.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [selectableIds]);
+  const toggle = (id: string, on: boolean) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  const selectIds = (ids: string[]) => setSelected((prev) => new Set([...prev, ...ids]));
+  const allOpenSelected = selectableIds.size > 0 && [...selectableIds].every((id) => selected.has(id));
   const views = useMemo(
     () => orderPropertyWorkQueue(tasks.map((task) => viewTask(task, tasks, release))),
     [tasks, release],
@@ -94,6 +129,33 @@ export function PropertyWorkQueue({
             ),
           )}
         </div>
+        {bulk && selectableIds.size > 0 ? (
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+            <label className="inline-flex items-center gap-2">
+              <Checkbox
+                checked={allOpenSelected}
+                onCheckedChange={(v) => (v ? selectIds([...selectableIds]) : setSelected(new Set()))}
+                aria-label="Select all open"
+              />
+              Select all open
+            </label>
+            <Select
+              value=""
+              onValueChange={(stage) =>
+                selectIds(bulkTasks.filter((t) => t.stage === stage && selectableIds.has(t.id)).map((t) => t.id))
+              }
+            >
+              <SelectTrigger className="h-8 w-56" aria-label="Select all in this stage">
+                <SelectValue placeholder="Select all in this stage" />
+              </SelectTrigger>
+              <SelectContent>
+                {stages.map((stage) => (
+                  <SelectItem key={stage} value={stage}>{stageLabel(stage)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
       </div>
 
       <div>
@@ -117,12 +179,24 @@ export function PropertyWorkQueue({
           shown.map((view) => {
             const task = view.task;
             const track = workstreamMeta(trackForTask(task));
+            const canTick = Boolean(bulk) && selectableIds.has(task.id);
             return (
+              <div key={task.id} className="flex items-stretch border-b border-border/60 last:border-b-0">
+              {bulk ? (
+                <span className="flex w-10 shrink-0 items-center justify-center">
+                  {canTick ? (
+                    <Checkbox
+                      checked={selected.has(task.id)}
+                      onCheckedChange={(v) => toggle(task.id, v === true)}
+                      aria-label={`Select ${task.title}`}
+                    />
+                  ) : null}
+                </span>
+              ) : null}
               <button
-                key={task.id}
                 type="button"
                 onClick={() => onSelect(task)}
-                className="grid w-full gap-2 border-b border-border/60 px-4 py-3 text-left last:border-b-0 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                className="grid w-full min-w-0 gap-2 px-4 py-3 text-left last:border-b-0 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
               >
                 <span className="min-w-0">
                   <span className="flex flex-wrap items-center gap-2">
@@ -148,10 +222,37 @@ export function PropertyWorkQueue({
                   {isWaitingTask(view) && <CircleAlert className="size-3.5 text-state-waiting" />}
                 </span>
               </button>
+              </div>
             );
           })
         )}
       </div>
+      {bulk && selected.size > 0 ? (
+        <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-2 border-t border-border bg-card px-4 py-3">
+          <span className="text-sm font-medium">
+            {selected.size} Task{selected.size === 1 ? "" : "s"} selected
+          </span>
+          <span className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setSelected(new Set())}>Clear</Button>
+            <Button size="sm" onClick={() => setBulkOpen(true)}>Edit selected</Button>
+          </span>
+        </div>
+      ) : null}
+      {bulk && bulkOpen ? (
+        <HomeTaskBulkEditDialog
+          propertyId={bulk.propertyId}
+          homeName={bulk.homeName}
+          tasks={bulkTasks}
+          stages={stages}
+          selectedIds={[...selected]}
+          onClose={() => setBulkOpen(false)}
+          onSaved={() => {
+            setBulkOpen(false);
+            setSelected(new Set());
+            bulk.onSaved();
+          }}
+        />
+      ) : null}
 
     </section>
   );
