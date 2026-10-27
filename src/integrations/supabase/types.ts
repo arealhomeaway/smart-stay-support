@@ -8123,8 +8123,9 @@ export type Database = {
           program_id: string | null
           property_id: string | null
           request_kind: string | null
+          review_id: string | null
           task_id: string | null
-          work_item_id: string
+          work_item_id: string | null
         }
         Insert: {
           author_id?: string | null
@@ -8138,8 +8139,9 @@ export type Database = {
           program_id?: string | null
           property_id?: string | null
           request_kind?: string | null
+          review_id?: string | null
           task_id?: string | null
-          work_item_id: string
+          work_item_id?: string | null
         }
         Update: {
           author_id?: string | null
@@ -8153,10 +8155,18 @@ export type Database = {
           program_id?: string | null
           property_id?: string | null
           request_kind?: string | null
+          review_id?: string | null
           task_id?: string | null
-          work_item_id?: string
+          work_item_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "owner_request_messages_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "owner_reviews"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "owner_request_messages_work_item_id_fkey"
             columns: ["work_item_id"]
@@ -14121,6 +14131,16 @@ export type Database = {
         Args: { _answer: string; _work_item: string }
         Returns: undefined
       }
+      append_owner_review_message: {
+        Args: {
+          _author_type: string
+          _body: string
+          _event: string
+          _id: string
+          _name: string
+        }
+        Returns: undefined
+      }
       archive_attachment: {
         Args: { _actor_id: string; _document_id: string; _reason?: string }
         Returns: string
@@ -14543,6 +14563,18 @@ export type Database = {
         Args: { _entry: Json; _property_ids: string[] }
         Returns: string
       }
+      manage_owner_review_conversation: {
+        Args: {
+          _action: string
+          _body?: string
+          _expected_updated_at?: string
+          _id: string
+          _title?: string
+          _what?: string
+          _why?: string
+        }
+        Returns: undefined
+      }
       mark_owner_alerts_read: { Args: { _ids: string[] }; Returns: number }
       mark_owner_opportunity_viewed: {
         Args: { _id: string }
@@ -14782,6 +14814,56 @@ export type Database = {
           program_status: string
           property: Json
         }[]
+      }
+      read_owner_review_conversations: {
+        Args: { _property_id: string }
+        Returns: {
+          author_id: string | null
+          author_name: string
+          author_type: string
+          body: string
+          created_at: string
+          event: string | null
+          id: string
+          is_demo: boolean
+          program_id: string | null
+          property_id: string | null
+          request_kind: string | null
+          review_id: string | null
+          task_id: string | null
+          work_item_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "owner_request_messages"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      read_owner_review_thread: {
+        Args: { _id: string }
+        Returns: {
+          author_id: string | null
+          author_name: string
+          author_type: string
+          body: string
+          created_at: string
+          event: string | null
+          id: string
+          is_demo: boolean
+          program_id: string | null
+          property_id: string | null
+          request_kind: string | null
+          review_id: string | null
+          task_id: string | null
+          work_item_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "owner_request_messages"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       read_owner_review_update: {
         Args: { _review_id: string; _revision: number }
