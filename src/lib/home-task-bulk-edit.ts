@@ -11,18 +11,18 @@ export type HomeBulkTask = {
   title: string;
   stage: string;
   status: string;
-  sort_order?: number | null;
-  archived_at?: string | null;
-  exception_at?: string | null;
-  exception_reason?: string | null;
+  sort_order?: number | null | undefined;
+  archived_at?: string | null | undefined;
+  exception_at?: string | null | undefined;
+  exception_reason?: string | null | undefined;
   due_on: string | null;
-  due_on_overridden?: boolean | null;
-  schedule_offset_unit?: string | null;
+  due_on_overridden?: boolean | null | undefined;
+  schedule_offset_unit?: string | null | undefined;
   assigned_seat: string | null;
-  is_required?: boolean | null;
+  is_required?: boolean | null | undefined;
   blocks_handoff: boolean;
   requires_owner_approval: boolean;
-  tags?: string[] | null;
+  tags?: string[] | null | undefined;
 };
 
 export type HomeBulkPatch = {

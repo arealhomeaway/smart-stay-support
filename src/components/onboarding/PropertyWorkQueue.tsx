@@ -50,7 +50,7 @@ export function PropertyWorkQueue({
   /** Voided Tasks — kept on record, never counted as work. */
   voided?: { id: string; title: string; archived_at: string; exception_reason: string | null }[];
   /** Present only for people who can edit this home's Tasks; the server re-checks. */
-  bulk?: { propertyId: string; homeName: string; onSaved: () => void };
+  bulk?: { propertyId: string; homeName: string; onSaved: () => void } | undefined;
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkOpen, setBulkOpen] = useState(false);
