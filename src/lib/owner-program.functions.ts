@@ -195,7 +195,7 @@ export const correctOwnerTimeEntry = createServerFn({ method: "POST" })
     return recordTimeCorrection(context.supabase, context.userId, data, supabaseAdmin);
   });
 
-/** Supervisor: release owner activities from the roadmap catalog. */
+/** Admin / Onboarding Director: one transaction for the complete activity release. */
 export const seedOwnerRoadmap = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
@@ -204,13 +204,14 @@ export const seedOwnerRoadmap = createServerFn({ method: "POST" })
         programId: z.string().uuid(),
         expectedVersion: z.string().uuid(),
         phase: z.enum(["onboarding", "ongoing", "all"]).default("all"),
+        preview: z.boolean().default(true),
+        expectedCount: z.number().int().nonnegative().optional(),
       })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
-    const { assertEnrollmentAuthority, seedRoadmap } = await import("./owner-program.server");
-    await assertEnrollmentAuthority(context.supabase, context.userId);
-    return seedRoadmap(context.supabase, context.userId, data);
+    const { programActivityRelease } = await import("./owner-program-release.server");
+    return programActivityRelease(context.supabase, context.userId, data);
   });
 
 /** Staff: one program with its homes, roadmap, participation log and history. */
