@@ -15,7 +15,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { OwnerConversation } from "@/components/OwnerConversation";
-import { AlertCircle, CheckCircle2, Clock, FileText, Link2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, FileText, Link2, PlayCircle } from "lucide-react";
 import { OWNER_QUEUES, inQueue, queueCounts, type OwnerQueue, type QueueInput } from "@/lib/owner-opportunity-filters";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -45,7 +45,6 @@ import { arhaCover, duplicatesArha, imageFor } from "@/lib/opportunity-images";
 import { OwnerUploadDialog } from "@/components/owner/OwnerUploadDialog";
 import { LibraryVideoPlayer, useLibraryVideoIndex } from "@/components/owner/LibraryVideoPlayer";
 import { videoForOpportunity } from "@/lib/library-video";
-import { PlayCircle } from "lucide-react";
 import { OwnerFileRow, useOwnerDocuments } from "@/components/OwnerFilesPanel";
 
 export type OpportunityHome = { propertyId: string; name: string; address?: string | null; photoUrl?: string | null };
@@ -229,6 +228,8 @@ export function OwnerOpportunities({
   const [statusFilter, setStatusFilter] = useState<"open" | "completed">("open");
   const [openId, setOpenId] = useState<string | null>(focusId);
   const [startFor, setStartFor] = useState<LibraryTemplate | null>(null);
+  const [watch, setWatch] = useState<LibraryTemplate | null>(null);
+  const videos = useLibraryVideoIndex();
   useEffect(() => { if (focusId) setOpenId(focusId); }, [focusId]);
 
   const preview = variant === "preview";
@@ -605,7 +606,8 @@ function OpportunityDetail({
   const canRespond = !readOnly && item && arha && !item.finished && (t.includes("acknowledge") || t.includes("feedback") || t.includes("decision"));
   const linked = item ? (docs.data?.files ?? []).filter((f) => f.work_item_id === item.id) : [];
   // Live from the current library item, so a replaced video reaches Opportunities already started.
-  const video = item ? videoForOpportunity(item.templateId, useLibraryVideoIndex()) : null;
+  const videoIndex = useLibraryVideoIndex();
+  const video = item ? videoForOpportunity(item.templateId, videoIndex) : null;
 
   return (
     <Dialog open={item !== null} onOpenChange={(v) => !v && onClose()}>
