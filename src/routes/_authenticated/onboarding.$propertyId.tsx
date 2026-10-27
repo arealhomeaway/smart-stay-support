@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { CheckCircle2, CircleAlert, Plus, XCircle } from "lucide-react";
 import { Chip, EmptyState, LoadingPage, PageHeader, ProgressRing } from "@/components/ui/page";
 import { PropertyOwnerCompletions } from "@/components/onboarding/PropertyOwnerCompletions";
+import { CarryoverSummary } from "@/components/onboarding/CarryoverSummary";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BackControl, useRecordOrigin } from "@/components/nav/NavContext";
 import { Button } from "@/components/ui/button";
@@ -506,6 +507,7 @@ function PropertyWorkspace() {
             <div>
               <p className="text-xs text-muted-foreground">Project health</p>
               <p className="text-sm font-medium">{onTrack}</p>
+              <CarryoverSummary propertyId={current.id}/>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Waiting on something</p>
