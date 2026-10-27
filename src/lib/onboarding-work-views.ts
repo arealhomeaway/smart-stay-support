@@ -129,7 +129,7 @@ export function parseWorkspaceSearch(search: {
     activity: "files",
     history: "files",
   };
-  const candidate = typeof search.tab === "string" ? (aliases[search.tab] ?? search.tab) : "overview";
+  const candidate = typeof search.opp === "string" ? "active-owner" : typeof search.tab === "string" ? (aliases[search.tab] ?? search.tab) : "overview";
   return {
     tab: (WORKSPACE_TABS as readonly string[]).includes(candidate) ? candidate : "overview",
     workFilter:
