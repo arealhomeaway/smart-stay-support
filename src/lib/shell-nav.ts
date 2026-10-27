@@ -206,7 +206,7 @@ const ONBOARDING_TABS: Record<string, string> = {
   files: "Files & History",
 };
 
-const RESERVED_ONBOARDING = new Set(["properties", "my-work", "team", "templates", "utilities", "transitions"]);
+const RESERVED_ONBOARDING = new Set(["properties", "my-work", "team", "templates", "handoff-standard", "utilities", "transitions"]);
 
 /**
  * Build the breadcrumb trail for a location. `propertyName` is the resolved
