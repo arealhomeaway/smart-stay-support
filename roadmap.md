@@ -41,3 +41,8 @@
 - [x] B. Permanent authenticated batch-release action, read-only confirmation and pending 0163 SQL (no publish/apply)
 - [x] Full automated suite and automatic typecheck/production build; isolated PostgreSQL release coverage
 - [ ] Signed-in preview/real release acceptance: blocked until 0163 is applied and code released; no real release executed
+
+## Help Ticket #56 bulk template steps (approved, no publish)
+- [ ] Template-only selection and bulk edit window with leave-as-is defaults
+- [ ] Pending all-or-nothing database action and audit history, not applied
+- [ ] Isolated tests, full suite, typecheck and production build; no live template writes
