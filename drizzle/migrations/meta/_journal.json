@@ -1191,6 +1191,13 @@
       "when": 1793143653422,
       "tag": "0169_handoff_standard_schema_0170",
       "breakpoints": true
+    },
+    {
+      "idx": 170,
+      "version": "7",
+      "when": 1793143763473,
+      "tag": "0170_handoff_home_status_0171",
+      "breakpoints": true
     }
   ]
 }

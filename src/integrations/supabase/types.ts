@@ -14807,6 +14807,15 @@ export type Database = {
         Args: { _approve: boolean; _notes: string; _waiver_id: string }
         Returns: undefined
       }
+      decide_home_handoff_requirement: {
+        Args: {
+          _property_id: string
+          _reason: string
+          _requirement_id: string
+          _state: string
+        }
+        Returns: undefined
+      }
       decide_onboarding_financial_request: {
         Args: {
           _approved: boolean
@@ -14858,6 +14867,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      home_handoff_requirement_states: {
+        Args: { _property_id: string }
+        Returns: {
+          requirement_id: string
+          state: string
+          task_ids: string[]
+        }[]
       }
       instantiate_onboarding_v2: {
         Args: { _project_id: string; _version_id: string }
@@ -15065,6 +15082,10 @@ export type Database = {
         Returns: Json
       }
       read_handoff_standard: { Args: never; Returns: Json }
+      read_home_handoff_standard: {
+        Args: { _property_id: string }
+        Returns: Json
+      }
       read_onboarding_assignment_authority: {
         Args: never
         Returns: {
