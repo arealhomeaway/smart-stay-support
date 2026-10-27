@@ -35,3 +35,9 @@
 - [x] Publish confirmed: live build index-DmxmHkXp.js (Pass 1, enrollment window, #57 fix)
 - [x] Applied 0157, 0158, 0160, 0159 with fingerprints + undo files in docs/pending/active-owner-enrollment/undo/
 - [ ] Part 2 (separate go-ahead): repair-four-real-programs.sql, 0162, 0161
+
+## Oct 27 revised Part 2
+- [ ] A. Skip prerelease welcome, then approve wording: blocked by migration tool's DDL-only restriction; no data changes
+- [x] B. Permanent authenticated batch-release action, read-only confirmation and pending 0163 SQL (no publish/apply)
+- [x] Full automated suite and automatic typecheck/production build; isolated PostgreSQL release coverage
+- [ ] Signed-in preview/real release acceptance: blocked until 0163 is applied and code released; no real release executed

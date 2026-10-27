@@ -1,4 +1,5 @@
 import { OwnerProgramSetup } from "@/components/OwnerProgramSetup";
+import { ProgramActivityRelease } from "@/components/owner/ProgramActivityRelease";
 import { ownerAttention as attentionReason } from "@/lib/owner-attention";
 import { EmptyState, LoadingPage, PageHeader, SectionCard, StatTile } from "@/components/ui/page";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
@@ -15,7 +16,6 @@ import {
   Home,
   KeyRound,
   Plus,
-  Route as RouteIcon,
   UserCheck,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -30,7 +30,6 @@ import {
   ownerPrograms,
   ownerTaskRoadmap,
   removeOwnerProgramProperty,
-  seedOwnerRoadmap,
   staffLinkOwnerAccount,
 } from "@/lib/owner-program.functions";
 import { DECISION_PATHS, PHASE_LABELS, type TaskTemplate } from "@/lib/owner-program";
@@ -519,7 +518,6 @@ function ProgramDetail({
   // Adding a home enrolls it: Onboarding Director seat or Platform Owner only.
   const canEnroll = useRole().can("active_owner_enroll");
   const loadDetail = useServerFn(ownerProgramDetail);
-  const seed = useServerFn(seedOwnerRoadmap);
   const addProperty = useServerFn(addOwnerProgramProperty);
   const removeProperty = useServerFn(removeOwnerProgramProperty);
   const confirmClosing = useServerFn(confirmOwnerPropertyClosing);
@@ -820,43 +818,7 @@ function ProgramDetail({
           </p>
         )}
         <div className="flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            onClick={() =>
-              void run(
-                () =>
-                  seed({
-                    data: {
-                      programId,
-                      expectedVersion: detail.data!.activationVersion,
-                      phase: "onboarding",
-                    },
-                  }),
-                "Onboarding activities released.",
-              )
-            }
-          >
-            <RouteIcon className="size-4" /> Release onboarding activities
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() =>
-              void run(
-                () =>
-                  seed({
-                    data: {
-                      programId,
-                      expectedVersion: detail.data!.activationVersion,
-                      phase: "ongoing",
-                    },
-                  }),
-                "Operating activities released.",
-              )
-            }
-          >
-            Release operating activities
-          </Button>
+          {canEnroll ? <ProgramActivityRelease programId={programId} expectedVersion={detail.data.activationVersion} onRefresh={refresh} /> : null}
           <Button
             size="sm"
             variant="outline"
