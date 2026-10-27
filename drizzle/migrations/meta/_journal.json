@@ -1128,6 +1128,20 @@
       "when": 1793060295349,
       "tag": "0160_0159_resumable_enrollment",
       "breakpoints": true
+    },
+    {
+      "idx": 161,
+      "version": "7",
+      "when": 1793110586295,
+      "tag": "0161_owner_welcome_skipped_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 162,
+      "version": "7",
+      "when": 1793110933154,
+      "tag": "0162_program_activity_release",
+      "breakpoints": true
     }
   ]
 }

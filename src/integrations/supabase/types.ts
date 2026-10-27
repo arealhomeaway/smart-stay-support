@@ -14835,6 +14835,15 @@ export type Database = {
         }
         Returns: Json
       }
+      release_owner_program_activities: {
+        Args: {
+          _expected_count?: number
+          _expected_version: string
+          _preview?: boolean
+          _program_id: string
+        }
+        Returns: Json
+      }
       remove_vendor_custom_field: {
         Args: { _field_id: string }
         Returns: string
