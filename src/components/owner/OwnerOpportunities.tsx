@@ -43,6 +43,9 @@ import {
 import { listOptionalLibrary, startOptionalOpportunity, type LibraryTemplate } from "@/lib/opportunity-library.functions";
 import { arhaCover, duplicatesArha, imageFor } from "@/lib/opportunity-images";
 import { OwnerUploadDialog } from "@/components/owner/OwnerUploadDialog";
+import { LibraryVideoPlayer, useLibraryVideoIndex } from "@/components/owner/LibraryVideoPlayer";
+import { videoForOpportunity } from "@/lib/library-video";
+import { PlayCircle } from "lucide-react";
 import { OwnerFileRow, useOwnerDocuments } from "@/components/OwnerFilesPanel";
 
 export type OpportunityHome = { propertyId: string; name: string; address?: string | null; photoUrl?: string | null };
@@ -365,6 +368,7 @@ export function OwnerOpportunities({
                 summary={o.summary}
                 status={o.finished ? "Completed" : "In Progress"}
                 meta={minutesLabel(o.suggestedMinutes)}
+                video={videoForOpportunity(o.templateId, videos) ? () => setOpenId(o.id) : null}
                 action={<Button size="sm" variant="outline" onClick={() => setOpenId(o.id)}>Open</Button>}
               />
             ))}
@@ -379,8 +383,9 @@ export function OwnerOpportunities({
                 label="Optional"
                 summary={t.summary}
                 meta={minutesLabel(t.suggested_minutes)}
+                video={videos.has(t.id) ? () => setWatch(t) : null}
                 action={
-                  readOnly ? null : (
+                  readOnly ? (videos.has(t.id) ? <Button size="sm" variant="outline" onClick={() => setWatch(t)}>Watch video</Button> : null) : (
                     <Button size="sm" className="bg-sage text-success-foreground hover:bg-sage/90" disabled={starting.isPending} onClick={() => beginStart(t)}>
                       Start Opportunity
                     </Button>
@@ -406,6 +411,18 @@ export function OwnerOpportunities({
         {...(onLogHours ? { onLogHours } : {})}
       />
 
+      <Dialog open={watch !== null} onOpenChange={(v) => !v && setWatch(null)}>
+        {watch ? (
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{watch.title}</DialogTitle>
+              <DialogDescription>{videos.get(watch.id)?.label ?? watch.summary}</DialogDescription>
+            </DialogHeader>
+            <LibraryVideoPlayer libraryId={watch.id} poster={imageFor(watch.image_key)} label={videos.get(watch.id)?.label ?? watch.title} />
+          </DialogContent>
+        ) : null}
+      </Dialog>
+
       <Dialog open={startFor !== null} onOpenChange={(v) => !v && setStartFor(null)}>
         {startFor ? (
           <StartDialog
@@ -422,8 +439,9 @@ export function OwnerOpportunities({
 }
 
 function OppCard({
-  tone, cover, title, property, propertyHint = null, label, summary, status = null, meta = null, action, priority = false,
+  tone, cover, title, property, propertyHint = null, label, summary, status = null, meta = null, action, priority = false, video = null,
 }: {
+  video?: (() => void) | null;
   priority?: boolean;
   tone: "arha" | "optional";
   cover: string;
@@ -440,14 +458,21 @@ function OppCard({
     status === "Completed" ? "text-state-done" : status === "New" || status === "Awaiting Your Response" ? "text-info" : "text-muted-foreground";
   return (
     <li className="flex gap-3 overflow-hidden rounded-xl border border-border bg-card p-3 shadow-sm sm:gap-4">
-      <img
-        src={cover}
-        alt=""
-        loading="lazy"
-        width={1024}
-        height={640}
-        className="h-20 w-24 shrink-0 rounded-lg object-cover sm:h-24 sm:w-32"
-      />
+      <div className="relative h-20 w-24 shrink-0 sm:h-24 sm:w-32">
+        <img
+          src={cover}
+          alt=""
+          loading="lazy"
+          width={1024}
+          height={640}
+          className="h-full w-full rounded-lg object-cover"
+        />
+        {video ? (
+          <button type="button" onClick={video} aria-label={`Play video: ${title}`} className="absolute inset-0 flex items-center justify-center rounded-lg bg-foreground/25 text-background transition hover:bg-foreground/40">
+            <PlayCircle className="size-9 drop-shadow" aria-hidden="true" />
+          </button>
+        ) : null}
+      </div>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex flex-wrap items-start justify-between gap-x-2">
           <p className="font-semibold leading-snug">{title}</p>
@@ -579,6 +604,8 @@ function OpportunityDetail({
   const arha = item?.source === "arha";
   const canRespond = !readOnly && item && arha && !item.finished && (t.includes("acknowledge") || t.includes("feedback") || t.includes("decision"));
   const linked = item ? (docs.data?.files ?? []).filter((f) => f.work_item_id === item.id) : [];
+  // Live from the current library item, so a replaced video reaches Opportunities already started.
+  const video = item ? videoForOpportunity(item.templateId, useLibraryVideoIndex()) : null;
 
   return (
     <Dialog open={item !== null} onOpenChange={(v) => !v && onClose()}>
@@ -594,6 +621,7 @@ function OpportunityDetail({
               {item.finished ? " · Completed" : ""}
             </DialogDescription>
           </DialogHeader>
+          {video && item.templateId ? <LibraryVideoPlayer libraryId={item.templateId} poster={item.cover} label={video.label} /> : null}
           <dl className="grid gap-3 text-sm">
             {item.what ? <div><dt className="font-medium">What you'll do</dt><dd className="whitespace-pre-wrap text-muted-foreground">{item.what}</dd></div> : null}
             {item.why ? <div><dt className="font-medium">{arha ? "Why this matters" : "Why it matters"}</dt><dd className="whitespace-pre-wrap text-muted-foreground">{item.why}</dd></div> : null}
