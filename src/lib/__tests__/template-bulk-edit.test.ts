@@ -29,7 +29,7 @@ describe("Workflow Template bulk edit preview", () => {
     if (!plan.ok) return;
     expect(plan.changes).toHaveLength(3);
     expect(plan.changes.every((change) => change.after["offset_days"] === 5)).toBe(true);
-    expect(bulkPreviewSentence(plan)).toBe("This will change 3 steps: due date to 5 days after confirmed access date.");
+    expect(bulkPreviewSentence(plan)).toBe("This will change 3 steps: due date to 5 days after confirmed access date (each step keeps its day type).");
   });
 
   it("plans business days without touching other fields", () => {

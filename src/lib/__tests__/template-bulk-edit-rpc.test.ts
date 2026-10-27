@@ -109,11 +109,13 @@ describe("Workflow Template bulk edit database action (isolated PostgreSQL)", ()
       "_step_ids := $2",
       "_set_stage := true",
       "_stage := 'Preparation'",
-    ], [template, [ids.c, ids.a]]);
-    expect(result.changed).toBe(2);
-    expect(await task(ids.a)).toMatchObject({ stage: "Preparation", sort_order: 20 });
-    expect(await task(ids.c)).toMatchObject({ stage: "Preparation", sort_order: 30 });
-    expect(await task(ids.d)).toMatchObject({ stage: "Preparation", sort_order: 10 });
+      "_set_is_required := true",
+      "_is_required := false",
+    ], [template, [ids.d, ids.c, ids.a]]);
+    expect(result.changed).toBe(3);
+    expect(await task(ids.a)).toMatchObject({ stage: "Preparation", sort_order: 20, is_required: false });
+    expect(await task(ids.c)).toMatchObject({ stage: "Preparation", sort_order: 30, is_required: false });
+    expect(await task(ids.d)).toMatchObject({ stage: "Preparation", sort_order: 10, is_required: false });
   });
 
   it("Blocks handoff Yes skips homeowner and Active Owner steps with the approved message", async () => {
