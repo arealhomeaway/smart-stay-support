@@ -54,11 +54,19 @@ const HANDOFF_SKIP_REASON = "Homeowner or Active Owner steps are left as non-blo
 function patchParts(patch: TemplateBulkPatch, roleName: (code: string | null) => string) {
   const parts: string[] = [];
   if (patch.dueRule) {
-    parts.push(
-      patch.dueRule.offsetDays === null
-        ? "due date rule to No date rule"
-        : `due date to ${describeRule(patch.dueRule.scheduleAnchor, patch.dueRule.offsetDays, patch.offsetUnit ?? "calendar")}`,
-    );
+    if (patch.dueRule.offsetDays === null) {
+      parts.push("due date rule to No date rule");
+    } else if (patch.offsetUnit) {
+      parts.push(`due date to ${describeRule(patch.dueRule.scheduleAnchor, patch.dueRule.offsetDays, patch.offsetUnit)}`);
+    } else {
+      const days = Math.abs(patch.dueRule.offsetDays);
+      const direction = patch.dueRule.offsetDays < 0 ? "before" : "after";
+      parts.push(
+        patch.dueRule.offsetDays === 0
+          ? `due date to ${anchorLabel(patch.dueRule.scheduleAnchor).toLowerCase()}`
+          : `due date to ${days} day${days === 1 ? "" : "s"} ${direction} ${anchorLabel(patch.dueRule.scheduleAnchor).toLowerCase()} (each step keeps its day type)`,
+      );
+    }
   }
   if (patch.offsetUnit) parts.push(patch.offsetUnit === "business" ? "business days" : "calendar days");
   if (patch.functionalRole !== undefined) parts.push(`assigned role to ${roleName(patch.functionalRole)}`);

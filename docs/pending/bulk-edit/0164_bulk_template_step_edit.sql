@@ -97,7 +97,7 @@ BEGIN
     END IF;
   END IF;
 
-  IF _set_offset_unit AND _offset_unit NOT IN ('calendar', 'business') THEN
+  IF _set_offset_unit AND (_offset_unit IS NULL OR _offset_unit NOT IN ('calendar', 'business')) THEN
     RAISE EXCEPTION 'Choose calendar days or business days.';
   END IF;
   IF _set_is_required AND _is_required IS NULL THEN
@@ -202,7 +202,10 @@ BEGIN
           FROM public.onboarding_template_tasks t
           WHERE t.template_id = _template_id
             AND t.stage = _stage
-            AND NOT EXISTS (SELECT 1 FROM changed x WHERE x.id = t.id)
+            AND NOT EXISTS (
+              SELECT 1 FROM changed x
+              WHERE x.id = t.id AND x.stage IS DISTINCT FROM _stage
+            )
         ), 0) + row_number() OVER (ORDER BY c.sort_order, c.id) * 10
       END AS new_sort_order
     FROM changed c
