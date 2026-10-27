@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { readTemplateFileSources, saveTemplateFileSources } from "@/lib/step-file-links.functions";
 import { TemplateBulkEditDialog } from "@/components/onboarding/TemplateBulkEditDialog";
 import {
   FUNCTIONAL_ROLES,
@@ -94,7 +95,10 @@ function SortableStage({ stage, onRename, onToggle }: { stage: Stage; onRename: 
 
 const emptyOpp: OpportunityContent = { title: "", what: "", why: "", how: "", resources: [], ways_to_document: "", suggested_minutes: null };
 
-function StepDialog({ step, onClose, onSave, saving }: { step: Step; onClose: () => void; onSave: (v: StepInput) => void; saving: boolean }) {
+type FileSourceOptions = { ready: boolean; selected: string[]; options: { id: string; title: string; stage: string }[] };
+
+function StepDialog({ step, onClose, onSave, saving, fileSources }: { step: Step; onClose: () => void; onSave: (v: StepInput, showFilesFrom: string[] | null) => void; saving: boolean; fileSources: FileSourceOptions }) {
+  const [showFrom, setShowFrom] = useState<string[]>(fileSources.selected);
   const [title, setTitle] = useState(step.title);
   const [detail, setDetail] = useState(step.detail ?? "");
   const [useBreezeway, setUseBreezeway] = useState(Boolean(step.breezeway_template_id));
@@ -218,6 +222,22 @@ function StepDialog({ step, onClose, onSave, saving }: { step: Step; onClose: ()
           ) : null}
         </div>
 
+        {fileSources.ready ? (
+          <div className="mt-2 space-y-2 rounded-md border border-border p-3">
+            <Label>Show files from</Label>
+            <p className="text-xs text-muted-foreground">Files uploaded on these steps appear on this step for the same home. Nothing is copied. Internal only — homeowners and vendors never see them.</p>
+            <div className="max-h-48 space-y-1 overflow-y-auto">
+              {fileSources.options.filter((o) => o.id !== step.id).map((o) => (
+                <label key={o.id} className="flex items-center gap-2 text-sm">
+                  <Checkbox checked={showFrom.includes(o.id)} onCheckedChange={(v) => setShowFrom((cur) => (v ? [...cur, o.id] : cur.filter((x) => x !== o.id)))} />
+                  <span className="truncate">{o.title}</span>
+                  <span className="text-xs text-muted-foreground">{o.stage}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         <div className="mt-2 space-y-3 rounded-md border border-border p-3">
           <label className="flex items-center gap-2 text-sm font-medium">
             <Switch checked={eligible} onCheckedChange={setEligible} /> Active Owner Opportunity
@@ -264,7 +284,7 @@ function StepDialog({ step, onClose, onSave, saving }: { step: Step; onClose: ()
                 videoUrl: videoUrl.trim() || null,
                 condition: clauses.length ? { all: clauses } : null,
                 opportunity: eligible ? opp : null,
-              })
+              }, fileSources.ready ? showFrom : null)
             }
           >
             Save
@@ -301,7 +321,20 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
 
   const stageM = useMutation({ mutationFn: (d: { stageId?: string; name: string; active: boolean }) => saveStage({ data: { templateId, ...d } }), onSuccess: refresh, onError: onErr });
   const reorderM = useMutation({ mutationFn: (ids: string[]) => reorder({ data: { templateId, stageIds: ids } }), onSuccess: refresh, onError: onErr });
-  const stepM = useMutation({ mutationFn: (d: StepInput) => saveStep({ data: d }), onSuccess: () => { toast.success("Step saved."); setEditing(null); refresh(); }, onError: onErr });
+  const readSources = useServerFn(readTemplateFileSources);
+  const saveSources = useServerFn(saveTemplateFileSources);
+  const sourcesQ = useQuery({ queryKey: ["template-file-sources", templateId], queryFn: () => readSources({ data: { templateId } }) });
+  const stepM = useMutation({
+    mutationFn: async ({ d, showFrom }: { d: StepInput; showFrom: string[] | null }) => {
+      await saveStep({ data: d });
+      const before = sourcesQ.data?.byStep[d.stepId] ?? [];
+      if (showFrom && (showFrom.length !== before.length || showFrom.some((x) => !before.includes(x))))
+        await saveSources({ data: { stepId: d.stepId, sourceIds: showFrom } });
+    },
+    onSuccess: () => { toast.success("Step saved."); setEditing(null); refresh(); void sourcesQ.refetch(); },
+    onError: onErr,
+  });
+  const _unusedStepM = useMutation({ mutationFn: (d: StepInput) => saveStep({ data: d }), onSuccess: () => { toast.success("Step saved."); setEditing(null); refresh(); }, onError: onErr });
   const publishM = useMutation({ mutationFn: () => publish({ data: { templateId } }), onSuccess: () => { toast.success("New version published. Homes already started keep their version."); refresh(); }, onError: onErr });
 
   if (q.isLoading) return <p className="text-sm text-muted-foreground">Loading plan settings…</p>;
@@ -469,7 +502,7 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
         })()}
       </details>
 
-      {editing ? <StepDialog step={editing} saving={stepM.isPending} onClose={() => setEditing(null)} onSave={(v) => stepM.mutate(v)} /> : null}
+      {editing ? <StepDialog step={editing} saving={stepM.isPending} onClose={() => setEditing(null)} onSave={(v, showFrom) => stepM.mutate({ d: v, showFrom })} fileSources={{ ready: Boolean(sourcesQ.data?.ready), selected: sourcesQ.data?.byStep[editing.id] ?? [], options: steps.map((s) => ({ id: s.id, title: s.title, stage: s.stage })) }} /> : null}
       {bulkOpen ? (
         <TemplateBulkEditDialog
           templateId={templateId}
