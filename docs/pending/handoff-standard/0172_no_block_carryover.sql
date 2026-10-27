@@ -23,6 +23,7 @@ BEGIN
  ELSE RAISE EXCEPTION 'Choose a handoff step.'; END IF;
  -- Serialize the living definition and home decisions for a truthful confirmation.
  PERFORM id FROM public.handoff_requirements FOR SHARE;
+ PERFORM id FROM public.onboarding_tasks WHERE property_id=pr.property_id FOR SHARE;
  expected:=public.handoff_open_items(pr.property_id);
  IF jsonb_typeof(_items)<>'array' THEN RAISE EXCEPTION 'Review all carry-over items.'; END IF;
  IF jsonb_array_length(_items)<>jsonb_array_length(expected) OR EXISTS(SELECT 1 FROM jsonb_array_elements(expected) ex WHERE (SELECT count(*) FROM jsonb_array_elements(_items) supplied WHERE supplied->>'key'=ex->>'item_key')<>1) THEN RAISE EXCEPTION 'Outstanding items changed. Review the carry-over list again.'; END IF;

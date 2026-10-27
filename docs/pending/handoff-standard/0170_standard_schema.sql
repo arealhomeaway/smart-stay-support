@@ -63,3 +63,9 @@ BEGIN
  RETURN jsonb_build_object('available',true,'canEdit',public.can_edit_handoff_standard(),'requirements',coalesce((SELECT jsonb_agg(r ORDER BY r.category,r.sort_order,r.code) FROM public.handoff_requirements r),'[]'),'steps',coalesce((SELECT jsonb_agg(x) FROM (SELECT tt.id,tt.title,t.name template_name FROM public.onboarding_template_tasks tt JOIN public.onboarding_templates t ON t.id=tt.template_id WHERE tt.is_active AND NOT t.is_archived ORDER BY t.name,tt.sort_order)x),'[]'),'suggestions',coalesce((SELECT jsonb_agg(s) FROM public.handoff_link_suggestions s WHERE confirmed_at IS NULL),'[]'),'history',coalesce((SELECT jsonb_agg(h ORDER BY h.created_at DESC) FROM public.handoff_standard_history h),'[]'));
 END $$;
 REVOKE ALL ON FUNCTION public.read_handoff_standard() FROM PUBLIC,anon; GRANT EXECUTE ON FUNCTION public.read_handoff_standard() TO authenticated,service_role;
+
+CREATE FUNCTION public.preserve_handoff_history() RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public' AS $$ BEGIN RAISE EXCEPTION 'Handoff history is permanent. Record a new decision instead.';END $$;
+REVOKE ALL ON FUNCTION public.preserve_handoff_history() FROM PUBLIC,anon,authenticated;
+CREATE TRIGGER handoff_standard_history_permanent BEFORE UPDATE OR DELETE ON public.handoff_standard_history FOR EACH ROW EXECUTE FUNCTION public.preserve_handoff_history();
+CREATE TRIGGER home_handoff_decisions_permanent BEFORE UPDATE OR DELETE ON public.home_handoff_decisions FOR EACH ROW EXECUTE FUNCTION public.preserve_handoff_history();
+CREATE TRIGGER handoff_step_history_permanent BEFORE UPDATE OR DELETE ON public.handoff_step_history FOR EACH ROW EXECUTE FUNCTION public.preserve_handoff_history();
