@@ -264,7 +264,7 @@ function Hub() {
                       disabled={readOnly}
                       className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20 disabled:opacity-50"
                     >
-                      <Plus className="size-4" /> Enroll property
+                      <Plus className="size-4" /> Add property
                     </button>
                   }
                 />

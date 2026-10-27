@@ -490,6 +490,7 @@ function PropertyWorkspace() {
         <TabsList className="flex h-auto flex-wrap justify-start">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="work">Tasks</TabsTrigger>
+          {activeOwner ? <TabsTrigger value="active-owner">Active Owner</TabsTrigger> : null}
           <TabsTrigger value="property">Property Details</TabsTrigger>
           <TabsTrigger value="files">Files &amp; History</TabsTrigger>
           <TabsTrigger value="handoff">Handoff</TabsTrigger>
@@ -582,9 +583,11 @@ function PropertyWorkspace() {
           </section>
 
           {activeOwner ? (
-            <PropertyOpportunitiesPanel propertyId={current.id} openId={linkedOpp} />
+            <p className="text-sm">Active Owner activities and replies <Button variant="link" onClick={() => void navigate({ search: { ...search, tab: "active-owner" }, replace: true })}>Open Active Owner</Button></p>
           ) : null}
         </TabsContent>
+
+        {activeOwner ? <TabsContent value="active-owner"><PropertyOpportunitiesPanel propertyId={current.id} openId={linkedOpp} /></TabsContent> : null}
 
         <TabsContent value="work" className="space-y-5">
           <div className="flex justify-end"><PlanCsvButton propertyId={current.id} /></div>

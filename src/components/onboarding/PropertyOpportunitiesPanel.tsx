@@ -1,236 +1,71 @@
-/**
- * Active Owner Opportunities for one home, managed from its Onboarding
- * workspace. Shares the editor and status view with the Task drawer's Owner
- * collaboration section. Opportunity status never controls the internal Task.
- */
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { GripVertical, Plus, Sparkles } from "lucide-react";
+import { GripVertical, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { RESPONSE_TYPES, compareArhaPriority, reorderArhaOpportunities } from "@/lib/v2-workflow.functions";
+import { compareArhaPriority, reorderArhaOpportunities } from "@/lib/v2-workflow.functions";
 import { Button } from "@/components/ui/button";
-import { SectionCard } from "@/components/ui/page";
-import { ownerPrograms } from "@/lib/owner-program.functions";
-import { OpportunityDetail, OpportunityEditor, ownerState, useOwnerCollaboration, type CollabOpp } from "@/components/onboarding/OwnerCollaboration";
+import { Progress } from "@/components/ui/progress";
+import { ownerPrograms, ownerProgramDetail } from "@/lib/owner-program.functions";
+import { OpportunityDetail, OpportunityEditor, useOwnerCollaboration, type CollabOpp } from "@/components/onboarding/OwnerCollaboration";
+import { groupOwnerTab, waitingDays, type OwnerTabItem } from "@/lib/onboarding-cleanup";
+import { LibraryVideoPlayer, useLibraryVideoIndex } from "@/components/owner/LibraryVideoPlayer";
+import { imageFor } from "@/lib/opportunity-images";
+import { useRole } from "@/hooks/useRole";
+import { readReleasedPropertyActivities } from "@/lib/onboarding-cleanup.functions";
+import { ReleasedActivityDetail } from "./ReleasedActivityDetail";
 
-function fmt(d: string | null | undefined) {
-  if (!d) return null;
-  return new Date(`${d}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+function when(value:string|null|undefined) { return value?new Date(value.length===10?`${value}T12:00:00`:value).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}):"Date not recorded"; }
+function SortableOpportunity({o,onOpen}:{o:CollabOpp;onOpen:()=>void}) {
+  const {attributes,listeners,setNodeRef,setActivatorNodeRef,transform,transition}=useSortable({id:o.id});
+  return <li ref={setNodeRef} style={{transform:CSS.Transform.toString(transform),transition}} className="flex items-center gap-2 border-b border-border py-2"><Button ref={setActivatorNodeRef} {...attributes} {...listeners} variant="ghost" size="icon" aria-label={`Reorder ${o.title}`} className="touch-none"><GripVertical className="size-4"/></Button><Button className="h-auto justify-start whitespace-normal text-left" variant="ghost" onClick={onOpen}>{o.title}</Button></li>;
 }
-
-/** One sortable ARHA card: only the grip handle starts a drag, so Details/Edit/links/text stay normal. */
-function SortableRow({ id, children }: { id: string; children: (handle: ReactNode) => ReactNode }) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id });
-  const handle = (
-    <button
-      type="button"
-      ref={setActivatorNodeRef}
-      {...attributes}
-      {...listeners}
-      aria-label="Drag to change the order the homeowner sees"
-      title="Drag to reorder"
-      className="mt-0.5 cursor-grab touch-none rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground active:cursor-grabbing"
-    >
-      <GripVertical className="size-4" />
-    </button>
-  );
-  return (
-    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} className={isDragging ? "relative z-10 opacity-80" : undefined}>
-      {children(handle)}
-    </div>
-  );
-}
-
-function whenTs(ts: string | null | undefined) {
-  if (!ts) return "";
-  return new Date(ts).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-}
-
-/** One plain sentence for the homeowner's latest response — never raw events. */
-function latestResponse(o: CollabOpp, owner: string, docs: { at: string }[]): { text: string; at: string } | null {
-  const items: { text: string; at: string }[] = [];
-  for (const r of o.owner_response ?? []) {
-    const verb =
-      r.kind === "decision"
-        ? r.decision === "authorize"
-          ? "authorized this work"
-          : r.decision === "changes"
-            ? "requested changes"
-            : "recorded a decision"
-        : r.kind === "acknowledge"
-          ? "acknowledged this"
-          : "submitted feedback";
-    if (r.at) items.push({ text: `${owner} ${verb}`, at: r.at });
-  }
-  for (const d of docs) items.push({ text: `${owner} uploaded documentation`, at: d.at });
-  if (o.status === "complete" && o.completed_at) items.push({ text: `${owner} marked this Opportunity complete`, at: o.completed_at });
-  items.sort((a, b) => b.at.localeCompare(a.at));
-  return items[0] ?? null;
-}
-
-function preview(text: string | null | undefined) {
-  const t = (text ?? "").trim();
-  return t ? t : null;
-}
-
-export function PropertyOpportunitiesPanel({
-  propertyId,
-  openId,
-}: {
-  propertyId: string;
-  /** Opportunity a notification links to — expanded and scrolled into view. */
-  openId?: string | null;
-}) {
-  const loadPrograms = useServerFn(ownerPrograms);
-  const [editing, setEditing] = useState<CollabOpp | "new" | null>(null);
-  const [expanded, setExpanded] = useState<string | null>(null);
-  // Demo homes belong to demo programs, which the production list leaves out.
-  const programs = useQuery({
-    queryKey: ["owner-programs", "property", propertyId],
-    queryFn: async () => {
-      const live = await loadPrograms({ data: {} });
-      if (live.rows.some((p) => p.properties.some((h) => h.id === propertyId))) return live;
-      const demo = await loadPrograms({ data: { demo: true } });
-      return { ...live, rows: [...live.rows, ...demo.rows] };
-    },
+export function PropertyOpportunitiesPanel({propertyId,openId}:{propertyId:string;openId?:string|null}) {
+  const {readOnly}=useRole(), qc=useQueryClient();
+  const loadPrograms=useServerFn(ownerPrograms),loadDetail=useServerFn(ownerProgramDetail),loadReleased=useServerFn(readReleasedPropertyActivities);
+  const [editing,setEditing]=useState<CollabOpp|"new"|null>(null),[selected,setSelected]=useState<string|null>(openId??null),[completedOpen,setCompletedOpen]=useState(false),[draftsOpen,setDraftsOpen]=useState(false),[reorderMode,setReorderMode]=useState(false);
+  const programs=useQuery({queryKey:["owner-programs","property",propertyId],queryFn:async()=>{const live=await loadPrograms({data:{}});if(live.rows.some(p=>p.properties.some(h=>h.id===propertyId)))return live;const demo=await loadPrograms({data:{demo:true}});return {...live,rows:[...live.rows,...demo.rows]};}});
+  const program=programs.data?.rows.find(p=>p.properties.some(h=>h.id===propertyId));
+  const detail=useQuery({queryKey:["owner-program-detail",program?.id],enabled:Boolean(program),queryFn:()=>{if(!program)throw new Error("No program.");return loadDetail({data:{programId:program.id}});}});
+  const released=useQuery({queryKey:["released-property-activities",propertyId],queryFn:()=>loadReleased({data:{propertyId}})});
+  const q=useOwnerCollaboration(propertyId), videos=useLibraryVideoIndex();
+  useEffect(()=>{if(openId)setSelected(openId);},[openId]);
+  const reorderFn=useServerFn(reorderArhaOpportunities);
+  const [order,setOrder]=useState<string[]|null>(null);
+  const sensors=useSensors(useSensor(PointerSensor,{activationConstraint:{distance:4}}),useSensor(KeyboardSensor,{coordinateGetter:sortableKeyboardCoordinates}));
+  const reorder=useMutation({mutationFn:(ids:string[])=>reorderFn({data:{propertyId,ids}}),onSuccess:()=>{setOrder(null);void qc.invalidateQueries({queryKey:["owner-collaboration"]});toast.success("Order saved.");},onError:e=>{setOrder(null);toast.error(e.message);}});
+  if(programs.isPending||q.isPending||released.isPending)return <p>Loading Active Owner…</p>;
+  if(programs.error||q.error||released.error)return <p role="alert">Could not load all Active Owner items. Please try again.</p>;
+  if(!program)return null;
+  const opps=q.data?.opportunities??[], messages=q.data?.messages??[];
+  const requests:OwnerTabItem[]=opps.map(o=>{
+    const thread=messages.filter(m=>m.work_item_id===o.id);
+    const files=(q.data?.files??[]).filter(f=>f.workItemId===o.id);
+    const ownerTimes=[...o.owner_response.map(r=>r.at),...thread.filter(m=>m.author_type==="homeowner").map(m=>m.created_at),...files.map(f=>f.uploadedAt)].filter((x):x is string=>Boolean(x)).sort();
+    const staffTimes=thread.filter(m=>m.author_type==="staff").map(m=>m.created_at).sort();
+    const latest=thread.filter(m=>m.author_type==="homeowner").slice(-1)[0];
+    return {id:o.id,kind:"request",title:o.title,status:o.status,sentAt:o.sent_at,completedAt:o.completed_at,ownerAt:ownerTimes.at(-1)??null,staffAt:staffTimes.at(-1)??null,activity:latest?`${latest.author_name} replied`:files.length?"Homeowner uploaded a file":"Homeowner responded"};
   });
-  const program = (programs.data?.rows ?? []).find((p) => p.properties.some((h) => h.id === propertyId));
-  const q = useOwnerCollaboration(propertyId);
-  // A notification link names one Opportunity: expand it and bring it into
-  // view once the list has loaded, so the alert lands on the item itself.
-  useEffect(() => {
-    if (!openId) return;
-    if (!(q.data?.opportunities ?? []).some((o) => o.id === openId)) return;
-    setExpanded(openId);
-    document.getElementById(`opp-${openId}`)?.scrollIntoView({ block: "center" });
-  }, [openId, q.data]);
-  const qc = useQueryClient();
-  const reorderFn = useServerFn(reorderArhaOpportunities);
-  const [localOrder, setLocalOrder] = useState<string[] | null>(null);
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
-  const reorder = useMutation({
-    mutationFn: (ids: string[]) => reorderFn({ data: { propertyId, ids } }),
-    onSuccess: async () => { await qc.invalidateQueries({ queryKey: ["owner-collaboration"] }); setLocalOrder(null); toast.success("Order saved. The homeowner now sees this order."); },
-    onError: (e) => { setLocalOrder(null); toast.error(e instanceof Error ? e.message : "Could not save the order."); },
-  });
-
-  if (!programs.isLoading && !program) return null;
-
-  const opps = q.data?.opportunities ?? [];
-  const drafts = opps.filter((o) => o.status === "draft");
-  const sent = opps.filter((o) => o.status !== "draft" && o.status !== "complete");
-  const arhaSaved = sent.filter((o) => o.source === "arha").sort(compareArhaPriority);
-  const arhaSent = localOrder ? localOrder.map((id) => arhaSaved.find((o) => o.id === id)).filter((o): o is CollabOpp => Boolean(o)) : arhaSaved;
-  const otherSent = sent.filter((o) => o.source !== "arha");
-  const available = [...arhaSent, ...otherSent];
-  const completed = opps.filter((o) => o.status === "complete");
-  const closing = q.data?.actualClosingOn ?? program?.startedOn ?? q.data?.plannedClosingOn ?? null;
-  const taskTitle = (id: string | null) => q.data?.tasks.find((t) => t.id === id)?.title;
-
-  const onDragEnd = (e: DragEndEvent) => {
-    if (!e.over || e.active.id === e.over.id) return;
-    const ids = arhaSent.map((o) => o.id);
-    const next = arrayMove(ids, ids.indexOf(String(e.active.id)), ids.indexOf(String(e.over.id)));
-    setLocalOrder(next);
-    reorder.mutate(next);
-  };
-
-  const ownerFirst = (program?.ownerName ?? "The homeowner").split(" ")[0] || "The homeowner";
-  const row = (o: CollabOpp, handle?: ReactNode, position?: number) => {
-    const c = o.owner_content;
-    const what = preview(c?.what);
-    const why = preview(c?.why);
-    const types = o.response_types.map((t) => RESPONSE_TYPES.find((r) => r.code === t)?.label ?? t);
-    const docs = (q.data?.files ?? []).filter((f) => f.workItemId === o.id).map((f) => ({ at: String(f.uploadedAt ?? "") })).filter((d) => d.at);
-    const latest = o.status === "draft" ? null : latestResponse(o, ownerFirst, docs);
-    const waitingFor =
-      o.status === "draft"
-        ? "Not sent — the homeowner can't see this yet."
-        : o.status === "complete"
-          ? null
-          : latest
-            ? "Review the homeowner's response."
-            : `Waiting for ${ownerFirst} to ${types.length ? types.join(" / ").toLowerCase() : "respond"}.`;
-    return (
-    <li key={o.id} id={`opp-${o.id}`} className="rounded-lg border border-border p-3">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="flex min-w-0 items-start gap-2">
-        {handle}
-        {position ? <span className="numeric mt-0.5 text-xs font-semibold text-muted-foreground">{position}.</span> : null}
-        <div className="min-w-0">
-          <p className="font-medium">{o.title}</p>
-          <p className="text-xs text-muted-foreground">
-            {ownerState(o)}
-            {o.source === "arha" ? " · From your ARHA Onboarding Team" : ""}
-          </p>
-          {types.length ? <p className="mt-1 text-xs"><span className="text-muted-foreground">Response type: </span>{types.join(", ")}</p> : null}
-          {what ? <p className="mt-1 line-clamp-2 text-sm"><span className="text-muted-foreground">What you&apos;ll do: </span>{what}</p> : null}
-          {why ? <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">Why this matters: {why}</p> : null}
-          {o.resources.length ? (
-            <p className="mt-1 text-xs"><span className="text-muted-foreground">Resources: </span>{o.resources.map((r) => r.label).join(" · ")}</p>
-          ) : null}
-          {taskTitle(o.taskId) ? <p className="mt-0.5 text-xs"><span className="text-muted-foreground">Related Task: </span>{taskTitle(o.taskId)}</p> : null}
-          {latest ? (
-            <p className="mt-1 text-xs font-medium">{latest.text} · {whenTs(latest.at)}</p>
-          ) : null}
-          {waitingFor ? <p className="mt-0.5 text-xs text-muted-foreground">{waitingFor}</p> : null}
-        </div>
-        </div>
-        <div className="flex gap-1">
-          <Button size="sm" variant="ghost" onClick={() => setExpanded(expanded === o.id ? null : o.id)}>{expanded === o.id ? "Hide" : "Details"}</Button>
-          {o.status !== "complete" ? <Button size="sm" variant="outline" onClick={() => setEditing(o)}>{o.status === "draft" ? "Edit draft" : "Edit"}</Button> : null}
-        </div>
-      </div>
-      {expanded === o.id ? (
-        <div className="mt-2 space-y-2 border-t border-border pt-2">
-          {what ? <div className="text-sm"><p className="text-xs font-medium">What you&apos;ll do</p><p className="whitespace-pre-wrap">{what}</p></div> : null}
-          {why ? <div className="text-sm"><p className="text-xs font-medium">Why this matters</p><p className="whitespace-pre-wrap">{why}</p></div> : null}
-          <OpportunityDetail o={o} files={q.data?.files ?? []} />
-        </div>
-      ) : null}
-    </li>
-    );
-  };
-
-  return (
-    <SectionCard
-      title={<span className="flex items-center gap-2"><Sparkles className="size-4" aria-hidden="true" /> Active Owner Opportunities</span>}
-      description="Owner collaboration for this property. Review what ARHA has shared and track the homeowner's response."
-      actions={<Button onClick={() => setEditing("new")}><Plus className="size-4" /> Create Opportunity</Button>}
-    >
-      <dl className="mb-4 grid gap-3 text-sm sm:grid-cols-3">
-        <div><dt className="text-muted-foreground">Active Owner</dt><dd className="font-medium">{program?.ownerName ?? "—"}</dd></div>
-        <div><dt className="text-muted-foreground">Program period</dt><dd className="font-medium">{fmt(closing) ?? "Closing date not set"} → Dec 31, 2026</dd></div>
-        <div><dt className="text-muted-foreground">Hours logged</dt><dd className="numeric font-medium">{(program?.reportedHours ?? 0).toFixed(1)} / 100+ hours</dd></div>
-      </dl>
-      <div className="space-y-4">
-        {drafts.length ? <div><h3 className="mb-2 text-sm font-semibold">Drafts (not visible to the homeowner)</h3><ul className="space-y-2">{drafts.map((o) => row(o))}</ul></div> : null}
-        <div>
-          <h3 className="mb-2 text-sm font-semibold">Sent to the homeowner ({available.length})</h3>
-          {arhaSent.length > 1 ? <p className="mb-2 text-xs text-muted-foreground">Drag the handle to set the order the homeowner sees ARHA Opportunities for this home. Presentation only — it never changes Tasks.</p> : null}
-          {available.length ? (
-            <ul className="space-y-2">
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-                <SortableContext items={arhaSent.map((o) => o.id)} strategy={verticalListSortingStrategy}>
-                  {arhaSent.map((o, i) => (
-                    <SortableRow key={o.id} id={o.id}>{(handle) => row(o, arhaSent.length > 1 ? handle : undefined, arhaSent.length > 1 ? i + 1 : undefined)}</SortableRow>
-                  ))}
-                </SortableContext>
-              </DndContext>
-              {otherSent.map((o) => row(o))}
-            </ul>
-          ) : <p className="text-sm text-muted-foreground">None sent yet. Use Create Opportunity.</p>}
-        </div>
-        <div>
-          <h3 className="mb-2 text-sm font-semibold">Completed ({completed.length})</h3>
-          {completed.length ? <ul className="space-y-2">{completed.map((o) => row(o))}</ul> : <p className="text-sm text-muted-foreground">None completed yet.</p>}
-        </div>
-      </div>
-      <OpportunityEditor propertyId={propertyId} data={q.data} editing={editing} onClose={() => setEditing(null)} />
-    </SectionCard>
-  );
+  const reviews:OwnerTabItem[]=(released.data??[]).map(r=>({id:r.id,kind:"review",title:r.title,status:r.status,sentAt:r.notified_at,completedAt:r.closed_at,ownerAt:r.responded_at,staffAt:r.last_staff_at,activity:r.owner_response?"Homeowner replied":"Homeowner responded"}));
+  const groups=groupOwnerTab([...requests,...reviews]);
+  const o=opps.find(o=>o.id===selected), review=released.data?.find(r=>r.id===selected);
+  const current=o?requests.find(x=>x.id===o.id):reviews.find(x=>x.id===review?.id);
+  const arhaSaved=opps.filter(o=>o.source==="arha"&&o.status!=="draft"&&o.status!=="complete").sort(compareArhaPriority);
+  const arha=order?order.map(id=>arhaSaved.find(o=>o.id===id)).filter((o):o is CollabOpp=>Boolean(o)):arhaSaved;
+  function drag(e:DragEndEvent){if(!e.over||e.active.id===e.over.id)return;const ids=arha.map(o=>o.id);const next=arrayMove(ids,ids.indexOf(String(e.active.id)),ids.indexOf(String(e.over.id)));setOrder(next);reorder.mutate(next);}
+  const row=(item:OwnerTabItem,group:string)=>{const days=waitingDays(item.sentAt,Date.now());return <li key={`${item.kind}-${item.id}`} className={`flex flex-wrap items-center gap-3 border-b border-border py-3 ${group==="waiting"&&days!==null&&days>14?"bg-amber/10":""}`}><Button variant="ghost" className="h-auto min-w-0 flex-1 justify-start whitespace-normal text-left" onClick={()=>setSelected(item.id)}>{item.title}</Button><span className="text-xs text-muted-foreground">{item.kind==="review"?"Program activity":"Opportunity"}</span><span className="text-xs text-muted-foreground">{group==="attention"?`${item.activity} · ${when(item.ownerAt)}`:group==="completed"?when(item.completedAt):group==="drafts"?"Not sent":`Sent ${when(item.sentAt)}${days===null?"":` · ${days} days`}`}</span><Button variant="outline" size="sm" onClick={()=>setSelected(item.id)}>{group==="attention"?"Reply":"Open"}</Button></li>;};
+  const last=groups.completed.map(i=>i.completedAt).filter((x):x is string=>Boolean(x)).sort().at(-1);
+  const hours=program.reportedHours,goal=detail.data?.program.targetHours??100,closing=detail.data?.properties.find(h=>h.propertyId===propertyId)?.closingDate;
+  const year=closing?.slice(0,4)??program.startedOn?.slice(0,4);
+  return <section className="space-y-6">
+    <div className="grid gap-4 border-b border-border pb-5 sm:grid-cols-[2fr_1fr_1fr]"><div className="space-y-2"><h2 className="font-semibold">{program.ownerName}</h2><p className="text-sm">{hours.toFixed(1)} of {goal} hours {year?`in ${year}`:"this year"}</p><Progress value={Math.min(100,hours/goal*100)}/><p className="text-xs text-muted-foreground">{when(closing)} to {year?`Dec 31, ${year}`:"End date not recorded"}</p></div><div className="rounded-md border border-amber/40 bg-amber/10 p-3"><p className="text-sm">Needs your reply</p><p className="text-2xl font-semibold">{groups.attention.length}</p></div><div className="rounded-md border border-border p-3"><p className="text-sm">Waiting on homeowner</p><p className="text-2xl font-semibold">{groups.waiting.length}</p></div></div>
+    <div className={`grid items-start gap-6 ${selected?"lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.85fr)]":""}`}><div className="min-w-0 space-y-6"><section><div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-semibold">Needs your attention</h2><Button disabled={readOnly} onClick={()=>setEditing("new")}><Plus className="size-4"/>Create Opportunity</Button></div>{groups.attention.length?<ul>{groups.attention.map(i=>row(i,"attention"))}</ul>:<p className="py-4 text-sm text-muted-foreground">Nothing needs a reply right now.</p>}</section>
+      <section><div className="flex items-center justify-between"><h2 className="font-semibold">Waiting on homeowner</h2>{arha.length>1?<Button variant="ghost" disabled={readOnly} onClick={()=>setReorderMode(v=>!v)}>{reorderMode?"Done reordering":"Reorder"}</Button>:null}</div>{reorderMode?<DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={drag}><SortableContext items={arha.map(o=>o.id)} strategy={verticalListSortingStrategy}><ul>{arha.map(o=><SortableOpportunity key={o.id} o={o} onOpen={()=>setSelected(o.id)}/>)}</ul></SortableContext></DndContext>:null}<ul>{groups.waiting.map(i=>row(i,"waiting"))}</ul>{!groups.waiting.length?<p className="py-3 text-sm text-muted-foreground">Nothing waiting on the homeowner.</p>:null}</section>
+      <section><Button variant="ghost" onClick={()=>setCompletedOpen(v=>!v)} aria-expanded={completedOpen}>Completed ({groups.completed.length}){last?` · Last on ${when(last)}`:""}</Button>{completedOpen?<ul>{groups.completed.map(i=>row(i,"completed"))}</ul>:null}</section><section><Button variant="link" onClick={()=>setDraftsOpen(v=>!v)} aria-expanded={draftsOpen}>Drafts ({groups.drafts.length})</Button>{draftsOpen?<ul>{groups.drafts.map(i=>row(i,"drafts"))}</ul>:null}</section></div>
+      {selected?<aside className="min-w-0 space-y-4 border-t border-border pt-4 lg:sticky lg:top-4 lg:max-h-[85dvh] lg:overflow-y-auto lg:border-l lg:border-t-0 lg:pl-5" aria-label="Active Owner details"><div className="flex items-start justify-between gap-2"><span className="rounded bg-muted px-2 py-1 text-xs">{current?.status==="complete"||current?.status==="closed"?"Completed":current?.status==="draft"?"Draft":current?.ownerAt?"Homeowner responded":"Waiting on homeowner"}</span><Button size="icon" variant="ghost" aria-label="Close details" onClick={()=>setSelected(null)}><X className="size-4"/></Button></div>{o?<><h2 className="text-xl font-semibold">{o.title}</h2><p className="text-xs text-muted-foreground">{o.source==="arha"?"Sent by ARHA":"Optional Library"} · {when(o.sent_at)}</p><Button size="sm" variant="outline" disabled={readOnly||o.source!=="arha"} onClick={()=>setEditing(o)}>Edit</Button>{o.owner_content?.what?<div><h3 className="text-sm font-semibold">What they'll do</h3><p className="whitespace-pre-wrap text-sm">{o.owner_content.what}</p></div>:null}{o.owner_content?.why?<div><h3 className="text-sm font-semibold">Why it matters</h3><p className="whitespace-pre-wrap text-sm">{o.owner_content.why}</p></div>:null}{o.library_template_id&&videos.has(o.library_template_id)?<LibraryVideoPlayer libraryId={o.library_template_id} poster={imageFor(null)} label={videos.get(o.library_template_id)?.label??o.title}/>:null}<OpportunityDetail o={o} files={q.data?.files??[]} readOnly={readOnly}/></>:review?<ReleasedActivityDetail activity={review} readOnly={readOnly}/>:<p>That item is not available for this home.</p>}</aside>:null}</div>
+    <OpportunityEditor propertyId={propertyId} data={q.data} editing={editing} onClose={()=>setEditing(null)}/>
+  </section>;
 }
