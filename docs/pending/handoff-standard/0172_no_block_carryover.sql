@@ -25,8 +25,8 @@ BEGIN
  PERFORM id FROM public.handoff_requirements FOR SHARE;
  expected:=public.handoff_open_items(pr.property_id);
  IF jsonb_typeof(_items)<>'array' THEN RAISE EXCEPTION 'Review all carry-over items.'; END IF;
- IF jsonb_array_length(_items)<>jsonb_array_length(expected) OR EXISTS(SELECT 1 FROM jsonb_array_elements(expected)e WHERE (SELECT count(*) FROM jsonb_array_elements(_items)v WHERE v->>'key'=e->>'item_key')<>1) THEN RAISE EXCEPTION 'Outstanding items changed. Review the carry-over list again.'; END IF;
- SELECT EXISTS(SELECT 1 FROM jsonb_array_elements(expected)e WHERE e->>'category' IN('Safety','Access','Water')) INTO _safety;
+ IF jsonb_array_length(_items)<>jsonb_array_length(expected) OR EXISTS(SELECT 1 FROM jsonb_array_elements(expected) ex WHERE (SELECT count(*) FROM jsonb_array_elements(_items) supplied WHERE supplied->>'key'=ex->>'item_key')<>1) THEN RAISE EXCEPTION 'Outstanding items changed. Review the carry-over list again.'; END IF;
+ SELECT EXISTS(SELECT 1 FROM jsonb_array_elements(expected) ex WHERE ex->>'category' IN('Safety','Access','Water')) INTO _safety;
  IF _step='accepted' AND _safety AND NOT coalesce(_booking_block,false) THEN RAISE EXCEPTION 'Confirm that you have placed or will place a booking block.'; END IF;
  FOR e IN SELECT value FROM jsonb_array_elements(expected) LOOP
  SELECT value INTO v FROM jsonb_array_elements(_items) WHERE value->>'key'=e->>'item_key';
