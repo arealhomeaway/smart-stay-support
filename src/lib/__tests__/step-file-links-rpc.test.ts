@@ -74,7 +74,7 @@ describe("Step file links database change 0166 (isolated PostgreSQL)", () => {
   it("template steps may only point at steps in the same template, never themselves", async () => {
     await q("INSERT INTO public.onboarding_template_tasks(id,template_id,title) VALUES ($1,$3,'A'),($2,$3,'B')", [stepDesign, stepPm, tpl]);
     await q("UPDATE public.onboarding_template_tasks SET show_files_from=$1 WHERE id=$2", [[stepDesign], stepPm]);
-    await expect(q("UPDATE public.onboarding_template_tasks SET show_files_from=$1 WHERE id=$1::uuid[]::uuid[] IS NULL OR id=$2", [[stepPm], stepPm])).rejects.toThrow("itself");
+    await expect(q("UPDATE public.onboarding_template_tasks SET show_files_from=$1 WHERE id=$2", [[stepPm], stepPm])).rejects.toThrow("itself");
     await expect(q("UPDATE public.onboarding_template_tasks SET show_files_from=$1 WHERE id=$2", [[t.other], stepPm])).rejects.toThrow("same template");
   });
 
