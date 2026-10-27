@@ -383,7 +383,7 @@ export async function loadProgramAggregate(
       endsOn: p.ends_on,
       activatedAt: p.activated_at,
       operatingTargetHours: Number(p.operating_target_hours ?? 105),
-      targetHours: Number(p.target_hours ?? 100),
+      targetHours: Number("target_hours" in p ? p.target_hours : 100),
       onboardingMilestoneHours: Number(p.onboarding_milestone_hours ?? 60),
       onboardingMilestoneDay: Number(p.onboarding_milestone_day ?? 35),
       onboardingLead: p.onboarding_lead,

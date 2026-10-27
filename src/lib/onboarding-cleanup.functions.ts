@@ -18,7 +18,7 @@ export const readReleasedPropertyActivities = createServerFn({ method: "POST" })
     return (r.data??[]).map(row=>{
       const thread=(messages.data??[]).filter(m=>m.review_id===row.id);
       const lastEvent=thread.filter(m=>m.event).at(-1);
-      return {...row,status:lastEvent?.event==="resolved"?"closed":row.status,last_staff_at:thread.filter(m=>m.author_type==="staff").at(-1)?.created_at??null};
+      return {...row,status:lastEvent?.event==="resolved"?"closed":lastEvent?.event==="reopened"?"awaiting_owner":row.status,last_staff_at:thread.filter(m=>m.author_type==="staff").at(-1)?.created_at??null};
     });
   });
 
