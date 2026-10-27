@@ -20,12 +20,15 @@ export const FUNCTIONAL_ROLES = [
   { code: "staging_team", label: "Staging Team" },
   { code: "design_staging", label: "Design & Staging (older steps)" },
   { code: "director_ops", label: "Operations Director" },
+  { code: "operations_director", label: "Director of Operations" },
+  { code: "ops_supervisor", label: "Operations Supervisor" },
+  { code: "director_onboarding", label: "Director of Onboarding" },
   { code: "property_coordinator", label: "Property Coordinator" },
   { code: "owner", label: "Owner" },
 ] as const;
 
 export function roleLabel(code: string | null | undefined) {
-  return FUNCTIONAL_ROLES.find((r) => r.code === code)?.label ?? code ?? "Unassigned";
+  return FUNCTIONAL_ROLES.find((r) => r.code === code)?.label ?? (code ? code.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "Unassigned");
 }
 
 const opportunitySchema = z
@@ -302,7 +305,7 @@ export const readHandoffV2 = createServerFn({ method: "POST" })
     const sb = context.supabase;
     const project = await sb
       .from("onboarding_projects")
-      .select("id, handoff_state, ready_for_ops_at, ops_accepted_at, director")
+      .select("id, handoff_state, ready_for_ops_at, ops_accepted_at, director, template_version_id")
       .eq("property_id", data.propertyId)
       .neq("status", "cancelled")
       .order("created_at", { ascending: false })
@@ -311,12 +314,11 @@ export const readHandoffV2 = createServerFn({ method: "POST" })
     fail(project.error);
     const blockers = await sb
       .from("onboarding_tasks")
-      .select("id, title, stage, assigned_seat, due_on, tags")
+      .select("id, title, stage, assigned_seat, due_on, tags, status, template_task_id")
       .eq("property_id", data.propertyId)
       .is("archived_at", null)
       .eq("blocks_handoff", true)
       .eq("is_required", true)
-      .not("status", "in", "(complete,done)")
       .order("due_on", { ascending: true, nullsFirst: false });
     fail(blockers.error);
     const seats = await sb.from("functional_roles").select("code, current_seat_holder").in("code", ["onboarding_director", "director_ops"]);
@@ -326,7 +328,8 @@ export const readHandoffV2 = createServerFn({ method: "POST" })
     const p = project.data;
     return {
       project: p,
-      blockers: blockers.data ?? [],
+      requirements: blockers.data ?? [],
+      blockers: (blockers.data ?? []).filter((t) => !["complete", "done"].includes(t.status)),
       canMarkReady: isAdmin || holder("onboarding_director") === context.userId || p?.director === context.userId,
       canAccept: isAdmin || holder("director_ops") === context.userId,
     };
@@ -577,12 +580,15 @@ export const readOwnerCollaboration = createServerFn({ method: "POST" })
     fail(tasks.error);
     fail(files.error);
     const rows = await withResources(sb, (opps.data ?? []) as CollabRow[]);
+    const messages = rows.length ? await sb.from("owner_request_messages").select("id,work_item_id,author_type,author_name,body,event,request_kind,created_at").in("work_item_id", rows.map((r) => r.id)).order("created_at") : { data: [], error: null };
+    fail(messages.error);
     // Older Opportunities pointed at the Task's mirror; resolve that to the real Task.
     const mirrorIds = rows.map((r) => r.linked_task_id).filter((x): x is string => Boolean(x));
     const mirrors = mirrorIds.length ? await sb.from("work_items").select("id, source_id").in("id", mirrorIds) : { data: [] };
     const toTask = new Map((mirrors.data ?? []).map((m) => [m.id, m.source_id as string | null]));
     return {
       opportunities: rows.map((r) => ({ ...r, taskId: r.source_task_id ?? (r.linked_task_id ? toTask.get(r.linked_task_id) ?? null : null) })),
+      messages: messages.data ?? [],
       tasks: tasks.data ?? [],
       files: (files.data ?? []).map((f) => ({ id: f.id, title: f.title ?? f.original_filename ?? "File", filename: f.original_filename, category: f.category, note: f.note, workItemId: f.work_item_id, uploadedAt: f.uploaded_at ?? f.created_at })),
       actualClosingOn: home.data?.actual_closing_on ?? null,

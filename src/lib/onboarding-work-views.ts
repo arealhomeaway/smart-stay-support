@@ -106,7 +106,7 @@ export function workspaceSearchFromLens(lens: string, hasHandoffGate: boolean) {
 }
 
 /** Five tabs: Overview, Tasks ("work"), Property Details, Files & History, Handoff. */
-export const WORKSPACE_TABS = ["overview", "work", "property", "files", "handoff"] as const;
+export const WORKSPACE_TABS = ["overview", "work", "active-owner", "property", "files", "handoff"] as const;
 
 export function parseWorkspaceSearch(search: {
   tab?: unknown;
