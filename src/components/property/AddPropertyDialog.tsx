@@ -25,7 +25,7 @@ export function AddPropertyDialog({ trigger, disabled, onCreated }: { trigger?: 
       {open ? <PropertySetupFields close={() => setOpen(false)} onCreated={onCreated} /> : null}
     </DialogContent></Dialog>;
 }
-function PropertySetupFields({close,onCreated}:{close:()=>void;onCreated?: (id:string)=>void}) {
+function PropertySetupFields({close,onCreated}:{close:()=>void;onCreated?: ((id:string)=>void) | undefined}) {
   const { can, readOnly } = useRole();
   const mayEnroll = can("active_owner_enroll") && !readOnly;
   const qc = useQueryClient();
@@ -47,7 +47,7 @@ function PropertySetupFields({close,onCreated}:{close:()=>void;onCreated?: (id:s
   const templates = useQuery({queryKey:["onboarding-templates"],queryFn:()=>listTemplates()});
   const candidates = useQuery({queryKey:["ownerrez-candidates"],enabled:method==="ownerrez",queryFn:()=>search({data:{query:""}}),retry:false});
   const prefill = useQuery({queryKey:["ownerrez-owner",selected?.listingId],enabled:Boolean(selected),queryFn:()=>{if(!selected) throw new Error("Choose a listing."); return ownerPreview({data:{listingId:selected.listingId}});},retry:false});
-  useEffect(()=>{if(prefill.data) setForm(f=>({...f,ownerName:prefill.data.name??"",ownerEmail:prefill.data.email??""}));},[prefill.data]);
+  useEffect(()=>{const owner=prefill.data; if(owner) setForm(f=>({...f,ownerName:owner.name??"",ownerEmail:owner.email??""}));},[prefill.data]);
   const run = useMutation({mutationFn:()=>runPropertySetup({startPlan,activeOwner:active,mayEnroll},receipt,{
     intake:async()=>{
       const owner={name:form.ownerName||null,email:form.ownerEmail||null,phone:null};
