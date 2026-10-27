@@ -86,6 +86,13 @@ describe("permanent program activity release (isolated PostgreSQL)", () => {
     await db.query("SELECT set_config('test.role','onboarding_director',false)");
     expect(await execute(2)).toMatchObject({ opened: 2 });
   });
+  it("synthetic callers cannot release real programs even as Admin", async () => {
+    await db.query("SELECT set_config('test.synthetic','true',false)");
+    try {
+      await expect(execute(2)).rejects.toThrow("Test accounts can only release demo activities");
+      expect(await count("test_actions")).toBe(0);
+    } finally { await db.query("SELECT set_config('test.synthetic','false',false)"); }
+  });
   it("missing closing refuses activation; stale counts refuse all writes", async () => {
     await db.exec("UPDATE owner_program_properties SET closing_date=NULL");
     await expect(execute(2)).rejects.toThrow("Record a closing date");
