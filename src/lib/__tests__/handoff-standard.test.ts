@@ -1,0 +1,16 @@
+import {describe,it,expect} from 'bun:test';
+import {homeRequirements,carryItems,safetyCarry,validateHomeDecision,essentialProgress,sevenDaysFrom,type StandardTask} from '../handoff-standard';
+import {PROPOSED_HANDOFF_STANDARD} from '../handoff-standard-seed';
+const base=PROPOSED_HANDOFF_STANDARD[0];if(!base)throw new Error('Missing SAF-01');
+const t:StandardTask={id:'t',title:'Renamed alarm Task',template_task_id:'step',status:'open',due_on:'2026-10-26',assigned_seat:'ops_supervisor',blocks_handoff:true};
+describe('Emily handoff policy',()=>{
+ it('seeds 50 requirements, 49 Proposed and GST-01 Retired',()=>{expect(PROPOSED_HANDOFF_STANDARD).toHaveLength(50);expect(PROPOSED_HANDOFF_STANDARD.filter(r=>r.status==='proposed')).toHaveLength(49);expect(PROPOSED_HANDOFF_STANDARD.find(r=>r.code==='GST-01')?.status).toBe('retired');expect(PROPOSED_HANDOFF_STANDARD.every(r=>r.template_step_ids.length===0)).toBe(true);});
+ it('computes live state after link definitions change',()=>{const r={...base,template_step_ids:['step']};expect(homeRequirements([r],[{...t,status:'complete'}],[])[0]?.state).toBe('done');expect(homeRequirements([{...r,template_step_ids:['different']}],[{...t,status:'complete'}],[])[0]?.state).toBe('unlinked');expect(homeRequirements([r],[t],[])[0]?.state).toBe('open');});
+ it('all linked Tasks must complete',()=>{expect(homeRequirements([{...base,template_step_ids:['step']}],[{...t,status:'complete'},{...t,id:'second'}],[])[0]?.state).toBe('open');});
+ it('not applicable needs reason, manual done only for unlinked',()=>{expect(()=>validateHomeDecision('not_applicable','',false)).toThrow('reason');expect(()=>validateHomeDecision('done','Checked on site',true)).toThrow('linked');expect(homeRequirements([base],[],[{requirement_id:base.id,state:'not_applicable',reason:'No combustion equipment'}])[0]?.state).toBe('not_applicable');expect(homeRequirements([base],[],[{requirement_id:base.id,state:'done',reason:'Checked on site'}])[0]?.state).toBe('done');});
+ it('carries every outstanding Task, not only blocking flags',()=>{const req=homeRequirements([{...base,template_step_ids:['step']}],[t],[]);const c=carryItems(req,[t,{...t,id:'other',template_task_id:null,blocks_handoff:false}], '2026-10-27');expect(c).toHaveLength(2);expect(c.every(i=>i.ownerRole==='ops_supervisor'&&i.dueOn==='2026-11-03')).toBe(true);});
+ it('duplicate handoff step is not extra carry-over',()=>{expect(carryItems([], [{...t,duplicate_step:'accepted'}],'2026-10-27')).toHaveLength(0);});
+ it('Safety Access Water trigger booking acknowledgment, other categories do not',()=>{for(const category of ['Safety','Access','Water'])expect(safetyCarry([{key:'x',category,requirementId:null,taskIds:[],name:'x',ownerRole:'ops_supervisor',dueOn:'2026-11-03',note:''}])).toBe(true);expect(safetyCarry([{key:'x',category:'Cleaning',requirementId:null,taskIds:[],name:'x',ownerRole:'ops_supervisor',dueOn:'2026-11-03',note:''}])).toBe(false);});
+ it('Not applicable essentials excluded from applicable denominator',()=>{const req=homeRequirements([base],[],[{requirement_id:base.id,state:'not_applicable',reason:'Not installed'}]);expect(essentialProgress(req).total).toBe(0);});
+ it('default due date is seven calendar days across month end',()=>expect(sevenDaysFrom('2026-10-27')).toBe('2026-11-03'));
+});
