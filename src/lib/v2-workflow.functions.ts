@@ -326,10 +326,15 @@ export const readHandoffV2 = createServerFn({ method: "POST" })
     const roles = await sb.from("user_roles").select("role").eq("user_id", context.userId);
     const isAdmin = (roles.data ?? []).some((r) => r.role === "admin");
     const p = project.data;
+    const rpc = sb.rpc as unknown as (name:string,args:Record<string,unknown>)=>Promise<{data:string[]|null;error:{code?:string;message:string}|null}>;
+    const duplicates = await rpc("handoff_duplicate_task_ids", {_property_id:data.propertyId});
+    if(duplicates.error && !["PGRST202","42883"].includes(duplicates.error.code??"")) throw new Error(duplicates.error.message);
+    const excluded = new Set(duplicates.data??[]);
+    const requirements = (blockers.data??[]).filter(t=>!excluded.has(t.id));
     return {
       project: p,
-      requirements: blockers.data ?? [],
-      blockers: (blockers.data ?? []).filter((t) => !["complete", "done"].includes(t.status)),
+      requirements,
+      blockers: requirements.filter((t) => !["complete", "done"].includes(t.status)),
       canMarkReady: isAdmin || holder("onboarding_director") === context.userId || p?.director === context.userId,
       canAccept: isAdmin || holder("director_ops") === context.userId,
     };
