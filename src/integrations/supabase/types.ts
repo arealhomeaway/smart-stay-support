@@ -14358,6 +14358,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      complete_handoff_step_tasks: {
+        Args: { _project_id: string; _step: string }
+        Returns: undefined
+      }
       complete_owner_opportunity: { Args: { _id: string }; Returns: undefined }
       complete_owner_program: {
         Args: {
@@ -14497,6 +14501,11 @@ export type Database = {
         Args: { _errors: Json; _run_id: string }
         Returns: Json
       }
+      handoff_duplicate_task_ids: {
+        Args: { _property_id: string }
+        Returns: string[]
+      }
+      handoff_step_for_task: { Args: { _task_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
