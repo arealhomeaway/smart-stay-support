@@ -3,7 +3,7 @@
 Build/test only on top of a008254a. Nothing applied, published or sent; no real home, Task, Ticket, template, account or seat changed.
 
 ## Pending application order and undo
-1. Prerequisite: `../onboarding-cleanup/0168_handoff_step_duplicates.sql`, preserving explicit legacy/template IDs and duplicate completion by matching handoff step. This prerequisite has not been applied by this work.
+1. Prerequisite: `0168_prerequisite_duplicates.sql` (byte-identical copy of the cleanup pending file; undo `undo/0168_prerequisite_undo.sql`), preserving explicit legacy/template IDs and duplicate completion by matching handoff step. This prerequisite has not been applied by this work.
 2. `0170_standard_schema.sql`: six tables, explicit grants/RLS, Director/Admin edit authority, immutable history, editing/confirmation/read RPCs. Undo: `undo/0170_undo.sql`.
 3. `0171_home_status.sql`: live requirement projection and reasoned decisions/read RPCs. Undo: `undo/0171_undo.sql`.
 4. `0172_no_block_carryover.sql`: transactional two-step confirmation and canonical Tickets, booking-block acknowledgment, completion linkage. Undo: `undo/0172_undo.sql` restores 0168 behavior.

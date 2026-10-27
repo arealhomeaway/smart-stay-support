@@ -21,6 +21,7 @@ BEGIN
  IF NOT coalesce(public.is_staff(auth.uid()) OR public.is_onboarding_staff(auth.uid()),false) THEN RAISE EXCEPTION 'Only staff can record a home decision.'; END IF;
  SELECT is_demo INTO _demo FROM public.properties WHERE id=_property_id;
  IF _demo IS NULL OR (coalesce(private.is_synthetic_account(),false) AND NOT _demo) THEN RAISE EXCEPTION 'Home not available.'; END IF;
+ PERFORM id FROM public.onboarding_projects WHERE property_id=_property_id ORDER BY created_at DESC LIMIT 1 FOR UPDATE;
  IF _state NOT IN('done','not_applicable','open') OR length(trim(_reason))=0 THEN RAISE EXCEPTION 'A reason is required.'; END IF;
  SELECT * INTO s FROM public.home_handoff_requirement_states(_property_id) WHERE requirement_id=_requirement_id;
  IF s.requirement_id IS NULL THEN RAISE EXCEPTION 'Requirement not available.'; END IF;
