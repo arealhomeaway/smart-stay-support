@@ -289,9 +289,15 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
   const [stages, setStages] = useState<Stage[]>([]);
   const [newStage, setNewStage] = useState("");
   const [editing, setEditing] = useState<Step | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [pvFurnishing, setPvFurnishing] = useState("full_furnishing");
   const [pvModules, setPvModules] = useState<string[]>([]);
   useEffect(() => setStages(q.data?.stages ?? []), [q.data?.stages]);
+  useEffect(() => {
+    const available = new Set((q.data?.steps ?? []).map((step) => step.id));
+    setSelectedIds((current) => current.filter((id) => available.has(id)));
+  }, [q.data?.steps]);
 
   const stageM = useMutation({ mutationFn: (d: { stageId?: string; name: string; active: boolean }) => saveStage({ data: { templateId, ...d } }), onSuccess: refresh, onError: onErr });
   const reorderM = useMutation({ mutationFn: (ids: string[]) => reorder({ data: { templateId, stageIds: ids } }), onSuccess: refresh, onError: onErr });
