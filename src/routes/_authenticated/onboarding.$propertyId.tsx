@@ -420,13 +420,9 @@ function PropertyWorkspace() {
     !current.actual_access_on || !tasks.some((t) => t.due_on && t.status !== "complete");
   const onTrack = life.accepted
     ? "Accepted by Operations"
-    : handoffLeft === 0
-      ? "Ready to mark Ready for Operations"
-      : overdue > 0
-        ? `At risk — ${overdue} overdue, ${handoffLeft} handoff Tasks left`
-        : scheduleIncomplete
-          ? `Schedule incomplete — needs the access date · ${handoffLeft} handoff Tasks left`
-          : `On track — ${handoffLeft} handoff Tasks left`;
+    : overdue > 0
+      ? `${overdue} overdue Tasks. Outstanding work carries over at handoff.`
+      : "Outstanding work carries over at handoff.";
   const actualClosing =
     (current as { actual_closing_on?: string | null }).actual_closing_on ?? null;
   const taskRow = (v: (typeof views)[number]) => (
