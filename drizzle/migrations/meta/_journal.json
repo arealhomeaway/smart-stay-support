@@ -1121,6 +1121,13 @@
       "when": 1793060165515,
       "tag": "0159_0160_release_batch_summary",
       "breakpoints": true
+    },
+    {
+      "idx": 160,
+      "version": "7",
+      "when": 1793060295349,
+      "tag": "0160_0159_resumable_enrollment",
+      "breakpoints": true
     }
   ]
 }

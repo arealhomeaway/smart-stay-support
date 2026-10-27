@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      active_owner_enrollment_runs: {
+        Row: {
+          account_id: string | null
+          actor_id: string
+          checkpoints: Json
+          created_at: string
+          id: string
+          input: Json
+          program_id: string | null
+          property_id: string
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          actor_id: string
+          checkpoints?: Json
+          created_at?: string
+          id: string
+          input: Json
+          program_id?: string | null
+          property_id: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          actor_id?: string
+          checkpoints?: Json
+          created_at?: string
+          id?: string
+          input?: Json
+          program_id?: string | null
+          property_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           key: string
@@ -13942,6 +13978,15 @@ export type Database = {
           _started_on: string
         }
         Returns: string
+      }
+      active_owner_enrollment_step: {
+        Args: {
+          _account_id?: string
+          _input: Json
+          _request_id: string
+          _step: string
+        }
+        Returns: Json
       }
       active_owner_may_act: { Args: { _is_demo: boolean }; Returns: boolean }
       add_business_days: { Args: { _d: string; _n: number }; Returns: string }
