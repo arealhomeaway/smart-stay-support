@@ -1,5 +1,7 @@
 CREATE SCHEMA auth;
 CREATE SCHEMA private;
+CREATE ROLE anon;
+CREATE ROLE authenticated;
 
 CREATE FUNCTION auth.uid() RETURNS uuid
 LANGUAGE sql STABLE AS $$
