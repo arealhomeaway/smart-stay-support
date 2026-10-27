@@ -210,6 +210,65 @@ export const saveTemplateStepV2 = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+const bulkTemplatePatchSchema = z
+  .object({
+    dueRule: z
+      .object({
+        offsetDays: z.number().int().min(-260).max(365).nullable(),
+        scheduleAnchor: z.enum(["project_created", "planned_closing", "actual_access", "target_handoff", "actual_closing"]).nullable(),
+      })
+      .optional(),
+    offsetUnit: z.enum(["calendar", "business"]).optional(),
+    functionalRole: z.string().trim().max(60).nullable().optional(),
+    isRequired: z.boolean().optional(),
+    blocksHandoff: z.boolean().optional(),
+    stage: z.string().trim().min(1).max(80).optional(),
+  })
+  .refine((patch) => Object.values(patch).some((value) => value !== undefined), "Choose at least one change.");
+
+/**
+ * Bulk template edits use one pending database action so validation, the
+ * handoff lock, the writes and history all commit or roll back together.
+ */
+export const bulkUpdateTemplateStepsV2 = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        templateId: z.string().uuid(),
+        stepIds: z.array(z.string().uuid()).min(1).max(500),
+        patch: bulkTemplatePatchSchema,
+      })
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    type BulkRpc = (name: string, args: Record<string, unknown>) => Promise<{
+      data: { changed: number; skipped: { stepId: string; title: string; reason: string }[]; auditRecorded: boolean } | null;
+      error: { message: string } | null;
+    }>;
+    const rpc = context.supabase.rpc as unknown as BulkRpc;
+    const result = await rpc("bulk_update_onboarding_template_steps", {
+      _template_id: data.templateId,
+      _step_ids: data.stepIds,
+      _set_due_rule: data.patch.dueRule !== undefined,
+      _offset_days: data.patch.dueRule?.offsetDays ?? null,
+      _schedule_anchor: data.patch.dueRule?.scheduleAnchor ?? null,
+      _set_offset_unit: data.patch.offsetUnit !== undefined,
+      _offset_unit: data.patch.offsetUnit ?? null,
+      _set_functional_role: data.patch.functionalRole !== undefined,
+      _functional_role: data.patch.functionalRole ?? null,
+      _set_is_required: data.patch.isRequired !== undefined,
+      _is_required: data.patch.isRequired ?? null,
+      _set_blocks_handoff: data.patch.blocksHandoff !== undefined,
+      _blocks_handoff: data.patch.blocksHandoff ?? null,
+      _set_stage: data.patch.stage !== undefined,
+      _stage: data.patch.stage ?? null,
+    });
+    fail(result.error);
+    if (!result.data) throw new Error("The bulk edit did not return a result. Nothing was saved.");
+    return result.data;
+  });
+
 export const publishTemplateVersion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ templateId: z.string().uuid() }).parse(d))

@@ -18,8 +18,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TemplateBulkEditDialog } from "@/components/onboarding/TemplateBulkEditDialog";
 import {
   FUNCTIONAL_ROLES,
   publishTemplateVersion,
@@ -287,9 +289,15 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
   const [stages, setStages] = useState<Stage[]>([]);
   const [newStage, setNewStage] = useState("");
   const [editing, setEditing] = useState<Step | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [pvFurnishing, setPvFurnishing] = useState("full_furnishing");
   const [pvModules, setPvModules] = useState<string[]>([]);
   useEffect(() => setStages(q.data?.stages ?? []), [q.data?.stages]);
+  useEffect(() => {
+    const available = new Set((q.data?.steps ?? []).map((step) => step.id));
+    setSelectedIds((current) => current.filter((id) => available.has(id)));
+  }, [q.data?.steps]);
 
   const stageM = useMutation({ mutationFn: (d: { stageId?: string; name: string; active: boolean }) => saveStage({ data: { templateId, ...d } }), onSuccess: refresh, onError: onErr });
   const reorderM = useMutation({ mutationFn: (ids: string[]) => reorder({ data: { templateId, stageIds: ids } }), onSuccess: refresh, onError: onErr });
@@ -311,6 +319,15 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
   };
 
   const stageNames = stages.length ? stages.map((s) => s.name) : Array.from(new Set(steps.map((s) => s.stage)));
+  const selected = new Set(selectedIds);
+  const toggleStep = (stepId: string, checked: boolean) =>
+    setSelectedIds((current) => (checked ? [...new Set([...current, stepId])] : current.filter((id) => id !== stepId)));
+  const toggleSteps = (ids: string[], checked: boolean) =>
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      for (const id of ids) checked ? next.add(id) : next.delete(id);
+      return [...next];
+    });
 
   return (
     <section className="surface space-y-4 p-4">
@@ -369,16 +386,36 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
       </div>
 
       <div className="space-y-3">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Checkbox
+            aria-label="Select all steps in this template"
+            checked={steps.length > 0 && selectedIds.length === steps.length}
+            onCheckedChange={(checked) => toggleSteps(steps.map((step) => step.id), checked === true)}
+          />
+          Select all
+        </label>
         {stageNames.map((name) => {
           const inStage = steps.filter((s) => s.stage === name);
           if (!inStage.length) return null;
           return (
             <div key={name}>
-              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">{name}</p>
+              <div className="mb-1 flex items-center gap-2">
+                <Checkbox
+                  aria-label={`Select all in ${name}`}
+                  checked={inStage.every((step) => selected.has(step.id))}
+                  onCheckedChange={(checked) => toggleSteps(inStage.map((step) => step.id), checked === true)}
+                />
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{name}</p>
+              </div>
               <ul className="divide-y divide-border rounded-md border border-border">
                 {inStage.map((s) => (
-                  <li key={s.id}>
-                    <button type="button" className="flex w-full flex-wrap items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted/50" onClick={() => setEditing(s)}>
+                  <li key={s.id} className="flex items-center gap-2 px-3 py-2">
+                    <Checkbox
+                      aria-label={`Select ${s.title}`}
+                      checked={selected.has(s.id)}
+                      onCheckedChange={(checked) => toggleStep(s.id, checked === true)}
+                    />
+                    <button type="button" className="flex min-w-0 flex-1 flex-wrap items-center gap-2 text-left text-sm hover:bg-muted/50" onClick={() => setEditing(s)}>
                       <span className={s.is_active ? "font-medium" : "text-muted-foreground line-through"}>{s.title}</span>
                       <span className="text-xs text-muted-foreground">{roleLabel(s.functional_role)}</span>
                       {!s.is_required ? <Badge variant="outline">Optional</Badge> : null}
@@ -393,6 +430,14 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
           );
         })}
       </div>
+
+      {selectedIds.length ? (
+        <div className="sticky bottom-4 z-20 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card p-3 shadow-lg">
+          <span className="text-sm font-medium">{selectedIds.length} steps selected</span>
+          <Button size="sm" onClick={() => setBulkOpen(true)}>Edit selected</Button>
+          <Button size="sm" variant="outline" onClick={() => setSelectedIds([])}>Clear</Button>
+        </div>
+      ) : null}
 
       <details className="rounded-md border border-border p-3 text-sm">
         <summary className="cursor-pointer font-medium">Preview which steps a home would get</summary>
@@ -425,6 +470,20 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
       </details>
 
       {editing ? <StepDialog step={editing} saving={stepM.isPending} onClose={() => setEditing(null)} onSave={(v) => stepM.mutate(v)} /> : null}
+      {bulkOpen ? (
+        <TemplateBulkEditDialog
+          templateId={templateId}
+          steps={steps}
+          stages={stageNames}
+          selectedIds={selectedIds}
+          onClose={() => setBulkOpen(false)}
+          onSaved={() => {
+            setBulkOpen(false);
+            setSelectedIds([]);
+            refresh();
+          }}
+        />
+      ) : null}
     </section>
   );
 }
