@@ -32,3 +32,4 @@
 
 - Owner notification delivery safety is enforced by the BEFORE INSERT/UPDATE block_demo_owner_notification_delivery trigger, before the AFTER INSERT network callback; demo/test alerts remain in-app only. Why: every producer shares one pre-delivery guard.
 - Program activity releases use a single caller-authenticated transactional RPC for preview and execution over canonical activation, roadmap and batch-summary functions; pending SQL is not applied during code-only work. Why: counts match releases, repeats and concurrent clicks cannot duplicate summaries, and existing authority stays enforced.
+- Workflow Template bulk edits use one caller-authenticated transactional RPC with existing template RLS and an in-transaction audit helper; never loop single-step writes from the browser. Why: one failed step rolls back every change and history matches the saved result.
