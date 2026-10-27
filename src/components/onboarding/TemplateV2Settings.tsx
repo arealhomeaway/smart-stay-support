@@ -386,16 +386,36 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
       </div>
 
       <div className="space-y-3">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Checkbox
+            aria-label="Select all steps in this template"
+            checked={steps.length > 0 && selectedIds.length === steps.length}
+            onCheckedChange={(checked) => toggleSteps(steps.map((step) => step.id), checked === true)}
+          />
+          Select all
+        </label>
         {stageNames.map((name) => {
           const inStage = steps.filter((s) => s.stage === name);
           if (!inStage.length) return null;
           return (
             <div key={name}>
-              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">{name}</p>
+              <div className="mb-1 flex items-center gap-2">
+                <Checkbox
+                  aria-label={`Select all in ${name}`}
+                  checked={inStage.every((step) => selected.has(step.id))}
+                  onCheckedChange={(checked) => toggleSteps(inStage.map((step) => step.id), checked === true)}
+                />
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{name}</p>
+              </div>
               <ul className="divide-y divide-border rounded-md border border-border">
                 {inStage.map((s) => (
-                  <li key={s.id}>
-                    <button type="button" className="flex w-full flex-wrap items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted/50" onClick={() => setEditing(s)}>
+                  <li key={s.id} className="flex items-center gap-2 px-3 py-2">
+                    <Checkbox
+                      aria-label={`Select ${s.title}`}
+                      checked={selected.has(s.id)}
+                      onCheckedChange={(checked) => toggleStep(s.id, checked === true)}
+                    />
+                    <button type="button" className="flex min-w-0 flex-1 flex-wrap items-center gap-2 text-left text-sm hover:bg-muted/50" onClick={() => setEditing(s)}>
                       <span className={s.is_active ? "font-medium" : "text-muted-foreground line-through"}>{s.title}</span>
                       <span className="text-xs text-muted-foreground">{roleLabel(s.functional_role)}</span>
                       {!s.is_required ? <Badge variant="outline">Optional</Badge> : null}
@@ -410,6 +430,14 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
           );
         })}
       </div>
+
+      {selectedIds.length ? (
+        <div className="sticky bottom-4 z-20 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card p-3 shadow-lg">
+          <span className="text-sm font-medium">{selectedIds.length} steps selected</span>
+          <Button size="sm" onClick={() => setBulkOpen(true)}>Edit selected</Button>
+          <Button size="sm" variant="outline" onClick={() => setSelectedIds([])}>Clear</Button>
+        </div>
+      ) : null}
 
       <details className="rounded-md border border-border p-3 text-sm">
         <summary className="cursor-pointer font-medium">Preview which steps a home would get</summary>
