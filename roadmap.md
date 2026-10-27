@@ -1,5 +1,11 @@
 # Roadmap — approved build work, NO publish
 
+## Oct 27 onboarding cleanup (approved build only)
+- [ ] Unified Add property window using canonical actions and retry receipts
+- [ ] Active Owner tab combines released reviews and staff Opportunities
+- [ ] Handoff layout and pending id-based duplicate-step repair with undo
+- [ ] Isolated tests, full suite and preview checks; no live mutations or publish
+
 - [x] Grouped top tabs (My Work / Properties / Work Orders / Claims / Reports / Admin) via PAGE_TAB_GROUPS + GroupTabs; Record work retained (top action hidden on /tickets)
 - [x] Sidebar regrouped in AppShell; Ask the Coach + Help moved into Help & Feedback dropdown
 - [x] Re-labels: Onboarding Home / My Tasks; unified page titles (Onboarding, Active Owner, Vendors, Owner Participation, My Work/My Tasks)
