@@ -1,5 +1,11 @@
 # Roadmap — approved build work, NO publish
 
+## Oct 27 editable handoff standard and carry-over (approved build/test only)
+- [ ] Editable shared standard, proposed seeds, history and human-confirmed link suggestions
+- [ ] Live home requirements, reasoned exceptions and category readiness
+- [ ] No-block steps, carry-over confirmation, booking-block acknowledgment, canonical Tickets and completion linkage
+- [ ] Pending database/seed/undo files, isolated tests, full suite, automatic validation and safe preview checklist
+
 ## Oct 27 onboarding cleanup (approved build only)
 - [x] Unified Add property window using canonical actions and retry receipts
 - [x] Active Owner tab combines released reviews and staff Opportunities
