@@ -319,6 +319,15 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
   };
 
   const stageNames = stages.length ? stages.map((s) => s.name) : Array.from(new Set(steps.map((s) => s.stage)));
+  const selected = new Set(selectedIds);
+  const toggleStep = (stepId: string, checked: boolean) =>
+    setSelectedIds((current) => (checked ? [...new Set([...current, stepId])] : current.filter((id) => id !== stepId)));
+  const toggleSteps = (ids: string[], checked: boolean) =>
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      for (const id of ids) checked ? next.add(id) : next.delete(id);
+      return [...next];
+    });
 
   return (
     <section className="surface space-y-4 p-4">
