@@ -67,3 +67,10 @@ BEGIN
  UPDATE public.onboarding_projects SET status='complete',completed_at=now() WHERE id=_project_id;
  UPDATE public.properties SET lifecycle_status='active' WHERE id=pr.property_id;
 END $$;
+
+CREATE OR REPLACE FUNCTION public.handoff_duplicate_task_ids(_property_id uuid) RETURNS SETOF uuid
+LANGUAGE sql STABLE SECURITY INVOKER SET search_path TO 'public' AS $$
+ SELECT id FROM public.onboarding_tasks WHERE property_id=_property_id AND public.handoff_step_for_task(id) IS NOT NULL
+$$;
+REVOKE ALL ON FUNCTION public.handoff_duplicate_task_ids(uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.handoff_duplicate_task_ids(uuid) TO authenticated,service_role;

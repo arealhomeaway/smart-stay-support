@@ -22,4 +22,5 @@ BEGIN
  UPDATE properties SET lifecycle_status='active' WHERE id=pr.property_id;
 END $$;
 DROP FUNCTION public.complete_handoff_step_tasks(uuid,text);
+DROP FUNCTION public.handoff_duplicate_task_ids(uuid);
 DROP FUNCTION public.handoff_step_for_task(uuid);
