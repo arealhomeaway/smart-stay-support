@@ -3,7 +3,7 @@ import { useShellPageLabel } from "@/components/nav/ShellNav";
  * Onboarding plan templates. The onboarding director creates and edits the
  * plans; project managers work the projects those plans create.
  */
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { TemplateCsvImport } from "@/components/onboarding/TemplateCsvImport";
@@ -157,6 +157,7 @@ function TemplatesPage() {
 
   return (
     <div className="space-y-6">
+      <Button variant="outline" asChild><Link to="/onboarding/handoff-standard">Handoff standard</Link></Button>
       <PageHeader
         title="Onboarding templates"
         description="The plan a new home is set up from. Edit the ARHA plan directly, or build another one alongside it."

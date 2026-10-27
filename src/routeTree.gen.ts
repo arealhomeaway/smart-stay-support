@@ -68,6 +68,7 @@ import { Route as AuthenticatedLeadsNewRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedLeadsPipelineRouteImport } from './routes/_authenticated/leads.pipeline'
 import { Route as AuthenticatedOnboardingIndexRouteImport } from './routes/_authenticated/onboarding.index'
 import { Route as AuthenticatedOnboardingPropertyIdRouteImport } from './routes/_authenticated/onboarding.$propertyId'
+import { Route as AuthenticatedOnboardingHandoffStandardRouteImport } from './routes/_authenticated/onboarding.handoff-standard'
 import { Route as AuthenticatedOnboardingMyWorkRouteImport } from './routes/_authenticated/onboarding.my-work'
 import { Route as AuthenticatedOnboardingOwnerCompletionsRouteImport } from './routes/_authenticated/onboarding.owner-completions'
 import { Route as AuthenticatedOnboardingPropertiesRouteImport } from './routes/_authenticated/onboarding.properties'
@@ -420,6 +421,12 @@ const AuthenticatedOnboardingPropertyIdRoute =
     path: '/$propertyId',
     getParentRoute: () => AuthenticatedOnboardingRoute,
   } as any)
+const AuthenticatedOnboardingHandoffStandardRoute =
+  AuthenticatedOnboardingHandoffStandardRouteImport.update({
+    id: '/handoff-standard',
+    path: '/handoff-standard',
+    getParentRoute: () => AuthenticatedOnboardingRoute,
+  } as any)
 const AuthenticatedOnboardingMyWorkRoute =
   AuthenticatedOnboardingMyWorkRouteImport.update({
     id: '/my-work',
@@ -671,6 +678,7 @@ export interface FileRoutesByFullPath {
   '/leads/new': typeof AuthenticatedLeadsNewRoute
   '/leads/pipeline': typeof AuthenticatedLeadsPipelineRoute
   '/onboarding/$propertyId': typeof AuthenticatedOnboardingPropertyIdRoute
+  '/onboarding/handoff-standard': typeof AuthenticatedOnboardingHandoffStandardRoute
   '/onboarding/my-work': typeof AuthenticatedOnboardingMyWorkRoute
   '/onboarding/owner-completions': typeof AuthenticatedOnboardingOwnerCompletionsRoute
   '/onboarding/properties': typeof AuthenticatedOnboardingPropertiesRoute
@@ -758,6 +766,7 @@ export interface FileRoutesByTo {
   '/leads/new': typeof AuthenticatedLeadsNewRoute
   '/leads/pipeline': typeof AuthenticatedLeadsPipelineRoute
   '/onboarding/$propertyId': typeof AuthenticatedOnboardingPropertyIdRoute
+  '/onboarding/handoff-standard': typeof AuthenticatedOnboardingHandoffStandardRoute
   '/onboarding/my-work': typeof AuthenticatedOnboardingMyWorkRoute
   '/onboarding/owner-completions': typeof AuthenticatedOnboardingOwnerCompletionsRoute
   '/onboarding/properties': typeof AuthenticatedOnboardingPropertiesRoute
@@ -853,6 +862,7 @@ export interface FileRoutesById {
   '/_authenticated/leads/new': typeof AuthenticatedLeadsNewRoute
   '/_authenticated/leads/pipeline': typeof AuthenticatedLeadsPipelineRoute
   '/_authenticated/onboarding/$propertyId': typeof AuthenticatedOnboardingPropertyIdRoute
+  '/_authenticated/onboarding/handoff-standard': typeof AuthenticatedOnboardingHandoffStandardRoute
   '/_authenticated/onboarding/my-work': typeof AuthenticatedOnboardingMyWorkRoute
   '/_authenticated/onboarding/owner-completions': typeof AuthenticatedOnboardingOwnerCompletionsRoute
   '/_authenticated/onboarding/properties': typeof AuthenticatedOnboardingPropertiesRoute
@@ -948,6 +958,7 @@ export interface FileRouteTypes {
     | '/leads/new'
     | '/leads/pipeline'
     | '/onboarding/$propertyId'
+    | '/onboarding/handoff-standard'
     | '/onboarding/my-work'
     | '/onboarding/owner-completions'
     | '/onboarding/properties'
@@ -1035,6 +1046,7 @@ export interface FileRouteTypes {
     | '/leads/new'
     | '/leads/pipeline'
     | '/onboarding/$propertyId'
+    | '/onboarding/handoff-standard'
     | '/onboarding/my-work'
     | '/onboarding/owner-completions'
     | '/onboarding/properties'
@@ -1129,6 +1141,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads/new'
     | '/_authenticated/leads/pipeline'
     | '/_authenticated/onboarding/$propertyId'
+    | '/_authenticated/onboarding/handoff-standard'
     | '/_authenticated/onboarding/my-work'
     | '/_authenticated/onboarding/owner-completions'
     | '/_authenticated/onboarding/properties'
@@ -1602,6 +1615,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOnboardingPropertyIdRouteImport
       parentRoute: typeof AuthenticatedOnboardingRoute
     }
+    '/_authenticated/onboarding/handoff-standard': {
+      id: '/_authenticated/onboarding/handoff-standard'
+      path: '/handoff-standard'
+      fullPath: '/onboarding/handoff-standard'
+      preLoaderRoute: typeof AuthenticatedOnboardingHandoffStandardRouteImport
+      parentRoute: typeof AuthenticatedOnboardingRoute
+    }
     '/_authenticated/onboarding/my-work': {
       id: '/_authenticated/onboarding/my-work'
       path: '/my-work'
@@ -1874,6 +1894,7 @@ const AuthenticatedLeadsRouteWithChildren =
 
 interface AuthenticatedOnboardingRouteChildren {
   AuthenticatedOnboardingPropertyIdRoute: typeof AuthenticatedOnboardingPropertyIdRoute
+  AuthenticatedOnboardingHandoffStandardRoute: typeof AuthenticatedOnboardingHandoffStandardRoute
   AuthenticatedOnboardingMyWorkRoute: typeof AuthenticatedOnboardingMyWorkRoute
   AuthenticatedOnboardingOwnerCompletionsRoute: typeof AuthenticatedOnboardingOwnerCompletionsRoute
   AuthenticatedOnboardingPropertiesRoute: typeof AuthenticatedOnboardingPropertiesRoute
@@ -1888,6 +1909,8 @@ const AuthenticatedOnboardingRouteChildren: AuthenticatedOnboardingRouteChildren
   {
     AuthenticatedOnboardingPropertyIdRoute:
       AuthenticatedOnboardingPropertyIdRoute,
+    AuthenticatedOnboardingHandoffStandardRoute:
+      AuthenticatedOnboardingHandoffStandardRoute,
     AuthenticatedOnboardingMyWorkRoute: AuthenticatedOnboardingMyWorkRoute,
     AuthenticatedOnboardingOwnerCompletionsRoute:
       AuthenticatedOnboardingOwnerCompletionsRoute,
