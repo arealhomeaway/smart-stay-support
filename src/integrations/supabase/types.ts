@@ -7535,6 +7535,69 @@ export type Database = {
           },
         ]
       }
+      owner_library_videos: {
+        Row: {
+          id: string
+          label: string
+          library_id: string
+          mime_type: string
+          removal_reason: string | null
+          removed_at: string | null
+          removed_by: string | null
+          replaced_by: string | null
+          size_bytes: number
+          storage_bucket: string
+          storage_path: string
+          uploaded_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          id?: string
+          label?: string
+          library_id: string
+          mime_type: string
+          removal_reason?: string | null
+          removed_at?: string | null
+          removed_by?: string | null
+          replaced_by?: string | null
+          size_bytes: number
+          storage_bucket?: string
+          storage_path: string
+          uploaded_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          id?: string
+          label?: string
+          library_id?: string
+          mime_type?: string
+          removal_reason?: string | null
+          removed_at?: string | null
+          removed_by?: string | null
+          replaced_by?: string | null
+          size_bytes?: number
+          storage_bucket?: string
+          storage_path?: string
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_library_videos_library_id_fkey"
+            columns: ["library_id"]
+            isOneToOne: false
+            referencedRelation: "owner_opportunity_library"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_library_videos_replaced_by_fkey"
+            columns: ["replaced_by"]
+            isOneToOne: false
+            referencedRelation: "owner_library_videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       owner_notifications: {
         Row: {
           action_path: string | null
@@ -14125,10 +14188,15 @@ export type Database = {
         Returns: Json
       }
       can_correct_actual_closing: { Args: never; Returns: boolean }
+      can_edit_owner_library: { Args: { _uid: string }; Returns: boolean }
       can_manage_credentials: { Args: { _user_id: string }; Returns: boolean }
       can_read_completed_onboarding_document: {
         Args: { _document_id: string }
         Returns: string
+      }
+      can_view_owner_library_video: {
+        Args: { _library_id: string }
+        Returns: boolean
       }
       change_owner_program: {
         Args: {
@@ -14928,6 +14996,10 @@ export type Database = {
         }
         Returns: Json
       }
+      relabel_owner_library_video: {
+        Args: { _label: string; _library_id: string }
+        Returns: number
+      }
       release_owner_program_activities: {
         Args: {
           _expected_count?: number
@@ -14936,6 +15008,10 @@ export type Database = {
           _program_id: string
         }
         Returns: Json
+      }
+      remove_owner_library_video: {
+        Args: { _library_id: string }
+        Returns: number
       }
       remove_vendor_custom_field: {
         Args: { _field_id: string }
@@ -15167,6 +15243,16 @@ export type Database = {
       set_owner_attention: {
         Args: { _id: string; _on: boolean }
         Returns: undefined
+      }
+      set_owner_library_video: {
+        Args: {
+          _label: string
+          _library_id: string
+          _mime_type: string
+          _size_bytes: number
+          _storage_path: string
+        }
+        Returns: string
       }
       staff_assignable: { Args: { _user_id: string }; Returns: boolean }
       staff_link_owner_account: {
