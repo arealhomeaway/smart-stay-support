@@ -52,3 +52,10 @@
 - [x] Pending all-or-nothing DB action + undo in docs/pending/home-plan-bulk-edit/ (not applied)
 - [x] Isolated tests, full suite, typecheck, build
 - [ ] Follow-up (not built): single-Task "return to automatic date" action
+
+## Optional Library video, played in the owner portal (approved, no publish)
+- [x] Staff Video section (upload/replace/remove, caption, progress, history)
+- [x] Owner play button + in-portal player via short-lived links, live from library item
+- [x] Pending DB change + undo in docs/pending/library-video/ (not applied)
+- [x] Isolated tests, full suite, typecheck, build
+- [ ] Real 129 MB upload and homeowner viewing: blocked until 0167 is applied and published

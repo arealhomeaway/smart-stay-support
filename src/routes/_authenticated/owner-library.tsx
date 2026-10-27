@@ -20,6 +20,7 @@ import {
   saveOptionalTemplate,
   type LibraryTemplate,
 } from "@/lib/opportunity-library.functions";
+import { LibraryVideoSection } from "@/components/owner/LibraryVideoSection";
 import { LIBRARY_CATEGORIES, OPPORTUNITY_IMAGES, imageFor, type OpportunityImageKey } from "@/lib/opportunity-images";
 
 export const Route = createFileRoute("/_authenticated/owner-library")({
@@ -162,6 +163,7 @@ function Editor({ draft, onDone }: { draft: Draft; onDone: () => void }) {
           <div className="space-y-1"><Label htmlFor="t-rl">Helpful link label (optional)</Label><Input id="t-rl" value={d.resource_label ?? ""} onChange={(e) => set("resource_label", e.target.value)} /></div>
           <div className="space-y-1"><Label htmlFor="t-ru">Helpful link URL (optional)</Label><Input id="t-ru" value={d.resource_url ?? ""} onChange={(e) => set("resource_url", e.target.value)} /></div>
         </div>
+        {d.id ? <LibraryVideoSection libraryId={d.id} poster={imageFor(d.image_key)} /> : <p className="text-xs text-muted-foreground">Save the template first to add a video.</p>}
         <div className="space-y-1">
           <Label htmlFor="t-tags">Tags (comma separated)</Label>
           <Input id="t-tags" value={d.tags.join(", ")} onChange={(e) => set("tags", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))} />
