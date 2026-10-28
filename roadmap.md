@@ -1,5 +1,11 @@
 # Roadmap — approved build work, NO publish
 
+## Oct 28 Help tickets 58 and 59 (approved code/test only)
+- [ ] Shared multiple-file queue, individual validation/progress/retry, three-upload cap and ordered attachments
+- [ ] Active Owner in-place draft reorder, Save/Cancel, accessible movement and saved waiting order
+- [ ] Isolated behavior tests, full suite, automatic typecheck/build and safe mocked preview checks
+- [ ] Live upload and order acceptance: blocked by prohibition on real uploads and Opportunity writes
+
 ## Oct 27 editable handoff standard and carry-over (approved build/test only)
 - [x] Editable shared standard, proposed seeds, history and human-confirmed link suggestions
 - [x] Live home requirements, reasoned exceptions and category readiness
