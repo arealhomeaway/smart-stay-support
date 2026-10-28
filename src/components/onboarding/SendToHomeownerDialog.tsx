@@ -44,6 +44,7 @@ export function SendToHomeownerDialog({
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
   const [version, setVersion] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [picked, setPicked] = useState<string[]>([]);
   const queryClient = useQueryClient();
 
@@ -129,7 +130,7 @@ export function SendToHomeownerDialog({
           {/* Photos belong where they are sent from, not on the step's front page. */}
           <div className="space-y-1.5">
             <p className="eyebrow">Add a photo or document</p>
-            <AttachmentsPanel entityType="onboarding_task" entityId={taskId} title="" />
+            <AttachmentsPanel entityType="onboarding_task" entityId={taskId} title="" onUploadBusyChange={setUploading} onUploaded={ids => setPicked(cur => [...cur.filter(id => !ids.includes(id)), ...ids])} />
           </div>
 
           <div className="space-y-1.5">
@@ -170,7 +171,7 @@ export function SendToHomeownerDialog({
               Cancel
             </Button>
             <Button
-              disabled={disabled || note.trim().length < 20 || mutation.isPending}
+              disabled={disabled || uploading || note.trim().length < 20 || mutation.isPending}
               onClick={() =>
                 mutation.mutate({
                   taskId,

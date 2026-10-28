@@ -5,7 +5,7 @@
  * is never blocked by it. Resources are links to existing home files (or new
  * files added to the home's library) — never copies.
  */
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -28,7 +28,7 @@ import {
   type ResponseType,
 } from "@/lib/v2-workflow.functions";
 import { attachmentUrlFn, beginUploadFn, completeUploadFn } from "@/lib/attachments.functions";
-import { MAX_FILE_BYTES, OVERSIZE_LINK_MESSAGE, validateFile } from "@/lib/attachments";
+import { MultiFileUpload } from "@/components/MultiFileUpload";
 
 const LINK_TYPES = { video: "Video", document: "Document", reference: "Reference", other: "Other" } as const;
 
@@ -233,8 +233,7 @@ export function OpportunityEditor({
   const EMPTY_LINK = { label: "", url: "", note: "", type: "video" as "video" | "document" | "reference" | "other" };
   const [link, setLink] = useState(EMPTY_LINK);
   const [uploading, setUploading] = useState(false);
-  const [uploadPct, setUploadPct] = useState(0);
-  const fileInput = useRef<HTMLInputElement>(null);
+  const [uploadedIds, setUploadedIds] = useState<string[]>([]);
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
 
   // Load the form when the dialog opens for a different record.
@@ -264,6 +263,7 @@ export function OpportunityEditor({
       );
     }
     setLink(EMPTY_LINK);
+    setUploadedIds([]);
   }
 
   const files = data?.files ?? [];
@@ -302,29 +302,16 @@ export function OpportunityEditor({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  async function upload(file: File) {
-    const check = validateFile({ name: file.name, type: file.type, size: file.size });
-    if (!check.ok) { toast.error(file.size > MAX_FILE_BYTES ? OVERSIZE_LINK_MESSAGE : check.message); return; }
-    setUploading(true);
-    setUploadPct(0);
-    try {
-      const started = await begin({
-        data: { entityType: "property", entityId: propertyId, uploadKey: crypto.randomUUID(), filename: file.name, mimeType: file.type, sizeBytes: file.size, category: null },
-      });
-      if (!started.documentId) throw new Error("The upload could not start.");
+  async function upload(file: File, progress: (pct: number) => void, uploadKey: string) {
+    const started = await begin({ data: { entityType: "property", entityId: propertyId, uploadKey, filename: file.name, mimeType: file.type, sizeBytes: file.size, category: null } });
+    if (!started.alreadyStored) {
+      if (!started.token) throw new Error("The upload could not start.");
       const { uploadToSignedSlot } = await import("@/lib/signed-upload");
-      let failed: unknown = null;
-      await uploadToSignedSlot(started.path!, started.token!, file, (pct) => setUploadPct(pct)).catch((e) => { failed = e; });
-      await complete({ data: { documentId: started.documentId, ok: !failed } });
-      if (failed) throw failed;
-      setResources((r) => [...r, { kind: "file", document_id: started.documentId! }]);
-      await qc.invalidateQueries({ queryKey: ["owner-collaboration", propertyId] });
-      toast.success("File added to this home's files and attached.");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "The upload did not finish.");
-    } finally {
-      setUploading(false);
+      try { await uploadToSignedSlot(started.path, started.token, file, progress); }
+      catch (error) { await complete({ data: { documentId: started.documentId, ok: false } }); throw error; }
+      await complete({ data: { documentId: started.documentId, ok: true } });
     }
+    return started.documentId;
   }
 
   const set = (k: keyof typeof EMPTY) => (e: { target: { value: string } }) => setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -373,12 +360,13 @@ export function OpportunityEditor({
                 attached={new Set(resources.flatMap((r) => (r.kind === "file" ? [r.document_id] : [])))}
                 onAttach={(ids) => setResources((cur) => [...cur, ...ids.filter((id) => !cur.some((r) => r.kind === "file" && r.document_id === id)).map((id) => ({ kind: "file" as const, document_id: id }))])}
               />
-              <input ref={fileInput} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void upload(f); }} />
-              <Button type="button" size="sm" variant="outline" disabled={uploading} onClick={() => fileInput.current?.click()}>
-                <Upload className="size-3.5" /> {uploading ? `Uploading… ${uploadPct}%` : "Add file"}
-              </Button>
               <ViewPropertyFilesLink propertyId={propertyId} />
             </div>
+            {editing !== null ? <MultiFileUpload key={key} upload={upload} onBusyChange={setUploading} disabled={mutation.isPending} onResults={ids => {
+              setResources(cur => [...cur.filter(r => r.kind !== "file" || !uploadedIds.includes(r.document_id)), ...ids.map(id => ({ kind: "file" as const, document_id: id }))]);
+              setUploadedIds(ids);
+              void qc.invalidateQueries({ queryKey: ["owner-collaboration", propertyId] });
+            }}/> : null}
             <div className="grid gap-2 rounded-md border border-dashed border-border p-2">
               <p className="text-xs text-muted-foreground">Or add a link — for large videos kept in your approved file-sharing location. Resolve links to it; it never copies it.</p>
               <div className="flex flex-wrap gap-2">
