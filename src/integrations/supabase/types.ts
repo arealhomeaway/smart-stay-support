@@ -14707,6 +14707,19 @@ export type Database = {
         Args: { _project_id: string; _step: string }
         Returns: undefined
       }
+      complete_onboarding_from_breezeway: {
+        Args: {
+          _breezeway_task_id: number
+          _breezeway_updated_at: string
+          _link_id: string
+          _project_updated_at: string
+          _property_id: string
+          _property_updated_at: string
+          _status: string
+          _task_updated_at: string
+        }
+        Returns: boolean
+      }
       complete_owner_opportunity: { Args: { _id: string }; Returns: undefined }
       complete_owner_program: {
         Args: {
