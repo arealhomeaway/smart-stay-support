@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { CheckCircle2, CircleAlert, Plus, XCircle } from "lucide-react";
 import { Chip, EmptyState, LoadingPage, PageHeader, ProgressRing } from "@/components/ui/page";
 import { PropertyOwnerCompletions } from "@/components/onboarding/PropertyOwnerCompletions";
+import { HomeContextHeader } from "@/components/property/HomeContextHeader";
 import { CarryoverSummary } from "@/components/onboarding/CarryoverSummary";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BackControl, useRecordOrigin } from "@/components/nav/NavContext";
@@ -445,6 +446,8 @@ function PropertyWorkspace() {
 
   return (
     <div className="space-y-5">
+      <HomeContextHeader propertyId={current.id} current="onboarding" />
+
 
       <div className="flex flex-wrap items-center gap-4">
         <div className="h-24 w-36 shrink-0 overflow-hidden rounded-lg bg-sunken">
