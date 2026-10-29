@@ -1212,6 +1212,13 @@
       "when": 1793244994539,
       "tag": "0172_enable_verified_breezeway_onboarding_completion",
       "breakpoints": true
+    },
+    {
+      "idx": 173,
+      "version": "7",
+      "when": 1793247616023,
+      "tag": "0173_ops_send_to_owner_operations_opportunity",
+      "breakpoints": true
     }
   ]
 }

@@ -14976,6 +14976,7 @@ export type Database = {
         Returns: string
       }
       open_handoff_blockers: { Args: { _property_id: string }; Returns: number }
+      ops_send_owner_ready: { Args: never; Returns: boolean }
       override_onboarding_task_date: {
         Args: {
           _actor_id: string
