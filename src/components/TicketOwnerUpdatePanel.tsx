@@ -95,7 +95,7 @@ function TicketOwnerUpdateEditor({ ticketId, wizard }: { ticketId: string; wizar
               outcome: latest?.outcome ?? "",
               ownerRequestType:
                 reviewedTicketRequestTypeSchema.safeParse(latest?.owner_request_type).data ??
-                "information_only",
+                    "information_only",
               ownerRequestWhy: latest?.owner_request_why ?? "For your information. No response is needed.",
               expectedTicketUpdatedAt: context.data.ticket.updated_at,
               expectedOwnerId: context.data.ownerRecordId,
@@ -171,9 +171,9 @@ function TicketOwnerUpdateEditor({ ticketId, wizard }: { ticketId: string; wizar
             </div>
             {(
               [
-                ["issue", "Issue", 2000, 10],
-                ["workPerformed", "Work performed or current progress", 3000, 10],
-                ["outcome", "Outcome, if known", 2000, 0],
+                ["issue", wizard ? "What happened" : "Issue", 2000, 10],
+                ["workPerformed", wizard ? "What we did" : "Work performed or current progress", 3000, 10],
+                ["outcome", wizard ? "What's next" : "Outcome, if known", 2000, 0],
               ] as const
             ).map(([field, label, max, min]) => (
               <div key={field} className="space-y-1">
@@ -228,13 +228,14 @@ function TicketOwnerUpdateEditor({ ticketId, wizard }: { ticketId: string; wizar
                 I reviewed this text and confirm it is appropriate for the property's owner.
               </span>
             </label>
+            </div>
             {mutation.error && <p role="alert">{mutation.error.message}</p>}
             <div className="flex flex-wrap gap-2">
               <Button type="submit" disabled={!draft.reviewed || changed}>
-                {mutation.isPending ? "Saving…" : "Save owner update"}
+                {mutation.isPending ? "Saving..." : wizard ? preview ? 'Send' : 'Preview' : "Save owner update"}
               </Button>
-              <Button type="button" variant="outline" onClick={() => setDraft(null)}>
-                Cancel
+              <Button type="button" variant="outline" onClick={() => wizard ? preview ? setPreview(false) : wizard.onBack() : setDraft(null)}>
+                {wizard ? 'Back' : 'Cancel'}
               </Button>
             </div>
           </fieldset>
