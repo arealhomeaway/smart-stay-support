@@ -35,13 +35,14 @@ export const sentOperationsOwnerItems = createServerFn({ method: 'GET' })
     const ticket = await db.from('tickets').select('property_id').eq('id',data.ticketId).single();
     if (ticket.error) throw ticket.error;
     if (ticket.data.property_id !== data.propertyId) throw new Error('This Ticket belongs to a different home.');
-    const [mirror, updates, reviews, orders] = await Promise.all([
+    const [mirror, updates, reviews, orders, responses] = await Promise.all([
       db.from('work_items').select('id').eq('source_table','tickets').eq('source_id',data.ticketId).eq('kind','task').maybeSingle(),
       db.from('ticket_owner_updates').select('*').eq('ticket_id',data.ticketId).order('revision',{ascending:false}),
       db.from('owner_reviews').select('id,title,status,responded_at,notified_at,created_at,owner_decision').eq('ticket_id',data.ticketId).is('archived_at',null),
       db.from('work_orders').select('id,approval_id').eq('ticket_id',data.ticketId),
+      db.from('owner_program_events').select('detail').in('kind',['owner_participation_response','owner_decision']).contains('detail',{ticketId:data.ticketId}),
     ]);
-    for (const r of [mirror,updates,reviews,orders]) if(r.error) throw r.error;
+    for (const r of [mirror,updates,reviews,orders,responses]) if(r.error) throw r.error;
     const ids = (orders.data ?? []).flatMap(o => o.approval_id ? [o.approval_id] : []);
     const [opportunities, approvals] = await Promise.all([
       mirror.data ? db.from('work_items').select('id,title,status,sent_at,responded_at,owner_content,owner_response').eq('linked_task_id',mirror.data.id).eq('kind','opportunity').not('sent_at','is',null).is('retired_at',null) : Promise.resolve({data:[],error:null}),
@@ -50,7 +51,7 @@ export const sentOperationsOwnerItems = createServerFn({ method: 'GET' })
     if(opportunities.error) throw opportunities.error;
     if(approvals.error) throw approvals.error;
     const rows = [
-      ...(updates.data ?? []).map(u=>({id:u.id,type:'Ticket update',title:'Ticket update',sentAt:u.reviewed_at,status:sentOwnerStatus({status:'open',responded:(reviews.data??[]).some(r=>r.responded_at!==null&&r.responded_at>=u.reviewed_at)}),detail:'update' as const,targetId:u.id})),
+      ...(updates.data ?? []).map(u=>({id:u.id,type:'Ticket update',title:'Ticket update',sentAt:u.reviewed_at,status:sentOwnerStatus({status:'open',responded:(responses.data??[]).some(r=>{const d=r.detail as Record<string,unknown>|null;const update=d?.['ownerUpdate'] as Record<string,unknown>|undefined;return update?.['revision']===u.revision;})}),detail:'update' as const,targetId:u.id})),
       ...(reviews.data ?? []).map(r=>({id:r.id,type:'For review',title:r.title,sentAt:r.notified_at??r.created_at,status:sentOwnerStatus({status:r.status,responded:Boolean(r.responded_at),reviewed:r.owner_decision==='acknowledged'}),detail:'review' as const,targetId:r.id})),
       ...(opportunities.data??[]).map(o=>{const c=o.owner_content as Record<string,unknown>|null;const review=c?.['send_kind']==='review';return {id:o.id,type:review?'For review':'Owner task',title:o.title,sentAt:o.sent_at,status:sentOwnerStatus({status:o.status,responded:Boolean(o.responded_at),reviewed:review&&Boolean(o.responded_at||o.status==='complete')}),detail:'opportunity' as const,targetId:o.id};}),
       ...(approvals.data??[]).map(a=>({id:a.id,type:'Approval request',title:a.title,sentAt:a.created_at,status:sentOwnerStatus({status:a.status}),detail:'approval' as const,targetId:a.entity_id})),

@@ -639,7 +639,7 @@ export const saveArhaOpportunity = createServerFn({ method: "POST" })
         responseTypes: z.array(z.enum(["acknowledge", "feedback", "documentation", "decision"])).min(1, "Choose at least one owner response type").max(4),
         resources: z.array(resourceInput),
         send: z.boolean(),
-        operations: z.object({ kind: z.enum(['owner_task','review']), ticketId: z.string().uuid().nullable(), dueOn: z.string() }).optional(),
+        operations: z.object({ kind: z.enum(['owner_task','review']), ticketId: z.string().uuid().nullable(), dueOn: z.union([z.literal(''),z.string().regex(/^\d{4}-\d{2}-\d{2}$/)]) }).optional(),
       })
       .parse(d),
   )
