@@ -7,6 +7,7 @@ export function createAttachmentUploader(
   begin: (input: { data: Intent }) => ReturnType<typeof beginUploadFn>,
   complete: (input: Parameters<typeof completeUploadFn>[0]) => ReturnType<typeof completeUploadFn>,
   intent: (file: File, key: string) => Intent,
+  transfer: typeof uploadToSignedSlot = uploadToSignedSlot,
 ) {
   const attempts = new Map<string, { input: Intent; bytesUploaded: boolean }>();
   return async (file: File, progress: (pct: number) => void, key: string) => {
@@ -16,7 +17,7 @@ export function createAttachmentUploader(
     if (!started.alreadyStored) {
       if (!attempt.bytesUploaded) {
         if (!started.token) throw new Error("The upload could not start.");
-        try { await uploadToSignedSlot(started.path, started.token, file, progress); attempt.bytesUploaded = true; }
+        try { await transfer(started.path, started.token, file, progress); attempt.bytesUploaded = true; }
         catch (error) {
           // A failed intent cannot be reopened. A retry gets a fresh intent, not another live file.
           attempts.set(key, { input: { ...attempt.input, uploadKey: crypto.randomUUID() }, bytesUploaded: false });

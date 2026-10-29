@@ -637,7 +637,7 @@ export const saveArhaOpportunity = createServerFn({ method: "POST" })
         sourceTaskId: z.string().uuid().nullable(),
         content: opportunitySchema.unwrap(),
         responseTypes: z.array(z.enum(["acknowledge", "feedback", "documentation", "decision"])).min(1, "Choose at least one owner response type").max(4),
-        resources: z.array(resourceInput).max(20),
+        resources: z.array(resourceInput),
         send: z.boolean(),
       })
       .parse(d),

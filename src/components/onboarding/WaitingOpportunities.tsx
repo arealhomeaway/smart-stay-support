@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
@@ -22,6 +22,8 @@ export function WaitingOpportunities({ items, allStaffIds, readOnly, save, row, 
 }) {
   const [session, setSession] = useState<WaitingOrderDraft | null>(null), [draft, setDraft] = useState<string[]>([]), [saving, setSaving] = useState(false), [error, setError] = useState<string | null>(null), [saved, setSaved] = useState<string[] | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
+  const incoming = allStaffIds.join(",");
+  useEffect(() => { setSaved(null); }, [incoming]);
   const ordered = savedWaitingOrder(items, saved ?? allStaffIds);
   const staff = ordered.filter(i => i.kind === "request" && allStaffIds.includes(i.id));
   const rest = ordered.filter(i => !staff.includes(i));

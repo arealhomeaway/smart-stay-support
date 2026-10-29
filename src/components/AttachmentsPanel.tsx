@@ -3,8 +3,8 @@
  *
  * Everything shown here has already been decided server-side: the list only
  * contains files this person may see, and each action re-checks on the server
- * before anything happens. A retried upload reuses its own upload key, so a
- * second attempt never leaves a second row behind.
+ * before anything happens. Retries retain completed bytes and finalize the
+ * same intent; failed transfers use a fresh intent through the existing path.
  */
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,20 +15,16 @@ import {
   FileText,
   Film,
   Image as ImageIcon,
-  Loader2,
   Paperclip,
   Trash2,
-  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import {
-  ALLOWED_MIME_TYPES,
   attachmentUploadInvalidationKeys,
   type AttachmentEntity,
   DOCUMENT_CATEGORIES,
@@ -36,7 +32,6 @@ import {
   ownerCategoryLabel,
   formatBytes,
   MAX_FILE_BYTES,
-  validateFile,
 } from "@/lib/attachments";
 import {
   Select,

@@ -259,7 +259,7 @@ export function OpportunityEditor({
       setTypes(editing.response_types.length ? editing.response_types : ["acknowledge"]);
       setResources(
         editing.resources.map((r) =>
-          r.kind === "file" ? { kind: "file", document_id: r.documentId! } : { kind: "link", label: r.label, url: r.url ?? "", note: r.note ?? undefined, resource_type: (r.resourceType ?? undefined) as "video" | "document" | "reference" | "other" | undefined },
+          r.kind === "file" && r.documentId ? { kind: "file", document_id: r.documentId } : { kind: "link", label: r.label, url: r.url ?? "", note: r.note ?? undefined, resource_type: (r.resourceType ?? undefined) as "video" | "document" | "reference" | "other" | undefined },
         ),
       );
     }

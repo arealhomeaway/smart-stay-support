@@ -6,14 +6,12 @@
 import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { OWNER_UPLOAD_CATEGORIES, type AttachmentEntity, validateFile } from "@/lib/attachments";
+import { OWNER_UPLOAD_CATEGORIES, type AttachmentEntity } from "@/lib/attachments";
 import { MultiFileUpload } from "@/components/MultiFileUpload";
 import { createAttachmentUploader } from "@/lib/attachment-upload-client";
 import { beginUploadFn, completeUploadFn, tagOwnerUploadFn } from "@/lib/attachments.functions";
@@ -69,7 +67,7 @@ export function OwnerUploadDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!busy) { if (!o) reset(); onOpenChange(o); } }}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{request ? request.title : opportunity ? "Document your participation" : "Upload"}</DialogTitle>
           <DialogDescription>
