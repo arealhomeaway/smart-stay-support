@@ -1,0 +1,149 @@
+{
+ "block_audit_log_mutation()": {
+  "oid": "25304",
+  "def_sha256": "04ea09b476d06aa447ad89ea131999c3aefe2176d8dc816b8210f9d8a51464f9",
+  "prosrc_sha256": "ffa10a0eebfce10049b0d09acad7f9ebd276d1b2a103711d32945a228a0ce21b",
+  "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+  "proconfig": "NULL"
+ },
+ "block_contact_attempt_mutation()": {
+  "oid": "28049",
+  "def_sha256": "670e1f38210e057526f5117a1a2c617384909fc6a1a7f41e51ddc020007ad716",
+  "prosrc_sha256": "b6af119fbcedffcb2429a8787a6644f062a2598614bcccc6ae819c58b8ad578f",
+  "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+  "proconfig": "NULL"
+ },
+ "block_match_event_mutation()": {
+  "oid": "27791",
+  "def_sha256": "9d5a49ed120c9f2d04a16de3af9fe07ed6836813f1942ddd7e33a90bdebc59f9",
+  "prosrc_sha256": "418dd905a4be8b0d53139fb8573f5018aca8657fae8c997174e45bb46f4e1717",
+  "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+  "proconfig": "NULL"
+ },
+ "block_owner_library_video_delete()": {
+  "oid": "29264",
+  "def_sha256": "b20155b54763f5eeb8b5a2ad0e71a34392f538beb531d89f498a01ac43746b0b",
+  "prosrc_sha256": "60ecaa8577b123147b93ef77429ac01bae0a1fce79c851d686a067de15384d85",
+  "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+  "proconfig": "NULL"
+ },
+ "block_template_version_mutation()": {
+  "oid": "26137",
+  "def_sha256": "04a958234356ecb0d07332bde6750d3d187f5cfcee094885a227ab71e0e4237e",
+  "prosrc_sha256": "b5817c7d6fa0619910943b4d4f5e0fa5ab0d97f251da3014de89d5475286fe9d",
+  "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+  "proconfig": "NULL"
+ },
+ "expense_purchase_auth_guard()": {
+  "oid": "28057",
+  "def_sha256": "288b8c6245f3ae6699b301f3a5a5e1d3cf5fb8fe7abc04af2a020fafeeda3e83",
+  "prosrc_sha256": "4032863d44eeb01223d19d65e03f48cba7d8959d7c7b5042edffcd2cc0b7bf49",
+  "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+  "proconfig": "NULL"
+ },
+ "private.block_completion_review_mutation()": {
+  "oid": "28327",
+  "def_sha256": "5ce5a209f68e1c459ab42bc9a7a29108f0b309f5bd493deee41b2921cc01e0fe",
+  "prosrc_sha256": "2520cd3922614aaa7dbd693e5f493f4c641de4e9e366bc5e47a02af499205393",
+  "acl": "",
+  "proconfig": "NULL"
+ },
+ "private.block_expense_event_mutation()": {
+  "oid": "27910",
+  "def_sha256": "b14ee02985a00ac77c2320c27c592238e5d54ef4c15e8fbd953b0691668cf6d1",
+  "prosrc_sha256": "1978e12a2f6125369a2ec74f29e02310d3d18769a5df831cacbbfb252cf263cd",
+  "acl": "",
+  "proconfig": "NULL"
+ },
+ "private.block_owner_message_mutation()": {
+  "oid": "26558",
+  "def_sha256": "48cc3d98aa4583064d1b73924769acf0131632a562fc93aaa5f5b33f102d1446",
+  "prosrc_sha256": "1d4cc0e7928bfb9e9c78a213308994db3b4e312a9c8252523352550c94342339",
+  "acl": "",
+  "proconfig": "NULL"
+ },
+ "private.business_today()": {
+  "oid": "28661",
+  "def_sha256": "dbffd49ffd202e0da75b9cf43d3a9341a09e0d3d6863492b95bd6c87c9f458bb",
+  "prosrc_sha256": "ee0f60f31cabdfe7fa3e6b3c8cdb86793f8ef7c69acce2c24137334a20e725a3",
+  "acl": "",
+  "proconfig": "NULL"
+ },
+ "private.cleaner_parse_elapsed(text)": {
+  "oid": "26752",
+  "def_sha256": "22c5d35a9d20b6fcd31450c2f782d617ce8540094c44f86cb79aa6b6c85e865b",
+  "prosrc_sha256": "9651d02bffc7ddbd03f6fc05cc7b595741f209c61d51948d1fd22c70365e3982",
+  "acl": "",
+  "proconfig": "NULL"
+ },
+ "private.cleaner_safeguard_state(numeric,numeric)": {
+  "oid": "26839",
+  "def_sha256": "9da3100fa75aae749d1f01994274fe5bb727a0f3753ff74b0c1d366563a8f201",
+  "prosrc_sha256": "69e280f7cae5246f70bb88b94099d2e1289e0234db56483873d4da3df5fbde56",
+  "acl": "",
+  "proconfig": "NULL"
+ },
+ "private.cleaner_state_rank(text)": {
+  "oid": "26927",
+  "def_sha256": "d01d225fe2ecd7c58ea340688c97f3c3ed9c8386f344d6983a0b03b823de4072",
+  "prosrc_sha256": "7ebabb01bf98abeae1b02d37755bc67507e5936fc4c22363d8d6dee42d489951",
+  "acl": "",
+  "proconfig": "NULL"
+ },
+ "private.expense_evidence_changed(expenses,expenses)": {
+  "oid": "28349",
+  "def_sha256": "508b28b78e58c40e2b7ebf1b3df999572f57596c9eeefeac548834dd8e43eefb",
+  "prosrc_sha256": "36e8dce27533bea5c1de22c5cd0dfc0f033a6d1a52acf6ceb8c8cb6cb04692a4",
+  "acl": "",
+  "proconfig": "NULL"
+ },
+ "private.expense_split_ok(jsonb,numeric)": {
+  "oid": "27913",
+  "def_sha256": "2564f440241b5fe13f98ef5f747277204e288d9aba287d7299964565204be285",
+  "prosrc_sha256": "b30dc00fd25b457698b449f4fd115e53500b84d57d23f3f07ed7658a93bdee35",
+  "acl": "",
+  "proconfig": "NULL"
+ },
+ "private.guard_property_work_record()": {
+  "oid": "26980",
+  "def_sha256": "40871b119ff67f112912b4b753b2a5418c91c7f2045bbb1d370841b738fa1ad2",
+  "prosrc_sha256": "6655646e7aaf33a60d84fbb6090c5fcd0c922fcbcb14668b125dec51944492a1",
+  "acl": "",
+  "proconfig": "NULL"
+ },
+ "private.guard_statement_history()": {
+  "oid": "28279",
+  "def_sha256": "626c6795f7acd07ce33646708458bb5ad48acef4b3b7a83024500fb1c0f6cb6d",
+  "prosrc_sha256": "c3bd2a44fd0005908c9ac6c1c8c6567ac2095b5be8a4107e5d744a5550222495",
+  "acl": "",
+  "proconfig": "NULL"
+ },
+ "private.str_report_owner_safe(jsonb,boolean)": {
+  "oid": "27045",
+  "def_sha256": "5e44748ed5f9cf1b96caf35cbdf2cc84d0e6f1542d43f86d11bd29405817d6be",
+  "prosrc_sha256": "c91661621abb63c60172f8bb7570e2257d8ce7132449d17cbd553c7b529c18f8",
+  "acl": "",
+  "proconfig": "NULL"
+ },
+ "private.str_report_refs(jsonb)": {
+  "oid": "27046",
+  "def_sha256": "01eacf946d135b1ef58ffc9e74f35251643f942662ed62676a6041da913bdda0",
+  "prosrc_sha256": "0d42146ed825c7ab1be7b69e104066c973501d7cf20f0ac12ab9f04df4ba6149",
+  "acl": "",
+  "proconfig": "NULL"
+ },
+ "private.vendor_gate_passes(text,date,boolean,boolean,boolean)": {
+  "oid": "27332",
+  "def_sha256": "1bd88c81dca72b8da9e88bfa85506013b2fccc6886374edc83f2f327a359569e",
+  "prosrc_sha256": "39269cc0a163772ca9b4a6be339818224323a96e6d245ef6325c3ed3d26e5670",
+  "acl": "",
+  "proconfig": "NULL"
+ },
+ "wo_authorization_snapshot()": {
+  "oid": "28053",
+  "def_sha256": "902d4f5e953987abd1167a02f7304bf7c76a6bab96d58d9df453e238ed1af590",
+  "prosrc_sha256": "b3e93d15571b2dd97b17e1eee63149119d4c6c7cd8b624a0c8ec7cd58e65efa1",
+  "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+  "proconfig": "NULL"
+ }
+}
