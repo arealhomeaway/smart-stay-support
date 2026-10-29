@@ -82,7 +82,6 @@ const ONBOARDING_ICONS: Record<string, typeof Home> = {
   "My Tasks": ClipboardList,
   Team: Users,
   "Workflow Templates": Workflow,
-  "Utilities & Accounts": PlugZap,
 };
 
 type NavItem = {

@@ -93,6 +93,8 @@ import { Route as AuthenticatedWorkOrdersCalendarRouteImport } from './routes/_a
 import { Route as AuthenticatedWorkOrdersManagerRouteImport } from './routes/_authenticated/work-orders.manager'
 import { Route as AuthenticatedWorkOrdersMyWorkOrdersRouteImport } from './routes/_authenticated/work-orders.my-work-orders'
 import { Route as OauthSharepointReturnRouteImport } from './routes/oauth/sharepoint/return'
+import { Route as AuthenticatedOnboardingTransitionsSplatRouteImport } from './routes/_authenticated/onboarding.transitions.$'
+import { Route as AuthenticatedOnboardingUtilitiesSplatRouteImport } from './routes/_authenticated/onboarding.utilities.$'
 import { Route as ApiPublicHooksBreezewayMirrorRouteImport } from './routes/api/public/hooks/breezeway-mirror'
 import { Route as ApiPublicHooksCleanerHoursReconcileRouteImport } from './routes/api/public/hooks/cleaner-hours-reconcile'
 import { Route as ApiPublicHooksOwnerNotificationEmailRouteImport } from './routes/api/public/hooks/owner-notification-email'
@@ -569,6 +571,18 @@ const OauthSharepointReturnRoute = OauthSharepointReturnRouteImport.update({
   path: '/oauth/sharepoint/return',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedOnboardingTransitionsSplatRoute =
+  AuthenticatedOnboardingTransitionsSplatRouteImport.update({
+    id: '/$',
+    path: '/$',
+    getParentRoute: () => AuthenticatedOnboardingTransitionsRoute,
+  } as any)
+const AuthenticatedOnboardingUtilitiesSplatRoute =
+  AuthenticatedOnboardingUtilitiesSplatRouteImport.update({
+    id: '/$',
+    path: '/$',
+    getParentRoute: () => AuthenticatedOnboardingUtilitiesRoute,
+  } as any)
 const ApiPublicHooksBreezewayMirrorRoute =
   ApiPublicHooksBreezewayMirrorRouteImport.update({
     id: '/api/public/hooks/breezeway-mirror',
@@ -684,8 +698,8 @@ export interface FileRoutesByFullPath {
   '/onboarding/properties': typeof AuthenticatedOnboardingPropertiesRoute
   '/onboarding/team': typeof AuthenticatedOnboardingTeamRoute
   '/onboarding/templates': typeof AuthenticatedOnboardingTemplatesRoute
-  '/onboarding/transitions': typeof AuthenticatedOnboardingTransitionsRoute
-  '/onboarding/utilities': typeof AuthenticatedOnboardingUtilitiesRoute
+  '/onboarding/transitions': typeof AuthenticatedOnboardingTransitionsRouteWithChildren
+  '/onboarding/utilities': typeof AuthenticatedOnboardingUtilitiesRouteWithChildren
   '/property/$propertyId': typeof AuthenticatedPropertyPropertyIdRoute
   '/recovery/manager': typeof AuthenticatedRecoveryManagerRoute
   '/recovery/my-recoveries': typeof AuthenticatedRecoveryMyRecoveriesRoute
@@ -706,6 +720,8 @@ export interface FileRoutesByFullPath {
   '/vendor/': typeof AuthenticatedVendorIndexRoute
   '/vendors/': typeof AuthenticatedVendorsIndexRoute
   '/work-orders/': typeof AuthenticatedWorkOrdersIndexRoute
+  '/onboarding/transitions/$': typeof AuthenticatedOnboardingTransitionsSplatRoute
+  '/onboarding/utilities/$': typeof AuthenticatedOnboardingUtilitiesSplatRoute
   '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
   '/api/public/hooks/cleaner-hours-reconcile': typeof ApiPublicHooksCleanerHoursReconcileRoute
   '/api/public/hooks/owner-notification-email': typeof ApiPublicHooksOwnerNotificationEmailRoute
@@ -772,8 +788,8 @@ export interface FileRoutesByTo {
   '/onboarding/properties': typeof AuthenticatedOnboardingPropertiesRoute
   '/onboarding/team': typeof AuthenticatedOnboardingTeamRoute
   '/onboarding/templates': typeof AuthenticatedOnboardingTemplatesRoute
-  '/onboarding/transitions': typeof AuthenticatedOnboardingTransitionsRoute
-  '/onboarding/utilities': typeof AuthenticatedOnboardingUtilitiesRoute
+  '/onboarding/transitions': typeof AuthenticatedOnboardingTransitionsRouteWithChildren
+  '/onboarding/utilities': typeof AuthenticatedOnboardingUtilitiesRouteWithChildren
   '/property/$propertyId': typeof AuthenticatedPropertyPropertyIdRoute
   '/recovery/manager': typeof AuthenticatedRecoveryManagerRoute
   '/recovery/my-recoveries': typeof AuthenticatedRecoveryMyRecoveriesRoute
@@ -794,6 +810,8 @@ export interface FileRoutesByTo {
   '/vendor': typeof AuthenticatedVendorIndexRoute
   '/vendors': typeof AuthenticatedVendorsIndexRoute
   '/work-orders': typeof AuthenticatedWorkOrdersIndexRoute
+  '/onboarding/transitions/$': typeof AuthenticatedOnboardingTransitionsSplatRoute
+  '/onboarding/utilities/$': typeof AuthenticatedOnboardingUtilitiesSplatRoute
   '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
   '/api/public/hooks/cleaner-hours-reconcile': typeof ApiPublicHooksCleanerHoursReconcileRoute
   '/api/public/hooks/owner-notification-email': typeof ApiPublicHooksOwnerNotificationEmailRoute
@@ -868,8 +886,8 @@ export interface FileRoutesById {
   '/_authenticated/onboarding/properties': typeof AuthenticatedOnboardingPropertiesRoute
   '/_authenticated/onboarding/team': typeof AuthenticatedOnboardingTeamRoute
   '/_authenticated/onboarding/templates': typeof AuthenticatedOnboardingTemplatesRoute
-  '/_authenticated/onboarding/transitions': typeof AuthenticatedOnboardingTransitionsRoute
-  '/_authenticated/onboarding/utilities': typeof AuthenticatedOnboardingUtilitiesRoute
+  '/_authenticated/onboarding/transitions': typeof AuthenticatedOnboardingTransitionsRouteWithChildren
+  '/_authenticated/onboarding/utilities': typeof AuthenticatedOnboardingUtilitiesRouteWithChildren
   '/_authenticated/property/$propertyId': typeof AuthenticatedPropertyPropertyIdRoute
   '/_authenticated/recovery/manager': typeof AuthenticatedRecoveryManagerRoute
   '/_authenticated/recovery/my-recoveries': typeof AuthenticatedRecoveryMyRecoveriesRoute
@@ -890,6 +908,8 @@ export interface FileRoutesById {
   '/_authenticated/vendor/': typeof AuthenticatedVendorIndexRoute
   '/_authenticated/vendors/': typeof AuthenticatedVendorsIndexRoute
   '/_authenticated/work-orders/': typeof AuthenticatedWorkOrdersIndexRoute
+  '/_authenticated/onboarding/transitions/$': typeof AuthenticatedOnboardingTransitionsSplatRoute
+  '/_authenticated/onboarding/utilities/$': typeof AuthenticatedOnboardingUtilitiesSplatRoute
   '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
   '/api/public/hooks/cleaner-hours-reconcile': typeof ApiPublicHooksCleanerHoursReconcileRoute
   '/api/public/hooks/owner-notification-email': typeof ApiPublicHooksOwnerNotificationEmailRoute
@@ -986,6 +1006,8 @@ export interface FileRouteTypes {
     | '/vendor/'
     | '/vendors/'
     | '/work-orders/'
+    | '/onboarding/transitions/$'
+    | '/onboarding/utilities/$'
     | '/api/public/hooks/breezeway-mirror'
     | '/api/public/hooks/cleaner-hours-reconcile'
     | '/api/public/hooks/owner-notification-email'
@@ -1074,6 +1096,8 @@ export interface FileRouteTypes {
     | '/vendor'
     | '/vendors'
     | '/work-orders'
+    | '/onboarding/transitions/$'
+    | '/onboarding/utilities/$'
     | '/api/public/hooks/breezeway-mirror'
     | '/api/public/hooks/cleaner-hours-reconcile'
     | '/api/public/hooks/owner-notification-email'
@@ -1169,6 +1193,8 @@ export interface FileRouteTypes {
     | '/_authenticated/vendor/'
     | '/_authenticated/vendors/'
     | '/_authenticated/work-orders/'
+    | '/_authenticated/onboarding/transitions/$'
+    | '/_authenticated/onboarding/utilities/$'
     | '/api/public/hooks/breezeway-mirror'
     | '/api/public/hooks/cleaner-hours-reconcile'
     | '/api/public/hooks/owner-notification-email'
@@ -1790,6 +1816,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OauthSharepointReturnRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/onboarding/transitions/$': {
+      id: '/_authenticated/onboarding/transitions/$'
+      path: '/$'
+      fullPath: '/onboarding/transitions/$'
+      preLoaderRoute: typeof AuthenticatedOnboardingTransitionsSplatRouteImport
+      parentRoute: typeof AuthenticatedOnboardingTransitionsRoute
+    }
+    '/_authenticated/onboarding/utilities/$': {
+      id: '/_authenticated/onboarding/utilities/$'
+      path: '/$'
+      fullPath: '/onboarding/utilities/$'
+      preLoaderRoute: typeof AuthenticatedOnboardingUtilitiesSplatRouteImport
+      parentRoute: typeof AuthenticatedOnboardingUtilitiesRoute
+    }
     '/api/public/hooks/breezeway-mirror': {
       id: '/api/public/hooks/breezeway-mirror'
       path: '/api/public/hooks/breezeway-mirror'
@@ -1892,6 +1932,36 @@ const AuthenticatedLeadsRouteChildren: AuthenticatedLeadsRouteChildren = {
 const AuthenticatedLeadsRouteWithChildren =
   AuthenticatedLeadsRoute._addFileChildren(AuthenticatedLeadsRouteChildren)
 
+interface AuthenticatedOnboardingTransitionsRouteChildren {
+  AuthenticatedOnboardingTransitionsSplatRoute: typeof AuthenticatedOnboardingTransitionsSplatRoute
+}
+
+const AuthenticatedOnboardingTransitionsRouteChildren: AuthenticatedOnboardingTransitionsRouteChildren =
+  {
+    AuthenticatedOnboardingTransitionsSplatRoute:
+      AuthenticatedOnboardingTransitionsSplatRoute,
+  }
+
+const AuthenticatedOnboardingTransitionsRouteWithChildren =
+  AuthenticatedOnboardingTransitionsRoute._addFileChildren(
+    AuthenticatedOnboardingTransitionsRouteChildren,
+  )
+
+interface AuthenticatedOnboardingUtilitiesRouteChildren {
+  AuthenticatedOnboardingUtilitiesSplatRoute: typeof AuthenticatedOnboardingUtilitiesSplatRoute
+}
+
+const AuthenticatedOnboardingUtilitiesRouteChildren: AuthenticatedOnboardingUtilitiesRouteChildren =
+  {
+    AuthenticatedOnboardingUtilitiesSplatRoute:
+      AuthenticatedOnboardingUtilitiesSplatRoute,
+  }
+
+const AuthenticatedOnboardingUtilitiesRouteWithChildren =
+  AuthenticatedOnboardingUtilitiesRoute._addFileChildren(
+    AuthenticatedOnboardingUtilitiesRouteChildren,
+  )
+
 interface AuthenticatedOnboardingRouteChildren {
   AuthenticatedOnboardingPropertyIdRoute: typeof AuthenticatedOnboardingPropertyIdRoute
   AuthenticatedOnboardingHandoffStandardRoute: typeof AuthenticatedOnboardingHandoffStandardRoute
@@ -1900,8 +1970,8 @@ interface AuthenticatedOnboardingRouteChildren {
   AuthenticatedOnboardingPropertiesRoute: typeof AuthenticatedOnboardingPropertiesRoute
   AuthenticatedOnboardingTeamRoute: typeof AuthenticatedOnboardingTeamRoute
   AuthenticatedOnboardingTemplatesRoute: typeof AuthenticatedOnboardingTemplatesRoute
-  AuthenticatedOnboardingTransitionsRoute: typeof AuthenticatedOnboardingTransitionsRoute
-  AuthenticatedOnboardingUtilitiesRoute: typeof AuthenticatedOnboardingUtilitiesRoute
+  AuthenticatedOnboardingTransitionsRoute: typeof AuthenticatedOnboardingTransitionsRouteWithChildren
+  AuthenticatedOnboardingUtilitiesRoute: typeof AuthenticatedOnboardingUtilitiesRouteWithChildren
   AuthenticatedOnboardingIndexRoute: typeof AuthenticatedOnboardingIndexRoute
 }
 
@@ -1920,9 +1990,9 @@ const AuthenticatedOnboardingRouteChildren: AuthenticatedOnboardingRouteChildren
     AuthenticatedOnboardingTemplatesRoute:
       AuthenticatedOnboardingTemplatesRoute,
     AuthenticatedOnboardingTransitionsRoute:
-      AuthenticatedOnboardingTransitionsRoute,
+      AuthenticatedOnboardingTransitionsRouteWithChildren,
     AuthenticatedOnboardingUtilitiesRoute:
-      AuthenticatedOnboardingUtilitiesRoute,
+      AuthenticatedOnboardingUtilitiesRouteWithChildren,
     AuthenticatedOnboardingIndexRoute: AuthenticatedOnboardingIndexRoute,
   }
 
