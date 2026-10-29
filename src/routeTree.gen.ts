@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AwaitingAccessRouteImport } from './routes/awaiting-access'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
+import { Route as AuthenticatedActiveOwnerFollowupRouteImport } from './routes/_authenticated/active-owner-followup'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
 import { Route as AuthenticatedAvailabilityFinderRouteImport } from './routes/_authenticated/availability-finder'
@@ -39,6 +40,7 @@ import { Route as AuthenticatedOversightRouteImport } from './routes/_authentica
 import { Route as AuthenticatedOversightAccessLogRouteImport } from './routes/_authenticated/oversight-access-log'
 import { Route as AuthenticatedOwnerRouteImport } from './routes/_authenticated/owner'
 import { Route as AuthenticatedOwnerAnalyticsRouteImport } from './routes/_authenticated/owner-analytics'
+import { Route as AuthenticatedOwnerHandoffPlanRouteImport } from './routes/_authenticated/owner-handoff-plan'
 import { Route as AuthenticatedOwnerLibraryRouteImport } from './routes/_authenticated/owner-library'
 import { Route as AuthenticatedOwnerOversightRouteImport } from './routes/_authenticated/owner-oversight'
 import { Route as AuthenticatedOwnerProgramsRouteImport } from './routes/_authenticated/owner-programs'
@@ -134,6 +136,12 @@ const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedActiveOwnerFollowupRoute =
+  AuthenticatedActiveOwnerFollowupRouteImport.update({
+    id: '/active-owner-followup',
+    path: '/active-owner-followup',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
@@ -261,6 +269,12 @@ const AuthenticatedOwnerAnalyticsRoute =
   AuthenticatedOwnerAnalyticsRouteImport.update({
     id: '/owner-analytics',
     path: '/owner-analytics',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOwnerHandoffPlanRoute =
+  AuthenticatedOwnerHandoffPlanRouteImport.update({
+    id: '/owner-handoff-plan',
+    path: '/owner-handoff-plan',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedOwnerLibraryRoute =
@@ -642,6 +656,7 @@ export interface FileRoutesByFullPath {
   '/awaiting-access': typeof AwaitingAccessRoute
   '/reset-password': typeof ResetPasswordRoute
   '/account': typeof AuthenticatedAccountRoute
+  '/active-owner-followup': typeof AuthenticatedActiveOwnerFollowupRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/availability-finder': typeof AuthenticatedAvailabilityFinderRoute
@@ -666,6 +681,7 @@ export interface FileRoutesByFullPath {
   '/oversight-access-log': typeof AuthenticatedOversightAccessLogRoute
   '/owner': typeof AuthenticatedOwnerRoute
   '/owner-analytics': typeof AuthenticatedOwnerAnalyticsRoute
+  '/owner-handoff-plan': typeof AuthenticatedOwnerHandoffPlanRoute
   '/owner-library': typeof AuthenticatedOwnerLibraryRoute
   '/owner-oversight': typeof AuthenticatedOwnerOversightRoute
   '/owner-programs': typeof AuthenticatedOwnerProgramsRoute
@@ -738,6 +754,7 @@ export interface FileRoutesByTo {
   '/awaiting-access': typeof AwaitingAccessRoute
   '/reset-password': typeof ResetPasswordRoute
   '/account': typeof AuthenticatedAccountRoute
+  '/active-owner-followup': typeof AuthenticatedActiveOwnerFollowupRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/availability-finder': typeof AuthenticatedAvailabilityFinderRoute
@@ -759,6 +776,7 @@ export interface FileRoutesByTo {
   '/oversight-access-log': typeof AuthenticatedOversightAccessLogRoute
   '/owner': typeof AuthenticatedOwnerRoute
   '/owner-analytics': typeof AuthenticatedOwnerAnalyticsRoute
+  '/owner-handoff-plan': typeof AuthenticatedOwnerHandoffPlanRoute
   '/owner-library': typeof AuthenticatedOwnerLibraryRoute
   '/owner-oversight': typeof AuthenticatedOwnerOversightRoute
   '/owner-programs': typeof AuthenticatedOwnerProgramsRoute
@@ -830,6 +848,7 @@ export interface FileRoutesById {
   '/awaiting-access': typeof AwaitingAccessRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
+  '/_authenticated/active-owner-followup': typeof AuthenticatedActiveOwnerFollowupRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
   '/_authenticated/availability-finder': typeof AuthenticatedAvailabilityFinderRoute
@@ -854,6 +873,7 @@ export interface FileRoutesById {
   '/_authenticated/oversight-access-log': typeof AuthenticatedOversightAccessLogRoute
   '/_authenticated/owner': typeof AuthenticatedOwnerRoute
   '/_authenticated/owner-analytics': typeof AuthenticatedOwnerAnalyticsRoute
+  '/_authenticated/owner-handoff-plan': typeof AuthenticatedOwnerHandoffPlanRoute
   '/_authenticated/owner-library': typeof AuthenticatedOwnerLibraryRoute
   '/_authenticated/owner-oversight': typeof AuthenticatedOwnerOversightRoute
   '/_authenticated/owner-programs': typeof AuthenticatedOwnerProgramsRoute
@@ -928,6 +948,7 @@ export interface FileRouteTypes {
     | '/awaiting-access'
     | '/reset-password'
     | '/account'
+    | '/active-owner-followup'
     | '/analytics'
     | '/audit'
     | '/availability-finder'
@@ -952,6 +973,7 @@ export interface FileRouteTypes {
     | '/oversight-access-log'
     | '/owner'
     | '/owner-analytics'
+    | '/owner-handoff-plan'
     | '/owner-library'
     | '/owner-oversight'
     | '/owner-programs'
@@ -1024,6 +1046,7 @@ export interface FileRouteTypes {
     | '/awaiting-access'
     | '/reset-password'
     | '/account'
+    | '/active-owner-followup'
     | '/analytics'
     | '/audit'
     | '/availability-finder'
@@ -1045,6 +1068,7 @@ export interface FileRouteTypes {
     | '/oversight-access-log'
     | '/owner'
     | '/owner-analytics'
+    | '/owner-handoff-plan'
     | '/owner-library'
     | '/owner-oversight'
     | '/owner-programs'
@@ -1115,6 +1139,7 @@ export interface FileRouteTypes {
     | '/awaiting-access'
     | '/reset-password'
     | '/_authenticated/account'
+    | '/_authenticated/active-owner-followup'
     | '/_authenticated/analytics'
     | '/_authenticated/audit'
     | '/_authenticated/availability-finder'
@@ -1139,6 +1164,7 @@ export interface FileRouteTypes {
     | '/_authenticated/oversight-access-log'
     | '/_authenticated/owner'
     | '/_authenticated/owner-analytics'
+    | '/_authenticated/owner-handoff-plan'
     | '/_authenticated/owner-library'
     | '/_authenticated/owner-oversight'
     | '/_authenticated/owner-programs'
@@ -1268,6 +1294,13 @@ declare module '@tanstack/react-router' {
       path: '/account'
       fullPath: '/account'
       preLoaderRoute: typeof AuthenticatedAccountRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/active-owner-followup': {
+      id: '/_authenticated/active-owner-followup'
+      path: '/active-owner-followup'
+      fullPath: '/active-owner-followup'
+      preLoaderRoute: typeof AuthenticatedActiveOwnerFollowupRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/analytics': {
@@ -1436,6 +1469,13 @@ declare module '@tanstack/react-router' {
       path: '/owner-analytics'
       fullPath: '/owner-analytics'
       preLoaderRoute: typeof AuthenticatedOwnerAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/owner-handoff-plan': {
+      id: '/_authenticated/owner-handoff-plan'
+      path: '/owner-handoff-plan'
+      fullPath: '/owner-handoff-plan'
+      preLoaderRoute: typeof AuthenticatedOwnerHandoffPlanRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/owner-library': {
@@ -2055,6 +2095,7 @@ const AuthenticatedWorkOrdersRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
+  AuthenticatedActiveOwnerFollowupRoute: typeof AuthenticatedActiveOwnerFollowupRoute
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
   AuthenticatedAvailabilityFinderRoute: typeof AuthenticatedAvailabilityFinderRoute
@@ -2079,6 +2120,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOversightAccessLogRoute: typeof AuthenticatedOversightAccessLogRoute
   AuthenticatedOwnerRoute: typeof AuthenticatedOwnerRoute
   AuthenticatedOwnerAnalyticsRoute: typeof AuthenticatedOwnerAnalyticsRoute
+  AuthenticatedOwnerHandoffPlanRoute: typeof AuthenticatedOwnerHandoffPlanRoute
   AuthenticatedOwnerLibraryRoute: typeof AuthenticatedOwnerLibraryRoute
   AuthenticatedOwnerOversightRoute: typeof AuthenticatedOwnerOversightRoute
   AuthenticatedOwnerProgramsRoute: typeof AuthenticatedOwnerProgramsRoute
@@ -2106,6 +2148,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
+  AuthenticatedActiveOwnerFollowupRoute: AuthenticatedActiveOwnerFollowupRoute,
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedAuditRoute: AuthenticatedAuditRoute,
   AuthenticatedAvailabilityFinderRoute: AuthenticatedAvailabilityFinderRoute,
@@ -2130,6 +2173,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOversightAccessLogRoute: AuthenticatedOversightAccessLogRoute,
   AuthenticatedOwnerRoute: AuthenticatedOwnerRoute,
   AuthenticatedOwnerAnalyticsRoute: AuthenticatedOwnerAnalyticsRoute,
+  AuthenticatedOwnerHandoffPlanRoute: AuthenticatedOwnerHandoffPlanRoute,
   AuthenticatedOwnerLibraryRoute: AuthenticatedOwnerLibraryRoute,
   AuthenticatedOwnerOversightRoute: AuthenticatedOwnerOversightRoute,
   AuthenticatedOwnerProgramsRoute: AuthenticatedOwnerProgramsRoute,
