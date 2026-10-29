@@ -1324,6 +1324,13 @@
       "when": 1793305139977,
       "tag": "0188_address_labels_redo_02_notify_onboarding_note",
       "breakpoints": true
+    },
+    {
+      "idx": 189,
+      "version": "7",
+      "when": 1793305162026,
+      "tag": "0189_address_labels_redo_02_notify_onboarding_task_complete",
+      "breakpoints": true
     }
   ]
 }
