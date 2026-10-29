@@ -1,11 +1,14 @@
 # Roadmap — approved build work, NO publish
 
 ## Oct 29 Step 3 cleanup Part A (approved, no publish or live record writes)
-- Retry items 1–3: capture base64 bytes with database SHA256 proof; stop at first failure, no real records or approvals touched.
-- [ ] Narrow handoff acceptance permission to current Director of Operations cover; exact undo, isolated role tests, apply and unchanged-record/grant checks
-- [ ] Stage old handoff function retirement or signed-out guard with exact undo based on remaining callers
-- [ ] Record missing Oct 16 live notification definitions in pending replay SQL, without applying
-- [ ] Read-only security scan/linter report; no security fixes
+- Continue approved items 1–3 plus screen visibility and full tests; stop on a live-data check/apply failure, fix test typos; no real records or approvals touched.
+- [x] Narrow handoff acceptance permission to current Director of Operations cover; exact undo, isolated role tests, apply and unchanged-record/grant checks
+- [x] Mirror active-cover acceptance on the screen; retire unused wrappers, retain canonical helper coverage
+- [x] Full tests (1727 pass, 5 skip) and automatic typecheck/production build; no publish
+- [x] Stage old handoff function retirement with exact base64/SHA-verified undo; no remaining src or database function callers; not applied
+- [x] Record evidenced Oct 16 live notification function in pending replay SQL with exact base64/SHA proof, without applying; no evidence for additional builders
+- [ ] Live cover-screen acceptance: blocked by no publish, account/seat changes or real-record writes; isolated rules verified
+- [x] Read-only security scan/linter report completed in prior attempt; no security fixes
 
 ## Oct 29 Operations Send to owner (Phase 1, approved code/test only)
 - [x] Shared type/fill/preview/send window and one recipient helper, Ticket/property entry points and fixed approval button

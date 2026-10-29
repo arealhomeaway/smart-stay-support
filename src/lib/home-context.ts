@@ -32,6 +32,12 @@ export function isOpsDirectorSeat(userId: string | null, holder: string | null, 
   return Boolean(userId) && (userId === holder || userId === cover);
 }
 
+/** Overrides must come from seat_override_at, which filters them at database now(). */
+export function canAcceptHandoff(userId: string, holder: string | null, isAdmin: boolean, currentOverrides: { kind: string; user_id: string }[]) {
+  const cover = currentOverrides.find((o) => o.kind === "cover")?.user_id ?? null;
+  return isAdmin || isOpsDirectorSeat(userId, holder, cover);
+}
+
 export type OpsOwnerRecord =
   | { type: "Ticket update"; id: string; ticketId: string; title: string; sentAt: string | null; answeredAt: string | null }
   | { type: "Approval request"; id: string; ticketId: string | null; title: string; sentAt: string | null; status: string; decidedAt: string | null };

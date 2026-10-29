@@ -1233,6 +1233,13 @@
       "when": 1793250992678,
       "tag": "0175_fix_closing_correction_jsonb_detail",
       "breakpoints": true
+    },
+    {
+      "idx": 176,
+      "version": "7",
+      "when": 1793253185386,
+      "tag": "0176_allow_active_director_ops_cover_handoff_acceptance",
+      "breakpoints": true
     }
   ]
 }
