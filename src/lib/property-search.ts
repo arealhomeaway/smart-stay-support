@@ -7,11 +7,16 @@
  * first. Deliberately simple — a lexical score, not a recommendation engine.
  */
 
+import { formatPropertyLabel, matchesPropertySearch } from "./property-label";
+
 export type PropertySearchRow = {
   id: string;
   name: string | null;
   nickname: string | null;
   address_line1: string | null;
+  unit?: string | null;
+  postal_code?: string | null;
+  state?: string | null;
   city: string | null;
   market: string | null;
   neighborhood: string | null;
@@ -49,6 +54,7 @@ export function scoreProperty(query: string, row: PropertySearchRow): number {
   if (orid && (orid === q || orid.startsWith(q))) score = Math.max(score, 85);
   if (score === 0 && names.some((n) => n.includes(q))) score = 20;
   if (score === 0 && [city, market, hood, orid].some((v) => v.includes(q))) score = 10;
+  if (score === 0 && matchesPropertySearch(row, query)) score = 10;
   return score;
 }
 
@@ -65,7 +71,7 @@ export function rankProperties<T extends PropertySearchRow>(
     .filter((x) => x.s > 0)
     .sort(
       (a, b) =>
-        b.s - a.s || norm(a.r.nickname ?? a.r.name).localeCompare(norm(b.r.nickname ?? b.r.name)),
+        b.s - a.s || formatPropertyLabel(a.r).primary.localeCompare(formatPropertyLabel(b.r).primary),
     )
     .slice(0, limit)
     .map((x) => x.r);

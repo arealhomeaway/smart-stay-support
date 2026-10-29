@@ -5,6 +5,7 @@
  * sending so a second pass can never double up.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { formatPropertyLabel, type PropertyLabelFields } from "./property-label";
 import { OWNER_WELCOME_KEY, readWelcomeTemplate, renderWelcome } from "./owner-welcome";
 
 const APP_ORIGIN = "https://smart-stay-support.lovable.app";
@@ -28,13 +29,14 @@ export async function welcomeContext(db: SupabaseClient, programId: string, owne
     db.from("profiles").select("full_name").eq("id", ownerUserId).maybeSingle(),
     db
       .from("owner_program_properties")
-      .select("closing_confirmed, closing_date, properties(name, address)")
+      .select("closing_confirmed, closing_date, properties(name, nickname, address_line1, unit, city, state, postal_code)")
       .eq("program_id", programId)
       .eq("inclusion_status", "included")
       .is("archived_at", null),
   ]);
-  const names = ((homes.data ?? []) as unknown as { properties: { name: string | null; address: string | null } | null }[])
-    .map((h) => h.properties?.name || h.properties?.address || "")
+  if (homes.error) throw new Error("The welcome's home address could not be loaded.");
+  const names = ((homes.data ?? []) as unknown as { properties: PropertyLabelFields | null }[])
+    .map((h) => h.properties ? formatPropertyLabel(h.properties).primary : "")
     .filter(Boolean);
   const hoursOpen = (homes.data ?? []).length > 0;
   return { ownerName: (profile.data as { full_name?: string } | null)?.full_name ?? null, propertyNames: names, hoursOpen };
