@@ -1254,6 +1254,13 @@
       "when": 1793282317600,
       "tag": "0178_security_batch2_pin_search_path",
       "breakpoints": true
+    },
+    {
+      "idx": 179,
+      "version": "7",
+      "when": 1793287900319,
+      "tag": "0179_security_batch3_drop_unused_functions",
+      "breakpoints": true
     }
   ]
 }
