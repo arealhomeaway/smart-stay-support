@@ -1401,6 +1401,13 @@
       "when": 1793305446491,
       "tag": "0199_address_labels_redo_02_publish_owner_approval",
       "breakpoints": true
+    },
+    {
+      "idx": 200,
+      "version": "7",
+      "when": 1793305473866,
+      "tag": "0200_address_labels_redo_02_read_owner_approvals",
+      "breakpoints": true
     }
   ]
 }
