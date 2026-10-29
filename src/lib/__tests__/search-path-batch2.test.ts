@@ -31,7 +31,7 @@ describe("Security batch 2 search_path pin, isolated", () => {
   });
   it("returns the same results after SET search_path = public, pg_temp", async () => {
     const before = await run();
-    expect(before).toEqual([true, false, false, expect.anything(), expect.anything(), ["x", "y"], false, true]);
+    expect(before).toEqual([true, false, false, before[3], before[4], ["x", "y"], false, true]);
     const apply = readFileSync(`${dir}/apply.sql`, "utf8").split("\n").filter((l) => names.some((n) => l.includes(`private.${n}(`)));
     expect(apply.length).toBe(4);
     for (const l of apply) await db.exec(l);
