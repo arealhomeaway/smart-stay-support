@@ -1,0 +1,22 @@
+-- Security batch 2: pin search_path on 21 functions. No body changes.
+ALTER FUNCTION block_audit_log_mutation() SET search_path = public, pg_temp;
+ALTER FUNCTION block_contact_attempt_mutation() SET search_path = public, pg_temp;
+ALTER FUNCTION block_match_event_mutation() SET search_path = public, pg_temp;
+ALTER FUNCTION block_owner_library_video_delete() SET search_path = public, pg_temp;
+ALTER FUNCTION block_template_version_mutation() SET search_path = public, pg_temp;
+ALTER FUNCTION expense_purchase_auth_guard() SET search_path = public, pg_temp;
+ALTER FUNCTION private.block_completion_review_mutation() SET search_path = public, pg_temp;
+ALTER FUNCTION private.block_expense_event_mutation() SET search_path = public, pg_temp;
+ALTER FUNCTION private.block_owner_message_mutation() SET search_path = public, pg_temp;
+ALTER FUNCTION private.business_today() SET search_path = public, pg_temp;
+ALTER FUNCTION private.cleaner_parse_elapsed(text) SET search_path = public, pg_temp;
+ALTER FUNCTION private.cleaner_safeguard_state(numeric,numeric) SET search_path = public, pg_temp;
+ALTER FUNCTION private.cleaner_state_rank(text) SET search_path = public, pg_temp;
+ALTER FUNCTION private.expense_evidence_changed(expenses,expenses) SET search_path = public, pg_temp;
+ALTER FUNCTION private.expense_split_ok(jsonb,numeric) SET search_path = public, pg_temp;
+ALTER FUNCTION private.guard_property_work_record() SET search_path = public, pg_temp;
+ALTER FUNCTION private.guard_statement_history() SET search_path = public, pg_temp;
+ALTER FUNCTION private.str_report_owner_safe(jsonb,boolean) SET search_path = public, pg_temp;
+ALTER FUNCTION private.str_report_refs(jsonb) SET search_path = public, pg_temp;
+ALTER FUNCTION private.vendor_gate_passes(text,date,boolean,boolean,boolean) SET search_path = public, pg_temp;
+ALTER FUNCTION wo_authorization_snapshot() SET search_path = public, pg_temp;
