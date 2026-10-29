@@ -27,6 +27,7 @@ import { formatBytes, validateFile } from "@/lib/attachments";
 import { logOwnerParticipation } from "@/lib/owner-portal.functions";
 import { beginParticipationEvidenceFn } from "@/lib/owner-evidence.functions";
 import { MANUAL_ENTRY_CONFIRMATION, MANUAL_ENTRY_NOTICE, parseOwnerMinutes } from "@/lib/owner-participation";
+import { isZip, prepareUploadSelection } from "@/lib/zip-upload";
 
 export type LogTimeAnchor = {
   /** The participation opportunity this time belongs to. */
@@ -89,6 +90,7 @@ export function LogTimeDialog({
   const [activity, setActivity] = useState(defaultActivity);
   const [confirmed, setConfirmed] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
+  const [openingZip, setOpeningZip] = useState(false);
   const [entryDate, setEntryDate] = useState(today);
   const [homes, setHomes] = useState<string[]>(defaultPropertyIds);
   const log = useServerFn(logOwnerParticipation);
@@ -104,9 +106,14 @@ export function LogTimeDialog({
   };
 
   /** Files build up across picks and drops, so nothing already chosen is lost. */
-  const addFiles = (chosen: File[]) => {
+  const addFiles = async (chosen: File[]) => {
+    if (openingZip || save.isPending) return;
+    setOpeningZip(chosen.some(isZip));
+    const selected = await prepareUploadSelection(chosen, true);
+    setOpeningZip(false);
+    selected.messages.forEach(message => toast.error(message));
     const keep: File[] = [];
-    for (const item of chosen) {
+    for (const item of selected.files) {
       const check = validateFile({ name: item.name, type: item.type, size: item.size });
       if (!check.ok) {
         toast.error(`${item.name}: ${check.message}`);
@@ -261,7 +268,7 @@ export function LogTimeDialog({
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
                 e.preventDefault();
-                addFiles(Array.from(e.dataTransfer.files));
+                void addFiles(Array.from(e.dataTransfer.files));
               }}
               className="rounded-xl border border-dashed border-border bg-muted/30 p-3"
             >
@@ -269,11 +276,13 @@ export function LogTimeDialog({
                 id="log-evidence"
                 type="file"
                 multiple
+                disabled={openingZip || save.isPending}
                 onChange={(e) => {
-                  addFiles(Array.from(e.target.files ?? []));
+                  void addFiles(Array.from(e.target.files ?? []));
                   e.target.value = "";
                 }}
               />
+              {openingZip ? <p role="status" className="text-sm text-muted-foreground">Opening ZIP...</p> : null}
               <p className="mt-2 text-xs text-muted-foreground">
                 Drag files here or choose them above. Receipts, notes, screenshots and photos are
                 all kept with this entry as your record of the work.
@@ -316,7 +325,7 @@ export function LogTimeDialog({
             Cancel
           </Button>
           <Button
-            disabled={save.isPending || activity.trim().length < 3 || !confirmed}
+            disabled={save.isPending || openingZip || activity.trim().length < 3 || !confirmed}
             onClick={() => save.mutate()}
           >
             Save entry

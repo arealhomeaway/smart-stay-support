@@ -31,7 +31,7 @@ beforeEach(async () => {
 it("completes once with Completed in Breezeway history, repeats do nothing", async () => {
  expect((await call()).rows[0]?.done).toBe(true);
  expect((await call()).rows[0]?.done).toBe(false);
- expect((await db.query("SELECT status FROM onboarding_tasks")).rows[0]?.status).toBe("complete");
+ expect((await db.query<{ status: string }>("SELECT status FROM onboarding_tasks")).rows[0]?.status).toBe("complete");
  expect((await db.query("SELECT body FROM onboarding_notes")).rows).toEqual([{ body: "Completed in Breezeway" }]);
  expect((await db.query("SELECT reason FROM audit_log")).rows).toEqual([{ reason: "Completed in Breezeway" }]);
 });
