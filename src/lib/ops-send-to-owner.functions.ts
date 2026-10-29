@@ -50,7 +50,7 @@ export const sentOperationsOwnerItems = createServerFn({ method: 'GET' })
     if(opportunities.error) throw opportunities.error;
     if(approvals.error) throw approvals.error;
     const rows = [
-      ...(updates.data ?? []).map(u=>({id:u.id,type:'Ticket update',title:'Ticket update',sentAt:u.reviewed_at,status:sentOwnerStatus({status:'open',responded:(reviews.data??[]).some(r=>Boolean(r.responded_at)&&r.responded_at>=u.reviewed_at)}),detail:'update' as const,targetId:u.id})),
+      ...(updates.data ?? []).map(u=>({id:u.id,type:'Ticket update',title:'Ticket update',sentAt:u.reviewed_at,status:sentOwnerStatus({status:'open',responded:(reviews.data??[]).some(r=>r.responded_at!==null&&r.responded_at>=u.reviewed_at)}),detail:'update' as const,targetId:u.id})),
       ...(reviews.data ?? []).map(r=>({id:r.id,type:'For review',title:r.title,sentAt:r.notified_at??r.created_at,status:sentOwnerStatus({status:r.status,responded:Boolean(r.responded_at),reviewed:r.owner_decision==='acknowledged'}),detail:'review' as const,targetId:r.id})),
       ...(opportunities.data??[]).map(o=>{const c=o.owner_content as Record<string,unknown>|null;const review=c?.['send_kind']==='review';return {id:o.id,type:review?'For review':'Owner task',title:o.title,sentAt:o.sent_at,status:sentOwnerStatus({status:o.status,responded:Boolean(o.responded_at),reviewed:review&&Boolean(o.responded_at||o.status==='complete')}),detail:'opportunity' as const,targetId:o.id};}),
       ...(approvals.data??[]).map(a=>({id:a.id,type:'Approval request',title:a.title,sentAt:a.created_at,status:sentOwnerStatus({status:a.status}),detail:'approval' as const,targetId:a.entity_id})),

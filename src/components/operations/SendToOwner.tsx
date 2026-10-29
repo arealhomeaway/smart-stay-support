@@ -16,7 +16,7 @@ import { ownerSendTypes, approvalPolicyLine, type OwnerSendType } from '@/lib/op
 import { evaluateAuthority } from '@/lib/work-orders';
 import { useRole } from '@/hooks/useRole';
 
-type Props = { propertyId: string; ticketId?: string; initialType?: OwnerSendType; approvalTrigger?: boolean; onWorkOrders?: () => void };
+type Props = { propertyId: string; ticketId?: string; initialType?: OwnerSendType; approvalTrigger?: boolean; onWorkOrders?: (() => void) | undefined };
 export function SendToOwner(props: Props) {
   const [open,setOpen]=useState(false);
   const role=useRole();
@@ -43,7 +43,7 @@ export function SendToOwnerWindow({propertyId,ticketId,initialType,onWorkOrders,
 function ApprovalSend({workOrders,onBack,onSent,onWorkOrders}:{workOrders:Awaited<ReturnType<typeof operationsOwnerContext>>['workOrders'];onBack:()=>void;onSent:()=>void;onWorkOrders:()=>void}) {
   const [selected,setSelected]=useState(''),[summary,setSummary]=useState(''),[preview,setPreview]=useState(false);
   const wo=workOrders.find(w=>w.id===selected);
-  const verdict=wo?evaluateAuthority(wo):null;
+  const verdict=wo?evaluateAuthority({...wo,phase:wo.phase==='mitigation'?'mitigation':'permanent'}):null;
   const mutation=useMutation({mutationFn:async()=>{
     if(!wo||!verdict?.ownerApprovalRequired||wo.approval_id)throw new Error('Open the Work Order to review its current approval.');
     const r=await supabase.rpc('prepare_work_order_owner_approval',{_work_order_id:wo.id,_expected_updated_at:wo.updated_at,_owner_summary:summary.trim()});
@@ -53,7 +53,7 @@ function ApprovalSend({workOrders,onBack,onSent,onWorkOrders}:{workOrders:Awaite
   },onSuccess:onSent});
   if(!workOrders.length)return <><DialogTitle>Approval request</DialogTitle><p>Add a quote to a Work Order first, then send it for approval.</p><Button onClick={onWorkOrders}>Go to Work Orders</Button><Button variant="ghost" onClick={onBack}>Back</Button></>;
   return <><DialogTitle>{preview?'3. Preview':'2. Fill in'}: Approval request</DialogTitle>
-    {preview&&wo?<section aria-label="Homeowner preview" className="space-y-3 whitespace-pre-wrap"><h3 className="text-xl font-semibold">Owner approval — property repair</h3><p>{summary}</p><p className="font-semibold">${Number(wo.quote_amount).toFixed(2)}</p><p>Approve or request changes</p></section>:<div className="space-y-3"><Label>Work Order</Label><Select value={selected} onValueChange={setSelected}><SelectTrigger aria-label="Work Order"><SelectValue placeholder="Choose a quoted Work Order"/></SelectTrigger><SelectContent>{workOrders.map(w=><SelectItem key={w.id} value={w.id}>{w.title} · ${Number(w.quote_amount).toFixed(2)}</SelectItem>)}</SelectContent></Select>{wo?<p>{approvalPolicyLine(Number(wo.quote_amount))}</p>:null}{wo?.approval_id?<p>There is already an approval for this Work Order. Open Work Orders to review it.</p>:null}<Label htmlFor="ops-approval-summary">Explanation for the owner</Label><Textarea id="ops-approval-summary" value={summary} onChange={e=>setSummary(e.target.value)} minLength={20} maxLength={4000}/></div>}
+    {preview&&wo?<section aria-label="Homeowner preview" className="space-y-3 whitespace-pre-wrap"><h3 className="text-xl font-semibold">{'Owner approval \u2014 property repair'}</h3><p>{summary}</p><p className="font-semibold">${Number(wo.quote_amount).toFixed(2)}</p><p>Approve or request changes</p></section>:<div className="space-y-3"><Label>Work Order</Label><Select value={selected} onValueChange={setSelected}><SelectTrigger aria-label="Work Order"><SelectValue placeholder="Choose a quoted Work Order"/></SelectTrigger><SelectContent>{workOrders.map(w=><SelectItem key={w.id} value={w.id}>{w.title} · ${Number(w.quote_amount).toFixed(2)}</SelectItem>)}</SelectContent></Select>{wo?<p>{approvalPolicyLine(Number(wo.quote_amount))}</p>:null}{wo&&verdict&&!verdict.ownerApprovalRequired&&(wo.contractual_exception||wo.phase==='mitigation')?<p>{verdict.label}. Open the Work Order to follow its recorded exception.</p>:null}{wo?.approval_id?<p>There is already an approval for this Work Order. Open Work Orders to review it.</p>:null}<Label htmlFor="ops-approval-summary">Explanation for the owner</Label><Textarea id="ops-approval-summary" value={summary} onChange={e=>setSummary(e.target.value)} minLength={20} maxLength={4000}/></div>}
     {mutation.error?<p role="alert">{mutation.error.message}</p>:null}
     <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={mutation.isPending} onClick={()=>preview?setPreview(false):onBack()}><ArrowLeft className="size-4"/>Back</Button>{preview?<Button disabled={mutation.isPending} onClick={()=>mutation.mutate()}>{mutation.isPending?'Sending...':'Send'}</Button>:<Button disabled={!wo||!verdict?.ownerApprovalRequired||Boolean(wo.approval_id)||summary.trim().length<20} onClick={()=>setPreview(true)}>Preview</Button>}<Button variant="ghost" onClick={onWorkOrders}>Go to Work Orders</Button></div>
   </>;
