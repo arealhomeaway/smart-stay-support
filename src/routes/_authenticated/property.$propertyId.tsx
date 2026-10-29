@@ -91,7 +91,7 @@ function PropertyHubPage() {
   });
   const homeContext = useQuery({ queryKey: ["home-context", propertyId], queryFn: () => readContext({ data: { propertyId } }) });
   const hasProject = Boolean(homeContext.data?.project);
-  const tab = search.tab ?? "overview";
+  const tab = search.tab === "handoff" && homeContext.isSuccess && !hasProject ? "overview" : (search.tab ?? "overview");
   const setTab = (next: string) => void navigate({ search: (prev) => ({ ...prev, tab: next }), replace: true });
 
   if (q.isLoading) {
