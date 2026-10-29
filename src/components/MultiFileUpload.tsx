@@ -7,7 +7,7 @@ import { FileUploadQueue } from "@/lib/file-upload-queue";
 
 export function MultiFileUpload<R>({ upload, onResults, onBusyChange, disabled = false, multiple = true }: {
   upload: (file: File, progress: (value: number) => void, key: string) => Promise<R>;
-  onResults?: (results: R[]) => void; onBusyChange?: (busy: boolean) => void;
+  onResults?: (results: R[]) => void; onBusyChange?: ((busy: boolean) => void) | undefined;
   disabled?: boolean; multiple?: boolean;
 }) {
   const latest = useRef({ upload, onResults, onBusyChange });
@@ -17,7 +17,8 @@ export function MultiFileUpload<R>({ upload, onResults, onBusyChange, disabled =
   const input = useRef<HTMLInputElement>(null), emitted = useRef<string>("");
   const [dragging, setDragging] = useState(false);
   const busy = queue.busy;
-  useEffect(() => { latest.current.onBusyChange?.(busy); }, [busy]);
+  const unfinished = busy || rows.some(row => row.status === "ready");
+  useEffect(() => { latest.current.onBusyChange?.(unfinished); }, [unfinished]);
   useEffect(() => {
     if (busy || rows.some(row => row.status === "ready")) return;
     const ids = rows.filter(row => row.status === "done").map(row => row.id).join(",");

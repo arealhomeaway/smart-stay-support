@@ -20,11 +20,11 @@ export function createAttachmentUploader(
         catch (error) {
           // A failed intent cannot be reopened. A retry gets a fresh intent, not another live file.
           attempts.set(key, { input: { ...attempt.input, uploadKey: crypto.randomUUID() }, bytesUploaded: false });
-          await complete({ data: { documentId: started.documentId, ok: false, fulfilsRequestId: attempt.input.fulfilsRequestId } });
+          await complete({ data: { documentId: started.documentId, ok: false, fulfilsRequestId: attempt.input.fulfilsRequestId ?? null } });
           throw error;
         }
       }
-      await complete({ data: { documentId: started.documentId, ok: true, fulfilsRequestId: attempt.input.fulfilsRequestId } });
+      await complete({ data: { documentId: started.documentId, ok: true, fulfilsRequestId: attempt.input.fulfilsRequestId ?? null } });
     }
     return started.documentId;
   };

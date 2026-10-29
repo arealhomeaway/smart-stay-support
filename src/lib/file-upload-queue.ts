@@ -4,7 +4,7 @@ export const UPLOAD_CONCURRENCY = 3;
 export type UploadFile = { name: string; size: number; type: string };
 export type UploadRow<F extends UploadFile, R> = {
   id: string; file: F; status: "ready" | "uploading" | "done" | "failed";
-  progress: number; reason?: string; invalid: boolean; result?: R;
+  progress: number; reason?: string | undefined; invalid: boolean; result?: R;
 };
 
 /** One queue owns selection order, independent failures and stable retry keys. */
