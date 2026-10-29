@@ -281,7 +281,7 @@ export async function loadOnboardingWorkspace(
     reviewCapabilities,
     independentReadiness,
     assignedWorkContexts: [] as AssignedWorkContext[],
-    properties: (props.data ?? []).map(p => ({ ...p, listing_name: p.name, name: formatPropertyLabel(p).primary })),
+    properties: props.data ?? [],
     pipeline: inPipeline.map((p) => p.id),
     projects,
     stageCaptures,

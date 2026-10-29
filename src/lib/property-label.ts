@@ -2,6 +2,8 @@
 export type PropertyLabelFields = {
   name?: string | null | undefined;
   nickname?: string | null | undefined;
+  listing_alias?: string | null | undefined;
+  listing_name?: string | null | undefined;
   address_line1?: string | null | undefined;
   unit?: string | null | undefined;
   city?: string | null | undefined;
@@ -31,7 +33,7 @@ export function formatPropertyLabel(property: PropertyLabelFields | null | undef
 export function propertySearchText(property: PropertyLabelFields) {
   const unit = trimmed(property.unit);
   return [property.address_line1, unit ? (/^unit\b/i.test(unit) ? unit : `Unit ${unit}`) : null, property.city, property.state,
-    property.postal_code, property.name, property.nickname, property.ownerrez_property_id]
+    property.postal_code, property.name, property.nickname, property.listing_alias, property.listing_name, property.ownerrez_property_id]
     .filter(value => value !== null && value !== undefined).join(" ");
 }
 
@@ -41,4 +43,4 @@ export function matchesPropertySearch(property: PropertyLabelFields, query: stri
   return normalize(query).split(/\s+/).filter(Boolean).every(token => haystack.includes(token));
 }
 
-export const PROPERTY_LABEL_SELECT = "name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id";
+export const PROPERTY_LABEL_SELECT = "name, nickname, listing_alias, address_line1, unit, city, state, postal_code, ownerrez_property_id";

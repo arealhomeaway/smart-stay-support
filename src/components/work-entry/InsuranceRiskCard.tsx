@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { OPEN_STATUSES } from "@/lib/tickets";
 import { useDemo } from "@/components/DemoProvider";
 import { insuranceRiskLabel } from "@/lib/work-entry";
+import { formatPropertyLabel } from "@/lib/property-label";
 
 /**
  * Oversight-only view of open Maintenance Tickets flagged Yes/Unsure for
@@ -19,7 +20,7 @@ export function InsuranceRiskCard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tickets")
-        .select("id, ref, title, insurance_risk, status, properties(name)")
+        .select("id, ref, title, insurance_risk, status, properties(name, address_line1, unit, city, state, postal_code)")
         .eq("entry_kind", "maintenance")
         .in("insurance_risk", ["yes", "unsure"])
         .in("status", OPEN_STATUSES)
@@ -56,7 +57,7 @@ export function InsuranceRiskCard() {
                     ARHA-{t.ref} {t.title}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {(t.properties as { name: string } | null)?.name}
+                    {formatPropertyLabel(t.properties).primary}
                   </span>
                 </Link>
               </li>

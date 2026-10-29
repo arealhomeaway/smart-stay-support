@@ -175,19 +175,10 @@ function PropertiesPage() {
     const owner = p.owner_record_id ? (data?.ownerName.get(p.owner_record_id) ?? "") : "";
     // Searchable identity only — never notes, and never anything that could
     // carry a credential.
-    return [
-      p.name,
-      p.nickname,
-      p.listing_alias,
-      p.address_line1,
-      p.unit,
-      p.city,
-      p.state,
-      p.postal_code,
+    return matchesPropertySearch(p, q) || [
       p.market,
       p.neighborhood,
       owner,
-      p.ownerrez_property_id,
     ]
       .filter(Boolean)
       .some((v) => String(v).toLowerCase().includes(q));

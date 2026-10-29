@@ -50,6 +50,7 @@ import {
 } from "@/lib/leads";
 import type { LeadRow, LeadUpdate } from "@/lib/lead-types";
 import { rankProperties } from "@/lib/property-search";
+import { readCountedRows } from "@/lib/read-all-rows";
 
 const CONTACT_CHANNELS: LeadChannel[] = ["call", "email", "text", "other"];
 
@@ -119,25 +120,12 @@ export function LeadDrawer({
     enabled: Boolean(leadId) && propertySearch.trim().length > 1,
     queryFn: async () => {
       const q = propertySearch.trim();
-      const { data, error } = await supabase
+      const { data, error } = await readCountedRows(supabase
         .from("properties")
         .select(
-          "id, name, nickname, address_line1, unit, city, state, postal_code, market, neighborhood, ownerrez_property_id, bedrooms, lifecycle_status",
+          "id, name, nickname, listing_alias, address_line1, unit, city, state, postal_code, market, neighborhood, ownerrez_property_id, bedrooms, lifecycle_status", { count: "exact" },
         )
-        .or(
-          [
-            `name.ilike.%${q}%`,
-            `nickname.ilike.%${q}%`,
-            `city.ilike.%${q}%`,
-            `market.ilike.%${q}%`,
-            `neighborhood.ilike.%${q}%`,
-            `address_line1.ilike.%${q}%`,
-            `unit.ilike.%${q}%`,
-            `postal_code.ilike.%${q}%`,
-            `ownerrez_property_id.ilike.%${q}%`,
-          ].join(","),
-        )
-        .limit(40);
+        .order("id"));
       if (error) throw error;
       return rankProperties(q, data ?? []);
     },
