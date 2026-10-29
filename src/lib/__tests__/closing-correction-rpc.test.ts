@@ -84,7 +84,7 @@ describe("Closing correction function, isolated only", () => {
     const prop = await db.query<{ actual_closing_on: string }>(
       "SELECT actual_closing_on::text FROM properties",
     );
-    expect(prop.rows[0].actual_closing_on).toBe("2026-09-23");
+    expect(prop.rows[0]!.actual_closing_on).toBe("2026-09-23");
   });
 
   it("a non-authorized caller is still refused and nothing is written", async () => {
