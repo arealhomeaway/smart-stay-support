@@ -394,7 +394,11 @@ function OverviewTab({ hub }: { hub: Hub }) {
         {hub.viewer.staff && (
           <Stat label="Blockers" value={o.blockers} tone={o.blockers ? "danger" : undefined} />
         )}
-        {hub.viewer.staff && <Stat label="Handoff gates open" value={o.handoffGatesOpen} />}
+        {hub.viewer.staff && (
+          <Link to="/property/$propertyId" params={{ propertyId: hub.property.id }} search={{ tab: "handoff" }} aria-label="Handoff gates open, open the Handoff tab" className="block rounded-lg hover:ring-1 hover:ring-primary">
+            <Stat label="Handoff gates open" value={o.handoffGatesOpen} />
+          </Link>
+        )}
         <Stat label="Documents you can see" value={o.documents} />
         {hub.viewer.staff && o.unassignedTasks != null && (
           <Stat
@@ -600,6 +604,14 @@ function OnboardingTab({ hub }: { hub: Hub }) {
             <p className="text-sm text-muted-foreground">
               Handoff: {label(String(o.handoff.status))}
               {o.handoff.gate_step ? ` · ${label(String(o.handoff.gate_step))}` : ""}
+              {hub.viewer.staff && (
+                <>
+                  {" · "}
+                  <Link to="/property/$propertyId" params={{ propertyId: hub.property.id }} search={{ tab: "handoff" }} className="text-primary underline">
+                    Open Handoff
+                  </Link>
+                </>
+              )}
             </p>
           )}
         </CardContent>
