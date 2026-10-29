@@ -26,11 +26,11 @@ type Draft = {
   reviewed: boolean;
 };
 
-export function TicketOwnerUpdatePanel({ ticketId }: { ticketId: string }) {
-  return <TicketOwnerUpdateEditor key={ticketId} ticketId={ticketId} />;
+export function TicketOwnerUpdatePanel({ ticketId, wizard }: { ticketId: string; wizard?: { onBack: () => void; onSent: () => void } }) {
+  return <TicketOwnerUpdateEditor key={ticketId} ticketId={ticketId} wizard={wizard} />;
 }
 
-function TicketOwnerUpdateEditor({ ticketId }: { ticketId: string }) {
+function TicketOwnerUpdateEditor({ ticketId, wizard }: { ticketId: string; wizard?: { onBack: () => void; onSent: () => void } | undefined }) {
   const { user } = useRouteContext({ from: "/_authenticated" });
   const load = useServerFn(ticketOwnerUpdates);
   const save = useServerFn(saveTicketOwnerUpdate);
@@ -38,6 +38,7 @@ function TicketOwnerUpdateEditor({ ticketId }: { ticketId: string }) {
   const key = ["ticket-owner-updates", user.id, ticketId];
   const context = useQuery({ queryKey: key, queryFn: () => load({ data: { ticketId } }) });
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [preview, setPreview] = useState(false);
   const latest = context.data?.history[0];
   const changed = Boolean(
     draft &&
@@ -54,6 +55,7 @@ function TicketOwnerUpdateEditor({ ticketId }: { ticketId: string }) {
     },
     onSuccess: () => {
       setDraft(null);
+      wizard?.onSent();
       void qc.invalidateQueries({ queryKey: key });
       void qc.invalidateQueries({ queryKey: ["owner-home"] });
     },
@@ -63,7 +65,7 @@ function TicketOwnerUpdateEditor({ ticketId }: { ticketId: string }) {
   });
   return (
     <section className="space-y-3 rounded-lg border p-4" aria-label="Owner update">
-      <h3 className="font-semibold">Owner update</h3>
+      <h3 className="font-semibold">{wizard ? `${preview ? '3. Preview' : '2. Fill in'}: Ticket update` : 'Owner update'}</h3>
       <p className="text-sm text-muted-foreground">
         Explain the issue, what ARHA did, and the outcome. Enrolled owners see this reviewed update
         alongside the current approval requirements.
@@ -94,7 +96,7 @@ function TicketOwnerUpdateEditor({ ticketId }: { ticketId: string }) {
               ownerRequestType:
                 reviewedTicketRequestTypeSchema.safeParse(latest?.owner_request_type).data ??
                 "information_only",
-              ownerRequestWhy: latest?.owner_request_why ?? "",
+              ownerRequestWhy: latest?.owner_request_why ?? "For your information. No response is needed.",
               expectedTicketUpdatedAt: context.data.ticket.updated_at,
               expectedOwnerId: context.data.ownerRecordId,
               expectedRevision: latest?.revision ?? 0,
@@ -110,10 +112,13 @@ function TicketOwnerUpdateEditor({ ticketId }: { ticketId: string }) {
           className="space-y-3"
           onSubmit={(event) => {
             event.preventDefault();
-            mutation.mutate();
+            if (wizard && !preview) setPreview(true);
+            else mutation.mutate();
           }}
         >
           <fieldset disabled={mutation.isPending} className="space-y-3">
+            {preview && wizard ? <section aria-label="Homeowner preview" className="space-y-3 whitespace-pre-wrap"><h3 className="font-semibold">Ticket update</h3><p>{draft.issue}</p><p>{draft.workPerformed}</p><p>{draft.outcome}</p><p>{reviewedTicketRequestText({owner_request_type:draft.ownerRequestType,owner_request_why:draft.ownerRequestWhy})}</p></section> : null}
+            <div className={preview && wizard ? 'hidden' : 'space-y-3'}>
             <legend className="sr-only">Review an owner update</legend>
             <p id={`owner-update-help-${ticketId}`} className="text-sm text-muted-foreground">
               Exclude guest names/contact details, private staff notes, door codes, credentials, and
