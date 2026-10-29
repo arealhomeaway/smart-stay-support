@@ -32,7 +32,8 @@ describe("after-handoff plan rules", () => {
   });
   it("both pages are in the Active Owner menu", () => {
     const ao = DEPARTMENTS.find((d) => d.key === "active-owner");
-    expect(ao?.links.map((l) => l.to)).toEqual(expect.arrayContaining(["/owner-handoff-plan", "/active-owner-followup"]));
+    const tos = ao?.links.map((l) => l.to) ?? [];
+    expect(tos.includes("/owner-handoff-plan") && tos.includes("/active-owner-followup")).toBe(true);
     expect(ao?.match("/active-owner-followup")).toBe(true);
   });
 });
