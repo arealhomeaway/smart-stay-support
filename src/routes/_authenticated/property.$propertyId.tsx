@@ -7,6 +7,9 @@
  */
 import { EmailComposer } from "@/components/EmailComposer";
 import { SendToOwner } from '@/components/operations/SendToOwner';
+import { HomeContextHeader } from "@/components/property/HomeContextHeader";
+import { TwoStepHandoff } from "@/components/onboarding/TwoStepHandoff";
+import { readHomeContext } from "@/lib/home-context.functions";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -66,8 +69,10 @@ export const Route = createFileRoute("/_authenticated/property/$propertyId")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  validateSearch: (raw: Record<string, unknown>): { from?: string | undefined } =>
-    typeof raw["from"] === "string" && raw["from"] ? { from: raw["from"] } : {},
+  validateSearch: (raw: Record<string, unknown>): { from?: string | undefined; tab?: string | undefined } => ({
+    ...(typeof raw["from"] === "string" && raw["from"] ? { from: raw["from"] } : {}),
+    ...(typeof raw["tab"] === "string" && raw["tab"] ? { tab: raw["tab"] } : {}),
+  }),
   component: PropertyHubPage,
 });
 
@@ -75,12 +80,19 @@ type Hub = Awaited<ReturnType<typeof getPropertyHubFn>>;
 
 function PropertyHubPage() {
   const { propertyId } = Route.useParams();
-  const { can } = useRole();
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const { can, readOnly } = useRole();
   const load = useServerFn(getPropertyHubFn);
+  const readContext = useServerFn(readHomeContext);
   const q = useQuery({
     queryKey: ["property-hub", propertyId],
     queryFn: () => load({ data: { propertyId } }),
   });
+  const homeContext = useQuery({ queryKey: ["home-context", propertyId], queryFn: () => readContext({ data: { propertyId } }) });
+  const hasProject = Boolean(homeContext.data?.project);
+  const tab = search.tab ?? "overview";
+  const setTab = (next: string) => void navigate({ search: (prev) => ({ ...prev, tab: next }), replace: true });
 
   if (q.isLoading) {
     return (
@@ -116,6 +128,7 @@ function PropertyHubPage() {
 
   return (
     <div className="space-y-6">
+      {hub.viewer.staff && <HomeContextHeader propertyId={propertyId} current="operations" />}
       <HubHeader hub={hub} />
 
       {hub.viewer.staff && (
@@ -178,12 +191,13 @@ function PropertyHubPage() {
         </div>
       )}
 
-      <Tabs defaultValue="overview">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="flex h-auto flex-wrap justify-start">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="details">Property details</TabsTrigger>
           {hub.viewer.staff && <TabsTrigger value="contacts">Contacts</TabsTrigger>}
           <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
+          {hub.viewer.staff && hasProject && <TabsTrigger value="handoff">Handoff</TabsTrigger>}
           {hub.viewer.staff && <TabsTrigger value="operations">Operations</TabsTrigger>}
           {hub.viewer.staff && <TabsTrigger value="surveys">Guest Surveys</TabsTrigger>}
           {hub.viewer.staff && <TabsTrigger value="reviews">Reviews</TabsTrigger>}
@@ -195,6 +209,18 @@ function PropertyHubPage() {
         <TabsContent value="overview" className="mt-4">
           <OverviewTab hub={hub} />
         </TabsContent>
+        {hub.viewer.staff && hasProject && (
+          <TabsContent value="handoff" className="mt-4">
+            {/* Same handoff component and server checks as the Onboarding page; nothing duplicated. */}
+            <TwoStepHandoff
+              propertyId={propertyId}
+              readOnly={readOnly}
+              onOpenTask={(task) =>
+                void navigate({ to: "/onboarding/$propertyId", params: { propertyId }, search: { task } as never })
+              }
+            />
+          </TabsContent>
+        )}
         <TabsContent value="details" className="mt-4">
           <DetailsTab hub={hub} />
         </TabsContent>
