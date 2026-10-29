@@ -122,7 +122,7 @@ export function LeadDrawer({
       const { data, error } = await supabase
         .from("properties")
         .select(
-          "id, name, nickname, city, market, neighborhood, address_line1, ownerrez_property_id, bedrooms, lifecycle_status",
+          "id, name, nickname, address_line1, unit, city, state, postal_code, market, neighborhood, ownerrez_property_id, bedrooms, lifecycle_status",
         )
         .or(
           [
@@ -132,6 +132,8 @@ export function LeadDrawer({
             `market.ilike.%${q}%`,
             `neighborhood.ilike.%${q}%`,
             `address_line1.ilike.%${q}%`,
+            `unit.ilike.%${q}%`,
+            `postal_code.ilike.%${q}%`,
             `ownerrez_property_id.ilike.%${q}%`,
           ].join(","),
         )

@@ -38,7 +38,7 @@ export const submitHelpTicket = createServerFn({ method: "POST" })
       supabaseAdmin.from("app_settings").select("value").eq("key", "help_feedback_recipient").maybeSingle(),
     ]);
     const prop = propRes.data as { name: string | null; address_line1: string | null } | null;
-    const propertyLabel = prop ? [prop.name, prop.address_line1].filter(Boolean).join(" — ") : null;
+    const propertyLabel = prop ? formatPropertyLabel(prop).primary : null;
     const roles = (roleRows ?? []).map((r) => r.role).join(", ") || "—";
     const email = (profile as { email?: string } | null)?.email ?? (context.claims as { email?: string })?.email ?? null;
     const name = (profile as { full_name?: string } | null)?.full_name ?? email ?? "Unknown user";

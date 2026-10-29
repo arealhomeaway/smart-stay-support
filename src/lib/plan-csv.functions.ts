@@ -35,7 +35,7 @@ export const exportProjectPlanCsv = createServerFn({ method: "POST" })
     const templateIds = [...new Set([...tplById.values()].map((t) => t.template_id))];
     const stages = templateIds.length ? (await sb.from("onboarding_template_stages").select("name, sort_order").in("template_id", templateIds)).data ?? [] : [];
     const nameOf = new Map((profs.data ?? []).map((p: { id: string; full_name: string | null; email: string | null }) => [p.id, p.full_name ?? p.email]));
-    const plan = home.data.name ?? "Home";
+    const plan = formatPropertyLabel(home.data).primary;
     const out = orderPlan(rows, stages).map(({ task: t, stageNo, taskNo }) => {
       const tt = t.template_task_id ? tplById.get(t.template_task_id) : undefined;
       return planRow({

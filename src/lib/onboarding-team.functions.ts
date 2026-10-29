@@ -101,7 +101,7 @@ export const readOnboardingTeam = createServerFn({ method: "POST" })
       };
     });
 
-    const propName = new Map((properties.data ?? []).map((p) => [p.id, p.name as string]));
+    const propName = new Map((properties.data ?? []).map((p) => [p.id, formatPropertyLabel(p).primary]));
     return {
       canEdit,
       people,

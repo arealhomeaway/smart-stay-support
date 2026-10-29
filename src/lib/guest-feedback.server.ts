@@ -412,7 +412,7 @@ export async function previewReviewImport(admin: Admin, items: ReviewInput[]) {
   const { data: props } = propIds.length
     ? await admin.from("properties").select("id, name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id").in("id", propIds)
     : { data: [] as { id: string; name: string }[] };
-  const names = new Map((props ?? []).map((p) => [p.id, p.name] as const));
+  const names = new Map((props ?? []).map((p) => [p.id, formatPropertyLabel(p).primary] as const));
   const rows: ReviewPreviewRow[] = items.map((r) => {
     const property_id = r.ownerrez_property_id ? homes.get(r.ownerrez_property_id) ?? null : null;
     const rating = r.stars && r.stars >= 1 && r.stars <= 5 ? Math.round(r.stars) : null;

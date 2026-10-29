@@ -689,10 +689,10 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
     viewer: { staff, supervisor: isSupervisor(viewer), owner: owns },
     property: {
       id: p.id,
-      name: p.name,
+      name: formatPropertyLabel(p).primary,
 
-      nickname: p.nickname,
-      address: propertyAddress(p),
+      nickname: null,
+      address: formatPropertyLabel(p).secondary,
       market: p.market,
       lifecycleStatus: p.lifecycle_status,
       onboardingStage: p.onboarding_stage,

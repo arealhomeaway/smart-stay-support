@@ -1,4 +1,4 @@
-import { formatPropertyLabel } from "@/lib/property-label";
+import { formatPropertyLabel, matchesPropertySearch } from "@/lib/property-label";
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import {
   isPostStayFeedback,
@@ -661,11 +661,7 @@ export function NewTicketForm({
                     />
                   </div>
                   {(properties ?? [])
-                    .filter((p) =>
-                      `${p.nickname ?? ""} ${p.name}`
-                        .toLowerCase()
-                        .includes(propertyQuery.toLowerCase()),
-                    )
+                    .filter((p) => matchesPropertySearch(p, propertyQuery))
                     .map((p) => (
                       <SelectItem key={p.id} value={p.id}>
                         {formatPropertyLabel(p).primary}

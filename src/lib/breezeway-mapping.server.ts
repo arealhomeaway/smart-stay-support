@@ -139,7 +139,7 @@ export async function auditPortfolioMapping(
     counts[state] += 1;
     rows.push({
       propertyId: p.id,
-      propertyName: p.name,
+      propertyName: formatPropertyLabel(p).primary,
       ownerrezPropertyId: ownerrez,
       breezewayHomeId:
         homeId ??
@@ -213,7 +213,7 @@ export async function propertyWriteEligibility(propertyId: string): Promise<{
   }
   const state = (p.breezeway_mapping_state ?? "unmapped") as BreezewayMappingState;
   const homeId = (p.breezeway_property_id ?? "").trim() || null;
-  const name = p.name;
+  const name = formatPropertyLabel(p).primary;
   if (p.is_demo) {
     return {
       eligible: false,

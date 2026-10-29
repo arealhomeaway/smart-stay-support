@@ -109,7 +109,7 @@ export const getActiveOwnerFollowup = createServerFn({ method: "GET" })
       canManage: a?.can_manage_followup === true,
       rows,
       waiting: waitingItems,
-      homes: Object.fromEntries(((props.data ?? []) as { id: string; name: string | null; address_line1: string | null }[]).map((p) => [p.id, p.name ?? p.address_line1 ?? "Home"])),
+      homes: Object.fromEntries((props.data ?? []).map((p) => [p.id, formatPropertyLabel(p).primary])),
       programs,
       options: [
         ...((tpls.data ?? []) as { id: string; title: string }[]).map((t) => ({ ...t, kind: "template" as const })),

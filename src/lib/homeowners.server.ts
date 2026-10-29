@@ -29,10 +29,10 @@ export async function loadHomeowners(supabase: Client): Promise<{ rows: Homeowne
   const homesByOwner = new Map<string, { id: string; name: string }[]>();
   const homeById = new Map<string, { id: string; name: string }>();
   for (const p of properties.data ?? []) {
-    homeById.set(p.id, { id: p.id, name: p.name });
+    homeById.set(p.id, { id: p.id, name: formatPropertyLabel(p).primary });
     if (!p.owner_record_id) continue;
     const list = homesByOwner.get(p.owner_record_id) ?? [];
-    list.push({ id: p.id, name: p.name });
+    list.push({ id: p.id, name: formatPropertyLabel(p).primary });
     homesByOwner.set(p.owner_record_id, list);
   }
 

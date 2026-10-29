@@ -51,8 +51,8 @@ async function propertyBits(supabase: Client, propertyId: string | null) {
     }));
 
   return {
-    name: row?.["nickname"] ?? row?.["name"] ?? null,
-    address: row?.["formatted_address"] ?? row?.["address_line1"] ?? null,
+    name: row ? formatPropertyLabel(row).primary : null,
+    address: row ? formatPropertyLabel(row).full : null,
     recipients,
     ownerName: recipients[0]?.name ?? null,
   };

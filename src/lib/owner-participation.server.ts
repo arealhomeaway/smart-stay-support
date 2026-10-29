@@ -291,6 +291,8 @@ export async function loadProgramAggregate(
       name: string;
       nickname: string | null;
       address_line1: string | null;
+      unit?: string | null;
+      postal_code?: string | null;
       city: string | null;
       state: string | null;
       primary_photo_url: string | null;
@@ -318,7 +320,7 @@ export async function loadProgramAggregate(
       id: l.id,
       propertyId: l.property_id,
       name: prop ? formatPropertyLabel(prop).primary : "Previously enrolled property",
-      address: prop ? locationOf(prop) : "",
+      address: prop ? formatPropertyLabel(prop).secondary : "",
       photoUrl: prop?.primary_photo_url ?? null,
       closingDate: l.closing_date,
       closingConfirmed: l.closing_confirmed,

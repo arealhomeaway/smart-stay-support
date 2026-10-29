@@ -893,7 +893,7 @@ export async function loadCommandCenter(
     windowDays: filters.days,
     filters: {
       markets: [...new Set(properties.map((p) => p.state).filter(Boolean))] as string[],
-      properties: properties.map((p) => ({ id: p.id, name: p.name })),
+      properties: properties.map((p) => ({ id: p.id, name: formatPropertyLabel(p).primary })),
       vendors: vendorIds.map((id) => ({
         id,
         name: profiles.find((p) => p.id === id)?.full_name ?? "Vendor",

@@ -637,7 +637,7 @@ export async function listOutboundNeedingReview(): Promise<BreezewayOutboundRevi
   if (propertyIds.length) {
     const { data: props } = await db.from("properties").select("id, name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id").in("id", propertyIds);
     for (const p of (props ?? []) as unknown as { id: string; name: string | null }[]) {
-      names.set(p.id, p.name);
+      names.set(p.id, formatPropertyLabel(p).primary);
     }
   }
 

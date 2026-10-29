@@ -87,7 +87,7 @@ export async function findAvailableProperties(supabase: Client, input: FinderInp
 
   const linked = (data ?? []).filter((row) => validCoordinates(row.latitude, row.longitude) && row.ownerrez_property_id);
   const properties: AvailabilityProperty[] = linked.map((row) => ({
-    id: row.id, name: row.name,
+    id: row.id, name: formatPropertyLabel(row).primary,
     address: addressLine(row) || row.formatted_address || "Address unavailable",
     lat: row.latitude!, lng: row.longitude!, bedrooms: row.bedrooms,
     bathrooms: row.bathrooms, maxGuests: row.max_guests,
