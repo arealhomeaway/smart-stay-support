@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TEAMS } from "@/lib/tickets";
+import { seatSections } from "@/lib/coverage-model";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
 import { TeamAccessPanel } from "@/components/TeamAccessPanel";
 import { TeamInvitePanel } from "@/components/TeamInvitePanel";
@@ -115,7 +116,7 @@ function TeamPage() {
         </TabsContent>
 
         <TabsContent value="seats" className="space-y-6">
-          {TEAMS.map((team) => {
+          {seatSections(TEAMS).map((team) => {
             const roles = data.roles.filter((r) => r.team === team.value);
             if (roles.length === 0) return null;
             return (

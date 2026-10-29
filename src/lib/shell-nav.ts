@@ -51,7 +51,7 @@ export const DEPARTMENTS: Department[] = [
     label: "Active Owner",
     home: "/owner-programs",
     match: (p) =>
-      ["/owner-programs", "/owner-oversight", "/owner-analytics", "/homeowners", "/owner-library"].some(
+      ["/owner-programs", "/owner-oversight", "/owner-analytics", "/homeowners", "/owner-library", "/owner-handoff-plan", "/active-owner-followup"].some(
         (r) => p === r || p.startsWith(r + "/"),
       ),
     links: [
@@ -60,6 +60,8 @@ export const DEPARTMENTS: Department[] = [
       { label: "Homeowners", to: "/homeowners", capability: "homeowner_directory" },
       { label: "Participation insight", to: "/owner-analytics", capability: "owner_program_admin" },
       { label: "Optional Opportunity Library", to: "/owner-library", capability: "owner_program_admin" },
+      { label: "After handoff plan", to: "/owner-handoff-plan", capability: "owner_programs" },
+      { label: "Active Owner follow-up", to: "/active-owner-followup", capability: "owner_programs" },
     ],
   },
   {
@@ -193,6 +195,8 @@ const SUBPAGE_LABELS: Record<string, string> = {
   "/owner-analytics": "Participation insight",
   "/homeowners": "Homeowners",
   "/owner-library": "Optional Opportunity Library",
+  "/owner-handoff-plan": "After handoff plan",
+  "/active-owner-followup": "Active Owner follow-up",
   "/str-participation-report": "Participation report",
 };
 
