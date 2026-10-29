@@ -5,7 +5,7 @@
 - [x] Broad staff, homeowner, navigation and export label/read coverage; stored identity and historical snapshots preserved
 - [x] Stage 17 alert/report functions plus one owner projection with exact undo and expression-only diff proofs
 - [x] Rachel welcome read-only finding and zero-fallback real-home inventory
-- [x] Isolated label-expression/focused/full tests and automatic typecheck/build; no sign-in/publish/apply
+- [x] Isolated label-expression and actual summary/note/handoff/message producer tests; welcome, homeowner-reader and export output tests; full suite and automatic typecheck/build; no sign-in/publish/apply
 - [ ] Signed-in screen acceptance and complete producer workflow execution: blocked by no sign-in/live writes; pending SQL not applied
 
 
