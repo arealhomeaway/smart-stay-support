@@ -1,5 +1,11 @@
 # Roadmap — approved build work, NO publish
 
+## Oct 29 Step 3 cleanup Part A (approved, no publish or live record writes)
+- [ ] Narrow handoff acceptance permission to current Director of Operations cover; exact undo, isolated role tests, apply and unchanged-record/grant checks
+- [ ] Stage old handoff function retirement or signed-out guard with exact undo based on remaining callers
+- [ ] Record missing Oct 16 live notification definitions in pending replay SQL, without applying
+- [ ] Read-only security scan/linter report; no security fixes
+
 ## Oct 29 Operations Send to owner (Phase 1, approved code/test only)
 - [x] Shared type/fill/preview/send window and one recipient helper, Ticket/property entry points and fixed approval button
 - [x] Reuse canonical Opportunity, reviewed Ticket update and Work Order approval actions; Ticket sent list and existing details
