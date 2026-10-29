@@ -47,7 +47,7 @@ describe("exact captured handoff acceptance with active cover, isolated PostgreS
     await db.exec("truncate coverage_overrides, handoff_step_history, audit_log");
     await db.query("update onboarding_projects set handoff_state='ready',status='active' where id=$1",[project]);
   });
-  for (const [name,id] of [["seat holder",holder],["Admin",admin]]) it(`${name} can accept and writes history`,async()=>{
+  for (const [name,id] of [["seat holder",holder],["Admin",admin]] as const) it(`${name} can accept and writes history`,async()=>{
     await as(id); await act();
     expect((await db.query<{actor_id:string;step:string}>("select actor_id,step from handoff_step_history")).rows).toEqual([{actor_id:id,step:"accepted"}]);
   });
