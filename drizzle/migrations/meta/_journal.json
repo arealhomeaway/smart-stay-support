@@ -1226,6 +1226,13 @@
       "when": 1793249544980,
       "tag": "0174_enable_onboarding_handoff_ready_seat_alert",
       "breakpoints": true
+    },
+    {
+      "idx": 175,
+      "version": "7",
+      "when": 1793250992678,
+      "tag": "0175_fix_closing_correction_jsonb_detail",
+      "breakpoints": true
     }
   ]
 }
