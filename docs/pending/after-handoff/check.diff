@@ -1,0 +1,6 @@
+48c48
+<  IF _step='accepted' THEN UPDATE public.onboarding_projects SET status='complete',completed_at=now() WHERE id=pr.id; UPDATE public.properties SET lifecycle_status='active' WHERE id=pr.property_id; END IF;
+---
+>  IF _step='accepted' THEN UPDATE public.onboarding_projects SET status='complete',completed_at=now() WHERE id=pr.id; UPDATE public.properties SET lifecycle_status='active' WHERE id=pr.property_id; PERFORM private.schedule_after_handoff(pr.id,pr.property_id); END IF;
+49a50
+> ;

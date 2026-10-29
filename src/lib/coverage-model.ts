@@ -12,6 +12,14 @@
 export const TEAM_A = "guest_experience";
 export const TEAM_B = "property_operations";
 
+/**
+ * Team & Coverage seat sections: the Ticket teams plus seat-only teams
+ * (such as Operations for Active Owner follow-up) that never route Tickets.
+ */
+export function seatSections<T extends { value: string; label: string }>(teams: readonly T[]) {
+  return [...teams.map((t) => ({ value: t.value, label: t.label })), { value: "operations", label: "Operations" }];
+}
+
 /** Operational seats and the team that owns them. */
 export const SEAT_TEAMS: Record<string, string> = {
   ge_day: TEAM_A,
