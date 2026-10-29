@@ -1,0 +1,5 @@
+{
+  "sha256": "f03a4ad1e65399557548d2f95f3d973bcf204c8a1a75e85fff29ce99f2e35070",
+  "proacl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+  "bytes": 10400
+}

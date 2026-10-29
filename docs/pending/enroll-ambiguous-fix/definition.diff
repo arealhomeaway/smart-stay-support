@@ -1,0 +1,13 @@
+--- live-before
++++ fix
+@@ -35,8 +35,8 @@
+  IF EXISTS(SELECT 1 FROM profiles f JOIN user_roles r ON r.user_id=f.id WHERE lower(f.email)=lower(_input->>'email') AND r.role<>'owner') THEN
+   RAISE EXCEPTION 'That email belongs to a staff account. Use the homeowner''s own email.';
+  END IF;
+- IF EXISTS(SELECT 1 FROM owner_programs p JOIN profiles f ON f.id=p.owner_user_id
+- WHERE p.owner_record_id=owner.id AND p.archived_at IS NULL AND p.status NOT IN ('closed','completed','complete')
++ IF EXISTS(SELECT 1 FROM owner_programs existing_program JOIN profiles f ON f.id=existing_program.owner_user_id
++ WHERE existing_program.owner_record_id=owner.id AND existing_program.archived_at IS NULL AND existing_program.status NOT IN ('closed','completed','complete')
+  AND lower(f.email)<>lower(_input->>'email')) THEN
+   RAISE EXCEPTION 'This Owner has a different linked login. An Admin must review account identity first.';
+  END IF;
