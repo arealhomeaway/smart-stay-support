@@ -56,7 +56,7 @@ describe("Closing correction function, isolated only", () => {
   it("the fix succeeds and writes its history with the same values", async () => {
     await load("docs/pending/closing-correction-fix/fix.sql");
     const r = await correct("2026-09-23");
-    expect(r.rows[0]).toEqual({
+    expect(r.rows[0]!).toEqual({
       correct_actual_closing: { previous: "2026-09-24", new: "2026-09-23", enrollments: 1 },
     });
     const ev = await db.query<{
