@@ -875,6 +875,13 @@ export async function refreshWorkOrder(
   }
   if (!raw || typeof raw.id !== "number") return null;
   const property = raw.home_id != null ? await propertyForHomeId(raw.home_id) : null;
+  if (property) {
+    try {
+      const { reconcileBreezewayTaskCompletion } = await import("./breezeway-task-completion.server");
+      await reconcileBreezewayTaskCompletion({ id: raw.id, propertyId: property.id, stage: raw.type_task_status?.stage ?? null,
+        status: raw.type_task_status?.name ?? raw.type_task_status?.code ?? null, updatedAt: normalizeDate(raw.updated_at ?? raw.modified_at) });
+    } catch { console.error("Breezeway completion not saved; linked Task remains unchanged."); }
+  }
   const db = await admin();
   const { data } = await db
     .from("breezeway_work_orders")
