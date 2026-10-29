@@ -1,0 +1,294 @@
+[
+  {
+    "name": "notify_onboarding_note",
+    "schema": "private",
+    "signature": "private.notify_onboarding_note()",
+    "sha256": "a6b6b53290064e0189c8e9842ff6b1cca8ff26ca3339fcd75b0db1c315113ed9",
+    "proacl": "<nil>",
+    "new_sha256": "9111cd1f41403fac8a46da3f28673361ac80d8703b5fe6be27de8c83a035533c",
+    "changes": [
+      [
+        "coalesce(nickname, name, 'the home')",
+        "public.format_property_label(to_jsonb(properties))->>'primary'"
+      ]
+    ],
+    "undo_byte_match": true,
+    "label_only": true
+  },
+  {
+    "name": "notify_onboarding_task_complete",
+    "schema": "private",
+    "signature": "private.notify_onboarding_task_complete()",
+    "sha256": "bb42f31071561ce30137b042451654275dc6d4201c2abe3b6c829e1701669b41",
+    "proacl": "<nil>",
+    "new_sha256": "7544ea4b02f9b3a44666c7e6c833dde6a927dfa6a8c2986c71176ebf30ef8d07",
+    "changes": [
+      [
+        "coalesce(nickname, name, 'the home')",
+        "public.format_property_label(to_jsonb(properties))->>'primary'"
+      ]
+    ],
+    "undo_byte_match": true,
+    "label_only": true
+  },
+  {
+    "name": "notify_opportunity_staff",
+    "schema": "private",
+    "signature": "private.notify_opportunity_staff(uuid,text)",
+    "sha256": "69b4f310b2a5ee5f2b6af68c3c209230a9b70548b99fea5a5f476c8f9a51500a",
+    "proacl": "<nil>",
+    "new_sha256": "61c8d95b094205acc77528d9b2facbc5ba98cde44a0f34b8bbc53ec33a18a804",
+    "changes": [
+      [
+        "coalesce(nickname, name, address_line1, 'the home')",
+        "public.format_property_label(to_jsonb(properties))->>'primary'"
+      ]
+    ],
+    "undo_byte_match": true,
+    "label_only": true
+  },
+  {
+    "name": "str_report_build",
+    "schema": "private",
+    "signature": "private.str_report_build(uuid,uuid,date,date,boolean,boolean)",
+    "sha256": "e269d3844f6206b2fc556332bfba45b7b399cfef697e960d785a648b8619f6d7",
+    "proacl": "<nil>",
+    "new_sha256": "b22222a96110244728c1797d366f102a6dd1fd12cddbaa35a9a00392137e04f8",
+    "changes": [
+      [
+        "'name', prop.name, 'address', coalesce(prop.formatted_address, prop.address_line1)",
+        "'name', public.format_property_label(to_jsonb(prop))->>'primary', 'address', public.format_property_label(to_jsonb(prop))->>'full'"
+      ]
+    ],
+    "undo_byte_match": true,
+    "label_only": true
+  },
+  {
+    "name": "str_report_create_version",
+    "schema": "private",
+    "signature": "private.str_report_create_version(uuid,uuid,uuid,text)",
+    "sha256": "541de6b9901268de1946ed18fafc81e80231c4a7bd0f7aeabcd9f5e663a460f6",
+    "proacl": "<nil>",
+    "new_sha256": "585a976e93c2d9e391fa478518f62aca5f027151d11f55757496f6a22447e66b",
+    "changes": [
+      [
+        "SELECT name INTO pname FROM public.properties",
+        "SELECT public.format_property_label(to_jsonb(properties))->>'primary' INTO pname FROM public.properties"
+      ]
+    ],
+    "undo_byte_match": true,
+    "label_only": true
+  },
+  {
+    "name": "notify_onboarding_handoff_ready",
+    "schema": "public",
+    "signature": "notify_onboarding_handoff_ready()",
+    "sha256": "f955b24f5bd836cb7ce1336aed1c8d658770ed078ae67428048891f58fefb79b",
+    "proacl": "{postgres=X/postgres,service_role=X/postgres}",
+    "new_sha256": "6ceb77c4b7b4d1d9a93dc7b22816963aba484abb4cdb4a3daf6489eea3c06809",
+    "changes": [
+      [
+        "coalesce(nickname, name, address_line1, 'A home')",
+        "public.format_property_label(to_jsonb(properties))->>'primary'"
+      ]
+    ],
+    "undo_byte_match": true,
+    "label_only": true
+  },
+  {
+    "name": "notify_owner_of_onboarding_publication",
+    "schema": "public",
+    "signature": "notify_owner_of_onboarding_publication()",
+    "sha256": "34a37683bd675a78718ebd1188b03c43d86c0eefb2ef25e823f36ac2738ae97d",
+    "proacl": "{postgres=X/postgres,service_role=X/postgres}",
+    "new_sha256": "9f90f20f46d25f0fcdab3738356fb328b425592c1448c45fec28f70921513c1c",
+    "changes": [
+      [
+        "coalesce(nullif(NEW.property_name,''),'your home')",
+        "coalesce((SELECT public.format_property_label(to_jsonb(properties))->>'primary' FROM public.properties WHERE id=NEW.property_id),'Home (address missing)')"
+      ]
+    ],
+    "undo_byte_match": true,
+    "label_only": true
+  },
+  {
+    "name": "owner_completions_for_review",
+    "schema": "public",
+    "signature": "owner_completions_for_review(boolean,uuid)",
+    "sha256": "fbd7f3e39f9eb26aa7e44bd99a92d92cc58c468e804af67e0fa02d27bf6105e6",
+    "proacl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+    "new_sha256": "db83cc73e07903103a5f0ca21b96f69695b5f54a3ba37741983c9fd48cf0de3a",
+    "changes": [
+      [
+        "coalesce(pp.nickname, pp.name, pp.address_line1)",
+        "public.format_property_label(to_jsonb(pp))->>'primary'"
+      ]
+    ],
+    "undo_byte_match": true,
+    "label_only": true
+  },
+  {
+    "name": "owner_release_summary",
+    "schema": "public",
+    "signature": "owner_release_summary(uuid,integer,uuid[",
+    "sha256": "177535579689a77c222008aac8356c71ceef29b980356d529fb80ff3e721d7da",
+    "proacl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+    "new_sha256": "fc1c99aa581c858c1bc0f5d661201ff2b2386bc480b6d375233706223ad4e11c",
+    "changes": [
+      [
+        "coalesce(nullif(trim(h.nickname),''),h.name)",
+        "public.format_property_label(to_jsonb(h))->>'primary'"
+      ]
+    ],
+    "undo_byte_match": true,
+    "label_only": true
+  },
+  {
+    "name": "owner_str_reports",
+    "schema": "public",
+    "signature": "owner_str_reports()",
+    "sha256": "474a83b2d2de09baf943d09d5e0a1c1a46a40e86b16d14bf051522b93401fc8d",
+    "proacl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+    "new_sha256": "71b8e37b75d585c8eedf7213f608fb367975fe1029a29d53c6080774e2ebdfc4",
+    "changes": [
+      [
+        "'propertyName', p.name",
+        "'propertyName', public.format_property_label(to_jsonb(p))->>'primary'"
+      ]
+    ],
+    "undo_byte_match": true,
+    "label_only": true
+  },
+  {
+    "name": "post_owner_request_message",
+    "schema": "public",
+    "signature": "post_owner_request_message(uuid,text)",
+    "sha256": "101f8626c2d7ef6925706c6434a3d49b41b81760c3c62d26923fc3cbd43531a3",
+    "proacl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+    "new_sha256": "5e4366474bd309efe8d8ddef2baf5e3b54aacff004b0dde73a254d141c73f534",
+    "changes": [
+      [
+        "coalesce(nickname, name, address_line1, 'your home')",
+        "public.format_property_label(to_jsonb(properties))->>'primary'"
+      ]
+    ],
+    "undo_byte_match": true,
+    "label_only": true
+  },
+  {
+    "name": "publish_owner_approval",
+    "schema": "public",
+    "signature": "publish_owner_approval(uuid,timestamp with time zone,integer,uuid,uuid,uuid,text,text,boolean)",
+    "sha256": "63110c75ea120cf935f008263d982b23485b5b5ac98fe6d47e56315ab16e1a0f",
+    "proacl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+    "new_sha256": "9eb9749bf0f52f6c4f2912d32b465d9a9c6735c618e1910816897c40a05b0de9",
+    "changes": [
+      [
+        "coalesce(nickname,name)",
+        "public.format_property_label(to_jsonb(properties))->>'primary'"
+      ]
+    ],
+    "undo_byte_match": true,
+    "label_only": true
+  },
+  {
+    "name": "read_owner_approvals",
+    "schema": "public",
+    "signature": "read_owner_approvals()",
+    "sha256": "1f6e7bc1d4e3e3d2f044b808d48ff3aaf031cb51ca08144c69adb2308f19fe1e",
+    "proacl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+    "new_sha256": "c6bc99e3f48abf30c0ccae3fcff671423718a26bbe1f0760964f827b7dfde268",
+    "changes": [
+      [
+        "coalesce(h.nickname,h.name)",
+        "public.format_property_label(to_jsonb(h))->>'primary'"
+      ]
+    ],
+    "undo_byte_match": true,
+    "label_only": true
+  },
+  {
+    "name": "read_owner_program_properties",
+    "schema": "public",
+    "signature": "read_owner_program_properties(uuid,boolean)",
+    "sha256": "5cbea66bc3c77171cb855f2d5f5c8af36af7416561c511c694f48844c6e520e8",
+    "proacl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+    "new_sha256": "bd16840a84530b0ed52bb8dd319b108fadb7d3093a78d2f028194f90f70430cc",
+    "changes": [
+      [
+        "'address_line1',h.address_line1,'city'",
+        "'address_line1',h.address_line1,'unit',h.unit,'postal_code',h.postal_code,'city'"
+      ]
+    ],
+    "undo_byte_match": true,
+    "label_only": false
+  },
+  {
+    "name": "record_owner_completion_review",
+    "schema": "public",
+    "signature": "record_owner_completion_review(uuid,text,text,uuid,text)",
+    "sha256": "87a675e079b9dade2892ba3ded16506f79b113cf78827a00ad6afbc8901bd52e",
+    "proacl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+    "new_sha256": "5b4c14d444729dcf23e298a58352e478a78b0aa72e7e393c881be3d29d180101",
+    "changes": [
+      [
+        "coalesce(nickname, name, address_line1, 'your home')",
+        "public.format_property_label(to_jsonb(properties))->>'primary'"
+      ],
+      [
+        "coalesce(nickname, name, address_line1, 'the home')",
+        "public.format_property_label(to_jsonb(properties))->>'primary'"
+      ]
+    ],
+    "undo_byte_match": true,
+    "label_only": true
+  },
+  {
+    "name": "release_owner_program_activities",
+    "schema": "public",
+    "signature": "release_owner_program_activities(uuid,uuid,boolean,integer)",
+    "sha256": "7c2dbc934fd598f9faa373ae2bb82ce01146a7a555cda2b24f02acecd927d5a4",
+    "proacl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+    "new_sha256": "0be350f3a5613438c6a9ae2b2e3fcc404ee1dbd03aa06845498e623b16dd3346",
+    "changes": [
+      [
+        "coalesce(nullif(trim(h.nickname),''),h.name)",
+        "public.format_property_label(to_jsonb(h))->>'primary'"
+      ]
+    ],
+    "undo_byte_match": true,
+    "label_only": true
+  },
+  {
+    "name": "request_owner_response",
+    "schema": "public",
+    "signature": "request_owner_response(uuid,text,text)",
+    "sha256": "251454e2afa4df9e014d90d4ee800f9862c9b3f2964f6061322cdc279f8e066f",
+    "proacl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+    "new_sha256": "125af8c649062b708162ba3ac9b7f21c2aaf64bf7ba22a2b1df8af9a428d025c",
+    "changes": [
+      [
+        "coalesce(nickname, name, address_line1, 'your home')",
+        "public.format_property_label(to_jsonb(properties))->>'primary'"
+      ]
+    ],
+    "undo_byte_match": true,
+    "label_only": true
+  },
+  {
+    "name": "str_report_context",
+    "schema": "public",
+    "signature": "str_report_context(uuid)",
+    "sha256": "a516b92450e2ac72e3fc7abf9b71881c5d67d85060524aff8aaaa46043b63a83",
+    "proacl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+    "new_sha256": "5df99e449f2b20e6cc44660ded40634a915fee3d32059132b4e5c05d473c4306",
+    "changes": [
+      [
+        "jsonb_build_object('id',id,'name',name)",
+        "jsonb_build_object('id',id,'name',public.format_property_label(to_jsonb(properties))->>'primary')"
+      ]
+    ],
+    "undo_byte_match": true,
+    "label_only": true
+  }
+]
