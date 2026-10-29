@@ -1,4 +1,4 @@
-import { formatPropertyLabel } from "@/lib/property-label";
+import { formatPropertyLabel, matchesPropertySearch } from "@/lib/property-label";
 /**
  * Routine work — the four recurring controls, in one place.
  *
@@ -345,11 +345,7 @@ function RunRoutineDialog({
   });
 
   const matches = (properties ?? [])
-    .filter((p) =>
-      query.trim()
-        ? `${p.nickname ?? ""} ${p.name ?? ""}`.toLowerCase().includes(query.trim().toLowerCase())
-        : true,
-    )
+    .filter((p) => matchesPropertySearch(p, query))
     .slice(0, 8);
 
   const create = useMutation({
@@ -362,7 +358,7 @@ function RunRoutineDialog({
         kind,
         event_key: manualKey(kind, propertyId || null, `${day}:${Date.now()}`),
         property_id: propertyId || null,
-        title: chosen ? `${config.label} — ${chosen.nickname ?? chosen.name}` : config.label,
+        title: chosen ? `${config.label} · ${formatPropertyLabel(chosen).primary}` : config.label,
         guest_name: guest.trim() || null,
         status: "due",
         due_at: new Date().toISOString(),

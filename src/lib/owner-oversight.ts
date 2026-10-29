@@ -1,4 +1,5 @@
 import { programLengthDays } from "./owner-participation";
+import { matchesPropertySearch, type PropertyLabelFields } from "./property-label";
 /**
  * Supervisor oversight for the Active Owner participation program.
  *
@@ -35,7 +36,7 @@ export type OversightInput = {
   openTasks: number;
   lastOwnerActivityAt: string | null;
   lastNotificationAt: string | null;
-  properties: { id: string; name: string }[];
+  properties: (PropertyLabelFields & { id: string; name: string })[];
 };
 
 export type OversightRow = OversightInput & {
@@ -137,7 +138,7 @@ export function matchesOversightSearch(row: OversightRow, query: string): boolea
   const hay = [row.ownerName ?? "", row.ownerEmail ?? "", ...row.properties.map((p) => p.name)]
     .join(" ")
     .toLowerCase();
-  return hay.includes(q);
+  return hay.includes(q) || row.properties.some(p => matchesPropertySearch(p, q));
 }
 
 export function matchesPaceFilter(row: OversightRow, filter: PaceFilter): boolean {

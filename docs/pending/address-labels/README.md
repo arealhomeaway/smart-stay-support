@@ -13,9 +13,11 @@ For every replaced function, `undo/*.sql` contains exact live definition bytes p
 
 Rachel's historical welcome used generic "your home" wording, not a property label. Its obsolete address-column query yielded no home context. The code now requests structured address fields and fails clearly if they cannot be loaded. Historical messages remain untouched.
 
-Deliberate retained names: stored identity/edit fields, OwnerRez import/matching aliases and unchanged historical approval/email/report snapshots. Current report producers are staged, not applied; saved report rendering remains snapshot-based.
+Deliberate retained names: stored identity/edit fields, OwnerRez import/matching aliases and unchanged historical approval/email/report snapshots. OwnerRez picker labels and new setup receipts use the address without changing import matching. Current report producers are staged, not applied; saved report rendering remains snapshot-based.
 
-Verification: isolated formatter parity and grants passed; every producer's changed label expression evaluated to the Fern address. Full producer workflows and signed-in screens are not verified, because live execution/sign-in are prohibited. Read-only inventory found 160 real active/nonarchived homes, zero missing streets.
+Verification: isolated formatter parity and grants passed; every producer's changed label expression evaluated to the Fern address. Actual pending summary, note, handoff and owner-message producers were executed in isolated PostgreSQL and produced address labels without changing property identity. Welcome context/rendering, authorized homeowner readers and plan/STR export outputs were tested without delivery. All 18 live definition hashes were rechecked read-only on October 29, 2026 and still match their undo files. Rachel's welcome was confirmed sent at 18:15:04 UTC with generic home copy and no Fern/address label. Read-only inventory found 160 real non-demo/nonarchived homes, zero missing streets.
+
+Signed-in screens, every complete producer workflow and exhaustive visible-site coverage remain not verified. The database files remain pending, so database-generated labels and owner unit/ZIP projections will not change until separately approved and applied.
 
 Preview checklist after publishing and separately approving pending SQL:
 1. Open Properties; verify street headings and city/state.

@@ -11,6 +11,7 @@
 import { OPEN_STATUSES, slaState } from "@/lib/tickets";
 import { currentOwnerId, isUnassigned } from "@/lib/matters";
 import { mostUrgentPriority } from "@/lib/geo";
+import { matchesPropertySearch, type PropertyLabelFields } from "./property-label";
 
 export type TeamQueueFilters = {
   /** "all" | user id | "unassigned" */
@@ -100,7 +101,7 @@ export type TeamQueueTicket = {
   property_id?: string | null;
   work_type_id?: string | null;
   kind?: "work_order";
-  properties?: {
+  properties?: PropertyLabelFields & {
     market?: string | null;
     city?: string | null;
     state?: string | null;
@@ -246,7 +247,7 @@ export function applyTeamQueueFilters(
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
-      if (!hay.includes(q)) return false;
+      if (!hay.includes(q) && !(t.properties && matchesPropertySearch(t.properties, q))) return false;
     }
 
     return true;

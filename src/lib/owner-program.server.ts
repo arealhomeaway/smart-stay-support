@@ -1,4 +1,4 @@
-import { formatPropertyLabel } from "@/lib/property-label";
+import { formatPropertyLabel, type PropertyLabelFields } from "@/lib/property-label";
 /**
  * Active Owner Participation Program — staff side (server-only).
  *
@@ -110,7 +110,7 @@ export type AdminProgramRow = {
   status: ProgramStatus;
   startedOn: string | null;
   endsOn: string | null;
-  properties: { id: string; name: string; coverage: string; openTasks: number; overdue: number }[];
+  properties: (PropertyLabelFields & { id: string; name: string; coverage: string; openTasks: number; overdue: number })[];
   day: number;
   daysLeft: number;
   reportedHours: number;
@@ -218,7 +218,7 @@ export async function loadPrograms(supabase: Client, demo = false) {
     );
 
     const propertyRows = myLinks.map((l) => {
-      const prop = l.properties as unknown as { name: string; nickname: string | null } | null;
+      const prop = l.properties as unknown as PropertyLabelFields | null;
       const mine = myReviews.filter((r) => reviewProperty.get(r.id) === l.property_id);
       const open = mine.filter((r) => !["answered", "closed"].includes(r.status));
       const overdue = open.filter((r) => r.respond_by && r.respond_by < today);
@@ -226,7 +226,9 @@ export async function loadPrograms(supabase: Client, demo = false) {
         (ep) => ep.property_id === l.property_id && myEntries.some((e) => e.id === ep.entry_id),
       );
       return {
+        ...prop,
         id: l.property_id,
+        listing_name: prop?.name,
         name: prop ? formatPropertyLabel(prop).primary : "Property",
         coverage: hasActivity
           ? overdue.length

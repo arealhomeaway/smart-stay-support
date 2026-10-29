@@ -65,7 +65,7 @@ export function GlobalSearch({ targets }: { targets: SearchTarget[] }) {
           .limit(6),
         readCountedRows(supabase
           .from("properties")
-          .select("id, name, nickname, address_line1, city, unit, state, postal_code, ownerrez_property_id", { count: "exact" })
+          .select("id, name, nickname, listing_alias, address_line1, city, unit, state, postal_code, ownerrez_property_id", { count: "exact" })
           .order("id")),
       ]);
 
@@ -128,7 +128,7 @@ export function GlobalSearch({ targets }: { targets: SearchTarget[] }) {
               {records?.properties.map((p) => (
                 <CommandItem
                   key={p.id}
-                  value={`home ${propertySearchText(p)}`}
+                  value={`home ${propertySearchText(p)} ${q}`}
                   onSelect={() => go(`/property/${p.id}`)}
                 >
                   <span className="truncate">{formatPropertyLabel(p).primary}</span>

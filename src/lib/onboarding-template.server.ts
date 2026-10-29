@@ -17,6 +17,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { masterStageForLegacyTask } from "./onboarding-stage-map";
+import { formatPropertyLabel } from "./property-label";
 import { MASTER_ONBOARDING_TEMPLATE, TEMPLATE_KEY, type TemplateTask } from "./onboarding-template";
 import { offsetFromAccess, setupWindowDays } from "./onboarding-schedule";
 
@@ -455,7 +456,7 @@ export async function applyOnboardingTemplate(
     action: "onboarding_template_applied",
     entityType: "property",
     entityId: input.propertyId,
-    entityLabel: property.name,
+    entityLabel: formatPropertyLabel(property).primary,
     after: {
       template: plan.key,
       created: rows.length,

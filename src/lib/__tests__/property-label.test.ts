@@ -25,8 +25,18 @@ describe("shared home address labels", () => {
     });
   }
   it("matches a unit and rejects a nonmatching home", () => {
-    expect(matchesPropertySearch({ ...home, unit: "B" }, "Unit B")).toBe(false);
+    expect(matchesPropertySearch({ ...home, unit: "B" }, "Unit B")).toBe(true);
     expect(matchesPropertySearch({ ...home, unit: "B" }, "B")).toBe(true);
     expect(matchesPropertySearch(home, "Tulsa 99999")).toBe(false);
+  });
+  it("retains listing aliases after the displayed name becomes an address", () => {
+    const projected = { ...home, name: "3400 N Fern Ave", listing_name: "Fernstone House", listing_alias: "Ramsey Retreat" };
+    expect(matchesPropertySearch(projected, "Fernstone")).toBe(true);
+    expect(matchesPropertySearch(projected, "Ramsey Retreat")).toBe(true);
+    expect(matchesPropertySearch(projected, "Broken Arrow 74012")).toBe(true);
+  });
+  it("filters a home beyond position sixty before limiting search results", () => {
+    const rows = Array.from({ length: 65 }, (_, i) => ({ ...home, id: `other-${i}`, name: "Other home", nickname: null, address_line1: `${i} Main St`, city: "Tulsa", postal_code: "74101", ownerrez_property_id: `${i}` }));
+    expect(rankProperties("499899", [...rows, home], 8).map(p => p.id)).toEqual(["fern"]);
   });
 });

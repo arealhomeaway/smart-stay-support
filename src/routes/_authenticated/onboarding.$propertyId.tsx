@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import { canReviewOnboardingGate } from "@/lib/onboarding-review-capabilities";
 import { gateReviewAuthority } from "@/lib/handoff-gate-authority";
 import { overrideOnboardingTaskDateFn } from "@/lib/onboarding.functions";
@@ -367,7 +368,7 @@ function PropertyWorkspace() {
       <div className="space-y-5">
           <PageHeader
           eyebrow="Onboarding"
-          title={current.name}
+          title={formatPropertyLabel(current).primary}
           description="Onboarding has not been started for this home yet."
         />
         <section className="surface p-4">
@@ -391,7 +392,7 @@ function PropertyWorkspace() {
 
         <ProjectScopePanel
           propertyId={current.id}
-          propertyName={current.name}
+          propertyName={formatPropertyLabel(current).primary}
           people={data.people}
           canEdit={canEdit}
           hints={{ planned_closing_on: current.planned_closing_on ?? null }}
@@ -453,7 +454,7 @@ function PropertyWorkspace() {
         <div className="h-24 w-36 shrink-0 overflow-hidden rounded-lg bg-sunken">
           <PropertyPhoto
             url={current.primary_photo_url ?? null}
-            name={current.nickname ?? current.name}
+            name={formatPropertyLabel(current).primary}
             rounded="rounded-none"
             className="size-full object-cover"
           />
@@ -461,7 +462,7 @@ function PropertyWorkspace() {
         <div className="min-w-0 flex-1">
           <PageHeader
             eyebrow="Onboarding"
-            title={current.name}
+            title={formatPropertyLabel(current).primary}
             description={
               [current.address_line1, current.city, current.state].filter(Boolean).join(", ") ||
               undefined
@@ -630,7 +631,7 @@ function PropertyWorkspace() {
             voided={data.retiredTasks ?? []}
             bulk={
               canEdit && !life.locked
-                ? { propertyId: current.id, homeName: current.name, onSaved: () => void refresh() }
+                ? { propertyId: current.id, homeName: formatPropertyLabel(current).primary, onSaved: () => void refresh() }
                 : undefined
             }
           />
@@ -642,7 +643,7 @@ function PropertyWorkspace() {
 
           <ProjectScopePanel
             propertyId={current.id}
-            propertyName={current.name}
+            propertyName={formatPropertyLabel(current).primary}
             people={data.people}
             canEdit={canEdit}
             hints={{ planned_closing_on: current.planned_closing_on ?? null }}
@@ -778,7 +779,7 @@ function PropertyWorkspace() {
         task={openTask}
         tasks={tasks}
         people={data.people}
-        propertyName={current.name}
+        propertyName={formatPropertyLabel(current).primary}
         disabled={!canEdit}
         release={release}
         approvals={approvals as never}

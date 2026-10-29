@@ -1,4 +1,4 @@
-import { matchesPropertySearch } from "@/lib/property-label";
+import { formatPropertyLabel, matchesPropertySearch } from "@/lib/property-label";
 import { canReviewOnboardingGate } from "@/lib/onboarding-review-capabilities";
 import { onboardingWorkspaceKey } from "@/lib/onboarding-workspace-view";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -202,7 +202,7 @@ function Hub() {
         homes={applyTestDataFilter(data.properties, false, (p) => p)
           .map((p) => ({
             id: p.id,
-            name: (p as { name?: string | null }).name ?? "Home",
+            name: formatPropertyLabel(p).primary,
             open: data.tasks.filter(
               (t) => t.property_id === p.id && t.status !== "complete" && t.assigned_to === userId,
             ).length,
@@ -407,7 +407,7 @@ function NeedsMyAttention({
       search={(originToken ? { from: originToken } : undefined) as never}
       className="block rounded-md border px-3 py-2 text-sm transition hover:bg-muted/40"
     >
-      <span className="font-medium">{p.property.name}</span>
+      <span className="font-medium">{formatPropertyLabel(p.property).primary}</span>
       <span className="block text-xs text-muted-foreground">{line}</span>
     </Link>
   );
@@ -482,7 +482,7 @@ function DashboardSections({
     .filter(
       (p) =>
         !q ||
-        matchesPropertySearch({ ...p.property, name: (p.property as { listing_name?: string }).listing_name ?? p.property.name }, q),
+        matchesPropertySearch(p.property, q),
     )
     .filter((p) =>
       filter === "attention" ? needs(p) : filter === "handoff" ? withinDays(p.target, 30) : true,
@@ -568,7 +568,7 @@ function DashboardSections({
                   search={(originToken ? { from: originToken } : undefined) as never}
                   className="font-medium hover:underline"
                 >
-                  {p.property.name}
+                  {formatPropertyLabel(p.property).primary}
                 </Link>
                 <span className="numeric text-muted-foreground">{usDate(p.target!)}</span>
               </li>
@@ -595,7 +595,7 @@ function PropertyRow({
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <PropertyPhoto
           url={(p.property as { primary_photo_url?: string | null }).primary_photo_url ?? null}
-          name={p.property.name}
+          name={formatPropertyLabel(p.property).primary}
           className="size-11"
         />
         <Link
@@ -605,7 +605,7 @@ function PropertyRow({
           className="min-w-0 flex-1 basis-full sm:basis-auto"
         >
           <span className="block truncate text-base font-semibold hover:underline">
-            {p.property.name}
+            {formatPropertyLabel(p.property).primary}
           </span>
           <span className="block truncate text-sm text-muted-foreground">
             {p.phaseLabel} · {p.next.headline}
@@ -668,11 +668,11 @@ function DecisionRow({
     >
       <PropertyPhoto
         url={(p.property as { primary_photo_url?: string | null }).primary_photo_url ?? null}
-        name={p.property.name}
+        name={formatPropertyLabel(p.property).primary}
         className="size-11"
       />
       <span className="min-w-0 flex-1 basis-full sm:basis-auto">
-        <span className="block truncate text-base font-semibold">{p.property.name}</span>
+        <span className="block truncate text-base font-semibold">{formatPropertyLabel(p.property).primary}</span>
         <span className="block truncate text-sm text-muted-foreground">
           {stage.label} · {p.next.headline}
         </span>

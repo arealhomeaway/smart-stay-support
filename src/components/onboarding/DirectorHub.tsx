@@ -1,4 +1,4 @@
-import { matchesPropertySearch } from "@/lib/property-label";
+import { formatPropertyLabel, matchesPropertySearch } from "@/lib/property-label";
 /**
  * Director Onboarding Hub — the exception surface.
  *
@@ -129,7 +129,7 @@ export function DirectorHub({
     return projects
       .filter((p) => matchesOnboardingLens(p, lens, viewer))
       .filter((p) => !owner || (p.owner ?? "Unassigned") === owner)
-      .filter((p) => !q || matchesPropertySearch({ ...p.property, name: (p.property as { listing_name?: string }).listing_name ?? p.property.name }, q) || (p.owner ?? "").toLowerCase().includes(q))
+      .filter((p) => !q || matchesPropertySearch(p.property, q) || (p.owner ?? "").toLowerCase().includes(q))
       .sort((a, b) => (a.target ?? "9999").localeCompare(b.target ?? "9999"));
   }, [projects, lens, find, owner, viewer]);
 
@@ -261,7 +261,7 @@ function PortfolioCard({
       <div className="relative aspect-[4/3] w-full overflow-hidden">
         <PropertyPhoto
           url={(p.property as { primary_photo_url?: string | null }).primary_photo_url ?? null}
-          name={p.property.name}
+          name={formatPropertyLabel(p.property).primary}
           className="size-full rounded-none"
           rounded="rounded-none"
         />
@@ -270,7 +270,7 @@ function PortfolioCard({
         </span>
       </div>
       <div className="space-y-1 p-3">
-        <p className="truncate text-sm font-semibold">{p.property.name}</p>
+        <p className="truncate text-sm font-semibold">{formatPropertyLabel(p.property).primary}</p>
         <div className="flex flex-wrap items-center gap-1.5">
           <span className={cn("rounded-md border px-2 py-0.5 text-xs font-medium", stage.accent)}>
             {stage.label}
@@ -311,13 +311,13 @@ function ProjectRow({
     >
       <PropertyPhoto
         url={(p.property as { primary_photo_url?: string | null }).primary_photo_url ?? null}
-        name={p.property.name}
+        name={formatPropertyLabel(p.property).primary}
         className="size-12 rounded-xl"
         rounded="rounded-xl"
       />
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-center gap-2">
-          <span className="truncate font-medium">{p.property.name}</span>
+          <span className="truncate font-medium">{formatPropertyLabel(p.property).primary}</span>
           <span className={cn("rounded-md border px-2 py-0.5 text-xs font-medium", stage.accent)}>
             {stage.label}
           </span>
