@@ -14,8 +14,7 @@ CREATE TABLE owner_programs(id uuid PRIMARY KEY, started_on date, ends_on date, 
 CREATE TABLE owner_program_properties(id uuid DEFAULT gen_random_uuid() PRIMARY KEY, program_id uuid, property_id uuid, closing_date date, closing_confirmed boolean, inclusion_status text, archived_at timestamptz);
 CREATE TABLE owner_program_events(id uuid DEFAULT gen_random_uuid() PRIMARY KEY, program_id uuid, property_id uuid, kind text, summary text, detail jsonb, previous_value text, new_value text, reason text, actor_id uuid);
 CREATE TABLE audit_log(id uuid DEFAULT gen_random_uuid() PRIMARY KEY, actor_id uuid, action text, entity_type text, entity_id uuid, entity_label text, reason text, before_value jsonb, after_value jsonb);
-CREATE SCHEMA private;
-CREATE FUNCTION private.can_correct_actual_closing(uid uuid) RETURNS boolean LANGUAGE sql AS $$ SELECT uid = '${emily}' $$;
+CREATE FUNCTION can_correct_actual_closing(uid uuid) RETURNS boolean LANGUAGE sql AS $$ SELECT uid = '${emily}' $$;
 CREATE SCHEMA auth;
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT current_setting('app.test_uid', true)::uuid $$;
 `;
