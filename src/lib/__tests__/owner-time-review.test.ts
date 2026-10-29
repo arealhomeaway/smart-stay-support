@@ -194,7 +194,7 @@ describe("versioned participation review", () => {
                   {
                     entry_id: "entry",
                     property_id: "home",
-                    properties: { name: "Lake home", nickname: null },
+                    properties: { name: "Lake home", nickname: null, address_line1: "101 Lake St" },
                   },
                 ];
         const query = {
@@ -216,6 +216,6 @@ describe("versioned participation review", () => {
     expect(selected[0]).toContain("review_version");
     expect(rows.length).toBe(1);
     expect(rows[0]?.reviewVersion).toBe("stored-version");
-    expect(rows[0]?.propertyNames).toEqual(["Lake home"]);
+    expect(rows[0]?.propertyNames).toEqual(["101 Lake St"]);
   });
 });
