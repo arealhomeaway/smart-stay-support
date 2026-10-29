@@ -105,3 +105,4 @@
 - [x] Pending DB change + undo in docs/pending/library-video/ (not applied)
 - [x] Isolated tests, full suite, typecheck, build
 - [ ] Real 129 MB upload and homeowner viewing: blocked until 0167 is applied and published
+- [ ] Append Linder correction line to program internal notes as Emily (published site)
