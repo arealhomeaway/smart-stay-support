@@ -3,8 +3,8 @@
  *
  * Everything shown here has already been decided server-side: the list only
  * contains files this person may see, and each action re-checks on the server
- * before anything happens. A retried upload reuses its own upload key, so a
- * second attempt never leaves a second row behind.
+ * before anything happens. Retries retain completed bytes and finalize the
+ * same intent; failed transfers use a fresh intent through the existing path.
  */
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,20 +15,16 @@ import {
   FileText,
   Film,
   Image as ImageIcon,
-  Loader2,
   Paperclip,
   Trash2,
-  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import {
-  ALLOWED_MIME_TYPES,
   attachmentUploadInvalidationKeys,
   type AttachmentEntity,
   DOCUMENT_CATEGORIES,
@@ -36,7 +32,6 @@ import {
   ownerCategoryLabel,
   formatBytes,
   MAX_FILE_BYTES,
-  validateFile,
 } from "@/lib/attachments";
 import {
   Select,
@@ -54,6 +49,8 @@ import {
   setAttachmentVisibilityFn,
 } from "@/lib/attachments.functions";
 import { usDate } from "@/lib/dates";
+import { MultiFileUpload } from "@/components/MultiFileUpload";
+import { createAttachmentUploader } from "@/lib/attachment-upload-client";
 
 type Props = {
   entityType: AttachmentEntity;
@@ -64,6 +61,8 @@ type Props = {
   description?: string;
   /** History view: show what is on file, but never a second uploader. */
   readOnly?: boolean;
+  onUploaded?: (ids: string[]) => void;
+  onUploadBusyChange?: (busy: boolean) => void;
 };
 
 function iconFor(kind: string) {
@@ -79,23 +78,12 @@ export function AttachmentsPanel({
   title = "Files",
   description,
   readOnly = false,
+  onUploaded,
+  onUploadBusyChange,
 }: Props) {
   const propertyLevel = entityType === "property";
   const [category, setCategory] = useState<string>("reference");
   const qc = useQueryClient();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [progress, setProgress] = useState<{ name: string; pct: number } | null>(null);
-  const [retry, setRetry] = useState<File | null>(null);
-  const [dragging, setDragging] = useState(false);
-
-  const uploadAttempt = useRef<{
-    file: File;
-    key: string;
-    category: string | null;
-    requestId: string | null;
-    bytesUploaded: boolean;
-  } | null>(null);
-
   const list = useServerFn(listAttachmentsFn);
   const begin = useServerFn(beginUploadFn);
   const complete = useServerFn(completeUploadFn);
@@ -109,75 +97,9 @@ export function AttachmentsPanel({
     queryFn: () => list({ data: { entityType, entityId } }),
   });
 
-  const upload = useMutation({
-    mutationFn: async (file: File) => {
-      const check = validateFile({ name: file.name, type: file.type, size: file.size });
-      if (!check.ok) throw new Error(check.message);
-
-      if (uploadAttempt.current?.file !== file) {
-        uploadAttempt.current = {
-          file,
-          key: crypto.randomUUID(),
-          category: propertyLevel ? category : null,
-          requestId: fulfilsRequestId,
-          bytesUploaded: false,
-        };
-      }
-      const attempt = uploadAttempt.current;
-      const uploadKey = attempt.key;
-      setProgress({ name: file.name, pct: 5 });
-      const started = await begin({
-        data: {
-          entityType,
-          entityId,
-          uploadKey,
-          filename: file.name,
-          mimeType: file.type,
-          sizeBytes: file.size,
-          category: attempt.category,
-          fulfilsRequestId: attempt.requestId,
-        },
-      });
-      if (started.alreadyStored) return { skipped: true as const };
-
-      setProgress({ name: file.name, pct: 5 });
-      try {
-        if (!attempt.bytesUploaded) {
-          const { uploadToSignedSlot } = await import("@/lib/signed-upload");
-          await uploadToSignedSlot(started.path, started.token!, file, (pct) =>
-            setProgress({ name: file.name, pct: 5 + Math.round(pct * 0.85) }),
-          );
-          attempt.bytesUploaded = true;
-        }
-      } catch (err) {
-        uploadAttempt.current = null;
-        await complete({
-          data: { documentId: started.documentId!, ok: false, fulfilsRequestId: attempt.requestId },
-        });
-        throw err instanceof Error ? err : new Error("The upload did not finish.");
-      }
-
-      setProgress({ name: file.name, pct: 95 });
-      await complete({
-        data: { documentId: started.documentId!, ok: true, fulfilsRequestId: attempt.requestId },
-      });
-      return { skipped: false as const };
-    },
-    onSuccess: (r) => {
-      setProgress(null);
-      setRetry(null);
-      uploadAttempt.current = null;
-      toast.success(r.skipped ? "That file was already on this record." : "File added.");
-      for (const queryKey of attachmentUploadInvalidationKeys(entityType, entityId)) {
-        void qc.invalidateQueries({ queryKey });
-      }
-    },
-    onError: (err, file) => {
-      setProgress(null);
-      setRetry(file);
-      toast.error(err instanceof Error ? err.message : "The upload failed.");
-    },
-  });
+  const uploadIntent = useRef((file: File, key: string) => ({ entityType, entityId, uploadKey: key, filename: file.name, mimeType: file.type, sizeBytes: file.size, category: propertyLevel ? category : null, fulfilsRequestId }));
+  uploadIntent.current = (file: File, key: string) => ({ entityType, entityId, uploadKey: key, filename: file.name, mimeType: file.type, sizeBytes: file.size, category: propertyLevel ? category : null, fulfilsRequestId });
+  const [upload] = useState(() => createAttachmentUploader(begin, complete, (file, key) => uploadIntent.current(file, key)));
 
   const open = useMutation({
     mutationFn: async (v: { documentId: string; download: boolean }) =>
@@ -215,23 +137,7 @@ export function AttachmentsPanel({
   const canDrop = Boolean(data?.canUpload) && !readOnly;
 
   return (
-    <Card
-      onDragOver={(e) => {
-        if (!canDrop) return;
-        e.preventDefault();
-        setDragging(true);
-      }}
-      onDragLeave={() => setDragging(false)}
-      onDrop={(e) => {
-        if (!canDrop) return;
-        e.preventDefault();
-        setDragging(false);
-        const f = e.dataTransfer.files?.[0];
-        if (f) upload.mutate(f);
-      }}
-      className={dragging ? "border-primary ring-2 ring-primary/30" : undefined}
-    >
-
+    <Card>
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -258,62 +164,13 @@ export function AttachmentsPanel({
               </SelectContent>
             </Select>
           ) : null}
-          {data?.canUpload && !readOnly ? (
-            <Button size="sm" disabled={upload.isPending} onClick={() => inputRef.current?.click()}>
-              {upload.isPending ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Upload className="size-4" />
-              )}{" "}
-              Add file
-            </Button>
-          ) : null}
         </div>
-        <input
-          ref={inputRef}
-          type="file"
-          className="hidden"
-          accept={ALLOWED_MIME_TYPES.join(",")}
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            e.target.value = "";
-            if (f) upload.mutate(f);
-          }}
-        />
       </CardHeader>
       <CardContent className="space-y-3">
-        {canDrop ? (
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            className={`w-full rounded-lg border-2 border-dashed px-4 py-6 text-center text-sm transition-colors ${
-              dragging
-                ? "border-primary bg-primary/5 text-foreground"
-                : "border-border text-muted-foreground hover:border-primary/60"
-            }`}
-          >
-            Drag a photo or document here, or click to choose one.
-          </button>
-        ) : null}
-
-        {progress ? (
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Uploading {progress.name}…</p>
-            <Progress value={progress.pct} />
-          </div>
-        ) : null}
-
-        {retry && !upload.isPending ? (
-          <div className="flex flex-wrap items-center gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm">
-            <span className="flex-1">{retry.name} did not finish uploading.</span>
-            <Button size="sm" variant="outline" onClick={() => upload.mutate(retry)}>
-              Try again
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => setRetry(null)}>
-              Dismiss
-            </Button>
-          </div>
-        ) : null}
+        {canDrop ? <MultiFileUpload key={`${entityType}-${entityId}`} upload={upload} multiple={!fulfilsRequestId} onBusyChange={onUploadBusyChange} onResults={ids => {
+          onUploaded?.(ids);
+          for (const queryKey of attachmentUploadInvalidationKeys(entityType, entityId)) void qc.invalidateQueries({ queryKey });
+        }}/> : null}
 
         {files.isLoading ? (
           <Skeleton className="h-16 w-full" />

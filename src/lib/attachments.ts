@@ -202,6 +202,8 @@ export function formatBytes(bytes: number): string {
 
 export type ValidationResult = { ok: true } | { ok: false; message: string };
 
+export const ZIP_UPLOAD_MESSAGE = "Resolve can't open ZIP files. Select the photos themselves instead.";
+
 /**
  * One place that decides whether a file may be attached at all.
  * Returns the exact sentence shown to the person uploading.
@@ -213,6 +215,8 @@ export function validateFile(input: {
 }): ValidationResult {
   if (!input.name.trim())
     return { ok: false, message: "That file has no name Resolve can record." };
+  if (/\.zip$/i.test(input.name) || ["application/zip", "application/x-zip-compressed"].includes(input.type))
+    return { ok: false, message: ZIP_UPLOAD_MESSAGE };
   if (input.size <= 0) return { ok: false, message: "That file is empty — nothing to upload." };
   if (input.size > MAX_FILE_BYTES) {
     return {
