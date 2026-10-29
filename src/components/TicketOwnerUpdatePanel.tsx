@@ -40,8 +40,10 @@ function TicketOwnerUpdateEditor({ ticketId, wizard }: { ticketId: string; wizar
   const [draft, setDraft] = useState<Draft | null>(null);
   const [preview, setPreview] = useState(false);
   const latest = context.data?.history[0];
-  if(wizard && !draft && context.data && !mutationPendingPlaceholder()) {
-    // The shared editor opens directly at Fill in when used by the sending window.
+  const [initialized,setInitialized]=useState(false);
+  if(wizard && !initialized && context.data) {
+    setInitialized(true);
+    setDraft({issue:'',workPerformed:'',outcome:'',ownerRequestType:'information_only',ownerRequestWhy:'For your information. No response is needed.',expectedTicketUpdatedAt:context.data.ticket.updated_at,expectedRevision:latest?.revision??0,expectedOwnerId:context.data.ownerRecordId,reviewed:false});
   }
   const changed = Boolean(
     draft &&
