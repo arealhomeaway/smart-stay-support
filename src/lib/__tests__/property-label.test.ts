@@ -25,7 +25,7 @@ describe("shared home address labels", () => {
     });
   }
   it("matches a unit and rejects a nonmatching home", () => {
-    expect(matchesPropertySearch({ ...home, unit: "B" }, "Unit B")).toBe(false);
+    expect(matchesPropertySearch({ ...home, unit: "B" }, "Unit B")).toBe(true);
     expect(matchesPropertySearch({ ...home, unit: "B" }, "B")).toBe(true);
     expect(matchesPropertySearch(home, "Tulsa 99999")).toBe(false);
   });

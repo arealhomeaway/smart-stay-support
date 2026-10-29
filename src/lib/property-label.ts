@@ -29,7 +29,8 @@ export function formatPropertyLabel(property: PropertyLabelFields | null | undef
 
 /** Aliases stay searchable, but are never substituted for an available street. */
 export function propertySearchText(property: PropertyLabelFields) {
-  return [property.address_line1, property.unit, property.city, property.state,
+  const unit = trimmed(property.unit);
+  return [property.address_line1, unit ? (/^unit\b/i.test(unit) ? unit : `Unit ${unit}`) : null, property.city, property.state,
     property.postal_code, property.name, property.nickname, property.ownerrez_property_id]
     .filter(value => value !== null && value !== undefined).join(" ");
 }
