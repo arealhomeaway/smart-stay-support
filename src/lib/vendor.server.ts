@@ -10,6 +10,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import type { VendorCandidate } from "./dispatch";
+import { formatPropertyLabel, type PropertyLabelFields } from "./property-label";
 
 type Client = SupabaseClient<Database>;
 
@@ -111,14 +112,14 @@ export async function rankVendorsForTicket(ticketId: string) {
 
   const { data: ticket } = await supabaseAdmin
     .from("tickets")
-    .select("id, priority, property_id, properties:property_id (latitude, longitude, name)")
+    .select("id, priority, property_id, properties:property_id (latitude, longitude, name, address_line1, unit, city, state, postal_code)")
     .eq("id", ticketId)
     .maybeSingle();
 
   const home =
     (
       ticket as unknown as {
-        properties: {
+        properties: PropertyLabelFields & {
           latitude: number | null;
           longitude: number | null;
           name: string | null;
@@ -135,7 +136,7 @@ export async function rankVendorsForTicket(ticketId: string) {
   if (vendors.length === 0) {
     return {
       candidates: [] as VendorCandidate[],
-      homeName: home?.name ?? null,
+      homeName: home ? formatPropertyLabel(home).primary : null,
       hasHomePin: !!homePin,
     };
   }
@@ -202,5 +203,5 @@ export async function rankVendorsForTicket(ticketId: string) {
   });
 
   candidates.sort((a, b) => b.score - a.score);
-  return { candidates, homeName: home?.name ?? null, hasHomePin: !!homePin };
+  return { candidates, homeName: home ? formatPropertyLabel(home).primary : null, hasHomePin: !!homePin };
 }

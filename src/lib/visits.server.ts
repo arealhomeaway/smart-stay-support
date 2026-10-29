@@ -9,6 +9,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { formatPropertyLabel, type PropertyLabelFields } from "./property-label";
 import {
   MAX_TRUSTED_ACCURACY_M,
   ON_SITE_RADIUS_M,
@@ -23,7 +24,7 @@ export type Fix = { lat: number; lng: number; accuracy: number } | null;
 async function loadJobForCaller(supabase: Client, ticketId: string, userId: string) {
   const { data: ticket, error } = await supabase
     .from("tickets")
-    .select("id, ref, title, property_id, vendor_user_id, properties(name, latitude, longitude)")
+    .select("id, ref, title, property_id, vendor_user_id, properties(name, address_line1, unit, city, state, postal_code, latitude, longitude)")
     .eq("id", ticketId)
     .maybeSingle();
   if (error) throw error;
@@ -58,7 +59,7 @@ async function log(ticketId: string, authorId: string, body: string) {
 
 export async function checkIn(supabase: Client, userId: string, ticketId: string, fix: Fix) {
   const ticket = await loadJobForCaller(supabase, ticketId, userId);
-  const home = (ticket.properties ?? null) as {
+  const home = (ticket.properties ?? null) as PropertyLabelFields & {
     name: string;
     latitude: number | null;
     longitude: number | null;
@@ -106,7 +107,7 @@ export async function checkIn(supabase: Client, userId: string, ticketId: string
     ticketId,
     userId,
     verified
-      ? `Vendor checked in on site at ${home?.name ?? "the home"} (${distance} m from the pin).`
+      ? `Vendor checked in on site at ${home ? formatPropertyLabel(home).primary : "the home"} (${distance} m from the pin).`
       : distance != null
         ? `Vendor checked in — phone location was ${distance} m from the home, so arrival is unconfirmed.`
         : "Vendor checked in without sharing location, so arrival is unconfirmed.",

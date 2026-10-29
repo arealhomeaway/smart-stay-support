@@ -202,7 +202,7 @@ function Hub() {
         homes={applyTestDataFilter(data.properties, false, (p) => p)
           .map((p) => ({
             id: p.id,
-            name: (p as { name?: string | null }).name ?? "Home",
+            name: formatPropertyLabel(p).primary,
             open: data.tasks.filter(
               (t) => t.property_id === p.id && t.status !== "complete" && t.assigned_to === userId,
             ).length,

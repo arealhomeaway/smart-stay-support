@@ -14,6 +14,7 @@ export type OwnerRezCandidate = {
   name: string;
   address: string | null;
   city: string | null;
+  unit?: string | null;
   state: string | null;
   postalCode: string | null;
   /** Already in Resolve on the OwnerRez ID — importing is blocked. */

@@ -378,7 +378,7 @@ export function LeadDrawer({
                       params={{ propertyId: convertedProperty.data.id }}
                       className="underline-offset-2 hover:underline"
                     >
-                      {convertedProperty.data.nickname ?? convertedProperty.data.name}
+                      {formatPropertyLabel(convertedProperty.data).primary}
                     </Link>
                   ) : (
                     "Not recorded"

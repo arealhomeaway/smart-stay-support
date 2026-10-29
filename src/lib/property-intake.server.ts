@@ -123,6 +123,7 @@ export async function searchOwnerRezCandidates(
         listingId,
         name: l.name,
         address: l.address?.street1 ?? null,
+        unit: l.address?.street2 ?? null,
         city: l.address?.city ?? null,
         state: l.address?.state ?? null,
         postalCode: l.address?.postal_code ?? l.address?.zip ?? null,
