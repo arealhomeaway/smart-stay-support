@@ -1352,6 +1352,13 @@
       "when": 1793305272592,
       "tag": "0192_address_labels_redo_02_str_report_create_version",
       "breakpoints": true
+    },
+    {
+      "idx": 193,
+      "version": "7",
+      "when": 1793305295535,
+      "tag": "0193_address_labels_redo_02_notify_onboarding_handoff_ready",
+      "breakpoints": true
     }
   ]
 }
