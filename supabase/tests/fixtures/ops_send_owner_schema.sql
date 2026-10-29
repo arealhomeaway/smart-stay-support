@@ -1,0 +1,15 @@
+CREATE SCHEMA auth;
+CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
+CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT '00000000-0000-4000-8000-000000000001'::uuid $$;
+CREATE FUNCTION is_staff(uuid) RETURNS boolean LANGUAGE sql AS $$ SELECT coalesce(current_setting('test.staff',true),'true')='true' $$;
+CREATE FUNCTION is_onboarding_staff(uuid) RETURNS boolean LANGUAGE sql AS $$ SELECT false $$;
+CREATE TABLE properties(id uuid PRIMARY KEY,is_demo boolean,nickname text,name text,address_line1 text);
+CREATE TABLE owner_programs(id uuid PRIMARY KEY,owner_user_id uuid,status text,archived_at timestamptz);
+CREATE TABLE owner_program_properties(property_id uuid,program_id uuid,inclusion_status text,archived_at timestamptz);
+CREATE TABLE onboarding_tasks(id uuid,property_id uuid,archived_at timestamptz);
+CREATE TABLE onboarding_projects(id uuid,property_id uuid,status text,created_at timestamptz);
+CREATE TABLE tickets(id uuid PRIMARY KEY,property_id uuid,is_demo boolean);
+CREATE TABLE work_items(id uuid PRIMARY KEY,department text,kind text,property_id uuid,source_table text,source_id uuid,linked_task_id uuid,program_id uuid,title text,owner_content jsonb,status text,functional_role text,required boolean,blocks_handoff boolean,is_demo boolean,source text,source_department text,source_project_id uuid,source_task_id uuid,response_types text[],sent_at timestamptz,due_on date);
+CREATE TABLE documents(id uuid,property_id uuid,deleted_at timestamptz);
+CREATE TABLE work_item_resources(work_item_id uuid,kind text,document_id uuid,sort_order integer,label text,url text,note text,resource_type text,removed_at timestamptz);
+CREATE TABLE owner_notifications(program_id uuid,owner_user_id uuid,kind text,priority text,title text,body text,action_path text,email_status text,is_demo boolean);
