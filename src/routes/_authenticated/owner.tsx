@@ -57,6 +57,7 @@ import { saveOwnerReportFile } from "@/lib/owner-report-download";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useOwnerPreview } from "@/lib/owner-preview";
 import { useDemo } from "@/components/DemoProvider";
+import { ownerProgramDisplay } from "@/lib/owner-program-display";
 
 export const Route = createFileRoute("/_authenticated/owner")({
   // Homeowners with more than one home switch between them here, so the chosen
@@ -283,7 +284,8 @@ function OwnerHubBody({
         handedOff,
       }),
     );
-  const closeoutVisible = Boolean(program.completedAt) || snapshot.daysLeft <= 30;
+  const programDisplay = ownerProgramDisplay(program.startedOn);
+  const closeoutVisible = programDisplay.showCountdown && (Boolean(program.completedAt) || snapshot.daysLeft <= 30);
 
   // Enrollment opens hour entry; the server preserves owner and program-state checks.
   const hoursState = ownerHoursEligibility(program, properties);
@@ -420,7 +422,7 @@ function OwnerHubBody({
                   reported toward {OWNER_GOAL_LABEL.toLowerCase()}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Program period ends {snapshot.endsOn ? usDate(snapshot.endsOn) : "December 31"}
+                  {programDisplay.futureStart ? `Your program starts ${usCalendarDate(programDisplay.futureStart)}` : `Program period ends ${snapshot.endsOn ? usDate(snapshot.endsOn) : "December 31"}`}
                 </p>
                 <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground" aria-label="Participation breakdown">
                   {yearTotals.length > 1

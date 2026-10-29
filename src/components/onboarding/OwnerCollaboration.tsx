@@ -30,6 +30,7 @@ import {
 import { attachmentUrlFn, beginUploadFn, completeUploadFn } from "@/lib/attachments.functions";
 import { MultiFileUpload } from "@/components/MultiFileUpload";
 import { createAttachmentUploader } from "@/lib/attachment-upload-client";
+import { OpportunityCreationReceipt } from "@/lib/create-opportunity-priority";
 
 const LINK_TYPES = { video: "Video", document: "Document", reference: "Reference", other: "Other" } as const;
 
@@ -226,6 +227,9 @@ export function OpportunityEditor({
 }) {
   const qc = useQueryClient();
   const save = useServerFn(saveArhaOpportunity);
+  const attention = useServerFn(setOwnerAttention);
+  const [priority, setPriority] = useState(false);
+  const creation = useRef(new OpportunityCreationReceipt());
   const begin = useServerFn(beginUploadFn);
   const complete = useServerFn(completeUploadFn);
   const [form, setForm] = useState(EMPTY);
@@ -241,6 +245,8 @@ export function OpportunityEditor({
   const key = editing === null ? null : editing === "new" ? "new" : editing.id;
   if (key !== loadedFor) {
     setLoadedFor(key);
+    setPriority(false);
+    creation.current = new OpportunityCreationReceipt();
     if (editing === "new") {
       setForm({ ...EMPTY, title: defaultTitle ?? "", task: fixedTaskId ?? "none" });
       setTypes([defaultResponseType ?? "acknowledge"]);
@@ -281,8 +287,7 @@ export function OpportunityEditor({
         ways_to_document: form.ways.trim(),
         suggested_minutes: form.minutes ? Math.round(Number(form.minutes) * 60) : null,
       };
-      return save({
-        data: {
+      const input = {
           id: editing && editing !== "new" ? editing.id : null,
           propertyId,
           sourceTaskId: form.task === "none" ? null : form.task,
@@ -290,8 +295,10 @@ export function OpportunityEditor({
           responseTypes: types,
           resources,
           send,
-        },
-      });
+      };
+      return editing === "new"
+        ? creation.current.save(input, priority, data => save({ data }), (id, on) => attention({ data: { id, on } }))
+        : save({ data: input });
     },
     onSuccess: (_r, send) => {
       const wasDraft = editing === "new" || editing?.status === "draft";
@@ -323,6 +330,7 @@ export function OpportunityEditor({
           <div className="grid gap-1"><Label htmlFor="op-what">What you&apos;ll do</Label><Textarea id="op-what" rows={3} value={form.what} onChange={set("what")} /></div>
           <div className="grid gap-1"><Label htmlFor="op-why">Why this matters</Label><Textarea id="op-why" rows={2} value={form.why} onChange={set("why")} /></div>
           <div className="grid gap-1"><Label htmlFor="op-how">How to complete it</Label><Textarea id="op-how" rows={3} value={form.how} onChange={set("how")} /></div>
+          {editing === "new" ? <label className="flex items-center gap-2 text-sm"><Checkbox checked={priority} onCheckedChange={value => setPriority(value === true)} aria-label="Owner priority" />Owner priority</label> : null}
 
           <fieldset className="grid gap-2">
             <legend className="text-sm font-medium">How the homeowner responds</legend>
@@ -404,7 +412,7 @@ export function OpportunityEditor({
           </div>
         </div>
         <DialogFooter className="gap-2">
-          {isDraft ? <Button variant="outline" disabled={!canSubmit} onClick={() => mutation.mutate(false)}>Save draft</Button> : null}
+          {isDraft ? <Button variant="outline" disabled={!canSubmit || (editing === "new" && priority)} onClick={() => mutation.mutate(false)}>Save draft</Button> : null}
           <Button disabled={!canSubmit} onClick={() => mutation.mutate(true)}>{isDraft ? "Send to homeowner" : "Save changes"}</Button>
         </DialogFooter>
       </DialogContent>
