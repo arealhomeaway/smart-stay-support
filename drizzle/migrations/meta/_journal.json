@@ -1219,6 +1219,13 @@
       "when": 1793247616023,
       "tag": "0173_ops_send_to_owner_operations_opportunity",
       "breakpoints": true
+    },
+    {
+      "idx": 174,
+      "version": "7",
+      "when": 1793249544980,
+      "tag": "0174_enable_onboarding_handoff_ready_seat_alert",
+      "breakpoints": true
     }
   ]
 }
