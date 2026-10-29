@@ -210,7 +210,7 @@ export async function loadJobMap(supabase: Client) {
   const located = (props ?? []).filter((p) => validCoordinates(p.latitude, p.longitude));
   const pins: MapPin[] = located.map((p) => ({
     propertyId: p.id,
-    name: p.name,
+    name: formatPropertyLabel(p).primary,
     market: p.market,
     city: p.city,
     state: p.state,
@@ -232,7 +232,7 @@ export async function loadJobMap(supabase: Client) {
     .filter((p) => !validCoordinates(p.latitude, p.longitude))
     .map((p) => ({
       propertyId: p.id,
-      name: p.name,
+      name: formatPropertyLabel(p).primary,
       address: addressLine({
         id: p.id, name: p.name, address_line1: p.address_line1,
         city: p.city, state: p.state, postal_code: p.postal_code,

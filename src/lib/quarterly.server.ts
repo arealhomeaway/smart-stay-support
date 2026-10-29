@@ -119,7 +119,7 @@ export async function loadQuarterlyReviews(db: Client) {
     const open = openByProperty.get(p.id) ?? null;
     return {
       propertyId: p.id,
-      name: p.nickname ? `${p.name} (${p.nickname})` : p.name,
+      name: formatPropertyLabel(p).primary,
       location: [p.city, p.state].filter(Boolean).join(", "),
       market: p.market,
       inspector: (p.market ? managerByMarket.get(p.market) : null) ?? null,

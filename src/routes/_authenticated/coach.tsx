@@ -260,7 +260,7 @@ function CoachPage() {
             <SelectContent>
               {(properties ?? []).map((p) => (
                 <SelectItem key={p.id} value={p.id}>
-                  {p.nickname ? `${p.nickname} — ${p.name}` : p.name}
+                  {formatPropertyLabel(p).primary}
                 </SelectItem>
               ))}
             </SelectContent>

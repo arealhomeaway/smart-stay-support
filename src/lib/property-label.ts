@@ -1,13 +1,13 @@
 /** Display-only home identity. Stored listing names and matching IDs never change. */
 export type PropertyLabelFields = {
-  name?: string | null;
-  nickname?: string | null;
-  address_line1?: string | null;
-  unit?: string | null;
-  city?: string | null;
-  state?: string | null;
-  postal_code?: string | null;
-  ownerrez_property_id?: string | number | null;
+  name?: string | null | undefined;
+  nickname?: string | null | undefined;
+  address_line1?: string | null | undefined;
+  unit?: string | null | undefined;
+  city?: string | null | undefined;
+  state?: string | null | undefined;
+  postal_code?: string | null | undefined;
+  ownerrez_property_id?: string | number | null | undefined;
 };
 
 const trimmed = (value: unknown): string => typeof value === "string" ? value.trim() : "";
