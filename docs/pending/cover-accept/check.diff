@@ -1,0 +1,11 @@
+--- live
++++ cover
+@@ -14,7 +14,7 @@
+  IF NOT coalesce(auth.uid()=public.seat_holder('onboarding_director') OR auth.uid()=pr.director OR public.has_role(auth.uid(),'admin'),false) THEN RAISE EXCEPTION 'Only the Onboarding Director can mark a home ready.'; END IF;
+  IF pr.handoff_state IN('ready','accepted') THEN RETURN; END IF;
+  ELSIF _step='accepted' THEN
+- IF NOT coalesce(auth.uid()=public.seat_holder('director_ops') OR public.has_role(auth.uid(),'admin'),false) THEN RAISE EXCEPTION 'Only the Operations Director can accept a home.'; END IF;
++ IF NOT coalesce(auth.uid()=public.seat_holder('director_ops') OR public.has_role(auth.uid(),'admin') OR EXISTS(SELECT 1 FROM public.seat_override_at('director_ops',now()) o WHERE o.kind='cover' AND o.user_id=auth.uid()),false) THEN RAISE EXCEPTION 'Only the Operations Director can accept a home.'; END IF;
+  IF pr.handoff_state='accepted' THEN RETURN; END IF;
+  IF pr.handoff_state<>'ready' THEN RAISE EXCEPTION 'Mark this home ready first.'; END IF;
+  ELSE RAISE EXCEPTION 'Choose a handoff step.'; END IF;

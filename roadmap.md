@@ -1,6 +1,7 @@
 # Roadmap — approved build work, NO publish
 
 ## Oct 29 Step 3 cleanup Part A (approved, no publish or live record writes)
+- Retry items 1–3: capture base64 bytes with database SHA256 proof; stop at first failure, no real records or approvals touched.
 - [ ] Narrow handoff acceptance permission to current Director of Operations cover; exact undo, isolated role tests, apply and unchanged-record/grant checks
 - [ ] Stage old handoff function retirement or signed-out guard with exact undo based on remaining callers
 - [ ] Record missing Oct 16 live notification definitions in pending replay SQL, without applying
