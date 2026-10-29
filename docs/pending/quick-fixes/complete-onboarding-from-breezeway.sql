@@ -17,7 +17,7 @@ BEGIN
  SELECT * INTO link FROM breezeway_outbound_tasks WHERE id=_link_id AND source_type='onboarding_task'
   AND breezeway_task_id=_breezeway_task_id AND property_id=_property_id FOR UPDATE;
  IF link.id IS NULL OR link.onboarding_task_id IS NULL THEN RETURN false; END IF;
- IF NOT EXISTS(SELECT 1 FROM breezeway_property_links WHERE property_id=_property_id AND breezeway_home_id=link.breezeway_home_id AND mapping_state='verified') THEN RETURN false; END IF;
+ IF home.breezeway_property_id IS DISTINCT FROM link.breezeway_home_id OR home.breezeway_mapping_state::text IS DISTINCT FROM 'verified' THEN RETURN false; END IF;
  SELECT * INTO task FROM onboarding_tasks WHERE id=link.onboarding_task_id AND property_id=_property_id AND archived_at IS NULL;
  IF task.id IS NULL OR task.status IN ('complete','carryover') OR task.completed_at IS NOT NULL THEN RETURN false; END IF;
  IF task.updated_at IS DISTINCT FROM _task_updated_at OR home.updated_at IS DISTINCT FROM _property_updated_at

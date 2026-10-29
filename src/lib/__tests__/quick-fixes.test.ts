@@ -7,7 +7,7 @@ import { ownerProgramDisplay } from "../owner-program-display";
 import { ownerHoursEligibility } from "../owner-hours-eligibility";
 import { OpportunityCreationReceipt } from "../create-opportunity-priority";
 const bytes = strToU8("photo bytes");
-const archive = (entries: Record<string, Uint8Array>) => new File([zipSync(entries)], "photos.zip", { type: "application/zip" });
+const archive = (entries: Record<string, Uint8Array>) => new File([new Uint8Array(zipSync(entries)).buffer], "photos.zip", { type: "application/zip" });
 describe("ZIP selection", () => {
   it("flattens folders, skips metadata and unsupported types, retaining archive order", async () => {
     const selection = await prepareUploadSelection([archive({ "first.jpg": bytes, "nested/second.png": bytes, "bad.exe": bytes, "__MACOSX/hidden.jpg": bytes, ".hidden.jpg": bytes, "nested/.secret/hidden.png": bytes, "folder/": new Uint8Array() })], true);
@@ -40,7 +40,7 @@ describe("ZIP selection", () => {
     queue.add(opened.files); queue.start();
     for (let i = 0; i < 50 && queue.busy; i++) await new Promise(r => setTimeout(r, 1));
     expect(queue.results()).toEqual(["photo.jpg"]);
-  }, 30000);
+  });
   it("single-file slot refuses multiple supported files and accepts one with skipped types", async () => {
     await expect(openZip(archive({ "a.jpg": bytes, "b.png": bytes }), false)).rejects.toThrow(ZIP_SINGLE_ERROR);
     const opened = await openZip(archive({ "bad.exe": bytes, "nested/a.jpg": bytes }), false);
@@ -48,7 +48,7 @@ describe("ZIP selection", () => {
     expect(opened.skipped).toBe(1);
   });
   it("an invalid ZIP does not cancel other selected files", async () => {
-    const chosen = await prepareUploadSelection([new File(["bad"], "bad.zip"), new File([bytes], "good.jpg", { type: "image/jpeg" })], true);
+    const chosen = await prepareUploadSelection([new File(["bad"], "bad.zip"), new File([new Uint8Array(bytes).buffer], "good.jpg", { type: "image/jpeg" })], true);
     expect(chosen.files.map(f => f.name)).toEqual(["good.jpg"]);
     expect(chosen.messages).toEqual([ZIP_OPEN_ERROR]);
   });
