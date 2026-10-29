@@ -1268,6 +1268,13 @@
       "when": 1793291684342,
       "tag": "0180_after_handoff_plan_and_schedule",
       "breakpoints": true
+    },
+    {
+      "idx": 181,
+      "version": "7",
+      "when": 1793291795259,
+      "tag": "0181_perform_handoff_step_schedule_after_handoff",
+      "breakpoints": true
     }
   ]
 }
