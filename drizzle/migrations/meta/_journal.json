@@ -1310,6 +1310,139 @@
       "when": 1793303872224,
       "tag": "0186_address_labels_undo_01_helper",
       "breakpoints": true
+    },
+    {
+      "idx": 187,
+      "version": "7",
+      "when": 1793304976205,
+      "tag": "0187_address_labels_redo_01_helper",
+      "breakpoints": true
+    },
+    {
+      "idx": 188,
+      "version": "7",
+      "when": 1793305139977,
+      "tag": "0188_address_labels_redo_02_notify_onboarding_note",
+      "breakpoints": true
+    },
+    {
+      "idx": 189,
+      "version": "7",
+      "when": 1793305162026,
+      "tag": "0189_address_labels_redo_02_notify_onboarding_task_complete",
+      "breakpoints": true
+    },
+    {
+      "idx": 190,
+      "version": "7",
+      "when": 1793305186003,
+      "tag": "0190_address_labels_redo_02_notify_opportunity_staff",
+      "breakpoints": true
+    },
+    {
+      "idx": 191,
+      "version": "7",
+      "when": 1793305246321,
+      "tag": "0191_address_labels_redo_02_str_report_build",
+      "breakpoints": true
+    },
+    {
+      "idx": 192,
+      "version": "7",
+      "when": 1793305272592,
+      "tag": "0192_address_labels_redo_02_str_report_create_version",
+      "breakpoints": true
+    },
+    {
+      "idx": 193,
+      "version": "7",
+      "when": 1793305295535,
+      "tag": "0193_address_labels_redo_02_notify_onboarding_handoff_ready",
+      "breakpoints": true
+    },
+    {
+      "idx": 194,
+      "version": "7",
+      "when": 1793305318185,
+      "tag": "0194_address_labels_redo_02_notify_owner_of_onboarding_publication",
+      "breakpoints": true
+    },
+    {
+      "idx": 195,
+      "version": "7",
+      "when": 1793305345378,
+      "tag": "0195_address_labels_redo_02_owner_completions_for_review",
+      "breakpoints": true
+    },
+    {
+      "idx": 196,
+      "version": "7",
+      "when": 1793305370126,
+      "tag": "0196_address_labels_redo_02_owner_release_summary",
+      "breakpoints": true
+    },
+    {
+      "idx": 197,
+      "version": "7",
+      "when": 1793305392395,
+      "tag": "0197_address_labels_redo_02_owner_str_reports",
+      "breakpoints": true
+    },
+    {
+      "idx": 198,
+      "version": "7",
+      "when": 1793305420154,
+      "tag": "0198_address_labels_redo_02_post_owner_request_message",
+      "breakpoints": true
+    },
+    {
+      "idx": 199,
+      "version": "7",
+      "when": 1793305446491,
+      "tag": "0199_address_labels_redo_02_publish_owner_approval",
+      "breakpoints": true
+    },
+    {
+      "idx": 200,
+      "version": "7",
+      "when": 1793305473866,
+      "tag": "0200_address_labels_redo_02_read_owner_approvals",
+      "breakpoints": true
+    },
+    {
+      "idx": 201,
+      "version": "7",
+      "when": 1793305507707,
+      "tag": "0201_address_labels_redo_02_record_owner_completion_review",
+      "breakpoints": true
+    },
+    {
+      "idx": 202,
+      "version": "7",
+      "when": 1793305538872,
+      "tag": "0202_address_labels_redo_02_release_owner_program_activities",
+      "breakpoints": true
+    },
+    {
+      "idx": 203,
+      "version": "7",
+      "when": 1793305565893,
+      "tag": "0203_address_labels_redo_02_request_owner_response",
+      "breakpoints": true
+    },
+    {
+      "idx": 204,
+      "version": "7",
+      "when": 1793305589062,
+      "tag": "0204_address_labels_redo_02_str_report_context",
+      "breakpoints": true
+    },
+    {
+      "idx": 205,
+      "version": "7",
+      "when": 1793305612206,
+      "tag": "0205_address_labels_redo_03_owner_address_projection",
+      "breakpoints": true
     }
   ]
 }
