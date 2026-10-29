@@ -1,5 +1,12 @@
 # Roadmap — approved build work, NO publish
 
+## Oct 29 Operations Send to owner (Phase 1, approved code/test only)
+- [ ] Shared type/fill/preview/send window and one recipient helper, Ticket/property entry points and fixed approval button
+- [ ] Reuse canonical Opportunity, reviewed Ticket update and Work Order approval actions; Ticket sent list and existing details
+- [ ] Pending Operations provenance/Ticket link SQL with live-definition SHA256 undo proof; isolated rule tests
+- [ ] Focused/full tests and automatic typecheck/build; synthetic unsigned preview only
+- [ ] Live send acceptance: blocked by no migrations, publish, sign-in or live writes
+
 ## Oct 29 quick fixes and five Help closures (approved)
 - [x] Browser-only ZIP unpacking in shared uploader and homeowner hour-file selection, independent validated rows and single-file protection
 - [x] Future program date display and creation Owner priority; Module helper already present and retained
