@@ -215,6 +215,7 @@ export function OpportunityEditor({
   defaultTitle,
   defaultResponseType,
   onClose,
+  operations,
 }: {
   propertyId: string;
   data: CollabData | undefined;
@@ -224,6 +225,7 @@ export function OpportunityEditor({
   /** From the Task's owner dependency — a starting point Kati can change. */
   defaultResponseType?: ResponseType | undefined;
   onClose: () => void;
+  operations?: { kind: 'owner_task' | 'review'; ticketId: string | null; ready: boolean; onSent: () => void };
 }) {
   const qc = useQueryClient();
   const save = useServerFn(saveArhaOpportunity);
@@ -240,6 +242,8 @@ export function OpportunityEditor({
   const [uploading, setUploading] = useState(false);
   const [uploadedIds, setUploadedIds] = useState<string[]>([]);
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
+  const [preview, setPreview] = useState(false);
+  const [dueOn, setDueOn] = useState('');
 
   // Load the form when the dialog opens for a different record.
   const key = editing === null ? null : editing === "new" ? "new" : editing.id;
@@ -295,6 +299,7 @@ export function OpportunityEditor({
           responseTypes: types,
           resources,
           send,
+          ...(operations ? { operations: { kind: operations.kind, ticketId: operations.ticketId, dueOn } } : {}),
       };
       return editing === "new"
         ? creation.current.save(input, priority, data => save({ data }), (id, on) => attention({ data: { id, on } }))
@@ -304,6 +309,7 @@ export function OpportunityEditor({
       const wasDraft = editing === "new" || editing?.status === "draft";
       toast.success(send && wasDraft ? "Opportunity sent to the homeowner." : send ? "Changes saved." : "Draft saved.");
       onClose();
+      operations?.onSent();
       void qc.invalidateQueries({ queryKey: ["owner-collaboration", propertyId] });
       void qc.invalidateQueries({ queryKey: ["property-opportunities", propertyId] });
     },
@@ -318,14 +324,20 @@ export function OpportunityEditor({
   const isDraft = editing === "new" || (editing && editing.status === "draft");
   const canSubmit = form.title.trim().length >= 3 && types.length > 0 && !mutation.isPending && !uploading;
 
-  return (
-    <Dialog open={editing !== null} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+  const body = (
+      <>
         <DialogHeader>
-          <DialogTitle>{editing === "new" ? "Create Opportunity" : "Edit Opportunity"}</DialogTitle>
+          <DialogTitle>{operations ? `${preview ? '3. Preview' : '2. Fill in'}: ${operations.kind === 'review' ? 'For review' : 'Owner task'}` : editing === "new" ? "Create Opportunity" : "Edit Opportunity"}</DialogTitle>
           <DialogDescription>Written for the homeowner. It never blocks or changes the internal Task.</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-3">
+        {preview && operations ? <section aria-label="Homeowner preview" className="space-y-4 whitespace-pre-wrap">
+          <h3 className="text-xl font-semibold">{form.title}</h3>
+          {([['What you\'ll do',form.what],['Why this matters',form.why],['How to complete it',form.how]] as const).map(([label,value])=><div key={label}><h4 className="text-sm font-semibold">{label}</h4><p>{value}</p></div>)}
+          {dueOn ? <p>Due {dueOn}</p> : null}
+          <p>{operations.kind==='review'?"I've reviewed this":types.map(t=>RESPONSE_TYPES.find(r=>r.code===t)?.label).join(', ')}</p>
+          <ul>{resources.map((r,i)=><li key={i}>{r.kind==='file'?fileName(r.document_id):r.label}</li>)}</ul>
+          {priority?<p>Needs your attention</p>:null}
+        </section> : <div className="grid gap-3">
           <div className="grid gap-1"><Label htmlFor="op-title">Opportunity title</Label><Input id="op-title" value={form.title} onChange={set("title")} placeholder="Review your floor plans" /></div>
           <div className="grid gap-1"><Label htmlFor="op-what">What you&apos;ll do</Label><Textarea id="op-what" rows={3} value={form.what} onChange={set("what")} /></div>
           <div className="grid gap-1"><Label htmlFor="op-why">Why this matters</Label><Textarea id="op-why" rows={2} value={form.why} onChange={set("why")} /></div>
@@ -335,7 +347,7 @@ export function OpportunityEditor({
           <fieldset className="grid gap-2">
             <legend className="text-sm font-medium">How the homeowner responds</legend>
             <div className="grid gap-2 sm:grid-cols-2">
-              {RESPONSE_TYPES.map((t) => (
+              {RESPONSE_TYPES.filter(t=>!operations||operations.kind!=='review'||t.code==='acknowledge').map((t) => (
                 <label key={t.code} className="flex items-center gap-2 text-sm">
                   <Checkbox
                     checked={types.includes(t.code)}
@@ -346,6 +358,7 @@ export function OpportunityEditor({
               ))}
             </div>
           </fieldset>
+          {operations ? <div className="grid gap-1"><Label htmlFor="op-due">Due date (optional)</Label><Input id="op-due" type="date" value={dueOn} onChange={e=>setDueOn(e.target.value)}/></div> : null}
 
           <div className="grid gap-2">
             <Label>Resources for the homeowner</Label>
@@ -394,7 +407,7 @@ export function OpportunityEditor({
             </div>
           </div>
 
-          <div className="grid gap-1"><Label htmlFor="op-ways">Ways to document your participation</Label><Textarea id="op-ways" rows={2} value={form.ways} onChange={set("ways")} /></div>
+          {operations ? null : <><div className="grid gap-1"><Label htmlFor="op-ways">Ways to document your participation</Label><Textarea id="op-ways" rows={2} value={form.ways} onChange={set("ways")} /></div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="grid gap-1"><Label htmlFor="op-min">Suggested time (hours, optional)</Label><Input id="op-min" type="number" min={0} step={0.25} value={form.minutes} onChange={set("minutes")} /></div>
             {fixedTaskId ? null : (
@@ -409,12 +422,19 @@ export function OpportunityEditor({
                 </Select>
               </div>
             )}
-          </div>
-        </div>
+          </div></>}
+        </div>}
+        {operations && !operations.ready ? <p role="status" className="text-sm text-muted-foreground">Operations sending will be available after the approved update. Nothing has been sent.</p> : null}
         <DialogFooter className="gap-2">
-          {isDraft ? <Button variant="outline" disabled={!canSubmit || (editing === "new" && priority)} onClick={() => mutation.mutate(false)}>Save draft</Button> : null}
-          <Button disabled={!canSubmit} onClick={() => mutation.mutate(true)}>{isDraft ? "Send to homeowner" : "Save changes"}</Button>
+          {operations ? <><Button variant="outline" disabled={mutation.isPending} onClick={()=>preview?setPreview(false):onClose()}>Back</Button>{preview?<Button disabled={!canSubmit||!operations.ready} onClick={()=>mutation.mutate(true)}>{mutation.isPending?'Sending...':'Send'}</Button>:<Button disabled={!canSubmit} onClick={()=>setPreview(true)}>Preview</Button>}</> : <>{isDraft ? <Button variant="outline" disabled={!canSubmit || (editing === "new" && priority)} onClick={() => mutation.mutate(false)}>Save draft</Button> : null}
+          <Button disabled={!canSubmit} onClick={() => mutation.mutate(true)}>{isDraft ? "Send to homeowner" : "Save changes"}</Button></>}
         </DialogFooter>
+      </>
+  );
+  return operations ? body : (
+    <Dialog open={editing !== null} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+        {body}
       </DialogContent>
     </Dialog>
   );

@@ -6,6 +6,7 @@
  * renders what it is given and never widens it.
  */
 import { EmailComposer } from "@/components/EmailComposer";
+import { SendToOwner } from '@/components/operations/SendToOwner';
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -126,6 +127,7 @@ function PropertyHubPage() {
             canManage={hub.viewer.supervisor}
           />
           <EmailComposer context="property" recordId={propertyId} label="Email the homeowner" />
+          <SendToOwner propertyId={propertyId}/>
         </div>
       )}
 
