@@ -1,5 +1,13 @@
 # Roadmap — approved build work, NO publish
 
+## Oct 29 address labels (approved code/test only, no live writes)
+- [ ] Shared code/database formatting and unified property search
+- [ ] Staff, homeowner, navigation and export label/read coverage
+- [ ] Stage live alert/read function replacements with exact undo and label-only diff proofs
+- [ ] Rachel welcome read-only finding and fallback inventory
+- [ ] Isolated database/focused/full tests and automatic validation; no sign-in/publish/apply
+
+
 ## Oct 29 urgent enrollment ambiguity fix (approved)
 - [x] Read-only Fern inventory, original function cause and other-attempt evidence; failed prepares leave no durable attempt records
 - [x] Byte-exact undo and alias-only fix with isolated new/existing-owner and Retry tests

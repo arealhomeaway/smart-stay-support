@@ -1,8 +1,17 @@
-Read-only findings (no changes proposed). Account-link history events, all real programs; the demo program (Birch Lane) has none.
-- Fitzgerald (VP Housing), Sep 22 21:28: owner_linked, "Homeowner connected their account with an invite code", actor Victor Puodziunas (homeowner). Source: invite redemption. The invite has no recorded creator. It was redeemed 2.5 min after it was created.
-- Foxtail (Linder), Oct 6 16:12:20: owner_linked, same wording, actor Matthew Linder (homeowner). Source: invite redemption. The invite was created by Emily Jimenez (Admin) at the exact same moment as the event and redeemed 0.08 s later.
-- Galveston (RL Home), Oct 26 17:10: owner_linked, "Staff linked the homeowner's account", actor Emily Jimenez (Admin). Source: staff link.
-- Buckland (Syska), Oct 26 20:47: same as Galveston, actor Emily, source: staff link.
-1. Yes, Linder is the only one. Staff created the invite and it was redeemed within the same instant, which a person typing a code could not do. Not verified: whose session redeemed it (audit_log was not checked).
-2. Enrollments since Oct 26 credit the staff member (Emily), not the homeowner.
-3. Yes. Fitzgerald looks like a genuine self-redemption, but who created its invite is Not verified.
+# Street address labels
+
+Switch staff and homeowner home labels to street addresses while preserving stored names, IDs, links, permissions, import and sync behavior.
+
+## Build
+- One shared formatter provides street plus unit, City/ST, full address, and the required missing-address fallback.
+- Update label displays, their address reads, navigation, homeowner screens and exports. Keep listing names and IDs searchable through one shared matching rule.
+- Fix welcome address reads and report what Rachel's already-sent welcome actually rendered, without changing it.
+- Stage database label helpers and existing alert/read function replacements with byte-exact live undo and hashes. Apply nothing.
+
+## Verification
+- Test formatting, searches, representative staff/homeowner/export output, and isolated database parity and label generation.
+- Run the full test suite; inspect automatic typecheck/build results. Inventory intentionally retained listing-name uses and missing-address homes.
+- No sign-in, publishing, live writes, migrations, syncs or email sends.
+
+## Technical details
+Keep address formatting browser-safe in src/lib. Database helpers have fixed search_path and existing authority boundaries. Address projections needed by checked homeowner readers are staged with the database changes. Historical messages and report snapshots remain untouched.
