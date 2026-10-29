@@ -74,6 +74,7 @@ export async function propertyDetail(ownerRezPropertyId: string) {
 export type OwnerRezListing = {
   id: number;
   name: string;
+  public_name?: string | null;
   address?: {
     street1?: string;
     street2?: string;

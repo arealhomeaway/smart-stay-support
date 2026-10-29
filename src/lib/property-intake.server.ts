@@ -88,7 +88,7 @@ async function loadResolveProperties(supabase: Client) {
 export async function searchOwnerRezCandidates(
   supabase: Client,
   query: string,
-): Promise<{ ok: true; items: OwnerRezCandidate[] } | { ok: false; error: string }> {
+): Promise<{ ok: true; items: OwnerRezCandidate[]; total: number; truncated: boolean } | { ok: false; error: string }> {
   const { listListings, OwnerRezError } = await import("./ownerrez.server");
   let listings;
   try {
@@ -108,7 +108,7 @@ export async function searchOwnerRezCandidates(
   );
   const q = norm(query);
 
-  const items = listings
+  const all = listings
     .map((l): OwnerRezCandidate => {
       const listingId = String(l.id);
       const existing = byOwnerRez.get(listingId) ?? null;
@@ -132,17 +132,16 @@ export async function searchOwnerRezCandidates(
         likely: likely ? toMatch(likely) : null,
       };
     })
-    .filter((c) =>
-      !q
-        ? true
-        : [c.name, c.address, c.city, c.state, c.postalCode, c.listingId]
-            .filter(Boolean)
-            .some((v) => String(v).toLowerCase().includes(q)),
-    )
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .slice(0, 60);
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const { filterListings } = await import("./property-intake");
+  const publicNames = new Map(listings.map((l) => [String(l.id), l.public_name ?? null] as const));
+  const found = filterListings(
+    all,
+    (c) => [c.name, publicNames.get(c.listingId), c.address, c.city, c.postalCode, c.listingId],
+    query,
+  );
 
-  return { ok: true, items };
+  return { ok: true, items: found.items, total: found.total, truncated: found.truncated };
 }
 
 /**
