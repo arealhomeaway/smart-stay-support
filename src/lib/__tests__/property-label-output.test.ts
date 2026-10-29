@@ -43,7 +43,7 @@ describe("address labels through current outputs", () => {
   });
   it("uses the address in new plan and STR report exports, retaining historical snapshots", () => {
     const primary = formatPropertyLabel(home).primary;
-    const row = planRow({ plan: primary, stageNo: 1, stage: "Setup", taskNo: 1, title: "Inspect home" });
+    const row = planRow({ plan: primary, stageNo: 1, stage: "Setup", taskNo: 1, title: "Inspect home", detail: null, role: null, person: null, status: null, dueOn: null, anchor: null, offset: null, required: null, blocksHandoff: null, evidence: null, ownerApproval: null, ownerDependency: null, module: null, breezeway: null, opportunity: null });
     expect(toCsv(PLAN_HEADER, [row])).toContain('"3400 N Fern Ave, Unit B"');
     const report: StrReport = { property: { name: primary, address: formatPropertyLabel(home).full }, owner: { name: "Rachel" }, program: { startedOn: null, endsOn: null, status: "active" }, period: { from: "2026-01-01", to: "2026-12-31" }, include: { owner: true, nonOwner: false }, rows: [], summary: [], totals: { ownerMinutes: 0, ownerEntries: 0, nonOwnerSupportedMinutes: 0, underReview: 0 }, disclaimer: "Recorded activity only." };
     expect(strReportCsv(report)).toContain('# Property,"3400 N Fern Ave, Unit B"');
@@ -89,13 +89,17 @@ describe("actual pending alert producers in isolated PostgreSQL", () => {
         await db.exec(readFileSync(`docs/pending/address-labels/definitions/${name}.sql`, "utf8"));
       }
       await db.query("INSERT INTO properties VALUES($1,$2,$3,$4,$5,$6,$7,$8,false)", [home.id,home.name,home.nickname,home.address_line1,home.unit,home.city,home.state,home.postal_code]);
-      await db.query("INSERT INTO profiles VALUES($1,'Rachel Ramsey','r@resolve-test.invalid'); INSERT INTO property_owners VALUES($1,true)", [owner]);
-      await db.query("INSERT INTO owner_programs VALUES($1,$2,$2,'active',NULL,false,true); INSERT INTO owner_program_properties VALUES($1,$3,'included')", [program,owner,home.id]);
-      await db.query("INSERT INTO onboarding_tasks VALUES($1,'Inspect home',$2,$2,$3); INSERT INTO work_items(id,kind,status,property_id,program_id,title,is_demo) VALUES($1,'opportunity','open',$3,$4,'Inspect home',false)", [task,owner,home.id,program]);
+      await db.query("INSERT INTO profiles VALUES($1,'Rachel Ramsey','r@resolve-test.invalid')", [owner]);
+      await db.query("INSERT INTO property_owners VALUES($1,true)", [owner]);
+      await db.query("INSERT INTO owner_programs VALUES($1,$2,$2,'active',NULL,false,true)", [program,owner]);
+      await db.query("INSERT INTO owner_program_properties VALUES($1,$2,'included')", [program,home.id]);
+      await db.query("INSERT INTO onboarding_tasks VALUES($1,'Inspect home',$2,$2,$3)", [task,owner,home.id]);
+      await db.query("INSERT INTO work_items(id,kind,status,property_id,program_id,title,is_demo) VALUES($1,'opportunity','open',$2,$3,'Inspect home',false)", [task,home.id,program]);
       await db.exec("CREATE TRIGGER test_note AFTER INSERT ON onboarding_notes FOR EACH ROW EXECUTE FUNCTION private.notify_onboarding_note(); CREATE TRIGGER test_handoff AFTER UPDATE ON onboarding_projects FOR EACH ROW EXECUTE FUNCTION public.notify_onboarding_handoff_ready();");
       await db.query("SELECT public.owner_release_summary($1,2,ARRAY[$2::uuid])", [program,home.id]);
       await db.query("INSERT INTO onboarding_notes VALUES($1,$2,'Checked',false)", [task,owner]);
-      await db.query("INSERT INTO onboarding_projects VALUES($1,$2,'draft',$3); UPDATE onboarding_projects SET handoff_state='ready' WHERE id=$1", [task,home.id,owner]);
+      await db.query("INSERT INTO onboarding_projects VALUES($1,$2,'draft',$3)", [task,home.id,owner]);
+      await db.query("UPDATE onboarding_projects SET handoff_state='ready' WHERE id=$1", [task]);
       await db.query("SELECT public.post_owner_request_message($1,'Update for the homeowner')", [task]);
       const alerts = await db.query<{kind:string;title:string;body:string}>("SELECT kind,title,body FROM owner_notifications UNION ALL SELECT kind,title,body FROM staff_notifications");
       expect(alerts.rows.length).toBe(4);
