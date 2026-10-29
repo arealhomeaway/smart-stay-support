@@ -14,7 +14,7 @@ export async function resolveOperationsOwnerRecipient(db: SupabaseClient<Databas
   if (account.error) throw new Error('Could not confirm homeowner portal access. Nothing has been sent.');
   const owner = account.data.user;
   const bannedUntil = owner?.['banned_until'];
-  const roles = await db.from('user_roles').select('role').eq('user_id',link.ownerUserId);
+  const roles = await supabaseAdmin.from('user_roles').select('role').eq('user_id',link.ownerUserId);
   if (roles.error) throw roles.error;
   if (!owner || (typeof bannedUntil==='string' && Date.parse(bannedUntil)>Date.now()) || !roles.data.some(r=>r.role==='owner') || roles.data.some(r=>['admin','manager','tech','onboarding','vendor'].includes(r.role))) return { eligible: false as const, name: link.ownerName };
   return { eligible: true as const, name: link.ownerName, programId: link.programId, recipientId: link.ownerUserId };
