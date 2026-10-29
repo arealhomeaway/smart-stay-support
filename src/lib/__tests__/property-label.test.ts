@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { formatPropertyLabel, matchesPropertySearch } from "../property-label";
 import { rankProperties } from "../property-search";
 
-const home = { id: "fern", name: "Fernstone House (3400)", nickname: "Ramsey", address_line1: "3400 N Fern Ave", unit: null, city: "Broken Arrow", state: "OK", postal_code: "74012", ownerrez_property_id: "499899" };
+const home = { id: "fern", name: "Fernstone House (3400)", nickname: "Ramsey", address_line1: "3400 N Fern Ave", unit: null, city: "Broken Arrow", state: "OK", postal_code: "74012", ownerrez_property_id: "499899", market: null, neighborhood: null };
 describe("shared home address labels", () => {
   it("uses the street as primary and city/state as secondary", () => {
     expect(formatPropertyLabel(home)).toEqual({ primary: "3400 N Fern Ave", secondary: "Broken Arrow, OK", full: "3400 N Fern Ave, Broken Arrow, OK 74012" });

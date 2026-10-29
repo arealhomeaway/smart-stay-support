@@ -22,7 +22,7 @@ describe("pending address labels in isolated PostgreSQL", () => {
       const grants = await db.query<{ anonymous: boolean; staff: boolean; service: boolean }>("SELECT has_function_privilege('anon','public.format_property_label(jsonb)','EXECUTE') anonymous, has_function_privilege('authenticated','public.format_property_label(jsonb)','EXECUTE') staff, has_function_privilege('service_role','public.format_property_label(jsonb)','EXECUTE') service");
       expect(grants.rows[0]).toEqual({ anonymous: false, staff: true, service: true });
     } finally { await db.close(); }
-  }, 30_000);
+  });
   it("evaluates every staged producer's label expression without writing homes", async () => {
     const db = new PGlite();
     try {
@@ -41,5 +41,5 @@ describe("pending address labels in isolated PostgreSQL", () => {
       const unchanged = await db.query<{name: string; nickname: string}>("SELECT name,nickname FROM properties");
       expect(unchanged.rows).toEqual([{ name: "Fernstone", nickname: "Ramsey" }]);
     } finally { await db.close(); }
-  }, 30_000);
+  });
 });
