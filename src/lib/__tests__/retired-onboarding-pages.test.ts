@@ -50,7 +50,7 @@ describe("retired Transitions and Utilities & Accounts pages", () => {
         }
       }
     };
-    walk(join(import.meta.dir, "../.."));
+    walk(join(process.cwd(), "src"));
     expect(hits).toEqual([]);
   });
 });
