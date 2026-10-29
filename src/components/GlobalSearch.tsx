@@ -65,7 +65,7 @@ export function GlobalSearch({ targets }: { targets: SearchTarget[] }) {
           .limit(6),
         readCountedRows(supabase
           .from("properties")
-          .select("id, name, nickname, address_line1, city, unit, state, postal_code, ownerrez_property_id", { count: "exact" })
+          .select("id, name, nickname, listing_alias, address_line1, city, unit, state, postal_code, ownerrez_property_id", { count: "exact" })
           .order("id")),
       ]);
 

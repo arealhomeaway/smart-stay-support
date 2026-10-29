@@ -205,7 +205,7 @@ export function NewTicketForm({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("properties")
-        .select("id, name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id")
+        .select("id, name, nickname, listing_alias, address_line1, unit, city, state, postal_code, ownerrez_property_id")
         .eq("active", true)
         .or(`is_demo.eq.${demoMode}${context.property ? `,id.eq.${context.property}` : ""}`)
         .order("name");

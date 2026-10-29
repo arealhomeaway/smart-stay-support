@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import { overrideOnboardingTaskDateFn } from "@/lib/onboarding.functions";
 import { restoreAssignedRelease } from "@/lib/onboarding-assigned-context";
 import {
@@ -308,7 +309,7 @@ function MyWork() {
               .filter((p) => !isTestRecord(p))
               .map((p) => (
                 <SelectItem key={p.id} value={p.id}>
-                  {p.name}
+                  {formatPropertyLabel(p).primary}
                 </SelectItem>
               ))}
           </SelectContent>
