@@ -106,8 +106,6 @@ export async function searchOwnerRezCandidates(
       .filter((r) => r.ownerrez_property_id)
       .map((r) => [String(r.ownerrez_property_id), r] as const),
   );
-  const q = norm(query);
-
   const all = listings
     .map((l): OwnerRezCandidate => {
       const listingId = String(l.id);
