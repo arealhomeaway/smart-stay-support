@@ -14418,10 +14418,6 @@ export type Database = {
       }
     }
     Functions: {
-      accept_into_operations: {
-        Args: { _project_id: string }
-        Returns: undefined
-      }
       activate_owner_program: {
         Args: {
           _expected_version: string
@@ -14935,10 +14931,6 @@ export type Database = {
       mark_owner_alerts_read: { Args: { _ids: string[] }; Returns: number }
       mark_owner_opportunity_viewed: {
         Args: { _id: string }
-        Returns: undefined
-      }
-      mark_ready_for_operations: {
-        Args: { _project_id: string }
         Returns: undefined
       }
       my_demo_access: { Args: never; Returns: Json }
@@ -15513,10 +15505,6 @@ export type Database = {
       }
       request_owner_response: {
         Args: { _body: string; _id: string; _kind: string }
-        Returns: string
-      }
-      rerun_departure_review_trigger: {
-        Args: { _wo_id: string }
         Returns: string
       }
       reset_demo_environment:
