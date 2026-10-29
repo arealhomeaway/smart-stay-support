@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { formatPropertyLabel, type PropertyLabelFields } from "@/lib/property-label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,7 +38,7 @@ export type ExternalRecord = {
   created_at: string;
 };
 
-type Property = { id: string; name: string; ownerrez_property_id?: string | null };
+type Property = PropertyLabelFields & { id: string; name: string; ownerrez_property_id?: string | null };
 
 /**
  * One standard framework for every external database — legacy databases, the
@@ -204,7 +205,7 @@ function RecordRow({
             <SelectItem value="none">No property selected</SelectItem>
             {properties.map((p) => (
               <SelectItem key={p.id} value={p.id}>
-                {p.name}
+                {formatPropertyLabel(p).primary}
               </SelectItem>
             ))}
           </SelectContent>

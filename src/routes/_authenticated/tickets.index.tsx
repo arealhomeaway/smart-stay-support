@@ -1,4 +1,4 @@
-import { formatPropertyLabel } from "@/lib/property-label";
+import { formatPropertyLabel, matchesPropertySearch } from "@/lib/property-label";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -141,7 +141,7 @@ function TicketsPage() {
     .filter((t) => {
       const q = search.trim().toLowerCase();
       if (!q) return true;
-      return [
+      return (t.properties && matchesPropertySearch(t.properties, q)) || [
         t.ref,
         t.title,
         t.description,

@@ -130,7 +130,7 @@
   {
     "name": "owner_release_summary",
     "schema": "public",
-    "signature": "owner_release_summary(uuid,integer,uuid[",
+    "signature": "public.owner_release_summary(uuid,integer,uuid[])",
     "sha256": "177535579689a77c222008aac8356c71ceef29b980356d529fb80ff3e721d7da",
     "proacl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
     "new_sha256": "fc1c99aa581c858c1bc0f5d661201ff2b2386bc480b6d375233706223ad4e11c",
