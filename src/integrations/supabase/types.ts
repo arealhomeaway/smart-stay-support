@@ -50,6 +50,268 @@ export type Database = {
         }
         Relationships: []
       }
+      after_handoff_plan_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          plan_item_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          plan_item_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          plan_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "after_handoff_plan_events_plan_item_id_fkey"
+            columns: ["plan_item_id"]
+            isOneToOne: false
+            referencedRelation: "after_handoff_plan_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      after_handoff_plan_items: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          library_id: string | null
+          notes: string | null
+          send_after_days: number
+          sort_order: number
+          source_kind: string
+          template_id: string | null
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          library_id?: string | null
+          notes?: string | null
+          send_after_days?: number
+          sort_order?: number
+          source_kind: string
+          template_id?: string | null
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          library_id?: string | null
+          notes?: string | null
+          send_after_days?: number
+          sort_order?: number
+          source_kind?: string
+          template_id?: string | null
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "after_handoff_plan_items_library_id_fkey"
+            columns: ["library_id"]
+            isOneToOne: false
+            referencedRelation: "owner_opportunity_library"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "after_handoff_plan_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "owner_task_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      after_handoff_schedule: {
+        Row: {
+          created_at: string
+          id: string
+          last_changed_at: string
+          last_changed_by: string | null
+          library_id: string | null
+          one_off: boolean
+          plan_item_id: string | null
+          program_id: string
+          project_id: string | null
+          property_id: string
+          send_on: string
+          source_kind: string
+          status: string
+          template_id: string | null
+          title: string
+          work_item_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_changed_at?: string
+          last_changed_by?: string | null
+          library_id?: string | null
+          one_off?: boolean
+          plan_item_id?: string | null
+          program_id: string
+          project_id?: string | null
+          property_id: string
+          send_on: string
+          source_kind: string
+          status?: string
+          template_id?: string | null
+          title: string
+          work_item_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_changed_at?: string
+          last_changed_by?: string | null
+          library_id?: string | null
+          one_off?: boolean
+          plan_item_id?: string | null
+          program_id?: string
+          project_id?: string | null
+          property_id?: string
+          send_on?: string
+          source_kind?: string
+          status?: string
+          template_id?: string | null
+          title?: string
+          work_item_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "after_handoff_schedule_library_id_fkey"
+            columns: ["library_id"]
+            isOneToOne: false
+            referencedRelation: "owner_opportunity_library"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "after_handoff_schedule_plan_item_id_fkey"
+            columns: ["plan_item_id"]
+            isOneToOne: false
+            referencedRelation: "after_handoff_plan_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "after_handoff_schedule_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "owner_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "after_handoff_schedule_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "after_handoff_schedule_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "after_handoff_schedule_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "after_handoff_schedule_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "owner_task_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "after_handoff_schedule_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      after_handoff_schedule_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          id: string
+          new_value: Json | null
+          note: string | null
+          old_value: Json | null
+          project_id: string | null
+          property_id: string | null
+          schedule_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          new_value?: Json | null
+          note?: string | null
+          old_value?: Json | null
+          project_id?: string | null
+          property_id?: string | null
+          schedule_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          new_value?: Json | null
+          note?: string | null
+          old_value?: Json | null
+          project_id?: string | null
+          property_id?: string | null
+          schedule_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "after_handoff_schedule_events_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "after_handoff_schedule"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_settings: {
         Row: {
           key: string
@@ -14446,6 +14708,48 @@ export type Database = {
           _worker_id: string
         }
         Returns: string
+      }
+      after_handoff_access: {
+        Args: never
+        Returns: {
+          can_edit_plan: boolean
+          can_manage_followup: boolean
+        }[]
+      }
+      after_handoff_plan_reorder: {
+        Args: { _ids: string[] }
+        Returns: undefined
+      }
+      after_handoff_plan_save: {
+        Args: {
+          _id: string
+          _notes: string
+          _send_after_days: number
+          _source_id: string
+          _source_kind: string
+          _title: string
+        }
+        Returns: string
+      }
+      after_handoff_plan_set_active: {
+        Args: { _active: boolean; _id: string }
+        Returns: undefined
+      }
+      after_handoff_schedule_add_one_off: {
+        Args: {
+          _note: string
+          _program_id: string
+          _property_id: string
+          _send_on: string
+          _source_id: string
+          _source_kind: string
+          _title: string
+        }
+        Returns: string
+      }
+      after_handoff_schedule_update: {
+        Args: { _action: string; _id: string; _note: string; _send_on: string }
+        Returns: undefined
       }
       answer_expense_clarification: {
         Args: { _answer: string; _work_item: string }
