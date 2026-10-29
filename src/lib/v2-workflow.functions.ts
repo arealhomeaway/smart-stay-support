@@ -9,6 +9,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { canAcceptHandoff } from "./home-context";
 
 export const FUNCTIONAL_ROLES = [
   { code: "onboarding_director", label: "Director of Onboarding" },
@@ -325,6 +326,9 @@ export const readHandoffV2 = createServerFn({ method: "POST" })
     const holder = (code: string) => seats.data?.find((s) => s.code === code)?.current_seat_holder ?? null;
     const roles = await sb.from("user_roles").select("role").eq("user_id", context.userId);
     const isAdmin = (roles.data ?? []).some((r) => r.role === "admin");
+    // Omit _at so the database applies the same now() as perform_handoff_step.
+    const cover = await sb.rpc("seat_override_at", { _role_code: "director_ops" });
+    fail(cover.error);
     const p = project.data;
     const rpc = sb.rpc.bind(sb) as unknown as (name:string,args:Record<string,unknown>)=>Promise<{data:string[]|null;error:{code?:string;message:string}|null}>;
     const duplicates = await rpc("handoff_duplicate_task_ids", {_property_id:data.propertyId});
@@ -336,24 +340,8 @@ export const readHandoffV2 = createServerFn({ method: "POST" })
       requirements,
       blockers: requirements.filter((t) => !["complete", "done"].includes(t.status)),
       canMarkReady: isAdmin || holder("onboarding_director") === context.userId || p?.director === context.userId,
-      canAccept: isAdmin || holder("director_ops") === context.userId,
+      canAccept: canAcceptHandoff(context.userId, holder("director_ops"), isAdmin, cover.data ?? []),
     };
-  });
-
-export const markReadyForOperations = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ projectId: z.string().uuid() }).parse(d))
-  .handler(async ({ context, data }) => {
-    fail((await context.supabase.rpc("mark_ready_for_operations", { _project_id: data.projectId })).error);
-    return { ok: true };
-  });
-
-export const acceptIntoOperations = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ projectId: z.string().uuid() }).parse(d))
-  .handler(async ({ context, data }) => {
-    fail((await context.supabase.rpc("accept_into_operations", { _project_id: data.projectId })).error);
-    return { ok: true };
   });
 
 export const logHandoffDeficiency = createServerFn({ method: "POST" })
