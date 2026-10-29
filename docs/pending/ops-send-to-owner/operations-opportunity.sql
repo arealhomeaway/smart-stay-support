@@ -18,7 +18,10 @@ BEGIN
   IF _program IS NULL THEN RAISE EXCEPTION 'This home is not enrolled in an Active Owner program.'; END IF;
   IF _send AND _owner IS NULL THEN RAISE EXCEPTION 'The homeowner does not have portal access yet, so this cannot be sent. Save it as a draft.'; END IF;
   _department := CASE WHEN _content->>'source_department'='operations' THEN 'operations' ELSE 'onboarding' END;
-  IF _id IS NOT NULL AND EXISTS(SELECT 1 FROM work_items WHERE id=_id AND property_id=_property_id AND source_department='operations') THEN _department:='operations'; END IF;
+  IF _id IS NOT NULL AND EXISTS(SELECT 1 FROM work_items WHERE id=_id AND property_id=_property_id AND source_department='operations') THEN
+    _department:='operations';
+    SELECT jsonb_build_object('source_department','operations','send_kind',owner_content->>'send_kind','ticket_id',owner_content->>'ticket_id','due_on',due_on::text) || _content INTO _content FROM work_items WHERE id=_id AND property_id=_property_id;
+  END IF;
   _ticket := nullif(_content->>'ticket_id','')::uuid;
   _item_kind := coalesce(_content->>'send_kind','owner_task');
   IF _department='operations' THEN

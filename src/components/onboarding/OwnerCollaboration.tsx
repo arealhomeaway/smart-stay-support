@@ -332,9 +332,9 @@ export function OpportunityEditor({
         </DialogHeader>
         {preview && operations ? <section aria-label="Homeowner preview" className="space-y-4 whitespace-pre-wrap">
           <h3 className="text-xl font-semibold">{form.title}</h3>
-          {([['What to do',form.what],['Why it matters',form.why],['How to complete it',form.how]] as const).map(([label,value])=><div key={label}><h4 className="text-sm font-semibold">{label}</h4><p>{value}</p></div>)}
+          {([['What you\'ll do',form.what],['Why this matters',form.why],['How to complete it',form.how]] as const).map(([label,value])=><div key={label}><h4 className="text-sm font-semibold">{label}</h4><p>{value}</p></div>)}
           {dueOn ? <p>Due {dueOn}</p> : null}
-          <p>{operations.kind==='review'?'Mark Reviewed':types.map(t=>RESPONSE_TYPES.find(r=>r.code===t)?.label).join(', ')}</p>
+          <p>{operations.kind==='review'?"I've reviewed this":types.map(t=>RESPONSE_TYPES.find(r=>r.code===t)?.label).join(', ')}</p>
           <ul>{resources.map((r,i)=><li key={i}>{r.kind==='file'?fileName(r.document_id):r.label}</li>)}</ul>
           {priority?<p>Needs your attention</p>:null}
         </section> : <div className="grid gap-3">
