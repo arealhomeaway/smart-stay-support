@@ -30,12 +30,12 @@ BEGIN
 END $function$
 ;
 
-ALTER FUNCTION accept_into_operations(uuid) OWNER TO postgres;
-REVOKE ALL ON FUNCTION accept_into_operations(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION accept_into_operations(uuid) TO service_role;
-ALTER FUNCTION mark_ready_for_operations(uuid) OWNER TO postgres;
-REVOKE ALL ON FUNCTION mark_ready_for_operations(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION mark_ready_for_operations(uuid) TO service_role;
-ALTER FUNCTION rerun_departure_review_trigger(uuid) OWNER TO postgres;
-REVOKE ALL ON FUNCTION rerun_departure_review_trigger(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION rerun_departure_review_trigger(uuid) TO service_role;
+ALTER FUNCTION public.accept_into_operations(uuid) OWNER TO postgres;
+REVOKE ALL ON FUNCTION public.accept_into_operations(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.accept_into_operations(uuid) TO service_role;
+ALTER FUNCTION public.mark_ready_for_operations(uuid) OWNER TO postgres;
+REVOKE ALL ON FUNCTION public.mark_ready_for_operations(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.mark_ready_for_operations(uuid) TO service_role;
+ALTER FUNCTION public.rerun_departure_review_trigger(uuid) OWNER TO postgres;
+REVOKE ALL ON FUNCTION public.rerun_departure_review_trigger(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.rerun_departure_review_trigger(uuid) TO service_role;
