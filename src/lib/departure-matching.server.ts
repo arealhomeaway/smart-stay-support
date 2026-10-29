@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import {
@@ -34,7 +35,7 @@ export async function loadMatchInputs(admin: Admin, days = 30) {
 
   const { data: wos, error } = await admin
     .from("breezeway_work_orders")
-    .select("id, breezeway_task_id, property_id, department, name, status, scheduled_date, finished_at, breezeway_updated_at, assignees, properties!inner(name, is_demo, ownerrez_property_id, market)")
+    .select("id, breezeway_task_id, property_id, department, name, status, scheduled_date, finished_at, breezeway_updated_at, assignees, properties!inner(name, is_demo, ownerrez_property_id, market, nickname, address_line1, unit, city, state, postal_code)")
     .eq("department", "housekeeping")
     .eq("properties.is_demo", false)
     .gte("scheduled_date", from)
@@ -44,7 +45,7 @@ export async function loadMatchInputs(admin: Admin, days = 30) {
   const rows = wos ?? [];
 
   const orIds = [...new Set(rows.map((r) => r.properties?.ownerrez_property_id).filter(Boolean) as string[])];
-  const { data: homes } = await admin.from("properties").select("id, name, ownerrez_property_id, market").eq("is_demo", false).not("ownerrez_property_id", "is", null);
+  const { data: homes } = await admin.from("properties").select("id, name, ownerrez_property_id, market, nickname, address_line1, unit, city, state, postal_code").eq("is_demo", false).not("ownerrez_property_id", "is", null);
   const allOr = [...new Set([...orIds, ...(homes ?? []).map((h) => h.ownerrez_property_id!)])];
 
   const { ownerRezGet } = await import("./ownerrez.server");
@@ -125,7 +126,7 @@ export function evaluate(inputs: MatchInputs, holders: { byBooking: Map<string, 
     const b = m.booking_id ? bookingById.get(m.booking_id) : null;
     return {
       ...m,
-      property: r.properties?.name ?? "—",
+      property: formatPropertyLabel(r.properties).primary,
       market: r.properties?.market ?? null,
       clean_name: r.name, clean_status: r.status, clean_date: r.scheduled_date, task_id: r.breezeway_task_id,
       clean_time_exact: !!r.finished_at, clean_time: r.finished_at ?? r.breezeway_updated_at,

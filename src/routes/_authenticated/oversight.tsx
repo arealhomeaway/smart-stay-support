@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Supervisor Operations Home — an exception board, not a stat dashboard.
  *
@@ -101,7 +102,7 @@ function useOversightData() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tickets")
-        .select("*, properties(name, nickname, market, city, primary_photo_url)")
+        .select("*, properties(name, nickname, market, city, primary_photo_url, address_line1, unit, state, postal_code, ownerrez_property_id)")
         .eq("is_demo", demoMode)
         .is("archived_at", null)
         .order("reported_at", { ascending: false })
@@ -438,7 +439,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
       .sort((a, b) => b[1] - a[1])
       .slice(0, 6);
 
-  const byProperty = trend((t) => t.properties?.nickname ?? t.properties?.name ?? "No property");
+  const byProperty = trend((t) => formatPropertyLabel(t.properties).primary);
   const byMarket = trend((t) => t.properties?.market ?? t.properties?.city ?? "No market");
   const byType = trend((t) => t.category ?? "other");
 
@@ -805,12 +806,12 @@ function ExceptionRow({
     >
       <PropertyPhoto
         url={ticket.properties?.primary_photo_url}
-        name={ticket.properties?.nickname ?? ticket.properties?.name}
+        name={formatPropertyLabel(ticket.properties).primary}
       />
       <span className="min-w-0">
         <span className="block truncate font-medium">{ticket.title}</span>
         <span className="text-xs text-muted-foreground">
-          {ticket.properties?.nickname ?? ticket.properties?.name ?? "No property"} ·{" "}
+          {formatPropertyLabel(ticket.properties).primary} ·{" "}
           {priorityMeta(ticket.priority).short}
         </span>
       </span>

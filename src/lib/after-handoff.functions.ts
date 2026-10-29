@@ -100,7 +100,7 @@ export const getActiveOwnerFollowup = createServerFn({ method: "GET" })
     const waitingItems = (waiting.data ?? []) as WaitingItem[];
     const propIds = [...new Set([...rows.map((r) => r.property_id), ...waitingItems.map((w) => w.property_id), ...programs.map((p) => p.property_id)].filter(Boolean))] as string[];
     const props = propIds.length
-      ? await s.from("properties").select("id,name,address_line1").in("id", propIds)
+      ? await s.from("properties").select("id, name, address_line1, nickname, unit, city, state, postal_code, ownerrez_property_id").in("id", propIds)
       : { data: [], error: null };
     fail(props.error);
     const a = (access.data as { can_edit_plan: boolean; can_manage_followup: boolean }[] | null)?.[0];

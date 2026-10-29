@@ -17,7 +17,7 @@ export const exportProjectPlanCsv = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const sb = context.supabase;
     const [home, tasks] = await Promise.all([
-      sb.from("properties").select("name").eq("id", data.propertyId).maybeSingle(),
+      sb.from("properties").select("name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id").eq("id", data.propertyId).maybeSingle(),
       sb.from("onboarding_tasks")
         .select("id, stage, title, detail, assigned_to, assigned_seat, status, due_on, schedule_anchor, schedule_offset_days, schedule_offset_unit, description, done_when, video_url, is_required, blocks_handoff, evidence_required, requires_owner_approval, owner_dependency, sort_order, template_task_id")
         .eq("property_id", data.propertyId).is("archived_at", null).is("parent_task_id", null),

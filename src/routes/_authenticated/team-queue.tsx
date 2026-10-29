@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
@@ -193,7 +194,7 @@ function TeamQueuePage() {
     enabled: operationsAccess,
     queryFn: async () => {
       const { data, error } = await supabase.from("properties")
-        .select("id, name, nickname, market, city, state")
+        .select("id, name, nickname, market, city, state, address_line1, unit, postal_code, ownerrez_property_id")
         .eq("active", true).eq("is_demo", demoMode).is("archived_at", null);
       if (error) throw error;
       return data;
@@ -205,7 +206,7 @@ function TeamQueuePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tickets")
-        .select("*, properties(name, nickname, market, city, state), work_types(name)")
+        .select("*, properties(name, nickname, market, city, state, address_line1, unit, postal_code, ownerrez_property_id), work_types(name)")
         .eq("is_demo", demoMode)
         .is("archived_at", null)
         .order("reported_at", { ascending: false });
@@ -315,10 +316,10 @@ function TeamQueuePage() {
 
   const properties = useMemo(() => {
     const map = new Map<string, string>();
-    for (const property of propertyCatalog.data ?? []) map.set(property.id, property.nickname ?? property.name);
+    for (const property of propertyCatalog.data ?? []) map.set(property.id, formatPropertyLabel(property).primary);
     for (const t of all)
       if (t.property_id)
-        map.set(t.property_id, t.properties?.nickname ?? t.properties?.name ?? "Property");
+        map.set(t.property_id, formatPropertyLabel(t.properties).primary);
     return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1]));
   }, [all, propertyCatalog.data]);
 
@@ -378,7 +379,7 @@ function TeamQueuePage() {
     tickets.map((t) => ({
       id: t.id,
       label: t.title,
-      sub: t.properties?.nickname ?? t.properties?.name ?? undefined,
+      sub: formatPropertyLabel(t.properties).primary,
     })),
   );
 
@@ -777,10 +778,10 @@ function TeamQueuePage() {
               <h2 className="font-semibold capitalize">{column.replace("_", " ")} · {rows.length}</h2>
               {rows.map((ticket) => "kind" in ticket ? <Link key={ticket.id} to="/work-orders" search={{ open: ticket.id, ...originSearch } as never}
                 className="block rounded-md border border-border bg-background p-3 text-sm hover:bg-accent/40">
-                <strong>Work Order · {ticket.title}</strong><p className="text-xs text-muted-foreground">{ticket.properties.nickname ?? ticket.properties.name} · {effectiveOperationsPriority(ticket).toUpperCase()}</p>
+                <strong>Work Order · {ticket.title}</strong><p className="text-xs text-muted-foreground">{formatPropertyLabel(ticket.properties).primary} · {effectiveOperationsPriority(ticket).toUpperCase()}</p>
               </Link> : <Link key={ticket.id} to="/tickets/$ticketId" params={{ ticketId: ticket.id }} search={originSearch}
                 className="block rounded-md border border-border bg-background p-3 text-sm hover:bg-accent/40">
-                <strong>#{ticket.ref} {ticket.title}</strong><p className="text-xs text-muted-foreground">{ticket.properties?.nickname ?? ticket.properties?.name} · {effectiveOperationsPriority(ticket).toUpperCase()}</p>
+                <strong>#{ticket.ref} {ticket.title}</strong><p className="text-xs text-muted-foreground">{formatPropertyLabel(ticket.properties).primary} · {effectiveOperationsPriority(ticket).toUpperCase()}</p>
               </Link>)}
             </section>;
           })}
@@ -828,10 +829,10 @@ function TeamQueuePage() {
                 {viewItems.filter((ticket) => itemDate(ticket) === date)
                   .map((ticket) => "kind" in ticket ? <Link key={ticket.id} to="/work-orders" search={{ open: ticket.id, ...originSearch } as never}
                     className="rounded-md border border-border bg-background p-3 text-sm hover:bg-accent/40">
-                    <strong>Work Order · {ticket.title}</strong><p className="text-xs text-muted-foreground">{ticket.properties.nickname ?? ticket.properties.name} · {effectiveOperationsPriority(ticket).toUpperCase()}</p>
+                    <strong>Work Order · {ticket.title}</strong><p className="text-xs text-muted-foreground">{formatPropertyLabel(ticket.properties).primary} · {effectiveOperationsPriority(ticket).toUpperCase()}</p>
                   </Link> : <Link key={ticket.id} to="/tickets/$ticketId" params={{ ticketId: ticket.id }} search={originSearch}
                     className="rounded-md border border-border bg-background p-3 text-sm hover:bg-accent/40">
-                    <strong>#{ticket.ref} {ticket.title}</strong><p className="text-xs text-muted-foreground">{ticket.properties?.nickname ?? ticket.properties?.name} · {effectiveOperationsPriority(ticket).toUpperCase()}</p>
+                    <strong>#{ticket.ref} {ticket.title}</strong><p className="text-xs text-muted-foreground">{formatPropertyLabel(ticket.properties).primary} · {effectiveOperationsPriority(ticket).toUpperCase()}</p>
                   </Link>)}
               </div>
             </section>
@@ -868,7 +869,7 @@ function TeamQueuePage() {
               >
                 <PropertyPhoto
                   url={(t.properties as { primary_photo_url?: string } | null)?.primary_photo_url}
-                  name={t.properties?.nickname ?? t.properties?.name}
+                  name={formatPropertyLabel(t.properties).primary}
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
@@ -924,12 +925,12 @@ function TeamQueuePage() {
           <QueueBulkActions selected={selectedTickets} onClear={() => setSelectedTickets([])} />
           {standaloneOrders.map((order) => <Link key={order.id} to="/work-orders" search={{ open: order.id, ...originSearch } as never}
             className="surface-row flex items-start gap-3 py-3 pl-4 pr-4">
-            <PropertyPhoto name={order.properties.nickname ?? order.properties.name} />
+            <PropertyPhoto name={formatPropertyLabel(order.properties).primary} />
             <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2">
               <span className="font-medium">Work Order · {order.title}</span>
               <Badge variant="outline" className={priorityTone(order.priority)}>{order.priority.toUpperCase()}</Badge>
               <StatusBadge tone={ticketTone(order.status)}>{order.status.replace("_", " ")}</StatusBadge>
-            </div><p className="mt-1 text-sm text-muted-foreground">{order.properties.nickname ?? order.properties.name} · {order.assigned_to ? displayName(people.get(order.assigned_to)) : "Unassigned"} · {order.vendor_name || "No vendor"}</p></div>
+            </div><p className="mt-1 text-sm text-muted-foreground">{formatPropertyLabel(order.properties).primary} · {order.assigned_to ? displayName(people.get(order.assigned_to)) : "Unassigned"} · {order.vendor_name || "No vendor"}</p></div>
             <span className="text-xs text-muted-foreground">{order.next_action_due_at ? `Due ${usDate(order.next_action_due_at)}` : "No due date"}</span>
           </Link>)}
         </div>

@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import { useEffect, useState } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -56,14 +57,14 @@ export function GlobalSearch({ targets }: { targets: SearchTarget[] }) {
       const [tickets, properties] = await Promise.all([
         supabase
           .from("tickets")
-          .select("id, ref, title, status, properties(name, nickname)")
+          .select("id, ref, title, status, properties(name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id)")
           .is("archived_at", null)
           .or(ticketFilter)
           .order("reported_at", { ascending: false })
           .limit(6),
         supabase
           .from("properties")
-          .select("id, name, nickname, address_line1, city")
+          .select("id, name, nickname, address_line1, city, unit, state, postal_code, ownerrez_property_id")
           .or(`name.ilike.${like},nickname.ilike.${like},address_line1.ilike.${like}`)
           .limit(6),
       ]);
@@ -115,7 +116,7 @@ export function GlobalSearch({ targets }: { targets: SearchTarget[] }) {
                   <span className="numeric mr-2 text-xs text-muted-foreground">#{t.ref}</span>
                   <span className="truncate">{t.title}</span>
                   <span className="ml-auto truncate pl-3 text-xs text-muted-foreground">
-                    {t.properties?.nickname ?? t.properties?.name ?? ""}
+                    {formatPropertyLabel(t.properties).primary}
                   </span>
                 </CommandItem>
               ))}
@@ -130,9 +131,9 @@ export function GlobalSearch({ targets }: { targets: SearchTarget[] }) {
                   value={`home ${p.nickname ?? ""} ${p.name} ${p.address_line1 ?? ""}`}
                   onSelect={() => go(`/property/${p.id}`)}
                 >
-                  <span className="truncate">{p.nickname ?? p.name}</span>
+                  <span className="truncate">{formatPropertyLabel(p).primary}</span>
                   <span className="ml-auto truncate pl-3 text-xs text-muted-foreground">
-                    {[p.address_line1, p.city].filter(Boolean).join(", ")}
+                    {formatPropertyLabel(p).secondary}
                   </span>
                 </CommandItem>
               ))}

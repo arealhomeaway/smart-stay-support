@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -208,7 +209,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
         supabase
           .from("tickets")
           .select(
-            "*, properties(id, name, nickname, address_line1, city, market, access_notes, notes, ownerrez_property_id, primary_photo_url), work_types(name, response_minutes, action_start_minutes, completion_target, required_closure_evidence, guest_communication_required)",
+            "*, properties(id, name, nickname, address_line1, city, market, access_notes, notes, ownerrez_property_id, primary_photo_url, unit, state, postal_code), work_types(name, response_minutes, action_start_minutes, completion_target, required_closure_evidence, guest_communication_required)",
           )
           .eq("id", ticketId)
           .eq("is_demo", demoMode)
@@ -831,7 +832,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     ((stage === "verify" && needsEvidence) || (Boolean(requiredEvidence) && !evidenceSatisfied));
 
   const assigneeName = ticketAssigneeName(ownerId, assignee);
-  const propertyName = ticket.properties?.nickname ?? ticket.properties?.name ?? "Property";
+  const propertyName = formatPropertyLabel(ticket.properties).primary;
   const activeBranch = { claim: Boolean(branches?.claim), recovery: Boolean(branches?.recovery) };
   // Whether resolving this ticket will close it outright or send it to a
   // supervisor first — the action's label must say which one actually happens.

@@ -31,7 +31,7 @@ async function propertyBits(supabase: Client, propertyId: string | null) {
   if (!propertyId) return { name: null, address: null, recipients: [] as ComposerRecipient[] };
   const { data: property } = await (supabase as never as Client)
     .from("properties")
-    .select("name, nickname, formatted_address, address_line1")
+    .select("name, nickname, formatted_address, address_line1, unit, city, state, postal_code, ownerrez_property_id")
     .eq("id", propertyId)
     .maybeSingle();
 

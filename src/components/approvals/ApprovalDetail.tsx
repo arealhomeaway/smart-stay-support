@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * One approval, in one place.
  *
@@ -72,7 +73,7 @@ export function ApprovalDetail({
         approval.property_id
           ? supabase
               .from("properties")
-              .select("id, name, nickname")
+              .select("id, name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id")
               .eq("id", approval.property_id)
               .maybeSingle()
           : Promise.resolve({ data: null }),
@@ -101,7 +102,7 @@ export function ApprovalDetail({
       );
       return {
         approval,
-        propertyName: property.data?.nickname ?? property.data?.name ?? null,
+        propertyName: formatPropertyLabel(property.data).primary,
         ticket: ticket.data,
         workOrder: workOrder.data,
         requestedBy: approval.requested_by ? (names.get(approval.requested_by) ?? null) : null,

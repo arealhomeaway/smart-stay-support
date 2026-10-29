@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Vendor company management (server-only).
  *
@@ -149,7 +150,7 @@ export async function loadVendorOrg(db: Client, orgId: string, viewerIsSuperviso
       db.from("vendor_contacts").select("*").eq("org_id", orgId).order("full_name"),
       db
         .from("property_vendor_coverage")
-        .select("*, properties(name, nickname, city, state)")
+        .select("*, properties(name, nickname, city, state, address_line1, unit, postal_code, ownerrez_property_id)")
         .eq("org_id", orgId)
         .order("service_category"),
       db.from("gatekeeper_requirements").select("*").eq("active", true).order("sort_order"),
@@ -621,7 +622,7 @@ export async function removeServiceArea(db: Client, userId: string, areaId: stri
  */
 export async function coverageForOrg(db: Client, orgId: string) {
   const [propsRes, coverageRes, areasRes] = await Promise.all([
-    db.from("properties").select("id, name, nickname, city, state, postal_code").eq("active", true),
+    db.from("properties").select("id, name, nickname, city, state, postal_code, address_line1, unit, ownerrez_property_id").eq("active", true),
     db.from("property_vendor_coverage").select("*").eq("org_id", orgId),
     db.from("vendor_service_areas").select("*").eq("org_id", orgId),
   ]);
@@ -667,7 +668,7 @@ export async function coverageForOrg(db: Client, orgId: string) {
       });
       rows.push({
         propertyId: property.id,
-        propertyName: property.nickname || property.name,
+        propertyName: formatPropertyLabel(property).primary,
         city: property.city,
         postalCode: property.postal_code,
         serviceCategory: category,

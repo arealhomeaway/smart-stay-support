@@ -109,7 +109,7 @@ export async function geocodeOne(address: string): Promise<GeocodeHit | null> {
 export async function geocodeProperties(supabase: Client, opts: { force?: boolean } = {}) {
   let query = supabase
     .from("properties")
-    .select("id, name, address_line1, city, state, postal_code")
+    .select("id, name, address_line1, city, state, postal_code, nickname, unit, ownerrez_property_id")
     .eq("active", true)
     .order("name")
     .limit(GEOCODE_BATCH_LIMIT);

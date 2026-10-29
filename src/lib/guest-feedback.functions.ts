@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { parseSurveyAnswers, surveySummary, needsFollowUp } from "./guest-feedback";
@@ -50,7 +51,7 @@ export const getGuestSurvey = createServerFn({ method: "POST" })
     const stay = await verifySurveyToken(data.token);
     if (!stay) return { ok: false as const };
     const [{ data: prop }, { data: existing }] = await Promise.all([
-      supabaseAdmin.from("properties").select("name, nickname, city, state").eq("id", stay.p).maybeSingle(),
+      supabaseAdmin.from("properties").select("name, nickname, city, state, address_line1, unit, postal_code, ownerrez_property_id").eq("id", stay.p).maybeSingle(),
       supabaseAdmin
         .from("guest_feedback")
         .select("id")
@@ -59,7 +60,7 @@ export const getGuestSurvey = createServerFn({ method: "POST" })
         .eq("ownerrez_booking_id", stay.b)
         .maybeSingle(),
     ]);
-    const homeName = (prop?.nickname || prop?.name || "your stay").replace(/^DEMO\s*—\s*/i, "");
+    const homeName = (formatPropertyLabel(prop).primary).replace(/^DEMO\s*—\s*/i, "");
     return {
       ok: true as const,
       homeName,
@@ -123,7 +124,7 @@ export const submitGuestSurvey = createServerFn({ method: "POST" })
 /* ================= Staff ================= */
 
 async function demoPropertyOnly(supabase: { from: (t: "properties") => any }, propertyId: string) {
-  const { data } = await supabase.from("properties").select("id, name, is_demo").eq("id", propertyId).maybeSingle();
+  const { data } = await supabase.from("properties").select("id, name, is_demo, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id").eq("id", propertyId).maybeSingle();
   if (!data?.is_demo) throw new Error("Test feedback can only be created on a demo home.");
   return data as { id: string; name: string };
 }

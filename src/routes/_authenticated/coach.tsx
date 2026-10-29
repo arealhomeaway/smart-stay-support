@@ -86,7 +86,7 @@ function CoachPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("properties")
-        .select("id, name, nickname")
+        .select("id, name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id")
         .eq("active", true)
         .order("name");
       if (error) throw error;

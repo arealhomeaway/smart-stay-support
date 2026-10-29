@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Shared claim reads and row presentation.
  *
@@ -74,10 +75,10 @@ export function usePropertyNames() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("properties")
-        .select("id, name, nickname, city, primary_photo_url");
+        .select("id, name, nickname, city, primary_photo_url, address_line1, unit, state, postal_code, ownerrez_property_id");
       if (error) throw error;
       const map = new Map<string, string>();
-      for (const p of data ?? []) map.set(p.id, p.nickname || p.name || p.city || "Property");
+      for (const p of data ?? []) map.set(p.id, formatPropertyLabel(p).primary);
       return map;
     },
   });

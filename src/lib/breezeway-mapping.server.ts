@@ -274,7 +274,7 @@ export async function propertyForHomeId(
   const db = await admin();
   const { data } = await db
     .from("properties")
-    .select("id, name")
+    .select("id, name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id")
     .eq("breezeway_property_id", String(homeId))
     .eq("breezeway_mapping_state", "verified")
     .maybeSingle();

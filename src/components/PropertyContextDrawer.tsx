@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Property context, without leaving the ticket.
  *
@@ -59,7 +60,7 @@ export function PropertyContextDrawer({
         <div className="relative h-32 w-full overflow-hidden rounded-lg bg-sunken">
           <PropertyPhoto
             url={data?.primary_photo_url ?? null}
-            name={data?.nickname ?? data?.name ?? null}
+            name={formatPropertyLabel(data).primary}
             rounded="rounded-none"
             className="size-full"
           />
@@ -67,7 +68,7 @@ export function PropertyContextDrawer({
         <SheetHeader>
           <SheetTitle className="flex flex-wrap items-center gap-2">
             <Building2 className="size-4 shrink-0" aria-hidden="true" />
-            <span className="truncate">{data?.nickname ?? data?.name ?? "Property"}</span>
+            <span className="truncate">{formatPropertyLabel(data).primary}</span>
             {data?.lifecycle_status && data.lifecycle_status !== "live" && (
               <StatusBadge tone="waiting">{data.lifecycle_status.replace(/_/g, " ")}</StatusBadge>
             )}

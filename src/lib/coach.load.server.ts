@@ -32,7 +32,7 @@ export async function loadCatalog(
     const [propRes, histRes] = await Promise.all([
       supabase
         .from("properties")
-        .select("name, nickname, address_line1, city, state, access_notes, wifi_notes, notes")
+        .select("name, nickname, address_line1, city, state, access_notes, wifi_notes, notes, unit, postal_code, ownerrez_property_id")
         .eq("id", opts.propertyId)
         .maybeSingle(),
       supabase

@@ -52,7 +52,7 @@ export const readOnboardingTeam = createServerFn({ method: "POST" })
           .from("onboarding_projects")
           .select("id, property_id, project_manager, status, is_demo")
           .in("status", ["planning", "active", "handoff"]),
-        sb.from("properties").select("id, name"),
+        sb.from("properties").select("id, name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id"),
         canManageTeam(context as unknown as Ctx),
       ]);
     if (roles.error) throw new Error(roles.error.message);

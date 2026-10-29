@@ -33,7 +33,7 @@ export const submitHelpTicket = createServerFn({ method: "POST" })
       supabaseAdmin.from("profiles").select("full_name, email").eq("id", userId).maybeSingle(),
       supabaseAdmin.from("user_roles").select("role").eq("user_id", userId),
       data.propertyId
-        ? supabaseAdmin.from("properties").select("name, address_line1").eq("id", data.propertyId).maybeSingle()
+        ? supabaseAdmin.from("properties").select("name, address_line1, nickname, unit, city, state, postal_code, ownerrez_property_id").eq("id", data.propertyId).maybeSingle()
         : Promise.resolve({ data: null }),
       supabaseAdmin.from("app_settings").select("value").eq("key", "help_feedback_recipient").maybeSingle(),
     ]);

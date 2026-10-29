@@ -12,7 +12,7 @@ function daysBetween(from: Date, to: Date) {
 export async function loadHomeowners(supabase: Client): Promise<{ rows: HomeownerRow[] }> {
   const [owners, properties, contacts, programs] = await Promise.all([
     supabase.from("property_owners").select("id, name, email, phone, active").eq("active", true),
-    supabase.from("properties").select("id, name, owner_record_id, is_demo").eq("active", true),
+    supabase.from("properties").select("id, name, owner_record_id, is_demo, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id").eq("active", true),
     supabase
       .from("property_owner_contacts")
       .select("id, property_id, owner_name, owner_email, owner_phone"),

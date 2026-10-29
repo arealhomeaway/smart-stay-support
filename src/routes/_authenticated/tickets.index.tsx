@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -116,7 +117,7 @@ function TicketsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tickets")
-        .select("*, properties(name, nickname), work_types(name)")
+        .select("*, properties(name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id), work_types(name)")
         .eq("is_demo", demoMode)
         .is("archived_at", null)
         .order("reported_at", { ascending: false });
@@ -145,7 +146,7 @@ function TicketsPage() {
         t.title,
         t.description,
         t.guest_name,
-        t.properties?.name,
+        formatPropertyLabel(t.properties).primary,
         t.properties?.nickname,
         t.work_types?.name,
         displayName(people.get(currentOwnerId(t) ?? "")),
@@ -166,7 +167,7 @@ function TicketsPage() {
     tickets.map((t) => ({
       id: t.id,
       label: t.title,
-      sub: t.properties?.nickname ?? t.properties?.name ?? undefined,
+      sub: formatPropertyLabel(t.properties).primary,
     })),
   );
   void token;
@@ -437,7 +438,7 @@ function TicketWorkCard({
     >
       <PropertyPhoto
         url={t.properties?.primary_photo_url}
-        name={t.properties?.nickname ?? t.properties?.name}
+        name={formatPropertyLabel(t.properties).primary}
       />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
@@ -455,7 +456,7 @@ function TicketWorkCard({
           )}
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
-          {t.properties?.nickname ?? t.properties?.name ?? "No property"} ·{" "}
+          {formatPropertyLabel(t.properties).primary} ·{" "}
           {t.work_types?.name ?? t.category}
         </p>
         <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-sm">

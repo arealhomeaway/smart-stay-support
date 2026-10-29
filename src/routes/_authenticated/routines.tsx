@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Routine work — the four recurring controls, in one place.
  *
@@ -133,7 +134,7 @@ function RoutinesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("routine_controls")
-        .select("*, properties(name, nickname)")
+        .select("*, properties(name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id)")
         .eq("is_demo", demoMode)
         .order("due_at", { ascending: true })
         .limit(400);
@@ -224,15 +225,15 @@ function RoutinesPage() {
               className="surface-row flex w-full flex-wrap items-center gap-3 px-4 py-2.5 text-left"
             >
               <PropertyPhoto
-                name={r.properties?.nickname ?? r.properties?.name}
+                name={formatPropertyLabel(r.properties).primary}
                 className="size-9"
               />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium">{r.title}</span>
                 <span className="block truncate text-xs text-muted-foreground">
                   {routineConfig(r.kind).label}
-                  {r.properties?.nickname || r.properties?.name
-                    ? ` · ${r.properties?.nickname ?? r.properties?.name}`
+                  {formatPropertyLabel(r.properties).primary
+                    ? ` · ${formatPropertyLabel(r.properties).primary}`
                     : ""}
                 </span>
               </span>
@@ -291,15 +292,15 @@ function Section({
               className="surface-row flex w-full flex-wrap items-center gap-3 px-4 py-3 text-left"
             >
               <PropertyPhoto
-                name={r.properties?.nickname ?? r.properties?.name}
+                name={formatPropertyLabel(r.properties).primary}
                 className="size-9"
               />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-base font-medium">{r.title}</span>
                 <span className="block truncate text-sm text-muted-foreground">
                   {config.label}
-                  {r.properties?.nickname || r.properties?.name
-                    ? ` · ${r.properties?.nickname ?? r.properties?.name}`
+                  {formatPropertyLabel(r.properties).primary
+                    ? ` · ${formatPropertyLabel(r.properties).primary}`
                     : ""}
                 </span>
               </span>
@@ -333,7 +334,7 @@ function RunRoutineDialog({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("properties")
-        .select("id, name, nickname, is_demo")
+        .select("id, name, nickname, is_demo, address_line1, unit, city, state, postal_code, ownerrez_property_id")
         .eq("active", true)
         .eq("is_demo", demoMode)
         .order("name")
@@ -440,11 +441,11 @@ function RunRoutineDialog({
                   key={p.id}
                   onClick={() => {
                     setPropertyId(p.id);
-                    setQuery(p.nickname ?? p.name ?? "");
+                    setQuery(formatPropertyLabel(p).primary);
                   }}
                   className="block w-full rounded px-2 py-1.5 text-left text-sm hover:bg-secondary"
                 >
-                  {p.nickname ?? p.name}
+                  {formatPropertyLabel(p).primary}
                 </button>
               ))}
               {matches.length === 0 && (

@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Statement Readiness — one property and statement period at a time.
  * Finance records dispositions and the Finance Lead confirms the expense review.
@@ -53,7 +54,7 @@ export function StatementReadiness({ demoMode, onOpenExpense }: { demoMode: bool
   const properties = useQuery({
     queryKey: ["sr-properties", demoMode],
     queryFn: async () => {
-      const { data, error } = await supabase.from("properties").select("id,name").eq("is_demo", demoMode).order("name");
+      const { data, error } = await supabase.from("properties").select("id, name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id").eq("is_demo", demoMode).order("name");
       if (error) throw error;
       return data ?? [];
     },
@@ -125,7 +126,7 @@ export function StatementReadiness({ demoMode, onOpenExpense }: { demoMode: bool
           <Select value={propertyId} onValueChange={setPropertyId}>
             <SelectTrigger id="sr-prop" aria-label="Property" className="w-72"><SelectValue placeholder="Choose a property" /></SelectTrigger>
             <SelectContent>
-              {(properties.data ?? []).map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+              {(properties.data ?? []).map((p) => <SelectItem key={p.id} value={p.id}>{formatPropertyLabel(p).primary}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>

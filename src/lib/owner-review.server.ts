@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Stage 3 — internal review of owner-reported participation, plus the
  * editable program rule set.
@@ -35,7 +36,7 @@ export async function loadTimeReviewQueue(supabase: Client, includeAll = false) 
     supabase.from("owner_programs").select("id, owner_name"),
     supabase
       .from("owner_time_entry_properties")
-      .select("entry_id, property_id, properties(name, nickname)")
+      .select("entry_id, property_id, properties(name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id)")
       .in(
         "entry_id",
         rows.map((r) => r.id),
@@ -51,7 +52,7 @@ export async function loadTimeReviewQueue(supabase: Client, includeAll = false) 
       .filter((l) => l.entry_id === e.id)
       .map((l) => {
         const p = l.properties as unknown as { name: string; nickname: string | null } | null;
-        return p ? p.nickname || p.name : "Property";
+        return p ? formatPropertyLabel(p).primary : "Property";
       });
     return {
       id: e.id,

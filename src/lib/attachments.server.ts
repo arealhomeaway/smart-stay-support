@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Server-only file handling for Resolve attachments.
  *
@@ -139,7 +140,7 @@ async function loadRecord(
   if (entityType === "property") {
     const { data, error } = await supabaseAdmin
       .from("properties")
-      .select("id, name, is_demo")
+      .select("id, name, is_demo, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id")
       .eq("id", entityId)
       .maybeSingle();
     if (error || !data) throw new Error("That property could not be found.");
@@ -669,8 +670,8 @@ export async function listOwnerDocuments(viewer: Viewer, client?: Client) {
   const propIds = [...new Set([...files.map((f) => f.property_id), ...requests.map((r) => r.propertyId)].filter(Boolean))] as string[];
   const names = new Map<string, string>();
   if (propIds.length) {
-    const { data } = await supabaseAdmin.from("properties").select("id, name, nickname").in("id", propIds);
-    for (const p of data ?? []) names.set(p.id, p.nickname || p.name);
+    const { data } = await supabaseAdmin.from("properties").select("id, name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id").in("id", propIds);
+    for (const p of data ?? []) names.set(p.id, formatPropertyLabel(p).primary);
   }
   return {
     files: files.map((f) => ({

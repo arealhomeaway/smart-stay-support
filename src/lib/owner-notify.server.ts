@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Delivery of owner alerts (server-only).
  *
@@ -197,10 +198,10 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50, onlyId?: st
         if (homeId) {
           const { data: home } = await supabase
             .from("properties")
-            .select("nickname, name, address_line1")
+            .select("nickname, name, address_line1, unit, city, state, postal_code, ownerrez_property_id")
             .eq("id", homeId)
             .maybeSingle();
-          propertyName = home?.nickname || home?.name || home?.address_line1 || null;
+          propertyName = formatPropertyLabel(home).primary;
         }
         const segments = safeText.body.split(" · ");
         const item = segments.length === 2 && safeText.body.length <= 200 ? segments[0]!.trim() : null;
