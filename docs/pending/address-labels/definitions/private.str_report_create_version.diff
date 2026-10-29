@@ -1,0 +1,11 @@
+--- live/private.str_report_create_version
++++ pending/private.str_report_create_version
+@@ -24,7 +24,7 @@
+     UPDATE public.str_participation_reports SET status='superseded', superseded_at=now() WHERE id=prev;
+   END IF;
+   IF st = 'pending_review' THEN
+-    SELECT name INTO pname FROM public.properties WHERE id=_property;
++    SELECT public.format_property_label(to_jsonb(properties))->>'primary' INTO pname FROM public.properties WHERE id=_property;
+     FOR u IN SELECT * FROM private.cleaner_leadership_ids() LOOP
+       INSERT INTO public.staff_notifications(user_id, kind, title, body, entity_type, entity_id, link_path, priority)
+       VALUES (u, 'str_report_review', format('STR report v%s for %s needs review before release', v, pname),

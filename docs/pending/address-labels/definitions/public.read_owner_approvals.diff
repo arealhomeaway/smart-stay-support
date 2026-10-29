@@ -1,0 +1,11 @@
+--- live/public.read_owner_approvals
++++ pending/public.read_owner_approvals
+@@ -14,7 +14,7 @@
+  ), current_requests AS (
+   SELECT a.id,a.updated_at,coalesce(a.kind,'other')::text AS kind,a.entity_type::text AS entity_type,p.title,p.detail,
+    a.amount,CASE WHEN a.currency ~ '^[A-Z]{3}$' THEN a.currency ELSE 'USD' END AS currency,a.status,NULL::text AS decision_note,a.decided_at,
+-   a.due_on,a.property_id,coalesce(h.nickname,h.name) AS property_name,a.created_at,p.id AS publication_id,p.revision,false AS recorded_by_owner,
++   a.due_on,a.property_id,public.format_property_label(to_jsonb(h))->>'primary' AS property_name,a.created_at,p.id AS publication_id,p.revision,false AS recorded_by_owner,
+    a.status='pending' AND coalesce(private.owner_approval_source_current(a),false) AS can_respond,
+    CASE WHEN a.status='pending' AND NOT coalesce(private.owner_approval_source_current(a),false) THEN 'The operational request changed. ARHA must reconcile it before you can decide.' END AS blocked_reason
+   FROM public.approvals a JOIN public.properties h ON h.id=a.property_id

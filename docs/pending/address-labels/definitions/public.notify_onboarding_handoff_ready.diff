@@ -1,0 +1,11 @@
+--- live/public.notify_onboarding_handoff_ready
++++ pending/public.notify_onboarding_handoff_ready
+@@ -7,7 +7,7 @@
+ DECLARE _home text; _demo boolean; _u uuid;
+ BEGIN
+   IF NEW.handoff_state = 'ready' AND OLD.handoff_state IS DISTINCT FROM 'ready' THEN
+-    SELECT coalesce(nickname, name, address_line1, 'A home'), coalesce(is_demo, false) INTO _home, _demo
++    SELECT public.format_property_label(to_jsonb(properties))->>'primary', coalesce(is_demo, false) INTO _home, _demo
+       FROM public.properties WHERE id = NEW.property_id;
+     FOR _u IN
+       SELECT DISTINCT v.u FROM (
