@@ -1,0 +1,1 @@
+DROP FUNCTION public.format_property_label(jsonb);
