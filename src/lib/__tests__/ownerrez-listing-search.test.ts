@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { filterListings, LISTING_MATCH_LIMIT } from "../property-intake";
 
 type L = { id: string; name: string; publicName: string | null; street: string; city: string; zip: string };
