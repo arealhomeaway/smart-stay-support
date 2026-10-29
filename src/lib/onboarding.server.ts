@@ -38,7 +38,7 @@ import {
 type Client = SupabaseClient<Database>;
 
 const PROPERTY_FIELDS =
-  "id, name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id, latitude, longitude, access_notes, wifi_notes, lifecycle_status, onboarding_stage, onboarding_owner, onboarding_started_at, planned_closing_on, actual_closing_on, actual_access_on, handoff_accepted_at, quarterly_review_due_on, active, is_demo, primary_photo_url, primary_photo_thumb_url, primary_photo_source";
+  "id, name, nickname, listing_alias, address_line1, unit, city, state, postal_code, ownerrez_property_id, latitude, longitude, access_notes, wifi_notes, lifecycle_status, onboarding_stage, onboarding_owner, onboarding_started_at, planned_closing_on, actual_closing_on, actual_access_on, handoff_accepted_at, quarterly_review_due_on, active, is_demo, primary_photo_url, primary_photo_thumb_url, primary_photo_source";
 
 async function assertCap(
   supabase: Client,

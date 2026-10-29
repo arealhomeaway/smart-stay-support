@@ -128,7 +128,7 @@ export function GlobalSearch({ targets }: { targets: SearchTarget[] }) {
               {records?.properties.map((p) => (
                 <CommandItem
                   key={p.id}
-                  value={`home ${propertySearchText(p)}`}
+                  value={`home ${propertySearchText(p)} ${q}`}
                   onSelect={() => go(`/property/${p.id}`)}
                 >
                   <span className="truncate">{formatPropertyLabel(p).primary}</span>
