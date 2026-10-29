@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Property Hub — one property, eight tabs, one contract (server-only).
  *

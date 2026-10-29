@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Onboarding lifecycle + controlled handoff (server-only).
  *

@@ -1,3 +1,4 @@
+import { matchesPropertySearch } from "@/lib/property-label";
 import { canReviewOnboardingGate } from "@/lib/onboarding-review-capabilities";
 import { onboardingWorkspaceKey } from "@/lib/onboarding-workspace-view";
 import { createFileRoute, Link } from "@tanstack/react-router";

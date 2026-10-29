@@ -1,3 +1,4 @@
+import { matchesPropertySearch } from "@/lib/property-label";
 /**
  * Director Onboarding Hub — the exception surface.
  *
