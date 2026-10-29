@@ -1,5 +1,11 @@
 # Roadmap — approved build work, NO publish
 
+## Oct 29 urgent enrollment ambiguity fix (approved)
+- [ ] Read-only Fern inventory, original function cause and other-attempt evidence
+- [ ] Byte-exact undo and alias-only fix with isolated new/existing-owner and Retry tests
+- [ ] Apply one function replacement; verify definition, grants, unchanged records and scheduled email-job health
+- [ ] Report Retry safety without retrying Fern, signing in or publishing
+
 ## Oct 29 Step 3 cleanup Part A (approved, no publish or live record writes)
 - Continue approved items 1–3 plus screen visibility and full tests; stop on a live-data check/apply failure, fix test typos; no real records or approvals touched.
 - [x] Narrow handoff acceptance permission to current Director of Operations cover; exact undo, isolated role tests, apply and unchanged-record/grant checks
