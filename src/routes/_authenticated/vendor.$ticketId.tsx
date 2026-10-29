@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -197,7 +198,7 @@ function VendorJob() {
       <header className="flex items-start gap-3">
         <PropertyPhoto
           url={property?.primary_photo_url}
-          name={property?.name}
+          name={formatPropertyLabel(property).primary}
           className="size-14"
         />
         <div className="min-w-0 flex-1 space-y-1.5">
@@ -236,17 +237,9 @@ function VendorJob() {
 
       <SectionCard title="The home">
         <div className="space-y-2 text-sm">
-          <p className="font-medium">{property?.name ?? "Address to be confirmed"}</p>
+          <p className="font-medium">{formatPropertyLabel(property).primary}</p>
           <p className="text-muted-foreground">
-            {[
-              property?.address_line1,
-              property?.unit,
-              property?.city,
-              property?.state,
-              property?.postal_code,
-            ]
-              .filter(Boolean)
-              .join(", ") || "Ask your coordinator for the address."}
+            {formatPropertyLabel(property).secondary}
           </p>
           {property?.access_notes && (
             <p>
@@ -264,7 +257,7 @@ function VendorJob() {
       </SectionCard>
 
       {!finished && (
-        <VisitCheckInCard ticketId={ticketId} homeName={property?.name ?? "the home"} />
+        <VisitCheckInCard ticketId={ticketId} homeName={formatPropertyLabel(property).primary} />
       )}
 
       <SectionCard

@@ -6,6 +6,7 @@ import { Download, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { formatPropertyLabel } from "@/lib/property-label";
 import { RequireCapability } from "@/components/RequireCapability";
 import { EmptyState, LoadingRows, PageHeader, SectionCard, SegmentedControl, StatTile } from "@/components/ui/page";
 import { Badge } from "@/components/ui/badge";
@@ -73,9 +74,9 @@ function ReportPage() {
   const homes = useQuery({
     queryKey: ["str-report", "homes"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("cleaner_hours_properties").select("property_id, properties(name)");
+      const { data, error } = await supabase.from("cleaner_hours_properties").select("property_id, properties(name, address_line1, unit, city, state, postal_code)");
       if (error) throw error;
-      return (data ?? []).map((r) => ({ id: r.property_id, name: (r.properties as { name: string } | null)?.name ?? "Property" }));
+      return (data ?? []).map((r) => ({ id: r.property_id, name: formatPropertyLabel(r.properties).primary }));
     },
   });
   return (

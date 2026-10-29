@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Running one routine control.
  *
@@ -148,7 +149,7 @@ export function RoutineDrawer({
   const done = row.status === "completed";
   const allChecked = config.steps.every((s) => checked[s.id]);
   const needsFollowUp = outcome === "needs_follow_up";
-  const propertyName = row.properties?.nickname ?? row.properties?.name ?? null;
+  const propertyName = formatPropertyLabel(row.properties).primary;
 
   return (
     <TaskWorkspace

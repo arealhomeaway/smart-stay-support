@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -28,7 +29,7 @@ export function DepartureMatchingPanel() {
     queryKey: ["departure-matching", "needs"],
     queryFn: async () => {
       const { data } = await supabase.from("departure_clean_matches")
-        .select("id, breezeway_task_id, reason, candidates, properties(name), breezeway_work_orders(name, scheduled_date, status)")
+        .select("id, breezeway_task_id, reason, candidates, properties(name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id), breezeway_work_orders(name, scheduled_date, status)")
         .eq("state", "multiple_reservations").order("created_at").limit(100);
       return data ?? [];
     },
@@ -59,7 +60,7 @@ export function DepartureMatchingPanel() {
           <h3 className="text-sm font-semibold">Needs reservation match · {needs.data!.length}</h3>
           {needs.data!.map((m) => (
             <div key={m.id} className="rounded-md border border-border p-3 text-sm">
-              <p className="font-medium">{m.properties?.name} · {m.breezeway_work_orders?.name} · {m.breezeway_work_orders?.scheduled_date ? usDate(m.breezeway_work_orders.scheduled_date) : "—"}</p>
+              <p className="font-medium">{formatPropertyLabel(m.properties).primary} · {m.breezeway_work_orders?.name} · {m.breezeway_work_orders?.scheduled_date ? usDate(m.breezeway_work_orders.scheduled_date) : "—"}</p>
               <p className="text-muted-foreground">{m.reason}</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {(m.candidates as Candidate[]).map((c) => (

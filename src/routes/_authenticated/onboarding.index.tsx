@@ -1,3 +1,4 @@
+import { matchesPropertySearch } from "@/lib/property-label";
 import { canReviewOnboardingGate } from "@/lib/onboarding-review-capabilities";
 import { onboardingWorkspaceKey } from "@/lib/onboarding-workspace-view";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -481,9 +482,7 @@ function DashboardSections({
     .filter(
       (p) =>
         !q ||
-        `${p.property.name} ${(p.property as { address?: string | null }).address ?? ""}`
-          .toLowerCase()
-          .includes(q),
+        matchesPropertySearch({ ...p.property, name: (p.property as { listing_name?: string }).listing_name ?? p.property.name }, q),
     )
     .filter((p) =>
       filter === "attention" ? needs(p) : filter === "handoff" ? withinDays(p.target, 30) : true,

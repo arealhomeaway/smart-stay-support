@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Read-only CSV exports of a home's onboarding plan and of a reusable
  * template. Reads run as the signed-in person, so existing access applies.
@@ -17,7 +18,7 @@ export const exportProjectPlanCsv = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const sb = context.supabase;
     const [home, tasks] = await Promise.all([
-      sb.from("properties").select("name").eq("id", data.propertyId).maybeSingle(),
+      sb.from("properties").select("name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id").eq("id", data.propertyId).maybeSingle(),
       sb.from("onboarding_tasks")
         .select("id, stage, title, detail, assigned_to, assigned_seat, status, due_on, schedule_anchor, schedule_offset_days, schedule_offset_unit, description, done_when, video_url, is_required, blocks_handoff, evidence_required, requires_owner_approval, owner_dependency, sort_order, template_task_id")
         .eq("property_id", data.propertyId).is("archived_at", null).is("parent_task_id", null),
@@ -35,7 +36,7 @@ export const exportProjectPlanCsv = createServerFn({ method: "POST" })
     const templateIds = [...new Set([...tplById.values()].map((t) => t.template_id))];
     const stages = templateIds.length ? (await sb.from("onboarding_template_stages").select("name, sort_order").in("template_id", templateIds)).data ?? [] : [];
     const nameOf = new Map((profs.data ?? []).map((p: { id: string; full_name: string | null; email: string | null }) => [p.id, p.full_name ?? p.email]));
-    const plan = home.data.name ?? "Home";
+    const plan = formatPropertyLabel(home.data).primary;
     const out = orderPlan(rows, stages).map(({ task: t, stageNo, taskNo }) => {
       const tt = t.template_task_id ? tplById.get(t.template_task_id) : undefined;
       return planRow({

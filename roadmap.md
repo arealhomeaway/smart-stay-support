@@ -1,11 +1,12 @@
 # Roadmap — approved build work, NO publish
 
 ## Oct 29 address labels (approved code/test only, no live writes)
-- [ ] Shared code/database formatting and unified property search
-- [ ] Staff, homeowner, navigation and export label/read coverage
-- [ ] Stage live alert/read function replacements with exact undo and label-only diff proofs
-- [ ] Rachel welcome read-only finding and fallback inventory
-- [ ] Isolated database/focused/full tests and automatic validation; no sign-in/publish/apply
+- [x] Shared code/database formatting and shared property search across global/Ticket/onboarding/lead entry points
+- [x] Broad staff, homeowner, navigation and export label/read coverage; stored identity and historical snapshots preserved
+- [x] Stage 17 alert/report functions plus one owner projection with exact undo and expression-only diff proofs
+- [x] Rachel welcome read-only finding and zero-fallback real-home inventory
+- [x] Isolated label-expression/focused/full tests and automatic typecheck/build; no sign-in/publish/apply
+- [ ] Signed-in screen acceptance and complete producer workflow execution: blocked by no sign-in/live writes; pending SQL not applied
 
 
 ## Oct 29 urgent enrollment ambiguity fix (approved)

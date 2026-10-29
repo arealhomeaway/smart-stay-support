@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import type { HomeownerEnrollment, HomeownerRow } from "./homeowners";
@@ -12,7 +13,7 @@ function daysBetween(from: Date, to: Date) {
 export async function loadHomeowners(supabase: Client): Promise<{ rows: HomeownerRow[] }> {
   const [owners, properties, contacts, programs] = await Promise.all([
     supabase.from("property_owners").select("id, name, email, phone, active").eq("active", true),
-    supabase.from("properties").select("id, name, owner_record_id, is_demo").eq("active", true),
+    supabase.from("properties").select("id, name, owner_record_id, is_demo, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id").eq("active", true),
     supabase
       .from("property_owner_contacts")
       .select("id, property_id, owner_name, owner_email, owner_phone"),
@@ -29,10 +30,10 @@ export async function loadHomeowners(supabase: Client): Promise<{ rows: Homeowne
   const homesByOwner = new Map<string, { id: string; name: string }[]>();
   const homeById = new Map<string, { id: string; name: string }>();
   for (const p of properties.data ?? []) {
-    homeById.set(p.id, { id: p.id, name: p.name });
+    homeById.set(p.id, { id: p.id, name: formatPropertyLabel(p).primary });
     if (!p.owner_record_id) continue;
     const list = homesByOwner.get(p.owner_record_id) ?? [];
-    list.push({ id: p.id, name: p.name });
+    list.push({ id: p.id, name: formatPropertyLabel(p).primary });
     homesByOwner.set(p.owner_record_id, list);
   }
 

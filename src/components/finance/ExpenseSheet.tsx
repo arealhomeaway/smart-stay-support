@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -178,7 +179,7 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
     queryKey: ["expense", expenseId],
     queryFn: async () => {
       const [e, links, recs, events, clar, docs, staff, dirSeat] = await Promise.all([
-        supabase.from("expenses").select("*, properties(name)").eq("id", expenseId).maybeSingle(),
+        supabase.from("expenses").select("*, properties(name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id)").eq("id", expenseId).maybeSingle(),
         supabase.from("expense_links").select("id, link_type, target_id").eq("expense_id", expenseId),
         supabase.from("expense_recoveries").select("*").eq("expense_id", expenseId).order("created_at"),
         supabase.from("expense_events").select("*").eq("expense_id", expenseId).order("created_at", { ascending: false }),
@@ -844,14 +845,14 @@ function RecoveryForm({ expenseId, rows, canReceive, onDone }: { expenseId: stri
 function PropertyPicker({ isDemo, value, onChange }: { isDemo: boolean; value: string | null; onChange: (id: string | null) => void }) {
   const q = useQuery({
     queryKey: ["expense-properties", isDemo],
-    queryFn: async () => (await supabase.from("properties").select("id, name").eq("is_demo", isDemo).is("archived_at", null).order("name")).data ?? [],
+    queryFn: async () => (await supabase.from("properties").select("id, name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id").eq("is_demo", isDemo).is("archived_at", null).order("name")).data ?? [],
   });
   return (
     <div>
       <Label>Property</Label>
       <select className={sel} value={value ?? ""} onChange={(x) => onChange(x.target.value || null)}>
         <option value="">Not identified yet</option>
-        {(q.data ?? []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+        {(q.data ?? []).map((p) => <option key={p.id} value={p.id}>{formatPropertyLabel(p).primary}</option>)}
       </select>
     </div>
   );

@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
@@ -46,9 +47,9 @@ function VendorProfile() {
     queryKey: ["vendor-coverage-properties"],
     enabled: sheet,
     queryFn: async () => {
-      const { data, error } = await supabase.from("properties").select("id, name, nickname").eq("active", true).order("name");
+      const { data, error } = await supabase.from("properties").select("id, name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id").eq("active", true).order("name");
       if (error) throw error;
-      return (data ?? []).map((p) => ({ id: p.id, label: p.nickname || p.name }));
+      return (data ?? []).map((p) => ({ id: p.id, label: formatPropertyLabel(p).primary }));
     },
   });
 

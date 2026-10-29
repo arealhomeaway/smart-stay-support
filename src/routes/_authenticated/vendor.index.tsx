@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -58,7 +59,7 @@ function VendorQueue() {
       const { data, error } = await supabase
         .from("tickets")
         .select(
-          "id, ref, title, priority, status, category, vendor_status, due_at, vendor_dispatched_at, properties(name, city, state, primary_photo_url)",
+          "id, ref, title, priority, status, category, vendor_status, due_at, vendor_dispatched_at, properties(name, address_line1, unit, city, state, postal_code, primary_photo_url)",
         )
         .eq("is_demo", false)
         .is("archived_at", null)
@@ -122,7 +123,7 @@ function VendorQueue() {
               >
                 <PropertyPhoto
                   url={property?.primary_photo_url}
-                  name={property?.name}
+                  name={formatPropertyLabel(property).primary}
                   className="mt-0.5 size-12"
                 />
                 <div className="min-w-0 flex-1">
@@ -143,7 +144,7 @@ function VendorQueue() {
                     </StatusBadge>
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {property?.name ?? "Home to be confirmed"} ·{" "}
+                    {formatPropertyLabel(property).primary} ·{" "}
                     {(job.category ?? "").replace(/_/g, " ")}
                     {job.due_at ? ` · due ${usDateTime(job.due_at)}` : ""}
                   </p>
@@ -173,7 +174,7 @@ function VendorQueue() {
                   <span className="font-medium">
                     #{job.ref} {job.title}
                   </span>
-                  <span className="text-muted-foreground">{property?.name ?? "—"}</span>
+                  <span className="text-muted-foreground">{formatPropertyLabel(property).primary}</span>
                   <StatusBadge tone="resolved" className="ml-auto">
                     Complete
                   </StatusBadge>

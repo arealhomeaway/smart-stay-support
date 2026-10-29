@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Onboarding as the homeowner sees it (server-only).
  *
@@ -137,7 +138,7 @@ async function onboardingProgress(admin: Client, propertyIds: string[]) {
       .from("onboarding_tasks")
       .select("property_id, title, stage, status, archived_at")
       .in("property_id", active),
-    admin.from("properties").select("id, name, nickname").in("id", active),
+    admin.from("properties").select("id, name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id").in("id", active),
   ]);
   if (tasks.error) throw tasks.error;
   if (props.error) throw props.error;
@@ -153,7 +154,7 @@ async function onboardingProgress(admin: Client, propertyIds: string[]) {
     const project = (projects.data ?? []).find((p) => p.property_id === id);
     homes.push({
       propertyId: id,
-      name: property?.nickname || property?.name || "Your home",
+      name: formatPropertyLabel(property).primary,
       targetGoLive: (project?.target_handoff_on as string | null) ?? null,
       statusLabel: "Onboarding",
       ...progress,
@@ -363,7 +364,7 @@ export async function loadOwnerOnboardingPreview(
 
   const names = await admin
     .from("properties")
-    .select("id, name, nickname")
+    .select("id, name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id")
     .in("id", propertyIds);
   if (names.error) throw names.error;
 
@@ -381,7 +382,7 @@ export async function loadOwnerOnboardingPreview(
       title: published?.title ?? (r.title as string) ?? "Onboarding decision",
       detail: published?.detail ?? (r.detail as string | null) ?? null,
       propertyId: (r.property_id as string | null) ?? null,
-      propertyName: property?.nickname || property?.name || null,
+      propertyName: formatPropertyLabel(property).primary,
       dueOn: (r.due_on as string | null) ?? null,
       status: (r.status as string) ?? "pending",
       updatedAt: (r.updated_at as string) ?? (r.created_at as string),

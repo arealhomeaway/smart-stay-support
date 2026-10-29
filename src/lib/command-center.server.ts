@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Executive Command Center (server-only).
  *
@@ -106,7 +107,7 @@ export async function loadCommandCenter(
     supabase
       .from("tickets")
       .select(
-        "id, ref, priority, status, category, team:functional_role_code, reported_at, acknowledged_at, resolved_at, response_due_at, action_due_at, next_review_at, waiting_on, reopen_count, avoidable_reopen, closure_qa_result, closure_evidence, escalation_level, supervisor_caught, guest_impact, occupancy_status, final_communication_sent, property_id, vendor_user_id, vendor_status, accountable_owner, current_action_owner, external_source, external_id, properties(name, state)",
+        "id, ref, priority, status, category, team:functional_role_code, reported_at, acknowledged_at, resolved_at, response_due_at, action_due_at, next_review_at, waiting_on, reopen_count, avoidable_reopen, closure_qa_result, closure_evidence, escalation_level, supervisor_caught, guest_impact, occupancy_status, final_communication_sent, property_id, vendor_user_id, vendor_status, accountable_owner, current_action_owner, external_source, external_id, properties(name, state, nickname, address_line1, unit, city, postal_code, ownerrez_property_id)",
       )
       // Executive KPIs exclude demo and archived records.
       .eq("is_demo", false)
@@ -893,7 +894,7 @@ export async function loadCommandCenter(
     windowDays: filters.days,
     filters: {
       markets: [...new Set(properties.map((p) => p.state).filter(Boolean))] as string[],
-      properties: properties.map((p) => ({ id: p.id, name: p.name })),
+      properties: properties.map((p) => ({ id: p.id, name: formatPropertyLabel(p).primary })),
       vendors: vendorIds.map((id) => ({
         id,
         name: profiles.find((p) => p.id === id)?.full_name ?? "Vendor",

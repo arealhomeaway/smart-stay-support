@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Server-side aggregation for the Active Owner Participation Program.
  *
@@ -166,7 +167,7 @@ export async function loadProgramAggregate(
           supabase
             .from("owner_program_properties")
             .select(
-              "id, property_id, closing_date, closing_confirmed, added_on, inclusion_status, onboarding_status, launch_status, coverage_status, last_owner_activity_at, properties(name, nickname, address_line1, city, state, primary_photo_url)",
+              "id, property_id, closing_date, closing_confirmed, added_on, inclusion_status, onboarding_status, launch_status, coverage_status, last_owner_activity_at, properties(name, nickname, address_line1, city, state, primary_photo_url, unit, postal_code, ownerrez_property_id)",
               { count: "exact" },
             )
             .eq("program_id", programId)
@@ -290,6 +291,8 @@ export async function loadProgramAggregate(
       name: string;
       nickname: string | null;
       address_line1: string | null;
+      unit?: string | null;
+      postal_code?: string | null;
       city: string | null;
       state: string | null;
       primary_photo_url: string | null;
@@ -316,8 +319,8 @@ export async function loadProgramAggregate(
     return {
       id: l.id,
       propertyId: l.property_id,
-      name: prop ? prop.nickname || prop.name || "Property" : "Previously enrolled property",
-      address: prop ? locationOf(prop) : "",
+      name: prop ? formatPropertyLabel(prop).primary : "Previously enrolled property",
+      address: prop ? formatPropertyLabel(prop).secondary : "",
       photoUrl: prop?.primary_photo_url ?? null,
       closingDate: l.closing_date,
       closingConfirmed: l.closing_confirmed,

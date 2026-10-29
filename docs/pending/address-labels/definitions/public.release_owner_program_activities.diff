@@ -1,0 +1,11 @@
+--- live/public.release_owner_program_activities
++++ pending/public.release_owner_program_activities
+@@ -21,7 +21,7 @@
+  IF p.owner_user_id IS NULL THEN RAISE EXCEPTION 'Link the homeowner login before releasing activities.'; END IF;
+  PERFORM 1 FROM owner_program_properties WHERE program_id=p.id ORDER BY property_id FOR SHARE;
+  PERFORM 1 FROM owner_task_templates WHERE active ORDER BY id FOR SHARE;
+- SELECT array_agg(coalesce(nullif(trim(h.nickname),''),h.name) ORDER BY h.name) INTO homes
++ SELECT array_agg(public.format_property_label(to_jsonb(h))->>'primary' ORDER BY h.name) INTO homes
+  FROM owner_program_properties e JOIN properties h ON h.id=e.property_id
+  WHERE e.program_id=p.id AND e.inclusion_status='included';
+  IF coalesce(cardinality(homes),0)=0 THEN RAISE EXCEPTION 'Include a home before releasing activities.'; END IF;

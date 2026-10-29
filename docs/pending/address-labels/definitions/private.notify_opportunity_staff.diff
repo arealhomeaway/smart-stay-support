@@ -1,0 +1,11 @@
+--- live/private.notify_opportunity_staff
++++ pending/private.notify_opportunity_staff
+@@ -17,7 +17,7 @@
+   _to := ARRAY[_pm, t_creator, t_assignee, w.assigned_to, public.seat_holder('onboarding_director')]
+       || coalesce((SELECT array_agg(user_id) FROM onboarding_follows WHERE property_id=w.property_id), '{}');
+   SELECT coalesce(pr.full_name, 'The homeowner') INTO _owner FROM owner_programs p LEFT JOIN profiles pr ON pr.id=p.owner_user_id WHERE p.id=w.program_id;
+-  SELECT coalesce(nickname, name, address_line1, 'the home') INTO _home FROM properties WHERE id=w.property_id;
++  SELECT public.format_property_label(to_jsonb(properties))->>'primary' INTO _home FROM properties WHERE id=w.property_id;
+   _link := '/onboarding/'||w.property_id||'?opp='||w.id;
+   PERFORM private.notify_onboarding_recipients(_to, auth.uid(), 'owner_collaboration',
+     coalesce(_owner,'The homeowner')||' '||_verb, w.title||' · '||_home, 'work_item', w.id, _link, w.is_demo);

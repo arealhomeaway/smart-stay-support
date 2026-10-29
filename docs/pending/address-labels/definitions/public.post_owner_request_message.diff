@@ -1,0 +1,11 @@
+--- live/public.post_owner_request_message
++++ pending/public.post_owner_request_message
+@@ -31,7 +31,7 @@
+     UPDATE work_items SET responded_at=now(), viewed_at=coalesce(viewed_at, now()) WHERE id=w.id;
+     PERFORM private.notify_opportunity_staff(w.id, 'replied');
+   ELSE
+-    SELECT coalesce(nickname, name, address_line1, 'your home') INTO _home FROM properties WHERE id=w.property_id;
++    SELECT public.format_property_label(to_jsonb(properties))->>'primary' INTO _home FROM properties WHERE id=w.property_id;
+     INSERT INTO owner_notifications(program_id, owner_user_id, kind, priority, title, body, action_path, email_status, is_demo)
+     VALUES (w.program_id, w.prog_owner, 'opportunity_reply', 'p3', 'New message from Your ARHA Team', w.title||' · '||_home,
+       '/owner?home='||w.property_id||'&opportunity='||w.id,

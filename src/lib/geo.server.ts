@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Geocoding + job map data (server-only).
  *
@@ -109,7 +110,7 @@ export async function geocodeOne(address: string): Promise<GeocodeHit | null> {
 export async function geocodeProperties(supabase: Client, opts: { force?: boolean } = {}) {
   let query = supabase
     .from("properties")
-    .select("id, name, address_line1, city, state, postal_code")
+    .select("id, name, address_line1, city, state, postal_code, nickname, unit, ownerrez_property_id")
     .eq("active", true)
     .order("name")
     .limit(GEOCODE_BATCH_LIMIT);
@@ -210,7 +211,7 @@ export async function loadJobMap(supabase: Client) {
   const located = (props ?? []).filter((p) => validCoordinates(p.latitude, p.longitude));
   const pins: MapPin[] = located.map((p) => ({
     propertyId: p.id,
-    name: p.name,
+    name: formatPropertyLabel(p).primary,
     market: p.market,
     city: p.city,
     state: p.state,
@@ -232,7 +233,7 @@ export async function loadJobMap(supabase: Client) {
     .filter((p) => !validCoordinates(p.latitude, p.longitude))
     .map((p) => ({
       propertyId: p.id,
-      name: p.name,
+      name: formatPropertyLabel(p).primary,
       address: addressLine({
         id: p.id, name: p.name, address_line1: p.address_line1,
         city: p.city, state: p.state, postal_code: p.postal_code,

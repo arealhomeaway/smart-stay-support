@@ -150,7 +150,8 @@ it("uses current owner-safe Property/program projections without leaking interna
   expect(JSON.stringify(result)).not.toContain("PRIVATE");
   expect(result.property).toMatchObject({
     id: "property",
-    address: "123 Owner Lane, Austin, TX",
+    name: "123 Owner Lane",
+    address: "Austin, TX",
     bedrooms: 3,
     internalNotes: null,
   });

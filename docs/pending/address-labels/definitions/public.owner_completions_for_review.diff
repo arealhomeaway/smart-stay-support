@@ -1,0 +1,11 @@
+--- live/public.owner_completions_for_review
++++ pending/public.owner_completions_for_review
+@@ -13,7 +13,7 @@
+        AND (private.is_staff(auth.uid()) OR public.is_onboarding_staff(auth.uid()))
+        AND private.onboarding_scope_ok(auth.uid(), w.property_id)
+   )
+-  SELECT b.id, b.property_id, coalesce(pp.nickname, pp.name, pp.address_line1),
++  SELECT b.id, b.property_id, public.format_property_label(to_jsonb(pp))->>'primary',
+     b.title, coalesce(op.full_name, 'Homeowner'), b.completed_at,
+     pm.project_manager, pmp.full_name, pm.project_manager IS NULL,
+     ((SELECT count(*) FROM documents d WHERE d.work_item_id = b.id AND d.deleted_at IS NULL)

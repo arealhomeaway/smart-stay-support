@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import { Badge } from "@/components/ui/badge";
 import { usDate } from "@/lib/dates";
 import {
@@ -31,7 +32,7 @@ export type ExpenseRow = ExpenseFacts & {
 };
 
 export const EXPENSE_SELECT =
-  "id, property_id, expense_type, payee, amount, expense_date, received_on, reason, dispatch_reason, visit_outcome, purchased_what, purchase_purpose, invoice_document_ids, photo_document_ids, photos_required, approval_id, authorization_note, proposed_statement_period, ops_completion, finance_review, cost_responsibility, reservation_link_state, ownerrez_booking_id, archived_at, duplicate_flag, is_estimate, purchase_auth_status, leadership_decision, properties(name), expense_links(id)";
+  "id, property_id, expense_type, payee, amount, expense_date, received_on, reason, dispatch_reason, visit_outcome, purchased_what, purchase_purpose, invoice_document_ids, photo_document_ids, photos_required, approval_id, authorization_note, proposed_statement_period, ops_completion, finance_review, cost_responsibility, reservation_link_state, ownerrez_booking_id, archived_at, duplicate_flag, is_estimate, purchase_auth_status, leadership_decision, properties(name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id), expense_links(id)";
 
 export function ExpenseChips({ e }: { e: ExpenseRow }) {
   const ready = docReadiness(e) === "ready";
@@ -58,7 +59,7 @@ export function ExpenseList({ rows, onOpen, showProperty = true }: { rows: Expen
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <span className="font-medium">
                 {e.payee || "No payee yet"} · {money(e.amount)}
-                {showProperty && <span className="text-muted-foreground"> · {e.properties?.name ?? "No property"}</span>}
+                {showProperty && <span className="text-muted-foreground"> · {formatPropertyLabel(e.properties).primary}</span>}
               </span>
               <span className="text-xs text-muted-foreground">
                 Expense date {e.expense_date ? usDate(e.expense_date) : "—"} · Received {usDate(e.received_on)} · Responsibility {RESPONSIBILITY_LABEL[e.cost_responsibility]}

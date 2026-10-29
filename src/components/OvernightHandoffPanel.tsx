@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Sunrise } from "lucide-react";
@@ -59,7 +60,7 @@ export function OvernightHandoffPanel({ className }: { className?: string | unde
       const { data: rows, error } = await supabase
         .from("tickets")
         .select(
-          "id, title, status, priority, reported_at, vendor_status, vendor_dispatched_at, vendor_completed_at, next_review_at, handoff_status, guest_in_residence, assignment_note, properties(name, nickname, primary_photo_url)",
+          "id, title, status, priority, reported_at, vendor_status, vendor_dispatched_at, vendor_completed_at, next_review_at, handoff_status, guest_in_residence, assignment_note, properties(name, nickname, primary_photo_url, address_line1, unit, city, state, postal_code, ownerrez_property_id)",
         )
         .eq("is_demo", false)
         .is("archived_at", null)
@@ -111,12 +112,12 @@ export function OvernightHandoffPanel({ className }: { className?: string | unde
                 >
                   <PropertyPhoto
                     url={t.properties?.primary_photo_url}
-                    name={t.properties?.nickname ?? t.properties?.name}
+                    name={formatPropertyLabel(t.properties).primary}
                   />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium">{t.title}</span>
                     <span className="block truncate text-xs text-muted-foreground">
-                      {t.properties?.nickname ?? t.properties?.name ?? "No property"} ·{" "}
+                      {formatPropertyLabel(t.properties).primary} ·{" "}
                       {usDateTime(t.reported_at)}
                     </span>
                   </span>

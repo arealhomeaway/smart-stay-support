@@ -1,3 +1,4 @@
+import { matchesPropertySearch } from "@/lib/property-label";
 /**
  * Director Onboarding Hub — the exception surface.
  *
@@ -128,7 +129,7 @@ export function DirectorHub({
     return projects
       .filter((p) => matchesOnboardingLens(p, lens, viewer))
       .filter((p) => !owner || (p.owner ?? "Unassigned") === owner)
-      .filter((p) => !q || `${p.property.name} ${p.owner ?? ""}`.toLowerCase().includes(q))
+      .filter((p) => !q || matchesPropertySearch({ ...p.property, name: (p.property as { listing_name?: string }).listing_name ?? p.property.name }, q) || (p.owner ?? "").toLowerCase().includes(q))
       .sort((a, b) => (a.target ?? "9999").localeCompare(b.target ?? "9999"));
   }, [projects, lens, find, owner, viewer]);
 

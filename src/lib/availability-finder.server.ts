@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { addressLine, geocodeOne } from "./geo.server";
@@ -80,14 +81,14 @@ export async function findAvailableProperties(supabase: Client, input: FinderInp
   if (!center) throw new Error("We could not locate that place. Try a fuller address or ZIP code.");
 
   const { data, error } = await supabase.from("properties")
-    .select("id,name,address_line1,city,state,postal_code,formatted_address,latitude,longitude,bedrooms,bathrooms,max_guests,primary_photo_url,primary_photo_source,listing_public_url,ownerrez_property_id,ownerrez_synced_at")
+    .select("id, name, address_line1, city, state, postal_code, formatted_address, latitude, longitude, bedrooms, bathrooms, max_guests, primary_photo_url, primary_photo_source, listing_public_url, ownerrez_property_id, ownerrez_synced_at, nickname, unit")
     .eq("active", true).eq("is_demo", false).is("archived_at", null)
     .not("ownerrez_property_id", "is", null);
   if (error) throw error;
 
   const linked = (data ?? []).filter((row) => validCoordinates(row.latitude, row.longitude) && row.ownerrez_property_id);
   const properties: AvailabilityProperty[] = linked.map((row) => ({
-    id: row.id, name: row.name,
+    id: row.id, name: formatPropertyLabel(row).primary,
     address: addressLine(row) || row.formatted_address || "Address unavailable",
     lat: row.latitude!, lng: row.longitude!, bedrooms: row.bedrooms,
     bathrooms: row.bathrooms, maxGuests: row.max_guests,

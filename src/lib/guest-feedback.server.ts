@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Server-only Guest Feedback helpers: signed survey tokens, OwnerRez stay
  * lookup, review ingestion and the automatic follow-up Ticket.
@@ -410,9 +411,9 @@ export async function previewReviewImport(admin: Admin, items: ReviewInput[]) {
   }
   const propIds = [...new Set(homes.values())];
   const { data: props } = propIds.length
-    ? await admin.from("properties").select("id, name").in("id", propIds)
+    ? await admin.from("properties").select("id, name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id").in("id", propIds)
     : { data: [] as { id: string; name: string }[] };
-  const names = new Map((props ?? []).map((p) => [p.id, p.name] as const));
+  const names = new Map((props ?? []).map((p) => [p.id, formatPropertyLabel(p).primary] as const));
   const rows: ReviewPreviewRow[] = items.map((r) => {
     const property_id = r.ownerrez_property_id ? homes.get(r.ownerrez_property_id) ?? null : null;
     const rating = r.stars && r.stars >= 1 && r.stars <= 5 ? Math.round(r.stars) : null;

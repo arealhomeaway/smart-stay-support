@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -194,7 +195,7 @@ function PropertiesPage() {
 
   const { originSearch } = useWorkspaceOrigin(
     "Properties",
-    visible.map((p) => ({ id: p.id, label: p.nickname ?? p.name, sub: p.market ?? undefined })),
+    visible.map((p) => ({ id: p.id, label: formatPropertyLabel(p).primary, sub: p.market ?? undefined })),
   );
 
   return (
@@ -294,7 +295,7 @@ function PropertiesPage() {
                   {p.primary_photo_url ? (
                     <img
                       src={p.primary_photo_url}
-                      alt={`${p.nickname ?? p.name} — listing photo`}
+                      alt={`${formatPropertyLabel(p).primary} — listing photo`}
                       className="h-40 w-full object-cover"
                       loading="lazy"
                     />
@@ -324,7 +325,7 @@ function PropertiesPage() {
                       search={originSearch}
                       className="hover:text-primary hover:underline"
                     >
-                      {p.nickname ?? p.name}
+                      {formatPropertyLabel(p).primary}
                     </Link>
                   </p>
                   <p className="text-sm text-muted-foreground">

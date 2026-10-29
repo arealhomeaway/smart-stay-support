@@ -404,7 +404,7 @@ export async function routeOwnerDecision(
     throw new Error("Link an active canonical Owner to this property before routing a decision.");
   const property = await supabase
     .from("properties")
-    .select("name, is_demo, archived_at")
+    .select("name, is_demo, archived_at, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id")
     .eq("id", input.propertyId)
     .maybeSingle();
   if (property.error) throw property.error;
@@ -644,7 +644,7 @@ export async function sendToAccounting(
   }
   const property = await supabase
     .from("properties")
-    .select("name")
+    .select("name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id")
     .eq("id", request.property_id)
     .maybeSingle();
   const { sendEmail, emailShell } = await import("./email.server");

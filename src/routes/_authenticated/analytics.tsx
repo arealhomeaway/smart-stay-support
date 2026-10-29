@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import { LoadingPage, PageHeader, SectionBand, StatTile } from "@/components/ui/page";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -72,7 +73,7 @@ type Ticket = {
 };
 
 const SELECT =
-  "id, priority, status, category, reported_at, acknowledged_at, action_started_at, resolved_at, response_due_at, action_due_at, promised_update_due_at, reopen_count, avoidable_reopen, closure_qa_result, escalation_level, supervisor_caught, late_reason, waiting_on, guest_impact, occupancy_status, final_communication_sent, external_source, source_channel, property_id, properties(name, nickname)";
+  "id, priority, status, category, reported_at, acknowledged_at, action_started_at, resolved_at, response_due_at, action_due_at, promised_update_due_at, reopen_count, avoidable_reopen, closure_qa_result, escalation_level, supervisor_caught, late_reason, waiting_on, guest_impact, occupancy_status, final_communication_sent, external_source, source_channel, property_id, properties(name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id)";
 
 function minutesBetween(a: string, b: string) {
   return (new Date(b).getTime() - new Date(a).getTime()) / 60000;
@@ -418,7 +419,7 @@ function Analytics() {
 
   // --- Root cause -----------------------------------------------------------
   const propertyKey = (t: Ticket) =>
-    t.properties?.nickname ?? t.properties?.name ?? "No home linked";
+    formatPropertyLabel(t.properties).primary;
 
   const recurring = new Map<
     string,

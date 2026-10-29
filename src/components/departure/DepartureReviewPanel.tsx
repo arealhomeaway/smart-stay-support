@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -74,7 +75,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
   const q = useQuery({
     queryKey: ["departure-review", reviewId],
     queryFn: async () => {
-      const { data: r, error } = await supabase.from("departure_reviews").select("*, properties(name)").eq("id", reviewId).single();
+      const { data: r, error } = await supabase.from("departure_reviews").select("*, properties(name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id)").eq("id", reviewId).single();
       if (error) throw error;
       const [linked, events, claim, ext, docs] = await Promise.all([
         supabase.from("tickets").select("id, ref, title, status, entry_kind").eq("departure_review_id", reviewId).is("archived_at", null).order("created_at"),
@@ -234,7 +235,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
     <div className="space-y-4">
       <div className="rounded-lg border border-border bg-muted/40 p-4 text-sm">
         <div className="mb-2 flex flex-wrap items-center gap-2">
-          <h2 className="font-display text-lg font-semibold">{r.properties?.name ?? "Property"}</h2>
+          <h2 className="font-display text-lg font-semibold">{formatPropertyLabel(r.properties).primary}</h2>
           <Badge variant={done ? "secondary" : "default"}>{done ? "Completed" : r.status === "in_progress" ? "In progress" : "Open"}</Badge>
           {r.is_demo && <Badge variant="outline">Demo</Badge>}
         </div>

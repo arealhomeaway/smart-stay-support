@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -12,15 +13,15 @@ export const readHomeContext = createServerFn({ method: "GET" })
   .handler(async ({ context, data }) => {
     const db = context.supabase;
     const [home, project] = await Promise.all([
-      db.from("properties").select("id,name,nickname,address_line1,city,state,lifecycle_status").eq("id", data.propertyId).single(),
+      db.from("properties").select("id, name, nickname, address_line1, city, state, lifecycle_status, unit, postal_code, ownerrez_property_id").eq("id", data.propertyId).single(),
       db.from("onboarding_projects").select("id,handoff_state").eq("property_id", data.propertyId).neq("status", "cancelled").order("created_at", { ascending: false }).limit(1).maybeSingle(),
     ]);
     if (home.error) throw new Error("This home could not be opened.");
     if (project.error) throw new Error(project.error.message);
     const h = home.data;
     return {
-      name: h.nickname ?? h.name,
-      address: [h.address_line1, h.city, h.state].filter(Boolean).join(", "),
+      name: formatPropertyLabel(h).primary,
+      address: formatPropertyLabel(h).secondary,
       lifecycleStatus: h.lifecycle_status as string | null,
       project: project.data ? { id: project.data.id, handoffState: (project.data as { handoff_state: string | null }).handoff_state } : null,
     };
@@ -43,13 +44,13 @@ export const readHandoffsWaitingForMe = createServerFn({ method: "GET" })
     if (!isOpsDirectorSeat(context.userId, (holder.data as string | null) ?? null, coverUser)) return { show: false, rows: [] };
     const r = await db
       .from("onboarding_projects")
-      .select("id,property_id,ready_for_ops_at,properties!inner(name,nickname,is_demo)")
+      .select("id,property_id,ready_for_ops_at,properties!inner(name, nickname, is_demo, address_line1, unit, city, state, postal_code, ownerrez_property_id)")
       .eq("handoff_state", "ready")
       .neq("status", "cancelled");
     if (r.error) throw new Error(r.error.message);
     const rows = (r.data ?? []).map((p) => {
       const h = (p as unknown as { properties: { name: string; nickname: string | null; is_demo: boolean | null } }).properties;
-      return { projectId: p.id, propertyId: p.property_id as string, name: h.nickname ?? h.name, readyAt: (p as { ready_for_ops_at: string | null }).ready_for_ops_at, demo: Boolean(h.is_demo) };
+      return { projectId: p.id, propertyId: p.property_id as string, name: formatPropertyLabel(h).primary, readyAt: (p as { ready_for_ops_at: string | null }).ready_for_ops_at, demo: Boolean(h.is_demo) };
     });
     return { show: true, rows };
   });

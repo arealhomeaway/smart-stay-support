@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -101,7 +102,7 @@ function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tickets")
-        .select("*, properties(name, nickname, primary_photo_url)")
+        .select("*, properties(name, nickname, primary_photo_url, address_line1, unit, city, state, postal_code, ownerrez_property_id)")
         .eq("is_demo", demoMode)
         .is("archived_at", null)
         .order("reported_at", { ascending: false })
@@ -159,7 +160,7 @@ function Dashboard() {
     [...needsMe, ...inProgress, ...waiting].map((t) => ({
       id: t.id,
       label: t.title,
-      sub: t.properties?.nickname ?? t.properties?.name ?? undefined,
+      sub: formatPropertyLabel(t.properties).primary,
     })),
   );
 
@@ -207,7 +208,7 @@ function Dashboard() {
             <span className="font-medium">{t.title}</span>
             <span className="text-muted-foreground">
               {" · "}
-              {t.properties?.nickname ?? t.properties?.name ?? "No property"}
+              {formatPropertyLabel(t.properties).primary}
             </span>
           </>
         ),
@@ -396,7 +397,7 @@ function WorkRow({
       <PriorityRail priority={t.priority} />
       <PropertyPhoto
         url={t.properties?.primary_photo_url ?? null}
-        name={t.properties?.nickname ?? t.properties?.name ?? null}
+        name={formatPropertyLabel(t.properties).primary}
         className="size-11"
       />
       <Badge variant="outline" className={priorityTone(t.priority)}>
@@ -410,7 +411,7 @@ function WorkRow({
           {t.title}
         </span>
         <span className="block truncate text-sm text-muted-foreground">
-          {t.properties?.nickname ?? t.properties?.name ?? "No property"}
+          {formatPropertyLabel(t.properties).primary}
           {next ? ` · ${next.label}` : ""}
         </span>
       </span>
@@ -450,7 +451,7 @@ function RoutineWorkDue() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("routine_controls")
-        .select("id, kind, title, status, due_at, properties(name, nickname)")
+        .select("id, kind, title, status, due_at, properties(name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id)")
         .eq("is_demo", demoMode)
         .in("status", ["due", "in_progress"])
         .order("due_at", { ascending: true })
@@ -499,8 +500,8 @@ function RoutineWorkDue() {
                 <span className="block truncate text-base font-medium">{r.title}</span>
                 <span className="block truncate text-sm text-muted-foreground">
                   {routineConfig(r.kind).label}
-                  {r.properties?.nickname || r.properties?.name
-                    ? ` \u00b7 ${r.properties?.nickname ?? r.properties?.name}`
+                  {formatPropertyLabel(r.properties).primary
+                    ? ` \u00b7 ${formatPropertyLabel(r.properties).primary}`
                     : ""}
                 </span>
               </span>

@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,10 +38,10 @@ export function DepartureReviewQueue() {
     queryKey: ["departure-reviews", "queue", demoMode],
     queryFn: async () => {
       const [{ data: rows, error }, { data: setting }, { data: cleans }] = await Promise.all([
-        supabase.from("departure_reviews").select("id, status, guest_name, stay_departure, clean_completed_at, claimed_by, properties(name)")
+        supabase.from("departure_reviews").select("id, status, guest_name, stay_departure, clean_completed_at, claimed_by, properties(name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id)")
           .eq("team", "property_operations").neq("status", "completed").eq("is_demo", demoMode).order("clean_completed_at"),
         supabase.from("app_settings").select("value").eq("key", TURNOVER_THRESHOLDS_KEY).maybeSingle(),
-        supabase.from("breezeway_work_orders").select("id, name, status, reservation_snapshot, properties!inner(name, is_demo)")
+        supabase.from("breezeway_work_orders").select("id, name, status, reservation_snapshot, properties!inner(name, is_demo, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id)")
           .eq("department", "housekeeping").not("reservation_snapshot", "is", null).eq("properties.is_demo", demoMode)
           .not("status", "in", "(Finished,Approved,Closed,Deleted)").limit(200),
       ]);
@@ -50,7 +51,7 @@ export function DepartureReviewQueue() {
       const late = (cleans ?? []).flatMap((c) => {
         const dep = (c.reservation_snapshot as { departure?: string } | null)?.departure;
         const risk = turnoverRisk(dep, isCleanComplete(c.status), now, t);
-        return risk ? [{ id: c.id, name: c.properties?.name ?? c.name, departure: dep!, status: c.status, risk }] : [];
+        return risk ? [{ id: c.id, name: formatPropertyLabel(c.properties).primary, departure: dep!, status: c.status, risk }] : [];
       });
       return { rows: rows ?? [], late, t };
     },
@@ -82,7 +83,7 @@ export function DepartureReviewQueue() {
         {rows.map((r) => (
           <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
             <div>
-              <span className="font-medium">{r.properties?.name}</span>
+              <span className="font-medium">{formatPropertyLabel(r.properties).primary}</span>
               <span className="text-muted-foreground"> · {r.guest_name ?? "Guest"} · departed {r.stay_departure ? usDate(r.stay_departure) : "—"}</span>
             </div>
             <div className="flex items-center gap-2">

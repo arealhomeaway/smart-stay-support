@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Breezeway outbound task creation (server-only).
  *
@@ -181,7 +182,7 @@ async function resolveSource(source: OutboundSource) {
 
   const { data: prop, error: propError } = await db
     .from("properties")
-    .select("id, name, breezeway_property_id")
+    .select("id, name, breezeway_property_id, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id")
     .eq("id", propertyId)
     .maybeSingle();
   if (propError) throw new Error("Could not read the property.");
@@ -635,9 +636,9 @@ export async function listOutboundNeedingReview(): Promise<BreezewayOutboundRevi
   const propertyIds = [...new Set(rows.map((r) => r.property_id).filter(Boolean))] as string[];
   const names = new Map<string, string | null>();
   if (propertyIds.length) {
-    const { data: props } = await db.from("properties").select("id, name").in("id", propertyIds);
+    const { data: props } = await db.from("properties").select("id, name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id").in("id", propertyIds);
     for (const p of (props ?? []) as unknown as { id: string; name: string | null }[]) {
-      names.set(p.id, p.name);
+      names.set(p.id, formatPropertyLabel(p).primary);
     }
   }
 

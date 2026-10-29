@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Resolve Help & Feedback — reports about the Resolve application itself.
  * Never an Operations ticket: writes only to help_tickets, never to tickets/work items.
@@ -33,12 +34,12 @@ export const submitHelpTicket = createServerFn({ method: "POST" })
       supabaseAdmin.from("profiles").select("full_name, email").eq("id", userId).maybeSingle(),
       supabaseAdmin.from("user_roles").select("role").eq("user_id", userId),
       data.propertyId
-        ? supabaseAdmin.from("properties").select("name, address_line1").eq("id", data.propertyId).maybeSingle()
+        ? supabaseAdmin.from("properties").select("name, address_line1, nickname, unit, city, state, postal_code, ownerrez_property_id").eq("id", data.propertyId).maybeSingle()
         : Promise.resolve({ data: null }),
       supabaseAdmin.from("app_settings").select("value").eq("key", "help_feedback_recipient").maybeSingle(),
     ]);
     const prop = propRes.data as { name: string | null; address_line1: string | null } | null;
-    const propertyLabel = prop ? [prop.name, prop.address_line1].filter(Boolean).join(" — ") : null;
+    const propertyLabel = prop ? formatPropertyLabel(prop).primary : null;
     const roles = (roleRows ?? []).map((r) => r.role).join(", ") || "—";
     const email = (profile as { email?: string } | null)?.email ?? (context.claims as { email?: string })?.email ?? null;
     const name = (profile as { full_name?: string } | null)?.full_name ?? email ?? "Unknown user";

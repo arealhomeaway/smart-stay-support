@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Server-only context gathering for the Contextual Email Composer.
  *
@@ -31,7 +32,7 @@ async function propertyBits(supabase: Client, propertyId: string | null) {
   if (!propertyId) return { name: null, address: null, recipients: [] as ComposerRecipient[] };
   const { data: property } = await (supabase as never as Client)
     .from("properties")
-    .select("name, nickname, formatted_address, address_line1")
+    .select("name, nickname, formatted_address, address_line1, unit, city, state, postal_code, ownerrez_property_id")
     .eq("id", propertyId)
     .maybeSingle();
 
@@ -51,8 +52,8 @@ async function propertyBits(supabase: Client, propertyId: string | null) {
     }));
 
   return {
-    name: row?.["nickname"] ?? row?.["name"] ?? null,
-    address: row?.["formatted_address"] ?? row?.["address_line1"] ?? null,
+    name: row ? formatPropertyLabel(row).primary : null,
+    address: row ? formatPropertyLabel(row).full : null,
     recipients,
     ownerName: recipients[0]?.name ?? null,
   };

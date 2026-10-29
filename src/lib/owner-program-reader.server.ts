@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Client } from "./owner-participation.server";
 import { readCountedRows } from "./read-all-rows";
+import { formatPropertyLabel } from "./property-label";
 
 const nullableText = z.string().nullable();
 const programSchema = z.object({
@@ -28,6 +29,8 @@ const propertyLabelSchema = z.object({
   name: nullableText,
   nickname: nullableText,
   address_line1: nullableText,
+  unit: nullableText.optional(),
+  postal_code: nullableText.optional(),
   city: nullableText,
   state: nullableText,
   primary_photo_url: nullableText,
@@ -126,11 +129,11 @@ export async function readOwnerPropertyLabels(supabase: Client, propertyIds: str
     );
     if (rows.error) throw rows.error;
     for (const row of rows.data ?? []) {
-      const property = z.object({ id: z.string(), name: nullableText }).parse(row.property);
+      const property = z.object({ id: z.string(), name: nullableText, address_line1: nullableText.optional(), unit: nullableText.optional(), city: nullableText.optional(), state: nullableText.optional(), postal_code: nullableText.optional() }).parse(row.property);
       if (property.id !== row.id) throw new Error("The Property context changed.");
       results.push({
         id: property.id,
-        name: property.name,
+        name: formatPropertyLabel(property).primary,
         active: !["closed", "completed", "complete"].includes(row.program_status),
       });
     }

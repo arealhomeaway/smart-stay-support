@@ -7,7 +7,9 @@
  * on file" in one surface while showing a full street address in another.
  * Every surface now calls this helper.
  */
-export type PropertyAddressFields = {
+import { formatPropertyLabel, type PropertyLabelFields } from "./property-label";
+
+export type PropertyAddressFields = PropertyLabelFields & {
   address_line1?: string | null;
   unit?: string | null;
   city?: string | null;
@@ -16,15 +18,10 @@ export type PropertyAddressFields = {
   formatted_address?: string | null;
 };
 
-/** Street + unit + city/state/zip, falling back to the geocoded address. */
+/** Full structured address, using the same label rule as home headings. */
 export function propertyAddress(p: PropertyAddressFields | null | undefined): string {
   if (!p) return "";
-  const composed = [p.address_line1, p.unit, p.city, p.state, p.postal_code]
-    .map((part) => (typeof part === "string" ? part.trim() : ""))
-    .filter(Boolean)
-    .join(", ");
-  if (composed) return composed;
-  return (p.formatted_address ?? "").trim();
+  return formatPropertyLabel(p).full;
 }
 
 /** The same address, or the shared empty-state sentence. */

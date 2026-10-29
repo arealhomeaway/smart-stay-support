@@ -1,0 +1,11 @@
+--- live/public.owner_release_summary
++++ pending/public.owner_release_summary
+@@ -14,7 +14,7 @@
+  SELECT p.* INTO prog FROM owner_programs p JOIN property_owners o ON o.id=p.owner_record_id AND o.active
+  WHERE p.id=_program_id AND p.status IN ('pending','active','target_reached') AND p.archived_at IS NULL AND NOT p.is_demo;
+  IF NOT FOUND OR prog.owner_user_id IS NULL THEN RETURN NULL; END IF;  -- demo/test or unlinked: no alert at all
+- SELECT array_agg(coalesce(nullif(trim(h.nickname),''),h.name) ORDER BY h.name) INTO names
++ SELECT array_agg(public.format_property_label(to_jsonb(h))->>'primary' ORDER BY h.name) INTO names
+  FROM properties h JOIN owner_program_properties e ON e.property_id=h.id AND e.program_id=prog.id AND e.inclusion_status='included'
+  WHERE NOT h.is_demo AND (_property_ids IS NULL OR h.id=ANY(_property_ids));
+  homes := CASE WHEN coalesce(array_length(names,1),0)=0 THEN 'your home'

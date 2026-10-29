@@ -93,7 +93,7 @@ function subKey(parentTaskId: string, title: string) {
 async function loadContext(supabase: Client, propertyId: string) {
   const property = await supabase
     .from("properties")
-    .select("id, name, is_demo, planned_closing_on, actual_closing_on, actual_access_on")
+    .select("id, name, is_demo, planned_closing_on, actual_closing_on, actual_access_on, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id")
     .eq("id", propertyId)
     .single();
   if (property.error) throw property.error;

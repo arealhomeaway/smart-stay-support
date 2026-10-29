@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Active Owner Participation Program — staff side (server-only).
  *
@@ -139,7 +140,7 @@ export async function loadPrograms(supabase: Client, demo = false) {
     await Promise.all([
       supabase
         .from("properties")
-        .select("id, name, nickname, city, state")
+        .select("id, name, nickname, city, state, address_line1, unit, postal_code, ownerrez_property_id")
         .eq("active", true)
         .order("name"),
       supabase
@@ -153,7 +154,7 @@ export async function loadPrograms(supabase: Client, demo = false) {
       supabase
         .from("owner_program_properties")
         .select(
-          "id, program_id, property_id, inclusion_status, closing_date, closing_confirmed, launch_status, coverage_status, last_owner_activity_at, properties(name, nickname)",
+          "id, program_id, property_id, inclusion_status, closing_date, closing_confirmed, launch_status, coverage_status, last_owner_activity_at, properties(name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id)",
         ),
       supabase
         .from("owner_reviews")
@@ -226,7 +227,7 @@ export async function loadPrograms(supabase: Client, demo = false) {
       );
       return {
         id: l.property_id,
-        name: prop ? prop.nickname || prop.name : "Property",
+        name: prop ? formatPropertyLabel(prop).primary : "Property",
         coverage: hasActivity
           ? overdue.length
             ? "needs_attention"
@@ -277,7 +278,7 @@ export async function loadPrograms(supabase: Client, demo = false) {
   );
   const available = (properties.data ?? [])
     .filter((p) => !enrolled.has(p.id))
-    .map((p) => ({ id: p.id, name: p.nickname || p.name, location: locationOf(p) }));
+    .map((p) => ({ id: p.id, name: formatPropertyLabel(p).primary, location: locationOf(p) }));
 
   return { rows, available };
 }

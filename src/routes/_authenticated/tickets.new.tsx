@@ -1,3 +1,4 @@
+import { formatPropertyLabel, matchesPropertySearch } from "@/lib/property-label";
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import {
   isPostStayFeedback,
@@ -204,7 +205,7 @@ export function NewTicketForm({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("properties")
-        .select("id, name, nickname")
+        .select("id, name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id")
         .eq("active", true)
         .or(`is_demo.eq.${demoMode}${context.property ? `,id.eq.${context.property}` : ""}`)
         .order("name");
@@ -660,14 +661,10 @@ export function NewTicketForm({
                     />
                   </div>
                   {(properties ?? [])
-                    .filter((p) =>
-                      `${p.nickname ?? ""} ${p.name}`
-                        .toLowerCase()
-                        .includes(propertyQuery.toLowerCase()),
-                    )
+                    .filter((p) => matchesPropertySearch(p, propertyQuery))
                     .map((p) => (
                       <SelectItem key={p.id} value={p.id}>
-                        {p.nickname ?? p.name}
+                        {formatPropertyLabel(p).primary}
                       </SelectItem>
                     ))}
                 </SelectContent>

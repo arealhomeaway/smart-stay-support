@@ -8,6 +8,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import type { CoverageVendor } from "./vendor-coverage";
+import { formatPropertyLabel } from "./property-label";
 
 type Client = SupabaseClient<Database>;
 
@@ -25,7 +26,7 @@ export async function loadPropertyCoverage(db: Client, userId: string, propertyI
 
   const { data: property, error: propertyError } = await db
     .from("properties")
-    .select("id, name, city, state, postal_code")
+    .select("id, name, address_line1, unit, city, state, postal_code")
     .eq("id", propertyId)
     .maybeSingle();
   if (propertyError) throw propertyError;
@@ -57,7 +58,7 @@ export async function loadPropertyCoverage(db: Client, userId: string, propertyI
 
   const orgIds = [...new Set([...assignedRows, ...territoryRows].map((r) => r.org_id))];
   if (orgIds.length === 0) {
-    return { property, zip: zip || null, vendors: [] as CoverageVendor[], categories: [] as string[] };
+    return { property: { ...property, name: formatPropertyLabel(property).primary }, zip: zip || null, vendors: [] as CoverageVendor[], categories: [] as string[] };
   }
 
   const { data: orgs, error: orgError } = await db
@@ -126,5 +127,5 @@ export async function loadPropertyCoverage(db: Client, userId: string, propertyI
     ]),
   ].filter(Boolean);
 
-  return { property, zip: zip || null, vendors, categories };
+  return { property: { ...property, name: formatPropertyLabel(property).primary }, zip: zip || null, vendors, categories };
 }

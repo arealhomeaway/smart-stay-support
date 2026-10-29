@@ -1,0 +1,11 @@
+--- live/private.str_report_build
++++ pending/private.str_report_build
+@@ -130,7 +130,7 @@
+     INTO blockers FROM jsonb_array_elements(rows) r WHERE r->>'status'='provisional';
+ 
+   RETURN jsonb_build_object(
+-    'property', jsonb_build_object('name', prop.name, 'address', coalesce(prop.formatted_address, prop.address_line1)),
++    'property', jsonb_build_object('name', public.format_property_label(to_jsonb(prop))->>'primary', 'address', public.format_property_label(to_jsonb(prop))->>'full'),
+     'owner', jsonb_build_object('name', coalesce(prog.owner_name,'Owner')),
+     'program', jsonb_build_object('startedOn', prog.started_on, 'endsOn', (private.str_program_period(_program)).period_end,
+                                   'status', prog.status),

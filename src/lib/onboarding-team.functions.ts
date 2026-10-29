@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Onboarding team management: a departmental view over the SAME functional
  * role architecture used everywhere else.
@@ -52,7 +53,7 @@ export const readOnboardingTeam = createServerFn({ method: "POST" })
           .from("onboarding_projects")
           .select("id, property_id, project_manager, status, is_demo")
           .in("status", ["planning", "active", "handoff"]),
-        sb.from("properties").select("id, name"),
+        sb.from("properties").select("id, name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id"),
         canManageTeam(context as unknown as Ctx),
       ]);
     if (roles.error) throw new Error(roles.error.message);
@@ -101,7 +102,7 @@ export const readOnboardingTeam = createServerFn({ method: "POST" })
       };
     });
 
-    const propName = new Map((properties.data ?? []).map((p) => [p.id, p.name as string]));
+    const propName = new Map((properties.data ?? []).map((p) => [p.id, formatPropertyLabel(p).primary]));
     return {
       canEdit,
       people,

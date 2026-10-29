@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { formatPropertyLabel } from "./property-label";
 
 export { generateGuidance, answerFollowUp } from "./coach.server";
 
@@ -32,7 +33,7 @@ export async function loadCatalog(
     const [propRes, histRes] = await Promise.all([
       supabase
         .from("properties")
-        .select("name, nickname, address_line1, city, state, access_notes, wifi_notes, notes")
+        .select("name, nickname, address_line1, city, state, access_notes, wifi_notes, notes, unit, postal_code, ownerrez_property_id")
         .eq("id", opts.propertyId)
         .maybeSingle(),
       supabase
@@ -47,12 +48,9 @@ export async function loadCatalog(
     ]);
     if (propRes.data) {
       property = {
-        name: propRes.data.name,
-        nickname: propRes.data.nickname,
-        address:
-          [propRes.data.address_line1, propRes.data.city, propRes.data.state]
-            .filter(Boolean)
-            .join(", ") || null,
+        name: formatPropertyLabel(propRes.data).primary,
+        nickname: null,
+        address: formatPropertyLabel(propRes.data).full,
         access_notes: propRes.data.access_notes,
         wifi_notes: propRes.data.wifi_notes,
         notes: propRes.data.notes,

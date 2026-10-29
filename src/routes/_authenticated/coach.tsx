@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -86,7 +87,7 @@ function CoachPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("properties")
-        .select("id, name, nickname")
+        .select("id, name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id")
         .eq("active", true)
         .order("name");
       if (error) throw error;
@@ -260,7 +261,7 @@ function CoachPage() {
             <SelectContent>
               {(properties ?? []).map((p) => (
                 <SelectItem key={p.id} value={p.id}>
-                  {p.nickname ? `${p.nickname} — ${p.name}` : p.name}
+                  {formatPropertyLabel(p).primary}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -1,0 +1,11 @@
+--- live/public.request_owner_response
++++ pending/public.request_owner_response
+@@ -22,7 +22,7 @@
+   INSERT INTO owner_request_messages(work_item_id, property_id, program_id, task_id, author_id, author_type, author_name, event, request_kind, body, is_demo)
+   VALUES (w.id, w.property_id, w.program_id, w.source_task_id, auth.uid(), 'staff', coalesce(_name,'Your ARHA team'), 'response_requested', _kind, trim(_body), coalesce(w.is_demo,false))
+   RETURNING id INTO _mid;
+-  SELECT coalesce(nickname, name, address_line1, 'your home') INTO _home FROM properties WHERE id=w.property_id;
++  SELECT public.format_property_label(to_jsonb(properties))->>'primary' INTO _home FROM properties WHERE id=w.property_id;
+   INSERT INTO owner_notifications(program_id, owner_user_id, kind, priority, title, body, action_path, email_status, is_demo)
+   VALUES (w.program_id, w.prog_owner, 'opportunity_reply', 'p3',
+     CASE WHEN _kind='decision' THEN 'Your ARHA Team needs your decision' ELSE 'Your ARHA Team is asking for your feedback' END,

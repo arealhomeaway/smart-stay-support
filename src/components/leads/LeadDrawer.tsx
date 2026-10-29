@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Lead workspace drawer.
  *
@@ -105,7 +106,7 @@ export function LeadDrawer({
       const { data, error } = await supabase
         .from("lead_properties")
         .select(
-          "id, property_id, note, properties(name, nickname, city, bedrooms, lifecycle_status)",
+          "id, property_id, note, properties(name, nickname, city, bedrooms, lifecycle_status, address_line1, unit, state, postal_code, ownerrez_property_id)",
         )
         .eq("lead_id", leadId!);
       if (error) throw error;
@@ -121,7 +122,7 @@ export function LeadDrawer({
       const { data, error } = await supabase
         .from("properties")
         .select(
-          "id, name, nickname, city, market, neighborhood, address_line1, ownerrez_property_id, bedrooms, lifecycle_status",
+          "id, name, nickname, address_line1, unit, city, state, postal_code, market, neighborhood, ownerrez_property_id, bedrooms, lifecycle_status",
         )
         .or(
           [
@@ -131,6 +132,8 @@ export function LeadDrawer({
             `market.ilike.%${q}%`,
             `neighborhood.ilike.%${q}%`,
             `address_line1.ilike.%${q}%`,
+            `unit.ilike.%${q}%`,
+            `postal_code.ilike.%${q}%`,
             `ownerrez_property_id.ilike.%${q}%`,
           ].join(","),
         )
@@ -146,7 +149,7 @@ export function LeadDrawer({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("properties")
-        .select("id, name, nickname, city")
+        .select("id, name, nickname, city, address_line1, unit, state, postal_code, ownerrez_property_id")
         .eq("id", lead!.converted_property_id!)
         .maybeSingle();
       if (error) throw error;
@@ -510,7 +513,7 @@ export function LeadDrawer({
                       params={{ propertyId: c.property_id }}
                       className="underline-offset-2 hover:underline"
                     >
-                      {c.properties?.nickname ?? c.properties?.name}
+                      {formatPropertyLabel(c.properties).primary}
                     </Link>
                     <span className="text-xs text-muted-foreground">
                       {c.properties?.city ?? "—"} · {c.properties?.bedrooms ?? "?"} bd ·{" "}
@@ -544,7 +547,7 @@ export function LeadDrawer({
                       invalidate();
                     }}
                   >
-                    {p.nickname ?? p.name} · {p.city ?? "—"} · {p.bedrooms ?? "?"} bd
+                    {formatPropertyLabel(p).primary} · {p.city ?? "—"} · {p.bedrooms ?? "?"} bd
                   </button>
                 ))}
               </>

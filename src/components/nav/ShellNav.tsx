@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Shell-level navigation, rendered once by AppShell above every page:
  * department menu + functional breadcrumbs + Back to the logical parent.
@@ -38,10 +39,10 @@ function usePropertyName(propertyId: string | undefined) {
     queryFn: async () => {
       const { data } = await supabase
         .from("properties")
-        .select("name, nickname")
+        .select("name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id")
         .eq("id", propertyId!)
         .maybeSingle();
-      return (data?.nickname || data?.name || null) as string | null;
+      return (formatPropertyLabel(data).primary) as string | null;
     },
   });
   return data ?? null;

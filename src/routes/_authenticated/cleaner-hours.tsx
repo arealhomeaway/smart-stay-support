@@ -4,6 +4,7 @@ import { useRole } from "@/hooks/useRole";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { formatPropertyLabel, type PropertyLabelFields } from "@/lib/property-label";
 import { RequireCapability } from "@/components/RequireCapability";
 import { EmptyState, LoadingRows, PageHeader, SectionCard, SegmentedControl, StatTile } from "@/components/ui/page";
 import { Badge } from "@/components/ui/badge";
@@ -70,10 +71,10 @@ function useProperties() {
   return useQuery({
     queryKey: ["cleaner-hours", "properties"],
     queryFn: async () => {
-      const rows = await fetchAll<{ id: string; name: string | null; breezeway_mapping_state: string | null }>("properties", (q) =>
-        q.select("id, name, breezeway_mapping_state").is("archived_at", null).order("name"),
+      const rows = await fetchAll<PropertyLabelFields & { id: string; name: string | null; breezeway_mapping_state: string | null }>("properties", (q) =>
+        q.select("id, name, address_line1, unit, city, state, postal_code, breezeway_mapping_state").is("archived_at", null).order("name"),
       );
-      return rows;
+      return rows.map(p => ({ ...p, name: formatPropertyLabel(p).primary }));
     },
   });
 }
@@ -103,7 +104,7 @@ function CleanerHoursPage() {
   const properties = useProperties();
   const propName = useMemo(() => new Map((properties.data ?? []).map((p) => [p.id, p.name ?? "Unnamed home"])), [properties.data]);
 
-  const props = portfolio.data?.properties ?? [];
+  const props = (portfolio.data?.properties ?? []).map(p => ({ ...p, name: propName.get(p.property_id) ?? p.name }));
   const cells = props.flatMap((p) => p.cleaners.map((c) => ({ ...c, property_id: p.property_id, property_name: p.name })));
   const flagged = cells.filter((c) => ["warning", "restricted", "hard_block"].includes(c.state) || c.inversion);
   const totalHours = cells.reduce((s, c) => s + Number(c.current_hours ?? 0), 0);

@@ -278,7 +278,7 @@ function HubHeader({ hub }: { hub: Hub }) {
           {p.photoUrl ? (
             <img
               src={p.photoUrl}
-              alt={`${p.nickname || p.name} — primary listing photo`}
+              alt={`${p.name} — primary listing photo`}
               className="absolute inset-0 size-full object-cover"
               loading="lazy"
             />
@@ -296,7 +296,7 @@ function HubHeader({ hub }: { hub: Hub }) {
               Property hub
             </p>
             <div className="mt-1 flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-semibold tracking-tight">{p.nickname || p.name}</h1>
+              <h1 className="text-2xl font-semibold tracking-tight">{p.name}</h1>
               {p.isDemo && <Badge variant="outline">Demo</Badge>}
             </div>
             <p className="mt-1 text-muted-foreground">{p.address || "No address on file"}</p>
@@ -704,7 +704,7 @@ function OperationsTab({ hub }: { hub: Hub }) {
   // Opening a ticket from a home is still working that home: Back returns
   // here, and the rail keeps the rest of this home's tickets in reach.
   const { originSearch } = useWorkspaceOrigin(
-    hub.property.nickname || hub.property.name || "Property",
+    hub.property.name,
     ops.tickets.map((t) => ({ id: t.id, label: t.title, sub: `ARHA-${t.ref}` })),
   );
   const opsGroups = (hub.details.groups ?? []).filter((g) => OPERATIONAL_GROUPS.includes(g.id));

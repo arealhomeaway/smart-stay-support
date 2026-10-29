@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Quarterly property reviews (server-only).
  *
@@ -118,7 +119,7 @@ export async function loadQuarterlyReviews(db: Client) {
     const open = openByProperty.get(p.id) ?? null;
     return {
       propertyId: p.id,
-      name: p.nickname ? `${p.name} (${p.nickname})` : p.name,
+      name: formatPropertyLabel(p).primary,
       location: [p.city, p.state].filter(Boolean).join(", "),
       market: p.market,
       inspector: (p.market ? managerByMarket.get(p.market) : null) ?? null,
@@ -148,7 +149,7 @@ export async function openQuarterlyReview(db: Client, userId: string | null, pro
 
   const { data: property, error: propError } = await db
     .from("properties")
-    .select("name, nickname, market")
+    .select("name, nickname, market, address_line1, unit, city, state, postal_code, ownerrez_property_id")
     .eq("id", propertyId)
     .single();
   if (propError) throw new Error(propError.message);
@@ -175,7 +176,7 @@ export async function openQuarterlyReview(db: Client, userId: string | null, pro
     .from("tickets")
     .insert({
       record_type: "active_task",
-      title: `Quarterly property review — ${property.nickname ?? property.name}`,
+      title: `Quarterly property review — ${formatPropertyLabel(property).primary}`,
       description:
         "Full quarterly review completed on site by a cleaning supervisor. Work the checklist in order, photograph the required steps, and open a separate ticket for every deficiency found.",
       property_id: propertyId,
