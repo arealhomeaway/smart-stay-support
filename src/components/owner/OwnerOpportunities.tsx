@@ -70,6 +70,7 @@ type Live = {
   viewed: boolean;
   responded: boolean;
   finished: boolean;
+  dueOn?: string | null;
   templateId: string | null;
   queue: QueueInput;
 };
@@ -143,6 +144,7 @@ export function useOwnerOpportunityData(homes: OpportunityHome[], selectedHomeId
           viewed: Boolean(o.viewed_at),
           responded: Boolean(o.responded_at) || o.owner_response.length > 0,
           finished: o.status === "complete" || o.status === "completed",
+          dueOn: o.due_on,
           templateId: o.library_template_id,
           queue: {
             status: o.status,
@@ -625,6 +627,7 @@ function OpportunityDetail({
           </DialogHeader>
           {video && item.templateId ? <LibraryVideoPlayer libraryId={item.templateId} poster={item.cover} label={video.label} /> : null}
           <dl className="grid gap-3 text-sm">
+            {item.dueOn ? <div><dt className="font-medium">Due date</dt><dd>{item.dueOn}</dd></div> : null}
             {item.what ? <div><dt className="font-medium">What you'll do</dt><dd className="whitespace-pre-wrap text-muted-foreground">{item.what}</dd></div> : null}
             {item.why ? <div><dt className="font-medium">{arha ? "Why this matters" : "Why it matters"}</dt><dd className="whitespace-pre-wrap text-muted-foreground">{item.why}</dd></div> : null}
             {item.how ? <div><dt className="font-medium">{arha ? "How to complete it" : "How to complete it remotely"}</dt><dd className="whitespace-pre-wrap text-muted-foreground">{item.how}</dd></div> : null}
