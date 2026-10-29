@@ -15169,6 +15169,7 @@ export type Database = {
         Args: { _errors: Json; _run_id: string }
         Returns: Json
       }
+      format_property_label: { Args: { _property: Json }; Returns: Json }
       handoff_duplicate_task_ids: {
         Args: { _property_id: string }
         Returns: string[]
