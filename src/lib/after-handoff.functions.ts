@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * After-handoff owner plan and follow-up. Every write goes through one
  * caller-authenticated database action that records history in the same

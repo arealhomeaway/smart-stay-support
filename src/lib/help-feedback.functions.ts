@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Resolve Help & Feedback — reports about the Resolve application itself.
  * Never an Operations ticket: writes only to help_tickets, never to tickets/work items.

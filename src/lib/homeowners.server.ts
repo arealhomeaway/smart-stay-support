@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import type { HomeownerEnrollment, HomeownerRow } from "./homeowners";

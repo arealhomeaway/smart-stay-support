@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Server-only context gathering for the Contextual Email Composer.
  *

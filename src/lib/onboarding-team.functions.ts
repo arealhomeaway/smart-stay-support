@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Onboarding team management: a departmental view over the SAME functional
  * role architecture used everywhere else.

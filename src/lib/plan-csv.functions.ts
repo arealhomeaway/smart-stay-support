@@ -1,3 +1,4 @@
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Read-only CSV exports of a home's onboarding plan and of a reusable
  * template. Reads run as the signed-in person, so existing access applies.
