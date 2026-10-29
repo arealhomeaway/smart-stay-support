@@ -6,7 +6,7 @@
  * before anything happens. A retried upload reuses its own upload key, so a
  * second attempt never leaves a second row behind.
  */
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -55,6 +55,7 @@ import {
 } from "@/lib/attachments.functions";
 import { usDate } from "@/lib/dates";
 import { MultiFileUpload } from "@/components/MultiFileUpload";
+import { createAttachmentUploader } from "@/lib/attachment-upload-client";
 
 type Props = {
   entityType: AttachmentEntity;
@@ -101,17 +102,9 @@ export function AttachmentsPanel({
     queryFn: () => list({ data: { entityType, entityId } }),
   });
 
-  async function upload(file: File, progress: (pct: number) => void, uploadKey: string) {
-    const started = await begin({ data: { entityType, entityId, uploadKey, filename: file.name, mimeType: file.type, sizeBytes: file.size, category: propertyLevel ? category : null, fulfilsRequestId } });
-    if (!started.alreadyStored) {
-      if (!started.token) throw new Error("The upload could not start.");
-      const { uploadToSignedSlot } = await import("@/lib/signed-upload");
-      try { await uploadToSignedSlot(started.path, started.token, file, progress); }
-      catch (error) { await complete({ data: { documentId: started.documentId, ok: false, fulfilsRequestId } }); throw error; }
-      await complete({ data: { documentId: started.documentId, ok: true, fulfilsRequestId } });
-    }
-    return started.documentId;
-  }
+  const uploadIntent = useRef((file: File, key: string) => ({ entityType, entityId, uploadKey: key, filename: file.name, mimeType: file.type, sizeBytes: file.size, category: propertyLevel ? category : null, fulfilsRequestId }));
+  uploadIntent.current = (file: File, key: string) => ({ entityType, entityId, uploadKey: key, filename: file.name, mimeType: file.type, sizeBytes: file.size, category: propertyLevel ? category : null, fulfilsRequestId });
+  const [upload] = useState(() => createAttachmentUploader(begin, complete, (file, key) => uploadIntent.current(file, key)));
 
   const open = useMutation({
     mutationFn: async (v: { documentId: string; download: boolean }) =>

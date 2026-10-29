@@ -5,7 +5,7 @@
  * is never blocked by it. Resources are links to existing home files (or new
  * files added to the home's library) — never copies.
  */
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -29,6 +29,7 @@ import {
 } from "@/lib/v2-workflow.functions";
 import { attachmentUrlFn, beginUploadFn, completeUploadFn } from "@/lib/attachments.functions";
 import { MultiFileUpload } from "@/components/MultiFileUpload";
+import { createAttachmentUploader } from "@/lib/attachment-upload-client";
 
 const LINK_TYPES = { video: "Video", document: "Document", reference: "Reference", other: "Other" } as const;
 
@@ -302,17 +303,9 @@ export function OpportunityEditor({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  async function upload(file: File, progress: (pct: number) => void, uploadKey: string) {
-    const started = await begin({ data: { entityType: "property", entityId: propertyId, uploadKey, filename: file.name, mimeType: file.type, sizeBytes: file.size, category: null } });
-    if (!started.alreadyStored) {
-      if (!started.token) throw new Error("The upload could not start.");
-      const { uploadToSignedSlot } = await import("@/lib/signed-upload");
-      try { await uploadToSignedSlot(started.path, started.token, file, progress); }
-      catch (error) { await complete({ data: { documentId: started.documentId, ok: false } }); throw error; }
-      await complete({ data: { documentId: started.documentId, ok: true } });
-    }
-    return started.documentId;
-  }
+  const uploadIntent = useRef((file: File, key: string) => ({ entityType: "property" as const, entityId: propertyId, uploadKey: key, filename: file.name, mimeType: file.type, sizeBytes: file.size, category: null }));
+  uploadIntent.current = (file: File, key: string) => ({ entityType: "property" as const, entityId: propertyId, uploadKey: key, filename: file.name, mimeType: file.type, sizeBytes: file.size, category: null });
+  const [upload] = useState(() => createAttachmentUploader(begin, complete, (file, key) => uploadIntent.current(file, key)));
 
   const set = (k: keyof typeof EMPTY) => (e: { target: { value: string } }) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const isDraft = editing === "new" || (editing && editing.status === "draft");

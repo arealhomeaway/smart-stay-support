@@ -3,7 +3,7 @@
  * property record (the shared document architecture); an Opportunity upload
  * is the same property file with an optional Opportunity link.
  */
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -14,7 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OWNER_UPLOAD_CATEGORIES, type AttachmentEntity, validateFile } from "@/lib/attachments";
-import { uploadToSignedSlot } from "@/lib/signed-upload";
+import { MultiFileUpload } from "@/components/MultiFileUpload";
+import { createAttachmentUploader } from "@/lib/attachment-upload-client";
 import { beginUploadFn, completeUploadFn, tagOwnerUploadFn } from "@/lib/attachments.functions";
 
 export type OwnerHome = { propertyId: string; name: string; address?: string | null };
@@ -45,63 +46,26 @@ export function OwnerUploadDialog({
   const tag = useServerFn(tagOwnerUploadFn);
   const known = request?.propertyId ?? fixedPropertyId ?? null;
   const [picked, setPicked] = useState<string>("");
-  const [files, setFiles] = useState<File[]>([]);
+
   const [category, setCategory] = useState(defaultCategory);
   const [note, setNote] = useState("");
-  const [busy, setBusy] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const propertyId = known ?? (homes.some((h) => h.propertyId === picked) ? picked : null);
   const home = homes.find((h) => h.propertyId === propertyId);
-  const reset = () => { setPicked(""); setFiles([]); setNote(""); setCategory(defaultCategory); };
+  const reset = () => { setPicked(""); setNote(""); setCategory(defaultCategory); };
 
-  const run = async () => {
-    if (!propertyId || files.length === 0) return;
-    const internal = OWNER_UPLOAD_CATEGORIES.find((c) => c.value === category)?.internal ?? "other";
-    let done = 0;
-    for (const file of files) {
-      const check = validateFile({ name: file.name, type: file.type, size: file.size });
-      if (!check.ok) { toast.error(`${file.name}: ${check.message}`); continue; }
-      setBusy(`Uploading ${file.name}…`);
-      try {
-        const entityType: AttachmentEntity = request?.entityType ?? "property";
-        const started = await begin({
-          data: {
-            entityType,
-            entityId: request?.entityId ?? propertyId,
-            uploadKey: crypto.randomUUID(),
-            filename: file.name,
-            mimeType: file.type,
-            sizeBytes: file.size,
-            note: note.trim() || null,
-            category: entityType === "property" ? internal : null,
-            fulfilsRequestId: request?.id ?? null,
-          },
-        });
-        if (!started.alreadyStored) {
-          try {
-            await uploadToSignedSlot(started.path, started.token!, file, (pct) => setBusy(`Uploading ${file.name}… ${pct}%`));
-          } catch (err) {
-            await complete({ data: { documentId: started.documentId, ok: false, fulfilsRequestId: request?.id ?? null } });
-            throw err;
-          }
-          await complete({ data: { documentId: started.documentId, ok: true, fulfilsRequestId: request?.id ?? null } });
-        }
-        await tag({ data: { documentId: started.documentId, ownerCategory: category, workItemId: opportunity?.id ?? null } });
-        done += 1;
-        if (request) break; // one file answers one request
-      } catch (e) {
-        toast.error(`${file.name}: ${e instanceof Error ? e.message : "Upload failed."}`);
-      }
-    }
-    setBusy(null);
-    if (done) {
-      toast.success(done === 1 ? "File uploaded." : `${done} files uploaded.`);
-      void qc.invalidateQueries({ queryKey: ["owner-documents"] });
-      void qc.invalidateQueries({ queryKey: ["attachments"] });
-      reset();
-      onOpenChange(false);
-    }
-  };
+  const intent = useRef((file: File, key: string) => ({ entityType: request?.entityType ?? "property" as AttachmentEntity, entityId: request?.entityId ?? propertyId ?? "", uploadKey: key, filename: file.name, mimeType: file.type, sizeBytes: file.size, note: note.trim() || null, category: (request?.entityType ?? "property") === "property" ? OWNER_UPLOAD_CATEGORIES.find(c => c.value === category)?.internal ?? "other" : null, fulfilsRequestId: request?.id ?? null }));
+  intent.current = (file, key) => ({ entityType: request?.entityType ?? "property", entityId: request?.entityId ?? propertyId ?? "", uploadKey: key, filename: file.name, mimeType: file.type, sizeBytes: file.size, note: note.trim() || null, category: (request?.entityType ?? "property") === "property" ? OWNER_UPLOAD_CATEGORIES.find(c => c.value === category)?.internal ?? "other" : null, fulfilsRequestId: request?.id ?? null });
+  const [upload] = useState(() => createAttachmentUploader(begin, complete, (file, key) => intent.current(file, key)));
+  const tags = useRef(new Map<string, { category: string; workItemId: string | null }>());
+  async function uploadAndTag(file: File, progress: (pct: number) => void, key: string) {
+    let values = tags.current.get(key);
+    if (!values) { values = { category, workItemId: opportunity?.id ?? null }; tags.current.set(key, values); }
+    const documentId = await upload(file, progress, key);
+    await tag({ data: { documentId, ownerCategory: values.category, workItemId: values.workItemId } });
+    return documentId;
+  }
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!busy) { if (!o) reset(); onOpenChange(o); } }}>
@@ -131,10 +95,6 @@ export function OwnerUploadDialog({
               </Select>
             </div>
           )}
-          <div className="grid gap-1">
-            <Label htmlFor="owner-upload-files">Choose file(s)</Label>
-            <Input id="owner-upload-files" type="file" multiple={!request} onChange={(e) => setFiles(Array.from(e.target.files ?? []))} />
-          </div>
           {!request ? (
             <div className="grid gap-1">
               <Label>Category</Label>
@@ -150,10 +110,14 @@ export function OwnerUploadDialog({
             <Label htmlFor="owner-upload-note">Description / note (optional)</Label>
             <Textarea id="owner-upload-note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
           </div>
-          {busy ? <p className="text-sm text-muted-foreground">{busy}</p> : null}
+          <MultiFileUpload key={`${propertyId}-${open}`} upload={uploadAndTag} disabled={!propertyId} multiple={!request} onBusyChange={setBusy} onResults={() => {
+            void qc.invalidateQueries({ queryKey: ["owner-documents"] });
+            void qc.invalidateQueries({ queryKey: ["attachments"] });
+          }}/>
+
         </div>
         <DialogFooter>
-          <Button disabled={!propertyId || files.length === 0 || Boolean(busy)} onClick={() => void run()}>Upload</Button>
+          <Button disabled={busy} onClick={() => { reset(); onOpenChange(false); }}>Close</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
