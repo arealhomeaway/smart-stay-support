@@ -1,11 +1,12 @@
 # Roadmap — approved build work, NO publish
 
 ## Oct 29 quick fixes and five Help closures (approved)
-- [ ] Browser-only ZIP unpacking in shared uploader, independent validated rows and single-file protection
-- [ ] Future program date display, creation Owner priority, Module helper
-- [ ] Check existing Breezeway completion arrival; build only if already available
-- [ ] Close only Help #27/#28/#30/#31/#42 through Emily's published admin screen, exact replies and normal notifications
-- [ ] Focused/full tests, automatic typecheck/build, safe preview checks; no publish or real work/file writes
+- [x] Browser-only ZIP unpacking in shared uploader and homeowner hour-file selection, independent validated rows and single-file protection
+- [x] Future program date display and creation Owner priority; Module helper already present and retained
+- [x] Completion status already arrives through existing Breezeway refresh/webhook; safe reconciliation built with pending atomic SQL and undo
+- [x] Help #27/#28/#30/#31/#42 closed through Emily's published admin screen with exact replies, history and sent emails
+- [x] Focused/full tests, automatic typecheck/build, synthetic desktop/mobile upload checks; no publish or real work/file writes
+- [ ] Live acceptance of code changes: blocked by no publish, no real uploads/Task/Opportunity changes; Breezeway additionally needs pending SQL approval
 
 ## Oct 28 Help tickets 58 and 59 (approved code/test only)
 - [x] Shared multiple-file queue, individual validation/progress/retry, three-upload cap and ordered attachments
