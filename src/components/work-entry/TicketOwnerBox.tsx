@@ -8,6 +8,7 @@ import { getPropertyContactContext } from "@/lib/guest-context.functions";
 import { useRole } from "@/hooks/useRole";
 import { useDemo } from "@/components/DemoProvider";
 import { insuranceFlagged, ownerSectionRelevant } from "@/lib/work-entry";
+import { SendToOwner } from '@/components/operations/SendToOwner';
 
 /**
  * Compact owner section on a Maintenance Ticket — only when owner contact or
@@ -18,6 +19,8 @@ import { insuranceFlagged, ownerSectionRelevant } from "@/lib/work-entry";
 export function TicketOwnerBox({
   ticket,
   workOrderCosts,
+  ticketId,
+  onWorkOrders,
 }: {
   ticket: {
     property_id: string | null;
@@ -27,6 +30,8 @@ export function TicketOwnerBox({
     is_demo?: boolean | null;
   };
   workOrderCosts: (number | string | null | undefined)[];
+  ticketId?: string;
+  onWorkOrders?: () => void;
 }) {
   const { can, isVendor, isOwner } = useRole();
   const { demoMode } = useDemo();
@@ -40,7 +45,7 @@ export function TicketOwnerBox({
     staleTime: 30_000,
     queryFn: () => fetchContext({ data: { propertyId: ticket.property_id! } }),
   });
-  if (!relevance.relevant || !staff) return null;
+  if (!staff) return null;
   const owner = data && data.visible !== false ? data.owner : null;
   const email = owner?.status === "matched" ? owner.email : null;
 
@@ -77,20 +82,10 @@ export function TicketOwnerBox({
           <Button asChild={Boolean(email)} size="sm" variant="outline" disabled={!email}>
             {email ? <a href={`mailto:${email}`}>Email Owner</a> : <span>Email Owner</span>}
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() =>
-              (document.querySelector("[data-ticket-work-orders]") ?? document.querySelector("[data-current-work]"))?.scrollIntoView({ behavior: "smooth" })
-            }
-          >
-            Review Owner Approval
-          </Button>
+          {ticket.property_id && ticketId ? <><SendToOwner propertyId={ticket.property_id} ticketId={ticketId} onWorkOrders={onWorkOrders}/><SendToOwner propertyId={ticket.property_id} ticketId={ticketId} initialType="approval" approvalTrigger onWorkOrders={onWorkOrders}/></> : null}
         </div>
         <p className="text-xs text-muted-foreground" data-testid="owner-approval-note">
-          Owner approval may be required. Nothing is sent from here — the approval request is sent
-          from the Work Order once a scope and cost (quote) are available, under the maintenance
-          policy.
+          Owner approval follows the Work Order's scope, quote and spending rules.
         </p>
       </CardContent>
     </Card>

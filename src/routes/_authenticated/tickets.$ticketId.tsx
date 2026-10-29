@@ -40,6 +40,7 @@ import { ticketGuestComm } from "@/lib/guest-impact";
 
 import { OutlookSourceCard } from "@/components/OutlookSourceCard";
 import { TicketOwnerBox } from "@/components/work-entry/TicketOwnerBox";
+import { SentToOwner } from '@/components/operations/SentToOwner';
 import { MAINTENANCE_CATEGORIES, insuranceFlagged, insuranceRiskLabel, labelOf, ownerSectionRelevant } from "@/lib/work-entry";
 import { TicketOwnerUpdatePanel } from "@/components/TicketOwnerUpdatePanel";
 import { OwnerParticipationOffer } from "@/components/OwnerParticipationOffer";
@@ -1542,9 +1543,12 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
               onChanged={refresh}
             />
             <TicketOwnerBox
+              ticketId={ticketId}
+              onWorkOrders={() => (document.querySelector('[data-ticket-work-orders]') ?? document.querySelector('[data-current-work]'))?.scrollIntoView({behavior:'smooth'})}
               ticket={ticket as Parameters<typeof TicketOwnerBox>[0]["ticket"]}
               workOrderCosts={((workOrders ?? []) as { quote_amount?: number | null; approved_amount?: number | null; actual_cost?: number | null }[]).flatMap((o) => [o.quote_amount, o.approved_amount, o.actual_cost])}
             />
+            {role.isStaff && ticket.property_id ? <SentToOwner propertyId={ticket.property_id} ticketId={ticketId} onWorkOrders={()=>(document.querySelector('[data-ticket-work-orders]')??document.querySelector('[data-current-work]'))?.scrollIntoView({behavior:'smooth'})}/> : null}
           </aside>
         </div>
 
