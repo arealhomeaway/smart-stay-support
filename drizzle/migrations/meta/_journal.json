@@ -1373,6 +1373,13 @@
       "when": 1793305345378,
       "tag": "0195_address_labels_redo_02_owner_completions_for_review",
       "breakpoints": true
+    },
+    {
+      "idx": 196,
+      "version": "7",
+      "when": 1793305370126,
+      "tag": "0196_address_labels_redo_02_owner_release_summary",
+      "breakpoints": true
     }
   ]
 }
