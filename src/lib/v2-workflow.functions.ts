@@ -639,6 +639,7 @@ export const saveArhaOpportunity = createServerFn({ method: "POST" })
         responseTypes: z.array(z.enum(["acknowledge", "feedback", "documentation", "decision"])).min(1, "Choose at least one owner response type").max(4),
         resources: z.array(resourceInput),
         send: z.boolean(),
+        operations: z.object({ kind: z.enum(['owner_task','review']), ticketId: z.string().uuid().nullable(), dueOn: z.string() }).optional(),
       })
       .parse(d),
   )
@@ -648,12 +649,21 @@ export const saveArhaOpportunity = createServerFn({ method: "POST" })
       const vague = vagueOpportunityReason(data.content.title, [data.content.what, data.content.how].join("\n"));
       if (vague) throw new Error(vague);
     }
+    if (data.operations) {
+      const { resolveOperationsOwnerRecipient } = await import('./ops-owner-recipient.server');
+      const recipient = await resolveOperationsOwnerRecipient(context.supabase, context.userId, data.propertyId);
+      if (!recipient.eligible) throw new Error("This homeowner doesn't have portal access yet.");
+      const probe = await context.supabase.rpc('ops_send_owner_ready' as never);
+      if (probe.error || probe.data !== true) throw new Error('Operations sending is not available yet. Your draft has not been sent.');
+    }
+    const { operationsContent } = await import('./ops-send-to-owner');
+    const content = data.operations ? operationsContent({ ...data.content, resources: [] },data.operations.kind,data.operations.ticketId,data.operations.dueOn) : { ...data.content, resources: [] };
     const { data: id, error } = await context.supabase.rpc("save_arha_opportunity", {
       _id: data.id as string,
       _property_id: data.propertyId,
       _source_task_id: data.sourceTaskId as string,
       _title: data.content.title,
-      _content: { ...data.content, resources: [] },
+      _content: content,
       _response_types: data.responseTypes,
       _resources: data.resources,
       _send: data.send,
