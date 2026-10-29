@@ -14,3 +14,4 @@
 - Post-change counts and checksums match for properties, projects, Tasks, Owners, programs, links, work items, reviews, enrollment runs, owner notifications, welcomes and email log. Account count remained 32, but the account checksum changed because an existing unrelated account's `updated_at` changed concurrently. No account calls or writes were made by this investigation; full account byte equality is not verified.
 - Retry is safe while the original Add property window and its successful intake receipt remain open. Closing/reopening loses that in-memory receipt. No Fern retry was performed, no sign-in, no release call, no email send, no publish.
 - Rollback: apply the exact `undo.sql` through the migration tool and verify the original SHA256 and ACL above.
+- Scheduled post-application email job at 17:25 UTC completed with no errors and zero emails sent. No job was manually triggered.

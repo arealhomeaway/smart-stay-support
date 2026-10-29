@@ -4,7 +4,7 @@
 - [x] Read-only Fern inventory, original function cause and other-attempt evidence; failed prepares leave no durable attempt records
 - [x] Byte-exact undo and alias-only fix with isolated new/existing-owner and Retry tests
 - [x] Apply one function replacement; definition/grants and all enrollment/output records unchanged; unrelated account timestamp changed concurrently
-- [ ] Confirm a scheduled email-job pass after application, then report Retry safety without retrying Fern, signing in or publishing
+- [x] Scheduled 17:25 UTC email-job pass completed without errors or sends; report Retry safety without retrying Fern, signing in or publishing
 
 ## Oct 29 Step 3 cleanup Part A (approved, no publish or live record writes)
 - Continue approved items 1–3 plus screen visibility and full tests; stop on a live-data check/apply failure, fix test typos; no real records or approvals touched.
