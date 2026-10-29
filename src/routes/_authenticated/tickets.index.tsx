@@ -33,6 +33,7 @@ import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 import { currentOwnerId, queueSort } from "@/lib/matters";
 import { MY_WORK_VIEWS, matchesMyWorkView, type MyWorkView } from "@/lib/my-work";
 import { isBlocked } from "@/lib/team-queue";
+import { HandoffsWaiting } from "@/components/operations/HandoffsWaiting";
 
 export const Route = createFileRoute("/_authenticated/tickets/")({
   head: () => ({
@@ -190,6 +191,9 @@ function TicketsPage() {
           </div>
         }
       />
+
+      <HandoffsWaiting />
+
 
       {demoMode && (
         <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-2.5 text-sm">

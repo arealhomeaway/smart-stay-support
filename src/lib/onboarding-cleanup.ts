@@ -31,7 +31,7 @@ export async function runPropertySetup(options: { startPlan: boolean; activeOwne
   return result;
 }
 
-export type OwnerTabItem = { id: string; kind: "request" | "review"; title: string; status: string; sentAt: string | null; completedAt: string | null; ownerAt: string | null; staffAt: string | null; activity: string };
+export type OwnerTabItem = { id: string; kind: "request" | "review" | "ops"; title: string; status: string; sentAt: string | null; completedAt: string | null; ownerAt: string | null; staffAt: string | null; activity: string; fromOperations?: boolean; ticketId?: string | null; typeLabel?: string | undefined };
 export function ownerTabGroup(item: OwnerTabItem) {
   if (["complete", "completed", "closed"].includes(item.status)) return "completed";
   if (["draft", "prepared"].includes(item.status)) return "drafts";
