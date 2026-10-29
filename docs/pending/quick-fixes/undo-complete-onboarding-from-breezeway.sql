@@ -1,0 +1,2 @@
+-- PENDING ONLY. Removes the new entry point; existing completion history is never erased.
+DROP FUNCTION IF EXISTS public.complete_onboarding_from_breezeway(uuid,bigint,uuid,text,timestamptz,timestamptz,timestamptz,timestamptz);
