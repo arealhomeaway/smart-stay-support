@@ -13,6 +13,7 @@ it("captures the report version before aggregate reads and propagates stale clos
           return query;
         },
         eq: () => query,
+        is: () => query,
         in: () => query,
         order: () => query,
         range: () => query,

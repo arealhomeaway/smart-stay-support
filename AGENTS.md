@@ -10,6 +10,7 @@
 <!-- LOVABLE:END -->
 
 - Co-owner access must use private.is_program_member (app side: isActiveProgramMember / ownerMemberProgramIds) while primary email identity stays owner_programs.owner_user_id; co-owners are added/removed only via add_program_co_owner / remove_program_co_owner, with logins from the shared findOrCreateOwnerLogin path; stage substitutions against captured live definitions with exact ACL-preserving undo and isolated tests. Why: shared authority without widening staff access or duplicating delivery.
+- Property Active Owner lookup uses the home's own demo flag, reports lookup failures instead of offering enrollment, and renders the guarded homeowner roster for an existing program without a second cached identity gate. Staff activity reads exclude archived reviews and retired Opportunities. Why: enrollment and lifecycle visibility must agree across staff and homeowner screens.
 
 - Navigation: every page must be enterable/exitable keeping property/department context; menus, breadcrumbs, Back come only from `src/lib/shell-nav.ts` + `ShellNav` (`useShellPageLabel` names a view). Why: one shell.
 - Help & Feedback: rendered once in `AppShell` (`HelpFeedback.tsx`), never per page; files `help_tickets`, never Operations tickets. Why: one entry point.
