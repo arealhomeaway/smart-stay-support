@@ -99,5 +99,15 @@
       "latestRyanEmailAt": "2026-10-26T16:45:17.525142Z"
     },
     "retainedChanges": "Append-only correction and reversal audit/events; automatic target report version/timestamps."
+  },
+  "phaseB_final": {
+    "status": "APPLIED, checks pending",
+    "result": {
+      "memberId": "44c079b2-7290-48bc-9dc0-b7c9b087858a",
+      "coOwnerId": "830332a2-3cee-4967-bd57-7cd625f8f9f9",
+      "primaryId": "68ad7bb6-458f-4c0c-921f-3299251ac3fa",
+      "programId": "814b9c32-0910-499b-b4ac-2c7fc026569b",
+      "welcomeId": "aa893e57-8424-4d7a-8743-9f2c61cb6057"
+    }
   }
 }
