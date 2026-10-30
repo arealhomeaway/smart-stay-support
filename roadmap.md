@@ -4,7 +4,7 @@
 - [x] Fix property demo lookup, roster gating and enrollment-error handling; exclude archived reviews/retired Opportunities; role render/rule tests, full suite 1842 pass / 5 skip, automatic type/build OK
 - [x] Inventory Lee program history and stage exact shared-alert read undo with base64/SHA256/ACL capture
 - [x] Phase A canonical Ryan login created with owner role only, no membership or email, retained receipt
-- [ ] Phase B rerun stopped at step 3: PostgreSQL reformatted the staged function header beyond trailing whitespace. No correction executed; both applied functions restored/removed and original state fingerprints verified. Requires a staged header matching PostgreSQL output and renewed continuation approval; Ryan login retained unused.
+- [ ] Corrected Phase B passed file/body/grant checks and authenticated apply, then stopped at step 5 because the restricted read tool denied private.is_program_member. Authenticated undo restored identity, memberships, profile, invites, no welcome/new email, reader SHA/ACL, unchanged hours/other programs and 69-function anon set. Audit/reversal and automatic target timestamps remain. Further continuation requires an authorized read-verification path, without widening grants; Ryan login retained unused.
 
 ## Oct 30 co-owner support (approved build/test only)
 - [x] Pass 2 subset: classify 59 functions plus 10 live/storage policies; reverify all 59 hashes/ACLs; stage six shared-helper substitutions plus one policy with exact undo; 13 isolated live-definition tests and full suite 1813 pass, 5 skip, 0 fail (15-second timeout for existing large ZIP test)
