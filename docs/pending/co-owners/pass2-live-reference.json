@@ -1,0 +1,410 @@
+{
+  "policies": [
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "People upload their own avatar",
+      "schemaname": "storage",
+      "with_check": "((bucket_id = 'avatars'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))"
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "((bucket_id = 'avatars'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "People replace their own avatar",
+      "schemaname": "storage",
+      "with_check": "((bucket_id = 'avatars'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))"
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "((bucket_id = 'avatars'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "People remove their own avatar",
+      "schemaname": "storage",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((bucket_id = 'help-feedback'::text) AND (((storage.foldername(name))[1] = (auth.uid())::text) OR has_role(auth.uid(), 'admin'::app_role) OR is_director(auth.uid())))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "Leadership reads help files",
+      "schemaname": "storage",
+      "with_check": null
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "Users upload own help files",
+      "schemaname": "storage",
+      "with_check": "((bucket_id = 'help-feedback'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((removed_at IS NULL) AND (EXISTS ( SELECT 1\n   FROM work_items w\n  WHERE ((w.id = work_item_resources.work_item_id) AND (w.kind = 'opportunity'::text) AND (w.status <> 'draft'::text) AND owner_owns_program(w.program_id)))))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "work_item_resources",
+      "permissive": "PERMISSIVE",
+      "policyname": "Owners read resources on their sent Opportunities",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((bucket_id = 'avatars'::text) AND (((storage.foldername(name))[1] = (auth.uid())::text) OR is_staff(auth.uid())))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "objects",
+      "permissive": "PERMISSIVE",
+      "policyname": "Own avatar or staff can view avatars",
+      "schemaname": "storage",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "private.owns_owner_request(work_item_id, auth.uid())",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "owner_request_messages",
+      "permissive": "PERMISSIVE",
+      "policyname": "Homeowner reads own conversations",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((kind = 'opportunity'::text) AND (status <> 'draft'::text) AND (status <> 'archived'::text) AND (retired_at IS NULL) AND owner_owns_program(program_id))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "work_items",
+      "permissive": "PERMISSIVE",
+      "policyname": "Owners read their Opportunities",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM (owner_reviews r\n     JOIN owner_programs p ON ((p.id = r.program_id)))\n  WHERE ((r.id = owner_request_messages.review_id) AND (p.owner_user_id = auth.uid()) AND (r.archived_at IS NULL) AND (r.status <> 'prepared'::text))))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "owner_request_messages",
+      "permissive": "PERMISSIVE",
+      "policyname": "Homeowner reads released activity conversations",
+      "schemaname": "public",
+      "with_check": null
+    }
+  ],
+  "functions": [
+    {
+      "acl": [
+        {
+          "grantee": "postgres",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        }
+      ],
+      "name": "demo_owner_link_ok",
+      "grants": "{postgres=X/postgres}",
+      "schema": "private",
+      "sha256": "0315fe6e562b463bcb628918baf742fa92a40a05474c776882935ed16247dacc",
+      "signature": "_actor uuid, _program_id uuid",
+      "definition_base64": "Q1JFQVRFIE9SIFJFUExBQ0UgRlVOQ1RJT04gcHJpdmF0ZS5kZW1vX293bmVyX2xpbmtfb2soX2Fj\ndG9yIHV1aWQsIF9wcm9ncmFtX2lkIHV1aWQpCiBSRVRVUk5TIGJvb2xlYW4KIExBTkdVQUdFIHNx\nbAogU1RBQkxFIFNFQ1VSSVRZIERFRklORVIKIFNFVCBzZWFyY2hfcGF0aCBUTyAncHVibGljJwpB\nUyAkZnVuY3Rpb24kCiBTRUxFQ1QgX2FjdG9yIElTIE5PVCBOVUxMIEFORCBFWElTVFMoCiAgU0VM\nRUNUIDEgRlJPTSBwdWJsaWMub3duZXJfcHJvZ3JhbXMgcCBKT0lOIGF1dGgudXNlcnMgYSBPTiBh\nLmlkPV9hY3RvcgogIFdIRVJFIHAuaWQ9X3Byb2dyYW1faWQgQU5EIHAuaXNfZGVtbyBBTkQgcC5h\ncmNoaXZlZF9hdCBJUyBOVUxMIEFORCBwLm93bmVyX3VzZXJfaWQ9X2FjdG9yCiAgIEFORCBhLmRl\nbGV0ZWRfYXQgSVMgTlVMTCBBTkQgKGEuYmFubmVkX3VudGlsIElTIE5VTEwgT1IgYS5iYW5uZWRf\ndW50aWw8PW5vdygpKQogICBBTkQgYS5lbWFpbF9jb25maXJtZWRfYXQgSVMgTk9UIE5VTEwgQU5E\nIGxvd2VyKGEuZW1haWwpIExJS0UgJyVAcmVzb2x2ZS10ZXN0LmludmFsaWQnCiAgIEFORCBFWElT\nVFMoU0VMRUNUIDEgRlJPTSBwdWJsaWMudXNlcl9yb2xlcyBXSEVSRSB1c2VyX2lkPV9hY3RvciBB\nTkQgcm9sZTo6dGV4dD0nb3duZXInKQogICBBTkQgTk9UIEVYSVNUUyhTRUxFQ1QgMSBGUk9NIHB1\nYmxpYy51c2VyX3JvbGVzIFdIRVJFIHVzZXJfaWQ9X2FjdG9yIEFORCByb2xlOjp0ZXh0PD4nb3du\nZXInKQogICBBTkQgTk9UIEVYSVNUUyhTRUxFQ1QgMSBGUk9NIHB1YmxpYy5vd25lcl9wcm9ncmFt\ncyBvIFdIRVJFIG8ub3duZXJfdXNlcl9pZD1fYWN0b3IgQU5EIG8uaWQ8PnAuaWQpCiAgIEFORCBF\nWElTVFMoU0VMRUNUIDEgRlJPTSBwdWJsaWMub3duZXJfcHJvZ3JhbV9wcm9wZXJ0aWVzIHBwIFdI\nRVJFIHBwLnByb2dyYW1faWQ9cC5pZCkKICAgQU5EIE5PVCBFWElTVFMoU0VMRUNUIDEgRlJPTSBw\ndWJsaWMub3duZXJfcHJvZ3JhbV9wcm9wZXJ0aWVzIHBwIExFRlQgSk9JTiBwdWJsaWMucHJvcGVy\ndGllcyBoIE9OIGguaWQ9cHAucHJvcGVydHlfaWQKICAgICBXSEVSRSBwcC5wcm9ncmFtX2lkPXAu\naWQgQU5EIChwcC5pc19kZW1vIElTIE5PVCBUUlVFIE9SIGguaXNfZGVtbyBJUyBOT1QgVFJVRSkp\nCiAgIEFORCAoU0VMRUNUIGwuYWN0aW9uPSdvd25lcl9wcm9ncmFtLmRlbW9fYWNjb3VudF9saW5r\nZWQnIEFORCBsLmFmdGVyX3ZhbHVlLT4+J293bmVyX3VzZXJfaWQnPV9hY3Rvcjo6dGV4dAogICAg\nICAgIEZST00gcHVibGljLmF1ZGl0X2xvZyBsIFdIRVJFIGwuZW50aXR5X3R5cGU9J293bmVyX3By\nb2dyYW0nIEFORCBsLmVudGl0eV9pZD1wLmlkCiAgICAgICAgIEFORCBsLmFjdGlvbiBJTiAoJ293\nbmVyX3Byb2dyYW0uZGVtb19hY2NvdW50X2xpbmtlZCcsJ293bmVyX3Byb2dyYW0uZGVtb19hY2Nv\ndW50X3VubGlua2VkJykKICAgICAgICAgQU5EIHB1YmxpYy5oYXNfcm9sZShsLmFjdG9yX2lkLCdh\nZG1pbicpCiAgICAgICAgT1JERVIgQlkgbC5jcmVhdGVkX2F0IERFU0MgTElNSVQgMSkgSVMgVFJV\nRSkKJGZ1bmN0aW9uJAo="
+    },
+    {
+      "acl": [
+        {
+          "grantee": "postgres",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "grantee": "service_role",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        }
+      ],
+      "name": "has_role",
+      "grants": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "schema": "public",
+      "sha256": "309ada16729ea569a81841eca206089610ff4f3482501e93b393ae0a542092cb",
+      "signature": "_user_id uuid, _role app_role",
+      "definition_base64": "Q1JFQVRFIE9SIFJFUExBQ0UgRlVOQ1RJT04gcHVibGljLmhhc19yb2xlKF91c2VyX2lkIHV1aWQs\nIF9yb2xlIGFwcF9yb2xlKQogUkVUVVJOUyBib29sZWFuCiBMQU5HVUFHRSBzcWwKIFNUQUJMRQog\nU0VUIHNlYXJjaF9wYXRoIFRPICdwdWJsaWMnLCAncHJpdmF0ZScKQVMgJGZ1bmN0aW9uJCBTRUxF\nQ1QgcHJpdmF0ZS5oYXNfcm9sZShfdXNlcl9pZCwgX3JvbGUpICRmdW5jdGlvbiQK"
+    },
+    {
+      "acl": [
+        {
+          "grantee": "postgres",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "grantee": "service_role",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        }
+      ],
+      "name": "has_role",
+      "grants": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "schema": "private",
+      "sha256": "17452528ccb3fd37a2036a1e6bd48040db4c45eb212033e966ed88f6c8737be3",
+      "signature": "_user_id uuid, _role app_role",
+      "definition_base64": "Q1JFQVRFIE9SIFJFUExBQ0UgRlVOQ1RJT04gcHJpdmF0ZS5oYXNfcm9sZShfdXNlcl9pZCB1dWlk\nLCBfcm9sZSBhcHBfcm9sZSkKIFJFVFVSTlMgYm9vbGVhbgogTEFOR1VBR0Ugc3FsCiBTVEFCTEUg\nU0VDVVJJVFkgREVGSU5FUgogU0VUIHNlYXJjaF9wYXRoIFRPICdwdWJsaWMnLCAncHJpdmF0ZScK\nQVMgJGZ1bmN0aW9uJAogIFNFTEVDVCBFWElTVFMgKFNFTEVDVCAxIEZST00gcHVibGljLnVzZXJf\ncm9sZXMgV0hFUkUgdXNlcl9pZCA9IF91c2VyX2lkIEFORCByb2xlID0gX3JvbGUpCiRmdW5jdGlv\nbiQK"
+    },
+    {
+      "acl": [
+        {
+          "grantee": "postgres",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "grantee": "service_role",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        }
+      ],
+      "name": "is_onboarding_director",
+      "grants": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "schema": "public",
+      "sha256": "5ff19b64d9e9079b9e0d0e984a84dc4de4ee1266d2773b14dcaf211da0727240",
+      "signature": "_user_id uuid",
+      "definition_base64": "Q1JFQVRFIE9SIFJFUExBQ0UgRlVOQ1RJT04gcHVibGljLmlzX29uYm9hcmRpbmdfZGlyZWN0b3Io\nX3VzZXJfaWQgdXVpZCkKIFJFVFVSTlMgYm9vbGVhbgogTEFOR1VBR0Ugc3FsCiBTVEFCTEUgU0VD\nVVJJVFkgREVGSU5FUgogU0VUIHNlYXJjaF9wYXRoIFRPICdwdWJsaWMnCkFTICRmdW5jdGlvbiQK\nICBTRUxFQ1QgRVhJU1RTIChTRUxFQ1QgMSBGUk9NIHB1YmxpYy5mdW5jdGlvbmFsX3JvbGVzCiAg\nICBXSEVSRSBjb2RlIElOICgnb25ib2FyZGluZ19kaXJlY3RvcicsJ2RpcmVjdG9yX29uYm9hcmRp\nbmcnKSBBTkQgY3VycmVudF9zZWF0X2hvbGRlciA9IF91c2VyX2lkKQokZnVuY3Rpb24kCg=="
+    },
+    {
+      "acl": [
+        {
+          "grantee": "postgres",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        }
+      ],
+      "name": "owner_approval_program",
+      "grants": "{postgres=X/postgres}",
+      "schema": "private",
+      "sha256": "b72735127c6d887cd03adb3302a0d222a63930992569324de98438bb49387f8f",
+      "signature": "_request approvals",
+      "definition_base64": "Q1JFQVRFIE9SIFJFUExBQ0UgRlVOQ1RJT04gcHJpdmF0ZS5vd25lcl9hcHByb3ZhbF9wcm9ncmFt\nKF9yZXF1ZXN0IGFwcHJvdmFscykKIFJFVFVSTlMgdXVpZAogTEFOR1VBR0Ugc3FsCiBTVEFCTEUg\nU0VDVVJJVFkgREVGSU5FUgogU0VUIHNlYXJjaF9wYXRoIFRPICdwdWJsaWMnCkFTICRmdW5jdGlv\nbiQKIFNFTEVDVCBDQVNFIFdIRU4gY291bnQoKik9MSBUSEVOIChhcnJheV9hZ2cocC5pZCkpWzFd\nIEVORAogRlJPTSBwdWJsaWMub3duZXJfcHJvZ3JhbXMgcAogV0hFUkUgX3JlcXVlc3QuYXBwcm92\nZXJfcm9sZT0nb3duZXInIEFORCBfcmVxdWVzdC5pc19kZW1vPWZhbHNlCiBBTkQgcC5vd25lcl91\nc2VyX2lkPV9yZXF1ZXN0LmFwcHJvdmVyX2lkCiBBTkQgcHJpdmF0ZS5vd25lcl9jdXJyZW50X3By\nb3BlcnR5X2Zvcl9hY3RvcihfcmVxdWVzdC5hcHByb3Zlcl9pZCxfcmVxdWVzdC5wcm9wZXJ0eV9p\nZCxwLmlkKQokZnVuY3Rpb24kCg=="
+    },
+    {
+      "acl": [
+        {
+          "grantee": "postgres",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "grantee": "service_role",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        }
+      ],
+      "name": "owner_can_see_property",
+      "grants": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "schema": "private",
+      "sha256": "36938ada7608b49ffdcb79ff467146861d17b4b71c00695bb09de42b2e2ed72b",
+      "signature": "_user_id uuid, _property_id uuid",
+      "definition_base64": "Q1JFQVRFIE9SIFJFUExBQ0UgRlVOQ1RJT04gcHJpdmF0ZS5vd25lcl9jYW5fc2VlX3Byb3BlcnR5\nKF91c2VyX2lkIHV1aWQsIF9wcm9wZXJ0eV9pZCB1dWlkKQogUkVUVVJOUyBib29sZWFuCiBMQU5H\nVUFHRSBzcWwKIFNUQUJMRSBTRUNVUklUWSBERUZJTkVSCiBTRVQgc2VhcmNoX3BhdGggVE8gJ3B1\nYmxpYycKQVMgJGZ1bmN0aW9uJAogIFNFTEVDVCBFWElTVFMgKAogICAgU0VMRUNUIDEKICAgIEZS\nT00gcHVibGljLm93bmVyX3Byb2dyYW1fcHJvcGVydGllcyBvcHAKICAgIEpPSU4gcHVibGljLm93\nbmVyX3Byb2dyYW1zIHAgT04gcC5pZCA9IG9wcC5wcm9ncmFtX2lkCiAgICBXSEVSRSBwLm93bmVy\nX3VzZXJfaWQgPSBfdXNlcl9pZAogICAgICBBTkQgb3BwLnByb3BlcnR5X2lkID0gX3Byb3BlcnR5\nX2lkCiAgICAgIEFORCBvcHAuaW5jbHVzaW9uX3N0YXR1cyA9ICdpbmNsdWRlZCcKICAgICAgQU5E\nIG9wcC5hcmNoaXZlZF9hdCBJUyBOVUxMCiAgKQokZnVuY3Rpb24kCg=="
+    },
+    {
+      "acl": [
+        {
+          "grantee": "postgres",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        }
+      ],
+      "name": "owner_current_property_for_actor",
+      "grants": "{postgres=X/postgres}",
+      "schema": "private",
+      "sha256": "e75d39f918f39302281f048fd9df9e5bc38c01b29eafd8e8a695195ccea4409e",
+      "signature": "_actor uuid, _property_id uuid, _program_id uuid",
+      "definition_base64": "Q1JFQVRFIE9SIFJFUExBQ0UgRlVOQ1RJT04gcHJpdmF0ZS5vd25lcl9jdXJyZW50X3Byb3BlcnR5\nX2Zvcl9hY3RvcihfYWN0b3IgdXVpZCwgX3Byb3BlcnR5X2lkIHV1aWQsIF9wcm9ncmFtX2lkIHV1\naWQgREVGQVVMVCBOVUxMOjp1dWlkKQogUkVUVVJOUyBib29sZWFuCiBMQU5HVUFHRSBzcWwKIFNU\nQUJMRSBTRUNVUklUWSBERUZJTkVSCiBTRVQgc2VhcmNoX3BhdGggVE8gJ3B1YmxpYycKQVMgJGZ1\nbmN0aW9uJAogU0VMRUNUIEVYSVNUUygKICBTRUxFQ1QgMSBGUk9NIHB1YmxpYy5vd25lcl9wcm9n\ncmFtcyBwCiAgSk9JTiBwdWJsaWMub3duZXJfcHJvZ3JhbV9wcm9wZXJ0aWVzIGUgT04gZS5wcm9n\ncmFtX2lkPXAuaWQgQU5EIGUucHJvcGVydHlfaWQ9X3Byb3BlcnR5X2lkCiAgIEFORCBlLmluY2x1\nc2lvbl9zdGF0dXM9J2luY2x1ZGVkJyBBTkQgZS5hcmNoaXZlZF9hdCBJUyBOVUxMIEFORCBlLmlz\nX2RlbW89cC5pc19kZW1vCiAgSk9JTiBwdWJsaWMucHJvcGVydGllcyBoIE9OIGguaWQ9ZS5wcm9w\nZXJ0eV9pZCBBTkQgaC5vd25lcl9yZWNvcmRfaWQ9cC5vd25lcl9yZWNvcmRfaWQKICAgQU5EIGgu\nYXJjaGl2ZWRfYXQgSVMgTlVMTCBBTkQgaC5pc19kZW1vPXAuaXNfZGVtbwogIFdIRVJFIChfcHJv\nZ3JhbV9pZCBJUyBOVUxMIE9SIHAuaWQ9X3Byb2dyYW1faWQpIEFORCBwcml2YXRlLm93bmVyX3By\nb2dyYW1fcmVhZGFibGUoX2FjdG9yLHAuaWQsZmFsc2UpCiApCiRmdW5jdGlvbiQK"
+    },
+    {
+      "acl": [
+        {
+          "grantee": "postgres",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "grantee": "service_role",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        }
+      ],
+      "name": "owner_owns_program",
+      "grants": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "schema": "public",
+      "sha256": "c333c6f450a729313061023305709e4b31cb6a2290cb0d63b1d75f40c72147a9",
+      "signature": "_program_id uuid",
+      "definition_base64": "Q1JFQVRFIE9SIFJFUExBQ0UgRlVOQ1RJT04gcHVibGljLm93bmVyX293bnNfcHJvZ3JhbShfcHJv\nZ3JhbV9pZCB1dWlkKQogUkVUVVJOUyBib29sZWFuCiBMQU5HVUFHRSBzcWwKIFNUQUJMRSBTRUNV\nUklUWSBERUZJTkVSCiBTRVQgc2VhcmNoX3BhdGggVE8gJ3B1YmxpYycKQVMgJGZ1bmN0aW9uJAog\nU0VMRUNUIEVYSVNUUyAoU0VMRUNUIDEgRlJPTSBvd25lcl9wcm9ncmFtcyBwIFdIRVJFIHAuaWQ9\nX3Byb2dyYW1faWQgQU5EIHAub3duZXJfdXNlcl9pZD1hdXRoLnVpZCgpIEFORCBwLmFyY2hpdmVk\nX2F0IElTIE5VTEwKICBBTkQgKHAuaXNfZGVtbz1mYWxzZSBPUiBwcml2YXRlLmRlbW9fb3duZXJf\nbGlua19vayhhdXRoLnVpZCgpLHAuaWQpKSkKJGZ1bmN0aW9uJAo="
+    },
+    {
+      "acl": [
+        {
+          "grantee": "postgres",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        }
+      ],
+      "name": "owner_program_readable",
+      "grants": "{postgres=X/postgres}",
+      "schema": "private",
+      "sha256": "786b1d9d02e914eb4b8bda643c73c1829d3640fd3a18f4a6bc4899aa96bf09d6",
+      "signature": "_actor uuid, _program_id uuid, _preview boolean",
+      "definition_base64": "Q1JFQVRFIE9SIFJFUExBQ0UgRlVOQ1RJT04gcHJpdmF0ZS5vd25lcl9wcm9ncmFtX3JlYWRhYmxl\nKF9hY3RvciB1dWlkLCBfcHJvZ3JhbV9pZCB1dWlkLCBfcHJldmlldyBib29sZWFuIERFRkFVTFQg\nZmFsc2UpCiBSRVRVUk5TIGJvb2xlYW4KIExBTkdVQUdFIHNxbAogU1RBQkxFIFNFQ1VSSVRZIERF\nRklORVIKIFNFVCBzZWFyY2hfcGF0aCBUTyAncHVibGljJwpBUyAkZnVuY3Rpb24kCiBTRUxFQ1Qg\nX2FjdG9yIElTIE5PVCBOVUxMIEFORCBFWElTVFMoCiAgU0VMRUNUIDEgRlJPTSBhdXRoLnVzZXJz\nIGEgSk9JTiBwdWJsaWMub3duZXJfcHJvZ3JhbXMgcCBPTiBwLmlkPV9wcm9ncmFtX2lkCiAgSk9J\nTiBwdWJsaWMucHJvcGVydHlfb3duZXJzIG8gT04gby5pZD1wLm93bmVyX3JlY29yZF9pZCBBTkQg\nby5hY3RpdmUKICBXSEVSRSBhLmlkPV9hY3RvciBBTkQgYS5kZWxldGVkX2F0IElTIE5VTEwgQU5E\nIChhLmJhbm5lZF91bnRpbCBJUyBOVUxMIE9SIGEuYmFubmVkX3VudGlsPD1ub3coKSkKICAgQU5E\nIHAuYXJjaGl2ZWRfYXQgSVMgTlVMTAogICBBTkQgKChfcHJldmlldyBJUyBUUlVFIEFORCBwdWJs\naWMuaGFzX3JvbGUoX2FjdG9yLCdhZG1pbicpKQogICAgT1IgKF9wcmV2aWV3IElTIEZBTFNFIEFO\nRCBwLm93bmVyX3VzZXJfaWQ9X2FjdG9yCiAgICAgQU5EIChwLmlzX2RlbW89ZmFsc2UgT1IgcHJp\ndmF0ZS5kZW1vX293bmVyX2xpbmtfb2soX2FjdG9yLHAuaWQpKQogICAgIEFORCBFWElTVFMoU0VM\nRUNUIDEgRlJPTSBwdWJsaWMudXNlcl9yb2xlcyBXSEVSRSB1c2VyX2lkPV9hY3RvciBBTkQgcm9s\nZTo6dGV4dD0nb3duZXInKQogICAgIEFORCBOT1QgRVhJU1RTKFNFTEVDVCAxIEZST00gcHVibGlj\nLnVzZXJfcm9sZXMgV0hFUkUgdXNlcl9pZD1fYWN0b3IgQU5EIHJvbGU6OnRleHQ8Pidvd25lcicp\nKSkKICkKJGZ1bmN0aW9uJAo="
+    },
+    {
+      "acl": [
+        {
+          "grantee": "postgres",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "grantee": "service_role",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        }
+      ],
+      "name": "owner_sees_property",
+      "grants": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}",
+      "schema": "private",
+      "sha256": "1f13af888d510a6dfbb8d18ef15523125801bf839e36324f72caa032be904fea",
+      "signature": "_user_id uuid, _property_id uuid",
+      "definition_base64": "Q1JFQVRFIE9SIFJFUExBQ0UgRlVOQ1RJT04gcHJpdmF0ZS5vd25lcl9zZWVzX3Byb3BlcnR5KF91\nc2VyX2lkIHV1aWQsIF9wcm9wZXJ0eV9pZCB1dWlkKQogUkVUVVJOUyBib29sZWFuCiBMQU5HVUFH\nRSBzcWwKIFNUQUJMRSBTRUNVUklUWSBERUZJTkVSCiBTRVQgc2VhcmNoX3BhdGggVE8gJ3B1Ymxp\nYycKQVMgJGZ1bmN0aW9uJAogIHNlbGVjdCBleGlzdHMgKAogICAgc2VsZWN0IDEgZnJvbSBwdWJs\naWMub3duZXJfcHJvZ3JhbXMKICAgIHdoZXJlIHByb3BlcnR5X2lkID0gX3Byb3BlcnR5X2lkIGFu\nZCBvd25lcl91c2VyX2lkID0gX3VzZXJfaWQKICApIG9yIGV4aXN0cyAoCiAgICBzZWxlY3QgMQog\nICAgZnJvbSBwdWJsaWMub3duZXJfcHJvZ3JhbV9wcm9wZXJ0aWVzIG9wcAogICAgam9pbiBwdWJs\naWMub3duZXJfcHJvZ3JhbXMgb3Agb24gb3AuaWQgPSBvcHAucHJvZ3JhbV9pZAogICAgd2hlcmUg\nb3BwLnByb3BlcnR5X2lkID0gX3Byb3BlcnR5X2lkCiAgICAgIGFuZCBvcC5vd25lcl91c2VyX2lk\nID0gX3VzZXJfaWQKICApCiRmdW5jdGlvbiQK"
+    },
+    {
+      "acl": [
+        {
+          "grantee": "PUBLIC",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "grantee": "postgres",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        }
+      ],
+      "name": "owns_owner_request",
+      "grants": null,
+      "schema": "private",
+      "sha256": "d6f5b01f0004dc2b3264144b0ceada01b30a1346adaacddea2327f93a704c413",
+      "signature": "_work_item_id uuid, _actor uuid",
+      "definition_base64": "Q1JFQVRFIE9SIFJFUExBQ0UgRlVOQ1RJT04gcHJpdmF0ZS5vd25zX293bmVyX3JlcXVlc3QoX3dv\ncmtfaXRlbV9pZCB1dWlkLCBfYWN0b3IgdXVpZCkKIFJFVFVSTlMgYm9vbGVhbgogTEFOR1VBR0Ug\nc3FsCiBTVEFCTEUgU0VDVVJJVFkgREVGSU5FUgogU0VUIHNlYXJjaF9wYXRoIFRPICdwdWJsaWMn\nCkFTICRmdW5jdGlvbiQKICBTRUxFQ1QgX2FjdG9yIElTIE5PVCBOVUxMIEFORCBFWElTVFMgKAog\nICAgU0VMRUNUIDEgRlJPTSBwdWJsaWMud29ya19pdGVtcyB3IEpPSU4gcHVibGljLm93bmVyX3By\nb2dyYW1zIHAgT04gcC5pZD13LnByb2dyYW1faWQKICAgICBXSEVSRSB3LmlkPV93b3JrX2l0ZW1f\naWQgQU5EIHcua2luZD0nb3Bwb3J0dW5pdHknIEFORCB3LnN0YXR1cyBOT1QgSU4gKCdkcmFmdCcs\nJ2FyY2hpdmVkJykKICAgICAgIEFORCBwLmFyY2hpdmVkX2F0IElTIE5VTEwgQU5EIHAub3duZXJf\ndXNlcl9pZD1fYWN0b3IpCiRmdW5jdGlvbiQK"
+    },
+    {
+      "acl": [
+        {
+          "grantee": "postgres",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "grantee": "service_role",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        }
+      ],
+      "name": "owns_program",
+      "grants": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "schema": "private",
+      "sha256": "739602c9bc9703d5b07c8241888401d1eb7809ad1bf74e2b4b87003fd6771820",
+      "signature": "_user_id uuid, _program_id uuid",
+      "definition_base64": "Q1JFQVRFIE9SIFJFUExBQ0UgRlVOQ1RJT04gcHJpdmF0ZS5vd25zX3Byb2dyYW0oX3VzZXJfaWQg\ndXVpZCwgX3Byb2dyYW1faWQgdXVpZCkKIFJFVFVSTlMgYm9vbGVhbgogTEFOR1VBR0Ugc3FsCiBT\nVEFCTEUgU0VDVVJJVFkgREVGSU5FUgogU0VUIHNlYXJjaF9wYXRoIFRPICdwdWJsaWMnLCAncHJp\ndmF0ZScKQVMgJGZ1bmN0aW9uJAogIFNFTEVDVCBFWElTVFMgKFNFTEVDVCAxIEZST00gcHVibGlj\nLm93bmVyX3Byb2dyYW1zIFdIRVJFIGlkID0gX3Byb2dyYW1faWQgQU5EIG93bmVyX3VzZXJfaWQg\nPSBfdXNlcl9pZCkKJGZ1bmN0aW9uJAo="
+    }
+  ],
+  "captured_at": "2026-10-30T04:05:08.453349+00:00",
+  "scope": "Shared helper subset only. No live writes. Existing anonymous grants remain identical."
+}
