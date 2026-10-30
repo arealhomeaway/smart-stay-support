@@ -207,50 +207,16 @@ export const setProjectRoleAssignee = createServerFn({ method: "POST" })
     await assertCanManage(context as unknown as Ctx);
     if (OPERATIONS_OWNED.has(data.roleCode) || data.roleCode === "onboarding_director")
       throw new Error("That role is not assigned from the Project Team.");
-    const db = await admin();
-    const { data: project } = await db
-      .from("onboarding_projects")
-      .select("id, property_id, project_manager, utility_manager, role_assignments")
-      .eq("id", data.projectId)
-      .maybeSingle();
-    if (!project) throw new Error("That onboarding project was not found.");
-    const column = projectRoleColumn(data.roleCode);
-    const assignments = { ...((project.role_assignments ?? {}) as Record<string, string>) };
-    const before = column ? project[column] : (assignments[data.roleCode] ?? null);
-    if (!column) {
-      if (data.userId) assignments[data.roleCode] = data.userId;
-      else delete assignments[data.roleCode];
-    }
-    // Written as the signed-in person: the project's responsibility guard
-    // checks who is making the change, and a service-role write has no identity.
-    const { error } = await (context as unknown as Ctx).supabase
-      .from("onboarding_projects")
-      .update(column ? { [column]: data.userId } : { role_assignments: assignments })
-      .eq("id", data.projectId);
-    if (error) throw new Error(error.message);
-
-    let moved = 0;
-    if (data.reassignPending) {
-      const { data: rows, error: e2 } = await db
-        .from("onboarding_tasks")
-        .update({ assigned_to: data.userId })
-        .eq("property_id", project.property_id)
-        .eq("assigned_seat", data.roleCode)
-        .in("status", ["open", "in_progress", "blocked"])
-        .select("id");
-      if (e2) throw new Error(e2.message);
-      moved = rows?.length ?? 0;
-    }
-    await db.from("audit_log").insert({
-      actor_id: context.userId,
-      action: "onboarding.project_team_changed",
-      entity_type: "onboarding_project",
-      entity_id: data.projectId,
-      entity_label: data.roleCode,
-      before: { role: data.roleCode, user: before },
-      after: { role: data.roleCode, user: data.userId, reassigned_tasks: moved },
-    } as never);
-    return { ok: true as const, moved };
+    // Pending SQL, intentionally no separate-write fallback.
+    type TeamRpc = (name: string, args: Record<string, unknown>) => Promise<{ data: { ok: true; moved: number } | null; error: { message: string } | null }>;
+    const rpc = context.supabase.rpc as unknown as TeamRpc;
+    const result = await rpc("set_onboarding_project_role", {
+      _project_id: data.projectId, _role_code: data.roleCode,
+      _user_id: data.userId, _reassign_pending: data.reassignPending,
+    });
+    if (result.error) throw new Error(result.error.message);
+    if (!result.data) throw new Error("Project Team did not return a saved result. Nothing was changed.");
+    return result.data;
   });
 
 /** One home's Project Team: each role its workflow uses, who holds it, and the pool to pick from. */

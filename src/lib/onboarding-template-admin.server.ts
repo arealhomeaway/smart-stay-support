@@ -10,6 +10,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { writeAudit } from "./audit.server";
+import { homeownerApprovalRequired } from "./owner-dependency";
 import {
   BUILT_IN_TEMPLATE_KEY,
   builtInAsRows,
@@ -389,6 +390,11 @@ export async function saveTemplateStep(
   const title = input.title.trim();
   if (title.length < 3) throw new Error("Give the step a title of at least three characters.");
   if (!input.stage.trim()) throw new Error("Choose the stage this step belongs to.");
+  const prior = input.stepId ? await supabase.from("onboarding_template_tasks")
+    .select("owner_dependency, requires_owner_approval").eq("id",input.stepId).eq("template_id",input.templateId).single() : null;
+  if (prior?.error) throw prior.error;
+  if (prior?.data?.owner_dependency === "business_decision" && !prior.data.requires_owner_approval)
+    throw new Error("This existing template step needs the separately approved homeowner approval correction before it can be saved.");
 
   let sortOrder = input.sortOrder ?? null;
   if (sortOrder === null && !input.stepId) {
@@ -410,7 +416,7 @@ export async function saveTemplateStep(
     role: input.role?.trim() || null,
     detail: input.detail?.trim() || null,
     blocks_handoff: Boolean(input.blocksHandoff),
-    requires_owner_approval: Boolean(input.requiresOwnerApproval),
+    requires_owner_approval: homeownerApprovalRequired({ owner_dependency: prior?.data?.owner_dependency, requires_owner_approval: input.requiresOwnerApproval }),
     owner_approval_when_active_owner: Boolean(input.ownerApprovalWhenActiveOwner),
     evidence_required: Boolean(input.evidenceRequired),
     schedule_anchor: input.scheduleAnchor ?? null,

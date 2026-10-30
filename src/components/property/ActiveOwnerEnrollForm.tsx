@@ -35,24 +35,25 @@ export const activeOwnerDetailsOk = (name: string, email: string) =>
   name.trim().length >= 2 && /\S+@\S+\.\S+/.test(email.trim());
 const STEP_NAMES = { account: "Homeowner login", enrollment: "Program and home linked", closing: "Closing date saved",
   activation: "Program active", onboarding: "Onboarding Opportunities released", operating: "Operating Opportunities released", welcome: "Welcome email" };
-export function ActiveOwnerEnrollForm({ propertyId, propertyName, finishing = false, onDone }: {
-  propertyId: string; propertyName: string; initialName?: string; initialEmail?: string; finishing?: boolean; onDone?: () => void;
+export function ActiveOwnerEnrollForm({ propertyId, propertyName, finishing = false, showTrigger = true, onDone }: {
+  propertyId: string; propertyName: string; initialName?: string; initialEmail?: string; finishing?: boolean; showTrigger?: boolean; onDone?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const load = useServerFn(activeOwnerEnrollmentContext);
   const context = useQuery({ queryKey: ["active-owner-enrollment-context", propertyId], enabled: open,
     queryFn: () => load({ data: { propertyId } }) });
-  return <Dialog open={open} onOpenChange={setOpen}>
-    <Button size="sm" onClick={() => setOpen(true)}>{finishing ? "Finish Active Owner setup" : "Enroll in Active Owner"}</Button>
+  const [retainReceipt, setRetainReceipt] = useState(false);
+  return <Dialog open={open} onOpenChange={(next) => { if (!retainReceipt) setOpen(next); }}>
+    {showTrigger ? <Button size="sm" onClick={() => setOpen(true)}>{finishing ? "Finish Active Owner setup" : "Enroll in Active Owner"}</Button> : null}
     <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-xl">
       <DialogHeader><DialogTitle>{finishing ? "Finish Active Owner setup" : "Enroll in Active Owner"}</DialogTitle><DialogDescription>{propertyName}</DialogDescription></DialogHeader>
       {context.isPending ? <p>Checking homeowner details…</p> : context.error ? <p role="alert">{context.error.message}</p> : context.data ?
-        <EnrollmentFields propertyId={propertyId} context={context.data} onDone={() => { onDone?.(); }} close={() => setOpen(false)} /> : null}
+        <EnrollmentFields propertyId={propertyId} context={context.data} onReceipt={() => setRetainReceipt(true)} onDone={() => { onDone?.(); }} close={() => { setRetainReceipt(false); setOpen(false); }} /> : null}
     </DialogContent>
   </Dialog>;
 }
-function EnrollmentFields({ propertyId, context, onDone, close }: {
-  propertyId: string; context: Awaited<ReturnType<typeof activeOwnerEnrollmentContext>>; onDone: () => void; close: () => void;
+function EnrollmentFields({ propertyId, context, onReceipt, onDone, close }: {
+  propertyId: string; context: Awaited<ReturnType<typeof activeOwnerEnrollmentContext>>; onReceipt: () => void; onDone: () => void; close: () => void;
 }) {
   const qc = useQueryClient();
   const enroll = useServerFn(enrollActiveOwner);
@@ -72,19 +73,20 @@ function EnrollmentFields({ propertyId, context, onDone, close }: {
   const input = { requestId, propertyId, ownerRecordId: context.owner.id, name, email, closingDate, reason, onboardingLead, operationsLead, notes };
   const changedConfirmed = Boolean(context.actualClosing && closingDate !== context.actualClosing);
   const run = useMutation({ mutationFn: () => enroll({ data: enrollmentInput.parse(input) }), onSuccess: (r) => {
-    setReceipt(r); void qc.invalidateQueries(); if (r.complete) onDone();
+    setReceipt(r); onReceipt(); void qc.invalidateQueries(); if (r.complete) onDone();
   }, onError: (e: Error) => toast.error(e.message) });
   if (receipt) return <div className="space-y-4" role="status">
     <h3 className="font-semibold">{receipt.complete ? "Enrollment complete" : "Enrollment needs attention"}</h3>
     {receipt.accountId && !receipt.programId ? <p className="text-sm text-destructive">The homeowner login exists, but its program has not been linked yet. Retry to finish setup.</p> : null}
     <ol className="space-y-3">{receipt.steps.map((step) => <li key={step.key} className="text-sm">
       <strong>{step.key === "welcome" && step.status === "done" ? (receipt.welcomeHeld ? "Welcome email held until the wording is approved" : "Welcome email queued") : STEP_NAMES[step.key]}</strong>
-      {step.key !== "welcome" || step.status !== "done" ? ` — ${step.status === "done" ? "Done" : step.status === "failed" ? "Failed" : "Not reached"}` : ""}
+      {step.key !== "welcome" || step.status !== "done" ? `: ${step.status === "done" ? "Done" : step.status === "failed" ? "Failed" : "Not reached"}` : ""}
       {step.detail ? <p className="text-destructive">{step.detail}</p> : null}
     </li>)}</ol>
     {receipt.complete ? <p className="text-sm">{receipt.onboardingAdded} onboarding and {receipt.operatingAdded} operating Opportunities added.</p> : null}
     {receipt.complete && receipt.welcomeHeld && receipt.accountId ? <HeldWelcomeSetupLink accountId={receipt.accountId} /> : null}
-    <Button onClick={() => receipt.complete ? close() : run.mutate()} disabled={run.isPending}>{receipt.complete ? "Done" : run.isPending ? "Retrying…" : "Retry"}</Button>
+    {!receipt.complete ? <Button onClick={() => run.mutate()} disabled={run.isPending}>{run.isPending ? "Retrying…" : "Retry"}</Button> : null}
+    <Button onClick={close} disabled={run.isPending}>Done</Button>
   </div>;
   return <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); run.mutate(); }}>
     <section className="space-y-3"><h3 className="font-semibold">Homeowner</h3>

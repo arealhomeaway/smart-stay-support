@@ -180,16 +180,6 @@ export function ActiveOwnerPanel({
               <dd className="numeric font-medium">{row.openTasks}</dd>
             </div>
           </dl>
-          {canEnroll && (!row.ownerLinked || row.status === "draft") ? (
-            <ActiveOwnerEnrollForm
-              finishing
-              propertyId={propertyId}
-              propertyName={propertyName}
-              initialName={row.ownerName && row.ownerName !== "Owner link unresolved" ? row.ownerName : ""}
-              initialEmail={row.ownerEmail ?? ""}
-              onDone={refresh}
-            />
-          ) : null}
           {canManage && CHANGEABLE.includes(row.status) ? (
             <div className="flex flex-wrap items-center gap-2">
               <Select
@@ -253,13 +243,11 @@ export function ActiveOwnerPanel({
           </p>
           {canManage || canEnroll ? (
             <div className="space-y-3">
-              {canEnroll ? (
-                <ActiveOwnerEnrollForm propertyId={propertyId} propertyName={propertyName} onDone={refresh} />
-              ) : (
+              {!canEnroll ? (
                 <p className="text-sm text-muted-foreground">
                   The Onboarding Director or an Admin enrolls homes in Active Owner.
                 </p>
-              )}
+              ) : null}
               <Button
                 variant="outline"
                 onClick={() => startOnboarding.mutate()}
@@ -276,6 +264,13 @@ export function ActiveOwnerPanel({
         </div>
       )}
       <ActualClosingCorrection propertyId={propertyId} />
+      {canEnroll ? <ActiveOwnerEnrollForm
+        propertyId={propertyId}
+        propertyName={propertyName}
+        finishing={Boolean(row)}
+        showTrigger={!programs.isLoading && (!row || !row.ownerLinked || row.status === "draft")}
+        onDone={refresh}
+      /> : null}
     </SectionCard>
   );
 }

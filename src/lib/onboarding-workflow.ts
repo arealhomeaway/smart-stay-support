@@ -16,6 +16,7 @@ import { releaseState, type ReleaseContext, type ReleaseState } from "./onboardi
 import { FULL_FURNISHING_TEMPLATE, type TemplateTask } from "./onboarding-template";
 import { SEAT_LABELS, type SeatCode } from "./onboarding-ownership";
 import type { WorkState } from "./semantic";
+import { homeownerApprovalRequired } from "./owner-dependency";
 
 export type WorkflowTask = {
   id: string;
@@ -355,7 +356,7 @@ export function whyThisTaskExists(view: TaskView, all: WorkflowTask[]): string[]
 
   if (template?.ownerApprovalWhenActiveOwner) {
     lines.push("Requires a recorded homeowner decision only for Active Owner Program homes.");
-  } else if (task.requires_owner_approval) {
+  } else if (homeownerApprovalRequired(task)) {
     lines.push("Requires a recorded homeowner decision before it can be completed.");
   }
 

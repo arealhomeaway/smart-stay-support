@@ -66,6 +66,13 @@ function task(over: Partial<WorkflowTask> = {}): WorkflowTask {
 
 const PROJECT = { id: "pr1", status: "active" as string | null, completed_at: null };
 
+it("a business-decision Task cannot be completed without approval even when its old flag is false", () => {
+  const t = task({ owner_dependency: "business_decision", requires_owner_approval: false });
+  const ctx = buildReleaseContext({ property: property(), project: PROJECT, tasks: [t], handoff: null });
+  expect(releaseState(t, [t], ctx).canComplete).toBe(false);
+  expect(releaseState({ ...t, owner_approval_status: "approved" }, [t], ctx).canComplete).toBe(true);
+});
+
 describe("release integrity", () => {
   function context(t: WorkflowTask) {
     return buildReleaseContext({
