@@ -24,7 +24,7 @@ describe("Help ticket 60: Opportunity video attachments", () => {
     expect(r.messages).toEqual([ZIP_COMPRESSION_ERROR]);
   });
 
-  for (const mb0 of [60, 130, 250]) it(`a ${mb0} MB MP4 is accepted and uploads once started automatically", async () => { const mb = mb0;
+  for (const mb0 of [60, 130, 250]) it(`a ${mb0} MB MP4 is accepted and uploads once started automatically`, async () => { const mb = mb0;
     const sent: number[] = [];
     const q = new FileUploadQueue<File, string>(async f => { sent.push(f.size); return "doc"; });
     q.add([sized("v.mp4", "video/mp4", mb * MB)]); q.start();
