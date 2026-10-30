@@ -57,6 +57,27 @@ export function parseOwnerProgram(row: { id: string; program: unknown }) {
   return { ...program, internal_notes: null };
 }
 
+/**
+ * Access rule matching the database: the main homeowner, or an active co-owner of that program.
+ * owner_user_id stays the main homeowner's identity (email recipient); it is not the only access.
+ * Before membership exists the lookup fails and only the main homeowner passes, as today.
+ */
+export async function isActiveProgramMember(
+  supabase: Client,
+  program: { id: string; owner_user_id: string | null },
+  userId: string,
+) {
+  if (program.owner_user_id === userId) return true;
+  const r = await supabase
+    .from("program_members" as never)
+    .select("id")
+    .eq("program_id", program.id)
+    .eq("user_id", userId)
+    .is("removed_at", null)
+    .limit(1);
+  return !r.error && (r.data ?? []).length === 1;
+}
+
 /** Two results are enough to detect an ambiguous legacy account without picking an Owner. */
 export async function findOwnerProgram(supabase: Client, userId: string) {
   const { data, error } = await supabase.rpc("read_owner_programs").limit(2);
@@ -65,7 +86,7 @@ export async function findOwnerProgram(supabase: Client, userId: string) {
   if (data.length !== 1)
     throw new Error("Multiple programs are linked to this account. Ask ARHA to reconcile access.");
   const program = parseOwnerProgram(data[0]!);
-  if (program.owner_user_id !== userId)
+  if (!(await isActiveProgramMember(supabase, program, userId)))
     throw new Error("The participation program is not available to this account.");
   return program;
 }

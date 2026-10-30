@@ -570,15 +570,34 @@ export async function requestOwnerDocument(
  * library: it lists only the records where a coordinator has either shared a
  * file with this owner or opened an upload slot for them.
  */
+/** Programs this login may read as a homeowner: main homeowner or active co-owner. */
+export async function ownerMemberProgramIds(client: Client, userId: string) {
+  const [own, member] = await Promise.all([
+    client.from("owner_programs").select("id").eq("owner_user_id", userId),
+    client
+      .from("program_members" as never)
+      .select("program_id")
+      .eq("user_id", userId)
+      .is("removed_at", null),
+  ]);
+  if (own.error) throw own.error;
+  // Membership is optional until it is turned on; its absence never widens access.
+  const memberRows = member.error ? [] : ((member.data ?? []) as { program_id: string }[]);
+  return [...new Set([...(own.data ?? []).map((r) => r.id as string), ...memberRows.map((r) => r.program_id)])];
+}
+
 export async function listOwnerFileRecords(viewer: Viewer, client?: Client) {
   if (!isExternalOwner(viewer)) return { records: [] };
   const supabaseAdmin =
     client ?? (await import("@/integrations/supabase/client.server")).supabaseAdmin;
 
+  // Main homeowner or active co-owner; ownerPropertyAccess below re-checks each home in the database.
+  const programIds = await ownerMemberProgramIds(supabaseAdmin, viewer.userId);
+  if (programIds.length === 0) return { records: [] };
   const props = await supabaseAdmin
     .from("owner_program_properties")
-    .select("property_id, inclusion_status, archived_at, owner_programs!inner(owner_user_id)")
-    .eq("owner_programs.owner_user_id", viewer.userId);
+    .select("property_id, inclusion_status, archived_at")
+    .in("program_id", programIds);
   if (props.error) throw props.error;
   const candidates = [
     ...new Set(

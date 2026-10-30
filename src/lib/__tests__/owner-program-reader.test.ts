@@ -33,7 +33,21 @@ it("strips private program fields and rejects mismatched canonical result identi
 });
 
 it("never chooses a legacy account's first program or another account's program", async () => {
-  const database = (programs: unknown[]) => ({
+  const database = (programs: unknown[], members: { program_id: string; user_id: string }[] = []) => ({
+    from: (table: string) => {
+      expect(table).toBe("program_members");
+      const f: Record<string, unknown> = {};
+      const q = {
+        select: () => q,
+        eq: (k: string, v: unknown) => ((f[k] = v), q),
+        is: () => q,
+        limit: async () => ({
+          data: members.filter((m) => m.program_id === f["program_id"] && m.user_id === f["user_id"]),
+          error: null,
+        }),
+      };
+      return q;
+    },
     rpc: (name: string) => {
       expect(name).toBe("read_owner_programs");
       return {
@@ -62,6 +76,28 @@ it("never chooses a legacy account's first program or another account's program"
         database([
           { id: "program", program: ownerProgramFixture({ owner_user_id: "someone-else" }) },
         ]) as never,
+        "owner",
+      ),
+    ),
+  ).toContain("not available to this account");
+  // An active co-owner of that program gets the same program; the main homeowner stays the identity.
+  const shared = await findOwnerProgram(
+    database(
+      [{ id: "program", program: ownerProgramFixture({ owner_user_id: "someone-else" }) }],
+      [{ program_id: "program", user_id: "owner" }],
+    ) as never,
+    "owner",
+  );
+  expect(shared?.id).toBe("program");
+  expect(shared?.owner_user_id).toBe("someone-else");
+  // A co-owner of a different program is still refused.
+  expect(
+    await failure(() =>
+      findOwnerProgram(
+        database(
+          [{ id: "program", program: ownerProgramFixture({ owner_user_id: "someone-else" }) }],
+          [{ program_id: "other-program", user_id: "owner" }],
+        ) as never,
         "owner",
       ),
     ),

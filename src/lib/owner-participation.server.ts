@@ -33,6 +33,8 @@ import {
 export type Client = SupabaseClient<Database>;
 
 export type EntryRow = {
+  /** The member who logged the entry (attribution only; totals sum every member). */
+  owner_user_id?: string | null;
   owner_update_revision?: number | null;
   owner_update_snapshot?: ReviewedOwnerUpdate | null;
   id: string;
