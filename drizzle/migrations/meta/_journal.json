@@ -1492,6 +1492,13 @@
       "when": 1793384467029,
       "tag": "0212_co_owner_01_complete_membership",
       "breakpoints": true
+    },
+    {
+      "idx": 213,
+      "version": "7",
+      "when": 1793384623119,
+      "tag": "0213_co_owner_03_access_conversion",
+      "breakpoints": true
     }
   ]
 }
