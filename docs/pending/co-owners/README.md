@@ -40,3 +40,6 @@ Convert the remaining direct access checks, including actor-specific hour/notifi
 - Practice homes: Admin only, `@resolve-test.invalid` emails only; welcome held.
 - Re-adding a removed co-owner does not queue a second welcome.
 - Apply order: 01, 02 (with receipt), 03, 04, 05. Undo order: undo/05, undo/04, undo/03, undo/01.
+
+## Live apply note (01)
+- 01 now revokes the default table grants before granting: `REVOKE ALL ON public.program_members FROM PUBLIC, anon, authenticated;` then `GRANT SELECT ... TO authenticated;` and `GRANT ALL ... TO service_role;`. Live, the first attempt was rolled back, so 01 was completed on the existing empty table by migration 0212 (comment cleared, grants tightened, helper and policy created with the same bytes as this file).

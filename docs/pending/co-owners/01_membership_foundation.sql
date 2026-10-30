@@ -9,6 +9,7 @@ CREATE TABLE public.program_members (
   removed_at timestamptz,
   removed_by uuid
 );
+REVOKE ALL ON public.program_members FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON public.program_members TO authenticated;
 GRANT ALL ON public.program_members TO service_role;
 ALTER TABLE public.program_members ENABLE ROW LEVEL SECURITY;
