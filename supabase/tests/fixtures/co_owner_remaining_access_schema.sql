@@ -43,3 +43,5 @@ CREATE FUNCTION private.notify_opportunity_staff(_id uuid,_verb text) RETURNS vo
 CREATE FUNCTION private.str_program_properties(_program_id uuid) RETURNS TABLE(property_id uuid) LANGUAGE sql AS $$
  SELECT property_id FROM public.owner_program_properties WHERE program_id=_program_id $$;
 CREATE FUNCTION public.format_property_label(_p jsonb) RETURNS jsonb LANGUAGE sql AS $$ SELECT jsonb_build_object('primary',_p->>'name') $$;
+CREATE TABLE public.owner_request_messages(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),review_id uuid,work_item_id uuid,property_id uuid,program_id uuid,task_id uuid,
+ author_id uuid,author_type text,author_name text,event text,body text,is_demo boolean);
