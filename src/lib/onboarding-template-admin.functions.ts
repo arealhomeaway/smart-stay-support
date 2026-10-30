@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { homeownerApprovalRequired } from "./owner-dependency";
 
 const ANCHOR = z.enum(["planned_closing", "actual_closing", "actual_access"]);
 
@@ -186,7 +187,7 @@ export const importTemplateCsvFn = createServerFn({ method: "POST" })
         template_id: created.id, stage: t.stage, title: t.title, detail: t.detail, role: t.role,
         functional_role: t.functionalRole, schedule_anchor: t.scheduleAnchor, offset_days: t.offsetDays,
         is_required: t.isRequired, blocks_handoff: t.blocksHandoff, evidence_required: t.evidenceRequired,
-        requires_owner_approval: t.requiresOwnerApproval, owner_dependency: t.ownerDependency,
+        requires_owner_approval: homeownerApprovalRequired({ owner_dependency: t.ownerDependency, requires_owner_approval: t.requiresOwnerApproval }), owner_dependency: t.ownerDependency,
         module: t.module, breezeway_template_id: t.breezewayTemplateId, opportunity: t.opportunity,
         sort_order: t.sortOrder, is_active: true,
         offset_unit: t.offsetUnit, description: t.description, done_when: t.doneWhen, video_url: t.videoUrl,
