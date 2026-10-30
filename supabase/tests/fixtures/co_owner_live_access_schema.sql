@@ -24,6 +24,9 @@ CREATE TABLE public.owner_request_messages(id uuid PRIMARY KEY,review_id uuid,wo
 CREATE TABLE public.work_item_resources(id uuid PRIMARY KEY,work_item_id uuid,removed_at timestamptz);
 CREATE TABLE public.approvals(id uuid,approver_role text,is_demo boolean,approver_id uuid,property_id uuid);
 GRANT SELECT ON public.work_items,public.work_item_resources,public.owner_request_messages TO authenticated;
+-- Live relation ACLs allow SELECT on joined program/review rows. Their complete
+-- RLS dependency closure is deliberately outside this helper-subset fixture.
+GRANT SELECT ON public.owner_programs,public.owner_reviews TO authenticated;
 ALTER TABLE public.work_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.work_item_resources ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.owner_request_messages ENABLE ROW LEVEL SECURITY;
