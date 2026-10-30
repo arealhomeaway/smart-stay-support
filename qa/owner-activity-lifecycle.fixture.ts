@@ -1,4 +1,4 @@
-import { expect, it } from "bun:test";
+import { deepStrictEqual } from "node:assert";
 import { loadProgramAggregate } from "../src/lib/owner-participation.server";
 import { loadPrograms } from "../src/lib/owner-program.server";
 import { unretiredOwnerWork } from "../src/lib/owner-activity-queries";
@@ -25,17 +25,18 @@ function client() {
   } };
 }
 
-it("staff program activities exclude the withdrawn October 29 review", async () => {
+{
   const agg = await loadProgramAggregate(client() as never, "p");
-  expect(agg.reviews.map(r => r.id)).toEqual(["live"]);
-});
-it("program queue does not count archived reviews as waiting homeowner work", async () => {
+  deepStrictEqual(agg.reviews.map(r => r.id), ["live"]);
+}
+{
   const result = await loadPrograms(client() as never);
-  expect(result.rows[0]?.openTasks).toBe(1);
-});
+  deepStrictEqual(result.rows[0]?.openTasks, 1);
+}
 
-it("retired work items never appear in current staff or homeowner activity lists", () => {
+{
   const rows = [{ id: "live", retired_at: null }, { id: "retired", retired_at: "2026-10-27" }];
   const actual = unretiredOwnerWork({ is: (column, value) => rows.filter(row => row[column as "retired_at"] === value) });
-  expect(actual.map(row => row.id)).toEqual(["live"]);
-});
+  deepStrictEqual(actual.map(row => row.id), ["live"]);
+}
+console.log("activity checks complete");
