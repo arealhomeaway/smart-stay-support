@@ -11,8 +11,8 @@ describe("Help ticket 60: Opportunity video attachments", () => {
   it("keeps the 250 MB per-file limit", () => { expect(MAX_FILE_BYTES).toBe(250 * MB); });
 
   it("a ~58 MB ZIP with one video unpacks into that video, ready to upload", async () => {
-    const zip = zipSync({ "walkthrough.mp4": [bytes(58 * MB), { level: 1 }] });
-    const r = await prepareUploadSelection([new File([zip], "walkthrough.zip", { type: "application/x-zip-compressed" })], true);
+    const zip = zipSync({ "walkthrough.mp4": [bytes(58 * MB) as Uint8Array<ArrayBuffer>, { level: 1 }] });
+    const r = await prepareUploadSelection([new File([zip as BlobPart], "walkthrough.zip", { type: "application/x-zip-compressed" })], true);
     expect(r.messages).toEqual([]);
     expect(r.files.map(f => [f.name, f.type])).toEqual([["walkthrough.mp4", "video/mp4"]]);
   }, 120000);
@@ -20,11 +20,11 @@ describe("Help ticket 60: Opportunity video attachments", () => {
   it("a ZIP using Deflate64 says exactly why and what to do", async () => {
     const zip = zipSync({ "walkthrough.mp4": [bytes(1024), { level: 0 }] }); const v = new DataView(zip.buffer);
     for (let i = 0; i < zip.length - 4; i++) { const s = v.getUint32(i, true); if (s === 0x04034b50) v.setUint16(i + 8, 9, true); if (s === 0x02014b50) v.setUint16(i + 10, 9, true); }
-    const r = await prepareUploadSelection([new File([zip], "w.zip")], true);
+    const r = await prepareUploadSelection([new File([zip as BlobPart], "w.zip")], true);
     expect(r.messages).toEqual([ZIP_COMPRESSION_ERROR]);
   });
 
-  it.each([60, 130, 250])("a %i MB MP4 is accepted and uploads once started automatically", async (mb) => {
+  it.each([60, 130, 250])("a %i MB MP4 is accepted and uploads once started automatically", async (mb: number) => {
     const sent: number[] = [];
     const q = new FileUploadQueue<File, string>(async f => { sent.push(f.size); return "doc"; });
     q.add([sized("v.mp4", "video/mp4", mb * MB)]); q.start();
