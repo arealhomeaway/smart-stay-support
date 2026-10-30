@@ -1,6 +1,7 @@
 import { expect, it } from "bun:test";
 import { loadProgramAggregate } from "../owner-participation.server";
 import { loadPrograms } from "../owner-program.server";
+import { unretiredOwnerWork } from "../owner-activity-queries";
 
 function client() {
   const sources: Record<string, Record<string, unknown>[]> = {
@@ -31,4 +32,10 @@ it("staff program activities exclude the withdrawn October 29 review", async () 
 it("program queue does not count archived reviews as waiting homeowner work", async () => {
   const result = await loadPrograms(client() as never);
   expect(result.rows[0]?.openTasks).toBe(1);
+});
+
+it("retired work items never appear in current staff or homeowner activity lists", () => {
+  const rows = [{ id: "live", retired_at: null }, { id: "retired", retired_at: "2026-10-27" }];
+  const actual = unretiredOwnerWork({ is: (column, value) => rows.filter(row => row[column as "retired_at"] === value) });
+  expect(actual.map(row => row.id)).toEqual(["live"]);
 });

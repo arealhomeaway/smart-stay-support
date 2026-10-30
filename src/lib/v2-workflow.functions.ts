@@ -566,7 +566,7 @@ async function withResources(sb: import("@supabase/supabase-js").SupabaseClient,
   }));
 }
 
-/** Staff view: every Opportunity on one home plus its enrolment, files and Tasks. */
+/** Staff view: current Opportunities on one home plus its enrolment, files and Tasks. */
 export const readOwnerCollaboration = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ propertyId: z.string().uuid() }).parse(d))
