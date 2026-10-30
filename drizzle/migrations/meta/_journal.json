@@ -1583,6 +1583,27 @@
       "when": 1793400343346,
       "tag": "0225_lee_corrected_check_failure_restore",
       "breakpoints": true
+    },
+    {
+      "idx": 226,
+      "version": "7",
+      "when": 1793400841284,
+      "tag": "0226_lee_alert_history_final",
+      "breakpoints": true
+    },
+    {
+      "idx": 227,
+      "version": "7",
+      "when": 1793400883251,
+      "tag": "0227_lee_homeowner_correction_final",
+      "breakpoints": true
+    },
+    {
+      "idx": 228,
+      "version": "7",
+      "when": 1793401026142,
+      "tag": "0228_remove_completed_lee_correction",
+      "breakpoints": true
     }
   ]
 }
