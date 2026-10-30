@@ -1,5 +1,10 @@
 # Roadmap — approved build work, NO publish
 
+## Oct 30 Homeowners fix and Lee identity correction
+- [ ] Fix property Homeowners visibility and hide archived/retired staff activities; render/rule tests and full suite
+- [ ] Inventory Lee program history and stage exact shared-alert read undo
+- [ ] Stage and execute Lee swap only if canonical account creation can meet the approved atomic transaction requirement; verify welcome and memberships without sign-in
+
 ## Oct 30 co-owner support (approved build/test only)
 - [x] Pass 2 subset: classify 59 functions plus 10 live/storage policies; reverify all 59 hashes/ACLs; stage six shared-helper substitutions plus one policy with exact undo; 13 isolated live-definition tests and full suite 1813 pass, 5 skip, 0 fail (15-second timeout for existing large ZIP test)
 - [x] Stage membership foundation, pending primary backfill draft, absence undo and isolated access tests
