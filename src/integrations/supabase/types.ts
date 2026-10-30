@@ -14750,6 +14750,15 @@ export type Database = {
         }
         Returns: string
       }
+      add_program_co_owner: {
+        Args: {
+          _account_id?: string
+          _email: string
+          _full_name: string
+          _program_id: string
+        }
+        Returns: Json
+      }
       after_handoff_access: {
         Args: never
         Returns: {
@@ -15663,6 +15672,25 @@ export type Database = {
           status: string
         }[]
       }
+      read_program_attribution: {
+        Args: { _program_id: string }
+        Returns: {
+          display_name: string
+          kind: string
+          ref_id: string
+          user_id: string
+        }[]
+      }
+      read_program_homeowners: {
+        Args: { _program_id: string }
+        Returns: {
+          added_at: string
+          email: string
+          full_name: string
+          role: string
+          user_id: string
+        }[]
+      }
       reconcile_onboarding_delivery: {
         Args: {
           _attempt_id: string
@@ -15813,6 +15841,10 @@ export type Database = {
       remove_owner_library_video: {
         Args: { _library_id: string }
         Returns: number
+      }
+      remove_program_co_owner: {
+        Args: { _program_id: string; _user_id: string }
+        Returns: Json
       }
       remove_vendor_custom_field: {
         Args: { _field_id: string }
