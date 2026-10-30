@@ -3,9 +3,11 @@ import { listOwnerFileRecords, type Viewer } from "../attachments.server";
 
 const owner: Viewer = { userId: "owner", roles: ["owner"] };
 
-function fileRecordsClient(title: string, enrolled = true) {
+function fileRecordsClient(title: string, enrolled = true, programs: { owner?: string[]; member?: string[] } = { owner: ["program"] }) {
   const reads: string[] = [];
   const rows: Record<string, Record<string, unknown>[]> = {
+    owner_programs: (programs.owner ?? []).map((id) => ({ id })),
+    program_members: (programs.member ?? []).map((program_id) => ({ program_id })),
     owner_program_properties: enrolled
       ? [{ property_id: "property", inclusion_status: "included", archived_at: null }]
       : [],
@@ -110,5 +112,18 @@ it("restricts the owner file index to external owner accounts; staff retain thei
 it("does not read Ticket records when the existing enrollment check provides no properties", async () => {
   const { client, reads } = fileRecordsClient("PRIVATE internal title", false);
   expect(await listOwnerFileRecords(owner, client as never)).toEqual({ records: [] });
-  expect(reads).toEqual(["owner_program_properties"]);
+  expect(reads).toEqual(["owner_programs", "program_members", "owner_program_properties"]);
+});
+
+it("gives an active co-owner the same file records as the main homeowner", async () => {
+  const main = await listOwnerFileRecords(owner, fileRecordsClient("PRIVATE t").client as never);
+  const co = await listOwnerFileRecords(owner, fileRecordsClient("PRIVATE t", true, { member: ["program"] }).client as never);
+  expect(co).toEqual(main);
+  expect(co.records.length).toBe(1);
+});
+
+it("returns nothing, and reads no homes, for a login that is neither main homeowner nor active co-owner", async () => {
+  const { client, reads } = fileRecordsClient("PRIVATE t", true, {});
+  expect(await listOwnerFileRecords(owner, client as never)).toEqual({ records: [] });
+  expect(reads).toEqual(["owner_programs", "program_members"]);
 });
