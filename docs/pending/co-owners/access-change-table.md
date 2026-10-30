@@ -111,4 +111,4 @@ Converted: 16 functions. Inherited without change: 3. Recipient/identity, attrib
 | public.resubmit_owner_time_entry | inherits | Unchanged: Own-entry rule (owner_user_id=auth.uid()) is the requested OWN-entry scope; program authority via converted lock_owner_time_program; copies original author. |
 | public.read_owner_programs | inherits | Unchanged: Access via converted private.owner_program_readable; owner_user_id is primary-identity output only. |
 
-All 29 access gates are now covered: 6 in 03, 16 in 04, 3 inherit, 4 were mixed rows already accounted for by 03 helpers. App-side checks in src/lib (findOwnerProgram, listOwnerFileRecords) still compare the primary and move in pass 3B with the code that depends on 04.
+All 29 access gates are now covered: 6 in 03, 16 in 04, 3 inherit, 4 are table policies (1 converted in 03, 3 inherit the 03 helpers). App-side checks in src/lib (findOwnerProgram, listOwnerFileRecords) still compare the primary and move in pass 3B with the code that depends on 04.
