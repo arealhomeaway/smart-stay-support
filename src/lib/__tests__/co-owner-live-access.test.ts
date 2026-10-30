@@ -7,7 +7,7 @@ type Fn = { schema: string; name: string; signature: string; definition_base64: 
 type Policy = { schemaname: string; tablename: string; policyname: string; cmd: string; qual: string | null; with_check: string | null; permissive: string; roles: string[] };
 const root = 'docs/pending/co-owners/';
 const live = JSON.parse(readFileSync(root+'pass2-live-reference.json','utf8')) as {functions: Fn[]; policies: Policy[]};
-const proof = JSON.parse(readFileSync(root+'pass2-undo-proof.json','utf8')) as {functions: (Fn & {replacement_base64: string; changes: [string,string][]})[]};
+const proof = JSON.parse(readFileSync(root+'pass2-undo-proof.json','utf8')) as {functions: (Fn & {replacement_base64: string; changes: [string,string][]})[]; policy: Policy};
 const uid = (n:number) => `00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
 const primary=uid(1),coOwner=uid(2),other=uid(3),staff=uid(4),a=uid(10),b=uid(20),ha=uid(30),hb=uid(40),oa=uid(50),ob=uid(60),wa=uid(70),wb=uid(80);
 let db:PGlite;
@@ -99,6 +99,13 @@ describe('pending co-owner shared gates from captured LIVE definitions',()=>{
  it('anonymous-executable SECURITY DEFINER identity set and exact ACLs are unchanged',async()=>{
   expect(beforeExposure.length).toBe(1);expect(await exposure()).toEqual(beforeExposure);expect(await acls()).toEqual(aclBefore);
  });
+ it('all substituted live definitions match the staged bytes exactly',async()=>{
+  for(const f of proof.functions){
+   const types=f.signature.split(',').map(arg=>arg.trim().split(' ').slice(1).join(' ')).join(',');
+   const result=await db.query<{definition:string}>('SELECT pg_get_functiondef($1::regprocedure) definition',[f.schema+'.'+f.name+'('+types+')']);
+   expect(result.rows[0]?.definition).toBe(decode(f.replacement_base64));
+  }
+ });
  it('archive, inclusion, canonical-owner, banned-account and demo conditions retain their original behavior',async()=>{
   await db.exec(`UPDATE owner_program_properties SET inclusion_status='excluded' WHERE program_id='${a}';`);
   expect((await gates(coOwner,a,ha,wa))?.included).toBe(false);expect((await gates(coOwner,a,ha,wa))?.sees).toBe(true);
@@ -111,6 +118,9 @@ describe('pending co-owner shared gates from captured LIVE definitions',()=>{
   await db.exec(`UPDATE owner_programs SET is_demo=false WHERE id='${a}'; UPDATE owner_reviews SET status='prepared' WHERE id='${uid(100)}';`);
   expect((await rows(coOwner)).some(x=>x.id===uid(110))).toBe(false);
   await db.exec(`UPDATE owner_reviews SET status='released' WHERE id='${uid(100)}';`);
+  await db.exec(`UPDATE property_owners SET active=false WHERE id='${oa}';`);
+  expect((await gates(coOwner,a,ha,wa))?.readable).toBe(false);
+  await db.exec(`UPDATE property_owners SET active=true WHERE id='${oa}';`);
  });
  it('undo restores every exact live function definition, original policy behavior and ACL',async()=>{
   await restore();
@@ -120,6 +130,12 @@ describe('pending co-owner shared gates from captured LIVE definitions',()=>{
    expect(r.rows[0]?.definition).toBe(decode(f.definition_base64));
   }
   expect(await acls()).toEqual(aclBefore);expect(await exposure()).toEqual(beforeExposure);expect(await rows(coOwner)).toEqual([]);await convert();
+ });
+ it('undo restores the exact catalog policy predicate, roles, command and permissiveness',async()=>{
+  await restore();
+  const result=await db.query<Policy>(`SELECT schemaname,tablename,policyname,cmd,qual,with_check,permissive,roles FROM pg_policies WHERE schemaname=$1 AND tablename=$2 AND policyname=$3`,[proof.policy.schemaname,proof.policy.tablename,proof.policy.policyname]);
+  const original=live.policies.find(p=>p.policyname===proof.policy.policyname);
+  expect(result.rows[0]).toEqual(original);await convert();
  });
  it('staged replacements differ only by the enumerated owner predicates',()=>{
   for(const f of proof.functions){let s=decode(f.definition_base64);for(const [a,b] of f.changes)s=s.replace(a,b);expect(s).toBe(decode(f.replacement_base64));expect(sha(decode(f.definition_base64))).toBe(f.sha256);}
