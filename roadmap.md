@@ -5,7 +5,9 @@
 - [x] Atomic Project Team save and exact pending undo (not applied)
 - [x] One business-decision approval rule, pending enforcement and separate three-template correction (not applied)
 - [x] First homeowner conversation visibility, retained enrollment receipt, original review-date eligibility
-- [ ] Focused and full tests, automatic type/build checks; no publish or live application
+- [x] Focused and full tests (1790 pass, 5 skipped), automatic type/build checks; isolated receipt and first-message screen checks; no publish or live application
+- [ ] Published practice Save reproduction: blocked by missing explicit practice-home label; template test skipped because no demo/test template exists
+- [ ] Live Project Team and database completion acceptance: blocked until separately authorized pending SQL is applied
 
 ## Oct 29 address labels (approved code/test only, no live writes)
 - [x] Shared code/database formatting and shared property search across global/Ticket/onboarding/lead entry points
