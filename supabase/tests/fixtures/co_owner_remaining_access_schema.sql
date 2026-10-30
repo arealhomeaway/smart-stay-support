@@ -31,7 +31,7 @@ CREATE TABLE public.approvals(id uuid PRIMARY KEY,entity_type text,entity_id uui
 CREATE TABLE public.owner_opportunity_library(id uuid PRIMARY KEY,active boolean);
 CREATE TABLE public.owner_time_entries(id uuid PRIMARY KEY,program_id uuid,owner_user_id uuid,minutes int,activity text,is_demo boolean DEFAULT false,owner_update_snapshot jsonb);
 CREATE TABLE public.owner_time_entry_properties(entry_id uuid,property_id uuid);
-CREATE TABLE public.owner_notifications(id uuid PRIMARY KEY,program_id uuid,owner_user_id uuid,kind text,priority text,ticket_id uuid,review_id uuid,
+CREATE TABLE public.owner_notifications(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),program_id uuid,owner_user_id uuid,kind text,priority text,ticket_id uuid,review_id uuid,
  read_at timestamptz,created_at timestamptz DEFAULT now(),title text,body text,action_path text,email_status text,is_demo boolean DEFAULT false);
 CREATE TABLE public.owner_reviews(id uuid PRIMARY KEY,program_id uuid);
 CREATE TABLE public.tickets(id uuid PRIMARY KEY,property_id uuid,is_demo boolean);
