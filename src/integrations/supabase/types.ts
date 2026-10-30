@@ -15993,15 +15993,6 @@ export type Database = {
         Args: { _on: boolean; _reason: string; _user: string }
         Returns: undefined
       }
-      set_onboarding_project_role: {
-        Args: {
-          _project_id: string
-          _reassign_pending?: boolean
-          _role_code: string
-          _user_id: string
-        }
-        Returns: Json
-      }
       set_onboarding_task_file_sources: {
         Args: { _source_ids: string[]; _task_id: string }
         Returns: number
