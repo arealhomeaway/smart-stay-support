@@ -376,7 +376,7 @@ export function OpportunityEditor({
               />
               <ViewPropertyFilesLink propertyId={propertyId} />
             </div>
-            {editing !== null ? <MultiFileUpload key={key} upload={upload} onBusyChange={setUploading} disabled={mutation.isPending} onResults={ids => {
+            {editing !== null ? <MultiFileUpload key={key} autoStart upload={upload} onBusyChange={setUploading} disabled={mutation.isPending} onResults={ids => {
               setResources(cur => [...cur.filter(r => r.kind !== "file" || !uploadedIds.includes(r.document_id)), ...ids.map(id => ({ kind: "file" as const, document_id: id }))]);
               setUploadedIds(ids);
               void qc.invalidateQueries({ queryKey: ["owner-collaboration", propertyId] });
@@ -425,6 +425,7 @@ export function OpportunityEditor({
           </div></>}
         </div>}
         {operations && !operations.ready ? <p role="status" className="text-sm text-muted-foreground">Operations sending will be available after the approved update. Nothing has been sent.</p> : null}
+        {uploading ? <p role="status" className="text-sm text-muted-foreground">Files are still uploading. Sending unlocks when every file shows Done, or remove the cause shown under any file marked Failed.</p> : null}
         <DialogFooter className="gap-2">
           {operations ? <><Button variant="outline" disabled={mutation.isPending} onClick={()=>preview?setPreview(false):onClose()}>Back</Button>{preview?<Button disabled={!canSubmit||!operations.ready} onClick={()=>mutation.mutate(true)}>{mutation.isPending?'Sending...':'Send'}</Button>:<Button disabled={!canSubmit} onClick={()=>setPreview(true)}>Preview</Button>}</> : <>{isDraft ? <Button variant="outline" disabled={!canSubmit || (editing === "new" && priority)} onClick={() => mutation.mutate(false)}>Save draft</Button> : null}
           <Button disabled={!canSubmit} onClick={() => mutation.mutate(true)}>{isDraft ? "Send to homeowner" : "Save changes"}</Button></>}
