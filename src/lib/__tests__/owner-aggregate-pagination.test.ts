@@ -74,6 +74,11 @@ it("includes late corrections and all program-scoped property links in aggregate
           filters.push([key, value]);
           return query;
         },
+        is: (key: string, value: unknown) => {
+          expect(table).toBe("owner_reviews");
+          expect([key, value]).toEqual(["archived_at", null]);
+          return query;
+        },
         order: (key: string) => {
           order.push(key);
           return query;

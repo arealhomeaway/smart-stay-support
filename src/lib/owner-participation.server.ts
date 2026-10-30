@@ -187,6 +187,7 @@ export async function loadProgramAggregate(
               { count: "exact" },
             )
             .eq("program_id", programId)
+            .is("archived_at", null)
             .order("sort_order")
             .order("id")
             .range(from, to),

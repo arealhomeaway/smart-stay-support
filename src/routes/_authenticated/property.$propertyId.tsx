@@ -186,6 +186,7 @@ function PropertyHubPage() {
             propertyName={hub.property.name}
             canManage={hub.viewer.supervisor}
             canEnroll={can("active_owner_enroll")}
+            isDemo={hub.property.isDemo}
             lifecycleStatus={hub.property.lifecycleStatus ?? null}
           />
         </div>

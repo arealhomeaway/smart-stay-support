@@ -158,7 +158,8 @@ export async function loadPrograms(supabase: Client, demo = false) {
         ),
       supabase
         .from("owner_reviews")
-        .select("id, program_id, property_id, status, respond_by, source_type, available_from"),
+        .select("id, program_id, property_id, status, respond_by, source_type, available_from")
+        .is("archived_at", null),
       supabase
         .from("owner_time_entries")
         .select("id, program_id, minutes, review_status, amends_entry_id, entry_date")

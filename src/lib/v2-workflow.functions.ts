@@ -573,7 +573,7 @@ export const readOwnerCollaboration = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const sb = context.supabase;
     const [opps, tasks, home, files] = await Promise.all([
-      sb.from("work_items").select(COLLAB_COLUMNS).eq("kind", "opportunity").eq("property_id", data.propertyId).neq("status", "archived").order("created_at", { ascending: false }),
+      sb.from("work_items").select(COLLAB_COLUMNS).eq("kind", "opportunity").eq("property_id", data.propertyId).neq("status", "archived").is("retired_at", null).order("created_at", { ascending: false }),
       sb.from("onboarding_tasks").select("id, title").eq("property_id", data.propertyId).is("archived_at", null).order("title"),
       sb.from("properties").select("actual_closing_on, planned_closing_on").eq("id", data.propertyId).single(),
       sb.from("documents").select("id, title, original_filename, category, note, work_item_id, uploaded_by, uploaded_at, created_at").eq("property_id", data.propertyId).is("deleted_at", null).is("archived_at", null).eq("upload_status", "stored").order("created_at", { ascending: false }).limit(1000),

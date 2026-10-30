@@ -49,6 +49,7 @@ export function ActiveOwnerPanel({
   propertyName,
   canManage,
   canEnroll = false,
+  isDemo = false,
   lifecycleStatus = null,
 }: {
   propertyId: string;
@@ -56,6 +57,7 @@ export function ActiveOwnerPanel({
   canManage: boolean;
   /** Onboarding Director seat or Admin: enroll / finish Active Owner setup. */
   canEnroll?: boolean;
+  isDemo?: boolean;
   /** The home's lifecycle, so enrolment can offer to start onboarding too. */
   lifecycleStatus?: string | null;
 }) {
@@ -70,8 +72,8 @@ export function ActiveOwnerPanel({
   const inOnboarding = lifecycleStatus === "onboarding";
 
   const programs = useQuery({
-    queryKey: ["owner-programs", "property", propertyId],
-    queryFn: () => loadPrograms({ data: {} }),
+    queryKey: ["owner-programs", "property", propertyId, isDemo],
+    queryFn: () => loadPrograms({ data: { demo: isDemo } }),
   });
 
   const row = (programs.data?.rows ?? []).find((p) =>
@@ -81,7 +83,10 @@ export function ActiveOwnerPanel({
   const detail = useQuery({
     queryKey: ["owner-program-detail", row?.id],
     enabled: Boolean(row?.id),
-    queryFn: () => loadDetail({ data: { programId: row!.id } }),
+    queryFn: () => {
+      if (!row) throw new Error("Choose an enrolled home first.");
+      return loadDetail({ data: { programId: row.id } });
+    },
   });
 
   const refresh = () => {
@@ -121,14 +126,16 @@ export function ActiveOwnerPanel({
 
 
   const changeStatus = useMutation({
-    mutationFn: (status: string) =>
-      statusFn({
+    mutationFn: (status: string) => {
+      if (!row || !detail.data) throw new Error("Refresh the program before changing its status.");
+      return statusFn({
         data: {
-          programId: row!.id,
-          expectedVersion: detail.data!.activationVersion as string,
+          programId: row.id,
+          expectedVersion: detail.data.activationVersion as string,
           status: status as "draft",
         },
-      }),
+      });
+    },
     onSuccess: () => {
       toast.success("Program status updated.");
       setPendingStatus(null);
@@ -155,6 +162,10 @@ export function ActiveOwnerPanel({
     >
       {programs.isLoading ? (
         <p className="text-sm text-muted-foreground">Checking enrollment…</p>
+      ) : programs.isError ? (
+        <p role="alert" className="text-sm text-destructive">
+          {programs.error instanceof Error ? programs.error.message : "Could not check this home's enrollment. Refresh and try again."}
+        </p>
       ) : row ? (
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
@@ -264,13 +275,13 @@ export function ActiveOwnerPanel({
           )}
         </div>
       )}
-      {canEnroll && row?.ownerLinked ? <ProgramHomeowners programId={row.id} /> : null}
+      {canEnroll && row ? <ProgramHomeowners programId={row.id} /> : null}
       <ActualClosingCorrection propertyId={propertyId} />
       {canEnroll ? <ActiveOwnerEnrollForm
         propertyId={propertyId}
         propertyName={propertyName}
         finishing={Boolean(row)}
-        showTrigger={!programs.isLoading && (!row || !row.ownerLinked || row.status === "draft")}
+        showTrigger={programs.isSuccess && (!row || !row.ownerLinked || row.status === "draft")}
         onDone={refresh}
       /> : null}
     </SectionCard>
