@@ -9,7 +9,7 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Co-owner access must use the staged private.is_program_member predicate while primary email identity stays owner_programs.owner_user_id; stage access-only substitutions against captured live definitions with exact ACL-preserving undo and isolated characterization tests, and do not enable partial conversions or member writes before audited provisioning is available. Why: shared authority without widening staff access or duplicating delivery.
+- Co-owner access must use private.is_program_member (app side: isActiveProgramMember / ownerMemberProgramIds) while primary email identity stays owner_programs.owner_user_id; co-owners are added/removed only via add_program_co_owner / remove_program_co_owner, with logins from the shared findOrCreateOwnerLogin path; stage substitutions against captured live definitions with exact ACL-preserving undo and isolated tests. Why: shared authority without widening staff access or duplicating delivery.
 
 - Navigation: every page must be enterable/exitable keeping property/department context; menus, breadcrumbs, Back come only from `src/lib/shell-nav.ts` + `ShellNav` (`useShellPageLabel` names a view). Why: one shell.
 - Help & Feedback: rendered once in `AppShell` (`HelpFeedback.tsx`), never per page; files `help_tickets`, never Operations tickets. Why: one entry point.
