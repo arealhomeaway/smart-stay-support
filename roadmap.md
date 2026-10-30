@@ -1,5 +1,12 @@
 # Roadmap — approved build work, NO publish
 
+## Oct 30 co-owner support (approved build/test only)
+- [ ] Stage membership foundation, primary backfill, exact undo and isolated access tests
+- [ ] Inventory live owner access objects and preserve primary email routing
+- [ ] Convert all owner access policies/functions and test full schema in isolation
+- [ ] Build guarded co-owner account linking/add/remove, shared portal and notification reads
+- [ ] Full tests and automatic type/build checks; report coherent scope and remaining work
+
 ## Oct 30 code-review fix pass (approved, pending database only)
 - [x] Attempt Emily's published practice-home test; stopped before edits because the home lacked an explicit practice label
 - [x] Atomic Project Team save and exact pending undo (not applied)
