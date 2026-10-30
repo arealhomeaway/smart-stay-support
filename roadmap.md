@@ -1,5 +1,13 @@
 # Roadmap — approved build work, NO publish
 
+## Oct 30 co-owner support (approved build/test only)
+- [x] Stage membership foundation, pending primary backfill draft, absence undo and isolated access tests
+- [x] Inventory 59 live owner_user_id functions and one direct policy with verified base64/SHA256 and grants; preserve all current routing
+- [ ] Convert all owner access policies/functions and test full schema in isolation
+- [ ] Build guarded co-owner account linking/add/remove, shared portal and notification reads
+- [x] Full suite: 1800 pass, 5 skipped; automatic local build OK; no application access changes
+- [ ] Complete replacement inventory, backfill row-scoped undo, provisioning, full production-schema policy tests and authenticated acceptance: not built in this foundation part
+
 ## Oct 30 code-review fix pass (approved, pending database only)
 - [x] Attempt Emily's published practice-home test; stopped before edits because the home lacked an explicit practice label
 - [x] Atomic Project Team save and exact pending undo (not applied)

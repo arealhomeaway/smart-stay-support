@@ -9,6 +9,8 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
+- Co-owner access must use the staged private.is_program_member predicate while primary email identity stays owner_programs.owner_user_id; do not enable partial access conversions or member writes before audited provisioning is available. Why: shared authority without widening staff access or duplicating delivery.
+
 - Navigation: every page must be enterable/exitable keeping property/department context; menus, breadcrumbs, Back come only from `src/lib/shell-nav.ts` + `ShellNav` (`useShellPageLabel` names a view). Why: one shell.
 - Help & Feedback: rendered once in `AppShell` (`HelpFeedback.tsx`), never per page; files `help_tickets`, never Operations tickets. Why: one entry point.
 - Homeowner⇄ARHA threads: append-only `owner_request_messages` via RPCs; status derived from last speaker; explicit fresh asks only via `request_owner_response` (event `response_requested`, open until an owner answer, `openResponseRequest`). Resolving/reopening an Opportunity never changes its internal Task. Why: no double-stored state; owner participation never gates internal work.
