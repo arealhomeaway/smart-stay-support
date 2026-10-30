@@ -1,10 +1,11 @@
 # Roadmap — approved build work, NO publish
 
 ## Oct 30 co-owner support (approved build/test only)
-- [ ] Pass 2: classify all captured functions and matching live/storage policies; stage exact access-only substitutions and undo; execute converted live definitions in isolation
+- [x] Pass 2 subset: classify 59 functions plus 10 live/storage policies; reverify all 59 hashes/ACLs; stage six shared-helper substitutions plus one policy with exact undo; 13 isolated live-definition tests and full suite 1813 pass, 5 skip, 0 fail (15-second timeout for existing large ZIP test)
 - [x] Stage membership foundation, pending primary backfill draft, absence undo and isolated access tests
 - [x] Inventory 59 live owner_user_id functions and one direct policy with verified base64/SHA256 and grants; preserve all current routing
 - [ ] Convert all owner access policies/functions and test full schema in isolation
+- [ ] Pass 3 also needs remaining direct gates, hours/history credit and author guards, shared notifications, addressed-approval/actor separation, file-signing and full production RLS dependency closure; demo co-owner audit provisioning remains deliberately unconverted
 - [ ] Build guarded co-owner account linking/add/remove, shared portal and notification reads
 - [x] Full suite: 1800 pass, 5 skipped; automatic local build OK; no application access changes
 - [ ] Complete replacement inventory, backfill row-scoped undo, provisioning, full production-schema policy tests and authenticated acceptance: not built in this foundation part
