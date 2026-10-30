@@ -1,7 +1,7 @@
 import { expect, it } from "bun:test";
-import { loadProgramAggregate } from "../owner-participation.server";
-import { loadPrograms } from "../owner-program.server";
-import { unretiredOwnerWork } from "../owner-activity-queries";
+import { loadProgramAggregate } from "../src/lib/owner-participation.server";
+import { loadPrograms } from "../src/lib/owner-program.server";
+import { unretiredOwnerWork } from "../src/lib/owner-activity-queries";
 
 function client() {
   const sources: Record<string, Record<string, unknown>[]> = {
