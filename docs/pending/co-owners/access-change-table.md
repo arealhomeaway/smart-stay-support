@@ -112,3 +112,11 @@ Converted: 16 functions. Inherited without change: 3. Recipient/identity, attrib
 | public.read_owner_programs | inherits | Unchanged: Access via converted private.owner_program_readable; owner_user_id is primary-identity output only. |
 
 All 29 access gates are now covered: 6 in 03, 16 in 04, 3 inherit, 4 are table policies (1 converted in 03, 3 inherit the 03 helpers). App-side checks in src/lib (findOwnerProgram, listOwnerFileRecords) still compare the primary and move in pass 3B with the code that depends on 04.
+
+## Pass 3B
+| Object | Class | Old check | New check |
+|---|---|---|---|
+| private.demo_owner_link_ok | ACCESS GATE (practice homes) | p.owner_user_id=_actor and latest Admin demo link audit | private.is_program_member(p.id,_actor) and (latest Admin demo link audit OR active co_owner membership added by an Admin) |
+| src findOwnerProgram | app ACCESS | program.owner_user_id === userId | main homeowner or active program_members row |
+| src listOwnerFileRecords | app ACCESS | owner_programs.owner_user_id = viewer | programs where viewer is main homeowner or active member; each home re-checked by owner_property_access |
+| src owner-welcome / owner-notify / homeowners / act-as / owner-ticket-alert | RECIPIENT/IDENTITY | owner_user_id | unchanged: email recipient and main homeowner identity |

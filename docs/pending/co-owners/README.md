@@ -34,3 +34,9 @@ Convert the remaining direct access checks, including actor-specific hour/notifi
 - `04_access_remaining.sql` and `undo/04_access_remaining.sql`: 16 remaining direct owner gates now use `private.is_program_member`. Hours stay attributed to the logging member; entry reads include past entries of removed members; notification rows stay addressed to the primary and are shared by program; email recipients unchanged. `respond_owner_opportunity` adds a row lock and rejects a second decision once the linked approval is approved.
 - `pass3a-live-reference.json`: exact live bytes (base64 + SHA256 + ACL) of the 16 targets, 3 inherited functions and 16 dependencies.
 - Apply order: 01, 02 (with receipt), 03, 04. Undo order: undo/04, undo/03, undo/01.
+## Pass 3B
+- `05_provisioning.sql` / `undo/05_provisioning.sql`: `add_program_co_owner`, `remove_program_co_owner`, `read_program_homeowners` (staff roster) and `read_program_attribution` (member names and who answered). Authenticated EXECUTE only; Onboarding Director or Admin decided inside each function. Replaces exactly one live function, `private.demo_owner_link_ok`, so an Admin-added practice co-owner passes the practice-home check; undo restores its live bytes (sha256 0315fe6e...). Proof in `pass3b-live-reference.json`.
+- Login creation stays in the canonical server path (`findOrCreateOwnerLogin`); the database asks for a login (`needsAccount`) before anything is written, then links it, grants owner only, records `co_owner_added` / `co_owner_removed` events plus audit, and queues the co-owner's own welcome (unique per program and login).
+- Practice homes: Admin only, `@resolve-test.invalid` emails only; welcome held.
+- Re-adding a removed co-owner does not queue a second welcome.
+- Apply order: 01, 02 (with receipt), 03, 04, 05. Undo order: undo/05, undo/04, undo/03, undo/01.
