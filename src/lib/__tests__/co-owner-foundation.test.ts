@@ -50,6 +50,9 @@ describe('co-owner pending membership foundation',()=>{
       EXISTS(SELECT 1 FROM pg_proc p,aclexplode(p.proacl) a WHERE p.oid='private.is_program_member(uuid,uuid)'::regprocedure AND a.grantee=0 AND a.privilege_type='EXECUTE') pub`);
     expect(r.rows[0]).toEqual({anon:false,pub:false});
     expect(await member(programA,null)).toBe(false);
+    const exposure=await db.query<{n:number}>(`SELECT count(*)::int n FROM pg_proc p JOIN pg_namespace s ON s.oid=p.pronamespace
+      WHERE s.nspname IN ('public','private') AND p.prosecdef AND has_function_privilege('anon',p.oid,'EXECUTE')`);
+    expect(exposure.rows[0]?.n).toBe(0);
   });
   it('members cannot directly add another account',async()=>{
     await db.exec('SET ROLE authenticated');
