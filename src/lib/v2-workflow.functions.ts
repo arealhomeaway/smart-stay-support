@@ -10,6 +10,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { canAcceptHandoff } from "./home-context";
+import { homeownerApprovalRequired } from "./owner-dependency";
 
 export const FUNCTIONAL_ROLES = [
   { code: "onboarding_director", label: "Director of Onboarding" },
@@ -187,6 +188,11 @@ export const saveTemplateStepV2 = createServerFn({ method: "POST" })
       const bad = data.condition.all.find((c) => !isKnownClause(c));
       if (bad) throw new Error(`Unsupported condition ${bad.field}=${bad.value}.`);
     }
+    const { data: prior, error: priorError } = await context.supabase.from("onboarding_template_tasks")
+      .select("owner_dependency, requires_owner_approval").eq("id", data.stepId).single();
+    fail(priorError);
+    if (!prior) throw new Error("That template step was not found.");
+    const dependency = data.ownerDependency === undefined ? prior.owner_dependency : data.ownerDependency === "none" ? null : data.ownerDependency;
     const { error } = await context.supabase
       .from("onboarding_template_tasks")
       .update({
@@ -198,7 +204,8 @@ export const saveTemplateStepV2 = createServerFn({ method: "POST" })
         is_required: data.isRequired,
         blocks_handoff: data.blocksHandoff,
         is_active: data.isActive,
-        ...(data.ownerDependency ? { owner_dependency: data.ownerDependency === "none" ? null : data.ownerDependency } : {}),
+        ...(data.ownerDependency ? { owner_dependency: dependency } : {}),
+        requires_owner_approval: homeownerApprovalRequired({ owner_dependency: dependency, requires_owner_approval: prior.requires_owner_approval }),
         module: data.module || null,
         offset_days: data.offsetDays,
         schedule_anchor: data.offsetDays === null ? null : (data.scheduleAnchor ?? "actual_access"),
