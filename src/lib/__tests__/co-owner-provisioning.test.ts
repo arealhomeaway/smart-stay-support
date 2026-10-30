@@ -112,7 +112,7 @@ INSERT INTO audit_log(actor_id,action,entity_type,entity_id,after_value) VALUES(
       const acl = (await db.query<{ a: string }>(`SELECT proacl::text a FROM pg_proc WHERE proname=$1`, [f])).rows[0]!.a;
       expect(acl).toContain("authenticated=X");
       expect(acl).not.toContain("anon=");
-      expect(acl).not.toMatch(/(^|[{,])=X/);
+      expect(/(^|[{,])=X/.test(acl)).toBe(false);
     }
   });
 

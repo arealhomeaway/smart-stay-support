@@ -42,7 +42,7 @@ it("never chooses a legacy account's first program or another account's program"
         eq: (k: string, v: unknown) => ((f[k] = v), q),
         is: () => q,
         limit: async () => ({
-          data: members.filter((m) => m.program_id === f.program_id && m.user_id === f.user_id),
+          data: members.filter((m) => m.program_id === f["program_id"] && m.user_id === f["user_id"]),
           error: null,
         }),
       };
