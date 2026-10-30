@@ -38,5 +38,30 @@
       }
     ],
     "anonCount": 69
+  },
+  "phaseB_rerun": {
+    "status": "STOPPED AND RESTORED",
+    "failureStep": 3,
+    "failure": "Live function definition differs from 02_swap.sql beyond trailing whitespace: PostgreSQL expands RETURNS, LANGUAGE, SECURITY DEFINER and SET search_path into separately formatted lines. Migration file bytes match under the trailing-whitespace rule. No correction RPC was executed.",
+    "appliedMigrations": [
+      "0220_lee_shared_alert_history_reapply.sql",
+      "0221_lee_correction_reapply.sql"
+    ],
+    "restorationMigration": "0222_lee_reapply_stop_restore.sql",
+    "checks": {
+      "readerSha": "1f1c44d6b8ca56ad96d76a80110aafd08abd30c1ceaf2414c598d36cbbadc5eb",
+      "readerAcl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "temporaryFunctionAbsent": true,
+      "originalPrimaryAndMembershipRestored": true,
+      "profile": "Ryan Lee",
+      "unrevokedInvites": 2,
+      "welcomeRows": 0,
+      "ryanMemberships": 0,
+      "entriesHash": "b31bd2afd05e7253deaadf23e5dcef75",
+      "otherProgramsHash": "4de480fd741cb2eb8ca03b2df009f21f",
+      "propertyOwnerHash": "d2853d2b139b25f57cc03afd08e8a8d9",
+      "anonSetHash": "70f8c5601ea3f18418113225505fd496",
+      "anonCount": 69
+    }
   }
 }
