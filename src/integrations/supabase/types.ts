@@ -14815,10 +14815,6 @@ export type Database = {
         }
         Returns: undefined
       }
-      apply_lee_homeowner_correction: {
-        Args: { _undo?: boolean }
-        Returns: Json
-      }
       archive_attachment: {
         Args: { _actor_id: string; _document_id: string; _reason?: string }
         Returns: string
