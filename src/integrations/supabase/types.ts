@@ -9530,6 +9530,47 @@ export type Database = {
         }
         Relationships: []
       }
+      program_members: {
+        Row: {
+          added_at: string
+          added_by: string | null
+          id: string
+          program_id: string
+          removed_at: string | null
+          removed_by: string | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          added_by?: string | null
+          id?: string
+          program_id: string
+          removed_at?: string | null
+          removed_by?: string | null
+          role: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          added_by?: string | null
+          id?: string
+          program_id?: string
+          removed_at?: string | null
+          removed_by?: string | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_members_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "owner_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       properties: {
         Row: {
           access: Json
