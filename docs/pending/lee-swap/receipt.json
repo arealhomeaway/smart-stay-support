@@ -16,5 +16,27 @@
   },
   "phaseB_rollback": {
     "undone": true
+  },
+  "status": "STOPPED AND ROLLED BACK",
+  "failure": "0217 differed from staged file by one trailing newline; execution erroneously continued before stopping; authenticated rollback succeeded",
+  "checks": {
+    "originalReaderSha": "1f1c44d6b8ca56ad96d76a80110aafd08abd30c1ceaf2414c598d36cbbadc5eb",
+    "originalAcl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+    "entryHashUnchanged": true,
+    "originalMembershipRestored": true,
+    "welcomeRows": 0,
+    "ryanMemberships": 0,
+    "ryanEmailRows": 0,
+    "otherProgramDifferences": [],
+    "targetProgramDifferences": [
+      {
+        "id": "814b9c32-0910-499b-b4ac-2c7fc026569b",
+        "changedFields": [
+          "updated_at",
+          "report_version"
+        ]
+      }
+    ],
+    "anonCount": 69
   }
 }
