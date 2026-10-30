@@ -115,7 +115,8 @@ describe('pending co-owner shared gates from captured LIVE definitions',()=>{
  it('undo restores every exact live function definition, original policy behavior and ACL',async()=>{
   await restore();
   for(const f of proof.functions){
-   const r=await db.query<{definition:string}>('SELECT pg_get_functiondef($1::regprocedure) definition',[f.schema+'.'+f.name+'('+f.signature+')']);
+   const types=f.signature.split(',').map(arg=>arg.trim().split(' ').slice(1).join(' ')).join(',');
+   const r=await db.query<{definition:string}>('SELECT pg_get_functiondef($1::regprocedure) definition',[f.schema+'.'+f.name+'('+types+')']);
    expect(r.rows[0]?.definition).toBe(decode(f.definition_base64));
   }
   expect(await acls()).toEqual(aclBefore);expect(await exposure()).toEqual(beforeExposure);expect(await rows(coOwner)).toEqual([]);await convert();
