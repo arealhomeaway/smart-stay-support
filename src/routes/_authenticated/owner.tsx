@@ -20,6 +20,8 @@ import { homeClosingArrived, hoursBlockedMessage, ownerHoursEligibility } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { programAttribution } from "@/lib/co-owners.functions";
+import { answeredByLabel, buildAttribution, loggedByLabel } from "@/lib/co-owner-attribution";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -347,6 +349,18 @@ function OwnerHubBody({
     return names.length ? names.join(" · ") : properties.length > 1 ? "All your homes" : properties[0]?.name ?? "";
   };
 
+  // Shared homes: who logged each entry and who answered. Single-owner programs see no change.
+  const loadAttribution = useServerFn(programAttribution);
+  const attributionQuery = useQuery({
+    queryKey: ["owner-attribution", program.id],
+    queryFn: () => loadAttribution({ data: { programId: program.id } }),
+  });
+  const attribution = useMemo(() => buildAttribution(attributionQuery.data?.rows ?? []), [attributionQuery.data]);
+  const respondedLabel = (reviewId: string) => {
+    if (attribution.answers.get(reviewId) === user.id) return "You responded";
+    return answeredByLabel(attribution, reviewId) ?? "You responded";
+  };
+
   // Recent activity: what happened, always labelled with the home it belongs to.
   const activity = useMemo(() => {
     type Item = { id: string; at: string; property: string; label: string; entryId?: string; files?: number };
@@ -357,7 +371,7 @@ function OwnerHubBody({
           id: `entry-${e.id}`,
           at: e.entry_date,
           property: propertyLabel(e.propertyIds),
-          label: `Logged ${Math.round((e.minutes / 60) * 100) / 100} hours — ${e.activity}`,
+          label: [`Logged ${Math.round((e.minutes / 60) * 100) / 100} hours — ${e.activity}`, loggedByLabel(attribution, e.owner_user_id)].filter(Boolean).join(" · "),
           entryId: e.id,
           files: attachmentCount(e),
         })),
@@ -383,12 +397,12 @@ function OwnerHubBody({
           id: `review-${r.id}`,
           at: r.responded_at as string,
           property: propertyLabel(r.propertyIds),
-          label: `You responded: ${r.title}`,
+          label: `${respondedLabel(r.id)}: ${r.title}`,
         })),
     ];
     return items.sort((a, b) => (a.at < b.at ? 1 : -1)).slice(0, 15);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data.entries, docs.data, tickets, reviews, selectedHomeId, properties]);
+  }, [data.entries, docs.data, tickets, reviews, selectedHomeId, properties, attribution]);
 
   const ownerHomes = properties.map((p) => ({ propertyId: p.propertyId, name: p.name, address: (p as { address?: string | null }).address ?? null }));
   const navigate = Route.useNavigate();
