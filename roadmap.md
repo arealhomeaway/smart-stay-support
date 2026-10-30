@@ -5,7 +5,8 @@
 - [x] Stage membership foundation, pending primary backfill draft, absence undo and isolated access tests
 - [x] Inventory 59 live owner_user_id functions and one direct policy with verified base64/SHA256 and grants; preserve all current routing
 - [ ] Convert all owner access policies/functions and test full schema in isolation
-- [ ] Pass 3 also needs remaining direct gates, hours/history credit and author guards, shared notifications, addressed-approval/actor separation, file-signing and full production RLS dependency closure; demo co-owner audit provisioning remains deliberately unconverted
+- [x] Pass 3A: 16 remaining direct gates staged in 04 with undo and isolated tests
+- [ ] Pass 3B: app-side primary checks (findOwnerProgram, listOwnerFileRecords), respond_owner_review concurrency test, full production RLS closure; demo co-owner provisioning stays unconverted
 - [ ] Build guarded co-owner account linking/add/remove, shared portal and notification reads
 - [x] Full suite: 1800 pass, 5 skipped; automatic local build OK; no application access changes
 - [ ] Complete replacement inventory, backfill row-scoped undo, provisioning, full production-schema policy tests and authenticated acceptance: not built in this foundation part
