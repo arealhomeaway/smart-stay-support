@@ -3,7 +3,7 @@
 ## Oct 30 Homeowners fix and Lee identity correction
 - [x] Fix property demo lookup, roster gating and enrollment-error handling; exclude archived reviews/retired Opportunities; role render/rule tests, full suite 1842 pass / 5 skip, automatic type/build OK
 - [x] Inventory Lee program history and stage exact shared-alert read undo with base64/SHA256/ACL capture
-- [ ] Lee swap and welcome: blocked because canonical Auth API login creation cannot join the requested single database transaction; no live writes. Needs approval of canonical creation followed by one audited atomic application-record transaction, retaining a retry receipt.
+- [ ] Approved two-phase Lee swap: canonical account receipt, staged audited atomic record swap and shared-alert read, exact undo, authenticated live checks and Ryan-only welcome verification
 
 ## Oct 30 co-owner support (approved build/test only)
 - [x] Pass 2 subset: classify 59 functions plus 10 live/storage policies; reverify all 59 hashes/ACLs; stage six shared-helper substitutions plus one policy with exact undo; 13 isolated live-definition tests and full suite 1813 pass, 5 skip, 0 fail (15-second timeout for existing large ZIP test)
