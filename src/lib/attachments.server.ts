@@ -570,6 +570,22 @@ export async function requestOwnerDocument(
  * library: it lists only the records where a coordinator has either shared a
  * file with this owner or opened an upload slot for them.
  */
+/** Programs this login may read as a homeowner: main homeowner or active co-owner. */
+export async function ownerMemberProgramIds(client: Client, userId: string) {
+  const [own, member] = await Promise.all([
+    client.from("owner_programs").select("id").eq("owner_user_id", userId),
+    client
+      .from("program_members" as never)
+      .select("program_id")
+      .eq("user_id", userId)
+      .is("removed_at", null),
+  ]);
+  if (own.error) throw own.error;
+  // Membership is optional until it is turned on; its absence never widens access.
+  const memberRows = member.error ? [] : ((member.data ?? []) as { program_id: string }[]);
+  return [...new Set([...(own.data ?? []).map((r) => r.id as string), ...memberRows.map((r) => r.program_id)])];
+}
+
 export async function listOwnerFileRecords(viewer: Viewer, client?: Client) {
   if (!isExternalOwner(viewer)) return { records: [] };
   const supabaseAdmin =
