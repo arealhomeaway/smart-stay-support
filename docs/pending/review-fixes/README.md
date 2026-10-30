@@ -24,4 +24,4 @@ The new Project Team caller intentionally has no old separate-write fallback. Pu
 
 ## Practice test
 
-Emily's own managed session opened the published 101 Willow Way onboarding page. Read-only data confirmed `is_demo=true`; the page did not explicitly label that home as practice. Testing stopped before selecting/editing any Task. No Save action, rollback or live record write occurred. The template table has no demo flag; no clearly labeled practice template was confirmed. Exact Save error and cause remain unverified.
+Emily's own managed session opened the published 101 Willow Way onboarding page. Read-only data confirmed `is_demo=true`; the page did not explicitly label that home as practice. Testing stopped before selecting/editing any Task. No Save action, rollback or live record write occurred. A read-only search found zero demo/practice/test templates by name or key. The template test was skipped. Exact Save error and cause remain unverified.
