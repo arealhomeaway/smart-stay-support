@@ -2,9 +2,9 @@
 
 ## Oct 30 code-review fix pass (approved, pending database only)
 - [x] Attempt Emily's published practice-home test; stopped before edits because the home lacked an explicit practice label
-- [ ] Atomic Project Team save and exact pending undo
-- [ ] One business-decision approval rule, pending enforcement and separate three-template correction
-- [ ] First homeowner conversation visibility, retained enrollment receipt, original review-date eligibility
+- [x] Atomic Project Team save and exact pending undo (not applied)
+- [x] One business-decision approval rule, pending enforcement and separate three-template correction (not applied)
+- [x] First homeowner conversation visibility, retained enrollment receipt, original review-date eligibility
 - [ ] Focused and full tests, automatic type/build checks; no publish or live application
 
 ## Oct 29 address labels (approved code/test only, no live writes)

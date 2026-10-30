@@ -32,6 +32,8 @@ describe("approved review fixes",()=>{
    await expect(db.query(`SELECT set_onboarding_project_role('${project}','utilities',NULL,true)`)).rejects.toThrow();
    const pr=await db.query<{utility_manager:string}>("SELECT utility_manager FROM onboarding_projects");expect(pr.rows[0]?.utility_manager).toBe(actor);
    await expect(db.query(`SELECT set_onboarding_project_role('${project}','owner',NULL,true)`)).rejects.toThrow("That role");
+   await db.exec("ALTER TABLE audit_log DROP CONSTRAINT fail_audit;CREATE OR REPLACE FUNCTION public.is_supervisor(uuid) RETURNS boolean LANGUAGE sql AS $$ SELECT false $$;");
+   await expect(db.query(`SELECT set_onboarding_project_role('${project}','utilities',NULL,true)`)).rejects.toThrow("Only the Onboarding Director");
   } finally {await db.close();}
  });
  it("database blocks business-decision completion, permits approved completion and leaves unrelated legacy edits alone",async()=>{
@@ -48,6 +50,8 @@ describe("approved review fixes",()=>{
    await expect(db.exec("INSERT INTO onboarding_template_tasks VALUES(3,'business_decision',false,'New')")).rejects.toThrow("requires homeowner approval");
    await db.exec("INSERT INTO onboarding_template_tasks VALUES(3,'business_decision',true,'New')");
    const r=await db.query<{status:string}>("SELECT status FROM onboarding_tasks WHERE id=1");expect(r.rows[0]?.status).toBe("complete");
+   await db.exec(readFileSync("docs/pending/review-fixes/undo/02_business_decision.sql","utf8"));
+   const removed=await db.query<{n:number}>("SELECT count(*)::int n FROM pg_proc WHERE proname='owner_business_decision_guard'");expect(removed.rows[0]?.n).toBe(0);
   }finally{await db.close();}
  });
 });
