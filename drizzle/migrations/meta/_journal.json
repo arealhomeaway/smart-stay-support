@@ -1485,6 +1485,34 @@
       "when": 1793379778947,
       "tag": "0211_co_owner_01_undo_partial",
       "breakpoints": true
+    },
+    {
+      "idx": 212,
+      "version": "7",
+      "when": 1793384467029,
+      "tag": "0212_co_owner_01_complete_membership",
+      "breakpoints": true
+    },
+    {
+      "idx": 213,
+      "version": "7",
+      "when": 1793384623119,
+      "tag": "0213_co_owner_03_access_conversion",
+      "breakpoints": true
+    },
+    {
+      "idx": 214,
+      "version": "7",
+      "when": 1793384937467,
+      "tag": "0214_co_owner_04_access_remaining",
+      "breakpoints": true
+    },
+    {
+      "idx": 215,
+      "version": "7",
+      "when": 1793385045965,
+      "tag": "0215_co_owner_05_provisioning",
+      "breakpoints": true
     }
   ]
 }

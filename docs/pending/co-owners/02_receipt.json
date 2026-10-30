@@ -1,0 +1,55 @@
+{
+ "applied_at": "2026-10-30",
+ "inserted": [
+  {
+   "id": "7e09b9bd-d141-487e-be90-57221c6070ab",
+   "program_id": "a0000000-0000-4000-8000-0000000c0100",
+   "user_id": "f8a9d111-3416-47f7-abc1-48f5e8aac2ab",
+   "role": "primary",
+   "email_masked": "q***@resolve-test.invalid"
+  },
+  {
+   "id": "e506187a-c528-4d00-8c5b-79ecb21c65c4",
+   "program_id": "e341b2b0-a6cf-40b3-9d1c-ff7584aec196",
+   "user_id": "eeaf39c4-3b22-4733-9ba5-b275476bc5a8",
+   "role": "primary",
+   "email_masked": "q***@resolve-test.invalid"
+  },
+  {
+   "id": "2eeb217e-5080-4424-a465-d2a5259b66e0",
+   "program_id": "2d05252c-dd0d-4473-adf8-b979fc5b5216",
+   "user_id": "bb286c4d-7751-47b5-bba2-e1590ba50841",
+   "role": "primary",
+   "email_masked": "a***@gmail.com"
+  },
+  {
+   "id": "0edcdf8e-b656-430b-8fc9-5ffa8a6eca57",
+   "program_id": "6cc0d779-9d06-472f-95c1-0a14dfe3b398",
+   "user_id": "e4a697e6-e392-46af-a9c6-a49f815db103",
+   "role": "primary",
+   "email_masked": "v***@gmail.com"
+  },
+  {
+   "id": "d95b8916-9b0c-4ace-b0f2-24ba478f17bf",
+   "program_id": "579cb6ae-c5a5-4aa3-aac2-64eedd2faafe",
+   "user_id": "bc62d95a-94fb-4b59-838b-55b9a25db6b9",
+   "role": "primary",
+   "email_masked": "n***@outlook.com"
+  },
+  {
+   "id": "7fc511b9-b8cd-449c-a3ce-cc4456693553",
+   "program_id": "814b9c32-0910-499b-b4ac-2c7fc026569b",
+   "user_id": "830332a2-3cee-4967-bd57-7cd625f8f9f9",
+   "role": "primary",
+   "email_masked": "l***@gmail.com"
+  },
+  {
+   "id": "d513b6d7-a8f9-47cd-b6bf-40a15a92709e",
+   "program_id": "c4f09fc4-7c10-4f35-964d-ed183d7691d7",
+   "user_id": "80c6e551-e370-4ab3-bdfd-1cd7f5c39448",
+   "role": "primary",
+   "email_masked": "r***@gmail.com"
+  }
+ ],
+ "undo_sql": "DELETE FROM public.program_members WHERE id IN ('7e09b9bd-d141-487e-be90-57221c6070ab','e506187a-c528-4d00-8c5b-79ecb21c65c4','2eeb217e-5080-4424-a465-d2a5259b66e0','0edcdf8e-b656-430b-8fc9-5ffa8a6eca57','d95b8916-9b0c-4ace-b0f2-24ba478f17bf','7fc511b9-b8cd-449c-a3ce-cc4456693553','d513b6d7-a8f9-47cd-b6bf-40a15a92709e');"
+}
