@@ -4,7 +4,8 @@
   "emailMasked": "rl***@gmail.com",
   "created": true,
   "created_at": "2026-10-30T22:20:33.458796Z",
-  "roleConfirmed": false,
-  "membershipConfirmedAbsent": false,
-  "noEmailRequested": true
+  "roleConfirmed": true,
+  "membershipConfirmedAbsent": true,
+  "noEmailRequested": true,
+  "phaseB": "not started"
 }
