@@ -83,3 +83,32 @@ RECIPIENT/IDENTITY: 20, STAFF-ONLY/unrelated: 10, ACCESS GATE: 29, ATTRIBUTION: 
 
 ## Still required before feature enablement
 Direct Opportunity/review/upload/report gates; hours lock and actor-attributed writes; full household hour reads/credit and correction guards; shared notification reads; addressed-approval versus respondent separation; application file-signing/read checks; audited add/remove, welcome and portal presentation; complete dependency/RLS negative-path tests. No partial access enablement.
+
+
+## Pass 3A: remaining access gates (04_access_remaining.sql)
+
+Converted: 16 functions. Inherited without change: 3. Recipient/identity, attribution and staff-only objects untouched. No policy, trigger or grant changes.
+
+| Object | Old check | New check |
+|---|---|---|
+| public.mark_owner_opportunity_viewed | p.owner_user_id=auth.uid() | private.is_program_member(p.id,auth.uid()) |
+| public.owner_hours_eligibility | p.owner_user_id=auth.uid() | private.is_program_member(p.id,auth.uid()) |
+| public.tag_owner_upload | p.owner_user_id = auth.uid() | private.is_program_member(p.id, auth.uid()) |
+| public.respond_owner_review | program.owner_user_id IS DISTINCT FROM auth.uid() | NOT coalesce(private.is_program_member(program.id,auth.uid()),false) |
+| private.lock_owner_time_program | program.owner_user_id IS DISTINCT FROM _actor_id | NOT coalesce(private.is_program_member(program.id,_actor_id),false) |
+| public.read_owner_participation | AND e.owner_user_id=p.owner_user_id; | AND (e.owner_user_id=p.owner_user_id OR EXISTS(SELECT 1 FROM public.program_members m WHERE m.program_id=p.id AND m.user_id=e.owner_user_id)); |
+| public.can_view_owner_library_video | p.owner_user_id = auth.uid() | private.is_program_member(p.id, auth.uid()) |
+| public.create_owner_matter | p.owner_user_id=auth.uid() | private.is_program_member(p.id,auth.uid()) |
+| public.read_owner_review_update | p.owner_user_id IS DISTINCT FROM auth.uid() | NOT coalesce(private.is_program_member(p.id,auth.uid()),false) |
+| public.manage_owner_review_conversation | auth.uid() IS DISTINCT FROM _owner | NOT coalesce(private.is_program_member(r.program_id,auth.uid()),false) |
+| public.append_owner_review_message | auth.uid() IS DISTINCT FROM _owner | NOT coalesce(private.is_program_member(r.program_id,auth.uid()),false) |
+| public.start_optional_opportunity | p.owner_user_id=auth.uid() | private.is_program_member(p.id,auth.uid()) |
+| private.opportunity_documentation_response | p.owner_user_id=NEW.uploaded_by | private.is_program_member(p.id,NEW.uploaded_by) |
+| public.respond_owner_opportunity | AND p.owner_user_id=auth.uid();;     IF t.id IS NOT NULL AND coalesce(t.requires_owner_approval,false) AND t.owner_approval_status IN | AND private.is_program_member(p.id,auth.uid())    FOR UPDATE OF wi;;     IF t.id IS NOT NULL AND coalesce(t.requires_owner_approval,false) AND t.owner_approval_status='approved' THEN       RAISE EXCEPTION 'This decision was already answered by an owner on this program.';     END IF;     IF t.id IS NOT NULL AND coalesce(t.requires_owner_approval,false) AND t.owner_approval_status IN |
+| public.post_owner_request_message | w.prog_owner = auth.uid() | private.is_program_member(w.program_id, auth.uid()) |
+| public.owner_str_reports | o.owner_user_id = auth.uid() | private.is_program_member(o.id, auth.uid()) |
+| public.log_owner_time_entry | inherits | Unchanged: Calls private.lock_owner_time_program(program, auth.uid()) for authority; inserts owner_user_id=auth.uid() so attribution stays the logging member. |
+| public.resubmit_owner_time_entry | inherits | Unchanged: Own-entry rule (owner_user_id=auth.uid()) is the requested OWN-entry scope; program authority via converted lock_owner_time_program; copies original author. |
+| public.read_owner_programs | inherits | Unchanged: Access via converted private.owner_program_readable; owner_user_id is primary-identity output only. |
+
+All 29 access gates are now covered: 6 in 03, 16 in 04, 3 inherit, 4 were mixed rows already accounted for by 03 helpers. App-side checks in src/lib (findOwnerProgram, listOwnerFileRecords) still compare the primary and move in pass 3B with the code that depends on 04.
