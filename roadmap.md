@@ -1,5 +1,12 @@
 # Roadmap — approved build work, NO publish
 
+## Oct 30 code-review fix pass (approved, pending database only)
+- [x] Attempt Emily's published practice-home test; stopped before edits because the home lacked an explicit practice label
+- [ ] Atomic Project Team save and exact pending undo
+- [ ] One business-decision approval rule, pending enforcement and separate three-template correction
+- [ ] First homeowner conversation visibility, retained enrollment receipt, original review-date eligibility
+- [ ] Focused and full tests, automatic type/build checks; no publish or live application
+
 ## Oct 29 address labels (approved code/test only, no live writes)
 - [x] Shared code/database formatting and shared property search across global/Ticket/onboarding/lead entry points
 - [x] Broad staff, homeowner, navigation and export label/read coverage; stored identity and historical snapshots preserved
