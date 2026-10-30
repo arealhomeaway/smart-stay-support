@@ -1478,6 +1478,13 @@
       "when": 1793379617347,
       "tag": "0210_co_owner_01_membership_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 211,
+      "version": "7",
+      "when": 1793379778947,
+      "tag": "0211_co_owner_01_undo_partial",
+      "breakpoints": true
     }
   ]
 }
