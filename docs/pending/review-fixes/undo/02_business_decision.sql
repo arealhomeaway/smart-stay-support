@@ -1,0 +1,3 @@
+DROP TRIGGER owner_business_decision_completion_guard ON public.onboarding_tasks;
+DROP TRIGGER owner_business_decision_template_guard ON public.onboarding_template_tasks;
+DROP FUNCTION public.owner_business_decision_guard();
