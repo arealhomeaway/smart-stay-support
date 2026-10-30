@@ -30,3 +30,7 @@ Convert the remaining direct access checks, including actor-specific hour/notifi
 4. Answer one approval from each login; confirm only the first answer counts and its author remains recorded.
 5. Log hours from each login, confirm shared totals and names; verify one in-app notification and primary-only routine email.
 6. Remove the co-owner, confirm access ends on the next request and all recorded hours/history remain; reject a staff email.
+## Pass 3A
+- `04_access_remaining.sql` and `undo/04_access_remaining.sql`: 16 remaining direct owner gates now use `private.is_program_member`. Hours stay attributed to the logging member; entry reads include past entries of removed members; notification rows stay addressed to the primary and are shared by program; email recipients unchanged. `respond_owner_opportunity` adds a row lock and rejects a second decision once the linked approval is approved.
+- `pass3a-live-reference.json`: exact live bytes (base64 + SHA256 + ACL) of the 16 targets, 3 inherited functions and 16 dependencies.
+- Apply order: 01, 02 (with receipt), 03, 04. Undo order: undo/04, undo/03, undo/01.
