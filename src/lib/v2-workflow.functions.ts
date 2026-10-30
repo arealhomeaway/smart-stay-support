@@ -193,6 +193,8 @@ export const saveTemplateStepV2 = createServerFn({ method: "POST" })
     fail(priorError);
     if (!prior) throw new Error("That template step was not found.");
     const dependency = data.ownerDependency === undefined ? prior.owner_dependency : data.ownerDependency === "none" ? null : data.ownerDependency;
+    if (prior.owner_dependency === "business_decision" && !prior.requires_owner_approval && dependency === "business_decision")
+      throw new Error("This existing template step needs the separately approved homeowner approval correction before it can be saved.");
     const { error } = await context.supabase
       .from("onboarding_template_tasks")
       .update({

@@ -12,5 +12,5 @@ it("an undated low-star import keeps a display timestamp but never creates a fol
  }};
  const item:ReviewInput={source_review_id:"undated",listing_site:null,ownerrez_property_id:null,booking_id:null,guest_id:null,guest_name:null,stars:2,body:"Old review",response:null,date:null,url:null};
  const r=await ingestReviews(db as never,[item]);
- expect(r.historical).toBe(1);expect(r.ticketsCreated).toBe(0);expect(ticketWrites).toBe(0);expect(typeof saved?.submitted_at).toBe("string");
+ expect(r.historical).toBe(1);expect(r.ticketsCreated).toBe(0);expect(ticketWrites).toBe(0);expect(typeof saved?.['submitted_at']).toBe("string");
 });

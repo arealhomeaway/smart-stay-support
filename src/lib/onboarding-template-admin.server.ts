@@ -391,8 +391,10 @@ export async function saveTemplateStep(
   if (title.length < 3) throw new Error("Give the step a title of at least three characters.");
   if (!input.stage.trim()) throw new Error("Choose the stage this step belongs to.");
   const prior = input.stepId ? await supabase.from("onboarding_template_tasks")
-    .select("owner_dependency").eq("id",input.stepId).eq("template_id",input.templateId).single() : null;
+    .select("owner_dependency, requires_owner_approval").eq("id",input.stepId).eq("template_id",input.templateId).single() : null;
   if (prior?.error) throw prior.error;
+  if (prior?.data?.owner_dependency === "business_decision" && !prior.data.requires_owner_approval)
+    throw new Error("This existing template step needs the separately approved homeowner approval correction before it can be saved.");
 
   let sortOrder = input.sortOrder ?? null;
   if (sortOrder === null && !input.stepId) {

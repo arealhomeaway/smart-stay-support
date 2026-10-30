@@ -13,7 +13,7 @@
 export type OwnerDependency = "none" | "information" | "feedback" | "acknowledge" | "business_decision";
 
 /** A business decision always requires a recorded homeowner approval. */
-export function homeownerApprovalRequired(task: { owner_dependency?: string | null; requires_owner_approval?: boolean | null }): boolean {
+export function homeownerApprovalRequired(task: { owner_dependency?: string | null | undefined; requires_owner_approval?: boolean | null | undefined }): boolean {
   return task.owner_dependency === "business_decision" || task.requires_owner_approval === true;
 }
 
