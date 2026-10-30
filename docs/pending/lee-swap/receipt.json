@@ -63,5 +63,41 @@
       "anonSetHash": "70f8c5601ea3f18418113225505fd496",
       "anonCount": 69
     }
+  },
+  "phaseB_corrected": {
+    "status": "STOPPED AND RESTORED",
+    "result": {
+      "memberId": "8072286f-61e4-4481-813b-0eff48e37a49",
+      "coOwnerId": "830332a2-3cee-4967-bd57-7cd625f8f9f9",
+      "primaryId": "68ad7bb6-458f-4c0c-921f-3299251ac3fa",
+      "programId": "814b9c32-0910-499b-b4ac-2c7fc026569b",
+      "welcomeId": "8f986dd0-1112-492b-b5dc-2870b102ffad"
+    },
+    "failureStep": 5,
+    "failure": "Read-only database tool denied execution of private.is_program_member. Stopped immediately and ran authenticated undo; no permission grant or bypass attempted.",
+    "undoResult": {
+      "undone": true
+    },
+    "restorationMigration": "0225_lee_corrected_check_failure_restore.sql",
+    "restorationChecks": {
+      "originalPrimary": "830332a2-3cee-4967-bd57-7cd625f8f9f9",
+      "oneOriginalPrimaryMembership": true,
+      "profile": "Ryan Lee",
+      "ryanMemberships": 0,
+      "welcomeRows": 0,
+      "unrevokedInvites": 2,
+      "entriesUnchanged": "6 entries, 302 minutes",
+      "entryHash": "b31bd2afd05e7253deaadf23e5dcef75",
+      "otherProgramsHash": "4de480fd741cb2eb8ca03b2df009f21f",
+      "propertyOwnerHash": "d2853d2b139b25f57cc03afd08e8a8d9",
+      "readerSha": "1f1c44d6b8ca56ad96d76a80110aafd08abd30c1ceaf2414c598d36cbbadc5eb",
+      "readerAcl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "temporaryFunctionAbsent": true,
+      "anonCount": 69,
+      "anonSetHash": "70f8c5601ea3f18418113225505fd496",
+      "newRyanEmails": 0,
+      "latestRyanEmailAt": "2026-10-26T16:45:17.525142Z"
+    },
+    "retainedChanges": "Append-only correction and reversal audit/events; automatic target report version/timestamps."
   }
 }
