@@ -18,6 +18,7 @@ import { GATE_STEPS, type HandoffCheck } from "./onboarding";
 import { ONBOARDING_STAGES } from "./onboarding";
 import { stageReviewMatchesWork, type StageCapture } from "./onboarding-stage";
 import type { WorkflowTask } from "./onboarding-workflow";
+import { homeownerApprovalRequired } from "./owner-dependency";
 
 /* -------------------------------------------------------------- lifecycle */
 
@@ -536,14 +537,14 @@ export function releaseState(
       canComplete: false,
     };
 
-  if (task.requires_owner_approval && task.owner_approval_status === "awaiting_owner")
+  if (homeownerApprovalRequired(task) && task.owner_approval_status === "awaiting_owner")
     return {
       state: "awaiting_review",
       reason: "Sent to the homeowner — waiting on their recorded decision.",
       canComplete: false,
     };
 
-  if (task.requires_owner_approval && task.owner_approval_status !== "approved")
+  if (homeownerApprovalRequired(task) && task.owner_approval_status !== "approved")
     return {
       state: "waiting",
       reason: "A homeowner decision is required before this step can be completed.",

@@ -285,7 +285,7 @@ export async function ingestReviews(admin: Admin, items: ReviewInput[]) {
     imported++;
     // Only reviews published on/after the start date can open follow-up work;
     // replays of older reviews are always history-only.
-    const decision = reviewImportDecision(data.rating, data.submitted_at, startDate);
+    const decision = reviewImportDecision(data.rating, r.date, startDate);
     if (decision === "historical") historical++;
     else if (decision === "follow_up" && (await createFollowUpTicket(admin, data))) ticketsCreated++;
   }

@@ -648,7 +648,7 @@ function OpportunityDetail({
             </div>
           ) : null}
 
-          {arha && (item.responses.length || item.finished) ? (
+          {arha ? (
             <OwnerConversation
               workItemId={item.id}
               status={item.finished ? "complete" : "open"}
