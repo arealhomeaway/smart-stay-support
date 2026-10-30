@@ -12,7 +12,7 @@ const uid = (n:number) => `00000000-0000-4000-8000-${String(n).padStart(12,'0')}
 const primary=uid(1),coOwner=uid(2),other=uid(3),staff=uid(4),a=uid(10),b=uid(20),ha=uid(30),hb=uid(40),oa=uid(50),ob=uid(60),wa=uid(70),wb=uid(80);
 let db:PGlite;
 let beforeExposure:unknown[];
-let staffBefore:unknown[];
+let staffBefore:string;
 let aclBefore:unknown[];
 const decode = (s:string) => Buffer.from(s,'base64').toString('utf8');
 const sha = (s:string) => createHash('sha256').update(s).digest('hex');
@@ -26,7 +26,7 @@ async function gates(user:string|null,program:string,home:string,work:string) {
 }
 async function rows(user:string|null) {
  await actor(user); await db.exec('SET ROLE authenticated');
- try { return (await db.query(`SELECT 'work' kind,id FROM work_items UNION ALL SELECT 'file',id FROM work_item_resources UNION ALL SELECT 'message',id FROM owner_request_messages ORDER BY 1,2`)).rows; }
+ try { return (await db.query<{kind:string;id:string}>(`SELECT 'work' kind,id FROM work_items UNION ALL SELECT 'file',id FROM work_item_resources UNION ALL SELECT 'message',id FROM owner_request_messages ORDER BY 1,2`)).rows; }
  finally {await db.exec('RESET ROLE');}
 }
 async function restore() { await db.exec(readFileSync(root+'undo/03_access_conversion.sql','utf8')); }
@@ -58,12 +58,12 @@ describe('pending co-owner shared gates from captured LIVE definitions',()=>{
    INSERT INTO work_item_resources VALUES('${uid(90)}','${wa}',NULL),('${uid(91)}','${wb}',NULL);
    INSERT INTO owner_reviews VALUES('${uid(100)}','${a}',NULL,'released'),('${uid(101)}','${b}',NULL,'released');
    INSERT INTO owner_request_messages VALUES('${uid(110)}','${uid(100)}',NULL),('${uid(111)}','${uid(101)}',NULL),('${uid(112)}',NULL,'${wa}');`);
-  beforeExposure=await exposure();aclBefore=await acls();staffBefore=[await gates(staff,a,ha,wa),await rows(staff)];
+  beforeExposure=await exposure();aclBefore=await acls();staffBefore=JSON.stringify([await gates(staff,a,ha,wa),await rows(staff)]);
   await db.exec(readFileSync(root+'01_membership_foundation.sql','utf8'));
   await db.exec(`INSERT INTO program_members(program_id,user_id,role) VALUES('${a}','${coOwner}','co_owner');`);
   expect(await exposure()).toEqual(beforeExposure);
   await convert();
- },30000);
+ });
  afterAll(async()=>{await db.close();});
  it('primary and co-owner pass every converted helper for program A',async()=>{
   const expected={owns:true,sees:true,included:true,portal:true,readable:true,conversation:true};
@@ -82,7 +82,7 @@ describe('pending co-owner shared gates from captured LIVE definitions',()=>{
   await db.exec(`UPDATE program_members SET removed_at=NULL WHERE user_id='${coOwner}';`);
  });
  it('staff results including preview authority are identical before and after conversion',async()=>{
-  expect([await gates(staff,a,ha,wa),await rows(staff)]).toEqual(staffBefore);
+  expect(JSON.stringify([await gates(staff,a,ha,wa),await rows(staff)])).toBe(staffBefore);
   expect((await db.query('SELECT private.owner_program_readable($1,$2,true) ok',[staff,a])).rows[0]).toEqual({ok:true});
   await restore();expect((await db.query('SELECT private.owner_program_readable($1,$2,true) ok',[staff,a])).rows[0]).toEqual({ok:true});await convert();
  });
