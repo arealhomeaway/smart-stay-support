@@ -1,0 +1,268 @@
+{
+  "captured_at": "2026-10-30T04:05:08.453349+00:00",
+  "functions": [
+    {
+      "acl": [
+        {
+          "grantee": "postgres",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "grantee": "service_role",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        }
+      ],
+      "name": "owns_program",
+      "grants": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "schema": "private",
+      "sha256": "739602c9bc9703d5b07c8241888401d1eb7809ad1bf74e2b4b87003fd6771820",
+      "signature": "_user_id uuid, _program_id uuid",
+      "definition_base64": "Q1JFQVRFIE9SIFJFUExBQ0UgRlVOQ1RJT04gcHJpdmF0ZS5vd25zX3Byb2dyYW0oX3VzZXJfaWQg\ndXVpZCwgX3Byb2dyYW1faWQgdXVpZCkKIFJFVFVSTlMgYm9vbGVhbgogTEFOR1VBR0Ugc3FsCiBT\nVEFCTEUgU0VDVVJJVFkgREVGSU5FUgogU0VUIHNlYXJjaF9wYXRoIFRPICdwdWJsaWMnLCAncHJp\ndmF0ZScKQVMgJGZ1bmN0aW9uJAogIFNFTEVDVCBFWElTVFMgKFNFTEVDVCAxIEZST00gcHVibGlj\nLm93bmVyX3Byb2dyYW1zIFdIRVJFIGlkID0gX3Byb2dyYW1faWQgQU5EIG93bmVyX3VzZXJfaWQg\nPSBfdXNlcl9pZCkKJGZ1bmN0aW9uJAo=",
+      "replacement_base64": "Q1JFQVRFIE9SIFJFUExBQ0UgRlVOQ1RJT04gcHJpdmF0ZS5vd25zX3Byb2dyYW0oX3VzZXJfaWQgdXVpZCwgX3Byb2dyYW1faWQgdXVpZCkKIFJFVFVSTlMgYm9vbGVhbgogTEFOR1VBR0Ugc3FsCiBTVEFCTEUgU0VDVVJJVFkgREVGSU5FUgogU0VUIHNlYXJjaF9wYXRoIFRPICdwdWJsaWMnLCAncHJpdmF0ZScKQVMgJGZ1bmN0aW9uJAogIFNFTEVDVCBFWElTVFMgKFNFTEVDVCAxIEZST00gcHVibGljLm93bmVyX3Byb2dyYW1zIFdIRVJFIGlkID0gX3Byb2dyYW1faWQgQU5EIHByaXZhdGUuaXNfcHJvZ3JhbV9tZW1iZXIoaWQsIF91c2VyX2lkKSkKJGZ1bmN0aW9uJAo=",
+      "replacement_sha256": "ae1c0007c81824f96443eb8e616715ff6c71045f00f61fe8744911bc8eb5384a",
+      "changes": [
+        [
+          "owner_user_id = _user_id",
+          "private.is_program_member(id, _user_id)"
+        ]
+      ],
+      "acl_handling": "CREATE OR REPLACE preserves exact existing proacl; no GRANT/REVOKE issued.",
+      "class": "ACCESS GATE"
+    },
+    {
+      "acl": [
+        {
+          "grantee": "postgres",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "grantee": "service_role",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        }
+      ],
+      "name": "owner_sees_property",
+      "grants": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}",
+      "schema": "private",
+      "sha256": "1f13af888d510a6dfbb8d18ef15523125801bf839e36324f72caa032be904fea",
+      "signature": "_user_id uuid, _property_id uuid",
+      "definition_base64": "Q1JFQVRFIE9SIFJFUExBQ0UgRlVOQ1RJT04gcHJpdmF0ZS5vd25lcl9zZWVzX3Byb3BlcnR5KF91\nc2VyX2lkIHV1aWQsIF9wcm9wZXJ0eV9pZCB1dWlkKQogUkVUVVJOUyBib29sZWFuCiBMQU5HVUFH\nRSBzcWwKIFNUQUJMRSBTRUNVUklUWSBERUZJTkVSCiBTRVQgc2VhcmNoX3BhdGggVE8gJ3B1Ymxp\nYycKQVMgJGZ1bmN0aW9uJAogIHNlbGVjdCBleGlzdHMgKAogICAgc2VsZWN0IDEgZnJvbSBwdWJs\naWMub3duZXJfcHJvZ3JhbXMKICAgIHdoZXJlIHByb3BlcnR5X2lkID0gX3Byb3BlcnR5X2lkIGFu\nZCBvd25lcl91c2VyX2lkID0gX3VzZXJfaWQKICApIG9yIGV4aXN0cyAoCiAgICBzZWxlY3QgMQog\nICAgZnJvbSBwdWJsaWMub3duZXJfcHJvZ3JhbV9wcm9wZXJ0aWVzIG9wcAogICAgam9pbiBwdWJs\naWMub3duZXJfcHJvZ3JhbXMgb3Agb24gb3AuaWQgPSBvcHAucHJvZ3JhbV9pZAogICAgd2hlcmUg\nb3BwLnByb3BlcnR5X2lkID0gX3Byb3BlcnR5X2lkCiAgICAgIGFuZCBvcC5vd25lcl91c2VyX2lk\nID0gX3VzZXJfaWQKICApCiRmdW5jdGlvbiQK",
+      "replacement_base64": "Q1JFQVRFIE9SIFJFUExBQ0UgRlVOQ1RJT04gcHJpdmF0ZS5vd25lcl9zZWVzX3Byb3BlcnR5KF91c2VyX2lkIHV1aWQsIF9wcm9wZXJ0eV9pZCB1dWlkKQogUkVUVVJOUyBib29sZWFuCiBMQU5HVUFHRSBzcWwKIFNUQUJMRSBTRUNVUklUWSBERUZJTkVSCiBTRVQgc2VhcmNoX3BhdGggVE8gJ3B1YmxpYycKQVMgJGZ1bmN0aW9uJAogIHNlbGVjdCBleGlzdHMgKAogICAgc2VsZWN0IDEgZnJvbSBwdWJsaWMub3duZXJfcHJvZ3JhbXMKICAgIHdoZXJlIHByb3BlcnR5X2lkID0gX3Byb3BlcnR5X2lkIGFuZCBwcml2YXRlLmlzX3Byb2dyYW1fbWVtYmVyKGlkLCBfdXNlcl9pZCkKICApIG9yIGV4aXN0cyAoCiAgICBzZWxlY3QgMQogICAgZnJvbSBwdWJsaWMub3duZXJfcHJvZ3JhbV9wcm9wZXJ0aWVzIG9wcAogICAgam9pbiBwdWJsaWMub3duZXJfcHJvZ3JhbXMgb3Agb24gb3AuaWQgPSBvcHAucHJvZ3JhbV9pZAogICAgd2hlcmUgb3BwLnByb3BlcnR5X2lkID0gX3Byb3BlcnR5X2lkCiAgICAgIGFuZCBwcml2YXRlLmlzX3Byb2dyYW1fbWVtYmVyKG9wLmlkLCBfdXNlcl9pZCkKICApCiRmdW5jdGlvbiQK",
+      "replacement_sha256": "6293abf8d43e11306c5d5fbf53fdbdc4c52d6de2e7abca030fc03b7351785f91",
+      "changes": [
+        [
+          "and owner_user_id = _user_id",
+          "and private.is_program_member(id, _user_id)"
+        ],
+        [
+          "op.owner_user_id = _user_id",
+          "private.is_program_member(op.id, _user_id)"
+        ]
+      ],
+      "acl_handling": "CREATE OR REPLACE preserves exact existing proacl; no GRANT/REVOKE issued.",
+      "class": "ACCESS GATE"
+    },
+    {
+      "acl": [
+        {
+          "grantee": "postgres",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "grantee": "service_role",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        }
+      ],
+      "name": "owner_can_see_property",
+      "grants": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "schema": "private",
+      "sha256": "36938ada7608b49ffdcb79ff467146861d17b4b71c00695bb09de42b2e2ed72b",
+      "signature": "_user_id uuid, _property_id uuid",
+      "definition_base64": "Q1JFQVRFIE9SIFJFUExBQ0UgRlVOQ1RJT04gcHJpdmF0ZS5vd25lcl9jYW5fc2VlX3Byb3BlcnR5\nKF91c2VyX2lkIHV1aWQsIF9wcm9wZXJ0eV9pZCB1dWlkKQogUkVUVVJOUyBib29sZWFuCiBMQU5H\nVUFHRSBzcWwKIFNUQUJMRSBTRUNVUklUWSBERUZJTkVSCiBTRVQgc2VhcmNoX3BhdGggVE8gJ3B1\nYmxpYycKQVMgJGZ1bmN0aW9uJAogIFNFTEVDVCBFWElTVFMgKAogICAgU0VMRUNUIDEKICAgIEZS\nT00gcHVibGljLm93bmVyX3Byb2dyYW1fcHJvcGVydGllcyBvcHAKICAgIEpPSU4gcHVibGljLm93\nbmVyX3Byb2dyYW1zIHAgT04gcC5pZCA9IG9wcC5wcm9ncmFtX2lkCiAgICBXSEVSRSBwLm93bmVy\nX3VzZXJfaWQgPSBfdXNlcl9pZAogICAgICBBTkQgb3BwLnByb3BlcnR5X2lkID0gX3Byb3BlcnR5\nX2lkCiAgICAgIEFORCBvcHAuaW5jbHVzaW9uX3N0YXR1cyA9ICdpbmNsdWRlZCcKICAgICAgQU5E\nIG9wcC5hcmNoaXZlZF9hdCBJUyBOVUxMCiAgKQokZnVuY3Rpb24kCg==",
+      "replacement_base64": "Q1JFQVRFIE9SIFJFUExBQ0UgRlVOQ1RJT04gcHJpdmF0ZS5vd25lcl9jYW5fc2VlX3Byb3BlcnR5KF91c2VyX2lkIHV1aWQsIF9wcm9wZXJ0eV9pZCB1dWlkKQogUkVUVVJOUyBib29sZWFuCiBMQU5HVUFHRSBzcWwKIFNUQUJMRSBTRUNVUklUWSBERUZJTkVSCiBTRVQgc2VhcmNoX3BhdGggVE8gJ3B1YmxpYycKQVMgJGZ1bmN0aW9uJAogIFNFTEVDVCBFWElTVFMgKAogICAgU0VMRUNUIDEKICAgIEZST00gcHVibGljLm93bmVyX3Byb2dyYW1fcHJvcGVydGllcyBvcHAKICAgIEpPSU4gcHVibGljLm93bmVyX3Byb2dyYW1zIHAgT04gcC5pZCA9IG9wcC5wcm9ncmFtX2lkCiAgICBXSEVSRSBwcml2YXRlLmlzX3Byb2dyYW1fbWVtYmVyKHAuaWQsIF91c2VyX2lkKQogICAgICBBTkQgb3BwLnByb3BlcnR5X2lkID0gX3Byb3BlcnR5X2lkCiAgICAgIEFORCBvcHAuaW5jbHVzaW9uX3N0YXR1cyA9ICdpbmNsdWRlZCcKICAgICAgQU5EIG9wcC5hcmNoaXZlZF9hdCBJUyBOVUxMCiAgKQokZnVuY3Rpb24kCg==",
+      "replacement_sha256": "44d6a14114a67cb12388685d2c2e69c0c7c71eb4db91874bee3bf4cc26ade452",
+      "changes": [
+        [
+          "p.owner_user_id = _user_id",
+          "private.is_program_member(p.id, _user_id)"
+        ]
+      ],
+      "acl_handling": "CREATE OR REPLACE preserves exact existing proacl; no GRANT/REVOKE issued.",
+      "class": "ACCESS GATE"
+    },
+    {
+      "acl": [
+        {
+          "grantee": "postgres",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "grantee": "service_role",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        }
+      ],
+      "name": "owner_owns_program",
+      "grants": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "schema": "public",
+      "sha256": "c333c6f450a729313061023305709e4b31cb6a2290cb0d63b1d75f40c72147a9",
+      "signature": "_program_id uuid",
+      "definition_base64": "Q1JFQVRFIE9SIFJFUExBQ0UgRlVOQ1RJT04gcHVibGljLm93bmVyX293bnNfcHJvZ3JhbShfcHJv\nZ3JhbV9pZCB1dWlkKQogUkVUVVJOUyBib29sZWFuCiBMQU5HVUFHRSBzcWwKIFNUQUJMRSBTRUNV\nUklUWSBERUZJTkVSCiBTRVQgc2VhcmNoX3BhdGggVE8gJ3B1YmxpYycKQVMgJGZ1bmN0aW9uJAog\nU0VMRUNUIEVYSVNUUyAoU0VMRUNUIDEgRlJPTSBvd25lcl9wcm9ncmFtcyBwIFdIRVJFIHAuaWQ9\nX3Byb2dyYW1faWQgQU5EIHAub3duZXJfdXNlcl9pZD1hdXRoLnVpZCgpIEFORCBwLmFyY2hpdmVk\nX2F0IElTIE5VTEwKICBBTkQgKHAuaXNfZGVtbz1mYWxzZSBPUiBwcml2YXRlLmRlbW9fb3duZXJf\nbGlua19vayhhdXRoLnVpZCgpLHAuaWQpKSkKJGZ1bmN0aW9uJAo=",
+      "replacement_base64": "Q1JFQVRFIE9SIFJFUExBQ0UgRlVOQ1RJT04gcHVibGljLm93bmVyX293bnNfcHJvZ3JhbShfcHJvZ3JhbV9pZCB1dWlkKQogUkVUVVJOUyBib29sZWFuCiBMQU5HVUFHRSBzcWwKIFNUQUJMRSBTRUNVUklUWSBERUZJTkVSCiBTRVQgc2VhcmNoX3BhdGggVE8gJ3B1YmxpYycKQVMgJGZ1bmN0aW9uJAogU0VMRUNUIEVYSVNUUyAoU0VMRUNUIDEgRlJPTSBvd25lcl9wcm9ncmFtcyBwIFdIRVJFIHAuaWQ9X3Byb2dyYW1faWQgQU5EIHByaXZhdGUuaXNfcHJvZ3JhbV9tZW1iZXIocC5pZCxhdXRoLnVpZCgpKSBBTkQgcC5hcmNoaXZlZF9hdCBJUyBOVUxMCiAgQU5EIChwLmlzX2RlbW89ZmFsc2UgT1IgcHJpdmF0ZS5kZW1vX293bmVyX2xpbmtfb2soYXV0aC51aWQoKSxwLmlkKSkpCiRmdW5jdGlvbiQK",
+      "replacement_sha256": "4ffc28e570831141b7cb1d2aec0eede9797a48a0d15adc4c69f51618b0facd1b",
+      "changes": [
+        [
+          "p.owner_user_id=auth.uid()",
+          "private.is_program_member(p.id,auth.uid())"
+        ]
+      ],
+      "acl_handling": "CREATE OR REPLACE preserves exact existing proacl; no GRANT/REVOKE issued.",
+      "class": "ACCESS GATE"
+    },
+    {
+      "acl": [
+        {
+          "grantee": "postgres",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        }
+      ],
+      "name": "owner_program_readable",
+      "grants": "{postgres=X/postgres}",
+      "schema": "private",
+      "sha256": "786b1d9d02e914eb4b8bda643c73c1829d3640fd3a18f4a6bc4899aa96bf09d6",
+      "signature": "_actor uuid, _program_id uuid, _preview boolean",
+      "definition_base64": "Q1JFQVRFIE9SIFJFUExBQ0UgRlVOQ1RJT04gcHJpdmF0ZS5vd25lcl9wcm9ncmFtX3JlYWRhYmxl\nKF9hY3RvciB1dWlkLCBfcHJvZ3JhbV9pZCB1dWlkLCBfcHJldmlldyBib29sZWFuIERFRkFVTFQg\nZmFsc2UpCiBSRVRVUk5TIGJvb2xlYW4KIExBTkdVQUdFIHNxbAogU1RBQkxFIFNFQ1VSSVRZIERF\nRklORVIKIFNFVCBzZWFyY2hfcGF0aCBUTyAncHVibGljJwpBUyAkZnVuY3Rpb24kCiBTRUxFQ1Qg\nX2FjdG9yIElTIE5PVCBOVUxMIEFORCBFWElTVFMoCiAgU0VMRUNUIDEgRlJPTSBhdXRoLnVzZXJz\nIGEgSk9JTiBwdWJsaWMub3duZXJfcHJvZ3JhbXMgcCBPTiBwLmlkPV9wcm9ncmFtX2lkCiAgSk9J\nTiBwdWJsaWMucHJvcGVydHlfb3duZXJzIG8gT04gby5pZD1wLm93bmVyX3JlY29yZF9pZCBBTkQg\nby5hY3RpdmUKICBXSEVSRSBhLmlkPV9hY3RvciBBTkQgYS5kZWxldGVkX2F0IElTIE5VTEwgQU5E\nIChhLmJhbm5lZF91bnRpbCBJUyBOVUxMIE9SIGEuYmFubmVkX3VudGlsPD1ub3coKSkKICAgQU5E\nIHAuYXJjaGl2ZWRfYXQgSVMgTlVMTAogICBBTkQgKChfcHJldmlldyBJUyBUUlVFIEFORCBwdWJs\naWMuaGFzX3JvbGUoX2FjdG9yLCdhZG1pbicpKQogICAgT1IgKF9wcmV2aWV3IElTIEZBTFNFIEFO\nRCBwLm93bmVyX3VzZXJfaWQ9X2FjdG9yCiAgICAgQU5EIChwLmlzX2RlbW89ZmFsc2UgT1IgcHJp\ndmF0ZS5kZW1vX293bmVyX2xpbmtfb2soX2FjdG9yLHAuaWQpKQogICAgIEFORCBFWElTVFMoU0VM\nRUNUIDEgRlJPTSBwdWJsaWMudXNlcl9yb2xlcyBXSEVSRSB1c2VyX2lkPV9hY3RvciBBTkQgcm9s\nZTo6dGV4dD0nb3duZXInKQogICAgIEFORCBOT1QgRVhJU1RTKFNFTEVDVCAxIEZST00gcHVibGlj\nLnVzZXJfcm9sZXMgV0hFUkUgdXNlcl9pZD1fYWN0b3IgQU5EIHJvbGU6OnRleHQ8Pidvd25lcicp\nKSkKICkKJGZ1bmN0aW9uJAo=",
+      "replacement_base64": "Q1JFQVRFIE9SIFJFUExBQ0UgRlVOQ1RJT04gcHJpdmF0ZS5vd25lcl9wcm9ncmFtX3JlYWRhYmxlKF9hY3RvciB1dWlkLCBfcHJvZ3JhbV9pZCB1dWlkLCBfcHJldmlldyBib29sZWFuIERFRkFVTFQgZmFsc2UpCiBSRVRVUk5TIGJvb2xlYW4KIExBTkdVQUdFIHNxbAogU1RBQkxFIFNFQ1VSSVRZIERFRklORVIKIFNFVCBzZWFyY2hfcGF0aCBUTyAncHVibGljJwpBUyAkZnVuY3Rpb24kCiBTRUxFQ1QgX2FjdG9yIElTIE5PVCBOVUxMIEFORCBFWElTVFMoCiAgU0VMRUNUIDEgRlJPTSBhdXRoLnVzZXJzIGEgSk9JTiBwdWJsaWMub3duZXJfcHJvZ3JhbXMgcCBPTiBwLmlkPV9wcm9ncmFtX2lkCiAgSk9JTiBwdWJsaWMucHJvcGVydHlfb3duZXJzIG8gT04gby5pZD1wLm93bmVyX3JlY29yZF9pZCBBTkQgby5hY3RpdmUKICBXSEVSRSBhLmlkPV9hY3RvciBBTkQgYS5kZWxldGVkX2F0IElTIE5VTEwgQU5EIChhLmJhbm5lZF91bnRpbCBJUyBOVUxMIE9SIGEuYmFubmVkX3VudGlsPD1ub3coKSkKICAgQU5EIHAuYXJjaGl2ZWRfYXQgSVMgTlVMTAogICBBTkQgKChfcHJldmlldyBJUyBUUlVFIEFORCBwdWJsaWMuaGFzX3JvbGUoX2FjdG9yLCdhZG1pbicpKQogICAgT1IgKF9wcmV2aWV3IElTIEZBTFNFIEFORCBwcml2YXRlLmlzX3Byb2dyYW1fbWVtYmVyKHAuaWQsX2FjdG9yKQogICAgIEFORCAocC5pc19kZW1vPWZhbHNlIE9SIHByaXZhdGUuZGVtb19vd25lcl9saW5rX29rKF9hY3RvcixwLmlkKSkKICAgICBBTkQgRVhJU1RTKFNFTEVDVCAxIEZST00gcHVibGljLnVzZXJfcm9sZXMgV0hFUkUgdXNlcl9pZD1fYWN0b3IgQU5EIHJvbGU6OnRleHQ9J293bmVyJykKICAgICBBTkQgTk9UIEVYSVNUUyhTRUxFQ1QgMSBGUk9NIHB1YmxpYy51c2VyX3JvbGVzIFdIRVJFIHVzZXJfaWQ9X2FjdG9yIEFORCByb2xlOjp0ZXh0PD4nb3duZXInKSkpCiApCiRmdW5jdGlvbiQK",
+      "replacement_sha256": "6dff1dd6f22dd4ad057e05f2ab218c7702cfbe284b384d4c1daeac816e40be84",
+      "changes": [
+        [
+          "p.owner_user_id=_actor",
+          "private.is_program_member(p.id,_actor)"
+        ]
+      ],
+      "acl_handling": "CREATE OR REPLACE preserves exact existing proacl; no GRANT/REVOKE issued.",
+      "class": "ACCESS GATE"
+    },
+    {
+      "acl": [
+        {
+          "grantee": "PUBLIC",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "grantee": "postgres",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        }
+      ],
+      "name": "owns_owner_request",
+      "grants": null,
+      "schema": "private",
+      "sha256": "d6f5b01f0004dc2b3264144b0ceada01b30a1346adaacddea2327f93a704c413",
+      "signature": "_work_item_id uuid, _actor uuid",
+      "definition_base64": "Q1JFQVRFIE9SIFJFUExBQ0UgRlVOQ1RJT04gcHJpdmF0ZS5vd25zX293bmVyX3JlcXVlc3QoX3dv\ncmtfaXRlbV9pZCB1dWlkLCBfYWN0b3IgdXVpZCkKIFJFVFVSTlMgYm9vbGVhbgogTEFOR1VBR0Ug\nc3FsCiBTVEFCTEUgU0VDVVJJVFkgREVGSU5FUgogU0VUIHNlYXJjaF9wYXRoIFRPICdwdWJsaWMn\nCkFTICRmdW5jdGlvbiQKICBTRUxFQ1QgX2FjdG9yIElTIE5PVCBOVUxMIEFORCBFWElTVFMgKAog\nICAgU0VMRUNUIDEgRlJPTSBwdWJsaWMud29ya19pdGVtcyB3IEpPSU4gcHVibGljLm93bmVyX3By\nb2dyYW1zIHAgT04gcC5pZD13LnByb2dyYW1faWQKICAgICBXSEVSRSB3LmlkPV93b3JrX2l0ZW1f\naWQgQU5EIHcua2luZD0nb3Bwb3J0dW5pdHknIEFORCB3LnN0YXR1cyBOT1QgSU4gKCdkcmFmdCcs\nJ2FyY2hpdmVkJykKICAgICAgIEFORCBwLmFyY2hpdmVkX2F0IElTIE5VTEwgQU5EIHAub3duZXJf\ndXNlcl9pZD1fYWN0b3IpCiRmdW5jdGlvbiQK",
+      "replacement_base64": "Q1JFQVRFIE9SIFJFUExBQ0UgRlVOQ1RJT04gcHJpdmF0ZS5vd25zX293bmVyX3JlcXVlc3QoX3dvcmtfaXRlbV9pZCB1dWlkLCBfYWN0b3IgdXVpZCkKIFJFVFVSTlMgYm9vbGVhbgogTEFOR1VBR0Ugc3FsCiBTVEFCTEUgU0VDVVJJVFkgREVGSU5FUgogU0VUIHNlYXJjaF9wYXRoIFRPICdwdWJsaWMnCkFTICRmdW5jdGlvbiQKICBTRUxFQ1QgX2FjdG9yIElTIE5PVCBOVUxMIEFORCBFWElTVFMgKAogICAgU0VMRUNUIDEgRlJPTSBwdWJsaWMud29ya19pdGVtcyB3IEpPSU4gcHVibGljLm93bmVyX3Byb2dyYW1zIHAgT04gcC5pZD13LnByb2dyYW1faWQKICAgICBXSEVSRSB3LmlkPV93b3JrX2l0ZW1faWQgQU5EIHcua2luZD0nb3Bwb3J0dW5pdHknIEFORCB3LnN0YXR1cyBOT1QgSU4gKCdkcmFmdCcsJ2FyY2hpdmVkJykKICAgICAgIEFORCBwLmFyY2hpdmVkX2F0IElTIE5VTEwgQU5EIHByaXZhdGUuaXNfcHJvZ3JhbV9tZW1iZXIocC5pZCxfYWN0b3IpKQokZnVuY3Rpb24kCg==",
+      "replacement_sha256": "c3e978fa5c100bcd1ccfb6e97f915deb9faa71d14885c6c7120ae74bc72b22a6",
+      "changes": [
+        [
+          "p.owner_user_id=_actor",
+          "private.is_program_member(p.id,_actor)"
+        ]
+      ],
+      "acl_handling": "CREATE OR REPLACE preserves exact existing proacl; no GRANT/REVOKE issued.",
+      "class": "ACCESS GATE"
+    }
+  ],
+  "policy": {
+    "cmd": "SELECT",
+    "qual": "(EXISTS ( SELECT 1\n   FROM (owner_reviews r\n     JOIN owner_programs p ON ((p.id = r.program_id)))\n  WHERE ((r.id = owner_request_messages.review_id) AND (p.owner_user_id = auth.uid()) AND (r.archived_at IS NULL) AND (r.status <> 'prepared'::text))))",
+    "roles": [
+      "authenticated"
+    ],
+    "tablename": "owner_request_messages",
+    "permissive": "PERMISSIVE",
+    "policyname": "Homeowner reads released activity conversations",
+    "schemaname": "public",
+    "with_check": null,
+    "capture_base64": "eyJjbWQiOiJTRUxFQ1QiLCJwZXJtaXNzaXZlIjoiUEVSTUlTU0lWRSIsInBvbGljeW5hbWUiOiJIb21lb3duZXIgcmVhZHMgcmVsZWFzZWQgYWN0aXZpdHkgY29udmVyc2F0aW9ucyIsInF1YWwiOiIoRVhJU1RTICggU0VMRUNUIDFcbiAgIEZST00gKG93bmVyX3Jldmlld3MgclxuICAgICBKT0lOIG93bmVyX3Byb2dyYW1zIHAgT04gKChwLmlkID0gci5wcm9ncmFtX2lkKSkpXG4gIFdIRVJFICgoci5pZCA9IG93bmVyX3JlcXVlc3RfbWVzc2FnZXMucmV2aWV3X2lkKSBBTkQgKHAub3duZXJfdXNlcl9pZCA9IGF1dGgudWlkKCkpIEFORCAoci5hcmNoaXZlZF9hdCBJUyBOVUxMKSBBTkQgKHIuc3RhdHVzIDw+ICdwcmVwYXJlZCc6OnRleHQpKSkpIiwicm9sZXMiOlsiYXV0aGVudGljYXRlZCJdLCJzY2hlbWFuYW1lIjoicHVibGljIiwidGFibGVuYW1lIjoib3duZXJfcmVxdWVzdF9tZXNzYWdlcyIsIndpdGhfY2hlY2siOm51bGx9",
+    "capture_sha256": "c4452e2aa06c81a4976203f4f0e9e7e9ae8e66f8ad58f75ce44937958ed83837",
+    "old_check": "(EXISTS ( SELECT 1\n   FROM (owner_reviews r\n     JOIN owner_programs p ON ((p.id = r.program_id)))\n  WHERE ((r.id = owner_request_messages.review_id) AND (p.owner_user_id = auth.uid()) AND (r.archived_at IS NULL) AND (r.status <> 'prepared'::text))))",
+    "new_check": "(EXISTS ( SELECT 1\n   FROM (owner_reviews r\n     JOIN owner_programs p ON ((p.id = r.program_id)))\n  WHERE ((r.id = owner_request_messages.review_id) AND (private.is_program_member(p.id,auth.uid())) AND (r.archived_at IS NULL) AND (r.status <> 'prepared'::text))))",
+    "original_undo_sql_base64": "QUxURVIgUE9MSUNZICJIb21lb3duZXIgcmVhZHMgcmVsZWFzZWQgYWN0aXZpdHkgY29udmVyc2F0aW9ucyIgT04gcHVibGljLm93bmVyX3JlcXVlc3RfbWVzc2FnZXMgVVNJTkcgKChFWElTVFMgKCBTRUxFQ1QgMQogICBGUk9NIChvd25lcl9yZXZpZXdzIHIKICAgICBKT0lOIG93bmVyX3Byb2dyYW1zIHAgT04gKChwLmlkID0gci5wcm9ncmFtX2lkKSkpCiAgV0hFUkUgKChyLmlkID0gb3duZXJfcmVxdWVzdF9tZXNzYWdlcy5yZXZpZXdfaWQpIEFORCAocC5vd25lcl91c2VyX2lkID0gYXV0aC51aWQoKSkgQU5EIChyLmFyY2hpdmVkX2F0IElTIE5VTEwpIEFORCAoci5zdGF0dXMgPD4gJ3ByZXBhcmVkJzo6dGV4dCkpKSkpOw=="
+  },
+  "replaced_triggers": [],
+  "grants_changed": false,
+  "counts": {
+    "RECIPIENT/IDENTITY": 20,
+    "STAFF-ONLY/unrelated": 10,
+    "ACCESS GATE": 29,
+    "ATTRIBUTION": 10
+  },
+  "converted_functions": 6,
+  "converted_policies": 1,
+  "all_59_live_reference_hashes_and_grants_reverified": true,
+  "remaining_access_functions": [
+    "public.mark_owner_opportunity_viewed",
+    "public.owner_hours_eligibility",
+    "public.tag_owner_upload",
+    "public.respond_owner_review",
+    "private.lock_owner_time_program",
+    "public.read_owner_programs",
+    "public.read_owner_participation",
+    "public.can_view_owner_library_video",
+    "public.log_owner_time_entry",
+    "public.resubmit_owner_time_entry",
+    "public.create_owner_matter",
+    "public.read_owner_review_update",
+    "public.manage_owner_review_conversation",
+    "public.start_optional_opportunity",
+    "private.opportunity_documentation_response",
+    "public.respond_owner_opportunity",
+    "public.append_owner_review_message",
+    "public.post_owner_request_message",
+    "public.owner_str_reports"
+  ]
+}
