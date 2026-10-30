@@ -1,0 +1,42 @@
+{
+  "phase": "A",
+  "userId": "68ad7bb6-458f-4c0c-921f-3299251ac3fa",
+  "emailMasked": "rl***@gmail.com",
+  "created": true,
+  "created_at": "2026-10-30T22:20:33.458796Z",
+  "roleConfirmed": true,
+  "membershipConfirmedAbsent": true,
+  "noEmailRequested": true,
+  "phaseB": {
+    "memberId": "15740f80-bd61-43be-806d-851021d1416e",
+    "coOwnerId": "830332a2-3cee-4967-bd57-7cd625f8f9f9",
+    "primaryId": "68ad7bb6-458f-4c0c-921f-3299251ac3fa",
+    "programId": "814b9c32-0910-499b-b4ac-2c7fc026569b",
+    "welcomeId": "9195a6a6-5f73-409b-a930-ed3091151732"
+  },
+  "phaseB_rollback": {
+    "undone": true
+  },
+  "status": "STOPPED AND ROLLED BACK",
+  "failure": "0217 differed from staged file by one trailing newline; execution erroneously continued before stopping; authenticated rollback succeeded",
+  "checks": {
+    "originalReaderSha": "1f1c44d6b8ca56ad96d76a80110aafd08abd30c1ceaf2414c598d36cbbadc5eb",
+    "originalAcl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+    "entryHashUnchanged": true,
+    "originalMembershipRestored": true,
+    "welcomeRows": 0,
+    "ryanMemberships": 0,
+    "ryanEmailRows": 0,
+    "otherProgramDifferences": [],
+    "targetProgramDifferences": [
+      {
+        "id": "814b9c32-0910-499b-b4ac-2c7fc026569b",
+        "changedFields": [
+          "updated_at",
+          "report_version"
+        ]
+      }
+    ],
+    "anonCount": 69
+  }
+}
