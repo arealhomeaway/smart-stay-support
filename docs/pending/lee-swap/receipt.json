@@ -17,7 +17,7 @@
   "phaseB_rollback": {
     "undone": true
   },
-  "status": "STOPPED AND ROLLED BACK",
+  "status": "COMPLETED",
   "failure": "0217 differed from staged file by one trailing newline; execution erroneously continued before stopping; authenticated rollback succeeded",
   "checks": {
     "originalReaderSha": "1f1c44d6b8ca56ad96d76a80110aafd08abd30c1ceaf2414c598d36cbbadc5eb",
@@ -101,13 +101,57 @@
     "retainedChanges": "Append-only correction and reversal audit/events; automatic target report version/timestamps."
   },
   "phaseB_final": {
-    "status": "APPLIED, checks pending",
+    "status": "COMPLETED",
     "result": {
       "memberId": "44c079b2-7290-48bc-9dc0-b7c9b087858a",
       "coOwnerId": "830332a2-3cee-4967-bd57-7cd625f8f9f9",
       "primaryId": "68ad7bb6-458f-4c0c-921f-3299251ac3fa",
       "programId": "814b9c32-0910-499b-b4ac-2c7fc026569b",
       "welcomeId": "aa893e57-8424-4d7a-8743-9f2c61cb6057"
-    }
+    },
+    "migrations": [
+      "0226_lee_alert_history_final.sql",
+      "0227_lee_homeowner_correction_final.sql",
+      "0228_remove_completed_lee_correction.sql"
+    ],
+    "checks": {
+      "fileMatchesIgnoringTrailingWhitespace": true,
+      "readerReplacementSha": "37211248bb927bad53e156df7182b74ad40272d035be20fd7ce96ec82835713b",
+      "bodySha": "7f26d9f4294d4ab7964091ac1a69cd824e0d6cfbe00fc97a7c1fe5071077ea10",
+      "signatureReturnSecuritySearchPathAclMatch": true,
+      "bothMemberProgramIds": [
+        "814b9c32-0910-499b-b4ac-2c7fc026569b"
+      ],
+      "portalTablePredicateRowSetsIdentical": {
+        "reviews": 0,
+        "entries": 6,
+        "alerts": 8,
+        "events": 10
+      },
+      "entryAttribution": "Logged by Lindsey Lee",
+      "minutes": 302,
+      "entriesHash": "b31bd2afd05e7253deaadf23e5dcef75",
+      "otherProgramsHash": "4de480fd741cb2eb8ca03b2df009f21f",
+      "propertyOwnerHash": "d2853d2b139b25f57cc03afd08e8a8d9",
+      "revokedInvites": 2,
+      "lindseyWelcomes": 0,
+      "temporaryFunctionAbsent": true,
+      "anonCount": 69,
+      "anonSetHash": "70f8c5601ea3f18418113225505fd496"
+    },
+    "delivery": {
+      "status": "sent",
+      "recipientMasked": "rl***@gmail.com",
+      "sent_at": "2026-10-30T23:00:06.734Z",
+      "email_log_sent_at": "2026-10-30T23:00:06.675Z",
+      "job_id": "a1fa011d-20b1-478f-bc41-779d77357ddb",
+      "jobStartedAt": "2026-10-30T23:00:02.60386Z",
+      "jobErrors": [],
+      "welcomesSent": 1,
+      "allOtherEmailCounts": 0
+    },
+    "notVerified": [
+      "Homeowner sign-in, rendered portal screens and inbox delivery were not tested. Portal equivalence verified using direct table predicates."
+    ]
   }
 }
