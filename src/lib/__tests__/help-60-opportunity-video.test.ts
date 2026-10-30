@@ -15,7 +15,7 @@ describe("Help ticket 60: Opportunity video attachments", () => {
     const r = await prepareUploadSelection([new File([zip as BlobPart], "walkthrough.zip", { type: "application/x-zip-compressed" })], true);
     expect(r.messages).toEqual([]);
     expect(r.files.map(f => [f.name, f.type])).toEqual([["walkthrough.mp4", "video/mp4"]]);
-  }, 120000);
+  });
 
   it("a ZIP using Deflate64 says exactly why and what to do", async () => {
     const zip = zipSync({ "walkthrough.mp4": [bytes(1024), { level: 0 }] }); const v = new DataView(zip.buffer);
@@ -35,6 +35,6 @@ describe("Help ticket 60: Opportunity video attachments", () => {
   it("a 251 MB MP4 is refused before upload with the link instruction", () => {
     const q = new FileUploadQueue<File, string>(async () => "doc");
     q.add([sized("v.mp4", "video/mp4", 251 * MB)]);
-    expect(q.snapshot()[0]?.status).toBe("failed"); expect(q.snapshot()[0]?.reason).toMatch(/250 MB.*link/);
+    expect(q.snapshot()[0]?.status).toBe("failed"); expect(/250 MB.*link/.test(q.snapshot()[0]?.reason ?? "")).toBe(true);
   });
 });
