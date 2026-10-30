@@ -1,6 +1,7 @@
 # Roadmap — approved build work, NO publish
 
 ## Oct 30 co-owner support (approved build/test only)
+- [ ] Pass 2: classify all captured functions and matching live/storage policies; stage exact access-only substitutions and undo; execute converted live definitions in isolation
 - [x] Stage membership foundation, pending primary backfill draft, absence undo and isolated access tests
 - [x] Inventory 59 live owner_user_id functions and one direct policy with verified base64/SHA256 and grants; preserve all current routing
 - [ ] Convert all owner access policies/functions and test full schema in isolation
