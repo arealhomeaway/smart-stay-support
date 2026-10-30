@@ -170,7 +170,7 @@ describe('pending co-owner remaining gates (04) from captured LIVE definitions',
   await d.exec('SET check_function_bodies=off');
   const p2=['private.has_role','public.has_role','public.is_onboarding_director','private.demo_owner_link_ok','private.owner_program_readable'];
   for(const n of p2){const f=live.functions.find(f=>f.schema+'.'+f.name===n)!;await load({...f,acl:'{'+(f.acl??[]).map(g=>g.grantee+'=X/postgres').join(',')+'}'} as Captured);}
-  for(const f of ref3.dependencies) await load(f);
+  for(const f of ref3.dependencies.filter(f=>f.name!=='notify_opportunity_staff')) await load(f); // staff alert side effect stays stubbed
   for(const f of ref3.targets) await load(f);
   await d.exec(`INSERT INTO property_owners VALUES('${OA}',true),('${OB}',true);
    INSERT INTO auth.users(id,email) VALUES('${P}','p@owners.test'),('${C}','c@owners.test'),('${R}','r@owners.test'),('${O}','o@owners.test'),('${S}','s@staff.test');
