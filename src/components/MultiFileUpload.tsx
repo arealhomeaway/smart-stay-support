@@ -6,10 +6,12 @@ import { formatBytes } from "@/lib/attachments";
 import { FileUploadQueue } from "@/lib/file-upload-queue";
 import { isZip, prepareUploadSelection } from "@/lib/zip-upload";
 
-export function MultiFileUpload<R>({ upload, onResults, onBusyChange, disabled = false, multiple = true }: {
+export function MultiFileUpload<R>({ upload, onResults, onBusyChange, disabled = false, multiple = true, autoStart = false }: {
   upload: (file: File, progress: (value: number) => void, key: string) => Promise<R>;
   onResults?: (results: R[]) => void; onBusyChange?: ((busy: boolean) => void) | undefined;
   disabled?: boolean; multiple?: boolean;
+  /** Start uploading as soon as files are chosen, so a form is never blocked by an unstarted file. */
+  autoStart?: boolean;
 }) {
   const latest = useRef({ upload, onResults, onBusyChange });
   latest.current = { upload, onResults, onBusyChange };
@@ -32,7 +34,7 @@ export function MultiFileUpload<R>({ upload, onResults, onBusyChange, disabled =
     if (disabled || busy || selecting.current) return;
     selecting.current = true;
     setOpening(files.some(isZip));
-    try { const selected = await prepareUploadSelection(files, multiple); setMessages(selected.messages); queue.add(selected.files); }
+    try { const selected = await prepareUploadSelection(files, multiple); setMessages(selected.messages); queue.add(selected.files); if (autoStart) queue.start(); }
     finally { selecting.current = false; setOpening(false); }
   }
   return <div className="space-y-2" onDragOver={e => { e.preventDefault(); if (!disabled && !busy && !opening) setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={e => { e.preventDefault(); setDragging(false); void add(Array.from(e.dataTransfer.files)); }}>

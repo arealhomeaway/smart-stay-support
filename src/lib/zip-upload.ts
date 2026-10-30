@@ -2,6 +2,7 @@ import { Unzip, UnzipInflate } from "fflate";
 import { ALLOWED_MIME_TYPES, MAX_FILE_BYTES, validateFile } from "./attachments";
 
 export const ZIP_OPEN_ERROR = "Resolve couldn't open this ZIP here. Try on a computer, or unzip it and select the files.";
+export const ZIP_COMPRESSION_ERROR = "This ZIP uses a compression type Resolve can't open (Windows does this for some large files). Select the video itself instead: videos up to 250 MB upload directly.";
 export const ZIP_SINGLE_ERROR = "This spot takes one file. Choose the file you need, or unzip and pick one.";
 const mimeByExtension: Record<string, string> = {
   jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", heic: "image/heic", heif: "image/heif",
@@ -36,6 +37,8 @@ export async function openZip(archive: Blob, multiple = true): Promise<{ files: 
     let cursor = 0;
     for (let i = 0; i < count; i++) {
       if (directory.getUint32(cursor, true) !== 0x02014b50 || (directory.getUint16(cursor + 8, true) & 0x41)) throw new Error();
+      const method = directory.getUint16(cursor + 10, true);
+      if (method !== 0 && method !== 8) throw new Error(ZIP_COMPRESSION_ERROR);
       expected.push({ size: directory.getUint32(cursor + 24, true), crc: directory.getUint32(cursor + 16, true) });
       cursor += 46 + directory.getUint16(cursor + 28, true) + directory.getUint16(cursor + 30, true) + directory.getUint16(cursor + 32, true);
     }
@@ -82,7 +85,8 @@ export async function openZip(archive: Blob, multiple = true): Promise<{ files: 
     if (!multiple && files.length > 1) throw new Error(ZIP_SINGLE_ERROR);
     return { files, skipped };
   } catch (error) {
-    throw new Error(error instanceof Error && error.message === ZIP_SINGLE_ERROR ? ZIP_SINGLE_ERROR : ZIP_OPEN_ERROR);
+    const known = error instanceof Error && (error.message === ZIP_SINGLE_ERROR || error.message === ZIP_COMPRESSION_ERROR);
+    throw new Error(known ? error.message : ZIP_OPEN_ERROR);
   }
 }
 

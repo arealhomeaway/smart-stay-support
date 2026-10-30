@@ -26,10 +26,10 @@ export function uploadToSignedSlot(
     };
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) resolve();
-      else if (xhr.status === 413) reject(new Error(`${file.name} is larger than the storage limit.`));
-      else reject(new Error(`${file.name} did not finish uploading. Try again.`));
+      else if (xhr.status === 413) reject(new Error(`Storage refused ${file.name} as too large. Files up to 250 MB can be uploaded; for anything bigger, add a link instead.`));
+      else reject(new Error(`${file.name} did not finish uploading (storage answered ${xhr.status}). Select Retry.`));
     };
-    xhr.onerror = () => reject(new Error(`${file.name} did not finish uploading — check your connection and try again.`));
+    xhr.onerror = () => reject(new Error(`${file.name} lost its connection while uploading. Check your connection, then select Retry.`));
     xhr.send(file);
   });
 }

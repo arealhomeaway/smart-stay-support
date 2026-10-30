@@ -376,7 +376,7 @@ export function OpportunityEditor({
               />
               <ViewPropertyFilesLink propertyId={propertyId} />
             </div>
-            {editing !== null ? <MultiFileUpload key={key} upload={upload} onBusyChange={setUploading} disabled={mutation.isPending} onResults={ids => {
+            {editing !== null ? <MultiFileUpload key={key} autoStart upload={upload} onBusyChange={setUploading} disabled={mutation.isPending} onResults={ids => {
               setResources(cur => [...cur.filter(r => r.kind !== "file" || !uploadedIds.includes(r.document_id)), ...ids.map(id => ({ kind: "file" as const, document_id: id }))]);
               setUploadedIds(ids);
               void qc.invalidateQueries({ queryKey: ["owner-collaboration", propertyId] });
