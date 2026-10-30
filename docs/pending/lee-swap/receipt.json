@@ -7,5 +7,11 @@
   "roleConfirmed": true,
   "membershipConfirmedAbsent": true,
   "noEmailRequested": true,
-  "phaseB": "not started"
+  "phaseB": {
+    "memberId": "15740f80-bd61-43be-806d-851021d1416e",
+    "coOwnerId": "830332a2-3cee-4967-bd57-7cd625f8f9f9",
+    "primaryId": "68ad7bb6-458f-4c0c-921f-3299251ac3fa",
+    "programId": "814b9c32-0910-499b-b4ac-2c7fc026569b",
+    "welcomeId": "9195a6a6-5f73-409b-a930-ed3091151732"
+  }
 }
