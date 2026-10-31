@@ -28,14 +28,14 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
 
         try {
           const result = await runEmailJob(supabaseAdmin, [
-            // Active Owner plan clocks; skipped silently until the staged function exists.
-            { name: "ao_clocks", run: () => runAoClocksGuarded(supabaseAdmin) },
             { name: "progress", run: (id) => evaluateAllPrograms(supabaseAdmin, id) },
             { name: "deadlines_and_vendor_reminders", run: () => sweepDeadlineAlerts(supabaseAdmin) },
             { name: "owner", run: (id) => drainOwnerAlerts(supabaseAdmin, 50, undefined, id) },
             { name: "staff", run: (id) => drainStaffNotifications(supabaseAdmin, 50, undefined, id) },
             { name: "scheduled", run: (id) => drainScheduledEmails(new Date(), id) },
             { name: "welcomes", run: (id) => drainOwnerWelcomes(supabaseAdmin, 20, id) },
+            // Last, so it can never hold up existing deliveries. Skipped silently until the staged function exists.
+            { name: "ao_clocks", run: () => runAoClocksGuarded(supabaseAdmin) },
           ]);
           return Response.json(result, { status: result.ok ? 200 : 500 });
         } catch (err) {
