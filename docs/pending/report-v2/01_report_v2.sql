@@ -51,6 +51,16 @@ CREATE POLICY "Staff read report wording uses" ON public.report_wording_uses
   FOR SELECT TO authenticated USING (
     public.has_role(auth.uid(),'admin') OR public.is_onboarding_director(auth.uid()) OR public.is_director(auth.uid()));
 
+-- Current wording for report builders (invoker rights; table RLS applies).
+CREATE FUNCTION public.report_wording_current()
+RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER
+SET search_path TO public, pg_temp AS $function$
+ SELECT jsonb_build_object('version', w.version, 'sentences', w.sentences)
+ FROM public.report_wording_versions w ORDER BY w.version DESC LIMIT 1
+$function$;
+REVOKE ALL ON FUNCTION public.report_wording_current() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.report_wording_current() TO authenticated;
+
 CREATE FUNCTION public.report_wording_save(_sentences jsonb, _note text DEFAULT NULL)
 RETURNS int LANGUAGE plpgsql SECURITY DEFINER
 SET search_path TO public, pg_temp AS $function$

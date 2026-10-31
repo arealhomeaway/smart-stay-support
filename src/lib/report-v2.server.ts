@@ -12,39 +12,28 @@ import {
 } from "./report-v2";
 
 type Res = { data: unknown; error: { code?: string; message?: string } | null };
-type Sb = {
-  rpc: (fn: string, args?: Record<string, unknown>) => PromiseLike<Res>;
-  from: (t: string) => {
-    select: (c: string) => {
-      order: (c: string, o: { ascending: boolean }) => { limit: (n: number) => PromiseLike<Res> };
-    };
-  };
-};
+type Sb = { rpc: (fn: string, args?: Record<string, unknown>) => PromiseLike<Res> };
 const sb = (c: unknown) => c as Sb;
 
 export async function loadReportWording(client: unknown): Promise<ReportWording> {
-  const res = await sb(client)
-    .from("report_wording_versions")
-    .select("version, sentences")
-    .order("version", { ascending: false })
-    .limit(1);
-  if (res.error) {
-    if (isMissingReportObject(res.error, "report_wording_versions")) return FALLBACK_WORDING;
+  const res = await sb(client).rpc("report_wording_current");
+  if (res?.error) {
+    if (isMissingReportObject(res.error, "report_wording_current")) return FALLBACK_WORDING;
     throw new Error(res.error.message ?? "Could not read report wording.");
   }
-  const row = (res.data as { version: number; sentences: string[] }[] | null)?.[0];
-  if (!row || !Array.isArray(row.sentences) || row.sentences.length !== 6) return FALLBACK_WORDING;
-  return { version: row.version, sentences: row.sentences };
+  const row = res?.data as { version?: number; sentences?: unknown } | null | undefined;
+  if (!row || typeof row.version !== "number" || !Array.isArray(row.sentences) || row.sentences.length !== 6) return FALLBACK_WORDING;
+  return { version: row.version, sentences: row.sentences.map(String) };
 }
 
 export async function loadEntryLabels(client: unknown, entryIds: string[]): Promise<Map<string, EntryLabel>> {
   if (entryIds.length === 0) return new Map();
   const res = await sb(client).rpc("report_entry_labels", { _entry_ids: entryIds });
-  if (res.error) {
+  if (res?.error) {
     if (isMissingReportObject(res.error, "report_entry_labels")) return new Map();
     throw new Error(res.error.message ?? "Could not label report entries.");
   }
-  return buildEntryLabels((res.data ?? []) as EntryLabelRow[]);
+  return buildEntryLabels(Array.isArray(res?.data) ? (res.data as EntryLabelRow[]) : []);
 }
 
 /** Records which wording version a downloaded file used. Skipped until the wording record exists. */
@@ -60,7 +49,7 @@ export async function recordWordingUse(
     _format: input.format,
     _version: input.wording.version,
   });
-  if (res.error) {
+  if (res?.error) {
     if (isMissingReportObject(res.error, "record_report_wording_use")) return { recorded: false as const };
     throw new Error(res.error.message ?? "Could not record the report wording.");
   }

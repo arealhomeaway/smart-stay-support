@@ -84,6 +84,12 @@ describe("report v2, isolated PostgreSQL", () => {
     await db.exec(`INSERT INTO public.report_legacy_card_map(match_kind, match_value, card_code) VALUES ('exact_title','Review HOA rules and documents','A12')`);
   });
 
+  it("current wording read returns version 1 to report builders", async () => {
+    await as(owner);
+    const r = await one<{ w: { version: number; sentences: string[] } }>("SELECT public.report_wording_current() w");
+    expect(r.w.version).toBe(1);
+  });
+
   it("seeds version 1 with the six approved sentences", async () => {
     const r = await one<{ version: number; sentences: string[] }>("SELECT version, sentences FROM public.report_wording_versions");
     expect(r.version).toBe(1);
@@ -92,7 +98,7 @@ describe("report v2, isolated PostgreSQL", () => {
 
   it("labels engine-linked, mapped and unmatched entries, with who logged each", async () => {
     await as(owner);
-    const rows = (await db.query<{ entry_id: string; logged_by: string; card_code: string | null; label_source: string }>(
+    const rows = (await db.query<{ entry_id: string; logged_by: string; card_code: string | null; card_title: string | null; label_source: string }>(
       `SELECT * FROM public.report_entry_labels($1::uuid[]) ORDER BY entry_id`, [`{${eOwner},${eCo},${eMapped},${eRemoved}}`])).rows;
     const by = Object.fromEntries(rows.map((r) => [r.entry_id, r]));
     expect(by[eOwner]).toMatchObject({ logged_by: "Ryan Lee", card_code: "P01", label_source: "engine" });
@@ -146,7 +152,7 @@ describe("report v2, isolated PostgreSQL", () => {
     await db.exec(read("docs/pending/report-v2/undo/02_wording_seed.data.sql"));
     await db.exec(read("docs/pending/report-v2/undo/01_report_v2.sql"));
     const left = await one<{ n: number }>(`SELECT count(*)::int n FROM pg_class WHERE relname LIKE 'report_%'`);
-    const fns = await one<{ n: number }>(`SELECT count(*)::int n FROM pg_proc WHERE proname IN ('report_entry_labels','record_report_wording_use','report_wording_save')`);
+    const fns = await one<{ n: number }>(`SELECT count(*)::int n FROM pg_proc WHERE proname IN ('report_entry_labels','record_report_wording_use','report_wording_save','report_wording_current')`);
     expect(left.n + fns.n).toBe(0);
     expect(await hourPrint()).toBe(hoursBefore);
   });
@@ -161,8 +167,7 @@ describe("report v2 app rules", () => {
 
   const missing = { code: "PGRST202", message: "Could not find the function public.report_entry_labels" };
   const fakeSb = (err: unknown) => ({
-    rpc: async () => ({ data: null, error: err }),
-    from: () => ({ select: () => ({ order: () => ({ limit: async () => ({ data: null, error: { code: "42P01", message: 'relation "public.report_wording_versions" does not exist' } }) }) }) }),
+    rpc: async (fn: string) => ({ data: null, error: err === missing ? { code: "PGRST202", message: `Could not find the function public.${fn}` } : err }),
   });
 
   it("reports keep working before the database change", async () => {
@@ -190,7 +195,7 @@ describe("report v2 app rules", () => {
     expect(ownerEntryIds(r)).toEqual(["e1"]);
     const out = withReportV2(r, buildEntryLabels([{ entry_id: "e1", logged_by: "Rachel Lee", card_code: null, card_title: null }]), { version: 1, sentences: WORDING_SEED_V1 });
     expect(out.rows[0]).toMatchObject({ loggedBy: "Rachel Lee", card: EARLIER_ACTIVITY, minutes: 30 });
-    expect(out.rows[1]!.loggedBy).toBeUndefined();
+    expect(out.rows[1]!.loggedBy === undefined).toBe(true);
     expect(out.totals).toEqual(r.totals);
     const csv = strReportCsv(out);
     expect(csv).toContain("logged_by,library_card");
