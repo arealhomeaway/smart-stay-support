@@ -148,20 +148,49 @@ export function showVerifyBadge(planCard: { owner_completed_at: string | null } 
   return Boolean(planCard?.owner_completed_at);
 }
 
-export type ContributionRow = { id: string; card: string; cardCode: string; home: string; member: string; submittedAt: string; values: Record<string, unknown> };
-export function filterContributions(rows: ContributionRow[], f: { card: string; home: string; from: string; to: string; q: string }) {
+export type ContributionRow = { id: string; planCardId?: string; card: string; cardCode: string; home: string; member: string; submittedAt: string; values: Record<string, unknown> };
+export function filterContributions(rows: ContributionRow[], f: { card: string; home: string; from: string; to: string; q: string; planCard?: string }) {
   const q = f.q.trim().toLowerCase();
   return rows.filter((r) =>
-    (f.card === "all" || r.cardCode === f.card) && (f.home === "all" || r.home === f.home) &&
+    (!f.planCard || r.planCardId === f.planCard) && (f.card === "all" || r.cardCode === f.card) && (f.home === "all" || r.home === f.home) &&
     (!f.from || r.submittedAt.slice(0, 10) >= f.from) && (!f.to || r.submittedAt.slice(0, 10) <= f.to) &&
     (!q || [r.card, r.cardCode, r.home, r.member, JSON.stringify(r.values)].some((s) => s.toLowerCase().includes(q))));
+}
+
+export const PAGE_SIZE = 1000;
+/** Reads every page (no row cap). Missing engine objects become "not available". */
+export async function fetchAllPages<T>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>): Promise<Available<T[]>> {
+  const out: T[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const r = unwrap<T[]>(await page(from, from + PAGE_SIZE - 1));
+    if (!r.available) return r;
+    const rows = r.data ?? [];
+    out.push(...rows);
+    if (rows.length < PAGE_SIZE) return { available: true, data: out };
+  }
+}
+
+export function contributionCount(shown: number, total: number) {
+  return shown === total ? `${total} ${total === 1 ? "answer" : "answers"}` : `Showing ${shown} of ${total} answers`;
+}
+
+/** True only when the error says ao_process_clocks itself is not installed. */
+export function isClocksFunctionMissing(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const e = err as { code?: string; message?: string; details?: string; hint?: string };
+  const m = `${e.message ?? ""}`.toLowerCase();
+  const namesIt = /\bao_process_clocks\b/.test(m);
+  if (e.code === "PGRST202") return namesIt && m.includes("could not find the function");
+  if (e.code === "42883") return namesIt && /function\s+(public\.)?ao_process_clocks\s*\(/.test(m) && m.includes("does not exist");
+  return false;
 }
 
 /** 5-minute job part: runs the timed reminders/expiries; silently skipped until the function exists. */
 export async function runAoClocksGuarded(db: Pick<SupabaseClient, "rpc">) {
   const res = await db.rpc("ao_process_clocks" as never, {} as never);
   if (res.error) {
-    if (isMissingDbObject(res.error)) return { skipped: true as const };
+    // Only a missing clock function is "not set up yet"; anything else inside it is a job error.
+    if (isClocksFunctionMissing(res.error)) return { skipped: true as const };
     throw new Error((res.error as { message?: string }).message ?? "Plan clocks failed");
   }
   return { skipped: false as const, result: res.data };

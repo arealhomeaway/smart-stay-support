@@ -12,7 +12,7 @@ export function TaskVerifyBadge({ taskId }: { taskId: string }) {
   const pc = q.data?.available ? q.data.data : null;
   if (!showVerifyBadge(pc)) return null;
   return (
-    <Link to="/owner-contributions" search={{ q: pc?.id ?? "" }}>
+    <Link to="/owner-contributions" search={{ planCard: pc?.id ?? "" }}>
       <Badge variant="secondary">{VERIFY_BADGE}</Badge>
     </Link>
   );

@@ -11,11 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useRole } from "@/hooks/useRole";
 import { loadContributions } from "@/lib/ao-data";
 import { contributionsCsv } from "@/lib/ao-engine";
-import { NOT_SET_UP, canViewContributions, filterContributions } from "@/lib/ao-ui";
+import { NOT_SET_UP, canViewContributions, contributionCount, filterContributions } from "@/lib/ao-ui";
 import { usDate } from "@/lib/ao-format";
 
 export const Route = createFileRoute("/_authenticated/owner-contributions")({
-  validateSearch: (s: Record<string, unknown>): { q?: string } => (typeof s["q"] === "string" && s["q"] ? { q: s["q"] } : {}),
+  validateSearch: (s: Record<string, unknown>): { q?: string; planCard?: string } => ({
+    ...(typeof s["q"] === "string" && s["q"] ? { q: s["q"] } : {}),
+    ...(typeof s["planCard"] === "string" && s["planCard"] ? { planCard: s["planCard"] } : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Homeowner contributions | Resolve" },
@@ -38,7 +41,7 @@ function ContributionsPage() {
   const search = Route.useSearch();
   const allowed = canViewContributions({ isAdmin: role.isAdmin, isOnboardingDirector: role.isOnboardingDirector, isOpsDirector: role.access.seats.opsDirector === true });
   const q = useQuery({ queryKey: ["ao-contributions"], queryFn: loadContributions, enabled: allowed, retry: false });
-  const [f, setF] = useState({ card: "all", home: "all", from: "", to: "", q: search.q ?? "" });
+  const [f, setF] = useState({ card: "all", home: "all", from: "", to: "", q: search.q ?? "", planCard: search.planCard ?? "" });
   const rows = q.data?.available ? q.data.data : [];
   const cards = useMemo(() => [...new Map(rows.map((r) => [r.cardCode, r.card])).entries()].sort(), [rows]);
   const homes = useMemo(() => [...new Set(rows.map((r) => r.home))].sort(), [rows]);
@@ -81,7 +84,11 @@ function ContributionsPage() {
           <div className="space-y-1"><Label htmlFor="c-from" className="text-xs">From</Label><Input id="c-from" type="date" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} /></div>
           <div className="space-y-1"><Label htmlFor="c-to" className="text-xs">To</Label><Input id="c-to" type="date" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} /></div>
         </div>
-        <ul className="mt-4 divide-y">
+        <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
+          <span>{contributionCount(shown.length, rows.length)}</span>
+          {f.planCard ? <Button size="sm" variant="ghost" onClick={() => setF({ ...f, planCard: "" })}>Show all answers</Button> : null}
+        </div>
+        <ul className="mt-2 divide-y">
           {shown.map((r) => (
             <li key={r.id} className="py-2 text-sm">
               <p className="font-medium">{r.cardCode} {r.card}</p>

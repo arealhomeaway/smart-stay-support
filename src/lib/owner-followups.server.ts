@@ -68,11 +68,46 @@ async function routeFor(db: Db, propertyId: string) {
   });
 }
 
+type OpenTask = { id: string; assigned_to: string | null; title: string; link_path: string; no_project_manager: boolean | null };
+
+function alertRow(t: OpenTask, isDemo: boolean) {
+  return {
+    user_id: t.assigned_to,
+    kind: "owner_followup",
+    title: t.title,
+    body: t.no_project_manager
+      ? "This home is in onboarding and has no Project Manager on its team."
+      : "Open the home's Active Owner section to see what is waiting.",
+    entity_type: "owner_followup_task",
+    entity_id: t.id,
+    link_path: t.link_path,
+    priority: "p3",
+    is_demo: isDemo,
+    email_status: "skipped",
+  };
+}
+
+/** An open follow-up whose alert never saved gets it now. True when repaired. */
+export async function repairAlert(db: Db, task: OpenTask, isDemo: boolean) {
+  if (!task.assigned_to) return false;
+  const found = await db
+    .from("staff_notifications")
+    .select("id")
+    .eq("entity_type", "owner_followup_task")
+    .eq("entity_id", task.id)
+    .limit(1);
+  if (found.error) throw found.error;
+  if ((found.data ?? []).length > 0) return false;
+  const note = await db.from("staff_notifications").insert(alertRow(task, isDemo));
+  if (note.error) throw note.error;
+  return true;
+}
+
 /** Sync one home. Returns what happened, for job notes and tests. */
 export async function syncHomeFollowUp(db: Db, home: HomeInput, now = new Date()) {
   const existing = await db
     .from("owner_followup_tasks")
-    .select("id, status, closed_at")
+    .select("id, status, closed_at, assigned_to, title, link_path, no_project_manager")
     .eq("property_id", home.propertyId);
   if (followUpsNotReady(existing.error)) return { action: "not_ready" as const };
   if (existing.error) throw existing.error;
@@ -81,6 +116,11 @@ export async function syncHomeFollowUp(db: Db, home: HomeInput, now = new Date()
     closedAt: t.closed_at,
   }));
   const decision = followUpDecision(home.items, tasks, now);
+  if (decision.action === "keep") {
+    const open = (existing.data ?? []).find((t: { status: string }) => t.status === "open") as OpenTask | undefined;
+    if (open && (await repairAlert(db, open, home.isDemo))) return { action: "repaired" as const };
+    return { action: "keep" as const };
+  }
   if (decision.action !== "create") return { action: decision.action };
 
   const route = await routeFor(db, home.propertyId);
@@ -107,20 +147,11 @@ export async function syncHomeFollowUp(db: Db, home: HomeInput, now = new Date()
   if (task.error?.code === "23505") return { action: "keep" as const };
   if (task.error) throw task.error;
 
-  const note = await db.from("staff_notifications").insert({
-    user_id: route.assignee,
-    kind: "owner_followup",
-    title,
-    body: route.noProjectManager
-      ? "This home is in onboarding and has no Project Manager on its team."
-      : "Open the home's Active Owner section to see what is waiting.",
-    entity_type: "owner_followup_task",
-    entity_id: (task.data as { id: string }).id,
-    link_path: link,
-    priority: "p3",
-    is_demo: home.isDemo,
-    email_status: "skipped",
-  });
+  // If this alert fails, the next run repairs it from the open task (repairAlert).
+  const note = await db.from("staff_notifications").insert(alertRow({
+    id: (task.data as { id: string }).id, assigned_to: route.assignee, title, link_path: link,
+    no_project_manager: route.noProjectManager,
+  }, home.isDemo));
   if (note.error) throw note.error;
   return { action: "create" as const, assignee: route.assignee, reason: route.reason, title };
 }
@@ -138,16 +169,23 @@ export async function syncProgramFollowUps(db: Db, programId: string, now = new 
   if (homeIds.length === 0) return [];
   // Program-wide items belong to the first enrolled home so they count once.
   const first = homeIds[0] as string;
-  const homeFor = (pid: string | null): string => (pid && homeIds.includes(pid) ? pid : first);
+  // Items with no home go to the first home; items from a home no longer enrolled are skipped.
+  const homeFor = (pid: string | null): string | null => (!pid ? first : homeIds.includes(pid) ? pid : null);
   const byHome = new Map<string, OwnerItem[]>(homeIds.map((id: string) => [id, []]));
   for (const r of (reviews.data ?? []) as { id: string; property_id: string | null; status: string; respond_by: string | null; available_from: string | null; created_at: string; archived_at: string | null }[]) {
-    byHome.get(homeFor(r.property_id))!.push({
+    const h = homeFor(r.property_id);
+    if (!h) continue;
+    byHome.get(h)!.push({
       id: r.id, source: "review", status: r.status, archivedAt: r.archived_at,
-      respondBy: r.respond_by, waitingSince: r.available_from ?? r.created_at,
+      respondBy: r.respond_by, availableFrom: r.available_from,
+      // Waiting starts when the item opened (unlock sets available_from); older items only have creation.
+      waitingSince: r.available_from ?? r.created_at,
     });
   }
   for (const w of (work.data ?? []) as { id: string; property_id: string | null; status: string; due_on: string | null; sent_at: string | null; responded_at: string | null; retired_at: string | null }[]) {
-    byHome.get(homeFor(w.property_id))!.push({
+    const h = homeFor(w.property_id);
+    if (!h) continue;
+    byHome.get(h)!.push({
       id: w.id, source: "work_item", status: w.status, retiredAt: w.retired_at,
       respondBy: w.due_on, waitingSince: w.sent_at, respondedAt: w.responded_at,
     });
