@@ -55,7 +55,7 @@ function centralOffsetMs(at: Date) {
 
 /** The instant a respond-by date ends: next midnight in Central time. */
 export function endOfCentralDay(date: string): Date {
-  const [y, m, d] = date.slice(0, 10).split("-").map(Number);
+  const [y = 0, m = 1, d = 1] = date.slice(0, 10).split("-").map(Number);
   const guess = Date.UTC(y, m - 1, d + 1);
   let t = guess - centralOffsetMs(new Date(guess));
   t = guess - centralOffsetMs(new Date(t));
