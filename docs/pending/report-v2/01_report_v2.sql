@@ -82,14 +82,18 @@ GRANT EXECUTE ON FUNCTION public.report_wording_save(jsonb,text) TO authenticate
 CREATE FUNCTION public.record_report_wording_use(_program uuid, _kind text, _ref uuid, _format text, _version int)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER
 SET search_path TO public, private, pg_temp AS $function$
+DECLARE prog uuid := _program;
 BEGIN
  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Sign in to download a report.' USING ERRCODE='42501'; END IF;
+ IF prog IS NULL AND _kind = 'str_report' AND _ref IS NOT NULL THEN
+  SELECT s.program_id INTO prog FROM public.str_participation_reports s WHERE s.id = _ref;
+ END IF;
  IF NOT (public.has_role(auth.uid(),'admin') OR public.is_director(auth.uid()) OR public.is_onboarding_director(auth.uid())
-   OR (_program IS NOT NULL AND private.owner_program_readable(auth.uid(), _program))) THEN
+   OR (prog IS NOT NULL AND private.owner_program_readable(auth.uid(), prog))) THEN
   RAISE EXCEPTION 'This report is not available to this account.' USING ERRCODE='42501';
  END IF;
  INSERT INTO public.report_wording_uses(program_id, report_kind, report_ref, file_format, wording_version, generated_by)
-  VALUES (_program, _kind, _ref, _format, _version, auth.uid());
+  VALUES (prog, _kind, _ref, _format, _version, auth.uid());
 END $function$;
 REVOKE ALL ON FUNCTION public.record_report_wording_use(uuid,text,uuid,text,int) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.record_report_wording_use(uuid,text,uuid,text,int) TO authenticated;
