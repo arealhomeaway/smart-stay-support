@@ -34,6 +34,8 @@ export const ownerReportFile = createServerFn({ method: "POST" })
     const programId = await ownProgramId(context.supabase as never, context.userId);
     const report = await buildOwnerReport(context.supabase as never, programId);
     const names = reportFileNames(report);
+    const { recordWordingUse } = await import("./report-v2.server");
+    await recordWordingUse(context.supabase, { programId, kind: "owner_participation", ref: null, format: data.format, wording: report.wording });
     if (data.format === "csv") {
       return {
         filename: names.csv,

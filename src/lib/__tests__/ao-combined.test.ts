@@ -55,7 +55,7 @@ const plan = (code: string) => one<{ id: string; join_outcome: string; owner_rev
 describe("Active Owner engine combined copy: 01, seed, 02, 03", () => {
   let catBefore = "", anonBefore = "", fpBefore = "";
   const anonAfter: string[] = [];
-  const csvCodes = read("docs/pending/ao-library/cards_v1.csv").split("\n").slice(1).filter(Boolean).map((l) => l.split(",")[0]).sort();
+  const csvCodes = read("docs/pending/ao-library/cards_v1.csv").split("\n").slice(1).filter(Boolean).map((l) => l.split(",")[0] ?? "").sort();
   let locked = "", open = "", flex = "";
 
   beforeAll(async () => {
@@ -117,7 +117,7 @@ describe("Active Owner engine combined copy: 01, seed, 02, 03", () => {
     const c = new Date(p.cutoff_at!.getTime() + 60_000).toISOString();
     await db.query("SELECT public.ao_process_clocks($1)", [c]); await db.query("SELECT public.ao_process_clocks($1)", [c]);
     const alerts = (await db.query<{ user_id: string }>("SELECT user_id FROM public.staff_notifications WHERE entity_id IS NOT NULL OR true")).rows;
-    expect(alerts.map((a) => a.user_id).filter((u) => u === assignee).length).toBeGreaterThanOrEqual(1);
+    expect(alerts.map((a) => a.user_id).filter((u) => u === assignee).length).toBeGreaterThan(0);
     expect(alerts.every((a) => a.user_id === assignee)).toBe(true);
     expect((await one<{ outcome: string }>("SELECT outcome FROM public.owner_reviews WHERE id=$1", [p.owner_review_id])).outcome).toBe("Owner opportunity expired, ARHA completed");
     await db.query("UPDATE public.onboarding_tasks SET status='open', completed_by=null WHERE id=$1", [taskA]);

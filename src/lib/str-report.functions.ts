@@ -79,9 +79,19 @@ export const strReportRevise = createServerFn({ method: "POST" })
     }),
   );
 
-async function file(report: StrReport, format: "pdf" | "csv", appendix: boolean) {
-  const { strReportCsv, reportFileBase } = await import("./str-report");
+async function file(
+  sb: unknown,
+  raw: StrReport,
+  format: "pdf" | "csv",
+  appendix: boolean,
+  use: { programId: string | null; ref: string | null },
+) {
+  const { strReportCsv, reportFileBase, withReportV2, ownerEntryIds } = await import("./str-report");
   const { strReportPdf, ownerSafe } = await import("./str-report.server");
+  const { loadEntryLabels, loadReportWording, recordWordingUse } = await import("./report-v2.server");
+  const [labels, wording] = await Promise.all([loadEntryLabels(sb, ownerEntryIds(raw)), loadReportWording(sb)]);
+  const report = withReportV2(raw, labels, wording);
+  await recordWordingUse(sb, { programId: use.programId, kind: "str_report", ref: use.ref, format, wording });
   const safe = ownerSafe(report);
   const base = reportFileBase(safe);
   if (format === "csv")
@@ -110,7 +120,10 @@ export const strReportExport = createServerFn({ method: "POST" })
     } else if (data.filters) {
       report = { ...(await preview(context.supabase, data.filters)), generatedAt: new Date().toISOString() };
     } else throw new Error("Choose a report to export.");
-    return file(report, data.format, data.appendix);
+    return file(context.supabase, report, data.format, data.appendix, {
+      programId: data.filters?.programId ?? null,
+      ref: data.reportId ?? null,
+    });
   });
 
 type OwnerReports = {
@@ -146,5 +159,11 @@ export const ownerStrReportFile = createServerFn({ method: "POST" })
     const res = await call<OwnerReports | null>(context.supabase, "owner_str_reports");
     const r = res?.reports.find((x) => x.id === data.reportId);
     if (!r) throw new Error("This report is not available.");
-    return file({ ...r.snapshot, version: r.version, generatedAt: r.generatedAt, draft: false }, data.format, true);
+    return file(
+      context.supabase,
+      { ...r.snapshot, version: r.version, generatedAt: r.generatedAt, draft: false },
+      data.format,
+      true,
+      { programId: null, ref: r.id },
+    );
   });

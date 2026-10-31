@@ -16,6 +16,8 @@ import { reviewedOwnerUpdateText } from "./owner-reviewed-update";
 import { loadOwnerResponseReceipts } from "./owner-response-history.server";
 import { readOwnerParticipation } from "./owner-participation-reader.server";
 import { ownerReportAction } from "./owner-report-action";
+import { loadEntryLabels, loadReportWording } from "./report-v2.server";
+import { labelFor, wordingVersionLabel } from "./report-v2";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import type { Client } from "./owner-participation.server";
 import { loadProgramAggregate, combinedMinutes } from "./owner-participation.server";
@@ -50,6 +52,10 @@ export type ReportEntry = {
   evidence: string;
   /** "Property-specific" when tagged to a home, otherwise "General". */
   scope: "Property-specific" | "General";
+  /** Who logged the entry. Attribution only; totals sum every member. */
+  loggedBy: string;
+  /** Library card code and title, or "Earlier activity". */
+  card: string;
 };
 
 export type ReportAction = {
@@ -95,6 +101,11 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
   const opportunities = new Map(agg.reviews.map((r) => [r.id, r] as const));
 
   const superseded = new Set(agg.entries.filter((e) => e.superseded).map((e) => e.id));
+  const [labels, wording] = await Promise.all([
+    loadEntryLabels(supabase, agg.entries.map((e) => e.id)),
+    loadReportWording(supabase),
+  ]);
+  const ownerFallback = p.ownerName ?? "Homeowner";
   // Homes closing in the same calendar year share one participation total.
   // An entry is "in period" when dated in a participation year (General and
   // pre-closing entries included), up to today.
@@ -131,6 +142,7 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
       opportunity: opp ? opp.title : "",
       evidence: e.attachment_path ? e.attachment_path.split("/").pop()! : "",
       scope: e.propertyIds.length ? "Property-specific" : "General",
+      ...labelFor(labels, e.id, ownerFallback),
     };
   });
 
@@ -221,17 +233,9 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
     outsidePeriod,
     actions: allActions,
     responses,
+    wording,
   };
 }
-
-const NOTES = [
-  "Reported hours are the homeowner's own record of participation, entered manually by the homeowner. ARHA does not certify or approve these hours.",
-  "Entries replaced by a correction, and entries returned for a data-quality question, are excluded from the total.",
-  "An activity shared across several homes is counted once in the combined total; the homes are listed for attribution only.",
-  "The shared total for each calendar year with a confirmed closing includes every activity dated that year — tagged to any home, General, or before a closing — counted once. Home figures only show which activities were tagged to that home; there is no separate per-home total or minimum.",
-  "Every hour is the homeowner's own record, entered manually. Approvals and revisions are logged as actions and never create hours.",
-  "This report is an operational record of reported participation. It is not a tax certification and not a guarantee of any tax treatment.",
-];
 
 export function reportCsv(report: OwnerReport) {
   const esc = (v: string | number | boolean) => `"${String(v).replace(/"/g, '""')}"`;
@@ -259,6 +263,8 @@ export function reportCsv(report: OwnerReport) {
     "ticket_id",
     "review_id",
     "narrative_revision",
+    "logged_by",
+    "library_card",
   ];
   const rows = [...report.entries, ...report.outsidePeriod].map((e) =>
     [
@@ -285,6 +291,8 @@ export function reportCsv(report: OwnerReport) {
       "",
       "",
       "",
+      e.loggedBy,
+      e.card,
     ]
       .map(esc)
       .join(","),
@@ -314,6 +322,8 @@ export function reportCsv(report: OwnerReport) {
       receipt.ticketId ?? "",
       receipt.reviewId ?? "",
       receipt.ownerUpdate?.revision ?? "",
+      "",
+      "",
     ]
       .map(esc)
       .join(","),
@@ -331,7 +341,8 @@ export function reportCsv(report: OwnerReport) {
     `# Awaiting review hours,${report.totals.pendingHours}`,
     `# Returned hours (not counted),${report.totals.returnedHours}`,
     `# Superseded hours (not counted),${report.totals.supersededHours}`,
-    ...NOTES.map((n) => `# ${n.replace(/,/g, ";")}`),
+    `# Report wording,${wordingVersionLabel(report.wording)}`,
+    ...report.wording.sentences.map((n) => `# ${n.replace(/,/g, ";")}`),
   ];
   return [...meta, head.join(","), ...rows, ...responseRows].join("\n");
 }
@@ -533,6 +544,8 @@ export async function reportPdf(report: OwnerReport) {
       x: cols[5],
       color: e.counts ? INK : MUTED,
     });
+    space(10);
+    text(fit(`${e.card} · Logged by ${e.loggedBy}`, W - M * 2 - 56, 7), { size: 7, color: MUTED, x: cols[1] });
   }
 
   if (report.entries.length === 0) para("No entries recorded in this period yet.");
@@ -551,6 +564,8 @@ export async function reportPdf(report: OwnerReport) {
       text(String(e.hours), { size: 8, x: cols[3] });
       text("—", { size: 8, x: cols[4] });
       text("Outside period", { size: 8, x: cols[5], color: MUTED });
+      space(10);
+      text(fit(`${e.card} · Logged by ${e.loggedBy}`, W - M * 2 - 56, 7), { size: 7, color: MUTED, x: cols[1] });
     }
   }
 
@@ -605,7 +620,8 @@ export async function reportPdf(report: OwnerReport) {
   if (report.responses.length === 0) para("No review responses recorded yet.");
 
   heading("How to read this report");
-  for (const n of NOTES) para(`• ${n}`, 8.5);
+  for (const n of report.wording.sentences) para(`• ${n}`, 8.5);
+  para(wordingVersionLabel(report.wording), 7.5);
 
   const bytes = await doc.save();
   return bytes;

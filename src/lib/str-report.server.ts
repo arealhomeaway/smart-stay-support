@@ -1,4 +1,5 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { wordingVersionLabel } from "./report-v2";
 import { PROGRAM_LEVEL_NOTE, ownerBreakdown, DRAFT_LABEL, hrs, timeLabel, totalText, type StrReport } from "./str-report";
 
 const TEAL = rgb(0.075, 0.455, 0.478);
@@ -182,7 +183,11 @@ export async function strReportPdf(r: StrReport, opts: { appendix: boolean }) {
           { s: x.date, x: c[0], w: 48 },
           { s: x.person, x: c[1], w: 92 },
           { s: x.workType, x: c[2], w: 70 },
-          { s: x.reference + (x.correction ? " (corrected)" : ""), x: c[3], w: 140 },
+          {
+            s: x.reference + (x.correction ? " (corrected)" : "") + (x.card ? ` | ${x.card}` : "") + (x.loggedBy ? ` | Logged by ${x.loggedBy}` : ""),
+            x: c[3],
+            w: 140,
+          },
           { s: timeLabel(x), x: c[4], w: 95 },
           {
             s: x.status === "provisional" ? "Under review" : x.minutes == null ? "-" : `${hrs(x.minutes)!.toFixed(2)} h`,
@@ -197,6 +202,11 @@ export async function strReportPdf(r: StrReport, opts: { appendix: boolean }) {
 
   heading("Disclaimer", wrap(r.disclaimer, W - M * 2, 8.5).length * 11.5);
   para(r.disclaimer, 8.5, INK);
+  if (r.wording) {
+    heading("How to read this report");
+    for (const n of r.wording.sentences) para(`- ${n}`, 8.5);
+    para(wordingVersionLabel(r.wording), 7.5);
+  }
   const pages = doc.getPages();
   pages.forEach((p, i) => {
     const label = `A Real Home Away  |  ${clean(r.property.name)}  |  Page ${i + 1} of ${pages.length}`;
