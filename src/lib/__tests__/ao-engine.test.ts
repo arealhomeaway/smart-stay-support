@@ -88,8 +88,9 @@ describe("hard rule: templates and home plans never change", () => {
     expect(snap([templates, tasks])).toBe(before);
   });
   it("staged SQL never writes to templates, versions, steps or home Tasks", async () => {
-    const sql = await Bun.file("docs/pending/ao-engine/01_engine_foundation.sql").text();
-    const code = sql.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
+    const { readFileSync } = await import("node:fs");
+    const sql: string = readFileSync("docs/pending/ao-engine/01_engine_foundation.sql", "utf8");
+    const code = sql.split("\n").filter((l: string) => !l.trim().startsWith("--")).join("\n");
     expect(/(INSERT INTO|UPDATE|DELETE FROM|ALTER TABLE|TRUNCATE)\s+public\.onboarding_(templates|template_versions|template_tasks|template_stages|tasks|projects)\b/i.test(code)).toBe(false);
   });
 });
