@@ -137,6 +137,9 @@ describe("Active Owner engine combined copy: 01, seed, 02, 03", () => {
     await db.exec("DELETE FROM public.ao_contributions; DELETE FROM public.ao_home_plan_cards; DELETE FROM public.ao_home_plan_settings_history; DELETE FROM public.ao_home_plan_settings;");
     for (const f of ["docs/pending/ao-engine/undo/03_screen_reads.sql", "docs/pending/ao-engine/undo/02_engine_rpcs.sql", "docs/pending/ao-library/undo/01_seed_cards_v1.data.sql"])
       await db.exec(read(f));
-    expect(await n("SELECT count(*)::int n FROM public.ao_library_cards")).toBe(3); // the 3 released copies were edited, then undo removes by code
+    expect(await n("SELECT count(*)::int n FROM public.ao_library_cards")).toBe(0);
+    await db.exec(read("docs/pending/ao-engine/undo/01_engine_foundation.sql"));
+    expect(await catalog()).toBe(catBefore);
+    expect(await anonSet()).toBe(anonBefore);
   });
 });
