@@ -24,9 +24,12 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
         const { drainScheduledEmails } = await import("@/lib/email-composer.server");
         const { drainOwnerWelcomes } = await import("@/lib/owner-welcome.server");
         const { runEmailJob } = await import("@/lib/email-job.server");
+        const { runAoClocksGuarded } = await import("@/lib/ao-ui");
 
         try {
           const result = await runEmailJob(supabaseAdmin, [
+            // Active Owner plan clocks; skipped silently until the staged function exists.
+            { name: "ao_clocks", run: () => runAoClocksGuarded(supabaseAdmin) },
             { name: "progress", run: (id) => evaluateAllPrograms(supabaseAdmin, id) },
             { name: "deadlines_and_vendor_reminders", run: () => sweepDeadlineAlerts(supabaseAdmin) },
             { name: "owner", run: (id) => drainOwnerAlerts(supabaseAdmin, 50, undefined, id) },
