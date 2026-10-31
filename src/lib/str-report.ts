@@ -1,3 +1,4 @@
+import { labelFor, wordingVersionLabel, type EntryLabel, type ReportWording } from "./report-v2";
 /**
  * STR Property Participation & Work Activity Report — browser-safe model,
  * labels and CSV. The rows and summary are built once in the database
@@ -19,6 +20,10 @@ export type ReportRow = {
   status: "final" | "provisional";
   correction: boolean;
   internal?: Record<string, string | number | boolean | null>;
+  /** Owner rows only: who logged the entry (labels never change minutes or totals). */
+  loggedBy?: string;
+  /** Owner rows only: library card code and title, or "Earlier activity". */
+  card?: string;
 };
 
 export type SummaryRow = {
@@ -55,7 +60,29 @@ export type StrReport = {
   version?: number;
   draft?: boolean;
   generatedAt?: string;
+  /** Approved report wording used for this file. */
+  wording?: ReportWording;
 };
+
+/** Adds Logged by and card labels to owner rows and attaches the wording set. Minutes untouched. */
+export function withReportV2(r: StrReport, labels: Map<string, EntryLabel>, wording: ReportWording): StrReport {
+  return {
+    ...r,
+    wording,
+    rows: r.rows.map((x) => {
+      if (x.personKind !== "owner") return x;
+      const id = typeof x.internal?.["id"] === "string" ? (x.internal["id"] as string) : "";
+      return { ...x, ...labelFor(labels, id, x.person) };
+    }),
+  };
+}
+
+/** Owner entry ids in a report, used to look up labels before internal refs are removed. */
+export function ownerEntryIds(r: StrReport) {
+  return r.rows
+    .filter((x) => x.personKind === "owner" && x.internal?.["kind"] === "owner_time_entry")
+    .map((x) => String(x.internal!["id"]));
+}
 
 export const PROGRAM_LEVEL_NOTE =
   "Program-Level Participation is owner participation not linked to a specific property. It is not automatically assigned to any property and is shown separately to avoid double-counting.";
@@ -142,6 +169,9 @@ export function strReportCsv(r: StrReport) {
     ...(r.include.owner ? [`# ${(r.programLevelNote ?? PROGRAM_LEVEL_NOTE).replace(/,/g, ";")}`] : []),
     ...(r.underReviewNote ? [`# ${r.underReviewNote}`] : []),
     `# ${r.disclaimer.replace(/,/g, ";")}`,
+    ...(r.wording
+      ? [`# Report wording,${wordingVersionLabel(r.wording)}`, ...r.wording.sentences.map((n) => `# ${n.replace(/,/g, ";")}`)]
+      : []),
   ];
   const head = [
     "property",
@@ -159,6 +189,8 @@ export function strReportCsv(r: StrReport) {
     "duration_hours",
     "status",
     "correction",
+    "logged_by",
+    "library_card",
   ];
   const lines = r.rows.map((x) =>
     [
@@ -181,6 +213,8 @@ export function strReportCsv(r: StrReport) {
           ? "Draft"
           : "Finalized",
       x.correction ? "Corrected" : "",
+      x.loggedBy ?? "",
+      x.card ?? "",
     ]
       .map(esc)
       .join(","),
