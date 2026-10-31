@@ -50,11 +50,12 @@ const catalog = async () =>
   (await one<{ s: string }>(`SELECT coalesce(string_agg(p.oid::regprocedure::text || md5(pg_get_functiondef(p.oid)) || coalesce(p.proacl::text,''), ',' ORDER BY 1),'') ||
      (SELECT coalesce(string_agg(tgname, ',' ORDER BY 1),'') FROM pg_trigger WHERE NOT tgisinternal) s
      FROM pg_proc p JOIN pg_namespace ns ON ns.oid=p.pronamespace WHERE ns.nspname IN ('public','private')`)).s;
-const card = (id: string, code: string, o: Record<string, unknown>) =>
+type CardOpts = { title?: string; lane?: string; stage?: string; status?: string; lock?: string; links?: string[]; days?: number; opens?: string };
+const card = (id: string, code: string, o: CardOpts) =>
   db.query(`INSERT INTO public.ao_library_cards(id, code, title, lane, stage_window, status, lock_rule, linked_template_task_ids, deadline_business_days, opens_text, why_text)
     VALUES ($1,$2,$3,$4,$5,$6,$7,$8::uuid[],$9,$10,'Why')`,
     [id, code, o.title ?? code, o.lane ?? "critical", o.stage ?? "onboarding_early", o.status ?? "released",
-     o.lock ?? "none", `{${(o.links as string[] | undefined)?.join(",") ?? ""}}`, o.days ?? 3, o.opens ?? ""]);
+     o.lock ?? "none", `{${o.links?.join(",") ?? ""}}`, o.days ?? 3, o.opens ?? ""]);
 const plan = (prop: string, c: string) =>
   one<{ id: string; join_outcome: string; owner_review_id: string | null; unlocked_at: string | null; reminder_at: Date | null; cutoff_at: Date | null; deadline_at: Date | null }>(
     "SELECT * FROM public.ao_home_plan_cards WHERE property_id=$1 AND card_id=$2", [prop, c]);
