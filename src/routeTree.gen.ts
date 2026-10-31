@@ -40,6 +40,8 @@ import { Route as AuthenticatedOversightRouteImport } from './routes/_authentica
 import { Route as AuthenticatedOversightAccessLogRouteImport } from './routes/_authenticated/oversight-access-log'
 import { Route as AuthenticatedOwnerRouteImport } from './routes/_authenticated/owner'
 import { Route as AuthenticatedOwnerAnalyticsRouteImport } from './routes/_authenticated/owner-analytics'
+import { Route as AuthenticatedOwnerCardLibraryRouteImport } from './routes/_authenticated/owner-card-library'
+import { Route as AuthenticatedOwnerContributionsRouteImport } from './routes/_authenticated/owner-contributions'
 import { Route as AuthenticatedOwnerHandoffPlanRouteImport } from './routes/_authenticated/owner-handoff-plan'
 import { Route as AuthenticatedOwnerLibraryRouteImport } from './routes/_authenticated/owner-library'
 import { Route as AuthenticatedOwnerOversightRouteImport } from './routes/_authenticated/owner-oversight'
@@ -269,6 +271,18 @@ const AuthenticatedOwnerAnalyticsRoute =
   AuthenticatedOwnerAnalyticsRouteImport.update({
     id: '/owner-analytics',
     path: '/owner-analytics',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOwnerCardLibraryRoute =
+  AuthenticatedOwnerCardLibraryRouteImport.update({
+    id: '/owner-card-library',
+    path: '/owner-card-library',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOwnerContributionsRoute =
+  AuthenticatedOwnerContributionsRouteImport.update({
+    id: '/owner-contributions',
+    path: '/owner-contributions',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedOwnerHandoffPlanRoute =
@@ -681,6 +695,8 @@ export interface FileRoutesByFullPath {
   '/oversight-access-log': typeof AuthenticatedOversightAccessLogRoute
   '/owner': typeof AuthenticatedOwnerRoute
   '/owner-analytics': typeof AuthenticatedOwnerAnalyticsRoute
+  '/owner-card-library': typeof AuthenticatedOwnerCardLibraryRoute
+  '/owner-contributions': typeof AuthenticatedOwnerContributionsRoute
   '/owner-handoff-plan': typeof AuthenticatedOwnerHandoffPlanRoute
   '/owner-library': typeof AuthenticatedOwnerLibraryRoute
   '/owner-oversight': typeof AuthenticatedOwnerOversightRoute
@@ -776,6 +792,8 @@ export interface FileRoutesByTo {
   '/oversight-access-log': typeof AuthenticatedOversightAccessLogRoute
   '/owner': typeof AuthenticatedOwnerRoute
   '/owner-analytics': typeof AuthenticatedOwnerAnalyticsRoute
+  '/owner-card-library': typeof AuthenticatedOwnerCardLibraryRoute
+  '/owner-contributions': typeof AuthenticatedOwnerContributionsRoute
   '/owner-handoff-plan': typeof AuthenticatedOwnerHandoffPlanRoute
   '/owner-library': typeof AuthenticatedOwnerLibraryRoute
   '/owner-oversight': typeof AuthenticatedOwnerOversightRoute
@@ -873,6 +891,8 @@ export interface FileRoutesById {
   '/_authenticated/oversight-access-log': typeof AuthenticatedOversightAccessLogRoute
   '/_authenticated/owner': typeof AuthenticatedOwnerRoute
   '/_authenticated/owner-analytics': typeof AuthenticatedOwnerAnalyticsRoute
+  '/_authenticated/owner-card-library': typeof AuthenticatedOwnerCardLibraryRoute
+  '/_authenticated/owner-contributions': typeof AuthenticatedOwnerContributionsRoute
   '/_authenticated/owner-handoff-plan': typeof AuthenticatedOwnerHandoffPlanRoute
   '/_authenticated/owner-library': typeof AuthenticatedOwnerLibraryRoute
   '/_authenticated/owner-oversight': typeof AuthenticatedOwnerOversightRoute
@@ -973,6 +993,8 @@ export interface FileRouteTypes {
     | '/oversight-access-log'
     | '/owner'
     | '/owner-analytics'
+    | '/owner-card-library'
+    | '/owner-contributions'
     | '/owner-handoff-plan'
     | '/owner-library'
     | '/owner-oversight'
@@ -1068,6 +1090,8 @@ export interface FileRouteTypes {
     | '/oversight-access-log'
     | '/owner'
     | '/owner-analytics'
+    | '/owner-card-library'
+    | '/owner-contributions'
     | '/owner-handoff-plan'
     | '/owner-library'
     | '/owner-oversight'
@@ -1164,6 +1188,8 @@ export interface FileRouteTypes {
     | '/_authenticated/oversight-access-log'
     | '/_authenticated/owner'
     | '/_authenticated/owner-analytics'
+    | '/_authenticated/owner-card-library'
+    | '/_authenticated/owner-contributions'
     | '/_authenticated/owner-handoff-plan'
     | '/_authenticated/owner-library'
     | '/_authenticated/owner-oversight'
@@ -1469,6 +1495,20 @@ declare module '@tanstack/react-router' {
       path: '/owner-analytics'
       fullPath: '/owner-analytics'
       preLoaderRoute: typeof AuthenticatedOwnerAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/owner-card-library': {
+      id: '/_authenticated/owner-card-library'
+      path: '/owner-card-library'
+      fullPath: '/owner-card-library'
+      preLoaderRoute: typeof AuthenticatedOwnerCardLibraryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/owner-contributions': {
+      id: '/_authenticated/owner-contributions'
+      path: '/owner-contributions'
+      fullPath: '/owner-contributions'
+      preLoaderRoute: typeof AuthenticatedOwnerContributionsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/owner-handoff-plan': {
@@ -2120,6 +2160,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOversightAccessLogRoute: typeof AuthenticatedOversightAccessLogRoute
   AuthenticatedOwnerRoute: typeof AuthenticatedOwnerRoute
   AuthenticatedOwnerAnalyticsRoute: typeof AuthenticatedOwnerAnalyticsRoute
+  AuthenticatedOwnerCardLibraryRoute: typeof AuthenticatedOwnerCardLibraryRoute
+  AuthenticatedOwnerContributionsRoute: typeof AuthenticatedOwnerContributionsRoute
   AuthenticatedOwnerHandoffPlanRoute: typeof AuthenticatedOwnerHandoffPlanRoute
   AuthenticatedOwnerLibraryRoute: typeof AuthenticatedOwnerLibraryRoute
   AuthenticatedOwnerOversightRoute: typeof AuthenticatedOwnerOversightRoute
@@ -2173,6 +2215,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOversightAccessLogRoute: AuthenticatedOversightAccessLogRoute,
   AuthenticatedOwnerRoute: AuthenticatedOwnerRoute,
   AuthenticatedOwnerAnalyticsRoute: AuthenticatedOwnerAnalyticsRoute,
+  AuthenticatedOwnerCardLibraryRoute: AuthenticatedOwnerCardLibraryRoute,
+  AuthenticatedOwnerContributionsRoute: AuthenticatedOwnerContributionsRoute,
   AuthenticatedOwnerHandoffPlanRoute: AuthenticatedOwnerHandoffPlanRoute,
   AuthenticatedOwnerLibraryRoute: AuthenticatedOwnerLibraryRoute,
   AuthenticatedOwnerOversightRoute: AuthenticatedOwnerOversightRoute,

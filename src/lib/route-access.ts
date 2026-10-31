@@ -40,6 +40,8 @@ const RULES: Rule[] = [
   { prefix: "/owner-oversight", capability: "owner_oversight" },
   { prefix: "/owner-analytics", capability: "owner_program_admin" },
   { prefix: "/owner-library", capability: "owner_program_admin" },
+  { prefix: "/owner-card-library", capability: "owner_program_admin" },
+  { prefix: "/owner-contributions", capability: "owner_programs" },
   { prefix: "/homeowners", capability: "homeowner_directory" },
   { prefix: "/owner", portal: "homeowner", orCapability: "owner_programs" },
   { prefix: "/vendors", capability: "vendor_directory" },

@@ -61,6 +61,7 @@ import {
 } from "@/lib/onboarding-task-action";
 import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
 import { SendToHomeownerDialog } from "@/components/onboarding/SendToHomeownerDialog";
+import { SendToActiveOwnerGate, TaskVerifyBadge } from "@/components/ao/TaskPlanLink";
 import { TaskGallery } from "@/components/onboarding/TaskGallery";
 import { trackForTask } from "@/lib/onboarding-workstreams";
 import { showsBreezeway, taskKind, uploadHint, uploadTitle } from "@/lib/onboarding-task-kind";
@@ -266,15 +267,22 @@ export function TaskDrawer({
     : dispatchable
       ? "vendor"
       : "internal";
+  const sendDialog = (
+    <SendToHomeownerDialog
+      taskId={task.id}
+      taskTitle={task.title}
+      disabled={disabled || task.owner_approval_status === "approved"}
+      alreadyWaiting={task.owner_approval_status === "awaiting_owner"}
+      {...(activeOwnerStep ? { label: "Send to Active Owner" } : {})}
+    />
+  );
   const sendToOwner = (
     <div className="flex flex-wrap items-center gap-2">
-      <SendToHomeownerDialog
-        taskId={task.id}
-        taskTitle={task.title}
-        disabled={disabled || task.owner_approval_status === "approved"}
-        alreadyWaiting={task.owner_approval_status === "awaiting_owner"}
-        {...(activeOwnerStep ? { label: "Send to Active Owner" } : {})}
-      />
+      {/* Send to Active Owner only for homes with an active program; same send path, linked to this Task. */}
+      {activeOwnerStep ? (
+        <SendToActiveOwnerGate propertyId={task.property_id}>{sendDialog}</SendToActiveOwnerGate>
+      ) : sendDialog}
+      <TaskVerifyBadge taskId={task.id} />
       {task.owner_approval_status === "awaiting_owner" && (
         <span className="text-xs text-muted-foreground">
           Waiting on the homeowner since the last send.
