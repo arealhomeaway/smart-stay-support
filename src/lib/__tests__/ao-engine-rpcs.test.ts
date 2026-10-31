@@ -143,7 +143,7 @@ describe("Active Owner engine pass 2, isolated PostgreSQL", () => {
     expect(p.cutoff_at!.getTime()).toBeGreaterThan(p.deadline_at!.getTime());
     expect(p.reminder_at!.getTime()).toBeLessThan(p.deadline_at!.getTime());
     expect((await one<{ status: string }>("SELECT status FROM public.owner_reviews WHERE id=$1", [p.owner_review_id])).status).toBe("awaiting_owner");
-    await db.query("UPDATE public.onboarding_tasks SET status='open' WHERE id=$1", [taskA]);
+    await db.query("UPDATE public.onboarding_tasks SET status='open', completed_by=null WHERE id=$1", [taskA]);
   });
 
   it("reminder once, then expiry alert to the Task assignee only", async () => {
