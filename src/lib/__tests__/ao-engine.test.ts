@@ -52,7 +52,7 @@ describe("deadlines in business days, Central time", () => {
 describe("owner pace and send gate", () => {
   it("weekly hours to reach 100 by end date", () => {
     const p = ownerPace(60, new Date("2026-11-01T00:00:00Z"), new Date("2026-12-31T00:00:00Z"));
-    expect(p.weeklyNeeded).toBeCloseTo(4.7, 1);
+    expect(p.weeklyNeeded).toBe(4.7);
     expect(p.onTrack).toBe(true);
     expect(ownerPace(0, new Date("2026-12-01T00:00:00Z"), new Date("2026-12-31T00:00:00Z")).label).toBe("Behind");
   });
