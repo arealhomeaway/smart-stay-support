@@ -137,7 +137,8 @@ export async function syncProgramFollowUps(db: Db, programId: string, now = new 
   const homeIds = (homes.data ?? []).map((h: { property_id: string }) => h.property_id);
   if (homeIds.length === 0) return [];
   // Program-wide items belong to the first enrolled home so they count once.
-  const homeFor = (pid: string | null) => (pid && homeIds.includes(pid) ? pid : homeIds[0]);
+  const first = homeIds[0] as string;
+  const homeFor = (pid: string | null): string => (pid && homeIds.includes(pid) ? pid : first);
   const byHome = new Map<string, OwnerItem[]>(homeIds.map((id: string) => [id, []]));
   for (const r of (reviews.data ?? []) as { id: string; property_id: string | null; status: string; respond_by: string | null; available_from: string | null; created_at: string; archived_at: string | null }[]) {
     byHome.get(homeFor(r.property_id))!.push({

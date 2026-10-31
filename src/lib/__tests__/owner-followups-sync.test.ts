@@ -12,14 +12,14 @@ function fakeDb(opts: { tasks?: Row[]; project?: Row | null; seat?: string; cove
     from: (table: string) => {
       const q: Record<string, unknown> = {};
       for (const k of ["select", "eq", "order", "limit", "is"]) q[k] = () => q;
-      q.maybeSingle = async () => ({ data: opts.project ?? null, error: null });
-      q.insert = (row: Row) => {
+      q["maybeSingle"] = async () => ({ data: opts.project ?? null, error: null });
+      q["insert"] = (row: Row) => {
         inserts.push({ table, row });
         const r = { select: () => r, single: async () => ({ data: { id: "task-1" }, error: null }),
           then: (res: (v: unknown) => unknown) => Promise.resolve({ error: null }).then(res) };
         return r;
       };
-      q.then = (res: (v: unknown) => unknown) =>
+      q["then"] = (res: (v: unknown) => unknown) =>
         Promise.resolve(opts.missing ? { data: null, error: { code: "PGRST205" } } : { data: opts.tasks ?? [], error: null }).then(res);
       return q;
     },
@@ -36,8 +36,8 @@ describe("owner follow-up sync", () => {
     const r = await syncHomeFollowUp(db as never, home, now);
     expect(r).toMatchObject({ action: "create", assignee: "pm" });
     const note = inserts.find((i) => i.table === "staff_notifications")!.row;
-    expect(note.email_status).toBe("skipped");
-    expect(note.link_path).toBe("/property/h#active-owner");
+    expect(note["email_status"]).toBe("skipped");
+    expect(note["link_path"]).toBe("/property/h#active-owner");
     expect(inserts.filter((i) => i.table === "owner_followup_tasks")).toHaveLength(1);
   });
   it("after handoff uses the cover when one is active", async () => {
