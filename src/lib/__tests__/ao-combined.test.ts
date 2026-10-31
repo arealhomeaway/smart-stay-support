@@ -55,7 +55,7 @@ const plan = (code: string) => one<{ id: string; join_outcome: string; owner_rev
 describe("Active Owner engine combined copy: 01, seed, 02, 03", () => {
   let catBefore = "", anonBefore = "", fpBefore = "";
   const anonAfter: string[] = [];
-  const csvCodes = read("docs/pending/ao-library/cards_v1.csv").split("\n").slice(1).filter(Boolean).map((l) => l.split(",")[0]).sort();
+  const csvCodes = read("docs/pending/ao-library/cards_v1.csv").split("\n").slice(1).filter(Boolean).map((l) => l.split(",")[0] ?? "").sort();
   let locked = "", open = "", flex = "";
 
   beforeAll(async () => {
