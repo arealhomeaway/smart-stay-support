@@ -312,6 +312,362 @@ export type Database = {
           },
         ]
       }
+      ao_business_holidays: {
+        Row: {
+          day: string
+          label: string
+        }
+        Insert: {
+          day: string
+          label?: string
+        }
+        Update: {
+          day?: string
+          label?: string
+        }
+        Relationships: []
+      }
+      ao_contributions: {
+        Row: {
+          card_id: string
+          field_values: Json
+          id: string
+          plan_card_id: string
+          program_id: string
+          property_id: string
+          submitted_at: string
+          submitted_by: string
+        }
+        Insert: {
+          card_id: string
+          field_values: Json
+          id?: string
+          plan_card_id: string
+          program_id: string
+          property_id: string
+          submitted_at?: string
+          submitted_by: string
+        }
+        Update: {
+          card_id?: string
+          field_values?: Json
+          id?: string
+          plan_card_id?: string
+          program_id?: string
+          property_id?: string
+          submitted_at?: string
+          submitted_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ao_contributions_plan_card_id_fkey"
+            columns: ["plan_card_id"]
+            isOneToOne: false
+            referencedRelation: "ao_home_plan_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ao_home_plan_cards: {
+        Row: {
+          card_id: string
+          card_version: number
+          created_at: string
+          cutoff_at: string | null
+          deadline_at: string | null
+          expired_at: string | null
+          id: string
+          join_outcome: string
+          linked_task_id: string | null
+          owner_completed_at: string | null
+          owner_review_id: string | null
+          program_id: string
+          property_id: string
+          reminder_at: string | null
+          reminder_sent_at: string | null
+          unlocked_at: string | null
+          unlocked_by: string | null
+        }
+        Insert: {
+          card_id: string
+          card_version: number
+          created_at?: string
+          cutoff_at?: string | null
+          deadline_at?: string | null
+          expired_at?: string | null
+          id?: string
+          join_outcome: string
+          linked_task_id?: string | null
+          owner_completed_at?: string | null
+          owner_review_id?: string | null
+          program_id: string
+          property_id: string
+          reminder_at?: string | null
+          reminder_sent_at?: string | null
+          unlocked_at?: string | null
+          unlocked_by?: string | null
+        }
+        Update: {
+          card_id?: string
+          card_version?: number
+          created_at?: string
+          cutoff_at?: string | null
+          deadline_at?: string | null
+          expired_at?: string | null
+          id?: string
+          join_outcome?: string
+          linked_task_id?: string | null
+          owner_completed_at?: string | null
+          owner_review_id?: string | null
+          program_id?: string
+          property_id?: string
+          reminder_at?: string | null
+          reminder_sent_at?: string | null
+          unlocked_at?: string | null
+          unlocked_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ao_home_plan_cards_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "ao_library_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ao_home_plan_cards_linked_task_id_fkey"
+            columns: ["linked_task_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ao_home_plan_cards_owner_review_id_fkey"
+            columns: ["owner_review_id"]
+            isOneToOne: false
+            referencedRelation: "owner_reviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ao_home_plan_cards_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "owner_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ao_home_plan_cards_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "ao_home_plan_cards_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ao_home_plan_settings: {
+        Row: {
+          automated: boolean
+          property_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          automated?: boolean
+          property_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          automated?: boolean
+          property_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ao_home_plan_settings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "ao_home_plan_settings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ao_home_plan_settings_history: {
+        Row: {
+          automated: boolean
+          changed_at: string
+          changed_by: string | null
+          id: number
+          property_id: string
+        }
+        Insert: {
+          automated: boolean
+          changed_at?: string
+          changed_by?: string | null
+          id?: number
+          property_id: string
+        }
+        Update: {
+          automated?: boolean
+          changed_at?: string
+          changed_by?: string | null
+          id?: number
+          property_id?: string
+        }
+        Relationships: []
+      }
+      ao_library_card_history: {
+        Row: {
+          card_id: string
+          changed_at: string
+          changed_by: string | null
+          id: number
+          snapshot: Json
+          version: number
+        }
+        Insert: {
+          card_id: string
+          changed_at?: string
+          changed_by?: string | null
+          id?: number
+          snapshot: Json
+          version: number
+        }
+        Update: {
+          card_id?: string
+          changed_at?: string
+          changed_by?: string | null
+          id?: number
+          snapshot?: Json
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ao_library_card_history_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "ao_library_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ao_library_cards: {
+        Row: {
+          card_group: string
+          code: string
+          created_at: string
+          cutoff_business_days: number
+          cutoff_rule: string
+          deadline_business_days: number | null
+          deadline_calendar_days: number | null
+          deadline_text: string
+          documentation_note: string
+          est_hours_max: number | null
+          est_hours_min: number | null
+          event_triggered: boolean
+          how_text: string
+          id: string
+          lane: string
+          linked_template_task_ids: string[]
+          lock_rule: string
+          opens_text: string
+          output_fields: Json
+          required_output: string
+          retired_at: string | null
+          stage_window: string
+          status: string
+          takeover_text: string
+          team_needs_this: boolean
+          title: string
+          updated_at: string
+          updated_by: string | null
+          version: number
+          what_text: string
+          why_text: string
+        }
+        Insert: {
+          card_group?: string
+          code: string
+          created_at?: string
+          cutoff_business_days?: number
+          cutoff_rule?: string
+          deadline_business_days?: number | null
+          deadline_calendar_days?: number | null
+          deadline_text?: string
+          documentation_note?: string
+          est_hours_max?: number | null
+          est_hours_min?: number | null
+          event_triggered?: boolean
+          how_text?: string
+          id?: string
+          lane: string
+          linked_template_task_ids?: string[]
+          lock_rule?: string
+          opens_text?: string
+          output_fields?: Json
+          required_output?: string
+          retired_at?: string | null
+          stage_window: string
+          status?: string
+          takeover_text?: string
+          team_needs_this?: boolean
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+          what_text?: string
+          why_text?: string
+        }
+        Update: {
+          card_group?: string
+          code?: string
+          created_at?: string
+          cutoff_business_days?: number
+          cutoff_rule?: string
+          deadline_business_days?: number | null
+          deadline_calendar_days?: number | null
+          deadline_text?: string
+          documentation_note?: string
+          est_hours_max?: number | null
+          est_hours_min?: number | null
+          event_triggered?: boolean
+          how_text?: string
+          id?: string
+          lane?: string
+          linked_template_task_ids?: string[]
+          lock_rule?: string
+          opens_text?: string
+          output_fields?: Json
+          required_output?: string
+          retired_at?: string | null
+          stage_window?: string
+          status?: string
+          takeover_text?: string
+          team_needs_this?: boolean
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+          what_text?: string
+          why_text?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           key: string
@@ -14881,6 +15237,46 @@ export type Database = {
         Args: { _answer: string; _work_item: string }
         Returns: undefined
       }
+      ao_card_save: {
+        Args: { _card_id: string; _patch: Json }
+        Returns: number
+      }
+      ao_card_set_status: {
+        Args: { _card_id: string; _status: string }
+        Returns: number
+      }
+      ao_owner_plan: {
+        Args: { _program: string }
+        Returns: {
+          code: string
+          deadline_at: string
+          expired_at: string
+          join_outcome: string
+          lane: string
+          opens_text: string
+          output_fields: Json
+          owner_completed_at: string
+          plan_card_id: string
+          property_id: string
+          title: string
+          unlocked_at: string
+          what_text: string
+        }[]
+      }
+      ao_preview_home_automation: {
+        Args: { _covered_card_ids?: string[]; _property: string }
+        Returns: Json
+      }
+      ao_process_clocks: { Args: { _now?: string }; Returns: Json }
+      ao_set_home_automation: {
+        Args: { _covered_card_ids?: string[]; _on: boolean; _property: string }
+        Returns: Json
+      }
+      ao_submit_card: {
+        Args: { _plan_card: string; _values: Json }
+        Returns: string
+      }
+      ao_unlock_now: { Args: { _plan_card: string }; Returns: boolean }
       append_owner_review_message: {
         Args: {
           _author_type: string
