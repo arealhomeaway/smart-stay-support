@@ -197,8 +197,14 @@ export async function evaluateProgramAlerts(supabase: Client, programId: string,
  * follow-up per home, routed to the Project Manager or follow-up seat.
  */
 export async function syncCoverageAlerts(supabase: Client, agg: ProgramAggregate) {
+  if (agg.includedProperties.length === 0) return;
   const { syncProgramFollowUps } = await import("./owner-followups.server");
-  await syncProgramFollowUps(supabase as never, agg.program.id);
+  try {
+    await syncProgramFollowUps(supabase as never, agg.program.id);
+  } catch (err) {
+    // Owner alerts already went out; a follow-up failure stays visible in logs.
+    console.error("owner follow-up sync failed", agg.program.id, err);
+  }
 }
 
 /** Runs the daily evaluation across every active program. */
