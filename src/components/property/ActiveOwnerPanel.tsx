@@ -32,6 +32,7 @@ import { startOnboardingProjectFn } from "@/lib/onboarding.functions";
 import { defaultModules } from "@/lib/onboarding-scope";
 import { ActualClosingCorrection } from "./ActualClosingCorrection";
 import { ProgramHomeowners } from "./ProgramHomeowners";
+import { HomeAutomation } from "@/components/ao/HomeAutomation";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Draft — not started",
@@ -276,6 +277,7 @@ export function ActiveOwnerPanel({
         </div>
       )}
       {canEnroll && row ? <ProgramHomeowners programId={row.id} /> : null}
+      {row ? <HomeAutomation propertyId={propertyId} canToggle={canEnroll} /> : null}
       <ActualClosingCorrection propertyId={propertyId} />
       {canEnroll ? <ActiveOwnerEnrollForm
         propertyId={propertyId}
