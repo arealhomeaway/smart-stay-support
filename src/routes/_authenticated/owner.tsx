@@ -36,6 +36,7 @@ import { answerOwnerReview, ownerHome, ownerHomePreview } from "@/lib/owner-port
 import { OWNER_GOAL_LABEL } from "@/lib/owner-participation";
 import { LogTimeContext, LogTimeDialog, useOpenLogTime, type LogTimeAnchor } from "@/components/owner/LogTimeDialog";
 import { OwnerOpportunities } from "@/components/owner/OwnerOpportunities";
+import { OwnerPaceCard, OwnerPlanCards } from "@/components/owner/OwnerPlanCards";
 import { OwnerQueueCards } from "@/components/owner/OwnerQueueCards";
 import { isOwnerQueue, type OwnerQueue } from "@/lib/owner-opportunity-filters";
 import { captureReviewedOpportunity, captureReviewedResponse } from "@/lib/owner-reviewed-update";
@@ -438,6 +439,9 @@ function OwnerHubBody({
                 <p className="mt-1 text-xs text-muted-foreground">
                   {programDisplay.futureStart ? `Your program starts ${usCalendarDate(programDisplay.futureStart)}` : `Program period ends ${snapshot.endsOn ? usDate(snapshot.endsOn) : "December 31"}`}
                 </p>
+                {!programDisplay.futureStart ? (
+                  <div className="mt-2"><OwnerPaceCard loggedHours={Number(snapshot.reportedHours) || 0} endsOn={snapshot.endsOn ?? null} endLabel={snapshot.endsOn ? usDate(snapshot.endsOn) : "December 31"} /></div>
+                ) : null}
                 <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground" aria-label="Participation breakdown">
                   {yearTotals.length > 1
                     ? yearTotals.map((y) => (
@@ -590,6 +594,7 @@ function OwnerHubBody({
           </div>
         )}
         <OnboardingActions readOnly={preview} programId={preview ? program.id : null} homeId={selectedHomeId} />
+        <OwnerPlanCards programId={program.id} readOnly={preview} />
         <OwnerApprovalPanel readOnly={preview} embedded hasOtherItems={openReviews.length > 0 || onboardingPending > 0} />
         </div>
       </SectionCard>
