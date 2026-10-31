@@ -61,6 +61,7 @@ function programDb(reviews: Record<string, unknown>[], homes: string[]) {
         if (t === "owner_program_properties") return chain(homes.map((property_id) => ({ property_id })));
         if (t === "owner_reviews") return chain(reviews);
         if (t === "work_items") return chain([]);
+        if (t === "onboarding_projects") return chain(null);
         if (t === "owner_followup_tasks") {
           const q = chain([]) as Record<string, unknown>;
           q["eq"] = (_c: string, v: string) => { followups.push(v); return q; };
