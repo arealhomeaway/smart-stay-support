@@ -23,35 +23,57 @@ export type OwnerItem = {
   /** When the item started waiting on the homeowner (sent/released). */
   waitingSince?: string | null;
   respondedAt?: string | null;
+  /** When the item opens to the homeowner; future means not counted yet. */
+  availableFrom?: string | null;
 };
 
 const CLOSED_REVIEW = new Set(["answered", "closed", "complete", "completed", "withdrawn"]);
 const OPEN_WORK = new Set(["open", "in_progress"]);
+/** Review statuses the homeowner cannot act on yet (locked plan cards, drafts). */
+const NOT_YET_AVAILABLE = new Set(["prepared", "draft", "scheduled"]);
 
 /** Is this item real and still waiting on the homeowner? */
-export function isCurrentOwnerItem(item: OwnerItem) {
+export function isCurrentOwnerItem(item: OwnerItem, now = new Date()) {
   if (item.archivedAt || item.retiredAt) return false;
+  if (item.availableFrom && new Date(item.availableFrom).getTime() > now.getTime()) return false;
   if (item.source === "work_item") {
     return OPEN_WORK.has(item.status) && !item.respondedAt && Boolean(item.waitingSince);
   }
-  return !CLOSED_REVIEW.has(item.status);
+  return !CLOSED_REVIEW.has(item.status) && !NOT_YET_AVAILABLE.has(item.status);
+}
+
+const CENTRAL = "America/Chicago";
+/** Offset (ms) of America/Chicago from UTC at a given instant. */
+function centralOffsetMs(at: Date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: CENTRAL, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  }).formatToParts(at);
+  const g = (t: string) => Number(parts.find((p) => p.type === t)!.value);
+  return Date.UTC(g("year"), g("month") - 1, g("day"), g("hour"), g("minute"), g("second")) - at.getTime();
+}
+
+/** The instant a respond-by date ends: next midnight in Central time. */
+export function endOfCentralDay(date: string): Date {
+  const [y, m, d] = date.slice(0, 10).split("-").map(Number);
+  const guess = Date.UTC(y, m - 1, d + 1);
+  let t = guess - centralOffsetMs(new Date(guess));
+  t = guess - centralOffsetMs(new Date(t));
+  return new Date(t);
 }
 
 /** The moment an item became behind, or null when it is not behind yet. */
-export function behindSince(item: OwnerItem): Date | null {
-  if (!isCurrentOwnerItem(item)) return null;
-  if (item.respondBy) {
-    // Past the respond-by date means the day after it ends.
-    const d = new Date(`${item.respondBy.slice(0, 10)}T00:00:00Z`);
-    return new Date(d.getTime() + DAY_MS);
-  }
+export function behindSince(item: OwnerItem, now = new Date()): Date | null {
+  if (!isCurrentOwnerItem(item, now)) return null;
+  // Past the respond-by date means after that day ends in Central time.
+  if (item.respondBy) return endOfCentralDay(item.respondBy);
   if (!item.waitingSince) return null;
   return new Date(new Date(item.waitingSince).getTime() + WAITING_DAYS * DAY_MS);
 }
 
 export function behindItems(items: OwnerItem[], now = new Date()) {
   return items.filter((i) => {
-    const at = behindSince(i);
+    const at = behindSince(i, now);
     return at !== null && at.getTime() <= now.getTime();
   });
 }
@@ -105,7 +127,7 @@ export function followUpDecision(
     .map((t) => new Date(t.closedAt!).getTime())
     .sort((a, b) => b - a)[0];
   if (lastClose === undefined) return { action: "create", count: behind.length };
-  const fresh = behind.some((i) => (behindSince(i)?.getTime() ?? 0) > lastClose);
+  const fresh = behind.some((i) => (behindSince(i, now)?.getTime() ?? 0) > lastClose);
   return fresh ? { action: "create", count: behind.length } : { action: "none", count: behind.length };
 }
 

@@ -138,16 +138,23 @@ export async function syncProgramFollowUps(db: Db, programId: string, now = new 
   if (homeIds.length === 0) return [];
   // Program-wide items belong to the first enrolled home so they count once.
   const first = homeIds[0] as string;
-  const homeFor = (pid: string | null): string => (pid && homeIds.includes(pid) ? pid : first);
+  // Items with no home go to the first home; items from a home no longer enrolled are skipped.
+  const homeFor = (pid: string | null): string | null => (!pid ? first : homeIds.includes(pid) ? pid : null);
   const byHome = new Map<string, OwnerItem[]>(homeIds.map((id: string) => [id, []]));
   for (const r of (reviews.data ?? []) as { id: string; property_id: string | null; status: string; respond_by: string | null; available_from: string | null; created_at: string; archived_at: string | null }[]) {
-    byHome.get(homeFor(r.property_id))!.push({
+    const h = homeFor(r.property_id);
+    if (!h) continue;
+    byHome.get(h)!.push({
       id: r.id, source: "review", status: r.status, archivedAt: r.archived_at,
-      respondBy: r.respond_by, waitingSince: r.available_from ?? r.created_at,
+      respondBy: r.respond_by, availableFrom: r.available_from,
+      // Waiting starts when the item opened (unlock sets available_from); older items only have creation.
+      waitingSince: r.available_from ?? r.created_at,
     });
   }
   for (const w of (work.data ?? []) as { id: string; property_id: string | null; status: string; due_on: string | null; sent_at: string | null; responded_at: string | null; retired_at: string | null }[]) {
-    byHome.get(homeFor(w.property_id))!.push({
+    const h = homeFor(w.property_id);
+    if (!h) continue;
+    byHome.get(h)!.push({
       id: w.id, source: "work_item", status: w.status, retiredAt: w.retired_at,
       respondBy: w.due_on, waitingSince: w.sent_at, respondedAt: w.responded_at,
     });
