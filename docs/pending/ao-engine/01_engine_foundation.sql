@@ -1,6 +1,6 @@
 -- Active Owner plan engine, pass 1. STAGED ONLY. Not applied.
 -- Adds new objects only; replaces no live function, policy or trigger.
--- Does not touch onboarding_templates, onboarding_template_tasks or any home plan.
+-- HARD RULE: never modifies onboarding templates (Full Plan, Standard), their versions or steps, or any home plan or Task.
 
 CREATE TABLE public.ao_library_cards (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -14,7 +14,7 @@ CREATE TABLE public.ao_library_cards (
   stage_window text NOT NULL CHECK (stage_window IN ('onboarding_early','onboarding_launch','anytime','operations')),
   team_needs_this boolean NOT NULL DEFAULT false,
   lock_rule text NOT NULL DEFAULT 'none' CHECK (lock_rule IN ('none','until_linked_step_done')),
-  linked_template_task_id uuid,
+  linked_template_task_ids uuid[] NOT NULL DEFAULT ARRAY[]::uuid[], -- read-only refs; may list matching steps in both Full Plan and Standard
   deadline_business_days int NOT NULL DEFAULT 5,
   cutoff_business_days int NOT NULL DEFAULT 1,
   takeover_text text NOT NULL DEFAULT '',
