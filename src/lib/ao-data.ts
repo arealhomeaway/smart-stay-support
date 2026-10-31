@@ -76,7 +76,7 @@ export async function loadTaskPlanCard(taskId: string) {
 }
 
 export async function loadOwnerPlan(programId: string) {
-  return unwrap<import("@/lib/ao-ui").PortalPlanCard[] & { property_id?: string }[]>(await db.rpc("ao_owner_plan", { _program: programId }));
+  return unwrap<import("@/lib/ao-ui").PortalPlanCard[]>(await db.rpc("ao_owner_plan", { _program: programId }));
 }
 export async function submitCard(planCardId: string, values: Record<string, unknown>) {
   const r = unwrap<string>(await db.rpc("ao_submit_card", { _plan_card: planCardId, _values: values }));
