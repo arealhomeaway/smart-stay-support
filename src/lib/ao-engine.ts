@@ -12,7 +12,8 @@ export interface LibraryCard {
   stageWindow: StageWindow;
   teamNeedsThis: boolean;
   lockRule: "none" | "until_linked_step_done";
-  linkedTemplateStepId: string | null;
+  /** Read-only references; may list matching steps in both Full Plan and Standard. */
+  linkedTemplateStepIds: readonly string[];
   deadlineBusinessDays: number;
   cutoffBusinessDays: number; // ARHA cutoff = deadline + N business days at 9:00 am
   takeoverText: string;
@@ -122,4 +123,9 @@ export function contributionsCsv(rows: { card: string; home: string; member: str
   };
   const head = ["Card", "Home", "Submitted by", "Submitted at", ...keys].map(esc).join(",");
   return [head, ...rows.map((r) => [r.card, r.home, r.member, r.submittedAt, ...keys.map((k) => r.values[k])].map(esc).join(","))].join("\n");
+}
+
+/** Finds the home's own Task created from any linked template step, whichever template the home uses. Read-only. */
+export function matchLinkedTask<T extends { id: string; template_task_id: string | null }>(card: LibraryCard, homeTasks: readonly T[]): T | null {
+  return homeTasks.find((t) => t.template_task_id != null && card.linkedTemplateStepIds.includes(t.template_task_id)) ?? null;
 }

@@ -1,15 +1,15 @@
 import { describe, it, expect } from "bun:test";
 import {
   joinOutcome, cardClock, dueEvent, addBusinessDays, ownerPace, canSendToActiveOwner,
-  contributionsCsv, lockedLabel, expiryAlertText, type LibraryCard,
+  contributionsCsv, matchLinkedTask, lockedLabel, expiryAlertText, type LibraryCard,
 } from "../ao-engine";
 
 const base: Omit<LibraryCard, "id" | "title" | "lane" | "stageWindow"> = {
-  teamNeedsThis: true, lockRule: "none", linkedTemplateStepId: null,
+  teamNeedsThis: true, lockRule: "none", linkedTemplateStepIds: [],
   deadlineBusinessDays: 3, cutoffBusinessDays: 1, takeoverText: "ARHA will finish this.",
 };
 const early: LibraryCard = { ...base, id: "c1", title: "House rules", lane: "critical", stageWindow: "onboarding_early" };
-const launch: LibraryCard = { ...base, id: "c2", title: "Welcome book photos", lane: "launch", stageWindow: "onboarding_launch", lockRule: "until_linked_step_done", linkedTemplateStepId: "step-photos" };
+const launch: LibraryCard = { ...base, id: "c2", title: "Welcome book photos", lane: "launch", stageWindow: "onboarding_launch", lockRule: "until_linked_step_done", linkedTemplateStepIds: ["full-photos", "std-photos"] };
 const flex: LibraryCard = { ...base, id: "c3", title: "Local favorites", lane: "flexible", stageWindow: "anytime" };
 
 describe("join at current stage", () => {
@@ -64,5 +64,32 @@ describe("owner pace and send gate", () => {
   it("exports contributions as CSV", () => {
     const csv = contributionsCsv([{ card: "House rules", home: "12 Elm", member: "Rachel", submittedAt: "2026-11-01", values: { pets: "no, sorry" } }]);
     expect(csv).toBe('Card,Home,Submitted by,Submitted at,pets\nHouse rules,12 Elm,Rachel,2026-11-01,"no, sorry"');
+  });
+});
+
+describe("hard rule: templates and home plans never change", () => {
+  const snap = (x: unknown) => JSON.stringify(x);
+  it("matches the home's own Task from either template", () => {
+    expect(matchLinkedTask(launch, [{ id: "t1", template_task_id: "std-photos" }])?.id).toBe("t1");
+    expect(matchLinkedTask(launch, [{ id: "t2", template_task_id: "full-photos" }])?.id).toBe("t2");
+    expect(matchLinkedTask(launch, [{ id: "t3", template_task_id: "other" }])).toBeNull();
+  });
+  it("switch, join, unlock and expire leave templates and home Tasks byte-for-byte unchanged", () => {
+    const templates = Object.freeze([{ name: "ARHA Onboarding \u2014 Full Plan", steps: [{ id: "full-photos" }] }, { name: "ARHA Onboarding - Standard", steps: [{ id: "std-photos" }] }]);
+    const tasks = [{ id: "t1", template_task_id: "full-photos", status: "open" }];
+    const before = snap([templates, tasks]);
+    for (const c of [early, launch, flex]) {
+      joinOutcome(c, "onboarding_early", new Set(), false);
+      const t = matchLinkedTask(c, tasks);
+      const clock = cardClock(c, new Date("2026-10-29T15:00:00Z"));
+      dueEvent(c, clock, new Date("2026-12-01T00:00:00Z"), false, false);
+      joinOutcome(c, "onboarding_early", new Set(), t != null);
+    }
+    expect(snap([templates, tasks])).toBe(before);
+  });
+  it("staged SQL never writes to templates, versions, steps or home Tasks", async () => {
+    const sql = await Bun.file("docs/pending/ao-engine/01_engine_foundation.sql").text();
+    const code = sql.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
+    expect(/(INSERT INTO|UPDATE|DELETE FROM|ALTER TABLE|TRUNCATE)\s+public\.onboarding_(templates|template_versions|template_tasks|template_stages|tasks|projects)\b/i.test(code)).toBe(false);
   });
 });
