@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Download } from "lucide-react";
@@ -87,7 +87,7 @@ function ContributionsPage() {
               <p className="font-medium">{r.cardCode} {r.card}</p>
               <p className="text-xs text-muted-foreground">{r.home}, submitted by {r.member} on {usDate(r.submittedAt)}</p>
               <dl className="mt-1 grid grid-cols-[max-content_1fr] gap-x-3 text-xs">
-                {Object.entries(r.values).map(([k, v]) => <><dt key={`${k}-k`} className="text-muted-foreground">{k}</dt><dd key={`${k}-v`}>{String(v)}</dd></>)}
+                {Object.entries(r.values).map(([k, v]) => <Fragment key={k}><dt className="text-muted-foreground">{k}</dt><dd>{String(v)}</dd></Fragment>)}
               </dl>
             </li>
           ))}
