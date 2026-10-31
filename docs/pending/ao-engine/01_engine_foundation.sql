@@ -74,14 +74,14 @@ ALTER TABLE public.ao_contributions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ao_business_holidays ENABLE ROW LEVEL SECURITY;
 
 -- Reads: staff (existing is_staff helper); members read their own home cards and contributions.
-CREATE POLICY ao_cards_staff_read ON public.ao_library_cards FOR SELECT TO authenticated USING (private.is_staff(auth.uid()));
-CREATE POLICY ao_card_hist_staff_read ON public.ao_library_card_history FOR SELECT TO authenticated USING (private.is_staff(auth.uid()));
-CREATE POLICY ao_settings_staff_read ON public.ao_home_plan_settings FOR SELECT TO authenticated USING (private.is_staff(auth.uid()));
-CREATE POLICY ao_settings_hist_staff_read ON public.ao_home_plan_settings_history FOR SELECT TO authenticated USING (private.is_staff(auth.uid()));
+CREATE POLICY ao_cards_staff_read ON public.ao_library_cards FOR SELECT TO authenticated USING (public.is_internal_staff(auth.uid()));
+CREATE POLICY ao_card_hist_staff_read ON public.ao_library_card_history FOR SELECT TO authenticated USING (public.is_internal_staff(auth.uid()));
+CREATE POLICY ao_settings_staff_read ON public.ao_home_plan_settings FOR SELECT TO authenticated USING (public.is_internal_staff(auth.uid()));
+CREATE POLICY ao_settings_hist_staff_read ON public.ao_home_plan_settings_history FOR SELECT TO authenticated USING (public.is_internal_staff(auth.uid()));
 CREATE POLICY ao_plan_read ON public.ao_home_plan_cards FOR SELECT TO authenticated
-  USING (private.is_staff(auth.uid()) OR private.is_program_member(program_id, auth.uid()));
+  USING (public.is_internal_staff(auth.uid()) OR private.is_program_member(program_id, auth.uid()));
 CREATE POLICY ao_contrib_read ON public.ao_contributions FOR SELECT TO authenticated
-  USING (public.has_role(auth.uid(),'admin') OR private.has_functional_role(auth.uid(), ARRAY['onboarding_director','ops_director'])
+  USING (public.has_role(auth.uid(),'admin') OR public.is_onboarding_director(auth.uid()) OR public.is_director(auth.uid())
          OR private.is_program_member(program_id, auth.uid()));
 CREATE POLICY ao_holidays_read ON public.ao_business_holidays FOR SELECT TO authenticated USING (true);
 -- Writes go only through later caller-authenticated RPCs (pass 2). No anon grants, no new anon-executable function.
