@@ -237,16 +237,6 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
   };
 }
 
-/** Kept for reference; reports read the current wording set (falls back to these). */
-const _LEGACY_NOTES = [
-  "Reported hours are the homeowner's own record of participation, entered manually by the homeowner. ARHA does not certify or approve these hours.",
-  "Entries replaced by a correction, and entries returned for a data-quality question, are excluded from the total.",
-  "An activity shared across several homes is counted once in the combined total; the homes are listed for attribution only.",
-  "The shared total for each calendar year with a confirmed closing includes every activity dated that year — tagged to any home, General, or before a closing — counted once. Home figures only show which activities were tagged to that home; there is no separate per-home total or minimum.",
-  "Every hour is the homeowner's own record, entered manually. Approvals and revisions are logged as actions and never create hours.",
-  "This report is an operational record of reported participation. It is not a tax certification and not a guarantee of any tax treatment.",
-];
-
 export function reportCsv(report: OwnerReport) {
   const esc = (v: string | number | boolean) => `"${String(v).replace(/"/g, '""')}"`;
   const head = [
