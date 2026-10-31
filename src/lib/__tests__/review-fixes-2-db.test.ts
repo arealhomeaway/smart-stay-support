@@ -24,7 +24,7 @@ LANGUAGE sql STABLE AS $$
 $$;`;
 let db: PGlite;
 const as = (uid: string | null) => db.query(`SELECT set_config('test.uid',$1,false)`, [uid ?? ""]);
-const fnState = async () => (await db.query<{ s: string }>(`SELECT string_agg(p.oid::regprocedure::text||md5(pg_get_functiondef(p.oid))||coalesce(p.proacl::text,'')||p.provolatile||coalesce(array_to_string(p.proconfig,','),''),',' ORDER BY 1) s
+const fnState = async () => (await db.query<{ s: string }>(`SELECT string_agg(p.oid::regprocedure::text||md5(pg_get_functiondef(p.oid))||coalesce(p.proacl::text,'')||p.provolatile::text||coalesce(array_to_string(p.proconfig,','),''),',' ORDER BY 1) s
   FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname IN ('public','private')`)).rows[0]!.s;
 const policies = async () => (await db.query<{ s: string }>(`SELECT string_agg(policyname||roles::text||qual,'|' ORDER BY 1) s FROM pg_policies WHERE policyname IN ('ao_plan_read','ao_contrib_read')`)).rows[0]!.s;
 const anonSet = async () => (await db.query<{ s: string }>(`SELECT coalesce(string_agg(p.oid::regprocedure::text,',' ORDER BY 1),'') s FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
