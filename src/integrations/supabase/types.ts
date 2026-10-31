@@ -15245,6 +15245,28 @@ export type Database = {
         Args: { _card_id: string; _status: string }
         Returns: number
       }
+      ao_owner_plan: {
+        Args: { _program: string }
+        Returns: {
+          code: string
+          deadline_at: string
+          expired_at: string
+          join_outcome: string
+          lane: string
+          opens_text: string
+          output_fields: Json
+          owner_completed_at: string
+          plan_card_id: string
+          property_id: string
+          title: string
+          unlocked_at: string
+          what_text: string
+        }[]
+      }
+      ao_preview_home_automation: {
+        Args: { _covered_card_ids?: string[]; _property: string }
+        Returns: Json
+      }
       ao_process_clocks: { Args: { _now?: string }; Returns: Json }
       ao_set_home_automation: {
         Args: { _covered_card_ids?: string[]; _on: boolean; _property: string }
