@@ -15237,6 +15237,24 @@ export type Database = {
         Args: { _answer: string; _work_item: string }
         Returns: undefined
       }
+      ao_card_save: {
+        Args: { _card_id: string; _patch: Json }
+        Returns: number
+      }
+      ao_card_set_status: {
+        Args: { _card_id: string; _status: string }
+        Returns: number
+      }
+      ao_process_clocks: { Args: { _now?: string }; Returns: Json }
+      ao_set_home_automation: {
+        Args: { _covered_card_ids?: string[]; _on: boolean; _property: string }
+        Returns: Json
+      }
+      ao_submit_card: {
+        Args: { _plan_card: string; _values: Json }
+        Returns: string
+      }
+      ao_unlock_now: { Args: { _plan_card: string }; Returns: boolean }
       append_owner_review_message: {
         Args: {
           _author_type: string
