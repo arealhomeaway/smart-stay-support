@@ -3,9 +3,8 @@
  * { available: false } while the staged database objects do not exist, so
  * screens can show "Not set up yet" instead of breaking.
  */
-import { fetchAllPages } from "@/lib/ao-ui";
 import { supabase } from "@/integrations/supabase/client";
-import { unwrap, type Available } from "@/lib/ao-ui";
+import { fetchAllPages, unwrap, type Available } from "@/lib/ao-ui";
 
 // The engine tables are staged and not in generated types yet.
 const db = supabase as unknown as {
