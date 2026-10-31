@@ -43,12 +43,12 @@ const fingerprint = async () => (await one<{ h: string }>(`SELECT md5(
 const anonSet = async () => (await one<{ s: string }>(`SELECT coalesce(string_agg(p.oid::regprocedure::text, ',' ORDER BY 1),'') s FROM pg_proc p
   JOIN pg_namespace ns ON ns.oid=p.pronamespace WHERE p.prosecdef AND has_function_privilege('anon', p.oid, 'EXECUTE')`)).s;
 const catalog = async () => (await one<{ s: string }>(`SELECT
-  (SELECT coalesce(string_agg(p.oid::regprocedure::text || md5(pg_get_functiondef(p.oid)) || coalesce(p.proacl::text,''), ',' ORDER BY 1),'')
+  (SELECT coalesce(string_agg(p.oid::regprocedure::text || md5(pg_get_functiondef(p.oid)) || coalesce(p.proacl::text,''), ',' ORDER BY p.oid::regprocedure::text),'')
      FROM pg_proc p JOIN pg_namespace ns ON ns.oid=p.pronamespace WHERE ns.nspname IN ('public','private')) ||
-  (SELECT coalesce(string_agg(tgname, ',' ORDER BY 1),'') FROM pg_trigger WHERE NOT tgisinternal) ||
-  (SELECT coalesce(string_agg(c.relname || coalesce(c.relacl::text,''), ',' ORDER BY 1),'') FROM pg_class c JOIN pg_namespace ns ON ns.oid=c.relnamespace
+  (SELECT coalesce(string_agg(tgname, ',' ORDER BY tgname),'') FROM pg_trigger WHERE NOT tgisinternal) ||
+  (SELECT coalesce(string_agg(c.relname || coalesce(c.relacl::text,''), ',' ORDER BY c.relname),'') FROM pg_class c JOIN pg_namespace ns ON ns.oid=c.relnamespace
      WHERE ns.nspname IN ('public','private') AND c.relkind='r') ||
-  (SELECT coalesce(string_agg(polname, ',' ORDER BY 1),'') FROM pg_policy) s`)).s;
+  (SELECT coalesce(string_agg(polname, ',' ORDER BY polname),'') FROM pg_policy) s`)).s;
 const plan = (code: string) => one<{ id: string; join_outcome: string; owner_review_id: string | null; unlocked_at: string | null; reminder_at: Date | null; cutoff_at: Date | null; deadline_at: Date | null }>(
   "SELECT pc.* FROM public.ao_home_plan_cards pc JOIN public.ao_library_cards c ON c.id=pc.card_id WHERE pc.property_id=$1 AND c.code=$2", [home, code]);
 
