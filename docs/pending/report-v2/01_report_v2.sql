@@ -72,8 +72,8 @@ BEGIN
  SELECT coalesce(max(version),0)+1 INTO v FROM public.report_wording_versions;
  INSERT INTO public.report_wording_versions(version, sentences, note, created_by)
   VALUES (v, _sentences, nullif(trim(coalesce(_note,'')),''), auth.uid());
- INSERT INTO public.audit_log(actor_id, action, entity_type, entity_id, details)
-  VALUES (auth.uid(), 'report_wording_saved', 'report_wording', NULL, jsonb_build_object('version', v));
+ INSERT INTO public.audit_log(actor_id, action, entity_type, entity_label, after_value)
+  VALUES (auth.uid(), 'report_wording_saved', 'report_wording', 'Report wording version ' || v, jsonb_build_object('version', v));
  RETURN v;
 END $function$;
 REVOKE ALL ON FUNCTION public.report_wording_save(jsonb,text) FROM PUBLIC, anon;
