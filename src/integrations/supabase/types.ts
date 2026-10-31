@@ -8019,6 +8019,82 @@ export type Database = {
           },
         ]
       }
+      owner_followup_tasks: {
+        Row: {
+          assigned_to: string
+          close_note: string | null
+          closed_at: string | null
+          closed_by: string | null
+          created_at: string
+          id: string
+          is_demo: boolean
+          item_count: number
+          link_path: string
+          no_project_manager: boolean
+          program_id: string
+          property_id: string
+          route_reason: string
+          status: string
+          title: string
+        }
+        Insert: {
+          assigned_to: string
+          close_note?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          id?: string
+          is_demo?: boolean
+          item_count: number
+          link_path: string
+          no_project_manager?: boolean
+          program_id: string
+          property_id: string
+          route_reason: string
+          status?: string
+          title: string
+        }
+        Update: {
+          assigned_to?: string
+          close_note?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          id?: string
+          is_demo?: boolean
+          item_count?: number
+          link_path?: string
+          no_project_manager?: boolean
+          program_id?: string
+          property_id?: string
+          route_reason?: string
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_followup_tasks_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "owner_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_followup_tasks_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "owner_followup_tasks_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       owner_invite_redemptions: {
         Row: {
           email_verified_at: string
@@ -15036,6 +15112,7 @@ export type Database = {
         Returns: undefined
       }
       cleaner_verify_cron_token: { Args: { _token: string }; Returns: boolean }
+      close_owner_followup: { Args: { _task_id: string }; Returns: undefined }
       close_owner_opportunity: {
         Args: {
           _expected_updated_at: string
