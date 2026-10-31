@@ -80,6 +80,7 @@ describe("Active Owner engine pass 2, isolated PostgreSQL", () => {
     await card(cDraft, "T05", { status: "draft", stage: "anytime" });
     await card(cCovered, "T06", { stage: "anytime" });
     await db.query("UPDATE public.ao_library_cards SET stage_window='onboarding_early' WHERE id=$1", [cPassed]);
+    fpBefore = await fingerprint();
     anonBefore = await anonDefinerSet();
     catBefore = await catalog();
     await db.exec(read("docs/pending/ao-engine/02_engine_rpcs.sql"));
