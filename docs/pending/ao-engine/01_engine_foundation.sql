@@ -15,7 +15,15 @@ CREATE TABLE public.ao_library_cards (
   team_needs_this boolean NOT NULL DEFAULT false,
   lock_rule text NOT NULL DEFAULT 'none' CHECK (lock_rule IN ('none','until_linked_step_done')),
   linked_template_task_ids uuid[] NOT NULL DEFAULT ARRAY[]::uuid[], -- read-only refs; may list matching steps in both Full Plan and Standard
-  deadline_business_days int NOT NULL DEFAULT 5,
+  code text NOT NULL UNIQUE,
+  status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','released','retired')),
+  card_group text NOT NULL DEFAULT '',
+  event_triggered boolean NOT NULL DEFAULT false,
+  opens_text text NOT NULL DEFAULT '',
+  deadline_text text NOT NULL DEFAULT '',
+  deadline_business_days int,          -- clock in business days from unlock, 5:00 pm Central
+  deadline_calendar_days int,          -- used when the card states calendar days
+  cutoff_rule text NOT NULL DEFAULT 'next_business_day_9am' CHECK (cutoff_rule IN ('next_business_day_9am','none')),
   cutoff_business_days int NOT NULL DEFAULT 1,
   takeover_text text NOT NULL DEFAULT '',
   output_fields jsonb NOT NULL DEFAULT '[]'::jsonb,

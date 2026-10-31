@@ -1,0 +1,84 @@
+{
+ "P01": {
+  "full": [
+   "03a86fb7-20b7-42d1-8a32-47516518529d"
+  ],
+  "std": [
+   "9f283354-0771-4bfd-a8da-875d9802f1d2",
+   "f9d6fe0a-6199-4f0c-a836-9f9666c7446c"
+  ],
+  "unmatched": [
+   "Full Plan: utility/property matrix"
+  ]
+ },
+ "P02": {
+  "full": [
+   "394302ee-cc36-421c-986c-0e608ee72a49",
+   "8899d954-0323-460b-885d-6c24cf4b08cd"
+  ],
+  "std": [
+   "bca10155-f463-454b-8bbd-e69b36bbf8d8",
+   "35fe9a3c-57db-4e7a-a4e9-04c20db157a6"
+  ],
+  "unmatched": []
+ },
+ "P05": {
+  "full": [
+   "5a01a1e3-7c55-4205-ba3d-72f72e5722cf",
+   "7a6ba63b-4088-4126-80e0-cdfefd662d81"
+  ],
+  "std": [
+   "4dd9cde7-9723-417d-bd26-c56c4cefd370",
+   "4e1674a8-1cc3-45ec-bbd3-d78980c11f9a",
+   "bff83959-f492-41ff-ac9c-150521a87611"
+  ],
+  "unmatched": [
+   "Full Plan: lawn care"
+  ]
+ },
+ "P06": {
+  "full": [],
+  "std": [
+   "a1cbf004-7ef2-4c91-8f3a-949a08f2d683"
+  ],
+  "unmatched": [
+   "Full Plan: Breezeway property details"
+  ]
+ },
+ "P07": {
+  "full": [],
+  "std": [
+   "5b46375b-3795-44a9-aef1-13f28d73541a"
+  ],
+  "unmatched": [
+   "Full Plan: listing content upload"
+  ]
+ },
+ "P08": {
+  "full": [],
+  "std": [
+   "d3bc3652-f977-4e97-bab0-d202c4aafd57"
+  ],
+  "unmatched": [
+   "Full Plan: confirm and download photos"
+  ]
+ },
+ "P21": {
+  "full": [
+   "84aca5a2-bed0-4d16-9980-490eeffa1542"
+  ],
+  "std": [
+   "8c28732f-acc8-40a9-a6e6-0cc3f33fc165"
+  ],
+  "unmatched": []
+ },
+ "A52": {
+  "full": [
+   "9603e8ed-cf3d-4069-870d-8198cc2ecadb"
+  ],
+  "std": [
+   "7460f7e9-39ad-40ba-9319-d6ac31d22e35"
+  ],
+  "unmatched": []
+ }
+}
