@@ -157,11 +157,23 @@ export function filterContributions(rows: ContributionRow[], f: { card: string; 
     (!q || [r.card, r.cardCode, r.home, r.member, JSON.stringify(r.values)].some((s) => s.toLowerCase().includes(q))));
 }
 
+/** True only when the error says ao_process_clocks itself is not installed. */
+export function isClocksFunctionMissing(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const e = err as { code?: string; message?: string; details?: string; hint?: string };
+  const m = `${e.message ?? ""}`.toLowerCase();
+  const namesIt = /\bao_process_clocks\b/.test(m);
+  if (e.code === "PGRST202") return namesIt && m.includes("could not find the function");
+  if (e.code === "42883") return namesIt && /function\s+(public\.)?ao_process_clocks\s*\(/.test(m) && m.includes("does not exist");
+  return false;
+}
+
 /** 5-minute job part: runs the timed reminders/expiries; silently skipped until the function exists. */
 export async function runAoClocksGuarded(db: Pick<SupabaseClient, "rpc">) {
   const res = await db.rpc("ao_process_clocks" as never, {} as never);
   if (res.error) {
-    if (isMissingDbObject(res.error)) return { skipped: true as const };
+    // Only a missing clock function is "not set up yet"; anything else inside it is a job error.
+    if (isClocksFunctionMissing(res.error)) return { skipped: true as const };
     throw new Error((res.error as { message?: string }).message ?? "Plan clocks failed");
   }
   return { skipped: false as const, result: res.data };
