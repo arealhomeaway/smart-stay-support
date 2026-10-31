@@ -193,104 +193,18 @@ export async function evaluateProgramAlerts(supabase: Client, programId: string,
 }
 
 /**
- * Internal-only property coverage alerts. These are about unfinished tasks
- * and decisions — never about a per-property hour deficiency.
+ * Staff follow-ups. The retired call/text queue is replaced by one My Work
+ * follow-up per home, routed to the Project Manager or follow-up seat.
  */
 export async function syncCoverageAlerts(supabase: Client, agg: ProgramAggregate) {
-  const included = agg.includedProperties;
-  if (included.length === 0) return;
-
-  const open = await supabase
-    .from("owner_contact_alerts")
-    .select("id, title")
-    .eq("program_id", agg.program.id)
-    .eq("status", "pending");
-  if (open.error) return;
-  const existing = new Set((open.data ?? []).map((a) => a.title));
-
-  const busiest = [...included].sort(
-    (a, b) => b.directMinutes + b.sharedMinutes - (a.directMinutes + a.sharedMinutes),
-  )[0];
-
-  const rows: { title: string; body: string; reason: string }[] = [];
-  for (const p of included) {
-    if (p.directMinutes + p.sharedMinutes === 0) {
-      rows.push({
-        title: `No owner activity yet at ${p.name}`,
-        body: `${p.name} has ${p.openTasks} open owner activit${p.openTasks === 1 ? "y" : "ies"} and no participation recorded.`,
-        reason: "property_no_activity",
-      });
-    }
-    if (p.overdueDecisions > 0) {
-      rows.push({
-        title: `Overdue owner decisions at ${p.name}`,
-        body: `${p.overdueDecisions} owner decision${p.overdueDecisions === 1 ? " is" : "s are"} past their response date.`,
-        reason: "property_overdue_decisions",
-      });
-    }
-    if (["ready", "launching"].includes(p.launchStatus) && p.openTasks > 0) {
-      rows.push({
-        title: `${p.name} is approaching launch with open items`,
-        body: `${p.openTasks} owner activit${p.openTasks === 1 ? "y remains" : "ies remain"} open while this home moves toward launch.`,
-        reason: "property_launch_risk",
-      });
-    }
-    if (
-      busiest &&
-      p.propertyId !== busiest.propertyId &&
-      p.directMinutes + p.sharedMinutes === 0 &&
-      busiest.directMinutes + busiest.sharedMinutes > 0 &&
-      p.openTasks > 0
-    ) {
-      rows.push({
-        title: `Participation is concentrated away from ${p.name}`,
-        body: `Activity is focused on ${busiest.name} while ${p.name} still has required owner work untouched.`,
-        reason: "property_uneven_coverage",
-      });
-    }
+  if (agg.includedProperties.length === 0) return;
+  const { syncProgramFollowUps } = await import("./owner-followups.server");
+  try {
+    await syncProgramFollowUps(supabase as never, agg.program.id);
+  } catch (err) {
+    // Owner alerts already went out; a follow-up failure stays visible in logs.
+    console.error("owner follow-up sync failed", agg.program.id, err);
   }
-
-  if (agg.goalMet && included.some((p) => p.openTasks > 0)) {
-    rows.push({
-      title: "Owner reached the 100-hour target with property work still open",
-      body: "The combined hour goal is met, but required property tasks or decisions remain outstanding.",
-      reason: "goal_met_work_open",
-    });
-  }
-
-  // Hour-checkpoint touchpoint for the assigned staff, once per checkpoint.
-  const s = agg.snapshot;
-  const checkpoint = milestoneWindow(s.day, s.totalDays);
-  if (checkpoint && !agg.goalMet) {
-    const view = milestoneCheckpoints({ day: s.day, totalDays: s.totalDays, reportedHours: s.reportedHours }).find(
-      (c) => c.day === checkpoint,
-    );
-    const onPace = view?.state === "met";
-    rows.push({
-      title: `${view?.expectedHours ?? 0}-hour checkpoint for ${agg.program.ownerName ?? "this homeowner"}`,
-      body: onPace
-        ? `${s.reportedHours} hours logged — on pace for the program ending ${s.endsOn ?? "December 31"}. A short check-in call keeps it steady.`
-        : `${s.reportedHours} hours logged, about ${view?.shortfallHours ?? 0} behind the ${view?.expectedHours ?? 0}-hour pace point. Worth a personal touchpoint this week.`,
-      reason: `milestone_touchpoint_${checkpoint}`,
-    });
-  }
-
-  const fresh = rows.filter((r) => !existing.has(r.title));
-  if (fresh.length === 0) return;
-
-  await supabase.from("owner_contact_alerts").insert(
-    fresh.map((r) => ({
-      program_id: agg.program.id,
-      priority: "p3",
-      owner_name: agg.program.ownerName,
-      owner_phone: agg.program.ownerPhone,
-      owner_email: agg.program.ownerEmail,
-      title: r.title,
-      body: r.body,
-      reason: r.reason,
-      status: "pending",
-    })),
-  );
 }
 
 /** Runs the daily evaluation across every active program. */

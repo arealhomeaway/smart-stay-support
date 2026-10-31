@@ -232,29 +232,11 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50, onlyId?: st
       }
     }
 
-    // A text request becomes an internal task: a teammate calls or texts the
-    // homeowner personally. We never auto-send an SMS.
+    // Texts are never sent and staff are never asked to call or text an
+    // owner. A text request is closed out; owner follow-ups come from the
+    // behind rule instead (owner-followups.server).
     if (row.sms_status === "pending") {
-      const { error: alertError } = await supabase.from("owner_contact_alerts").insert({
-        program_id: row.program_id,
-        notification_id: row.id,
-        ticket_id: row.ticket_id ?? null,
-        priority: row.priority,
-        owner_name: program?.owner_name ?? null,
-        owner_phone: program?.owner_phone ?? null,
-        owner_email: program?.owner_email ?? null,
-        title: safeText.title,
-        body: safeText.body,
-        reason: program?.owner_phone
-          ? "Urgent ticket at this owner's home — text or call them now."
-          : "Urgent ticket at this owner's home, and we have no phone number on file — reach them by email and collect a number.",
-      });
-      if (alertError) {
-        notes.push(alertError.message);
-      } else {
-        patch.sms_status = "escalated";
-        escalated++;
-      }
+      patch.sms_status = "skipped";
     }
 
     patch.delivered_at = new Date().toISOString();

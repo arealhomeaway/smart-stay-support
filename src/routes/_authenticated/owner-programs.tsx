@@ -49,7 +49,6 @@ import {
 import { SupervisorOnly } from "@/components/SupervisorOnly";
 import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { usCalendarDate, usDate } from "@/lib/dates";
-import { OwnerContactAlerts } from "@/components/OwnerContactAlerts";
 import { OwnerProgramActivation } from "@/components/OwnerProgramActivation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -216,7 +215,6 @@ function ProgramsBoard() {
         }
       />
 
-      <SupervisorContactAlerts />
 
 
       <ProgramSummary rows={rows} />
@@ -1182,12 +1180,6 @@ function RoadmapCatalog({ templates, loading }: { templates: TaskTemplate[]; loa
       )}
     </SectionCard>
   );
-}
-
-/** The text/call queue is a supervisor duty — the Onboarding Director never loads it. */
-function SupervisorContactAlerts() {
-  const { isSupervisor } = useRole();
-  return isSupervisor ? <OwnerContactAlerts /> : null;
 }
 
 function StaffLinkOwner({

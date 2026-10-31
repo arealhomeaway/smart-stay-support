@@ -1,5 +1,6 @@
 import { formatPropertyLabel, matchesPropertySearch } from "@/lib/property-label";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { OwnerFollowUps } from "@/components/OwnerFollowUps";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -194,6 +195,7 @@ function TicketsPage() {
       />
 
       <HandoffsWaiting />
+      <OwnerFollowUps />
 
 
       {demoMode && (
