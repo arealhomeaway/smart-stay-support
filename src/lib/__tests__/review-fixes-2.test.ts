@@ -55,7 +55,7 @@ function programDb(reviews: Record<string, unknown>[], homes: string[]) {
   return {
     followups,
     db: {
-      rpc: async () => ({ data: "seat", error: null }),
+      rpc: async (n: string) => ({ data: n === "seat_holder" ? "seat" : [], error: null }),
       from: (t: string) => {
         if (t === "owner_programs") return chain({ owner_name: "Matt", is_demo: true });
         if (t === "owner_program_properties") return chain(homes.map((property_id) => ({ property_id })));
