@@ -15,7 +15,7 @@ import { NOT_SET_UP, canViewContributions, filterContributions } from "@/lib/ao-
 import { usDate } from "@/lib/ao-format";
 
 export const Route = createFileRoute("/_authenticated/owner-contributions")({
-  validateSearch: (s: Record<string, unknown>): { q?: string } => (typeof s.q === "string" && s.q ? { q: s.q } : {}),
+  validateSearch: (s: Record<string, unknown>): { q?: string } => (typeof s["q"] === "string" && s["q"] ? { q: s["q"] } : {}),
   head: () => ({
     meta: [
       { title: "Homeowner contributions | Resolve" },
@@ -36,7 +36,7 @@ export const Route = createFileRoute("/_authenticated/owner-contributions")({
 function ContributionsPage() {
   const role = useRole();
   const search = Route.useSearch();
-  const allowed = canViewContributions({ isAdmin: role.isAdmin, isOnboardingDirector: role.isOnboardingDirector, isOpsDirector: role.access.seats.opsDirector });
+  const allowed = canViewContributions({ isAdmin: role.isAdmin, isOnboardingDirector: role.isOnboardingDirector, isOpsDirector: role.access.seats.opsDirector === true });
   const q = useQuery({ queryKey: ["ao-contributions"], queryFn: loadContributions, enabled: allowed, retry: false });
   const [f, setF] = useState({ card: "all", home: "all", from: "", to: "", q: search.q ?? "" });
   const rows = q.data?.available ? q.data.data : [];

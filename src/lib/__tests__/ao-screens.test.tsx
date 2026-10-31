@@ -119,7 +119,8 @@ describe("owner portal", () => {
     expect(wrap(<PlanCardItem card={{ ...base, unlocked_at: "x", expired_at: "y" }} programId="g" readOnly={false} />)).not.toContain("<form");
   });
   test("submit validation and values", () => {
-    const fields = portalCardView({ ...base, unlocked_at: "x" }).kind === "open" ? (portalCardView({ ...base, unlocked_at: "x" }) as { fields: never[] }).fields : [];
+    const v = portalCardView({ ...base, unlocked_at: "x" });
+    const fields = v.kind === "open" ? v.fields : [];
     expect(validateSubmission(fields, { provider: "CPS" })).toBe("Please fill in Monthly cost");
     expect(validateSubmission(fields, { provider: "CPS", cost: "abc" })).toBe("Monthly cost must be a number");
     expect(validateSubmission(fields, { provider: "CPS", cost: "80" })).toBeNull();
