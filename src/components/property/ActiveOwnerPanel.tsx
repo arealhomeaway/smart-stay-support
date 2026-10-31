@@ -277,7 +277,7 @@ export function ActiveOwnerPanel({
         </div>
       )}
       {canEnroll && row ? <ProgramHomeowners programId={row.id} /> : null}
-      {row ? <HomeAutomation propertyId={propertyId} canToggle={canEnroll} /> : null}
+      {row ? <HomeAutomation propertyId={propertyId} /> : null}
       <ActualClosingCorrection propertyId={propertyId} />
       {canEnroll ? <ActiveOwnerEnrollForm
         propertyId={propertyId}

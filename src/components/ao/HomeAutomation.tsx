@@ -9,11 +9,14 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { loadHomePlan, previewHomeAutomation, setHomeAutomation, unlockNow } from "@/lib/ao-data";
-import { NOT_SET_UP, OUTCOME_LABEL, previewSummary } from "@/lib/ao-ui";
+import { useRole } from "@/hooks/useRole";
+import { NOT_SET_UP, canToggleHomeAutomation, OUTCOME_LABEL, previewSummary } from "@/lib/ao-ui";
 import { usDate } from "@/lib/ao-format";
 
 /** "Automated homeowner plan" on the property's Active Owner section. Staff view; editors switch. */
-export function HomeAutomation({ propertyId, canToggle }: { propertyId: string; canToggle: boolean }) {
+export function HomeAutomation({ propertyId }: { propertyId: string }) {
+  const role = useRole();
+  const canToggle = !role.readOnly && canToggleHomeAutomation(role);
   const qc = useQueryClient();
   const key = ["ao-home-plan", propertyId];
   const q = useQuery({ queryKey: key, queryFn: () => loadHomePlan(propertyId), retry: false });
