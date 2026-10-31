@@ -62,7 +62,7 @@ describe("call/text prompt is gone", () => {
   it("the call/text card and its loaders no longer exist", () => {
     expect(existsSync("src/components/OwnerContactAlerts.tsx")).toBe(false);
     expect(existsSync("src/lib/owner-alerts.functions.ts")).toBe(false);
-    expect(readFileSync("src/routes/_authenticated/owner-programs.tsx", "utf8")).includes("OwnerContactAlerts")).toBe(false);
+    expect(readFileSync("src/routes/_authenticated/owner-programs.tsx", "utf8").includes("OwnerContactAlerts")).toBe(false);
   });
   it("no code path creates new call/text items", () => {
     for (const f of ["src/lib/owner-notify.server.ts", "src/lib/owner-progress-alerts.server.ts"]) {
