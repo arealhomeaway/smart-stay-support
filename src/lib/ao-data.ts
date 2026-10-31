@@ -3,6 +3,7 @@
  * { available: false } while the staged database objects do not exist, so
  * screens can show "Not set up yet" instead of breaking.
  */
+import { fetchAllPages } from "@/lib/ao-ui";
 import { supabase } from "@/integrations/supabase/client";
 import { unwrap, type Available } from "@/lib/ao-ui";
 
@@ -84,23 +85,32 @@ export async function submitCard(planCardId: string, values: Record<string, unkn
   return r.data;
 }
 
+type ContributionDbRow = { id: string; plan_card_id: string; submitted_at: string; submitted_by: string; field_values: Record<string, unknown>; property_id: string; card: { code: string; title: string } | null };
+
+async function inChunks<T>(ids: string[], q: (ids: string[]) => PromiseLike<{ data: T[] | null }>) {
+  const out: T[] = [];
+  for (let i = 0; i < ids.length; i += 200) out.push(...(((await q(ids.slice(i, i + 200))).data) ?? []));
+  return { data: out };
+}
+
 export async function loadContributions() {
-  const r = unwrap<{ id: string; submitted_at: string; submitted_by: string; field_values: Record<string, unknown>; property_id: string; card: { code: string; title: string } | null }[]>(
-    await db.from("ao_contributions").select("id,submitted_at,submitted_by,field_values,property_id,card:ao_library_cards(code,title)").order("submitted_at", { ascending: false }).limit(2000));
+  const r = await fetchAllPages<ContributionDbRow>((from, to) =>
+    db.from("ao_contributions").select("id,plan_card_id,submitted_at,submitted_by,field_values,property_id,card:ao_library_cards(code,title)")
+      .order("submitted_at", { ascending: false }).order("id").range(from, to));
   if (!r.available) return r;
-  const rows = r.data ?? [];
+  const rows = r.data;
   const propIds = [...new Set(rows.map((x) => x.property_id))];
   const userIds = [...new Set(rows.map((x) => x.submitted_by))];
   const [props, people] = await Promise.all([
-    propIds.length ? supabase.from("properties").select("id,name").in("id", propIds) : Promise.resolve({ data: [] as { id: string; name: string }[] }),
-    userIds.length ? supabase.from("profiles").select("id,full_name").in("id", userIds) : Promise.resolve({ data: [] as { id: string; full_name: string | null }[] }),
+    inChunks(propIds, (ids) => supabase.from("properties").select("id,name").in("id", ids)),
+    inChunks(userIds, (ids) => supabase.from("profiles").select("id,full_name").in("id", ids)),
   ]);
   const pName = new Map((props.data ?? []).map((p) => [p.id, p.name]));
   const uName = new Map((people.data ?? []).map((p) => [p.id, p.full_name ?? "Homeowner"]));
   return {
     available: true as const,
     data: rows.map((x) => ({
-      id: x.id, card: x.card?.title ?? "", cardCode: x.card?.code ?? "", home: pName.get(x.property_id) ?? "Home",
+      id: x.id, planCardId: x.plan_card_id, card: x.card?.title ?? "", cardCode: x.card?.code ?? "", home: pName.get(x.property_id) ?? "Home",
       member: uName.get(x.submitted_by) ?? "Homeowner", submittedAt: x.submitted_at, values: x.field_values ?? {},
     })),
   };
