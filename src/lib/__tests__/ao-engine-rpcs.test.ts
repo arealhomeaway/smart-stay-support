@@ -141,7 +141,7 @@ describe("Active Owner engine pass 2, isolated PostgreSQL", () => {
     const p = await plan(home, cLocked);
     expect(p.unlocked_at).not.toBeNull();
     expect(p.cutoff_at!.getTime()).toBeGreaterThan(p.deadline_at!.getTime());
-    expect(p.reminder_at!.getTime()).toBeLessThan(p.deadline_at!.getTime());
+    expect(p.deadline_at!.getTime()).toBeGreaterThan(p.reminder_at!.getTime());
     expect((await one<{ status: string }>("SELECT status FROM public.owner_reviews WHERE id=$1", [p.owner_review_id])).status).toBe("awaiting_owner");
     await db.query("UPDATE public.onboarding_tasks SET status='open', completed_by=null WHERE id=$1", [taskA]);
   });
@@ -172,7 +172,7 @@ describe("Active Owner engine pass 2, isolated PostgreSQL", () => {
     await db.query("UPDATE public.onboarding_tasks SET status='complete' WHERE id=$1", [demoTaskA]);
     const p = await plan(demoHome, cLocked);
     await db.query("SELECT public.ao_process_clocks($1)", [new Date(p.reminder_at!.getTime() + 1000).toISOString()]);
-    expect(await n("SELECT count(*)::int n FROM public.owner_notifications WHERE program_id=$1", [demoProg])).toBeGreaterThanOrEqual(1);
+    expect(await n("SELECT count(*)::int n FROM public.owner_notifications WHERE program_id=$1", [demoProg])).toBeGreaterThan(0);
     expect(await n("SELECT count(*)::int n FROM public.owner_notifications WHERE program_id=$1 AND email_status<>'skipped'", [demoProg])).toBe(0);
     await db.query("UPDATE public.onboarding_tasks SET status='open' WHERE id=$1", [demoTaskA]);
   });
@@ -196,7 +196,7 @@ describe("Active Owner engine pass 2, isolated PostgreSQL", () => {
     await db.query("SELECT public.ao_set_home_automation($1,false)", [home]);
     const after = await n("SELECT count(*)::int n FROM public.owner_reviews") + await n("SELECT count(*)::int n FROM public.ao_home_plan_cards");
     expect(after).toBe(before);
-    expect(await n("SELECT count(*)::int n FROM public.ao_home_plan_settings_history WHERE property_id=$1", [home])).toBeGreaterThanOrEqual(2);
+    expect(await n("SELECT count(*)::int n FROM public.ao_home_plan_settings_history WHERE property_id=$1", [home])).toBeGreaterThan(1);
   });
 
   it("templates, steps and home Tasks unchanged; undo restores the exact catalog", async () => {
