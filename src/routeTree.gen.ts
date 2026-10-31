@@ -46,6 +46,7 @@ import { Route as AuthenticatedOwnerHandoffPlanRouteImport } from './routes/_aut
 import { Route as AuthenticatedOwnerLibraryRouteImport } from './routes/_authenticated/owner-library'
 import { Route as AuthenticatedOwnerOversightRouteImport } from './routes/_authenticated/owner-oversight'
 import { Route as AuthenticatedOwnerProgramsRouteImport } from './routes/_authenticated/owner-programs'
+import { Route as AuthenticatedOwnerReportWordingRouteImport } from './routes/_authenticated/owner-report-wording'
 import { Route as AuthenticatedPlaybooksRouteImport } from './routes/_authenticated/playbooks'
 import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated/properties'
 import { Route as AuthenticatedQuarterlyRouteImport } from './routes/_authenticated/quarterly'
@@ -307,6 +308,12 @@ const AuthenticatedOwnerProgramsRoute =
   AuthenticatedOwnerProgramsRouteImport.update({
     id: '/owner-programs',
     path: '/owner-programs',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOwnerReportWordingRoute =
+  AuthenticatedOwnerReportWordingRouteImport.update({
+    id: '/owner-report-wording',
+    path: '/owner-report-wording',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedPlaybooksRoute = AuthenticatedPlaybooksRouteImport.update({
@@ -701,6 +708,7 @@ export interface FileRoutesByFullPath {
   '/owner-library': typeof AuthenticatedOwnerLibraryRoute
   '/owner-oversight': typeof AuthenticatedOwnerOversightRoute
   '/owner-programs': typeof AuthenticatedOwnerProgramsRoute
+  '/owner-report-wording': typeof AuthenticatedOwnerReportWordingRoute
   '/playbooks': typeof AuthenticatedPlaybooksRoute
   '/properties': typeof AuthenticatedPropertiesRoute
   '/quarterly': typeof AuthenticatedQuarterlyRoute
@@ -798,6 +806,7 @@ export interface FileRoutesByTo {
   '/owner-library': typeof AuthenticatedOwnerLibraryRoute
   '/owner-oversight': typeof AuthenticatedOwnerOversightRoute
   '/owner-programs': typeof AuthenticatedOwnerProgramsRoute
+  '/owner-report-wording': typeof AuthenticatedOwnerReportWordingRoute
   '/playbooks': typeof AuthenticatedPlaybooksRoute
   '/properties': typeof AuthenticatedPropertiesRoute
   '/quarterly': typeof AuthenticatedQuarterlyRoute
@@ -897,6 +906,7 @@ export interface FileRoutesById {
   '/_authenticated/owner-library': typeof AuthenticatedOwnerLibraryRoute
   '/_authenticated/owner-oversight': typeof AuthenticatedOwnerOversightRoute
   '/_authenticated/owner-programs': typeof AuthenticatedOwnerProgramsRoute
+  '/_authenticated/owner-report-wording': typeof AuthenticatedOwnerReportWordingRoute
   '/_authenticated/playbooks': typeof AuthenticatedPlaybooksRoute
   '/_authenticated/properties': typeof AuthenticatedPropertiesRoute
   '/_authenticated/quarterly': typeof AuthenticatedQuarterlyRoute
@@ -999,6 +1009,7 @@ export interface FileRouteTypes {
     | '/owner-library'
     | '/owner-oversight'
     | '/owner-programs'
+    | '/owner-report-wording'
     | '/playbooks'
     | '/properties'
     | '/quarterly'
@@ -1096,6 +1107,7 @@ export interface FileRouteTypes {
     | '/owner-library'
     | '/owner-oversight'
     | '/owner-programs'
+    | '/owner-report-wording'
     | '/playbooks'
     | '/properties'
     | '/quarterly'
@@ -1194,6 +1206,7 @@ export interface FileRouteTypes {
     | '/_authenticated/owner-library'
     | '/_authenticated/owner-oversight'
     | '/_authenticated/owner-programs'
+    | '/_authenticated/owner-report-wording'
     | '/_authenticated/playbooks'
     | '/_authenticated/properties'
     | '/_authenticated/quarterly'
@@ -1537,6 +1550,13 @@ declare module '@tanstack/react-router' {
       path: '/owner-programs'
       fullPath: '/owner-programs'
       preLoaderRoute: typeof AuthenticatedOwnerProgramsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/owner-report-wording': {
+      id: '/_authenticated/owner-report-wording'
+      path: '/owner-report-wording'
+      fullPath: '/owner-report-wording'
+      preLoaderRoute: typeof AuthenticatedOwnerReportWordingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/playbooks': {
@@ -2166,6 +2186,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOwnerLibraryRoute: typeof AuthenticatedOwnerLibraryRoute
   AuthenticatedOwnerOversightRoute: typeof AuthenticatedOwnerOversightRoute
   AuthenticatedOwnerProgramsRoute: typeof AuthenticatedOwnerProgramsRoute
+  AuthenticatedOwnerReportWordingRoute: typeof AuthenticatedOwnerReportWordingRoute
   AuthenticatedPlaybooksRoute: typeof AuthenticatedPlaybooksRoute
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRoute
   AuthenticatedQuarterlyRoute: typeof AuthenticatedQuarterlyRoute
@@ -2221,6 +2242,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOwnerLibraryRoute: AuthenticatedOwnerLibraryRoute,
   AuthenticatedOwnerOversightRoute: AuthenticatedOwnerOversightRoute,
   AuthenticatedOwnerProgramsRoute: AuthenticatedOwnerProgramsRoute,
+  AuthenticatedOwnerReportWordingRoute: AuthenticatedOwnerReportWordingRoute,
   AuthenticatedPlaybooksRoute: AuthenticatedPlaybooksRoute,
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRoute,
   AuthenticatedQuarterlyRoute: AuthenticatedQuarterlyRoute,
