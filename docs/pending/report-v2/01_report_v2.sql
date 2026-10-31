@@ -96,15 +96,15 @@ GRANT EXECUTE ON FUNCTION public.record_report_wording_use(uuid,text,uuid,text,i
 
 -- Labels only: who logged each entry and which library card it belongs to.
 -- Engine link (entry review -> plan card) wins; then an approved legacy map row; else none.
-CREATE FUNCTION public.report_entry_labels(_program uuid)
+-- Rows outside the caller's access are left out, never errored one by one.
+CREATE FUNCTION public.report_entry_labels(_entry_ids uuid[])
 RETURNS TABLE(entry_id uuid, logged_by text, card_code text, card_title text, label_source text)
 LANGUAGE plpgsql STABLE SECURITY DEFINER
 SET search_path TO public, private, pg_temp AS $function$
+DECLARE staff boolean;
 BEGIN
- IF auth.uid() IS NULL OR NOT (public.has_role(auth.uid(),'admin') OR public.is_director(auth.uid())
-   OR public.is_onboarding_director(auth.uid()) OR private.owner_program_readable(auth.uid(), _program)) THEN
-  RAISE EXCEPTION 'This program is not available to this account.' USING ERRCODE='42501';
- END IF;
+ IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Sign in to read this report.' USING ERRCODE='42501'; END IF;
+ staff := public.has_role(auth.uid(),'admin') OR public.is_director(auth.uid()) OR public.is_onboarding_director(auth.uid());
  RETURN QUERY
  SELECT e.id,
   coalesce(nullif(trim(f.full_name),''), nullif(trim(f.first_name),''), 'a homeowner'),
@@ -120,7 +120,8 @@ BEGIN
    WHERE (m.match_kind = 'template_id' AND m.match_value = r.template_id::text)
       OR (m.match_kind = 'exact_title' AND m.match_value = e.activity)
    ORDER BY (m.match_kind = 'template_id') DESC LIMIT 1) mc ON true
- WHERE e.program_id = _program;
+ WHERE e.id = ANY(_entry_ids)
+   AND (staff OR private.owner_program_readable(auth.uid(), e.program_id));
 END $function$;
-REVOKE ALL ON FUNCTION public.report_entry_labels(uuid) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.report_entry_labels(uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.report_entry_labels(uuid[]) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.report_entry_labels(uuid[]) TO authenticated;
