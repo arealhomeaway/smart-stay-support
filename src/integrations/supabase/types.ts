@@ -11165,6 +11165,98 @@ export type Database = {
         }
         Relationships: []
       }
+      report_legacy_card_map: {
+        Row: {
+          approved_at: string
+          approved_by: string | null
+          card_code: string
+          id: string
+          match_kind: string
+          match_value: string
+        }
+        Insert: {
+          approved_at?: string
+          approved_by?: string | null
+          card_code: string
+          id?: string
+          match_kind: string
+          match_value: string
+        }
+        Update: {
+          approved_at?: string
+          approved_by?: string | null
+          card_code?: string
+          id?: string
+          match_kind?: string
+          match_value?: string
+        }
+        Relationships: []
+      }
+      report_wording_uses: {
+        Row: {
+          file_format: string
+          generated_at: string
+          generated_by: string
+          id: string
+          program_id: string | null
+          report_kind: string
+          report_ref: string | null
+          wording_version: number
+        }
+        Insert: {
+          file_format: string
+          generated_at?: string
+          generated_by: string
+          id?: string
+          program_id?: string | null
+          report_kind: string
+          report_ref?: string | null
+          wording_version: number
+        }
+        Update: {
+          file_format?: string
+          generated_at?: string
+          generated_by?: string
+          id?: string
+          program_id?: string | null
+          report_kind?: string
+          report_ref?: string | null
+          wording_version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_wording_uses_wording_version_fkey"
+            columns: ["wording_version"]
+            isOneToOne: false
+            referencedRelation: "report_wording_versions"
+            referencedColumns: ["version"]
+          },
+        ]
+      }
+      report_wording_versions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          note: string | null
+          sentences: Json
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          note?: string | null
+          sentences: Json
+          version: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          note?: string | null
+          sentences?: Json
+          version?: number
+        }
+        Relationships: []
+      }
       routine_controls: {
         Row: {
           assigned_role_code: string | null
@@ -16253,6 +16345,16 @@ export type Database = {
         }
         Returns: string
       }
+      record_report_wording_use: {
+        Args: {
+          _format: string
+          _kind: string
+          _program: string
+          _ref: string
+          _version: number
+        }
+        Returns: undefined
+      }
       record_staff_work_order_owner_decision: {
         Args: {
           _approved_amount: number
@@ -16327,6 +16429,21 @@ export type Database = {
       reorder_arha_opportunities: {
         Args: { _ids: string[]; _property_id: string }
         Returns: undefined
+      }
+      report_entry_labels: {
+        Args: { _entry_ids: string[] }
+        Returns: {
+          card_code: string
+          card_title: string
+          entry_id: string
+          label_source: string
+          logged_by: string
+        }[]
+      }
+      report_wording_current: { Args: never; Returns: Json }
+      report_wording_save: {
+        Args: { _note?: string; _sentences: Json }
+        Returns: number
       }
       request_claim_waiver: {
         Args: { _claim_id: string; _context?: string; _reason: string }
