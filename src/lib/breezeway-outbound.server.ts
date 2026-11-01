@@ -205,7 +205,7 @@ export async function outboundEligibility(
   try {
     const { propertyId } = await resolveSource(source);
     const { propertyWriteEligibility } = await import("./breezeway-mapping.server");
-    const gate = await propertyWriteEligibility(propertyId!);
+    const gate = await propertyWriteEligibility(propertyId);
     if (!gate.eligible) {
       return {
         enabled,
@@ -487,7 +487,8 @@ export async function createOutboundTask(
     }
   }
 
-  const insert = await db
+  const stagedDb = db as unknown as import("@supabase/supabase-js").SupabaseClient;
+  const insert = await stagedDb
     .from("breezeway_outbound_tasks")
     .insert({
       ...(input.workOrderId ? { dispatch_guarded: true } : {}),

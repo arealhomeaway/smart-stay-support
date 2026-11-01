@@ -20,6 +20,10 @@ const store = createFakeOutboundStore();
 mock.module("@/integrations/supabase/client.server", () => ({
   supabaseAdmin: store.supabaseAdmin,
 }));
+mock.module("@/lib/breezeway-directory.server", () => ({
+  listBreezewayTemplates: async () => [],
+  listAssignableBreezewayPeople: async () => [{ id: 123, name: "Accepted vendor" }],
+}));
 
 class FakeBreezewayError extends Error {
   constructor(
@@ -533,5 +537,63 @@ describe("verified-mapping write gate", () => {
     const result = await createOutboundTask(input("key-nohome-0000000"), "actor");
     expect(result.ok).toBe(false);
     expect(calls.length).toBe(0);
+  });
+});
+
+describe('approved pilot dispatch with mocked Breezeway', () => {
+  function dispatch(key: string) {
+    store.state.workOrders.push({ id: 'selected-wo', ticket_id: TICKET, property_id: 'prop-1', closed_at: null, phase: 'scheduled', breezeway_handoff_status: 'not_sent', vendor_org_id: 'vendor', scheduled_for: '2026-11-09T16:30:00Z' });
+    store.state.candidates.push({ work_order_id: 'selected-wo', status: 'accepted', vendor_org_id: 'vendor', vendor_orgs: { breezeway_person_id: 123 } });
+    return { ...input(key), workOrderId: 'selected-wo', assigneeIds: [123], scheduledDate: '2026-11-09', scheduledTime: '10:30:00' };
+  }
+  it('sends accepted person and agreed Central appointment on the exact Work Order', async () => {
+    const r = await createOutboundTask(dispatch('approved-happy-key'), 'actor');
+    expect(r.ok).toBe(true);
+    expect(r.link?.workOrderId).toBe('selected-wo');
+    expect(calls.find(c => c.method === 'POST')?.body).toMatchObject({ assignments: [123], scheduled_date: '2026-11-09', scheduled_time: '10:30:00' });
+    expect(store.workOrders()).toHaveLength(1);
+  });
+  it('refuses missing mapping', async () => {
+    const d = dispatch('approved-no-mapping');
+    const candidate = store.state.candidates[0];
+    if (candidate) candidate['vendor_orgs'] = { breezeway_person_id: null };
+    const r = await createOutboundTask(d, 'actor'); expect(r.ok).toBe(false); expect(calls.filter(c => c.method === 'POST')).toHaveLength(0);
+  });
+  it('refuses missing appointment', async () => {
+    const d = dispatch('approved-no-appointment'); const wo = store.state.workOrders[0]; if (wo) wo['scheduled_for'] = null;
+    expect((await createOutboundTask(d, 'actor')).ok).toBe(false); expect(calls.filter(c => c.method === 'POST')).toHaveLength(0);
+  });
+  it('refuses wrong Ticket and home', async () => {
+    const d = dispatch('approved-wrong-home'); const wo = store.state.workOrders[0]; if (wo) wo['property_id'] = 'other';
+    expect((await createOutboundTask(d, 'actor')).ok).toBe(false); expect(calls.filter(c => c.method === 'POST')).toHaveLength(0);
+  });
+  it('refuses cancelled work', async () => {
+    const d = dispatch('approved-cancelled'); const wo = store.state.workOrders[0]; if (wo) wo['phase'] = 'cancelled';
+    expect((await createOutboundTask(d, 'actor')).ok).toBe(false); expect(calls.filter(c => c.method === 'POST')).toHaveLength(0);
+  });
+  it('close wins before transactional reservation and no task is sent', async () => {
+    const d = dispatch('approved-close-race'); store.state.closeBeforeInsert = true;
+    expect((await createOutboundTask(d, 'actor')).ok).toBe(false); expect(calls.filter(c => c.method === 'POST')).toHaveLength(0);
+  });
+  it('double click and different keys create one task', async () => {
+    const d = dispatch('approved-double-click');
+    await Promise.all([createOutboundTask(d,'actor'), createOutboundTask({ ...d, requestKey: 'approved-other-key' },'actor')]);
+    expect(calls.filter(c => c.method === 'POST')).toHaveLength(1); expect(store.outbound()).toHaveLength(1);
+  });
+  it('refuses dispatch until pending safeguards are applied', async () => {
+    const d = dispatch('approved-not-ready'); store.state.dispatchReady = false;
+    expect((await createOutboundTask(d,'actor')).ok).toBe(false); expect(calls.filter(c => c.method === 'POST')).toHaveLength(0);
+  });
+  it('pilot scope blocks both clicked source types at server boundary', async () => {
+    store.state.sending.push({ mode: 'pilot_only', home_ids: [] });
+    for (const sourceType of ['ticket','onboarding_task'] as const) {
+      const r = await createOutboundTask({ ...input('approved-pilot-' + sourceType), sourceType, sourceId: sourceType === 'ticket' ? TICKET : ONBOARDING_TASK },'actor');
+      expect(r.ok).toBe(false); if (!r.ok) expect(r.message).toBe('This home is not in the Breezeway pilot yet');
+    }
+    expect(calls.filter(c => c.method === 'POST')).toHaveLength(0);
+  });
+  it('pilot list allows its selected home', async () => {
+    store.state.sending.push({ mode: 'pilot_only', home_ids: ['prop-1'] });
+    expect((await createOutboundTask(input('approved-listed-home'),'actor')).ok).toBe(true);
   });
 });

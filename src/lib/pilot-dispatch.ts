@@ -13,5 +13,5 @@ export function acceptedVendorAppointment(personId: unknown, scheduledFor: strin
     hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
   }).formatToParts(new Date(scheduledFor));
   const p = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
-  return { assigneeIds: [id], scheduledDate: `${p.year}-${p.month}-${p.day}`, scheduledTime: `${p.hour}:${p.minute}:${p.second}` };
+  return { assigneeIds: [id], scheduledDate: `${p['year']}-${p['month']}-${p['day']}`, scheduledTime: `${p['hour']}:${p['minute']}:${p['second']}` };
 }
