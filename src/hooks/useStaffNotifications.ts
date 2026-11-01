@@ -3,6 +3,7 @@ import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-quer
 import { supabase } from "@/integrations/supabase/client";
 import { useDemo } from "@/components/DemoProvider";
 import { allowsInApp, readPreferences } from "@/lib/notification-preferences";
+import { markAllUnread, readUnreadKinds } from "@/lib/notification-feed-data";
 import { PAGE_SIZE, type ApprovalTarget, type FeedRow } from "@/lib/notification-feed";
 
 export type FeedFilters = { unreadOnly?: boolean; kind?: string | null; home?: string | null };
@@ -32,23 +33,7 @@ export function useStaffNotifications(filters: FeedFilters = {}, enabled = true)
     queryKey: ["staff-notifications", "unread", demoMode],
     refetchInterval: 60_000,
     staleTime: 30_000,
-    queryFn: async () => {
-      const kinds: string[] = [];
-      for (let from = 0; ; from += 1000) {
-        const { data, error } = await supabase
-          .from("staff_notifications")
-          .select("kind")
-          .eq("is_demo", demoMode)
-          .is("retracted_at", null)
-          .is("read_at", null)
-          .order("created_at", { ascending: false })
-          .range(from, from + 999);
-        if (error) throw error;
-        for (const r of data ?? []) kinds.push(r.kind);
-        if (!data || data.length < 1000) break;
-      }
-      return kinds;
-    },
+    queryFn: () => readUnreadKinds(supabase as never, demoMode),
   });
   const unreadCount = useMemo(
     () => (unreadQuery.data ?? []).filter((k) => allowsInApp(prefs, k)).length,
@@ -124,14 +109,7 @@ export function useStaffNotifications(filters: FeedFilters = {}, enabled = true)
   async function markAllRead(): Promise<number> {
     const { data: auth } = await supabase.auth.getUser();
     if (!auth.user) throw new Error("Please sign in again.");
-    const { error, count } = await supabase
-      .from("staff_notifications")
-      .update({ read_at: new Date().toISOString() }, { count: "exact" })
-      .eq("user_id", auth.user.id)
-      .eq("is_demo", demoMode)
-      .is("retracted_at", null)
-      .is("read_at", null);
-    if (error) throw error;
+    const count = await markAllUnread(supabase as never, auth.user.id, demoMode);
     refresh();
     return count ?? 0;
   }
