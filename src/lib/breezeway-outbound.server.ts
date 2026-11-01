@@ -418,7 +418,7 @@ export async function createOutboundTask(
     if (selected.closed_at || ["closed", "cancelled", "canceled"].includes(selected.phase)) return { ok: false, message: "This Work Order is closed or cancelled. Nothing was sent." };
     if (selected.dispatched_at || ["sent", "simulated", "uncertain"].includes(selected.breezeway_handoff_status)) return { ok: false, message: "This Work Order was already dispatched or is awaiting review." };
     const { authorizationState } = await import("./vendor-sourcing");
-    const authorization = authorizationState(selected);
+    const authorization = authorizationState({ ...selected, phase: selected.phase === "mitigation" ? "mitigation" : "permanent" });
     if (!authorization.satisfied) return { ok: false, message: authorization.label };
     const { data: accepted } = await db.from("work_order_vendor_candidates").select("vendor_org_id, vendor_orgs:vendor_org_id (breezeway_person_id)").eq("work_order_id", selected.id).eq("status", "accepted").maybeSingle();
     const vendor = (accepted as unknown as { vendor_org_id: string; vendor_orgs: { breezeway_person_id: unknown } } | null);
