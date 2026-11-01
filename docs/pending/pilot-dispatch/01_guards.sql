@@ -53,7 +53,7 @@ BEGIN
  IF person IS NULL OR person<=0 THEN RAISE EXCEPTION 'The accepted vendor has no Breezeway person mapping. Add the mapping before sending.'; END IF;
  appt:=wo.scheduled_for;
  IF appt IS NULL THEN RAISE EXCEPTION 'The agreed appointment date and time are missing. Set the appointment before sending.'; END IF;
- IF NEW.assignee_ids IS DISTINCT FROM ARRAY[person]::bigint[] OR NEW.scheduled_date IS DISTINCT FROM (appt AT TIME ZONE 'America/Chicago')::date OR NEW.scheduled_time IS DISTINCT FROM to_char(appt AT TIME ZONE 'America/Chicago','HH24:MI:SS') THEN RAISE EXCEPTION 'The accepted vendor or appointment changed. Refresh the Work Order before sending.'; END IF;
+ IF NEW.assignee_ids IS DISTINCT FROM ARRAY[person]::integer[] OR NEW.scheduled_date IS DISTINCT FROM (appt AT TIME ZONE 'America/Chicago')::date OR NEW.scheduled_time IS DISTINCT FROM to_char(appt AT TIME ZONE 'America/Chicago','HH24:MI:SS') THEN RAISE EXCEPTION 'The accepted vendor or appointment changed. Refresh the Work Order before sending.'; END IF;
  UPDATE public.work_orders SET breezeway_handoff_status='uncertain',breezeway_request_key=NEW.request_key,breezeway_handoff_at=now(),breezeway_handoff_error='Sending to Breezeway. Reconcile before retrying.' WHERE id=wo.id;
  RETURN NEW;
 END $$;
