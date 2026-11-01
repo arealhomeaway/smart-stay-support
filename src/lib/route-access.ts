@@ -32,6 +32,7 @@ type Rule = {
 // Longest/most specific prefixes first; matching is by whole path segment.
 const RULES: Rule[] = [
   { prefix: "/account", shared: true },
+  { prefix: "/notifications", shared: true },
   { prefix: "/hub", shared: true },
   { prefix: "/join", shared: true },
   { prefix: "/demo", capability: "view_as" },

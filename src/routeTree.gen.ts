@@ -34,6 +34,7 @@ import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authent
 import { Route as AuthenticatedJoinRouteImport } from './routes/_authenticated/join'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedMapRouteImport } from './routes/_authenticated/map'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedOpsAnalyticsRouteImport } from './routes/_authenticated/ops-analytics'
 import { Route as AuthenticatedOversightRouteImport } from './routes/_authenticated/oversight'
@@ -241,6 +242,12 @@ const AuthenticatedMapRoute = AuthenticatedMapRouteImport.update({
   path: '/map',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedNotificationsRoute =
+  AuthenticatedNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -696,6 +703,7 @@ export interface FileRoutesByFullPath {
   '/join': typeof AuthenticatedJoinRoute
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/map': typeof AuthenticatedMapRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
   '/ops-analytics': typeof AuthenticatedOpsAnalyticsRoute
   '/oversight': typeof AuthenticatedOversightRoute
@@ -795,6 +803,7 @@ export interface FileRoutesByTo {
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/join': typeof AuthenticatedJoinRoute
   '/map': typeof AuthenticatedMapRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/ops-analytics': typeof AuthenticatedOpsAnalyticsRoute
   '/oversight': typeof AuthenticatedOversightRoute
   '/oversight-access-log': typeof AuthenticatedOversightAccessLogRoute
@@ -894,6 +903,7 @@ export interface FileRoutesById {
   '/_authenticated/join': typeof AuthenticatedJoinRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/_authenticated/map': typeof AuthenticatedMapRoute
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
   '/_authenticated/ops-analytics': typeof AuthenticatedOpsAnalyticsRoute
   '/_authenticated/oversight': typeof AuthenticatedOversightRoute
@@ -997,6 +1007,7 @@ export interface FileRouteTypes {
     | '/join'
     | '/leads'
     | '/map'
+    | '/notifications'
     | '/onboarding'
     | '/ops-analytics'
     | '/oversight'
@@ -1096,6 +1107,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/join'
     | '/map'
+    | '/notifications'
     | '/ops-analytics'
     | '/oversight'
     | '/oversight-access-log'
@@ -1194,6 +1206,7 @@ export interface FileRouteTypes {
     | '/_authenticated/join'
     | '/_authenticated/leads'
     | '/_authenticated/map'
+    | '/_authenticated/notifications'
     | '/_authenticated/onboarding'
     | '/_authenticated/ops-analytics'
     | '/_authenticated/oversight'
@@ -1466,6 +1479,13 @@ declare module '@tanstack/react-router' {
       path: '/map'
       fullPath: '/map'
       preLoaderRoute: typeof AuthenticatedMapRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/onboarding': {
@@ -2174,6 +2194,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedJoinRoute: typeof AuthenticatedJoinRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRouteWithChildren
   AuthenticatedMapRoute: typeof AuthenticatedMapRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRouteWithChildren
   AuthenticatedOpsAnalyticsRoute: typeof AuthenticatedOpsAnalyticsRoute
   AuthenticatedOversightRoute: typeof AuthenticatedOversightRoute
@@ -2230,6 +2251,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedJoinRoute: AuthenticatedJoinRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRouteWithChildren,
   AuthenticatedMapRoute: AuthenticatedMapRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRouteWithChildren,
   AuthenticatedOpsAnalyticsRoute: AuthenticatedOpsAnalyticsRoute,
   AuthenticatedOversightRoute: AuthenticatedOversightRoute,
