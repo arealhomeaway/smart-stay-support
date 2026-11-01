@@ -1,0 +1,8 @@
+{
+  "01_guards.sql": "031773b84161a23e931d1df30ec7fc4602f7297b16c60dbbb3ed3d70be498b93",
+  "README.md": "1416ba56c62ada76862627dab4bc5ce76d4ab3c63ce67c73e37e1ed4b76c9f93",
+  "live-capture/receipt.json": "f86aad78b0b522deba5d08de4c432c7a6fb491fe38dcbfcdee97cec874e324d8",
+  "live-capture/wo_authorization_snapshot.base64": "11703c624095e51828153caa7d462eeea281f451cba2bb54ad3d5a38827e1819",
+  "live-capture/wo_authorization_snapshot.sql": "8f580f6dfaf2954a598ca5287c643ea9b13063738b0b14decb20fc8deba4a331",
+  "undo.sql": "260c6792be08caff2a64c55c88145f3a1ef2250ca624e707404f8afa47a57861"
+}

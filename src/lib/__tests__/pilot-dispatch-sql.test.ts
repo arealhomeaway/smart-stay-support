@@ -1,0 +1,36 @@
+import { beforeAll, describe, expect, it } from 'bun:test';
+import { PGlite } from '@electric-sql/pglite';
+import { readFileSync } from 'node:fs';
+const U=(n:number)=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
+let db:PGlite;
+const sql=readFileSync('docs/pending/pilot-dispatch/01_guards.sql','utf8');
+const insert=(n:number)=>`INSERT INTO breezeway_outbound_tasks(id,source_type,ticket_id,property_id,work_order_id,request_key,status,assignee_ids,scheduled_date,scheduled_time,dispatch_guarded) VALUES('${U(n)}','ticket','${U(2)}','${U(1)}','${U(3)}','key-${n}','creating',ARRAY[123],'2026-11-09','10:30:00',true)`;
+describe('staged dispatch database safeguards, isolated PostgreSQL',()=>{
+ beforeAll(async()=>{
+  db=new PGlite();
+  await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role; CREATE SCHEMA auth;
+   CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT '${U(9)}'::uuid $$;
+   CREATE FUNCTION auth.role() RETURNS text LANGUAGE sql AS $$ SELECT 'service_role' $$;
+   CREATE FUNCTION public.has_role(uuid,text) RETURNS boolean LANGUAGE sql AS $$ SELECT coalesce(current_setting('test.admin',true),'true')='true' $$;
+   CREATE TABLE properties(id uuid PRIMARY KEY,is_demo boolean DEFAULT false,archived_at timestamptz);
+   CREATE TABLE tickets(id uuid PRIMARY KEY,property_id uuid);
+   CREATE TABLE work_orders(id uuid PRIMARY KEY,ticket_id uuid,property_id uuid,closed_at timestamptz,dispatched_at timestamptz,phase text,breezeway_handoff_status text,breezeway_request_key text,breezeway_handoff_at timestamptz,breezeway_handoff_error text,breezeway_task_ref text,authorization_stale boolean,approval_status text,supervisor_approval_status text,vendor_org_id uuid,scheduled_for timestamptz,scope text,quote_amount numeric);
+   CREATE TABLE vendor_orgs(id uuid PRIMARY KEY,breezeway_person_id text);
+   CREATE TABLE work_order_vendor_candidates(work_order_id uuid,vendor_org_id uuid,status text);
+   CREATE TABLE breezeway_outbound_tasks(id uuid PRIMARY KEY,source_type text,ticket_id uuid,property_id uuid,work_order_id uuid,request_key text,status text,assignee_ids integer[],scheduled_date date,scheduled_time text,breezeway_task_id bigint,error_message text,review_note text);
+   INSERT INTO properties(id) VALUES('${U(1)}'); INSERT INTO tickets VALUES('${U(2)}','${U(1)}');
+   INSERT INTO vendor_orgs VALUES('${U(4)}','123'); INSERT INTO work_order_vendor_candidates VALUES('${U(3)}','${U(4)}','accepted');
+   INSERT INTO work_orders(id,ticket_id,property_id,phase,breezeway_handoff_status,authorization_stale,approval_status,supervisor_approval_status,vendor_org_id,scheduled_for) VALUES('${U(3)}','${U(2)}','${U(1)}','scheduled','not_sent',false,'not_required','not_required','${U(4)}','2026-11-09T16:30:00Z');`);
+  await db.exec(sql);
+ });
+ it('default permits sending and reserves exact row before external call',async()=>{ await db.exec(insert(10)); const r=await db.query<{breezeway_handoff_status:string}>('SELECT breezeway_handoff_status FROM work_orders'); expect(r.rows[0]?.breezeway_handoff_status).toBe('uncertain'); });
+ it('send wins and concurrent close cannot change reserved row',async()=>{ await expect(db.exec(`UPDATE work_orders SET closed_at=now()`)).rejects.toThrow('sending is in progress'); });
+ it('different-key double click cannot reserve twice',async()=>{ await expect(db.exec(insert(11))).rejects.toThrow('already dispatched'); expect((await db.query('SELECT * FROM breezeway_outbound_tasks')).rows).toHaveLength(1); });
+ it('uncertain result keeps close blocked',async()=>{ await db.exec(`UPDATE breezeway_outbound_tasks SET status='needs_review',error_message='Timeout'`); await expect(db.exec(`UPDATE work_orders SET phase='cancelled'`)).rejects.toThrow('sending is in progress'); });
+ it('definite refusal releases reservation and permits close',async()=>{ await db.exec(`UPDATE breezeway_outbound_tasks SET status='error',error_message='Not created'; UPDATE work_orders SET closed_at=now()`); expect((await db.query<{breezeway_handoff_status:string}>('SELECT breezeway_handoff_status FROM work_orders')).rows[0]?.breezeway_handoff_status).toBe('failed'); });
+ it('close wins and reservation refuses without outbound row',async()=>{ await expect(db.exec(insert(12))).rejects.toThrow('closed or cancelled'); expect((await db.query('SELECT * FROM breezeway_outbound_tasks')).rows).toHaveLength(1); });
+ it('Admin scope changes and home list are atomic with history',async()=>{ await db.exec(`SELECT save_breezeway_sending('pilot_only','{}');`); expect((await db.query('SELECT * FROM breezeway_sending_history')).rows).toHaveLength(1); await expect(db.exec(insert(13))).rejects.toThrow('not in the Breezeway pilot'); await db.exec(`SELECT save_breezeway_sending('pilot_only',ARRAY['${U(1)}']::uuid[])`); expect((await db.query('SELECT * FROM breezeway_sending_history')).rows).toHaveLength(2); });
+ it('non-Admin cannot edit setting or add history',async()=>{ await db.exec(`SELECT set_config('test.admin','false',false)`); await expect(db.exec(`SELECT save_breezeway_sending('all_verified','{}')`)).rejects.toThrow('Only an Admin'); expect((await db.query('SELECT * FROM breezeway_sending_history')).rows).toHaveLength(2); });
+ it('new privileged functions never grant anon execution',async()=>{ const rows=await db.query(`SELECT proname FROM pg_proc WHERE proname IN ('guard_pilot_dispatch','guard_pilot_dispatch_close','finish_pilot_dispatch','save_breezeway_sending') AND has_function_privilege('anon',oid,'EXECUTE')`); expect(rows.rows).toHaveLength(0); });
+ it('exact undo removes new objects without touching canonical rows',async()=>{ const before=(await db.query('SELECT * FROM work_orders')).rows; await db.exec(readFileSync('docs/pending/pilot-dispatch/undo.sql','utf8')); expect((await db.query('SELECT * FROM work_orders')).rows).toEqual(before); expect((await db.query(`SELECT to_regclass('public.breezeway_sending_settings') AS t`)).rows[0]).toEqual({t:null}); });
+});

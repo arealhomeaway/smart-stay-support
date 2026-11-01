@@ -37,6 +37,8 @@ import {
 export type OutboundSource = { sourceType: "ticket" | "onboarding_task"; sourceId: string };
 
 export type CreateOutboundInput = OutboundSource & {
+  /** Exact selected Work Order for accepted-vendor dispatch. No find/create fallback. */
+  workOrderId?: string;
   requestKey: string;
   title: string;
   description: string | null;
@@ -203,7 +205,7 @@ export async function outboundEligibility(
   try {
     const { propertyId } = await resolveSource(source);
     const { propertyWriteEligibility } = await import("./breezeway-mapping.server");
-    const gate = await propertyWriteEligibility(propertyId!);
+    const gate = await propertyWriteEligibility(propertyId);
     if (!gate.eligible) {
       return {
         enabled,
@@ -313,7 +315,10 @@ export async function createOutboundTask(
   // Idempotent fast path. The earlier attempt's REAL state is reported —
   // a failed or uncertain first attempt must never look like a success.
   const existing = await rowByRequestKey(input.requestKey);
-  if (existing) return resultForExisting(existing);
+  if (existing) {
+    if ((input.workOrderId && existing.work_order_id !== input.workOrderId) || existing.source_type !== input.sourceType || (input.sourceType === "ticket" ? existing.ticket_id : existing.onboarding_task_id) !== input.sourceId) return { ok: false, message: "This sending reference belongs to different work. Refresh before sending." };
+    return resultForExisting(existing);
+  }
 
   if (!(await outboundEnabled())) {
     return { ok: false, message: "Breezeway outbound task creation is switched off." };
@@ -331,9 +336,16 @@ export async function createOutboundTask(
     };
   }
   const { propertyId, defaults } = resolved;
+  if (!propertyId) return { ok: false, message: "This record has no home." };
+  try {
+    const { assertPilotHome } = await import("./pilot-dispatch.server");
+    await assertPilotHome(propertyId);
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : "Could not check Breezeway sending settings." };
+  }
   // Single write gate: the persisted, deterministic mapping state.
   const { propertyWriteEligibility } = await import("./breezeway-mapping.server");
-  const gate = await propertyWriteEligibility(propertyId!);
+  const gate = await propertyWriteEligibility(propertyId);
   if (!gate.eligible || !gate.homeId) {
     return {
       ok: false,
@@ -396,13 +408,34 @@ export async function createOutboundTask(
 
   const db = await admin();
 
+  if (input.workOrderId) {
+    // No direct-write fallback while the staged transactional guards are pending.
+    const rpc = db.rpc.bind(db) as unknown as (name: string) => Promise<{ data: unknown; error: unknown }>;
+    const ready = await rpc("pilot_dispatch_ready");
+    if (ready.error || ready.data !== true) return { ok: false, message: "Breezeway dispatch safeguards are not set up yet. Nothing was sent." };
+    const { data: selected, error } = await db.from("work_orders").select("*").eq("id", input.workOrderId).maybeSingle();
+    if (error || !selected || selected.ticket_id !== input.sourceId || selected.property_id !== propertyId || input.sourceType !== "ticket") return { ok: false, message: "The selected Work Order does not belong to this Ticket and home." };
+    if (selected.closed_at || ["closed", "cancelled", "canceled"].includes(selected.phase)) return { ok: false, message: "This Work Order is closed or cancelled. Nothing was sent." };
+    if (selected.dispatched_at || ["sent", "simulated", "uncertain"].includes(selected.breezeway_handoff_status)) return { ok: false, message: "This Work Order was already dispatched or is awaiting review." };
+    const { authorizationState } = await import("./vendor-sourcing");
+    const authorization = authorizationState({ ...selected, phase: selected.phase === "mitigation" ? "mitigation" : "permanent" });
+    if (!authorization.satisfied) return { ok: false, message: authorization.label };
+    const { data: accepted } = await db.from("work_order_vendor_candidates").select("vendor_org_id, vendor_orgs:vendor_org_id (breezeway_person_id)").eq("work_order_id", selected.id).eq("status", "accepted").maybeSingle();
+    const vendor = (accepted as unknown as { vendor_org_id: string; vendor_orgs: { breezeway_person_id: unknown } } | null);
+    try {
+      const { acceptedVendorAppointment } = await import("./pilot-dispatch");
+      const appointment = acceptedVendorAppointment(vendor?.vendor_orgs?.breezeway_person_id, selected.scheduled_for);
+      if (vendor?.vendor_org_id !== selected.vendor_org_id || JSON.stringify(appointment.assigneeIds) !== JSON.stringify(assigneeIds) || appointment.scheduledDate !== input.scheduledDate || appointment.scheduledTime !== input.scheduledTime) return { ok: false, message: "The accepted vendor or appointment changed. Refresh the Work Order before sending." };
+    } catch (error) { return { ok: false, message: error instanceof Error ? error.message : "Could not verify the appointment." }; }
+  }
+
   // Breezeway is an outbound execution channel off the canonical Resolve
   // Work Order, not a second repair record — find or create the one open
   // Work Order for this ticket and link the outbound task to it. Only
   // ticket-sourced repairs have a Work Order to link; onboarding-task
   // repairs are unaffected.
-  let workOrderId: string | null = null;
-  if (input.sourceType === "ticket") {
+  let workOrderId: string | null = input.workOrderId ?? null;
+  if (input.sourceType === "ticket" && !input.workOrderId) {
     const openWo = await db
       .from("work_orders")
       .select("id")
@@ -421,7 +454,7 @@ export async function createOutboundTask(
         .eq("id", input.sourceId)
         .maybeSingle();
       const ticketPriority = ["p1", "p2", "p3"].includes(String(ticketRow.data?.priority))
-        ? (ticketRow.data!.priority as string)
+        ? String(ticketRow.data?.priority)
         : "p3";
       const createdWo = await db
         .from("work_orders")
@@ -460,9 +493,11 @@ export async function createOutboundTask(
     }
   }
 
-  const insert = await db
+  const stagedDb = db as unknown as import("@supabase/supabase-js").SupabaseClient;
+  const insert = await stagedDb
     .from("breezeway_outbound_tasks")
     .insert({
+      ...(input.workOrderId ? { dispatch_guarded: true } : {}),
       source_type: input.sourceType,
       ticket_id: input.sourceType === "ticket" ? input.sourceId : null,
       onboarding_task_id: input.sourceType === "onboarding_task" ? input.sourceId : null,
@@ -500,7 +535,7 @@ export async function createOutboundTask(
           "Another Breezeway request for this record is still open (being created, or awaiting admin review). It must resolve first.",
       };
     }
-    return { ok: false, message: "Could not record the Breezeway request." };
+    return { ok: false, message: input.workOrderId ? insert.error.message : "Could not record the Breezeway request." };
   }
 
   const row = insert.data as unknown as Row;

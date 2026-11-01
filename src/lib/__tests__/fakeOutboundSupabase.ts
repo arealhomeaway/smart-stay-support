@@ -23,6 +23,10 @@ export function createFakeOutboundStore() {
     properties: [] as Row[],
     outbound: [] as Row[],
     workOrders: [] as Row[],
+    sending: [] as Row[],
+    candidates: [] as Row[],
+    dispatchReady: true,
+    closeBeforeInsert: false,
     nextId: 1,
     failNextOutboundUpdate: 0,
     failNextWorkOrderInsert: 0,
@@ -36,6 +40,8 @@ export function createFakeOutboundStore() {
     if (table === "properties") return state.properties;
     if (table === "breezeway_outbound_tasks") return state.outbound;
     if (table === "work_orders") return state.workOrders;
+    if (table === "breezeway_sending_settings") return state.sending;
+    if (table === "work_order_vendor_candidates") return state.candidates;
     throw new Error(`Unexpected table in test: ${table}`);
   }
 
@@ -55,6 +61,12 @@ export function createFakeOutboundStore() {
   }
 
   function insertOutbound(payload: Row) {
+    if (payload['dispatch_guarded']) {
+      const wo = state.workOrders.find(w => w['id'] === payload['work_order_id']);
+      if (state.closeBeforeInsert && wo) wo['closed_at'] = '2026-11-01T00:00:00Z';
+      if (!wo || wo['closed_at']) return { data: null, error: { code: 'P0001', message: 'This Work Order is closed or cancelled. Nothing was sent.' } };
+      if (state.outbound.some(r => r['work_order_id'] === wo['id'] && ['creating','needs_review','created','synced'].includes(String(r['status'])))) return { data: null, error: { code: '23505', message: 'already dispatched' } };
+    }
     const dupeKey = state.outbound.find((r) => r["request_key"] === payload["request_key"]);
     if (dupeKey) return { data: null, error: { code: "23505", message: "duplicate request_key" } };
     for (const col of ["ticket_id", "onboarding_task_id"] as const) {
@@ -186,7 +198,7 @@ export function createFakeOutboundStore() {
   }
 
   return {
-    supabaseAdmin: { from: (table: string) => builder(table) },
+    supabaseAdmin: { from: (table: string) => builder(table), rpc: async () => ({ data: state.dispatchReady, error: null }) },
     state,
     outbound: () => state.outbound,
     workOrders: () => state.workOrders,
@@ -255,6 +267,10 @@ export function createFakeOutboundStore() {
       state.properties = [];
       state.outbound = [];
       state.workOrders = [];
+      state.sending = [];
+      state.candidates = [];
+      state.dispatchReady = true;
+      state.closeBeforeInsert = false;
       state.nextId = 1;
       state.failNextOutboundUpdate = 0;
       state.failNextWorkOrderInsert = 0;

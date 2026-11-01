@@ -16,6 +16,7 @@ import { BreezewayWebhookPanel } from "@/components/BreezewayWebhookPanel";
 import { BreezewayOutboundReviewPanel } from "@/components/BreezewayOutboundReviewPanel";
 import { BreezewaySyncReviewPanel } from "@/components/BreezewaySyncReviewPanel";
 import { DocumentCompletionPanel } from "@/components/DocumentCompletionPanel";
+import { BreezewaySendingPanel } from "@/components/BreezewaySendingPanel";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
   component: () => (
@@ -92,6 +93,7 @@ function IntegrationsPage() {
       <SharePointConnectionPanel />
 
       <BreezewayConnectionPanel />
+      <BreezewaySendingPanel />
       <BreezewayWebhookPanel />
       <BreezewayOutboundReviewPanel />
       <BreezewaySyncReviewPanel />
