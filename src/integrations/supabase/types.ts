@@ -1073,6 +1073,7 @@ export type Database = {
           created_by: string | null
           department: string | null
           description: string | null
+          dispatch_guarded: boolean
           error_message: string | null
           id: string
           last_synced_at: string | null
@@ -1108,6 +1109,7 @@ export type Database = {
           created_by?: string | null
           department?: string | null
           description?: string | null
+          dispatch_guarded?: boolean
           error_message?: string | null
           id?: string
           last_synced_at?: string | null
@@ -1143,6 +1145,7 @@ export type Database = {
           created_by?: string | null
           department?: string | null
           description?: string | null
+          dispatch_guarded?: boolean
           error_message?: string | null
           id?: string
           last_synced_at?: string | null
@@ -1248,6 +1251,54 @@ export type Database = {
           mapping_state?: string
           resolve_user_id?: string | null
           synced_at?: string
+        }
+        Relationships: []
+      }
+      breezeway_sending_history: {
+        Row: {
+          actor_id: string
+          after_value: Json
+          before_value: Json
+          created_at: string
+          id: string
+        }
+        Insert: {
+          actor_id: string
+          after_value: Json
+          before_value: Json
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          actor_id?: string
+          after_value?: Json
+          before_value?: Json
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      breezeway_sending_settings: {
+        Row: {
+          home_ids: string[]
+          id: boolean
+          mode: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          home_ids?: string[]
+          id?: boolean
+          mode?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          home_ids?: string[]
+          id?: boolean
+          mode?: string
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -15959,6 +16010,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      pilot_dispatch_ready: { Args: never; Returns: boolean }
       plan_due_from_rule: {
         Args: { _anchor: string; _offset: number; _unit: string }
         Returns: string
@@ -16555,6 +16607,10 @@ export type Database = {
           _title: string
         }
         Returns: string
+      }
+      save_breezeway_sending: {
+        Args: { _home_ids: string[]; _mode: string }
+        Returns: undefined
       }
       save_handoff_requirement: { Args: { _value: Json }; Returns: string }
       save_owner_alert_preferences: {
