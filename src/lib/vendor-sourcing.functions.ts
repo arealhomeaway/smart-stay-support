@@ -37,6 +37,7 @@ export const pushWorkOrderToBreezeway = createServerFn({ method: "POST" })
     });
     if (!elig.allowed) throw new Error(elig.reasons.join(" "));
     if (wo.closed_at || ["closed", "cancelled", "canceled"].includes(wo.phase)) throw new Error("This Work Order is closed or cancelled. Nothing was sent.");
+    if (wo.dispatched_at) throw new Error("This Work Order was already dispatched. Nothing was sent.");
     const appointment = acceptedVendorAppointment(vendor?.breezeway_person_id, wo.scheduled_for);
 
     const now = new Date().toISOString();

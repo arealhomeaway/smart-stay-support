@@ -315,7 +315,10 @@ export async function createOutboundTask(
   // Idempotent fast path. The earlier attempt's REAL state is reported —
   // a failed or uncertain first attempt must never look like a success.
   const existing = await rowByRequestKey(input.requestKey);
-  if (existing) return resultForExisting(existing);
+  if (existing) {
+    if ((input.workOrderId && existing.work_order_id !== input.workOrderId) || existing.source_type !== input.sourceType || (input.sourceType === "ticket" ? existing.ticket_id : existing.onboarding_task_id) !== input.sourceId) return { ok: false, message: "This sending reference belongs to different work. Refresh before sending." };
+    return resultForExisting(existing);
+  }
 
   if (!(await outboundEnabled())) {
     return { ok: false, message: "Breezeway outbound task creation is switched off." };
@@ -413,7 +416,10 @@ export async function createOutboundTask(
     const { data: selected, error } = await db.from("work_orders").select("*").eq("id", input.workOrderId).maybeSingle();
     if (error || !selected || selected.ticket_id !== input.sourceId || selected.property_id !== propertyId || input.sourceType !== "ticket") return { ok: false, message: "The selected Work Order does not belong to this Ticket and home." };
     if (selected.closed_at || ["closed", "cancelled", "canceled"].includes(selected.phase)) return { ok: false, message: "This Work Order is closed or cancelled. Nothing was sent." };
-    if (["sent", "simulated", "uncertain"].includes(selected.breezeway_handoff_status)) return { ok: false, message: "This Work Order was already dispatched or is awaiting review." };
+    if (selected.dispatched_at || ["sent", "simulated", "uncertain"].includes(selected.breezeway_handoff_status)) return { ok: false, message: "This Work Order was already dispatched or is awaiting review." };
+    const { authorizationState } = await import("./vendor-sourcing");
+    const authorization = authorizationState(selected);
+    if (!authorization.satisfied) return { ok: false, message: authorization.label };
     const { data: accepted } = await db.from("work_order_vendor_candidates").select("vendor_org_id, vendor_orgs:vendor_org_id (breezeway_person_id)").eq("work_order_id", selected.id).eq("status", "accepted").maybeSingle();
     const vendor = (accepted as unknown as { vendor_org_id: string; vendor_orgs: { breezeway_person_id: unknown } } | null);
     try {

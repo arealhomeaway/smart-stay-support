@@ -14,7 +14,7 @@ describe('staged dispatch database safeguards, isolated PostgreSQL',()=>{
    CREATE FUNCTION public.has_role(uuid,text) RETURNS boolean LANGUAGE sql AS $$ SELECT coalesce(current_setting('test.admin',true),'true')='true' $$;
    CREATE TABLE properties(id uuid PRIMARY KEY,is_demo boolean DEFAULT false,archived_at timestamptz);
    CREATE TABLE tickets(id uuid PRIMARY KEY,property_id uuid);
-   CREATE TABLE work_orders(id uuid PRIMARY KEY,ticket_id uuid,property_id uuid,closed_at timestamptz,phase text,breezeway_handoff_status text,breezeway_request_key text,breezeway_handoff_at timestamptz,breezeway_handoff_error text,breezeway_task_ref text,authorization_stale boolean,approval_status text,supervisor_approval_status text,vendor_org_id uuid,scheduled_for timestamptz,scope text,quote_amount numeric);
+   CREATE TABLE work_orders(id uuid PRIMARY KEY,ticket_id uuid,property_id uuid,closed_at timestamptz,dispatched_at timestamptz,phase text,breezeway_handoff_status text,breezeway_request_key text,breezeway_handoff_at timestamptz,breezeway_handoff_error text,breezeway_task_ref text,authorization_stale boolean,approval_status text,supervisor_approval_status text,vendor_org_id uuid,scheduled_for timestamptz,scope text,quote_amount numeric);
    CREATE TABLE vendor_orgs(id uuid PRIMARY KEY,breezeway_person_id text);
    CREATE TABLE work_order_vendor_candidates(work_order_id uuid,vendor_org_id uuid,status text);
    CREATE TABLE breezeway_outbound_tasks(id uuid PRIMARY KEY,source_type text,ticket_id uuid,property_id uuid,work_order_id uuid,request_key text,status text,assignee_ids integer[],scheduled_date date,scheduled_time text,breezeway_task_id bigint,error_message text,review_note text);

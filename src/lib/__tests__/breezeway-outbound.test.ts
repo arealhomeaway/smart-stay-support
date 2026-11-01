@@ -571,6 +571,14 @@ describe('approved pilot dispatch with mocked Breezeway', () => {
     const d = dispatch('approved-cancelled'); const wo = store.state.workOrders[0]; if (wo) wo['phase'] = 'cancelled';
     expect((await createOutboundTask(d, 'actor')).ok).toBe(false); expect(calls.filter(c => c.method === 'POST')).toHaveLength(0);
   });
+  it('refuses previously dispatched work', async () => {
+    const d = dispatch('approved-already-dispatched'); const wo = store.state.workOrders[0]; if (wo) wo['dispatched_at'] = '2026-11-01T00:00:00Z';
+    expect((await createOutboundTask(d, 'actor')).ok).toBe(false); expect(calls.filter(c => c.method === 'POST')).toHaveLength(0);
+  });
+  it('refuses stale authorization on exact outbound path', async () => {
+    const d = dispatch('approved-stale-authorization'); const wo = store.state.workOrders[0]; if (wo) { wo['quote_amount'] = 500; wo['authorization_stale'] = true; wo['approval_status'] = 'approved'; }
+    expect((await createOutboundTask(d, 'actor')).ok).toBe(false); expect(calls.filter(c => c.method === 'POST')).toHaveLength(0);
+  });
   it('close wins before transactional reservation and no task is sent', async () => {
     const d = dispatch('approved-close-race'); store.state.closeBeforeInsert = true;
     expect((await createOutboundTask(d, 'actor')).ok).toBe(false); expect(calls.filter(c => c.method === 'POST')).toHaveLength(0);
