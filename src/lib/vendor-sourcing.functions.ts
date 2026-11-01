@@ -15,7 +15,8 @@ export const pushWorkOrderToBreezeway = createServerFn({ method: "POST" })
     const sb = context.supabase;
     const { data: staff } = await sb.rpc("is_staff", { _user_id: context.userId });
     if (!staff) throw new Error("Only the internal team can hand work to Breezeway.");
-    const { breezewayPushEligibility, vendorChannels, runHandoffAttempt } = await import("./vendor-sourcing");
+    const { breezewayPushEligibility, vendorChannels, handoffRequestKey } = await import("./vendor-sourcing");
+    const { acceptedVendorAppointment } = await import("./pilot-dispatch");
 
     const { data: woRow, error } = await sb.from("work_orders").select("*").eq("id", data.workOrderId).maybeSingle();
     if (error || !woRow) throw new Error("Work Order not found.");
@@ -35,6 +36,8 @@ export const pushWorkOrderToBreezeway = createServerFn({ method: "POST" })
       handoffStatus: wo.breezeway_handoff_status === "failed" ? "not_sent" : wo.breezeway_handoff_status,
     });
     if (!elig.allowed) throw new Error(elig.reasons.join(" "));
+    if (wo.closed_at || ["closed", "cancelled", "canceled"].includes(wo.phase)) throw new Error("This Work Order is closed or cancelled. Nothing was sent.");
+    const appointment = acceptedVendorAppointment(vendor?.breezeway_person_id, wo.scheduled_for);
 
     const now = new Date().toISOString();
     if (wo.is_demo) {
@@ -50,19 +53,14 @@ export const pushWorkOrderToBreezeway = createServerFn({ method: "POST" })
     if (!wo.ticket_id) throw new Error("This Work Order has no Ticket to hand off.");
     const ticketId = wo.ticket_id;
     const { createOutboundTask } = await import("./breezeway-outbound.server");
-    const r = await runHandoffAttempt({
-      workOrderId: wo.id, status: wo.breezeway_handoff_status, priorKey: wo.breezeway_request_key,
-      save: async (patch) => {
-        const { error: e } = await sb.from("work_orders").update({ ...patch, breezeway_handoff_at: now }).eq("id", wo.id);
-        if (e) throw new Error(e.message);
-      },
-      create: (requestKey) => createOutboundTask({
-        sourceType: "ticket", sourceId: ticketId, requestKey,
+    const r = await createOutboundTask({
+        sourceType: "ticket", sourceId: ticketId, workOrderId: wo.id,
+        requestKey: handoffRequestKey(wo.id, wo.breezeway_request_key, wo.breezeway_handoff_status),
         title: wo.title ?? "Work Order", description: wo.scope ?? null, department: "maintenance",
-        priority: wo.priority ?? null, scheduledDate: null, scheduledTime: null,
-      }, context.userId),
-    });
-    return { status: r.status, ref: r.ref, message: r.message };
+        priority: wo.priority ?? null, ...appointment,
+      }, context.userId);
+    const ref = r.link?.breezewayTaskId != null ? String(r.link.breezewayTaskId) : null;
+    return { status: r.ok ? "sent" : r.link && !r.retryable ? "uncertain" : "failed", ref, message: r.ok ? "Sent to Breezeway." : r.message };
   });
 
 /**
