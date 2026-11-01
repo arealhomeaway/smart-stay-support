@@ -4,5 +4,7 @@
   "live-capture/receipt.json": "f86aad78b0b522deba5d08de4c432c7a6fb491fe38dcbfcdee97cec874e324d8",
   "live-capture/wo_authorization_snapshot.base64": "11703c624095e51828153caa7d462eeea281f451cba2bb54ad3d5a38827e1819",
   "live-capture/wo_authorization_snapshot.sql": "8f580f6dfaf2954a598ca5287c643ea9b13063738b0b14decb20fc8deba4a331",
-  "undo.sql": "260c6792be08caff2a64c55c88145f3a1ef2250ca624e707404f8afa47a57861"
+  "undo.sql": "260c6792be08caff2a64c55c88145f3a1ef2250ca624e707404f8afa47a57861",
+  "01_guards.applied.sql": "dc23f9c976a9e6bfa271ec826e1e2e5d4002a6d2323faf06d0e2bf20339eddb8",
+  "undo.applied.sql": "3f8a0c0fc790ac5701c618de9a9fae0736e9141f795a4f95ee7fd4c8a924896b"
 }
