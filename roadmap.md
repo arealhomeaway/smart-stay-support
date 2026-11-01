@@ -1,5 +1,10 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 1 Operations pilot dispatch (build/test only)
+- [ ] Read-only sending impact, accepted vendor and appointment, exact Work Order reservation, Admin pilot setting and history
+- [ ] Stage database guards and exact undo in docs/pending/pilot-dispatch; no application, live writes, sign-in, sends or publish
+- [ ] Mocked outbound/concurrency tests, full suite and automatic type/build verification
+
 ## Oct 30 Homeowners fix and Lee identity correction
 - [x] Fix property demo lookup, roster gating and enrollment-error handling; exclude archived reviews/retired Opportunities; role render/rule tests, full suite 1842 pass / 5 skip, automatic type/build OK
 - [x] Inventory Lee program history and stage exact shared-alert read undo with base64/SHA256/ACL capture
