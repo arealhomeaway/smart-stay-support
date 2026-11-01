@@ -94,8 +94,8 @@ describe("unread count and mark all", () => {
   it("pages in 20s so the feed is never capped at 20", () => {
     expect(PAGE_SIZE).toBe(20);
     const src = readFileSync("src/hooks/useStaffNotifications.ts", "utf8");
-    expect(src).not.toMatch(/\.limit\(20\)/);
-    expect(src).toMatch(/getNextPageParam/);
+    expect(/\.limit\(20\)/.test(src)).toBe(false);
+    expect(/getNextPageParam/.test(src)).toBe(true);
   });
 });
 
@@ -166,8 +166,8 @@ describe("no change to recipients or email", () => {
   it("feed code only reads and marks read; never inserts or emails", () => {
     for (const f of ["src/hooks/useStaffNotifications.ts", "src/lib/notification-feed-data.ts", "src/routes/_authenticated/notifications.tsx", "src/components/NotificationBell.tsx"]) {
       const s = readFileSync(f, "utf8");
-      expect(s).not.toMatch(/\.insert\(|\.upsert\(|email_log|sendEmail|\.delete\(/);
-      expect(s).not.toMatch(/user_id:\s/);
+      expect(/\.insert\(|\.upsert\(|email_log|sendEmail|\.delete\(/.test(s)).toBe(false);
+      expect(/user_id:\s/.test(s)).toBe(false);
     }
   });
 });
