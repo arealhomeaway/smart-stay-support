@@ -29,8 +29,20 @@ import type { IntakeMatch, IntakeResult, OwnerRezCandidate } from "./property-in
 
 export type { IntakeMatch, IntakeResult, OwnerRezCandidate };
 
-function norm(v: string | null | undefined) {
-  return (v ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+/** String-safe trim: OwnerRez can send numbers, nulls or objects where text is expected. */
+export function textOf(v: unknown): string {
+  if (v == null || typeof v === "object" || typeof v === "function") return "";
+  return String(v).trim();
+}
+
+/** Trimmed text, or null when empty. */
+export function textOrNull(v: unknown): string | null {
+  const t = textOf(v);
+  return t ? t : null;
+}
+
+function norm(v: unknown) {
+  return textOf(v).toLowerCase().replace(/\s+/g, " ");
 }
 
 function addressOf(p: {
@@ -121,12 +133,12 @@ export async function searchOwnerRezCandidates(
           ) ?? null);
       return {
         listingId,
-        name: l.name,
-        address: l.address?.street1 ?? null,
-        unit: l.address?.street2 ?? null,
-        city: l.address?.city ?? null,
-        state: l.address?.state ?? null,
-        postalCode: l.address?.postal_code ?? l.address?.zip ?? null,
+        name: textOf(l.name),
+        address: textOrNull(l.address?.street1),
+        unit: textOrNull(l.address?.street2),
+        city: textOrNull(l.address?.city),
+        state: textOrNull(l.address?.state),
+        postalCode: textOrNull(l.address?.postal_code) ?? textOrNull(l.address?.zip),
         existing: existing ? toMatch(existing) : null,
         likely: likely ? toMatch(likely) : null,
       };
@@ -195,12 +207,12 @@ export async function importOwnerRezProperty(
   const { data, error } = await supabase
     .from("properties")
     .insert({
-      name: listing.name,
-      address_line1: listing.address?.street1 ?? null,
-      unit: listing.address?.street2 ?? null,
-      city: listing.address?.city ?? null,
-      state: listing.address?.state ?? null,
-      postal_code: listing.address?.postal_code ?? listing.address?.zip ?? null,
+      name: textOf(listing.name) || `OwnerRez listing ${input.listingId}`,
+      address_line1: textOrNull(listing.address?.street1),
+      unit: textOrNull(listing.address?.street2),
+      city: textOrNull(listing.address?.city),
+      state: textOrNull(listing.address?.state),
+      postal_code: textOrNull(listing.address?.postal_code) ?? textOrNull(listing.address?.zip),
       ownerrez_property_id: input.listingId,
       ownerrez_synced_at: now,
       owner_record_id: ownerRecordId,
@@ -246,12 +258,12 @@ export async function ownerRezOwner(
       home_phone?: string;
       cell_phone?: string;
     }>(`/owners/${encodeURIComponent(String(ownerId))}`);
-    const name = [owner.first_name, owner.last_name].filter(Boolean).join(" ").trim();
+    const name = [textOf(owner.first_name), textOf(owner.last_name)].filter(Boolean).join(" ");
     return {
       sourceId: String(ownerId),
       name: name || null,
-      email: owner.email_address ?? owner.email ?? null,
-      phone: owner.cell_phone ?? owner.phone ?? owner.home_phone ?? null,
+      email: textOrNull(owner.email_address) ?? textOrNull(owner.email),
+      phone: textOrNull(owner.cell_phone) ?? textOrNull(owner.phone) ?? textOrNull(owner.home_phone),
     };
   } catch {
     return null;
@@ -269,7 +281,7 @@ export async function resolveOwnerRecord(
     typed?: OwnerDetails | undefined;
   },
 ): Promise<string | null> {
-  const clean = (v: string | null | undefined) => (v && v.trim() ? v.trim() : null);
+  const clean = textOrNull;
   const or = input.fromOwnerRez ?? null;
   const typed = input.typed ?? {};
 
@@ -329,7 +341,7 @@ export type PropertyMilestones = {
 
 function milestoneColumns(m: PropertyMilestones | undefined) {
   if (!m) return {};
-  const clean = (v: string | null | undefined) => (v && v.trim() ? v.trim() : null);
+  const clean = textOrNull;
   return {
     planned_closing_on: clean(m.plannedClosingOn),
     actual_closing_on: clean(m.actualClosingOn),
@@ -365,7 +377,7 @@ export async function createPropertyManually(
   input: ManualPropertyInput,
 ): Promise<IntakeResult> {
   const rows = await loadResolveProperties(supabase);
-  const orId = input.ownerRezPropertyId?.trim() || null;
+  const orId = textOrNull(input.ownerRezPropertyId);
   if (orId) {
     const dupe = rows.find((r) => String(r.ownerrez_property_id ?? "") === orId);
     if (dupe) return { status: "duplicate", property: toMatch(dupe) };
@@ -383,13 +395,13 @@ export async function createPropertyManually(
   const { data, error } = await supabase
     .from("properties")
     .insert({
-      name: input.name.trim(),
-      address_line1: input.addressLine1.trim(),
-      unit: input.unit?.trim() || null,
-      city: input.city.trim(),
-      state: input.state.trim(),
-      postal_code: input.postalCode.trim(),
-      market: input.market?.trim() || null,
+      name: textOf(input.name),
+      address_line1: textOf(input.addressLine1),
+      unit: textOrNull(input.unit),
+      city: textOf(input.city),
+      state: textOf(input.state),
+      postal_code: textOf(input.postalCode),
+      market: textOrNull(input.market),
       owner_record_id: ownerRecordId,
       ownerrez_property_id: orId,
       ownerrez_synced_at: orId ? new Date().toISOString() : null,
