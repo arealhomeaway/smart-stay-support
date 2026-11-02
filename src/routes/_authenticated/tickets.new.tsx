@@ -23,6 +23,7 @@ import {
   insuranceFlagged,
   labelOf,
   workTypeFitsKind,
+  guessMaintenanceCategory,
   type EntryKind,
 } from "@/lib/work-entry";
 import { supabase } from "@/integrations/supabase/client";
@@ -361,6 +362,15 @@ export function NewTicketForm({
           },
     );
   }, [guess, situationTouched, workTypes, isTicket, mode]);
+
+  // Maintenance category starts from the description, like the work type does,
+  // until the coordinator picks one themselves.
+  const [categoryTouched, setCategoryTouched] = useState(false);
+  useEffect(() => {
+    if (mode !== "maintenance" || categoryTouched) return;
+    const g = guessMaintenanceCategory(form.description);
+    if (g && g !== form.maintenance_category) setForm((f) => ({ ...f, maintenance_category: g }));
+  }, [mode, categoryTouched, form.description, form.maintenance_category]);
 
   const role = useMemo(
     () => roles?.find((r) => r.code === form.functional_role_code) ?? null,
@@ -837,7 +847,7 @@ export function NewTicketForm({
                     <Label>Maintenance category</Label>
                     <Select
                       value={form.maintenance_category}
-                      onValueChange={(v) => setForm({ ...form, maintenance_category: v })}
+                      onValueChange={(v) => { setCategoryTouched(true); setForm({ ...form, maintenance_category: v }); }}
                     >
                       <SelectTrigger aria-label="Maintenance category">
                         <SelectValue placeholder="Pick a category" />

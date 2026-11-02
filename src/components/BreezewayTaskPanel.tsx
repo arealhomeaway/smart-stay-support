@@ -15,6 +15,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { dispatchBasicsProblem } from "@/lib/pilot-dispatch";
 import { CalendarClock, Search, Send, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
@@ -334,7 +335,7 @@ export function BreezewayTaskPanel({
               </Select>
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="bz-date">Scheduled / due</Label>
+              <Label htmlFor="bz-date">Date (required)</Label>
               <Input
                 id="bz-date"
                 type="date"
@@ -387,7 +388,7 @@ export function BreezewayTaskPanel({
               )}
               {!options.isLoading && matchingAssignees.length === 0 && (
                 <p className="p-2 text-xs text-muted-foreground">
-                  No match. The repair can still be sent unassigned.
+                  No match. Choose at least one person before sending.
                 </p>
               )}
               {matchingAssignees.map((person) => {
@@ -439,12 +440,15 @@ export function BreezewayTaskPanel({
           <Button
             className="w-full"
             size="lg"
-            disabled={send.isPending || !title.trim()}
+            disabled={send.isPending || !title.trim() || Boolean(dispatchBasicsProblem({ scheduledDate, assigneeIds }))}
             onClick={() => setConfirmOpen(true)}
           >
             <Send className="size-4" />
             {send.isPending ? "Sending…" : "Dispatch to Breezeway"}
           </Button>
+          {dispatchBasicsProblem({ scheduledDate, assigneeIds }) ? (
+            <p className="text-xs text-muted-foreground">{dispatchBasicsProblem({ scheduledDate, assigneeIds })}</p>
+          ) : null}
         </div>
       </TaskWorkspace>
 
@@ -458,7 +462,7 @@ export function BreezewayTaskPanel({
             <Button variant="outline" onClick={() => setConfirmOpen(false)}>
               Cancel
             </Button>
-            <Button disabled={send.isPending} onClick={() => send.mutate()}>
+            <Button disabled={send.isPending || Boolean(dispatchBasicsProblem({ scheduledDate, assigneeIds }))} onClick={() => send.mutate()}>
               {send.isPending ? "Sending…" : "Send it"}
             </Button>
           </>

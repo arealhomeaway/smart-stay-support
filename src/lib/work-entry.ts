@@ -121,3 +121,24 @@ export function ownerSectionRelevant(
 export function defaultMaintenanceWorkTypeName(guestAffected: boolean) {
   return guestAffected ? "Immediate maintenance" : "Ongoing maintenance";
 }
+
+const MAINTENANCE_WORDS: [string, RegExp][] = [
+  ["water_intrusion", /\b(leak|leaking|flood|flooding|water (on|in) the|ceiling stain|drip)/i],
+  ["plumbing", /\b(toilet|sink|drain|clog|faucet|shower|water heater|pipe|disposal)/i],
+  ["hvac", /\b(ac|a\/c|air condition|hvac|heat|heater|furnace|thermostat|not cooling)\b/i],
+  ["electrical", /\b(outlet|breaker|power|light|electric|switch|gfci)/i],
+  ["appliance", /\b(fridge|refrigerator|dishwasher|washer|dryer|oven|stove|microwave|ice maker)/i],
+  ["lock_access", /\b(lock|keypad|door code|smart lock|key|garage door)/i],
+  ["technology", /\b(wifi|wi-fi|internet|router|tv|remote|streaming)/i],
+  ["roof", /\broof|shingle/i],
+  ["exterior", /\b(yard|lawn|fence|gate|sprinkler|pool|patio|deck)/i],
+  ["furniture", /\b(bed|couch|sofa|chair|table|mattress|dresser)/i],
+  ["structural", /\b(crack|foundation|wall damage|floor damage)/i],
+];
+
+/** Starting maintenance category from what the coordinator typed; null when nothing is clear. */
+export function guessMaintenanceCategory(text: string | null | undefined): string | null {
+  const t = String(text ?? "");
+  for (const [value, re] of MAINTENANCE_WORDS) if (re.test(t)) return value;
+  return null;
+}
