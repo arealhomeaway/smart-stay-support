@@ -20,8 +20,18 @@ export function acceptedVendorAppointment(personId: unknown, scheduledFor: strin
  * rule as accepted-vendor dispatch: never undated, never unassigned.
  * Returns a plain message to show, or null when the send may go ahead.
  */
-export function dispatchBasicsProblem(input: { scheduledDate?: string | null; assigneeIds?: unknown[] | null }): string | null {
+/**
+ * A date is always required. Who does the work is required for Ticket and
+ * Work Order sends, but optional for onboarding Tasks, which are sent before
+ * closing and assigned once the closing date is firm.
+ */
+export function dispatchBasicsProblem(input: {
+  scheduledDate?: string | null;
+  assigneeIds?: unknown[] | null;
+  sourceType?: string | null;
+}): string | null {
   if (!String(input.scheduledDate ?? "").trim()) return "Choose the date for this work before sending it to Breezeway.";
+  if (input.sourceType === "onboarding_task") return null;
   if (!(input.assigneeIds ?? []).length) return "Choose who is doing the work before sending it to Breezeway.";
   return null;
 }

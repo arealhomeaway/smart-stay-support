@@ -59,3 +59,15 @@ describe("send path", () => {
     expect(src.indexOf('status !== "sent"') < src.indexOf('from("work_order_events").insert')).toBe(true);
   });
 });
+
+describe("vendor email contact line", () => {
+  it("names the sender and never a made-up phone number", async () => {
+    const { buildVendorWorkOrderEmail } = await import("@/lib/vendor-email");
+    const base = { vendorName: "Joe", address: "1 Main St", title: "Fix sink", scope: null, scheduledFor: null, timeWindow: null, photoLinks: [] } as never;
+    const named = buildVendorWorkOrderEmail({ ...(base as object), senderName: "Kati Hand" } as never).body;
+    expect(named.includes("please contact Kati Hand at A Real Home Away by replying to this email")).toBe(true);
+    expect(/\d{3}[-. )]\d{3}[-. ]\d{4}/.test(named)).toBe(false);
+    const anon = buildVendorWorkOrderEmail({ ...(base as object), senderName: null } as never).body;
+    expect(anon.includes("the A Real Home Away team member who sent this email")).toBe(true);
+  });
+});
