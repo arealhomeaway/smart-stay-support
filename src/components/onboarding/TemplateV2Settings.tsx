@@ -123,7 +123,8 @@ const emptyOpp: OpportunityContent = { title: "", what: "", why: "", how: "", re
 
 type FileSourceOptions = { ready: boolean; selected: string[]; options: { id: string; title: string; stage: string }[] };
 
-function StepDialog({ step, onClose, onSave, saving, fileSources }: { step: Step; onClose: () => void; onSave: (v: StepInput, showFilesFrom: string[] | null) => void; saving: boolean; fileSources: FileSourceOptions }) {
+function StepDialog({ step, onClose, onSave, onRemove, saving, fileSources }: { step: Step; onClose: () => void; onSave: (v: StepInput, showFilesFrom: string[] | null) => void; onRemove: () => void; saving: boolean; fileSources: FileSourceOptions }) {
+  const [confirmRemove, setConfirmRemove] = useState(false);
   const [showFrom, setShowFrom] = useState<string[]>(fileSources.selected);
   const [title, setTitle] = useState(step.title);
   const [detail, setDetail] = useState(step.detail ?? "");
