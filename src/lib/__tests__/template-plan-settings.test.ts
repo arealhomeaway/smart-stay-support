@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { moveStep, stepGroups } from "@/lib/template-step-order";
 import { planTemplateBulkEdit } from "@/lib/template-bulk-edit";
 
@@ -69,7 +69,7 @@ describe("One template editor", () => {
       "Turn off to hide this step from new homes without deleting it.",
     ]) expect(bulk).toContain(t);
     expect(bulk).not.toMatch(/<Label>Stage<\/Label>/);
-    expect(bulk).not.toMatch(/breezeway/i.source === "" ? /$^/ : /breezewayTemplateId/);
+    expect(bulk).not.toMatch(/breezewayTemplateId/);
     expect(bulk).toMatch(/Preview/);
   });
 });
