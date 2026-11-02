@@ -19,7 +19,7 @@ const navFor = (ctx: typeof kati | typeof pc | typeof admin) =>
     .map((l) => l.to);
 
 describe("Onboarding Director Active Owner access", () => {
-  it.each(OD_PAGES)("Kati can open %s and sees it in the menu", (p) => {
+  for (const p of OD_PAGES) it("Kati can open ${p} and sees it in the menu".replace("${p}", p), () => {
     expect(canOpenPath(p, kati)).toBe(true);
     expect(navFor(kati)).toContain(p);
   });
@@ -33,7 +33,7 @@ describe("Onboarding Director Active Owner access", () => {
     expect(canToggleHomeAutomation(who)).toBe(true);
     expect(canViewContributions(who)).toBe(true);
   });
-  it.each([...OD_PAGES, "/owner-report-wording"])("a PC and a homeowner cannot open %s", (p) => {
+  for (const p of [...OD_PAGES, "/owner-report-wording"]) it("a PC and a homeowner cannot open ${p}".replace("${p}", p), () => {
     expect(canOpenPath(p, pc)).toBe(false);
     expect(canOpenPath(p, homeowner)).toBe(false);
   });
@@ -43,7 +43,7 @@ describe("Onboarding Director Active Owner access", () => {
     expect(canToggleHomeAutomation(who)).toBe(false);
     expect(canViewContributions(who)).toBe(false);
   });
-  it.each([...OD_PAGES, "/owner-report-wording"])("Admin still opens %s", (p) => {
+  for (const p of [...OD_PAGES, "/owner-report-wording"]) it("Admin still opens ${p}".replace("${p}", p), () => {
     expect(canOpenPath(p, admin)).toBe(true);
   });
 });
