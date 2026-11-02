@@ -20,6 +20,10 @@ export type ComposerContextData = {
   heading: string;
   recipients: ComposerRecipient[];
   mergeValues: MergeValues;
+  /** Other homeowners offered as optional CC, unchecked by default. */
+  ccSuggestions?: { name: string | null; email: string }[];
+  /** Task title, so the composer can suggest a template linked by name. */
+  suggestFor?: string | null;
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
@@ -148,13 +152,22 @@ export async function gatherComposerContext(
       .maybeSingle();
     const task = (data ?? {}) as { [k: string]: string | null };
     const property = await propertyBits(supabase, task["property_id"] ?? null);
+    const { splitHomeowners, firstName } = await import("./task-email");
+    const owners = dedupe(property.recipients);
+    const split = splitHomeowners(owners.map((r) => ({ name: r.name, email: r.email })));
+    // Only the home label, owner names and sender are merged: never the Task
+    // detail, codes, guests or internal notes.
     return {
       heading: task["title"] ?? "Onboarding step",
-      recipients: dedupe(property.recipients),
+      recipients: split.primary ? owners.filter((r) => r.email === split.primary!.email) : [],
+      ccSuggestions: split.coOwners,
+      suggestFor: task["title"] ?? null,
       mergeValues: {
         property: property.name,
         property_address: property.address,
         owner_name: property.ownerName,
+        owner_first_name: firstName(property.ownerName),
+        arha_contact: senderName ? `${senderName}, A Real Home Away` : "A Real Home Away",
         task_title: task["title"],
         task_due: task["due_on"] ? new Date(`${task["due_on"]}T00:00:00`).toLocaleDateString("en-US") : null,
         sender_name: senderName,
