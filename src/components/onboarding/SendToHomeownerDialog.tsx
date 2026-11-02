@@ -26,6 +26,8 @@ import {
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { listAttachmentsFn } from "@/lib/attachments.functions";
 import { sendTaskToOwnerFn } from "@/lib/onboarding.functions";
+import { confirmOneOff } from "@/lib/ao-data";
+import { ONE_OFF_ACTION, isCardExistsError } from "@/lib/ao-dedupe";
 
 export function SendToHomeownerDialog({
   taskId,
@@ -76,7 +78,20 @@ export function SendToHomeownerDialog({
       setPicked([]);
       void queryClient.invalidateQueries();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error, input) => {
+      if (!isCardExistsError(e.message) || !propertyId) return toast.error(e.message);
+      toast.error(e.message, {
+        duration: 15000,
+        action: {
+          label: ONE_OFF_ACTION,
+          onClick: () => {
+            void confirmOneOff(propertyId, taskId, taskTitle)
+              .then(() => mutation.mutate(input))
+              .catch((err: Error) => toast.error(err.message));
+          },
+        },
+      });
+    },
   });
 
   const toggle = (id: string) =>

@@ -12,6 +12,7 @@ import { loadHomePlan, previewHomeAutomation, setHomeAutomation, unlockNow } fro
 import { useRole } from "@/hooks/useRole";
 import { NOT_SET_UP, canToggleHomeAutomation, OUTCOME_LABEL, previewSummary } from "@/lib/ao-ui";
 import { usDate } from "@/lib/ao-format";
+import { coveredReasonLabel } from "@/lib/ao-dedupe";
 
 /** "Automated homeowner plan" on the property's Active Owner section. Staff view; editors switch. */
 export function HomeAutomation({ propertyId }: { propertyId: string }) {
@@ -74,7 +75,12 @@ export function HomeAutomation({ propertyId }: { propertyId: string }) {
               {plan.map((p) => (
                 <tr key={p.id} className="border-t">
                   <td className="py-1 pr-2">{p.card ? `${p.card.code} ${p.card.title}` : "Card"}</td>
-                  <td className="pr-2">{OUTCOME_LABEL[p.join_outcome] ?? p.join_outcome}</td>
+                  <td className="pr-2">
+                    {OUTCOME_LABEL[p.join_outcome] ?? p.join_outcome}
+                    {p.join_outcome === "already_covered" && p.covered_reason ? (
+                      <span className="block text-xs text-muted-foreground">{coveredReasonLabel(p.covered_reason)}</span>
+                    ) : null}
+                  </td>
                   <td className="pr-2">{usDate(p.unlocked_at)}</td>
                   <td className="pr-2">{usDate(p.deadline_at)}</td>
                   <td className="pr-2">{usDate(p.reminder_sent_at)}</td>
@@ -119,6 +125,16 @@ export function HomeAutomation({ propertyId }: { propertyId: string }) {
                       : `This home would get: ${previewSummary(pv.data.outcomes)}.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {confirm === true && pv?.available && pv.data.ready && (pv.data.covered?.length ?? 0) > 0 ? (
+            <div className="max-h-48 overflow-y-auto text-sm">
+              <p className="font-medium">Already covered</p>
+              <ul className="list-disc pl-5 text-muted-foreground">
+                {pv.data.covered!.map((c) => (
+                  <li key={c.code}><span className="font-mono">{c.code}</span> {c.title}: {coveredReasonLabel(c.reason, c.item_title)}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
