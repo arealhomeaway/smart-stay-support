@@ -33,7 +33,7 @@ describe("Email homeowner from a Task", () => {
 
   it("no homeowner email gives no primary and a clear message", () => {
     expect(splitHomeowners([]).primary).toBeNull();
-    expect(NO_HOMEOWNER_EMAIL).toMatch(/no homeowner email/);
+    expect(/no homeowner email/.test(String(NO_HOMEOWNER_EMAIL))).toBe(true);
   });
 
   it("suggests a template linked by the Task name only when unique", () => {
@@ -57,10 +57,10 @@ describe("Email homeowner from a Task", () => {
   });
 
   it("merge keys never include codes, guests or internal notes", () => {
-    for (const k of TASK_MERGE_KEYS) expect(k).not.toMatch(/code|guest|note|detail|lock|wifi/);
+    for (const k of TASK_MERGE_KEYS) expect(/code|guest|note|detail|lock|wifi/.test(String(k))).toBe(false);
     const server = readFileSync("src/lib/email-composer.server.ts", "utf8");
     const block = server.slice(server.indexOf('context === "onboarding_task"'), server.indexOf('context === "work_order"'));
-    expect(block).not.toMatch(/detail:|task\["detail"\]\s*[,}]/);
+    expect(/detail:|task\["detail"\]\s*[,}]/.test(String(block))).toBe(false);
   });
 
   it("event summary wording", () => {
@@ -68,7 +68,7 @@ describe("Email homeowner from a Task", () => {
   });
 
   it("demo records never send", () => {
-    expect(localEmailBlock({ to: "ryan@home.com", isDemo: true })).toMatch(/Demo/);
+    expect(/Demo/.test(String(localEmailBlock({ to: "ryan@home.com", isDemo: true })))).toBe(true);
   });
 });
 
@@ -99,11 +99,11 @@ describe("recordTaskEmailEvents", () => {
 describe("drawer visibility", () => {
   it("Email homeowner shows only when the person can work the Task", () => {
     const src = readFileSync("src/components/onboarding/TaskDrawer.tsx", "utf8");
-    expect(src).toMatch(/\{!disabled && \([\s\S]{0,200}label="Email homeowner"/);
+    expect(/\{!disabled && \([\s\S]{0,200}label="Email homeowner"/.test(String(src))).toBe(true);
   });
   it("send records events only after a real send, never for scheduled or blocked", () => {
     const src = readFileSync("src/lib/email-composer.functions.ts", "utf8");
-    expect(src).toMatch(/taskRow && result\.status === "sent"/);
-    expect(src).toMatch(/taskRow\?\.is_demo \? \{ isDemo: true \}/);
+    expect(/taskRow && result\.status === "sent"/.test(String(src))).toBe(true);
+    expect(/taskRow\?\.is_demo \? \{ isDemo: true \}/.test(String(src))).toBe(true);
   });
 });
