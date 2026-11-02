@@ -1,0 +1,15 @@
+{
+  "01_dedupe.sql": "34b4cccf61d566c12679b59ab8e675066b415e4141d3827d7a308db635771688",
+  "README.md": "0b69493450116b7306ef484b00bb4999046781bff4a662ddadf0074133a36f65",
+  "live-capture/apply-receipt.txt": "d98fb987fa923264a285f28e6b7b52260ab033dc61078eb27f5db269239023f5",
+  "live-capture/private.schedule_after_handoff.acl": "a9fb31535569f159dc32bf8ad6866263e3c6f6032130a1f965b2c40a82aaa1cd",
+  "live-capture/private.schedule_after_handoff.base64": "596cff27c04257cc9963c02e8bda250262ebaacc6aaaa3cc6b5acefd0a12d227",
+  "live-capture/private.schedule_after_handoff.sql": "8e0c60e8e88ab0dc4b6b871fbd20a86408aab80cd56ae520ed6e62308e4153c5",
+  "live-capture/public.ao_preview_home_automation.acl": "3843536d7ce71034ce4870850e50ff3c5c01394dba8fd1f77d7611a66bd6a708",
+  "live-capture/public.ao_preview_home_automation.base64": "a1cc14657c619087b8f5e71f04c988372756d32ac387c26738be3f705598ca18",
+  "live-capture/public.ao_preview_home_automation.sql": "4c92cec3f0f49a11638230af9e745473df1a1932829878c9fe73ed0a484c89c7",
+  "live-capture/public.ao_set_home_automation.acl": "3843536d7ce71034ce4870850e50ff3c5c01394dba8fd1f77d7611a66bd6a708",
+  "live-capture/public.ao_set_home_automation.base64": "c483dc04974d87e3721bbc9b42b7ad66235b7452d7cdf96d20c1a5cab9b6bb4f",
+  "live-capture/public.ao_set_home_automation.sql": "da2f27a298089f0a3456e4c843a843ab6b3351a7cc3f8b233c40e812b1898bfc",
+  "undo.sql": "bbd1f46802df98eb07f0036eede3ffe6c02cd1f83325f0d70bda1095f5913204"
+}

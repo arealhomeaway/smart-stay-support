@@ -271,6 +271,7 @@ export function TaskDrawer({
     <SendToHomeownerDialog
       taskId={task.id}
       taskTitle={task.title}
+      propertyId={task.property_id}
       disabled={disabled || task.owner_approval_status === "approved"}
       alreadyWaiting={task.owner_approval_status === "awaiting_owner"}
       {...(activeOwnerStep ? { label: "Send to Active Owner" } : {})}

@@ -91,6 +91,8 @@ export type Database = {
       after_handoff_plan_items: {
         Row: {
           active: boolean
+          coverage: string
+          covered_card_code: string | null
           created_at: string
           created_by: string | null
           id: string
@@ -106,6 +108,8 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          coverage?: string
+          covered_card_code?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -121,6 +125,8 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          coverage?: string
+          covered_card_code?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -327,6 +333,84 @@ export type Database = {
         }
         Relationships: []
       }
+      ao_card_item_map: {
+        Row: {
+          card_code: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          match_kind: string
+          match_value: string
+          note: string
+          status: string
+        }
+        Insert: {
+          card_code: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          match_kind: string
+          match_value: string
+          note?: string
+          status?: string
+        }
+        Update: {
+          card_code?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          match_kind?: string
+          match_value?: string
+          note?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      ao_card_step_link_suggestions: {
+        Row: {
+          card_code: string
+          confidence: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          note: string
+          proposed_lock: string | null
+          status: string
+          suggestion_kind: string
+          template_task_ids: string[]
+        }
+        Insert: {
+          card_code: string
+          confidence: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          note?: string
+          proposed_lock?: string | null
+          status?: string
+          suggestion_kind: string
+          template_task_ids?: string[]
+        }
+        Update: {
+          card_code?: string
+          confidence?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          note?: string
+          proposed_lock?: string | null
+          status?: string
+          suggestion_kind?: string
+          template_task_ids?: string[]
+        }
+        Relationships: []
+      }
       ao_contributions: {
         Row: {
           card_id: string
@@ -368,10 +452,43 @@ export type Database = {
           },
         ]
       }
+      ao_dedupe_events: {
+        Row: {
+          action: string
+          actor: string | null
+          at: string
+          detail: Json
+          id: number
+          subject: string
+          subject_id: string | null
+        }
+        Insert: {
+          action: string
+          actor?: string | null
+          at?: string
+          detail?: Json
+          id?: number
+          subject: string
+          subject_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor?: string | null
+          at?: string
+          detail?: Json
+          id?: number
+          subject?: string
+          subject_id?: string | null
+        }
+        Relationships: []
+      }
       ao_home_plan_cards: {
         Row: {
           card_id: string
           card_version: number
+          covered_item_id: string | null
+          covered_reason: string | null
+          covered_source: string | null
           created_at: string
           cutoff_at: string | null
           deadline_at: string | null
@@ -391,6 +508,9 @@ export type Database = {
         Insert: {
           card_id: string
           card_version: number
+          covered_item_id?: string | null
+          covered_reason?: string | null
+          covered_source?: string | null
           created_at?: string
           cutoff_at?: string | null
           deadline_at?: string | null
@@ -410,6 +530,9 @@ export type Database = {
         Update: {
           card_id?: string
           card_version?: number
+          covered_item_id?: string | null
+          covered_reason?: string | null
+          covered_source?: string | null
           created_at?: string
           cutoff_at?: string | null
           deadline_at?: string | null
@@ -665,6 +788,36 @@ export type Database = {
           version?: number
           what_text?: string
           why_text?: string
+        }
+        Relationships: []
+      }
+      ao_one_off_confirmations: {
+        Row: {
+          confirmed_by: string
+          created_at: string
+          id: string
+          property_id: string
+          task_id: string | null
+          title_key: string
+          used_at: string | null
+        }
+        Insert: {
+          confirmed_by: string
+          created_at?: string
+          id?: string
+          property_id: string
+          task_id?: string | null
+          title_key?: string
+          used_at?: string | null
+        }
+        Update: {
+          confirmed_by?: string
+          created_at?: string
+          id?: string
+          property_id?: string
+          task_id?: string | null
+          title_key?: string
+          used_at?: string | null
         }
         Relationships: []
       }
@@ -15360,6 +15513,10 @@ export type Database = {
         Args: { _active: boolean; _id: string }
         Returns: undefined
       }
+      after_handoff_plan_set_coverage: {
+        Args: { _card_code: string; _coverage: string; _id: string }
+        Returns: boolean
+      }
       after_handoff_schedule_add_one_off: {
         Args: {
           _note: string
@@ -15380,6 +15537,10 @@ export type Database = {
         Args: { _answer: string; _work_item: string }
         Returns: undefined
       }
+      ao_card_item_map_decide: {
+        Args: { _id: string; _status: string }
+        Returns: string
+      }
       ao_card_save: {
         Args: { _card_id: string; _patch: Json }
         Returns: number
@@ -15387,6 +15548,10 @@ export type Database = {
       ao_card_set_status: {
         Args: { _card_id: string; _status: string }
         Returns: number
+      }
+      ao_confirm_one_off: {
+        Args: { _property: string; _task: string; _title: string }
+        Returns: string
       }
       ao_owner_plan: {
         Args: { _program: string }
@@ -15414,6 +15579,10 @@ export type Database = {
       ao_set_home_automation: {
         Args: { _covered_card_ids?: string[]; _on: boolean; _property: string }
         Returns: Json
+      }
+      ao_step_link_decide: {
+        Args: { _accept: boolean; _id: string }
+        Returns: string
       }
       ao_submit_card: {
         Args: { _plan_card: string; _values: Json }

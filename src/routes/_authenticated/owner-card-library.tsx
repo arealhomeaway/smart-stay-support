@@ -20,6 +20,7 @@ import {
   statusActions, type CardFilters, type FieldType, type OutputField,
 } from "@/lib/ao-ui";
 import { usDate } from "@/lib/ao-format";
+import { ExistingItemMatches, SuggestedStepLinks } from "@/components/ao/DedupeReview";
 
 export const Route = createFileRoute("/_authenticated/owner-card-library")({
   head: () => ({
@@ -118,6 +119,8 @@ function LibraryPage() {
           {shown.length === 0 ? <p className="py-4 text-sm text-muted-foreground">No cards match.</p> : null}
         </div>
       </SectionCard>
+      <SuggestedStepLinks canEdit={canEdit} />
+      <ExistingItemMatches canEdit={canEdit} />
       <Sheet open={openId !== null} onOpenChange={(o) => { if (!o) setOpenId(null); }}>
         <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
           {openId ? <CardEditor key={openId} card={rows.find((r) => r.id === openId)!} canEdit={canEdit} onDone={() => setOpenId(null)} /> : null}

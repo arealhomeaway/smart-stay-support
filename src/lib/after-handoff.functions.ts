@@ -138,3 +138,33 @@ export const addFollowupOneOff = createServerFn({ method: "POST" })
     fail(error);
     return { ok: true };
   });
+
+/** "Send" or "Covered by card X" per plan item. Hidden until the card de-duplication change exists. */
+export const getAfterHandoffCoverage = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const s = db(context.supabase);
+    const [items, cards] = await Promise.all([
+      s.from("after_handoff_plan_items").select("id,coverage,covered_card_code"),
+      s.from("ao_library_cards").select("code,title").neq("status", "retired").order("code"),
+    ]);
+    if (notEnabled(items.error) || notEnabled(cards.error) || /coverage/.test(items.error?.message ?? "")) return { enabled: false as const };
+    fail(items.error); fail(cards.error);
+    return {
+      enabled: true as const,
+      coverage: Object.fromEntries(((items.data ?? []) as { id: string; coverage: string; covered_card_code: string | null }[])
+        .map((r) => [r.id, r.coverage === "covered_by_card" ? r.covered_card_code : null])) as Record<string, string | null>,
+      cards: (cards.data ?? []) as { code: string; title: string }[],
+    };
+  });
+
+export const setAfterHandoffPlanItemCoverage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: z.string().uuid(), cardCode: z.string().max(20).nullable() }))
+  .handler(async ({ context, data }) => {
+    const { error } = await db(context.supabase).rpc("after_handoff_plan_set_coverage", {
+      _id: data.id, _coverage: data.cardCode ? "covered_by_card" : "send", _card_code: data.cardCode,
+    });
+    fail(error);
+    return { ok: true };
+  });
