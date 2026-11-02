@@ -160,8 +160,14 @@ describe("Active Owner card de-duplication (isolated PostgreSQL)", () => {
       .rejects.toThrow('already has "Authorize the make-ready estimate" on its Active Owner plan');
     await expect(db.query(`INSERT INTO public.work_items(kind, property_id, source_table, source_task_id, title) VALUES ('opportunity',$1,'onboarding_tasks',$2,'Estimate')`, [home, taskA]))
       .rejects.toThrow("already has");
-    await expect(db.query(`INSERT INTO public.owner_reviews(program_id, property_id, title) VALUES ($1,$2,'Readiness call follow up')`, [prog, home]))
-      .rejects.toThrow('"Document the planning call"');
+    // A covered card is not live, so its confirmed match does not block.
+    await db.query(`INSERT INTO public.owner_reviews(program_id, property_id, title) VALUES ($1,$2,'Readiness call follow up')`, [prog, home]);
+    // A confirmed title match to a live card blocks a release-style item with no Task.
+    await as(admin);
+    await db.query("SELECT public.ao_card_item_map_decide(id,'confirmed') FROM public.ao_card_item_map WHERE match_value='%make ready%'");
+    await as(staffer);
+    await expect(db.query(`INSERT INTO public.work_items(kind, property_id, source_table, title) VALUES ('opportunity',$1,'owner_opportunity_library','Make ready questions')`, [home]))
+      .rejects.toThrow('"Authorize the make-ready estimate"');
     // Unrelated items and Task work items still go through.
     await db.query(`INSERT INTO public.owner_reviews(program_id, property_id, title) VALUES ($1,$2,'Paint colors')`, [prog, home]);
     await db.query(`INSERT INTO public.work_items(kind, property_id, source_task_id, title) VALUES ('task',$1,$2,'Task copy')`, [home, taskA]);
