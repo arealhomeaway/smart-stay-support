@@ -80,7 +80,7 @@ export const importOwnerRezProperties = createServerFn({ method: "POST" })
     const linked = new Set(
       (existing ?? []).map((p) => p.ownerrez_property_id).filter(Boolean) as string[],
     );
-    const byName = new Map((existing ?? []).map((p) => [p.name.trim().toLowerCase(), p] as const));
+    const byName = new Map((existing ?? []).map((p) => [String(p.name ?? "").trim().toLowerCase(), p] as const));
 
     const now = new Date().toISOString();
     let created = 0;
@@ -90,7 +90,7 @@ export const importOwnerRezProperties = createServerFn({ method: "POST" })
       const listingId = String(l.id);
       if (linked.has(listingId)) continue;
 
-      const existingByName = byName.get(l.name.trim().toLowerCase());
+      const existingByName = byName.get(String(l.name ?? "").trim().toLowerCase());
       if (existingByName && !existingByName.ownerrez_property_id) {
         const { error: linkError } = await context.supabase
           .from("properties")
