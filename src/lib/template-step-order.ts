@@ -35,12 +35,9 @@ export function moveStep(
   }
   const stageNames = groups.map(([n]) => n);
   const targetIdx = stageNames.indexOf(targetStage);
-  let at = order.length;
-  for (let i = order.length - 1; i >= 0; i -= 1) {
-    if (order[i]!.stage === targetStage) { at = i + 1; break; }
-    if (i === 0) at = -1;
-  }
-  if (at === -1 || (at === order.length && !order.some((e) => e.stage === targetStage))) {
+  let at = -1;
+  for (let i = order.length - 1; i >= 0; i -= 1) if (order[i]!.stage === targetStage) { at = i + 1; break; }
+  if (at === -1) {
     // Empty stage: insert before the first step of any later stage.
     const later = order.findIndex((e) => stageNames.indexOf(e.stage) > targetIdx);
     at = later < 0 ? order.length : later;
