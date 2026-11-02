@@ -1,0 +1,37 @@
+card_code,suggestion,template,stage,step_title,step_id,proposed_lock,confidence,note
+A03,link,ARHA Onboarding - Standard,Pre-Close,Work order: Complete the New House Assessment,4708b6a4-b6bf-47e7-918f-110607d82a9c,,high,Card opens when ARHA uploads the assessment; this step produces it.
+A03,link,ARHA Onboarding — Full Plan,documents_assessment,Save assessment report and TRR to the property file (save only — no review),ae817018-1ddb-4cb0-9ff8-9b0102b6db53,,high,Card opens when ARHA uploads the assessment; this step produces it.
+A25,link,ARHA Onboarding - Standard,Pre-Close,Share the mood boards and floor plans with the owner,465ed7be-2ae9-497f-857f-447553df16c5,,high,Step shares the mood board with the owner.
+A25,link,ARHA Onboarding — Full Plan,design_approvals_procurement,Send Mood Boards to Owner,60d33519-b3dd-4c5a-ac27-a8e6c1febb5b,,high,Step shares the mood board with the owner.
+A26,link,ARHA Onboarding - Standard,Pre-Close,Share the mood boards and floor plans with the owner,465ed7be-2ae9-497f-857f-447553df16c5,,high,Same step shares the floor plan. Full Plan has no floor plan step.
+A27,link,ARHA Onboarding - Standard,Pre-Close,Share the Make Ready Estimate with the owner,3621f91b-80aa-4e90-b92f-f978c7fb6743,,high,Step sends the estimate the card asks the owner to authorize. Full Plan match is medium.
+A27,link,ARHA Onboarding — Full Plan,fieldwork_setup_review,Send recommended repair & home improvements cost projections to prospective buyer,9ca4d305-dc1a-4bc7-8576-538b524b3a04,,high,Step sends the estimate the card asks the owner to authorize. Full Plan match is medium.
+A28,link,ARHA Onboarding - Standard,Ordering & Repairs,Share the first onboarding invoice with the Active Owner,c8e7a719-a1b6-4018-83cc-eb95a9f909c2,,high,Step issues the furnishing invoice. Full Plan match is medium.
+A28,link,ARHA Onboarding — Full Plan,design_approvals_procurement,Confirm Initial Furnishings & Repairs Invoice Sent,3bf15c5a-dfcb-4754-a846-6785a9320da9,,high,Step issues the furnishing invoice. Full Plan match is medium.
+A31,link,ARHA Onboarding - Standard,Preparing for Handoff,Schedule the handoff meeting,ef76b3e0-02af-43f2-8d26-8e5d1d66bc07,,high,Card opens once the handoff meeting is scheduled.
+A31,link,ARHA Onboarding — Full Plan,handoff_acceptance,Schedule the Handoff Meeting,dc75638c-9cf0-4b99-91f4-4bd7baad6e33,,high,Card opens once the handoff meeting is scheduled.
+A39,link,ARHA Onboarding - Standard,Ordering & Repairs,Send the Property Management Agreement through DocuSign,263f7c5c-5df2-4d0d-943d-e2603a0f8139,,high,Step sends the agreement.
+A39,link,ARHA Onboarding — Full Plan,documents_assessment,Send A Real Home Away management agreement to prospective buyer for review and signature,51537bcc-19df-44b9-8703-0089b3e35d92,,high,Step sends the agreement.
+A41,link,ARHA Onboarding - Standard,Preparing for Handoff,Share the final costs with the owner,98efdfb5-e68c-4b84-a059-e67aca03df17,,high,Step issues the cost summary. Full Plan match is medium.
+A41,link,ARHA Onboarding — Full Plan,closeout_stabilization,"Provide final cost for repairs, flooring, painting and landscaping to Accounting Team for owner invoice",f49f883a-0445-4d62-8cab-ad5e1aef72f2,,high,Step issues the cost summary. Full Plan match is medium.
+A57,link,ARHA Onboarding - Standard,Intake,Hold the Owner readiness call,ec1afa4b-bf49-4d4b-91cf-2f5546fcfa49,,high,Card opens after the planning call is held. Full Plan has no matching step.
+N02,link,ARHA Onboarding - Standard,Pre-Close,Work order: Walkthrough Video & Photos,9c26d406-c71f-4802-b14f-36dfe5164839,,low,Walkthrough photos may include appliances and systems; confirm before accepting.
+P03,link,ARHA Onboarding - Standard,Pre-Close,Confirm the design inputs are ready,7c6b189e-e4c7-4ef4-b26a-5c5e2ae623aa,,medium,Design inputs include bed sizes and occupancy.
+P04,link,ARHA Onboarding - Standard,Pre-Close,Confirm the design inputs are ready,7c6b189e-e4c7-4ef4-b26a-5c5e2ae623aa,,medium,Design inputs include occupancy and layout.
+P12,link,ARHA Onboarding - Standard,Handoff,Open the calendar and go live,423b20b6-a3c4-4a4a-a3d8-7090886f5ac9,,high,Card final step opens with the live listing link.
+P13,link,ARHA Onboarding - Standard,Preparing for Handoff,Upload the photos and listing content in OwnerRez,5b46375b-3795-44a9-aef1-13f28d73541a,,medium,Approved photos and listing content are ready after this step.
+P13,link,ARHA Onboarding — Full Plan,listing_final_clean,Upload photos and home marketing content to marketing sites via OwnerRez,3d78ec10-01f6-43f2-97c8-87ac0dc2058f,,medium,Approved photos and listing content are ready after this step.
+P14,link,ARHA Onboarding - Standard,Preparing for Handoff,Upload the photos and listing content in OwnerRez,5b46375b-3795-44a9-aef1-13f28d73541a,,medium,Approved photos and listing content are ready after this step.
+P14,link,ARHA Onboarding — Full Plan,listing_final_clean,Upload photos and home marketing content to marketing sites via OwnerRez,3d78ec10-01f6-43f2-97c8-87ac0dc2058f,,medium,Approved photos and listing content are ready after this step.
+P15,link,ARHA Onboarding - Standard,Handoff,Open the calendar and go live,423b20b6-a3c4-4a4a-a3d8-7090886f5ac9,,high,Card final step opens with the live link.
+P19,link,ARHA Onboarding - Standard,Preparing for Handoff,Share the guest instructions with the Active Owner,cbb23216-ee09-4301-b0b0-4392a960a145,,medium,Guest instructions carry the approved facts and rules.
+P20,link,ARHA Onboarding - Standard,Preparing for Handoff,Confirm the photos and download them,d3bc3652-f977-4e97-bab0-d202c4aafd57,,medium,Approved photo assets are ready after this step.
+P20,link,ARHA Onboarding — Full Plan,design_approvals_procurement,"Confirm completion of photo shoot, purchase photos and download to OneDrive",473c402d-63c8-4140-879e-0e97b72d0ca1,,medium,Approved photo assets are ready after this step.
+A14,lock,,,,,unlock_now_only,high,Operations reports have no onboarding step. Keep it locked and use Unlock now when it applies.
+A15,lock,,,,,unlock_now_only,high,Operations repair estimates have no onboarding step. Keep it locked and use Unlock now when it applies.
+A30,lock,,,,,unlock_now_only,high,Substitutions come up case by case. Keep it locked and use Unlock now when it applies.
+A33,lock,,,,,unlock_now_only,high,First booking has no onboarding step. Keep it locked and use Unlock now when it applies.
+A35,lock,,,,,unlock_now_only,high,Statements have no onboarding step. Keep it locked and use Unlock now when it applies.
+A51,lock,,,,,unlock_now_only,high,Appliance issues come up case by case. Keep it locked and use Unlock now when it applies.
+A56,lock,,,,,unlock_now_only,high,Documentation sessions are scheduled case by case. Keep it locked and use Unlock now when it applies.
+N10,lock,,,,,unlock_now_only,high,First month feedback happens after handoff. Keep it locked and use Unlock now when it applies.
