@@ -482,6 +482,7 @@ function ComposerBody({
         toast.success(result.status === "scheduled" ? "Message scheduled." : "Message sent.");
         setFiles([]);
         setExtra(EMPTY_RECIPIENTS);
+        setCcChecked({});
         setScheduled(false);
         setSubject("");
         setBody("");
@@ -645,6 +646,14 @@ function ComposerBody({
             <Label id="composer-template-label" htmlFor="composer-template">
               Template
             </Label>
+            {templates.length > 6 ? (
+              <Input
+                value={templateFilter}
+                onChange={(e) => setTemplateFilter(e.target.value)}
+                placeholder="Filter templates by name"
+                aria-label="Filter templates"
+              />
+            ) : null}
             <Select value={templateId} onValueChange={chooseTemplate}>
               <SelectTrigger
                 id="composer-template"
@@ -655,7 +664,9 @@ function ComposerBody({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={BLANK}>Start blank</SelectItem>
-                {templates.map((t) => (
+                {visibleTemplates
+                  .concat(templates.filter((t) => t.id === templateId && !visibleTemplates.includes(t)))
+                  .map((t) => (
                   <SelectItem key={t.id} value={t.id}>
                     {t.name} · {AUDIENCE_LABELS[t.audience as MessageAudience]}
                   </SelectItem>
