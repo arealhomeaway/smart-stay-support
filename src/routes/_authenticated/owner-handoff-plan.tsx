@@ -19,6 +19,8 @@ import {
   reorderAfterHandoffPlan,
   saveAfterHandoffPlanItem,
   setAfterHandoffPlanItemActive,
+  getAfterHandoffCoverage,
+  setAfterHandoffPlanItemCoverage,
 } from "@/lib/after-handoff.functions";
 import { PLAN_CHANGE_NOTE, dayLabel, moveWithinDay, sortPlan, sourceLabel, type PlanItem } from "@/lib/after-handoff";
 
@@ -62,6 +64,14 @@ function PlanPage() {
     onError,
   });
   const activeM = useMutation({ mutationFn: (v: { id: string; active: boolean }) => setActive({ data: v }), onSuccess: refresh, onError });
+  const loadCoverage = useServerFn(getAfterHandoffCoverage);
+  const setCoverage = useServerFn(setAfterHandoffPlanItemCoverage);
+  const cov = useQuery({ queryKey: ["after-handoff-coverage"], queryFn: () => loadCoverage(), retry: false });
+  const coverM = useMutation({
+    mutationFn: (v: { id: string; cardCode: string | null }) => setCoverage({ data: v }),
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: ["after-handoff-coverage"] }); },
+    onError,
+  });
   const orderM = useMutation({ mutationFn: (ids: string[]) => reorder({ data: { ids } }), onSuccess: refresh, onError });
 
   if (q.isLoading) return <LoadingPage />;
@@ -123,6 +133,21 @@ function PlanPage() {
                       <Button size="sm" variant="outline" onClick={() => setDraft({ id: it.id, title: it.title, sourceKey: `${it.source_kind}:${src}`, days: String(it.send_after_days), notes: it.notes ?? "" })}>Edit</Button>
                     </div>
                   )}
+                  {cov.data?.enabled ? (
+                    <Select
+                      value={cov.data.coverage[it.id] ?? "send"}
+                      disabled={!data.canEdit || coverM.isPending}
+                      onValueChange={(v) => coverM.mutate({ id: it.id, cardCode: v === "send" ? null : v })}
+                    >
+                      <SelectTrigger className="w-56" aria-label={`Send or covered: ${it.title}`}><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="send">Send</SelectItem>
+                        {cov.data.cards.map((c) => (
+                          <SelectItem key={c.code} value={c.code}>Covered by card {c.code}: {c.title}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : null}
                   <div className="flex items-center gap-2">
                     <Switch aria-label={`Active: ${it.title}`} checked={it.active} disabled={!data.canEdit || activeM.isPending}
                       onCheckedChange={(v) => activeM.mutate({ id: it.id, active: v })} />
