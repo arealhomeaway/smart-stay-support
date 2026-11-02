@@ -41,13 +41,13 @@ export async function setCardStatus(cardId: string, status: string) {
 export type HomePlanRow = {
   id: string; join_outcome: string; unlocked_at: string | null; deadline_at: string | null; reminder_sent_at: string | null;
   expired_at: string | null; owner_completed_at: string | null; linked_task_id: string | null; owner_review_id: string | null;
-  card: { code: string; title: string } | null;
+  card: { code: string; title: string } | null; covered_reason?: string | null;
 };
 export async function loadHomePlan(propertyId: string) {
   const settings = unwrap<{ automated: boolean } | null>(await db.from("ao_home_plan_settings").select("automated").eq("property_id", propertyId).maybeSingle());
   if (!settings.available) return { available: false as const };
   const [cards, history] = await Promise.all([
-    db.from("ao_home_plan_cards").select("id,join_outcome,unlocked_at,deadline_at,reminder_sent_at,expired_at,owner_completed_at,linked_task_id,owner_review_id,card:ao_library_cards(code,title)").eq("property_id", propertyId),
+    db.from("ao_home_plan_cards").select("*,card:ao_library_cards(code,title)").eq("property_id", propertyId),
     db.from("ao_home_plan_settings_history").select("id,automated,changed_by,changed_at").eq("property_id", propertyId).order("changed_at", { ascending: false }),
   ]);
   const c = unwrap<HomePlanRow[]>(cards); const h = unwrap<{ id: number; automated: boolean; changed_by: string | null; changed_at: string }[]>(history);
@@ -56,7 +56,8 @@ export async function loadHomePlan(propertyId: string) {
   return { available: true as const, automated: Boolean(settings.data?.automated), plan, history: h.data ?? [] };
 }
 export async function previewHomeAutomation(propertyId: string) {
-  return unwrap<{ ready: boolean; reason?: string; stage?: string; outcomes?: Record<string, number>; already_on_plan?: number }>(
+  return unwrap<{ ready: boolean; reason?: string; stage?: string; outcomes?: Record<string, number>; already_on_plan?: number;
+    covered?: { code: string; title: string; reason: string; item_title?: string }[] }>(
     await db.rpc("ao_preview_home_automation", { _property: propertyId }));
 }
 export async function setHomeAutomation(propertyId: string, on: boolean) {
@@ -118,4 +119,44 @@ export async function loadContributions() {
 export async function loadHomeProgramStatus(propertyId: string): Promise<string | null> {
   const { data } = await supabase.from("owner_programs").select("status").eq("property_id", propertyId).is("archived_at", null).order("created_at", { ascending: false }).limit(1).maybeSingle();
   return (data as { status?: string } | null)?.status ?? null;
+}
+
+// ---- De-duplication: confirmed map, step-link suggestions, one-off sends ----
+import type { LinkSuggestionRow, MapRow } from "@/lib/ao-dedupe";
+
+export async function loadItemMap(): Promise<Available<MapRow[]>> {
+  return unwrap(await db.from("ao_card_item_map").select("id,match_kind,match_value,card_code,status,note").order("card_code").order("match_value"));
+}
+export async function decideItemMap(id: string, status: "confirmed" | "rejected" | "suggested") {
+  const r = unwrap<string>(await db.rpc("ao_card_item_map_decide", { _id: id, _status: status }));
+  if (!r.available) throw new Error("This list is not set up yet");
+  return r.data;
+}
+export async function loadStepLinkSuggestions(): Promise<Available<LinkSuggestionRow[]>> {
+  return unwrap(await db.from("ao_card_step_link_suggestions").select("id,card_code,suggestion_kind,template_task_ids,proposed_lock,confidence,note,status").order("card_code"));
+}
+export async function decideStepLink(id: string, accept: boolean) {
+  const r = unwrap<string>(await db.rpc("ao_step_link_decide", { _id: id, _accept: accept }));
+  if (!r.available) throw new Error("This list is not set up yet");
+  return r.data;
+}
+export async function loadStepTitles(ids: string[]): Promise<Record<string, { title: string; template: string }>> {
+  if (ids.length === 0) return {};
+  const { data } = await supabase.from("onboarding_template_tasks").select("id,title,template_id,onboarding_templates(name)").in("id", ids);
+  return Object.fromEntries(((data ?? []) as unknown as { id: string; title: string; onboarding_templates: { name: string } | null }[])
+    .map((r) => [r.id, { title: r.title, template: r.onboarding_templates?.name ?? "" }]));
+}
+export async function loadMapTemplateTitles(ids: string[]): Promise<Record<string, string>> {
+  if (ids.length === 0) return {};
+  const [a, b] = await Promise.all([
+    supabase.from("owner_task_templates").select("id,title").in("id", ids),
+    supabase.from("owner_opportunity_library").select("id,title").in("id", ids),
+  ]);
+  return Object.fromEntries([...(a.data ?? []), ...(b.data ?? [])].map((r) => [r.id, r.title]));
+}
+/** Staff confirm the next send is a clearly different one-off for this home. */
+export async function confirmOneOff(propertyId: string, taskId: string | null, title: string) {
+  const r = unwrap<string>(await db.rpc("ao_confirm_one_off", { _property: propertyId, _task: taskId, _title: title }));
+  if (!r.available) throw new Error("This check is not set up yet");
+  return r.data;
 }
