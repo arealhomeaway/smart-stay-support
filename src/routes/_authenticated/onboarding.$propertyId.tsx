@@ -42,6 +42,7 @@ import { TwoStepHandoff } from "@/components/onboarding/TwoStepHandoff";
 import { OnboardingNotes } from "@/components/onboarding/OnboardingNotes";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { HomeownerCard } from "@/components/property/HomeownerCard";
+import { HomeAutomation } from "@/components/ao/HomeAutomation";
 
 import { OperationsContextPanel } from "@/components/onboarding/OperationsContextPanel";
 import { ProjectScopePanel } from "@/components/onboarding/ProjectScopePanel";
@@ -589,7 +590,7 @@ function PropertyWorkspace() {
           ) : null}
         </TabsContent>
 
-        {activeOwner ? <TabsContent value="active-owner"><PropertyOpportunitiesPanel propertyId={current.id} openId={linkedOpp} /></TabsContent> : null}
+        {activeOwner ? <TabsContent value="active-owner" className="space-y-5"><HomeAutomation propertyId={current.id} /><PropertyOpportunitiesPanel propertyId={current.id} openId={linkedOpp} /></TabsContent> : null}
 
         <TabsContent value="work" className="space-y-5">
           <div className="flex justify-end"><PlanCsvButton propertyId={current.id} /></div>

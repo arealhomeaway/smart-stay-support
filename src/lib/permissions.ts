@@ -98,6 +98,9 @@ export type Capability =
   // leadership only (kept apart from owner_programs so the Onboarding
   // Director's Active Owner access does not widen into executive tools).
   | "owner_program_admin"
+  // Active Owner Card library (edit/release): Admin and the Onboarding
+  // Director, mirroring DB private.ao_is_editor. Supervisors may open it read-only.
+  | "owner_card_library"
   // STR Cleaner Hours Safeguard monitoring: Operations leadership only.
   | "cleaner_hours"
   // STR cleaner safeguard check before dispatch: Operations coordinators and leadership.
@@ -143,6 +146,7 @@ const SUPERVISOR_CAPS: Capability[] = [
   "onboarding_templates",
   "owner_programs",
   "owner_program_admin",
+  "owner_card_library",
   "owner_oversight",
   "homeowner_directory",
   "vendor_admin",
@@ -198,6 +202,7 @@ export const ONBOARDING_DIRECTOR_CAPS: Capability[] = [
   "owner_oversight",
   "homeowner_directory",
   "active_owner_enroll",
+  "owner_card_library",
 ];
 
 export function capabilitiesFor(roles: AppRole[], seats: AccessSeats = {}): Set<Capability> {

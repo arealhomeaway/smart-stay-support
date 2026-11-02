@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/owner-card-library")({
     ],
   }),
   component: () => (
-    <RequireCapability capability="owner_program_admin">
+    <RequireCapability capability="owner_card_library">
       <LibraryPage />
     </RequireCapability>
   ),
