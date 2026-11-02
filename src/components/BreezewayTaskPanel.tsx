@@ -446,6 +446,9 @@ export function BreezewayTaskPanel({
             <Send className="size-4" />
             {send.isPending ? "Sending…" : "Dispatch to Breezeway"}
           </Button>
+          {dispatchBasicsProblem({ scheduledDate, assigneeIds }) ? (
+            <p className="text-xs text-muted-foreground">{dispatchBasicsProblem({ scheduledDate, assigneeIds })}</p>
+          ) : null}
         </div>
       </TaskWorkspace>
 
