@@ -11,7 +11,7 @@ import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useDroppable,
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import type { ReactNode } from "react";
 import { PlanCsvButton } from "@/components/onboarding/PlanCsvButton";
-import { arrangeTemplateStepsFn } from "@/lib/onboarding-template-admin.functions";
+import { arrangeTemplateStepsFn, deleteTemplateStepFn, saveTemplateStepFn } from "@/lib/onboarding-template-admin.functions";
 import { moveStep, stepGroups } from "@/lib/template-step-order";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
@@ -284,7 +284,17 @@ function StepDialog({ step, onClose, onSave, onRemove, saving, fileSources }: { 
           ) : null}
         </div>
 
+        {confirmRemove ? (
+          <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
+            <p>Remove "{step.title}" from this plan? Homes already started keep their Task. New homes stop getting it after you publish.</p>
+            <div className="mt-2 flex gap-2">
+              <Button size="sm" variant="destructive" disabled={saving} onClick={onRemove}>Remove step</Button>
+              <Button size="sm" variant="outline" onClick={() => setConfirmRemove(false)}>Keep it</Button>
+            </div>
+          </div>
+        ) : null}
         <DialogFooter>
+          <Button variant="ghost" className="mr-auto text-destructive" onClick={() => setConfirmRemove(true)}>Remove step</Button>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button
             disabled={saving || title.trim().length < 3 || (eligible && opp.title.trim().length < 3) || (useBreezeway && !bzTemplate.trim())}
@@ -328,6 +338,9 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
   const saveStep = useServerFn(saveTemplateStepV2);
   const publish = useServerFn(publishTemplateVersion);
   const arrangeSteps = useServerFn(arrangeTemplateStepsFn);
+  const addStepFn = useServerFn(saveTemplateStepFn);
+  const removeStepFn = useServerFn(deleteTemplateStepFn);
+  const [adding, setAdding] = useState<{ stage: string; title: string } | null>(null);
   const stepSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -355,6 +368,23 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
     mutationFn: (order: { stepId: string; stage: string }[]) => arrangeSteps({ data: { templateId, order } }),
     onSuccess: () => { toast.success("Plan order saved."); refresh(); },
     onError: (e) => { onErr(e); refresh(); },
+  });
+  // Same server functions the older editor used for adding and removing steps.
+  const addM = useMutation({
+    mutationFn: (d: { stage: string; title: string }) => addStepFn({ data: { templateId, stage: d.stage, title: d.title } }),
+    onSuccess: async (_r, d) => {
+      toast.success("Step added. Set its details now.");
+      setAdding(null);
+      const fresh = await q.refetch();
+      const made = (fresh.data?.steps ?? []).filter((x) => x.stage === d.stage && x.title === d.title).sort((x, y) => y.sort_order - x.sort_order)[0];
+      if (made) setEditing(made);
+    },
+    onError: onErr,
+  });
+  const removeM = useMutation({
+    mutationFn: (stepId: string) => removeStepFn({ data: { templateId, stepId } }),
+    onSuccess: () => { toast.success("Step removed from the plan."); setEditing(null); refresh(); },
+    onError: onErr,
   });
   const readSources = useServerFn(readTemplateFileSources);
   const saveSources = useServerFn(saveTemplateFileSources);
@@ -466,6 +496,26 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
       </div>
 
       <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Button size="sm" variant="outline" disabled={!groups.length} onClick={() => setAdding({ stage: groups[0]?.[0] ?? "", title: "" })}>Add step</Button>
+        </div>
+        {adding ? (
+          <div className="flex flex-wrap items-end gap-2 rounded-md border border-border p-3">
+            <div className="space-y-1">
+              <Label>Stage</Label>
+              <Select value={adding.stage} onValueChange={(v) => setAdding({ ...adding, stage: v })}>
+                <SelectTrigger className="w-56" aria-label="Stage for the new step"><SelectValue /></SelectTrigger>
+                <SelectContent>{groups.map(([n]) => <SelectItem key={n} value={n}>{n}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="min-w-60 flex-1 space-y-1">
+              <Label htmlFor="new-step-title">Step title</Label>
+              <Input id="new-step-title" value={adding.title} onChange={(e) => setAdding({ ...adding, title: e.target.value })} />
+            </div>
+            <Button size="sm" disabled={addM.isPending || adding.title.trim().length < 3 || !adding.stage} onClick={() => addM.mutate({ stage: adding.stage, title: adding.title.trim() })}>Add</Button>
+            <Button size="sm" variant="outline" onClick={() => setAdding(null)}>Cancel</Button>
+          </div>
+        ) : null}
         <label className="flex items-center gap-2 text-sm text-muted-foreground">
           <Checkbox
             aria-label="Select all steps in this template"
@@ -553,7 +603,7 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
         })()}
       </details>
 
-      {editing ? <StepDialog step={editing} saving={stepM.isPending} onClose={() => setEditing(null)} onSave={(v, showFrom) => stepM.mutate({ d: v, showFrom })} fileSources={{ ready: Boolean(sourcesQ.data?.ready), selected: sourcesQ.data?.byStep[editing.id] ?? [], options: steps.map((s) => ({ id: s.id, title: s.title, stage: s.stage })) }} /> : null}
+      {editing ? <StepDialog step={editing} saving={stepM.isPending || removeM.isPending} onClose={() => setEditing(null)} onSave={(v, showFrom) => stepM.mutate({ d: v, showFrom })} onRemove={() => removeM.mutate(editing.id)} fileSources={{ ready: Boolean(sourcesQ.data?.ready), selected: sourcesQ.data?.byStep[editing.id] ?? [], options: steps.map((s) => ({ id: s.id, title: s.title, stage: s.stage })) }} /> : null}
       {bulkOpen ? (
         <TemplateBulkEditDialog
           templateId={templateId}
