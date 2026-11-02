@@ -768,3 +768,45 @@ export const opportunityResourceUrl = createServerFn({ method: "POST" })
     if (signed.error) throw new Error("Resolve could not open that file.");
     return { url: signed.data.signedUrl };
   });
+
+/** True once the staged template-bulk-v2 function exists; false (never an error) before then. */
+export const templateBulkV2Ready = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const rpc = context.supabase.rpc as unknown as (n: string) => Promise<{ data: unknown; error: unknown }>;
+    const { data, error } = await rpc("template_bulk_v2_ready");
+    if (error) return { ready: false };
+    return { ready: data === true };
+  });
+
+/** Conditions, homeowner need and active, set-based in one transaction (template-bulk-v2). */
+export const bulkUpdateTemplateStepsV2b = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      templateId: z.string().uuid(),
+      stepIds: z.array(z.string().uuid()).min(1).max(500),
+      condition: z.object({ all: z.array(z.object({ field: z.enum(["furnishing_scope", "module"]), value: z.string().max(60) })).min(1) }).nullable().optional(),
+      ownerDependency: z.enum(["none", "information", "feedback", "acknowledge", "business_decision"]).optional(),
+      isActive: z.boolean().optional(),
+    }).refine((p) => p.condition !== undefined || p.ownerDependency !== undefined || p.isActive !== undefined, "Choose at least one change.").parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const rpc = context.supabase.rpc as unknown as (n: string, a: Record<string, unknown>) => Promise<{
+      data: { changed: number; skipped: { stepId: string; title: string; reason: string }[]; auditRecorded: boolean } | null;
+      error: { message: string } | null;
+    }>;
+    const r = await rpc("bulk_update_onboarding_template_steps_v2", {
+      _template_id: data.templateId,
+      _step_ids: data.stepIds,
+      _set_condition: data.condition !== undefined,
+      _condition: data.condition ?? null,
+      _set_owner_dependency: data.ownerDependency !== undefined,
+      _owner_dependency: data.ownerDependency ?? null,
+      _set_is_active: data.isActive !== undefined,
+      _is_active: data.isActive ?? null,
+    });
+    if (r.error) throw new Error(r.error.message);
+    if (!r.data) throw new Error("The bulk edit did not return a result. Nothing was saved.");
+    return r.data;
+  });
