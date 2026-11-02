@@ -13,7 +13,7 @@ export function vendorEmailOffered(input: { hasAcceptedVendor: boolean; vendorBr
 const EMAIL = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 
 /** Work Order inbox first, then the primary contact, then any contact on file. */
-export function pickVendorEmail(v: { work_order_email?: string | null; primary_contact_email?: string | null; contacts?: (string | null)[] }) {
+export function pickVendorEmail(v: { work_order_email?: string | null | undefined; primary_contact_email?: string | null | undefined; contacts?: (string | null)[] | undefined }) {
   for (const e of [v.work_order_email, v.primary_contact_email, ...(v.contacts ?? [])]) {
     const t = String(e ?? "").trim();
     if (EMAIL.test(t)) return t;

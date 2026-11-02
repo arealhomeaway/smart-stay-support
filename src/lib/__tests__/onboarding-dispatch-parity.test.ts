@@ -17,7 +17,7 @@ describe("staff-composed Breezeway sends", () => {
     const src = readFileSync("src/lib/breezeway-outbound.functions.ts", "utf8");
     const v = src.indexOf("dispatchBasicsProblem({ scheduledDate: date");
     expect(v).toBeGreaterThan(0);
-    expect(v).toBeLessThan(src.indexOf("createOutboundTask(data"));
+    expect(v < src.indexOf("createOutboundTask(data")).toBe(true);
   });
 });
 
