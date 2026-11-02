@@ -15,3 +15,13 @@ export function acceptedVendorAppointment(personId: unknown, scheduledFor: strin
   const p = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
   return { assigneeIds: [id], scheduledDate: `${p['year']}-${p['month']}-${p['day']}`, scheduledTime: `${p['hour']}:${p['minute']}:${p['second']}` };
 }
+/**
+ * Staff-composed Breezeway sends (onboarding Tasks and Tickets) use the same
+ * rule as accepted-vendor dispatch: never undated, never unassigned.
+ * Returns a plain message to show, or null when the send may go ahead.
+ */
+export function dispatchBasicsProblem(input: { scheduledDate?: string | null; assigneeIds?: unknown[] | null }): string | null {
+  if (!String(input.scheduledDate ?? "").trim()) return "Choose the date for this work before sending it to Breezeway.";
+  if (!(input.assigneeIds ?? []).length) return "Choose who is doing the work before sending it to Breezeway.";
+  return null;
+}
