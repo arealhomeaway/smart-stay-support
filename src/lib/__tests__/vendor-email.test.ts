@@ -61,13 +61,8 @@ describe("send path", () => {
 });
 
 describe("vendor email contact line", () => {
-  it("names the sender and never a made-up phone number", async () => {
-    const { buildVendorWorkOrderEmail } = await import("@/lib/vendor-email");
-    const base = { vendorName: "Joe", address: "1 Main St", title: "Fix sink", scope: null, scheduledFor: null, timeWindow: null, photoLinks: [] } as never;
-    const named = buildVendorWorkOrderEmail({ ...(base as object), senderName: "Kati Hand" } as never).body;
-    expect(named.includes("please contact Kati Hand at A Real Home Away by replying to this email")).toBe(true);
-    expect(/\d{3}[-. )]\d{3}[-. ]\d{4}/.test(named)).toBe(false);
-    const anon = buildVendorWorkOrderEmail({ ...(base as object), senderName: null } as never).body;
-    expect(anon.includes("the A Real Home Away team member who sent this email")).toBe(true);
+  it("uses the ARHA main line", () => {
+    const body = buildVendorWorkOrderEmail({ vendorName: "Joe", address: "1 Main St", title: "Fix sink", scope: null, scheduledFor: null, timeWindow: null, photoLinks: [], senderName: "Kati Hand" } as never).body;
+    expect(body.includes("On site: please call ARHA at 405-315-2898 before you arrive. We will arrange access on the day.")).toBe(true);
   });
 });
