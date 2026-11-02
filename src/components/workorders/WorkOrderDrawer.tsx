@@ -26,6 +26,7 @@ import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { ProgressSteps, Celebrate } from "@/components/ui/feedback";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { EmailComposer } from "@/components/EmailComposer";
+import { VendorEmailButton } from "@/components/workorders/VendorEmailButton";
 import { PhotoStrip } from "@/components/onboarding/PhotoStrip";
 import { usDate, usDateTime } from "@/lib/dates";
 import {
@@ -517,6 +518,7 @@ export function WorkOrderDrawer({
             owned by {owner ? displayName(people.find((p) => p.id === owner)) : "nobody yet"}
           </span>
           <EmailComposer context="work_order" recordId={workOrder.id} />
+          {!workOrder.closed_at ? <VendorEmailButton workOrderId={workOrder.id} /> : null}
         </div>
       }
     >
