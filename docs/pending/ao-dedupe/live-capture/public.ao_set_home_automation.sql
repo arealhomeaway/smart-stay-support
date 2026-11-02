@@ -53,4 +53,3 @@ BEGIN
   END LOOP;
   RETURN jsonb_build_object('automated', true, 'stage', stage, 'outcomes', counts);
 END $function$
-

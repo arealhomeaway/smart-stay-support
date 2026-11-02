@@ -33,4 +33,3 @@ BEGIN
   ) SELECT count(*) INTO _n FROM ev;
   RETURN _n;
 END $function$
-
