@@ -5,6 +5,7 @@
  */
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllPages, unwrap, type Available } from "@/lib/ao-ui";
+import type { LinkSuggestionRow, MapRow } from "@/lib/ao-dedupe";
 
 // The engine tables are staged and not in generated types yet.
 const db = supabase as unknown as {
@@ -122,7 +123,6 @@ export async function loadHomeProgramStatus(propertyId: string): Promise<string 
 }
 
 // ---- De-duplication: confirmed map, step-link suggestions, one-off sends ----
-import type { LinkSuggestionRow, MapRow } from "@/lib/ao-dedupe";
 
 export async function loadItemMap(): Promise<Available<MapRow[]>> {
   return unwrap(await db.from("ao_card_item_map").select("id,match_kind,match_value,card_code,status,note").order("card_code").order("match_value"));
