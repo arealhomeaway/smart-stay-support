@@ -74,7 +74,7 @@ describe("Email homeowner from a Task", () => {
 
 describe("recordTaskEmailEvents", () => {
   const inserts: { table: string; row: Record<string, unknown> }[] = [];
-  beforeEach(() => inserts.splice(0));
+  beforeEach(() => { inserts.splice(0); });
   const client = {
     from(table: string) {
       const q = {
