@@ -49,17 +49,17 @@ describe("One template editor", () => {
   const bulk = read("src/components/onboarding/TemplateBulkEditDialog.tsx");
   const route = read("src/routes/_authenticated/onboarding.templates.tsx");
   it("hides the older editor and keeps CSV in Plan settings", () => {
-    expect(route).not.toMatch(/<TemplateEditor/);
-    expect(settings).toMatch(/<PlanCsvButton templateId=\{templateId\}/);
+    expect(/<TemplateEditor/.test(route)).toBe(false);
+    expect(/<PlanCsvButton templateId=\{templateId\}/.test(settings)).toBe(true);
   });
   it("hides Video link and Module but saves stored values back", () => {
-    expect(settings).not.toMatch(/>Video link</);
-    expect(settings).not.toMatch(/Module \(optional\)/);
-    expect(settings).toMatch(/const module = step\.module \?\? ""/);
-    expect(settings).toMatch(/const videoUrl = step\.video_url \?\? ""/);
+    expect(/>Video link</.test(settings)).toBe(false);
+    expect(/Module \(optional\)/.test(settings)).toBe(false);
+    expect(/const module = step\.module \?\? ""/.test(settings)).toBe(true);
+    expect(/const videoUrl = step\.video_url \?\? ""/.test(settings)).toBe(true);
   });
   it("saves order through the existing arrange path, never publishing", () => {
-    expect(settings).toMatch(/arrangeTemplateStepsFn/);
+    expect(/arrangeTemplateStepsFn/.test(settings)).toBe(true);
     expect(settings.match(/publishM\.mutate\(/g)).toHaveLength(1);
   });
   it("bulk edit has help text and no Breezeway or stage field", () => {
@@ -68,8 +68,8 @@ describe("One template editor", () => {
       "Operations cannot accept the home until this step is done.",
       "Turn off to hide this step from new homes without deleting it.",
     ]) expect(bulk).toContain(t);
-    expect(bulk).not.toMatch(/<Label>Stage<\/Label>/);
-    expect(bulk).not.toMatch(/breezewayTemplateId/);
-    expect(bulk).toMatch(/Preview/);
+    expect(/<Label>Stage<\/Label>/.test(bulk)).toBe(false);
+    expect(/breezewayTemplateId/.test(bulk)).toBe(false);
+    expect(/Preview/.test(bulk)).toBe(true);
   });
 });
