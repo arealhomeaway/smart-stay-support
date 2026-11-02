@@ -7,8 +7,12 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { DndContext, closestCenter, type DragEndEvent } from "@dnd-kit/core";
-import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useDroppable, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import type { ReactNode } from "react";
+import { PlanCsvButton } from "@/components/onboarding/PlanCsvButton";
+import { arrangeTemplateStepsFn } from "@/lib/onboarding-template-admin.functions";
+import { moveStep, stepGroups } from "@/lib/template-step-order";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 import { toast } from "sonner";
@@ -22,7 +26,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { readTemplateFileSources, saveTemplateFileSources } from "@/lib/step-file-links.functions";
-import { TemplateBulkEditDialog } from "@/components/onboarding/TemplateBulkEditDialog";
+import { SWITCH_HELP, TemplateBulkEditDialog } from "@/components/onboarding/TemplateBulkEditDialog";
 import {
   FUNCTIONAL_ROLES,
   publishTemplateVersion,
@@ -93,6 +97,28 @@ function SortableStage({ stage, onRename, onToggle }: { stage: Stage; onRename: 
   );
 }
 
+const stepDragId = (id: string) => `step:${id}`;
+
+function DraggableStepRow({ step, children }: { step: { id: string; title: string; stage: string }; children: ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: stepDragId(step.id),
+    data: { type: "step", stepId: step.id, stage: step.stage },
+  });
+  return (
+    <li ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1 }} className="flex items-center gap-2 bg-card px-3 py-2">
+      <button type="button" aria-label={`Drag ${step.title}`} className="cursor-grab text-muted-foreground" {...attributes} {...listeners}>
+        <GripVertical className="size-4" />
+      </button>
+      {children}
+    </li>
+  );
+}
+
+function StepStageDrop({ stage, children }: { stage: string; children: ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id: `stage:${stage}`, data: { type: "stage", stage } });
+  return <div ref={setNodeRef} data-stage-drop={stage} className={isOver ? "rounded-md ring-2 ring-primary/40" : undefined}>{children}</div>;
+}
+
 const emptyOpp: OpportunityContent = { title: "", what: "", why: "", how: "", resources: [], ways_to_document: "", suggested_minutes: null };
 
 type FileSourceOptions = { ready: boolean; selected: string[]; options: { id: string; title: string; stage: string }[] };
@@ -108,20 +134,20 @@ function StepDialog({ step, onClose, onSave, saving, fileSources }: { step: Step
   const lockHandoff = handoffLocked(step);
   const [blocking, setBlocking] = useState(lockHandoff ? false : step.blocks_handoff);
   const [active, setActive] = useState(step.is_active);
-  const [module, setModule] = useState(step.module ?? "");
+  // Module and video link are no longer edited here; stored values are saved back unchanged.
+  const module = step.module ?? "";
   const [dependency, setDependency] = useState<OwnerDependency>((step.owner_dependency as OwnerDependency | null) ?? "none");
   const [offset, setOffset] = useState(step.offset_days == null ? "" : String(step.offset_days));
   const [anchor, setAnchor] = useState<string>(step.schedule_anchor ?? "actual_access");
   const [unit, setUnit] = useState<OffsetUnit>((step.offset_unit as OffsetUnit | null) ?? "calendar");
   const [description, setDescription] = useState(step.description ?? "");
   const [doneWhen, setDoneWhen] = useState(step.done_when ?? "");
-  const [videoUrl, setVideoUrl] = useState(step.video_url ?? "");
+  const videoUrl = step.video_url ?? "";
   const stored = readCondition(step.condition);
   const [clauses, setClauses] = useState<ConditionClause[]>(stored.condition?.all ?? []);
   const toggleClause = (c: ConditionClause) =>
     setClauses((cur) => (cur.some((x) => x.field === c.field && x.value === c.value) ? cur.filter((x) => !(x.field === c.field && x.value === c.value)) : [...cur, c]));
   const offsetNum = offset.trim() === "" || Number.isNaN(Number(offset)) ? null : Math.round(Number(offset));
-  const videoOk = !videoUrl.trim() || /^https:\/\//.test(videoUrl.trim());
   const [eligible, setEligible] = useState(Boolean(step.opportunity));
   const [opp, setOpp] = useState<OpportunityContent>(step.opportunity ? completeOpportunity(step.opportunity, step.title) : { ...emptyOpp, title: step.title });
   const set = (k: keyof OpportunityContent, v: string) => setOpp((o) => ({ ...o, [k]: v }));
@@ -137,8 +163,7 @@ function StepDialog({ step, onClose, onSave, saving, fileSources }: { step: Step
           <div className="space-y-1"><Label htmlFor="desc">Description <span className="font-normal text-muted-foreground">— what the step is and why it matters</span></Label><Textarea id="desc" rows={3} className="resize-y" value={description} onChange={(e) => setDescription(e.target.value)} /></div>
           <div className="space-y-1"><Label htmlFor="det">Instructions <span className="font-normal text-muted-foreground">— how to do it</span></Label><Textarea id="det" rows={6} className="resize-y" value={detail} onChange={(e) => setDetail(e.target.value)} /></div>
           <div className="space-y-1"><Label htmlFor="done">Done when <span className="font-normal text-muted-foreground">— what finished looks like (guidance, not an approval step)</span></Label><Textarea id="done" rows={2} className="resize-y" value={doneWhen} onChange={(e) => setDoneWhen(e.target.value)} /></div>
-          <div className="space-y-1"><Label htmlFor="vid">Video link</Label><Input id="vid" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://…" />{!videoOk ? <p className="text-xs text-destructive">The link must start with https://</p> : null}</div>
-          <p className="text-xs text-muted-foreground">All four are optional and internal only. Homeowners never see them; their wording is set separately below.</p>
+          <p className="text-xs text-muted-foreground">All three are optional and internal only. Homeowners never see them; their wording is set separately below.</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
@@ -171,11 +196,6 @@ function StepDialog({ step, onClose, onSave, saving, fileSources }: { step: Step
               {describeRule(offsetNum === null ? null : anchor, offsetNum, unit)}. Use a negative number for "before". Business days are Monday–Friday; no holidays are skipped. Leave days empty for no rule. A missing anchor date leaves the Task undated.
             </p>
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="mod">Module (optional)</Label>
-            <Input id="mod" value={module} onChange={(e) => setModule(e.target.value)} placeholder="e.g. furnishing, pool" />
-            <p className="text-xs text-muted-foreground">A label for grouping and filtering only. Use "Include this step only when" to make a step conditional.</p>
-          </div>
           <div className="space-y-1 sm:col-span-2 rounded-md border border-border p-3">
             <Label>Include this step only when</Label>
             <div className="mt-1 flex flex-wrap gap-2">
@@ -203,9 +223,12 @@ function StepDialog({ step, onClose, onSave, saving, fileSources }: { step: Step
           </div>
           <div className="flex flex-col justify-end gap-2 text-sm">
             <label className="flex items-center gap-2"><Switch checked={required} onCheckedChange={setRequired} /> Required</label>
+            <p className="text-xs text-muted-foreground">{SWITCH_HELP.required}</p>
             <label className="flex items-center gap-2"><Switch checked={blocking} disabled={lockHandoff} onCheckedChange={setBlocking} /> Blocks handoff</label>
+            <p className="text-xs text-muted-foreground">{SWITCH_HELP.blocksHandoff}</p>
             {lockHandoff ? <p className="text-xs text-muted-foreground">{HANDOFF_LOCK_NOTE}</p> : null}
             <label className="flex items-center gap-2"><Switch checked={active} onCheckedChange={setActive} /> Active in this plan</label>
+            <p className="text-xs text-muted-foreground">{SWITCH_HELP.active}</p>
           </div>
         </div>
 
@@ -263,7 +286,7 @@ function StepDialog({ step, onClose, onSave, saving, fileSources }: { step: Step
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button
-            disabled={saving || !videoOk || title.trim().length < 3 || (eligible && opp.title.trim().length < 3) || (useBreezeway && !bzTemplate.trim())}
+            disabled={saving || title.trim().length < 3 || (eligible && opp.title.trim().length < 3) || (useBreezeway && !bzTemplate.trim())}
             onClick={() =>
               onSave({
                 stepId: step.id,
@@ -303,6 +326,11 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
   const reorder = useServerFn(reorderTemplateStages);
   const saveStep = useServerFn(saveTemplateStepV2);
   const publish = useServerFn(publishTemplateVersion);
+  const arrangeSteps = useServerFn(arrangeTemplateStepsFn);
+  const stepSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
   const key = ["template-v2", templateId];
   const q = useQuery({ queryKey: key, queryFn: () => read({ data: { templateId } }) });
   const refresh = () => void qc.invalidateQueries({ queryKey: key });
@@ -321,6 +349,12 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
 
   const stageM = useMutation({ mutationFn: (d: { stageId?: string; name: string; active: boolean }) => saveStage({ data: { templateId, ...d } }), onSuccess: refresh, onError: onErr });
   const reorderM = useMutation({ mutationFn: (ids: string[]) => reorder({ data: { templateId, stageIds: ids } }), onSuccess: refresh, onError: onErr });
+  // Same save path the older editor used: the whole plan order with each step's stage.
+  const arrangeM = useMutation({
+    mutationFn: (order: { stepId: string; stage: string }[]) => arrangeSteps({ data: { templateId, order } }),
+    onSuccess: () => { toast.success("Plan order saved."); refresh(); },
+    onError: (e) => { onErr(e); refresh(); },
+  });
   const readSources = useServerFn(readTemplateFileSources);
   const saveSources = useServerFn(saveTemplateFileSources);
   const sourcesQ = useQuery({ queryKey: ["template-file-sources", templateId], queryFn: () => readSources({ data: { templateId } }) });
@@ -351,6 +385,16 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
   };
 
   const stageNames = stages.length ? stages.map((s) => s.name) : Array.from(new Set(steps.map((s) => s.stage)));
+  const groups = stepGroups(stageNames, steps);
+  const onStepDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over || arrangeM.isPending) return;
+    const stepId = String(active.data.current?.["stepId"] ?? "");
+    const targetStage = String(over.data.current?.["stage"] ?? "");
+    if (!stepId || !targetStage) return;
+    const beforeStepId = over.data.current?.["type"] === "step" ? String(over.data.current?.["stepId"] ?? "") : null;
+    if (beforeStepId === stepId) return;
+    arrangeM.mutate(moveStep(groups, stepId, targetStage, beforeStepId));
+  };
   const selected = new Set(selectedIds);
   const toggleStep = (stepId: string, checked: boolean) =>
     setSelectedIds((current) => (checked ? [...new Set([...current, stepId])] : current.filter((id) => id !== stepId)));
@@ -371,7 +415,10 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
             {latest ? `Published version ${latest.version} (${new Date(latest.published_at).toLocaleDateString()}).` : "Not published yet."}
           </p>
         </div>
-        <Button size="sm" onClick={() => publishM.mutate()} disabled={publishM.isPending}>Publish new version</Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <PlanCsvButton templateId={templateId} />
+          <Button size="sm" onClick={() => publishM.mutate()} disabled={publishM.isPending}>Publish new version</Button>
+        </div>
       </div>
 
       <div>
@@ -414,7 +461,7 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
           <Input value={newStage} onChange={(e) => setNewStage(e.target.value)} placeholder="New stage name" className="h-8" />
           <Button size="sm" variant="outline" disabled={newStage.trim().length < 2} onClick={() => { stageM.mutate({ name: newStage.trim(), active: true }); setNewStage(""); }}>Add stage</Button>
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">To change the order of steps, drag them by the handle in the step list further down this page.</p>
+        <p className="mt-2 text-xs text-muted-foreground">To reorder a step, drag it by its handle below. Drop it on another stage to move it there. New homes get the change only after you publish.</p>
       </div>
 
       <div className="space-y-3">
@@ -426,41 +473,45 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
           />
           Select all
         </label>
-        {stageNames.map((name) => {
-          const inStage = steps.filter((s) => s.stage === name);
-          if (!inStage.length) return null;
-          return (
+        <DndContext sensors={stepSensors} collisionDetection={closestCenter} onDragEnd={onStepDragEnd}>
+        {groups.map(([name, inStage]) => (
             <div key={name}>
               <div className="mb-1 flex items-center gap-2">
                 <Checkbox
                   aria-label={`Select all in ${name}`}
-                  checked={inStage.every((step) => selected.has(step.id))}
+                  disabled={!inStage.length}
+                  checked={inStage.length > 0 && inStage.every((step) => selected.has(step.id))}
                   onCheckedChange={(checked) => toggleSteps(inStage.map((step) => step.id), checked === true)}
                 />
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{name}</p>
               </div>
-              <ul className="divide-y divide-border rounded-md border border-border">
-                {inStage.map((s) => (
-                  <li key={s.id} className="flex items-center gap-2 px-3 py-2">
-                    <Checkbox
-                      aria-label={`Select ${s.title}`}
-                      checked={selected.has(s.id)}
-                      onCheckedChange={(checked) => toggleStep(s.id, checked === true)}
-                    />
-                    <button type="button" className="flex min-w-0 flex-1 flex-wrap items-center gap-2 text-left text-sm hover:bg-muted/50" onClick={() => setEditing(s)}>
-                      <span className={s.is_active ? "font-medium" : "text-muted-foreground line-through"}>{s.title}</span>
-                      <span className="text-xs text-muted-foreground">{roleLabel(s.functional_role)}</span>
-                      {!s.is_required ? <Badge variant="outline">Optional</Badge> : null}
-                      {s.blocks_handoff ? <Badge variant="outline">Blocks handoff</Badge> : null}
-                      {s.breezeway_template_id ? <Badge variant="outline">Breezeway</Badge> : null}{s.opportunity ? <Badge variant="secondary">Owner Opportunity</Badge> : null}
-                      {readCondition(s.condition).condition ? <Badge variant="outline">{describeCondition(readCondition(s.condition).condition)}</Badge> : null}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <StepStageDrop stage={name}>
+                <SortableContext items={inStage.map((s) => stepDragId(s.id))} strategy={verticalListSortingStrategy}>
+                  {!inStage.length ? <p className="rounded-md border border-dashed border-border p-3 text-xs text-muted-foreground">No steps in this stage. Drop one here to move it.</p> : null}
+                  <ul className="divide-y divide-border rounded-md border border-border empty:hidden">
+                    {inStage.map((s) => (
+                      <DraggableStepRow key={s.id} step={s}>
+                        <Checkbox
+                          aria-label={`Select ${s.title}`}
+                          checked={selected.has(s.id)}
+                          onCheckedChange={(checked) => toggleStep(s.id, checked === true)}
+                        />
+                        <button type="button" className="flex min-w-0 flex-1 flex-wrap items-center gap-2 text-left text-sm hover:bg-muted/50" onClick={() => setEditing(s)}>
+                          <span className={s.is_active ? "font-medium" : "text-muted-foreground line-through"}>{s.title}</span>
+                          <span className="text-xs text-muted-foreground">{roleLabel(s.functional_role)}</span>
+                          {!s.is_required ? <Badge variant="outline">Optional</Badge> : null}
+                          {s.blocks_handoff ? <Badge variant="outline">Blocks handoff</Badge> : null}
+                          {s.breezeway_template_id ? <Badge variant="outline">Breezeway</Badge> : null}{s.opportunity ? <Badge variant="secondary">Owner Opportunity</Badge> : null}
+                          {readCondition(s.condition).condition ? <Badge variant="outline">{describeCondition(readCondition(s.condition).condition)}</Badge> : null}
+                        </button>
+                      </DraggableStepRow>
+                    ))}
+                  </ul>
+                </SortableContext>
+              </StepStageDrop>
             </div>
-          );
-        })}
+        ))}
+        </DndContext>
       </div>
 
       {selectedIds.length ? (

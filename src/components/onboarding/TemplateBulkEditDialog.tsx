@@ -19,6 +19,13 @@ import { bulkUpdateTemplateStepsV2, FUNCTIONAL_ROLES, roleLabel } from "@/lib/v2
 
 type Choice = "leave" | "set" | "clear";
 
+/** One plain sentence per switch, shared by the single-step and bulk editors. */
+export const SWITCH_HELP = {
+  required: "The plan is not complete until this step is done or skipped with a reason.",
+  blocksHandoff: "Operations cannot accept the home until this step is done.",
+  active: "Turn off to hide this step from new homes without deleting it.",
+} as const;
+
 export function TemplateBulkEditDialog({
   templateId,
   steps,
@@ -42,7 +49,6 @@ export function TemplateBulkEditDialog({
   const [role, setRole] = useState("leave");
   const [required, setRequired] = useState("leave");
   const [blocking, setBlocking] = useState("leave");
-  const [stage, setStage] = useState("leave");
   const [saving, setSaving] = useState(false);
 
   const offsetNumber = offset.trim() === "" ? Number.NaN : Math.round(Number(offset));
@@ -54,9 +60,8 @@ export function TemplateBulkEditDialog({
     if (role !== "leave") next.functionalRole = role === "none" ? null : role;
     if (required !== "leave") next.isRequired = required === "yes";
     if (blocking !== "leave") next.blocksHandoff = blocking === "yes";
-    if (stage !== "leave") next.stage = stage;
     return next;
-  }, [anchor, blocking, dueMode, offsetNumber, required, role, stage, unit]);
+  }, [anchor, blocking, dueMode, offsetNumber, required, role, unit]);
 
   const plan = useMemo(
     () => planTemplateBulkEdit(steps, selectedIds, patch, { stages, roleName: roleLabel }),
@@ -89,7 +94,7 @@ export function TemplateBulkEditDialog({
         <ScrollArea className="max-h-[62vh] pr-4">
           <div className="space-y-4">
             <p className="rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-              Changes apply to homes started from this template after you save. Homes already in progress keep their current plan.
+              Changes save to the working plan. New homes get them only after you publish a new version. Homes already in progress keep their current plan. Breezeway settings are edited one step at a time.
             </p>
 
             <div className="space-y-2 rounded-md border border-border p-3">
@@ -156,6 +161,7 @@ export function TemplateBulkEditDialog({
                     <SelectItem value="no">Optional</SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">{SWITCH_HELP.required}</p>
               </div>
               <div className="space-y-1">
                 <Label>Blocks handoff</Label>
@@ -167,16 +173,7 @@ export function TemplateBulkEditDialog({
                     <SelectItem value="no">No</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="space-y-1 sm:col-span-2">
-                <Label>Stage</Label>
-                <Select value={stage} onValueChange={setStage}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="leave">Leave as is</SelectItem>
-                    {stages.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <p className="text-xs text-muted-foreground">{SWITCH_HELP.blocksHandoff}</p>
               </div>
             </div>
 

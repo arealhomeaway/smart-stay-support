@@ -25,7 +25,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { TemplateEditor } from "@/components/onboarding/TemplateEditor";
 import { TemplateV2Settings } from "@/components/onboarding/TemplateV2Settings";
 import { OwnerEmailCopyCard } from "@/components/onboarding/OwnerEmailCopyCard";
 import { useRole } from "@/hooks/useRole";
@@ -276,7 +275,7 @@ function TemplatesPage() {
             </Button>
           </div>
           <TemplateV2Settings templateId={selected} />
-          <TemplateEditor templateId={selected} />
+          {/* The older step editor is retired from this screen; Plan settings is the one editor. */}
         </div>
       ) : null}
 
