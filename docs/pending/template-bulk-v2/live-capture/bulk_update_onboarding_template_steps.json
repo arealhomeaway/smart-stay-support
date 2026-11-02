@@ -1,0 +1,7 @@
+{
+  "note": "Not replaced by 01_bulk_v2.sql. Captured for non-regression only.",
+  "signature": "public.bulk_update_onboarding_template_steps(uuid,uuid[],boolean,integer,text,boolean,text,boolean,text,boolean,boolean,boolean,boolean,boolean,text)",
+  "definition_sha256": "9ee24f5ac0788f74d4c851bf1f232819ec1cf06449c52b12f46349cab2f040b0",
+  "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+  "captured_at": "2026-11-02T18:30Z"
+}

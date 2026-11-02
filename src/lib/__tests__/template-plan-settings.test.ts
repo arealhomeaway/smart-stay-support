@@ -73,3 +73,31 @@ describe("One template editor", () => {
     expect(/Preview/.test(bulk)).toBe(true);
   });
 });
+
+import { planExtraBulkEdit } from "@/lib/template-bulk-edit";
+describe("Plan settings follow-up", () => {
+  const s = readFileSync("src/components/onboarding/TemplateV2Settings.tsx", "utf8");
+  const bulk = readFileSync("src/components/onboarding/TemplateBulkEditDialog.tsx", "utf8");
+  it("Add step and Remove step use the older editor's server functions", () => {
+    expect(s.includes("useServerFn(saveTemplateStepFn)")).toBe(true);
+    expect(s.includes("useServerFn(deleteTemplateStepFn)")).toBe(true);
+    expect(s.includes(">Add step<")).toBe(true);
+    expect(s.includes("setConfirmRemove(true)")).toBe(true);
+  });
+  it("the three new bulk fields show only when the database function exists", () => {
+    expect(bulk.includes("{extraReady ? (")).toBe(true);
+    expect(bulk.includes('if (error) return { ready: false }') || readFileSync("src/lib/v2-workflow.functions.ts", "utf8").includes("if (error) return { ready: false }")).toBe(true);
+  });
+  const steps = [
+    { id: "1", title: "A", condition: null, owner_dependency: null, is_active: true, blocks_handoff: false },
+    { id: "2", title: "B", condition: null, owner_dependency: null, is_active: true, blocks_handoff: true },
+  ];
+  it("previews the count and skips handoff-blocking steps for Business Decision", () => {
+    expect(planExtraBulkEdit(steps, ["1", "2"], { ownerDependency: "business_decision" })).toEqual({ ok: true, changes: 1, skipped: ["2"] });
+  });
+  it("counts inactive changes and condition changes", () => {
+    expect(planExtraBulkEdit(steps, ["1", "2"], { isActive: false })).toEqual({ ok: true, changes: 2, skipped: [] });
+    expect(planExtraBulkEdit(steps, ["1"], { condition: { all: [{ field: "module", value: "pool" }] } })).toEqual({ ok: true, changes: 1, skipped: [] });
+    expect(planExtraBulkEdit(steps, ["1"], { condition: null }).ok).toBe(false);
+  });
+});
