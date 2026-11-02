@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, mock } from "bun:test";
 
 const listing = {
   id: 624001,
@@ -6,14 +6,14 @@ const listing = {
   public_name: null,
   address: { street1: "624 Daniel Court", street2: 2, city: "Norman", state: "OK", postal_code: 73069, zip: null },
 };
-vi.mock("../ownerrez.server", () => ({
+mock.module("../ownerrez.server", () => ({
   listListings: async () => [listing],
   propertyDetail: async () => ({ owner_id: 98765 }),
   ownerRezGet: async () => ({ first_name: "Pat", last_name: null, email_address: null, email: "pat@example.com", phone: { number: "4055550100" }, cell_phone: 4055550199 }),
   OwnerRezError: class extends Error {},
 }));
 
-import { textOf, textOrNull, importOwnerRezProperty, ownerRezOwner } from "../property-intake.server";
+const { textOf, textOrNull, importOwnerRezProperty, ownerRezOwner } = await import("../property-intake.server");
 
 function fakeClient() {
   const inserts: Record<string, unknown>[] = [];
@@ -30,7 +30,6 @@ function fakeClient() {
 }
 
 describe("string-safe OwnerRez intake", () => {
-  beforeEach(() => vi.clearAllMocks());
   it("textOf handles numbers, nulls and objects", () => {
     expect(textOf(73069)).toBe("73069");
     expect(textOf(null)).toBe("");
@@ -46,9 +45,9 @@ describe("string-safe OwnerRez intake", () => {
     const { client, inserts } = fakeClient();
     const r = await importOwnerRezProperty(client, "user-1", { listingId: "624001", owner: { name: "Pat", email: null, phone: null } });
     expect(r.status).toBe("created");
-    const prop = inserts.find((i) => i.table === "properties")!;
+    const prop = inserts.find((i) => i["table"] === "properties")!;
     expect(prop).toMatchObject({ unit: "2", postal_code: "73069", city: "Norman", ownerrez_property_id: "624001" });
-    const owner = inserts.find((i) => i.table === "property_owners")!;
+    const owner = inserts.find((i) => i["table"] === "property_owners")!;
     expect(owner).toMatchObject({ name: "Pat", email: "pat@example.com", phone: "4055550199" });
   });
 });
