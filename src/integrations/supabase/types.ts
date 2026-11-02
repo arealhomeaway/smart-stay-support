@@ -15496,6 +15496,19 @@ export type Database = {
         }
         Returns: Json
       }
+      bulk_update_onboarding_template_steps_v2: {
+        Args: {
+          _condition?: Json
+          _is_active?: boolean
+          _owner_dependency?: string
+          _set_condition?: boolean
+          _set_is_active?: boolean
+          _set_owner_dependency?: boolean
+          _step_ids: string[]
+          _template_id: string
+        }
+        Returns: Json
+      }
       can_correct_actual_closing: { Args: never; Returns: boolean }
       can_edit_handoff_standard: { Args: never; Returns: boolean }
       can_edit_owner_library: { Args: { _uid: string }; Returns: boolean }
@@ -16781,6 +16794,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      template_bulk_v2_ready: { Args: never; Returns: boolean }
       unlink_demo_owner_account: {
         Args: { _program_id: string; _reason: string }
         Returns: string

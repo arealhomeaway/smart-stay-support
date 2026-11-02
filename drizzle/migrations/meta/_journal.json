@@ -1660,6 +1660,13 @@
       "when": 1793544876456,
       "tag": "0236_pilot_dispatch_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 237,
+      "version": "7",
+      "when": 1793645040531,
+      "tag": "0237_template_bulk_v2",
+      "breakpoints": true
     }
   ]
 }
