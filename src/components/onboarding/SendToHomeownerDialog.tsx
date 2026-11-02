@@ -81,7 +81,7 @@ export function SendToHomeownerDialog({
       void queryClient.invalidateQueries();
     },
     onError: (e: Error, input) => {
-      if (!isCardExistsError(e.message) || !propertyId) return toast.error(e.message);
+      if (!isCardExistsError(e.message) || !propertyId) { toast.error(e.message); return; }
       toast.error(e.message, {
         duration: 15000,
         action: {

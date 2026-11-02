@@ -316,7 +316,7 @@ export function OpportunityEditor({
       void qc.invalidateQueries({ queryKey: ["property-opportunities", propertyId] });
     },
     onError: (e: Error, send) => {
-      if (!isCardExistsError(e.message)) return toast.error(e.message);
+      if (!isCardExistsError(e.message)) { toast.error(e.message); return; }
       toast.error(e.message, {
         duration: 15000,
         action: {

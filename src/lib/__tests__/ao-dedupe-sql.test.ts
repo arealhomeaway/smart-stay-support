@@ -122,7 +122,7 @@ describe("Active Owner card de-duplication (isolated PostgreSQL)", () => {
     const byCode = Object.fromEntries(pv.r.covered.map((c) => [c.code, c.reason]));
     expect(byCode["A39"]).toBe("linked_task");
     expect(byCode["A28"]).toBe("same_task_other_card");
-    expect(byCode["A57"]).toBeUndefined(); // suggested only
+    expect(byCode["A57"] ?? null).toBeNull(); // suggested only
     const m = await one<{ id: string }>("SELECT id FROM public.ao_card_item_map WHERE match_value='%readiness call%'");
     await as(staffer);
     await expect(db.query("SELECT public.ao_card_item_map_decide($1,'confirmed')", [m.id])).rejects.toThrow("Only Admin");
