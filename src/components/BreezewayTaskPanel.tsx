@@ -440,14 +440,14 @@ export function BreezewayTaskPanel({
           <Button
             className="w-full"
             size="lg"
-            disabled={send.isPending || !title.trim() || Boolean(dispatchBasicsProblem({ scheduledDate, assigneeIds }))}
+            disabled={send.isPending || !title.trim() || Boolean(dispatchBasicsProblem({ scheduledDate, assigneeIds, sourceType }))}
             onClick={() => setConfirmOpen(true)}
           >
             <Send className="size-4" />
             {send.isPending ? "Sending…" : "Dispatch to Breezeway"}
           </Button>
-          {dispatchBasicsProblem({ scheduledDate, assigneeIds }) ? (
-            <p className="text-xs text-muted-foreground">{dispatchBasicsProblem({ scheduledDate, assigneeIds })}</p>
+          {dispatchBasicsProblem({ scheduledDate, assigneeIds, sourceType }) ? (
+            <p className="text-xs text-muted-foreground">{dispatchBasicsProblem({ scheduledDate, assigneeIds, sourceType })}</p>
           ) : null}
         </div>
       </TaskWorkspace>
@@ -462,7 +462,7 @@ export function BreezewayTaskPanel({
             <Button variant="outline" onClick={() => setConfirmOpen(false)}>
               Cancel
             </Button>
-            <Button disabled={send.isPending || Boolean(dispatchBasicsProblem({ scheduledDate, assigneeIds }))} onClick={() => send.mutate()}>
+            <Button disabled={send.isPending || Boolean(dispatchBasicsProblem({ scheduledDate, assigneeIds, sourceType }))} onClick={() => send.mutate()}>
               {send.isPending ? "Sending…" : "Send it"}
             </Button>
           </>

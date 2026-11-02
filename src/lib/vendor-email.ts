@@ -60,7 +60,7 @@ export function buildVendorWorkOrderEmail(f: VendorEmailFacts) {
   if (f.timeWindow?.trim()) lines.push(`Time window: ${f.timeWindow.trim()}`);
   lines.push(
     "",
-    "On site: please call ARHA before you arrive. We will give you access on the day. Reply to this email if you have questions.",
+    `On site: before you arrive, please contact ${f.senderName ? `${f.senderName} at A Real Home Away` : "the A Real Home Away team member who sent this email"} by replying to this email. We will give you access on the day.`,
   );
   if (f.photoLinks.length) lines.push("", "Photos:", ...f.photoLinks);
   lines.push("", "Please reply to confirm you can do this work and when.", "", "Thank you,", f.senderName ?? "A Real Home Away");

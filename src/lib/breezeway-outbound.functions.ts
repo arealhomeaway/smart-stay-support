@@ -71,7 +71,7 @@ export const createBreezewayOutboundTask = createServerFn({ method: "POST" })
       const time = String(input?.scheduledTime ?? "").trim();
       if (time && !/^\d{2}:\d{2}$/.test(time)) throw new Error("Invalid scheduled time.");
       const assigneeList = (input?.assigneeIds ?? []).map((id) => Number(id)).filter((id) => Number.isInteger(id) && id > 0);
-      const basics = dispatchBasicsProblem({ scheduledDate: date, assigneeIds: assigneeList });
+      const basics = dispatchBasicsProblem({ scheduledDate: date, assigneeIds: assigneeList, sourceType: source.sourceType });
       if (basics) throw new Error(basics);
       return {
         ...source,
