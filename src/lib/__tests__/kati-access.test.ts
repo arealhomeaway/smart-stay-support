@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { canOpenPath } from "@/lib/route-access";
 import { can } from "@/lib/permissions";
 import { canEditCardLibrary, canToggleHomeAutomation, canViewContributions } from "@/lib/ao-ui";
