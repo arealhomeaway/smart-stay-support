@@ -62,7 +62,7 @@ export const DEPARTMENTS: Department[] = [
       { label: "Optional Opportunity Library", to: "/owner-library", capability: "owner_program_admin" },
       { label: "After handoff plan", to: "/owner-handoff-plan", capability: "owner_programs" },
       { label: "Active Owner follow-up", to: "/active-owner-followup", capability: "owner_programs" },
-      { label: "Card library", to: "/owner-card-library", capability: "owner_program_admin" },
+      { label: "Card library", to: "/owner-card-library", capability: "owner_card_library" },
       { label: "Homeowner contributions", to: "/owner-contributions", capability: "owner_programs" },
       { label: "Report wording", to: "/owner-report-wording", capability: "owner_program_admin" },
     ],
