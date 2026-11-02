@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach } from "bun:test";
 import { readFileSync } from "node:fs";
 import {
   NO_HOMEOWNER_EMAIL,
@@ -107,4 +107,3 @@ describe("drawer visibility", () => {
     expect(src).toMatch(/taskRow\?\.is_demo \? \{ isDemo: true \}/);
   });
 });
-vi.restoreAllMocks();

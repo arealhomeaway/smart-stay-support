@@ -212,14 +212,15 @@ export const sendComposedEmail = createServerFn({ method: "POST" })
 
     // Onboarding Task: practice homes never send real email (shared rule),
     // and the Task's own demo flag is passed so it fails closed here too.
-    let taskRow: { property_id: string; is_demo: boolean; title: string } | null = null;
+    type TaskRow = { property_id: string; is_demo: boolean; title: string };
+    let taskRow = null as TaskRow | null;
     if (data.context === "onboarding_task") {
       const { data: row } = await context.supabase
         .from("onboarding_tasks")
         .select("property_id, is_demo, title")
         .eq("id", data.recordId)
         .maybeSingle();
-      taskRow = (row as typeof taskRow) ?? null;
+      taskRow = (row as TaskRow | null) ?? null;
     }
 
     const result = await sendEmail({
