@@ -69,6 +69,7 @@ import {
   sendComposedEmail,
 } from "@/lib/email-composer.functions";
 import { clearDraft, loadDraft, saveDraft } from "@/lib/email-draft-store";
+import { NO_HOMEOWNER_EMAIL, checkedCc, suggestTemplateId } from "@/lib/task-email";
 
 type Props = {
   context: ComposerContext;
@@ -191,6 +192,16 @@ function ComposerBody({
     onError: (error: Error) => toast.error(error.message),
   });
 
+  // Onboarding Task: other homeowners are offered as CC, never checked for you.
+  const ccSuggestions = (ctx.data as { ccSuggestions?: { name: string | null; email: string }[] } | undefined)
+    ?.ccSuggestions ?? [];
+  const [ccChecked, setCcChecked] = useState<Record<string, boolean>>({});
+  const [templateFilter, setTemplateFilter] = useState("");
+  const visibleTemplates = templates.filter((t) =>
+    t.name.toLowerCase().includes(templateFilter.trim().toLowerCase()),
+  );
+  const suggestedLoaded = useRef(false);
+
   // Pick the first known contact as soon as the record answers.
   useEffect(() => {
     if (!recipientKey && recipients[0]) {
@@ -268,6 +279,16 @@ function ComposerBody({
     const match = recipients.find((r) => r.audience === picked.audience);
     if (match) setRecipientKey(match.email);
   }
+
+  // A Task can suggest a template linked by name; staff can still change it.
+  useEffect(() => {
+    if (suggestedLoaded.current || !ctx.data || context !== "onboarding_task") return;
+    suggestedLoaded.current = true;
+    if (subject || templateId !== BLANK) return;
+    const id = suggestTemplateId(templates, (ctx.data as { suggestFor?: string | null }).suggestFor);
+    if (id) chooseTemplate(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ctx.data]);
 
   const missing = useMemo(() => {
     const picked = templates.find((t) => t.id === templateId);
@@ -444,7 +465,7 @@ function ComposerBody({
           recordId,
           to: to.trim(),
           toAdditional: extra.to,
-          cc: extra.cc,
+          cc: [...extra.cc, ...checkedCc(ccSuggestions, ccChecked).filter((e) => !extra.cc.includes(e))],
           bcc: extra.bcc,
           subject,
           body,
@@ -598,8 +619,25 @@ function ComposerBody({
             ) : null}
             {recipients.length === 0 && ctx.isSuccess ? (
               <p id="composer-to-hint" className="text-sm text-muted-foreground">
-                This record has no contact on file yet — type an address above.
+                {context === "onboarding_task"
+                  ? NO_HOMEOWNER_EMAIL
+                  : "This record has no contact on file yet — type an address above."}
               </p>
+            ) : null}
+            {ccSuggestions.length > 0 ? (
+              <fieldset className="grid gap-1" aria-label="Copy other homeowners">
+                <legend className="text-sm font-medium">Copy other homeowners (optional)</legend>
+                {ccSuggestions.map((c) => (
+                  <label key={c.email} className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={ccChecked[c.email] === true}
+                      onCheckedChange={(v) => setCcChecked((prev) => ({ ...prev, [c.email]: v === true }))}
+                      aria-label={`CC ${c.name ?? c.email}`}
+                    />
+                    {c.name ? `${c.name} (${c.email})` : c.email}
+                  </label>
+                ))}
+              </fieldset>
             ) : null}
           </div>
 
