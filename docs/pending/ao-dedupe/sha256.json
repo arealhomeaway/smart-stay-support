@@ -1,6 +1,7 @@
 {
   "01_dedupe.sql": "34b4cccf61d566c12679b59ab8e675066b415e4141d3827d7a308db635771688",
   "README.md": "0b69493450116b7306ef484b00bb4999046781bff4a662ddadf0074133a36f65",
+  "live-capture/apply-receipt.txt": "d98fb987fa923264a285f28e6b7b52260ab033dc61078eb27f5db269239023f5",
   "live-capture/private.schedule_after_handoff.acl": "a9fb31535569f159dc32bf8ad6866263e3c6f6032130a1f965b2c40a82aaa1cd",
   "live-capture/private.schedule_after_handoff.base64": "596cff27c04257cc9963c02e8bda250262ebaacc6aaaa3cc6b5acefd0a12d227",
   "live-capture/private.schedule_after_handoff.sql": "8e0c60e8e88ab0dc4b6b871fbd20a86408aab80cd56ae520ed6e62308e4153c5",
