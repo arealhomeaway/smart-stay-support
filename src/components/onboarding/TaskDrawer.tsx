@@ -470,6 +470,12 @@ export function TaskDrawer({
       }
     >
       <div className="space-y-5">
+        {/* Staff who can work this home's Tasks can write to the homeowner. */}
+        {!disabled && (
+          <div className="flex justify-end">
+            <EmailComposer context="onboarding_task" recordId={task.id} label="Email homeowner" />
+          </div>
+        )}
         {visualTrack && <TaskGallery taskId={task.id} />}
 
         {/* What this kind of step is for, first: the homeowner's own work,

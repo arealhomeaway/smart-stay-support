@@ -210,7 +210,21 @@ export const sendComposedEmail = createServerFn({ method: "POST" })
       );
     }
 
+    // Onboarding Task: practice homes never send real email (shared rule),
+    // and the Task's own demo flag is passed so it fails closed here too.
+    type TaskRow = { property_id: string; is_demo: boolean; title: string };
+    let taskRow = null as TaskRow | null;
+    if (data.context === "onboarding_task") {
+      const { data: row } = await context.supabase
+        .from("onboarding_tasks")
+        .select("property_id, is_demo, title")
+        .eq("id", data.recordId)
+        .maybeSingle();
+      taskRow = (row as TaskRow | null) ?? null;
+    }
+
     const result = await sendEmail({
+      ...(taskRow?.is_demo ? { isDemo: true } : {}),
       to: data.to.trim(),
       toAdditional: data.toAdditional ?? [],
       cc: data.cc ?? [],
@@ -225,6 +239,16 @@ export const sendComposedEmail = createServerFn({ method: "POST" })
       sentBy: context.userId,
       templateId: data.templateId ?? null,
     });
+    if (taskRow && result.status === "sent") {
+      const { recordTaskEmailEvents } = await import("./task-email.server");
+      await recordTaskEmailEvents(context.supabase as never, {
+        taskId: data.recordId,
+        propertyId: taskRow.property_id,
+        isDemo: taskRow.is_demo,
+        subject: data.subject,
+        actor: context.userId,
+      });
+    }
     return result;
   });
 

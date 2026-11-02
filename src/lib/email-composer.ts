@@ -29,6 +29,8 @@ export const MERGE_FIELDS: { key: string; describes: string }[] = [
   { key: "property_address", describes: "Property address" },
   { key: "guest_name", describes: "Guest on the reservation" },
   { key: "owner_name", describes: "Homeowner" },
+  { key: "owner_first_name", describes: "Homeowner first name" },
+  { key: "arha_contact", describes: "Your ARHA contact line" },
   { key: "vendor_name", describes: "Vendor on the job" },
   { key: "ticket_ref", describes: "Ticket number" },
   { key: "ticket_title", describes: "What the ticket is about" },
