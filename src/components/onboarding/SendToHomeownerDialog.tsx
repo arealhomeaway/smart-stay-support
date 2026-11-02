@@ -35,7 +35,9 @@ export function SendToHomeownerDialog({
   disabled,
   alreadyWaiting,
   label,
+  propertyId,
 }: {
+  propertyId?: string | null;
   taskId: string;
   taskTitle: string;
   disabled: boolean;
