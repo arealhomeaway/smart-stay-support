@@ -7,6 +7,8 @@
  */
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { confirmOneOff } from "@/lib/ao-data";
+import { ONE_OFF_ACTION, isCardExistsError } from "@/lib/ao-dedupe";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { FileText, Link2, Plus, Trash2, Upload } from "lucide-react";
@@ -313,7 +315,20 @@ export function OpportunityEditor({
       void qc.invalidateQueries({ queryKey: ["owner-collaboration", propertyId] });
       void qc.invalidateQueries({ queryKey: ["property-opportunities", propertyId] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error, send) => {
+      if (!isCardExistsError(e.message)) return toast.error(e.message);
+      toast.error(e.message, {
+        duration: 15000,
+        action: {
+          label: ONE_OFF_ACTION,
+          onClick: () => {
+            void confirmOneOff(propertyId, form.task === "none" ? null : form.task, form.title.trim())
+              .then(() => mutation.mutate(send))
+              .catch((err: Error) => toast.error(err.message));
+          },
+        },
+      });
+    },
   });
 
   const uploadIntent = useRef((file: File, key: string) => ({ entityType: "property" as const, entityId: propertyId, uploadKey: key, filename: file.name, mimeType: file.type, sizeBytes: file.size, category: null }));
