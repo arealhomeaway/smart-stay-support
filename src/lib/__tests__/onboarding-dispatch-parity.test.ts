@@ -32,3 +32,17 @@ describe("maintenance category from the description", () => {
     expect(guessMaintenanceCategory("guest called about something")).toBeNull();
   });
 });
+
+describe("onboarding sends may leave the person blank", () => {
+  it("onboarding Task: date required, person optional", () => {
+    expect(dispatchBasicsProblem({ scheduledDate: "", assigneeIds: [], sourceType: "onboarding_task" })).toBe("Choose the date for this work before sending it to Breezeway.");
+    expect(dispatchBasicsProblem({ scheduledDate: "2026-11-10", assigneeIds: [], sourceType: "onboarding_task" })).toBeNull();
+  });
+  it("Ticket still needs a person", () => {
+    expect(dispatchBasicsProblem({ scheduledDate: "2026-11-10", assigneeIds: [], sourceType: "ticket" })).toBe("Choose who is doing the work before sending it to Breezeway.");
+  });
+  it("server passes the source to the same rule", () => {
+    const src = readFileSync("src/lib/breezeway-outbound.functions.ts", "utf8");
+    expect(src.includes("sourceType: source.sourceType })")).toBe(true);
+  });
+});

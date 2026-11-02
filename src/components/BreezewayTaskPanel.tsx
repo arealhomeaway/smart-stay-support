@@ -449,6 +449,11 @@ export function BreezewayTaskPanel({
           {dispatchBasicsProblem({ scheduledDate, assigneeIds, sourceType }) ? (
             <p className="text-xs text-muted-foreground">{dispatchBasicsProblem({ scheduledDate, assigneeIds, sourceType })}</p>
           ) : null}
+          {sourceType === "onboarding_task" && assigneeIds.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              A date is required. Who does the work can be left blank and assigned after closing.
+            </p>
+          ) : null}
         </div>
       </TaskWorkspace>
 
