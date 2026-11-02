@@ -1,5 +1,9 @@
 /** Bulk editor for safe, shared Workflow Template step settings. */
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { CONDITION_OPTIONS, describeCondition, type ConditionClause } from "@/lib/plan-rules";
+import { OWNER_DEPENDENCIES } from "@/lib/owner-dependency";
+import { planExtraBulkEdit, type ExtraBulkStep } from "@/lib/template-bulk-edit";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -15,7 +19,7 @@ import {
   type TemplateBulkPatch,
   type TemplateBulkStep,
 } from "@/lib/template-bulk-edit";
-import { bulkUpdateTemplateStepsV2, FUNCTIONAL_ROLES, roleLabel } from "@/lib/v2-workflow.functions";
+import { bulkUpdateTemplateStepsV2, bulkUpdateTemplateStepsV2b, templateBulkV2Ready, FUNCTIONAL_ROLES, roleLabel } from "@/lib/v2-workflow.functions";
 
 type Choice = "leave" | "set" | "clear";
 
@@ -35,7 +39,7 @@ export function TemplateBulkEditDialog({
   onSaved,
 }: {
   templateId: string;
-  steps: TemplateBulkStep[];
+  steps: (TemplateBulkStep & Partial<ExtraBulkStep>)[];
   stages: string[];
   selectedIds: string[];
   onClose: () => void;
@@ -50,6 +54,21 @@ export function TemplateBulkEditDialog({
   const [required, setRequired] = useState("leave");
   const [blocking, setBlocking] = useState("leave");
   const [saving, setSaving] = useState(false);
+  const readyFn = useServerFn(templateBulkV2Ready);
+  const bulkExtra = useServerFn(bulkUpdateTemplateStepsV2b);
+  const readyQ = useQuery({ queryKey: ["template-bulk-v2-ready"], queryFn: () => readyFn() });
+  const extraReady = readyQ.data?.ready === true;
+  const [condMode, setCondMode] = useState<Choice>("leave");
+  const [clauses, setClauses] = useState<ConditionClause[]>([]);
+  const [dependency, setDependency] = useState("leave");
+  const [active, setActive] = useState("leave");
+  const extra = useMemo(() => ({
+    ...(condMode === "set" ? { condition: { all: clauses } } : condMode === "clear" ? { condition: null } : {}),
+    ...(dependency !== "leave" ? { ownerDependency: dependency as "none" } : {}),
+    ...(active !== "leave" ? { isActive: active === "yes" } : {}),
+  }), [condMode, clauses, dependency, active]);
+  const extraChosen = Object.keys(extra).length > 0;
+  const extraPlan = useMemo(() => planExtraBulkEdit(steps.map((s) => ({ ...s, condition: s.condition ?? null, owner_dependency: s.owner_dependency ?? null, is_active: s.is_active ?? true })), selectedIds, extra), [steps, selectedIds, extra]);
 
   const offsetNumber = offset.trim() === "" ? Number.NaN : Math.round(Number(offset));
   const patch = useMemo(() => {
@@ -63,6 +82,8 @@ export function TemplateBulkEditDialog({
     return next;
   }, [anchor, blocking, dueMode, offsetNumber, required, role, unit]);
 
+  const baseChosen = Object.keys(patch).length > 0;
+  const mixed = baseChosen && extraChosen;
   const plan = useMemo(
     () => planTemplateBulkEdit(steps, selectedIds, patch, { stages, roleName: roleLabel }),
     [patch, selectedIds, stages, steps],
@@ -70,6 +91,23 @@ export function TemplateBulkEditDialog({
   const dueInvalid = dueMode === "set" && (!Number.isInteger(offsetNumber) || offsetNumber < -260 || offsetNumber > 365);
 
   const save = async () => {
+    if (mixed) return;
+    if (extraChosen) {
+      if (!extraPlan.ok) return;
+      setSaving(true);
+      try {
+        const result = await bulkExtra({ data: { templateId, stepIds: selectedIds, ...extra } });
+        const parts = [`${result.changed} step${result.changed === 1 ? "" : "s"} updated.`];
+        if (result.skipped.length) parts.push(`${result.skipped.length} steps that block handoff were left unchanged.`);
+        toast.success(parts.join(" "));
+        onSaved();
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Nothing was changed. Review the steps and try again.");
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
     if (!plan.ok) return;
     setSaving(true);
     try {
@@ -177,9 +215,72 @@ export function TemplateBulkEditDialog({
               </div>
             </div>
 
+            {extraReady ? (
+              <div className="space-y-3 rounded-md border border-border p-3">
+                <div className="space-y-1">
+                  <Label>Include this step only when</Label>
+                  <Select value={condMode} onValueChange={(v) => setCondMode(v as Choice)}>
+                    <SelectTrigger aria-label="Include this step only when"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="leave">Leave as is</SelectItem>
+                      <SelectItem value="set">Set conditions</SelectItem>
+                      <SelectItem value="clear">Every home (no condition)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {condMode === "set" ? (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {CONDITION_OPTIONS.map((o) => {
+                        const on = clauses.some((c) => c.field === o.field && c.value === o.value);
+                        return (
+                          <button type="button" key={o.field + o.value} aria-pressed={on}
+                            onClick={() => setClauses((cur) => (on ? cur.filter((c) => !(c.field === o.field && c.value === o.value)) : [...cur, { field: o.field, value: o.value }]))}
+                            className={"rounded-full border px-2.5 py-1 text-xs " + (on ? "border-primary bg-primary/10 text-foreground" : "border-border text-muted-foreground")}>
+                            {o.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                  {condMode === "set" ? <p className="text-xs text-muted-foreground">{describeCondition(clauses.length ? { all: clauses } : null)}.</p> : null}
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <Label>Needs from the homeowner</Label>
+                    <Select value={dependency} onValueChange={setDependency}>
+                      <SelectTrigger aria-label="Needs from the homeowner"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="leave">Leave as is</SelectItem>
+                        {OWNER_DEPENDENCIES.map((d) => <SelectItem key={d.code} value={d.code}>{d.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Active in this plan</Label>
+                    <Select value={active} onValueChange={setActive}>
+                      <SelectTrigger aria-label="Active in this plan"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="leave">Leave as is</SelectItem>
+                        <SelectItem value="yes">Active</SelectItem>
+                        <SelectItem value="no">Not active</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">{SWITCH_HELP.active}</p>
+                  </div>
+                </div>
+                {mixed ? <p className="text-xs text-destructive">Save these three separately from the settings above, so each save changes everything or nothing.</p> : null}
+              </div>
+            ) : null}
+
             <div className="rounded-md border border-border p-3 text-sm">
               <p className="font-medium">Preview</p>
-              {plan.ok ? (
+              {extraChosen && !baseChosen ? (
+                extraPlan.ok ? (
+                  <>
+                    <p className="mt-1">This will change {extraPlan.changes} steps.</p>
+                    {extraPlan.skipped.length ? <p className="mt-2 text-muted-foreground">{extraPlan.skipped.length} steps that block handoff stay unchanged. Turn off Blocks handoff before making them a Business Decision.</p> : null}
+                  </>
+                ) : <p className="mt-1 text-muted-foreground">{extraPlan.error}</p>
+              ) : plan.ok ? (
                 <>
                   <p className="mt-1">{bulkPreviewSentence(plan)}</p>
                   {plan.handoffSkipMessage ? <p className="mt-2 text-muted-foreground">{plan.handoffSkipMessage}</p> : null}
@@ -197,7 +298,7 @@ export function TemplateBulkEditDialog({
         </ScrollArea>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button disabled={!plan.ok || dueInvalid || saving} onClick={() => void save()}>
+          <Button disabled={saving || mixed || (extraChosen ? !extraPlan.ok : !plan.ok || dueInvalid)} onClick={() => void save()}>
             {saving ? "Saving…" : "Save changes"}
           </Button>
         </DialogFooter>

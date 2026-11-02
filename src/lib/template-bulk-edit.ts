@@ -153,3 +153,30 @@ export function bulkPreviewSentence(plan: Extract<TemplateBulkPlan, { ok: true }
 export function bulkAnchorLabel(anchor: string | null | undefined) {
   return anchorLabel(anchor);
 }
+
+export type ExtraBulkStep = { id: string; title: string; condition: unknown; owner_dependency: string | null; is_active: boolean; blocks_handoff: boolean };
+export type ExtraBulkPatch = { condition?: { all: { field: string; value: string }[] } | null; ownerDependency?: string; isActive?: boolean };
+
+/** Preview for conditions, homeowner need and active. The database repeats these rules. */
+export function planExtraBulkEdit(steps: ExtraBulkStep[], selectedIds: string[], patch: ExtraBulkPatch):
+  | { ok: true; changes: number; skipped: string[] }
+  | { ok: false; error: string } {
+  if (!selectedIds.length) return { ok: false, error: "Select at least one step." };
+  if (!Object.keys(patch).length) return { ok: false, error: "Choose at least one change." };
+  if (patch.condition && !patch.condition.all.length) return { ok: false, error: "Choose at least one condition, or pick Every home." };
+  const byId = new Map(steps.map((s) => [s.id, s]));
+  const skipped: string[] = [];
+  let changes = 0;
+  const same = (x: unknown, y: unknown) => JSON.stringify(x ?? null) === JSON.stringify(y ?? null);
+  for (const id of selectedIds) {
+    const s = byId.get(id);
+    if (!s) return { ok: false, error: "Some selected steps are no longer in this template. Refresh and try again." };
+    if (patch.ownerDependency === "business_decision" && s.blocks_handoff) { skipped.push(s.id); continue; }
+    const dep = patch.ownerDependency === "none" ? null : patch.ownerDependency;
+    if ((patch.condition !== undefined && !same(s.condition, patch.condition))
+      || (patch.ownerDependency !== undefined && (s.owner_dependency ?? null) !== dep)
+      || (patch.isActive !== undefined && s.is_active !== patch.isActive)) changes += 1;
+  }
+  if (!changes) return { ok: false, error: skipped.length ? "Every selected step blocks handoff. Turn that off first." : "The selected steps already have these settings." };
+  return { ok: true, changes, skipped };
+}
