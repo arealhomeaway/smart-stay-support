@@ -201,7 +201,7 @@ CREATE FUNCTION public.set_onboarding_step_review_settings(_step_id uuid, _revie
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$
 DECLARE _actor uuid := auth.uid(); step public.onboarding_template_tasks; before jsonb; after jsonb; roles text[];
 BEGIN
-  IF _actor IS NULL OR NOT private.is_onboarding_leader(_actor) THEN
+  IF _actor IS NULL OR NOT coalesce(private.is_onboarding_leader(_actor), false) THEN
     RAISE EXCEPTION 'Only the Onboarding Director or a Supervisor can change review settings.';
   END IF;
   SELECT * INTO step FROM public.onboarding_template_tasks WHERE id = _step_id;
@@ -233,8 +233,8 @@ CREATE FUNCTION public.set_staff_no_second_look(_user_id uuid, _on boolean)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$
 DECLARE _actor uuid := auth.uid(); before boolean;
 BEGIN
-  IF _actor IS NULL OR NOT (public.has_role(_actor,'admin') OR public.is_onboarding_director(_actor)
-     OR _actor = public.seat_holder('director_ops')) THEN
+  IF _actor IS NULL OR NOT coalesce(public.has_role(_actor,'admin') OR public.is_onboarding_director(_actor)
+     OR _actor = public.seat_holder('director_ops'), false) THEN
     RAISE EXCEPTION 'Only an Admin or a Director can change this setting.';
   END IF;
   IF _user_id IS NULL OR _on IS NULL THEN RAISE EXCEPTION 'Choose a person and a setting.'; END IF;
@@ -253,7 +253,7 @@ BEGIN
   IF _actor IS NULL THEN RAISE EXCEPTION 'Sign in to submit this step.'; END IF;
   SELECT * INTO t FROM public.onboarding_tasks WHERE id = _task_id FOR UPDATE;
   IF NOT FOUND OR t.archived_at IS NOT NULL THEN RAISE EXCEPTION 'That Task is not available.'; END IF;
-  IF NOT (t.assigned_to = _actor OR public.is_onboarding_staff(_actor) OR public.has_role(_actor,'admin')) THEN
+  IF NOT coalesce(t.assigned_to = _actor OR public.is_onboarding_staff(_actor) OR public.has_role(_actor,'admin'), false) THEN
     RAISE EXCEPTION 'You cannot submit this Task.';
   END IF;
   IF t.status = 'complete' THEN RAISE EXCEPTION 'This Task is already done.'; END IF;
@@ -344,7 +344,7 @@ CREATE FUNCTION public.onboarding_task_review_state(_task_id uuid)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public' AS $$
 DECLARE _actor uuid := auth.uid(); t public.onboarding_tasks; s public.onboarding_step_review_settings; rv public.onboarding_task_reviews; proj uuid; reviewers jsonb;
 BEGIN
-  IF _actor IS NULL OR NOT (public.is_onboarding_staff(_actor) OR public.is_supervisor(_actor)) THEN RAISE EXCEPTION 'Not available.'; END IF;
+  IF _actor IS NULL OR NOT coalesce(public.is_onboarding_staff(_actor) OR public.is_supervisor(_actor), false) THEN RAISE EXCEPTION 'Not available.'; END IF;
   SELECT * INTO t FROM public.onboarding_tasks WHERE id = _task_id;
   IF NOT FOUND THEN RETURN NULL; END IF;
   SELECT * INTO s FROM public.onboarding_step_review_settings WHERE template_task_id = t.template_task_id;
