@@ -83,6 +83,10 @@ GRANT ALL ON public.onboarding_step_review_settings, public.onboarding_step_revi
   public.staff_review_preferences, public.staff_review_preference_history,
   public.onboarding_task_reviews, public.onboarding_task_review_decisions, public.onboarding_task_review_events TO service_role;
 
+REVOKE ALL ON public.onboarding_step_review_settings, public.onboarding_step_review_settings_history,
+  public.staff_review_preferences, public.staff_review_preference_history,
+  public.onboarding_task_reviews, public.onboarding_task_review_decisions, public.onboarding_task_review_events FROM anon;
+
 ALTER TABLE public.onboarding_step_review_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.onboarding_step_review_settings_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.staff_review_preferences ENABLE ROW LEVEL SECURITY;
