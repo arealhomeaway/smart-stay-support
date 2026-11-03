@@ -63,6 +63,7 @@ import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
 import { SendToHomeownerDialog } from "@/components/onboarding/SendToHomeownerDialog";
 import { SendToActiveOwnerGate, TaskVerifyBadge } from "@/components/ao/TaskPlanLink";
 import { TaskGallery } from "@/components/onboarding/TaskGallery";
+import { ReviewAwareComplete, TaskReviewPanel } from "@/components/onboarding/TaskReviewPanel";
 import { trackForTask } from "@/lib/onboarding-workstreams";
 import { showsBreezeway, taskKind, uploadHint, uploadTitle } from "@/lib/onboarding-task-kind";
 
@@ -414,6 +415,7 @@ export function TaskDrawer({
       footer={
         <>
           {task.status !== "complete" ? (
+            <ReviewAwareComplete taskId={task.id} disabled={disabled || awaitingOwner}>
             <div className="flex flex-1 flex-col gap-1">
               <Button
                 className="w-full"
@@ -445,6 +447,7 @@ export function TaskDrawer({
                 view.reason && <p className="text-xs text-muted-foreground">{view.reason}</p>
               )}
             </div>
+            </ReviewAwareComplete>
           ) : (
             <div className="flex flex-1 flex-col gap-1.5">
               <Input
@@ -516,6 +519,8 @@ export function TaskDrawer({
         {action && !finishesStep && guidedCard}
 
         <div id="task-detail-body" />
+
+        <TaskReviewPanel taskId={task.id} />
 
         <dl className="grid grid-cols-2 gap-3 text-sm">
           <Field label="Assignee" value={assigneeLabel(task, people)} />
