@@ -56,3 +56,10 @@ export function reviewAction(state: ReviewState | null | undefined): "complete" 
 export function waitingLabel(blockedBy: string | null | undefined) {
   return blockedBy ? `Waiting on review of ${blockedBy}` : null;
 }
+
+/** 5-minute job step: alerts reviewers once when a review passes its time limit. */
+export async function runReviewOverdueSweep(db: { rpc: (fn: "onboarding_review_overdue_sweep") => PromiseLike<{ data: unknown; error: { message: string } | null }> }) {
+  const r = await db.rpc("onboarding_review_overdue_sweep");
+  if (r.error) throw new Error(r.error.message);
+  return { overdue_alerts: Number(r.data ?? 0) };
+}
