@@ -1,0 +1,25 @@
+-- Exact undo for 01_reviews.sql. Only removes objects that file created; nothing it replaced (it replaced nothing).
+DROP TRIGGER IF EXISTS onboarding_review_completion_guard ON public.onboarding_tasks;
+DROP TRIGGER IF EXISTS onboarding_review_handoff_guard ON public.onboarding_projects;
+DROP FUNCTION IF EXISTS public.onboarding_review_overdue_sweep();
+DROP FUNCTION IF EXISTS public.my_onboarding_reviews();
+DROP FUNCTION IF EXISTS public.onboarding_task_review_state(uuid);
+DROP FUNCTION IF EXISTS public.record_onboarding_review_edit(uuid, text);
+DROP FUNCTION IF EXISTS public.decide_onboarding_task_review(uuid, text, text);
+DROP FUNCTION IF EXISTS public.submit_onboarding_task_review(uuid, text);
+DROP FUNCTION IF EXISTS public.set_staff_no_second_look(uuid, boolean);
+DROP FUNCTION IF EXISTS public.set_onboarding_step_review_settings(uuid, text[], integer, boolean, text, uuid[], text);
+DROP FUNCTION IF EXISTS private.onboarding_review_handoff_guard();
+DROP FUNCTION IF EXISTS private.onboarding_review_completion_guard();
+DROP FUNCTION IF EXISTS private.review_blocker(uuid);
+DROP FUNCTION IF EXISTS private.review_notify(uuid[], uuid, text, text, text, uuid, uuid, boolean);
+DROP FUNCTION IF EXISTS private.review_person_name(uuid);
+DROP FUNCTION IF EXISTS private.review_due_at(timestamptz, integer);
+DROP FUNCTION IF EXISTS private.review_role_person(uuid, text);
+DROP TABLE IF EXISTS public.onboarding_task_review_events;
+DROP TABLE IF EXISTS public.onboarding_task_review_decisions;
+DROP TABLE IF EXISTS public.onboarding_task_reviews;
+DROP TABLE IF EXISTS public.staff_review_preference_history;
+DROP TABLE IF EXISTS public.staff_review_preferences;
+DROP TABLE IF EXISTS public.onboarding_step_review_settings_history;
+DROP TABLE IF EXISTS public.onboarding_step_review_settings;
