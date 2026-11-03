@@ -119,7 +119,7 @@ export function StepReviewSection({ stepId, steps, stages }: { stepId: string; s
             </div>
           ) : null}
           {blocks === "stage" ? (
-            <Select value={blockedStage || undefined} onValueChange={setBlockedStage}>
+            <Select value={blockedStage} onValueChange={setBlockedStage}>
               <SelectTrigger aria-label="Stage"><SelectValue placeholder="Choose a stage" /></SelectTrigger>
               <SelectContent>{stages.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
             </Select>

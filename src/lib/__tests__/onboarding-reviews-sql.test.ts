@@ -123,7 +123,7 @@ describe("onboarding review steps (isolated database)", () => {
       const round = await db.query<{ round: number }>(`SELECT round FROM onboarding_task_reviews WHERE id='${r2.rows[0]!.r.review_id}'`);
       expect(round.rows[0]?.round).toBe(2);
       const kinds = await db.query<{ kind: string }>(`SELECT kind FROM onboarding_task_review_events ORDER BY created_at, kind`);
-      expect(kinds.rows.map((k) => k.kind)).toEqual(expect.arrayContaining(["submitted", "edited", "sent_back", "resubmitted"]));
+      for (const k of ["submitted", "edited", "sent_back", "resubmitted"]) expect(kinds.rows.map((r) => r.kind)).toContain(k);
     } finally { await db.close(); }
   });
 
