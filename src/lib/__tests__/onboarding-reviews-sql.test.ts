@@ -60,8 +60,7 @@ async function setup() {
 const as = (db: PGlite, uid: string | null) => db.exec(`SELECT set_config('test.uid', '${uid ?? ""}', false)`);
 const status = async (db: PGlite, id: string) => (await db.query<{ status: string }>(`SELECT status FROM onboarding_tasks WHERE id='${id}'`)).rows[0]?.status;
 const configure = (db: PGlite, roles: string, alerts = true, blocks = "nothing", extra = "'{}'::uuid[], NULL") =>
-  db.exec(`SELECT set_staff_no_second_look; `).catch(() => undefined).then(() =>
-    db.query(`SELECT set_onboarding_step_review_settings('${STEP_LOA}', ${roles}, 1, ${alerts}, '${blocks}', ${extra})`));
+  db.query(`SELECT set_onboarding_step_review_settings('${STEP_LOA}', ${roles}, 1, ${alerts}, '${blocks}', ${extra})`);
 
 describe("onboarding review steps (isolated database)", () => {
   it("defaults off: steps without settings complete exactly as today and create nothing", async () => {
