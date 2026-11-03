@@ -11,6 +11,7 @@ import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useDroppable,
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import type { ReactNode } from "react";
 import { PlanCsvButton } from "@/components/onboarding/PlanCsvButton";
+import { StepReviewSection } from "@/components/onboarding/StepReviewSection";
 import { arrangeTemplateStepsFn, deleteTemplateStepFn, saveTemplateStepFn } from "@/lib/onboarding-template-admin.functions";
 import { moveStep, stepGroups } from "@/lib/template-step-order";
 import { CSS } from "@dnd-kit/utilities";
@@ -123,7 +124,7 @@ const emptyOpp: OpportunityContent = { title: "", what: "", why: "", how: "", re
 
 type FileSourceOptions = { ready: boolean; selected: string[]; options: { id: string; title: string; stage: string }[] };
 
-function StepDialog({ step, onClose, onSave, onRemove, saving, fileSources }: { step: Step; onClose: () => void; onSave: (v: StepInput, showFilesFrom: string[] | null) => void; onRemove: () => void; saving: boolean; fileSources: FileSourceOptions }) {
+function StepDialog({ step, onClose, onSave, onRemove, saving, fileSources, stageNames }: { step: Step; onClose: () => void; onSave: (v: StepInput, showFilesFrom: string[] | null) => void; onRemove: () => void; saving: boolean; fileSources: FileSourceOptions; stageNames: string[] }) {
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [showFrom, setShowFrom] = useState<string[]>(fileSources.selected);
   const [title, setTitle] = useState(step.title);
@@ -261,6 +262,8 @@ function StepDialog({ step, onClose, onSave, onRemove, saving, fileSources }: { 
             </div>
           </div>
         ) : null}
+
+        <StepReviewSection stepId={step.id} steps={fileSources.options} stages={stageNames} />
 
         <div className="mt-2 space-y-3 rounded-md border border-border p-3">
           <label className="flex items-center gap-2 text-sm font-medium">
@@ -603,7 +606,7 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
         })()}
       </details>
 
-      {editing ? <StepDialog step={editing} saving={stepM.isPending || removeM.isPending} onClose={() => setEditing(null)} onSave={(v, showFrom) => stepM.mutate({ d: v, showFrom })} onRemove={() => removeM.mutate(editing.id)} fileSources={{ ready: Boolean(sourcesQ.data?.ready), selected: sourcesQ.data?.byStep[editing.id] ?? [], options: steps.map((s) => ({ id: s.id, title: s.title, stage: s.stage })) }} /> : null}
+      {editing ? <StepDialog step={editing} saving={stepM.isPending || removeM.isPending} onClose={() => setEditing(null)} onSave={(v, showFrom) => stepM.mutate({ d: v, showFrom })} onRemove={() => removeM.mutate(editing.id)} fileSources={{ ready: Boolean(sourcesQ.data?.ready), selected: sourcesQ.data?.byStep[editing.id] ?? [], options: steps.map((s) => ({ id: s.id, title: s.title, stage: s.stage })) }} stageNames={stageNames} /> : null}
       {bulkOpen ? (
         <TemplateBulkEditDialog
           templateId={templateId}

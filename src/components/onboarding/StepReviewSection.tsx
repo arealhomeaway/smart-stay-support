@@ -42,6 +42,7 @@ export function StepReviewSection({ stepId, steps, stages }: { stepId: string; s
     setBlockedStage(s?.blocked_stage ?? "");
   }, [q.data]);
 
+  const on = first !== "none" || second !== "none";
   const m = useMutation({
     mutationFn: () =>
       save({
@@ -50,9 +51,9 @@ export function StepReviewSection({ stepId, steps, stages }: { stepId: string; s
           reviewerRoles: [first, second].filter((r) => r !== "none"),
           timeLimitDays: Math.min(30, Math.max(1, Math.round(Number(days) || 1))),
           alertsEnabled: alerts,
-          blocks,
-          blockedStepIds: blocks === "steps" ? blockedSteps : [],
-          blockedStage: blocks === "stage" ? blockedStage : null,
+          blocks: on ? blocks : "nothing",
+          blockedStepIds: on && blocks === "steps" ? blockedSteps : [],
+          blockedStage: on && blocks === "stage" ? blockedStage : null,
         },
       }),
     onSuccess: () => {
@@ -62,7 +63,6 @@ export function StepReviewSection({ stepId, steps, stages }: { stepId: string; s
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const on = first !== "none" || second !== "none";
   const picker = (value: string, set: (v: string) => void, label: string, other: string) => (
     <div className="space-y-1">
       <Label>{label}</Label>
