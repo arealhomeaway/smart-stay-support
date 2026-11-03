@@ -36,6 +36,7 @@ import {
 } from "@/lib/onboarding-work-views";
 import { isTestRecord } from "@/lib/test-data";
 import { assignablePeople } from "@/lib/assignable-people";
+import { ReviewsWaiting } from "@/components/onboarding/ReviewsWaiting";
 import {
   getOnboardingWorkspace,
   addOnboardingNoteFn,
@@ -270,6 +271,8 @@ function MyWork() {
         title="My Tasks"
         description="Onboarding tasks assigned to you across every home, in the order they need attention."
       />
+
+      <ReviewsWaiting propertyName={propertyName} />
 
       <div className="flex flex-wrap gap-2">
         {selection.canBrowseTeam && (

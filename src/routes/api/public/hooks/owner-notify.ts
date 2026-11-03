@@ -25,6 +25,7 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
         const { drainOwnerWelcomes } = await import("@/lib/owner-welcome.server");
         const { runEmailJob } = await import("@/lib/email-job.server");
         const { runAoClocksGuarded } = await import("@/lib/ao-ui");
+        const { runReviewOverdueSweep } = await import("@/lib/onboarding-reviews");
 
         try {
           const result = await runEmailJob(supabaseAdmin, [
@@ -36,6 +37,8 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
             { name: "welcomes", run: (id) => drainOwnerWelcomes(supabaseAdmin, 20, id) },
             // Last, so it can never hold up existing deliveries. Skipped silently until the staged function exists.
             { name: "ao_clocks", run: () => runAoClocksGuarded(supabaseAdmin) },
+            // Review overdue alerts are in-app only; they never queue email.
+            { name: "onboarding_review_overdue", run: () => runReviewOverdueSweep(supabaseAdmin) },
           ]);
           return Response.json(result, { status: result.ok ? 200 : 500 });
         } catch (err) {

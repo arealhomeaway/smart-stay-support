@@ -25,6 +25,7 @@ import {
 } from "@/lib/onboarding-team.functions";
 import { OnboardingAccountsPanel } from "@/components/onboarding/OnboardingAccountsPanel";
 import { WelcomeEmailEditor } from "@/components/onboarding/WelcomeEmailEditor";
+import { NoSecondLookPanel } from "@/components/onboarding/NoSecondLookPanel";
 
 export const Route = createFileRoute("/_authenticated/onboarding/team")({
   head: () => ({
@@ -158,6 +159,8 @@ function OnboardingTeamPage() {
           />
         ))}
       </SectionCard>
+
+      <NoSecondLookPanel people={data.people} canEdit={data.canEdit} />
 
       {data.canEdit ? <OnboardingAccountsPanel /> : null}
       <WelcomeEmailEditor />

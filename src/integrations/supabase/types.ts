@@ -7673,6 +7673,77 @@ export type Database = {
           },
         ]
       }
+      onboarding_step_review_settings: {
+        Row: {
+          alerts_enabled: boolean
+          blocked_stage: string | null
+          blocked_step_ids: string[]
+          blocks: string
+          reviewer_roles: string[]
+          template_task_id: string
+          time_limit_business_days: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          alerts_enabled?: boolean
+          blocked_stage?: string | null
+          blocked_step_ids?: string[]
+          blocks?: string
+          reviewer_roles?: string[]
+          template_task_id: string
+          time_limit_business_days?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          alerts_enabled?: boolean
+          blocked_stage?: string | null
+          blocked_step_ids?: string[]
+          blocks?: string
+          reviewer_roles?: string[]
+          template_task_id?: string
+          time_limit_business_days?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_step_review_settings_template_task_id_fkey"
+            columns: ["template_task_id"]
+            isOneToOne: true
+            referencedRelation: "onboarding_template_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_step_review_settings_history: {
+        Row: {
+          after_value: Json
+          before_value: Json | null
+          changed_at: string
+          changed_by: string | null
+          id: string
+          template_task_id: string
+        }
+        Insert: {
+          after_value: Json
+          before_value?: Json | null
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          template_task_id: string
+        }
+        Update: {
+          after_value?: Json
+          before_value?: Json | null
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          template_task_id?: string
+        }
+        Relationships: []
+      }
       onboarding_task_file_links: {
         Row: {
           created_at: string
@@ -7718,6 +7789,151 @@ export type Database = {
           {
             foreignKeyName: "onboarding_task_file_links_source_task_id_fkey"
             columns: ["source_task_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_task_review_decisions: {
+        Row: {
+          decided_at: string
+          decision: string
+          id: string
+          note: string | null
+          review_id: string
+          reviewer_id: string
+          role_code: string
+        }
+        Insert: {
+          decided_at?: string
+          decision: string
+          id?: string
+          note?: string | null
+          review_id: string
+          reviewer_id: string
+          role_code: string
+        }
+        Update: {
+          decided_at?: string
+          decision?: string
+          id?: string
+          note?: string | null
+          review_id?: string
+          reviewer_id?: string
+          role_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_task_review_decisions_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_task_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_task_review_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          id: string
+          kind: string
+          note: string | null
+          review_id: string | null
+          role_code: string | null
+          task_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          note?: string | null
+          review_id?: string | null
+          role_code?: string | null
+          task_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          note?: string | null
+          review_id?: string | null
+          role_code?: string | null
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_task_review_events_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_task_reviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_task_review_events_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_task_reviews: {
+        Row: {
+          alerts_enabled: boolean
+          closed_at: string | null
+          due_at: string | null
+          id: string
+          is_demo: boolean
+          overdue_alerted_at: string | null
+          project_id: string | null
+          property_id: string
+          reviewer_roles: string[]
+          round: number
+          status: string
+          submitted_at: string
+          submitted_by: string | null
+          task_id: string
+        }
+        Insert: {
+          alerts_enabled?: boolean
+          closed_at?: string | null
+          due_at?: string | null
+          id?: string
+          is_demo?: boolean
+          overdue_alerted_at?: string | null
+          project_id?: string | null
+          property_id: string
+          reviewer_roles?: string[]
+          round?: number
+          status?: string
+          submitted_at?: string
+          submitted_by?: string | null
+          task_id: string
+        }
+        Update: {
+          alerts_enabled?: boolean
+          closed_at?: string | null
+          due_at?: string | null
+          id?: string
+          is_demo?: boolean
+          overdue_alerted_at?: string | null
+          project_id?: string | null
+          property_id?: string
+          reviewer_roles?: string[]
+          round?: number
+          status?: string
+          submitted_at?: string
+          submitted_by?: string | null
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_task_reviews_task_id_fkey"
+            columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "onboarding_tasks"
             referencedColumns: ["id"]
@@ -11747,6 +11963,54 @@ export type Database = {
           retracted_by?: string | null
           retracted_reason?: string | null
           title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      staff_review_preference_history: {
+        Row: {
+          after_value: boolean
+          before_value: boolean | null
+          changed_at: string
+          changed_by: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          after_value: boolean
+          before_value?: boolean | null
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          after_value?: boolean
+          before_value?: boolean | null
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      staff_review_preferences: {
+        Row: {
+          no_second_look: boolean
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          no_second_look?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          no_second_look?: boolean
+          updated_at?: string
+          updated_by?: string | null
           user_id?: string
         }
         Relationships: []
@@ -15995,6 +16259,10 @@ export type Database = {
         }
         Returns: string
       }
+      decide_onboarding_task_review: {
+        Args: { _decision: string; _note?: string; _review_id: string }
+        Returns: Json
+      }
       email_delivery_allowed: {
         Args: {
           _actor_id?: string
@@ -16087,6 +16355,19 @@ export type Database = {
         Returns: undefined
       }
       my_demo_access: { Args: never; Returns: Json }
+      my_onboarding_reviews: {
+        Args: never
+        Returns: {
+          due_at: string
+          property_id: string
+          review_id: string
+          roles: string[]
+          submitted_at: string
+          submitted_by_name: string
+          task_id: string
+          title: string
+        }[]
+      }
       my_spending_approval_authority: { Args: never; Returns: boolean }
       notify_staff: {
         Args: {
@@ -16119,6 +16400,11 @@ export type Database = {
           _user_id: string
         }
         Returns: string
+      }
+      onboarding_review_overdue_sweep: { Args: never; Returns: number }
+      onboarding_task_review_state: {
+        Args: { _task_id: string }
+        Returns: Json
       }
       open_handoff_blockers: { Args: { _property_id: string }; Returns: number }
       ops_send_owner_ready: { Args: never; Returns: boolean }
@@ -16521,6 +16807,10 @@ export type Database = {
         Args: { _errors: Json; _part: string; _result: Json; _run_id: string }
         Returns: undefined
       }
+      record_onboarding_review_edit: {
+        Args: { _note: string; _review_id: string }
+        Returns: undefined
+      }
       record_onboarding_stage_capture: {
         Args: {
           _actor: string
@@ -16903,6 +17193,18 @@ export type Database = {
         }
         Returns: Json
       }
+      set_onboarding_step_review_settings: {
+        Args: {
+          _alerts_enabled: boolean
+          _blocked_stage: string
+          _blocked_step_ids: string[]
+          _blocks: string
+          _reviewer_roles: string[]
+          _step_id: string
+          _time_limit_days: number
+        }
+        Returns: undefined
+      }
       set_onboarding_task_file_sources: {
         Args: { _source_ids: string[]; _task_id: string }
         Returns: number
@@ -16920,6 +17222,10 @@ export type Database = {
           _storage_path: string
         }
         Returns: string
+      }
+      set_staff_no_second_look: {
+        Args: { _on: boolean; _user_id: string }
+        Returns: undefined
       }
       staff_assignable: { Args: { _user_id: string }; Returns: boolean }
       staff_link_owner_account: {
@@ -16951,6 +17257,10 @@ export type Database = {
         Returns: Json
       }
       str_report_version: { Args: { _report: string }; Returns: Json }
+      submit_onboarding_task_review: {
+        Args: { _note?: string; _task_id: string }
+        Returns: Json
+      }
       sync_ticket_opportunities: {
         Args: { _property_id: string; _ticket_id?: string }
         Returns: undefined
