@@ -16278,6 +16278,15 @@ export type Database = {
         Args: { _decision: string; _note?: string; _review_id: string }
         Returns: Json
       }
+      decide_recovery_approval: {
+        Args: {
+          _approved_amount?: number
+          _decision: string
+          _reason?: string
+          _recovery_id: string
+        }
+        Returns: undefined
+      }
       email_delivery_allowed: {
         Args: {
           _actor_id?: string

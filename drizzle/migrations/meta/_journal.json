@@ -1730,6 +1730,13 @@
       "when": 1793829191132,
       "tag": "0246_refund_authority_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 247,
+      "version": "7",
+      "when": 1793829249926,
+      "tag": "0247_recovery_approval_decision",
+      "breakpoints": true
     }
   ]
 }
