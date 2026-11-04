@@ -24,6 +24,7 @@ export function seatSections<T extends { value: string; label: string }>(teams: 
 export const SEAT_TEAMS: Record<string, string> = {
   ge_day: TEAM_A,
   ge_evening: TEAM_A,
+  ge_parttime: TEAM_A,
   po_day: TEAM_B,
   po_evening: TEAM_B,
   ops_supervisor: "leadership",
@@ -32,6 +33,7 @@ export const SEAT_TEAMS: Record<string, string> = {
 export const SEAT_LABELS: Record<string, string> = {
   ge_day: "Guest Experience & Reservations Coordinator — Day/Weekend",
   ge_evening: "Guest Experience & Reservations Coordinator — Evening",
+  ge_parttime: "Guest Experience & Reservations Coordinator — Part-time",
   po_day: "Property Operations Coordinator — Weekday Day",
   po_evening: "Property Operations Coordinator — Evening/Weekend",
   ops_supervisor: "Operations Supervisor",

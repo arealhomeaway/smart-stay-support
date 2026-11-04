@@ -56,6 +56,7 @@ import { Route as AuthenticatedRecoveryRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedRoutinesRouteImport } from './routes/_authenticated/routines'
 import { Route as AuthenticatedStrDispatchCheckRouteImport } from './routes/_authenticated/str-dispatch-check'
 import { Route as AuthenticatedStrParticipationReportRouteImport } from './routes/_authenticated/str-participation-report'
+import { Route as AuthenticatedSupervisorCheckRouteImport } from './routes/_authenticated/supervisor-check'
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
 import { Route as AuthenticatedTeamQueueRouteImport } from './routes/_authenticated/team-queue'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
@@ -366,6 +367,12 @@ const AuthenticatedStrParticipationReportRoute =
   AuthenticatedStrParticipationReportRouteImport.update({
     id: '/str-participation-report',
     path: '/str-participation-report',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSupervisorCheckRoute =
+  AuthenticatedSupervisorCheckRouteImport.update({
+    id: '/supervisor-check',
+    path: '/supervisor-check',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedTeamRoute = AuthenticatedTeamRouteImport.update({
@@ -739,6 +746,7 @@ export interface FileRoutesByFullPath {
   '/routines': typeof AuthenticatedRoutinesRoute
   '/str-dispatch-check': typeof AuthenticatedStrDispatchCheckRoute
   '/str-participation-report': typeof AuthenticatedStrParticipationReportRoute
+  '/supervisor-check': typeof AuthenticatedSupervisorCheckRoute
   '/team': typeof AuthenticatedTeamRoute
   '/team-queue': typeof AuthenticatedTeamQueueRoute
   '/vendors': typeof AuthenticatedVendorsRouteWithChildren
@@ -839,6 +847,7 @@ export interface FileRoutesByTo {
   '/routines': typeof AuthenticatedRoutinesRoute
   '/str-dispatch-check': typeof AuthenticatedStrDispatchCheckRoute
   '/str-participation-report': typeof AuthenticatedStrParticipationReportRoute
+  '/supervisor-check': typeof AuthenticatedSupervisorCheckRoute
   '/team': typeof AuthenticatedTeamRoute
   '/team-queue': typeof AuthenticatedTeamQueueRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
@@ -943,6 +952,7 @@ export interface FileRoutesById {
   '/_authenticated/routines': typeof AuthenticatedRoutinesRoute
   '/_authenticated/str-dispatch-check': typeof AuthenticatedStrDispatchCheckRoute
   '/_authenticated/str-participation-report': typeof AuthenticatedStrParticipationReportRoute
+  '/_authenticated/supervisor-check': typeof AuthenticatedSupervisorCheckRoute
   '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/_authenticated/team-queue': typeof AuthenticatedTeamQueueRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRouteWithChildren
@@ -1049,6 +1059,7 @@ export interface FileRouteTypes {
     | '/routines'
     | '/str-dispatch-check'
     | '/str-participation-report'
+    | '/supervisor-check'
     | '/team'
     | '/team-queue'
     | '/vendors'
@@ -1149,6 +1160,7 @@ export interface FileRouteTypes {
     | '/routines'
     | '/str-dispatch-check'
     | '/str-participation-report'
+    | '/supervisor-check'
     | '/team'
     | '/team-queue'
     | '/welcome'
@@ -1252,6 +1264,7 @@ export interface FileRouteTypes {
     | '/_authenticated/routines'
     | '/_authenticated/str-dispatch-check'
     | '/_authenticated/str-participation-report'
+    | '/_authenticated/supervisor-check'
     | '/_authenticated/team'
     | '/_authenticated/team-queue'
     | '/_authenticated/vendors'
@@ -1659,6 +1672,13 @@ declare module '@tanstack/react-router' {
       path: '/str-participation-report'
       fullPath: '/str-participation-report'
       preLoaderRoute: typeof AuthenticatedStrParticipationReportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/supervisor-check': {
+      id: '/_authenticated/supervisor-check'
+      path: '/supervisor-check'
+      fullPath: '/supervisor-check'
+      preLoaderRoute: typeof AuthenticatedSupervisorCheckRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/team': {
@@ -2256,6 +2276,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRoutinesRoute: typeof AuthenticatedRoutinesRoute
   AuthenticatedStrDispatchCheckRoute: typeof AuthenticatedStrDispatchCheckRoute
   AuthenticatedStrParticipationReportRoute: typeof AuthenticatedStrParticipationReportRoute
+  AuthenticatedSupervisorCheckRoute: typeof AuthenticatedSupervisorCheckRoute
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
   AuthenticatedTeamQueueRoute: typeof AuthenticatedTeamQueueRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRouteWithChildren
@@ -2316,6 +2337,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedStrDispatchCheckRoute: AuthenticatedStrDispatchCheckRoute,
   AuthenticatedStrParticipationReportRoute:
     AuthenticatedStrParticipationReportRoute,
+  AuthenticatedSupervisorCheckRoute: AuthenticatedSupervisorCheckRoute,
   AuthenticatedTeamRoute: AuthenticatedTeamRoute,
   AuthenticatedTeamQueueRoute: AuthenticatedTeamQueueRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRouteWithChildren,

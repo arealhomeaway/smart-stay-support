@@ -113,6 +113,14 @@ export type PageTabGroup = {
 
 export const PAGE_TAB_GROUPS: PageTabGroup[] = [
   {
+    key: "oversight",
+    match: (p) => p === "/oversight" || p === "/supervisor-check",
+    tabs: [
+      { label: "Oversight", to: "/oversight", capability: "oversight" },
+      { label: "Supervisor check", to: "/supervisor-check", capability: "oversight" },
+    ],
+  },
+  {
     key: "bookings-leads",
     match: (p) => ["/leads", "/inquiry-sources"].some((r) => p === r || p.startsWith(r + "/")),
     tabs: [
