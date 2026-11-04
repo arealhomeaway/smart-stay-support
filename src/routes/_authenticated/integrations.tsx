@@ -17,6 +17,7 @@ import { BreezewayOutboundReviewPanel } from "@/components/BreezewayOutboundRevi
 import { BreezewaySyncReviewPanel } from "@/components/BreezewaySyncReviewPanel";
 import { DocumentCompletionPanel } from "@/components/DocumentCompletionPanel";
 import { BreezewaySendingPanel } from "@/components/BreezewaySendingPanel";
+import { ReviewImportStatusPanel } from "@/components/feedback/ReviewImportStatusPanel";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
   component: () => (
@@ -104,6 +105,7 @@ function IntegrationsPage() {
 
       <MailboxIntakePanel />
 
+      <ReviewImportStatusPanel />
       <EmailDeliveryPanel />
 
       <SectionCard
