@@ -1132,7 +1132,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                 )}
                 {isNotionImported(ticket) && (
                   <span className="inline-flex items-center gap-1.5 text-sm">
-                    <StatusBadge tone="neutral">Imported from Notion</StatusBadge>
+                    <StatusBadge tone="context">Imported from Notion</StatusBadge>
                     {ticket.external_url && (
                       <a href={ticket.external_url} target="_blank" rel="noreferrer" className="font-medium text-primary underline-offset-2 hover:underline">
                         Open in Notion
