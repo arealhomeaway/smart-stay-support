@@ -72,7 +72,7 @@ export const coverageModel = createServerFn({ method: "POST" })
       supabase.from("coverage_overrides").select("*").order("starts_at"),
       supabase.from("coverage_triage_windows").select("*").eq("active", true).order("weekday"),
       supabase.from("oncall_roster").select("*").order("starts_on"),
-      supabase.from("profiles").select("id, full_name, email, oncall_eligible").order("full_name"),
+      supabase.from("profiles").select("*").order("full_name"),
       supabase.from("coverage_config").select("*").maybeSingle(),
       supabase.rpc("is_supervisor", { _user_id: context.userId }),
     ]);

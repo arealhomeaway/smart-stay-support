@@ -20,7 +20,7 @@ export type SRole = {
 export type SShift = { id: string; role_code: string; weekday: number; start_minute: number; end_minute: number; active?: boolean | null };
 export type SOverride = { id: string; role_code: string; kind: string; user_id: string | null; starts_at: string; ends_at: string; note: string | null; created_at?: string | null };
 export type SRoster = { id: string; user_id: string; starts_on: string; ends_on: string; label: string | null; created_at?: string | null };
-export type SPerson = { id: string; full_name: string | null; email: string | null };
+export type SPerson = { id: string; full_name: string | null; email: string | null; removed_at?: string | null };
 
 // ---------- dates (Central, daylight-saving safe) ----------
 
@@ -86,7 +86,8 @@ export function shortDate(date: string) {
 export function personName(people: SPerson[], id: string | null | undefined) {
   if (!id) return null;
   const p = people.find((e) => e.id === id);
-  return p?.full_name ?? p?.email ?? "Unknown";
+  const n = p?.full_name ?? p?.email ?? "Unknown";
+  return p?.removed_at ? `${n} (former)` : n;
 }
 
 // ---------- the week grid ----------
