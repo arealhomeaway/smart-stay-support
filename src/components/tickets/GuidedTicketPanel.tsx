@@ -308,26 +308,40 @@ export function GuidedTicketPanel({
             <div className="mt-1 space-y-3">
               <h3 className="text-lg font-semibold">{g.title}</h3>
               <p className="text-sm text-muted-foreground">{g.body}</p>
-              <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="What did you tell the guest?" aria-label="What did you tell the guest?" />
-              <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Next guest update">
-                {NEXT_UPDATE.map((o) => (
-                  <button key={o.label} type="button" onClick={() => setNextHours(o.hours)}>
-                    <Chip className={nextHours === o.hours ? "border-primary" : undefined}>{o.label}</Chip>
-                  </button>
-                ))}
+              <p className="font-medium">Have you responded to the guest in OwnerRez?</p>
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Responded in OwnerRez">
+                <Button variant={responded === true ? "default" : "outline"} onClick={() => setResponded(true)}>Yes, responded</Button>
+                <Button variant={responded === false ? "default" : "outline"} onClick={() => setResponded(false)}>Not yet</Button>
               </div>
-              <Button
-                disabled={note.trim().length < 5 || save.isPending}
-                onClick={() =>
-                  save.mutate({
-                    patch: { guest_update_at: new Date().toISOString(), guest_update_note: note.trim(), next_guest_update_at: nextUpdateAt(nextHours) },
-                    history: `Guest updated — ${note.trim()}`,
-                    guestUpdate: true,
-                  })
-                }
-              >
-                Save Guest Update & Continue
-              </Button>
+              {responded === false && (
+                <p className="text-sm text-muted-foreground" data-testid="guest-update-due">
+                  {g.waiting?.guestUpdateDue || ticket.next_guest_update_at
+                    ? `Guest update due ${usDateTime((g.waiting?.guestUpdateDue ?? ticket.next_guest_update_at)!)}. Reply in OwnerRez, then come back here.`
+                    : "Reply to the guest in OwnerRez, then come back here."}
+                </p>
+              )}
+              {responded === true && (
+                <>
+                  <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional note" aria-label="Optional note about the guest reply" />
+                  <p className="text-sm font-medium">When is the next update due?</p>
+                  <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Next guest update">
+                    {NEXT_UPDATE.map((o) => (
+                      <button key={o.label} type="button" onClick={() => setNextHours(o.hours)}>
+                        <Chip className={nextHours === o.hours ? "border-primary" : undefined}>{o.label}</Chip>
+                      </button>
+                    ))}
+                  </div>
+                  <Button
+                    disabled={save.isPending}
+                    onClick={() => {
+                      const u = ownerRezGuestUpdate(note, nextUpdateAt(nextHours), new Date());
+                      save.mutate({ patch: u.patch, history: u.history, guestUpdate: true });
+                    }}
+                  >
+                    Save and continue
+                  </Button>
+                </>
+              )}
             </div>
           )}
 
