@@ -285,3 +285,20 @@ export function templateProblems(t: ChecklistTemplate): string[] {
   });
   return out;
 }
+
+/** Read a stored checklist row. Returns null when the shape is not usable. */
+export function parseChecklistRow(row: {
+  id: string; title: string; version: number; checklist: unknown; checklist_category: string | null; sop_url?: string | null;
+}): (ChecklistTemplate & { id: string; version: number }) | null {
+  const body = row.checklist as { steps?: unknown; priority?: unknown } | null;
+  if (!body || !Array.isArray(body.steps) || !categoryById(row.checklist_category)) return null;
+  const t: ChecklistTemplate = {
+    category: row.checklist_category as ChecklistCategoryId,
+    title: row.title,
+    sopUrl: row.sop_url ?? null,
+    priority: (body.priority as ChecklistTemplate["priority"]) ?? null,
+    steps: body.steps as ChecklistStep[],
+  };
+  if (t.steps.some((s) => !s || typeof s.key !== "string" || !Array.isArray(s.options))) return null;
+  return { ...t, id: row.id, version: row.version };
+}
