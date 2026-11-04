@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { CATEGORIES, STATUSES } from "@/lib/tickets";
-import { relativeTime } from "@/lib/dates";
+import { CATEGORIES, STATUSES, relativeTime } from "@/lib/tickets";
 import { sameCategoryHistory, type HistoryCategoryKey } from "@/lib/property-history";
 
 export type PropertyHistoryRow = {

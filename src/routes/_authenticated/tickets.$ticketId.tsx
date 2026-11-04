@@ -42,6 +42,8 @@ import { ticketGuestComm } from "@/lib/guest-impact";
 import { OutlookSourceCard } from "@/components/OutlookSourceCard";
 import { TicketOwnerBox } from "@/components/work-entry/TicketOwnerBox";
 import { SentToOwner } from '@/components/operations/SentToOwner';
+import { PropertyHistoryList, type PropertyHistoryRow } from "@/components/work-entry/PropertyHistoryList";
+import { historyCategoryKey as categoryKeyFor } from "@/lib/property-history";
 import { MAINTENANCE_CATEGORIES, insuranceFlagged, insuranceRiskLabel, labelOf, ownerSectionRelevant } from "@/lib/work-entry";
 import { TicketOwnerUpdatePanel } from "@/components/TicketOwnerUpdatePanel";
 import { OwnerParticipationOffer } from "@/components/OwnerParticipationOffer";
@@ -389,6 +391,12 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
 
   const { ticket, steps, activity } = data;
   const workType = ticket.work_types;
+  const historyCategoryKey = categoryKeyFor(ticket as { maintenance_category?: string | null; category?: string | null });
+  const historyCategoryLabel = historyCategoryKey
+    ? historyCategoryKey.field === "maintenance_category"
+      ? labelOf(MAINTENANCE_CATEGORIES, historyCategoryKey.value)
+      : labelFor(CATEGORIES, historyCategoryKey.value)
+    : "";
   // Occupancy / guest-impact rules live once, in src/lib/guest-impact.ts.
   const guestComm = ticketGuestComm(
     {

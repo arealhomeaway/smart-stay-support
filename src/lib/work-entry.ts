@@ -73,6 +73,18 @@ export function workTypeFitsKind(category: string | null | undefined, kind: "ops
   return kind === "maintenance" ? category === "maintenance" : category !== "maintenance";
 }
 
+/**
+ * Maintenance categories where the potential-insurance question is asked:
+ * flooding and major leaks (Water intrusion / leak), roof, structural.
+ * Fire or smoke has no maintenance category yet.
+ */
+export const INSURANCE_CATEGORIES: readonly string[] = ["water_intrusion", "roof", "structural"];
+
+/** Ask about insurance for these categories, and always keep an answer already given visible. */
+export function insuranceOptionShown(category: string | null | undefined, risk: string | null | undefined): boolean {
+  return INSURANCE_CATEGORIES.includes(category ?? "") || insuranceFlagged(risk);
+}
+
 export function insuranceFlagged(risk: string | null | undefined): boolean {
   return risk === "yes" || risk === "unsure";
 }
