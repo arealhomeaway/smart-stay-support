@@ -1709,6 +1709,13 @@
       "when": 1793821252931,
       "tag": "0243_notion_ticket_import",
       "breakpoints": true
+    },
+    {
+      "idx": 244,
+      "version": "7",
+      "when": 1793829056400,
+      "tag": "0244_oncall_weekday_pattern",
+      "breakpoints": true
     }
   ]
 }

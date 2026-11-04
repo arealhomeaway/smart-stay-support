@@ -16430,6 +16430,7 @@ export type Database = {
         Args: { _task_id: string }
         Returns: Json
       }
+      oncall_user_for_night: { Args: { _night: string }; Returns: string }
       open_handoff_blockers: { Args: { _property_id: string }; Returns: number }
       ops_send_owner_ready: { Args: never; Returns: boolean }
       override_onboarding_task_date: {
