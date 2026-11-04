@@ -60,6 +60,8 @@ import { VendorRatingPanel } from "@/components/VendorRatingPanel";
 import { ReservationContextPanel } from "@/components/ReservationContextPanel";
 import { ClaimRelatedPrompt, TicketClaimPanel } from "@/components/claims/TicketClaimPanel";
 import { TicketRecoveryPanel } from "@/components/recovery/TicketRecoveryPanel";
+import { DoThisNow, OccupancyChip, StepTracker, TicketHeaderLine, useHeaderOccupancy } from "@/components/tickets/TicketTopBits";
+import { doThisNowDueAt, dueInLabel, recoveryOpen, ticketTracker, type RecoveryLike } from "@/lib/ticket-cleanup";
 import {
   TicketWorkOrderPanel,
   useTicketWorkOrders,
@@ -276,6 +278,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   });
 
   const propertyId = data?.ticket?.property_id;
+  const occupancy = useHeaderOccupancy(propertyId);
   const { data: history } = useQuery({
     queryKey: ["property-history", propertyId],
     enabled: !!propertyId,
@@ -895,6 +898,33 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     requiredOpenSteps: requiredOpen.length,
     missingClosureEvidence: Boolean(requiredEvidence) && !evidenceSatisfied,
   });
+  const headerAddress =
+    [ticket.properties?.address_line1, ticket.properties?.city].filter(Boolean).join(", ") || propertyName || null;
+  // Display only: which of Logged / Tell the guest / Fix it / Make it right this ticket is on.
+  const tracker = ticketTracker({
+    closed: closed || ticket.record_type === "completed_interaction",
+    guestInvolved: guestComm.commState !== "not_required",
+    commState: guestComm.commState,
+    stage,
+    status: ticket.status,
+    acknowledged: Boolean(ticket.acknowledged_at),
+    makeRightOpen:
+      Boolean(branches?.makeRightOpen) ||
+      (Boolean((ticket as { guest_recovery_needed?: boolean | null }).guest_recovery_needed) && !activeBranch.recovery),
+  });
+  const doNowDue = closed
+    ? null
+    : dueInLabel(
+        doThisNowDueAt({
+          commState: guestComm.commState,
+          commDueAt: guestComm.commDueAt,
+          acknowledged_at: ticket.acknowledged_at,
+          action_started_at: ticket.action_started_at,
+          response_due_at: (ticket as { response_due_at?: string | null }).response_due_at ?? null,
+          action_due_at: (ticket as { action_due_at?: string | null }).action_due_at ?? null,
+          next_guest_update_at: ticket.next_guest_update_at ?? null,
+        }),
+      );
   const firstActionLeads = currentAction?.id === "acknowledge" || currentAction?.id === "start_work";
 
   // One plain-language sentence: what is happening and what comes next. No stat wall.
