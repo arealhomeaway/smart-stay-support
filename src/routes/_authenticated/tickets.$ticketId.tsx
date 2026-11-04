@@ -60,6 +60,8 @@ import { VendorRatingPanel } from "@/components/VendorRatingPanel";
 import { ReservationContextPanel } from "@/components/ReservationContextPanel";
 import { ClaimRelatedPrompt, TicketClaimPanel } from "@/components/claims/TicketClaimPanel";
 import { TicketRecoveryPanel } from "@/components/recovery/TicketRecoveryPanel";
+import { ChecklistStepCard, type ChecklistFacts } from "@/components/tickets/ChecklistStepCard";
+import { isActiveGuest } from "@/lib/ticket-checklists";
 import { DoThisNow, OccupancyChip, StepTracker, TicketHeaderLine, useHeaderOccupancy } from "@/components/tickets/TicketTopBits";
 import { doThisNowDueAt, dueInLabel, recoveryOpen, ticketTracker, type RecoveryLike } from "@/lib/ticket-cleanup";
 import {
@@ -282,6 +284,29 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
 
   const propertyId = data?.ticket?.property_id;
   const occupancy = useHeaderOccupancy(propertyId);
+  // Guided checklist pinned at creation (null on tickets opened before it, or with the category off).
+  const pinnedChecklistId =
+    (data?.ticket as { checklist_playbook_id?: string | null } | undefined)?.checklist_playbook_id ?? null;
+  const checklistExtra = useQuery({
+    queryKey: ["checklist-facts", propertyId],
+    enabled: Boolean(propertyId && pinnedChecklistId),
+    queryFn: async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const [prop, clean] = await Promise.all([
+        supabase.from("properties").select("access").eq("id", propertyId as string).maybeSingle(),
+        supabase
+          .from("cleaner_task_snapshots")
+          .select("scheduled_date")
+          .eq("property_id", propertyId as string)
+          .gte("scheduled_date", today)
+          .is("finished_at", null)
+          .order("scheduled_date")
+          .limit(1),
+      ]);
+      const access = (prop.data?.access ?? null) as { lock_brand?: string | null } | null;
+      return { lockSystem: access?.lock_brand ?? null, nextClean: (clean.data?.[0]?.scheduled_date as string | undefined) ?? null };
+    },
+  });
   const { data: history } = useQuery({
     queryKey: ["property-history", propertyId],
     enabled: !!propertyId,
@@ -424,6 +449,19 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   const requiredOpen = steps.filter((s) => s.required && !s.completed);
   const done = steps.filter((s) => s.completed).length;
   const closed = isClosed(ticket.status);
+  const checklistActiveGuest = isActiveGuest({
+    inHome: occupancy.state === "in_home" || Boolean(ticket.guest_in_residence),
+    nextArrival: occupancy.nextArrival ?? null,
+  });
+  const resv = ticket as { reservation_guest_name?: string | null; reservation_arrival?: string | null; reservation_departure?: string | null };
+  const checklistFacts: ChecklistFacts = {
+    guest: occupancy.state === "in_home" ? [occupancy.guestName, occupancy.until ? `in home until ${usDate(occupancy.until)}` : "in home"].filter(Boolean).join(", ") : null,
+    lockSystem: checklistExtra.data?.lockSystem ?? null,
+    reservation: resv.reservation_arrival ? `${resv.reservation_guest_name ?? "Guest"}, ${usDate(resv.reservation_arrival)} to ${resv.reservation_departure ? usDate(resv.reservation_departure) : "?"}` : null,
+    lastStay: resv.reservation_departure ? `${resv.reservation_guest_name ?? "Guest"}, left ${usDate(resv.reservation_departure)}` : null,
+    nextClean: checklistExtra.data?.nextClean ?? null,
+    nextArrival: occupancy.nextArrival ?? null,
+  };
   const meta = priorityMeta(ticket.priority);
   const sla = slaState(ticket);
   // The requirement, scoped to this scenario: a porch railing never has to
