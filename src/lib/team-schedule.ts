@@ -509,3 +509,31 @@ export async function applyCoverageActions(actions: CoverageAction[], w: Coverag
   }
   return actions.length;
 }
+
+// ---------- undoing "this week only" changes ----------
+
+/** "Undo out": the off overrides on this block, plus a cover saved with the same window. */
+export function undoOutIds(block: CellBlock, overrides: SOverride[]): string[] {
+  const offs = overrides.filter((o) => block.overrideIds.includes(o.id) && o.kind === "off");
+  return removeWithPairedCover(offs, overrides);
+}
+
+/** "Back to normal shift": the cover overrides on this block. */
+export function backToNormalIds(block: CellBlock, overrides: SOverride[]): string[] {
+  return overrides.filter((o) => block.overrideIds.includes(o.id) && o.kind === "cover").map((o) => o.id);
+}
+
+/** Remove (x) on a Who's out entry: that off override and its paired cover. */
+export function whosOutRemoveIds(offId: string, overrides: SOverride[]): string[] {
+  return removeWithPairedCover(overrides.filter((o) => o.id === offId && o.kind === "off"), overrides);
+}
+
+function removeWithPairedCover(offs: SOverride[], overrides: SOverride[]): string[] {
+  const ids = new Set(offs.map((o) => o.id));
+  for (const off of offs) {
+    for (const c of overrides) {
+      if (c.kind === "cover" && c.role_code === off.role_code && c.starts_at === off.starts_at && c.ends_at === off.ends_at) ids.add(c.id);
+    }
+  }
+  return [...ids];
+}
