@@ -327,6 +327,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   // invalidates what this page reads too — no separate, differently-shaped
   // cache to fall out of sync.
   const { data: workOrders } = useTicketWorkOrders(ticketId);
+  const [showAllDetails, setShowAllDetails] = useState(false);
 
   // Waiting is a saved state, not a form: reopening the ticket shows exactly
   // what was parked, on what, and when it comes back.
