@@ -27,14 +27,14 @@ type Input = {
 const TABLE = { guest_recovery: "guest_recovery", claim: "claims" } as const;
 
 export function validateSlotInput(raw: unknown): Input {
-  const d = (raw ?? {}) as Record<string, unknown>;
+  const d = (raw ?? {}) as { subjectType?: unknown; subjectId?: unknown; slots?: unknown };
   if (d.subjectType !== "guest_recovery" && d.subjectType !== "claim")
     throw new Error("Unknown record type.");
   const id = String(d.subjectId ?? "");
   if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error("Invalid record reference.");
   if (!Array.isArray(d.slots) || d.slots.length > 30) throw new Error("Invalid checklist.");
   const slots = d.slots.map((s) => {
-    const o = s as Record<string, unknown>;
+    const o = s as { slot_key?: unknown; label?: unknown; requirement_kind?: unknown; instruction?: unknown; required?: unknown };
     if (typeof o.slot_key !== "string" || typeof o.label !== "string" || typeof o.requirement_kind !== "string")
       throw new Error("Invalid checklist item.");
     return {
