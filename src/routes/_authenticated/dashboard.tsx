@@ -17,7 +17,6 @@ import {
   ClipboardList,
   PauseCircle,
   PlayCircle,
-  Plus,
   ShieldAlert,
   Users,
 } from "lucide-react";
