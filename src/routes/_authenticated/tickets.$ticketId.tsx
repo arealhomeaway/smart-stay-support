@@ -179,6 +179,9 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   // Closure stays compact until the coordinator is actually closing the ticket.
   const [closeOpen, setCloseOpen] = useState(false);
   const [guidedLeads, setGuidedLeads] = useState(false);
+  // Guided checklist: refund form opener and the repair/vendor tools toggle.
+  const [refundSignal, setRefundSignal] = useState(0);
+  const [checklistTools, setChecklistTools] = useState(false);
   const [waitOn, setWaitOn] = useState("vendor");
   const [waitReason, setWaitReason] = useState("");
   const [waitReview, setWaitReview] = useState("");
@@ -1197,7 +1200,37 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                   />
                 </div>
               )}
-              <div className="mt-2">
+              {pinnedChecklistId && (
+                <div className="mt-1">
+                  <ChecklistStepCard
+                    ticketId={ticketId}
+                    playbookId={pinnedChecklistId}
+                    activeGuest={checklistActiveGuest}
+                    facts={checklistFacts}
+                    readOnly={role.readOnly || closed}
+                    log={log}
+                    onChanged={refresh}
+                    nameFor={(id) => displayName(people.find((p) => p.id === id))}
+                    onAction={(action) => {
+                      const scrollTo = (sel: string) => document.querySelector(sel)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      if (action === "refund") { setRefundSignal((n) => n + 1); scrollTo("[data-ticket-recovery]"); }
+                      else if (action === "claim") scrollTo("[data-ticket-claim]");
+                      else if (action === "fix_flow" || action === "work_order") { setChecklistTools(true); setTimeout(() => scrollTo("[data-checklist-tools]"), 50); }
+                      else if (action === "close") setCloseOpen(true);
+                      else if (action === "escalate") { setWaitOn("supervisor"); toast.message("Use Waiting on someone? to send this to the Supervisor with a reason."); }
+                      else if (action === "follow_up") void navigate({ to: "/tickets/new", search: { from: `ticket:${ticketId}` } as never });
+                      else if (action === "purchase") void navigate({ to: "/finance" });
+                      else if (action === "calendar_block") toast.message("Block the dates in OwnerRez, then let the owner know.");
+                    }}
+                  />
+                  {!checklistTools && (
+                    <Button variant="ghost" size="sm" className="mt-2 text-muted-foreground" onClick={() => setChecklistTools(true)}>
+                      Show vendor and work order tools
+                    </Button>
+                  )}
+                </div>
+              )}
+              <div className="mt-2" data-checklist-tools hidden={Boolean(pinnedChecklistId) && !checklistTools}>
                 <GuidedTicketPanel
                   ticket={{
                     ...(ticket as unknown as GuidedTicket),
@@ -1512,10 +1545,10 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             {guidance}
 
             {(ticket as { entry_kind?: string | null }).entry_kind !== "activity" && ticket.record_type !== "completed_interaction" && (
-              <TicketRecoveryPanel ticket={ticket} />
+              <TicketRecoveryPanel ticket={ticket} openSignal={refundSignal} />
             )}
             {activeBranch.claim ? (
-              <TicketClaimPanel ticket={ticket} />
+              <div data-ticket-claim><TicketClaimPanel ticket={ticket} /></div>
             ) : (
               (ticket as { entry_kind?: string | null }).entry_kind !== "activity" &&
               ticket.record_type !== "completed_interaction" && <ClaimRelatedPrompt ticket={ticket} />

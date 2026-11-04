@@ -7,7 +7,7 @@ import { createEvidenceSlotsFn } from "@/lib/evidence-slots.functions";
  * only thing an employee types is the decision itself. Every threshold shown
  * here comes from the central ARHA policy — nothing is decided in this file.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -90,11 +90,12 @@ type RecoveryRow = {
 
 const SITUATIONS = Object.keys(SITUATION_LABELS) as RecoverySituation[];
 
-export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
+export function TicketRecoveryPanel({ ticket, openSignal = 0 }: { ticket: TicketContext; /** Bump to open the log form (guided checklist). */ openSignal?: number }) {
   const qc = useQueryClient();
   const userId = useCurrentUserId();
   const { can, readOnly } = useRole();
   const [open, setOpen] = useState(false);
+  useEffect(() => { if (openSignal > 0) setOpen(true); }, [openSignal]);
   const [situation, setSituation] = useState<RecoverySituation>("general");
   const [action, setAction] = useState<RecoveryAction | "">("");
   const [impact, setImpact] = useState("");
