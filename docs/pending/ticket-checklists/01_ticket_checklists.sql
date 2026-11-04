@@ -128,9 +128,10 @@ BEGIN
       coalesce(cur.version, 0) + 1, 'approved', uid, now(), current_date, ARRAY['ticket'], 'authored',
       cur.id, nullif(trim(coalesce(_note, '')), ''), _checklist, _category, nullif(trim(coalesce(_sop_url, '')), ''))
   RETURNING id INTO new_id;
-  INSERT INTO public.audit_log (actor_id, action, entity_type, entity_id, detail)
-  VALUES (uid, 'ticket_checklist_published', 'playbook', new_id,
-      jsonb_build_object('category', _category, 'version', coalesce(cur.version, 0) + 1, 'supersedes', cur.id));
+  INSERT INTO public.audit_log (actor_id, action, entity_type, entity_id, entity_label, reason, before_value, after_value)
+  VALUES (uid, 'ticket_checklist_published', 'playbook', new_id, trim(_title), nullif(trim(coalesce(_note, '')), ''),
+      CASE WHEN cur.id IS NULL THEN NULL ELSE jsonb_build_object('id', cur.id, 'version', cur.version) END,
+      jsonb_build_object('category', _category, 'version', coalesce(cur.version, 0) + 1));
   RETURN new_id;
 END $$;
 REVOKE ALL ON FUNCTION public.publish_ticket_checklist(text, text, jsonb, text, text) FROM PUBLIC, anon;
