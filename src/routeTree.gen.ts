@@ -29,6 +29,7 @@ import { Route as AuthenticatedFinanceRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedHelpTicketsRouteImport } from './routes/_authenticated/help-tickets'
 import { Route as AuthenticatedHomeownersRouteImport } from './routes/_authenticated/homeowners'
 import { Route as AuthenticatedHubRouteImport } from './routes/_authenticated/hub'
+import { Route as AuthenticatedImportedTicketsRouteImport } from './routes/_authenticated/imported-tickets'
 import { Route as AuthenticatedInquirySourcesRouteImport } from './routes/_authenticated/inquiry-sources'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
 import { Route as AuthenticatedJoinRouteImport } from './routes/_authenticated/join'
@@ -67,6 +68,7 @@ import { Route as AuthenticatedClaimsIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedClaimsClosedRouteImport } from './routes/_authenticated/claims.closed'
 import { Route as AuthenticatedClaimsManagerRouteImport } from './routes/_authenticated/claims.manager'
 import { Route as AuthenticatedClaimsMyClaimsRouteImport } from './routes/_authenticated/claims.my-claims'
+import { Route as AuthenticatedIntegrationsNotionImportRouteImport } from './routes/_authenticated/integrations_.notion-import'
 import { Route as AuthenticatedLeadsIndexRouteImport } from './routes/_authenticated/leads.index'
 import { Route as AuthenticatedLeadsManagerRouteImport } from './routes/_authenticated/leads.manager'
 import { Route as AuthenticatedLeadsMyLeadsRouteImport } from './routes/_authenticated/leads.my-leads'
@@ -215,6 +217,12 @@ const AuthenticatedHubRoute = AuthenticatedHubRouteImport.update({
   path: '/hub',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedImportedTicketsRoute =
+  AuthenticatedImportedTicketsRouteImport.update({
+    id: '/imported-tickets',
+    path: '/imported-tickets',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedInquirySourcesRoute =
   AuthenticatedInquirySourcesRouteImport.update({
     id: '/inquiry-sources',
@@ -424,6 +432,12 @@ const AuthenticatedClaimsMyClaimsRoute =
     id: '/my-claims',
     path: '/my-claims',
     getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
+const AuthenticatedIntegrationsNotionImportRoute =
+  AuthenticatedIntegrationsNotionImportRouteImport.update({
+    id: '/integrations_/notion-import',
+    path: '/integrations/notion-import',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedLeadsIndexRoute = AuthenticatedLeadsIndexRouteImport.update({
   id: '/',
@@ -698,6 +712,7 @@ export interface FileRoutesByFullPath {
   '/help-tickets': typeof AuthenticatedHelpTicketsRoute
   '/homeowners': typeof AuthenticatedHomeownersRoute
   '/hub': typeof AuthenticatedHubRoute
+  '/imported-tickets': typeof AuthenticatedImportedTicketsRoute
   '/inquiry-sources': typeof AuthenticatedInquirySourcesRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/join': typeof AuthenticatedJoinRoute
@@ -735,6 +750,7 @@ export interface FileRoutesByFullPath {
   '/claims/closed': typeof AuthenticatedClaimsClosedRoute
   '/claims/manager': typeof AuthenticatedClaimsManagerRoute
   '/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
+  '/integrations/notion-import': typeof AuthenticatedIntegrationsNotionImportRoute
   '/leads/manager': typeof AuthenticatedLeadsManagerRoute
   '/leads/my-leads': typeof AuthenticatedLeadsMyLeadsRoute
   '/leads/new': typeof AuthenticatedLeadsNewRoute
@@ -799,6 +815,7 @@ export interface FileRoutesByTo {
   '/help-tickets': typeof AuthenticatedHelpTicketsRoute
   '/homeowners': typeof AuthenticatedHomeownersRoute
   '/hub': typeof AuthenticatedHubRoute
+  '/imported-tickets': typeof AuthenticatedImportedTicketsRoute
   '/inquiry-sources': typeof AuthenticatedInquirySourcesRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/join': typeof AuthenticatedJoinRoute
@@ -831,6 +848,7 @@ export interface FileRoutesByTo {
   '/claims/closed': typeof AuthenticatedClaimsClosedRoute
   '/claims/manager': typeof AuthenticatedClaimsManagerRoute
   '/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
+  '/integrations/notion-import': typeof AuthenticatedIntegrationsNotionImportRoute
   '/leads/manager': typeof AuthenticatedLeadsManagerRoute
   '/leads/my-leads': typeof AuthenticatedLeadsMyLeadsRoute
   '/leads/new': typeof AuthenticatedLeadsNewRoute
@@ -898,6 +916,7 @@ export interface FileRoutesById {
   '/_authenticated/help-tickets': typeof AuthenticatedHelpTicketsRoute
   '/_authenticated/homeowners': typeof AuthenticatedHomeownersRoute
   '/_authenticated/hub': typeof AuthenticatedHubRoute
+  '/_authenticated/imported-tickets': typeof AuthenticatedImportedTicketsRoute
   '/_authenticated/inquiry-sources': typeof AuthenticatedInquirySourcesRoute
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
   '/_authenticated/join': typeof AuthenticatedJoinRoute
@@ -935,6 +954,7 @@ export interface FileRoutesById {
   '/_authenticated/claims/closed': typeof AuthenticatedClaimsClosedRoute
   '/_authenticated/claims/manager': typeof AuthenticatedClaimsManagerRoute
   '/_authenticated/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
+  '/_authenticated/integrations_/notion-import': typeof AuthenticatedIntegrationsNotionImportRoute
   '/_authenticated/leads/manager': typeof AuthenticatedLeadsManagerRoute
   '/_authenticated/leads/my-leads': typeof AuthenticatedLeadsMyLeadsRoute
   '/_authenticated/leads/new': typeof AuthenticatedLeadsNewRoute
@@ -1002,6 +1022,7 @@ export interface FileRouteTypes {
     | '/help-tickets'
     | '/homeowners'
     | '/hub'
+    | '/imported-tickets'
     | '/inquiry-sources'
     | '/integrations'
     | '/join'
@@ -1039,6 +1060,7 @@ export interface FileRouteTypes {
     | '/claims/closed'
     | '/claims/manager'
     | '/claims/my-claims'
+    | '/integrations/notion-import'
     | '/leads/manager'
     | '/leads/my-leads'
     | '/leads/new'
@@ -1103,6 +1125,7 @@ export interface FileRouteTypes {
     | '/help-tickets'
     | '/homeowners'
     | '/hub'
+    | '/imported-tickets'
     | '/inquiry-sources'
     | '/integrations'
     | '/join'
@@ -1135,6 +1158,7 @@ export interface FileRouteTypes {
     | '/claims/closed'
     | '/claims/manager'
     | '/claims/my-claims'
+    | '/integrations/notion-import'
     | '/leads/manager'
     | '/leads/my-leads'
     | '/leads/new'
@@ -1201,6 +1225,7 @@ export interface FileRouteTypes {
     | '/_authenticated/help-tickets'
     | '/_authenticated/homeowners'
     | '/_authenticated/hub'
+    | '/_authenticated/imported-tickets'
     | '/_authenticated/inquiry-sources'
     | '/_authenticated/integrations'
     | '/_authenticated/join'
@@ -1238,6 +1263,7 @@ export interface FileRouteTypes {
     | '/_authenticated/claims/closed'
     | '/_authenticated/claims/manager'
     | '/_authenticated/claims/my-claims'
+    | '/_authenticated/integrations_/notion-import'
     | '/_authenticated/leads/manager'
     | '/_authenticated/leads/my-leads'
     | '/_authenticated/leads/new'
@@ -1444,6 +1470,13 @@ declare module '@tanstack/react-router' {
       path: '/hub'
       fullPath: '/hub'
       preLoaderRoute: typeof AuthenticatedHubRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/imported-tickets': {
+      id: '/_authenticated/imported-tickets'
+      path: '/imported-tickets'
+      fullPath: '/imported-tickets'
+      preLoaderRoute: typeof AuthenticatedImportedTicketsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/inquiry-sources': {
@@ -1711,6 +1744,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/claims/my-claims'
       preLoaderRoute: typeof AuthenticatedClaimsMyClaimsRouteImport
       parentRoute: typeof AuthenticatedClaimsRoute
+    }
+    '/_authenticated/integrations_/notion-import': {
+      id: '/_authenticated/integrations_/notion-import'
+      path: '/integrations/notion-import'
+      fullPath: '/integrations/notion-import'
+      preLoaderRoute: typeof AuthenticatedIntegrationsNotionImportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/leads/': {
       id: '/_authenticated/leads/'
@@ -2189,6 +2229,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHelpTicketsRoute: typeof AuthenticatedHelpTicketsRoute
   AuthenticatedHomeownersRoute: typeof AuthenticatedHomeownersRoute
   AuthenticatedHubRoute: typeof AuthenticatedHubRoute
+  AuthenticatedImportedTicketsRoute: typeof AuthenticatedImportedTicketsRoute
   AuthenticatedInquirySourcesRoute: typeof AuthenticatedInquirySourcesRoute
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
   AuthenticatedJoinRoute: typeof AuthenticatedJoinRoute
@@ -2221,6 +2262,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
   AuthenticatedWelcomeVideoRoute: typeof AuthenticatedWelcomeVideoRoute
   AuthenticatedWorkOrdersRoute: typeof AuthenticatedWorkOrdersRouteWithChildren
+  AuthenticatedIntegrationsNotionImportRoute: typeof AuthenticatedIntegrationsNotionImportRoute
   AuthenticatedPropertyPropertyIdRoute: typeof AuthenticatedPropertyPropertyIdRoute
   AuthenticatedTicketsTicketIdRoute: typeof AuthenticatedTicketsTicketIdRoute
   AuthenticatedTicketsNewRoute: typeof AuthenticatedTicketsNewRoute
@@ -2246,6 +2288,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHelpTicketsRoute: AuthenticatedHelpTicketsRoute,
   AuthenticatedHomeownersRoute: AuthenticatedHomeownersRoute,
   AuthenticatedHubRoute: AuthenticatedHubRoute,
+  AuthenticatedImportedTicketsRoute: AuthenticatedImportedTicketsRoute,
   AuthenticatedInquirySourcesRoute: AuthenticatedInquirySourcesRoute,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
   AuthenticatedJoinRoute: AuthenticatedJoinRoute,
@@ -2279,6 +2322,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
   AuthenticatedWelcomeVideoRoute: AuthenticatedWelcomeVideoRoute,
   AuthenticatedWorkOrdersRoute: AuthenticatedWorkOrdersRouteWithChildren,
+  AuthenticatedIntegrationsNotionImportRoute:
+    AuthenticatedIntegrationsNotionImportRoute,
   AuthenticatedPropertyPropertyIdRoute: AuthenticatedPropertyPropertyIdRoute,
   AuthenticatedTicketsTicketIdRoute: AuthenticatedTicketsTicketIdRoute,
   AuthenticatedTicketsNewRoute: AuthenticatedTicketsNewRoute,

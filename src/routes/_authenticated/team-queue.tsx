@@ -28,6 +28,7 @@ import { JobMap, type MapViewport } from "@/components/JobMap";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import type { WorkOrderRow } from "@/lib/work-order-types";
 import { standaloneOperationsOrders } from "@/lib/operations-population";
+import { withoutImportHeld } from "@/lib/import-hold";
 import { operationsCalendarDays, operationsCalendarMonth, operationsView, parseOperationsSearch, shiftOperationsMonth, withOperationsView } from "@/lib/operations-view-state";
 import { Chip, EmptyState, LoadingRows, PageHeader } from "@/components/ui/page";
 import { StatusBadge, ticketTone } from "@/components/ui/status";
@@ -224,7 +225,7 @@ function TeamQueuePage() {
         if (linked?.ticket_id) byDispatch.set(linked.ticket_id, row);
       }
     }
-    return (data ?? []).map((ticket) => ({
+    return withoutImportHeld(data ?? []).map((ticket) => ({
       ...ticket,
       workOrder: byTicket.get(ticket.id) ?? null,
       dispatchState: byDispatch.get(ticket.id)?.status ?? null,
