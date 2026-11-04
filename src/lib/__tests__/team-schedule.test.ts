@@ -170,6 +170,7 @@ describe("Read only for non-supervisors", () => {
   it("the grid shows edit controls only when the server says the viewer can edit", () => {
     const ui = require("node:fs").readFileSync("src/components/team/ScheduleTab.tsx", "utf8") as string;
     expect(ui).toContain("canEdit: data.canEdit === true");
-    expect((ui.match(/!m\.canEdit/g) ?? []).length).toBeGreaterThanOrEqual(3);
+    expect((ui.match(/!m\.canEdit/g) ?? []).length).toBe(2);
+    expect((ui.match(/m\.canEdit \?/g) ?? []).length).toBe(2);
   });
 });
