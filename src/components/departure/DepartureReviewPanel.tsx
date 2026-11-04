@@ -16,6 +16,7 @@ import { ownerRezBookingUrl } from "@/lib/ownerrez-links";
 import { usDate } from "@/lib/dates";
 import {
   DAMAGE_CATEGORIES,
+  damageLabel,
   HOST_REVIEW_OPTIONS,
   OUTREACH_NO_REASONS,
   OUTREACH_OPTIONS,
@@ -77,7 +78,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
     queryFn: async () => {
       const { data: r, error } = await supabase.from("departure_reviews").select("*, properties(name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id)").eq("id", reviewId).single();
       if (error) throw error;
-      const [linked, events, claim, ext, docs] = await Promise.all([
+      const [linked, events, claim, ext, docs, cr] = await Promise.all([
         supabase.from("tickets").select("id, ref, title, status, entry_kind").eq("departure_review_id", reviewId).is("archived_at", null).order("created_at"),
         supabase.from("departure_review_events").select("*").eq("departure_review_id", reviewId).order("created_at"),
         r.claim_id ? supabase.from("claims").select("id, title, stage").eq("id", r.claim_id).maybeSingle() : Promise.resolve({ data: null }),
@@ -89,8 +90,10 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
         r.attachment_document_ids.length
           ? supabase.from("documents").select("id, filename").in("id", r.attachment_document_ids)
           : Promise.resolve({ data: [] }),
+        supabase.from("cleaning_reviews").select("bill_guest, guest_paid_deposit").eq("departure_review_id", reviewId).maybeSingle(),
       ]);
       return {
+        cleaning: (cr.data ?? null) as { bill_guest: boolean | null; guest_paid_deposit: boolean | null } | null,
         r: r as Review & { properties: { name: string } | null },
         linked: linked.data ?? [],
         events: events.data ?? [],
@@ -104,6 +107,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
   const r = q.data?.r;
   const [propNotes, setPropNotes] = useState("");
   const [dmg, setDmg] = useState({ description: "", estimate: "", notes: "" });
+  const [deposit, setDeposit] = useState("");
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
@@ -114,6 +118,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
     setPropNotes(r.property_notes ?? "");
     setDmg({ description: r.damage_description ?? "", estimate: r.damage_estimate?.toString() ?? "", notes: r.damage_notes ?? "" });
     setReason(r.outreach_reason ?? "");
+    setDeposit(r.deposit_amount?.toString() ?? "");
     setNotes(r.notes ?? "");
   }, [r?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -149,9 +154,19 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
     await refresh();
   };
 
+  /** Saves the Fillout yes/no answers on the cleaning review record. */
+  const saveCleaning = async (patch: { bill_guest?: boolean; guest_paid_deposit?: boolean }) => {
+    setBusy(true);
+    const { error } = await supabase.from("cleaning_reviews").update(patch).eq("departure_review_id", r.id);
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    await refresh();
+  };
+  const yn = (v: boolean | null | undefined) => (v == null ? null : v ? "yes" : "no");
+
   const createClaim = async () => {
     setBusy(true);
-    const cats = r.damage_categories.map((c) => DAMAGE_CATEGORIES.find((d) => d.id === c)?.label ?? c);
+    const cats = r.damage_categories.map(damageLabel);
     const { data, error } = await supabase.from("claims").insert({
       claim_type: "guest_damage",
       title: `Departure damage — ${cats.join(", ")}`,
@@ -303,6 +318,25 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
             <p className="text-sm">Did the departure clean identify damage or another issue that may require guest recovery?</p>
             <Choice options={[{ id: "no", label: "No" }, { id: "yes", label: "Yes" }, { id: "unsure", label: "Unsure" }]} value={r.damage_screen} disabled={locked}
               onChange={(v) => save({ damage_screen: v })} />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                <p className="text-sm">Will we need to bill the guest?</p>
+                <Choice options={[{ id: "yes", label: "Yes" }, { id: "no", label: "No" }]} value={yn(q.data.cleaning?.bill_guest)} disabled={locked}
+                  onChange={(v) => saveCleaning({ bill_guest: v === "yes" })} />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm">Did the guest pay a deposit?</p>
+                <Choice options={[{ id: "yes", label: "Yes" }, { id: "no", label: "No" }]} value={yn(q.data.cleaning?.guest_paid_deposit)} disabled={locked}
+                  onChange={(v) => saveCleaning({ guest_paid_deposit: v === "yes" })} />
+              </div>
+              {q.data.cleaning?.guest_paid_deposit && (
+                <div className="space-y-1">
+                  <Label htmlFor="dr-dep">Deposit amount</Label>
+                  <Input id="dr-dep" type="number" min="0" step="0.01" value={deposit} disabled={locked} onChange={(e) => setDeposit(e.target.value)}
+                    onBlur={() => save({ deposit_amount: deposit ? Number(deposit) : null })} />
+                </div>
+              )}
+            </div>
             {(r.damage_screen === "yes" || r.damage_screen === "unsure") && (
               <div className="space-y-3">
                 <div className="flex flex-wrap gap-2" role="group" aria-label="Damage categories">

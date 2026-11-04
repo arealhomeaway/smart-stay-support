@@ -167,6 +167,12 @@ export function TicketClaimPanel({
         })
         .select("id")
         .single();
+      if (error?.code === "23505") {
+        // Another click already created this ticket's claim: open that one.
+        const again = await supabase.from("claims").select("id").eq("ticket_id", ticket.id).limit(1);
+        const id = (again.data ?? [])[0]?.id as string | undefined;
+        if (id) return id;
+      }
       if (error) throw error;
 
       const claimId = data.id as string;

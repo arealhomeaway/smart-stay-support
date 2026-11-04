@@ -96,7 +96,7 @@ export function VendorSourcingPanel({ workOrderId, readOnly, focusFindVendor = f
   const acceptedVendor = accepted?.vendor_org_id ? vendorById.get(accepted.vendor_org_id) : null;
   const facts = fourFacts(wo, !!accepted);
   const auth = authorizationState(wo);
-  const elig = breezewayPushEligibility({ wo, hasAcceptedVendor: !!accepted, vendorUsesBreezeway: vendorChannels(acceptedVendor).breezeway, handoffStatus: wo.breezeway_handoff_status });
+  const elig = breezewayPushEligibility({ wo, hasAcceptedVendor: !!accepted, vendorUsesBreezeway: vendorChannels(acceptedVendor).breezeway, handoffStatus: wo.breezeway_handoff_status === "failed" ? "not_sent" : wo.breezeway_handoff_status, hasAppointment: !!(wo as { scheduled_for?: string | null }).scheduled_for });
   const name = (v: VendorOrg) => v.display_name ?? v.legal_name ?? "Vendor";
 
   return (
@@ -258,7 +258,7 @@ export function VendorSourcingPanel({ workOrderId, readOnly, focusFindVendor = f
         {wo.breezeway_handoff_error && (
           <p className="flex items-center gap-1 text-xs text-destructive"><AlertTriangle className="size-3.5" />{wo.breezeway_handoff_error}</p>
         )}
-        {!elig.allowed && wo.breezeway_handoff_status === "not_sent" && <p className="text-xs text-muted-foreground">{elig.reasons.join(" ")}</p>}
+        {!elig.allowed && wo.breezeway_handoff_status !== "uncertain" && <p className="text-xs text-muted-foreground" data-testid="push-blockers">{elig.reasons.join(" ")}</p>}
         {!readOnly && wo.breezeway_handoff_status === "uncertain" && (
           <div className="space-y-2 rounded-md border border-destructive/40 p-2 text-xs" data-testid="handoff-reconcile">
             <p>Breezeway may already have this task. Check Breezeway, then record what you found. Another create is blocked until then.</p>
@@ -275,7 +275,7 @@ export function VendorSourcingPanel({ workOrderId, readOnly, focusFindVendor = f
           </div>
         )}
         {!readOnly && wo.breezeway_handoff_status !== "uncertain" && (
-          <Button size="sm" variant="outline" disabled={run.isPending || (!elig.allowed && wo.breezeway_handoff_status !== "failed")}
+          <Button size="sm" variant="outline" disabled={run.isPending || !elig.allowed}
             onClick={() => run.mutate(async () => { const r = await push({ data: { workOrderId } }); toast.message(r.message); })}>
             {wo.breezeway_handoff_status === "failed" ? "Retry Breezeway handoff" : "Push to Breezeway"}
           </Button>

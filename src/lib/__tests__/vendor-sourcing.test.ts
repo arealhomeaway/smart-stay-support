@@ -47,3 +47,21 @@ describe("vendor sourcing", () => {
     expect(purchaseNeedsLeadership({ ...e, expense_type: "vendor_service" })).toBe(false);
   });
 });
+
+describe("dispatch blocker wording", () => {
+  const wo = { quote_amount: 100 };
+  it("no accepted vendor says so, and never claims the vendor is off Breezeway", () => {
+    const r = breezewayPushEligibility({ wo, hasAcceptedVendor: false, vendorUsesBreezeway: false, handoffStatus: "not_sent" });
+    expect(r.reasons.join(" ")).toContain("No vendor has accepted");
+    expect(r.reasons.join(" ")).not.toContain("not set up in Breezeway");
+  });
+  it("accepted vendor off Breezeway is named only then", () => {
+    const r = breezewayPushEligibility({ wo, hasAcceptedVendor: true, vendorUsesBreezeway: false, handoffStatus: "not_sent" });
+    expect(r.reasons.join(" ")).toContain("not set up in Breezeway");
+  });
+  it("missing appointment is a blocker", () => {
+    const r = breezewayPushEligibility({ wo, hasAcceptedVendor: true, vendorUsesBreezeway: true, handoffStatus: "not_sent", hasAppointment: false });
+    expect(r.allowed).toBe(false);
+    expect(r.reasons).toContain("Add the appointment date and time first.");
+  });
+});

@@ -3023,11 +3023,13 @@ export type Database = {
       }
       cleaning_reviews: {
         Row: {
+          bill_guest: boolean | null
           breezeway_task_id: number | null
           cleaner_name: string | null
           created_at: string
           damage_found: boolean | null
           departure_review_id: string
+          guest_paid_deposit: boolean | null
           id: string
           is_demo: boolean
           linked_claim_id: string | null
@@ -3044,11 +3046,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          bill_guest?: boolean | null
           breezeway_task_id?: number | null
           cleaner_name?: string | null
           created_at?: string
           damage_found?: boolean | null
           departure_review_id: string
+          guest_paid_deposit?: boolean | null
           id?: string
           is_demo?: boolean
           linked_claim_id?: string | null
@@ -3065,11 +3069,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          bill_guest?: boolean | null
           breezeway_task_id?: number | null
           cleaner_name?: string | null
           created_at?: string
           damage_found?: boolean | null
           departure_review_id?: string
+          guest_paid_deposit?: boolean | null
           id?: string
           is_demo?: boolean
           linked_claim_id?: string | null

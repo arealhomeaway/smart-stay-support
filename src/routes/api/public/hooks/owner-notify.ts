@@ -26,6 +26,7 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
         const { runEmailJob } = await import("@/lib/email-job.server");
         const { runAoClocksGuarded } = await import("@/lib/ao-ui");
         const { runReviewOverdueSweep } = await import("@/lib/onboarding-reviews");
+        const { runNightlyReviewSync } = await import("@/lib/review-sync.server");
 
         try {
           const result = await runEmailJob(supabaseAdmin, [
@@ -39,6 +40,8 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
             { name: "ao_clocks", run: () => runAoClocksGuarded(supabaseAdmin) },
             // Review overdue alerts are in-app only; they never queue email.
             { name: "onboarding_review_overdue", run: () => runReviewOverdueSweep(supabaseAdmin) },
+            // Nightly OwnerRez review import (2 a.m. Central); read-only toward OwnerRez.
+            { name: "ownerrez_reviews_nightly", run: () => runNightlyReviewSync(supabaseAdmin) },
           ]);
           return Response.json(result, { status: result.ok ? 200 : 500 });
         } catch (err) {

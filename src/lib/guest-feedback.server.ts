@@ -244,12 +244,21 @@ export async function loadReviewFollowUpStart(admin: Admin): Promise<string | nu
   return readReviewFollowUpStart(data?.value ?? null);
 }
 
+/** True when an already-stored review's editable text or stars changed in OwnerRez. */
+export function reviewChanged(
+  prev: { summary: string | null; response_text: string | null; rating: number | null },
+  next: { summary: string | null; response_text: string | null; rating: number | null },
+): boolean {
+  return (prev.summary ?? "") !== (next.summary ?? "") || (prev.response_text ?? "") !== (next.response_text ?? "") || prev.rating !== next.rating;
+}
+
 export async function ingestReviews(admin: Admin, items: ReviewInput[]) {
   const homes = await linkedHomes(admin);
   const startDate = await loadReviewFollowUpStart(admin);
   let historical = 0;
   let imported = 0;
   let duplicates = 0;
+  let updated = 0;
   let ticketsCreated = 0;
   for (const r of items) {
     const propertyId = r.property_id ?? (r.ownerrez_property_id ? homes.get(r.ownerrez_property_id) ?? null : null);
@@ -278,7 +287,25 @@ export async function ingestReviews(admin: Admin, items: ReviewInput[]) {
       .select("*")
       .single();
     if (error) {
-      if (error.code === "23505") duplicates++;
+      if (error.code === "23505") {
+        duplicates++;
+        // Same OwnerRez review seen again: refresh only what the guest or host can edit.
+        // Never opens follow-up work, never touches reviewer or reservation fields.
+        const rating = r.stars && r.stars >= 1 && r.stars <= 5 ? Math.round(r.stars) : null;
+        const { data: prev } = await admin
+          .from("guest_feedback")
+          .select("id, summary, response_text, rating")
+          .eq("source", "ownerrez")
+          .eq("source_review_id", r.source_review_id)
+          .maybeSingle();
+        if (prev && reviewChanged(prev, { summary: r.body, response_text: r.response, rating })) {
+          const { error: uErr } = await admin
+            .from("guest_feedback")
+            .update({ summary: r.body, response_text: r.response, rating })
+            .eq("id", prev.id);
+          if (!uErr) updated++;
+        }
+      }
       else console.error("review import failed", error.message);
       continue;
     }
@@ -290,7 +317,7 @@ export async function ingestReviews(admin: Admin, items: ReviewInput[]) {
     else if (decision === "follow_up" && (await createFollowUpTicket(admin, data))) ticketsCreated++;
   }
   await enrichReviewReservations(admin);
-  return { imported, duplicates, ticketsCreated, historical, startDate };
+  return { imported, duplicates, updated, ticketsCreated, historical, startDate };
 }
 
 /**
@@ -341,14 +368,14 @@ export async function enrichReviewReservations(admin: Admin, opts: { all?: boole
 }
 
 /** Reads OwnerRez reviews for linked homes, newest first, and maps them. */
-export async function fetchOwnerRezReviews(admin: Admin, sinceDays = 60): Promise<ReviewInput[]> {
+export async function fetchOwnerRezReviews(admin: Admin, sinceDays = 60, sinceIso?: string): Promise<ReviewInput[]> {
   const { ownerRezGet } = await import("./ownerrez.server");
   type OrReview = {
     id: number; booking_id?: number | null; property_id?: number | null; guest_id?: number | null;
     display_name?: string | null; stars?: number | null; body?: string | null; response?: string | null;
     date?: string | null; listing_site?: string | null; reviewer?: string | null;
   };
-  const since = new Date(Date.now() - sinceDays * 86400000).toISOString();
+  const since = sinceIso ?? new Date(Date.now() - sinceDays * 86400000).toISOString();
   const out: ReviewInput[] = [];
   let offset = 0;
   for (let page = 0; page < 20; page++) {

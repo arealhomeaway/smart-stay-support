@@ -110,10 +110,14 @@ export type PushEligibility = { allowed: boolean; reasons: string[] };
 /** "Push to Breezeway" only after vendor acceptance and a current authorization. */
 export function breezewayPushEligibility(input: {
   wo: DispatchWorkOrder; hasAcceptedVendor: boolean; vendorUsesBreezeway: boolean; handoffStatus: string;
+  /** Appointment date and time; omitted means not checked here. */
+  hasAppointment?: boolean;
 }): PushEligibility {
   const reasons: string[] = [];
-  if (!input.vendorUsesBreezeway) reasons.push("The accepted vendor does not use Breezeway — track the work here instead.");
-  if (!input.hasAcceptedVendor) reasons.push("A vendor has not accepted the work yet.");
+  // Breezeway use is only judged for a vendor who has actually accepted.
+  if (!input.hasAcceptedVendor) reasons.push("No vendor has accepted this work yet. Mark the vendor as accepted to send it to Breezeway.");
+  else if (!input.vendorUsesBreezeway) reasons.push("The accepted vendor is not set up in Breezeway. Track the work here or email the work order instead.");
+  if (input.hasAppointment === false) reasons.push("Add the appointment date and time first.");
   const a = authorizationState(input.wo);
   if (!a.satisfied) reasons.push(a.label);
   if (input.handoffStatus === "sent" || input.handoffStatus === "simulated") reasons.push("Already handed off to Breezeway.");

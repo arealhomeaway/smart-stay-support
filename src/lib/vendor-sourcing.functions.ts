@@ -34,6 +34,7 @@ export const pushWorkOrderToBreezeway = createServerFn({ method: "POST" })
     const elig = breezewayPushEligibility({
       wo, hasAcceptedVendor: !!accepted, vendorUsesBreezeway: vendorChannels(vendor).breezeway,
       handoffStatus: wo.breezeway_handoff_status === "failed" ? "not_sent" : wo.breezeway_handoff_status,
+      hasAppointment: !!wo.scheduled_for,
     });
     if (!elig.allowed) throw new Error(elig.reasons.join(" "));
     if (wo.closed_at || ["closed", "cancelled", "canceled"].includes(wo.phase)) throw new Error("This Work Order is closed or cancelled. Nothing was sent.");
