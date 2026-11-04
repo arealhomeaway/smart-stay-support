@@ -19,6 +19,7 @@ import {
   type SPerson,
   type SRole,
   type SRoster,
+  type OncallPattern,
 } from "@/lib/team-schedule";
 
 const NONE = "";
@@ -33,6 +34,7 @@ export function TimeOffDialog({
   roster,
   overrides,
   defaultUserId,
+  pattern = null,
 }: {
   open: boolean;
   onClose: () => void;
@@ -42,6 +44,7 @@ export function TimeOffDialog({
   roster: SRoster[];
   overrides: SOverride[];
   defaultUserId?: string | null;
+  pattern?: OncallPattern | null;
 }) {
   const today = centralToday();
   const [userId, setUserId] = useState(defaultUserId ?? NONE);
@@ -62,7 +65,7 @@ export function TimeOffDialog({
   const onCallNights: string[] = [];
   if (userId && endDate >= startDate) {
     for (let d = addDays(startDate, -1), i = 0; d <= endDate && i < 62; d = addDays(d, 1), i++) {
-      const n = nightStatus(d, roster, roles, overrides);
+      const n = nightStatus(d, roster, roles, overrides, pattern);
       const nightFrom = centralInstant(d, 22 * 60), nightTo = centralInstant(d, 1440 + 8 * 60);
       if (n.userId === userId && new Date(startsAt) < new Date(nightTo) && new Date(endsAt) > new Date(nightFrom)) onCallNights.push(d);
     }

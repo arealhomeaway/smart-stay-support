@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { effectivePattern, oncallForNight, PATTERN_KEY, type SRoster } from "@/lib/team-schedule";
 import { coverageNow, windowLabel, type CoverageConfig } from "@/lib/coverage";
 
 /**
@@ -25,20 +26,17 @@ export function OnCallNowCard({ className }: { className?: string }) {
       const state = coverageNow(cfg as CoverageConfig | null);
       const lookupDate = state.rosterDate ?? new Date().toISOString().slice(0, 10);
 
-      const { data: entry } = await supabase
-        .from("oncall_roster")
-        .select("user_id, starts_on, ends_on")
-        .lte("starts_on", lookupDate)
-        .gte("ends_on", lookupDate)
-        .limit(1)
-        .maybeSingle();
-
+      const [{ data: rows }, { data: pat }] = await Promise.all([
+        supabase.from("oncall_roster").select("id, user_id, starts_on, ends_on, label, created_at").lte("starts_on", lookupDate).gte("ends_on", lookupDate),
+        supabase.from("app_settings").select("value").eq("key", PATTERN_KEY).maybeSingle(),
+      ]);
+      const entry = oncallForNight((rows ?? []) as SRoster[], lookupDate, effectivePattern(pat?.value ?? null, []));
       let name: string | null = null;
-      if (entry) {
+      if (entry.userId) {
         const { data: profile } = await supabase
           .from("profiles")
           .select("full_name, email")
-          .eq("id", entry.user_id)
+          .eq("id", entry.userId)
           .maybeSingle();
         name = profile?.full_name ?? profile?.email ?? "Unknown";
       }

@@ -17,8 +17,10 @@ import { ROLE_LABELS, primaryRole } from "@/lib/permissions";
 import { SEAT_LABELS, teamOf } from "@/lib/coverage-model";
 import { TEAMS } from "@/lib/tickets";
 import { usDateTime } from "@/lib/dates";
-import { clock, filterUsers, seatsHeldBy, userRows, type AccessPerson, type SOverride, type SPerson, type SRole, type SRoster, type SShift, type UserRow } from "@/lib/team-schedule";
-import { useCoverageModel } from "./ScheduleTab";
+import { setOncallEligible, setTestAccount } from "@/lib/coverage-admin.functions";
+import { toast } from "sonner";
+import { clock, filterUsers, isStaff, isTestAccount, seatsHeldBy, STAFF_ROLES, userRows, type AccessPerson, type SOverride, type SPerson, type SRole, type SRoster, type SShift, type UserRow, type OncallPattern } from "@/lib/team-schedule";
+import { buildModel, useCoverageModel } from "./ScheduleTab";
 import { TimeOffDialog } from "./TimeOffDialog";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -36,9 +38,14 @@ export function UsersTab() {
   const [status, setStatus] = useState("all");
   const [openId, setOpenId] = useState<string | null>(null);
   const [inviting, setInviting] = useState(false);
+  const [showTest, setShowTest] = useState(false);
 
   const roles = ((cov.data?.roles ?? []) as SRole[]).filter((r) => r.code !== "__none__");
-  const people = (access.data?.people ?? []) as unknown as AccessPerson[];
+  const testIds = (cov.data?.testAccountIds ?? []) as string[];
+  const eligibleIds = (cov.data?.eligibleIds ?? []) as string[];
+  const allPeople = (access.data?.people ?? []) as unknown as AccessPerson[];
+  // Staff only: homeowners, co-owners and vendors are managed on their own pages.
+  const people = allPeople.filter((p) => isStaff(p) && (showTest || !isTestAccount(p, testIds)));
   const rows = useMemo(
     () =>
       userRows(
@@ -48,10 +55,10 @@ export function UsersTab() {
         (c) => TEAMS.find((t) => t.value === teamOf(c))?.label ?? null,
         (c) => SEAT_LABELS[c] ?? roles.find((r) => r.code === c)?.name ?? c,
       ),
-    [people, roles],
+    [people, roles, showTest],
   );
   const shown = filterUsers(rows, { q, role, status });
-  const roleOptions = [...new Set(rows.map((r) => r.role))].sort();
+  const roleOptions = STAFF_ROLES.map((r) => ROLE_LABELS[r]);
 
   if (roleLoading) return <Skeleton className="h-40 w-full" />;
   if (!isAdmin) return <p className="text-sm text-muted-foreground">Only Admins can view and change users.</p>;
@@ -71,6 +78,7 @@ export function UsersTab() {
           <option value="all">All statuses</option>
           {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={showTest} onChange={(e) => setShowTest(e.target.checked)} /> Show test accounts</label>
         <Button size="sm" onClick={() => setInviting(true)}><Plus className="size-4" /> Add user</Button>
       </div>
 
@@ -88,7 +96,7 @@ export function UsersTab() {
             <TableBody>
               {shown.map((r) => (
                 <TableRow key={r.id} className="cursor-pointer" onClick={() => setOpenId(r.id)}>
-                  <TableCell className="font-medium">{r.name}</TableCell>
+                  <TableCell className="font-medium">{r.name}{isTestAccount(people.find((p) => p.id === r.id)!, testIds) && <Badge variant="outline" className="ml-2">Test</Badge>}</TableCell>
                   <TableCell className="text-muted-foreground">{r.email}</TableCell>
                   <TableCell>{r.role}</TableCell>
                   <TableCell>{r.seat === "None" ? "None" : `${r.seat} · ${r.team}`}</TableCell>
@@ -113,7 +121,7 @@ export function UsersTab() {
         </Dialog>
       )}
 
-      {openId && (
+      {openId && rows.some((r) => r.id === openId) && (
         <UserPanel
           row={rows.find((r) => r.id === openId)!}
           person={people.find((p) => p.id === openId)!}
@@ -121,9 +129,13 @@ export function UsersTab() {
           shifts={(cov.data?.shifts ?? []) as SShift[]}
           overrides={(cov.data?.overrides ?? []) as SOverride[]}
           roster={(cov.data?.roster ?? []) as SRoster[]}
-          people={(cov.data?.people ?? []) as SPerson[]}
+          people={cov.data ? (buildModel(cov.data).shiftPeople as SPerson[]) : []}
+          pattern={cov.data ? buildModel(cov.data).pattern : null}
+          isTest={isTestAccount(people.find((p) => p.id === openId) ?? { id: openId, full_name: null, email: null }, testIds)}
+          flaggedTest={testIds.includes(openId)}
+          eligible={eligibleIds.includes(openId)}
           onClose={() => setOpenId(null)}
-          onChanged={() => qc.invalidateQueries({ queryKey: ["coverage-model"] })}
+          onChanged={() => { void qc.invalidateQueries({ queryKey: ["coverage-model"] }); }}
         />
       )}
     </div>
@@ -131,11 +143,18 @@ export function UsersTab() {
 }
 
 function UserPanel({
-  row, person, roles, shifts, overrides, roster, people, onClose, onChanged,
+  row, person, roles, shifts, overrides, roster, people, pattern, isTest, flaggedTest, eligible, onClose, onChanged,
 }: {
   row: UserRow; person: AccessPerson; roles: SRole[]; shifts: SShift[]; overrides: SOverride[]; roster: SRoster[]; people: SPerson[];
+  pattern: OncallPattern | null; isTest: boolean; flaggedTest: boolean; eligible: boolean;
   onClose: () => void; onChanged: () => void;
 }) {
+  const setElig = useServerFn(setOncallEligible);
+  const setTest = useServerFn(setTestAccount);
+  const toggle = async (fn: () => Promise<unknown>, msg: string) => {
+    try { await fn(); toast.success(msg); onChanged(); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "The change could not be saved."); }
+  };
   const [editing, setEditing] = useState(false);
   const [timeOff, setTimeOff] = useState(false);
   const seats = seatsHeldBy(roles, person.id);
@@ -153,6 +172,14 @@ function UserPanel({
           <p>Role: {row.role}</p>
           <p>Status: {row.status}</p>
           <Button size="sm" variant="outline" onClick={() => setEditing(true)}>Edit profile</Button>
+          <label className="flex items-center gap-2 pt-2">
+            <input type="checkbox" checked={eligible} onChange={(e) => toggle(() => setElig({ data: { userId: person.id, eligible: e.target.checked } }), "On-call list updated.")} />
+            Can be on call
+          </label>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={isTest} disabled={isTest && !flaggedTest} onChange={(e) => toggle(() => setTest({ data: { userId: person.id, test: e.target.checked } }), "Test account setting updated.")} />
+            Test account (hidden from lists and pickers)
+          </label>
         </section>
         <section className="space-y-1 text-sm">
           <h3 className="font-semibold">Schedule</h3>
@@ -174,7 +201,7 @@ function UserPanel({
         </section>
         {editing && <EditTeammateDialog person={person as unknown as TeammateRow} onClose={() => setEditing(false)} />}
         {timeOff && (
-          <TimeOffDialog open onClose={() => setTimeOff(false)} onSaved={onChanged} people={people} roles={roles} roster={roster} overrides={overrides} defaultUserId={person.id} />
+          <TimeOffDialog open onClose={() => setTimeOff(false)} onSaved={onChanged} people={people} roles={roles} roster={roster} overrides={overrides} pattern={pattern} defaultUserId={person.id} />
         )}
       </SheetContent>
     </Sheet>

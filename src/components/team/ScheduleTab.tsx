@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { AlertTriangle, ArrowDown, ArrowUp, CalendarClock, ChevronLeft, ChevronRight, GripVertical, Moon, Plus, X } from "lucide-react";
+import { AlertTriangle, CalendarClock, ChevronLeft, ChevronRight, Moon, Plus, Rows3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -11,13 +11,15 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { SEAT_LABELS } from "@/lib/coverage-model";
+import { SEAT_LABELS, teamOf } from "@/lib/coverage-model";
+import { useRole } from "@/hooks/useRole";
 import type { Ownership } from "@/lib/semantic";
 import {
   coverageModel,
-  deleteOnCall,
   deleteShift,
-  saveOnCall,
+  saveGridSeats,
+  saveOnCallNights,
+  saveOnCallPattern,
   saveOverride,
   saveShift,
   setSeatHolder,
@@ -28,25 +30,33 @@ import {
   cellBlocks,
   centralToday,
   clock,
-  generateRotation,
-  moveItem,
+  applyNightChanges,
+  effectivePattern,
+  patternFromSetting,
+  gridRows,
+  gridSeatCodes,
+  monthCells,
   needsOwnerAlert,
-  nextMonday,
   nightStatus,
+  oncallPickerPeople,
   personName,
   planNewShift,
+  planRangeAssign,
+  planRemoveOverride,
   planShiftEdit,
-  rotationOrderFromRoster,
-  rotationRowsToReplace,
-  ROTATION_LABEL,
+  planSwap,
   shortDate,
-  SINGLE_NIGHT_LABEL,
+  staffPickerPeople,
+  WEEKDAYS,
   weekDates,
   weekStart,
   whosOut,
   type CellBlock,
   type CoverageAction,
+  type NightChange,
+  type OncallPattern,
   type SOverride,
+  type StaffPerson,
   type SPerson,
   type SRole,
   type SRoster,
@@ -70,7 +80,58 @@ function seatOwnership(code: string): Ownership {
 const toTime = (m: number) => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return (h ?? 0) * 60 + (m ?? 0); };
 type Triage = { id: string; weekday: number; start_minute: number; end_minute: number; role_code: string };
-type Model = { roles: SRole[]; shifts: SShift[]; overrides: SOverride[]; roster: SRoster[]; people: SPerson[]; triage: Triage[]; canEdit: boolean; staffIds: string[] };
+type Model = {
+  roles: SRole[]; gridRoles: SRole[]; shifts: SShift[]; overrides: SOverride[]; roster: SRoster[]; people: SPerson[]; triage: Triage[]; canEdit: boolean;
+  pattern: OncallPattern | null; prefill: OncallPattern; patternSaved: boolean; shiftPeople: StaffPerson[]; oncallPeople: StaffPerson[]; gridCodes: string[];
+};
+type Raw = Awaited<ReturnType<typeof coverageModel>>;
+const isDefaultRow = (c: string) => { const t = teamOf(c); return !!t && t !== "leadership"; };
+
+/** Build the screen model from the server payload (pure, shared with Users). */
+export function buildModel(data: Raw): Model {
+  const roles = (data.roles as SRole[]).filter((r) => r.code !== "__none__");
+  const roster = data.roster as SRoster[];
+  const staff = (data.staff ?? []) as StaffPerson[];
+  const testIds = (data.testAccountIds ?? []) as string[];
+  const gridCodes = gridSeatCodes(data.gridSeatsSetting, roles, isDefaultRow);
+  return {
+    roles,
+    gridRoles: gridRows(roles, gridCodes),
+    gridCodes,
+    shifts: data.shifts as SShift[],
+    overrides: data.overrides as SOverride[],
+    roster,
+    people: data.people as SPerson[],
+    triage: data.triage as Triage[],
+    canEdit: data.canEdit === true,
+    // Grid, calendar and routing read only the saved pattern, so they always agree.
+    pattern: patternFromSetting(data.patternSetting),
+    prefill: effectivePattern(data.patternSetting, roster),
+    patternSaved: !!data.patternSetting,
+    shiftPeople: staffPickerPeople(staff, roles, testIds),
+    oncallPeople: oncallPickerPeople(staff, (data.eligibleIds ?? []) as string[], testIds),
+  };
+}
+
+/** Save on-call date changes: the grid updates at once, the server write and refresh follow. */
+function useNightSaver() {
+  const qc = useQueryClient();
+  const save = useServerFn(saveOnCallNights);
+  return async (changes: NightChange[]) => {
+    const key = ["coverage-model"];
+    await qc.cancelQueries({ queryKey: key });
+    const prev = qc.getQueryData<Raw>(key);
+    if (prev) qc.setQueryData<Raw>(key, { ...prev, roster: applyNightChanges(prev.roster as SRoster[], changes) as never });
+    try {
+      await save({ data: { changes } });
+    } catch (e) {
+      if (prev) qc.setQueryData(key, prev);
+      throw e;
+    } finally {
+      void qc.invalidateQueries({ queryKey: key });
+    }
+  };
+}
 
 export function useCoverageModel() {
   const load = useServerFn(coverageModel);
@@ -110,16 +171,7 @@ export function ScheduleTab() {
   });
 
   if (isLoading || !data) return <Skeleton className="h-72 w-full" />;
-  const m: Model = {
-    roles: (data.roles as SRole[]).filter((r) => r.code !== "__none__"),
-    shifts: data.shifts as SShift[],
-    overrides: data.overrides as SOverride[],
-    roster: data.roster as SRoster[],
-    people: data.people as SPerson[],
-    triage: data.triage as Triage[],
-    canEdit: data.canEdit === true,
-    staffIds: (data.staffIds ?? []) as string[],
-  };
+  const m = buildModel(data);
   const refresh = () => qc.invalidateQueries({ queryKey: ["coverage-model"] });
   const alert = needsOwnerAlert(needsOwner.data ?? 0);
   const thisWeek = weekStart(centralToday());
@@ -145,6 +197,7 @@ export function ScheduleTab() {
         </div>
         {m.canEdit ? (
           <div className="flex gap-2">
+            <GridRowsButton m={m} onChanged={refresh} />
             <Button size="sm" variant="outline" onClick={() => setManageOnCall(true)}><Moon className="size-4" /> Manage on-call</Button>
             <Button size="sm" onClick={() => setTimeOff(true)}><Plus className="size-4" /> Add time off</Button>
           </div>
@@ -153,13 +206,18 @@ export function ScheduleTab() {
         )}
       </div>
 
+      {!m.patternSaved && (
+        <p className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
+          The on-call weekday pattern is not saved yet, so nights after the last listed date have no one on call. Open Manage on-call and save the pattern.
+        </p>
+      )}
       <WhosOutStrip sunday={sunday} m={m} />
       <WeekGrid sunday={sunday} m={m} onChanged={refresh} />
 
       {timeOff && (
-        <TimeOffDialog open onClose={() => setTimeOff(false)} onSaved={refresh} people={m.people} roles={m.roles} roster={m.roster} overrides={m.overrides} />
+        <TimeOffDialog open onClose={() => setTimeOff(false)} onSaved={refresh} people={m.shiftPeople} roles={m.roles} roster={m.roster} overrides={m.overrides} pattern={m.pattern} />
       )}
-      {manageOnCall && <ManageOnCall m={m} onClose={() => setManageOnCall(false)} onChanged={refresh} />}
+      {manageOnCall && <ManageOnCall m={m} onClose={() => setManageOnCall(false)} />}
     </div>
   );
 }
@@ -200,7 +258,6 @@ function WeekGrid({ sunday, m, onChanged }: { sunday: string; m: Model; onChange
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className={`chip ${BLOCK_FILL.team_a}`}>Team A, Guest Experience</span>
           <span className={`chip ${BLOCK_FILL.team_b}`}>Team B, Property Operations</span>
-          <span className={`chip ${BLOCK_FILL.leadership}`}>Supervisor</span>
           <span className="chip triage-block border-dashed border-triage/60 text-triage">Cross-team triage</span>
           <span className="chip border-border bg-muted text-muted-foreground">Out</span>
         </div>
@@ -211,7 +268,7 @@ function WeekGrid({ sunday, m, onChanged }: { sunday: string; m: Model; onChange
             <div className="eyebrow self-end">Person</div>
             {dates.map((d) => <div key={d} className="pb-1 text-center text-xs font-semibold">{shortDate(d)}</div>)}
           </div>
-          {m.roles.map((role) => {
+          {m.gridRoles.map((role) => {
             const kind = seatOwnership(role.code);
             const holder = personName(m.people, role.current_seat_holder) ?? role.current_seat_name;
             return (
@@ -250,7 +307,7 @@ function WeekGrid({ sunday, m, onChanged }: { sunday: string; m: Model; onChange
               </div>
             );
           })}
-          <OnCallRow dates={dates} m={m} onChanged={onChanged} />
+          <OnCallRow dates={dates} m={m} />
         </div>
       </div>
     </section>
@@ -280,7 +337,7 @@ function ShiftBlock({ block, role, date, m, fill, onChanged }: { block: CellBloc
           start={block.shift.start_minute}
           end={block.shift.end_minute}
           personId={role.current_seat_holder}
-          people={m.people}
+          people={m.shiftPeople}
           allowOut
           onSave={async (v) => planShiftEdit({ ...v, roleCode: role.code, date, shift: block.shift!, seatHolder: role.current_seat_holder })}
           onDone={onChanged}
@@ -305,7 +362,7 @@ function NewShiftPopover({ role, date, m, onChanged }: { role: SRole; date: stri
           start={8 * 60}
           end={17 * 60}
           personId={role.current_seat_holder}
-          people={m.people}
+          people={m.shiftPeople}
           onSave={async (v) => planNewShift({ ...v, roleCode: role.code, date, seatHolder: role.current_seat_holder })}
           onDone={onChanged}
         />
@@ -368,24 +425,21 @@ function ShiftForm({
   );
 }
 
-function OnCallRow({ dates, m, onChanged }: { dates: string[]; m: Model; onChanged: () => void }) {
+function OnCallRow({ dates, m }: { dates: string[]; m: Model }) {
   return (
     <div className="mt-3 grid grid-cols-[16rem_repeat(7,1fr)] items-stretch gap-1.5" data-testid="oncall-row">
       <div className="flex items-center gap-2 rounded-md border border-module-override/40 bg-module-override/10 px-3 py-2 text-xs font-semibold text-module-override">
         <Moon className="size-3.5" /> On call (10 p.m. to 8 a.m.)
       </div>
       {dates.map((d) => {
-        const n = nightStatus(d, m.roster, m.roles, m.overrides);
-        const bad = n.empty || n.needsCover;
-        const cls = `w-full rounded-md border px-1.5 py-1.5 text-center text-[0.6875rem] font-medium leading-tight ${
-          bad ? "border-danger/50 bg-danger/10 text-danger" : "border-module-override/40 bg-module-override/10 text-module-override"
-        }`;
-        const label = n.empty ? "No one on call" : `${personName(m.people, n.userId)}${n.needsCover ? " · Needs cover" : ""}`;
+        const n = nightStatus(d, m.roster, m.roles, m.overrides, m.pattern);
+        const label = nightLabel(n, m);
+        const cls = nightClass(n);
         if (!m.canEdit) return <div key={d} className={cls}>{label}</div>;
         return (
           <Popover key={d}>
             <PopoverTrigger asChild><button type="button" className={cls}>{label}</button></PopoverTrigger>
-            <PopoverContent className="w-72"><NightForm date={d} night={n} m={m} onChanged={onChanged} /></PopoverContent>
+            <PopoverContent className="w-72"><NightForm dates={[d]} mode="night" m={m} /></PopoverContent>
           </Popover>
         );
       })}
@@ -393,99 +447,200 @@ function OnCallRow({ dates, m, onChanged }: { dates: string[]; m: Model; onChang
   );
 }
 
-function NightForm({ date, night, m, onChanged }: { date: string; night: ReturnType<typeof nightStatus>; m: Model; onChanged: () => void }) {
-  const save = useServerFn(saveOnCall);
-  const del = useServerFn(deleteOnCall);
-  const [who, setWho] = useState(night.userId ?? "");
+function nightLabel(n: ReturnType<typeof nightStatus>, m: Model) {
+  if (n.empty) return "No one on call";
+  return `${personName(m.people, n.userId)}${n.needsCover ? " · Needs cover" : ""}`;
+}
+function nightClass(n: ReturnType<typeof nightStatus>) {
+  const bad = n.empty || n.needsCover;
+  return `w-full rounded-md border px-1.5 py-1.5 text-center text-[0.6875rem] font-medium leading-tight ${
+    bad ? "border-danger/50 bg-danger/10 text-danger" : n.isOverride ? "border-module-override/70 bg-module-override/25 text-module-override" : "border-module-override/40 bg-module-override/10 text-module-override"
+  }`;
+}
+
+type NightMode = "night" | "range" | "swap";
+
+/** One form for a single night, a date range or a swap. Only on-call list people can be picked. */
+function NightForm({ dates, mode, m, onDone }: { dates: string[]; mode: NightMode; m: Model; onDone?: () => void }) {
+  const saveNights = useNightSaver();
+  const first = nightStatus(dates[0]!, m.roster, m.roles, m.overrides, m.pattern);
+  const [who, setWho] = useState(mode === "night" ? first.userId ?? "" : "");
+  const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
-  const go = async (fn: () => Promise<unknown>, msg: string) => {
+  const go = async (changes: NightChange[], msg: string) => {
     setBusy(true);
-    try { await fn(); toast.success(msg); onChanged(); }
+    try { await saveNights(changes); toast.success(msg); onDone?.(); }
     catch (e) { toast.error(e instanceof Error ? e.message : "The on-call change could not be saved."); }
     finally { setBusy(false); }
   };
+  const title =
+    mode === "swap" ? `Swap ${shortDate(dates[0]!)} and ${shortDate(dates[1]!)}` :
+    mode === "range" ? `On call, ${shortDate(dates[0]!)} to ${shortDate(dates[dates.length - 1]!)}` :
+    `On call, night of ${shortDate(dates[0]!)}`;
   return (
     <div className="space-y-2 text-sm">
-      <p className="font-semibold">On call, night of {shortDate(date)}</p>
-      <select aria-label="On-call person" className="h-9 w-full rounded-md border border-input bg-background px-2" value={who} onChange={(e) => setWho(e.target.value)}>
-        <option value="">Choose a person</option>
-        {m.people.map((p) => <option key={p.id} value={p.id}>{p.full_name ?? p.email}</option>)}
-      </select>
-      <div className="flex gap-2">
-        <Button size="sm" disabled={busy || !who} onClick={() => go(() => save({ data: { id: night.singleNight ? night.entryId : null, userId: who, startsOn: date, endsOn: date, label: SINGLE_NIGHT_LABEL } }), "On-call night saved.")}>
-          Save this night
-        </Button>
-        {night.singleNight && night.entryId && (
-          <Button size="sm" variant="outline" disabled={busy} onClick={() => go(() => del({ data: { id: night.entryId! } }), "Single night removed.")}>
-            Remove this night
+      <p className="font-semibold">{title}</p>
+      {mode === "swap" ? (
+        <p className="text-muted-foreground">
+          {personName(m.people, first.userId) ?? "No one"} and {personName(m.people, nightStatus(dates[1]!, m.roster, m.roles, m.overrides, m.pattern).userId) ?? "No one"} trade nights.
+        </p>
+      ) : (
+        <select aria-label="On-call person" className="h-9 w-full rounded-md border border-input bg-background px-2" value={who} onChange={(e) => setWho(e.target.value)}>
+          <option value="">Choose a person</option>
+          {m.oncallPeople.map((p) => <option key={p.id} value={p.id}>{p.full_name ?? p.email}</option>)}
+        </select>
+      )}
+      <Input aria-label="Note" placeholder="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
+      <div className="flex flex-wrap gap-2">
+        {mode === "swap" ? (
+          <Button size="sm" disabled={busy} onClick={() => { try { void go(planSwap(dates[0]!, dates[1]!, m.roster, m.pattern, note), "Nights swapped."); } catch (e) { toast.error((e as Error).message); } }}>Swap nights</Button>
+        ) : (
+          <Button size="sm" disabled={busy || !who} onClick={() => go(planRangeAssign(dates[0]!, dates[dates.length - 1]!, who, note), mode === "range" ? "Dates saved." : "Night saved.")}>
+            {mode === "range" ? "Save these dates" : "Save this night"}
+          </Button>
+        )}
+        {mode === "night" && first.entryId && (
+          <Button size="sm" variant="outline" disabled={busy} onClick={() => go(planRemoveOverride(dates[0]!), "Back to the weekday pattern.")}>
+            Use the weekday pattern
           </Button>
         )}
       </div>
-      <p className="text-xs text-muted-foreground">A single night always wins over the weekly rotation.</p>
+      <p className="text-xs text-muted-foreground">A date change always wins over the weekday pattern.</p>
     </div>
   );
 }
 
-function ManageOnCall({ m, onClose, onChanged }: { m: Model; onClose: () => void; onChanged: () => void }) {
-  const today = centralToday();
-  const [order, setOrder] = useState<string[]>(() => rotationOrderFromRoster(m.roster, today));
-  const [adding, setAdding] = useState("");
-  const [drag, setDrag] = useState<number | null>(null);
+function ManageOnCall({ m, onClose }: { m: Model; onClose: () => void }) {
+  const qc = useQueryClient();
+  const savePattern = useServerFn(saveOnCallPattern);
+  const [pattern, setPattern] = useState<OncallPattern>(m.prefill);
   const [busy, setBusy] = useState(false);
-  const save = useServerFn(saveOnCall);
-  const del = useServerFn(deleteOnCall);
-  const first = nextMonday(today);
+  const today = centralToday();
+  const [ym, setYm] = useState(() => ({ y: Number(today.slice(0, 4)), m: Number(today.slice(5, 7)) - 1 }));
+  const [mode, setMode] = useState<NightMode>("night");
+  const [picked, setPicked] = useState<string[]>([]);
 
-  const generate = async () => {
+  const save = async () => {
     setBusy(true);
     try {
-      const rows = generateRotation(order, first, 8);
-      for (const r of rotationRowsToReplace(m.roster, first, 8)) await del({ data: { id: r.id } });
-      for (const r of rows) await save({ data: { id: null, userId: r.userId, startsOn: r.startsOn, endsOn: r.endsOn, label: ROTATION_LABEL } });
-      toast.success("On-call rotation saved for the next 8 weeks.");
-      onChanged();
-      onClose();
+      await savePattern({ data: { pattern } });
+      const key = ["coverage-model"];
+      const prev = qc.getQueryData<Raw>(key);
+      if (prev) qc.setQueryData<Raw>(key, { ...prev, patternSetting: Object.fromEntries(pattern.map((u, i) => [String(i), u ?? ""])) as never });
+      void qc.invalidateQueries({ queryKey: key });
+      toast.success("Weekday pattern saved for all future weeks. Date changes stay as they are.");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "The rotation could not be saved.");
+      toast.error(e instanceof Error ? e.message : "The pattern could not be saved.");
     } finally {
       setBusy(false);
     }
   };
+  const pick = (d: string) => {
+    if (mode === "night") return setPicked([d]);
+    if (picked.length >= 2 || picked.length === 0) return setPicked([d]);
+    setPicked([picked[0]!, d].sort());
+  };
+  const ready = mode === "night" ? picked.length === 1 : picked.length === 2;
+  const formDates = !ready ? [] : mode === "range" ? (() => { const out: string[] = []; for (let d = picked[0]!; d <= picked[1]!; d = addDays(d, 1)) out.push(d); return out; })() : picked;
+  const inRange = (d: string) => mode === "range" && picked.length === 2 ? d >= picked[0]! && d <= picked[1]! : picked.includes(d);
+  const monthName = new Date(Date.UTC(ym.y, ym.m, 1)).toLocaleDateString("en-US", { timeZone: "UTC", month: "long", year: "numeric" });
+  const shiftMonth = (n: number) => { const t = new Date(Date.UTC(ym.y, ym.m + n, 1)); setYm({ y: t.getUTCFullYear(), m: t.getUTCMonth() }); setPicked([]); };
 
   return (
     <Sheet open onOpenChange={(o) => !o && onClose()}>
-      <SheetContent className="space-y-4 overflow-y-auto">
+      <SheetContent className="w-full space-y-5 overflow-y-auto sm:max-w-xl">
         <SheetHeader>
           <SheetTitle>Manage on-call</SheetTitle>
-          <SheetDescription>Weekly rotation, Monday to Sunday. Drag to change the order.</SheetDescription>
+          <SheetDescription>Each weekday has a usual person. Change any single date on the calendar.</SheetDescription>
         </SheetHeader>
-        <ol className="space-y-1">
-          {order.map((id, i) => (
-            <li key={id} draggable onDragStart={() => setDrag(i)} onDragOver={(e) => e.preventDefault()}
-              onDrop={() => { if (drag !== null) setOrder(moveItem(order, drag, i)); setDrag(null); }}
-              className="flex items-center gap-2 rounded-md border border-border px-2 py-1.5 text-sm">
-              <GripVertical className="size-4 cursor-grab text-muted-foreground" />
-              <span className="w-5 text-muted-foreground">{i + 1}.</span>
-              <span className="flex-1">{personName(m.people, id)}</span>
-              <Button size="icon" variant="ghost" aria-label="Move up" disabled={i === 0} onClick={() => setOrder(moveItem(order, i, i - 1))}><ArrowUp className="size-3.5" /></Button>
-              <Button size="icon" variant="ghost" aria-label="Move down" disabled={i === order.length - 1} onClick={() => setOrder(moveItem(order, i, i + 1))}><ArrowDown className="size-3.5" /></Button>
-              <Button size="icon" variant="ghost" aria-label="Remove" onClick={() => setOrder(order.filter((x) => x !== id))}><X className="size-3.5" /></Button>
-            </li>
+
+        <section className="space-y-2">
+          <h3 className="text-sm font-semibold">Weekday pattern</h3>
+          {!m.patternSaved && <p className="text-xs text-muted-foreground">Filled in from the current on-call nights. Nothing is saved until you press Save.</p>}
+          {WEEKDAYS.map((day, i) => (
+            <div key={day} className="flex items-center gap-2 text-sm">
+              <span className="w-28">{day}</span>
+              <select aria-label={`${day} on call`} className="h-9 flex-1 rounded-md border border-input bg-background px-2" value={pattern[i] ?? ""}
+                onChange={(e) => setPattern(pattern.map((u, j) => (j === i ? e.target.value || null : u)))}>
+                <option value="">Choose a person</option>
+                {m.oncallPeople.map((p) => <option key={p.id} value={p.id}>{p.full_name ?? p.email}</option>)}
+                {pattern[i] && !m.oncallPeople.some((p) => p.id === pattern[i]) && <option value={pattern[i]!}>{personName(m.people, pattern[i])} (not on the on-call list)</option>}
+              </select>
+            </div>
           ))}
-          {order.length === 0 && <li className="text-sm text-muted-foreground">No one in the rotation yet.</li>}
-        </ol>
-        <div className="flex gap-2">
-          <select aria-label="Add a person" className="h-9 flex-1 rounded-md border border-input bg-background px-2 text-sm" value={adding} onChange={(e) => setAdding(e.target.value)}>
-            <option value="">Add a person</option>
-            {m.people.filter((p) => m.staffIds.includes(p.id) && !order.includes(p.id)).map((p) => <option key={p.id} value={p.id}>{p.full_name ?? p.email}</option>)}
-          </select>
-          <Button size="sm" variant="outline" disabled={!adding} onClick={() => { setOrder([...order, adding]); setAdding(""); }}>Add</Button>
-        </div>
-        <Button className="w-full" disabled={busy || order.length === 0} onClick={generate}>
-          Save rotation for 8 weeks from {shortDate(first)}
-        </Button>
-        <p className="text-xs text-muted-foreground">Single nights you set on the grid stay in place and win over the rotation.</p>
+          <Button className="w-full" disabled={busy || pattern.some((u) => !u)} onClick={save}>Save for all future weeks</Button>
+        </section>
+
+        <section className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold">Calendar</h3>
+            <div className="flex items-center gap-1">
+              <Button size="sm" variant="outline" aria-label="Previous month" onClick={() => shiftMonth(-1)}><ChevronLeft className="size-4" /></Button>
+              <span className="w-32 text-center text-sm">{monthName}</span>
+              <Button size="sm" variant="outline" aria-label="Next month" onClick={() => shiftMonth(1)}><ChevronRight className="size-4" /></Button>
+            </div>
+          </div>
+          <div className="flex gap-1" role="group" aria-label="What to change">
+            {([["night", "One night"], ["range", "Date range"], ["swap", "Swap two nights"]] as const).map(([k, l]) => (
+              <Button key={k} size="sm" variant={mode === k ? "secondary" : "outline"} onClick={() => { setMode(k); setPicked([]); }}>{l}</Button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {mode === "night" ? "Click a night to change it." : mode === "range" ? "Click the first night, then the last night." : "Click the two nights to trade."}
+          </p>
+          <div className="grid grid-cols-7 gap-1 text-center text-[0.6875rem]">
+            {WEEKDAYS.map((d) => <div key={d} className="font-semibold">{d.slice(0, 3)}</div>)}
+            {monthCells(ym.y, ym.m).map((d, i) => {
+              if (!d) return <div key={`x${i}`} />;
+              const n = nightStatus(d, m.roster, m.roles, m.overrides, m.pattern);
+              return (
+                <button key={d} type="button" onClick={() => pick(d)} aria-pressed={inRange(d)} title={n.note ?? undefined}
+                  className={`${nightClass(n)} min-h-12 ${inRange(d) ? "ring-2 ring-primary" : ""}`}>
+                  <div className="font-semibold">{Number(d.slice(8))}{n.isOverride ? " ·" : ""}</div>
+                  <div className="truncate">{n.empty ? "No one" : (personName(m.people, n.userId) ?? "").split(" ")[0]}</div>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-muted-foreground">A dot marks a date change. Red means no one is on call or the person has time off.</p>
+          {ready && (
+            <div className="rounded-md border border-border p-3">
+              <NightForm key={formDates.join(",") + mode} dates={formDates} mode={mode} m={m} onDone={() => setPicked([])} />
+            </div>
+          )}
+        </section>
       </SheetContent>
     </Sheet>
+  );
+}
+
+function GridRowsButton({ m, onChanged }: { m: Model; onChanged: () => void }) {
+  const { isAdmin } = useRole();
+  const save = useServerFn(saveGridSeats);
+  const [codes, setCodes] = useState<string[]>(m.gridCodes);
+  const [busy, setBusy] = useState(false);
+  if (!isAdmin) return null;
+  return (
+    <Popover>
+      <PopoverTrigger asChild><Button size="sm" variant="outline"><Rows3 className="size-4" /> Rows shown</Button></PopoverTrigger>
+      <PopoverContent className="w-80 space-y-2 text-sm">
+        <p className="font-semibold">Rows on the schedule</p>
+        <p className="text-xs text-muted-foreground">Display only. Hidden seats still get work exactly as before.</p>
+        <div className="max-h-72 space-y-1 overflow-y-auto">
+          {m.roles.map((r) => (
+            <label key={r.code} className="flex items-center gap-2">
+              <input type="checkbox" checked={codes.includes(r.code)} onChange={(e) => setCodes(e.target.checked ? [...codes, r.code] : codes.filter((c) => c !== r.code))} />
+              {SEAT_LABELS[r.code] ?? r.name}
+            </label>
+          ))}
+        </div>
+        <Button size="sm" disabled={busy} onClick={async () => {
+          setBusy(true);
+          try { await save({ data: { codes: m.roles.map((r) => r.code).filter((c) => codes.includes(c)) } }); toast.success("Rows saved."); onChanged(); }
+          catch (e) { toast.error(e instanceof Error ? e.message : "Rows could not be saved."); }
+          finally { setBusy(false); }
+        }}>Save rows</Button>
+      </PopoverContent>
+    </Popover>
   );
 }

@@ -253,15 +253,47 @@ export function personOutDuring(userId: string, from: string, to: string, roles:
 
 // ---------- on call ----------
 
-export const ROTATION_LABEL = "Weekly on-call rotation";
-export const SINGLE_NIGHT_LABEL = "Single night on-call";
-
 /**
- * Who is on call for the night that starts on `date` (10 p.m. that day to
- * 8 a.m. the next). Shortest entry wins, then the newest, so a single-night
- * entry always beats a weekly rotation. Mirrors pending SQL 01.
+ * On call is a weekday pattern (one person per weekday, no end date) plus
+ * dated entries in oncall_roster. A dated entry always wins over the pattern.
+ * The pattern lives in app_settings key `oncall_weekday_pattern` as
+ * {"0": userId, ... "6": userId} (0 = Sunday). Mirrors pending SQL
+ * team-coverage-pass-a2/01 (public.oncall_user_for_night).
  */
-export function oncallForNight(roster: SRoster[], date: string): SRoster | null {
+export const PATTERN_KEY = "oncall_weekday_pattern";
+export const DATE_CHANGE_LABEL = "On-call date change";
+export type OncallPattern = (string | null)[]; // index 0 = Sunday
+export const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+export function patternFromSetting(value: unknown): OncallPattern | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const v = value as Record<string, unknown>;
+  const out = WEEKDAYS.map((_, i) => (typeof v[String(i)] === "string" && v[String(i)] ? (v[String(i)] as string) : null));
+  return out.some(Boolean) ? out : null;
+}
+export function patternToSetting(p: OncallPattern) {
+  return Object.fromEntries(p.map((u, i) => [String(i), u ?? ""]));
+}
+
+/** Pre-fill: the latest single night on the roster for each weekday. Never writes. */
+export function patternFromRoster(roster: SRoster[]): OncallPattern {
+  const out: OncallPattern = [null, null, null, null, null, null, null];
+  const seen: (string | null)[] = [null, null, null, null, null, null, null];
+  for (const r of roster) {
+    if (r.starts_on !== r.ends_on) continue;
+    const wd = weekdayOf(r.starts_on);
+    if (seen[wd] === null || r.starts_on > seen[wd]!) { seen[wd] = r.starts_on; out[wd] = r.user_id; }
+  }
+  return out;
+}
+
+/** The pattern to use: the saved one, else the one read from the roster. */
+export function effectivePattern(setting: unknown, roster: SRoster[]): OncallPattern {
+  return patternFromSetting(setting) ?? patternFromRoster(roster);
+}
+
+/** Dated entry for a night: shortest entry wins, then the newest. */
+export function rosterEntryForNight(roster: SRoster[], date: string): SRoster | null {
   const span = (r: SRoster) => (Date.parse(r.ends_on) - Date.parse(r.starts_on)) / 86400000;
   return (
     roster
@@ -270,62 +302,135 @@ export function oncallForNight(roster: SRoster[], date: string): SRoster | null 
   );
 }
 
-export type NightStatus = { date: string; userId: string | null; entryId: string | null; singleNight: boolean; needsCover: boolean; empty: boolean };
+export type NightOwner = { userId: string | null; source: "date" | "pattern" | "none"; entry: SRoster | null };
+
+/** Who is on call for the night that starts on `date` (10 p.m. that day to 8 a.m. the next). */
+export function oncallForNight(roster: SRoster[], date: string, pattern: OncallPattern | null = null): NightOwner {
+  const entry = rosterEntryForNight(roster, date);
+  if (entry) return { userId: entry.user_id, source: "date", entry };
+  const p = pattern?.[weekdayOf(date)] ?? null;
+  return p ? { userId: p, source: "pattern", entry: null } : { userId: null, source: "none", entry: null };
+}
+
+export type NightStatus = { date: string; userId: string | null; entryId: string | null; isOverride: boolean; needsCover: boolean; empty: boolean; note: string | null };
 
 export function nightStatus(
   date: string,
   roster: SRoster[],
   roles: SRole[],
   overrides: SOverride[],
+  pattern: OncallPattern | null = null,
   window: { start: number; end: number } = { start: 22 * 60, end: 8 * 60 },
 ): NightStatus {
-  const entry = oncallForNight(roster, date);
-  if (!entry) return { date, userId: null, entryId: null, singleNight: false, needsCover: false, empty: true };
+  const o = oncallForNight(roster, date, pattern);
+  if (!o.userId) return { date, userId: null, entryId: null, isOverride: false, needsCover: false, empty: true, note: null };
   const from = centralInstant(date, window.start);
   const to = centralInstant(date, window.end <= window.start ? 1440 + window.end : window.end);
+  // A dated row that just repeats the pattern is not shown as a change.
+  const isOverride = o.source === "date" && o.userId !== (pattern?.[weekdayOf(date)] ?? null);
+  const label = o.entry?.label ?? null;
   return {
     date,
-    userId: entry.user_id,
-    entryId: entry.id,
-    singleNight: entry.starts_on === entry.ends_on,
-    needsCover: personOutDuring(entry.user_id, from, to, roles, overrides),
+    userId: o.userId,
+    entryId: o.entry?.id ?? null,
+    isOverride,
+    needsCover: personOutDuring(o.userId, from, to, roles, overrides),
     empty: false,
+    note: label && label.startsWith(DATE_CHANGE_LABEL + ": ") ? label.slice(DATE_CHANGE_LABEL.length + 2) : null,
   };
 }
 
-/** Next Monday on or after `today` (rotation weeks run Monday to Sunday). */
-export function nextMonday(today: string) {
-  const wd = weekdayOf(today);
-  return addDays(today, wd === 1 ? 0 : (8 - wd) % 7);
+export type NightChange = { date: string; userId: string | null; note: string };
+
+export function datesBetween(from: string, to: string) {
+  if (to < from) throw new Error("The end date cannot be before the start date.");
+  const out: string[] = [];
+  for (let d = from; d <= to; d = addDays(d, 1)) {
+    out.push(d);
+    if (out.length > 370) throw new Error("Pick a range of one year or less.");
+  }
+  return out;
+}
+/** One person for every night in a range (vacation, days off). */
+export function planRangeAssign(from: string, to: string, userId: string, note = ""): NightChange[] {
+  return datesBetween(from, to).map((date) => ({ date, userId, note }));
+}
+/** Trade the people on two nights in one step. */
+export function planSwap(a: string, b: string, roster: SRoster[], pattern: OncallPattern | null, note = ""): NightChange[] {
+  if (a === b) throw new Error("Pick two different nights.");
+  const ua = oncallForNight(roster, a, pattern).userId;
+  const ub = oncallForNight(roster, b, pattern).userId;
+  if (!ua || !ub) throw new Error("Both nights need someone on call before they can be swapped.");
+  return [{ date: a, userId: ub, note }, { date: b, userId: ua, note }];
+}
+/** Remove a date change so the night falls back to the pattern. */
+export function planRemoveOverride(date: string): NightChange[] {
+  return [{ date, userId: null, note: "" }];
+}
+/** Roster label stored for a date change (holds the optional note). */
+export function dateChangeLabel(note: string) {
+  const n = note.trim();
+  return (n ? `${DATE_CHANGE_LABEL}: ${n}` : DATE_CHANGE_LABEL).slice(0, 200);
 }
 
-export type RotationRow = { userId: string; startsOn: string; endsOn: string };
-
-/** Weekly rows, Monday to Sunday, cycling through the ordered list. */
-export function generateRotation(order: string[], firstMonday: string, weeks = 8): RotationRow[] {
-  if (order.length === 0) throw new Error("Add at least one person to the rotation.");
-  if (weekdayOf(firstMonday) !== 1) throw new Error("Rotation weeks start on a Monday.");
-  return Array.from({ length: weeks }, (_, i) => ({
-    userId: order[i % order.length]!,
-    startsOn: addDays(firstMonday, i * 7),
-    endsOn: addDays(firstMonday, i * 7 + 6),
-  }));
+/** Apply night changes to a roster copy (optimistic screen update; mirrors saveOnCallNights). */
+export function applyNightChanges(roster: SRoster[], changes: NightChange[], now = new Date().toISOString()): SRoster[] {
+  const dates = new Set(changes.map((c) => c.date));
+  const kept = roster.filter((r) => !(r.starts_on === r.ends_on && dates.has(r.starts_on)));
+  const added = changes
+    .filter((c) => c.userId)
+    .map((c, i) => ({ id: `pending-${c.date}-${i}`, user_id: c.userId!, starts_on: c.date, ends_on: c.date, label: dateChangeLabel(c.note), created_at: now }));
+  return [...kept, ...added];
 }
 
-/** Existing rotation rows the generator replaces (only its own weekly rows in range). */
-export function rotationRowsToReplace(roster: SRoster[], firstMonday: string, weeks = 8) {
-  const last = addDays(firstMonday, weeks * 7 - 1);
-  return roster.filter((r) => r.label === ROTATION_LABEL && r.starts_on >= firstMonday && r.starts_on <= last);
+/** The days of a month calendar, Sunday first, padded with nulls. */
+export function monthCells(year: number, month0: number): (string | null)[] {
+  const first = `${year}-${String(month0 + 1).padStart(2, "0")}-01`;
+  const days = new Date(Date.UTC(year, month0 + 1, 0)).getUTCDate();
+  const cells: (string | null)[] = Array.from({ length: weekdayOf(first) }, () => null);
+  for (let d = 0; d < days; d++) cells.push(addDays(first, d));
+  while (cells.length % 7) cells.push(null);
+  return cells;
 }
 
-/** The rotation order as last saved: people in weekly rows from this week on, first appearance order. */
-export function rotationOrderFromRoster(roster: SRoster[], today: string) {
-  const seen: string[] = [];
-  roster
-    .filter((r) => r.label === ROTATION_LABEL && r.ends_on >= today)
-    .sort((a, b) => a.starts_on.localeCompare(b.starts_on))
-    .forEach((r) => { if (!seen.includes(r.user_id)) seen.push(r.user_id); });
-  return seen;
+// ---------- who appears where ----------
+
+export const STAFF_ROLES = ["admin", "manager", "onboarding", "tech"] as const;
+export const TEST_ACCOUNTS_KEY = "test_account_ids";
+export const GRID_SEATS_KEY = "schedule_grid_seats";
+
+/** Test and demo accounts: flagged list, test email domains, or names starting "QA ". */
+export function isTestAccount(p: { id: string; full_name: string | null; email: string | null; is_demo?: boolean | null }, flagged: string[] = []) {
+  if (p.is_demo || flagged.includes(p.id)) return true;
+  const e = (p.email ?? "").toLowerCase();
+  if (/@(.+\.)?(example\.com|example\.invalid|resolve-test\.invalid)$/.test(e) || e.endsWith(".test")) return true;
+  const n = (p.full_name ?? "").trim();
+  return /^QA /.test(n) || /\(demo\)/i.test(n);
+}
+
+export type StaffPerson = SPerson & { roles: string[]; active: boolean };
+
+export function isStaff(p: { roles: string[] }) {
+  return p.roles.some((r) => (STAFF_ROLES as readonly string[]).includes(r));
+}
+
+/** Shift and time-off pickers: active internal staff holding a seat, never test accounts. */
+export function staffPickerPeople(people: StaffPerson[], roles: SRole[], flagged: string[]): StaffPerson[] {
+  const holders = new Set(roles.map((r) => r.current_seat_holder).filter(Boolean));
+  return people.filter((p) => p.active && isStaff(p) && holders.has(p.id) && !isTestAccount(p, flagged));
+}
+/** On-call pickers: only the Admin-kept eligible list, never test accounts. */
+export function oncallPickerPeople(people: StaffPerson[], eligibleIds: string[], flagged: string[]): StaffPerson[] {
+  return people.filter((p) => eligibleIds.includes(p.id) && p.active && isStaff(p) && !isTestAccount(p, flagged));
+}
+
+/** Seats shown as grid rows. Display only: hidden seats keep routing exactly as before. */
+export function gridSeatCodes(setting: unknown, roles: SRole[], isDefaultRow: (code: string) => boolean): string[] {
+  if (Array.isArray(setting) && setting.every((x) => typeof x === "string")) return setting as string[];
+  return roles.filter((r) => isDefaultRow(r.code)).map((r) => r.code);
+}
+export function gridRows(roles: SRole[], codes: string[]) {
+  return roles.filter((r) => codes.includes(r.code));
 }
 
 export function moveItem<T>(list: T[], from: number, to: number) {

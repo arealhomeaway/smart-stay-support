@@ -122,13 +122,14 @@ export async function routeBreezewayTicket(now: Date = new Date()): Promise<Rout
       month: "2-digit",
       day: "2-digit",
     }).format(now);
-    const { data: roster } = await db
-      .from("oncall_roster")
-      .select("user_id, starts_on, ends_on")
-      .lte("starts_on", today)
-      .gte("ends_on", today)
-      .limit(1);
-    const candidate = ((roster ?? []) as { user_id: string }[])[0]?.user_id ?? null;
+    const [{ data: roster }, { data: pat }] = await Promise.all([
+      db.from("oncall_roster").select("id, user_id, starts_on, ends_on, label, created_at").lte("starts_on", today).gte("ends_on", today),
+      db.from("app_settings").select("value").eq("key", "oncall_weekday_pattern").maybeSingle(),
+    ]);
+    // Same rule as the grid and app ticket routing: a date change wins, else the weekday pattern.
+    const { oncallForNight, effectivePattern } = await import("./team-schedule");
+    const rows = (roster ?? []) as import("./team-schedule").SRoster[];
+    const candidate = oncallForNight(rows, today, effectivePattern(pat?.value ?? null, [])).userId;
     if (await assignable(candidate)) onCallUserId = candidate;
   }
 
