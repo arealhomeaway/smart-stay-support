@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { ownerRezGuestUpdate } from "@/lib/dispatch-next-step";
 import { Chip } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status";
 import { VendorDirectory } from "@/components/vendors/VendorDirectory";
@@ -125,6 +127,7 @@ export function GuidedTicketPanel({
   const qc = useQueryClient();
   const [note, setNote] = useState("");
   const [nextHours, setNextHours] = useState(2);
+  const [responded, setResponded] = useState<boolean | null>(null);
   const [changingVendor, setChangingVendor] = useState(false);
 
   const guideKey = guideKeyFor(`${ticket.title ?? ""} ${ticket.description ?? ""}`, ticket.category);
