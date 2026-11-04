@@ -250,6 +250,7 @@ export async function ingestReviews(admin: Admin, items: ReviewInput[]) {
   let historical = 0;
   let imported = 0;
   let duplicates = 0;
+  let updated = 0;
   let ticketsCreated = 0;
   for (const r of items) {
     const propertyId = r.property_id ?? (r.ownerrez_property_id ? homes.get(r.ownerrez_property_id) ?? null : null);
@@ -278,7 +279,20 @@ export async function ingestReviews(admin: Admin, items: ReviewInput[]) {
       .select("*")
       .single();
     if (error) {
-      if (error.code === "23505") duplicates++;
+      if (error.code === "23505") {
+        duplicates++;
+        // Same OwnerRez review seen again: refresh only what the guest or host can edit.
+        // Never opens follow-up work, never touches reviewer or reservation fields.
+        const rating = r.stars && r.stars >= 1 && r.stars <= 5 ? Math.round(r.stars) : null;
+        const { data: upd } = await admin
+          .from("guest_feedback")
+          .update({ summary: r.body, response_text: r.response, rating })
+          .eq("source", "ownerrez")
+          .eq("source_review_id", r.source_review_id)
+          .or(`summary.is.distinct.from.${JSON.stringify(r.body ?? "")},response_text.is.distinct.from.${JSON.stringify(r.response ?? "")}`)
+          .select("id");
+        updated += upd?.length ?? 0;
+      }
       else console.error("review import failed", error.message);
       continue;
     }
@@ -290,7 +304,7 @@ export async function ingestReviews(admin: Admin, items: ReviewInput[]) {
     else if (decision === "follow_up" && (await createFollowUpTicket(admin, data))) ticketsCreated++;
   }
   await enrichReviewReservations(admin);
-  return { imported, duplicates, ticketsCreated, historical, startDate };
+  return { imported, duplicates, updated, ticketsCreated, historical, startDate };
 }
 
 /**
@@ -341,14 +355,14 @@ export async function enrichReviewReservations(admin: Admin, opts: { all?: boole
 }
 
 /** Reads OwnerRez reviews for linked homes, newest first, and maps them. */
-export async function fetchOwnerRezReviews(admin: Admin, sinceDays = 60): Promise<ReviewInput[]> {
+export async function fetchOwnerRezReviews(admin: Admin, sinceDays = 60, sinceIso?: string): Promise<ReviewInput[]> {
   const { ownerRezGet } = await import("./ownerrez.server");
   type OrReview = {
     id: number; booking_id?: number | null; property_id?: number | null; guest_id?: number | null;
     display_name?: string | null; stars?: number | null; body?: string | null; response?: string | null;
     date?: string | null; listing_site?: string | null; reviewer?: string | null;
   };
-  const since = new Date(Date.now() - sinceDays * 86400000).toISOString();
+  const since = sinceIso ?? new Date(Date.now() - sinceDays * 86400000).toISOString();
   const out: ReviewInput[] = [];
   let offset = 0;
   for (let page = 0; page < 20; page++) {
