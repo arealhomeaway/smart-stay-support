@@ -1716,6 +1716,13 @@
       "when": 1793829056400,
       "tag": "0244_oncall_weekday_pattern",
       "breakpoints": true
+    },
+    {
+      "idx": 245,
+      "version": "7",
+      "when": 1793829102911,
+      "tag": "0245_allow_app_recovery_values",
+      "breakpoints": true
     }
   ]
 }
