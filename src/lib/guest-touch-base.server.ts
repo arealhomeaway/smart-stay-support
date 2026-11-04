@@ -24,6 +24,8 @@ type Booking = TouchBaseBooking & { property_id: number; guest_id?: number; gues
 export async function fetchBookingsWindow(ownerRezIds: string[], from: string, to: string): Promise<Booking[]> {
   const { ownerRezGet } = await import("./ownerrez.server");
   const out: Booking[] = [];
+  // OwnerRez only accepts whole-number listing IDs; anything else cannot be a listing.
+  ownerRezIds = ownerRezIds.filter((id) => /^\d{1,9}$/.test(id));
   for (let i = 0; i < ownerRezIds.length; i += 25) {
     const ids = ownerRezIds.slice(i, i + 25).join(",");
     let offset = 0;
