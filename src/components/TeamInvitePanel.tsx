@@ -36,6 +36,14 @@ const ROLE_LABEL: Record<InviteRole, string> = {
   owner: "Homeowner — their own enrolled home",
 };
 
+type InviteLike = { redeemed_at?: string | null; revoked_at?: string | null; expires_at: string; created_at?: string | null };
+/** Newest first; redeemed, revoked and expired codes only when asked for. */
+export function visibleInvites<T extends InviteLike>(list: T[], showUsed: boolean, now = new Date()): T[] {
+  return list
+    .filter((i) => showUsed || (!i.redeemed_at && !i.revoked_at && new Date(i.expires_at) >= now))
+    .sort((a, b) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")));
+}
+
 /** Admin-only: issue single-use codes that grant a role when the new teammate signs up. */
 export function TeamInvitePanel() {
   const { isAdmin, isLoading: roleLoading } = useRole();
@@ -48,6 +56,7 @@ export function TeamInvitePanel() {
   const [role, setRole] = useState<InviteRole>("tech");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [showUsed, setShowUsed] = useState(false);
 
   const invites = useQuery({
     queryKey: ["team-invites"],
@@ -107,7 +116,8 @@ Your access is set the moment the code is redeemed. Codes are single-use and exp
 
   if (roleLoading || !isAdmin) return null;
 
-  const rows = invites.data?.invites ?? [];
+  const all = invites.data?.invites ?? [];
+  const rows = visibleInvites(all, showUsed);
 
   return (
     <Card>
@@ -165,12 +175,14 @@ Your access is set the moment the code is redeemed. Codes are single-use and exp
 
         {invites.isLoading ? (
           <Skeleton className="h-20 w-full" />
-        ) : rows.length === 0 ? (
-          <p className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
-            No invite codes yet.
-          </p>
         ) : (
-          <div className="space-y-2">
+          <details className="rounded-md border border-border">
+          <summary className="cursor-pointer px-3 py-2 text-sm font-medium">Past invites ({all.length})</summary>
+          <div className="space-y-2 p-3 pt-1">
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <input type="checkbox" checked={showUsed} onChange={(e) => setShowUsed(e.target.checked)} /> Show used and expired
+            </label>
+            {rows.length === 0 && <p className="text-sm text-muted-foreground">No active invite codes.</p>}
             {rows.map((i) => {
               const used = Boolean(i.redeemed_at);
               const revoked = Boolean(i.revoked_at);
@@ -235,6 +247,7 @@ Your access is set the moment the code is redeemed. Codes are single-use and exp
               );
             })}
           </div>
+          </details>
         )}
       </CardContent>
     </Card>

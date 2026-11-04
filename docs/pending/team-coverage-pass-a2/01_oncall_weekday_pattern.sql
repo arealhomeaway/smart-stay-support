@@ -5,6 +5,8 @@
 --    precedence); otherwise the weekday pattern in app_settings key oncall_weekday_pattern. Because the
 --    pattern has no end date, no night is ever empty while the pattern has a person for that weekday.
 -- 2. public.auto_assign_ticket(): the overnight lookup calls that function. No other line changes.
+-- 4. public.seat_on_duty(): a seat with no recurring shifts counts as OFF duty (was: always on).
+--    Precheck md5(pg_get_functiondef('public.seat_on_duty(text,timestamptz)')) = 6c092e95270690504a379582bf2327c6.
 -- 3. Seeds the pattern once from the latest roster night for each weekday (only when the key is absent),
 --    so routing keeps working past the last roster row (currently 2026-11-07).
 
@@ -183,3 +185,28 @@ $function$;
 
 REVOKE ALL ON FUNCTION public.auto_assign_ticket() FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.auto_assign_ticket() TO service_role;
+
+-- ---------- 4. Empty seat is off duty ----------
+CREATE OR REPLACE FUNCTION public.seat_on_duty(_role_code text, _at timestamp with time zone DEFAULT now())
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  SELECT CASE
+    WHEN NOT EXISTS (SELECT 1 FROM public.coverage_shifts c WHERE c.role_code = _role_code AND c.active)
+      THEN false  -- a seat with no recurring shifts is off duty (Pass A.2)
+    ELSE EXISTS (
+      SELECT 1 FROM public.coverage_shifts c
+      WHERE c.role_code = _role_code AND c.active
+        AND c.weekday = EXTRACT(dow FROM (_at AT TIME ZONE 'America/Chicago'))::int
+        AND (EXTRACT(hour FROM (_at AT TIME ZONE 'America/Chicago'))::int * 60
+             + EXTRACT(minute FROM (_at AT TIME ZONE 'America/Chicago'))::int)
+            >= c.start_minute
+        AND (EXTRACT(hour FROM (_at AT TIME ZONE 'America/Chicago'))::int * 60
+             + EXTRACT(minute FROM (_at AT TIME ZONE 'America/Chicago'))::int)
+            < c.end_minute
+    )
+  END
+$function$;
+REVOKE ALL ON FUNCTION public.seat_on_duty(text, timestamp with time zone) FROM PUBLIC, anon;
