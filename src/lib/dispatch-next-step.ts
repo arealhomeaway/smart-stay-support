@@ -61,15 +61,15 @@ export function dispatchNextStep(input: {
   };
 }
 
-/** The guest update saved when a PC confirms they replied in OwnerRez. */
+/** The guest update saved when a PC confirms they replied to the guest. */
 export function ownerRezGuestUpdate(note: string, nextUpdateAt: string | null, now: Date) {
   const extra = note.trim();
   return {
     patch: {
       guest_update_at: now.toISOString(),
-      guest_update_note: extra ? `Responded in OwnerRez. ${extra}` : "Responded in OwnerRez.",
+      guest_update_note: extra ? `Responded to the guest. ${extra}` : "Responded to the guest.",
       next_guest_update_at: nextUpdateAt,
     },
-    history: extra ? `Guest updated in OwnerRez: ${extra}` : "Guest updated in OwnerRez.",
+    history: extra ? `Guest updated: ${extra}` : "Guest updated.",
   };
 }

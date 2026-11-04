@@ -311,16 +311,16 @@ export function GuidedTicketPanel({
             <div className="mt-1 space-y-3">
               <h3 className="text-lg font-semibold">{g.title}</h3>
               <p className="text-sm text-muted-foreground">{g.body}</p>
-              <p className="font-medium">Have you responded to the guest in OwnerRez?</p>
-              <div className="flex flex-wrap gap-2" role="group" aria-label="Responded in OwnerRez">
+              <p className="font-medium">Have you responded to the guest?</p>
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Responded to the guest">
                 <Button variant={responded === true ? "default" : "outline"} onClick={() => setResponded(true)}>Yes, responded</Button>
                 <Button variant={responded === false ? "default" : "outline"} onClick={() => setResponded(false)}>Not yet</Button>
               </div>
               {responded === false && (
                 <p className="text-sm text-muted-foreground" data-testid="guest-update-due">
                   {g.waiting?.guestUpdateDue || ticket.next_guest_update_at
-                    ? `Guest update due ${usDateTime((g.waiting?.guestUpdateDue ?? ticket.next_guest_update_at)!)}. Reply in OwnerRez, then come back here.`
-                    : "Reply to the guest in OwnerRez, then come back here."}
+                    ? `Guest update due ${usDateTime((g.waiting?.guestUpdateDue ?? ticket.next_guest_update_at)!)}. Reply to the guest, then come back here.`
+                    : "Reply to the guest, then come back here."}
                 </p>
               )}
               {responded === true && (
