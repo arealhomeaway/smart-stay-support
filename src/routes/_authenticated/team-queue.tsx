@@ -557,7 +557,11 @@ function TeamQueuePage() {
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="start" className="max-h-[75vh] w-[min(28rem,calc(100vw-2rem))] space-y-3 overflow-y-auto">
+          <PopoverContent
+            align="start"
+            collisionPadding={12}
+            className="max-h-[min(75vh,var(--radix-popover-content-available-height))] w-[min(28rem,calc(100vw-2rem))] space-y-3 overflow-y-auto overscroll-contain"
+          >
             <div className="grid gap-2 sm:grid-cols-2">
               <FilterSelect
                 label="Owner"

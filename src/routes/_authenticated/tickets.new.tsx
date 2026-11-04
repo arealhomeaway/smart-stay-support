@@ -18,6 +18,7 @@ import { PropertyActivityForm } from "@/components/work-entry/PropertyActivityFo
 import {
   ENTRY_KINDS,
   INSURANCE_RISK,
+  insuranceOptionShown,
   MAINTENANCE_CATEGORIES,
   defaultMaintenanceWorkTypeName,
   insuranceFlagged,
@@ -447,7 +448,7 @@ export function NewTicketForm({
       toast.error("Pick the maintenance category.");
       return;
     }
-    if (mode === "maintenance" && !form.insurance_risk) {
+    if (mode === "maintenance" && insuranceOptionShown(form.maintenance_category, form.insurance_risk) && !form.insurance_risk) {
       toast.error("Answer whether this could be an insurance-related event (Yes / No / Unsure).");
       return;
     }
@@ -518,7 +519,7 @@ export function NewTicketForm({
           linked_feedback_id: context.feedback ?? null,
           departure_review_id: context.departureReview ?? null,
           maintenance_category: mode === "maintenance" ? form.maintenance_category : null,
-          insurance_risk: mode === "maintenance" ? form.insurance_risk : null,
+          insurance_risk: mode === "maintenance" ? form.insurance_risk || null : null,
           estimated_cost: mode === "maintenance" && estimated !== null && Number.isFinite(estimated) ? estimated : null,
           functional_role_code: form.functional_role_code || null,
           cross_team: oneTouch ? false : form.cross_team,
@@ -899,6 +900,7 @@ export function NewTicketForm({
                     onCheckedChange={(v) => setForm({ ...form, guest_in_residence: v })}
                   />
                 </div>
+                {insuranceOptionShown(form.maintenance_category, form.insurance_risk) && (
                 <div className="space-y-2">
                   <Label>Potential insurance-related event?</Label>
                   <div className="flex gap-2" role="radiogroup" aria-label="Potential insurance-related event">
@@ -923,6 +925,7 @@ export function NewTicketForm({
                       : ""}
                   </p>
                 </div>
+                )}
                 <p className="text-xs text-muted-foreground">
                   Add photos on the Ticket's Evidence tab once it opens.
                 </p>
