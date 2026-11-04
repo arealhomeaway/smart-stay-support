@@ -519,7 +519,7 @@ export function NewTicketForm({
           linked_feedback_id: context.feedback ?? null,
           departure_review_id: context.departureReview ?? null,
           maintenance_category: mode === "maintenance" ? form.maintenance_category : null,
-          insurance_risk: mode === "maintenance" && (insuranceOptionShown(form.maintenance_category, form.insurance_risk) || form.insurance_risk) ? form.insurance_risk || null : null,
+          insurance_risk: mode === "maintenance" ? form.insurance_risk || null : null,
           estimated_cost: mode === "maintenance" && estimated !== null && Number.isFinite(estimated) ? estimated : null,
           functional_role_code: form.functional_role_code || null,
           cross_team: oneTouch ? false : form.cross_team,
