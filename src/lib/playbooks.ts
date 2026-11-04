@@ -262,6 +262,7 @@ export function parsePlaybook(row: PlaybookRow): AuthoredPlaybook {
     row.source === "ai_draft" || row.source === "imported" ? row.source : "authored";
   return {
     id: row.id,
+    isChecklist: row.checklist != null,
     playbook_key: row.playbook_key ?? row.id,
     version: row.version ?? 1,
     status,
