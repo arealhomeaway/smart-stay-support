@@ -172,13 +172,15 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
   {
     key: "admin",
     match: (p) =>
-      ["/integrations", "/audit", "/help-tickets", "/oversight-access-log"].some(
+      ["/integrations", "/audit", "/help-tickets", "/oversight-access-log", "/imported-tickets"].some(
         (r) => p === r || p.startsWith(r + "/"),
       ),
     tabs: [
       { label: "Integrations", to: "/integrations", capability: "integrations" },
       { label: "Audit History", to: "/audit", capability: "audit_history" },
       { label: "Help Tickets", to: "/help-tickets", capability: "audit_history" },
+      { label: "Imported tickets", to: "/imported-tickets", capability: "audit_history" },
+      { label: "Notion import", to: "/integrations/notion-import", capability: "integrations" },
     ],
   },
 ];
@@ -190,6 +192,8 @@ export function pageTabGroupFor(pathname: string): PageTabGroup | null {
 /** Last path segment → page label for department sub-pages. */
 const SUBPAGE_LABELS: Record<string, string> = {
   "/onboarding/my-work": "My Tasks",
+  "/imported-tickets": "Imported tickets",
+  "/integrations/notion-import": "Notion import",
   "/onboarding/owner-completions": "Owner Completions",
   "/onboarding/team": "Team",
   "/onboarding/templates": "Workflow Templates",
