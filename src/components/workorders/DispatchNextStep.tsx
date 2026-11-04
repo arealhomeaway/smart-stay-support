@@ -14,6 +14,7 @@ import { VendorEmailButton } from "@/components/workorders/VendorEmailButton";
 
 export function DispatchNextStep({ workOrderId, readOnly, onOpenWorkOrder }: { workOrderId: string; readOnly: boolean; onOpenWorkOrder: () => void }) {
   const qc = useQueryClient();
+  const userId = useCurrentUserId();
   const push = useServerFn(pushWorkOrderToBreezeway);
   const prepare = useServerFn(prepareVendorWorkOrderEmail);
   const [when, setWhen] = useState("");
@@ -87,7 +88,7 @@ export function DispatchNextStep({ workOrderId, readOnly, onOpenWorkOrder }: { w
             onClick={() => run.mutate(async () => {
               const iso = new Date(when).toISOString();
               await must(supabase.from("work_orders").update({ vendor_eta_at: iso, scheduled_for: iso }).eq("id", workOrderId));
-              await must(supabase.from("work_order_events").insert({ work_order_id: workOrderId, event_type: "vendor_scheduled", body: "Appointment and ETA recorded", is_demo: wo.is_demo } as never));
+              await must(supabase.from("work_order_events").insert({ work_order_id: workOrderId, author_id: userId, event_type: "vendor_scheduled", body: "Appointment and ETA recorded", is_demo: wo.is_demo } as never));
               setWhen("");
             })}>{step.button}</Button>
         </div>
