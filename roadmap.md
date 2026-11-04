@@ -153,3 +153,11 @@
 - [x] Isolated tests, full suite, typecheck, build
 - [ ] Real 129 MB upload and homeowner viewing: blocked until 0167 is applied and published
 - [ ] Append Linder correction line to program internal notes as Emily (published site)
+
+## Nov 4 Parts 6-10 (no publish)
+- [x] 6 Survey review routine (trigger for new surveys only)
+- [x] 7 Maintenance review queue; Breezeway approval write-back researched, not built
+- [x] 8 Calendar with Breezeway source, filters, last sync
+- [x] 9 Ticket sections by need with Show all details
+- [x] 10 Guest impact confirmation separate from occupancy
+- [ ] Signed-in visual checks (no sign-in this session)

@@ -18,16 +18,31 @@
  * engines, exactly as they do for tickets.
  */
 
-export type RoutineKind = "cleaning_review" | "guest_review" | "checkout" | "guest_touch_base";
+export type RoutineKind =
+  | "cleaning_review"
+  | "guest_review"
+  | "checkout"
+  | "guest_touch_base"
+  | "survey_review"
+  | "maintenance_review";
 export type RoutineStatus = "due" | "in_progress" | "completed" | "cancelled";
 export type RoutineOutcome = "looks_good" | "needs_follow_up" | "no_answer" | "not_applicable";
+
+const ROUTINE_CONFIG_GENERATED_ONLY = new Set<string>(["survey_review", "maintenance_review"]);
 
 export const ROUTINE_KINDS: RoutineKind[] = [
   "cleaning_review",
   "guest_review",
   "checkout",
   "guest_touch_base",
+  "survey_review",
+  "maintenance_review",
 ];
+
+/** Kinds a person can start by hand. The others come only from real events. */
+export const MANUAL_ROUTINE_KINDS: RoutineKind[] = ROUTINE_KINDS.filter(
+  (k) => !ROUTINE_CONFIG_GENERATED_ONLY.has(k),
+);
 
 /** One prompt inside a control. Deliberately phrased as the job, not as a field. */
 export type RoutineStep = { id: string; prompt: string; hint?: string };
@@ -167,6 +182,46 @@ export const ROUTINE_CONFIG: Record<RoutineKind, RoutineConfig> = {
     evidenceLabel: null,
     generated: false,
   },
+  survey_review: {
+    kind: "survey_review",
+    label: "Survey Review",
+    plural: "Survey Reviews",
+    runLabel: "Review a guest survey",
+    team: "guest_experience",
+    teamLabel: "Guest Experience & Reservations",
+    purpose: "Read the guest's survey answers, write down what we learned, and open a follow-up if something needs fixing.",
+    dueNoun: "Review by",
+    steps: [
+      { id: "read", prompt: "Read every survey answer" },
+      { id: "learned", prompt: "Wrote down what we learned", hint: "Even when the stay went well." },
+      { id: "follow_up", prompt: "Decided whether anyone needs to follow up" },
+    ],
+    outcomes: ["looks_good", "needs_follow_up", "not_applicable"],
+    followUpPrompt: "What did we learn, and what needs to happen next?",
+    evidenceLabel: null,
+    generated: true,
+    generatedFrom: "new guest survey responses",
+  },
+  maintenance_review: {
+    kind: "maintenance_review",
+    label: "Maintenance Review",
+    plural: "Maintenance Reviews",
+    runLabel: "Review finished maintenance",
+    team: "property_operations",
+    teamLabel: "Property Operations",
+    purpose: "Check maintenance a vendor marked Finished. A vendor finishing the work is not our review: approve it here only after you have checked it.",
+    dueNoun: "Review by",
+    steps: [
+      { id: "details", prompt: "Read the work order and the vendor notes" },
+      { id: "photos", prompt: "Completion photos show the work is done", hint: "If there are no photos, ask before approving." },
+      { id: "pending", prompt: "Nothing is still pending at the home" },
+    ],
+    outcomes: ["looks_good", "needs_follow_up", "not_applicable"],
+    followUpPrompt: "What is still pending?",
+    evidenceLabel: null,
+    generated: true,
+    generatedFrom: "Breezeway maintenance marked Finished",
+  },
 };
 
 export function routineConfig(kind: string): RoutineConfig {
@@ -233,4 +288,37 @@ export function cleaningReviewKey(breezewayWorkOrderId: string): string {
 /** Manual controls still get a key, so a double click cannot create two rows. */
 export function manualKey(kind: RoutineKind, propertyId: string | null, isoDay: string): string {
   return `manual:${kind}:${propertyId ?? "no_property"}:${isoDay}`;
+}
+
+/** Stable key for a survey review: one per survey response, never two. */
+export function surveyReviewKey(feedbackId: string): string {
+  return `survey:${feedbackId}`;
+}
+
+/** Stable key for a maintenance review: one per Breezeway work order. */
+export function maintenanceReviewKey(breezewayWorkOrderId: string): string {
+  return `bz_maint:${breezewayWorkOrderId}`;
+}
+
+/** The Breezeway work order a maintenance review is about, read from its key. */
+export function maintenanceReviewWorkOrderId(eventKey: string | null | undefined): string | null {
+  return eventKey?.startsWith("bz_maint:") ? eventKey.slice("bz_maint:".length) : null;
+}
+
+export function surveyReviewFeedbackId(eventKey: string | null | undefined): string | null {
+  return eventKey?.startsWith("survey:") ? eventKey.slice("survey:".length) : null;
+}
+
+/**
+ * Finished maintenance waiting for the team's own review. A vendor marking a
+ * job Finished never counts as reviewed: only a completed Maintenance Review
+ * in Resolve does. Breezeway "Approved" or "Closed" jobs are already settled.
+ */
+export function needsMaintenanceReview(
+  wo: { id: string; department: string | null; status: string | null },
+  approvedIds: Set<string>,
+): boolean {
+  if ((wo.department ?? "").toLowerCase() !== "maintenance") return false;
+  if ((wo.status ?? "").toLowerCase() !== "finished") return false;
+  return !approvedIds.has(wo.id);
 }

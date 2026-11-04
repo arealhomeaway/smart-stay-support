@@ -28,6 +28,7 @@ import {
   type RoutineOutcome,
 } from "@/lib/routine-controls";
 import { usDate } from "@/lib/dates";
+import { RoutineSourceDetails } from "@/components/routines/RoutineSourceDetails";
 
 export type RoutineRow = {
   id: string;
@@ -48,6 +49,7 @@ export type RoutineRow = {
   evidence_urls: string[] | null;
   completed_at: string | null;
   assigned_to: string | null;
+  event_key?: string | null;
   properties?: { name: string | null; nickname: string | null } | null;
   /** Unsaved check from the chooser: saved only when it is completed. */
   draft?: Record<string, unknown>;
@@ -207,6 +209,8 @@ export function RoutineDrawer({
             )}
           </div>
         )}
+
+        <RoutineSourceDetails row={row} />
 
         {row.property_id && (
           <SpecialHandlingNotice

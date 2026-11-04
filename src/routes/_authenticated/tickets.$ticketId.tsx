@@ -13,6 +13,7 @@ import { scopedClosureEvidence } from "@/lib/closure-evidence";
 import { closureEvidenceSatisfied, requiresPhotoOrFile } from "@/lib/evidence-requirements";
 import { listAttachmentsFn } from "@/lib/attachments.functions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { hiddenSectionCount, ticketSections } from "@/lib/ticket-sections";
 import { StatusBadge, ticketTone, type StatusTone } from "@/components/ui/status";
 import { ActivityList, type ActivityKind } from "@/components/ui/activity";
 import { Celebrate } from "@/components/ui/feedback";
@@ -326,6 +327,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   // invalidates what this page reads too — no separate, differently-shaped
   // cache to fall out of sync.
   const { data: workOrders } = useTicketWorkOrders(ticketId);
+  const [showAllDetails, setShowAllDetails] = useState(false);
 
   // Waiting is a saved state, not a form: reopening the ticket shows exactly
   // what was parked, on what, and when it comes back.
@@ -833,6 +835,14 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   });
   // The coordinator can say "this needs no repair" and go straight to finishing.
   const stage = rawStage === "repair" && closeOpen ? "closure" : rawStage;
+  const sections = ticketSections({
+    stage,
+    entryKind: (ticket as { entry_kind?: string | null }).entry_kind,
+    estimatedCost: (ticket as { estimated_cost?: number | null }).estimated_cost,
+    workOrderCount: (workOrders ?? []).length,
+    vendorName: ticket.vendor_name,
+    closed,
+  });
   // One active upload path: while an evidence requirement is live the uploader
   // lives in Current Work, and the Evidence tab shows history only.
   const evidenceRequirementActive =
@@ -1214,7 +1224,19 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
           </TabsContent>
 
           <TabsContent value="details" className="space-y-4 pt-4">
-            {role.isStaff && <ExpensesCard propertyId={ticket.property_id} linkType="ticket" targetId={ticketId} />}
+            {hiddenSectionCount(sections) > 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm">
+                <span className="text-muted-foreground">
+                  {showAllDetails
+                    ? "Showing every section, including ones this ticket does not need yet."
+                    : "Costs and vendor sections appear when this ticket needs them."}
+                </span>
+                <Button variant="outline" size="sm" onClick={() => setShowAllDetails((v) => !v)}>
+                  {showAllDetails ? "Show only what this ticket needs" : "Show all details"}
+                </Button>
+              </div>
+            )}
+            {role.isStaff && (showAllDetails || sections.costs) && <ExpensesCard propertyId={ticket.property_id} linkType="ticket" targetId={ticketId} />}
             {role.can("work_orders_internal") &&
               (!ticket.entry_kind ||
                 ownerSectionRelevant(ticket, ((workOrders ?? []) as { quote_amount?: number | null; approved_amount?: number | null }[]).flatMap((o) => [o.quote_amount, o.approved_amount])).relevant) && (
@@ -1268,7 +1290,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
               )}
             </div>
 
-            <details className="group rounded-lg border border-border px-3 py-2 text-sm">
+            <details open={showAllDetails || undefined} className="group rounded-lg border border-border px-3 py-2 text-sm">
               <summary className="cursor-pointer font-medium text-muted-foreground">
                 More about this ticket
               </summary>
@@ -1293,6 +1315,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                     repair_active and verify above; here it's reference only,
                     once all of those stages have passed. */}
                 {role.can("work_orders_internal") &&
+                  (showAllDetails || sections.vendor) &&
                   stage !== "repair" &&
                   stage !== "repair_active" &&
                   stage !== "verify" && (
