@@ -21,6 +21,7 @@ import { EmptyState, LoadingPage, PageHeader, SectionCard } from "@/components/u
 import { StatusBadge } from "@/components/ui/status";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { RoutineDrawer, type RoutineRow } from "@/components/routines/RoutineDrawer";
+import { MaintenanceReviewQueue } from "@/components/routines/MaintenanceReviewQueue";
 import { useDemo } from "@/components/DemoProvider";
 import { useSeat } from "@/hooks/useSeat";
 import {
@@ -28,8 +29,6 @@ import {
   ROUTINE_CONFIG,
   ROUTINE_KINDS,
   MANUAL_ROUTINE_KINDS,
-  maintenanceReviewKey,
-  needsMaintenanceReview,
   cleaningReviewKey,
   manualKey,
   routineConfig,
@@ -46,12 +45,12 @@ export const Route = createFileRoute("/_authenticated/routines")({
       {
         name: "description",
         content:
-          "Cleaning Reviews, Guest Reviews, Checkouts and Guest Touch Bases — the recurring checks the team runs every day.",
+          "Cleaning, guest, survey and maintenance reviews, checkouts and guest touch bases: the recurring checks the team runs every day.",
       },
       { property: "og:title", content: "Routine work — Resolve Operations" },
       {
         property: "og:description",
-        content: "The four routine controls, with what is due, what is late and what was found.",
+        content: "Routine checks with what is due, what is late and what was found.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -170,7 +169,7 @@ function RoutinesPage() {
             ? `${overdue.length} routine ${overdue.length === 1 ? "check is" : "checks are"} late`
             : "Routine work is on track"
         }
-        description="Legacy / backup: Checkout, Cleaning Review and Guest Review checks are replaced by the automated Departure Review in the Team Queue. Past checks stay here for history; Guest Touch Bases continue as before."
+        description="Legacy / backup: Checkout, Cleaning Review and Guest Review checks are replaced by the automated Departure Review in the Team Queue. Past checks stay here for history. Guest Touch Bases, Survey Reviews and Maintenance Reviews are worked here."
         actions={
           <>
             <div className="flex rounded-lg border border-border p-0.5">
@@ -212,6 +211,8 @@ function RoutinesPage() {
         rows={upcoming}
         onOpen={setOpenRow}
       />
+
+      <MaintenanceReviewQueue demoMode={demoMode} onOpen={setOpenRow} />
 
       <SectionCard
         title="Recently completed"
