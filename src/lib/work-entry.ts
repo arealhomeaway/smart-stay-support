@@ -52,6 +52,7 @@ export const MAINTENANCE_CATEGORIES = [
   { value: "structural", label: "Structural" },
   { value: "roof", label: "Roof" },
   { value: "water_intrusion", label: "Water intrusion / leak" },
+  { value: "fire_smoke", label: "Fire or smoke" },
   { value: "exterior", label: "Exterior / yard" },
   { value: "technology", label: "Internet / technology" },
   { value: "other", label: "Other" },
@@ -78,7 +79,7 @@ export function workTypeFitsKind(category: string | null | undefined, kind: "ops
  * flooding and major leaks (Water intrusion / leak), roof, structural.
  * Fire or smoke has no maintenance category yet.
  */
-export const INSURANCE_CATEGORIES: readonly string[] = ["water_intrusion", "roof", "structural"];
+export const INSURANCE_CATEGORIES: readonly string[] = ["water_intrusion", "roof", "structural", "fire_smoke"];
 
 /** Ask about insurance for these categories, and always keep an answer already given visible. */
 export function insuranceOptionShown(category: string | null | undefined, risk: string | null | undefined): boolean {
