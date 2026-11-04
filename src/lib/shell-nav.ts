@@ -113,6 +113,14 @@ export type PageTabGroup = {
 
 export const PAGE_TAB_GROUPS: PageTabGroup[] = [
   {
+    key: "bookings-leads",
+    match: (p) => ["/leads", "/inquiry-sources"].some((r) => p === r || p.startsWith(r + "/")),
+    tabs: [
+      { label: "Leads", to: "/leads", capability: "leads_work" },
+      { label: "Inquiry Sources", to: "/inquiry-sources", capability: "work_orders_internal" },
+    ],
+  },
+  {
     key: "my-work",
     match: (p) => p.startsWith("/tickets") || p === "/routines",
     tabs: [

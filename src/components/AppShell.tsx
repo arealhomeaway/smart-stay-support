@@ -96,6 +96,8 @@ type NavItem = {
   supervisorOnly?: boolean;
   /** Launch-state gate: hidden while the workstream is not part of the beta. */
   flag?: string;
+  /** Other pages that also highlight this item (grouped tab pages). */
+  alsoActive?: string[];
 };
 
 type NavGroup = { label: string; items: NavItem[] };
@@ -389,6 +391,22 @@ export function AppShell({ children }: { children: ReactNode }) {
                 ),
               }))
               .filter((g) => g.items.length > 0);
+            // Bookings & Leads: one item for Leads and Inquiry Sources, opening
+            // the first of the two this person can open (same visibility as before).
+            for (const g of visible) {
+              const booking = g.items.filter((i) => i.to === "/leads" || i.to === "/inquiry-sources");
+              if (!booking.length) continue;
+              const first = booking.find((i) => i.to === "/leads") ?? booking[0]!;
+              const at = g.items.indexOf(booking[0]!);
+              g.items = g.items.filter((i) => !booking.includes(i));
+              g.items.splice(at, 0, {
+                to: first.to,
+                label: "Bookings & Leads",
+                icon: first.icon,
+                tour: "bookings-leads",
+                alsoActive: ["/leads", "/inquiry-sources"],
+              });
+            }
             // One sidebar item per grouped area; the group's other pages are
             // top-of-page tabs (PAGE_TAB_GROUPS). The item opens the first
             // page this person can open.
@@ -489,7 +507,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                         Object.entries(item.search).every(([k, v]) => recordSearch[k] === v)
                       : onboardingOnly && item.to === "/onboarding"
                         ? activePathname === item.to && !("lens" in recordSearch)
-                        : activePathname === item.to ||
+                        : (item.alsoActive ?? []).some(
+                              (p) => activePathname === p || activePathname.startsWith(`${p}/`),
+                            ) ||
+                          activePathname === item.to ||
                           (!(onboardingOnly && item.to === "/onboarding") &&
                             activePathname.startsWith(`${item.to}/`));
                     return (
