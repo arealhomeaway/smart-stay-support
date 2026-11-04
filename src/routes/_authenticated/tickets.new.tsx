@@ -438,6 +438,60 @@ export function NewTicketForm({
     140,
   );
 
+  const guestInHomeNow = Boolean(
+    stay?.ok && stay.propertyId === form.property_id && stay.data.occupancy_status !== "vacant",
+  );
+  const guestImpactQuestion = (
+    <>
+      {stay?.ok && stay.propertyId === form.property_id && stay.data.occupancy_status !== "vacant" ? (
+                  <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+                    <p className="text-sm">
+                      OwnerRez shows {stay.data.guest_name ?? "a guest"} in the home right now.
+                    </p>
+                    <Label>Was the guest actually affected by this issue?</Label>
+                    <div className="flex gap-2" role="radiogroup" aria-label="Was the guest actually affected">
+                      {[
+                        { v: true, label: "Yes, the guest is affected" },
+                        { v: false, label: "No, not affected" },
+                      ].map((o) => (
+                        <Button
+                          key={String(o.v)}
+                          type="button"
+                          role="radio"
+                          size="sm"
+                          aria-checked={impactAnswered && form.guest_in_residence === o.v}
+                          variant={impactAnswered && form.guest_in_residence === o.v ? "default" : "outline"}
+                          onClick={() => {
+                            setImpactAnswered(true);
+                            setForm({ ...form, guest_in_residence: o.v });
+                          }}
+                        >
+                          {o.label}
+                        </Button>
+                      ))}
+                    </div>
+                    {!impactAnswered && (
+                      <p className="text-xs text-muted-foreground">
+                        A guest being in the home is not the same as being affected. Please choose one.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="guest-affected">A guest is currently affected</Label>
+                    <Switch
+                      id="guest-affected"
+                      checked={form.guest_in_residence}
+                      onCheckedChange={(v) => {
+                        setImpactAnswered(true);
+                        setForm({ ...form, guest_in_residence: v });
+                      }}
+                    />
+                  </div>
+                )}
+    </>
+  );
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!derivedTitle) {
@@ -447,6 +501,10 @@ export function NewTicketForm({
     if (!isTicket) return;
     if (!effectiveWorkTypeId) {
       toast.error("Pick what kind of Ops work this is.");
+      return;
+    }
+    if (guestInHomeNow && !impactAnswered && !form.guest_in_residence) {
+      toast.error("A guest is in the home. Please say whether they were actually affected.");
       return;
     }
     if (mode === "maintenance" && !form.maintenance_category) {
@@ -479,15 +537,6 @@ export function NewTicketForm({
       const now = new Date();
       const { response_due_at, action_due_at } = slaDueDates(form.priority, now, workType);
       const oneTouch = false;
-      if (
-        stay?.ok &&
-        stay.propertyId === form.property_id &&
-        stay.data.occupancy_status !== "vacant" &&
-        !impactAnswered &&
-        !form.guest_in_residence
-      ) {
-        throw new Error("A guest is in the home. Please say whether they were actually affected.");
-      }
       const estimated = form.estimated_cost.trim() ? Number(form.estimated_cost) : null;
 
       // A demo home only ever carries demo Tickets, whatever mode the viewer is in.
@@ -855,6 +904,8 @@ export function NewTicketForm({
               </div>
             )}
 
+            {mode === "ops" && guestInHomeNow && guestImpactQuestion}
+
             {mode === "maintenance" && (
               <div className="space-y-4 rounded-lg border border-border p-3">
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -906,52 +957,7 @@ export function NewTicketForm({
                     </SelectContent>
                   </Select>
                 </div>
-                {stay?.ok && stay.propertyId === form.property_id && stay.data.occupancy_status !== "vacant" ? (
-                  <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
-                    <p className="text-sm">
-                      OwnerRez shows {stay.data.guest_name ?? "a guest"} in the home right now.
-                    </p>
-                    <Label>Was the guest actually affected by this issue?</Label>
-                    <div className="flex gap-2" role="radiogroup" aria-label="Was the guest actually affected">
-                      {[
-                        { v: true, label: "Yes, the guest is affected" },
-                        { v: false, label: "No, not affected" },
-                      ].map((o) => (
-                        <Button
-                          key={String(o.v)}
-                          type="button"
-                          role="radio"
-                          size="sm"
-                          aria-checked={impactAnswered && form.guest_in_residence === o.v}
-                          variant={impactAnswered && form.guest_in_residence === o.v ? "default" : "outline"}
-                          onClick={() => {
-                            setImpactAnswered(true);
-                            setForm({ ...form, guest_in_residence: o.v });
-                          }}
-                        >
-                          {o.label}
-                        </Button>
-                      ))}
-                    </div>
-                    {!impactAnswered && (
-                      <p className="text-xs text-muted-foreground">
-                        A guest being in the home is not the same as being affected. Please choose one.
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="guest-affected">A guest is currently affected</Label>
-                    <Switch
-                      id="guest-affected"
-                      checked={form.guest_in_residence}
-                      onCheckedChange={(v) => {
-                        setImpactAnswered(true);
-                        setForm({ ...form, guest_in_residence: v });
-                      }}
-                    />
-                  </div>
-                )}
+                {guestImpactQuestion}
                 {insuranceOptionShown(form.maintenance_category, form.insurance_risk) && (
                 <div className="space-y-2">
                   <Label>Potential insurance-related event?</Label>
