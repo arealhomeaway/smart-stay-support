@@ -76,6 +76,15 @@ describe("work attention views", () => {
     });
     expect(parseWorkspaceSearch({ opp: 42 })).toEqual({ tab: "overview", workFilter: "all" });
   });
+  it("opens an emailed Opportunity link on Active Owner without locking the other tabs", () => {
+    // The email link itself: /onboarding/<home>?opp=<id>
+    expect(parseWorkspaceSearch({ opp: "o-1" }).tab).toBe("active-owner");
+    // Clicking Tasks (or any tab) keeps opp in the address but must still switch.
+    for (const tab of ["overview", "work", "property", "files", "handoff"]) {
+      expect(parseWorkspaceSearch({ opp: "o-1", tab }).tab).toBe(tab);
+    }
+    expect(parseWorkspaceSearch({ opp: "o-1", tab: "tasks" }).tab).toBe("work");
+  });
   it("orders one property queue with workable steps before waiting and finished work", () => {
     const ready = view("ready", "ready", "2026-09-16");
     const overdue = view("overdue", "in_progress", "2026-09-10", true);
