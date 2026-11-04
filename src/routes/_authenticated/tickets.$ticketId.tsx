@@ -1658,6 +1658,11 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                 <div className="flex flex-wrap items-center gap-2" data-testid="ticket-about-chips">
                   {ticket.record_type === "completed_interaction" && <StatusBadge tone="context">Completed interaction</StatusBadge>}
                   <StatusBadge tone={ticketTone(ticket.status)}>{labelFor(STATUSES, ticket.status)}</StatusBadge>
+                  {(ticket as { work_types?: { name?: string | null } | null }).work_types?.name && (
+                    <span className="text-sm text-muted-foreground" data-testid="about-work-type">
+                      Work type: {(ticket as { work_types: { name: string } }).work_types.name}
+                    </span>
+                  )}
                   {guestComm.impact === "yes" && <StatusBadge tone="brand">Affects active stay</StatusBadge>}
                   {isNotionImported(ticket) && (
                     <span className="inline-flex items-center gap-1.5 text-sm">
