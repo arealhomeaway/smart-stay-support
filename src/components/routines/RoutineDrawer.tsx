@@ -49,6 +49,8 @@ export type RoutineRow = {
   completed_at: string | null;
   assigned_to: string | null;
   properties?: { name: string | null; nickname: string | null } | null;
+  /** Unsaved check from the chooser: saved only when it is completed. */
+  draft?: Record<string, unknown>;
 };
 
 export function RoutineDrawer({
@@ -85,18 +87,29 @@ export function RoutineDrawer({
         .split(/[\n,]/)
         .map((v) => v.trim())
         .filter(Boolean);
+      const finished = {
+        status: "completed",
+        outcome,
+        findings: findings.trim() || null,
+        evidence_urls: urls,
+        completed_at: new Date().toISOString(),
+        completed_by: auth.user?.id ?? null,
+      };
+      if (row.draft) {
+        const { data, error } = await supabase
+          .from("routine_controls")
+          .insert({ ...row.draft, ...finished } as never)
+          .select("id")
+          .single();
+        if (error) throw error;
+        return data.id as string;
+      }
       const { error } = await supabase
         .from("routine_controls")
-        .update({
-          status: "completed",
-          outcome,
-          findings: findings.trim() || null,
-          evidence_urls: urls,
-          completed_at: new Date().toISOString(),
-          completed_by: auth.user?.id ?? null,
-        })
+        .update(finished)
         .eq("id", row.id);
       if (error) throw error;
+      return row.id;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["routine-controls"] });
@@ -109,7 +122,7 @@ export function RoutineDrawer({
 
   const start = useMutation({
     mutationFn: async () => {
-      if (!row) return;
+      if (!row || row.draft) return;
       const { data: auth } = await supabase.auth.getUser();
       const { error } = await supabase
         .from("routine_controls")
@@ -125,14 +138,15 @@ export function RoutineDrawer({
   // back to the ticket it produced.
   async function completeAndFollowUp() {
     if (!row) return;
+    let savedId: string;
     try {
-      await complete.mutateAsync();
+      savedId = await complete.mutateAsync();
     } catch {
       return;
     }
     const followUp = {
       ...(row.property_id ? { property: row.property_id } : {}),
-      from: `routine:${row.id}`,
+      from: `routine:${savedId}`,
     };
     // Follow-up opens in the shell side panel over the routine list, so
     // closing it returns here; the full page is the fallback outside the shell.
@@ -231,7 +245,7 @@ export function RoutineDrawer({
                     checked={Boolean(checked[step.id])}
                     onCheckedChange={(v) => {
                       setChecked((c) => ({ ...c, [step.id]: Boolean(v) }));
-                      if (row.status === "due") start.mutate();
+                      if (row.status === "due" && !row.draft) start.mutate();
                     }}
                     className="mt-0.5"
                   />
