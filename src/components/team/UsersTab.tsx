@@ -23,6 +23,7 @@ import { clock, filterUsers, isStaff, isTestAccount, seatsHeldBy, STAFF_ROLES, u
 import { buildModel, useCoverageModel } from "./ScheduleTab";
 import { TimeOffDialog } from "./TimeOffDialog";
 import { DeleteUserDialog } from "./DeleteUserDialog";
+import { USER_REMOVAL_ENABLED } from "@/lib/user-removal";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const STATUSES = ["Active", "Invite pending", "Off"] as const;
@@ -201,9 +202,11 @@ function UserPanel({
           )}
           <Button size="sm" onClick={() => setTimeOff(true)}>Add time off</Button>
         </section>
-        <section className="border-t border-border pt-3">
-          <Button size="sm" variant="destructive" onClick={() => setDeleting(true)}>Delete user</Button>
-        </section>
+        {USER_REMOVAL_ENABLED && (
+          <section className="border-t border-border pt-3">
+            <Button size="sm" variant="destructive" onClick={() => setDeleting(true)}>Delete user</Button>
+          </section>
+        )}
         {deleting && <DeleteUserDialog userId={person.id} name={row.name} onClose={() => setDeleting(false)} onDeleted={() => { onChanged(); onClose(); }} />}
         {editing && <EditTeammateDialog person={person as unknown as TeammateRow} onClose={() => setEditing(false)} />}
         {timeOff && (

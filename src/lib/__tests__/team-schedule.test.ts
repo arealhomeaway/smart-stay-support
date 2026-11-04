@@ -258,3 +258,26 @@ describe("Read only for non-supervisors", () => {
     expect((ui.match(/m\.canEdit \?/g) ?? []).length).toBe(3);
   });
 });
+
+import { USER_REMOVAL_ENABLED } from "@/lib/user-removal";
+import { isTestAccount as _isTest } from "@/lib/team-schedule";
+describe("Emily's confirmed test account list stays hidden by default", () => {
+  it("each listed account is classified as a test account", () => {
+    const flagged = ["emma"];
+    const list = [
+      { id: "1", full_name: "QA James", email: "qa.james@resolve-test.invalid" },
+      { id: "2", full_name: "qa.um.admin", email: "qa.um.admin@resolve-test.invalid" },
+      { id: "3", full_name: "Emily Jimenez", email: "emily.test@example.com" },
+      { id: "4", full_name: "pr10-owner-a-20260917@example.invalid", email: "pr10-owner-a-20260917@example.invalid" },
+      { id: "5", full_name: "pr10-owner-b-20260917@example.invalid", email: "pr10-owner-b-20260917@example.invalid" },
+      { id: "6", full_name: "Avery Lindqvist (demo owner)", email: "qa.owner@resolve-test.invalid" },
+      { id: "7", full_name: "Riley Alder (DEMO)", email: "riley.alder@demo.arha.test" },
+      { id: "emma", full_name: "Emma Renee", email: "emily.r.jimenez4@gmail.com" },
+    ];
+    for (const p of list) expect(_isTest(p, flagged)).toBe(true);
+    expect(_isTest({ id: "x", full_name: "James Almario", email: "james@arha.com" }, flagged)).toBe(false);
+  });
+  it("Delete user and Archive stay hidden until their database file is applied", () => {
+    expect(USER_REMOVAL_ENABLED).toBe(false);
+  });
+});

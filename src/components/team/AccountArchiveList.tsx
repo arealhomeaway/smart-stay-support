@@ -7,11 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SectionCard } from "@/components/ui/page";
+import { USER_REMOVAL_ENABLED } from "@/lib/user-removal";
 import { listArchivableAccounts, setAccountArchived } from "@/lib/user-removal.functions";
 import { ARCHIVE_CONFIRM } from "@/lib/user-removal";
 
 /** Admin only: archive or restore homeowner or vendor logins. Nothing is ever deleted. */
-export function AccountArchiveList({ kind }: { kind: "owner" | "vendor" }) {
+export function AccountArchiveList(props: { kind: "owner" | "vendor" }) {
+  if (!USER_REMOVAL_ENABLED) return null;
+  return <AccountArchiveListInner {...props} />;
+}
+
+function AccountArchiveListInner({ kind }: { kind: "owner" | "vendor" }) {
   const { isAdmin } = useRole();
   const qc = useQueryClient();
   const list = useServerFn(listArchivableAccounts);
