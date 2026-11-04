@@ -291,8 +291,7 @@ export function GuidedTicketPanel({
       )}
 
       {!closed && !readOnly && (guidedStep || needsWorkOrder) ? (
-        <section className="rounded-xl border-2 border-primary/40 bg-card p-4" aria-label="Next action">
-          <p className="eyebrow text-muted-foreground">Next action</p>
+        <section className="pt-1" aria-label="Next action">
 
           {needsWorkOrder && vendor.data && (
             <div className="mt-1 space-y-3">
