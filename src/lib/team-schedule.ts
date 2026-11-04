@@ -385,3 +385,21 @@ export function needsOwnerAlert(n: number) {
   if (n <= 0) return null;
   return `${n} ${n === 1 ? "ticket needs" : "tickets need"} an owner`;
 }
+
+export type CoverageWriters = {
+  saveOverride: (a: { roleCode: string; kind: "cover" | "off"; userId: string | null; startsAt: string; endsAt: string; note: string }) => Promise<unknown>;
+  saveShift: (a: { id: string | null; roleCode: string; weekday: number; startMinute: number; endMinute: number }) => Promise<unknown>;
+  deleteShift: (a: { id: string }) => Promise<unknown>;
+  setSeatHolder: (a: { roleCode: string; userId: string | null }) => Promise<unknown>;
+};
+
+/** Run planned writes in order through the existing audited server functions. */
+export async function applyCoverageActions(actions: CoverageAction[], w: CoverageWriters) {
+  for (const a of actions) {
+    if (a.type === "override") await w.saveOverride({ roleCode: a.roleCode, kind: a.kind, userId: a.userId, startsAt: a.startsAt, endsAt: a.endsAt, note: a.note });
+    else if (a.type === "shift") await w.saveShift({ id: a.id, roleCode: a.roleCode, weekday: a.weekday, startMinute: a.startMinute, endMinute: a.endMinute });
+    else if (a.type === "deleteShift") await w.deleteShift({ id: a.id });
+    else await w.setSeatHolder({ roleCode: a.roleCode, userId: a.userId });
+  }
+  return actions.length;
+}
