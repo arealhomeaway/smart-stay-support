@@ -10345,6 +10345,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          archived_at: string | null
+          archived_by: string | null
           avatar_url: string | null
           created_at: string
           email: string | null
@@ -10356,9 +10358,13 @@ export type Database = {
           last_name: string | null
           oncall_eligible: boolean
           phone: string | null
+          removed_at: string | null
+          removed_by: string | null
           updated_at: string
         }
         Insert: {
+          archived_at?: string | null
+          archived_by?: string | null
           avatar_url?: string | null
           created_at?: string
           email?: string | null
@@ -10370,9 +10376,13 @@ export type Database = {
           last_name?: string | null
           oncall_eligible?: boolean
           phone?: string | null
+          removed_at?: string | null
+          removed_by?: string | null
           updated_at?: string
         }
         Update: {
+          archived_at?: string | null
+          archived_by?: string | null
           avatar_url?: string | null
           created_at?: string
           email?: string | null
@@ -10384,6 +10394,8 @@ export type Database = {
           last_name?: string | null
           oncall_eligible?: boolean
           phone?: string | null
+          removed_at?: string | null
+          removed_by?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -16810,6 +16822,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      reassign_staff_open_work: { Args: { _user: string }; Returns: number }
       reconcile_onboarding_delivery: {
         Args: {
           _attempt_id: string
@@ -16988,6 +17001,7 @@ export type Database = {
         Args: { _program_id: string; _user_id: string }
         Returns: Json
       }
+      remove_staff_user: { Args: { _user: string }; Returns: undefined }
       remove_vendor_custom_field: {
         Args: { _field_id: string }
         Returns: string
@@ -17206,6 +17220,10 @@ export type Database = {
         Args: { _actor?: string }
         Returns: undefined
       }
+      set_account_archived: {
+        Args: { _archived: boolean; _user: string }
+        Returns: undefined
+      }
       set_attachment_visibility: {
         Args: { _actor_id: string; _document_id: string; _visibility: string }
         Returns: string
@@ -17274,6 +17292,14 @@ export type Database = {
       staff_link_owner_account: {
         Args: { _program_id: string; _user_id: string }
         Returns: string
+      }
+      staff_open_work: {
+        Args: { _user: string }
+        Returns: {
+          item_id: string
+          kind: string
+          label: string
+        }[]
       }
       start_optional_opportunity: {
         Args: { _property_id: string; _template_id: string }
