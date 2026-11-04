@@ -95,6 +95,7 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
   const [amount, setAmount] = useState("");
   const [policyFit, setPolicyFit] = useState<"unknown" | "within" | "outside">("unknown");
   const [flags, setFlags] = useState<EscalationFlag[]>([]);
+  const [decisionReason, setDecisionReason] = useState("");
   const [acknowledged, setAcknowledged] = useState(false);
 
   const recoveries = useQuery({
@@ -153,6 +154,8 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
           escalation_flags: escalations,
           authority_level: verdict.level,
           approval_status: verdict.level === "pc" ? "not_required" : "pending",
+          approval_authority: verdict.level === "pc" ? null : verdict.level,
+          decision_reason: decisionReason.trim() || null,
           policy_version: POLICY_VERSION,
           assigned_to: userId,
           created_by: userId,
@@ -262,7 +265,8 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
   if (!can("claims_work")) return null;
 
   const existing = recoveries.data ?? [];
-  const blocked = duplicates.length > 0 && !acknowledged;
+  const reasonMissing = verdict.requiresDecisionReason && !decisionReason.trim();
+  const blocked = (duplicates.length > 0 && !acknowledged) || reasonMissing;
 
   const toggleFlag = (flag: EscalationFlag) =>
     setFlags((current) =>
@@ -452,6 +456,19 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
               <p className="mt-1 text-xs text-muted-foreground">
                 {policyBoundaryLabel(withinPolicy)} · {POLICY_VERSION}
               </p>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs" htmlFor="rec-reason">
+                Reason {verdict.requiresDecisionReason ? "(required)" : "(optional)"}
+              </Label>
+              <Textarea
+                id="rec-reason"
+                rows={2}
+                value={decisionReason}
+                onChange={(e) => setDecisionReason(e.target.value)}
+                placeholder="Why this remedy, at this amount, for this guest."
+              />
             </div>
 
             {duplicates.length > 0 ? (

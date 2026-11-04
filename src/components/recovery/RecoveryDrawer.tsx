@@ -345,7 +345,7 @@ export function RecoveryDrawer({
 
             <div className="space-y-1">
               <Label className="text-xs">
-                Decision reason {verdict.requiresDecisionReason ? "(required)" : "(optional)"}
+                Reason {verdict.requiresDecisionReason ? "(required)" : "(optional)"}
               </Label>
               <Textarea
                 rows={2}
@@ -359,7 +359,11 @@ export function RecoveryDrawer({
             <div className="flex flex-wrap gap-2">
               <Button
                 size="sm"
-                disabled={readOnly || save.isPending}
+                disabled={
+                  readOnly ||
+                  save.isPending ||
+                  (verdict.requiresDecisionReason && !value("decision_reason").trim())
+                }
                 onClick={() => {
                   const policy = fields["within_airbnb_policy"];
                   save.mutate({
@@ -371,6 +375,9 @@ export function RecoveryDrawer({
                       approved_amount: numOrNull(value("approved_amount")),
                       decision_reason: value("decision_reason") || null,
                       authority_level: verdict.level,
+                      ...(recovery.approval_status === "not_required" && verdict.level !== "pc"
+                        ? { approval_status: "pending", approval_authority: verdict.level }
+                        : {}),
                       escalation_flags: verdict.escalations,
                       ...(policy
                         ? {
