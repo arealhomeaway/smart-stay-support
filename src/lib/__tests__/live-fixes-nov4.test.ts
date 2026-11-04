@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import { readFileSync } from "node:fs";
 import { backToNormalIds, cellBlocks, undoOutIds, whosOutRemoveIds, type SOverride, type SShift } from "@/lib/team-schedule";
 import { validateSlotInput } from "@/lib/evidence-slots.functions";
