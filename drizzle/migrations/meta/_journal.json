@@ -1723,6 +1723,13 @@
       "when": 1793829102911,
       "tag": "0245_allow_app_recovery_values",
       "breakpoints": true
+    },
+    {
+      "idx": 246,
+      "version": "7",
+      "when": 1793829191132,
+      "tag": "0246_refund_authority_guard",
+      "breakpoints": true
     }
   ]
 }

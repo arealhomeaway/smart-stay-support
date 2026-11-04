@@ -16937,6 +16937,15 @@ export type Database = {
         }
         Returns: string
       }
+      recovery_required_authority: {
+        Args: {
+          _action: string
+          _amount: number
+          _flags: string[]
+          _within_policy: boolean
+        }
+        Returns: string
+      }
       redeem_owner_invite: {
         Args: { _code: string; _user_id: string }
         Returns: string
