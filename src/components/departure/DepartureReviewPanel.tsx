@@ -16,8 +16,6 @@ import { ownerRezBookingUrl } from "@/lib/ownerrez-links";
 import { usDate } from "@/lib/dates";
 import {
   DAMAGE_CATEGORIES,
-  LEGACY_DAMAGE_CATEGORIES,
-  damageCategoryLabel,
   HOST_REVIEW_OPTIONS,
   OUTREACH_NO_REASONS,
   OUTREACH_OPTIONS,
@@ -106,7 +104,6 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
   const r = q.data?.r;
   const [propNotes, setPropNotes] = useState("");
   const [dmg, setDmg] = useState({ description: "", estimate: "", notes: "" });
-  const [depositText, setDepositText] = useState("");
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
@@ -116,7 +113,6 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
     if (!r) return;
     setPropNotes(r.property_notes ?? "");
     setDmg({ description: r.damage_description ?? "", estimate: r.damage_estimate?.toString() ?? "", notes: r.damage_notes ?? "" });
-    setDepositText(r.deposit_amount?.toString() ?? "");
     setReason(r.outreach_reason ?? "");
     setNotes(r.notes ?? "");
   }, [r?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -155,7 +151,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
 
   const createClaim = async () => {
     setBusy(true);
-    const cats = r.damage_categories.map(damageCategoryLabel);
+    const cats = r.damage_categories.map((c) => DAMAGE_CATEGORIES.find((d) => d.id === c)?.label ?? c);
     const { data, error } = await supabase.from("claims").insert({
       claim_type: "guest_damage",
       title: `Departure damage — ${cats.join(", ")}`,
@@ -310,7 +306,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
             {(r.damage_screen === "yes" || r.damage_screen === "unsure") && (
               <div className="space-y-3">
                 <div className="flex flex-wrap gap-2" role="group" aria-label="Damage categories">
-                  {[...DAMAGE_CATEGORIES, ...LEGACY_DAMAGE_CATEGORIES.filter((l) => r.damage_categories.includes(l.id))].map((c) => {
+                  {DAMAGE_CATEGORIES.map((c) => {
                     const on = r.damage_categories.includes(c.id);
                     return (
                       <Button key={c.id} size="sm" type="button" disabled={locked} variant={on ? "default" : "outline"} aria-pressed={on}
@@ -330,11 +326,6 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
                     <Label htmlFor="dr-de">Estimated amount (if known)</Label>
                     <Input id="dr-de" type="number" min="0" step="0.01" value={dmg.estimate} disabled={locked} onChange={(e) => setDmg({ ...dmg, estimate: e.target.value })}
                       onBlur={() => save({ damage_estimate: dmg.estimate ? Number(dmg.estimate) : null })} />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="dr-dep">Deposit amount (if the guest paid one)</Label>
-                    <Input id="dr-dep" type="number" min="0" step="0.01" value={depositText} disabled={locked} onChange={(e) => setDepositText(e.target.value)}
-                      onBlur={() => { const v = depositText ? Number(depositText) : null; if (v !== r.deposit_amount) void save({ deposit_amount: v }); }} />
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="dr-dn">Notes</Label>
