@@ -232,7 +232,7 @@ export const SEED_TEMPLATES: ChecklistTemplate[] = [
         label: "7",
         question: "Owner email sent within 1 business day, CC Micah Sinor and James Miller?",
         options: [yes()],
-        showIfApproval: { step: "quote", field: "amount", emergencyStep: "emergency" },
+        showIfApproval: { step: "quote", field: "amount" },
       },
       {
         key: "calendar",

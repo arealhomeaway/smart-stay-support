@@ -71,7 +71,7 @@ export type ChecklistStep = {
    * Shown only when the amount entered on another step needs approval or an
    * owner FYI under the existing Work Order spending authority.
    */
-  showIfApproval?: { step: string; field: string; emergencyStep?: string };
+  showIfApproval?: { step: string; field: string };
   /** Shown only when a guest is active (in the home or arriving within 48 hours). */
   activeGuestOnly?: boolean;
   /** This is a guest-response step: Yes records the guest update and asks when the next is due. */
@@ -172,9 +172,8 @@ export function stepVisible(step: ChecklistStep, answers: Map<string, ChecklistA
     const a = answers.get(step.showIfApproval.step);
     const amount = a?.fields?.[step.showIfApproval.field];
     if (!a || amount === undefined || amount === "") return false;
-    const emergency = step.showIfApproval.emergencyStep ? answers.get(step.showIfApproval.emergencyStep)?.value === "yes" : false;
+    // The owner email is owed at the permanent-repair band even in an emergency.
     const band = repairBand(Number(amount), false);
-    void emergency; // owner email is owed for $200+ even in an emergency; approval may follow
     if (!band || !(band.ownerApprovalRequired || band.supervisorApprovalRequired)) return false;
   }
   return true;
