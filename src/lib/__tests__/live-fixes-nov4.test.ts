@@ -47,18 +47,18 @@ describe("refund and claim evidence checklist", () => {
   it("no screen inserts evidence_requirements directly", () => {
     for (const f of ["src/components/recovery/LogRecoveryDialog.tsx", "src/components/recovery/TicketRecoveryPanel.tsx", "src/components/claims/TicketClaimPanel.tsx"]) {
       const s = readFileSync(f, "utf8");
-      expect(s).not.toMatch(/from\("evidence_requirements"\)\.insert/);
+      expect(s.includes('from("evidence_requirements").insert')).toBe(false);
       expect(s).toContain("createEvidenceSlotsFn");
     }
   });
   it("server path removes the new record if the checklist fails", () => {
     const s = readFileSync("src/lib/evidence-slots.functions.ts", "utf8");
-    expect(s).toMatch(/if \(error\) \{[\s\S]*\.delete\(\)\.eq\("id", row\.id\)\.eq\("created_by", userId\)/);
+    expect(/if \(error\) \{[\s\S]*\.delete\(\)\.eq\("id", row\.id\)\.eq\("created_by", userId\)/.test(s)).toBe(true);
     expect(s).toContain("row.created_by !== userId");
   });
   it("validates input", () => {
     expect(() => validateSlotInput({ subjectType: "tickets", subjectId: "x", slots: [] })).toThrow();
     const ok = validateSlotInput({ subjectType: "claim", subjectId: "21bcc867-f72d-4ea9-8bfc-efa199aec180", slots: [{ slot_key: "a", label: "A", requirement_kind: "photo", instruction: null, required: true, subject_type: "x" }] });
-    expect(ok.slots[0]).not.toHaveProperty("subject_type");
+    expect("subject_type" in (ok.slots[0] as object)).toBe(false);
   });
 });
