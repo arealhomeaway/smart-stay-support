@@ -150,6 +150,8 @@ const frontlineGroup: NavGroup = {
       tour: "inquiry-sources",
       capability: "work_orders_internal",
     },
+    // Lead Management is Operations work (Guest Experience & Reservations).
+    { to: "/leads", label: "Lead Management", icon: UserPlus, tour: "leads", capability: "leads_work" },
   ],
 };
 
@@ -225,7 +227,6 @@ const navGroups: NavGroup[] = [
         tour: "homeowners",
         capability: "homeowner_directory",
       },
-      { to: "/leads", label: "Leads", icon: UserPlus, tour: "leads", capability: "leads_work" },
     ],
   },
   // "Reports" and "Admin" are single sidebar items that open the first page
