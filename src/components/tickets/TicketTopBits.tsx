@@ -9,7 +9,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Check } from "lucide-react";
 import { getPropertyContactContext } from "@/lib/guest-context.functions";
 import { useRole } from "@/hooks/useRole";
-import { useDemo } from "@/hooks/useDemo";
+import { useDemo } from "@/components/DemoProvider";
 import { usDate } from "@/lib/dates";
 import { StatusBadge } from "@/components/ui/status";
 import type { Tracker } from "@/lib/ticket-cleanup";
