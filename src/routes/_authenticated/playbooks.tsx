@@ -102,7 +102,7 @@ function usePlaybooks() {
         .select("*")
         .order("updated_at", { ascending: false });
       if (error) throw error;
-      return (data as PlaybookRow[]).map(parsePlaybook);
+      return (data as PlaybookRow[]).map(parsePlaybook).filter((p) => !p.isChecklist);
     },
   });
 }
