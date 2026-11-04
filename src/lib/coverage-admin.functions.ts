@@ -76,19 +76,42 @@ export const coverageModel = createServerFn({ method: "POST" })
       supabase.from("coverage_config").select("*").maybeSingle(),
       supabase.rpc("is_supervisor", { _user_id: context.userId }),
     ]);
-    // Active internal staff (for the on-call rotation picker). Only leadership
-    // gets this list, read after the supervisor check above.
-    let staffIds: string[] = [];
+    const settings = await supabase
+      .from("app_settings")
+      .select("key, value")
+      .in("key", ["oncall_weekday_pattern", "schedule_grid_seats", "test_account_ids"]);
+    const setting = (k: string) => (settings.data ?? []).find((r: { key: string }) => r.key === k)?.value ?? null;
+    // Staff with roles and sign-in state (for pickers). Only leadership gets
+    // this list, read after the supervisor check above.
+    let staff: { id: string; full_name: string | null; email: string | null; roles: string[]; active: boolean }[] = [];
     if (canEdit.data === true) {
       const db = await admin();
-      const { data: staff } = await db
-        .from("user_roles")
-        .select("user_id")
-        .in("role", ["admin", "manager", "onboarding", "tech"]);
-      staffIds = [...new Set((staff ?? []).map((r: { user_id: string }) => r.user_id))];
+      const [{ data: ur }, users] = await Promise.all([
+        db.from("user_roles").select("user_id, role"),
+        db.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+      ]);
+      const authById = new Map((users.data?.users ?? []).map((u) => [u.id, u]));
+      staff = ((people.data ?? []) as { id: string; full_name: string | null; email: string | null }[]).map((p) => {
+        const u = authById.get(p.id) as { banned_until?: string | null } | undefined;
+        const banned = !!u?.banned_until && new Date(u.banned_until) > new Date();
+        return {
+          id: p.id,
+          full_name: p.full_name,
+          email: p.email,
+          roles: ((ur ?? []) as { user_id: string; role: string }[]).filter((r) => r.user_id === p.id).map((r) => r.role),
+          active: !!u && !banned,
+        };
+      });
     }
+    const eligibleIds = ((people.data ?? []) as { id: string; oncall_eligible: boolean | null }[])
+      .filter((p) => p.oncall_eligible)
+      .map((p) => p.id);
     return {
-      staffIds,
+      staff,
+      eligibleIds,
+      patternSetting: setting("oncall_weekday_pattern"),
+      gridSeatsSetting: setting("schedule_grid_seats"),
+      testAccountIds: (Array.isArray(setting("test_account_ids")) ? setting("test_account_ids") : []) as string[],
       roles: roles.data ?? [],
       shifts: shifts.data ?? [],
       overrides: overrides.data ?? [],
@@ -440,5 +463,129 @@ export const deleteOnCall = createServerFn({ method: "POST" })
       before,
       after: null,
     });
+    return { ok: true as const };
+  });
+
+// ---------- Pass A.2: weekday pattern, date changes, settings ----------
+
+async function assertAdminCaller({ supabase, userId }: Ctx) {
+  const { data, error } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+  if (error) throw new Error("Could not verify your access level.");
+  if (!data) throw new Error("Only an Admin can change this setting.");
+}
+
+async function writeSetting(key: string, value: unknown, actorId: string) {
+  const db = await admin();
+  const { data: prev } = await db.from("app_settings").select("value").eq("key", key).maybeSingle();
+  const { error } = await db
+    .from("app_settings")
+    .upsert({ key, value: value as never, updated_by: actorId, updated_at: new Date().toISOString() } as never, { onConflict: "key" });
+  if (error) throw error;
+  await audit({ actorId, action: "settings.updated", entityType: "app_settings", entityId: null, entityLabel: key, before: prev?.value ?? null, after: value });
+}
+
+async function eligibleOnCall(): Promise<Set<string>> {
+  const db = await admin();
+  const { data, error } = await db.from("profiles").select("id").eq("oncall_eligible", true);
+  if (error) throw error;
+  return new Set(((data ?? []) as { id: string }[]).map((r) => r.id));
+}
+
+const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
+
+/** Weekday pattern (Sunday to Saturday). Never touches dated roster rows. */
+export const saveOnCallPattern = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { pattern: (string | null)[] }) => {
+    const p = Array.isArray(input?.pattern) ? input.pattern : [];
+    if (p.length !== 7) throw new Error("Pick a person for each day of the week.");
+    return { pattern: p.map((x) => uuidOrNull(x)) };
+  })
+  .handler(async ({ data, context }) => {
+    await assertCanEditCoverage(context);
+    const ok = await eligibleOnCall();
+    if (data.pattern.some((u) => !u)) throw new Error("Every day needs someone on call.");
+    if (data.pattern.some((u) => u && !ok.has(u))) throw new Error("Only people on the on-call list can be picked.");
+    await writeSetting("oncall_weekday_pattern", Object.fromEntries(data.pattern.map((u, i) => [String(i), u ?? ""])), context.userId);
+    return { ok: true as const };
+  });
+
+/**
+ * Date changes in one call: each date gets one single-night row (or none, to
+ * fall back to the pattern). One delete and one insert, so range, swap and
+ * single nights save together.
+ */
+export const saveOnCallNights = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { changes: { date: string; userId: string | null; note?: string }[] }) => {
+    const c = Array.isArray(input?.changes) ? input.changes : [];
+    if (c.length === 0 || c.length > 370) throw new Error("Pick between 1 and 370 nights.");
+    return {
+      changes: c.map((x) => {
+        const date = String(x?.date ?? "").slice(0, 10);
+        if (!isDate(date)) throw new Error("Pick a valid date.");
+        return { date, userId: uuidOrNull(x?.userId), note: String(x?.note ?? "").slice(0, 160) };
+      }),
+    };
+  })
+  .handler(async ({ data, context }) => {
+    await assertCanEditCoverage(context);
+    const ok = await eligibleOnCall();
+    if (data.changes.some((c) => c.userId && !ok.has(c.userId))) throw new Error("Only people on the on-call list can be picked.");
+    const { dateChangeLabel } = await import("./team-schedule");
+    const db = await admin();
+    const dates = [...new Set(data.changes.map((c) => c.date))];
+    const { data: before } = await db.from("oncall_roster").select("*").in("starts_on", dates);
+    const replace = ((before ?? []) as { id: string; starts_on: string; ends_on: string }[]).filter((r) => r.starts_on === r.ends_on);
+    if (replace.length) {
+      const { error } = await db.from("oncall_roster").delete().in("id", replace.map((r) => r.id));
+      if (error) throw error;
+    }
+    const rows = data.changes
+      .filter((c) => c.userId)
+      .map((c) => ({ user_id: c.userId!, starts_on: c.date, ends_on: c.date, label: dateChangeLabel(c.note), created_by: context.userId }));
+    if (rows.length) {
+      const { error } = await db.from("oncall_roster").insert(rows as never);
+      if (error) throw error;
+    }
+    await audit({ actorId: context.userId, action: "coverage.oncall_dates_changed", entityType: "oncall_roster", entityId: null, before: replace, after: rows });
+    return { ok: true as const };
+  });
+
+/** Admin: who may be picked for on call. */
+export const setOncallEligible = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { userId: string; eligible: boolean }) => ({ userId: uuidOrNull(input?.userId)!, eligible: input?.eligible === true }))
+  .handler(async ({ data, context }) => {
+    await assertAdminCaller(context);
+    const db = await admin();
+    const { data: prev } = await db.from("profiles").select("oncall_eligible").eq("id", data.userId).maybeSingle();
+    const { error } = await db.from("profiles").update({ oncall_eligible: data.eligible } as never).eq("id", data.userId);
+    if (error) throw error;
+    await audit({ actorId: context.userId, action: "user.oncall_eligible_changed", entityType: "user", entityId: data.userId, before: prev, after: { oncall_eligible: data.eligible } });
+    return { ok: true as const };
+  });
+
+/** Admin: mark or unmark an account as a test account (hidden by default). Never deletes. */
+export const setTestAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { userId: string; test: boolean }) => ({ userId: uuidOrNull(input?.userId)!, test: input?.test === true }))
+  .handler(async ({ data, context }) => {
+    await assertAdminCaller(context);
+    const db = await admin();
+    const { data: row } = await db.from("app_settings").select("value").eq("key", "test_account_ids").maybeSingle();
+    const cur = (Array.isArray(row?.value) ? row!.value : []) as string[];
+    const next = data.test ? [...new Set([...cur, data.userId])] : cur.filter((x) => x !== data.userId);
+    await writeSetting("test_account_ids", next, context.userId);
+    return { ok: true as const };
+  });
+
+/** Admin: which seats show as rows on the schedule grid. Display only. */
+export const saveGridSeats = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { codes: string[] }) => ({ codes: (Array.isArray(input?.codes) ? input.codes : []).map((c) => code(c)) }))
+  .handler(async ({ data, context }) => {
+    await assertAdminCaller(context);
+    await writeSetting("schedule_grid_seats", data.codes, context.userId);
     return { ok: true as const };
   });
