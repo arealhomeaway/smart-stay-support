@@ -5,7 +5,8 @@
 --    precedence); otherwise the weekday pattern in app_settings key oncall_weekday_pattern. Because the
 --    pattern has no end date, no night is ever empty while the pattern has a person for that weekday.
 -- 2. public.auto_assign_ticket(): the overnight lookup calls that function. No other line changes.
--- 4. public.seat_on_duty(): a seat with no recurring shifts counts as OFF duty (was: always on).
+-- 4. public.seat_on_duty(): a scheduled coverage seat (ge_*, po_*) with no recurring shifts counts as
+--    OFF duty (was: always on). Every other seat keeps the old rule exactly (no shifts = always on).
 --    Precheck md5(pg_get_functiondef('public.seat_on_duty(text,timestamptz)')) = 6c092e95270690504a379582bf2327c6.
 -- 3. Seeds the pattern once from the latest roster night for each weekday (only when the key is absent),
 --    so routing keeps working past the last roster row (currently 2026-11-07).
@@ -195,7 +196,9 @@ CREATE OR REPLACE FUNCTION public.seat_on_duty(_role_code text, _at timestamp wi
 AS $function$
   SELECT CASE
     WHEN NOT EXISTS (SELECT 1 FROM public.coverage_shifts c WHERE c.role_code = _role_code AND c.active)
-      THEN false  -- a seat with no recurring shifts is off duty (Pass A.2)
+      THEN NOT (_role_code LIKE 'ge\_%' OR _role_code LIKE 'po\_%')
+      -- only scheduled coverage seats (ge_*, po_*) with no recurring shifts are off duty (Pass A.2);
+      -- every other seat keeps the previous rule: no shifts means always on duty
     ELSE EXISTS (
       SELECT 1 FROM public.coverage_shifts c
       WHERE c.role_code = _role_code AND c.active
