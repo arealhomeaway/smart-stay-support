@@ -43,6 +43,74 @@ import {
   type ScheduledWorkOrder,
 } from "@/lib/work-order-calendar";
 import type { WorkOrderRow } from "@/lib/work-order-types";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  DEFAULT_FILTERS,
+  SOURCE_LABELS,
+  WORK_TYPE_LABELS,
+  activeFilterCount,
+  breezewayCalendarItems,
+  matchesCalendarFilters,
+  type BreezewayCalendarRow,
+  type CalendarFilters,
+  type CalendarItem,
+  type CalendarSource,
+  type WorkType,
+} from "@/lib/work-order-calendar-sources";
+
+function resolveItem(entry: ScheduledWorkOrder): CalendarItem {
+  const w = entry.workOrder;
+  return {
+    key: `wo:${w.id}`,
+    source: "resolve",
+    id: w.id,
+    day: entry.day,
+    title: w.title,
+    propertyId: w.property_id,
+    workType: "maintenance",
+    assignees: w.vendor_name ? [w.vendor_name] : [],
+  };
+}
+
+/** Breezeway work orders already synced into Resolve, for the visible window. */
+function useBreezewayCalendar(from: string, to: string) {
+  return useQuery({
+    queryKey: ["work-order-calendar-breezeway", from, to],
+    staleTime: 60 * 1000,
+    queryFn: async () => {
+      const [rows, synced] = await Promise.all([
+        supabase
+          .from("breezeway_work_orders")
+          .select("id, breezeway_task_id, name, department, status, scheduled_date, property_id, assignees, linked_ticket_id")
+          .gte("scheduled_date", from)
+          .lte("scheduled_date", to)
+          .neq("status", "Deleted")
+          .order("scheduled_date", { ascending: true })
+          .limit(3000),
+        supabase
+          .from("breezeway_work_orders")
+          .select("last_synced_at")
+          .order("last_synced_at", { ascending: false, nullsFirst: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+      if (rows.error) throw rows.error;
+      return {
+        rows: (rows.data ?? []) as Array<BreezewayCalendarRow & { linked_ticket_id: string | null }>,
+        lastSyncedAt: (synced.data?.last_synced_at as string | null | undefined) ?? null,
+      };
+    },
+  });
+}
+
+function isoShift(day: string, days: number): string {
+  const d = new Date(`${day}T12:00:00`);
+  d.setDate(d.getDate() + days);
+  return calendarDay(d.toISOString()) ?? day;
+}
 
 export const Route = createFileRoute("/_authenticated/work-orders/calendar")({
   validateSearch: (raw: Record<string, unknown>) => ({
@@ -69,10 +137,59 @@ function WorkOrderCalendar() {
   const { readOnly } = useRole();
 
   const rows = useMemo(() => workOrders.data ?? [], [workOrders.data]);
-  const entries = useMemo(() => scheduleEntries(rows), [rows]);
+  const [filters, setFilters] = useState<CalendarFilters>(DEFAULT_FILTERS);
+  const [openBz, setOpenBz] = useState<string | null>(null);
+  const allEntries = useMemo(() => scheduleEntries(rows), [rows]);
+  const entries = useMemo(
+    () => allEntries.filter((e) => matchesCalendarFilters(resolveItem(e), filters)),
+    [allEntries, filters],
+  );
   const grid = useMemo(() => monthGrid(month, entries), [month, entries]);
   const today = calendarDay(new Date().toISOString()) ?? "";
   const timeline = useMemo(() => timelineDays(entries, today), [entries, today]);
+  const monthStart = `${month}-01`;
+  const windowFrom = isoShift(monthStart < today ? monthStart : today, -7);
+  const windowTo = isoShift(isoShift(monthStart, 31) > isoShift(today, 30) ? isoShift(monthStart, 31) : isoShift(today, 30), 7);
+  const breezeway = useBreezewayCalendar(windowFrom, windowTo);
+  const linkedRefs = useMemo(
+    () => new Set(rows.map((w) => w.breezeway_task_ref).filter((v): v is string => Boolean(v))),
+    [rows],
+  );
+  const bzAll = useMemo(
+    () => breezewayCalendarItems(breezeway.data?.rows ?? [], linkedRefs),
+    [breezeway.data, linkedRefs],
+  );
+  const bzItems = useMemo(() => bzAll.filter((i) => matchesCalendarFilters(i, filters)), [bzAll, filters]);
+  const bzByDay = useMemo(() => {
+    const m = new Map<string, CalendarItem[]>();
+    for (const i of bzItems) m.set(i.day, [...(m.get(i.day) ?? []), i]);
+    return m;
+  }, [bzItems]);
+  const timelineAll = useMemo(() => {
+    const days = new Set<string>(timeline.map((t) => t.day));
+    const horizon = isoShift(today, 30);
+    for (const d of bzByDay.keys()) if (d >= today && d <= horizon) days.add(d);
+    return [...days].sort().map((day) => ({
+      day,
+      entries: timeline.find((t) => t.day === day)?.entries ?? [],
+      bz: bzByDay.get(day) ?? [],
+    }));
+  }, [timeline, bzByDay, today]);
+  const propertyOptions = useMemo(() => {
+    const ids = new Set<string>();
+    for (const e of allEntries) if (e.workOrder.property_id) ids.add(e.workOrder.property_id);
+    for (const i of bzAll) if (i.propertyId) ids.add(i.propertyId);
+    return [...ids]
+      .map((id) => ({ id, name: propertyNames.data?.get(id) ?? "Unnamed home" }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [allEntries, bzAll, propertyNames.data]);
+  const assigneeOptions = useMemo(() => {
+    const names = new Set<string>();
+    for (const e of allEntries) for (const a of resolveItem(e).assignees) names.add(a);
+    for (const i of bzAll) for (const a of i.assignees) names.add(a);
+    return [...names].sort((a, b) => a.localeCompare(b));
+  }, [allEntries, bzAll]);
+  const openBzRow = openBz ? (breezeway.data?.rows ?? []).find((r) => r.id === openBz) ?? null : null;
   const waiting = useMemo(() => unscheduled(rows), [rows]);
 
   const [openId, setOpenId] = useState<string | null>(search.open ?? null);
@@ -127,6 +244,48 @@ function WorkOrderCalendar() {
         ) : null}
       </div>
 
+      <div className="flex flex-wrap items-end gap-3 rounded-lg border border-border p-3">
+        <FilterSelect
+          label="Source"
+          value={filters.source}
+          onChange={(v) => setFilters((f) => ({ ...f, source: v as CalendarSource }))}
+          options={(Object.keys(SOURCE_LABELS) as CalendarSource[]).map((k) => ({ value: k, label: SOURCE_LABELS[k] }))}
+        />
+        <FilterSelect
+          label="Work type"
+          value={filters.workType}
+          onChange={(v) => setFilters((f) => ({ ...f, workType: v as WorkType | "all" }))}
+          options={[
+            { value: "all", label: "All work types" },
+            ...(Object.keys(WORK_TYPE_LABELS) as WorkType[]).map((k) => ({ value: k, label: WORK_TYPE_LABELS[k] })),
+          ]}
+        />
+        <FilterSelect
+          label="Home"
+          value={filters.propertyId}
+          onChange={(v) => setFilters((f) => ({ ...f, propertyId: v }))}
+          options={[{ value: "all", label: "All homes" }, ...propertyOptions.map((p) => ({ value: p.id, label: p.name }))]}
+        />
+        <FilterSelect
+          label="Assigned to"
+          value={filters.assignee}
+          onChange={(v) => setFilters((f) => ({ ...f, assignee: v }))}
+          options={[{ value: "all", label: "Anyone" }, ...assigneeOptions.map((a) => ({ value: a, label: a }))]}
+        />
+        {activeFilterCount(filters) > 0 ? (
+          <Button variant="ghost" className="h-9" onClick={() => setFilters(DEFAULT_FILTERS)}>
+            Reset filters ({activeFilterCount(filters)})
+          </Button>
+        ) : null}
+        <p className="ml-auto text-xs text-muted-foreground">
+          {breezeway.isError
+            ? "Breezeway work orders could not be loaded."
+            : breezeway.data?.lastSyncedAt
+              ? `Breezeway data last synced ${usDate(breezeway.data.lastSyncedAt)} at ${usTime(breezeway.data.lastSyncedAt)}`
+              : "Breezeway data has not synced yet."}
+        </p>
+      </div>
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <StatTile label="Scheduled, all dates" value={entries.length} />
         <StatTile
@@ -176,9 +335,20 @@ function WorkOrderCalendar() {
                       onOpen={() => setOpenId(entry.workOrder.id)}
                     />
                   ))}
-                  {cell.entries.length > 3 ? (
+                  {(bzByDay.get(cell.day) ?? []).slice(0, Math.max(0, 3 - cell.entries.length)).map((item) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => setOpenBz(item.id)}
+                      title={`Breezeway: ${item.title}`}
+                      className="resolve-press block w-full truncate rounded border border-dashed border-border px-1.5 py-1 text-left text-[0.6875rem] hover:bg-muted/70"
+                    >
+                      {propertyNames.data?.get(item.propertyId ?? "") ?? item.title}
+                    </button>
+                  ))}
+                  {cell.entries.length + (bzByDay.get(cell.day)?.length ?? 0) > 3 ? (
                     <p className="text-[0.6875rem] text-muted-foreground">
-                      +{cell.entries.length - 3} more
+                      +{cell.entries.length + (bzByDay.get(cell.day)?.length ?? 0) - 3} more
                     </p>
                   ) : null}
                 </div>
@@ -186,17 +356,17 @@ function WorkOrderCalendar() {
             ))}
           </div>
         </SectionCard>
-      ) : timeline.length === 0 ? (
+      ) : timelineAll.length === 0 ? (
         <EmptyState
           title="Nothing scheduled from today onward"
           hint="Set a schedule or a vendor arrival time on an open Work Order to see it here."
         />
       ) : (
-        timeline.map(({ day, entries: dayEntries }) => (
+        timelineAll.map(({ day, entries: dayEntries, bz }) => (
           <SectionCard
             key={day}
             title={usDate(day)}
-            description={`${dayEntries.length} Work Order${dayEntries.length === 1 ? "" : "s"}`}
+            description={`${dayEntries.length + bz.length} Work Order${dayEntries.length + bz.length === 1 ? "" : "s"}`}
           >
             <div className="space-y-2">
               {dayEntries.map((entry) => (
@@ -206,6 +376,28 @@ function WorkOrderCalendar() {
                   propertyName={nameOf(entry.workOrder)}
                   onOpen={() => setOpenId(entry.workOrder.id)}
                 />
+              ))}
+              {bz.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setOpenBz(item.id)}
+                  className="resolve-press flex w-full items-start gap-3 rounded-md px-2 py-2 text-left hover:bg-muted/40"
+                >
+                  <span className="w-20 shrink-0 pt-0.5 text-xs text-muted-foreground">All day</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold">
+                        {propertyNames.data?.get(item.propertyId ?? "") ?? "Home not linked"}
+                      </span>
+                      <StatusBadge tone="waiting">Breezeway</StatusBadge>
+                      <span className="text-xs text-muted-foreground">{WORK_TYPE_LABELS[item.workType]}</span>
+                    </span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">
+                      {item.title} · {item.assignees.join(", ") || "Not assigned"}
+                    </span>
+                  </span>
+                </button>
               ))}
             </div>
           </SectionCard>
@@ -249,6 +441,38 @@ function WorkOrderCalendar() {
         originToken={originToken}
         onClose={() => setOpenId(null)}
       />
+
+      <Dialog open={Boolean(openBzRow)} onOpenChange={(v) => !v && setOpenBz(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{openBzRow?.name ?? "Breezeway work order"}</DialogTitle>
+          </DialogHeader>
+          {openBzRow ? (
+            <div className="space-y-1.5 text-sm">
+              <p>{propertyNames.data?.get(openBzRow.property_id ?? "") ?? "Home not linked"}</p>
+              <p className="text-muted-foreground">
+                Breezeway status: {openBzRow.status ?? "Unknown"}
+                {openBzRow.scheduled_date ? ` · ${usDate(openBzRow.scheduled_date)}` : ""}
+              </p>
+              <p className="text-muted-foreground">
+                Assigned to: {bzAll.find((i) => i.id === openBzRow.id)?.assignees.join(", ") || "Not assigned"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                This is a copy of the Breezeway work order. Changes are made in Breezeway.
+              </p>
+              {openBzRow.linked_ticket_id ? (
+                <Link
+                  to="/tickets/$ticketId"
+                  params={{ ticketId: openBzRow.linked_ticket_id }}
+                  className="font-medium text-primary hover:underline"
+                >
+                  Open the linked ticket
+                </Link>
+              ) : null}
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
@@ -320,5 +544,34 @@ function TimelineRow({
         </span>
       </span>
     </button>
+  );
+}
+
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+      {label}
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-9 max-w-[14rem] rounded-md border border-input bg-background px-2 text-sm text-foreground"
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
