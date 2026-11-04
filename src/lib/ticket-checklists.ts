@@ -67,6 +67,11 @@ export type ChecklistStep = {
   action?: ChecklistAction;
   /** Shown only when an earlier step was answered with one of these values. */
   showIf?: { step: string; answers: string[] };
+  /**
+   * Shown only when the amount entered on another step needs approval or an
+   * owner FYI under the existing Work Order spending authority.
+   */
+  showIfApproval?: { step: string; field: string; emergencyStep?: string };
   /** Shown only when a guest is active (in the home or arriving within 48 hours). */
   activeGuestOnly?: boolean;
   /** This is a guest-response step: Yes records the guest update and asks when the next is due. */
@@ -162,6 +167,15 @@ export function stepVisible(step: ChecklistStep, answers: Map<string, ChecklistA
   if (step.showIf) {
     const a = answers.get(step.showIf.step);
     if (!a || !step.showIf.answers.includes(a.value)) return false;
+  }
+  if (step.showIfApproval) {
+    const a = answers.get(step.showIfApproval.step);
+    const amount = a?.fields?.[step.showIfApproval.field];
+    if (!a || amount === undefined || amount === "") return false;
+    const emergency = step.showIfApproval.emergencyStep ? answers.get(step.showIfApproval.emergencyStep)?.value === "yes" : false;
+    const band = repairBand(Number(amount), false);
+    void emergency; // owner email is owed for $200+ even in an emergency; approval may follow
+    if (!band || !(band.ownerApprovalRequired || band.supervisorApprovalRequired)) return false;
   }
   return true;
 }
@@ -267,6 +281,7 @@ export function templateProblems(t: ChecklistTemplate): string[] {
       if (target < 0) out.push(`Step ${s.label} answer "${o.label}" goes to a step that doesn't exist.`);
       else if (target <= idx) out.push(`Step ${s.label} answer "${o.label}" must go forward.`);
     }
+    if (s.showIfApproval && !keys.has(s.showIfApproval.step)) out.push(`Step ${s.label} depends on a step that doesn't exist.`);
     if (s.showIf && !keys.has(s.showIf.step)) out.push(`Step ${s.label} depends on a step that doesn't exist.`);
   });
   return out;
