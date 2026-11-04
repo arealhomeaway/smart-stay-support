@@ -7,15 +7,20 @@
  */
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useRole } from "@/hooks/useRole";
+import { useSeat } from "@/hooks/useSeat";
 import { pageTabGroupFor } from "@/lib/shell-nav";
 import { cn } from "@/lib/utils";
 
 export function GroupTabs() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { can, canOpen } = useRole();
+  // Same rule as the sidebar: Guest Experience seats work leads.
+  const seat = useSeat();
   const group = pageTabGroupFor(pathname);
   if (!group) return null;
-  const tabs = group.tabs.filter((t) => (!t.capability || can(t.capability)) && canOpen(t.to));
+  const tabs = group.tabs.filter((t) =>
+      (!t.capability || can(t.capability) || (t.capability === "leads_work" && seat.isGuestExperience)) &&
+      canOpen(t.to));
   if (tabs.length < 2) return null;
 
   return (
