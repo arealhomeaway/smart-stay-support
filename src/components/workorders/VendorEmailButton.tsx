@@ -30,7 +30,17 @@ export function VendorEmailButton({ workOrderId }: { workOrderId: string }) {
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "The email was not sent."),
   });
-  if (!q.data?.offered) return null;
+  if (!q.data) return null;
+  if (!q.data.offered) {
+    return (
+      <span className="inline-flex items-center gap-2">
+        <Button size="sm" variant="outline" disabled title={q.data.notOfferedReason ?? undefined}>
+          <Mail className="mr-1 size-4" /> Email work order to vendor
+        </Button>
+        <span className="text-xs text-muted-foreground">{q.data.notOfferedReason}</span>
+      </span>
+    );
+  }
   const problems = vendorEmailProblems(`${subject}\n${body}`);
   return (
     <>
