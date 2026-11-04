@@ -247,15 +247,6 @@ function Dashboard() {
             >
               <Users className="size-4" /> Team queue
             </Link>
-            {role.can("ticket_create") && (
-              <Link
-                to="/tickets/new"
-                search={{ origin: originSearch.from }}
-                className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20"
-              >
-                <Plus className="size-4" /> Report an issue
-              </Link>
-            )}
           </>
         }
       />
@@ -308,20 +299,9 @@ function Dashboard() {
         </SectionCard>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <SectionCard title="Recent activity" description="The last few things that moved.">
-          <ActivityList events={recent} emptyLabel="Nothing has moved in your work yet today." />
-        </SectionCard>
-        <div className="warm-surface flex flex-col justify-center p-6">
-          <p className="eyebrow">The ARHA way</p>
-          <p className="mt-2 font-display text-2xl leading-snug">
-            “Own the outcome. Protect the stay.”
-          </p>
-          <p className="mt-3 text-sm text-muted-foreground">
-            A handoff is not complete until someone accepts it.
-          </p>
-        </div>
-      </div>
+      <SectionCard title="Recent activity" description="The last few things that moved.">
+        <ActivityList events={recent} emptyLabel="Nothing has moved in your work yet today." />
+      </SectionCard>
 
       <RoutineWorkDue />
     </div>

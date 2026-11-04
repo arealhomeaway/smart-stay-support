@@ -150,15 +150,6 @@ const frontlineGroup: NavGroup = {
       tour: "inquiry-sources",
       capability: "work_orders_internal",
     },
-    // Kept in the sidebar: the top-bar "Record work" button hides on every
-    // /tickets page, so removing this item would strand people there.
-    {
-      to: "/tickets/new",
-      label: "Record work",
-      icon: Plus,
-      tour: "report",
-      capability: "ticket_create",
-    },
   ],
 };
 
@@ -334,7 +325,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     !readOnly &&
     operationsSurface &&
     can("ticket_create") &&
-    !pathname.startsWith("/tickets");
+    pathname !== "/tickets/new";
   const quietLogTicket = [
     "/leads",
     "/onboarding",
