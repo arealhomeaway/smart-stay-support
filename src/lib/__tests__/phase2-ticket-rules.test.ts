@@ -30,3 +30,17 @@ describe("property history default", () => {
     expect(sameCategoryHistory(rows, key).map((r) => r.id)).toEqual(["a", "b"]);
   });
 });
+
+import { insuranceOptionShown as shown2, MAINTENANCE_CATEGORIES as MC } from "@/lib/work-entry";
+import { DAMAGE_CATEGORIES as DC, damageLabel } from "@/lib/departure-review";
+describe("approved follow-ups", () => {
+  it("Fire or smoke exists and asks about insurance", () => {
+    expect(MC.some((c) => c.value === "fire_smoke" && c.label === "Fire or smoke")).toBe(true);
+    expect(shown2("fire_smoke", "")).toBe(true);
+  });
+  it("damage checklist matches the Fillout list and old answers still read", () => {
+    const labels = DC.map((d) => d.label);
+    for (const l of ["Carpet stains", "Extra cleaning", "Minor cat damage", "Major cat damage", "Minor dog damage", "Major dog damage", "Excessive pet hair", "Linens and towels", "Smoking pot", "Smoking cigarettes", "Furniture damage", "Rug damage"]) expect(labels).toContain(l);
+    expect(damageLabel("pet_damage")).toBe("Pet damage");
+  });
+});
