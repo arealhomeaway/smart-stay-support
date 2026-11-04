@@ -236,13 +236,15 @@ export function fillQuestion(q: string, facts: { lockSystem?: string | null }) {
 /** Repair band text from the existing Work Order spending authority. */
 export function repairBand(amount: number | null, emergency: boolean) {
   if (amount === null || !Number.isFinite(amount)) return null;
-  const v = evaluateAuthority({ phase: emergency ? "mitigation" : "permanent", emergency_reason: emergency ? "active_leak" : null, quote_amount: amount });
+  const v = evaluateAuthority({ phase: emergency ? "mitigation" : "permanent", emergency_reason: emergency ? "active_property_damage" : null, quote_amount: amount });
   return { label: v.label, reason: v.reason, ownerApprovalRequired: v.ownerApprovalRequired, supervisorApprovalRequired: v.supervisorApprovalRequired };
 }
 
 /** Refund limits text from the existing refund policy. */
 export function refundLimitsText() {
-  return RECOVERY_POLICY;
+  const pc = RECOVERY_POLICY.pcApprovalCeiling;
+  const sup = RECOVERY_POLICY.supervisorApprovalCeiling;
+  return `Coordinator up to $${pc}, Supervisor over $${pc}, Director over $${sup.toLocaleString("en-US")}. A reason is always required.`;
 }
 
 // ---------------------------------------------------------------------------
