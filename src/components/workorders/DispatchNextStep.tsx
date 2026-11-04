@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useCurrentUserId } from "@/hooks/useTeam";
 import { authorizationState, type DispatchWorkOrder } from "@/lib/vendor-sourcing";
 import { pushWorkOrderToBreezeway } from "@/lib/vendor-sourcing.functions";
 import { prepareVendorWorkOrderEmail } from "@/lib/vendor-email.functions";

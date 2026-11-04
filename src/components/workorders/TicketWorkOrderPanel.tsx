@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCurrentUserId, useStaffDirectory } from "@/hooks/useTeam";
+import { DispatchNextStep } from "@/components/workorders/DispatchNextStep";
 import { useRole } from "@/hooks/useRole";
 import { stateChip } from "@/lib/semantic";
 import { WorkOrderDrawer } from "@/components/workorders/WorkOrderDrawer";
@@ -335,6 +336,14 @@ export function TicketWorkOrderPanel({
 
               {blockers.length && !wo.closed_at ? (
                 <p className="text-xs text-muted-foreground">Before closing: {blockers[0]}</p>
+              ) : null}
+
+              {!wo.closed_at ? (
+                <DispatchNextStep
+                  workOrderId={wo.id}
+                  readOnly={readOnly}
+                  onOpenWorkOrder={() => onOpenWorkOrderIdChange(wo.id)}
+                />
               ) : null}
 
               <Button size="sm" variant="outline" onClick={() => onOpenWorkOrderIdChange(wo.id)}>
