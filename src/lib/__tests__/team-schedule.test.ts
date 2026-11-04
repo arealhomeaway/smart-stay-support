@@ -191,7 +191,7 @@ describe("Who appears in lists and pickers", () => {
     expect(staffPickerPeople(people, seated, []).map((p) => p.id)).toEqual([A]);
   });
   it("on-call pickers show only the eligible list", () => {
-    expect(oncallPickerPeople(people, [C, "qa", "own"], []).map((p) => p.id)).toEqual([C, "own"].filter((x) => x === C));
+    expect(oncallPickerPeople(people, [C, "qa", "own"], []).map((p) => p.id)).toEqual([C]);
   });
   it("grid rows come from the setting; hidden seats keep their data", () => {
     const all: SRole[] = [...roles, { code: "ops_supervisor", name: "Sup", current_seat_holder: C, current_seat_name: null }];

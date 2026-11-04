@@ -421,7 +421,7 @@ export function staffPickerPeople(people: StaffPerson[], roles: SRole[], flagged
 }
 /** On-call pickers: only the Admin-kept eligible list, never test accounts. */
 export function oncallPickerPeople(people: StaffPerson[], eligibleIds: string[], flagged: string[]): StaffPerson[] {
-  return people.filter((p) => eligibleIds.includes(p.id) && p.active && !isTestAccount(p, flagged));
+  return people.filter((p) => eligibleIds.includes(p.id) && p.active && isStaff(p) && !isTestAccount(p, flagged));
 }
 
 /** Seats shown as grid rows. Display only: hidden seats keep routing exactly as before. */
