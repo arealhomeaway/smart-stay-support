@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { stayQualifies, touchBaseDueToCreate, touchBaseDueAt, touchBaseEventKey, touchBaseSyncDue } from "../guest-touch-base";
 
 const b = (arrival: string, departure: string, extra = {}) => ({ id: 77, arrival, departure, status: "active", ...extra });
