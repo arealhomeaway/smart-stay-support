@@ -129,7 +129,14 @@ export function parseWorkspaceSearch(search: {
     activity: "files",
     history: "files",
   };
-  const candidate = typeof search.opp === "string" && typeof search.task !== "string" ? "active-owner" : typeof search.tab === "string" ? (aliases[search.tab] ?? search.tab) : "overview";
+  // A tab the person picked always wins. A linked Opportunity only chooses the
+  // starting tab, so it can never lock someone out of Tasks or other tabs.
+  const candidate =
+    typeof search.tab === "string"
+      ? (aliases[search.tab] ?? search.tab)
+      : typeof search.opp === "string" && typeof search.task !== "string"
+        ? "active-owner"
+        : "overview";
   return {
     tab: (WORKSPACE_TABS as readonly string[]).includes(candidate) ? candidate : "overview",
     workFilter:
