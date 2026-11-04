@@ -48,6 +48,7 @@ import { HomeownerCard } from "@/components/property/HomeownerCard";
 import { ActiveOwnerPanel } from "@/components/property/ActiveOwnerPanel";
 import { LifecycleSwitcher } from "@/components/property/LifecycleSwitcher";
 import { BackControl, useRecordOrigin, useWorkspaceOrigin } from "@/components/nav/NavContext";
+import { PropertyFilesTab } from "@/components/property/PropertyFilesTab";
 import { CompletedOnboardingRecords } from "@/components/property/CompletedOnboardingRecords";
 import { useRole } from "@/hooks/useRole";
 
@@ -203,6 +204,7 @@ function PropertyHubPage() {
           {hub.viewer.staff && <TabsTrigger value="surveys">Guest Surveys</TabsTrigger>}
           {hub.viewer.staff && <TabsTrigger value="reviews">Reviews</TabsTrigger>}
           <TabsTrigger value="documents">Documents &amp; media</TabsTrigger>
+          <TabsTrigger value="files">Files</TabsTrigger>
           <TabsTrigger value="approvals">Approvals</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
@@ -250,6 +252,9 @@ function PropertyHubPage() {
         )}
         <TabsContent value="documents" className="mt-4">
           <DocumentsTab hub={hub} />
+        </TabsContent>
+        <TabsContent value="files" className="mt-4">
+          <PropertyFilesTab propertyId={propertyId} />
         </TabsContent>
         <TabsContent value="approvals" className="mt-4">
           <ApprovalsTab hub={hub} />
