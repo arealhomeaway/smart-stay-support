@@ -95,8 +95,22 @@ describe("On-call weekday pattern (isolated PostgreSQL)", () => {
 
   it("hidden grid rows still route: daytime seat and Supervisor last resort unchanged", async () => {
     await overnight(false);
+    for (let d = 0; d < 7; d++)
+      await db.query("INSERT INTO public.coverage_shifts(role_code, weekday, start_minute, end_minute) VALUES ('ge_day',$1,0,1440)", [d]);
     expect(await route("ge_day")).toBe(holder);
     expect(await route(null)).toBe(sup);
+  });
+
+  it("a seat with no recurring shifts is off duty, so its work goes to the Supervisor", async () => {
+    await overnight(false);
+    await db.exec("INSERT INTO public.functional_roles(code, name, current_seat_holder) VALUES ('empty_seat','Empty',$$" + holder + "$$) ON CONFLICT DO NOTHING");
+    const duty = async () => (await db.query<{ d: boolean }>("SELECT public.seat_on_duty('empty_seat') d")).rows[0]!.d;
+    expect(await duty()).toBe(false);
+    expect(await route("empty_seat")).toBe(sup);
+    await db.exec(HELPERS.split("CREATE OR REPLACE FUNCTION public.seat_on_duty")[1] ? "CREATE OR REPLACE FUNCTION public.seat_on_duty" + HELPERS.split("CREATE OR REPLACE FUNCTION public.seat_on_duty")[1]!.split("CREATE OR REPLACE FUNCTION public.seat_override_at")[0]! : "");
+    expect(await duty()).toBe(true); // today's rule: always on duty
+    await db.exec(NEW);
+    expect(await duty()).toBe(false);
   });
 
   it("only the on-call lookup line changed, and undo restores the exact Pass A definition", async () => {
@@ -111,6 +125,10 @@ describe("On-call weekday pattern (isolated PostgreSQL)", () => {
     await db.exec(LIVE + ";");
     expect(undone).toBe(await def());
     expect((await db.query("SELECT 1 FROM pg_proc WHERE proname='oncall_user_for_night'")).rows).toHaveLength(0);
+    const sod = async () => (await db.query<{ d: string }>("SELECT pg_get_functiondef('public.seat_on_duty'::regproc) d")).rows[0]!.d;
+    const afterUndo = await sod();
+    await db.exec(read(`${DIR}/live-capture/public.seat_on_duty.sql`));
+    expect(afterUndo).toBe(await sod());
   });
 
   it("no anonymous or PUBLIC execute", async () => {
