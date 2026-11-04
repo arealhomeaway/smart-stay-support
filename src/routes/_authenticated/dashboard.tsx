@@ -26,6 +26,7 @@ import { OPEN_STATUSES, priorityMeta, priorityTone, relativeTime, slaState } fro
 import { isMine } from "@/lib/matters";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 import { SupervisorAttentionBand } from "@/components/SupervisorAttentionBand";
+import { withoutImportHeld } from "@/lib/import-hold";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -111,7 +112,7 @@ function Dashboard() {
     },
   });
 
-  const rows = data ?? [];
+  const rows = withoutImportHeld(data ?? []);
   const open = rows.filter((t) => OPEN_STATUSES.includes(t.status));
   const owned = role.userId ? open.filter((t) => isMine(t, role.userId)) : [];
   // While an admin is previewing another seat, their own assignments are not

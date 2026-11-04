@@ -97,6 +97,7 @@ import { Chip } from "@/components/ui/page";
 import { PersonChip } from "@/components/PersonAvatar";
 import { stateChip } from "@/lib/semantic";
 import { Badge } from "@/components/ui/badge";
+import { IMPORT_HOLD_LABELS, isImportHeld, isNotionImported, type ImportHold } from "@/lib/import-hold";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -1128,6 +1129,19 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                 </StatusBadge>
                 {guestComm.impact === "yes" && (
                   <StatusBadge tone="brand">Affects active stay</StatusBadge>
+                )}
+                {isNotionImported(ticket) && (
+                  <span className="inline-flex items-center gap-1.5 text-sm">
+                    <StatusBadge tone="neutral">Imported from Notion</StatusBadge>
+                    {ticket.external_url && (
+                      <a href={ticket.external_url} target="_blank" rel="noreferrer" className="font-medium text-primary underline-offset-2 hover:underline">
+                        Open in Notion
+                      </a>
+                    )}
+                  </span>
+                )}
+                {isImportHeld(ticket as { import_hold?: string | null }) && (
+                  <StatusBadge tone="waiting">{IMPORT_HOLD_LABELS[(ticket as { import_hold: ImportHold }).import_hold]}</StatusBadge>
                 )}
                 {ticket.property_id && (
                   <button
