@@ -3,6 +3,12 @@
  * Staff are deleted as a kept "former" record; homeowners and vendors are archived.
  * Nobody's row is ever deleted, so history always has a name to show.
  */
+/**
+ * Delete user and Archive stay hidden until docs/pending/remove-users is applied
+ * in a separate approved step. Flip to true only then.
+ */
+export const USER_REMOVAL_ENABLED = false;
+
 export type OpenWorkItem = { kind: "ticket" | "task" | "work_order" | "approval" | "seat"; item_id: string; label: string };
 
 export const OPEN_WORK_LABEL: Record<OpenWorkItem["kind"], string> = {

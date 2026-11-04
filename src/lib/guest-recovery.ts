@@ -961,3 +961,22 @@ export function findDuplicates(
 }
 
 export { formatMoney, communicationOverdue };
+
+/**
+ * Who may Approve or Decline a refund awaiting approval. Mirrors the database
+ * function decide_recovery_approval: Supervisor level = Operations Supervisor,
+ * Director or Admin; Director level = Director or Admin. The database re-checks.
+ */
+export function canDecideApproval(
+  level: string | null | undefined,
+  viewer: { isSupervisor: boolean; isDirector: boolean; isAdmin?: boolean },
+): boolean {
+  const director = viewer.isDirector || !!viewer.isAdmin;
+  if (level === "director") return director;
+  return director || viewer.isSupervisor;
+}
+
+/** A decision reason is always required. */
+export function decisionReasonMissing(reason: string | null | undefined): boolean {
+  return !(reason ?? "").trim();
+}

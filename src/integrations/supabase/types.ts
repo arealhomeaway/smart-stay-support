@@ -16278,6 +16278,15 @@ export type Database = {
         Args: { _decision: string; _note?: string; _review_id: string }
         Returns: Json
       }
+      decide_recovery_approval: {
+        Args: {
+          _approved_amount?: number
+          _decision: string
+          _reason?: string
+          _recovery_id: string
+        }
+        Returns: undefined
+      }
       email_delivery_allowed: {
         Args: {
           _actor_id?: string
@@ -16430,6 +16439,7 @@ export type Database = {
         Args: { _task_id: string }
         Returns: Json
       }
+      oncall_user_for_night: { Args: { _night: string }; Returns: string }
       open_handoff_blockers: { Args: { _property_id: string }; Returns: number }
       ops_send_owner_ready: { Args: never; Returns: boolean }
       override_onboarding_task_date: {
@@ -16933,6 +16943,15 @@ export type Database = {
           _expected_updated_at: string
           _note: string
           _owner_id: string
+        }
+        Returns: string
+      }
+      recovery_required_authority: {
+        Args: {
+          _action: string
+          _amount: number
+          _flags: string[]
+          _within_policy: boolean
         }
         Returns: string
       }
