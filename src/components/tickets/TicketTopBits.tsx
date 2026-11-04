@@ -14,7 +14,7 @@ import { usDate } from "@/lib/dates";
 import { StatusBadge } from "@/components/ui/status";
 import type { Tracker } from "@/lib/ticket-cleanup";
 
-export type HeaderOccupancy = { state: "in_home" | "vacant" | "unknown"; guestName: string | null; until: string | null };
+export type HeaderOccupancy = { state: "in_home" | "vacant" | "unknown"; guestName: string | null; until: string | null; nextArrival?: string | null };
 
 export function useHeaderOccupancy(propertyId: string | null | undefined): HeaderOccupancy {
   const { can, isVendor, isOwner } = useRole();
