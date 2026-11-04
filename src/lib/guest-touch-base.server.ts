@@ -129,7 +129,7 @@ export async function runGuestTouchBaseSync(admin: Admin, now = new Date()) {
       const seen = bookings.find((b) => String(b.id) === bookingId);
       const booking = seen ?? (await ownerRezGet<Booking>(`/bookings/${encodeURIComponent(bookingId)}`).catch(() => null));
       if (!booking || !isCancelledBooking(booking)) continue;
-      await admin
+      const { error: closeError } = await admin
         .from("routine_controls")
         .update({
           status: "cancelled",
@@ -138,6 +138,7 @@ export async function runGuestTouchBaseSync(admin: Admin, now = new Date()) {
         })
         .eq("id", row.id)
         .in("status", ["due", "in_progress"]);
+      if (closeError) throw new Error(`Could not close touch base ${row.id}: ${closeError.message}`);
       cancelled++;
     }
 
