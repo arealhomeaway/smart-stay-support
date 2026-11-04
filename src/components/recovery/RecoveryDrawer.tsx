@@ -37,8 +37,6 @@ import {
   RECOVERY_ACTION_LABELS,
   RECOVERY_STAGE_LABELS,
   canClose,
-  canDecideApproval,
-  decisionReasonMissing,
   closureBlockers,
   effectiveOwner,
   evaluateAuthority,
