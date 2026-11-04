@@ -12284,6 +12284,8 @@ export type Database = {
           event_at: string
           event_type: string
           evidence_url: string | null
+          external_author_name: string | null
+          external_id: string | null
           from_owner: string | null
           id: string
           internal: boolean
@@ -12301,6 +12303,8 @@ export type Database = {
           event_at?: string
           event_type?: string
           evidence_url?: string | null
+          external_author_name?: string | null
+          external_id?: string | null
           from_owner?: string | null
           id?: string
           internal?: boolean
@@ -12318,6 +12322,8 @@ export type Database = {
           event_at?: string
           event_type?: string
           evidence_url?: string | null
+          external_author_name?: string | null
+          external_id?: string | null
           from_owner?: string | null
           id?: string
           internal?: boolean
@@ -12713,6 +12719,7 @@ export type Database = {
           handoff_status: string
           handoff_type: string | null
           id: string
+          import_hold: string | null
           initiator_type: string
           insurance_risk: string | null
           is_demo: boolean
@@ -12846,6 +12853,7 @@ export type Database = {
           handoff_status?: string
           handoff_type?: string | null
           id?: string
+          import_hold?: string | null
           initiator_type?: string
           insurance_risk?: string | null
           is_demo?: boolean
@@ -12979,6 +12987,7 @@ export type Database = {
           handoff_status?: string
           handoff_type?: string | null
           id?: string
+          import_hold?: string | null
           initiator_type?: string
           insurance_risk?: string | null
           is_demo?: boolean
@@ -16312,6 +16321,15 @@ export type Database = {
           state: string
           task_ids: string[]
         }[]
+      }
+      import_notion_ticket: { Args: { p: Json }; Returns: Json }
+      import_notion_ticket_comments: {
+        Args: { p_comments: Json; p_ticket_id: string }
+        Returns: number
+      }
+      import_notion_ticket_file: {
+        Args: { p: Json; p_ticket_id: string }
+        Returns: boolean
       }
       instantiate_onboarding_v2: {
         Args: { _project_id: string; _version_id: string }
