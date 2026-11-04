@@ -12,8 +12,8 @@ export const IMPORT_HOLD_LABELS: Record<ImportHold, string> = {
 export function isImportHeld(t: { import_hold?: string | null }): boolean {
   return t.import_hold === "backlog_review" || t.import_hold === "needs_home";
 }
-export function withoutImportHeld<T extends { import_hold?: string | null }>(rows: T[]): T[] {
-  return rows.filter((r) => !isImportHeld(r));
+export function withoutImportHeld<T>(rows: T[]): T[] {
+  return rows.filter((r) => !isImportHeld(r as { import_hold?: string | null }));
 }
 export function isNotionImported(t: { external_source?: string | null }): boolean {
   return t.external_source === "notion";

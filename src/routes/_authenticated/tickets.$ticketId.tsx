@@ -1140,8 +1140,8 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                     )}
                   </span>
                 )}
-                {isImportHeld(ticket as { import_hold?: string | null }) && (
-                  <StatusBadge tone="waiting">{IMPORT_HOLD_LABELS[(ticket as { import_hold: ImportHold }).import_hold]}</StatusBadge>
+                {isImportHeld(ticket as unknown as { import_hold?: string | null }) && (
+                  <StatusBadge tone="waiting">{IMPORT_HOLD_LABELS[(ticket as unknown as { import_hold: ImportHold }).import_hold]}</StatusBadge>
                 )}
                 {ticket.property_id && (
                   <button
