@@ -172,6 +172,8 @@ export function NewTicketForm({
   const isTicket = mode === "ops" || mode === "maintenance";
   const [saving, setSaving] = useState(false);
   const [priorityTouched, setPriorityTouched] = useState(false);
+  // Guest impact must be a person's answer, never inferred from occupancy.
+  const [impactAnswered, setImpactAnswered] = useState(false);
   const [showCatalog, setShowCatalog] = useState(false);
   // Everything Resolve can decide for itself stays folded away until asked for.
   const [advanced, setAdvanced] = useState(false);
@@ -477,6 +479,15 @@ export function NewTicketForm({
       const now = new Date();
       const { response_due_at, action_due_at } = slaDueDates(form.priority, now, workType);
       const oneTouch = false;
+      if (
+        stay?.ok &&
+        stay.propertyId === form.property_id &&
+        stay.data.occupancy_status !== "vacant" &&
+        !impactAnswered &&
+        !form.guest_in_residence
+      ) {
+        throw new Error("A guest is in the home. Please say whether they were actually affected.");
+      }
       const estimated = form.estimated_cost.trim() ? Number(form.estimated_cost) : null;
 
       // A demo home only ever carries demo Tickets, whatever mode the viewer is in.
