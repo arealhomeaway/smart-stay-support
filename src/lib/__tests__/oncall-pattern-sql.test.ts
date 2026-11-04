@@ -102,7 +102,7 @@ describe("On-call weekday pattern (isolated PostgreSQL)", () => {
   it("only the on-call lookup line changed, and undo restores the exact Pass A definition", async () => {
     const body = (s: string) => s.slice(s.indexOf("CREATE OR REPLACE FUNCTION public.auto_assign_ticket"), s.indexOf("$function$;", s.indexOf("CREATE OR REPLACE FUNCTION public.auto_assign_ticket")));
     const a = body(NEW).split("\n"), b = LIVE.split("\n");
-    const removed = b.filter((l) => !a.includes(l)), added = a.filter((l) => !b.includes(l));
+    const removed = b.filter((l) => !a.includes(l) && l.trim() !== "$function$;" && l.trim() !== ""), added = a.filter((l) => !b.includes(l));
     expect(removed.every((l) => /oncall_roster|v_oncall|BETWEEN r\.starts_on|ORDER BY \(r\.ends_on|LIMIT 1;|WHERE \(CASE WHEN v_minutes/.test(l))).toBe(true);
     expect(added.every((l) => /oncall_user_for_night|CASE WHEN v_minutes/.test(l))).toBe(true);
     const def = async () => (await db.query<{ d: string }>("SELECT pg_get_functiondef('public.auto_assign_ticket'::regproc) d")).rows[0]!.d;
