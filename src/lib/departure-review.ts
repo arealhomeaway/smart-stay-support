@@ -7,15 +7,34 @@
  * has ended. Everything here is pure so the rules are testable and shared.
  */
 
+/** Damage checklist, matching the Fillout Cleaning Review form. */
 export const DAMAGE_CATEGORIES = [
+  { id: "carpet_stains", label: "Carpet stains" },
   { id: "extra_cleaning", label: "Extra cleaning" },
-  { id: "pet_damage", label: "Pet damage" },
-  { id: "missing_items", label: "Missing items" },
-  { id: "linen_damage", label: "Linen/towel damage" },
-  { id: "smoking", label: "Smoking" },
-  { id: "property_damage", label: "Property damage" },
+  { id: "minor_cat_damage", label: "Minor cat damage" },
+  { id: "major_cat_damage", label: "Major cat damage" },
+  { id: "minor_dog_damage", label: "Minor dog damage" },
+  { id: "major_dog_damage", label: "Major dog damage" },
+  { id: "excessive_pet_hair", label: "Excessive pet hair" },
+  { id: "linen_damage", label: "Linens and towels" },
+  { id: "smoking_pot", label: "Smoking pot" },
+  { id: "smoking_cigarettes", label: "Smoking cigarettes" },
+  { id: "furniture_damage", label: "Furniture damage" },
+  { id: "rug_damage", label: "Rug damage" },
   { id: "other", label: "Other" },
 ] as const;
+
+/** Older choices kept so reviews saved before the checklist change still read correctly. */
+export const LEGACY_DAMAGE_CATEGORIES = [
+  { id: "pet_damage", label: "Pet damage" },
+  { id: "missing_items", label: "Missing items" },
+  { id: "smoking", label: "Smoking" },
+  { id: "property_damage", label: "Property damage" },
+] as const;
+
+export function damageCategoryLabel(id: string): string {
+  return [...DAMAGE_CATEGORIES, ...LEGACY_DAMAGE_CATEGORIES].find((d) => d.id === id)?.label ?? id;
+}
 
 export const OUTREACH_OPTIONS = [
   { id: "yes", label: "Yes" },
