@@ -27,6 +27,7 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
         const { runAoClocksGuarded } = await import("@/lib/ao-ui");
         const { runReviewOverdueSweep } = await import("@/lib/onboarding-reviews");
         const { runNightlyReviewSync } = await import("@/lib/review-sync.server");
+        const { runGuestTouchBaseSync } = await import("@/lib/guest-touch-base.server");
 
         try {
           const result = await runEmailJob(supabaseAdmin, [
@@ -42,6 +43,8 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
             { name: "onboarding_review_overdue", run: () => runReviewOverdueSweep(supabaseAdmin) },
             // Nightly OwnerRez review import (2 a.m. Central); read-only toward OwnerRez.
             { name: "ownerrez_reviews_nightly", run: () => runNightlyReviewSync(supabaseAdmin) },
+            // Hourly: one Guest Touch Base task per 4+ night stay on day 2. Reads OwnerRez only; never contacts guests.
+            { name: "guest_touch_base", run: () => runGuestTouchBaseSync(supabaseAdmin) },
           ]);
           return Response.json(result, { status: result.ok ? 200 : 500 });
         } catch (err) {

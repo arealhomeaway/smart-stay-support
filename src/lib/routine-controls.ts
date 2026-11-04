@@ -180,7 +180,8 @@ export const ROUTINE_CONFIG: Record<RoutineKind, RoutineConfig> = {
     outcomes: ["looks_good", "needs_follow_up", "no_answer", "not_applicable"],
     followUpPrompt: "What did the guest raise?",
     evidenceLabel: null,
-    generated: false,
+    generated: true,
+    generatedFrom: "day 2 of OwnerRez stays of 4 or more nights",
   },
   survey_review: {
     kind: "survey_review",
