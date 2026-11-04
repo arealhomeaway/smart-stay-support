@@ -252,8 +252,8 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     queryKey: ["ticket-branches", ticketId],
     queryFn: async () => {
       const [claims, recoveries, orders] = await Promise.all([
-        supabase.from("claims").select("id").eq("ticket_id", ticketId),
-        supabase.from("guest_recovery").select("id").eq("ticket_id", ticketId),
+        supabase.from("claims").select("id, stage").eq("ticket_id", ticketId),
+        supabase.from("guest_recovery").select("id, stage, approval_status, delivered_amount").eq("ticket_id", ticketId),
         supabase
           .from("work_orders")
           .select("approved_amount, quote_amount")
@@ -262,6 +262,10 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
       return {
         claim: (claims.data ?? []).length > 0,
         recovery: (recoveries.data ?? []).length > 0,
+        // Display only: is a refund, credit or claim still being worked?
+        makeRightOpen:
+          ((recoveries.data ?? []) as RecoveryLike[]).some(recoveryOpen) ||
+          ((claims.data ?? []) as { stage: string }[]).some((c) => c.stage !== "closed" && c.stage !== "recovered"),
         // Same repair figure the server uses for its Final Review rule.
         repairAmount: (orders.data ?? []).reduce(
           (max, o) => Math.max(max, Number(o.approved_amount ?? o.quote_amount ?? 0)),
