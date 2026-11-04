@@ -375,9 +375,6 @@ export function RecoveryDrawer({
                       approved_amount: numOrNull(value("approved_amount")),
                       decision_reason: value("decision_reason") || null,
                       authority_level: verdict.level,
-                      ...(recovery.approval_status === "not_required" && verdict.level !== "pc"
-                        ? { approval_status: "pending", approval_authority: verdict.level }
-                        : {}),
                       escalation_flags: verdict.escalations,
                       ...(policy
                         ? {
@@ -401,7 +398,7 @@ export function RecoveryDrawer({
                   disabled={
                     readOnly ||
                     save.isPending ||
-                    (verdict.requiresDecisionReason && !value("decision_reason"))
+                    (verdict.requiresDecisionReason && !value("decision_reason").trim())
                   }
                   onClick={() =>
                     save.mutate({
