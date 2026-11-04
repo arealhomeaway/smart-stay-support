@@ -1,3 +1,4 @@
+import { createEvidenceSlotsFn } from "@/lib/evidence-slots.functions";
 /**
  * "+ Log Guest Refund or Credit" — starting one from the refunds & credits queue.
  *
@@ -202,8 +203,9 @@ export function LogRecoveryDialog() {
         created_by: userId,
       }));
       if (slots.length) {
-        const { error: reqError } = await supabase.from("evidence_requirements").insert(slots);
-        if (reqError) throw reqError;
+        await createEvidenceSlotsFn({
+          data: { subjectType: "guest_recovery", subjectId: recoveryId, slots },
+        });
       }
 
       await supabase.from("guest_recovery_activity").insert({

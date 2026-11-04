@@ -1,3 +1,4 @@
+import { createEvidenceSlotsFn } from "@/lib/evidence-slots.functions";
 /**
  * Create a claim from the ticket where the incident was handled.
  *
@@ -189,8 +190,9 @@ export function TicketClaimPanel({
         created_by: userId,
       }));
       if (slots.length) {
-        const { error: reqError } = await supabase.from("evidence_requirements").insert(slots);
-        if (reqError) throw reqError;
+        await createEvidenceSlotsFn({
+          data: { subjectType: "claim", subjectId: claimId, slots },
+        });
       }
 
       await supabase.from("claim_activity").insert({

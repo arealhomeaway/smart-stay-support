@@ -1,3 +1,4 @@
+import { createEvidenceSlotsFn } from "@/lib/evidence-slots.functions";
 /**
  * Guest refunds & credits on the ticket where the guest situation is being handled.
  *
@@ -179,8 +180,9 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
         created_by: userId,
       }));
       if (slots.length) {
-        const { error: reqError } = await supabase.from("evidence_requirements").insert(slots);
-        if (reqError) throw reqError;
+        await createEvidenceSlotsFn({
+          data: { subjectType: "guest_recovery", subjectId: recoveryId, slots },
+        });
       }
 
       await supabase.from("guest_recovery_activity").insert({
