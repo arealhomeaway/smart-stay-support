@@ -157,11 +157,13 @@ export const MONETARY_ACTIONS: RecoveryAction[] = [
   "other",
 ];
 
-/** Remedies a coordinator can fund out of the courtesy allowance. */
-const COURTESY_ACTIONS: RecoveryAction[] = ["courtesy_item", "mitigation"];
-
 /** Remedies that are, by definition, a multi-night or full-stay refund. */
-const MULTI_NIGHT_ACTIONS: RecoveryAction[] = ["full_refund", "shorten_stay"];
+export const MULTI_NIGHT_ACTIONS: RecoveryAction[] = ["full_refund", "shorten_stay"];
+
+/** Whole-dollar wording for policy limits, for example "$1,500". */
+export function policyDollars(n: number): string {
+  return `$${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+}
 
 export function isMonetary(action: RecoveryAction | null | undefined) {
   return !!action && MONETARY_ACTIONS.includes(action);
@@ -307,7 +309,7 @@ export type AuthorityVerdict = {
   label: string;
   /** Plain-language reason. Always shown — staff learn the framework while working. */
   reason: string;
-  /** True when a written decision reason is required before approval completes. */
+  /** True when a written reason is required before the remedy can be saved or approved. */
   requiresDecisionReason: boolean;
   /** True when the Airbnb-policy question still has to be answered. */
   requiresPolicyAnswer: boolean;
@@ -317,10 +319,10 @@ export type AuthorityVerdict = {
 };
 
 export const AUTHORITY_LABELS: Record<AuthorityLevel, string> = {
-  pc: "Within coordinator authority — proceed",
-  supervisor: "Operations Supervisor approval required (James)",
-  director: "Director of Operations approval required (Micah)",
-  emergency: "Emergency — proceed and notify leadership",
+  pc: "Coordinator may approve",
+  supervisor: "Needs Supervisor approval (James)",
+  director: "Needs Director approval (Micah)",
+  emergency: "Emergency: act now and notify leadership",
 };
 
 function num(value: number | string | null | undefined): number | null {
@@ -354,12 +356,15 @@ export function evaluateAuthority(input: AuthorityInput): AuthorityVerdict {
   const action = (input.recovery_action ?? null) as RecoveryAction | null;
   const amount = num(input.proposed_amount);
   const escalations = allEscalations(input);
+  // Every refund or compensation needs a short written reason, whatever the amount.
+  const requiresDecisionReason = isMonetary(action) && amount !== null;
   const base = {
     escalations,
     policyVersion: POLICY_VERSION,
-    requiresDecisionReason: false,
+    requiresDecisionReason,
     requiresPolicyAnswer: false,
   };
+  const reasonNote = requiresDecisionReason ? " A short written reason is required." : "";
 
   if (input.emergency) {
     return {
@@ -367,7 +372,8 @@ export function evaluateAuthority(input: AuthorityInput): AuthorityVerdict {
       level: "emergency",
       label: AUTHORITY_LABELS.emergency,
       reason:
-        "Guest safety or displacement is immediate. Act now, then notify the Director — the decision is still reviewed.",
+        "Guest safety or displacement is immediate. Act now, then notify the Director. The decision is still reviewed." +
+        reasonNote,
     };
   }
 
@@ -377,8 +383,7 @@ export function evaluateAuthority(input: AuthorityInput): AuthorityVerdict {
       ...base,
       level: "director",
       label: AUTHORITY_LABELS.director,
-      reason: `Director approval required — ${reasons.join("; ")}.`,
-      requiresDecisionReason: true,
+      reason: `Needs Director approval whatever the amount: ${reasons.join("; ")}.${reasonNote}`,
     };
   }
 
@@ -387,7 +392,7 @@ export function evaluateAuthority(input: AuthorityInput): AuthorityVerdict {
       ...base,
       level: "pc",
       label: AUTHORITY_LABELS.pc,
-      reason: "Reasonable non-monetary service recovery is within coordinator authority.",
+      reason: "Non-monetary service recovery is within coordinator authority.",
     };
   }
 
@@ -397,66 +402,46 @@ export function evaluateAuthority(input: AuthorityInput): AuthorityVerdict {
       level: "pc",
       label: AUTHORITY_LABELS.pc,
       reason:
-        "No amount proposed yet. Confirm the impact and record the proposed amount before an authority is decided.",
+        "No amount yet. Record the proposed amount so Resolve can show who needs to approve it.",
     };
   }
 
-  const courtesy = !!action && COURTESY_ACTIONS.includes(action);
-  if (courtesy && amount <= RECOVERY_POLICY.pcCourtesyCeiling) {
-    return {
-      ...base,
-      level: "pc",
-      label: AUTHORITY_LABELS.pc,
-      reason: `Coordinators may approve courtesy items and small recovery expenses up to ${formatMoney(
-        RECOVERY_POLICY.pcCourtesyCeiling,
-      )}.`,
-    };
-  }
+  const requiresPolicyAnswer = input.within_airbnb_policy !== true;
+  const policyNote = requiresPolicyAnswer
+    ? " Confirm it fits normal Airbnb refund and discount policy first. Anything outside it needs the Director."
+    : "";
 
-  const policyAnswered = input.within_airbnb_policy === true;
-
-  if (amount > RECOVERY_POLICY.supervisorRefundCeiling) {
+  if (amount > RECOVERY_POLICY.supervisorApprovalCeiling) {
     return {
       ...base,
       level: "director",
       label: AUTHORITY_LABELS.director,
-      reason: `Director approval required — ${formatMoney(amount)} is above the ${formatMoney(
-        RECOVERY_POLICY.supervisorRefundCeiling,
-      )} supervisor limit.`,
-      requiresDecisionReason: true,
+      reason: `Needs Director approval: over ${policyDollars(RECOVERY_POLICY.supervisorApprovalCeiling)}.${reasonNote}`,
     };
   }
 
-  const requiresDecisionReason = amount > RECOVERY_POLICY.supervisorDocumentationThreshold;
-  const documentation = requiresDecisionReason
-    ? ` A written decision reason is required because compensation exceeds ${formatMoney(
-        RECOVERY_POLICY.supervisorDocumentationThreshold,
-      )}.`
-    : "";
-
-  if (!policyAnswered) {
+  if (amount > RECOVERY_POLICY.pcApprovalCeiling) {
     return {
       ...base,
       level: "supervisor",
       label: AUTHORITY_LABELS.supervisor,
       reason:
-        "Confirm whether this fits normal Airbnb refund/discount policy before requesting approval — " +
-        "anything outside it needs Director review whatever the amount." +
-        documentation,
-      requiresDecisionReason,
-      requiresPolicyAnswer: true,
+        `Needs Supervisor approval: over ${policyDollars(RECOVERY_POLICY.pcApprovalCeiling)}.` +
+        reasonNote +
+        policyNote,
+      requiresPolicyAnswer,
     };
   }
 
   return {
     ...base,
-    level: "supervisor",
-    label: AUTHORITY_LABELS.supervisor,
+    level: "pc",
+    label: AUTHORITY_LABELS.pc,
     reason:
-      `James may approve because this recovery is within standard Airbnb policy and below ${formatMoney(
-        RECOVERY_POLICY.supervisorRefundCeiling,
-      )}.` + documentation,
-    requiresDecisionReason,
+      `Coordinator may approve: ${policyDollars(RECOVERY_POLICY.pcApprovalCeiling)} or less.` +
+      reasonNote +
+      policyNote,
+    requiresPolicyAnswer,
   };
 }
 
@@ -526,7 +511,7 @@ export function supervisorTriggers(
     out.push("resolution_attempt_failed");
   }
   const asked = num(input.guest_requested_amount);
-  if (asked !== null && asked > RECOVERY_POLICY.pcCourtesyCeiling) out.push("monetary_beyond_pc");
+  if (asked !== null && asked > RECOVERY_POLICY.pcApprovalCeiling) out.push("monetary_beyond_pc");
   if ((input.vendor_missed_commitments ?? 0) >= RECOVERY_POLICY.vendorMissedCommitments) {
     out.push("vendor_missed_commitments");
   }
@@ -657,7 +642,7 @@ export function nextAction(recovery: RecoveryLike, ctx: NextActionContext = {}):
   if (recovery.stage === "awaiting_approval") {
     const verdict = verdictFor(recovery, ctx);
     if (verdict.requiresDecisionReason && !recovery.decision_reason) {
-      return `Waiting on approval — a written decision reason is required before it can complete. ${verdict.reason}`;
+      return `Waiting on approval. Add a short written reason before it can be approved. ${verdict.reason}`;
     }
     return `Waiting on approval. ${verdict.reason}`;
   }
@@ -866,8 +851,8 @@ export type ManagerFilter =
 
 export const MANAGER_FILTER_LABELS: Record<ManagerFilter, string> = {
   pending_approvals: "Pending approvals",
-  above_supervisor_limit: `Refunds above ${formatMoney(RECOVERY_POLICY.supervisorRefundCeiling)}`,
-  documentation_missing: `Approvals over ${formatMoney(RECOVERY_POLICY.supervisorDocumentationThreshold)} needing a written reason`,
+  above_supervisor_limit: `Refunds over ${policyDollars(RECOVERY_POLICY.supervisorApprovalCeiling)}`,
+  documentation_missing: "Refunds missing a written reason",
   outside_policy: "Outside standard Airbnb policy",
   director_escalations: "Automatic Director escalations",
   communication_overdue: "Overdue guest communication",
@@ -892,13 +877,12 @@ export function matchesManagerFilter(
     case "pending_approvals":
       return row.approval_status === "pending";
     case "above_supervisor_limit":
-      return amount !== null && amount > RECOVERY_POLICY.supervisorRefundCeiling;
+      return amount !== null && amount > RECOVERY_POLICY.supervisorApprovalCeiling;
     case "documentation_missing":
       return (
         amount !== null &&
-        amount > RECOVERY_POLICY.supervisorDocumentationThreshold &&
-        amount <= RECOVERY_POLICY.supervisorRefundCeiling &&
-        !row.decision_reason
+        isMonetary((row.recovery_action ?? null) as RecoveryAction | null) &&
+        !row.decision_reason?.trim()
       );
     case "outside_policy":
       return row.within_airbnb_policy === false;
