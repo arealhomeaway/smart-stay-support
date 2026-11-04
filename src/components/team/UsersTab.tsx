@@ -121,7 +121,7 @@ export function UsersTab() {
         </Dialog>
       )}
 
-      {openId && (
+      {openId && rows.some((r) => r.id === openId) && (
         <UserPanel
           row={rows.find((r) => r.id === openId)!}
           person={people.find((p) => p.id === openId)!}
