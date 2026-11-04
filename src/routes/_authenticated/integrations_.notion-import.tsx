@@ -34,7 +34,8 @@ const RESUME_KEY = "notion-import-resume";
 const PASS_LABEL: Record<Pass, string> = { dry_run: "Dry run", pass1: "Pass 1: tickets and claims", pass2: "Pass 2: comments and files" };
 
 function NotionImportPage() {
-  const { role, isLoading } = useRole() as unknown as { role: string | null; isLoading: boolean };
+  const { isAdmin, readOnly, isLoading } = useRole();
+  const role = isAdmin && !readOnly ? "admin" : null;
   const qc = useQueryClient();
   const dry = useServerFn(notionImportDryRun) as unknown as Step;
   const p1 = useServerFn(notionImportPass1) as unknown as Step;
