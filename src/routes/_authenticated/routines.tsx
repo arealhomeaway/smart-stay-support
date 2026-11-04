@@ -253,7 +253,10 @@ function RoutinesPage() {
       <RunRoutineDialog
         open={runOpen}
         onOpenChange={setRunOpen}
-        onCreated={() => qc.invalidateQueries({ queryKey: ["routine-controls"] })}
+        onChoose={(draftRow) => {
+          setRunOpen(false);
+          setOpenRow(draftRow);
+        }}
       />
     </div>
   );
@@ -316,11 +319,11 @@ function Section({
 function RunRoutineDialog({
   open,
   onOpenChange,
-  onCreated,
+  onChoose,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  onCreated: () => void;
+  onChoose: (row: RoutineRow) => void;
 }) {
   const [kind, setKind] = useState<RoutineKind>("checkout");
   const [propertyId, setPropertyId] = useState("");
@@ -348,39 +351,54 @@ function RunRoutineDialog({
     .filter((p) => matchesPropertySearch(p, query))
     .slice(0, 8);
 
-  const create = useMutation({
-    mutationFn: async () => {
-      const config = ROUTINE_CONFIG[kind];
-      const { data: auth } = await supabase.auth.getUser();
-      const day = new Date().toISOString().slice(0, 10);
-      const chosen = (properties ?? []).find((p) => p.id === propertyId);
-      const { error } = await supabase.from("routine_controls").insert({
-        kind,
-        event_key: manualKey(kind, propertyId || null, `${day}:${Date.now()}`),
-        property_id: propertyId || null,
-        title: chosen ? `${config.label} · ${formatPropertyLabel(chosen).primary}` : config.label,
-        guest_name: guest.trim() || null,
-        status: "due",
-        due_at: new Date().toISOString(),
-        team: config.team,
-        assigned_to: auth.user?.id ?? null,
-        created_by: auth.user?.id ?? null,
-        // A routine on a demo property is always demo work, even if the lens is off.
-        is_demo: demoMode || Boolean((chosen as { is_demo?: boolean } | undefined)?.is_demo),
-      });
-      if (error) throw error;
-    },
-
-    onSuccess: () => {
-      toast.success("Added to routine work.");
-      onCreated();
-      onOpenChange(false);
-      setPropertyId("");
-      setQuery("");
-      setGuest("");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
+  // Choosing a check opens it straight away. Nothing is saved until the
+  // person completes it, so choosing alone never adds it to Due today.
+  async function choose() {
+    const config = ROUTINE_CONFIG[kind];
+    const { data: auth } = await supabase.auth.getUser();
+    const day = new Date().toISOString().slice(0, 10);
+    const chosen = (properties ?? []).find((p) => p.id === propertyId);
+    const now = new Date().toISOString();
+    const title = chosen ? `${config.label} · ${formatPropertyLabel(chosen).primary}` : config.label;
+    const draft = {
+      kind,
+      event_key: manualKey(kind, propertyId || null, `${day}:${Date.now()}`),
+      property_id: propertyId || null,
+      title,
+      guest_name: guest.trim() || null,
+      due_at: now,
+      team: config.team,
+      assigned_to: auth.user?.id ?? null,
+      created_by: auth.user?.id ?? null,
+      // A routine on a demo property is always demo work, even if the lens is off.
+      is_demo: demoMode || Boolean((chosen as { is_demo?: boolean } | undefined)?.is_demo),
+    };
+    onChoose({
+      id: `draft-${Date.now()}`,
+      kind,
+      status: "due",
+      title,
+      outcome: null,
+      property_id: propertyId || null,
+      ticket_id: null,
+      follow_up_ticket_id: null,
+      guest_name: draft.guest_name,
+      reservation_confirmation: null,
+      stay_arrival: null,
+      stay_departure: null,
+      due_at: now,
+      findings: null,
+      notes: null,
+      evidence_urls: null,
+      completed_at: null,
+      assigned_to: draft.assigned_to,
+      properties: chosen ? (chosen as never) : null,
+      draft,
+    });
+    setPropertyId("");
+    setQuery("");
+    setGuest("");
+  }
 
   return (
     <FocusedAction
@@ -393,8 +411,8 @@ function RunRoutineDialog({
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={() => create.mutate()} disabled={create.isPending}>
-            Start it
+          <Button onClick={() => void choose()}>
+            Open it
           </Button>
         </>
       }

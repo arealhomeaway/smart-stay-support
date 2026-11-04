@@ -32,8 +32,8 @@ describe("AppShell — Simplification Pass 1 sidebar structure", () => {
     expect(body).toContain('to: "/claims"');
     expect(body).toContain('label: "Guest Claims & Refunds"');
     expect(body).toContain('to: "/inquiry-sources"');
-    // Record work stays: the top-bar button hides on every /tickets page.
-    expect(body).toContain('to: "/tickets/new"');
+    // Record work lives only in the top bar now.
+    expect(body).not.toContain('to: "/tickets/new"');
   });
 
   it("grouped destinations left the sidebar for top-of-page tabs", () => {

@@ -185,11 +185,6 @@ function TicketsPage() {
             <Button variant="outline" asChild>
               <Link to="/team-queue">Team Queue</Link>
             </Button>
-            <Button asChild>
-              <Link to="/tickets/new" search={{ origin: token }}>
-                Report an issue
-              </Link>
-            </Button>
           </div>
         }
       />
