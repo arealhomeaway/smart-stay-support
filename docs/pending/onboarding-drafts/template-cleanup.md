@@ -2,7 +2,7 @@
 
 Read only. Nothing was archived or changed. "In use" means a home with an onboarding plan that is not finished is linked to the template, either by its saved plan version or by its Tasks.
 
-Data checked: 11 onboarding plans in total, 10 not finished. 4 unfinished plans (all demo homes) have no link to any template, so they do not count against any template below.
+Data checked: 11 onboarding plans in total, 10 not finished. 4 demo plans (3 unfinished, 1 finished) have no link to any template, so they do not count against any template below.
 
 | Template | Steps | Saved versions | Unfinished homes using it | Finished homes | Can it be archived safely? |
 |---|---|---|---|---|---|
