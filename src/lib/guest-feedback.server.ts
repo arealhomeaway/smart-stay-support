@@ -244,6 +244,14 @@ export async function loadReviewFollowUpStart(admin: Admin): Promise<string | nu
   return readReviewFollowUpStart(data?.value ?? null);
 }
 
+/** True when an already-stored review's editable text or stars changed in OwnerRez. */
+export function reviewChanged(
+  prev: { summary: string | null; response_text: string | null; rating: number | null },
+  next: { summary: string | null; response_text: string | null; rating: number | null },
+): boolean {
+  return (prev.summary ?? "") !== (next.summary ?? "") || (prev.response_text ?? "") !== (next.response_text ?? "") || prev.rating !== next.rating;
+}
+
 export async function ingestReviews(admin: Admin, items: ReviewInput[]) {
   const homes = await linkedHomes(admin);
   const startDate = await loadReviewFollowUpStart(admin);
@@ -284,14 +292,19 @@ export async function ingestReviews(admin: Admin, items: ReviewInput[]) {
         // Same OwnerRez review seen again: refresh only what the guest or host can edit.
         // Never opens follow-up work, never touches reviewer or reservation fields.
         const rating = r.stars && r.stars >= 1 && r.stars <= 5 ? Math.round(r.stars) : null;
-        const { data: upd } = await admin
+        const { data: prev } = await admin
           .from("guest_feedback")
-          .update({ summary: r.body, response_text: r.response, rating })
+          .select("id, summary, response_text, rating")
           .eq("source", "ownerrez")
           .eq("source_review_id", r.source_review_id)
-          .or(`summary.is.distinct.from.${JSON.stringify(r.body ?? "")},response_text.is.distinct.from.${JSON.stringify(r.response ?? "")}`)
-          .select("id");
-        updated += upd?.length ?? 0;
+          .maybeSingle();
+        if (prev && reviewChanged(prev, { summary: r.body, response_text: r.response, rating })) {
+          const { error: uErr } = await admin
+            .from("guest_feedback")
+            .update({ summary: r.body, response_text: r.response, rating })
+            .eq("id", prev.id);
+          if (!uErr) updated++;
+        }
       }
       else console.error("review import failed", error.message);
       continue;
