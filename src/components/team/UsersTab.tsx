@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { clock, filterUsers, isStaff, isTestAccount, seatsHeldBy, STAFF_ROLES, userRows, type AccessPerson, type SOverride, type SPerson, type SRole, type SRoster, type SShift, type UserRow, type OncallPattern } from "@/lib/team-schedule";
 import { buildModel, useCoverageModel } from "./ScheduleTab";
 import { TimeOffDialog } from "./TimeOffDialog";
+import { DeleteUserDialog } from "./DeleteUserDialog";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const STATUSES = ["Active", "Invite pending", "Off"] as const;
@@ -156,6 +157,7 @@ function UserPanel({
     catch (e) { toast.error(e instanceof Error ? e.message : "The change could not be saved."); }
   };
   const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [timeOff, setTimeOff] = useState(false);
   const seats = seatsHeldBy(roles, person.id);
   const myShifts = shifts.filter((s) => seats.includes(s.role_code) && s.active !== false).sort((a, b) => a.weekday - b.weekday || a.start_minute - b.start_minute);
@@ -199,6 +201,10 @@ function UserPanel({
           )}
           <Button size="sm" onClick={() => setTimeOff(true)}>Add time off</Button>
         </section>
+        <section className="border-t border-border pt-3">
+          <Button size="sm" variant="destructive" onClick={() => setDeleting(true)}>Delete user</Button>
+        </section>
+        {deleting && <DeleteUserDialog userId={person.id} name={row.name} onClose={() => setDeleting(false)} onDeleted={() => { onChanged(); onClose(); }} />}
         {editing && <EditTeammateDialog person={person as unknown as TeammateRow} onClose={() => setEditing(false)} />}
         {timeOff && (
           <TimeOffDialog open onClose={() => setTimeOff(false)} onSaved={onChanged} people={people} roles={roles} roster={roster} overrides={overrides} pattern={pattern} defaultUserId={person.id} />

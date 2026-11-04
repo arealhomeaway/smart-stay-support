@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Search, Users } from "lucide-react";
 import { EmptyState, LoadingPage, PageHeader, SectionCard, StatTile } from "@/components/ui/page";
+import { AccountArchiveList } from "@/components/team/AccountArchiveList";
 import { CapabilityGate } from "@/components/CapabilityGate";
 import { StatusBadge } from "@/components/ui/status";
 import { Input } from "@/components/ui/input";
@@ -204,6 +205,7 @@ function HomeownersPage() {
           </div>
         )}
       </SectionCard>
+      <AccountArchiveList kind="owner" />
     </div>
   );
 }

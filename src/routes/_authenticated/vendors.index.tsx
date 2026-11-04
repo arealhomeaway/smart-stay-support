@@ -1,3 +1,4 @@
+import { AccountArchiveList } from "@/components/team/AccountArchiveList";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
@@ -77,7 +78,7 @@ function VendorsWorkspace() {
           <TabsTrigger value="coverage">Market Coverage</TabsTrigger>
           <TabsTrigger value="review">Needs Review</TabsTrigger>
         </TabsList>
-        <TabsContent value="directory" className="pt-4"><VendorDirectory /></TabsContent>
+        <TabsContent value="directory" className="space-y-6 pt-4"><VendorDirectory /><AccountArchiveList kind="vendor" /></TabsContent>
         {canManage && (
           <TabsContent value="database" className="pt-4"><VendorDatabase canManage={canManage} isLead={isLead} /></TabsContent>
         )}
