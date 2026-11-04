@@ -11,6 +11,7 @@ import { EmailDeliveryPanel } from "@/components/EmailDeliveryPanel";
 import { MailboxIntakePanel } from "@/components/MailboxIntakePanel";
 import { FeatureFlagsPanel } from "@/components/FeatureFlagsPanel";
 import { SharePointConnectionPanel } from "@/components/SharePointConnectionPanel";
+import { NightlyBackupPanel } from "@/components/NightlyBackupPanel";
 import { BreezewayConnectionPanel } from "@/components/BreezewayConnectionPanel";
 import { BreezewayWebhookPanel } from "@/components/BreezewayWebhookPanel";
 import { BreezewayOutboundReviewPanel } from "@/components/BreezewayOutboundReviewPanel";
@@ -92,6 +93,7 @@ function IntegrationsPage() {
       </SectionCard>
 
       <SharePointConnectionPanel />
+      <NightlyBackupPanel />
 
       <BreezewayConnectionPanel />
       <BreezewaySendingPanel />
