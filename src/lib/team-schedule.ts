@@ -425,9 +425,9 @@ export function oncallPickerPeople(people: StaffPerson[], eligibleIds: string[],
 }
 
 /** Seats shown as grid rows. Display only: hidden seats keep routing exactly as before. */
-export function gridSeatCodes(setting: unknown, roles: SRole[], teamOf: (code: string) => string | null): string[] {
+export function gridSeatCodes(setting: unknown, roles: SRole[], isDefaultRow: (code: string) => boolean): string[] {
   if (Array.isArray(setting) && setting.every((x) => typeof x === "string")) return setting as string[];
-  return roles.filter((r) => teamOf(r.code) === "team_a" || teamOf(r.code) === "team_b").map((r) => r.code);
+  return roles.filter((r) => isDefaultRow(r.code)).map((r) => r.code);
 }
 export function gridRows(roles: SRole[], codes: string[]) {
   return roles.filter((r) => codes.includes(r.code));
