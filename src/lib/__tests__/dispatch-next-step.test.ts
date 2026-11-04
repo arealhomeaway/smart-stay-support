@@ -45,11 +45,11 @@ describe("dispatch next step", () => {
   });
 });
 
-describe("OwnerRez guest update", () => {
+describe("guest reply update", () => {
   const now = new Date("2026-11-04T23:00:00Z");
   it("records the same guest update fields, note optional", () => {
     const u = ownerRezGuestUpdate("", "2026-11-05T01:00:00.000Z", now);
-    expect(u.patch).toEqual({ guest_update_at: now.toISOString(), guest_update_note: "Responded in OwnerRez.", next_guest_update_at: "2026-11-05T01:00:00.000Z" });
-    expect(ownerRezGuestUpdate(" Told them 3 pm ", null, now).patch.guest_update_note).toBe("Responded in OwnerRez. Told them 3 pm");
+    expect(u.patch).toEqual({ guest_update_at: now.toISOString(), guest_update_note: "Responded to the guest.", next_guest_update_at: "2026-11-05T01:00:00.000Z" });
+    expect(ownerRezGuestUpdate(" Told them 3 pm ", null, now).patch.guest_update_note).toBe("Responded to the guest. Told them 3 pm");
   });
 });
