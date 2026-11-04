@@ -38,6 +38,17 @@ export const STATUS_TONE: Record<string, StatusTone> = {
 };
 
 const ALL = "__all";
+const TRANSITIONAL = "__transitional";
+const COVERAGE_ROLE_OPTIONS: [string, string][] = [
+  ["primary", "Primary"],
+  ["backup", "Backup"],
+  ["emergency", "Emergency"],
+  ["other", "Other"],
+];
+const REVIEW_STATUS_OPTIONS: [string, string][] = [
+  ...(Object.entries(VENDOR_STATUS_LABELS) as [string, string][]),
+  [TRANSITIONAL, "In transitional review"],
+];
 
 /** The one plain question asked on a Ticket when the trade is not known. */
 export const HELP_KINDS: [string, string | null][] = [
@@ -92,20 +103,24 @@ export function VendorDirectory({
             c.org_id === v.id &&
             (market === ALL || c.market === market) &&
             (category === ALL || c.service_category === category) &&
-            (pref === ALL || c.preference === pref),
+            (pref === ALL || pref === "emergency" || c.preference === pref),
         );
         return { v, cov };
       })
       .filter(({ v, cov }) => {
         if (needle && !`${v.display_name} ${v.legal_name ?? ""} ${v.primary_contact_name ?? ""}`.toLowerCase().includes(needle))
           return false;
-        const coverageFiltered = market !== ALL || category !== ALL || pref !== ALL;
+        const prefCoverage = pref !== ALL && pref !== "emergency";
+        const coverageFiltered = market !== ALL || category !== ALL || prefCoverage;
         const legacyMatch =
           (market === ALL || v.markets.includes(market)) &&
           (category === ALL || v.service_categories.includes(category)) &&
-          pref === ALL;
+          !prefCoverage;
+        if (pref === "emergency" && !v.emergency_only && !v.emergency_available) return false;
         if (coverageFiltered && cov.length === 0 && !legacyMatch) return false;
-        if (status !== ALL && v.status !== status) return false;
+        if (status === TRANSITIONAL) {
+          if (!inTransitionalReview(v)) return false;
+        } else if (status !== ALL && v.status !== status) return false;
         if (active === "active" && !v.is_active) return false;
         if (active === "inactive" && v.is_active) return false;
         if (dispatch !== ALL && v.dispatch_method !== dispatch) return false;
@@ -183,8 +198,8 @@ export function VendorDirectory({
         )}
         {!onSelect && (
           <>
-            <Filter label="Preference" value={pref} onChange={setPref} options={Object.entries(PREFERENCE_LABELS)} />
-            <Filter label="Gold Standard" value={status} onChange={setStatus} options={Object.entries(VENDOR_STATUS_LABELS)} />
+            <Filter label="Coverage role" value={pref} onChange={setPref} options={COVERAGE_ROLE_OPTIONS} />
+            <Filter label="Review status" value={status} onChange={setStatus} options={REVIEW_STATUS_OPTIONS} />
             <Filter
               label="Active"
               value={active}
@@ -198,6 +213,36 @@ export function VendorDirectory({
           </>
         )}
       </div>
+      {!onSelect && (() => {
+        const label = (opts: [string, string][], v: string) => opts.find(([k]) => k === v)?.[1] ?? v;
+        const chips: [string, () => void][] = [];
+        if (q.trim()) chips.push([`Search: ${q.trim()}`, () => setQ("")]);
+        if (market !== ALL) chips.push([`Market: ${market}`, () => setMarket(ALL)]);
+        if (category !== ALL) chips.push([`Service category: ${category}`, () => setCategory(ALL)]);
+        if (pref !== ALL) chips.push([`Coverage role: ${label(COVERAGE_ROLE_OPTIONS, pref)}`, () => setPref(ALL)]);
+        if (status !== ALL) chips.push([`Review status: ${label(REVIEW_STATUS_OPTIONS, status)}`, () => setStatus(ALL)]);
+        if (active !== "active") chips.push([`Showing: ${active === "inactive" ? "Inactive" : active}`, () => setActive("active")]);
+        if (dispatch !== ALL) chips.push([`Dispatch: ${label(Object.entries(DISPATCH_METHOD_LABELS), dispatch)}`, () => setDispatch(ALL)]);
+        if (chips.length === 0) return null;
+        return (
+          <div className="flex flex-wrap items-center gap-1.5" aria-label="Active filters">
+            {chips.map(([text, clear]) => (
+              <button key={text} type="button" onClick={clear} aria-label={`Remove filter ${text}`}>
+                <Chip>{text} ×</Chip>
+              </button>
+            ))}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setQ(""); setMarket(ALL); setCategory(ALL); setPref(ALL); setStatus(ALL); setActive("active"); setDispatch(ALL);
+              }}
+            >
+              Reset filters
+            </Button>
+          </div>
+        );
+      })()}
 
       {fallback}
       {emergencyHidden > 0 && canRevealEmergency(ticketPriority, canOverrideEmergency) && (
