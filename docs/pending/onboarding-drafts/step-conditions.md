@@ -25,14 +25,14 @@ Only these home facts are used: Active Owner, furnishing scope (full or partial)
 | Pre-Close | Get the inspection date and time from the realtor | Always | Always include | No listed home fact fits this step. | high |
 | Pre-Close | Work order: Complete the New House Assessment | Always | Always include | No listed home fact fits this step. | high |
 | Pre-Close | Work order: Walkthrough Video & Photos | Always | Always include | The text mentions Active Owner only as a variation inside the step, so the step still applies to every home. | medium |
-| Pre-Close | Work order: Houzz Pro 3D Floor Plans | Always | Furnishing scope is Full | The step is design, furniture or staging work. | medium |
+| Pre-Close | Work order: Houzz Pro 3D Floor Plans | Always | Furnishing scope is Full | The step is design or furniture work. | medium |
 | Pre-Close | Work order: Repair & Improvement Estimates | Always | Always include | No listed home fact fits this step. | high |
 | Pre-Close | Watch the walkthrough videos in Telegram during the inspection | Always | Always include | No listed home fact fits this step. | high |
 | Pre-Close | Review STR requirements and send permit costs to the PM | Always | STR permit required is Yes | The step is about the short-term rental permit. | medium |
 | Pre-Close | Save the inspection report and ask the owner about repairs | Always | Always include | The text mentions Active Owner only as a variation inside the step, so the step still applies to every home. | medium |
 | Pre-Close | Request landscaping recommendations | Always | Always include | No listed home fact fits this step. | high |
 | Pre-Close | Confirm the design inputs are ready | Always | Always include | The text mentions Furnishing scope only as a variation inside the step, so the step still applies to every home. | medium |
-| Pre-Close | Review the floor plans, assessment, and walkthrough video | Always | Furnishing scope is Full | The step is design, furniture or staging work. | medium |
+| Pre-Close | Review the floor plans, assessment, and walkthrough video | Always | Furnishing scope is Full | The step is design or furniture work. | medium |
 | Pre-Close | Request detailed repair estimates from vendors | Always | Always include | No listed home fact fits this step. | high |
 | Pre-Close | Review and countersign the Utilities LOA & Exhibit D, then send to the Utilities Coordinator | Always | Utility option is ARHA sets up utilities | The step is utilities setup that only applies when ARHA manages the utilities. | low |
 | Pre-Close | Update the utility/property matrix | Always | Always include | No listed home fact fits this step. | high |
@@ -43,7 +43,7 @@ Only these home facts are used: Active Owner, furnishing scope (full or partial)
 | Pre-Close | Review and approve the Make Ready Estimate | Always | Always include | No listed home fact fits this step. | high |
 | Pre-Close | Share the Make Ready Estimate with the owner | Always | Always include | The text mentions Active Owner only as a variation inside the step, so the step still applies to every home. | medium |
 | Pre-Close | Purchase locks, access and security equipment | Always | Always include | The text mentions Furnishing scope only as a variation inside the step, so the step still applies to every home. | medium |
-| Pre-Close | Create the floor plans and mood boards | Always | Furnishing scope is Full | The step is design, furniture or staging work. | medium |
+| Pre-Close | Create the floor plans and mood boards | Always | Furnishing scope is Full | The step is design or furniture work. | medium |
 | Pre-Close | Create the window treatment pick list and curtain rod instructions | Always | Always include | The text mentions Furnishing scope only as a variation inside the step, so the step still applies to every home. | medium |
 | Pre-Close | Transfer or set up electric | Always | Always include | The text mentions Utility option only as a variation inside the step, so the step still applies to every home. | medium |
 | Pre-Close | Transfer or set up gas | Always | Always include | The text mentions Utility option only as a variation inside the step, so the step still applies to every home. | medium |
@@ -65,10 +65,10 @@ Only these home facts are used: Active Owner, furnishing scope (full or partial)
 | Pre-Close | Draft work order: Home repairs | Always | Always include | The text mentions Furnishing scope only as a variation inside the step, so the step still applies to every home. | medium |
 | Pre-Close | Draft work order: Painting | Always | Always include | No listed home fact fits this step. | high |
 | Pre-Close | Draft work order: Landscaping | Always | Always include | No listed home fact fits this step. | high |
-| Pre-Close | Draft work order: Assemble boxed furniture | Always | Furnishing scope is Full | The step is design, furniture or staging work. | medium |
+| Pre-Close | Draft work order: Assemble boxed furniture | Always | Furnishing scope is Full | The step is design or furniture work. | medium |
 | Pre-Close | Draft work order: Install TV mounts | Always | Always include | No listed home fact fits this step. | high |
-| Pre-Close | Draft work order: Unbox deliveries and check for damage (2 visits) | Always | Furnishing scope is Full | The step is design, furniture or staging work. | medium |
-| Pre-Close | Draft work order: Unbox and clean primary dishware | Always | Furnishing scope is Full | The step is design, furniture or staging work. | medium |
+| Pre-Close | Draft work order: Unbox deliveries and check for damage (2 visits) | Always | Furnishing scope is Full | The step is design or furniture work. | medium |
+| Pre-Close | Draft work order: Unbox and clean primary dishware | Always | Furnishing scope is Full | The step is design or furniture work. | medium |
 | Pre-Close | Draft work order: Set out essentials | Always | Always include | The text mentions Furnishing scope only as a variation inside the step, so the step still applies to every home. | medium |
 | Pre-Close | Draft work order: Wash linens and make beds | Always | Always include | No listed home fact fits this step. | high |
 | Pre-Close | Draft work order: Stage decor | Always | Always include | The text mentions Furnishing scope only as a variation inside the step, so the step still applies to every home. | medium |
@@ -79,8 +79,8 @@ Only these home facts are used: Active Owner, furnishing scope (full or partial)
 | Pre-Close | Follow up with the owner on the Make Ready Estimate | Always | Always include | No listed home fact fits this step. | high |
 | Pre-Close | Review and approve the design budget | Always | Always include | The text mentions Furnishing scope only as a variation inside the step, so the step still applies to every home. | medium |
 | Pre-Close | Work order: Pick up keys from the post office | Always | Always include | No listed home fact fits this step. | high |
-| Pre-Close | Export the owner mood boards and the furniture and decor pick list | Always | Furnishing scope is Full | The step is design, furniture or staging work. | medium |
-| Pre-Close | Share the mood boards and floor plans with the owner | Always | Furnishing scope is Full | The step is design, furniture or staging work. | medium |
+| Pre-Close | Export the owner mood boards and the furniture and decor pick list | Always | Furnishing scope is Full | The step is design or furniture work. | medium |
+| Pre-Close | Share the mood boards and floor plans with the owner | Always | Furnishing scope is Full | The step is design or furniture work. | medium |
 | Pre-Close | Send the invoice request to Accounting | Always | Always include | The text mentions Active Owner, Furnishing scope only as a variation inside the step, so the step still applies to every home. | medium |
 | Ordering & Repairs | Confirm closing and get access | Always | Always include | The text mentions Active Owner only as a variation inside the step, so the step still applies to every home. | medium |
 | Ordering & Repairs | Send the Property Management Agreement through DocuSign | Always | Always include | The text mentions Active Owner only as a variation inside the step, so the step still applies to every home. | medium |
@@ -97,7 +97,7 @@ Only these home facts are used: Active Owner, furnishing scope (full or partial)
 | Ordering & Repairs | Provide replacement items | Always | Always include | The text mentions Furnishing scope only as a variation inside the step, so the step still applies to every home. | medium |
 | Ordering & Repairs | Order custom blinds | Always | Always include | No listed home fact fits this step. | high |
 | Ordering & Repairs | Review and countersign the Property Management Agreement | Always | Always include | No listed home fact fits this step. | high |
-| Ordering & Repairs | Assign the repair, cleaning, staging, and landscaping work orders | Always | Furnishing scope is Full | The step is design, furniture or staging work. | medium |
+| Ordering & Repairs | Assign the repair, cleaning, staging, and landscaping work orders | Always | Furnishing scope is Full | The step is staging work. Partial homes may also be staged, so Kati should confirm. | low |
 | Ordering & Repairs | Work order: Meet the furniture delivery | Always | Always include | The text mentions Furnishing scope only as a variation inside the step, so the step still applies to every home. | medium |
 | Ordering & Repairs | Work order: Meet the appliance delivery and test appliances | Always | Always include | No listed home fact fits this step. | high |
 | Ordering & Repairs | Assign the bring in deliveries work order | Always | Always include | The text mentions Furnishing scope only as a variation inside the step, so the step still applies to every home. | medium |
@@ -107,11 +107,11 @@ Only these home facts are used: Active Owner, furnishing scope (full or partial)
 | Ordering & Repairs | Remove the realtor from Telegram | Always | Always include | No listed home fact fits this step. | high |
 | Ordering & Repairs | Track deliveries | Always | Always include | No listed home fact fits this step. | high |
 | Ordering & Repairs | Send the weekly progress update | Always | Always include | The text mentions Active Owner only as a variation inside the step, so the step still applies to every home. | medium |
-| Setup & Staging | Ask the staging team about a pre-cleaning | Always | Furnishing scope is Full | The step is design, furniture or staging work. | medium |
+| Setup & Staging | Ask the staging team about a pre-cleaning | Always | Furnishing scope is Full | The step is staging work. Partial homes may also be staged, so Kati should confirm. | low |
 | Setup & Staging | Schedule the professional photo shoot | Always | Always include | The text mentions Furnishing scope, Market only as a variation inside the step, so the step still applies to every home. | medium |
-| Setup & Staging | Create the staging instructions | Always | Furnishing scope is Full | The step is design, furniture or staging work. | medium |
-| Setup & Staging | Send the staging instructions and task summary sheet to the staging team | Always | Furnishing scope is Full | The step is design, furniture or staging work. | medium |
-| Setup & Staging | Share the staging plan with the Active Owner | Always | Active Owner is Yes and Furnishing scope is Full | The step text is written for Active Owner homes. The step is design, furniture or staging work. | medium |
+| Setup & Staging | Create the staging instructions | Always | Furnishing scope is Full | The step is staging work. Partial homes may also be staged, so Kati should confirm. | low |
+| Setup & Staging | Send the staging instructions and task summary sheet to the staging team | Always | Furnishing scope is Full | The step is staging work. Partial homes may also be staged, so Kati should confirm. | low |
+| Setup & Staging | Share the staging plan with the Active Owner | Always | Active Owner is Yes and Furnishing scope is Full | The step text is written for Active Owner homes. The step is staging work. Partial homes may also be staged, so Kati should confirm. | low |
 | Setup & Staging | Activate the Roku devices | Always | Always include | The text mentions Furnishing scope only as a variation inside the step, so the step still applies to every home. | medium |
 | Setup & Staging | Complete the Mid-Project Review | Always | Always include | No listed home fact fits this step. | high |
 | Setup & Staging | Approve the completed repairs | Always | Always include | The text mentions Active Owner, Furnishing scope only as a variation inside the step, so the step still applies to every home. | medium |
@@ -122,8 +122,8 @@ Only these home facts are used: Active Owner, furnishing scope (full or partial)
 | Setup & Staging | Add the property to Truvi | Always | Always include | No listed home fact fits this step. | high |
 | Setup & Staging | Set up lawn care | Always | Always include | No listed home fact fits this step. | high |
 | Setup & Staging | Work order: Remove the surveillance signs | Always | Always include | No listed home fact fits this step. | high |
-| Setup & Staging | Approve the staging and cleaning | Always | Furnishing scope is Full | The step is design, furniture or staging work. | medium |
-| Setup & Staging | Share the staged home with the Active Owner | Always | Active Owner is Yes | The step text is written for Active Owner homes. | high |
+| Setup & Staging | Approve the staging and cleaning | Always | Furnishing scope is Full | The step is staging work. Partial homes may also be staged, so Kati should confirm. | low |
+| Setup & Staging | Share the staged home with the Active Owner | Always | Active Owner is Yes and Furnishing scope is Full | The step text is written for Active Owner homes. The step is staging work. Partial homes may also be staged, so Kati should confirm. | low |
 | Setup & Staging | Coordinate the cost segregation study | Always | Always include | The text mentions Furnishing scope only as a variation inside the step, so the step still applies to every home. | medium |
 | Setup & Staging | Return or reallocate unused decor | Always | Always include | No listed home fact fits this step. | high |
 | Preparing for Handoff | Assign the Final Inspection work order | Always | Always include | The text mentions Furnishing scope only as a variation inside the step, so the step still applies to every home. | medium |
