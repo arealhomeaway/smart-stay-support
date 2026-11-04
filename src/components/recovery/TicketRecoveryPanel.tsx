@@ -431,8 +431,9 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
               </div>
             </div>
 
-            <div className="space-y-1">
-              <Label className="text-xs">Anything that raises the stakes?</Label>
+            <details className="rounded-md border px-3 py-2" open={flags.length > 0 ? true : undefined} data-testid="serious-flags">
+              <summary className="cursor-pointer text-xs font-medium">Anything serious? (legal, safety, insurance, damage...)</summary>
+              <div className="pt-2">
               <div className="flex flex-wrap gap-2">
                 {ESCALATION_FLAGS.filter(
                   (f) => f !== "outside_policy" && f !== "multi_night_refund" && f !== "relocation",
@@ -450,7 +451,8 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
                   </label>
                 ))}
               </div>
-            </div>
+              </div>
+            </details>
 
             <div className="rounded-md border bg-muted/40 p-3">
               <p className="text-sm font-medium">{verdict.label}</p>
