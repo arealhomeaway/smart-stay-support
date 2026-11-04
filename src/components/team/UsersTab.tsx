@@ -114,9 +114,9 @@ export function UsersTab() {
 
       {inviting && (
         <Dialog open onOpenChange={(o) => !o && setInviting(false)}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="flex max-h-[100dvh] max-w-2xl flex-col overflow-hidden sm:max-h-[90dvh]">
             <DialogHeader><DialogTitle>Add user</DialogTitle></DialogHeader>
-            <TeamInvitePanel />
+            <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1"><TeamInvitePanel /></div>
           </DialogContent>
         </Dialog>
       )}
