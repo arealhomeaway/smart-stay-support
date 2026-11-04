@@ -277,7 +277,7 @@ describe("Emily's confirmed test account list stays hidden by default", () => {
     for (const p of list) expect(_isTest(p, flagged)).toBe(true);
     expect(_isTest({ id: "x", full_name: "James Almario", email: "james@arha.com" }, flagged)).toBe(false);
   });
-  it("Delete user and Archive stay hidden until their database file is applied", () => {
-    expect(USER_REMOVAL_ENABLED).toBe(false);
+  it("Delete user and Archive are on now that their database file is applied", () => {
+    expect(USER_REMOVAL_ENABLED).toBe(true);
   });
 });

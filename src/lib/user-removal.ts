@@ -7,7 +7,7 @@
  * Delete user and Archive stay hidden until docs/pending/remove-users is applied
  * in a separate approved step. Flip to true only then.
  */
-export const USER_REMOVAL_ENABLED = false;
+export const USER_REMOVAL_ENABLED = true;
 
 export type OpenWorkItem = { kind: "ticket" | "task" | "work_order" | "approval" | "seat"; item_id: string; label: string };
 

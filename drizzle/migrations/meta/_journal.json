@@ -1737,6 +1737,13 @@
       "when": 1793829249926,
       "tag": "0247_recovery_approval_decision",
       "breakpoints": true
+    },
+    {
+      "idx": 248,
+      "version": "7",
+      "when": 1793832230095,
+      "tag": "0248_remove_users",
+      "breakpoints": true
     }
   ]
 }
