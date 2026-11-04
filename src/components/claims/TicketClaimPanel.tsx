@@ -74,11 +74,17 @@ function suggestType(channel: string | null | undefined): ClaimType {
   return "guest_damage";
 }
 
-export function TicketClaimPanel({ ticket }: { ticket: TicketContext }) {
+export function TicketClaimPanel({
+  ticket,
+  startOpen = false,
+}: {
+  ticket: TicketContext;
+  startOpen?: boolean;
+}) {
   const qc = useQueryClient();
   const userId = useCurrentUserId();
   const { can, readOnly } = useRole();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(startOpen);
   const [type, setType] = useState<ClaimType>(suggestType(ticket.ownerrez_channel));
   const [deadline, setDeadline] = useState("");
   const [acknowledgedDuplicate, setAcknowledgedDuplicate] = useState(false);
@@ -126,6 +132,17 @@ export function TicketClaimPanel({ ticket }: { ticket: TicketContext }) {
 
   const create = useMutation({
     mutationFn: async () => {
+      // One linked claim per ticket: a retry after a slow or failed save opens
+      // the claim that already exists instead of creating a second one.
+      const already = await supabase
+        .from("claims")
+        .select("id")
+        .eq("ticket_id", ticket.id)
+        .limit(1);
+      if (already.error) throw already.error;
+      const found = (already.data ?? [])[0] as { id: string } | undefined;
+      if (found) return found.id;
+
       const { data, error } = await supabase
         .from("claims")
         .insert({
@@ -224,9 +241,9 @@ export function TicketClaimPanel({ ticket }: { ticket: TicketContext }) {
           </Link>
         ))}
 
-        {readOnly ? null : !open ? (
+        {readOnly || existing.length > 0 ? null : !open ? (
           <Button variant="outline" onClick={() => setOpen(true)}>
-            {existing.length ? "Open another claim" : "Open a claim"}
+            Open a claim
           </Button>
         ) : (
           <div className="space-y-3 rounded-md border p-3">
@@ -309,6 +326,32 @@ export function TicketClaimPanel({ ticket }: { ticket: TicketContext }) {
             </div>
           </div>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * "Is this claim related?" on Operations and Maintenance tickets. Answering
+ * Yes opens the one linked claim form, prefilled from the ticket.
+ */
+export function ClaimRelatedPrompt({ ticket }: { ticket: TicketContext }) {
+  const { can, readOnly } = useRole();
+  const [yes, setYes] = useState(false);
+  if (!can("claims_work") || readOnly) return null;
+  if (yes) return <TicketClaimPanel ticket={ticket} startOpen />;
+  return (
+    <Card>
+      <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4 text-sm">
+        <div>
+          <p className="font-medium">Is this claim related?</p>
+          <p className="text-xs text-muted-foreground">
+            Damage, a deposit, or a cost the guest, platform or insurer should cover.
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => setYes(true)}>
+          Yes, open a claim
+        </Button>
       </CardContent>
     </Card>
   );
