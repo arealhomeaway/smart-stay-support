@@ -14,12 +14,14 @@ export type Priority = "p1" | "p2" | "p3";
 export const RECOVERY_POLICY = {
   version: POLICY_VERSION,
 
-  /** A Property Coordinator may approve courtesy items and small recovery expenses up to this. */
-  pcCourtesyCeiling: 50,
-  /** James (Operations Supervisor) may approve refunds and credits up to this. */
-  supervisorRefundCeiling: 500,
-  /** Above this, James must document the reason for the decision. */
-  supervisorDocumentationThreshold: 300,
+  /**
+   * A Property Coordinator may approve a refund or compensation up to and
+   * including this amount. Mirrored by public.recovery_required_authority in
+   * docs/pending/refund-authority (a test keeps the two equal).
+   */
+  pcApprovalCeiling: 500,
+  /** The Operations Supervisor may approve up to and including this. Above it, the Director. */
+  supervisorApprovalCeiling: 1500,
 
   /** First guest acknowledgment, in minutes, by priority. */
   acknowledgeMinutes: { p1: 3, p2: 10, p3: 30 } as Record<Priority, number>,
@@ -122,7 +124,7 @@ export const SUPERVISOR_TRIGGER_REASONS: Record<SupervisorTrigger, string> = {
   guest_asked_supervisor: "Supervisor escalation required — the guest has asked for a supervisor.",
   resolution_attempt_failed:
     "Supervisor escalation required because the guest remains dissatisfied after one reasonable resolution attempt.",
-  monetary_beyond_pc: `Supervisor escalation required — the guest is asking for compensation above the $${RECOVERY_POLICY.pcCourtesyCeiling} coordinator limit.`,
+  monetary_beyond_pc: `Supervisor escalation required: the guest is asking for more than the $${RECOVERY_POLICY.pcApprovalCeiling} coordinator limit.`,
   vendor_missed_commitments: `Supervisor escalation required — the vendor has missed ${RECOVERY_POLICY.vendorMissedCommitments} commitments.`,
   unresolved_two_hours:
     "Supervisor escalation required — an active-stay issue has been materially unresolved for over 2 hours.",

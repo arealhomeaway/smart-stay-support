@@ -19,6 +19,7 @@ import {
   RECOVERY_POLICY,
   POLICY_VERSION,
 } from "@/lib/guest-recovery";
+import { ESCALATION_FLAGS } from "@/lib/recovery-policy";
 
 const req = (slot: string, status: string, required = true) =>
   ({
@@ -40,49 +41,65 @@ describe("policy authority", () => {
     expect(v.requiresDecisionReason).toBe(false);
   });
 
-  it("a $35 courtesy item stays with the coordinator", () => {
-    const v = evaluateAuthority({ recovery_action: "courtesy_item", proposed_amount: 35 });
+  it("$500.00 exactly is coordinator authority", () => {
+    const v = evaluateAuthority({
+      recovery_action: "partial_refund",
+      proposed_amount: 500,
+      within_airbnb_policy: true,
+    });
     expect(v.level).toBe("pc");
   });
 
-  it("a courtesy item above $50 leaves coordinator authority", () => {
-    expect(evaluateAuthority({ recovery_action: "courtesy_item", proposed_amount: 65 }).level).toBe(
-      "supervisor",
-    );
-  });
-
-  it("refunds within Airbnb policy and under $500 are James's call", () => {
-    for (const amount of [75, 250, 300]) {
-      const v = evaluateAuthority({
-        recovery_action: "partial_refund",
-        proposed_amount: amount,
-        within_airbnb_policy: true,
-      });
-      expect(v.level).toBe("supervisor");
-      expect(v.requiresDecisionReason).toBe(false);
-    }
-  });
-
-  it("over $300 James must document the reason", () => {
-    for (const amount of [325, 475]) {
-      const v = evaluateAuthority({
-        recovery_action: "partial_refund",
-        proposed_amount: amount,
-        within_airbnb_policy: true,
-      });
-      expect(v.level).toBe("supervisor");
-      expect(v.requiresDecisionReason).toBe(true);
-    }
-  });
-
-  it("over $500 goes to the Director", () => {
+  it("$500.01 needs the Supervisor", () => {
     const v = evaluateAuthority({
       recovery_action: "partial_refund",
-      proposed_amount: 550,
+      proposed_amount: 500.01,
+      within_airbnb_policy: true,
+    });
+    expect(v.level).toBe("supervisor");
+    expect(v.reason).toContain("Needs Supervisor approval: over $500");
+  });
+
+  it("$1,500.00 exactly is still the Supervisor", () => {
+    const v = evaluateAuthority({
+      recovery_action: "credit",
+      proposed_amount: 1500,
+      within_airbnb_policy: true,
+    });
+    expect(v.level).toBe("supervisor");
+  });
+
+  it("$1,500.01 needs the Director", () => {
+    const v = evaluateAuthority({
+      recovery_action: "credit",
+      proposed_amount: 1500.01,
       within_airbnb_policy: true,
     });
     expect(v.level).toBe("director");
-    expect(v.reason).toContain("$500");
+    expect(v.reason).toContain("Needs Director approval: over $1,500");
+  });
+
+  it("the old $50 courtesy limit is gone", () => {
+    expect(evaluateAuthority({ recovery_action: "courtesy_item", proposed_amount: 65, within_airbnb_policy: true }).level).toBe("pc");
+  });
+
+  it("every refund or compensation needs a written reason, whatever the amount", () => {
+    for (const amount of [1, 50, 300, 500, 900, 2000]) {
+      expect(evaluateAuthority({ recovery_action: "partial_refund", proposed_amount: amount }).requiresDecisionReason).toBe(true);
+    }
+    expect(evaluateAuthority({ recovery_action: "apology" }).requiresDecisionReason).toBe(false);
+  });
+
+  it("every Director flag forces the Director on a small amount", () => {
+    for (const flag of ESCALATION_FLAGS) {
+      const v = evaluateAuthority({
+        recovery_action: "credit",
+        proposed_amount: 20,
+        within_airbnb_policy: true,
+        escalation_flags: [flag],
+      });
+      expect(v.level).toBe("director");
+    }
   });
 
   it("outside standard Airbnb policy escalates whatever the amount", () => {
@@ -128,9 +145,8 @@ describe("policy authority", () => {
   });
 
   it("thresholds come from the central policy", () => {
-    expect(RECOVERY_POLICY.pcCourtesyCeiling).toBe(50);
-    expect(RECOVERY_POLICY.supervisorRefundCeiling).toBe(500);
-    expect(RECOVERY_POLICY.supervisorDocumentationThreshold).toBe(300);
+    expect(RECOVERY_POLICY.pcApprovalCeiling).toBe(500);
+    expect(RECOVERY_POLICY.supervisorApprovalCeiling).toBe(1500);
   });
 });
 
@@ -156,8 +172,9 @@ describe("supervisor escalation triggers", () => {
     ).toContain("p2_no_plan");
   });
 
-  it("a guest asking for more than $50 exceeds coordinator authority", () => {
-    expect(supervisorTriggers({ guest_requested_amount: 120 }, now)).toContain(
+  it("a guest asking for more than $500 exceeds coordinator authority", () => {
+    expect(supervisorTriggers({ guest_requested_amount: 500 }, now)).not.toContain("monetary_beyond_pc");
+    expect(supervisorTriggers({ guest_requested_amount: 500.01 }, now)).toContain(
       "monetary_beyond_pc",
     );
   });
@@ -295,7 +312,7 @@ describe("next action", () => {
         stage: "decision_drafted",
         impact_detail: "x",
         recovery_action: "partial_refund",
-        proposed_amount: 200,
+        proposed_amount: 900,
         within_airbnb_policy: true,
       },
       { now },
@@ -310,7 +327,7 @@ describe("next action", () => {
         stage: "decision_drafted",
         impact_detail: "x",
         recovery_action: "partial_refund",
-        proposed_amount: 900,
+        proposed_amount: 1600,
         within_airbnb_policy: true,
       },
       { now },
@@ -332,6 +349,7 @@ describe("next action", () => {
         impact_detail: "x",
         recovery_action: "courtesy_item",
         proposed_amount: 25,
+        within_airbnb_policy: true,
         stay_departure: "2026-03-11",
       },
       { now: new Date("2026-03-10T12:00:00") },
@@ -438,17 +456,17 @@ describe("manager oversight", () => {
   it("finds approvals above the supervisor limit", () => {
     expect(
       matchesManagerFilter(
-        { stage: "awaiting_approval", proposed_amount: 800 },
+        { stage: "awaiting_approval", proposed_amount: 1600 },
         "above_supervisor_limit",
         now,
       ),
     ).toBe(true);
   });
 
-  it("finds approvals over $300 with no written reason", () => {
+  it("finds refunds with no written reason", () => {
     expect(
       matchesManagerFilter(
-        { stage: "awaiting_approval", proposed_amount: 400 },
+        { stage: "awaiting_approval", recovery_action: "credit", proposed_amount: 40 },
         "documentation_missing",
         now,
       ),

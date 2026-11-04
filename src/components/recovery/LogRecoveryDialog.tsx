@@ -79,6 +79,7 @@ export function LogRecoveryDialog() {
   const [amount, setAmount] = useState("");
   const [policyFit, setPolicyFit] = useState<"unknown" | "within" | "outside">("unknown");
   const [flags, setFlags] = useState<EscalationFlag[]>([]);
+  const [decisionReason, setDecisionReason] = useState("");
   const [acknowledged, setAcknowledged] = useState(false);
 
   const tickets = useQuery({
@@ -134,7 +135,8 @@ export function LogRecoveryDialog() {
         (existing.data ?? []) as never,
       )
     : [];
-  const blocked = duplicates.length > 0 && !acknowledged;
+  const reasonMissing = verdict.requiresDecisionReason && !decisionReason.trim();
+  const blocked = (duplicates.length > 0 && !acknowledged) || reasonMissing;
 
   function reset() {
     setSearch("");
@@ -146,6 +148,7 @@ export function LogRecoveryDialog() {
     setAmount("");
     setPolicyFit("unknown");
     setFlags([]);
+    setDecisionReason("");
     setAcknowledged(false);
   }
 
@@ -174,6 +177,8 @@ export function LogRecoveryDialog() {
           escalation_flags: escalations,
           authority_level: verdict.level,
           approval_status: verdict.level === "pc" ? "not_required" : "pending",
+          approval_authority: verdict.level === "pc" ? null : verdict.level,
+          decision_reason: decisionReason.trim() || null,
           policy_version: POLICY_VERSION,
           assigned_to: userId,
           created_by: userId,
@@ -400,6 +405,19 @@ export function LogRecoveryDialog() {
             <p className="mt-1 text-xs text-muted-foreground">
               {policyBoundaryLabel(withinPolicy)} · {POLICY_VERSION}
             </p>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs" htmlFor="rec-new-reason">
+              Reason {verdict.requiresDecisionReason ? "(required)" : "(optional)"}
+            </Label>
+            <Textarea
+              id="rec-new-reason"
+              rows={2}
+              value={decisionReason}
+              onChange={(e) => setDecisionReason(e.target.value)}
+              placeholder="Why this remedy, at this amount, for this guest."
+            />
           </div>
 
           {duplicates.length > 0 ? (
