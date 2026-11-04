@@ -106,6 +106,7 @@ import { Route as AuthenticatedOnboardingTransitionsSplatRouteImport } from './r
 import { Route as AuthenticatedOnboardingUtilitiesSplatRouteImport } from './routes/_authenticated/onboarding.utilities.$'
 import { Route as ApiPublicHooksBreezewayMirrorRouteImport } from './routes/api/public/hooks/breezeway-mirror'
 import { Route as ApiPublicHooksCleanerHoursReconcileRouteImport } from './routes/api/public/hooks/cleaner-hours-reconcile'
+import { Route as ApiPublicHooksNightlyBackupRouteImport } from './routes/api/public/hooks/nightly-backup'
 import { Route as ApiPublicHooksOwnerNotificationEmailRouteImport } from './routes/api/public/hooks/owner-notification-email'
 import { Route as ApiPublicHooksOwnerNotifyRouteImport } from './routes/api/public/hooks/owner-notify'
 import { Route as ApiPublicHooksQuarterlySchedulerRouteImport } from './routes/api/public/hooks/quarterly-scheduler'
@@ -658,6 +659,12 @@ const ApiPublicHooksCleanerHoursReconcileRoute =
     path: '/api/public/hooks/cleaner-hours-reconcile',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksNightlyBackupRoute =
+  ApiPublicHooksNightlyBackupRouteImport.update({
+    id: '/api/public/hooks/nightly-backup',
+    path: '/api/public/hooks/nightly-backup',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksOwnerNotificationEmailRoute =
   ApiPublicHooksOwnerNotificationEmailRouteImport.update({
     id: '/api/public/hooks/owner-notification-email',
@@ -796,6 +803,7 @@ export interface FileRoutesByFullPath {
   '/onboarding/utilities/$': typeof AuthenticatedOnboardingUtilitiesSplatRoute
   '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
   '/api/public/hooks/cleaner-hours-reconcile': typeof ApiPublicHooksCleanerHoursReconcileRoute
+  '/api/public/hooks/nightly-backup': typeof ApiPublicHooksNightlyBackupRoute
   '/api/public/hooks/owner-notification-email': typeof ApiPublicHooksOwnerNotificationEmailRoute
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
@@ -895,6 +903,7 @@ export interface FileRoutesByTo {
   '/onboarding/utilities/$': typeof AuthenticatedOnboardingUtilitiesSplatRoute
   '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
   '/api/public/hooks/cleaner-hours-reconcile': typeof ApiPublicHooksCleanerHoursReconcileRoute
+  '/api/public/hooks/nightly-backup': typeof ApiPublicHooksNightlyBackupRoute
   '/api/public/hooks/owner-notification-email': typeof ApiPublicHooksOwnerNotificationEmailRoute
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
@@ -1002,6 +1011,7 @@ export interface FileRoutesById {
   '/_authenticated/onboarding/utilities/$': typeof AuthenticatedOnboardingUtilitiesSplatRoute
   '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
   '/api/public/hooks/cleaner-hours-reconcile': typeof ApiPublicHooksCleanerHoursReconcileRoute
+  '/api/public/hooks/nightly-backup': typeof ApiPublicHooksNightlyBackupRoute
   '/api/public/hooks/owner-notification-email': typeof ApiPublicHooksOwnerNotificationEmailRoute
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
@@ -1109,6 +1119,7 @@ export interface FileRouteTypes {
     | '/onboarding/utilities/$'
     | '/api/public/hooks/breezeway-mirror'
     | '/api/public/hooks/cleaner-hours-reconcile'
+    | '/api/public/hooks/nightly-backup'
     | '/api/public/hooks/owner-notification-email'
     | '/api/public/hooks/owner-notify'
     | '/api/public/hooks/quarterly-scheduler'
@@ -1208,6 +1219,7 @@ export interface FileRouteTypes {
     | '/onboarding/utilities/$'
     | '/api/public/hooks/breezeway-mirror'
     | '/api/public/hooks/cleaner-hours-reconcile'
+    | '/api/public/hooks/nightly-backup'
     | '/api/public/hooks/owner-notification-email'
     | '/api/public/hooks/owner-notify'
     | '/api/public/hooks/quarterly-scheduler'
@@ -1314,6 +1326,7 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding/utilities/$'
     | '/api/public/hooks/breezeway-mirror'
     | '/api/public/hooks/cleaner-hours-reconcile'
+    | '/api/public/hooks/nightly-backup'
     | '/api/public/hooks/owner-notification-email'
     | '/api/public/hooks/owner-notify'
     | '/api/public/hooks/quarterly-scheduler'
@@ -1334,6 +1347,7 @@ export interface RootRouteChildren {
   OauthSharepointReturnRoute: typeof OauthSharepointReturnRoute
   ApiPublicHooksBreezewayMirrorRoute: typeof ApiPublicHooksBreezewayMirrorRoute
   ApiPublicHooksCleanerHoursReconcileRoute: typeof ApiPublicHooksCleanerHoursReconcileRoute
+  ApiPublicHooksNightlyBackupRoute: typeof ApiPublicHooksNightlyBackupRoute
   ApiPublicHooksOwnerNotificationEmailRoute: typeof ApiPublicHooksOwnerNotificationEmailRoute
   ApiPublicHooksOwnerNotifyRoute: typeof ApiPublicHooksOwnerNotifyRoute
   ApiPublicHooksQuarterlySchedulerRoute: typeof ApiPublicHooksQuarterlySchedulerRoute
@@ -2024,6 +2038,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksCleanerHoursReconcileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/nightly-backup': {
+      id: '/api/public/hooks/nightly-backup'
+      path: '/api/public/hooks/nightly-backup'
+      fullPath: '/api/public/hooks/nightly-backup'
+      preLoaderRoute: typeof ApiPublicHooksNightlyBackupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/owner-notification-email': {
       id: '/api/public/hooks/owner-notification-email'
       path: '/api/public/hooks/owner-notification-email'
@@ -2370,6 +2391,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksBreezewayMirrorRoute: ApiPublicHooksBreezewayMirrorRoute,
   ApiPublicHooksCleanerHoursReconcileRoute:
     ApiPublicHooksCleanerHoursReconcileRoute,
+  ApiPublicHooksNightlyBackupRoute: ApiPublicHooksNightlyBackupRoute,
   ApiPublicHooksOwnerNotificationEmailRoute:
     ApiPublicHooksOwnerNotificationEmailRoute,
   ApiPublicHooksOwnerNotifyRoute: ApiPublicHooksOwnerNotifyRoute,

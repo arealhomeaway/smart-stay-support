@@ -237,6 +237,25 @@ export async function getSharePointConnectionStatus(userId: string) {
   };
 }
 
+/**
+ * The stored key held by the approved service identity, whichever Admin
+ * connected it. Used by unattended jobs (nightly backup). Null if none.
+ */
+export async function getServiceSharePointConnectionKey(): Promise<string | null> {
+  const db = await admin();
+  const { data, error } = await db
+    .from("app_user_connections")
+    .select("connection_key_ciphertext, connected_identity")
+    .eq("connector_id", SHAREPOINT_CONNECTOR_ID)
+    .eq("connected_identity", REQUIRED_SHAREPOINT_IDENTITY.toLowerCase())
+    .order("updated_at", { ascending: false })
+    .limit(1);
+  if (error) throw error;
+  const row = (data as ConnectionRow[] | null)?.[0];
+  if (!row || !isApprovedIdentity(row.connected_identity?.toLowerCase() ?? null)) return null;
+  return decryptConnectionKey(row.connection_key_ciphertext);
+}
+
 /** Revoke at the gateway and delete the stored row. */
 export async function revokeSharePointConnection(userId: string) {
   const key = await loadRawKey(userId);
