@@ -32,6 +32,7 @@ import {
   clock,
   applyNightChanges,
   effectivePattern,
+  patternFromSetting,
   gridRows,
   gridSeatCodes,
   monthCells,
@@ -81,7 +82,7 @@ const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return (
 type Triage = { id: string; weekday: number; start_minute: number; end_minute: number; role_code: string };
 type Model = {
   roles: SRole[]; gridRoles: SRole[]; shifts: SShift[]; overrides: SOverride[]; roster: SRoster[]; people: SPerson[]; triage: Triage[]; canEdit: boolean;
-  pattern: OncallPattern; patternSaved: boolean; shiftPeople: StaffPerson[]; oncallPeople: StaffPerson[]; gridCodes: string[];
+  pattern: OncallPattern | null; prefill: OncallPattern; patternSaved: boolean; shiftPeople: StaffPerson[]; oncallPeople: StaffPerson[]; gridCodes: string[];
 };
 type Raw = Awaited<ReturnType<typeof coverageModel>>;
 const isDefaultRow = (c: string) => { const t = teamOf(c); return !!t && t !== "leadership"; };
@@ -103,7 +104,9 @@ export function buildModel(data: Raw): Model {
     people: data.people as SPerson[],
     triage: data.triage as Triage[],
     canEdit: data.canEdit === true,
-    pattern: effectivePattern(data.patternSetting, roster),
+    // Grid, calendar and routing read only the saved pattern, so they always agree.
+    pattern: patternFromSetting(data.patternSetting),
+    prefill: effectivePattern(data.patternSetting, roster),
     patternSaved: !!data.patternSetting,
     shiftPeople: staffPickerPeople(staff, roles, testIds),
     oncallPeople: oncallPickerPeople(staff, (data.eligibleIds ?? []) as string[], testIds),
@@ -203,6 +206,11 @@ export function ScheduleTab() {
         )}
       </div>
 
+      {!m.patternSaved && (
+        <p className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
+          The on-call weekday pattern is not saved yet, so nights after the last listed date have no one on call. Open Manage on-call and save the pattern.
+        </p>
+      )}
       <WhosOutStrip sunday={sunday} m={m} />
       <WeekGrid sunday={sunday} m={m} onChanged={refresh} />
 
@@ -505,7 +513,7 @@ function NightForm({ dates, mode, m, onDone }: { dates: string[]; mode: NightMod
 function ManageOnCall({ m, onClose }: { m: Model; onClose: () => void }) {
   const qc = useQueryClient();
   const savePattern = useServerFn(saveOnCallPattern);
-  const [pattern, setPattern] = useState<OncallPattern>(m.pattern);
+  const [pattern, setPattern] = useState<OncallPattern>(m.prefill);
   const [busy, setBusy] = useState(false);
   const today = centralToday();
   const [ym, setYm] = useState(() => ({ y: Number(today.slice(0, 4)), m: Number(today.slice(5, 7)) - 1 }));
