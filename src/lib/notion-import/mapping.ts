@@ -145,7 +145,6 @@ export function normalizeOwnerRezId(v: string | null | undefined): string | null
 }
 
 const money = (n: number | null) => (n == null ? "blank" : `$${n.toFixed(2)}`);
-const fmtDate = (iso: string) => iso.slice(0, 10);
 
 export function mapNotionPage(
   page: NotionPage,
@@ -253,7 +252,6 @@ export function mapNotionPage(
     formerProperty,
     multipleHomes: pids.length > 1,
   };
-  void fmtDate;
 }
 
 export type RunReport = {
