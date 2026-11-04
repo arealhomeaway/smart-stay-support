@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { RecoveryDecisionBox } from "@/components/recovery/RecoveryDecisionBox";
 import { Separator } from "@/components/ui/separator";
 import { Chip } from "@/components/ui/page";
 import {
@@ -36,8 +37,6 @@ import {
   RECOVERY_ACTION_LABELS,
   RECOVERY_STAGE_LABELS,
   canClose,
-  canDecideApproval,
-  decisionReasonMissing,
   closureBlockers,
   effectiveOwner,
   evaluateAuthority,
@@ -102,46 +101,6 @@ export function RecoveryDrawer({
       if (error) throw error;
       return (data ?? []) as RecoveryActivityRow[];
     },
-  });
-
-  const authority = useQuery({
-    queryKey: ["recovery-viewer-authority", userId],
-    enabled: !!userId,
-    queryFn: async () => {
-      const [sup, dir] = await Promise.all([
-        supabase.rpc("is_supervisor", { _user_id: userId! }),
-        supabase.rpc("is_director", { _user_id: userId! }),
-      ]);
-      return { isSupervisor: sup.data === true, isDirector: dir.data === true };
-    },
-  });
-  const [decisionReason, setDecisionReason] = useState("");
-  const [decisionAmount, setDecisionAmount] = useState("");
-  const decide = useMutation({
-    mutationFn: async (decision: "approve" | "decline") => {
-      if (!recovery) return;
-      const amount = decisionAmount.trim() === "" ? null : Number(decisionAmount);
-      // decide_recovery_approval checks the approver's role in the database.
-      const rpc = supabase.rpc as unknown as (
-        fn: string,
-        args: Record<string, unknown>,
-      ) => Promise<{ error: { message: string } | null }>;
-      const { error } = await rpc("decide_recovery_approval", {
-        _recovery_id: recovery.id,
-        _decision: decision,
-        _approved_amount: decision === "approve" ? amount : null,
-        _reason: decisionReason.trim(),
-      });
-      if (error) throw new Error(error.message);
-      return decision;
-    },
-    onSuccess: (d) => {
-      setDecisionReason("");
-      setDecisionAmount("");
-      refresh();
-      toast.success(d === "approve" ? "Approved" : "Declined");
-    },
-    onError: (e: Error) => toast.error(e.message),
   });
 
   const reqs = (requirements.data ?? []) as RequirementLike[];
@@ -461,51 +420,7 @@ export function RecoveryDrawer({
                 </Button>
               ) : null}
 
-              {recovery.approval_status === "pending" &&
-              authority.data &&
-              canDecideApproval(recovery.approval_authority, authority.data) ? (
-                <div className="w-full space-y-2 rounded-md border p-3">
-                  <p className="font-medium">Your decision</p>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <div>
-                      <Label htmlFor="decision-amount">Approved amount</Label>
-                      <Input
-                        id="decision-amount"
-                        inputMode="decimal"
-                        placeholder={recovery.proposed_amount != null ? String(recovery.proposed_amount) : ""}
-                        value={decisionAmount}
-                        onChange={(e) => setDecisionAmount(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="decision-reason">Reason (required)</Label>
-                    <Textarea
-                      id="decision-reason"
-                      rows={2}
-                      value={decisionReason}
-                      onChange={(e) => setDecisionReason(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      disabled={decide.isPending || decisionReasonMissing(decisionReason)}
-                      onClick={() => decide.mutate("approve")}
-                    >
-                      Approve
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={decide.isPending || decisionReasonMissing(decisionReason)}
-                      onClick={() => decide.mutate("decline")}
-                    >
-                      Decline
-                    </Button>
-                  </div>
-                </div>
-              ) : null}
+              <RecoveryDecisionBox recovery={recovery} onDone={refresh} />
 
               {suggested !== recovery.stage ? (
                 <Button

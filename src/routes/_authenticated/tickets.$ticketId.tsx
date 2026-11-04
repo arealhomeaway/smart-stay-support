@@ -60,6 +60,8 @@ import { VendorRatingPanel } from "@/components/VendorRatingPanel";
 import { ReservationContextPanel } from "@/components/ReservationContextPanel";
 import { ClaimRelatedPrompt, TicketClaimPanel } from "@/components/claims/TicketClaimPanel";
 import { TicketRecoveryPanel } from "@/components/recovery/TicketRecoveryPanel";
+import { DoThisNow, OccupancyChip, StepTracker, TicketHeaderLine, useHeaderOccupancy } from "@/components/tickets/TicketTopBits";
+import { doThisNowDueAt, dueInLabel, recoveryOpen, ticketTracker, type RecoveryLike } from "@/lib/ticket-cleanup";
 import {
   TicketWorkOrderPanel,
   useTicketWorkOrders,
@@ -252,8 +254,8 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     queryKey: ["ticket-branches", ticketId],
     queryFn: async () => {
       const [claims, recoveries, orders] = await Promise.all([
-        supabase.from("claims").select("id").eq("ticket_id", ticketId),
-        supabase.from("guest_recovery").select("id").eq("ticket_id", ticketId),
+        supabase.from("claims").select("id, stage").eq("ticket_id", ticketId),
+        supabase.from("guest_recovery").select("id, stage, approval_status, delivered_amount").eq("ticket_id", ticketId),
         supabase
           .from("work_orders")
           .select("approved_amount, quote_amount")
@@ -262,6 +264,10 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
       return {
         claim: (claims.data ?? []).length > 0,
         recovery: (recoveries.data ?? []).length > 0,
+        // Display only: is a refund, credit or claim still being worked?
+        makeRightOpen:
+          ((recoveries.data ?? []) as RecoveryLike[]).some(recoveryOpen) ||
+          ((claims.data ?? []) as { stage: string }[]).some((c) => c.stage !== "closed" && c.stage !== "recovered"),
         // Same repair figure the server uses for its Final Review rule.
         repairAmount: (orders.data ?? []).reduce(
           (max, o) => Math.max(max, Number(o.approved_amount ?? o.quote_amount ?? 0)),
@@ -272,6 +278,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   });
 
   const propertyId = data?.ticket?.property_id;
+  const occupancy = useHeaderOccupancy(propertyId);
   const { data: history } = useQuery({
     queryKey: ["property-history", propertyId],
     enabled: !!propertyId,
@@ -891,6 +898,33 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     requiredOpenSteps: requiredOpen.length,
     missingClosureEvidence: Boolean(requiredEvidence) && !evidenceSatisfied,
   });
+  const headerAddress =
+    [ticket.properties?.address_line1, ticket.properties?.city].filter(Boolean).join(", ") || propertyName || null;
+  // Display only: which of Logged / Tell the guest / Fix it / Make it right this ticket is on.
+  const tracker = ticketTracker({
+    closed: closed || ticket.record_type === "completed_interaction",
+    guestInvolved: guestComm.commState !== "not_required",
+    commState: guestComm.commState,
+    stage,
+    status: ticket.status,
+    acknowledged: Boolean(ticket.acknowledged_at),
+    makeRightOpen:
+      Boolean(branches?.makeRightOpen) ||
+      (Boolean((ticket as { guest_recovery_needed?: boolean | null }).guest_recovery_needed) && !activeBranch.recovery),
+  });
+  const doNowDue = closed
+    ? null
+    : dueInLabel(
+        doThisNowDueAt({
+          commState: guestComm.commState,
+          commDueAt: guestComm.commDueAt,
+          acknowledged_at: ticket.acknowledged_at,
+          action_started_at: ticket.action_started_at,
+          response_due_at: (ticket as { response_due_at?: string | null }).response_due_at ?? null,
+          action_due_at: (ticket as { action_due_at?: string | null }).action_due_at ?? null,
+          next_guest_update_at: ticket.next_guest_update_at ?? null,
+        }),
+      );
   const firstActionLeads = currentAction?.id === "acknowledge" || currentAction?.id === "start_work";
 
   // One plain-language sentence: what is happening and what comes next. No stat wall.
@@ -1117,45 +1151,12 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
               </button>
             )}
             <div className="min-w-0">
-              <p className="text-sm text-muted-foreground">
-                #{ticket.ref}
-                {ticket.record_type === "completed_interaction" ? " · Completed interaction" : ""}
-              </p>
               <h1 className="text-2xl font-semibold sm:text-3xl">{ticket.title}</h1>
+              <TicketHeaderLine address={headerAddress} occupancy={occupancy} ticketRef={ticket.ref} />
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <StatusBadge tone={priorityTone2(ticket.priority)}>{meta.short}</StatusBadge>
-                <StatusBadge tone={ticketTone(ticket.status)}>
-                  {labelFor(STATUSES, ticket.status)}
-                </StatusBadge>
-                {guestComm.impact === "yes" && (
-                  <StatusBadge tone="brand">Affects active stay</StatusBadge>
-                )}
-                {isNotionImported(ticket) && (
-                  <span className="inline-flex items-center gap-1.5 text-sm">
-                    <StatusBadge tone="context">Imported from Notion</StatusBadge>
-                    {ticket.external_url && (
-                      <a href={ticket.external_url} target="_blank" rel="noreferrer" className="font-medium text-primary underline-offset-2 hover:underline">
-                        Open in Notion
-                      </a>
-                    )}
-                  </span>
-                )}
-                {isImportHeld(ticket as unknown as { import_hold?: string | null }) && (
-                  <StatusBadge tone="waiting">{IMPORT_HOLD_LABELS[(ticket as unknown as { import_hold: ImportHold }).import_hold]}</StatusBadge>
-                )}
-                {ticket.property_id && (
-                  <button
-                    type="button"
-                    onClick={() => setPropertyOpen(true)}
-                    className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border px-2.5 text-sm font-medium transition-colors hover:bg-secondary"
-                  >
-                    <Building2 className="size-3.5" aria-hidden="true" />
-                    {propertyName}
-                  </button>
-                )}
+                <OccupancyChip occupancy={occupancy} />
               </div>
-              {/* When a guided step leads, its Next action box is the one instruction — no competing hint. */}
-              {!guidedLeads && !firstActionLeads && <p className="mt-2 text-sm font-medium text-muted-foreground">{nextStepLine}</p>}
             </div>
           </div>
           <MoreActions
@@ -1169,7 +1170,13 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
           />
         </div>
 
-        {sla.escalation && (
+
+
+        <div className="space-y-5">
+          <div className="space-y-4">
+            <StepTracker tracker={tracker} />
+            <DoThisNow due={doNowDue}>
+              {sla.escalation && (
           <div className="flex items-start gap-3 rounded-lg border border-danger/40 bg-danger/10 p-4">
             <BellRing className="mt-0.5 size-5 shrink-0 text-danger" />
             <div>
@@ -1181,183 +1188,6 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
           </div>
         )}
 
-        {/* ---------------- record & history, kept at the top so updates and sections are one glance away ---------------- */}
-        <Tabs defaultValue="activity" className="w-full">
-          <TabsList>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
-            <TabsTrigger value="evidence">Evidence</TabsTrigger>
-            <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="history">Property history</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="activity" className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Textarea
-                rows={3}
-                placeholder="Add an update: who you called, what the vendor found, what the guest said…"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-              />
-              <Button onClick={addNote} size="sm" variant="secondary">
-                Add note
-              </Button>
-            </div>
-            <div className="max-h-96 overflow-y-auto border-t border-border pt-2">
-              <ActivityList
-                events={activity.map((a) => ({
-                  id: a.id,
-                  kind: activityKindFor(a.kind, a.event_type, a.body),
-                  label: (
-                    <>
-                      {humanizeHistoryText(a.body)}{" "}
-                      <span className="text-muted-foreground">
-                        — {a.author?.full_name ?? a.author?.email ?? "Team member"}
-                      </span>
-                    </>
-                  ),
-                  when: relativeTime(a.event_at ?? a.created_at),
-                }))}
-                emptyLabel="No activity yet."
-              />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="evidence" className="pt-4">
-            <AttachmentsPanel
-              entityType="ticket"
-              entityId={ticketId}
-              title="Evidence on file"
-              readOnly={evidenceRequirementActive}
-              {...(evidenceRequirementActive
-                ? {
-                    description:
-                      "An upload is required for the current step — add it in Current Work so Resolve credits the requirement.",
-                  }
-                : {})}
-            />
-          </TabsContent>
-
-          <TabsContent value="details" className="space-y-4 pt-4">
-            {hiddenSectionCount(sections) > 0 && (
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm">
-                <span className="text-muted-foreground">
-                  {showAllDetails
-                    ? "Showing every section, including ones this ticket does not need yet."
-                    : "Costs and vendor sections appear when this ticket needs them."}
-                </span>
-                <Button variant="outline" size="sm" onClick={() => setShowAllDetails((v) => !v)}>
-                  {showAllDetails ? "Show only what this ticket needs" : "Show all details"}
-                </Button>
-              </div>
-            )}
-            {role.isStaff && (showAllDetails || sections.costs) && <ExpensesCard propertyId={ticket.property_id} linkType="ticket" targetId={ticketId} />}
-            {role.can("work_orders_internal") &&
-              (!ticket.entry_kind ||
-                ownerSectionRelevant(ticket, ((workOrders ?? []) as { quote_amount?: number | null; approved_amount?: number | null }[]).flatMap((o) => [o.quote_amount, o.approved_amount])).relevant) && (
-              <TicketOwnerUpdatePanel key={ticket.id} ticketId={ticket.id} />
-            )}
-            <div className="space-y-3 text-sm">
-              <Field
-                label="Address"
-                value={
-                  [ticket.properties?.address_line1, ticket.properties?.city]
-                    .filter(Boolean)
-                    .join(", ") || "—"
-                }
-              />
-              <Field label="Acknowledged" value={relativeTime(ticket.acknowledged_at)} />
-              <Field label="Action started" value={relativeTime(ticket.action_started_at)} />
-              <div className="flex items-baseline justify-between gap-4">
-                <span className="text-muted-foreground">Vendor</span>
-                <span className="flex items-center gap-2 text-right font-medium">
-                  {ticket.vendor_name ?? "—"}
-                  {ticket.vendor_name && ticket.vendor_status && (
-                    <StatusBadge tone={vendorStatusTone(ticket.vendor_status)}>
-                      {labelFor(
-                        [
-                          { value: "dispatched", label: "Dispatched" },
-                          { value: "in_progress", label: "In progress" },
-                          { value: "completed", label: "Completed" },
-                        ],
-                        ticket.vendor_status,
-                      )}
-                    </StatusBadge>
-                  )}
-                </span>
-              </div>
-              {ticket.priority_override_reason && (
-                <Field label="Priority override" value={ticket.priority_override_reason} />
-              )}
-              {ticket.description && (
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                    Description
-                  </p>
-                  <p className="mt-1 whitespace-pre-wrap">{ticket.description}</p>
-                </div>
-              )}
-              {ticket.closure_evidence && (
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Evidence</p>
-                  <p className="mt-1 whitespace-pre-wrap">{ticket.closure_evidence}</p>
-                </div>
-              )}
-            </div>
-
-            <details open={showAllDetails || undefined} className="group rounded-lg border border-border px-3 py-2 text-sm">
-              <summary className="cursor-pointer font-medium text-muted-foreground">
-                More about this ticket
-              </summary>
-              <div className="mt-3 space-y-4 border-t border-border pt-3">
-                <OutlookSourceCard entityType="ticket" entityId={ticketId} />
-                <details className="rounded-lg border border-border px-3 py-2 text-sm">
-                  <summary className="cursor-pointer text-muted-foreground">
-                    Reservation snapshot from when this ticket opened
-                  </summary>
-                  <div className="pt-3">
-                    <ReservationContextPanel
-                      ticket={ticket}
-                      ownerRezPropertyId={ticket.properties?.ownerrez_property_id ?? null}
-                    />
-                  </div>
-                </details>
-                {ticket.vendor_user_id && ticket.vendor_status === "completed" && (
-                  <VendorRatingPanel ticketId={ticket.id} priority={ticket.priority ?? null} />
-                )}
-                {ticket.vendor_user_id && <VisitLogPanel ticketId={ticket.id} />}
-                {/* Shown as the primary action in Current Work during repair,
-                    repair_active and verify above; here it's reference only,
-                    once all of those stages have passed. */}
-                {role.can("work_orders_internal") &&
-                  (showAllDetails || sections.vendor) &&
-                  stage !== "repair" &&
-                  stage !== "repair_active" &&
-                  stage !== "verify" && (
-                    <TicketWorkOrderPanel
-                      ticket={ticket}
-                      propertyName={propertyName}
-                      openWorkOrderId={openWorkOrderId}
-                      onOpenWorkOrderIdChange={setOpenWorkOrderId}
-                    />
-                  )}
-              </div>
-            </details>
-          </TabsContent>
-
-          <TabsContent value="history" className="space-y-2 pt-4">
-            <PropertyHistoryList
-              history={(history ?? []) as PropertyHistoryRow[]}
-              categoryKey={historyCategoryKey}
-              categoryLabel={historyCategoryLabel}
-            />
-          </TabsContent>
-        </Tabs>
-
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* ---------------- B. dominant active-work canvas ---------------- */}
-          <div className="space-y-5 lg:col-span-2">
-            <section aria-label="Current work">
-              <h2 className="eyebrow text-muted-foreground">Current work</h2>
 
               {(ticket as { guest_feedback_id?: string | null }).guest_feedback_id && (
                 <div className="mt-2">
@@ -1677,23 +1507,110 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                   />
                 </div>
               )}
-            </section>
+            </DoThisNow>
 
             {guidance}
 
-            {/* Live lanes on the same incident — only when they are actually open. */}
-            {activeBranch.recovery && <TicketRecoveryPanel ticket={ticket} />}
+            {(ticket as { entry_kind?: string | null }).entry_kind !== "activity" && ticket.record_type !== "completed_interaction" && (
+              <TicketRecoveryPanel ticket={ticket} />
+            )}
             {activeBranch.claim ? (
               <TicketClaimPanel ticket={ticket} />
             ) : (
               (ticket as { entry_kind?: string | null }).entry_kind !== "activity" &&
               ticket.record_type !== "completed_interaction" && <ClaimRelatedPrompt ticket={ticket} />
             )}
-          </div>
 
-          {/* ---------------- B. context rail ---------------- */}
-          <aside className="space-y-4">
-            <Card>
+            <section aria-label="Details" className="space-y-2">
+              <h2 className="eyebrow text-muted-foreground">Details</h2>
+              <details className="group rounded-lg border border-border bg-card px-3 py-2" data-testid="details-activity">
+                <summary className="cursor-pointer py-1 font-medium">Activity</summary>
+                <div className="space-y-4 pt-3">
+
+            <div className="space-y-2">
+              <Textarea
+                rows={3}
+                placeholder="Add an update: who you called, what the vendor found, what the guest said…"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+              />
+              <Button onClick={addNote} size="sm" variant="secondary">
+                Add note
+              </Button>
+            </div>
+            <div className="max-h-96 overflow-y-auto border-t border-border pt-2">
+              <ActivityList
+                events={activity.map((a) => ({
+                  id: a.id,
+                  kind: activityKindFor(a.kind, a.event_type, a.body),
+                  label: (
+                    <>
+                      {humanizeHistoryText(a.body)}{" "}
+                      <span className="text-muted-foreground">
+                        — {a.author?.full_name ?? a.author?.email ?? "Team member"}
+                      </span>
+                    </>
+                  ),
+                  when: relativeTime(a.event_at ?? a.created_at),
+                }))}
+                emptyLabel="No activity yet."
+              />
+            </div>
+          
+                </div>
+              </details>
+              <details className="group rounded-lg border border-border bg-card px-3 py-2" data-testid="details-occupancy">
+                <summary className="cursor-pointer py-1 font-medium">Occupancy and guest impact</summary>
+                <div className="space-y-4 pt-3">
+<OccupancyGuestPanel
+              ticket={ticket as Parameters<typeof OccupancyGuestPanel>[0]["ticket"]}
+              workTypeName={workType?.name ?? null}
+              readOnly={role.readOnly}
+              onChanged={refresh}
+            />
+                </div>
+              </details>
+              <details className="group rounded-lg border border-border bg-card px-3 py-2" data-testid="details-owner">
+                <summary className="cursor-pointer py-1 font-medium">Owner</summary>
+                <div className="space-y-4 pt-3">
+<TicketOwnerBox
+              ticketId={ticketId}
+              onWorkOrders={() => (document.querySelector('[data-ticket-work-orders]') ?? document.querySelector('[data-current-work]'))?.scrollIntoView({behavior:'smooth'})}
+              ticket={ticket as Parameters<typeof TicketOwnerBox>[0]["ticket"]}
+              workOrderCosts={((workOrders ?? []) as { quote_amount?: number | null; approved_amount?: number | null; actual_cost?: number | null }[]).flatMap((o) => [o.quote_amount, o.approved_amount, o.actual_cost])}
+            />
+{role.isStaff && ticket.property_id ? <SentToOwner propertyId={ticket.property_id} ticketId={ticketId} onWorkOrders={()=>(document.querySelector('[data-ticket-work-orders]')??document.querySelector('[data-current-work]'))?.scrollIntoView({behavior:'smooth'})}/> : null}
+                </div>
+              </details>
+              <details className="group rounded-lg border border-border bg-card px-3 py-2" data-testid="details-about">
+                <summary className="cursor-pointer py-1 font-medium">About this ticket</summary>
+                <div className="space-y-4 pt-3">
+                <div className="flex flex-wrap items-center gap-2" data-testid="ticket-about-chips">
+                  {ticket.record_type === "completed_interaction" && <StatusBadge tone="context">Completed interaction</StatusBadge>}
+                  <StatusBadge tone={ticketTone(ticket.status)}>{labelFor(STATUSES, ticket.status)}</StatusBadge>
+                  {guestComm.impact === "yes" && <StatusBadge tone="brand">Affects active stay</StatusBadge>}
+                  {isNotionImported(ticket) && (
+                    <span className="inline-flex items-center gap-1.5 text-sm">
+                      <StatusBadge tone="context">Imported from Notion</StatusBadge>
+                      {ticket.external_url && (
+                        <a href={ticket.external_url} target="_blank" rel="noreferrer" className="font-medium text-primary underline-offset-2 hover:underline">
+                          Open in Notion
+                        </a>
+                      )}
+                    </span>
+                  )}
+                  {isImportHeld(ticket as unknown as { import_hold?: string | null }) && (
+                    <StatusBadge tone="waiting">{IMPORT_HOLD_LABELS[(ticket as unknown as { import_hold: ImportHold }).import_hold]}</StatusBadge>
+                  )}
+                  {ticket.property_id && (
+                    <button type="button" onClick={() => setPropertyOpen(true)} className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border px-2.5 text-sm font-medium transition-colors hover:bg-secondary">
+                      <Building2 className="size-3.5" aria-hidden="true" />
+                      {propertyName}
+                    </button>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground">{nextStepLine}</p>
+<Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Context</CardTitle>
               </CardHeader>
@@ -1745,21 +1662,152 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                 </div>
               </CardContent>
             </Card>
+                </div>
+              </details>
+              <details className="group rounded-lg border border-border bg-card px-3 py-2" data-testid="details-more">
+                <summary className="cursor-pointer py-1 font-medium">Reservation, costs and vendor</summary>
+                <div className="space-y-4 pt-3">
 
-            <OccupancyGuestPanel
-              ticket={ticket as Parameters<typeof OccupancyGuestPanel>[0]["ticket"]}
-              workTypeName={workType?.name ?? null}
-              readOnly={role.readOnly}
-              onChanged={refresh}
+            {hiddenSectionCount(sections) > 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm">
+                <span className="text-muted-foreground">
+                  {showAllDetails
+                    ? "Showing every section, including ones this ticket does not need yet."
+                    : "Costs and vendor sections appear when this ticket needs them."}
+                </span>
+                <Button variant="outline" size="sm" onClick={() => setShowAllDetails((v) => !v)}>
+                  {showAllDetails ? "Show only what this ticket needs" : "Show all details"}
+                </Button>
+              </div>
+            )}
+            {role.isStaff && (showAllDetails || sections.costs) && <ExpensesCard propertyId={ticket.property_id} linkType="ticket" targetId={ticketId} />}
+            {role.can("work_orders_internal") &&
+              (!ticket.entry_kind ||
+                ownerSectionRelevant(ticket, ((workOrders ?? []) as { quote_amount?: number | null; approved_amount?: number | null }[]).flatMap((o) => [o.quote_amount, o.approved_amount])).relevant) && (
+              <TicketOwnerUpdatePanel key={ticket.id} ticketId={ticket.id} />
+            )}
+            <div className="space-y-3 text-sm">
+              <Field
+                label="Address"
+                value={
+                  [ticket.properties?.address_line1, ticket.properties?.city]
+                    .filter(Boolean)
+                    .join(", ") || "—"
+                }
+              />
+              <Field label="Acknowledged" value={relativeTime(ticket.acknowledged_at)} />
+              <Field label="Action started" value={relativeTime(ticket.action_started_at)} />
+              <div className="flex items-baseline justify-between gap-4">
+                <span className="text-muted-foreground">Vendor</span>
+                <span className="flex items-center gap-2 text-right font-medium">
+                  {ticket.vendor_name ?? "—"}
+                  {ticket.vendor_name && ticket.vendor_status && (
+                    <StatusBadge tone={vendorStatusTone(ticket.vendor_status)}>
+                      {labelFor(
+                        [
+                          { value: "dispatched", label: "Dispatched" },
+                          { value: "in_progress", label: "In progress" },
+                          { value: "completed", label: "Completed" },
+                        ],
+                        ticket.vendor_status,
+                      )}
+                    </StatusBadge>
+                  )}
+                </span>
+              </div>
+              {ticket.priority_override_reason && (
+                <Field label="Priority override" value={ticket.priority_override_reason} />
+              )}
+              {ticket.description && (
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Description
+                  </p>
+                  <p className="mt-1 whitespace-pre-wrap">{ticket.description}</p>
+                </div>
+              )}
+              {ticket.closure_evidence && (
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Evidence</p>
+                  <p className="mt-1 whitespace-pre-wrap">{ticket.closure_evidence}</p>
+                </div>
+              )}
+            </div>
+
+            <details open={showAllDetails || undefined} className="group rounded-lg border border-border px-3 py-2 text-sm">
+              <summary className="cursor-pointer font-medium text-muted-foreground">
+                More about this ticket
+              </summary>
+              <div className="mt-3 space-y-4 border-t border-border pt-3">
+                <OutlookSourceCard entityType="ticket" entityId={ticketId} />
+                <details className="rounded-lg border border-border px-3 py-2 text-sm">
+                  <summary className="cursor-pointer text-muted-foreground">
+                    Reservation snapshot from when this ticket opened
+                  </summary>
+                  <div className="pt-3">
+                    <ReservationContextPanel
+                      ticket={ticket}
+                      ownerRezPropertyId={ticket.properties?.ownerrez_property_id ?? null}
+                    />
+                  </div>
+                </details>
+                {ticket.vendor_user_id && ticket.vendor_status === "completed" && (
+                  <VendorRatingPanel ticketId={ticket.id} priority={ticket.priority ?? null} />
+                )}
+                {ticket.vendor_user_id && <VisitLogPanel ticketId={ticket.id} />}
+                {/* Shown as the primary action in Current Work during repair,
+                    repair_active and verify above; here it's reference only,
+                    once all of those stages have passed. */}
+                {role.can("work_orders_internal") &&
+                  (showAllDetails || sections.vendor) &&
+                  stage !== "repair" &&
+                  stage !== "repair_active" &&
+                  stage !== "verify" && (
+                    <TicketWorkOrderPanel
+                      ticket={ticket}
+                      propertyName={propertyName}
+                      openWorkOrderId={openWorkOrderId}
+                      onOpenWorkOrderIdChange={setOpenWorkOrderId}
+                    />
+                  )}
+              </div>
+            </details>
+          
+                </div>
+              </details>
+              <details className="group rounded-lg border border-border bg-card px-3 py-2" data-testid="details-history">
+                <summary className="cursor-pointer py-1 font-medium">Property history</summary>
+                <div className="space-y-4 pt-3">
+
+            <PropertyHistoryList
+              history={(history ?? []) as PropertyHistoryRow[]}
+              categoryKey={historyCategoryKey}
+              categoryLabel={historyCategoryLabel}
             />
-            <TicketOwnerBox
-              ticketId={ticketId}
-              onWorkOrders={() => (document.querySelector('[data-ticket-work-orders]') ?? document.querySelector('[data-current-work]'))?.scrollIntoView({behavior:'smooth'})}
-              ticket={ticket as Parameters<typeof TicketOwnerBox>[0]["ticket"]}
-              workOrderCosts={((workOrders ?? []) as { quote_amount?: number | null; approved_amount?: number | null; actual_cost?: number | null }[]).flatMap((o) => [o.quote_amount, o.approved_amount, o.actual_cost])}
+          
+                </div>
+              </details>
+              <details className="group rounded-lg border border-border bg-card px-3 py-2" data-testid="details-evidence">
+                <summary className="cursor-pointer py-1 font-medium">Evidence</summary>
+                <div className="space-y-4 pt-3">
+
+            <AttachmentsPanel
+              entityType="ticket"
+              entityId={ticketId}
+              title="Evidence on file"
+              readOnly={evidenceRequirementActive}
+              {...(evidenceRequirementActive
+                ? {
+                    description:
+                      "An upload is required for the current step — add it in Current Work so Resolve credits the requirement.",
+                  }
+                : {})}
             />
-            {role.isStaff && ticket.property_id ? <SentToOwner propertyId={ticket.property_id} ticketId={ticketId} onWorkOrders={()=>(document.querySelector('[data-ticket-work-orders]')??document.querySelector('[data-current-work]'))?.scrollIntoView({behavior:'smooth'})}/> : null}
-          </aside>
+          
+                </div>
+              </details>
+            </section>
+          </div>
         </div>
 
 
@@ -1846,16 +1894,6 @@ function MoreActions({
 
           {/* Only shows when this property belongs to an Active Owner program. */}
           <OwnerParticipationOffer source="operations" sourceId={String(ticket["id"])} />
-          {!branches.recovery && (
-            <IncidentBranch
-              open={false}
-              label="Make it right for the guest"
-              hint="Credit, refund, a gesture — and who has to approve it."
-            >
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              <TicketRecoveryPanel ticket={ticket as any} />
-            </IncidentBranch>
-          )}
           {!branches.claim && (
             <IncidentBranch
               open={false}
