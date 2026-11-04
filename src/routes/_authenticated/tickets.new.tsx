@@ -615,7 +615,7 @@ export function NewTicketForm({
           work_type_id: effectiveWorkTypeId,
           entry_kind: mode,
           ...(activeCategory && liveChecklist.data && !oneTouch
-            ? { checklist_playbook_id: liveChecklist.data.id, checklist_category: activeCategory }
+            ? ({ checklist_playbook_id: liveChecklist.data.id, checklist_category: activeCategory } as {})
             : {}),
           linked_feedback_id: context.feedback ?? null,
           departure_review_id: context.departureReview ?? null,
