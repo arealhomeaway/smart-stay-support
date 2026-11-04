@@ -48,7 +48,7 @@ const decide = (id: string, d: string, reason: string | null, amount: number | n
 async function err(fn: () => Promise<unknown>) {
   try { await fn(); return ""; } catch (e) { return (e as Error).message; }
 }
-const row = async (id: string) => (await db.query<Record<string, unknown>>("SELECT * FROM public.guest_recovery WHERE id=$1", [id])).rows[0]!;
+const row = async (id: string) => (await db.query<{ approval_status: string; approved_by: string | null; approved_at: string | null; approval_authority: string; approved_amount: string | null; decision_note: string }>("SELECT * FROM public.guest_recovery WHERE id=$1", [id])).rows[0]!;
 
 beforeAll(async () => {
   db = new PGlite();
@@ -142,7 +142,7 @@ describe("Refund Approve and Decline (isolated PostgreSQL)", () => {
 
   it("no anonymous or PUBLIC execute; undo removes everything", async () => {
     const acl = (await db.query<{ a: string }>("SELECT proacl::text a FROM pg_proc WHERE proname='decide_recovery_approval'")).rows[0]!.a;
-    expect(acl).not.toMatch(/(^|[{,])=X/);
+    expect(/(^|[{,])=X/.test(acl)).toBe(false);
     expect(acl).not.toContain("anon=");
     await db.exec(read("03_undo_recovery_approval_decision.sql"));
     expect((await db.query("SELECT 1 FROM pg_proc WHERE proname IN ('decide_recovery_approval','guard_recovery_decision')")).rows).toHaveLength(0);
