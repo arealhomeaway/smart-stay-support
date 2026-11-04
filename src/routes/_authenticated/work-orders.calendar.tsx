@@ -6,7 +6,7 @@
  * twice on one day — are derived from the schedule itself and shown where the
  * booking is, and every entry opens the Work Order it belongs to.
  */
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -44,7 +44,6 @@ import {
 } from "@/lib/work-order-calendar";
 import type { WorkOrderRow } from "@/lib/work-order-types";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
