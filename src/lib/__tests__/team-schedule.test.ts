@@ -158,3 +158,18 @@ describe("Needs an owner alert", () => {
     expect(needsOwnerAlert(3)).toBe("3 tickets need an owner");
   });
 });
+
+describe("Read only for non-supervisors", () => {
+  const src = require("node:fs").readFileSync("src/lib/coverage-admin.functions.ts", "utf8") as string;
+  it("every schedule write checks the existing supervisor rule on the server", () => {
+    for (const fn of ["setSeatHolder", "saveShift", "deleteShift", "saveOverride", "deleteOverride", "saveOnCall", "deleteOnCall"]) {
+      const body = src.split(`export const ${fn} =`)[1]!.split("export const ")[0]!;
+      expect(body).toContain("assertCanEditCoverage(context)");
+    }
+  });
+  it("the grid shows edit controls only when the server says the viewer can edit", () => {
+    const ui = require("node:fs").readFileSync("src/components/team/ScheduleTab.tsx", "utf8") as string;
+    expect(ui).toContain("canEdit: data.canEdit === true");
+    expect((ui.match(/!m\.canEdit/g) ?? []).length).toBeGreaterThanOrEqual(3);
+  });
+});
