@@ -200,6 +200,7 @@ export function TicketClaimPanel({
       setOpen(false);
       setAcknowledgedDuplicate(false);
       qc.invalidateQueries({ queryKey: ["claims-for-ticket", ticket.id] });
+      qc.invalidateQueries({ queryKey: ["ticket-branches", ticket.id] });
       qc.invalidateQueries({ queryKey: ["claims"] });
       qc.invalidateQueries({ queryKey: ["claim-requirements"] });
       toast.success("Claim opened");
