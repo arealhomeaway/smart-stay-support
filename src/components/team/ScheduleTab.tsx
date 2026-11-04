@@ -70,7 +70,7 @@ function seatOwnership(code: string): Ownership {
 const toTime = (m: number) => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return (h ?? 0) * 60 + (m ?? 0); };
 type Triage = { id: string; weekday: number; start_minute: number; end_minute: number; role_code: string };
-type Model = { roles: SRole[]; shifts: SShift[]; overrides: SOverride[]; roster: SRoster[]; people: SPerson[]; triage: Triage[]; canEdit: boolean };
+type Model = { roles: SRole[]; shifts: SShift[]; overrides: SOverride[]; roster: SRoster[]; people: SPerson[]; triage: Triage[]; canEdit: boolean; staffIds: string[] };
 
 export function useCoverageModel() {
   const load = useServerFn(coverageModel);
@@ -118,6 +118,7 @@ export function ScheduleTab() {
     people: data.people as SPerson[],
     triage: data.triage as Triage[],
     canEdit: data.canEdit === true,
+    staffIds: (data.staffIds ?? []) as string[],
   };
   const refresh = () => qc.invalidateQueries({ queryKey: ["coverage-model"] });
   const alert = needsOwnerAlert(needsOwner.data ?? 0);
@@ -476,7 +477,7 @@ function ManageOnCall({ m, onClose, onChanged }: { m: Model; onClose: () => void
         <div className="flex gap-2">
           <select aria-label="Add a person" className="h-9 flex-1 rounded-md border border-input bg-background px-2 text-sm" value={adding} onChange={(e) => setAdding(e.target.value)}>
             <option value="">Add a person</option>
-            {m.people.filter((p) => !order.includes(p.id)).map((p) => <option key={p.id} value={p.id}>{p.full_name ?? p.email}</option>)}
+            {m.people.filter((p) => m.staffIds.includes(p.id) && !order.includes(p.id)).map((p) => <option key={p.id} value={p.id}>{p.full_name ?? p.email}</option>)}
           </select>
           <Button size="sm" variant="outline" disabled={!adding} onClick={() => { setOrder([...order, adding]); setAdding(""); }}>Add</Button>
         </div>
