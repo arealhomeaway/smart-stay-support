@@ -6,7 +6,7 @@ import {
   addDays,
   centralDate,
   isCancelledBooking,
-  stayNights,
+
   touchBaseDueAt,
   touchBaseDueToCreate,
   touchBaseEventKey,
@@ -139,7 +139,7 @@ export async function runGuestTouchBaseSync(admin: Admin, now = new Date()) {
       cancelled++;
     }
 
-    if (run) await admin.from("integration_events").update({ status: "completed", response_payload: { created, cancelled, checked: bookings.length } }).eq("id", run.id);
+    if (run) await admin.from("integration_events").update({ status: "completed", request_payload: { created, cancelled, checked: bookings.length } }).eq("id", run.id);
     return { created, cancelled };
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
@@ -148,4 +148,3 @@ export async function runGuestTouchBaseSync(admin: Admin, now = new Date()) {
   }
 }
 
-export { stayNights };
