@@ -1210,10 +1210,9 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                     readOnly={role.readOnly || closed}
                     log={log}
                     onChanged={refresh}
-                    nameFor={(id) => displayName(people.find((p) => p.id === id))}
                     onAction={(action) => {
                       const scrollTo = (sel: string) => document.querySelector(sel)?.scrollIntoView({ behavior: "smooth", block: "start" });
-                      if (action === "refund") { setRefundSignal((n) => n + 1); scrollTo("[data-ticket-recovery]"); }
+                      if (action === "refund") { setRefundSignal((n) => n + 1); scrollTo("[data-testid=make-it-right]"); }
                       else if (action === "claim") scrollTo("[data-ticket-claim]");
                       else if (action === "fix_flow" || action === "work_order") { setChecklistTools(true); setTimeout(() => scrollTo("[data-checklist-tools]"), 50); }
                       else if (action === "close") setCloseOpen(true);
