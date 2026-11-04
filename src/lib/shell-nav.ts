@@ -51,7 +51,7 @@ export const DEPARTMENTS: Department[] = [
     label: "Active Owner",
     home: "/owner-programs",
     match: (p) =>
-      ["/owner-programs", "/owner-oversight", "/owner-analytics", "/homeowners", "/owner-library", "/owner-handoff-plan", "/active-owner-followup", "/owner-card-library", "/owner-contributions", "/owner-report-wording"].some(
+      ["/owner-programs", "/owner-oversight", "/owner-analytics", "/homeowners", "/owner-library", "/owner-handoff-plan", "/active-owner-followup", "/owner-card-library", "/owner-contributions", "/owner-report-wording", "/str-dispatch-check"].some(
         (r) => p === r || p.startsWith(r + "/"),
       ),
     links: [
@@ -65,6 +65,7 @@ export const DEPARTMENTS: Department[] = [
       { label: "Card library", to: "/owner-card-library", capability: "owner_card_library" },
       { label: "Homeowner contributions", to: "/owner-contributions", capability: "owner_programs" },
       { label: "Report wording", to: "/owner-report-wording", capability: "owner_program_admin" },
+      { label: "Cleaner hours check", to: "/str-dispatch-check", capability: "cleaner_dispatch_check" },
     ],
   },
   {
@@ -113,11 +114,10 @@ export type PageTabGroup = {
 export const PAGE_TAB_GROUPS: PageTabGroup[] = [
   {
     key: "my-work",
-    match: (p) => p.startsWith("/tickets") || p === "/routines" || p === "/str-dispatch-check",
+    match: (p) => p.startsWith("/tickets") || p === "/routines",
     tabs: [
       { label: "My Work", to: "/tickets", exact: true },
       { label: "Routine Work", to: "/routines", capability: "routines" },
-      { label: "STR Cleaner Check", to: "/str-dispatch-check", capability: "cleaner_dispatch_check" },
     ],
   },
   {
@@ -203,6 +203,7 @@ const SUBPAGE_LABELS: Record<string, string> = {
   "/owner-card-library": "Card library",
   "/owner-contributions": "Homeowner contributions",
   "/owner-report-wording": "Report wording",
+  "/str-dispatch-check": "Cleaner hours check",
   "/str-participation-report": "Participation report",
 };
 

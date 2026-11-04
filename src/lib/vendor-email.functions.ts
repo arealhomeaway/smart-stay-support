@@ -66,7 +66,8 @@ async function loadFacts(ctx: Ctx, workOrderId: string) {
     photoLinks: [],
     senderName: me?.full_name ?? null,
   });
-  return { wo, offered, email, draft, guestName: ticket?.guest_name ?? null, replyTo: me?.email ?? ctx.claims?.email ?? null, lastSentAt: last?.created_at ?? null };
+  const notOfferedReason = offered ? null : !accepted ? "No vendor has accepted this work order yet." : "This vendor gets work orders through Breezeway. Use Breezeway dispatch instead.";
+  return { wo, offered, notOfferedReason, email, draft, guestName: ticket?.guest_name ?? null, replyTo: me?.email ?? ctx.claims?.email ?? null, lastSentAt: last?.created_at ?? null };
 }
 
 export const prepareVendorWorkOrderEmail = createServerFn({ method: "POST" })
@@ -74,7 +75,7 @@ export const prepareVendorWorkOrderEmail = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ workOrderId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const f = await loadFacts(context as never as Ctx, data.workOrderId);
-    return { offered: f.offered, email: f.email, subject: f.draft.subject, body: f.draft.body, lastSentAt: f.lastSentAt };
+    return { offered: f.offered, notOfferedReason: f.notOfferedReason, email: f.email, subject: f.draft.subject, body: f.draft.body, lastSentAt: f.lastSentAt };
   });
 
 export const sendVendorWorkOrderEmail = createServerFn({ method: "POST" })

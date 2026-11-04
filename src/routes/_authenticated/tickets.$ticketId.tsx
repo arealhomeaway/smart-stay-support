@@ -57,7 +57,7 @@ import { EmailComposer } from "@/components/EmailComposer";
 
 import { VendorRatingPanel } from "@/components/VendorRatingPanel";
 import { ReservationContextPanel } from "@/components/ReservationContextPanel";
-import { TicketClaimPanel } from "@/components/claims/TicketClaimPanel";
+import { ClaimRelatedPrompt, TicketClaimPanel } from "@/components/claims/TicketClaimPanel";
 import { TicketRecoveryPanel } from "@/components/recovery/TicketRecoveryPanel";
 import {
   TicketWorkOrderPanel,
@@ -1646,7 +1646,12 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
 
             {/* Live lanes on the same incident — only when they are actually open. */}
             {activeBranch.recovery && <TicketRecoveryPanel ticket={ticket} />}
-            {activeBranch.claim && <TicketClaimPanel ticket={ticket} />}
+            {activeBranch.claim ? (
+              <TicketClaimPanel ticket={ticket} />
+            ) : (
+              (ticket as { entry_kind?: string | null }).entry_kind !== "activity" &&
+              ticket.record_type !== "completed_interaction" && <ClaimRelatedPrompt ticket={ticket} />
+            )}
           </div>
 
           {/* ---------------- B. context rail ---------------- */}

@@ -39,7 +39,17 @@ function ClaimsLayout() {
         <SubLink to="/claims/my-claims">My claims</SubLink>
         {isSupervisor ? <SubLink to="/claims/manager">Manager</SubLink> : null}
         <SubLink to="/claims/closed">Closed</SubLink>
+        <a
+          href="/tickets/new?kind=ops&from=claims"
+          className="ml-auto inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground"
+        >
+          Report a Claim
+        </a>
       </nav>
+      <p className="text-xs text-muted-foreground">
+        Report a Claim records the incident as a Ticket first, then answers "Is this claim
+        related?" with Yes so the claim is linked and prefilled.
+      </p>
       <Outlet />
     </div>
   );

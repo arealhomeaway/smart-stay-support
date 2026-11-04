@@ -13,9 +13,9 @@ import { worstState, type Evaluation } from "@/lib/cleaner-hours";
 export const Route = createFileRoute("/_authenticated/str-dispatch-check")({
   head: () => ({
     meta: [
-      { title: "STR cleaner check — Resolve" },
+      { title: "Cleaner hours check — Resolve" },
       { name: "description", content: "Check the STR cleaner-hours operational safeguard before assigning a cleaner to an enrolled STR home." },
-      { property: "og:title", content: "STR cleaner check — Resolve" },
+      { property: "og:title", content: "Cleaner hours check — Resolve" },
       { property: "og:description", content: "Operational safeguard check before dispatching a cleaner to an STR home." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -77,7 +77,7 @@ function DispatchCheckPage() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Operations"
-        title="STR cleaner check"
+        title="Cleaner hours check"
         description="Run this before assigning a cleaner to a clean at an enrolled STR home. It shows the cleaner's Attributed Cleaner Time against the operational safeguard thresholds. It is an operational safeguard only — not a tax determination."
       />
       {options.isLoading ? <LoadingRows /> : options.error ? (
