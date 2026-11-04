@@ -76,7 +76,19 @@ export const coverageModel = createServerFn({ method: "POST" })
       supabase.from("coverage_config").select("*").maybeSingle(),
       supabase.rpc("is_supervisor", { _user_id: context.userId }),
     ]);
+    // Active internal staff (for the on-call rotation picker). Only leadership
+    // gets this list, read after the supervisor check above.
+    let staffIds: string[] = [];
+    if (canEdit.data === true) {
+      const db = await admin();
+      const { data: staff } = await db
+        .from("user_roles")
+        .select("user_id")
+        .in("role", ["admin", "manager", "onboarding", "tech"]);
+      staffIds = [...new Set((staff ?? []).map((r: { user_id: string }) => r.user_id))];
+    }
     return {
+      staffIds,
       roles: roles.data ?? [],
       shifts: shifts.data ?? [],
       overrides: overrides.data ?? [],
