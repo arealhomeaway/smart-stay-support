@@ -67,6 +67,7 @@ import { Route as AuthenticatedClaimsIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedClaimsClosedRouteImport } from './routes/_authenticated/claims.closed'
 import { Route as AuthenticatedClaimsManagerRouteImport } from './routes/_authenticated/claims.manager'
 import { Route as AuthenticatedClaimsMyClaimsRouteImport } from './routes/_authenticated/claims.my-claims'
+import { Route as AuthenticatedIntegrationsNotionImportRouteImport } from './routes/_authenticated/integrations_.notion-import'
 import { Route as AuthenticatedLeadsIndexRouteImport } from './routes/_authenticated/leads.index'
 import { Route as AuthenticatedLeadsManagerRouteImport } from './routes/_authenticated/leads.manager'
 import { Route as AuthenticatedLeadsMyLeadsRouteImport } from './routes/_authenticated/leads.my-leads'
@@ -425,6 +426,12 @@ const AuthenticatedClaimsMyClaimsRoute =
     path: '/my-claims',
     getParentRoute: () => AuthenticatedClaimsRoute,
   } as any)
+const AuthenticatedIntegrationsNotionImportRoute =
+  AuthenticatedIntegrationsNotionImportRouteImport.update({
+    id: '/integrations_/notion-import',
+    path: '/integrations/notion-import',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedLeadsIndexRoute = AuthenticatedLeadsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -735,6 +742,7 @@ export interface FileRoutesByFullPath {
   '/claims/closed': typeof AuthenticatedClaimsClosedRoute
   '/claims/manager': typeof AuthenticatedClaimsManagerRoute
   '/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
+  '/integrations/notion-import': typeof AuthenticatedIntegrationsNotionImportRoute
   '/leads/manager': typeof AuthenticatedLeadsManagerRoute
   '/leads/my-leads': typeof AuthenticatedLeadsMyLeadsRoute
   '/leads/new': typeof AuthenticatedLeadsNewRoute
@@ -831,6 +839,7 @@ export interface FileRoutesByTo {
   '/claims/closed': typeof AuthenticatedClaimsClosedRoute
   '/claims/manager': typeof AuthenticatedClaimsManagerRoute
   '/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
+  '/integrations/notion-import': typeof AuthenticatedIntegrationsNotionImportRoute
   '/leads/manager': typeof AuthenticatedLeadsManagerRoute
   '/leads/my-leads': typeof AuthenticatedLeadsMyLeadsRoute
   '/leads/new': typeof AuthenticatedLeadsNewRoute
@@ -935,6 +944,7 @@ export interface FileRoutesById {
   '/_authenticated/claims/closed': typeof AuthenticatedClaimsClosedRoute
   '/_authenticated/claims/manager': typeof AuthenticatedClaimsManagerRoute
   '/_authenticated/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
+  '/_authenticated/integrations_/notion-import': typeof AuthenticatedIntegrationsNotionImportRoute
   '/_authenticated/leads/manager': typeof AuthenticatedLeadsManagerRoute
   '/_authenticated/leads/my-leads': typeof AuthenticatedLeadsMyLeadsRoute
   '/_authenticated/leads/new': typeof AuthenticatedLeadsNewRoute
@@ -1039,6 +1049,7 @@ export interface FileRouteTypes {
     | '/claims/closed'
     | '/claims/manager'
     | '/claims/my-claims'
+    | '/integrations/notion-import'
     | '/leads/manager'
     | '/leads/my-leads'
     | '/leads/new'
@@ -1135,6 +1146,7 @@ export interface FileRouteTypes {
     | '/claims/closed'
     | '/claims/manager'
     | '/claims/my-claims'
+    | '/integrations/notion-import'
     | '/leads/manager'
     | '/leads/my-leads'
     | '/leads/new'
@@ -1238,6 +1250,7 @@ export interface FileRouteTypes {
     | '/_authenticated/claims/closed'
     | '/_authenticated/claims/manager'
     | '/_authenticated/claims/my-claims'
+    | '/_authenticated/integrations_/notion-import'
     | '/_authenticated/leads/manager'
     | '/_authenticated/leads/my-leads'
     | '/_authenticated/leads/new'
@@ -1711,6 +1724,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/claims/my-claims'
       preLoaderRoute: typeof AuthenticatedClaimsMyClaimsRouteImport
       parentRoute: typeof AuthenticatedClaimsRoute
+    }
+    '/_authenticated/integrations_/notion-import': {
+      id: '/_authenticated/integrations_/notion-import'
+      path: '/integrations/notion-import'
+      fullPath: '/integrations/notion-import'
+      preLoaderRoute: typeof AuthenticatedIntegrationsNotionImportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/leads/': {
       id: '/_authenticated/leads/'
@@ -2221,6 +2241,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
   AuthenticatedWelcomeVideoRoute: typeof AuthenticatedWelcomeVideoRoute
   AuthenticatedWorkOrdersRoute: typeof AuthenticatedWorkOrdersRouteWithChildren
+  AuthenticatedIntegrationsNotionImportRoute: typeof AuthenticatedIntegrationsNotionImportRoute
   AuthenticatedPropertyPropertyIdRoute: typeof AuthenticatedPropertyPropertyIdRoute
   AuthenticatedTicketsTicketIdRoute: typeof AuthenticatedTicketsTicketIdRoute
   AuthenticatedTicketsNewRoute: typeof AuthenticatedTicketsNewRoute
@@ -2279,6 +2300,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
   AuthenticatedWelcomeVideoRoute: AuthenticatedWelcomeVideoRoute,
   AuthenticatedWorkOrdersRoute: AuthenticatedWorkOrdersRouteWithChildren,
+  AuthenticatedIntegrationsNotionImportRoute:
+    AuthenticatedIntegrationsNotionImportRoute,
   AuthenticatedPropertyPropertyIdRoute: AuthenticatedPropertyPropertyIdRoute,
   AuthenticatedTicketsTicketIdRoute: AuthenticatedTicketsTicketIdRoute,
   AuthenticatedTicketsNewRoute: AuthenticatedTicketsNewRoute,
