@@ -25,6 +25,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Check } from "lucide-react";
+import { RecoveryDecisionBox } from "@/components/recovery/RecoveryDecisionBox";
+import { RECOVERY_TRACK, recoveryStatusChip, recoveryTrackDone, type ApproverNames } from "@/lib/ticket-cleanup";
 import { useCurrentUserId } from "@/hooks/useTeam";
 import { useRole } from "@/hooks/useRole";
 import { stateChip } from "@/lib/semantic";
@@ -80,6 +83,9 @@ type RecoveryRow = {
   ownerrez_booking_id: string | null;
   within_airbnb_policy?: boolean | null;
   escalation_flags?: string[] | null;
+  approval_status?: string | null;
+  approval_authority?: string | null;
+  decision_reason?: string | null;
 };
 
 const SITUATIONS = Object.keys(SITUATION_LABELS) as RecoverySituation[];
@@ -98,6 +104,19 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
   const [flags, setFlags] = useState<EscalationFlag[]>([]);
   const [decisionReason, setDecisionReason] = useState("");
   const [acknowledged, setAcknowledged] = useState(false);
+  const [saidNo, setSaidNo] = useState(false);
+  const approverNames = useQuery({
+    queryKey: ["recovery-approver-names"],
+    staleTime: 5 * 60 * 1000,
+    queryFn: async (): Promise<ApproverNames> => {
+      const { data } = await supabase.from("functional_roles").select("code, current_seat_name").in("code", ["ops_supervisor", "director_ops"]);
+      const rows = (data ?? []) as { code: string; current_seat_name: string | null }[];
+      return {
+        supervisor: rows.find((r) => r.code === "ops_supervisor")?.current_seat_name ?? null,
+        director: rows.find((r) => r.code === "director_ops")?.current_seat_name ?? null,
+      };
+    },
+  });
 
   const recoveries = useQuery({
     queryKey: ["recovery-for-ticket", ticket.id],
@@ -275,68 +294,60 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
       current.includes(flag) ? current.filter((f) => f !== flag) : [...current, flag],
     );
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Make it right for the guest</CardTitle>
-        <CardDescription>
-          What the guest is owed after this failure — separate from recovering the cost from anyone
-          else.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3 text-sm">
-        <label className="flex items-start gap-2 rounded-md border px-3 py-2">
-          <input
-            type="checkbox"
-            className="mt-0.5"
-            checked={flagged}
-            disabled={readOnly || flag.isPending || (flagged && existing.length > 0)}
-            onChange={(e) => flag.mutate(e.target.checked)}
-          />
-          <span>
-            <span className="font-medium">This ticket resulted in guest refund or credit</span>
-            <span className="block text-xs text-muted-foreground">
-              {flagged
-                ? existing.length > 0
-                  ? "Recorded on this ticket and linked to the refund or credit below."
-                  : "Recorded — log what the guest is owed to finish it."
-                : "Tick this and the refund or credit log opens straight away."}
-            </span>
-          </span>
-        </label>
+  const refreshRows = () => {
+    qc.invalidateQueries({ queryKey: ["recovery-for-ticket", ticket.id] });
+    qc.invalidateQueries({ queryKey: ["guest-recovery"] });
+    qc.invalidateQueries({ queryKey: ["ticket-branches", ticket.id] });
+  };
 
-        {existing.map((row) => (
-          <div key={row.id} className="rounded-md border px-3 py-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <Chip className={stateChip(stageState(row.stage))}>
-                {RECOVERY_STAGE_LABELS[row.stage]}
-              </Chip>
-              {row.recovery_action ? (
-                <Chip>{RECOVERY_ACTION_LABELS[row.recovery_action]}</Chip>
-              ) : null}
-              {row.within_airbnb_policy === false ? (
-                <Chip className={stateChip("blocked")}>Outside standard policy</Chip>
-              ) : null}
-            </div>
-            <p className="mt-1 font-medium">{nextAction(row)}</p>
-            <p className="text-xs text-muted-foreground">
-              Proposed {formatMoney(row.proposed_amount)} · approved{" "}
-              {formatMoney(row.approved_amount)} · issued {formatMoney(row.delivered_amount)}
-            </p>
-            <Link
-              to="/recovery"
-              search={{ open: row.id }}
-              className="text-xs font-medium underline underline-offset-2"
-            >
-              See it in Guest refunds & credits
-            </Link>
+  return (
+    <section aria-label="Make it right" className="surface space-y-3 p-4 text-sm" data-testid="make-it-right">
+      <h2 className="font-semibold">Make it right</h2>
+      {existing.length === 0 && !open ? (
+        saidNo && !flagged ? (
+          <p className="text-muted-foreground">
+            No refund or credit for this guest.{" "}
+            {!readOnly && (
+              <button type="button" className="font-medium text-primary underline-offset-2 hover:underline" onClick={() => setSaidNo(false)}>
+                Change
+              </button>
+            )}
+          </p>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="font-medium">Does the guest need a refund or credit?</span>
+            {!readOnly && (
+              <div className="flex gap-2">
+                <Button size="sm" disabled={flag.isPending} onClick={() => (flagged ? setOpen(true) : flag.mutate(true))}>
+                  Yes
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={flag.isPending}
+                  onClick={() => {
+                    if (flagged) flag.mutate(false);
+                    setSaidNo(true);
+                  }}
+                >
+                  No
+                </Button>
+              </div>
+            )}
           </div>
-        ))}
+        )
+      ) : null}
+
+      {existing.map((row) => (
+        <RecoveryStatusCard key={row.id} row={row} names={approverNames.data ?? { supervisor: null, director: null }} onDone={refreshRows} />
+      ))}
 
         {readOnly ? null : !open ? (
-          <Button variant="outline" onClick={() => setOpen(true)}>
-            {existing.length ? "Open another refund or credit" : "Open a guest refund or credit"}
-          </Button>
+          existing.length ? (
+            <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
+              Open another refund or credit
+            </Button>
+          ) : null
         ) : (
           <div className="space-y-3 rounded-md border p-3">
             <div className="space-y-1">
@@ -508,7 +519,39 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+    </section>
+  );
+}
+
+function RecoveryStatusCard({ row, names, onDone }: { row: RecoveryRow; names: ApproverNames; onDone: () => void }) {
+  const chip = recoveryStatusChip(row, names);
+  const done = recoveryTrackDone(row);
+  const amount = row.delivered_amount ?? row.approved_amount ?? row.proposed_amount;
+  const tone = chip === "Declined" ? "blocked" : chip.startsWith("Waiting") || chip === "Sent back" ? "waiting" : "done";
+  return (
+    <div className="space-y-2 rounded-md border px-3 py-2" data-testid="recovery-status-card">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="font-medium">
+          {row.recovery_action ? RECOVERY_ACTION_LABELS[row.recovery_action] : "Remedy not chosen yet"}
+          {amount != null ? ` · ${formatMoney(amount)}` : ""}
+        </span>
+        <Chip className={stateChip(tone)}>{chip}</Chip>
+      </div>
+      <ol className="flex flex-wrap items-center gap-1 text-xs" aria-label="Refund progress">
+        {RECOVERY_TRACK.map((label, i) => (
+          <li key={label} className={`flex items-center gap-1 ${i < done ? "text-success" : i === done ? "font-semibold" : "text-muted-foreground"}`}>
+            {i > 0 && <span className="text-muted-foreground" aria-hidden="true">&gt;</span>}
+            {i < done ? <Check className="size-3" aria-label="done" /> : null}
+            {label}
+          </li>
+        ))}
+      </ol>
+      {row.decision_reason ? <p className="text-xs text-muted-foreground">Reason: {row.decision_reason}</p> : null}
+      <p className="text-xs">{nextAction(row)}</p>
+      <RecoveryDecisionBox recovery={row} onDone={onDone} />
+      <Link to="/recovery" search={{ open: row.id }} className="text-xs font-medium underline underline-offset-2">
+        See it in Guest refunds & credits
+      </Link>
+    </div>
   );
 }
