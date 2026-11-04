@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { AlertTriangle, CalendarClock, ChevronLeft, ChevronRight, Moon, Plus, Rows3 } from "lucide-react";
+import { X, AlertTriangle, CalendarClock, ChevronLeft, ChevronRight, Moon, Plus, Rows3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,7 @@ import { useRole } from "@/hooks/useRole";
 import type { Ownership } from "@/lib/semantic";
 import {
   coverageModel,
+  deleteOverride,
   deleteShift,
   saveGridSeats,
   saveOnCallNights,
@@ -51,6 +52,9 @@ import {
   weekDates,
   weekStart,
   whosOut,
+  undoOutIds,
+  backToNormalIds,
+  whosOutRemoveIds,
   type CellBlock,
   type CoverageAction,
   type NightChange,
@@ -211,7 +215,7 @@ export function ScheduleTab() {
           The on-call weekday pattern is not saved yet, so nights after the last listed date have no one on call. Open Manage on-call and save the pattern.
         </p>
       )}
-      <WhosOutStrip sunday={sunday} m={m} />
+      <WhosOutStrip sunday={sunday} m={m} onChanged={refresh} />
       <WeekGrid sunday={sunday} m={m} onChanged={refresh} />
 
       {timeOff && (
@@ -222,7 +226,8 @@ export function ScheduleTab() {
   );
 }
 
-function WhosOutStrip({ sunday, m }: { sunday: string; m: Model }) {
+function WhosOutStrip({ sunday, m, onChanged }: { sunday: string; m: Model; onChanged: () => void }) {
+  const remove = useOverrideRemover(onChanged);
   const out = whosOut(sunday, m.roles, m.overrides);
   const fmt = (iso: string) => new Date(iso).toLocaleString("en-US", { timeZone: "America/Chicago", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   return (
@@ -238,6 +243,12 @@ function WhosOutStrip({ sunday, m }: { sunday: string; m: Model }) {
               <span className="text-muted-foreground">{fmt(o.startsAt)} to {fmt(o.endsAt)}</span>
               {" · "}
               {o.coverUserId ? <>Covered by {personName(m.people, o.coverUserId)}</> : <span className="text-warning">Backup seat covers</span>}
+              {m.canEdit && (
+                <button type="button" aria-label={`Remove time off for ${personName(m.people, o.personId) ?? "this seat"}`} className="ml-2 inline-flex align-middle text-muted-foreground hover:text-danger"
+                  onClick={() => remove(whosOutRemoveIds(o.id, m.overrides), "Time off removed. Back to the normal shift.")}>
+                  <X className="size-3.5" />
+                </button>
+              )}
             </li>
           ))}
         </ul>
@@ -325,13 +336,38 @@ function ShiftBlock({ block, role, date, m, fill, onChanged }: { block: CellBloc
   const cls = `w-full rounded-md border px-1.5 py-1.5 text-center text-[0.6875rem] font-medium leading-tight ${
     block.out && !block.coverUserId ? "border-border bg-muted text-muted-foreground" : fill
   }`;
-  if (!m.canEdit || !block.shift) return <div className={cls}>{blockText(block, m)}</div>;
+  const remove = useOverrideRemover(onChanged);
+  if (!m.canEdit) return <div className={cls}>{blockText(block, m)}</div>;
+  const outIds = undoOutIds(block, m.overrides);
+  const coverIds = backToNormalIds(block, m.overrides);
+  const undo = (outIds.length > 0 || coverIds.length > 0) && (
+    <div className="mb-3 space-y-1 border-b border-border pb-3">
+      {outIds.length > 0 && (
+        <Button size="sm" variant="outline" className="w-full" onClick={() => remove(outIds, "Out removed. Back to the normal shift.")}>Undo out</Button>
+      )}
+      {outIds.length === 0 && coverIds.length > 0 && (
+        <Button size="sm" variant="outline" className="w-full" onClick={() => remove(coverIds, "Back to the normal shift.")}>Back to normal shift</Button>
+      )}
+    </div>
+  );
+  if (!block.shift) {
+    return (
+      <Popover>
+        <PopoverTrigger asChild><button type="button" className={cls}>{blockText(block, m)}</button></PopoverTrigger>
+        <PopoverContent className="w-72">
+          <p className="mb-2 text-sm font-semibold">{SEAT_LABELS[role.code] ?? role.name}, {shortDate(date)}</p>
+          {undo || <p className="text-sm text-muted-foreground">This is a one-week shift.</p>}
+        </PopoverContent>
+      </Popover>
+    );
+  }
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button type="button" className={cls}>{blockText(block, m)}</button>
       </PopoverTrigger>
       <PopoverContent className="w-72">
+        {undo}
         <ShiftForm
           title={`${SEAT_LABELS[role.code] ?? role.name}, ${shortDate(date)}`}
           start={block.shift.start_minute}
@@ -643,4 +679,19 @@ function GridRowsButton({ m, onChanged }: { m: Model; onChanged: () => void }) {
       </PopoverContent>
     </Popover>
   );
+}
+
+/** Removes "this week only" overrides through the audited server function. Admin and Supervisor only (checked on the server). */
+function useOverrideRemover(onChanged: () => void) {
+  const del = useServerFn(deleteOverride);
+  return async (ids: string[], msg: string) => {
+    if (ids.length === 0) return;
+    try {
+      for (const id of ids) await del({ data: { id } });
+      toast.success(msg);
+      onChanged();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "The change could not be removed.");
+    }
+  };
 }
