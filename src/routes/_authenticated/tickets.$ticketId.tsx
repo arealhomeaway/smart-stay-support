@@ -274,13 +274,13 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tickets")
-        .select("id, ref, title, status, reported_at, category")
+        .select("id, ref, title, status, reported_at, category, maintenance_category")
         .eq("property_id", propertyId!)
         .neq("id", ticketId)
         .eq("is_demo", false)
         .is("archived_at", null)
         .order("reported_at", { ascending: false })
-        .limit(8);
+        .limit(200);
       if (error) throw error;
       return data;
     },
@@ -1149,6 +1149,165 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
           </div>
         )}
 
+        {/* ---------------- record & history, kept at the top so updates and sections are one glance away ---------------- */}
+        <Tabs defaultValue="activity" className="w-full">
+          <TabsList>
+            <TabsTrigger value="activity">Activity</TabsTrigger>
+            <TabsTrigger value="evidence">Evidence</TabsTrigger>
+            <TabsTrigger value="details">Details</TabsTrigger>
+            <TabsTrigger value="history">Property history</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="activity" className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Textarea
+                rows={3}
+                placeholder="Add an update: who you called, what the vendor found, what the guest said…"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+              />
+              <Button onClick={addNote} size="sm" variant="secondary">
+                Add note
+              </Button>
+            </div>
+            <div className="max-h-96 overflow-y-auto border-t border-border pt-2">
+              <ActivityList
+                events={activity.map((a) => ({
+                  id: a.id,
+                  kind: activityKindFor(a.kind, a.event_type, a.body),
+                  label: (
+                    <>
+                      {humanizeHistoryText(a.body)}{" "}
+                      <span className="text-muted-foreground">
+                        — {a.author?.full_name ?? a.author?.email ?? "Team member"}
+                      </span>
+                    </>
+                  ),
+                  when: relativeTime(a.event_at ?? a.created_at),
+                }))}
+                emptyLabel="No activity yet."
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="evidence" className="pt-4">
+            <AttachmentsPanel
+              entityType="ticket"
+              entityId={ticketId}
+              title="Evidence on file"
+              readOnly={evidenceRequirementActive}
+              {...(evidenceRequirementActive
+                ? {
+                    description:
+                      "An upload is required for the current step — add it in Current Work so Resolve credits the requirement.",
+                  }
+                : {})}
+            />
+          </TabsContent>
+
+          <TabsContent value="details" className="space-y-4 pt-4">
+            {role.isStaff && <ExpensesCard propertyId={ticket.property_id} linkType="ticket" targetId={ticketId} />}
+            {role.can("work_orders_internal") &&
+              (!ticket.entry_kind ||
+                ownerSectionRelevant(ticket, ((workOrders ?? []) as { quote_amount?: number | null; approved_amount?: number | null }[]).flatMap((o) => [o.quote_amount, o.approved_amount])).relevant) && (
+              <TicketOwnerUpdatePanel key={ticket.id} ticketId={ticket.id} />
+            )}
+            <div className="space-y-3 text-sm">
+              <Field
+                label="Address"
+                value={
+                  [ticket.properties?.address_line1, ticket.properties?.city]
+                    .filter(Boolean)
+                    .join(", ") || "—"
+                }
+              />
+              <Field label="Acknowledged" value={relativeTime(ticket.acknowledged_at)} />
+              <Field label="Action started" value={relativeTime(ticket.action_started_at)} />
+              <div className="flex items-baseline justify-between gap-4">
+                <span className="text-muted-foreground">Vendor</span>
+                <span className="flex items-center gap-2 text-right font-medium">
+                  {ticket.vendor_name ?? "—"}
+                  {ticket.vendor_name && ticket.vendor_status && (
+                    <StatusBadge tone={vendorStatusTone(ticket.vendor_status)}>
+                      {labelFor(
+                        [
+                          { value: "dispatched", label: "Dispatched" },
+                          { value: "in_progress", label: "In progress" },
+                          { value: "completed", label: "Completed" },
+                        ],
+                        ticket.vendor_status,
+                      )}
+                    </StatusBadge>
+                  )}
+                </span>
+              </div>
+              {ticket.priority_override_reason && (
+                <Field label="Priority override" value={ticket.priority_override_reason} />
+              )}
+              {ticket.description && (
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Description
+                  </p>
+                  <p className="mt-1 whitespace-pre-wrap">{ticket.description}</p>
+                </div>
+              )}
+              {ticket.closure_evidence && (
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Evidence</p>
+                  <p className="mt-1 whitespace-pre-wrap">{ticket.closure_evidence}</p>
+                </div>
+              )}
+            </div>
+
+            <details className="group rounded-lg border border-border px-3 py-2 text-sm">
+              <summary className="cursor-pointer font-medium text-muted-foreground">
+                More about this ticket
+              </summary>
+              <div className="mt-3 space-y-4 border-t border-border pt-3">
+                <OutlookSourceCard entityType="ticket" entityId={ticketId} />
+                <details className="rounded-lg border border-border px-3 py-2 text-sm">
+                  <summary className="cursor-pointer text-muted-foreground">
+                    Reservation snapshot from when this ticket opened
+                  </summary>
+                  <div className="pt-3">
+                    <ReservationContextPanel
+                      ticket={ticket}
+                      ownerRezPropertyId={ticket.properties?.ownerrez_property_id ?? null}
+                    />
+                  </div>
+                </details>
+                {ticket.vendor_user_id && ticket.vendor_status === "completed" && (
+                  <VendorRatingPanel ticketId={ticket.id} priority={ticket.priority ?? null} />
+                )}
+                {ticket.vendor_user_id && <VisitLogPanel ticketId={ticket.id} />}
+                {/* Shown as the primary action in Current Work during repair,
+                    repair_active and verify above; here it's reference only,
+                    once all of those stages have passed. */}
+                {role.can("work_orders_internal") &&
+                  stage !== "repair" &&
+                  stage !== "repair_active" &&
+                  stage !== "verify" && (
+                    <TicketWorkOrderPanel
+                      ticket={ticket}
+                      propertyName={propertyName}
+                      openWorkOrderId={openWorkOrderId}
+                      onOpenWorkOrderIdChange={setOpenWorkOrderId}
+                    />
+                  )}
+              </div>
+            </details>
+          </TabsContent>
+
+          <TabsContent value="history" className="space-y-2 pt-4">
+            <PropertyHistoryList
+              history={(history ?? []) as PropertyHistoryRow[]}
+              categoryKey={historyCategoryKey}
+              categoryLabel={historyCategoryLabel}
+            />
+          </TabsContent>
+        </Tabs>
+
         <div className="grid gap-6 lg:grid-cols-3">
           {/* ---------------- B. dominant active-work canvas ---------------- */}
           <div className="space-y-5 lg:col-span-2">
@@ -1553,176 +1712,6 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
           </aside>
         </div>
 
-        {/* ---------------- C. record & history ---------------- */}
-        <Tabs defaultValue="activity" className="w-full">
-          <TabsList>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
-            <TabsTrigger value="evidence">Evidence</TabsTrigger>
-            <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="history">Property history</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="activity" className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Textarea
-                rows={3}
-                placeholder="Add an update: who you called, what the vendor found, what the guest said…"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-              />
-              <Button onClick={addNote} size="sm" variant="secondary">
-                Add note
-              </Button>
-            </div>
-            <div className="border-t border-border pt-2">
-              <ActivityList
-                events={activity.map((a) => ({
-                  id: a.id,
-                  kind: activityKindFor(a.kind, a.event_type, a.body),
-                  label: (
-                    <>
-                      {humanizeHistoryText(a.body)}{" "}
-                      <span className="text-muted-foreground">
-                        — {a.author?.full_name ?? a.author?.email ?? "Team member"}
-                      </span>
-                    </>
-                  ),
-                  when: relativeTime(a.event_at ?? a.created_at),
-                }))}
-                emptyLabel="No activity yet."
-              />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="evidence" className="pt-4">
-            <AttachmentsPanel
-              entityType="ticket"
-              entityId={ticketId}
-              title="Evidence on file"
-              readOnly={evidenceRequirementActive}
-              {...(evidenceRequirementActive
-                ? {
-                    description:
-                      "An upload is required for the current step — add it in Current Work so Resolve credits the requirement.",
-                  }
-                : {})}
-            />
-          </TabsContent>
-
-          <TabsContent value="details" className="space-y-4 pt-4">
-            {role.isStaff && <ExpensesCard propertyId={ticket.property_id} linkType="ticket" targetId={ticketId} />}
-            {role.can("work_orders_internal") &&
-              (!ticket.entry_kind ||
-                ownerSectionRelevant(ticket, ((workOrders ?? []) as { quote_amount?: number | null; approved_amount?: number | null }[]).flatMap((o) => [o.quote_amount, o.approved_amount])).relevant) && (
-              <TicketOwnerUpdatePanel key={ticket.id} ticketId={ticket.id} />
-            )}
-            <div className="space-y-3 text-sm">
-              <Field
-                label="Address"
-                value={
-                  [ticket.properties?.address_line1, ticket.properties?.city]
-                    .filter(Boolean)
-                    .join(", ") || "—"
-                }
-              />
-              <Field label="Acknowledged" value={relativeTime(ticket.acknowledged_at)} />
-              <Field label="Action started" value={relativeTime(ticket.action_started_at)} />
-              <div className="flex items-baseline justify-between gap-4">
-                <span className="text-muted-foreground">Vendor</span>
-                <span className="flex items-center gap-2 text-right font-medium">
-                  {ticket.vendor_name ?? "—"}
-                  {ticket.vendor_name && ticket.vendor_status && (
-                    <StatusBadge tone={vendorStatusTone(ticket.vendor_status)}>
-                      {labelFor(
-                        [
-                          { value: "dispatched", label: "Dispatched" },
-                          { value: "in_progress", label: "In progress" },
-                          { value: "completed", label: "Completed" },
-                        ],
-                        ticket.vendor_status,
-                      )}
-                    </StatusBadge>
-                  )}
-                </span>
-              </div>
-              {ticket.priority_override_reason && (
-                <Field label="Priority override" value={ticket.priority_override_reason} />
-              )}
-              {ticket.description && (
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                    Description
-                  </p>
-                  <p className="mt-1 whitespace-pre-wrap">{ticket.description}</p>
-                </div>
-              )}
-              {ticket.closure_evidence && (
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Evidence</p>
-                  <p className="mt-1 whitespace-pre-wrap">{ticket.closure_evidence}</p>
-                </div>
-              )}
-            </div>
-
-            <details className="group rounded-lg border border-border px-3 py-2 text-sm">
-              <summary className="cursor-pointer font-medium text-muted-foreground">
-                More about this ticket
-              </summary>
-              <div className="mt-3 space-y-4 border-t border-border pt-3">
-                <OutlookSourceCard entityType="ticket" entityId={ticketId} />
-                <details className="rounded-lg border border-border px-3 py-2 text-sm">
-                  <summary className="cursor-pointer text-muted-foreground">
-                    Reservation snapshot from when this ticket opened
-                  </summary>
-                  <div className="pt-3">
-                    <ReservationContextPanel
-                      ticket={ticket}
-                      ownerRezPropertyId={ticket.properties?.ownerrez_property_id ?? null}
-                    />
-                  </div>
-                </details>
-                {ticket.vendor_user_id && ticket.vendor_status === "completed" && (
-                  <VendorRatingPanel ticketId={ticket.id} priority={ticket.priority ?? null} />
-                )}
-                {ticket.vendor_user_id && <VisitLogPanel ticketId={ticket.id} />}
-                {/* Shown as the primary action in Current Work during repair,
-                    repair_active and verify above; here it's reference only,
-                    once all of those stages have passed. */}
-                {role.can("work_orders_internal") &&
-                  stage !== "repair" &&
-                  stage !== "repair_active" &&
-                  stage !== "verify" && (
-                    <TicketWorkOrderPanel
-                      ticket={ticket}
-                      propertyName={propertyName}
-                      openWorkOrderId={openWorkOrderId}
-                      onOpenWorkOrderIdChange={setOpenWorkOrderId}
-                    />
-                  )}
-              </div>
-            </details>
-          </TabsContent>
-
-          <TabsContent value="history" className="space-y-2 pt-4">
-            {(history ?? []).length === 0 && (
-              <p className="text-sm text-muted-foreground">No other tickets at this property.</p>
-            )}
-            {(history ?? []).map((h) => (
-              <Link
-                key={h.id}
-                to="/tickets/$ticketId"
-                params={{ ticketId: h.id }}
-                className="block rounded-md border border-border p-2 text-sm transition-colors hover:bg-secondary"
-              >
-                <p className="font-medium">{h.title}</p>
-                <p className="text-xs text-muted-foreground">
-                  {labelFor(CATEGORIES, h.category)} · {labelFor(STATUSES, h.status)} ·{" "}
-                  {relativeTime(h.reported_at)}
-                </p>
-              </Link>
-            ))}
-          </TabsContent>
-        </Tabs>
 
         <PropertyContextDrawer
           propertyId={ticket.property_id}
