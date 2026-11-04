@@ -106,6 +106,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
   const r = q.data?.r;
   const [propNotes, setPropNotes] = useState("");
   const [dmg, setDmg] = useState({ description: "", estimate: "", notes: "" });
+  const [depositText, setDepositText] = useState("");
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
@@ -115,6 +116,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
     if (!r) return;
     setPropNotes(r.property_notes ?? "");
     setDmg({ description: r.damage_description ?? "", estimate: r.damage_estimate?.toString() ?? "", notes: r.damage_notes ?? "" });
+    setDepositText(r.deposit_amount?.toString() ?? "");
     setReason(r.outreach_reason ?? "");
     setNotes(r.notes ?? "");
   }, [r?.id]); // eslint-disable-line react-hooks/exhaustive-deps
