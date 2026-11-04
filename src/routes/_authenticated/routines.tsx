@@ -27,6 +27,9 @@ import {
   OUTCOME_LABELS,
   ROUTINE_CONFIG,
   ROUTINE_KINDS,
+  MANUAL_ROUTINE_KINDS,
+  maintenanceReviewKey,
+  needsMaintenanceReview,
   cleaningReviewKey,
   manualKey,
   routineConfig,
@@ -419,7 +422,7 @@ function RunRoutineDialog({
     >
       <div className="space-y-4">
         <div className="grid gap-2 sm:grid-cols-2">
-          {ROUTINE_KINDS.map((k) => (
+          {MANUAL_ROUTINE_KINDS.map((k) => (
             <button
               key={k}
               onClick={() => setKind(k)}
