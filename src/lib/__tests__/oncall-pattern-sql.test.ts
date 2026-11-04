@@ -101,16 +101,31 @@ describe("On-call weekday pattern (isolated PostgreSQL)", () => {
     expect(await route(null)).toBe(sup);
   });
 
-  it("a seat with no recurring shifts is off duty, so its work goes to the Supervisor", async () => {
+  it("an empty scheduled coverage seat (ge_, po_) is off duty, so its work goes to the Supervisor", async () => {
     await overnight(false);
-    await db.exec("INSERT INTO public.functional_roles(code, name, current_seat_holder) VALUES ('empty_seat','Empty',$$" + holder + "$$) ON CONFLICT DO NOTHING");
-    const duty = async () => (await db.query<{ d: boolean }>("SELECT public.seat_on_duty('empty_seat') d")).rows[0]!.d;
-    expect(await duty()).toBe(false);
-    expect(await route("empty_seat")).toBe(sup);
-    await db.exec(HELPERS.split("CREATE OR REPLACE FUNCTION public.seat_on_duty")[1] ? "CREATE OR REPLACE FUNCTION public.seat_on_duty" + HELPERS.split("CREATE OR REPLACE FUNCTION public.seat_on_duty")[1]!.split("CREATE OR REPLACE FUNCTION public.seat_override_at")[0]! : "");
-    expect(await duty()).toBe(true); // today's rule: always on duty
+    await db.exec("DELETE FROM public.coverage_shifts WHERE role_code IN ('ge_day','po_day')");
+    for (const code of ["ge_day", "po_day"]) {
+      await db.exec("INSERT INTO public.functional_roles(code, name, current_seat_holder) VALUES ('" + code + "','S',$$" + holder + "$$) ON CONFLICT (code) DO UPDATE SET current_seat_holder = EXCLUDED.current_seat_holder");
+      const d = (await db.query<{ d: boolean }>("SELECT public.seat_on_duty('" + code + "') d")).rows[0]!.d;
+      expect(d).toBe(false);
+    }
+    expect(await route("ge_day")).toBe(sup);
+  });
+
+  it("every other empty seat (Directors, Active Owner follow-up, onboarding, Supervisor) keeps today's always-on rule", async () => {
+    await overnight(false);
     await db.exec(NEW);
-    expect(await duty()).toBe(false);
+    for (const code of ["director_ops", "active_owner_followup", "ceo", "finance_lead", "accounting", "onboarding_manager", "ops_supervisor"]) {
+      await db.exec("INSERT INTO public.functional_roles(code, name, current_seat_holder) VALUES ('" + code + "','S',$$" + holder + "$$) ON CONFLICT (code) DO NOTHING");
+      await db.exec("DELETE FROM public.coverage_shifts WHERE role_code = '" + code + "'");
+      const q = "SELECT public.seat_on_duty('" + code + "') d";
+      const after = (await db.query<{ d: boolean }>(q)).rows[0]!.d;
+      await db.exec(read(`${DIR}/live-capture/public.seat_on_duty.sql`));
+      const before = (await db.query<{ d: boolean }>(q)).rows[0]!.d;
+      await db.exec(NEW);
+      expect(after).toBe(true);
+      expect(after).toBe(before);
+    }
   });
 
   it("only the on-call lookup line changed, and undo restores the exact Pass A definition", async () => {
