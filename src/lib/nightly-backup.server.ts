@@ -33,7 +33,7 @@ async function graph(key: string, path: string, init?: RequestInit) {
     connectorId: SHAREPOINT_CONNECTOR_ID,
     connectionAPIKey: key,
     path,
-    init,
+    ...(init ? { init } : {}),
   });
   if (!res.ok) {
     const body = await res.text();
