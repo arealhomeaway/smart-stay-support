@@ -29,6 +29,7 @@ import { Route as AuthenticatedFinanceRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedHelpTicketsRouteImport } from './routes/_authenticated/help-tickets'
 import { Route as AuthenticatedHomeownersRouteImport } from './routes/_authenticated/homeowners'
 import { Route as AuthenticatedHubRouteImport } from './routes/_authenticated/hub'
+import { Route as AuthenticatedImportedTicketsRouteImport } from './routes/_authenticated/imported-tickets'
 import { Route as AuthenticatedInquirySourcesRouteImport } from './routes/_authenticated/inquiry-sources'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
 import { Route as AuthenticatedJoinRouteImport } from './routes/_authenticated/join'
@@ -216,6 +217,12 @@ const AuthenticatedHubRoute = AuthenticatedHubRouteImport.update({
   path: '/hub',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedImportedTicketsRoute =
+  AuthenticatedImportedTicketsRouteImport.update({
+    id: '/imported-tickets',
+    path: '/imported-tickets',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedInquirySourcesRoute =
   AuthenticatedInquirySourcesRouteImport.update({
     id: '/inquiry-sources',
@@ -705,6 +712,7 @@ export interface FileRoutesByFullPath {
   '/help-tickets': typeof AuthenticatedHelpTicketsRoute
   '/homeowners': typeof AuthenticatedHomeownersRoute
   '/hub': typeof AuthenticatedHubRoute
+  '/imported-tickets': typeof AuthenticatedImportedTicketsRoute
   '/inquiry-sources': typeof AuthenticatedInquirySourcesRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/join': typeof AuthenticatedJoinRoute
@@ -807,6 +815,7 @@ export interface FileRoutesByTo {
   '/help-tickets': typeof AuthenticatedHelpTicketsRoute
   '/homeowners': typeof AuthenticatedHomeownersRoute
   '/hub': typeof AuthenticatedHubRoute
+  '/imported-tickets': typeof AuthenticatedImportedTicketsRoute
   '/inquiry-sources': typeof AuthenticatedInquirySourcesRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/join': typeof AuthenticatedJoinRoute
@@ -907,6 +916,7 @@ export interface FileRoutesById {
   '/_authenticated/help-tickets': typeof AuthenticatedHelpTicketsRoute
   '/_authenticated/homeowners': typeof AuthenticatedHomeownersRoute
   '/_authenticated/hub': typeof AuthenticatedHubRoute
+  '/_authenticated/imported-tickets': typeof AuthenticatedImportedTicketsRoute
   '/_authenticated/inquiry-sources': typeof AuthenticatedInquirySourcesRoute
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
   '/_authenticated/join': typeof AuthenticatedJoinRoute
@@ -1012,6 +1022,7 @@ export interface FileRouteTypes {
     | '/help-tickets'
     | '/homeowners'
     | '/hub'
+    | '/imported-tickets'
     | '/inquiry-sources'
     | '/integrations'
     | '/join'
@@ -1114,6 +1125,7 @@ export interface FileRouteTypes {
     | '/help-tickets'
     | '/homeowners'
     | '/hub'
+    | '/imported-tickets'
     | '/inquiry-sources'
     | '/integrations'
     | '/join'
@@ -1213,6 +1225,7 @@ export interface FileRouteTypes {
     | '/_authenticated/help-tickets'
     | '/_authenticated/homeowners'
     | '/_authenticated/hub'
+    | '/_authenticated/imported-tickets'
     | '/_authenticated/inquiry-sources'
     | '/_authenticated/integrations'
     | '/_authenticated/join'
@@ -1457,6 +1470,13 @@ declare module '@tanstack/react-router' {
       path: '/hub'
       fullPath: '/hub'
       preLoaderRoute: typeof AuthenticatedHubRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/imported-tickets': {
+      id: '/_authenticated/imported-tickets'
+      path: '/imported-tickets'
+      fullPath: '/imported-tickets'
+      preLoaderRoute: typeof AuthenticatedImportedTicketsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/inquiry-sources': {
@@ -2209,6 +2229,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHelpTicketsRoute: typeof AuthenticatedHelpTicketsRoute
   AuthenticatedHomeownersRoute: typeof AuthenticatedHomeownersRoute
   AuthenticatedHubRoute: typeof AuthenticatedHubRoute
+  AuthenticatedImportedTicketsRoute: typeof AuthenticatedImportedTicketsRoute
   AuthenticatedInquirySourcesRoute: typeof AuthenticatedInquirySourcesRoute
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
   AuthenticatedJoinRoute: typeof AuthenticatedJoinRoute
@@ -2267,6 +2288,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHelpTicketsRoute: AuthenticatedHelpTicketsRoute,
   AuthenticatedHomeownersRoute: AuthenticatedHomeownersRoute,
   AuthenticatedHubRoute: AuthenticatedHubRoute,
+  AuthenticatedImportedTicketsRoute: AuthenticatedImportedTicketsRoute,
   AuthenticatedInquirySourcesRoute: AuthenticatedInquirySourcesRoute,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
   AuthenticatedJoinRoute: AuthenticatedJoinRoute,
