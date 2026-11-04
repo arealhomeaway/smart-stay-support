@@ -73,7 +73,7 @@ describe("status", () => {
 
 describe("assignees (Emily decision 2)", () => {
   it("the four named people map to their Resolve users", () => {
-    for (const [n, id] of [["Micah Sinor", "micah"], ["Romeo Canales", "romeo"], ["Mike Cacatian", "mike"], ["James Almario", "james"]]) {
+    for (const [n, id] of [["Micah Sinor", "micah"], ["Romeo Canales", "romeo"], ["Mike Cacatian", "mike"], ["James Almario", "james"]] as const) {
       expect(resolveAssignee(n, staff).userId).toBe(id);
     }
   });

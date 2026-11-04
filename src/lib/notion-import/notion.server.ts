@@ -10,8 +10,8 @@ const MIN_GAP_MS = 350;
 let lastCall = 0;
 
 function headers() {
-  const lovable = process.env.LOVABLE_API_KEY;
-  const notion = process.env.NOTION_API_KEY;
+  const lovable = process.env["LOVABLE_API_KEY"];
+  const notion = process.env["NOTION_API_KEY"];
   if (!lovable) throw new Error("LOVABLE_API_KEY is not configured");
   if (!notion) throw new Error("The Notion connection is not linked");
   return {
@@ -37,7 +37,7 @@ async function notion<T>(path: string, init?: { method?: "GET" | "POST"; body?: 
     const res = await fetch(`${GATEWAY_URL}${path}`, {
       method,
       headers: headers(),
-      body: init?.body ? JSON.stringify(init.body) : undefined,
+      ...(init?.body ? { body: JSON.stringify(init.body) } : {}),
     });
     if (res.status === 429 || res.status >= 500) {
       const retry = Number(res.headers.get("retry-after")) || 2 ** attempt;
@@ -82,7 +82,7 @@ export async function pidOwnerRez(pageId: string) {
   let ownerRez: string | null = null;
   let label: string | null = null;
   for (const [name, p] of Object.entries(page.properties)) {
-    const v = readAny(p);
+    const v = readAny(p as unknown as Record<string, unknown> & { type: string });
     if (p.type === "title") label = v;
     if (/ownerrez/i.test(name) && /id/i.test(name) && v && !ownerRez) ownerRez = v;
   }
@@ -98,9 +98,9 @@ function readAny(p: Record<string, unknown> & { type: string }): string | null {
   if (Array.isArray(v)) return v.map((t) => (t as { plain_text?: string }).plain_text ?? "").join("").trim() || null;
   if (typeof v === "object") {
     const o = v as Record<string, unknown>;
-    if (typeof o.string === "string") return o.string;
-    if (typeof o.number === "number") return String(o.number);
-    if (typeof o.name === "string") return o.name;
+    if (typeof o["string"] === "string") return o["string"];
+    if (typeof o["number"] === "number") return String(o["number"]);
+    if (typeof o["name"] === "string") return o["name"];
   }
   return null;
 }

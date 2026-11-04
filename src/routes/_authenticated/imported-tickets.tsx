@@ -65,7 +65,7 @@ function ImportedTicketsPage() {
 
   async function moveOut(row: Row, propertyId?: string) {
     const patch: Record<string, unknown> = { import_hold: null };
-    if (propertyId) patch.property_id = propertyId;
+    if (propertyId) patch["property_id"] = propertyId;
     const { error } = await supabase.from("tickets").update(patch as never).eq("id", row.id);
     if (error) toast.error(error.message);
     else {

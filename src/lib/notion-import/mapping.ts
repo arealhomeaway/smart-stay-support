@@ -11,7 +11,17 @@ export const FORMER_PROPERTY_OWNERREZ: Record<string, string> = { "410153": "210
 export const SCOPE_DAYS = 30;
 export const BACKLOG_BEFORE_YEAR = 2026;
 
-export type NotionProp = Record<string, unknown> & { type: string };
+export type NotionProp = {
+  type: string;
+  title?: unknown;
+  rich_text?: unknown;
+  status?: unknown;
+  select?: unknown;
+  number?: unknown;
+  date?: unknown;
+  people?: unknown;
+  relation?: unknown;
+};
 export type NotionPage = {
   id: string;
   url?: string;
@@ -132,9 +142,9 @@ export function resolveAssignee(name: string | null, staff: StaffUser[]): { user
   const n = norm(name);
   if (!n || n === "general") return { userId: null, missingLogin: null };
   const byName = staff.filter((s) => norm(s.full_name) === n);
-  if (byName.length === 1) return { userId: byName[0].id, missingLogin: null };
+  if (byName.length === 1 && byName[0]) return { userId: byName[0].id, missingLogin: null };
   const byEmail = staff.filter((s) => norm(s.email) === n);
-  if (byEmail.length === 1) return { userId: byEmail[0].id, missingLogin: null };
+  if (byEmail.length === 1 && byEmail[0]) return { userId: byEmail[0].id, missingLogin: null };
   return { userId: null, missingLogin: name!.trim() };
 }
 

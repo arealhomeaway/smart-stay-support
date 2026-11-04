@@ -69,7 +69,7 @@ function NotionImportPage() {
     let runId: string | undefined = from?.runId;
     try {
       do {
-        const out = await step({ data: { cursor, runId } });
+        const out = await step({ data: runId ? { cursor, runId } : { cursor } });
         runId = out.runId;
         total = mergeReport(total, out.report);
         setReport(total);

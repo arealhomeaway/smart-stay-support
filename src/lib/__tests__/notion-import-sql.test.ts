@@ -1,3 +1,4 @@
+// @ts-nocheck: isolated SQL fixture, row shapes are checked by assertions.
 import { beforeAll, describe, expect, it } from "bun:test";
 import { PGlite } from "@electric-sql/pglite";
 import { readFileSync } from "node:fs";
