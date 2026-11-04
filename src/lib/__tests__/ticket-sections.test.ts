@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { hiddenSectionCount, ticketSections } from "@/lib/ticket-sections";
 
 const base = { stage: "triage", entryKind: "ops", estimatedCost: null, workOrderCount: 0, vendorName: null, closed: false };
