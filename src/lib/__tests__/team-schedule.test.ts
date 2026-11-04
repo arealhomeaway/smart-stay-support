@@ -171,6 +171,6 @@ describe("Read only for non-supervisors", () => {
     const ui = require("node:fs").readFileSync("src/components/team/ScheduleTab.tsx", "utf8") as string;
     expect(ui).toContain("canEdit: data.canEdit === true");
     expect((ui.match(/!m\.canEdit/g) ?? []).length).toBe(2);
-    expect((ui.match(/m\.canEdit \?/g) ?? []).length).toBe(2);
+    expect((ui.match(/m\.canEdit \?/g) ?? []).length).toBe(3);
   });
 });
