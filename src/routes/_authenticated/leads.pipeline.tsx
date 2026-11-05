@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { EmptyState, LoadingRows, PageHeader, SectionCard } from "@/components/ui/page";
-import { LeadListSection, useLeads, useLeadsWithProperties } from "@/components/leads/LeadList";
+import { LeadListSection, useLeads } from "@/components/leads/LeadList";
 import { useRole } from "@/hooks/useRole";
 import { PIPELINE, STAGE_LABELS, leadSort } from "@/lib/leads";
 
@@ -13,7 +13,6 @@ export const Route = createFileRoute("/_authenticated/leads/pipeline")({
 
 function Pipeline() {
   const leads = useLeads();
-  const linked = useLeadsWithProperties();
   const { readOnly } = useRole();
   const [term, setTerm] = useState("");
 
@@ -29,8 +28,6 @@ function Pipeline() {
       )
       .sort(leadSort);
   }, [leads.data, term]);
-
-  const withProperties = linked.data ?? new Set<string>();
 
   return (
     <div className="space-y-5">
@@ -65,7 +62,6 @@ function Pipeline() {
             >
               <LeadListSection
                 leads={stageRows}
-                withProperties={withProperties}
                 canEdit={!readOnly}
               />
             </SectionCard>

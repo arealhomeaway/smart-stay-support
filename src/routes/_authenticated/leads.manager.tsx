@@ -133,7 +133,6 @@ function Manager() {
             ) : (
               <LeadListSection
                 leads={needsAttention}
-                withProperties={withProperties}
                 canEdit={!readOnly}
               />
             )}

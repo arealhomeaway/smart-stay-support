@@ -15,15 +15,25 @@ import { displayName, useStaffDirectory } from "@/hooks/useTeam";
 import { LeadDrawer, stageState } from "@/components/leads/LeadDrawer";
 import {
   SOURCE_LABELS,
-  STAGE_LABELS,
-  attentionFlags,
   followUpBucket,
   formatDate,
-  formatMoney,
-  nextAction,
-  relativeDays,
+  nextFollowUpAt,
 } from "@/lib/leads";
+import {
+  LEAD_OUTCOME_LABELS,
+  OFFER_OUTCOME_LABELS,
+  guestsPetsLabel,
+  lastOffer,
+  leadFollowUpDate,
+  leadOutcome,
+  leadRegion,
+  offerOutcome,
+  stayDatesLabel,
+  type LeadOffer,
+} from "@/lib/lead-offers";
 import type { LeadRow } from "@/lib/lead-types";
+
+export type OfferEntry = LeadOffer & { propertyName: string | null };
 
 export function useLeads() {
   return useQuery({
@@ -35,6 +45,33 @@ export function useLeads() {
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as LeadRow[];
+    },
+  });
+}
+
+/**
+ * Every lead's offers, grouped by lead. The offer columns come from the
+ * staged v2 SQL; until it is applied this query fails and the list simply
+ * shows no offer column.
+ */
+export function useLeadOfferMap() {
+  return useQuery({
+    queryKey: ["lead-offer-map"],
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lead_properties")
+        .select(
+          "id, lead_id, property_id, note, presented_at, added_by, created_at, quote_total, quote_currency, outcome, outcome_reason, outcome_at, outcome_by, properties(name, nickname, unit, address_line1, city, state, postal_code)",
+        );
+      if (error) throw error;
+      const map = new Map<string, OfferEntry[]>();
+      for (const row of (data ?? []) as unknown as (LeadOffer & { properties: { name: string; nickname: string | null; unit: string | null; address_line1: string | null; city: string | null; state: string | null; postal_code: string | null } | null })[]) {
+        const { properties: property, ...offer } = row;
+        const entry: OfferEntry = { ...offer, propertyName: property?.nickname ?? property?.name ?? null };
+        map.set(offer.lead_id, [...(map.get(offer.lead_id) ?? []), entry]);
+      }
+      return map;
     },
   });
 }
@@ -53,17 +90,19 @@ export function useLeadsWithProperties() {
 
 export function LeadRowCard({
   lead,
-  hasProperty,
+  offers,
   assigneeName,
   onOpen,
 }: {
   lead: LeadRow;
-  hasProperty: boolean;
+  offers: OfferEntry[];
   assigneeName: string;
   onOpen: () => void;
 }) {
+  const outcome = leadOutcome(lead);
+  const last = lastOffer(offers);
+  const followUp = leadFollowUpDate(lead) ?? nextFollowUpAt(lead)?.toISOString() ?? null;
   const bucket = followUpBucket(lead);
-  const flags = attentionFlags(lead, { hasProperty });
   return (
     <button
       type="button"
@@ -71,33 +110,28 @@ export function LeadRowCard({
       className="resolve-press w-full rounded-lg border bg-card px-4 py-3 text-left shadow-card transition-colors hover:bg-muted/50"
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-semibold">{lead.contact_name}</span>
+        <span className="font-semibold">{lead.contact_name ?? "Not recorded yet"}</span>
         {lead.company ? (
           <span className="text-sm text-muted-foreground">· {lead.company}</span>
         ) : null}
-        <Chip className={stateChip(stageState(lead.stage))}>{STAGE_LABELS[lead.stage]}</Chip>
+        <Chip className={stateChip(stageState(lead.stage))}>{LEAD_OUTCOME_LABELS[outcome]}</Chip>
         <Chip>{SOURCE_LABELS[lead.source]}</Chip>
-        {bucket === "overdue" ? (
+        {outcome === "open" && bucket === "overdue" ? (
           <StatusBadge tone="escalated">Overdue</StatusBadge>
-        ) : bucket === "today" ? (
+        ) : outcome === "open" && bucket === "today" ? (
           <StatusBadge tone="waiting">Due today</StatusBadge>
         ) : null}
-        {flags
-          .filter((f) => f.key !== "overdue")
-          .slice(0, 2)
-          .map((f) => (
-            <Chip key={f.key} className="border-border/60">
-              {f.label}
-            </Chip>
-          ))}
       </div>
-      <p className="mt-1 text-sm font-medium text-foreground/90">
-        {nextAction(lead, { hasProperty })}
+      <p className="mt-1 text-sm text-foreground/90">
+        {leadRegion(lead)} · {stayDatesLabel(lead)} · {guestsPetsLabel(lead)}
       </p>
       <p className="mt-0.5 text-xs text-muted-foreground">
-        {lead.market ?? "Market unspecified"} · move-in {formatDate(lead.desired_move_in)} ·{" "}
-        {formatMoney(lead.budget_monthly)}/mo · {assigneeName} · last contact{" "}
-        {relativeDays(lead.last_contact_at)}
+        {last
+          ? `Last offered: ${last.propertyName ?? "a home"} (${OFFER_OUTCOME_LABELS[offerOutcome(last)]})`
+          : "No home offered yet"}
+        {" · Next follow-up "}
+        {followUp ? formatDate(followUp) : "not set"}
+        {` · ${assigneeName}`}
       </p>
     </button>
   );
@@ -106,15 +140,14 @@ export function LeadRowCard({
 /** List plus drawer wiring — the piece every leads view reuses. */
 export function LeadListSection({
   leads,
-  withProperties,
   canEdit,
 }: {
   leads: LeadRow[];
-  withProperties: Set<string>;
   canEdit: boolean;
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const people = useStaffDirectory().data ?? [];
+  const offerMap = useLeadOfferMap().data ?? new Map<string, OfferEntry[]>();
   // Logging contact can move a lead out of the list this view filters to. The
   // workspace should stay open on the row the coordinator is working, so the
   // last known version of it is kept until they close the drawer themselves.
@@ -133,7 +166,7 @@ export function LeadListSection({
           <LeadRowCard
             key={lead.id}
             lead={lead}
-            hasProperty={withProperties.has(lead.id)}
+            offers={offerMap.get(lead.id) ?? []}
             assigneeName={displayName(people.find((p) => p.id === lead.assigned_to))}
             onOpen={() => setOpenId(lead.id)}
           />

@@ -9,7 +9,8 @@ import { formatPropertyLabel } from "@/lib/property-label";
  */
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { OutlookSourceCard } from "@/components/OutlookSourceCard";
@@ -32,13 +33,11 @@ import { stateChip } from "@/lib/semantic";
 import {
   CHANNEL_LABELS,
   LOSS_REASON_LABELS,
-  PIPELINE,
   SOURCE_LABELS,
   STAGE_LABELS,
   attentionFlags,
   followUpBucket,
   formatDate,
-  formatMoney,
   isOpen,
   nextAction,
   nextFollowUpAt,
@@ -48,9 +47,30 @@ import {
   type LeadLossReason,
   type LeadStage,
 } from "@/lib/leads";
+import {
+  LEAD_OUTCOME_LABELS,
+  OFFER_OUTCOME_LABELS,
+  finderSearchFromLead,
+  guestsPetsLabel,
+  leadFollowUpDate,
+  leadOutcome,
+  leadRegion,
+  offerOutcome,
+  sortOffers,
+  stayDatesLabel,
+  validateLeadLost,
+  waitingOffer,
+  type LeadOffer,
+} from "@/lib/lead-offers";
+import { decideLeadOffer, updateLeadDetails } from "@/lib/lead-offers.functions";
 import type { LeadRow, LeadUpdate } from "@/lib/lead-types";
-import { rankProperties } from "@/lib/property-search";
-import { readCountedRows } from "@/lib/read-all-rows";
+
+type OfferProperty = {
+  name: string; nickname: string | null; city: string | null; bedrooms: number | null;
+  lifecycle_status: string | null; address_line1: string | null; unit: string | null;
+  state: string | null; postal_code: string | null; ownerrez_property_id: string | null;
+};
+type OfferRow = LeadOffer & { properties: OfferProperty | null };
 
 const CONTACT_CHANNELS: LeadChannel[] = ["call", "email", "text", "other"];
 
@@ -75,14 +95,22 @@ export function LeadDrawer({
 }) {
   const qc = useQueryClient();
   const userId = useCurrentUserId();
+  const navigate = useNavigate();
+  const decideOffer = useServerFn(decideLeadOffer);
+  const saveLeadDetails = useServerFn(updateLeadDetails);
   const [channel, setChannel] = useState<LeadChannel>("email");
   const [outcome, setOutcome] = useState("");
   const [note, setNote] = useState("");
   const [lossReason, setLossReason] = useState<LeadLossReason | "">("");
   const [lossNote, setLossNote] = useState("");
   const [keepOpen, setKeepOpen] = useState("");
-  const [reservationRef, setReservationRef] = useState("");
-  const [propertySearch, setPropertySearch] = useState("");
+  const [editingWho, setEditingWho] = useState(false);
+  const [whoForm, setWhoForm] = useState({ organization: "", contactName: "", phone: "", email: "" });
+  const [followUpOn, setFollowUpOn] = useState("");
+  const [declineId, setDeclineId] = useState<string | null>(null);
+  const [declineReason, setDeclineReason] = useState("");
+  const [choosePrompt, setChoosePrompt] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const leadId = lead?.id ?? null;
 
@@ -100,34 +128,22 @@ export function LeadDrawer({
     },
   });
 
+  // Offers live on lead_properties. The offer columns come from the staged v2
+  // SQL; until it is applied this query fails and the section says so instead
+  // of breaking the drawer.
   const candidates = useQuery({
     queryKey: ["lead-properties", leadId],
     enabled: Boolean(leadId),
+    retry: false,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("lead_properties")
         .select(
-          "id, property_id, note, properties(name, nickname, city, bedrooms, lifecycle_status, address_line1, unit, state, postal_code, ownerrez_property_id)",
+          "id, lead_id, property_id, note, presented_at, added_by, created_at, quote_total, quote_currency, outcome, outcome_reason, outcome_at, outcome_by, properties(name, nickname, city, bedrooms, lifecycle_status, address_line1, unit, state, postal_code, ownerrez_property_id)",
         )
         .eq("lead_id", leadId!);
       if (error) throw error;
-      return data;
-    },
-  });
-
-  const propertyOptions = useQuery({
-    queryKey: ["lead-property-search", propertySearch],
-    enabled: Boolean(leadId) && propertySearch.trim().length > 1,
-    queryFn: async () => {
-      const q = propertySearch.trim();
-      const { data, error } = await readCountedRows(supabase
-        .from("properties")
-        .select(
-          "id, name, nickname, listing_alias, address_line1, unit, city, state, postal_code, market, neighborhood, ownerrez_property_id, bedrooms, lifecycle_status", { count: "exact" },
-        )
-        .order("id"));
-      if (error) throw error;
-      return rankProperties(q, data ?? []);
+      return (data ?? []) as unknown as OfferRow[];
     },
   });
 
@@ -184,7 +200,55 @@ export function LeadDrawer({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const hasProperty = (candidates.data ?? []).length > 0;
+  const offers = sortOffers(candidates.data ?? []);
+  const hasProperty = offers.length > 0;
+  const waiting = waitingOffer(offers);
+
+  async function decide(offerId: string, decision: "declined" | "accepted", reason?: string) {
+    setSaving(true);
+    try {
+      await decideOffer({ data: { offerId, decision, ...(reason ? { reason } : {}) } });
+      toast.success(decision === "accepted" ? "Booked — this lead is now Booked on that home." : "Offer marked declined.");
+      setDeclineId(null);
+      setDeclineReason("");
+      invalidate();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save the answer.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveWho() {
+    if (!lead) return;
+    setSaving(true);
+    try {
+      await saveLeadDetails({
+        data: {
+          leadId: lead.id,
+          who: {
+            organization: whoForm.organization || undefined,
+            contactName: whoForm.contactName || undefined,
+            phone: whoForm.phone || undefined,
+            email: whoForm.email || undefined,
+          },
+          nextFollowUpOn: followUpOn || null,
+        },
+      });
+      toast.success("Lead details saved.");
+      setEditingWho(false);
+      invalidate();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save the lead details.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function openFinder() {
+    if (!lead) return;
+    void navigate({ to: "/availability-finder", search: finderSearchFromLead(lead) });
+  }
 
   const derived = useMemo(() => {
     if (!lead) return null;
@@ -231,49 +295,25 @@ export function LeadDrawer({
     );
   }
 
-  function convert() {
-    if (!lead) return;
-    patchLead.mutate(
-      {
-        patch: {
-          stage: "converted",
-          converted_at: new Date().toISOString(),
-          converted_by: userId,
-          converted_property_id: candidates.data?.[0]?.property_id ?? null,
-          reservation_ref: reservationRef || null,
-        },
-        log: {
-          channel: "stage_change",
-          outcome: "Booking converted",
-          from: lead.stage,
-          to: "converted",
-        },
-      },
-      { onSuccess: () => toast.success("✓ Booking converted") },
-    );
-  }
-
   function closeLost() {
     if (!lead) return;
-    if (!lossReason) {
-      toast.error("Choose a loss reason.");
+    const problem = validateLeadLost(lossReason, lossNote);
+    if (problem || !lossReason) {
+      toast.error(problem ?? "Choose a reason.");
       return;
     }
-    if (lossReason === "other" && !lossNote.trim()) {
-      toast.error("A note is required for Other.");
-      return;
-    }
+    const reason = lossReason;
     patchLead.mutate(
       {
         patch: {
           stage: "lost",
           lost_at: new Date().toISOString(),
-          lost_reason: lossReason,
+          lost_reason: reason,
           lost_note: lossNote || null,
         },
         log: {
           channel: "stage_change",
-          outcome: `Closed as lost — ${LOSS_REASON_LABELS[lossReason]}`,
+          outcome: `Closed as lost — ${LOSS_REASON_LABELS[reason]}`,
           note: lossNote || undefined,
           from: lead.stage,
           to: "lost",
@@ -287,7 +327,7 @@ export function LeadDrawer({
     <Sheet open={Boolean(lead)} onOpenChange={(o) => !o && onClose()}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
         <SheetHeader>
-          <SheetTitle className="pr-8 text-left">{lead.contact_name}</SheetTitle>
+          <SheetTitle className="pr-8 text-left">{lead.contact_name ?? "Lead"}</SheetTitle>
         </SheetHeader>
 
         <div className="space-y-5 pb-10">
@@ -303,9 +343,9 @@ export function LeadDrawer({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Chip className={stateChip(stageState(lead.stage))}>{STAGE_LABELS[lead.stage]}</Chip>
+            <Chip className={stateChip(stageState(lead.stage))}>{LEAD_OUTCOME_LABELS[leadOutcome(lead)]}</Chip>
             <Chip>{SOURCE_LABELS[lead.source]}</Chip>
-            {lead.market ? <Chip>{lead.market}</Chip> : null}
+            {leadRegion(lead) !== "—" ? <Chip>{leadRegion(lead)}</Chip> : null}
             {derived.flags.map((f) => (
               <Chip
                 key={f.key}
@@ -340,32 +380,68 @@ export function LeadDrawer({
             </p>
           </div>
 
-          <Facts
-            rows={[
-              ["Company", lead.company ?? "—"],
-              ["Phone", lead.phone ?? "—"],
-              ["Email", lead.email ?? "—"],
-              ["Assigned to", displayName(assignee)],
-              ["Move-in", formatDate(lead.desired_move_in)],
-              [
-                "Length of stay",
-                lead.length_of_stay_days ? `${lead.length_of_stay_days} days` : "—",
-              ],
-              ["Bedrooms", lead.bedrooms ? String(lead.bedrooms) : "—"],
-              ["Budget", formatMoney(lead.budget_monthly)],
-              ["Pets", lead.pets === null ? "—" : lead.pets ? "Yes" : "No"],
-              [
-                "Dates flexible",
-                lead.date_flexible === null ? "—" : lead.date_flexible ? "Yes" : "No",
-              ],
-            ]}
-          />
+          <section className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold">Who and the stay</h3>
+              {canEdit && !editingWho && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="resolve-press"
+                  onClick={() => {
+                    setWhoForm({
+                      organization: lead.company ?? "",
+                      contactName: lead.contact_name ?? "",
+                      phone: lead.phone ?? "",
+                      email: lead.email ?? "",
+                    });
+                    setFollowUpOn(leadFollowUpDate(lead) ?? "");
+                    setEditingWho(true);
+                  }}
+                >
+                  Edit
+                </Button>
+              )}
+            </div>
+            {editingWho ? (
+              <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
+                <Input placeholder="Organization or inquiry source" value={whoForm.organization} onChange={(e) => setWhoForm((w) => ({ ...w, organization: e.target.value }))} />
+                <Input placeholder="Contact name" value={whoForm.contactName} onChange={(e) => setWhoForm((w) => ({ ...w, contactName: e.target.value }))} />
+                <div className="grid grid-cols-2 gap-2">
+                  <Input placeholder="Phone" value={whoForm.phone} onChange={(e) => setWhoForm((w) => ({ ...w, phone: e.target.value }))} />
+                  <Input placeholder="Email" value={whoForm.email} onChange={(e) => setWhoForm((w) => ({ ...w, email: e.target.value }))} />
+                </div>
+                <Label className="text-xs text-muted-foreground">Next follow-up date</Label>
+                <Input type="date" value={followUpOn} onChange={(e) => setFollowUpOn(e.target.value)} />
+                <div className="flex gap-2">
+                  <Button size="sm" className="resolve-press" onClick={() => void saveWho()} disabled={saving}>
+                    {saving ? "Saving…" : "Save"}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setEditingWho(false)}>Cancel</Button>
+                </div>
+              </div>
+            ) : (
+              <Facts
+                rows={[
+                  ["Organization / source", lead.company ?? "—"],
+                  ["Contact", lead.contact_name ?? "Not recorded yet"],
+                  ["Phone", lead.phone ?? "—"],
+                  ["Email", lead.email ?? "—"],
+                  ["Region", leadRegion(lead)],
+                  ["Stay", stayDatesLabel(lead)],
+                  ["Guests and pets", guestsPetsLabel(lead)],
+                  ["Next follow-up", leadFollowUpDate(lead) ?? (derived.due ? formatDate(derived.due.toISOString()) : "—")],
+                  ["Assigned to", displayName(assignee)],
+                ]}
+              />
+            )}
+          </section>
 
           <OutlookSourceCard entityType="lead" entityId={lead.id} />
 
           {lead.stage === "converted" ? (
             <section className="resolve-rise space-y-1.5 rounded-lg border border-success/40 bg-success/10 px-4 py-3">
-              <p className="eyebrow">Conversion</p>
+              <p className="eyebrow">Booked</p>
               <p className="text-sm font-semibold">Booking confirmed</p>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                 <dt className="text-muted-foreground">Converted</dt>
@@ -457,88 +533,110 @@ export function LeadDrawer({
             </section>
           )}
 
-          {canEdit && (
-            <section className="space-y-2">
-              <Label className="text-sm font-semibold">Stage</Label>
-              <Select
-                value={lead.stage}
-                onValueChange={(v) =>
-                  patchLead.mutate({
-                    patch: { stage: v as LeadStage },
-                    log: {
-                      channel: "stage_change",
-                      from: lead.stage,
-                      to: v as LeadStage,
-                      outcome: "Stage changed",
-                    },
-                  })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PIPELINE.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {STAGE_LABELS[s]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </section>
-          )}
-
           <section className="space-y-2">
-            <h3 className="text-sm font-semibold">Candidate properties</h3>
-            {(candidates.data ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">No homes linked yet.</p>
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold">Offers</h3>
+              {canEdit && isOpen(lead.stage) && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="resolve-press"
+                  onClick={() => (waiting ? setChoosePrompt(true) : openFinder())}
+                >
+                  Choose another property
+                </Button>
+              )}
+            </div>
+            {candidates.error ? (
+              <p className="text-sm text-muted-foreground">Offers will appear here once the pending lead update is applied.</p>
+            ) : offers.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No homes offered yet. Use Choose another property to offer one.</p>
             ) : (
-              <ul className="space-y-1.5">
-                {(candidates.data ?? []).map((c) => (
-                  <li key={c.id} className="flex items-center justify-between gap-2 text-sm">
-                    <Link
-                      to="/property/$propertyId"
-                      params={{ propertyId: c.property_id }}
-                      className="underline-offset-2 hover:underline"
-                    >
-                      {formatPropertyLabel(c.properties).primary}
-                    </Link>
-                    <span className="text-xs text-muted-foreground">
-                      {c.properties?.city ?? "—"} · {c.properties?.bedrooms ?? "?"} bd ·{" "}
-                      {c.properties?.lifecycle_status ?? "—"}
-                    </span>
+              <ul className="space-y-2">
+                {offers.map((offer) => (
+                  <li key={offer.id} className="rounded-md border px-3 py-2 text-sm">
+                    <div className="flex items-center justify-between gap-2">
+                      <Link
+                        to="/property/$propertyId"
+                        params={{ propertyId: offer.property_id }}
+                        className="font-medium underline-offset-2 hover:underline"
+                      >
+                        {offer.properties ? formatPropertyLabel(offer.properties).primary : "Home"}
+                      </Link>
+                      <Chip className={offerOutcome(offer) === "accepted" ? stateChip("done") : offerOutcome(offer) === "declined" ? stateChip("blocked") : stateChip("waiting")}>
+                        {OFFER_OUTCOME_LABELS[offerOutcome(offer)]}
+                      </Chip>
+                    </div>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Offered {formatDate(offer.presented_at ?? offer.created_at)}
+                      {offer.quote_total !== null ? ` · quoted $${Number(offer.quote_total).toLocaleString("en-US", { maximumFractionDigits: 0 })}` : ""}
+                      {offer.added_by ? ` · by ${displayName(people.find((p) => p.id === offer.added_by))}` : ""}
+                    </p>
+                    {offerOutcome(offer) === "declined" && offer.outcome_reason ? (
+                      <p className="mt-0.5 text-xs text-muted-foreground">Declined: {offer.outcome_reason}</p>
+                    ) : null}
+                    {canEdit && isOpen(lead.stage) && offerOutcome(offer) === "waiting" && (
+                      <div className="mt-2 space-y-2">
+                        {declineId === offer.id ? (
+                          <div className="space-y-2">
+                            <Input
+                              placeholder="Reason it was declined"
+                              value={declineReason}
+                              onChange={(e) => setDeclineReason(e.target.value)}
+                            />
+                            <div className="flex gap-2">
+                              <Button size="sm" variant="outline" className="resolve-press" disabled={saving || !declineReason.trim()} onClick={() => void decide(offer.id, "declined", declineReason)}>
+                                Save declined
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={() => { setDeclineId(null); setDeclineReason(""); }}>Cancel</Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <Button size="sm" className="resolve-press" disabled={saving} onClick={() => void decide(offer.id, "accepted")}>
+                              Accepted — book this home
+                            </Button>
+                            <Button size="sm" variant="outline" className="resolve-press" onClick={() => { setDeclineId(offer.id); setDeclineReason(""); }}>
+                              Declined
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
             )}
-            {canEdit && (
-              <>
+            {choosePrompt && waiting && (
+              <div className="space-y-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm">
+                <p>
+                  {waiting.properties ? formatPropertyLabel(waiting.properties).primary : "The current offer"} is still
+                  waiting on an answer. Mark it Declined first?
+                </p>
                 <Input
-                  placeholder="Search homes by name or city…"
-                  value={propertySearch}
-                  onChange={(e) => setPropertySearch(e.target.value)}
+                  placeholder="Reason it was declined"
+                  value={declineReason}
+                  onChange={(e) => setDeclineReason(e.target.value)}
                 />
-                {(propertyOptions.data ?? []).map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    className="resolve-press block w-full rounded-md border px-3 py-1.5 text-left text-sm hover:bg-muted/60"
-                    onClick={async () => {
-                      const { error } = await supabase
-                        .from("lead_properties")
-                        .insert({ lead_id: lead.id, property_id: p.id, added_by: userId });
-                      if (error) {
-                        toast.error(error.message);
-                        return;
-                      }
-                      setPropertySearch("");
-                      invalidate();
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    className="resolve-press"
+                    disabled={saving || !declineReason.trim()}
+                    onClick={() => {
+                      const offerId = waiting.id;
+                      void (async () => {
+                        await decide(offerId, "declined", declineReason);
+                        setChoosePrompt(false);
+                        openFinder();
+                      })();
                     }}
                   >
-                    {formatPropertyLabel(p).primary} · {p.city ?? "—"} · {p.bedrooms ?? "?"} bd
-                  </button>
-                ))}
-              </>
+                    Mark declined and choose another
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setChoosePrompt(false)}>Cancel</Button>
+                </div>
+              </div>
             )}
           </section>
 
@@ -569,18 +667,9 @@ export function LeadDrawer({
               <Separator />
               <section className="space-y-3">
                 <h3 className="text-sm font-semibold">Close the opportunity</h3>
-                <Input
-                  placeholder="Reservation reference (optional)"
-                  value={reservationRef}
-                  onChange={(e) => setReservationRef(e.target.value)}
-                />
-                <Button
-                  className="resolve-press w-full"
-                  onClick={convert}
-                  disabled={patchLead.isPending}
-                >
-                  Convert — booking confirmed
-                </Button>
+                <p className="text-xs text-muted-foreground">
+                  To mark the lead Booked, accept the offer on the home they chose under Offers.
+                </p>
 
                 <Select
                   value={lossReason}

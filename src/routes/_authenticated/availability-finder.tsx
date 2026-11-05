@@ -1,8 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState, type FormEvent } from "react";
 import { searchAvailability, downloadAvailabilityOptions } from "@/lib/availability-finder.functions";
+import { offerPropertyToLead } from "@/lib/lead-offers.functions";
+import { offeredPropertyIds, type LeadOffer } from "@/lib/lead-offers";
+import { supabase } from "@/integrations/supabase/client";
 import { AVAILABILITY_RADIUS_MILES, emailSummary, nextOption, rankAvailability, validStay, verifiedPublicListingUrl, visibleResults, type RankedOption } from "@/lib/availability-finder";
 import { AMENITY_LABELS, AMENITY_SPECS, confirmedAmenities, petSummary, type AmenityKey } from "@/lib/property-facts";
 import { formatMoney, internalQuoteLine, PRICE_ESTIMATE_NOTE, quoteSourceNote } from "@/lib/pricing";
@@ -17,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-type FinderSearch = { checkIn?: string | undefined; checkOut?: string | undefined; location?: string | undefined; showUnavailable?: boolean | undefined; selected?: string | undefined; dogs?: number | undefined; cats?: number | undefined; guests?: number | undefined; minBedrooms?: number | undefined; amenities?: string | undefined; inquirySourceId?: string | undefined };
+type FinderSearch = { checkIn?: string | undefined; checkOut?: string | undefined; location?: string | undefined; showUnavailable?: boolean | undefined; selected?: string | undefined; dogs?: number | undefined; cats?: number | undefined; guests?: number | undefined; minBedrooms?: number | undefined; amenities?: string | undefined; inquirySourceId?: string | undefined; leadId?: string | undefined };
 
 function countParam(value: unknown, max: number) {
   const parsed = Number(value);
@@ -42,6 +45,7 @@ export const Route = createFileRoute("/_authenticated/availability-finder")({
     minBedrooms: countParam(search["minBedrooms"], 12),
     amenities: typeof search["amenities"] === "string" ? search["amenities"] : undefined,
     inquirySourceId: typeof search["inquirySourceId"] === "string" ? search["inquirySourceId"] : undefined,
+    leadId: typeof search["leadId"] === "string" ? search["leadId"] : undefined,
   }),
   head: () => ({
     meta: [
@@ -79,7 +83,12 @@ function AvailabilityFinderPage() {
   // Session memory: homes already shown or declined this search are never repeated.
   const [seenIds, setSeenIds] = useState<string[]>([]);
   const [offeredId, setOfferedId] = useState<string | null>(null);
+  const [offeredLeadId, setOfferedLeadId] = useState<string | null>(search.leadId ?? null);
   const [showAll, setShowAll] = useState(false);
+  const [offerDialog, setOfferDialog] = useState<RankedOption | null>(null);
+  const [who, setWho] = useState({ organization: "", contactName: "", phone: "", email: "" });
+  const [offerSaving, setOfferSaving] = useState(false);
+  const [offerError, setOfferError] = useState<string | null>(null);
   const sources = useInquirySources();
   const sourceList = sources.data ?? [];
   const [addingSource, setAddingSource] = useState(false);
@@ -99,8 +108,24 @@ function AvailabilityFinderPage() {
     retry: false,
   });
   const results = visibleResults(query.data?.results ?? [], Boolean(search.showUnavailable));
+  // When the finder was opened from a lead, homes already offered on that lead
+  // are never recommended again, whatever their outcome.
+  const leadOffers = useQuery({
+    queryKey: ["lead-offers", search.leadId],
+    enabled: allowed && Boolean(search.leadId),
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lead_properties")
+        .select("id, lead_id, property_id, note, presented_at, added_by, created_at")
+        .eq("lead_id", search.leadId!);
+      if (error) throw error;
+      return (data ?? []) as unknown as LeadOffer[];
+    },
+  });
+  const alreadyOffered = offeredPropertyIds(leadOffers.data ?? []);
   const ranked = query.data ? rankAvailability(results, search.checkIn!, search.checkOut!) : [];
-  const current = nextOption(ranked, seenIds);
+  const current = nextOption(ranked, [...seenIds, ...alreadyOffered]);
   const selectedId = current?.result.id ?? (results.some((row) => row.id === search.selected) ? search.selected! : null);
   const onSelect = useCallback((id: string) => {
     void navigate({ search: (previous) => ({ ...previous, selected: id }) });
@@ -133,10 +158,48 @@ function AvailabilityFinderPage() {
   }
 
   function offerCurrent(option: RankedOption) {
-    setConfirmUnlinked(null);
-    setChosen([option.result.id]);
-    setOfferedId(option.result.id);
-    setSeenIds((currentIds) => currentIds.includes(option.result.id) ? currentIds : [...currentIds, option.result.id]);
+    setOfferError(null);
+    setWho({ organization: "", contactName: "", phone: "", email: "" });
+    setOfferDialog(option);
+  }
+
+  async function saveOffer(option: RankedOption) {
+    setOfferSaving(true);
+    setOfferError(null);
+    try {
+      const quote = option.result.sourceQuote
+        ? { total: option.result.sourceQuote.total, currency: option.result.sourceQuote.currency }
+        : { total: option.result.quote?.total ?? null, currency: option.result.quote?.currency ?? null };
+      const saved = await offerPropertyToLead({
+        data: {
+          ...(search.leadId ? { leadId: search.leadId } : {}),
+          propertyId: option.result.id,
+          search: {
+            location: search.location!, checkIn: search.checkIn!, checkOut: search.checkOut!,
+            guests: search.guests ?? 0, dogs: search.dogs ?? 0, cats: search.cats ?? 0,
+            minBedrooms: search.minBedrooms ?? 0,
+            ...(search.inquirySourceId ? { inquirySourceId: search.inquirySourceId } : {}),
+          },
+          who: {
+            organization: who.organization || undefined,
+            contactName: who.contactName || undefined,
+            phone: who.phone || undefined,
+            email: who.email || undefined,
+          },
+          quoteTotal: quote.total, quoteCurrency: quote.currency,
+        },
+      });
+      setConfirmUnlinked(null);
+      setChosen([option.result.id]);
+      setOfferedId(option.result.id);
+      setOfferedLeadId(saved.leadId);
+      setSeenIds((currentIds) => currentIds.includes(option.result.id) ? currentIds : [...currentIds, option.result.id]);
+      setOfferDialog(null);
+    } catch (error) {
+      setOfferError(error instanceof Error ? error.message : "The offer could not be saved.");
+    } finally {
+      setOfferSaving(false);
+    }
   }
 
   function showNext(option: RankedOption) {
@@ -223,6 +286,35 @@ function AvailabilityFinderPage() {
         }} />
       </DialogContent>
     </Dialog>
+    <Dialog open={Boolean(offerDialog)} onOpenChange={(open) => { if (!open) setOfferDialog(null); }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader><DialogTitle>Offer {offerDialog?.result.name}</DialogTitle></DialogHeader>
+        {offerDialog && <div className="space-y-3 text-sm">
+          <p className="text-muted-foreground">
+            {search.leadId
+              ? "This offer is added to the lead you came from, with today's quote saved with it."
+              : "A lead is created for this search and this offer is recorded on it. Who asked is optional and can be filled in later."}
+          </p>
+          {!search.leadId && <div className="grid gap-2">
+            <Input placeholder="Organization or inquiry source (optional)" value={who.organization} onChange={(e) => setWho((w) => ({ ...w, organization: e.target.value }))} />
+            <Input placeholder="Contact name (optional)" value={who.contactName} onChange={(e) => setWho((w) => ({ ...w, contactName: e.target.value }))} />
+            <Input placeholder="Phone (optional)" value={who.phone} onChange={(e) => setWho((w) => ({ ...w, phone: e.target.value }))} />
+            <Input placeholder="Email (optional)" value={who.email} onChange={(e) => setWho((w) => ({ ...w, email: e.target.value }))} />
+          </div>}
+          {offerError && <p role="alert" className="text-destructive">{offerError}</p>}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" disabled={offerSaving} onClick={() => void saveOffer(offerDialog)}>
+              {offerSaving ? "Saving…" : "Save offer"}
+            </Button>
+            {!search.leadId && (
+              <Button type="button" variant="ghost" disabled={offerSaving} onClick={() => void saveOffer(offerDialog)}>
+                Skip these and save offer
+              </Button>
+            )}
+          </div>
+        </div>}
+      </DialogContent>
+    </Dialog>
     {query.isPending && inputReady && <p role="status">Checking OwnerRez reservations and nearby properties…</p>}
     {query.error && <p role="alert" className="rounded border border-destructive p-4 text-destructive">{query.error instanceof Error ? query.error.message : "Search failed."} No availability result was issued.</p>}
     {query.data && !showAll && <>
@@ -265,6 +357,7 @@ function AvailabilityFinderPage() {
       </div>
       {offeredId && selectedResults.length > 0 && <div className="space-y-2 rounded-lg border bg-card p-4">
         <p className="text-sm font-semibold">Offering {selectedResults[0]!.name}</p>
+        {offeredLeadId && <p className="text-sm text-muted-foreground">Saved on the lead. <Link to="/leads" className="text-primary underline">Open Leads</Link> to see it.</p>}
         <div className="flex flex-wrap items-center gap-2">
           <Button onClick={() => void downloadPdf()} disabled={exporting}>{exporting ? "Preparing PDF…" : "Download Property Options PDF"}</Button>
           <EmailComposer
