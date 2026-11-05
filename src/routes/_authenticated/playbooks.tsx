@@ -294,11 +294,14 @@ function PlaybookDetail({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("playbook_approvals")
-        .select("*, profiles:actor_id(full_name)")
+        .select("*")
         .eq("playbook_id", pb.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
+      const ids = [...new Set((data ?? []).flatMap((row) => row.actor_id ? [row.actor_id] : []))];
+      const people = ids.length ? await supabase.from("profiles").select("id, full_name").in("id", ids) : { data: [], error: null };
+      if (people.error) throw people.error;
+      return (data ?? []).map((row) => ({ ...row, actorName: people.data?.find((person) => person.id === row.actor_id)?.full_name }));
     },
   });
 
@@ -457,7 +460,7 @@ function PlaybookDetail({
                 {STATUS_LABELS[(h.to_status as PlaybookStatus) ?? "draft"]} ·{" "}
                 {usDateTime(h.created_at)}
                 {` · v${(h as unknown as { version?: number }).version ?? pb.version}`}
-                {h.profiles?.full_name ? ` · ${h.profiles.full_name}` : h.actor_role ? ` · ${h.actor_role}` : ""}
+                {h.actorName ? ` · ${h.actorName}` : h.actor_role ? ` · ${h.actor_role}` : ""}
                 {h.note ? ` · ${h.note}` : ""}
               </li>
             ))}
@@ -472,25 +475,17 @@ function NewPlaybook({ onSaved }: { onSaved: () => void }) {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("other");
   const [summary, setSummary] = useState("");
-  const [director, setDirector] = useState(false);
+  const create = useServerFn(savePlaybookEdit);
+  const [busy, setBusy] = useState(false);
 
   async function save() {
     if (!title.trim()) return;
-    const { error } = await supabase.from("playbooks").insert({
-      title: title.trim(),
-      category,
-      summary: summary.trim() || null,
-      status: "draft",
-      active: false,
-      source: "authored",
-      requires_director: director,
-    });
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Draft created.");
-    onSaved();
+    setBusy(true);
+    try {
+      await create({ data: { id: null, expectedUpdatedAt: null, content: { title: title.trim(), category, summary: summary.trim() || null, applies_to: ["ticket"], keywords: [], risk_flags: [], immediate_actions: [], escalate_if: [], required_evidence: [], steps: [] } } });
+      toast.success("Draft created."); onSaved();
+    } catch (err) { toast.error(err instanceof Error ? err.message : "Could not create the draft."); }
+    finally { setBusy(false); }
   }
 
   return (
@@ -522,11 +517,7 @@ function NewPlaybook({ onSaved }: { onSaved: () => void }) {
         <Label>Summary</Label>
         <Textarea rows={3} value={summary} onChange={(e) => setSummary(e.target.value)} />
       </div>
-      <label className="flex items-center gap-3 text-sm">
-        <Switch checked={director} onCheckedChange={setDirector} />
-        Involves policy, money, safety, owner obligations or escalation — Director approval
-      </label>
-      <Button onClick={save} className="w-full">
+      <Button onClick={save} disabled={busy} className="w-full">
         Create draft
       </Button>
     </div>
