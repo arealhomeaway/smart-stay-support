@@ -6944,8 +6944,14 @@ export type Database = {
           id: string
           lead_id: string
           note: string | null
+          outcome: string | null
+          outcome_at: string | null
+          outcome_by: string | null
+          outcome_reason: string | null
           presented_at: string | null
           property_id: string
+          quote_currency: string | null
+          quote_total: number | null
         }
         Insert: {
           added_by?: string | null
@@ -6953,8 +6959,14 @@ export type Database = {
           id?: string
           lead_id: string
           note?: string | null
+          outcome?: string | null
+          outcome_at?: string | null
+          outcome_by?: string | null
+          outcome_reason?: string | null
           presented_at?: string | null
           property_id: string
+          quote_currency?: string | null
+          quote_total?: number | null
         }
         Update: {
           added_by?: string | null
@@ -6962,8 +6974,14 @@ export type Database = {
           id?: string
           lead_id?: string
           note?: string | null
+          outcome?: string | null
+          outcome_at?: string | null
+          outcome_by?: string | null
+          outcome_reason?: string | null
           presented_at?: string | null
           property_id?: string
+          quote_currency?: string | null
+          quote_total?: number | null
         }
         Relationships: [
           {
@@ -7040,17 +7058,22 @@ export type Database = {
           assigned_to: string | null
           bedrooms: number | null
           budget_monthly: number | null
+          cats: number | null
           company: string | null
-          contact_name: string
+          contact_name: string | null
           converted_at: string | null
           converted_by: string | null
           converted_property_id: string | null
           created_at: string
           created_by: string | null
           date_flexible: boolean | null
+          desired_check_out: string | null
           desired_move_in: string | null
+          dogs: number | null
           email: string | null
+          guests: number | null
           id: string
+          inquiry_source_id: string | null
           is_demo: boolean
           keep_open_reason: string | null
           last_contact_at: string | null
@@ -7059,6 +7082,7 @@ export type Database = {
           lost_note: string | null
           lost_reason: Database["public"]["Enums"]["lead_loss_reason"] | null
           market: string | null
+          next_follow_up_on: string | null
           notes: string | null
           pets: boolean | null
           phone: string | null
@@ -7068,6 +7092,7 @@ export type Database = {
           quote_sent_at: string | null
           requirements: string | null
           reservation_ref: string | null
+          search_region: string | null
           source: Database["public"]["Enums"]["lead_source"]
           source_detail: Json
           stage: Database["public"]["Enums"]["lead_stage"]
@@ -7077,17 +7102,22 @@ export type Database = {
           assigned_to?: string | null
           bedrooms?: number | null
           budget_monthly?: number | null
+          cats?: number | null
           company?: string | null
-          contact_name: string
+          contact_name?: string | null
           converted_at?: string | null
           converted_by?: string | null
           converted_property_id?: string | null
           created_at?: string
           created_by?: string | null
           date_flexible?: boolean | null
+          desired_check_out?: string | null
           desired_move_in?: string | null
+          dogs?: number | null
           email?: string | null
+          guests?: number | null
           id?: string
+          inquiry_source_id?: string | null
           is_demo?: boolean
           keep_open_reason?: string | null
           last_contact_at?: string | null
@@ -7096,6 +7126,7 @@ export type Database = {
           lost_note?: string | null
           lost_reason?: Database["public"]["Enums"]["lead_loss_reason"] | null
           market?: string | null
+          next_follow_up_on?: string | null
           notes?: string | null
           pets?: boolean | null
           phone?: string | null
@@ -7105,6 +7136,7 @@ export type Database = {
           quote_sent_at?: string | null
           requirements?: string | null
           reservation_ref?: string | null
+          search_region?: string | null
           source?: Database["public"]["Enums"]["lead_source"]
           source_detail?: Json
           stage?: Database["public"]["Enums"]["lead_stage"]
@@ -7114,17 +7146,22 @@ export type Database = {
           assigned_to?: string | null
           bedrooms?: number | null
           budget_monthly?: number | null
+          cats?: number | null
           company?: string | null
-          contact_name?: string
+          contact_name?: string | null
           converted_at?: string | null
           converted_by?: string | null
           converted_property_id?: string | null
           created_at?: string
           created_by?: string | null
           date_flexible?: boolean | null
+          desired_check_out?: string | null
           desired_move_in?: string | null
+          dogs?: number | null
           email?: string | null
+          guests?: number | null
           id?: string
+          inquiry_source_id?: string | null
           is_demo?: boolean
           keep_open_reason?: string | null
           last_contact_at?: string | null
@@ -7133,6 +7170,7 @@ export type Database = {
           lost_note?: string | null
           lost_reason?: Database["public"]["Enums"]["lead_loss_reason"] | null
           market?: string | null
+          next_follow_up_on?: string | null
           notes?: string | null
           pets?: boolean | null
           phone?: string | null
@@ -7142,6 +7180,7 @@ export type Database = {
           quote_sent_at?: string | null
           requirements?: string | null
           reservation_ref?: string | null
+          search_region?: string | null
           source?: Database["public"]["Enums"]["lead_source"]
           source_detail?: Json
           stage?: Database["public"]["Enums"]["lead_stage"]
@@ -7160,6 +7199,13 @@ export type Database = {
             columns: ["converted_property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_inquiry_source_id_fkey"
+            columns: ["inquiry_source_id"]
+            isOneToOne: false
+            referencedRelation: "inquiry_sources"
             referencedColumns: ["id"]
           },
         ]
