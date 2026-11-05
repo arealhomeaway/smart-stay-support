@@ -244,7 +244,8 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
       const authorMap = new Map(authors.map((a) => [a.id, a]));
       return {
         ticket: ticket.data,
-        steps: steps.data ?? [],
+        // Guided checklist answers live in the checklist card, not the routine step list.
+        steps: (steps.data ?? []).filter((r) => (r as { step_key?: string | null }).step_key == null),
         activity: (activity.data ?? []).map((a) => ({
           ...a,
           author: a.author_id ? (authorMap.get(a.author_id) ?? null) : null,

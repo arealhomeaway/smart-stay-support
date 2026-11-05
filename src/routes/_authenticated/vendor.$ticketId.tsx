@@ -64,7 +64,8 @@ function VendorJob() {
           .limit(20),
       ]);
       if (ticket.error) throw ticket.error;
-      return { ticket: ticket.data, steps: steps.data ?? [], activity: activity.data ?? [] };
+      return { ticket: ticket.data, // Guided checklist answers live in the checklist card, not the routine step list.
+        steps: (steps.data ?? []).filter((r) => (r as { step_key?: string | null }).step_key == null), activity: activity.data ?? [] };
     },
   });
 
