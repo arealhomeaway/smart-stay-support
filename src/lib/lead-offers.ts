@@ -76,12 +76,12 @@ export function offerOutcome(offer: LeadOffer): LeadOfferOutcome {
 }
 
 /** Most recently offered first. */
-export function sortOffers(offers: LeadOffer[]): LeadOffer[] {
+export function sortOffers<T extends LeadOffer>(offers: T[]): T[] {
   return [...offers].sort((a, b) =>
     (b.presented_at ?? b.created_at).localeCompare(a.presented_at ?? a.created_at));
 }
 
-export function lastOffer(offers: LeadOffer[]): LeadOffer | null {
+export function lastOffer<T extends LeadOffer>(offers: T[]): T | null {
   return sortOffers(offers)[0] ?? null;
 }
 
@@ -91,7 +91,7 @@ export function offeredPropertyIds(offers: LeadOffer[]): string[] {
 }
 
 /** The offer still waiting on an answer, if there is one. */
-export function waitingOffer(offers: LeadOffer[]): LeadOffer | null {
+export function waitingOffer<T extends LeadOffer>(offers: T[]): T | null {
   return sortOffers(offers).find((offer) => offerOutcome(offer) === "waiting") ?? null;
 }
 

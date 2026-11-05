@@ -69,7 +69,7 @@ function LeadsHome() {
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile label="Open" value={counts.open} />
-        <StatTile label="Follow-up due" value={counts.due} tone={counts.due ? "attention" : "default"} />
+        <StatTile label="Follow-up due" value={counts.due} tone={counts.due ? "attention" : "neutral"} />
         <StatTile label="Booked" value={counts.booked} />
         <StatTile label="My open leads" value={mine.length} hint="Assigned to you" />
       </div>

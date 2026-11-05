@@ -298,10 +298,11 @@ export function LeadDrawer({
   function closeLost() {
     if (!lead) return;
     const problem = validateLeadLost(lossReason, lossNote);
-    if (problem) {
-      toast.error(problem);
+    if (problem || !lossReason) {
+      toast.error(problem ?? "Choose a reason.");
       return;
     }
+    const reason = lossReason;
     patchLead.mutate(
       {
         patch: {

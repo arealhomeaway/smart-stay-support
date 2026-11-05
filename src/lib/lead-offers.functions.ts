@@ -202,12 +202,12 @@ export const updateLeadDetails = createServerFn({ method: "POST" })
     const patch: Record<string, unknown> = {};
     if (data.who) {
       const blank = (value: string | undefined) => (value?.trim() ? value.trim() : null);
-      patch.company = blank(data.who.organization);
-      patch.contact_name = blank(data.who.contactName);
-      patch.phone = blank(data.who.phone);
-      patch.email = blank(data.who.email);
+      patch["company"] = blank(data.who.organization);
+      patch["contact_name"] = blank(data.who.contactName);
+      patch["phone"] = blank(data.who.phone);
+      patch["email"] = blank(data.who.email);
     }
-    if (data.nextFollowUpOn !== undefined) patch.next_follow_up_on = data.nextFollowUpOn || null;
+    if (data.nextFollowUpOn !== undefined) patch["next_follow_up_on"] = data.nextFollowUpOn || null;
     if (Object.keys(patch).length === 0) return { leadId: data.leadId };
     const { error } = await context.supabase.from("leads").update(patch as never).eq("id", data.leadId);
     if (error) throw error;
