@@ -403,32 +403,68 @@ export function LeadDrawer({
             </p>
           </div>
 
-          <Facts
-            rows={[
-              ["Company", lead.company ?? "—"],
-              ["Phone", lead.phone ?? "—"],
-              ["Email", lead.email ?? "—"],
-              ["Assigned to", displayName(assignee)],
-              ["Move-in", formatDate(lead.desired_move_in)],
-              [
-                "Length of stay",
-                lead.length_of_stay_days ? `${lead.length_of_stay_days} days` : "—",
-              ],
-              ["Bedrooms", lead.bedrooms ? String(lead.bedrooms) : "—"],
-              ["Budget", formatMoney(lead.budget_monthly)],
-              ["Pets", lead.pets === null ? "—" : lead.pets ? "Yes" : "No"],
-              [
-                "Dates flexible",
-                lead.date_flexible === null ? "—" : lead.date_flexible ? "Yes" : "No",
-              ],
-            ]}
-          />
+          <section className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold">Who and the stay</h3>
+              {canEdit && !editingWho && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="resolve-press"
+                  onClick={() => {
+                    setWhoForm({
+                      organization: lead.company ?? "",
+                      contactName: lead.contact_name ?? "",
+                      phone: lead.phone ?? "",
+                      email: lead.email ?? "",
+                    });
+                    setFollowUpOn(leadFollowUpDate(lead) ?? "");
+                    setEditingWho(true);
+                  }}
+                >
+                  Edit
+                </Button>
+              )}
+            </div>
+            {editingWho ? (
+              <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
+                <Input placeholder="Organization or inquiry source" value={whoForm.organization} onChange={(e) => setWhoForm((w) => ({ ...w, organization: e.target.value }))} />
+                <Input placeholder="Contact name" value={whoForm.contactName} onChange={(e) => setWhoForm((w) => ({ ...w, contactName: e.target.value }))} />
+                <div className="grid grid-cols-2 gap-2">
+                  <Input placeholder="Phone" value={whoForm.phone} onChange={(e) => setWhoForm((w) => ({ ...w, phone: e.target.value }))} />
+                  <Input placeholder="Email" value={whoForm.email} onChange={(e) => setWhoForm((w) => ({ ...w, email: e.target.value }))} />
+                </div>
+                <Label className="text-xs text-muted-foreground">Next follow-up date</Label>
+                <Input type="date" value={followUpOn} onChange={(e) => setFollowUpOn(e.target.value)} />
+                <div className="flex gap-2">
+                  <Button size="sm" className="resolve-press" onClick={() => void saveWho()} disabled={saving}>
+                    {saving ? "Saving…" : "Save"}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setEditingWho(false)}>Cancel</Button>
+                </div>
+              </div>
+            ) : (
+              <Facts
+                rows={[
+                  ["Organization / source", lead.company ?? "—"],
+                  ["Contact", lead.contact_name ?? "Not recorded yet"],
+                  ["Phone", lead.phone ?? "—"],
+                  ["Email", lead.email ?? "—"],
+                  ["Region", leadRegion(lead)],
+                  ["Stay", stayDatesLabel(lead)],
+                  ["Guests and pets", guestsPetsLabel(lead)],
+                  ["Next follow-up", leadFollowUpDate(lead) ?? (derived.due ? formatDate(derived.due.toISOString()) : "—")],
+                  ["Assigned to", displayName(assignee)],
+                ]}
+              />
+            )}
+          </section>
 
           <OutlookSourceCard entityType="lead" entityId={lead.id} />
 
           {lead.stage === "converted" ? (
             <section className="resolve-rise space-y-1.5 rounded-lg border border-success/40 bg-success/10 px-4 py-3">
-              <p className="eyebrow">Conversion</p>
+              <p className="eyebrow">Booked</p>
               <p className="text-sm font-semibold">Booking confirmed</p>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                 <dt className="text-muted-foreground">Converted</dt>
