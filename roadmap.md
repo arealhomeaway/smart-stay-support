@@ -1,5 +1,10 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 5 simplify Record work (build/test only)
+- [ ] Rename maintenance entry, show situation tiles directly, restrict work-type override to Admin/Supervisor
+- [ ] Carry repair selections into the shared maintenance form without changing tile mapping or clocks
+- [ ] Regression tests and full suite; automatic type/build checks; no publish or data writes
+
 ## Nov 1 Operations pilot dispatch (build/test only)
 - [x] Read-only impact: zero recorded task sends; accepted vendor/appointment, exact Work Order reservation, Admin scope/history built
 - [x] Stage database guards and exact undo in docs/pending/pilot-dispatch; no application, live writes, sign-in, sends or publish
