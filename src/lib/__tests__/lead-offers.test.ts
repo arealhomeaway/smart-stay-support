@@ -70,7 +70,7 @@ describe("offer rows", () => {
     expect(insert.quote_total).toBe(4320);
     expect(insert.quote_currency).toBe("USD");
     expect(insert.outcome).toBe("waiting");
-    expect(insert.presented_at).toBe("2026-11-05T18:00:00Z");
+    expect(insert.presented_at).toBe("2026-11-05T18:00:00.000Z");
   });
 
   it("an offer with no quote still records who offered it and when", () => {
