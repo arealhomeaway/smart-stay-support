@@ -77,7 +77,7 @@ function MyLeads() {
           <EmptyState title="Nothing closed yet" hint="Converted and lost leads land here." />
         ) : (
           <SectionCard title="Closed leads">
-            <LeadListSection leads={closed} withProperties={withProperties} canEdit={!readOnly} />
+            <LeadListSection leads={closed} canEdit={!readOnly} />
           </SectionCard>
         )
       ) : open.length === 0 ? (
@@ -93,7 +93,7 @@ function MyLeads() {
               description={`${rows.length} lead${rows.length === 1 ? "" : "s"}`}
               tone={bucket === "overdue" ? "critical" : "default"}
             >
-              <LeadListSection leads={rows} withProperties={withProperties} canEdit={!readOnly} />
+              <LeadListSection leads={rows} canEdit={!readOnly} />
             </SectionCard>
           );
         })
