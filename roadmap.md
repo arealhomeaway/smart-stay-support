@@ -1,9 +1,11 @@
 # Roadmap — approved build work, NO publish
 
 ## Nov 5 simplify Record work (build/test only)
-- [ ] Rename maintenance entry, show situation tiles directly, restrict work-type override to Admin/Supervisor
-- [ ] Carry repair selections into the shared maintenance form without changing tile mapping or clocks
-- [ ] Regression tests and full suite; automatic type/build checks; no publish or data writes
+- [x] Rename maintenance entry, show unchanged situation tiles directly, restrict work-type override to Admin/Supervisor
+- [x] Carry repair selections into shared maintenance form; unchanged catalog supplies work type, seat and clocks
+- [x] 26 new regression tests; full suite 2388 pass / 5 skip / 0 fail; automatic type/build OK
+- [x] Unsigned synthetic browser checks: three roles, suggested tile, three repair handoffs retaining summary/home/source, mobile overflow; no publish or data writes
+- [ ] Authenticated real-record creation not tested because sign-in and data writes are not approved; Internal remains deliberately unmapped and requires a Supervisor work-type choice
 
 ## Nov 1 Operations pilot dispatch (build/test only)
 - [x] Read-only impact: zero recorded task sends; accepted vendor/appointment, exact Work Order reservation, Admin scope/history built
