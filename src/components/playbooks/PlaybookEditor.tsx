@@ -14,11 +14,12 @@ export function PlaybookEditor({ initial, busy, onSave, onCancel }: {
   initial: PlaybookContent; busy: boolean; onSave: (content: PlaybookContent) => void; onCancel: () => void;
 }) {
   const [form, setForm] = useState(initial);
+  const [listText, setListText] = useState({ keywords: initial.keywords.join("\n"), immediate_actions: initial.immediate_actions.join("\n"), escalate_if: initial.escalate_if.join("\n"), required_evidence: initial.required_evidence.join("\n") });
   const [error, setError] = useState("");
   const set = <K extends keyof PlaybookContent>(key: K, value: PlaybookContent[K]) => setForm((f) => ({ ...f, [key]: value }));
   return <form className="space-y-5" onSubmit={(e) => {
     e.preventDefault();
-    const parsed = playbookContentSchema.safeParse(form);
+    const parsed = playbookContentSchema.safeParse({ ...form, keywords: lines(listText.keywords), immediate_actions: lines(listText.immediate_actions), escalate_if: lines(listText.escalate_if), required_evidence: lines(listText.required_evidence) });
     if (!parsed.success) { setError("Add a title, category, applies to and an instruction for each step."); return; }
     setError(""); onSave(parsed.data);
   }}>
@@ -31,12 +32,12 @@ export function PlaybookEditor({ initial, busy, onSave, onCancel }: {
     <fieldset className="space-y-2"><legend className="text-sm font-medium">Applies to</legend><div className="flex flex-wrap gap-4">
       {([['ticket', 'Ticket'], ['work_order', 'Work Order'], ['recovery', 'Refund or credit'], ['claim', 'Claim']] as const).map(([v, label]) => <label key={v} className="flex items-center gap-2 text-sm"><Checkbox checked={form.applies_to.includes(v)} onCheckedChange={(checked) => set("applies_to", checked ? [...form.applies_to, v] : form.applies_to.filter((s) => s !== v))} />{label}</label>)}
     </div></fieldset>
-    <div className="space-y-2"><Label htmlFor="edit-pb-keywords">Matching keywords</Label><Textarea id="edit-pb-keywords" value={form.keywords.join("\n")} onChange={(e) => set("keywords", lines(e.target.value))} /></div>
+    <div className="space-y-2"><Label htmlFor="edit-pb-keywords">Matching keywords</Label><Textarea id="edit-pb-keywords" value={listText.keywords} onChange={(e) => setListText((f) => ({ ...f, keywords: e.target.value }))} /></div>
     <section className="space-y-3"><h3 className="text-sm font-medium">Consider</h3>
       {form.risk_flags.map((risk, index) => <div className="flex items-start gap-2" key={index}><div className="min-w-0 flex-1 space-y-2"><Input aria-label={`Consider ${index + 1}`} value={risk.title} onChange={(e) => set("risk_flags", form.risk_flags.map((r, i) => i === index ? { ...r, title: e.target.value } : r))} /><Input aria-label={`Why ${index + 1}`} placeholder="Why, if helpful" value={risk.why ?? ""} onChange={(e) => set("risk_flags", form.risk_flags.map((r, i) => i === index ? { ...r, why: e.target.value } : r))} /></div><Button type="button" variant="ghost" size="icon" aria-label={`Remove consideration ${index + 1}`} title="Remove consideration" onClick={() => set("risk_flags", form.risk_flags.filter((_, i) => i !== index))}><Trash2 className="size-4" /></Button></div>)}
       <Button type="button" variant="outline" size="sm" onClick={() => set("risk_flags", [...form.risk_flags, { title: "", why: null }])}><Plus className="size-4" />Add consideration</Button>
     </section>
-    {([['immediate_actions', 'Do first'], ['escalate_if', 'Escalate if'], ['required_evidence', 'Required evidence']] as const).map(([key, label]) => <div key={key} className="space-y-2"><Label htmlFor={`edit-pb-${key}`}>{label}</Label><Textarea id={`edit-pb-${key}`} value={form[key].join("\n")} onChange={(e) => set(key, lines(e.target.value))} /></div>)}
+    {([['immediate_actions', 'Do first'], ['escalate_if', 'Escalate if'], ['required_evidence', 'Required evidence']] as const).map(([key, label]) => <div key={key} className="space-y-2"><Label htmlFor={`edit-pb-${key}`}>{label}</Label><Textarea id={`edit-pb-${key}`} value={listText[key]} onChange={(e) => setListText((f) => ({ ...f, [key]: e.target.value }))} /></div>)}
     <section className="space-y-3"><h3 className="font-medium">Ordered steps</h3>
       {form.steps.map((step, index) => <div key={index} className="space-y-2 border-b border-border pb-4">
         <div className="flex items-center gap-2"><span className="mr-auto text-sm font-medium">Step {index + 1}</span>
