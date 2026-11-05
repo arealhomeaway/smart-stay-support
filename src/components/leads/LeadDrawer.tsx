@@ -58,6 +58,7 @@ import {
   offerOutcome,
   sortOffers,
   stayDatesLabel,
+  validateLeadLost,
   waitingOffer,
   type LeadOffer,
 } from "@/lib/lead-offers";
