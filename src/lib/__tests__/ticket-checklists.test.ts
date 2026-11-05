@@ -187,7 +187,14 @@ describe("booking checklist (Notion SOP)", () => {
     expect(fillQuestion(step.help!, {}, edited)).toContain("2:00 PM $60");
     expect(fillQuestion(b().steps.find((s) => s.key === "lco_same_day")!.help!, {}, b().settings)).toContain("after noon $145");
   });
-  test("nothing from the unapproved v2 draft", () => {
-    expect(/door code|gap fee|goodwill|\$100/i.test(JSON.stringify(b()))).toBe(false);
+  test("the approved manual door code step is in; nothing else from the unapproved v2 draft", () => {
+    const door = b().steps.find((s) => s.key === "eci_door")!;
+    expect(door.question).toBe("Door code sent to the guest manually?");
+    expect(door.options.map((o) => o.label)).toEqual(["Yes"]);
+    const text = JSON.stringify(b());
+    expect(/gap fee|goodwill|\$100/i.test(text)).toBe(false);
+    expect(/smart lock|lock start time|start time/i.test(text)).toBe(false);
+    expect(/after-noon|afternoon cleaner check/i.test(text)).toBe(false);
+    expect(/airbnb|vrbo|channel/i.test(text)).toBe(false);
   });
 });
