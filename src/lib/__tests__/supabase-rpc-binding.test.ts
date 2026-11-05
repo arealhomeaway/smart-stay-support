@@ -10,14 +10,14 @@ import { createClient } from "@supabase/supabase-js";
 describe("supabase rpc binding", () => {
   const client = createClient("https://example.supabase.co", "sb_publishable_test");
 
-  it("a detached rpc reference crashes with the reported error", () => {
+  it("a detached rpc reference crashes on this.rest before any network work", () => {
     const detached = client.rpc as unknown as (
       name: string,
       args: Record<string, unknown>,
     ) => Promise<unknown>;
-    expect(() => detached("any_function", {})).toThrow(
-      "Cannot read properties of undefined (reading 'rest')",
-    );
+    // V8: "Cannot read properties of undefined (reading 'rest')";
+    // JSC: "undefined is not an object (evaluating 'this.rest')".
+    expect(() => detached("any_function", {})).toThrow(/rest/);
   });
 
   it("a bound rpc reference gets past the client and only fails on the network", async () => {
