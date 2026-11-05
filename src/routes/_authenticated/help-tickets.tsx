@@ -149,14 +149,14 @@ export function TicketList({ rows: all, isLoading }: { rows: any[]; isLoading: b
         </div>
         {confirmation && <p role="status" className="mb-3 text-sm text-success">{confirmation}</p>}
         {canBulk && rows.length > 0 && !isLoading && <div className="mb-3 flex items-center gap-3 text-sm">
-          <label className="flex items-center gap-2"><Checkbox aria-label="Select all" disabled={saving} checked={allSelected ? true : selectedIds.length ? "indeterminate" : false} onCheckedChange={(checked) => { setSelection(toggleHelpSelection(selectedIds, rows.map((r) => r.id), checked === true)); setPending(null); }} />Select all</label>
+          <label className="flex items-center gap-2"><Checkbox aria-label="Select all" disabled={saving || Boolean(pending)} checked={allSelected ? true : selectedIds.length ? "indeterminate" : false} onCheckedChange={(checked) => { setSelection(toggleHelpSelection(selectedIds, rows.map((r) => r.id), checked === true)); setPending(null); }} />Select all</label>
           <span aria-live="polite">{selectedIds.length} selected</span>
         </div>}
         {canBulk && selectedIds.length > 0 && <div className="mb-4 space-y-3 border-y border-border py-4">
           {pending && !saving && <p role="alert" className="text-sm text-warning">The save was not confirmed. Save again to check the same update, or cancel and refresh the list.</p>}
-          <div className="flex flex-wrap items-center gap-3"><span className="text-sm font-medium">Change status</span><Select value={bulkStatus} disabled={saving} onValueChange={(value) => { setBulkStatus(value as HelpBulkInput["status"]); setPending(null); }}><SelectTrigger aria-label="Change status" className="w-56"><SelectValue /></SelectTrigger><SelectContent>{HELP_STATUSES.map((s) => <SelectItem key={s} value={s}>{s === "closed" ? "Closed" : label(s)}</SelectItem>)}</SelectContent></Select></div>
-          <Textarea aria-label="Optional note for all selected tickets" placeholder="Optional note" value={note} maxLength={5000} disabled={saving} onChange={(e) => { setNote(e.target.value); setPending(null); }} />
-          <div className="flex flex-wrap items-center justify-between gap-3"><label className="flex items-center gap-2 text-sm"><Checkbox checked={notify} disabled={saving} onCheckedChange={(checked) => { setNotify(checked === true); setPending(null); }} />Notify submitters</label><div className="flex gap-2"><Button variant="outline" disabled={saving} onClick={clearSelection}>Cancel</Button><Button disabled={saving} onClick={() => void saveBulk()}>{saving ? "Saving…" : "Save"}</Button></div></div>
+          <div className="flex flex-wrap items-center gap-3"><span className="text-sm font-medium">Change status</span><Select value={bulkStatus} disabled={saving || Boolean(pending)} onValueChange={(value) => { setBulkStatus(value as HelpBulkInput["status"]); setPending(null); }}><SelectTrigger aria-label="Change status" className="w-56"><SelectValue /></SelectTrigger><SelectContent>{HELP_STATUSES.map((s) => <SelectItem key={s} value={s}>{s === "closed" ? "Closed" : label(s)}</SelectItem>)}</SelectContent></Select></div>
+          <Textarea aria-label="Optional note for all selected tickets" placeholder="Optional note" value={note} maxLength={5000} disabled={saving || Boolean(pending)} onChange={(e) => { setNote(e.target.value); setPending(null); }} />
+          <div className="flex flex-wrap items-center justify-between gap-3"><label className="flex items-center gap-2 text-sm"><Checkbox checked={notify} disabled={saving || Boolean(pending)} onCheckedChange={(checked) => { setNotify(checked === true); setPending(null); }} />Notify submitters</label><div className="flex gap-2"><Button variant="outline" disabled={saving} onClick={clearSelection}>Cancel</Button><Button disabled={saving} onClick={() => void saveBulk()}>{saving ? "Saving…" : "Save"}</Button></div></div>
         </div>}
         {isLoading ? (
           <Skeleton className="h-40" />
@@ -166,7 +166,7 @@ export function TicketList({ rows: all, isLoading }: { rows: any[]; isLoading: b
           <ul className="divide-y">
             {rows.map((r) => (
               <li key={r.id} className="flex items-start gap-3">
-                {canBulk && <Checkbox className="mt-4 shrink-0" aria-label={`Select Help Ticket #${r.ticket_number}`} disabled={saving} checked={selectedIds.includes(r.id)} onCheckedChange={(checked) => { setSelection(toggleHelpSelection(selectedIds, [r.id], checked === true)); setPending(null); setConfirmation(""); }} />}
+                {canBulk && <Checkbox className="mt-4 shrink-0" aria-label={`Select Help Ticket #${r.ticket_number}`} disabled={saving || Boolean(pending)} checked={selectedIds.includes(r.id)} onCheckedChange={(checked) => { setSelection(toggleHelpSelection(selectedIds, [r.id], checked === true)); setPending(null); setConfirmation(""); }} />}
                 <Link
                   to="/help-tickets"
                   search={{ ticket: r.ticket_number }}
