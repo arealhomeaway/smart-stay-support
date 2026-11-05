@@ -15,7 +15,6 @@ CREATE TABLE public.backup_runs (
 );
 CREATE INDEX backup_runs_started_idx ON public.backup_runs (started_at DESC);
 CREATE INDEX backup_runs_folder_idx ON public.backup_runs (folder_name, status);
-CREATE UNIQUE INDEX backup_runs_one_running_per_folder ON public.backup_runs (folder_name) WHERE status = 'running';
 
 GRANT SELECT ON public.backup_runs TO authenticated;
 GRANT ALL ON public.backup_runs TO service_role;
