@@ -31,6 +31,7 @@ import { RequireCapability } from "@/components/RequireCapability";
 import { useRole } from "@/hooks/useRole";
 import { useServerFn } from "@tanstack/react-start";
 import { PlaybookEditor } from "@/components/playbooks/PlaybookEditor";
+import { SopVersionComparison } from "@/components/playbooks/SopVersionComparison";
 import { SopUpload } from "@/components/playbooks/SopUpload";
 import { getSopPlaybookLinks } from "@/lib/sop-upload.functions";
 import { sopNeedsReview, type SopLink } from "@/lib/sop-upload";

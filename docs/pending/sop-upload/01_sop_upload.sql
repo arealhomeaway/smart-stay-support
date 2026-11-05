@@ -70,7 +70,7 @@ BEGIN
   _new:=(_saved->>'id')::uuid;
   UPDATE playbooks SET source='ai_draft', source_refs=ARRAY[_file->>'url'], source_version=_s.version::text, generated_at=now(), effective_on=_s.effective_on,
    matcher=matcher||jsonb_build_object('situations',coalesce(_d->'situations','[]')), active=false,status='draft' WHERE id=_new;
-  INSERT INTO sop_playbooks(playbook_id,sop_version_id,checklist_categories) VALUES(_new,_id,ARRAY(SELECT jsonb_array_elements_text(coalesce(_d->'checklistCategories','[]'))));
+  INSERT INTO sop_playbooks(playbook_id,sop_version_id,checklist_categories) VALUES(_new,_id,ARRAY(SELECT jsonb_array_elements_text(coalesce(_d->'checklistCategories','[]')))) ON CONFLICT(playbook_id) DO UPDATE SET sop_version_id=excluded.sop_version_id,checklist_categories=excluded.checklist_categories;
   _ids:=array_append(_ids,_new);
  END LOOP;
  UPDATE sop_versions SET state='saved',file_url=_file->>'url',file_id=_file->>'id',drive_id=_file->>'driveId',draft_ids=_ids WHERE id=_id;
