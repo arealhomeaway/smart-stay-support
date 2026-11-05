@@ -556,88 +556,110 @@ export function LeadDrawer({
             </section>
           )}
 
-          {canEdit && (
-            <section className="space-y-2">
-              <Label className="text-sm font-semibold">Stage</Label>
-              <Select
-                value={lead.stage}
-                onValueChange={(v) =>
-                  patchLead.mutate({
-                    patch: { stage: v as LeadStage },
-                    log: {
-                      channel: "stage_change",
-                      from: lead.stage,
-                      to: v as LeadStage,
-                      outcome: "Stage changed",
-                    },
-                  })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PIPELINE.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {STAGE_LABELS[s]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </section>
-          )}
-
           <section className="space-y-2">
-            <h3 className="text-sm font-semibold">Candidate properties</h3>
-            {(candidates.data ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">No homes linked yet.</p>
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold">Offers</h3>
+              {canEdit && isOpen(lead.stage) && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="resolve-press"
+                  onClick={() => (waiting ? setChoosePrompt(true) : openFinder())}
+                >
+                  Choose another property
+                </Button>
+              )}
+            </div>
+            {candidates.error ? (
+              <p className="text-sm text-muted-foreground">Offers will appear here once the pending lead update is applied.</p>
+            ) : offers.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No homes offered yet. Use Choose another property to offer one.</p>
             ) : (
-              <ul className="space-y-1.5">
-                {(candidates.data ?? []).map((c) => (
-                  <li key={c.id} className="flex items-center justify-between gap-2 text-sm">
-                    <Link
-                      to="/property/$propertyId"
-                      params={{ propertyId: c.property_id }}
-                      className="underline-offset-2 hover:underline"
-                    >
-                      {formatPropertyLabel(c.properties).primary}
-                    </Link>
-                    <span className="text-xs text-muted-foreground">
-                      {c.properties?.city ?? "—"} · {c.properties?.bedrooms ?? "?"} bd ·{" "}
-                      {c.properties?.lifecycle_status ?? "—"}
-                    </span>
+              <ul className="space-y-2">
+                {offers.map((offer) => (
+                  <li key={offer.id} className="rounded-md border px-3 py-2 text-sm">
+                    <div className="flex items-center justify-between gap-2">
+                      <Link
+                        to="/property/$propertyId"
+                        params={{ propertyId: offer.property_id }}
+                        className="font-medium underline-offset-2 hover:underline"
+                      >
+                        {offer.properties ? formatPropertyLabel(offer.properties).primary : "Home"}
+                      </Link>
+                      <Chip className={offerOutcome(offer) === "accepted" ? stateChip("done") : offerOutcome(offer) === "declined" ? stateChip("blocked") : stateChip("waiting")}>
+                        {OFFER_OUTCOME_LABELS[offerOutcome(offer)]}
+                      </Chip>
+                    </div>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Offered {formatDate(offer.presented_at ?? offer.created_at)}
+                      {offer.quote_total !== null ? ` · quoted $${Number(offer.quote_total).toLocaleString("en-US", { maximumFractionDigits: 0 })}` : ""}
+                      {offer.added_by ? ` · by ${displayName(people.find((p) => p.id === offer.added_by))}` : ""}
+                    </p>
+                    {offerOutcome(offer) === "declined" && offer.outcome_reason ? (
+                      <p className="mt-0.5 text-xs text-muted-foreground">Declined: {offer.outcome_reason}</p>
+                    ) : null}
+                    {canEdit && isOpen(lead.stage) && offerOutcome(offer) === "waiting" && (
+                      <div className="mt-2 space-y-2">
+                        {declineId === offer.id ? (
+                          <div className="space-y-2">
+                            <Input
+                              placeholder="Reason it was declined"
+                              value={declineReason}
+                              onChange={(e) => setDeclineReason(e.target.value)}
+                            />
+                            <div className="flex gap-2">
+                              <Button size="sm" variant="outline" className="resolve-press" disabled={saving || !declineReason.trim()} onClick={() => void decide(offer.id, "declined", declineReason)}>
+                                Save declined
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={() => { setDeclineId(null); setDeclineReason(""); }}>Cancel</Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <Button size="sm" className="resolve-press" disabled={saving} onClick={() => void decide(offer.id, "accepted")}>
+                              Accepted — book this home
+                            </Button>
+                            <Button size="sm" variant="outline" className="resolve-press" onClick={() => { setDeclineId(offer.id); setDeclineReason(""); }}>
+                              Declined
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
             )}
-            {canEdit && (
-              <>
+            {choosePrompt && waiting && (
+              <div className="space-y-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm">
+                <p>
+                  {waiting.properties ? formatPropertyLabel(waiting.properties).primary : "The current offer"} is still
+                  waiting on an answer. Mark it Declined first?
+                </p>
                 <Input
-                  placeholder="Search homes by name or city…"
-                  value={propertySearch}
-                  onChange={(e) => setPropertySearch(e.target.value)}
+                  placeholder="Reason it was declined"
+                  value={declineReason}
+                  onChange={(e) => setDeclineReason(e.target.value)}
                 />
-                {(propertyOptions.data ?? []).map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    className="resolve-press block w-full rounded-md border px-3 py-1.5 text-left text-sm hover:bg-muted/60"
-                    onClick={async () => {
-                      const { error } = await supabase
-                        .from("lead_properties")
-                        .insert({ lead_id: lead.id, property_id: p.id, added_by: userId });
-                      if (error) {
-                        toast.error(error.message);
-                        return;
-                      }
-                      setPropertySearch("");
-                      invalidate();
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    className="resolve-press"
+                    disabled={saving || !declineReason.trim()}
+                    onClick={() => {
+                      const offerId = waiting.id;
+                      void (async () => {
+                        await decide(offerId, "declined", declineReason);
+                        setChoosePrompt(false);
+                        openFinder();
+                      })();
                     }}
                   >
-                    {formatPropertyLabel(p).primary} · {p.city ?? "—"} · {p.bedrooms ?? "?"} bd
-                  </button>
-                ))}
-              </>
+                    Mark declined and choose another
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setChoosePrompt(false)}>Cancel</Button>
+                </div>
+              </div>
             )}
           </section>
 
