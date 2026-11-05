@@ -130,9 +130,11 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
   },
   {
     key: "bookings-leads",
-    match: (p) => ["/leads", "/inquiry-sources"].some((r) => p === r || p.startsWith(r + "/")),
+    match: (p) =>
+      ["/leads", "/inquiry-sources"].some((r) => p === r || p.startsWith(r + "/")) || p === "/availability-finder",
     tabs: [
       { label: "Leads", to: "/leads", capability: "leads_work" },
+      { label: "Availability Finder", to: "/availability-finder", capability: "work_orders_internal" },
       { label: "Inquiry Sources", to: "/inquiry-sources", capability: "work_orders_internal" },
     ],
   },
@@ -147,11 +149,10 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
   {
     key: "properties",
     match: (p) =>
-      p === "/properties" || p.startsWith("/property/") || p === "/map" || p === "/availability-finder",
+      p === "/properties" || p.startsWith("/property/") || p === "/map",
     tabs: [
       { label: "Properties", to: "/properties", capability: "properties" },
       { label: "Work Map", to: "/map", capability: "work_orders_internal" },
-      { label: "Availability Finder", to: "/availability-finder", capability: "work_orders_internal" },
     ],
   },
   {

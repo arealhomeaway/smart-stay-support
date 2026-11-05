@@ -25,6 +25,8 @@ export type FinderInput = {
   dogs?: number | undefined;
   /** Cats travelling with the guest; 0 means cats are not a requirement. */
   cats?: number | undefined;
+  /** Guests travelling; 0 means party size is not a requirement. */
+  guests?: number | undefined;
   /** Smallest acceptable bedroom count; 0 means size is not a requirement. */
   minBedrooms?: number | undefined;
   amenities?: AmenityKey[] | undefined;
@@ -137,6 +139,7 @@ export async function findAvailableProperties(supabase: Client, input: FinderInp
   const requirements: MatchRequirements = {
     dogs: input.dogs ?? 0,
     cats: input.cats ?? 0,
+    guests: input.guests ?? 0,
     minBedrooms: input.minBedrooms ?? 0,
     amenities: input.amenities ?? [],
   };

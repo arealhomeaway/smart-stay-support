@@ -125,14 +125,8 @@ export function buildSourceQuote(
       amount: source.petFeePerPet * petCount,
     });
   }
-  // Corporate Housing Extra is a monthly charge, prorated over a 30-day month.
-  if (money(source.corporateHousingExtra) && source.corporateHousingExtra > 0) {
-    const months = quote.nights / 30;
-    lines.push({
-      label: `Corporate housing extra (${formatMoney(source.corporateHousingExtra, quote.currency)}/month, ${quote.nights} nights)`,
-      amount: Math.round(source.corporateHousingExtra * months),
-    });
-  }
+  // Corporate Housing Extra is retired (Emily, 2026-11-05): the stored field
+  // stays on the source for history, but it is never added to a quote.
 
   const total = Math.round(lines.reduce((sum, line) => sum + line.amount, 0));
   const referral = referralCostFor(source, accommodation, quote.nights);

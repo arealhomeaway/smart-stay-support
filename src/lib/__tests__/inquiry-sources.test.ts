@@ -25,10 +25,11 @@ describe("source quotes", () => {
     expect(quote.total).toBe(6500);
   });
 
-  it("corporate housing extra is charged per month, prorated over 30 days", () => {
+  it("corporate housing extra is retired: stored but never added to a quote", () => {
     const half: StayQuote = { ...stay, nights: 15, total: 3000 };
     const quote = buildSourceQuote(half, source({ corporateHousingExtra: 500 }), 0)!;
-    expect(quote.total).toBe(3250);
+    expect(quote.total).toBe(3000);
+    expect(quote.lines.some((line) => line.label.toLowerCase().includes("corporate"))).toBe(false);
   });
 
   it("a negative discount is flagged rather than applied", () => {
