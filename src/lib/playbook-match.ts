@@ -128,6 +128,8 @@ function scoreOne(pb: AuthoredPlaybook, ctx: MatchContext): MatchedPlaybook | nu
   // Only approved guidance ever reaches the frontline, and never before the
   // day leadership said it takes effect.
   if (!isApproved(pb)) return null;
+  // Guided ticket checklists live on playbook rows but are never guidance.
+  if (pb.isChecklist) return null;
 
   const subjects = pb.matcher.objects ?? pb.applies_to;
   if (!subjects.includes(ctx.objectType)) return null;

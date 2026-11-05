@@ -13,7 +13,11 @@ import { captureTicketReservation, getPropertyStay } from "@/lib/ownerrez.functi
 import { PropertyContactPanel } from "@/components/PropertyContactPanel";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Clock, History, Users, Wrench } from "lucide-react";
+import { CalendarDays, CircleHelp, Clock, History, KeyRound, MessageSquareWarning, ShieldAlert, Sparkles, Users, Wrench } from "lucide-react";
+import { useFeatureFlags } from "@/lib/feature-flags";
+import { CHECKLIST_CATEGORIES, categoryUsesChecklist, isActiveGuest, parseChecklistRow, templatePriority } from "@/lib/ticket-checklists";
+
+const CATEGORY_ICONS = { KeyRound, Sparkles, Wrench, MessageSquareWarning, ShieldAlert, CalendarDays, CircleHelp } as const;
 import { PropertyActivityForm } from "@/components/work-entry/PropertyActivityForm";
 import {
   ENTRY_KINDS,
@@ -170,6 +174,30 @@ export function NewTicketForm({
   const { demoMode } = useDemo();
   const [mode, setModeRaw] = useState<Mode>(context.kind ?? null);
   const isTicket = mode === "ops" || mode === "maintenance";
+  // Guided checklist category (display only; it picks the same situation and work type a person could pick today).
+  const flags = useFeatureFlags();
+  const [checklistCategory, setChecklistCategory] = useState<string | null>(null);
+  const opsChecklistCategories = CHECKLIST_CATEGORIES.filter((c) => c.flag && flags.enabled(c.flag));
+  const pickerShown = mode === "ops" && opsChecklistCategories.length > 0;
+  const activeCategory =
+    mode === "maintenance"
+      ? (categoryUsesChecklist("maintenance", flags.enabled) ? "maintenance" : null)
+      : checklistCategory && categoryUsesChecklist(checklistCategory, flags.enabled) ? checklistCategory : null;
+  const liveChecklist = useQuery({
+    queryKey: ["live-ticket-checklist", activeCategory],
+    enabled: Boolean(activeCategory),
+    queryFn: async () => {
+      const { data, error } = await (supabase as unknown as { from: (t: string) => any })
+        .from("playbooks")
+        .select("id, title, version, checklist, checklist_category, sop_url")
+        .eq("checklist_category", activeCategory)
+        .eq("status", "approved")
+        .not("checklist", "is", null)
+        .maybeSingle();
+      if (error) throw error;
+      return data ? parseChecklistRow(data) : null;
+    },
+  });
   const [saving, setSaving] = useState(false);
   const [priorityTouched, setPriorityTouched] = useState(false);
   // Guest impact must be a person's answer, never inferred from occupancy.
@@ -383,7 +411,12 @@ export function NewTicketForm({
   // Mechanical priority model: work type suggests, guest impact and occupancy decide.
   const situation = useMemo(() => situationById(form.situation_id), [form.situation_id]);
 
-  const mechanical = useMemo(
+  const checklistGuestActive = isActiveGuest({
+    inHome: Boolean(form.guest_in_residence) || form.occupancy_status === "occupied",
+    nextArrival: stay?.ok ? (stay.data as { next_arrival?: string | null }).next_arrival ?? (form.occupancy_status === "same_day_arrival" ? new Date().toISOString() : null) : null,
+  });
+  const checklistStartPriority = activeCategory ? templatePriority(liveChecklist.data, checklistGuestActive) : null;
+  const mechanicalBase = useMemo(
     () =>
       mechanicalPriority(
         workType?.default_priority,
@@ -393,6 +426,8 @@ export function NewTicketForm({
       ),
     [workType, form.guest_impact, form.occupancy_status, situation],
   );
+  // A checklist template may set the starting priority (for example lockout with an active guest = P1).
+  const mechanical = checklistStartPriority ?? mechanicalBase;
 
   useEffect(() => {
     if (!priorityTouched) setForm((f) => ({ ...f, priority: mechanical }));
@@ -579,6 +614,9 @@ export function NewTicketForm({
           property_id: form.property_id || null,
           work_type_id: effectiveWorkTypeId,
           entry_kind: mode,
+          ...(activeCategory && liveChecklist.data && !oneTouch
+            ? ({ checklist_playbook_id: liveChecklist.data.id, checklist_category: activeCategory } as {})
+            : {}),
           linked_feedback_id: context.feedback ?? null,
           departure_review_id: context.departureReview ?? null,
           maintenance_category: mode === "maintenance" ? form.maintenance_category : null,
@@ -877,7 +915,43 @@ export function NewTicketForm({
 
             {form.property_id && <PropertyContactPanel propertyId={form.property_id} showOwner={false} />}
 
-            {mode === "ops" && (
+            {pickerShown && (
+              <div className="space-y-2">
+                <Label>What kind of problem is it?</Label>
+                <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Category">
+                  {[...opsChecklistCategories, CHECKLIST_CATEGORIES.find((c) => c.id === "other")!].map((c) => {
+                    const Icon = CATEGORY_ICONS[c.icon];
+                    const on = (checklistCategory ?? "") === c.id;
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={on}
+                        onClick={() => {
+                          setChecklistCategory(c.id);
+                          if (c.id === "maintenance") { setMode("maintenance"); return; }
+                          const sid = c.situation(checklistGuestActive);
+                          if (sid) pickSituation(sid);
+                        }}
+                        className={`flex items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:border-primary ${on ? "border-primary bg-primary/5" : "border-border"}`}
+                      >
+                        <Icon className="mt-0.5 size-5 shrink-0 text-primary" />
+                        <span>
+                          <span className="block font-medium">{c.label}</span>
+                          <span className="block text-xs text-muted-foreground">{c.hint}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {activeCategory && workType && (
+                  <p className="text-xs text-muted-foreground">Filed as {workType.name}. A guided checklist will walk you through it.</p>
+                )}
+              </div>
+            )}
+
+            {mode === "ops" && (!pickerShown || checklistCategory === "other") && (
               <div className="space-y-2">
                 <Label>Kind of Ops work</Label>
                 <Select

@@ -60,6 +60,8 @@ import { VendorRatingPanel } from "@/components/VendorRatingPanel";
 import { ReservationContextPanel } from "@/components/ReservationContextPanel";
 import { ClaimRelatedPrompt, TicketClaimPanel } from "@/components/claims/TicketClaimPanel";
 import { TicketRecoveryPanel } from "@/components/recovery/TicketRecoveryPanel";
+import { ChecklistStepCard, type ChecklistFacts } from "@/components/tickets/ChecklistStepCard";
+import { isActiveGuest } from "@/lib/ticket-checklists";
 import { DoThisNow, OccupancyChip, StepTracker, TicketHeaderLine, useHeaderOccupancy } from "@/components/tickets/TicketTopBits";
 import { doThisNowDueAt, dueInLabel, recoveryOpen, ticketTracker, type RecoveryLike } from "@/lib/ticket-cleanup";
 import {
@@ -179,6 +181,9 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   // Closure stays compact until the coordinator is actually closing the ticket.
   const [closeOpen, setCloseOpen] = useState(false);
   const [guidedLeads, setGuidedLeads] = useState(false);
+  // Guided checklist: refund form opener and the repair/vendor tools toggle.
+  const [refundSignal, setRefundSignal] = useState(0);
+  const [checklistTools, setChecklistTools] = useState(false);
   const [waitOn, setWaitOn] = useState("vendor");
   const [waitReason, setWaitReason] = useState("");
   const [waitReview, setWaitReview] = useState("");
@@ -239,7 +244,8 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
       const authorMap = new Map(authors.map((a) => [a.id, a]));
       return {
         ticket: ticket.data,
-        steps: steps.data ?? [],
+        // Guided checklist answers live in the checklist card, not the routine step list.
+        steps: (steps.data ?? []).filter((r) => (r as { step_key?: string | null }).step_key == null),
         activity: (activity.data ?? []).map((a) => ({
           ...a,
           author: a.author_id ? (authorMap.get(a.author_id) ?? null) : null,
@@ -279,6 +285,29 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
 
   const propertyId = data?.ticket?.property_id;
   const occupancy = useHeaderOccupancy(propertyId);
+  // Guided checklist pinned at creation (null on tickets opened before it, or with the category off).
+  const pinnedChecklistId =
+    (data?.ticket as { checklist_playbook_id?: string | null } | undefined)?.checklist_playbook_id ?? null;
+  const checklistExtra = useQuery({
+    queryKey: ["checklist-facts", propertyId],
+    enabled: Boolean(propertyId && pinnedChecklistId),
+    queryFn: async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const [prop, clean] = await Promise.all([
+        supabase.from("properties").select("access").eq("id", propertyId as string).maybeSingle(),
+        supabase
+          .from("cleaner_task_snapshots")
+          .select("scheduled_date")
+          .eq("property_id", propertyId as string)
+          .gte("scheduled_date", today)
+          .is("finished_at", null)
+          .order("scheduled_date")
+          .limit(1),
+      ]);
+      const access = (prop.data?.access ?? null) as { lock_brand?: string | null } | null;
+      return { lockSystem: access?.lock_brand ?? null, nextClean: (clean.data?.[0]?.scheduled_date as string | undefined) ?? null };
+    },
+  });
   const { data: history } = useQuery({
     queryKey: ["property-history", propertyId],
     enabled: !!propertyId,
@@ -421,6 +450,19 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   const requiredOpen = steps.filter((s) => s.required && !s.completed);
   const done = steps.filter((s) => s.completed).length;
   const closed = isClosed(ticket.status);
+  const checklistActiveGuest = isActiveGuest({
+    inHome: occupancy.state === "in_home" || Boolean(ticket.guest_in_residence),
+    nextArrival: occupancy.nextArrival ?? null,
+  });
+  const resv = ticket as { reservation_guest_name?: string | null; reservation_arrival?: string | null; reservation_departure?: string | null };
+  const checklistFacts: ChecklistFacts = {
+    guest: occupancy.state === "in_home" ? [occupancy.guestName, occupancy.until ? `in home until ${usDate(occupancy.until)}` : "in home"].filter(Boolean).join(", ") : null,
+    lockSystem: checklistExtra.data?.lockSystem ?? null,
+    reservation: resv.reservation_arrival ? `${resv.reservation_guest_name ?? "Guest"}, ${usDate(resv.reservation_arrival)} to ${resv.reservation_departure ? usDate(resv.reservation_departure) : "?"}` : null,
+    lastStay: resv.reservation_departure ? `${resv.reservation_guest_name ?? "Guest"}, left ${usDate(resv.reservation_departure)}` : null,
+    nextClean: checklistExtra.data?.nextClean ?? null,
+    nextArrival: occupancy.nextArrival ?? null,
+  };
   const meta = priorityMeta(ticket.priority);
   const sla = slaState(ticket);
   // The requirement, scoped to this scenario: a porch railing never has to
@@ -1197,7 +1239,36 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                   />
                 </div>
               )}
-              <div className="mt-2">
+              {pinnedChecklistId && (
+                <div className="mt-1">
+                  <ChecklistStepCard
+                    ticketId={ticketId}
+                    playbookId={pinnedChecklistId}
+                    activeGuest={checklistActiveGuest}
+                    facts={checklistFacts}
+                    readOnly={role.readOnly || closed}
+                    log={log}
+                    onChanged={refresh}
+                    onAction={(action) => {
+                      const scrollTo = (sel: string) => document.querySelector(sel)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      if (action === "refund") { setRefundSignal((n) => n + 1); scrollTo("[data-testid=make-it-right]"); }
+                      else if (action === "claim") scrollTo("[data-ticket-claim]");
+                      else if (action === "fix_flow" || action === "work_order") { setChecklistTools(true); setTimeout(() => scrollTo("[data-checklist-tools]"), 50); }
+                      else if (action === "close") setCloseOpen(true);
+                      else if (action === "escalate") { setWaitOn("supervisor"); toast.message("Use Waiting on someone? to send this to the Supervisor with a reason."); }
+                      else if (action === "follow_up") void navigate({ to: "/tickets/new", search: { from: `ticket:${ticketId}` } as never });
+                      else if (action === "purchase") void navigate({ to: "/finance" });
+                      else if (action === "calendar_block") toast.message("Block the dates in OwnerRez, then let the owner know.");
+                    }}
+                  />
+                  {!checklistTools && (
+                    <Button variant="ghost" size="sm" className="mt-2 text-muted-foreground" onClick={() => setChecklistTools(true)}>
+                      Show vendor and work order tools
+                    </Button>
+                  )}
+                </div>
+              )}
+              <div className="mt-2" data-checklist-tools hidden={Boolean(pinnedChecklistId) && !checklistTools}>
                 <GuidedTicketPanel
                   ticket={{
                     ...(ticket as unknown as GuidedTicket),
@@ -1512,10 +1583,10 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             {guidance}
 
             {(ticket as { entry_kind?: string | null }).entry_kind !== "activity" && ticket.record_type !== "completed_interaction" && (
-              <TicketRecoveryPanel ticket={ticket} />
+              <TicketRecoveryPanel ticket={ticket} openSignal={refundSignal} />
             )}
             {activeBranch.claim ? (
-              <TicketClaimPanel ticket={ticket} />
+              <div data-ticket-claim><TicketClaimPanel ticket={ticket} /></div>
             ) : (
               (ticket as { entry_kind?: string | null }).entry_kind !== "activity" &&
               ticket.record_type !== "completed_interaction" && <ClaimRelatedPrompt ticket={ticket} />
@@ -1588,6 +1659,11 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                 <div className="flex flex-wrap items-center gap-2" data-testid="ticket-about-chips">
                   {ticket.record_type === "completed_interaction" && <StatusBadge tone="context">Completed interaction</StatusBadge>}
                   <StatusBadge tone={ticketTone(ticket.status)}>{labelFor(STATUSES, ticket.status)}</StatusBadge>
+                  {(ticket as { work_types?: { name?: string | null } | null }).work_types?.name && (
+                    <span className="text-sm text-muted-foreground" data-testid="about-work-type">
+                      Work type: {(ticket as { work_types: { name: string } }).work_types.name}
+                    </span>
+                  )}
                   {guestComm.impact === "yes" && <StatusBadge tone="brand">Affects active stay</StatusBadge>}
                   {isNotionImported(ticket) && (
                     <span className="inline-flex items-center gap-1.5 text-sm">

@@ -31,6 +31,13 @@ export const FLAG_KEYS = [
   // Launch-state gates for workstreams that ship after the Operations beta.
   "vendor_portal",
   "quarterly_reviews",
+  // Guided ticket checklists, one per category (src/lib/ticket-checklists.ts).
+  "checklist_lockout",
+  "checklist_cleaning",
+  "checklist_maintenance",
+  "checklist_other_complaint",
+  "checklist_damage",
+  "checklist_booking",
 ] as const;
 
 export type FlagKey = (typeof FLAG_KEYS)[number];

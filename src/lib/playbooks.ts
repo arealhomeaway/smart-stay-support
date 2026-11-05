@@ -104,6 +104,8 @@ export type PlaybookCondition =
 /** A Playbook row as the app consumes it, after parsing the jsonb columns. */
 export type AuthoredPlaybook = {
   id: string;
+  /** A guided ticket checklist row: edited on Ticket checklists, never matched as guidance. */
+  isChecklist?: boolean;
   playbook_key: string;
   version: number;
   status: PlaybookStatus;
@@ -207,6 +209,7 @@ function asMatcher(value: unknown): PlaybookMatcher {
 /** Row shape as it arrives from the database, before parsing. */
 export type PlaybookRow = {
   id: string;
+  checklist?: unknown;
   title: string;
   category: string;
   summary?: string | null;
@@ -262,6 +265,7 @@ export function parsePlaybook(row: PlaybookRow): AuthoredPlaybook {
     row.source === "ai_draft" || row.source === "imported" ? row.source : "authored";
   return {
     id: row.id,
+    isChecklist: row.checklist != null,
     playbook_key: row.playbook_key ?? row.id,
     version: row.version ?? 1,
     status,

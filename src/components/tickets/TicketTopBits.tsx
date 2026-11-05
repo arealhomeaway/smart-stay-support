@@ -14,7 +14,7 @@ import { usDate } from "@/lib/dates";
 import { StatusBadge } from "@/components/ui/status";
 import type { Tracker } from "@/lib/ticket-cleanup";
 
-export type HeaderOccupancy = { state: "in_home" | "vacant" | "unknown"; guestName: string | null; until: string | null };
+export type HeaderOccupancy = { state: "in_home" | "vacant" | "unknown"; guestName: string | null; until: string | null; nextArrival?: string | null };
 
 export function useHeaderOccupancy(propertyId: string | null | undefined): HeaderOccupancy {
   const { can, isVendor, isOwner } = useRole();
@@ -30,7 +30,7 @@ export function useHeaderOccupancy(propertyId: string | null | undefined): Heade
   const g = live.data && live.data.visible && live.data.propertyId === propertyId ? live.data.guest : null;
   if (!g) return { state: "unknown", guestName: null, until: null };
   if (g.status === "occupied") return { state: "in_home", guestName: g.guest_name ?? null, until: g.departure ?? null };
-  if (g.status === "vacant") return { state: "vacant", guestName: null, until: null };
+  if (g.status === "vacant") return { state: "vacant", guestName: null, until: null, nextArrival: g.next_arrival ?? null };
   return { state: "unknown", guestName: null, until: null };
 }
 

@@ -121,6 +121,14 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
     ],
   },
   {
+    key: "playbooks",
+    match: (p) => p === "/playbooks" || p === "/ticket-checklists",
+    tabs: [
+      { label: "Playbooks", to: "/playbooks", capability: "playbooks_edit" },
+      { label: "Ticket checklists", to: "/ticket-checklists", capability: "playbooks_edit" },
+    ],
+  },
+  {
     key: "bookings-leads",
     match: (p) => ["/leads", "/inquiry-sources"].some((r) => p === r || p.startsWith(r + "/")),
     tabs: [
