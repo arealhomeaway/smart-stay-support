@@ -158,10 +158,48 @@ function AvailabilityFinderPage() {
   }
 
   function offerCurrent(option: RankedOption) {
-    setConfirmUnlinked(null);
-    setChosen([option.result.id]);
-    setOfferedId(option.result.id);
-    setSeenIds((currentIds) => currentIds.includes(option.result.id) ? currentIds : [...currentIds, option.result.id]);
+    setOfferError(null);
+    setWho({ organization: "", contactName: "", phone: "", email: "" });
+    setOfferDialog(option);
+  }
+
+  async function saveOffer(option: RankedOption) {
+    setOfferSaving(true);
+    setOfferError(null);
+    try {
+      const quote = option.result.sourceQuote
+        ? { total: option.result.sourceQuote.total, currency: option.result.sourceQuote.currency }
+        : { total: option.result.quote?.total ?? null, currency: option.result.quote?.currency ?? null };
+      const saved = await offerPropertyToLead({
+        data: {
+          ...(search.leadId ? { leadId: search.leadId } : {}),
+          propertyId: option.result.id,
+          search: {
+            location: search.location!, checkIn: search.checkIn!, checkOut: search.checkOut!,
+            guests: search.guests ?? 0, dogs: search.dogs ?? 0, cats: search.cats ?? 0,
+            minBedrooms: search.minBedrooms ?? 0,
+            ...(search.inquirySourceId ? { inquirySourceId: search.inquirySourceId } : {}),
+          },
+          who: {
+            organization: who.organization || undefined,
+            contactName: who.contactName || undefined,
+            phone: who.phone || undefined,
+            email: who.email || undefined,
+          },
+          quoteTotal: quote.total, quoteCurrency: quote.currency,
+        },
+      });
+      setConfirmUnlinked(null);
+      setChosen([option.result.id]);
+      setOfferedId(option.result.id);
+      setOfferedLeadId(saved.leadId);
+      setSeenIds((currentIds) => currentIds.includes(option.result.id) ? currentIds : [...currentIds, option.result.id]);
+      setOfferDialog(null);
+    } catch (error) {
+      setOfferError(error instanceof Error ? error.message : "The offer could not be saved.");
+    } finally {
+      setOfferSaving(false);
+    }
   }
 
   function showNext(option: RankedOption) {
