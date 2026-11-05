@@ -212,11 +212,13 @@ export type MatchRequirements = {
   cats?: number | undefined;
   /** Smallest acceptable bedroom count. */
   minBedrooms?: number | undefined;
+  /** Guests travelling; 0 means party size is not a requirement. */
+  guests?: number | undefined;
   amenities?: AmenityKey[] | undefined;
 };
 
 /** The home's own listed size, checked alongside the OwnerRez facts. */
-export type MatchHome = { bedrooms: number | null };
+export type MatchHome = { bedrooms: number | null; maxGuests?: number | null | undefined };
 
 export type MatchOutcome = {
   ok: boolean;
@@ -233,6 +235,7 @@ export function hasRequirements(requirements: MatchRequirements) {
   return Boolean(
     totalPets(requirements) > 0 ||
     (requirements.minBedrooms ?? 0) > 0 ||
+    (requirements.guests ?? 0) > 0 ||
     (requirements.amenities ?? []).length,
   );
 }
@@ -271,6 +274,12 @@ export function matchesRequirements(
     const bedrooms = home?.bedrooms ?? null;
     if (bedrooms === null) reasons.push("Bedroom count not on file");
     else if (bedrooms < minBedrooms) reasons.push(`Has ${bedrooms} bedroom${bedrooms === 1 ? "" : "s"}`);
+  }
+  const guests = requirements.guests ?? 0;
+  if (guests > 0) {
+    const maxGuests = home?.maxGuests ?? null;
+    if (maxGuests === null) reasons.push("Guest capacity not on file");
+    else if (maxGuests < guests) reasons.push(`Sleeps up to ${maxGuests} guest${maxGuests === 1 ? "" : "s"}`);
   }
   for (const key of requirements.amenities ?? []) {
     const value = facts.amenities[key];
