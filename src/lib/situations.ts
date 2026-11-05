@@ -43,6 +43,14 @@ export const SITUATION_GROUPS: { key: SituationGroup; label: string }[] = [
 
 export const SITUATIONS: Situation[] = [
   {
+    id: "reservation_change",
+    group: "guest",
+    label: "Change to a reservation",
+    hint: "Early check-in, late checkout, extend or change dates, double booking.",
+    workTypeNames: ["Current or past guest request"],
+    keywords: ["early check-in", "early check in", "late checkout", "late check-out", "late check out", "extend", "extension", "change dates", "date change", "double booked", "double booking"],
+  },
+  {
     id: "guest_needs_now",
     group: "guest",
     label: "A guest needs something right now",
