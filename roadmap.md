@@ -1,9 +1,9 @@
 # Roadmap — approved build work, NO publish
 
 ## Nov 5 Help ticket bulk updates (build/test only)
-- [ ] Filtered Select all, row selection, bulk status/note and default-off notifications
-- [ ] Caller-authenticated atomic history/status action and undo staged only
-- [ ] Mocked grouped-email and isolated database tests, full suite and automatic checks
+- [x] Filtered Select all across all paginated rows, row selection, six bulk statuses/note and default-off notifications
+- [x] Caller-authenticated atomic history/status action, replay receipt and grouped notification claim; SQL/undo/README/checksums staged only
+- [x] 14 mocked/isolated rules tests; full suite 2428 pass / 5 skip / 0 fail; automatic type/build OK; mocked desktop/mobile save and restricted-control checks passed
 - [ ] Real bulk saving blocked by unapplied SQL and prohibition on real Help ticket writes
 
 ## Nov 5 SOP upload (build/test only)
