@@ -3,6 +3,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState, type FormEvent } from "react";
 import { searchAvailability, downloadAvailabilityOptions } from "@/lib/availability-finder.functions";
+import { offerPropertyToLead } from "@/lib/lead-offers.functions";
+import { offeredPropertyIds, type LeadOffer } from "@/lib/lead-offers";
+import { supabase } from "@/integrations/supabase/client";
 import { AVAILABILITY_RADIUS_MILES, emailSummary, nextOption, rankAvailability, validStay, verifiedPublicListingUrl, visibleResults, type RankedOption } from "@/lib/availability-finder";
 import { AMENITY_LABELS, AMENITY_SPECS, confirmedAmenities, petSummary, type AmenityKey } from "@/lib/property-facts";
 import { formatMoney, internalQuoteLine, PRICE_ESTIMATE_NOTE, quoteSourceNote } from "@/lib/pricing";
@@ -17,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-type FinderSearch = { checkIn?: string | undefined; checkOut?: string | undefined; location?: string | undefined; showUnavailable?: boolean | undefined; selected?: string | undefined; dogs?: number | undefined; cats?: number | undefined; guests?: number | undefined; minBedrooms?: number | undefined; amenities?: string | undefined; inquirySourceId?: string | undefined };
+type FinderSearch = { checkIn?: string | undefined; checkOut?: string | undefined; location?: string | undefined; showUnavailable?: boolean | undefined; selected?: string | undefined; dogs?: number | undefined; cats?: number | undefined; guests?: number | undefined; minBedrooms?: number | undefined; amenities?: string | undefined; inquirySourceId?: string | undefined; leadId?: string | undefined };
 
 function countParam(value: unknown, max: number) {
   const parsed = Number(value);
@@ -42,6 +45,7 @@ export const Route = createFileRoute("/_authenticated/availability-finder")({
     minBedrooms: countParam(search["minBedrooms"], 12),
     amenities: typeof search["amenities"] === "string" ? search["amenities"] : undefined,
     inquirySourceId: typeof search["inquirySourceId"] === "string" ? search["inquirySourceId"] : undefined,
+    leadId: typeof search["leadId"] === "string" ? search["leadId"] : undefined,
   }),
   head: () => ({
     meta: [
