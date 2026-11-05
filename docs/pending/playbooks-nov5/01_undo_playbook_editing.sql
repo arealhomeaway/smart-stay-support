@@ -1,0 +1,10 @@
+BEGIN;
+DROP TRIGGER authored_playbook_history_guard ON public.playbook_approvals;
+DROP TRIGGER authored_playbook_steps_guard ON public.playbook_steps;
+DROP TRIGGER authored_playbooks_guard ON public.playbooks;
+DROP FUNCTION private.guard_authored_playbook_write();
+DROP FUNCTION public.change_playbook_state(uuid,timestamptz,text,text);
+DROP FUNCTION public.save_playbook_draft(uuid,timestamptz,jsonb);
+DROP FUNCTION public.can_manage_playbooks(uuid);
+ALTER TABLE public.playbook_approvals DROP COLUMN version;
+COMMIT;

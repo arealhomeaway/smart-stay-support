@@ -55,6 +55,7 @@ const RULES: Rule[] = [
   { prefix: "/audit", capability: "audit_history" },
   { prefix: "/oversight-access-log", capability: "audit_history" },
   { prefix: "/integrations", capability: "integrations" },
+  { prefix: "/playbooks", capability: "playbooks_edit" },
   { prefix: "/imported-tickets", capability: "audit_history" },
   { prefix: "/cleaner-hours", capability: "cleaner_hours" },
   { prefix: "/str-participation-report", capability: "str_participation_report" },

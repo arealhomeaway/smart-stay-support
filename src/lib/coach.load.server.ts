@@ -23,7 +23,9 @@ export async function loadCatalog(
     supabase
       .from("playbooks")
       .select("title, category, summary, playbook_steps(instruction, position)")
-      .eq("active", true),
+      .eq("active", true)
+      .in("status", ["approved", "active"])
+      .is("checklist", null),
   ]);
 
   let property = null;

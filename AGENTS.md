@@ -25,6 +25,7 @@
 - Emergency Only vendors: `vendor_orgs.emergency_only`; picker visibility in `src/lib/emergency-vendor.ts`, enforced by DB `ticket_selected_vendor_guard` (P1 free, P2 basis, P3 Supervisor override; reason/authorizer stamped). Never coverage. Why: one rule.
 - Ticket opening: in-app Ticket links open `TicketWorkspace` in the shell drawer (`src/components/nav/TicketDrawer.tsx`); the full page renders the same component. Why: one Ticket implementation, page context preserved.
 - Work entry: one `NewTicketForm` serves the full page and drawer; `record-work.ts` applies existing situation prefills, carries repair drafts to maintenance and gates work-type overrides by effective roles. Existing catalog supplies seats/clocks; owner relevance stays in `ownerSectionRelevant` reading `MAINTENANCE_POLICY`. Why: one intake path, no duplicated mappings or lost draft context.
+- Ordinary playbook writes use caller-authenticated transactional save/state RPCs with optimistic locks and family locks; approval retires prior active versions and updates only future work-type defaults, never existing Ticket steps. Checklist publishing stays separate. Why: draft edits cannot replace active guidance or bypass history.
 
 - Review follow-up automation start date: `app_settings` key `review_followup_automation_start` read only via `reviewImportDecision` in `src/lib/guest-feedback.ts`; unset/missing publish date = history-only. Why: one rule, replays never create retroactive follow-ups.
 - Departure Review creation and clean→reservation matching rules: see `drizzle/AGENTS.md`.

@@ -192,6 +192,7 @@ export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
 export type AccessSeats = { onboardingDirector?: boolean; opsDirector?: boolean; finance?: boolean };
 
 export const ONBOARDING_DIRECTOR_CAPS: Capability[] = [
+  "playbooks_edit",
   "onboarding_workspace",
   "onboarding_templates",
   "handoff_request",
@@ -210,6 +211,7 @@ export function capabilitiesFor(roles: AppRole[], seats: AccessSeats = {}): Set<
   for (const role of roles) for (const cap of ROLE_CAPABILITIES[role] ?? []) set.add(cap);
   if (seats.onboardingDirector) for (const cap of ONBOARDING_DIRECTOR_CAPS) set.add(cap);
   if (seats.opsDirector) {
+    set.add("playbooks_edit");
     set.add("str_participation_report");
     set.add("vendor_admin");
     set.add("finance_workspace");
