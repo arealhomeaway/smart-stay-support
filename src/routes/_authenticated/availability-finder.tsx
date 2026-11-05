@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState, type FormEvent } from "react";
@@ -286,6 +286,35 @@ function AvailabilityFinderPage() {
         }} />
       </DialogContent>
     </Dialog>
+    <Dialog open={Boolean(offerDialog)} onOpenChange={(open) => { if (!open) setOfferDialog(null); }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader><DialogTitle>Offer {offerDialog?.result.name}</DialogTitle></DialogHeader>
+        {offerDialog && <div className="space-y-3 text-sm">
+          <p className="text-muted-foreground">
+            {search.leadId
+              ? "This offer is added to the lead you came from, with today's quote saved with it."
+              : "A lead is created for this search and this offer is recorded on it. Who asked is optional and can be filled in later."}
+          </p>
+          {!search.leadId && <div className="grid gap-2">
+            <Input placeholder="Organization or inquiry source (optional)" value={who.organization} onChange={(e) => setWho((w) => ({ ...w, organization: e.target.value }))} />
+            <Input placeholder="Contact name (optional)" value={who.contactName} onChange={(e) => setWho((w) => ({ ...w, contactName: e.target.value }))} />
+            <Input placeholder="Phone (optional)" value={who.phone} onChange={(e) => setWho((w) => ({ ...w, phone: e.target.value }))} />
+            <Input placeholder="Email (optional)" value={who.email} onChange={(e) => setWho((w) => ({ ...w, email: e.target.value }))} />
+          </div>}
+          {offerError && <p role="alert" className="text-destructive">{offerError}</p>}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" disabled={offerSaving} onClick={() => void saveOffer(offerDialog)}>
+              {offerSaving ? "Saving…" : "Save offer"}
+            </Button>
+            {!search.leadId && (
+              <Button type="button" variant="ghost" disabled={offerSaving} onClick={() => void saveOffer(offerDialog)}>
+                Skip these and save offer
+              </Button>
+            )}
+          </div>
+        </div>}
+      </DialogContent>
+    </Dialog>
     {query.isPending && inputReady && <p role="status">Checking OwnerRez reservations and nearby properties…</p>}
     {query.error && <p role="alert" className="rounded border border-destructive p-4 text-destructive">{query.error instanceof Error ? query.error.message : "Search failed."} No availability result was issued.</p>}
     {query.data && !showAll && <>
@@ -328,6 +357,7 @@ function AvailabilityFinderPage() {
       </div>
       {offeredId && selectedResults.length > 0 && <div className="space-y-2 rounded-lg border bg-card p-4">
         <p className="text-sm font-semibold">Offering {selectedResults[0]!.name}</p>
+        {offeredLeadId && <p className="text-sm text-muted-foreground">Saved on the lead. <Link to="/leads" className="text-primary underline">Open Leads</Link> to see it.</p>}
         <div className="flex flex-wrap items-center gap-2">
           <Button onClick={() => void downloadPdf()} disabled={exporting}>{exporting ? "Preparing PDF…" : "Download Property Options PDF"}</Button>
           <EmailComposer
