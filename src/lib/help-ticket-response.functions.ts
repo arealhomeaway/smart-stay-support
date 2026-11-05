@@ -7,17 +7,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export const HELP_STATUSES = ["new", "reviewing", "planned", "in_progress", "resolved", "closed"] as const;
-export const HELP_STATUS_LABEL: Record<string, string> = {
-  new: "New",
-  reviewing: "Reviewing",
-  planned: "Planned",
-  in_progress: "In Progress",
-  resolved: "Resolved",
-  closed: "Closed / Not Pursuing",
-};
+import { HELP_STATUSES, HELP_STATUS_LABEL } from "./help-ticket-bulk";
+export { HELP_STATUSES, HELP_STATUS_LABEL } from "./help-ticket-bulk";
 
-async function leadershipGuard(supabase: any, userId: string) {
+export async function leadershipGuard(supabase: any, userId: string) {
   const [{ data: admin }, { data: director }] = await Promise.all([
     supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
     supabase.rpc("is_director", { _user_id: userId }),
@@ -25,7 +18,7 @@ async function leadershipGuard(supabase: any, userId: string) {
   if (admin !== true && director !== true) throw new Error("Only leadership can manage help tickets.");
 }
 
-async function submitterEmail(ticket: { submitted_by: string | null; submitter_email: string | null }) {
+export async function submitterEmail(ticket: { submitted_by: string | null; submitter_email: string | null }) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   if (ticket.submitted_by) {
     const { data } = await supabaseAdmin.auth.admin.getUserById(ticket.submitted_by);
