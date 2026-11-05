@@ -148,6 +148,6 @@ describe("authority comes from existing rules", () => {
     expect(refundLimitsText()).toContain("$1,500");
   });
   test("templates never store dollar limits", () => {
-    expect(JSON.stringify(SEED_TEMPLATES)).not.toMatch(/ceiling|threshold/i);
+    expect(JSON.stringify(SEED_TEMPLATES)).not.toMatch(/\$\d/);
   });
 });
