@@ -3,7 +3,7 @@
  *
  *  - Log Property Activity: already handled, history only (property_activity_log).
  *  - Create Ops Ticket: actionable non-maintenance work (Ticket engine).
- *  - Report Maintenance: physical repair work (Ticket engine + maintenance fields).
+ *  - Create Maintenance Ticket: physical repair work (Ticket engine + maintenance fields).
  *
  * Pure: no I/O. The owner-relevance rule reads the one maintenance threshold
  * from MAINTENANCE_POLICY; nothing here restates a dollar amount.
@@ -25,7 +25,7 @@ export const ENTRY_KINDS: { value: EntryKind; title: string; hint: string }[] = 
   },
   {
     value: "maintenance",
-    title: "Report Maintenance",
+    title: "Create Maintenance Ticket",
     hint: "Something physical at the home needs repair or maintenance.",
   },
 ];

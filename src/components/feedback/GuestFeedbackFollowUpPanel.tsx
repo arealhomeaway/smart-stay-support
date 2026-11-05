@@ -170,7 +170,7 @@ export function GuestFeedbackFollowUpPanel({ feedbackId, readOnly }: { feedbackI
                     if (existing) return null; // one linked Ticket per kind; open it from the list above
                     return (
                       <Button key={kind} size="sm" variant="outline" onClick={() => drawer?.openNewTicket({ property: fb.property_id!, kind, feedback: fb.id })}>
-                        {kind === "ops" ? "Create linked Ops Ticket" : "Report linked Maintenance"}
+                        {kind === "ops" ? "Create linked Ops Ticket" : "Create Maintenance Ticket"}
                       </Button>
                     );
                   })}
