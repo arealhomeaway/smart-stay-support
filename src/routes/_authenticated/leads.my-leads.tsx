@@ -8,7 +8,7 @@ import {
   SectionCard,
   SegmentedControl,
 } from "@/components/ui/page";
-import { LeadListSection, useLeads, useLeadsWithProperties } from "@/components/leads/LeadList";
+import { LeadListSection, useLeads } from "@/components/leads/LeadList";
 import { useCurrentUserId } from "@/hooks/useTeam";
 import { useRole } from "@/hooks/useRole";
 import {
@@ -28,7 +28,6 @@ type Filter = "open" | "closed";
 
 function MyLeads() {
   const leads = useLeads();
-  const linked = useLeadsWithProperties();
   const userId = useCurrentUserId();
   const { readOnly } = useRole();
   const [filter, setFilter] = useState<Filter>("open");
@@ -39,7 +38,6 @@ function MyLeads() {
   );
   const open = mine.filter((l) => isOpen(l.stage)).sort(leadSort);
   const closed = mine.filter((l) => !isOpen(l.stage));
-  const withProperties = linked.data ?? new Set<string>();
 
   const grouped = useMemo(() => {
     const map = new Map<QueueBucket, typeof open>();
