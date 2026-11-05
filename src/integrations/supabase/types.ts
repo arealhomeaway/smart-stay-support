@@ -10282,6 +10282,8 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           category: string
+          checklist: Json | null
+          checklist_category: string | null
           created_at: string
           effective_on: string | null
           escalate_if: string[]
@@ -10296,6 +10298,7 @@ export type Database = {
           retired_at: string | null
           review_note: string | null
           risk_flags: Json
+          sop_url: string | null
           source: string
           source_refs: string[]
           source_version: string | null
@@ -10315,6 +10318,8 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           category: string
+          checklist?: Json | null
+          checklist_category?: string | null
           created_at?: string
           effective_on?: string | null
           escalate_if?: string[]
@@ -10329,6 +10334,7 @@ export type Database = {
           retired_at?: string | null
           review_note?: string | null
           risk_flags?: Json
+          sop_url?: string | null
           source?: string
           source_refs?: string[]
           source_version?: string | null
@@ -10348,6 +10354,8 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           category?: string
+          checklist?: Json | null
+          checklist_category?: string | null
           created_at?: string
           effective_on?: string | null
           escalate_if?: string[]
@@ -10362,6 +10370,7 @@ export type Database = {
           retired_at?: string | null
           review_note?: string | null
           risk_flags?: Json
+          sop_url?: string | null
           source?: string
           source_refs?: string[]
           source_version?: string | null
@@ -12493,6 +12502,9 @@ export type Database = {
       }
       ticket_steps: {
         Row: {
+          answer: string | null
+          answer_fields: Json | null
+          checklist_playbook_id: string | null
           completed: boolean
           completed_at: string | null
           completed_by: string | null
@@ -12500,13 +12512,18 @@ export type Database = {
           detail: string | null
           id: string
           instruction: string
+          not_applicable_reason: string | null
           note: string | null
           photo_required: boolean
           position: number
           required: boolean
+          step_key: string | null
           ticket_id: string
         }
         Insert: {
+          answer?: string | null
+          answer_fields?: Json | null
+          checklist_playbook_id?: string | null
           completed?: boolean
           completed_at?: string | null
           completed_by?: string | null
@@ -12514,13 +12531,18 @@ export type Database = {
           detail?: string | null
           id?: string
           instruction: string
+          not_applicable_reason?: string | null
           note?: string | null
           photo_required?: boolean
           position: number
           required?: boolean
+          step_key?: string | null
           ticket_id: string
         }
         Update: {
+          answer?: string | null
+          answer_fields?: Json | null
+          checklist_playbook_id?: string | null
           completed?: boolean
           completed_at?: string | null
           completed_by?: string | null
@@ -12528,13 +12550,22 @@ export type Database = {
           detail?: string | null
           id?: string
           instruction?: string
+          not_applicable_reason?: string | null
           note?: string | null
           photo_required?: boolean
           position?: number
           required?: boolean
+          step_key?: string | null
           ticket_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ticket_steps_checklist_playbook_id_fkey"
+            columns: ["checklist_playbook_id"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ticket_steps_ticket_id_fkey"
             columns: ["ticket_id"]
@@ -12724,6 +12755,8 @@ export type Database = {
           breezeway_task_url: string | null
           bucket: string | null
           category: string
+          checklist_category: string | null
+          checklist_playbook_id: string | null
           closure_evidence: string | null
           closure_exception_at: string | null
           closure_exception_by: string | null
@@ -12858,6 +12891,8 @@ export type Database = {
           breezeway_task_url?: string | null
           bucket?: string | null
           category?: string
+          checklist_category?: string | null
+          checklist_playbook_id?: string | null
           closure_evidence?: string | null
           closure_exception_at?: string | null
           closure_exception_by?: string | null
@@ -12992,6 +13027,8 @@ export type Database = {
           breezeway_task_url?: string | null
           bucket?: string | null
           category?: string
+          checklist_category?: string | null
+          checklist_playbook_id?: string | null
           closure_evidence?: string | null
           closure_exception_at?: string | null
           closure_exception_by?: string | null
@@ -13108,6 +13145,13 @@ export type Database = {
           work_type_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "tickets_checklist_playbook_id_fkey"
+            columns: ["checklist_playbook_id"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tickets_departure_review_id_fkey"
             columns: ["departure_review_id"]
@@ -16617,6 +16661,16 @@ export type Database = {
           _expected_revision: number
           _expected_updated_at: string
           _reviewed: boolean
+          _title: string
+        }
+        Returns: string
+      }
+      publish_ticket_checklist: {
+        Args: {
+          _category: string
+          _checklist: Json
+          _note?: string
+          _sop_url?: string
           _title: string
         }
         Returns: string
