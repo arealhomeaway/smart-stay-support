@@ -240,7 +240,11 @@ function MyWork() {
           : !activeOwnerHomes.has(v.task.property_id),
     )
     .filter((v) => (search.home === "all" ? true : v.task.property_id === search.home))
-    .filter((v) => matchesWorkFilter(v, search.state as WorkFilter));
+    .filter((v) => matchesWorkFilter(v, search.state as WorkFilter))
+    .filter((v) => matchesMyTasksQuick(v, prefs.quick, t0))
+    .filter((v) => matchesMyTasksDueRange(v, prefs.from, prefs.to));
+  const sorted = sortMyTasks(filtered, prefs.sort, propertyName);
+  const groups = groupMyTasks(sorted, prefs.group, t0, propertyName);
 
   const openTask = mine.find((t) => t.id === openTaskId) ?? null;
   const assignedDrawerContext = data.assignedWorkContexts.find(
