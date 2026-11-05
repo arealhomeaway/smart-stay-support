@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import type { TaskView } from "@/lib/onboarding-workflow";
 import {
   MY_TASKS_PREFS_DEFAULTS,
@@ -145,11 +145,11 @@ describe("groupMyTasks", () => {
       homeName,
     );
     const byKey = Object.fromEntries(groups.map((g) => [g.key, g.items.map((v) => v.task.id)]));
-    expect(byKey.overdue).toEqual(["1"]);
-    expect(byKey.today).toEqual(["2"]);
-    expect(byKey.week).toEqual(["3"]);
-    expect(byKey.later).toEqual(["4"]);
-    expect(byKey.nodate).toEqual(["5"]);
+    expect(byKey["overdue"]).toEqual(["1"]);
+    expect(byKey["today"]).toEqual(["2"]);
+    expect(byKey["week"]).toEqual(["3"]);
+    expect(byKey["later"]).toEqual(["4"]);
+    expect(byKey["nodate"]).toEqual(["5"]);
   });
 
   it("groups by home in name order", () => {
