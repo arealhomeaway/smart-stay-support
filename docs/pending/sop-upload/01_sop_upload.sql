@@ -53,7 +53,7 @@ BEGIN
  SELECT * INTO _s FROM sop_versions WHERE id=_id FOR UPDATE;
  IF NOT FOUND OR _s.uploaded_by<>auth.uid() THEN RAISE EXCEPTION 'Upload not found.'; END IF;
  IF _s.state='saved' THEN RETURN public.sop_upload_receipt(_id); END IF;
- IF nullif(_file->>'id','') IS NULL OR nullif(_file->>'driveId','') IS NULL OR _file->>'url' NOT LIKE 'https://arealhomeaway.sharepoint.com/%' OR jsonb_typeof(_drafts) IS DISTINCT FROM 'array' OR jsonb_array_length(_drafts)=0 THEN RAISE EXCEPTION 'The file and drafts could not be confirmed.'; END IF;
+ IF nullif(_file->>'id','') IS NULL OR nullif(_file->>'driveId','') IS NULL OR coalesce(_file->>'url','') NOT LIKE 'https://arealhomeaway.sharepoint.com/%' OR jsonb_typeof(_drafts) IS DISTINCT FROM 'array' OR jsonb_array_length(_drafts)=0 THEN RAISE EXCEPTION 'The file and drafts could not be confirmed.'; END IF;
  -- Every active linked playbook must have exactly one suggested replacement.
  FOR _linked IN SELECT p.id FROM playbooks p JOIN sop_playbooks l ON l.playbook_id=p.id JOIN sop_versions v ON v.id=l.sop_version_id WHERE lower(v.original_name)=lower(_s.original_name) AND p.status IN ('active','approved') LOOP
   IF (SELECT count(*) FROM jsonb_array_elements(_drafts) d WHERE d->>'previousPlaybookId'=_linked::text)<>1 THEN RAISE EXCEPTION 'A linked playbook changed. Read the SOP again before saving.'; END IF;
