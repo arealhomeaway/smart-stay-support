@@ -199,7 +199,55 @@ export function LeadDrawer({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const hasProperty = (candidates.data ?? []).length > 0;
+  const offers = sortOffers(candidates.data ?? []);
+  const hasProperty = offers.length > 0;
+  const waiting = waitingOffer(offers);
+
+  async function decide(offerId: string, decision: "declined" | "accepted", reason?: string) {
+    setSaving(true);
+    try {
+      await decideOffer({ data: { offerId, decision, ...(reason ? { reason } : {}) } });
+      toast.success(decision === "accepted" ? "Booked — this lead is now Booked on that home." : "Offer marked declined.");
+      setDeclineId(null);
+      setDeclineReason("");
+      invalidate();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save the answer.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveWho() {
+    if (!lead) return;
+    setSaving(true);
+    try {
+      await saveLeadDetails({
+        data: {
+          leadId: lead.id,
+          who: {
+            organization: whoForm.organization || undefined,
+            contactName: whoForm.contactName || undefined,
+            phone: whoForm.phone || undefined,
+            email: whoForm.email || undefined,
+          },
+          nextFollowUpOn: followUpOn || null,
+        },
+      });
+      toast.success("Lead details saved.");
+      setEditingWho(false);
+      invalidate();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save the lead details.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function openFinder() {
+    if (!lead) return;
+    void navigate({ to: "/availability-finder", search: finderSearchFromLead(lead) });
+  }
 
   const derived = useMemo(() => {
     if (!lead) return null;
@@ -318,9 +366,9 @@ export function LeadDrawer({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Chip className={stateChip(stageState(lead.stage))}>{STAGE_LABELS[lead.stage]}</Chip>
+            <Chip className={stateChip(stageState(lead.stage))}>{LEAD_OUTCOME_LABELS[leadOutcome(lead)]}</Chip>
             <Chip>{SOURCE_LABELS[lead.source]}</Chip>
-            {lead.market ? <Chip>{lead.market}</Chip> : null}
+            {leadRegion(lead) !== "—" ? <Chip>{leadRegion(lead)}</Chip> : null}
             {derived.flags.map((f) => (
               <Chip
                 key={f.key}
