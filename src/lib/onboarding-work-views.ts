@@ -235,6 +235,185 @@ export function groupMyWorkSimple(views: TaskView[], today: string) {
   return groups;
 }
 
+// ============= My Tasks: quick filters, sorting, grouping, saved view =============
+
+export const MY_TASKS_QUICK_LABELS = {
+  incomplete: "Incomplete",
+  completed: "Completed",
+  due_today: "Due today",
+  this_week: "Due this week",
+  next_week: "Due next week",
+  overdue: "Overdue",
+} as const;
+export type MyTasksQuick = keyof typeof MY_TASKS_QUICK_LABELS;
+export type MyTasksSort = "due" | "home";
+export type MyTasksGroup = "due" | "home";
+
+/** Monday-start week bounds around a YYYY-MM-DD today, as date strings. */
+export function myTasksWeeks(today: string) {
+  const day = new Date(`${today}T12:00:00Z`);
+  const sinceMonday = (day.getUTCDay() + 6) % 7;
+  const start = new Date(day);
+  start.setUTCDate(day.getUTCDate() - sinceMonday);
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  const DAY = 24 * 60 * 60 * 1000;
+  return {
+    thisStart: iso(start),
+    thisEnd: iso(new Date(start.getTime() + 6 * DAY)),
+    nextStart: iso(new Date(start.getTime() + 7 * DAY)),
+    nextEnd: iso(new Date(start.getTime() + 13 * DAY)),
+  };
+}
+
+function isFinishedTask(view: TaskView) {
+  return view.status === "complete" || view.status === "carryover";
+}
+
+/** One quick filter at a time. Date filters only apply to work still open. */
+export function matchesMyTasksQuick(view: TaskView, quick: MyTasksQuick, today: string) {
+  if (quick === "completed") return isFinishedTask(view);
+  if (isFinishedTask(view)) return false;
+  if (quick === "incomplete") return true;
+  const due = view.task.due_on;
+  const weeks = myTasksWeeks(today);
+  if (quick === "due_today") return due === today;
+  if (quick === "overdue") return view.overdue || Boolean(due && due < today);
+  if (quick === "this_week") return Boolean(due && due >= weeks.thisStart && due <= weeks.thisEnd);
+  return Boolean(due && due >= weeks.nextStart && due <= weeks.nextEnd);
+}
+
+/** Optional due-date range on top of the quick filter. Undated work only shows with no range. */
+export function matchesMyTasksDueRange(view: TaskView, from: string, to: string) {
+  if (!from && !to) return true;
+  const due = view.task.due_on;
+  if (!due) return false;
+  if (from && due < from) return false;
+  if (to && due > to) return false;
+  return true;
+}
+
+/** Due date (oldest first, undated last) or home name then due date. */
+export function sortMyTasks(
+  views: TaskView[],
+  sort: MyTasksSort,
+  homeName: (propertyId: string) => string,
+) {
+  const byDue = (a: TaskView, b: TaskView) => {
+    const aDue = a.task.due_on ?? "9999-12-31";
+    const bDue = b.task.due_on ?? "9999-12-31";
+    if (aDue !== bDue) return aDue.localeCompare(bDue);
+    return a.task.sort_order - b.task.sort_order;
+  };
+  return [...views].sort((a, b) => {
+    if (sort === "home") {
+      const aName = homeName(a.task.property_id);
+      const bName = homeName(b.task.property_id);
+      if (aName !== bName) return aName.localeCompare(bName);
+    }
+    return byDue(a, b);
+  });
+}
+
+/** Group by due date buckets or by home. Items keep the sort already applied. */
+export function groupMyTasks(
+  views: TaskView[],
+  group: MyTasksGroup,
+  today: string,
+  homeName: (propertyId: string) => string,
+) {
+  if (group === "home") {
+    const names = [...new Set(views.map((v) => homeName(v.task.property_id)))].sort((a, b) =>
+      a.localeCompare(b),
+    );
+    return names.map((name) => ({
+      key: `home:${name}`,
+      label: name,
+      hint: "Tasks at this home.",
+      items: views.filter((v) => homeName(v.task.property_id) === name),
+    }));
+  }
+  const weeks = myTasksWeeks(today);
+  const groups = [
+    { key: "overdue", label: "Overdue", hint: "Past its due date." },
+    { key: "today", label: "Today", hint: "Due today." },
+    { key: "week", label: "This week", hint: "Due later this week." },
+    { key: "later", label: "Later", hint: "Due after this week." },
+    { key: "nodate", label: "No date", hint: "Not dated yet." },
+  ].map((g) => ({ ...g, items: [] as TaskView[] }));
+  for (const view of views) {
+    const due = view.task.due_on;
+    const key = !due
+      ? "nodate"
+      : due < today
+        ? "overdue"
+        : due === today
+          ? "today"
+          : due <= weeks.thisEnd
+            ? "week"
+            : "later";
+    groups.find((g) => g.key === key)!.items.push(view);
+  }
+  return groups;
+}
+
+export type MyTasksPrefs = {
+  quick: MyTasksQuick;
+  sort: MyTasksSort;
+  group: MyTasksGroup;
+  from: string;
+  to: string;
+};
+export const MY_TASKS_PREFS_DEFAULTS: MyTasksPrefs = {
+  quick: "incomplete",
+  sort: "due",
+  group: "due",
+  from: "",
+  to: "",
+};
+
+export function myTasksPrefsKey(userId: string | null) {
+  return `resolve.myTasks.prefs.${userId ?? "anonymous"}`;
+}
+
+/** Each person's last My Tasks view, remembered in their own browser. */
+export function loadMyTasksPrefs(
+  storage: Pick<Storage, "getItem"> | null,
+  userId: string | null,
+): MyTasksPrefs {
+  if (!storage) return MY_TASKS_PREFS_DEFAULTS;
+  try {
+    const raw = storage.getItem(myTasksPrefsKey(userId));
+    if (!raw) return MY_TASKS_PREFS_DEFAULTS;
+    const parsed = JSON.parse(raw) as Partial<MyTasksPrefs>;
+    const date = (v: unknown) =>
+      typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : "";
+    return {
+      quick: Object.hasOwn(MY_TASKS_QUICK_LABELS, parsed.quick ?? "")
+        ? (parsed.quick as MyTasksQuick)
+        : "incomplete",
+      sort: parsed.sort === "home" ? "home" : "due",
+      group: parsed.group === "home" ? "home" : "due",
+      from: date(parsed.from),
+      to: date(parsed.to),
+    };
+  } catch {
+    return MY_TASKS_PREFS_DEFAULTS;
+  }
+}
+
+export function saveMyTasksPrefs(
+  storage: Pick<Storage, "setItem"> | null,
+  userId: string | null,
+  prefs: MyTasksPrefs,
+) {
+  if (!storage) return;
+  try {
+    storage.setItem(myTasksPrefsKey(userId), JSON.stringify(prefs));
+  } catch {
+    // Private browsing or a full quota: the view still works, it just is not remembered.
+  }
+}
+
 /** A step simple enough to tick off from a list: nothing to attach or approve. */
 export function canQuickComplete(view: TaskView) {
   const t = view.task;
