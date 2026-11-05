@@ -1,5 +1,11 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 5 Help ticket bulk updates (build/test only)
+- [ ] Filtered Select all, row selection, bulk status/note and default-off notifications
+- [ ] Caller-authenticated atomic history/status action and undo staged only
+- [ ] Mocked grouped-email and isolated database tests, full suite and automatic checks
+- [ ] Real bulk saving blocked by unapplied SQL and prohibition on real Help ticket writes
+
 ## Nov 5 SOP upload (build/test only)
 - [x] Admin/Director Upload dialog, Word/PDF reading, existing SharePoint/Coach integration, linked draft editor and side-by-side version comparison
 - [x] Transactional SOP/version/draft setup, undo, README and checksums staged in docs/pending/sop-upload; no application
