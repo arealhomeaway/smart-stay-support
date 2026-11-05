@@ -167,7 +167,21 @@ function MyWork() {
     data?.projects ?? [],
   );
   const who = selection.who;
-  const mine = selection.tasks.filter((task) => task.status !== "complete");
+  // Completed tasks stay in the pool so the Completed quick filter can show them.
+  const mine = selection.tasks;
+
+  // Each person's last view choices, remembered in their own browser.
+  const [prefs, setPrefs] = useState<MyTasksPrefs>(MY_TASKS_PREFS_DEFAULTS);
+  useEffect(() => {
+    if (userId) setPrefs(loadMyTasksPrefs(window.localStorage, userId));
+  }, [userId]);
+  const updatePrefs = (patch: Partial<MyTasksPrefs>) => {
+    setPrefs((current) => {
+      const next = { ...current, ...patch };
+      saveMyTasksPrefs(window.localStorage, userId, next);
+      return next;
+    });
+  };
 
   if (isLoading || !data) return <LoadingPage />;
 
