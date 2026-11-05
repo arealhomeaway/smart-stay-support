@@ -1,0 +1,2 @@
+eb673ff587bf5ae43c4f99313520554cec16b3ba3a73a103a76c39103adf475a  docs/pending/sop-upload/01_sop_upload.sql
+bbd78ce56b9030dec5ccdcc5c3e935d82c16b6c3c514d5473d52b3c03a1587fc  docs/pending/sop-upload/01_undo_sop_upload.sql
