@@ -83,7 +83,12 @@ function AvailabilityFinderPage() {
   // Session memory: homes already shown or declined this search are never repeated.
   const [seenIds, setSeenIds] = useState<string[]>([]);
   const [offeredId, setOfferedId] = useState<string | null>(null);
+  const [offeredLeadId, setOfferedLeadId] = useState<string | null>(search.leadId ?? null);
   const [showAll, setShowAll] = useState(false);
+  const [offerDialog, setOfferDialog] = useState<RankedOption | null>(null);
+  const [who, setWho] = useState({ organization: "", contactName: "", phone: "", email: "" });
+  const [offerSaving, setOfferSaving] = useState(false);
+  const [offerError, setOfferError] = useState<string | null>(null);
   const sources = useInquirySources();
   const sourceList = sources.data ?? [];
   const [addingSource, setAddingSource] = useState(false);
@@ -103,8 +108,24 @@ function AvailabilityFinderPage() {
     retry: false,
   });
   const results = visibleResults(query.data?.results ?? [], Boolean(search.showUnavailable));
+  // When the finder was opened from a lead, homes already offered on that lead
+  // are never recommended again, whatever their outcome.
+  const leadOffers = useQuery({
+    queryKey: ["lead-offers", search.leadId],
+    enabled: allowed && Boolean(search.leadId),
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lead_properties")
+        .select("id, lead_id, property_id, note, presented_at, added_by, created_at")
+        .eq("lead_id", search.leadId!);
+      if (error) throw error;
+      return (data ?? []) as unknown as LeadOffer[];
+    },
+  });
+  const alreadyOffered = offeredPropertyIds(leadOffers.data ?? []);
   const ranked = query.data ? rankAvailability(results, search.checkIn!, search.checkOut!) : [];
-  const current = nextOption(ranked, seenIds);
+  const current = nextOption(ranked, [...seenIds, ...alreadyOffered]);
   const selectedId = current?.result.id ?? (results.some((row) => row.id === search.selected) ? search.selected! : null);
   const onSelect = useCallback((id: string) => {
     void navigate({ search: (previous) => ({ ...previous, selected: id }) });
