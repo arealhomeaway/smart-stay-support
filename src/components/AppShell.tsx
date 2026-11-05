@@ -340,6 +340,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     "/oversight",
     "/map",
     "/playbooks",
+    "/ticket-checklists",
   ].some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
   // Navigation is generated from route authorization: a link only appears when
