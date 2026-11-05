@@ -1,4 +1,3 @@
-BEGIN;
 
 ALTER TABLE public.playbook_approvals ADD COLUMN version integer;
 
@@ -130,4 +129,3 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.change_playbook_state(uuid,timestamptz,text,text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.change_playbook_state(uuid,timestamptz,text,text) TO authenticated, service_role;
-COMMIT;
