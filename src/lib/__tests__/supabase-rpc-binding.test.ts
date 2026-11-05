@@ -10,12 +10,12 @@ import { createClient } from "@supabase/supabase-js";
 describe("supabase rpc binding", () => {
   const client = createClient("https://example.supabase.co", "sb_publishable_test");
 
-  it("a detached rpc reference crashes with the reported error", async () => {
+  it("a detached rpc reference crashes with the reported error", () => {
     const detached = client.rpc as unknown as (
       name: string,
       args: Record<string, unknown>,
     ) => Promise<unknown>;
-    await expect(detached("any_function", {})).rejects.toThrow(
+    expect(() => detached("any_function", {})).toThrow(
       "Cannot read properties of undefined (reading 'rest')",
     );
   });
@@ -24,9 +24,11 @@ describe("supabase rpc binding", () => {
     const bound = client.rpc.bind(client) as unknown as (
       name: string,
       args: Record<string, unknown>,
-    ) => Promise<unknown>;
-    await expect(bound("any_function", {})).rejects.not.toThrow(
-      "Cannot read properties of undefined (reading 'rest')",
-    );
+    ) => Promise<{ error: { message: string } | null }>;
+    const result = await bound("any_function", {});
+    // The unreachable test host fails the fetch; the point is the call itself
+    // no longer crashes on `this.rest` before any network work happens.
+    expect(result.error?.message ?? "").not.toContain("reading 'rest'");
+    expect(result.error).not.toBeNull();
   });
 });
