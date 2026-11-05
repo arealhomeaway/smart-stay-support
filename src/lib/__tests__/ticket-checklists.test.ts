@@ -156,10 +156,21 @@ describe("authority comes from existing rules", () => {
 describe("booking checklist (Notion SOP)", () => {
   const b = () => tpl("booking");
   const start = [ans("guest", "yes")];
-  test("early check-in: cleaner yes asks payment then notes; no declines to the shared steps", () => {
+  test("early check-in: cleaner yes asks payment, then the door code, then notes; no declines to the shared steps", () => {
     expect(current("booking", [...start, ans("request", "early")])).toBe("eci_cleaner");
     expect(current("booking", [...start, ans("request", "early"), ans("eci_cleaner", "yes")])).toBe("eci_payment");
     expect(current("booking", [...start, ans("request", "early"), ans("eci_cleaner", "no")])).toBe("waiver");
+    expect(current("booking", [...start, ans("request", "early"), ans("eci_cleaner", "yes"), ans("eci_payment", "yes")])).toBe("eci_door");
+    expect(current("booking", [...start, ans("request", "early"), ans("eci_cleaner", "yes"), ans("eci_payment", "free")])).toBe("eci_door");
+    expect(
+      current("booking", [
+        ...start,
+        ans("request", "early"),
+        ans("eci_cleaner", "yes"),
+        ans("eci_payment", "yes"),
+        ans("eci_door", "yes"),
+      ]),
+    ).toBe("eci_notes");
   });
   test("late checkout: same-day arrival declines, otherwise asks about the clean", () => {
     expect(current("booking", [...start, ans("request", "late"), ans("lco_same_day", "yes")])).toBe("waiver");
@@ -176,7 +187,14 @@ describe("booking checklist (Notion SOP)", () => {
     expect(fillQuestion(step.help!, {}, edited)).toContain("2:00 PM $60");
     expect(fillQuestion(b().steps.find((s) => s.key === "lco_same_day")!.help!, {}, b().settings)).toContain("after noon $145");
   });
-  test("nothing from the unapproved v2 draft", () => {
-    expect(/door code|gap fee|goodwill|\$100/i.test(JSON.stringify(b()))).toBe(false);
+  test("the approved manual door code step is in; nothing else from the unapproved v2 draft", () => {
+    const door = b().steps.find((s) => s.key === "eci_door")!;
+    expect(door.question).toBe("Door code sent to the guest manually?");
+    expect(door.options.map((o) => o.label)).toEqual(["Yes"]);
+    const text = JSON.stringify(b());
+    expect(/gap fee|goodwill|\$100/i.test(text)).toBe(false);
+    expect(/smart lock|lock start time|start time/i.test(text)).toBe(false);
+    expect(/after-noon|afternoon cleaner check/i.test(text)).toBe(false);
+    expect(/airbnb|vrbo|channel/i.test(text)).toBe(false);
   });
 });
