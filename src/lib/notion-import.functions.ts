@@ -26,7 +26,8 @@ import { ATTACHMENT_BUCKET } from "./attachments";
 type Ctx = { supabase: SupabaseClient<Database>; userId: string };
 // The import functions are staged, so they are not in the generated types yet.
 type LooseRpc = (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
-const rpc = (ctx: Ctx) => ctx.supabase.rpc as unknown as LooseRpc;
+// Bind: supabase-js rpc reads this.rest, so a detached reference crashes.
+const rpc = (ctx: Ctx) => ctx.supabase.rpc.bind(ctx.supabase) as unknown as LooseRpc;
 
 async function assertAdmin({ supabase, userId }: Ctx) {
   const { data, error } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });

@@ -209,7 +209,8 @@ export const setProjectRoleAssignee = createServerFn({ method: "POST" })
       throw new Error("That role is not assigned from the Project Team.");
     // Pending SQL, intentionally no separate-write fallback.
     type TeamRpc = (name: string, args: Record<string, unknown>) => Promise<{ data: { ok: true; moved: number } | null; error: { message: string } | null }>;
-    const rpc = context.supabase.rpc as unknown as TeamRpc;
+    // Bind: supabase-js rpc reads this.rest, so a detached reference crashes.
+    const rpc = context.supabase.rpc.bind(context.supabase) as unknown as TeamRpc;
     const result = await rpc("set_onboarding_project_role", {
       _project_id: data.projectId, _role_code: data.roleCode,
       _user_id: data.userId, _reassign_pending: data.reassignPending,

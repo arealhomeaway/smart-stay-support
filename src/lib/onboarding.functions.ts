@@ -550,7 +550,8 @@ export const bulkUpdateHomeTasksFn = createServerFn({ method: "POST" })
       } | null;
       error: { message: string } | null;
     }>;
-    const rpc = context.supabase.rpc as unknown as BulkRpc;
+    // Bind: supabase-js rpc reads this.rest, so a detached reference crashes.
+    const rpc = context.supabase.rpc.bind(context.supabase) as unknown as BulkRpc;
     const p = data.patch;
     const result = await rpc("bulk_update_onboarding_home_tasks", {
       _property_id: data.propertyId,

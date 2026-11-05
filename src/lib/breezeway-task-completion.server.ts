@@ -22,7 +22,8 @@ export async function reconcileBreezewayTaskCompletion(input: { id: number; prop
   if (!home.data || !project.data || !target) return;
   if (!breezewayCompletionAllowed(home.data as StateProperty, project.data as StateProject, (tasks.data ?? []) as WorkflowTask[], target.id, captures)) return;
   // Pending approval-only SQL provides row locks, compare-and-save and atomic history. No fallback row update.
-  const rpc = db.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ error: { code?: string; message: string } | null }>;
+  // Bind: supabase-js rpc reads this.rest, so a detached reference crashes.
+  const rpc = db.rpc.bind(db) as unknown as (name: string, args: Record<string, unknown>) => Promise<{ error: { code?: string; message: string } | null }>;
   const result = await rpc("complete_onboarding_from_breezeway", {
     _link_id: link.id, _breezeway_task_id: input.id, _property_id: input.propertyId,
     _status: input.stage ?? input.status, _task_updated_at: target.updated_at,

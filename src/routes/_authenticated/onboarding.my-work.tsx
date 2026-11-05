@@ -8,9 +8,11 @@ import {
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { EmptyState, LoadingPage, PageHeader } from "@/components/ui/page";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -26,12 +28,21 @@ import { viewTask, type WorkflowTask } from "@/lib/onboarding-workflow";
 import { projectScope, splitByScope } from "@/lib/onboarding-scope";
 import { buildReleaseContext } from "@/lib/onboarding-state";
 import {
-  groupMyWorkSimple,
   canQuickComplete,
   myWorkSelection,
   matchesWorkFilter,
   validateMyWorkSearch,
   WORK_FILTER_LABELS,
+  MY_TASKS_QUICK_LABELS,
+  MY_TASKS_PREFS_DEFAULTS,
+  loadMyTasksPrefs,
+  saveMyTasksPrefs,
+  matchesMyTasksQuick,
+  matchesMyTasksDueRange,
+  sortMyTasks,
+  groupMyTasks,
+  type MyTasksPrefs,
+  type MyTasksQuick,
   type WorkFilter,
 } from "@/lib/onboarding-work-views";
 import { isTestRecord } from "@/lib/test-data";
@@ -156,7 +167,21 @@ function MyWork() {
     data?.projects ?? [],
   );
   const who = selection.who;
-  const mine = selection.tasks.filter((task) => task.status !== "complete");
+  // Completed tasks stay in the pool so the Completed quick filter can show them.
+  const mine = selection.tasks;
+
+  // Each person's last view choices, remembered in their own browser.
+  const [prefs, setPrefs] = useState<MyTasksPrefs>(MY_TASKS_PREFS_DEFAULTS);
+  useEffect(() => {
+    if (userId) setPrefs(loadMyTasksPrefs(window.localStorage, userId));
+  }, [userId]);
+  const updatePrefs = (patch: Partial<MyTasksPrefs>) => {
+    setPrefs((current) => {
+      const next = { ...current, ...patch };
+      saveMyTasksPrefs(window.localStorage, userId, next);
+      return next;
+    });
+  };
 
   if (isLoading || !data) return <LoadingPage />;
 
@@ -215,7 +240,11 @@ function MyWork() {
           : !activeOwnerHomes.has(v.task.property_id),
     )
     .filter((v) => (search.home === "all" ? true : v.task.property_id === search.home))
-    .filter((v) => matchesWorkFilter(v, search.state as WorkFilter));
+    .filter((v) => matchesWorkFilter(v, search.state as WorkFilter))
+    .filter((v) => matchesMyTasksQuick(v, prefs.quick, t0))
+    .filter((v) => matchesMyTasksDueRange(v, prefs.from, prefs.to));
+  const sorted = sortMyTasks(filtered, prefs.sort, propertyName);
+  const groups = groupMyTasks(sorted, prefs.group, t0, propertyName);
 
   const openTask = mine.find((t) => t.id === openTaskId) ?? null;
   const assignedDrawerContext = data.assignedWorkContexts.find(
@@ -331,17 +360,76 @@ function MyWork() {
         </Select>
       </div>
 
+      <div className="flex flex-wrap items-center gap-2" aria-label="My Tasks view">
+        <div className="flex flex-wrap gap-1" role="group" aria-label="Quick filters">
+          {(Object.entries(MY_TASKS_QUICK_LABELS) as [MyTasksQuick, string][]).map(
+            ([key, label]) => (
+              <Button
+                key={key}
+                size="sm"
+                variant={prefs.quick === key ? "default" : "outline"}
+                aria-pressed={prefs.quick === key}
+                onClick={() => updatePrefs({ quick: key })}
+              >
+                {label}
+              </Button>
+            ),
+          )}
+        </div>
+        <label className="flex items-center gap-1 text-xs text-muted-foreground">
+          Due from
+          <Input
+            type="date"
+            className="h-8 w-36"
+            value={prefs.from}
+            onChange={(e) => updatePrefs({ from: e.target.value })}
+          />
+        </label>
+        <label className="flex items-center gap-1 text-xs text-muted-foreground">
+          to
+          <Input
+            type="date"
+            className="h-8 w-36"
+            value={prefs.to}
+            onChange={(e) => updatePrefs({ to: e.target.value })}
+          />
+        </label>
+        {(prefs.from || prefs.to) && (
+          <Button size="sm" variant="ghost" onClick={() => updatePrefs({ from: "", to: "" })}>
+            Clear dates
+          </Button>
+        )}
+        <Select value={prefs.sort} onValueChange={(v) => updatePrefs({ sort: v as MyTasksPrefs["sort"] })}>
+          <SelectTrigger className="w-48" aria-label="Sort tasks">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="due">Sort by due date</SelectItem>
+            <SelectItem value="home">Sort by home</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={prefs.group} onValueChange={(v) => updatePrefs({ group: v as MyTasksPrefs["group"] })}>
+          <SelectTrigger className="w-48" aria-label="Group tasks">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="due">Group by due date</SelectItem>
+            <SelectItem value="home">Group by home</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {filtered.length === 0 && (
         <EmptyState
-          title="Nothing open"
-          hint="No open onboarding task matches this view right now."
+          title="Nothing matches"
+          hint="No onboarding task matches this view right now."
         />
       )}
 
-      {groupMyWorkSimple(filtered, t0)
+      {groups
         .filter((g) => g.items.length > 0)
         .map((g) => (
-          <details key={g.key} open={g.key !== "later"} className="surface overflow-hidden">
+          <details key={g.key} open={g.key !== "later" && g.key !== "nodate"} className="surface overflow-hidden">
             <summary className="cursor-pointer border-b border-border bg-muted/40 px-3 py-2">
               <p className="text-sm font-semibold">
                 {g.label} <span className="numeric text-muted-foreground">({g.items.length})</span>
@@ -349,7 +437,6 @@ function MyWork() {
               <p className="text-xs text-muted-foreground">{g.hint}</p>
             </summary>
             {g.items
-              .sort((a, b) => (a.task.due_on ?? "9999").localeCompare(b.task.due_on ?? "9999"))
               .map((v) => (
                 <div key={v.task.id} className="flex items-center border-b border-border/60 last:border-b-0">
                   <span className="flex w-10 shrink-0 justify-center">

@@ -260,7 +260,8 @@ export const bulkUpdateTemplateStepsV2 = createServerFn({ method: "POST" })
       data: { changed: number; skipped: { stepId: string; title: string; reason: string }[]; auditRecorded: boolean } | null;
       error: { message: string } | null;
     }>;
-    const rpc = context.supabase.rpc as unknown as BulkRpc;
+    // Bind: supabase-js rpc reads this.rest, so a detached reference crashes.
+    const rpc = context.supabase.rpc.bind(context.supabase) as unknown as BulkRpc;
     const result = await rpc("bulk_update_onboarding_template_steps", {
       _template_id: data.templateId,
       _step_ids: data.stepIds,
@@ -773,7 +774,8 @@ export const opportunityResourceUrl = createServerFn({ method: "POST" })
 export const templateBulkV2Ready = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const rpc = context.supabase.rpc as unknown as (n: string) => Promise<{ data: unknown; error: unknown }>;
+    // Bind: supabase-js rpc reads this.rest, so a detached reference crashes.
+    const rpc = context.supabase.rpc.bind(context.supabase) as unknown as (n: string) => Promise<{ data: unknown; error: unknown }>;
     const { data, error } = await rpc("template_bulk_v2_ready");
     if (error) return { ready: false };
     return { ready: data === true };
@@ -792,7 +794,8 @@ export const bulkUpdateTemplateStepsV2b = createServerFn({ method: "POST" })
     }).refine((p) => p.condition !== undefined || p.ownerDependency !== undefined || p.isActive !== undefined, "Choose at least one change.").parse(d),
   )
   .handler(async ({ context, data }) => {
-    const rpc = context.supabase.rpc as unknown as (n: string, a: Record<string, unknown>) => Promise<{
+    // Bind: supabase-js rpc reads this.rest, so a detached reference crashes.
+    const rpc = context.supabase.rpc.bind(context.supabase) as unknown as (n: string, a: Record<string, unknown>) => Promise<{
       data: { changed: number; skipped: { stepId: string; title: string; reason: string }[]; auditRecorded: boolean } | null;
       error: { message: string } | null;
     }>;
