@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState, type FormEvent } from "react";
 import { searchAvailability, downloadAvailabilityOptions } from "@/lib/availability-finder.functions";
-import { AVAILABILITY_RADIUS_MILES, emailSummary, needsStrRebook, rebookStepSummary, validStay, verifiedPublicListingUrl, visibleResults } from "@/lib/availability-finder";
+import { AVAILABILITY_RADIUS_MILES, emailSummary, nextOption, rankAvailability, validStay, verifiedPublicListingUrl, visibleResults, type RankedOption } from "@/lib/availability-finder";
 import { AMENITY_LABELS, AMENITY_SPECS, confirmedAmenities, petSummary, type AmenityKey } from "@/lib/property-facts";
 import { formatMoney, internalQuoteLine, PRICE_ESTIMATE_NOTE, quoteSourceNote } from "@/lib/pricing";
 import { AvailabilityMap } from "@/components/AvailabilityMap";
@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-type FinderSearch = { checkIn?: string | undefined; checkOut?: string | undefined; location?: string | undefined; showUnavailable?: boolean | undefined; selected?: string | undefined; dogs?: number | undefined; cats?: number | undefined; minBedrooms?: number | undefined; amenities?: string | undefined; inquirySourceId?: string | undefined };
+type FinderSearch = { checkIn?: string | undefined; checkOut?: string | undefined; location?: string | undefined; showUnavailable?: boolean | undefined; selected?: string | undefined; dogs?: number | undefined; cats?: number | undefined; guests?: number | undefined; minBedrooms?: number | undefined; amenities?: string | undefined; inquirySourceId?: string | undefined };
 
 function countParam(value: unknown, max: number) {
   const parsed = Number(value);
@@ -38,9 +38,20 @@ export const Route = createFileRoute("/_authenticated/availability-finder")({
     selected: typeof search["selected"] === "string" ? search["selected"] : undefined,
     dogs: countParam(search["dogs"], 10),
     cats: countParam(search["cats"], 10),
+    guests: countParam(search["guests"], 30),
     minBedrooms: countParam(search["minBedrooms"], 12),
     amenities: typeof search["amenities"] === "string" ? search["amenities"] : undefined,
     inquirySourceId: typeof search["inquirySourceId"] === "string" ? search["inquirySourceId"] : undefined,
+  }),
+  head: () => ({
+    meta: [
+      { title: "Availability Finder | ARHA Resolve" },
+      { name: "description", content: "Find nearby ARHA homes for a proposed stay, recommended one at a time." },
+      { property: "og:title", content: "Availability Finder | ARHA Resolve" },
+      { property: "og:description", content: "Find nearby ARHA homes for a proposed stay, recommended one at a time." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
   }),
   component: AvailabilityFinderPage,
 });
@@ -48,7 +59,7 @@ export const Route = createFileRoute("/_authenticated/availability-finder")({
 function AvailabilityFinderPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
-  const { can, isLoading } = useRole();
+  const { can, isLoading, isSupervisor } = useRole();
   const allowed = can("work_orders_internal");
   const find = useServerFn(searchAvailability);
   const downloadOptions = useServerFn(downloadAvailabilityOptions);
@@ -61,9 +72,14 @@ function AvailabilityFinderPage() {
   const [exporting, setExporting] = useState(false);
   const [dogs, setDogs] = useState(String(search.dogs ?? 0));
   const [cats, setCats] = useState(String(search.cats ?? 0));
+  const [guests, setGuests] = useState(String(search.guests ?? 0));
   const [minBedrooms, setMinBedrooms] = useState(String(search.minBedrooms ?? 0));
   const [amenities, setAmenities] = useState<AmenityKey[]>(parseAmenities(search.amenities));
   const [confirmUnlinked, setConfirmUnlinked] = useState<string | null>(null);
+  // Session memory: homes already shown or declined this search are never repeated.
+  const [seenIds, setSeenIds] = useState<string[]>([]);
+  const [offeredId, setOfferedId] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
   const sources = useInquirySources();
   const sourceList = sources.data ?? [];
   const [addingSource, setAddingSource] = useState(false);
@@ -77,13 +93,15 @@ function AvailabilityFinderPage() {
   const searchedAmenities = parseAmenities(search.amenities);
   const inputReady = Boolean(search.location?.trim() && search.checkIn && search.checkOut && validStay(search.checkIn, search.checkOut));
   const query = useQuery({
-    queryKey: ["availability-finder", search.checkIn, search.checkOut, search.location, search.dogs, search.cats, search.minBedrooms, search.amenities, search.inquirySourceId],
-    queryFn: () => find({ data: { checkIn: search.checkIn!, checkOut: search.checkOut!, location: search.location!, dogs: search.dogs ?? 0, cats: search.cats ?? 0, minBedrooms: search.minBedrooms ?? 0, amenities: searchedAmenities, ...(search.inquirySourceId ? { inquirySourceId: search.inquirySourceId } : {}) } }),
+    queryKey: ["availability-finder", search.checkIn, search.checkOut, search.location, search.dogs, search.cats, search.guests, search.minBedrooms, search.amenities, search.inquirySourceId],
+    queryFn: () => find({ data: { checkIn: search.checkIn!, checkOut: search.checkOut!, location: search.location!, dogs: search.dogs ?? 0, cats: search.cats ?? 0, guests: search.guests ?? 0, minBedrooms: search.minBedrooms ?? 0, amenities: searchedAmenities, ...(search.inquirySourceId ? { inquirySourceId: search.inquirySourceId } : {}) } }),
     enabled: allowed && inputReady,
     retry: false,
   });
   const results = visibleResults(query.data?.results ?? [], Boolean(search.showUnavailable));
-  const selectedId = results.some((row) => row.id === search.selected) ? search.selected! : null;
+  const ranked = query.data ? rankAvailability(results, search.checkIn!, search.checkOut!) : [];
+  const current = nextOption(ranked, seenIds);
+  const selectedId = current?.result.id ?? (results.some((row) => row.id === search.selected) ? search.selected! : null);
   const onSelect = useCallback((id: string) => {
     void navigate({ search: (previous) => ({ ...previous, selected: id }) });
     document.getElementById(`availability-${id}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -96,20 +114,33 @@ function AvailabilityFinderPage() {
     event.preventDefault();
     if (!location.trim()) { setValidation("Enter a city, ZIP code, address, or general location."); return; }
     if (!validStay(checkIn, checkOut)) { setValidation("Enter valid dates, with check-out after check-in."); return; }
-    setValidation(null); setChosen([]);
+    setValidation(null); setChosen([]); setSeenIds([]); setOfferedId(null); setShowAll(false);
     const count = (value: string, max: number) => Math.min(max, Math.max(0, Math.trunc(Number(value) || 0)));
     const dogCount = count(dogs, 10);
     const catCount = count(cats, 10);
+    const guestCount = count(guests, 30);
     const bedroomCount = count(minBedrooms, 12);
     void navigate({ search: {
       checkIn, checkOut, location: location.trim(), showUnavailable: false,
       ...(dogCount > 0 ? { dogs: dogCount } : {}),
       ...(catCount > 0 ? { cats: catCount } : {}),
+      ...(guestCount > 0 ? { guests: guestCount } : {}),
       ...(bedroomCount > 0 ? { minBedrooms: bedroomCount } : {}),
       ...(amenities.length ? { amenities: amenities.join(",") } : {}),
       ...(typedSource ? { inquirySourceId: typedSource.id } : {}),
     } });
     setSourceEdit(null);
+  }
+
+  function offerCurrent(option: RankedOption) {
+    setConfirmUnlinked(null);
+    setChosen([option.result.id]);
+    setOfferedId(option.result.id);
+    setSeenIds((currentIds) => currentIds.includes(option.result.id) ? currentIds : [...currentIds, option.result.id]);
+  }
+
+  function showNext(option: RankedOption) {
+    setSeenIds((currentIds) => currentIds.includes(option.result.id) ? currentIds : [...currentIds, option.result.id]);
   }
 
   async function downloadPdf() {
@@ -151,6 +182,7 @@ function AvailabilityFinderPage() {
       <label className="space-y-1 text-sm">Check-out<Input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} required /></label>
       <label className="space-y-1 text-sm">City, ZIP, address, or location<Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Dallas, TX" required /></label>
       <Button type="submit">Search 20 miles</Button>
+      <label className="space-y-1 text-sm">Guests<Input type="number" min={0} max={30} value={guests} onChange={(e) => setGuests(e.target.value)} /></label>
       <label className="space-y-1 text-sm">Dogs<Input type="number" min={0} max={10} value={dogs} onChange={(e) => setDogs(e.target.value)} /></label>
       <label className="space-y-1 text-sm">Cats<Input type="number" min={0} max={10} value={cats} onChange={(e) => setCats(e.target.value)} /></label>
       <label className="space-y-1 text-sm">Bedrooms (minimum)<Input type="number" min={0} max={12} value={minBedrooms} onChange={(e) => setMinBedrooms(e.target.value)} /></label>
@@ -193,10 +225,65 @@ function AvailabilityFinderPage() {
     </Dialog>
     {query.isPending && inputReady && <p role="status">Checking OwnerRez reservations and nearby properties…</p>}
     {query.error && <p role="alert" className="rounded border border-destructive p-4 text-destructive">{query.error instanceof Error ? query.error.message : "Search failed."} No availability result was issued.</p>}
-    {query.data && <>
+    {query.data && !showAll && <>
+      <p className="text-sm text-muted-foreground">{ranked.length} of {query.data.results.length} properties within {AVAILABILITY_RADIUS_MILES} miles can be offered{query.data.heldBack.length ? ` · ${query.data.heldBack.length} hidden because OwnerRez does not confirm what you asked for` : ""}</p>
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(340px,1fr)]">
+        <AvailabilityMap results={results} selectedId={selectedId} onSelect={onSelect} />
+        <div className="space-y-3" aria-label="Recommended property">
+          {current && <article className="rounded-lg border bg-card p-4 ring-2 ring-primary">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{current.label}</p>
+            <div className="mt-2 flex gap-3">
+              {current.result.imageUrl && <img src={current.result.imageUrl} alt={current.result.name} className="h-24 w-28 rounded object-cover" />}
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold">{current.result.name}</p>
+                <p className="text-sm text-muted-foreground">{current.result.address} · {current.result.distanceMiles.toFixed(1)} miles</p>
+                <p className="text-sm">{current.result.bedrooms ?? "—"} beds · {current.result.bathrooms ?? "—"} baths · sleeps {current.result.maxGuests ?? "—"}</p>
+                <p className="text-sm text-muted-foreground">{petSummary(current.result.facts)}{confirmedAmenities(current.result.facts).length ? ` · ${confirmedAmenities(current.result.facts).map((key) => AMENITY_LABELS[key]).join(", ")}` : ""}</p>
+              </div>
+            </div>
+            {current.result.sourceQuote
+              ? <p className="mt-2 text-sm font-medium">{current.result.sourceQuote.sourceName} quote: {formatMoney(current.result.sourceQuote.total, current.result.sourceQuote.currency)}</p>
+              : current.result.quote
+                ? <p className="mt-2 text-sm font-medium">{internalQuoteLine(current.result.quote)}<span className="block text-xs font-normal text-muted-foreground">{quoteSourceNote(current.result.quote)} {PRICE_ESTIMATE_NOTE}</span></p>
+                : <p className="mt-2 text-xs text-amber-700">{current.result.quoteUnavailable ?? "No price estimate available."}</p>}
+            {current.tier === "rebook" && <div className="mt-2 text-sm">
+              <p>Second step if the guest chooses it: re-book {current.shortStays === 1 ? "this stay" : "these stays"} at another home first.</p>
+              <ul className="list-inside list-disc">{current.result.strConflicts.map((conflict, index) => <li key={`${conflict.arrival}-${index}`}>{conflict.arrival} to {conflict.departure}</li>)}</ul>
+            </div>}
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button type="button" onClick={() => offerCurrent(current)}>Offer this property</Button>
+              <Button type="button" variant="outline" onClick={() => showNext(current)}>Show the next option</Button>
+            </div>
+          </article>}
+          {!current && ranked.length > 0 && <div className="rounded-lg border bg-card p-4 text-sm">
+            <p>You have seen every matching home.</p>
+            <Button type="button" variant="outline" className="mt-2" onClick={() => { setSeenIds([]); setOfferedId(null); }}>Start the list over</Button>
+          </div>}
+          {ranked.length === 0 && <p className="rounded border p-6 text-muted-foreground">No matching properties can be offered for these dates.</p>}
+          {isSupervisor && ranked.length > 0 && <button type="button" className="text-sm text-primary underline" onClick={() => setShowAll(true)}>See all matches</button>}
+        </div>
+      </div>
+      {offeredId && selectedResults.length > 0 && <div className="space-y-2 rounded-lg border bg-card p-4">
+        <p className="text-sm font-semibold">Offering {selectedResults[0]!.name}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button onClick={() => void downloadPdf()} disabled={exporting}>{exporting ? "Preparing PDF…" : "Download Property Options PDF"}</Button>
+          <EmailComposer
+            context="property"
+            recordId={selectedResults[0]!.id}
+            label="Email these options"
+            initialSubject={`Property options for ${search.checkIn} to ${search.checkOut}`}
+            initialBody={emailSummary(selectedResults, search.checkIn!, search.checkOut!, search.location!)}
+          />
+        </div>
+      </div>}
+      {exportError && <p role="alert" className="text-destructive">{exportError}</p>}
+      <p className="text-xs text-muted-foreground">Public listing links come from OwnerRez. Reservation conflicts remain internal; the PDF uses neutral final-confirmation language.</p>
+    </>}
+    {query.data && showAll && <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">{results.length} of {query.data.results.length} properties within {AVAILABILITY_RADIUS_MILES} miles · sorted by distance{query.data.heldBack.length ? ` · ${query.data.heldBack.length} hidden because OwnerRez does not confirm what you asked for` : ""}</p>
         <div className="flex flex-wrap items-center gap-4">
+          <button type="button" className="text-sm text-primary underline" onClick={() => setShowAll(false)}>Back to recommendations</button>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={allSelectableChosen} disabled={selectableIds.length === 0} onChange={(event) => {
             setConfirmUnlinked(null);
             setChosen(event.target.checked ? selectableIds : []);
@@ -232,19 +319,19 @@ function AvailabilityFinderPage() {
               </div>
             </div>
             <p className={`mt-3 font-semibold ${row.status === "conditional" ? "text-amber-700 dark:text-amber-400" : row.status === "available" ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"}`}>{row.status === "conditional" ? "Conditional — STR relocation required" : row.status === "available" ? "Available" : "Unavailable"}</p>
-            {needsStrRebook(row) && <div className="mt-1 text-sm"><p>This home can still be offered. Second step if the guest chooses it: {rebookStepSummary(row)}</p><ul className="list-inside list-disc">{row.strConflicts.map((conflict, index) => <li key={`${conflict.arrival}-${index}`}>{conflict.arrival} to {conflict.departure}</li>)}</ul></div>}
+            {row.status === "conditional" && row.strConflicts.length > 0 && <div className="mt-1 text-sm"><p>This home can still be offered. Second step if the guest chooses it: {row.strConflicts.length} short stay{row.strConflicts.length === 1 ? "" : "s"} must be re-booked at another home before this stay can start.</p><ul className="list-inside list-disc">{row.strConflicts.map((conflict, index) => <li key={`${conflict.arrival}-${index}`}>{conflict.arrival} to {conflict.departure}</li>)}</ul></div>}
             {row.status === "unavailable" && <p className="mt-1 text-sm">Non-movable reservation or block overlaps the requested stay.</p>}
             {row.bookingUrl ? <a href={row.bookingUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm text-primary underline">View public listing</a> : <p className="mt-2 text-sm text-amber-700">No verified public listing link. The PDF page for this home will carry no link.</p>}
             {row.status !== "unavailable" && <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={chosen.includes(row.id)} onChange={(event) => {
               if (event.target.checked && !row.bookingUrl) { setConfirmUnlinked(row.id); return; }
-              setConfirmUnlinked((current) => current === row.id ? null : current);
-              setChosen((current) => event.target.checked ? [...current, row.id] : current.filter((id) => id !== row.id));
+              setConfirmUnlinked((currentId) => currentId === row.id ? null : currentId);
+              setChosen((currentIds) => event.target.checked ? [...currentIds, row.id] : currentIds.filter((id) => id !== row.id));
             }} />Include in property options PDF</label>}
             {confirmUnlinked === row.id && <div role="alertdialog" aria-label="Add property anyway?" className="mt-2 rounded border border-amber-500 bg-amber-50 p-3 text-sm dark:bg-amber-950/30">
               <p>This home has no linked posting. Add property anyway?</p>
               <div className="mt-2 flex gap-2">
-                <Button type="button" size="sm" onClick={() => { setChosen((current) => current.includes(row.id) ? current : [...current, row.id]); setConfirmUnlinked(null); }}>Yes</Button>
-                <Button type="button" size="sm" variant="outline" onClick={() => { setChosen((current) => current.filter((id) => id !== row.id)); setConfirmUnlinked(null); }}>No</Button>
+                <Button type="button" size="sm" onClick={() => { setChosen((currentIds) => currentIds.includes(row.id) ? currentIds : [...currentIds, row.id]); setConfirmUnlinked(null); }}>Yes</Button>
+                <Button type="button" size="sm" variant="outline" onClick={() => { setChosen((currentIds) => currentIds.filter((id) => id !== row.id)); setConfirmUnlinked(null); }}>No</Button>
               </div>
             </div>}
           </article>)}
