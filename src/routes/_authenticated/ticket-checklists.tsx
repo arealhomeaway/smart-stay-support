@@ -15,7 +15,7 @@ import { ChecklistStepView } from "@/components/tickets/ChecklistStepCard";
 import {
   ACTION_LABELS,
   CHECKLIST_CATEGORIES,
-  checklistTemplateProblems,
+  templateProblems,
   parseChecklistRow,
   type ChecklistAction,
   type ChecklistAnswer,
@@ -69,7 +69,7 @@ function TicketChecklistsPage() {
   const base: ChecklistTemplate | null = live.data?.row ?? seed;
   const [draft, setDraft] = useState<ChecklistTemplate | null>(base);
   useEffect(() => setDraft(base), [cat, live.data?.row?.id, live.data?.row?.version]); // eslint-disable-line react-hooks/exhaustive-deps
-  const problems = useMemo(() => (draft ? checklistTemplateProblems(draft) : []), [draft]);
+  const problems = useMemo(() => (draft ? templateProblems(draft) : []), [draft]);
   const [previewAnswers, setPreviewAnswers] = useState<ChecklistAnswer[]>([]);
   const [previewGuest, setPreviewGuest] = useState(true);
   useEffect(() => setPreviewAnswers([]), [cat]);
@@ -114,7 +114,7 @@ function TicketChecklistsPage() {
       </header>
 
       <div className="flex flex-wrap gap-2" role="tablist" aria-label="Checklist">
-        {CHECKLIST_CATEGORIES.filter((c) => c.flag).map((c) => (
+        {CHECKLIST_CATEGORIES.filter((c): c is typeof c & { id: ChecklistCategoryId } => Boolean(c.flag)).map((c) => (
           <Button key={c.id} role="tab" aria-selected={cat === c.id} variant={cat === c.id ? "default" : "outline"} size="sm" onClick={() => setCat(c.id)}>
             {c.label}
           </Button>
@@ -141,7 +141,7 @@ function TicketChecklistsPage() {
                 <Input id="cl-sop" disabled={!editable} value={draft.sopUrl ?? ""} placeholder="https://" onChange={(e) => setDraft({ ...draft, sopUrl: e.target.value || null })} />
               </div>
             </div>
-            {draft.priority && <p className="text-sm text-muted-foreground">Starting priority: {draft.priority.note}</p>}
+            {draft.priority && <p className="text-sm text-muted-foreground">Starting priority: {draft.priority.activeGuest.toUpperCase()} with a guest in the home or arriving within 48 hours, otherwise {draft.priority.otherwise.toUpperCase()}.</p>}
 
             {draft.steps.map((s, i) => (
               <StepEditor
@@ -172,7 +172,7 @@ function TicketChecklistsPage() {
             )}
             {problems.length > 0 && (
               <ul className="space-y-1 text-sm text-destructive" aria-label="Problems">
-                {problems.map((p) => <li key={p}>{p}</li>)}
+                {problems.map((p: string) => <li key={p}>{p}</li>)}
               </ul>
             )}
             {editable && (
@@ -209,6 +209,14 @@ function TicketChecklistsPage() {
   );
 }
 
+/** Set or drop an optional key (exact optional property types). */
+function withOpt<T extends object, K extends keyof T>(o: T, k: K, v: T[K] | undefined): T {
+  const n = { ...o };
+  if (v === undefined || v === "" || v === false) delete n[k];
+  else n[k] = v;
+  return n;
+}
+
 function StepEditor({
   step, index, count, stepKeys, disabled, onChange, onMove, onRemove,
 }: {
@@ -228,21 +236,21 @@ function StepEditor({
           </>
         )}
       </div>
-      <Textarea aria-label="Help text" rows={2} disabled={disabled} placeholder="Help text (optional)" value={step.help ?? ""} onChange={(e) => onChange({ ...step, help: e.target.value || undefined })} />
+      <Textarea aria-label="Help text" rows={2} disabled={disabled} placeholder="Help text (optional)" value={step.help ?? ""} onChange={(e) => onChange(withOpt(step, "help", e.target.value))} />
       <div className="flex flex-wrap items-center gap-3 text-sm">
         <label className="flex items-center gap-1.5">
           Opens
-          <select className="rounded border border-border bg-background px-1 py-0.5" disabled={disabled} value={step.action ?? ""} onChange={(e) => onChange({ ...step, action: (e.target.value || undefined) as ChecklistAction | undefined })}>
+          <select className="rounded border border-border bg-background px-1 py-0.5" disabled={disabled} value={step.action ?? ""} onChange={(e) => onChange(withOpt(step, "action", (e.target.value || undefined) as ChecklistAction | undefined))}>
             <option value="">Nothing</option>
             {Object.entries(ACTION_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
         </label>
         <label className="flex items-center gap-1.5">
-          <input type="checkbox" disabled={disabled} checked={Boolean(step.guestResponse)} onChange={(e) => onChange({ ...step, guestResponse: e.target.checked || undefined })} />
+          <input type="checkbox" disabled={disabled} checked={Boolean(step.guestResponse)} onChange={(e) => onChange(withOpt(step, "guestResponse", e.target.checked))} />
           Guest response step
         </label>
         <label className="flex items-center gap-1.5">
-          <input type="checkbox" disabled={disabled} checked={step.showIf?.activeGuest === true} onChange={(e) => onChange({ ...step, showIf: e.target.checked ? { ...step.showIf, activeGuest: true } : undefined })} />
+          <input type="checkbox" disabled={disabled} checked={step.activeGuestOnly === true} onChange={(e) => onChange(withOpt(step, "activeGuestOnly", e.target.checked))} />
           Only with an active guest
         </label>
       </div>
@@ -252,17 +260,17 @@ function StepEditor({
             <Input aria-label="Answer" className="w-56" disabled={disabled} value={o.label} onChange={(e) => onChange({ ...step, options: step.options.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)) })} />
             <label className="flex items-center gap-1">
               then
-              <select className="rounded border border-border bg-background px-1 py-0.5" disabled={disabled} value={o.next ?? ""} onChange={(e) => onChange({ ...step, options: step.options.map((x, j) => (j === i ? { ...x, next: e.target.value || undefined } : x)) })}>
+              <select className="rounded border border-border bg-background px-1 py-0.5" disabled={disabled} value={o.goto ?? ""} onChange={(e) => onChange({ ...step, options: step.options.map((x, j) => (j === i ? withOpt(x, "goto", e.target.value) : x)) })}>
                 <option value="">Next step</option>
                 {stepKeys.filter((k) => k !== step.key).map((k) => <option key={k} value={k}>Go to {k}</option>)}
               </select>
             </label>
             <label className="flex items-center gap-1">
-              <input type="checkbox" disabled={disabled} checked={Boolean(o.keepsOpen)} onChange={(e) => onChange({ ...step, options: step.options.map((x, j) => (j === i ? { ...x, keepsOpen: e.target.checked || undefined } : x)) })} />
+              <input type="checkbox" disabled={disabled} checked={Boolean(o.keepsOpen)} onChange={(e) => onChange({ ...step, options: step.options.map((x, j) => (j === i ? withOpt(x, "keepsOpen", e.target.checked) : x)) })} />
               keeps step open
             </label>
             <label className="flex items-center gap-1">
-              <input type="checkbox" disabled={disabled} checked={Boolean(o.noteRequired)} onChange={(e) => onChange({ ...step, options: step.options.map((x, j) => (j === i ? { ...x, noteRequired: e.target.checked || undefined } : x)) })} />
+              <input type="checkbox" disabled={disabled} checked={Boolean(o.noteRequired)} onChange={(e) => onChange({ ...step, options: step.options.map((x, j) => (j === i ? withOpt(x, "noteRequired", e.target.checked) : x)) })} />
               note required
             </label>
             {!disabled && step.options.length > 1 && (
