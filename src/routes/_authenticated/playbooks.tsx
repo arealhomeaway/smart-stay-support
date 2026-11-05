@@ -31,6 +31,9 @@ import { RequireCapability } from "@/components/RequireCapability";
 import { useRole } from "@/hooks/useRole";
 import { useServerFn } from "@tanstack/react-start";
 import { PlaybookEditor } from "@/components/playbooks/PlaybookEditor";
+import { SopUpload } from "@/components/playbooks/SopUpload";
+import { getSopPlaybookLinks } from "@/lib/sop-upload.functions";
+import { sopNeedsReview, type SopLink } from "@/lib/sop-upload";
 import { canManagePlaybooks, playbookEditContent, type PlaybookContent, type PlaybookStepEdit } from "@/lib/playbook-editing";
 import { savePlaybookEdit, changePlaybookState } from "@/lib/playbook-editing.functions";
 import { CATEGORIES, labelFor } from "@/lib/tickets";
@@ -116,6 +119,9 @@ function PlaybooksPage() {
   const [filter, setFilter] = useState<PlaybookStatus | "all" | "attention">("attention");
   const [openId, setOpenId] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(false);
+  const [editUploaded, setEditUploaded] = useState<string | null>(null);
+  const readLinks = useServerFn(getSopPlaybookLinks);
+  const links = useQuery({ queryKey: ["sop-playbook-links"], queryFn: () => readLinks() });
 
   const { data, isLoading } = usePlaybooks();
 
@@ -123,9 +129,9 @@ function PlaybooksPage() {
     const rows = (data ?? []).filter((pb) => !isTestPlaybook(pb) || filter === "all");
     if (filter === "all") return rows;
     if (filter === "attention")
-      return rows.filter((pb) => pb.status === "in_review" || pb.status === "draft");
+      return rows.filter((pb) => pb.status === "in_review" || pb.status === "draft" || sopNeedsReview(links.data?.[pb.id], pb.status));
     return rows.filter((pb) => pb.status === filter);
-  }, [data, filter]);
+  }, [data, filter, links.data]);
 
   const selected = (data ?? []).find((pb) => pb.id === openId) ?? null;
 
@@ -149,9 +155,12 @@ function PlaybooksPage() {
           </p>
         </div>
         {!readOnly && isDirector && (
+          <div className="flex flex-wrap items-start gap-2">
+          <SopUpload onSaved={(receipt) => { setFilter("all"); setOpenId(receipt.draftIds[0] ?? null); setEditUploaded(receipt.draftIds[0] ?? null); void qc.invalidateQueries({ queryKey: ["playbooks-admin"] }); void qc.invalidateQueries({ queryKey: ["sop-playbook-links"] }); toast.success(`${receipt.draftIds.length} draft playbooks created.`); }} />
           <Button onClick={() => setShowNew(true)}>
             <Plus className="size-4" /> New playbook
           </Button>
+          </div>
         )}
       </div>
 
@@ -184,6 +193,7 @@ function PlaybooksPage() {
                 {STATUS_LABELS[pb.status]}
               </Badge>
               <span className="font-medium">{pb.title}</span>
+              {sopNeedsReview(links.data?.[pb.id], pb.status) && <Badge variant="outline" className="border-warning/40 text-warning">Needs review</Badge>}
               <span className="text-sm text-muted-foreground">
                 {labelFor(CATEGORIES, pb.category)}
               </span>
@@ -217,6 +227,10 @@ function PlaybooksPage() {
               updatedAt={selected.updatedAt}
               isDirector={isDirector}
               readOnly={readOnly}
+              sopLink={links.data?.[selected.id]}
+              initialEditing={editUploaded === selected.id}
+              activeVersion={(data ?? []).find((p) => p.id === selected.supersedes_id) ?? null}
+              suggestedDraft={(data ?? []).find((p) => p.supersedes_id === selected.id && p.status === "draft") ?? null}
               onChanged={(id) => { if (id) setOpenId(id); void qc.invalidateQueries({ queryKey: ["playbooks-admin"] }); void qc.invalidateQueries({ queryKey: ["playbooks-contextual"] }); void qc.invalidateQueries({ queryKey: ["playbooks"] }); void qc.invalidateQueries({ queryKey: ["work-types"] }); }}
             />
           )}
@@ -259,17 +273,25 @@ function PlaybookDetail({
   isDirector,
   readOnly,
   onChanged,
+  sopLink,
+  initialEditing,
+  activeVersion,
+  suggestedDraft,
 }: {
   pb: AuthoredPlaybook;
   updatedAt: string;
   isDirector: boolean;
   readOnly: boolean;
   onChanged: (id?: string) => void;
+  sopLink?: SopLink;
+  initialEditing?: boolean;
+  activeVersion: AuthoredPlaybook | null;
+  suggestedDraft: AuthoredPlaybook | null;
 }) {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const drift = driftWarnings(pb);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(Boolean(initialEditing));
   const saveEdit = useServerFn(savePlaybookEdit);
   const changeState = useServerFn(changePlaybookState);
   const qc = useQueryClient();
@@ -329,6 +351,13 @@ function PlaybookDetail({
         <SheetTitle>{pb.title}</SheetTitle>
         <SheetDescription>{pb.summary ?? "No summary written yet."}</SheetDescription>
       </SheetHeader>
+
+      {sopLink && <div className="space-y-2 border-b border-border pb-4"><p className="text-sm">Created from SOP: {sopLink.title} v{sopLink.version}</p><a href={sopLink.file_url} target="_blank" rel="noreferrer" className="text-sm text-primary underline">Open SOP in SharePoint</a>
+        {sopNeedsReview(sopLink, pb.status) && <p className="text-sm text-warning">Needs review</p>}
+        {suggestedDraft && <Button variant="outline" onClick={() => onChanged(suggestedDraft.id)}>Review suggested changes</Button>}
+      </div>}
+      {sopLink && activeVersion && <SopVersionComparison active={activeVersion} draft={pb} />}
+      {sopLink && suggestedDraft && <SopVersionComparison active={pb} draft={suggestedDraft} />}
 
       {isDirector && !readOnly && !editing && <div className="flex flex-wrap gap-2">
         <Button variant="outline" disabled={steps.isLoading || steps.isError || busy} onClick={() => setEditing(true)}>Edit</Button>
