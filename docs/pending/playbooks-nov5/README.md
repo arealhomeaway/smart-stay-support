@@ -2,6 +2,10 @@
 
 Build and test only. Nothing in this folder has been applied. No real playbook was edited, approved or archived.
 
+## Approved application correction, Nov 5 at 22:23 UTC
+
+Emily approved removing only the first `BEGIN;` line and last `COMMIT;` line from `01_playbook_editing.sql`. All interior bytes remain unchanged. The migration tool supplies the transaction. SHA256SUMS is updated; the undo is unchanged. Application is authorized, but real playbook editing, approval, archival and publishing remain prohibited. The build-only statements below describe the original build.
+
 ## Read-only inventory
 
 - Checklist build: Nov 4–5, from Emily's Guided Ticket Checklists request and exact six seeds. Live schema/seeds were applied Nov 5 at 03:29 UTC. All six switches are off.
