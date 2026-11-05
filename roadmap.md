@@ -1,9 +1,9 @@
 # Roadmap — approved build work, NO publish
 
 ## Nov 5 reservation change tile (build/test only)
-- [ ] Add Guest reservation-change tile, booking-only category mapping and text suggestions using existing catalog routing
-- [ ] Stage cleaning repeat-complaint 60-day template version and audited TEST 1 archive with undo; do not apply
-- [ ] Focused/full tests and automatic type/build checks; mock-only screen verification
+- [x] Add Guest reservation-change tile, booking-only category mapping and text suggestions using existing Current or past guest request catalog routing
+- [x] Stage cleaning repeat-complaint 60-day template version and audited TEST 1 archive with compensating undo/checksums; nothing applied
+- [x] 16 new rules/isolated publishing tests; full suite 2444 pass / 5 skip; mocked shared form desktop/mobile suggestion/choice checked without sign-in or writes
 - [ ] Live template publication/archive blocked by no live-write approval; playbook editing migration rejected BEGIN/COMMIT, remains unapplied
 
 ## Nov 5 Help ticket bulk updates (build/test only)
@@ -23,7 +23,7 @@
 - [x] Admin/both Director draft editing, version-safe active edits, atomic approval/history and archive; SQL/undo/README/checksums staged in docs/pending/playbooks-nov5 only
 - [x] 11 lifecycle/server-permission tests; full suite 2399 pass / 5 skip / 0 fail; automatic type/build OK; synthetic desktop/mobile editor saves checked
 - [x] Read-only before/after: all 35 live playbook row checksums unchanged; no real writes, migration application or publish
-- [ ] Signed-in edit/approve/archive cannot be verified until staged SQL is separately approved and applied; Booking vs Other guest complaint shared situation ambiguity remains a separate intake decision
+- [ ] Signed-in edit/approve/archive cannot be verified until staged SQL is applied; byte-for-byte application rejected BEGIN/COMMIT. Booking vs Other guest complaint ambiguity resolved by separately approved reservation tile.
 
 ## Nov 5 simplify Record work (build/test only)
 - [x] Rename maintenance entry, show unchanged situation tiles directly, restrict work-type override to Admin/Supervisor

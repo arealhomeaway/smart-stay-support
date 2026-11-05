@@ -41,4 +41,4 @@ it("staged cleaning publication and compensating undo preserve original content 
     expect((await db.query<{ checksum: string; version: number }>("SELECT md5(checklist::text) checksum,version FROM playbooks WHERE status='approved'")).rows[0]).toEqual({ checksum: "a54db86e7ac93640746fe90e7464d563", version: 3 });
     expect((await db.query<{ count: number }>("SELECT count(*)::integer count FROM audit_log WHERE action='ticket_checklist_published'")).rows[0]?.count).toBe(2);
   } finally { await db.close(); }
-}, 30000);
+});
