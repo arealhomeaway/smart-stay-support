@@ -1214,6 +1214,48 @@ export type Database = {
         }
         Relationships: []
       }
+      backup_runs: {
+        Row: {
+          error: string | null
+          files: Json | null
+          finished_at: string | null
+          folder_item_id: string | null
+          folder_name: string
+          id: string
+          pruned_at: string | null
+          pruned_count: number | null
+          started_at: string
+          status: string
+          trigger: string
+        }
+        Insert: {
+          error?: string | null
+          files?: Json | null
+          finished_at?: string | null
+          folder_item_id?: string | null
+          folder_name: string
+          id?: string
+          pruned_at?: string | null
+          pruned_count?: number | null
+          started_at?: string
+          status?: string
+          trigger?: string
+        }
+        Update: {
+          error?: string | null
+          files?: Json | null
+          finished_at?: string | null
+          folder_item_id?: string | null
+          folder_name?: string
+          id?: string
+          pruned_at?: string | null
+          pruned_count?: number | null
+          started_at?: string
+          status?: string
+          trigger?: string
+        }
+        Relationships: []
+      }
       breezeway_outbound_tasks: {
         Row: {
           assignee: string | null
