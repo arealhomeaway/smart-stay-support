@@ -1,5 +1,11 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 5 SOP upload (build/test only)
+- [x] Admin/Director Upload dialog, Word/PDF reading, existing SharePoint/Coach integration, linked draft editor and side-by-side version comparison
+- [x] Transactional SOP/version/draft setup, undo, README and checksums staged in docs/pending/sop-upload; no application
+- [x] 15 mocked/isolated upload, AI, rollback and permission tests; full suite 2414 pass / 5 skip / 0 fail; automatic type/build OK; mocked desktop/mobile Word and PDF browser flow passed
+- [ ] Real authenticated upload blocked by unapplied SQL and prohibition on real uploads
+
 ## Nov 5 playbook editing (build/test only)
 - [x] Read-only checklist provenance/behavior/mapping, playbook counts and duplicate/empty inventory reported before B
 - [x] Admin/both Director draft editing, version-safe active edits, atomic approval/history and archive; SQL/undo/README/checksums staged in docs/pending/playbooks-nov5 only
