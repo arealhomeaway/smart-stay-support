@@ -43,7 +43,8 @@ export function RecoveryDecisionBox({
     mutationFn: async (decision: "approve" | "decline") => {
       const amount = decisionAmount.trim() === "" ? null : Number(decisionAmount);
       // decide_recovery_approval checks the approver's role in the database.
-      const rpc = supabase.rpc as unknown as (
+      // Bind: supabase-js rpc reads this.rest, so a detached reference crashes.
+      const rpc = supabase.rpc.bind(supabase) as unknown as (
         fn: string,
         args: Record<string, unknown>,
       ) => Promise<{ error: { message: string } | null }>;
