@@ -100,7 +100,7 @@ export function TicketList({ rows: all, isLoading }: { rows: any[]; isLoading: b
   const rows = filterHelpTickets(all, { status, kind, portal, q });
   const selectedIds = selection.filter((id) => rows.some((row) => row.id === id));
   const allSelected = rows.length > 0 && selectedIds.length === rows.length;
-  function clearSelection() { setSelection([]); setPending(null); setConfirmation(""); }
+  function clearSelection() { if (pending) void qc.invalidateQueries({ queryKey: ["help-tickets"] }); setSelection([]); setPending(null); setConfirmation(""); }
   async function saveBulk() {
     if (!selectedIds.length || !canBulk) return;
     setSaving(true); setConfirmation("");
