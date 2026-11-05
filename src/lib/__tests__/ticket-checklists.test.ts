@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, it as test } from "bun:test";
 import {
   CHECKLIST_CATEGORIES,
   NOT_APPLICABLE,
@@ -148,6 +148,6 @@ describe("authority comes from existing rules", () => {
     expect(refundLimitsText()).toContain("$1,500");
   });
   test("templates never store dollar limits", () => {
-    expect(JSON.stringify(SEED_TEMPLATES)).not.toMatch(/\$\d/);
+    expect(/\$\d/.test(JSON.stringify(SEED_TEMPLATES))).toBe(false);
   });
 });
