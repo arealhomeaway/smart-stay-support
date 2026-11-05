@@ -13,11 +13,10 @@ import { captureTicketReservation, getPropertyStay } from "@/lib/ownerrez.functi
 import { PropertyContactPanel } from "@/components/PropertyContactPanel";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { CalendarDays, CircleHelp, Clock, History, KeyRound, MessageSquareWarning, ShieldAlert, Sparkles, Users, Wrench } from "lucide-react";
+import { ChevronDown, Clock, History, Users, Wrench } from "lucide-react";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { CHECKLIST_CATEGORIES, categoryUsesChecklist, isActiveGuest, parseChecklistRow, templatePriority } from "@/lib/ticket-checklists";
 
-const CATEGORY_ICONS = { KeyRound, Sparkles, Wrench, MessageSquareWarning, ShieldAlert, CalendarDays, CircleHelp } as const;
 import { PropertyActivityForm } from "@/components/work-entry/PropertyActivityForm";
 import {
   ENTRY_KINDS,
@@ -67,7 +66,7 @@ import {
   resolveWorkType,
   situationById,
 } from "@/lib/situations";
-import { classifyTicketText } from "@/lib/ticket-classify";
+import { applyRecordWorkSituation, canOverrideRecordWorkType, situationEntryKind, suggestedRecordWorkSituation } from "@/lib/record-work";
 import { BackControl } from "@/components/nav/NavContext";
 import { resolveOrigin } from "@/lib/nav-context";
 
@@ -115,13 +114,13 @@ export const Route = createFileRoute("/_authenticated/tickets/new")({
   },
   head: () => ({
     meta: [
-      { title: "Record work — Resolve Operations" },
+      { title: "Record work | Resolve Operations" },
       {
         name: "description",
         content:
-          "Log property activity, open an Ops Ticket or report maintenance — each with the right workflow attached.",
+          "Log Property Activity, Create Ops Ticket or Create Maintenance Ticket.",
       },
-      { property: "og:title", content: "Record work — Resolve Operations" },
+      { property: "og:title", content: "Record work | Resolve Operations" },
       {
         property: "og:description",
         content: "Log a one-touch resolution or open a ticket with its response standard attached.",
@@ -168,7 +167,8 @@ export function NewTicketForm({
   /** After a Property Activity entry is saved (no Ticket exists). */
   onActivityLogged?: (propertyId: string) => void;
 }) {
-  const { can, readOnly, isSupervisor, isLoading: rolesLoading } = useRole();
+  const { can, readOnly, roles: userRoles, isSupervisor, isLoading: rolesLoading } = useRole();
+  const canOverrideWorkType = canOverrideRecordWorkType(userRoles);
   // In the demo environment a new ticket is a demo ticket: it lands in the
   // demo queues, never in the real counts, and reaches no guest or vendor.
   const { demoMode } = useDemo();
@@ -177,8 +177,6 @@ export function NewTicketForm({
   // Guided checklist category (display only; it picks the same situation and work type a person could pick today).
   const flags = useFeatureFlags();
   const [checklistCategory, setChecklistCategory] = useState<string | null>(null);
-  const opsChecklistCategories = CHECKLIST_CATEGORIES.filter((c) => c.flag && flags.enabled(c.flag));
-  const pickerShown = mode === "ops" && opsChecklistCategories.length > 0;
   const activeCategory =
     mode === "maintenance"
       ? (categoryUsesChecklist("maintenance", flags.enabled) ? "maintenance" : null)
@@ -202,7 +200,6 @@ export function NewTicketForm({
   const [priorityTouched, setPriorityTouched] = useState(false);
   // Guest impact must be a person's answer, never inferred from occupancy.
   const [impactAnswered, setImpactAnswered] = useState(false);
-  const [showCatalog, setShowCatalog] = useState(false);
   // Everything Resolve can decide for itself stays folded away until asked for.
   const [advanced, setAdvanced] = useState(false);
   const [situationTouched, setSituationTouched] = useState(false);
@@ -356,16 +353,8 @@ export function NewTicketForm({
    */
   function pickSituation(id: string) {
     setSituationTouched(true);
-    const situation = situationById(id);
-    const resolved = resolveWorkType(situation, workTypes);
-    setShowCatalog(Boolean(situation?.openCatalog) || (Boolean(situation) && !resolved));
-    setForm((f) => ({
-      ...f,
-      situation_id: id,
-      work_type_id: resolved?.id ?? "",
-      guest_impact: situation?.guestImpact ?? f.guest_impact,
-      occupancy_status: situation?.occupancy ?? f.occupancy_status,
-    }));
+    if (mode === "ops" && situationEntryKind(id) === "maintenance") setModeRaw("maintenance");
+    setForm((f) => applyRecordWorkSituation(f, id, workTypes));
   }
 
   /**
@@ -374,24 +363,15 @@ export function NewTicketForm({
    * and it stops as soon as they choose one themselves.
    */
   const guess = useMemo(
-    () => (situationTouched ? null : classifyTicketText(form.description)),
-    [form.description, situationTouched],
+    () => suggestedRecordWorkSituation(form.description, situationTouched, mode),
+    [form.description, situationTouched, mode],
   );
 
   useEffect(() => {
     if (!guess || situationTouched || !isTicket) return;
     const resolved = resolveWorkType(guess.situation, workTypes);
-    if (!resolved || !workTypeFitsKind(resolved.category, mode)) return;
-    setForm((f) =>
-      f.situation_id === guess.situation.id
-        ? f
-        : {
-            ...f,
-            situation_id: guess.situation.id,
-            work_type_id: resolved?.id ?? f.work_type_id,
-            guest_impact: guess.situation.guestImpact ?? f.guest_impact,
-          },
-    );
+    if (!resolved || (mode === "maintenance" && !workTypeFitsKind(resolved.category, mode))) return;
+    setForm((f) => f.situation_id === guess.situation.id ? f : applyRecordWorkSituation(f, guess.situation.id, workTypes));
   }, [guess, situationTouched, workTypes, isTicket, mode]);
 
   // Maintenance category starts from the description, like the work type does,
@@ -415,6 +395,10 @@ export function NewTicketForm({
     inHome: Boolean(form.guest_in_residence) || form.occupancy_status === "occupied",
     nextArrival: stay?.ok ? (stay.data as { next_arrival?: string | null }).next_arrival ?? (form.occupancy_status === "same_day_arrival" ? new Date().toISOString() : null) : null,
   });
+  useEffect(() => {
+    const category = CHECKLIST_CATEGORIES.find((c) => c.flag && c.situation(checklistGuestActive) === form.situation_id);
+    setChecklistCategory(category?.id ?? null);
+  }, [form.situation_id, checklistGuestActive]);
   const checklistStartPriority = activeCategory ? templatePriority(liveChecklist.data, checklistGuestActive) : null;
   const mechanicalBase = useMemo(
     () =>
@@ -534,8 +518,12 @@ export function NewTicketForm({
       return;
     }
     if (!isTicket) return;
+    if (mode === "ops" && situationEntryKind(form.situation_id) === "maintenance") {
+      setModeRaw("maintenance");
+      return;
+    }
     if (!effectiveWorkTypeId) {
-      toast.error("Pick what kind of Ops work this is.");
+      toast.error("Choose a situation. If none fits, ask a Supervisor to choose the work type.");
       return;
     }
     if (guestInHomeNow && !impactAnswered && !form.guest_in_residence) {
@@ -729,7 +717,7 @@ export function NewTicketForm({
           kind: "created",
           event_type: "created",
           channel: form.source_channel,
-          body: `${mode === "maintenance" ? "Maintenance reported" : "Ops Ticket opened"}${
+          body: `${mode === "maintenance" ? "Maintenance Ticket created" : "Ops Ticket opened"}${
             mode === "maintenance" ? ` (${labelOf(MAINTENANCE_CATEGORIES, form.maintenance_category)}${estimated !== null ? ` · est. $${estimated}` : ""})` : ""
           }. Ticket opened at ${meta.short} (${labelFor(GUEST_IMPACT, form.guest_impact)} · ${labelFor(
                 OCCUPANCY_STATUS,
@@ -738,7 +726,7 @@ export function NewTicketForm({
         });
       }
 
-      toast.success(mode === "maintenance" ? "Maintenance reported with its clocks running." : "Ticket opened with its clocks running.");
+      toast.success(mode === "maintenance" ? "Maintenance Ticket created." : "Ticket opened with its clocks running.");
       onCreated(ticket.id);
     } catch (err) {
       toast.error(
@@ -890,14 +878,14 @@ export function NewTicketForm({
       {isTicket && (
       <Card>
         <CardHeader>
-          <CardTitle>{mode === "maintenance" ? "What is wrong?" : "What happened?"}</CardTitle>
+          <CardTitle>{mode === "maintenance" ? "Create Maintenance Ticket" : "Create Ops Ticket"}</CardTitle>
           <CardDescription>Write it the way it was reported to you.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={submit} className="space-y-5">
             {/* One question. Resolve works out the classification. */}
             <div className="space-y-2">
-              <Label htmlFor="description">What happened?</Label>
+              <Label htmlFor="description">Summary</Label>
               <Textarea
                 id="description"
                 rows={3}
@@ -911,72 +899,67 @@ export function NewTicketForm({
               </p>
             </div>
 
+                <div className="space-y-2">
+                  <Label>How did it come in?</Label>
+                  <Select
+                    value={form.source_channel}
+                    onValueChange={(v) => setForm({ ...form, source_channel: v })}
+                  >
+                    <SelectTrigger aria-label="How did it come in?">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SOURCE_CHANNELS.map((c) => (
+                        <SelectItem key={c.value} value={c.value}>
+                          {c.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+            {mode === "ops" && (<> 
+                <div className="space-y-3">
+                  <div>
+                    <Label>What is happening?</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Resolve suggests one from your description; you can change it.
+                    </p>
+                  </div>
+                  {SITUATION_GROUPS.map((g) => (
+                    <div key={g.key} className="space-y-2">
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        {g.label}
+                      </p>
+                      <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label={g.label}>
+                        {SITUATIONS.filter((s) => s.group === g.key).map((s) => (
+                          <Button variant="outline"
+                            key={s.id}
+                            type="button"
+                            role="radio"
+                            aria-checked={form.situation_id === s.id}
+                            onClick={() => pickSituation(s.id)}
+                            className={`resolve-press h-auto min-h-24 whitespace-normal justify-start block rounded-lg border p-3 text-left transition ${
+                              form.situation_id === s.id
+                                ? "border-primary bg-primary/5 shadow-sm"
+                                : "border-border hover:border-primary/40 hover:bg-secondary"
+                            }`}
+                          >
+                            <span className="block text-sm font-medium">{s.label}</span>
+                            <span className="mt-0.5 block text-xs text-muted-foreground">
+                              {s.hint}
+                            </span>
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+ </>)}
+
             {propertyPicker}
 
             {form.property_id && <PropertyContactPanel propertyId={form.property_id} showOwner={false} />}
-
-            {pickerShown && (
-              <div className="space-y-2">
-                <Label>What kind of problem is it?</Label>
-                <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Category">
-                  {[...opsChecklistCategories, CHECKLIST_CATEGORIES.find((c) => c.id === "other")!].map((c) => {
-                    const Icon = CATEGORY_ICONS[c.icon];
-                    const on = (checklistCategory ?? "") === c.id;
-                    return (
-                      <button
-                        key={c.id}
-                        type="button"
-                        role="radio"
-                        aria-checked={on}
-                        onClick={() => {
-                          setChecklistCategory(c.id);
-                          if (c.id === "maintenance") { setMode("maintenance"); return; }
-                          const sid = c.situation(checklistGuestActive);
-                          if (sid) pickSituation(sid);
-                        }}
-                        className={`flex items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:border-primary ${on ? "border-primary bg-primary/5" : "border-border"}`}
-                      >
-                        <Icon className="mt-0.5 size-5 shrink-0 text-primary" />
-                        <span>
-                          <span className="block font-medium">{c.label}</span>
-                          <span className="block text-xs text-muted-foreground">{c.hint}</span>
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-                {activeCategory && workType && (
-                  <p className="text-xs text-muted-foreground">Filed as {workType.name}. A guided checklist will walk you through it.</p>
-                )}
-              </div>
-            )}
-
-            {mode === "ops" && (!pickerShown || checklistCategory === "other") && (
-              <div className="space-y-2">
-                <Label>Kind of Ops work</Label>
-                <Select
-                  value={form.work_type_id}
-                  onValueChange={(v) => {
-                    setSituationTouched(true);
-                    setForm({ ...form, work_type_id: v });
-                  }}
-                >
-                  <SelectTrigger aria-label="Kind of Ops work">
-                    <SelectValue placeholder="Pick the closest match" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {kindWorkTypes.map((w) => (
-                      <SelectItem key={w.id} value={w.id}>
-                        {w.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Resolve suggests one from your description; you can always change it.
-                </p>
-              </div>
-            )}
 
             {mode === "ops" && guestInHomeNow && guestImpactQuestion}
 
@@ -1075,7 +1058,7 @@ export function NewTicketForm({
                     {meta.short}
                   </Badge>
                   <span className="font-medium">{situation?.label ?? workType.name}</span>
-                  <span className="text-muted-foreground">· {workType.name}</span>
+                  {canOverrideWorkType && <span className="text-muted-foreground">· {workType.name}</span>}
                 </div>
                 <p className="mt-2 text-muted-foreground">
                   {meta.short} because{" "}
@@ -1086,32 +1069,17 @@ export function NewTicketForm({
                   )}
                   .{role ? ` Owned by ${role.name}.` : ""}
                 </p>
-                {!advanced && (
-                  <button
-                    type="button"
-                    onClick={() => setAdvanced(true)}
-                    className="mt-2 text-xs text-primary hover:underline"
-                  >
-                    Not right? Change
-                  </button>
-                )}
               </div>
             )}
 
-            {!workType && (
-              <button
-                type="button"
-                onClick={() => setAdvanced(true)}
-                className="text-xs text-primary hover:underline"
-              >
-                Choose what happened
-              </button>
-            )}
+            <Button type="button" variant="ghost" size="sm" aria-expanded={advanced} onClick={() => setAdvanced((v) => !v)}>
+              <ChevronDown className="size-4" /> Advanced
+            </Button>
 
             {advanced && (
               <div className="space-y-5 rounded-lg border border-border p-3">
                 <div className="space-y-2">
-                  <Label htmlFor="title">Summary</Label>
+                  <Label htmlFor="title">Ticket title, if different</Label>
                   <Input
                     id="title"
                     placeholder={derivedTitle || "Leak under the kitchen sink"}
@@ -1120,72 +1088,18 @@ export function NewTicketForm({
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label>How did it come in?</Label>
-                  <Select
-                    value={form.source_channel}
-                    onValueChange={(v) => setForm({ ...form, source_channel: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SOURCE_CHANNELS.map((c) => (
-                        <SelectItem key={c.value} value={c.value}>
-                          {c.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
 
-                <div className="space-y-3">
-                  <div>
-                    <Label>What is happening?</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Pick the situation. Resolve sets the work type, the owning seat and the
-                      clocks.
-                    </p>
-                  </div>
-                  {SITUATION_GROUPS.map((g) => (
-                    <div key={g.key} className="space-y-2">
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        {g.label}
-                      </p>
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        {SITUATIONS.filter((s) => s.group === g.key).map((s) => (
-                          <button
-                            key={s.id}
-                            type="button"
-                            onClick={() => pickSituation(s.id)}
-                            className={`resolve-press rounded-lg border p-3 text-left transition ${
-                              form.situation_id === s.id
-                                ? "border-primary bg-primary/5 shadow-sm"
-                                : "border-border hover:border-primary/40 hover:bg-secondary"
-                            }`}
-                          >
-                            <span className="block text-sm font-medium">{s.label}</span>
-                            <span className="mt-0.5 block text-xs text-muted-foreground">
-                              {s.hint}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
+                {canOverrideWorkType && (
                 <div className="space-y-2">
                   <Label>Work type</Label>
                   <Select
                     value={form.work_type_id}
                     onValueChange={(v) => {
                       setSituationTouched(true);
-                      setShowCatalog(true);
                       setForm({ ...form, work_type_id: v });
                     }}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger aria-label="Work type">
                       <SelectValue placeholder="Pick the closest match" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1197,6 +1111,7 @@ export function NewTicketForm({
                     </SelectContent>
                   </Select>
                 </div>
+                )}
               </div>
             )}
 
@@ -1455,7 +1370,7 @@ export function NewTicketForm({
             )}
 
             <Button type="submit" className="w-full" disabled={saving}>
-              {saving ? "Saving…" : mode === "maintenance" ? "Report maintenance" : "Open Ops Ticket"}
+              {saving ? "Saving…" : mode === "maintenance" ? "Create Maintenance Ticket" : situationEntryKind(form.situation_id) === "maintenance" ? "Continue to Create Maintenance Ticket" : "Open Ops Ticket"}
             </Button>
           </form>
         </CardContent>
@@ -1479,10 +1394,11 @@ function ModeCard({
   hint: string;
 }) {
   return (
-    <button
+    <Button
+      variant="outline"
       type="button"
       onClick={onClick}
-      className={`rounded-lg border p-4 text-left transition-colors ${
+      className={`h-auto min-h-36 whitespace-normal block rounded-lg border p-4 text-left transition-colors ${
         active ? "border-primary bg-primary/5" : "border-border hover:bg-secondary"
       }`}
     >
@@ -1491,6 +1407,6 @@ function ModeCard({
         {title}
       </div>
       <p className="mt-1 text-sm text-muted-foreground">{hint}</p>
-    </button>
+    </Button>
   );
 }
