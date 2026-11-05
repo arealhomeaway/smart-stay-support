@@ -9,6 +9,7 @@ const searchInput = z.object({
   checkIn: z.string().max(10), checkOut: z.string().max(10), location: z.string().max(240),
   dogs: z.number().int().min(0).max(10).optional(),
   cats: z.number().int().min(0).max(10).optional(),
+  guests: z.number().int().min(0).max(30).optional(),
   minBedrooms: z.number().int().min(0).max(12).optional(),
   amenities: z.array(amenityKey).max(AMENITY_SPECS.length).optional(),
   inquirySourceId: z.string().uuid().optional(),

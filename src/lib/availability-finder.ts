@@ -121,11 +121,74 @@ export function applyRequirements(results: AvailabilityResult[], requirements: M
   const matched: AvailabilityResult[] = [];
   const heldBack: HeldBackResult[] = [];
   for (const result of results) {
-    const outcome = matchesRequirements(result.facts, requirements, { bedrooms: result.bedrooms });
+    const outcome = matchesRequirements(result.facts, requirements, { bedrooms: result.bedrooms, maxGuests: result.maxGuests });
     if (outcome.ok) matched.push(result);
     else heldBack.push({ result, reasons: outcome.reasons });
   }
   return { matched, heldBack };
+}
+
+// ============= One-at-a-time recommendation ranking =============
+
+export type AvailabilityTier = "firm30" | "open" | "rebook";
+export type RankedOption = {
+  result: AvailabilityResult;
+  tier: AvailabilityTier;
+  /** Plain-words tier label shown on the recommendation card. */
+  label: string;
+  /** Short stays overlapping the requested dates (tier 3 only). */
+  shortStays: number;
+  /** Nights of the requested stay covered by those short stays. */
+  nightsAffected: number;
+};
+
+/** ARHA marks 30-day-minimum homes in the OwnerRez listing name. */
+export function isThirtyDayFirm(name: string) {
+  return /\(30d firm\)/i.test(name);
+}
+
+function overlapNights(conflict: ReservationConflict, checkIn: string, checkOut: string) {
+  const start = Date.parse(`${conflict.arrival > checkIn ? conflict.arrival : checkIn}T00:00:00Z`);
+  const end = Date.parse(`${conflict.departure < checkOut ? conflict.departure : checkOut}T00:00:00Z`);
+  return Math.max(0, Math.round((end - start) / 86400000));
+}
+
+/**
+ * Ranks matching homes for the one-at-a-time recommendation.
+ * Tier 1: "(30D FIRM)" homes open for the whole stay, closest first.
+ * Tier 2: any other home with nothing overlapping, closest first.
+ * Tier 3 (only when tiers 1 and 2 are empty): homes with short stays to
+ * re-book, fewest stays, then fewest nights affected, then closest.
+ * A home with a long stay (28+ nights) or a block overlapping never appears.
+ */
+export function rankAvailability(results: AvailabilityResult[], checkIn: string, checkOut: string): RankedOption[] {
+  const offerable = results.filter((result) => result.nonMovableConflicts.length === 0);
+  const toOption = (result: AvailabilityResult, tier: AvailabilityTier): RankedOption => {
+    const shortStays = result.strConflicts.length;
+    const nightsAffected = result.strConflicts.reduce((sum, conflict) => sum + overlapNights(conflict, checkIn, checkOut), 0);
+    const label = tier === "firm30"
+      ? "30D Firm, open the whole stay"
+      : tier === "open"
+        ? "Open, no short stays"
+        : `Has ${shortStays} short stay${shortStays === 1 ? "" : "s"} to re-book`;
+    return { result, tier, label, shortStays, nightsAffected };
+  };
+  const byDistance = (a: RankedOption, b: RankedOption) => a.result.distanceMiles - b.result.distanceMiles;
+  const firm = offerable.filter((r) => r.strConflicts.length === 0 && isThirtyDayFirm(r.name)).map((r) => toOption(r, "firm30")).sort(byDistance);
+  const open = offerable.filter((r) => r.strConflicts.length === 0 && !isThirtyDayFirm(r.name)).map((r) => toOption(r, "open")).sort(byDistance);
+  if (firm.length + open.length > 0) return [...firm, ...open];
+  return offerable
+    .filter((r) => r.strConflicts.length > 0)
+    .map((r) => toOption(r, "rebook"))
+    .sort((a, b) => a.shortStays - b.shortStays || a.nightsAffected - b.nightsAffected || byDistance(a, b));
+}
+
+/**
+ * The next home to show: the first ranked option neither shown nor declined
+ * yet this search. Returns null when every option has been seen.
+ */
+export function nextOption(ranked: RankedOption[], seenIds: string[]): RankedOption | null {
+  return ranked.find((option) => !seenIds.includes(option.result.id)) ?? null;
 }
 
 /**
