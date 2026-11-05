@@ -308,12 +308,12 @@ export function LeadDrawer({
         patch: {
           stage: "lost",
           lost_at: new Date().toISOString(),
-          lost_reason: lossReason,
+          lost_reason: reason,
           lost_note: lossNote || null,
         },
         log: {
           channel: "stage_change",
-          outcome: `Closed as lost — ${LOSS_REASON_LABELS[lossReason]}`,
+          outcome: `Closed as lost — ${LOSS_REASON_LABELS[reason]}`,
           note: lossNote || undefined,
           from: lead.stage,
           to: "lost",
@@ -327,7 +327,7 @@ export function LeadDrawer({
     <Sheet open={Boolean(lead)} onOpenChange={(o) => !o && onClose()}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
         <SheetHeader>
-          <SheetTitle className="pr-8 text-left">{lead.contact_name}</SheetTitle>
+          <SheetTitle className="pr-8 text-left">{lead.contact_name ?? "Lead"}</SheetTitle>
         </SheetHeader>
 
         <div className="space-y-5 pb-10">
