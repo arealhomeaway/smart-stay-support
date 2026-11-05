@@ -1,5 +1,11 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 5 reservation change tile (build/test only)
+- [ ] Add Guest reservation-change tile, booking-only category mapping and text suggestions using existing catalog routing
+- [ ] Stage cleaning repeat-complaint 60-day template version and audited TEST 1 archive with undo; do not apply
+- [ ] Focused/full tests and automatic type/build checks; mock-only screen verification
+- [ ] Live template publication/archive blocked by no live-write approval; playbook editing migration rejected BEGIN/COMMIT, remains unapplied
+
 ## Nov 5 Help ticket bulk updates (build/test only)
 - [x] Filtered Select all across all paginated rows, row selection, six bulk statuses/note and default-off notifications
 - [x] Caller-authenticated atomic history/status action, replay receipt and grouped notification claim; SQL/undo/README/checksums staged only
