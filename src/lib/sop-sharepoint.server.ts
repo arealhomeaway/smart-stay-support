@@ -22,6 +22,10 @@ export async function sopSharePoint() {
         folder = await graph(`/drives/${drive.id}/root/children`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "SOPs", folder: {}, "@microsoft.graph.conflictBehavior": "fail" }) });
       }
       const target = `/drives/${drive.id}/items/${folder.id}:/${encodeURIComponent(name)}:`;
+      try {
+        await graph(`${target}?$select=id`);
+        throw new Error("That version already exists in SharePoint. Nothing was overwritten.");
+      } catch (error) { if (!String(error).includes("[404]")) throw error; }
       // Fail on collisions; never overwrite SharePoint's master copy.
       const session = await graph(`${target}/createUploadSession`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ item: { "@microsoft.graph.conflictBehavior": "fail", name } }) });
       const bytes = new Uint8Array(await file.arrayBuffer());
@@ -30,7 +34,7 @@ export async function sopSharePoint() {
         for (let start = 0; start < bytes.length; start += chunk) {
           const end = Math.min(start + chunk, bytes.length);
           const response = await fetch(session.uploadUrl, { method: "PUT", headers: { "Content-Length": String(end - start), "Content-Range": `bytes ${start}-${end - 1}/${bytes.length}` }, body: bytes.slice(start, end) });
-          if (!response.ok) { const body = await response.text(); console.error(`SOP upload [${response.status}]: ${body}`); throw new Error("SharePoint upload failed."); }
+          if (!response.ok) { const body = await response.text(); console.error(`SOP upload [${response.status}]: ${body}`); if (response.status === 409) throw new Error("Version collision"); throw new Error("SharePoint upload failed."); }
           const result = await response.json();
           if (response.status !== 202) {
             if (!result.id || !result.webUrl) throw new Error("Could not confirm SharePoint upload.");
@@ -39,6 +43,10 @@ export async function sopSharePoint() {
         }
         throw new Error("Could not confirm SharePoint upload.");
       } catch (error) {
+        if (error instanceof Error && error.message === "Version collision") {
+          await fetch(session.uploadUrl, { method: "DELETE" });
+          throw error;
+        }
         // Resolve a possibly completed final chunk before reporting an empty save.
         try {
           const completed = await graph(`${target}?$select=id,webUrl`);

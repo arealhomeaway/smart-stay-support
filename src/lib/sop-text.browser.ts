@@ -8,7 +8,10 @@ export async function readSopText(file: File): Promise<string> {
   try {
     const bytes = new Uint8Array(await file.arrayBuffer());
     if (/\.docx$/i.test(file.name)) {
-      const xml = unzipSync(bytes, { filter: (entry) => entry.name === "word/document.xml" });
+      const xml = unzipSync(bytes, { filter: (entry) => {
+        if (entry.name === "word/document.xml" && entry.originalSize > 30 * 1024 * 1024) throw new Error("Document too large");
+        return entry.name === "word/document.xml";
+      } });
       const document = xml["word/document.xml"];
       if (!document || document.length > 30 * 1024 * 1024) throw new Error("Invalid document");
       const parsed = new DOMParser().parseFromString(strFromU8(document), "application/xml");

@@ -22,5 +22,6 @@ Consider = risk_flags. Do first = immediate_actions. Required and photo_required
   const answer = await result.text;
   const start = answer.indexOf("{"); const end = answer.lastIndexOf("}");
   if (start < 0 || end < start) throw new Error("AI could not read this SOP. Saved nothing.");
-  return sopDraftsSchema.parse(JSON.parse(answer.slice(start, end + 1).replace(/\u2014/g, ", "))).drafts;
+  try { return sopDraftsSchema.parse(JSON.parse(answer.slice(start, end + 1).replace(/\u2014/g, ", "))).drafts; }
+  catch { throw new Error("AI could not prepare readable drafts. Saved nothing. Try again or check Admin > Integrations"); }
 }
