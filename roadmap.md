@@ -1,5 +1,10 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 5 playbook editing (build/test only)
+- [x] Read-only checklist provenance/behavior/mapping, playbook counts and duplicate/empty inventory reported before B
+- [ ] Admin/Director draft editing, version-safe active edits, atomic approval/history and archive; staged SQL plus undo only
+- [ ] Lifecycle/server permission tests, full suite and automatic type/build checks; no real playbook writes or publish
+
 ## Nov 5 simplify Record work (build/test only)
 - [x] Rename maintenance entry, show unchanged situation tiles directly, restrict work-type override to Admin/Supervisor
 - [x] Carry repair selections into shared maintenance form; unchanged catalog supplies work type, seat and clocks
