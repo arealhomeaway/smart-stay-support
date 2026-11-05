@@ -6,9 +6,13 @@ was missing from the project and has no record in project history.
 
 Apply order:
 1. `01_backup_runs.sql` - run history table read by Admin > Integrations. Undo: `01_backup_runs.undo.sql`.
-2. Add server secret `BACKUP_CRON_SECRET` (32+ characters) in Project Settings > Secrets.
-3. The scheduler needs the same value: a database vault entry `backup_cron_secret`.
-4. `02_schedule_backup.sql` - 07:00 and 08:00 UTC calls; only 2 a.m. Central runs. Undo: `02_schedule_backup.undo.sql`.
+2. `02_schedule_backup.sql` - creates a random token held only in the database
+   (`private.backup_cron_token`), a service-role-only check `backup_verify_cron_token`, and the
+   07:00 and 08:00 UTC calls (header `x-cron-secret`); only 2 a.m. Central runs. Same pattern as the
+   cleaner-hours job. No app secret and no vault copy. Undo: `02_schedule_backup.undo.sql`.
+
+Admins can also press "Run backup now" on Admin > Integrations; it uses the same backup step,
+role-checked on the server.
 
 Exports: tickets, ticket_activity, work_orders, claims, guest_recovery, guest_recovery_ledger,
 expenses, onboarding_tasks, as CSV in ARHA Resolve > Documents > Resolve Backups > <date>.

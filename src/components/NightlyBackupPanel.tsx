@@ -1,15 +1,31 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { useRole } from "@/hooks/useRole";
 import { useServerFn } from "@tanstack/react-start";
 import { DatabaseBackup } from "lucide-react";
 import { SectionCard } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status";
-import { listBackupRuns } from "@/lib/nightly-backup.functions";
+import { listBackupRuns, runBackupNow } from "@/lib/nightly-backup.functions";
 
 export function NightlyBackupPanel() {
   const fn = useServerFn(listBackupRuns);
   const q = useQuery({ queryKey: ["backup-runs"], queryFn: () => fn() });
   const runs = q.data?.runs ?? [];
   const last = runs[0];
+  const role = useRole();
+  const qc = useQueryClient();
+  const runFn = useServerFn(runBackupNow);
+  const run = useMutation({
+    mutationFn: () => runFn(),
+    onSuccess: (r) => {
+      if (!r.ok) toast.error(`Backup did not finish: ${r.error}`);
+      else if ("skipped" in r) toast.message(r.skipped);
+      else toast.success(`Backup saved to ${r.folder}`);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Backup did not start"),
+    onSettled: () => qc.invalidateQueries({ queryKey: ["backup-runs"] }),
+  });
   const tone = !last ? "closed" : last.status === "failed" ? "breached" : last.status === "succeeded" ? "resolved" : "waiting";
 
   return (
@@ -20,9 +36,16 @@ export function NightlyBackupPanel() {
         </span>
       }
       actions={
+        <span className="flex items-center gap-2">
+        {role.isAdmin && q.data?.ready ? (
+          <Button size="sm" variant="outline" disabled={run.isPending} onClick={() => run.mutate()}>
+            {run.isPending ? "Running..." : "Run backup now"}
+          </Button>
+        ) : null}
         <StatusBadge tone={tone as never}>
           {!q.data?.ready ? "Not turned on" : !last ? "No runs yet" : last.status === "failed" ? "Last run failed" : last.status === "succeeded" ? "Last run OK" : "Running"}
         </StatusBadge>
+        </span>
       }
       description="Every night at 2 a.m. Central, tickets, ticket activity, work orders, claims, guest refunds and credits, expenses and onboarding Tasks are saved as spreadsheets in ARHA Resolve > Documents > Resolve Backups. Each night gets its own dated folder, kept for 60 days."
     >

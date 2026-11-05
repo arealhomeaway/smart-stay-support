@@ -27,3 +27,13 @@ export const listBackupRuns = createServerFn({ method: "GET" })
     if (error) return { ready: false as const, runs: [] as BackupRunRow[] };
     return { ready: true as const, runs: (data ?? []) as BackupRunRow[] };
   });
+
+/** Admin-only: run the backup now through the same server path as the schedule. */
+export const runBackupNow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { runNightlyBackup } = await import("@/lib/nightly-backup.server");
+    return runNightlyBackup(supabaseAdmin as never, new Date(), "manual");
+  });
