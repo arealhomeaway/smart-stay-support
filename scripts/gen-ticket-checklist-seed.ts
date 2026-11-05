@@ -12,10 +12,10 @@ const lines = [
 for (const t of SEED_TEMPLATES) {
   const p = templateProblems(t);
   if (p.length) throw new Error(`${t.category}: ${p.join("; ")}`);
-  const body = JSON.stringify({ priority: t.priority, steps: t.steps });
+  const body = JSON.stringify({ priority: t.priority, ...(t.settings ? { settings: t.settings } : {}), steps: t.steps });
   lines.push(
     `INSERT INTO public.playbooks (category, title, active, playbook_key, version, status, approved_at, effective_on, applies_to, source, source_refs, checklist, checklist_category, sop_url)
-SELECT 'checklist', ${q(t.title)}, false, ${q("checklist:" + t.category)}, 1, 'approved', now(), current_date, ARRAY['ticket'], 'imported', ARRAY['Resolve Ticket Checklists: Draft for Review (Nov 4 2026)'], ${q(body)}::jsonb, ${q(t.category)}, NULL
+SELECT 'checklist', ${q(t.title)}, false, ${q("checklist:" + t.category)}, 1, 'approved', now(), current_date, ARRAY['ticket'], 'imported', ${t.category === "booking" ? "ARRAY['Notion SOP: Early Check-in/Late Checkout Requests (verified)']" : "ARRAY['Resolve Ticket Checklists: Draft for Review (Nov 4 2026)']"}, ${q(body)}::jsonb, ${q(t.category)}, NULL
 WHERE NOT EXISTS (SELECT 1 FROM public.playbooks WHERE checklist IS NOT NULL AND checklist_category = ${q(t.category)});`,
   );
 }

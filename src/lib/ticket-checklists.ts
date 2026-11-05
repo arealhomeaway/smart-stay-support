@@ -86,8 +86,12 @@ export type ChecklistTemplate = {
   sopUrl: string | null;
   /** Starting priority when the template sets one; null = existing priority rules. */
   priority: { activeGuest: "p1" | "p2" | "p3"; otherwise: "p1" | "p2" | "p3" } | null;
+  /** Editable values (for example fees) shown in step text as {key}. */
+  settings?: ChecklistSetting[];
   steps: ChecklistStep[];
 };
+
+export type ChecklistSetting = { key: string; label: string; value: string };
 
 export const NOT_APPLICABLE = "not_applicable";
 
@@ -239,8 +243,10 @@ export function answerHistoryLine(step: ChecklistStep, a: { value: string; note?
   return [`Checklist step ${step.label}, "${step.question}": ${label}.`, ...fields, note ? `Note: ${note}` : null].filter(Boolean).join(" ");
 }
 
-export function fillQuestion(q: string, facts: { lockSystem?: string | null }) {
-  return q.replace(/\{lock_system\}/g, facts.lockSystem?.trim() || "the home's lock system");
+export function fillQuestion(q: string, facts: { lockSystem?: string | null }, settings: ChecklistSetting[] = []) {
+  let out = q.replace(/\{lock_system\}/g, facts.lockSystem?.trim() || "the home's lock system");
+  for (const st of settings) out = out.split(`{${st.key}}`).join(st.value);
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -272,7 +278,12 @@ export function templateProblems(t: ChecklistTemplate): string[] {
     if (!s.question.trim()) out.push(`Step ${s.label} needs a question.`);
     if (s.options.length === 0) out.push(`Step ${s.label} needs at least one answer.`);
     if (s.action && !CHECKLIST_ACTIONS.includes(s.action)) out.push(`Step ${s.label} opens an unknown action.`);
+    const known = new Set(["lock_system", ...(t.settings ?? []).map((x) => x.key)]);
+    for (const m of `${s.question} ${s.help ?? ""}`.matchAll(/\{(\w+)\}/g)) {
+      if (!known.has(m[1]!)) out.push(`Step ${s.label} uses {${m[1]}}, which is not a setting.`);
+    }
   });
+  for (const st of t.settings ?? []) if (!st.value.trim()) out.push(`Setting "${st.label}" needs a value.`);
   t.steps.forEach((s, idx) => {
     for (const o of s.options) {
       if (!o.goto) continue;
@@ -299,6 +310,8 @@ export function parseChecklistRow(row: {
     priority: (body.priority as ChecklistTemplate["priority"]) ?? null,
     steps: body.steps as ChecklistStep[],
   };
+  const settings = (body as { settings?: unknown }).settings;
+  if (Array.isArray(settings)) t.settings = settings as ChecklistSetting[];
   if (t.steps.some((s) => !s || typeof s.key !== "string" || !Array.isArray(s.options))) return null;
   return { ...t, id: row.id, version: row.version };
 }

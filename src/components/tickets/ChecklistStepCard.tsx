@@ -144,7 +144,7 @@ export function ChecklistStepView({
           <li key={s.key} className="flex gap-2">
             <Check className="mt-0.5 size-4 shrink-0 text-primary" />
             <span>
-              <span className="font-medium">{s.label}. {fillQuestion(s.question, facts)}</span>{" "}
+              <span className="font-medium">{s.label}. {fillQuestion(s.question, facts, template.settings)}</span>{" "}
               <span className="text-muted-foreground">
                 {answer.value === NOT_APPLICABLE ? `Doesn't apply: ${answer.note ?? ""}` : (option?.label ?? answer.value)}
                 {answer.answeredAt ? ` · ${nameFor ? nameFor(answer.answeredBy) + ", " : ""}${usDateTime(answer.answeredAt)}` : ""}
@@ -180,8 +180,8 @@ export function ChecklistStepView({
         </p>
         <span className="text-xs text-muted-foreground">{progress.done.length} of {progress.total} done</span>
       </div>
-      <h3 className="text-lg font-semibold" data-testid="checklist-question">{fillQuestion(step.question, facts)}</h3>
-      {step.help && <p className="text-sm text-muted-foreground">{step.help}</p>}
+      <h3 className="text-lg font-semibold" data-testid="checklist-question">{fillQuestion(step.question, facts, template.settings)}</h3>
+      {step.help && <p className="text-sm text-muted-foreground">{fillQuestion(step.help, facts, template.settings)}</p>}
       {factLines.length > 0 && (
         <ul className="space-y-0.5 rounded-md bg-sunken px-3 py-2 text-sm" aria-label="What Resolve already knows">
           {factLines.map((l) => <li key={l}>{l}</li>)}
@@ -325,8 +325,8 @@ export function ChecklistStepCard({
       const { error } = await (supabase as unknown as Db).from("ticket_steps").insert({
         ticket_id: ticketId,
         position: (answers.data?.length ?? 0) + 1,
-        instruction: fillQuestion(step.question, facts),
-        detail: step.help ?? null,
+        instruction: fillQuestion(step.question, facts, tpl.data?.settings),
+        detail: step.help ? fillQuestion(step.help, facts, tpl.data?.settings) : null,
         required: true,
         step_key: step.key,
         answer: a.value,

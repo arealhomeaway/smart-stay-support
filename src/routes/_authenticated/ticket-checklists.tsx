@@ -81,7 +81,7 @@ function TicketChecklistsPage() {
         _category: cat,
         _title: draft.title,
         _sop_url: draft.sopUrl ?? null,
-        _checklist: { priority: draft.priority ?? null, steps: draft.steps },
+        _checklist: { priority: draft.priority ?? null, settings: draft.settings ?? [], steps: draft.steps },
       });
       if (error) throw error;
     },
@@ -141,6 +141,25 @@ function TicketChecklistsPage() {
                 <Input id="cl-sop" disabled={!editable} value={draft.sopUrl ?? ""} placeholder="https://" onChange={(e) => setDraft({ ...draft, sopUrl: e.target.value || null })} />
               </div>
             </div>
+            {(draft.settings ?? []).length > 0 && (
+              <div className="space-y-2 rounded-lg border border-border p-3" aria-label="Settings">
+                <p className="font-medium">Settings</p>
+                <p className="text-xs text-muted-foreground">Used in the step text wherever {"{"}name{"}"} appears.</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {(draft.settings ?? []).map((st, i) => (
+                    <div key={st.key} className="space-y-1">
+                      <Label htmlFor={`cl-set-${st.key}`}>{st.label}</Label>
+                      <Input
+                        id={`cl-set-${st.key}`}
+                        disabled={!editable}
+                        value={st.value}
+                        onChange={(e) => setDraft({ ...draft, settings: (draft.settings ?? []).map((x, j) => (j === i ? { ...x, value: e.target.value } : x)) })}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {draft.priority && <p className="text-sm text-muted-foreground">Starting priority: {draft.priority.activeGuest.toUpperCase()} with a guest in the home or arriving within 48 hours, otherwise {draft.priority.otherwise.toUpperCase()}.</p>}
 
             {draft.steps.map((s, i) => (
