@@ -27,3 +27,17 @@ Seed templates wait for the six checklists' step text from Emily's doc "Resolve 
 6. **Limits** are never stored in templates. A step that needs one calls `evaluateAuthority` or `RECOVERY_POLICY`.
 7. **Rollout:** one `FLAG_KEYS` entry per category, all off. Off means today's form and flow.
 8. **Prefilled facts** come from data Resolve already reads (OwnerRez stay and arrival, reservation, the home's lock system, last stay, next clean), shown for the coordinator to confirm.
+
+## What was built (code, all categories off)
+
+- Rules: `src/lib/ticket-checklists.ts` (walking, branching, "doesn't apply", active guest, starting priority, repair bands via `evaluateAuthority`, refund limits via `RECOVERY_POLICY`). Seed text: `src/lib/ticket-checklist-seed.ts`; `scripts/gen-ticket-checklist-seed.ts` writes `02_seed_ticket_checklists.sql`.
+- Ticket: `ChecklistStepCard` sits at the top of "Do this now" only when the ticket was pinned to a checklist version at creation. Existing vendor/work order tools stay one click away. Answers go to `ticket_steps` (step_key rows) and ticket activity; the guest step saves the same guest update as before.
+- New ticket: category tiles appear only when at least one category switch is on; each picks the existing situation, so work type, seat, SLA and priority rules are unchanged. "Other" shows today's work type picker. Work type stays visible under Details > About this ticket.
+- Editor: `/ticket-checklists` (tab next to Playbooks). Admin or Director of Operations edit and publish a new version through `publish_ticket_checklist`; others view. Until step 01 is applied it shows the seed text read-only.
+
+## Apply order (Emily approves)
+1. `01_ticket_checklists.sql`  2. `02_seed_ticket_checklists.sql`  3. Turn on one category switch at a time.
+Undo in reverse: `02_undo_...`, then `01_undo_...`. Checksums in `SHA256SUMS`.
+
+## Not built yet
+Automatic repeat-cleaner check, lock-check flag on the home, claim deadline reminder, and calendar block (step shows guidance only). Seed step 8 cleaning is a manual "Checked".

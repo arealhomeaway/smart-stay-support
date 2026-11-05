@@ -182,7 +182,7 @@ function TicketChecklistsPage() {
             )}
           </section>
 
-          <aside className="space-y-3 rounded-lg border border-border p-4" aria-label="Preview">
+          <aside className="space-y-3 self-start rounded-lg border border-border p-4" aria-label="Preview">
             <div className="flex items-center justify-between gap-2">
               <p className="font-medium">Preview</p>
               <Button variant="ghost" size="sm" onClick={() => setPreviewAnswers([])}>Start over</Button>
