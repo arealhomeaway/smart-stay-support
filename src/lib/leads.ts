@@ -44,6 +44,19 @@ export type LeadLossReason =
 
 export type LeadChannel = "call" | "email" | "text" | "other" | "note" | "stage_change" | "system";
 
+/** Every valid loss reason, for server-side validation. */
+export const LEAD_LOSS_REASONS = [
+  "unresponsive",
+  "other_option",
+  "budget_too_low",
+  "no_properties_available",
+  "outside_coverage",
+  "requirements_not_met",
+  "expired",
+  "dates_did_not_work",
+  "other",
+] as const;
+
 export const STAGE_LABELS: Record<LeadStage, string> = {
   new: "New",
   first_contact: "First contact sent",
