@@ -15,7 +15,7 @@ export const BACKUP_EXPORTS = [
   { table: "work_orders", file: "work-orders.csv" },
   { table: "claims", file: "claims.csv" },
   { table: "guest_recovery", file: "guest-refunds-credits.csv" },
-  { table: "guest_recovery_ledger", file: "guest-refunds-credits-ledger.csv" },
+  { table: "guest_recovery_ledger", file: "guest-refunds-credits-ledger.csv", orderBy: "recovery_id" },
   { table: "expenses", file: "expenses.csv" },
   { table: "onboarding_tasks", file: "onboarding-tasks.csv" },
 ] as const;

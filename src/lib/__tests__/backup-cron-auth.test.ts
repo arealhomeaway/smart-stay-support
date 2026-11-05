@@ -24,3 +24,11 @@ describe("nightly backup trigger token", () => {
     expect(await backupCallerAllowed(good, verify)).toBe(true);
   });
 });
+
+import { BACKUP_EXPORTS } from "@/lib/nightly-backup";
+describe("backup exports", () => {
+  it("reads the refunds ledger by recovery_id, since it has no id column", () => {
+    const l = BACKUP_EXPORTS.find((e) => e.table === "guest_recovery_ledger") as { orderBy?: string };
+    expect(l.orderBy).toBe("recovery_id");
+  });
+});
