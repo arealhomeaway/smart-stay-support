@@ -42,13 +42,13 @@ async function graph(key: string, path: string, init?: RequestInit) {
   return res.status === 204 ? null : res.json();
 }
 
-async function readAll(db: Db, table: string): Promise<Record<string, unknown>[]> {
+async function readAll(db: Db, table: string, orderBy = "id"): Promise<Record<string, unknown>[]> {
   const out: Record<string, unknown>[] = [];
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await db
       .from(table)
       .select("*")
-      .order("id", { ascending: true })
+      .order(orderBy, { ascending: true })
       .range(from, from + PAGE - 1);
     if (error) throw new Error(`Reading ${table} failed: ${error.message}`);
     out.push(...(data ?? []));
@@ -160,7 +160,7 @@ export async function runNightlyBackup(db: Db, now = new Date(), trigger = "sche
     await db.from("backup_runs").update({ folder_item_id: folderItemId }).eq("id", runId);
 
     for (const exp of BACKUP_EXPORTS) {
-      const rows = await readAll(db, exp.table);
+      const rows = await readAll(db, exp.table, "orderBy" in exp ? exp.orderBy : "id");
       const bytes = await upload(key, drive.id, dated.id, exp.file, toCsv(rows));
       files.push({ file: exp.file, rows: rows.length, bytes });
     }

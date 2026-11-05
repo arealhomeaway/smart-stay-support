@@ -1758,6 +1758,13 @@
       "when": 1793849232800,
       "tag": "0250_ticket_checklists",
       "breakpoints": true
+    },
+    {
+      "idx": 251,
+      "version": "7",
+      "when": 1793850256517,
+      "tag": "0251_schedule_nightly_backup",
+      "breakpoints": true
     }
   ]
 }
