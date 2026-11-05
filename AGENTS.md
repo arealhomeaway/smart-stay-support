@@ -9,6 +9,8 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
+- Help ticket bulk transaction and grouped notification rules: see src/lib/AGENTS.md.
+
 - Accepted-vendor Breezeway dispatch carries the exact Work Order, canonical mapped person and appointment; staged insert/close/result triggers reserve that row across the external call and block uncertain retries without replacing existing authorization functions. Admin sending scope uses one audited caller-authenticated RPC and a shared outbound gate; absent settings retain verified-home behavior, absent dispatch guards refuse sends. Why: prevent unassigned, undated, duplicate or closed-work sends with no pending-schema fallback.
 
 - Co-owner access must use private.is_program_member (app side: isActiveProgramMember / ownerMemberProgramIds) while primary email identity stays owner_programs.owner_user_id; co-owners are added/removed only via add_program_co_owner / remove_program_co_owner, with logins from the shared findOrCreateOwnerLogin path; stage substitutions against captured live definitions with exact ACL-preserving undo and isolated tests. Why: shared authority without widening staff access or duplicating delivery.

@@ -7,37 +7,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export const HELP_STATUSES = ["new", "reviewing", "planned", "in_progress", "resolved", "closed"] as const;
-export const HELP_STATUS_LABEL: Record<string, string> = {
-  new: "New",
-  reviewing: "Reviewing",
-  planned: "Planned",
-  in_progress: "In Progress",
-  resolved: "Resolved",
-  closed: "Closed / Not Pursuing",
-};
-
-async function leadershipGuard(supabase: any, userId: string) {
-  const [{ data: admin }, { data: director }] = await Promise.all([
-    supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
-    supabase.rpc("is_director", { _user_id: userId }),
-  ]);
-  if (admin !== true && director !== true) throw new Error("Only leadership can manage help tickets.");
-}
-
-async function submitterEmail(ticket: { submitted_by: string | null; submitter_email: string | null }) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  if (ticket.submitted_by) {
-    const { data } = await supabaseAdmin.auth.admin.getUserById(ticket.submitted_by);
-    if (data?.user?.email) return data.user.email;
-  }
-  return ticket.submitter_email ?? null;
-}
+import { HELP_STATUSES, HELP_STATUS_LABEL } from "./help-ticket-bulk";
+export { HELP_STATUSES, HELP_STATUS_LABEL } from "./help-ticket-bulk";
 
 export const getHelpTicketRecipient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ ticketId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
+    const { leadershipGuard, submitterEmail } = await import("./help-ticket-response.server");
     await leadershipGuard(context.supabase, context.userId);
     const { data: t } = await context.supabase
       .from("help_tickets")
@@ -60,6 +37,7 @@ export const updateHelpTicket = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => UpdateInput.parse(d))
   .handler(async ({ data, context }) => {
+    const { leadershipGuard, submitterEmail } = await import("./help-ticket-response.server");
     const { supabase, userId } = context;
     await leadershipGuard(supabase, userId);
     const { data: t, error: tErr } = await supabase.from("help_tickets").select("*").eq("id", data.ticketId).maybeSingle();
@@ -78,7 +56,7 @@ export const updateHelpTicket = createServerFn({ method: "POST" })
     if (statusChanged) {
       const { error } = await supabase
         .from("help_tickets")
-        .update({ status: data.status!, updated_at: now, last_activity_at: now })
+        .update({ status: data.status ?? t.status, updated_at: now, last_activity_at: now })
         .eq("id", t.id);
       if (error) throw new Error("Could not update status.");
     } else {
@@ -106,7 +84,7 @@ export const updateHelpTicket = createServerFn({ method: "POST" })
       const { sendEmail, emailShell, escapeHtml } = await import("./email.server");
       const newStatus = HELP_STATUS_LABEL[(statusChanged ? data.status : t.status) as string] ?? t.status;
       const kindLabel = t.kind === "issue" ? "Issue" : "Suggestion";
-      const reopened = statusChanged && ["resolved", "closed"].includes(t.status) && !["resolved", "closed"].includes(data.status!);
+      const reopened = statusChanged && ["resolved", "closed"].includes(t.status) && !["resolved", "closed"].includes(data.status ?? t.status);
       const subject = publicReply
         ? `Resolve Help Ticket #${t.ticket_number} — Reply from ARHA${statusChanged ? ` (${newStatus})` : ""}`
         : reopened
