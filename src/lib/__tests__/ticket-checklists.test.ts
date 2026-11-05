@@ -1,5 +1,6 @@
 import { describe, expect, it as test } from "bun:test";
 import {
+  fillQuestion,
   CHECKLIST_CATEGORIES,
   NOT_APPLICABLE,
   answerProblem,
@@ -148,6 +149,34 @@ describe("authority comes from existing rules", () => {
     expect(refundLimitsText()).toContain("$1,500");
   });
   test("templates never store dollar limits", () => {
-    expect(/\$\d/.test(JSON.stringify(SEED_TEMPLATES))).toBe(false);
+    expect(/\$\d/.test(JSON.stringify(SEED_TEMPLATES.map((t) => t.steps)))).toBe(false);
+  });
+});
+
+describe("booking checklist (Notion SOP)", () => {
+  const b = () => tpl("booking");
+  const start = [ans("guest", "yes")];
+  test("early check-in: cleaner yes asks payment then notes; no declines to the shared steps", () => {
+    expect(current("booking", [...start, ans("request", "early")])).toBe("eci_cleaner");
+    expect(current("booking", [...start, ans("request", "early"), ans("eci_cleaner", "yes")])).toBe("eci_payment");
+    expect(current("booking", [...start, ans("request", "early"), ans("eci_cleaner", "no")])).toBe("waiver");
+  });
+  test("late checkout: same-day arrival declines, otherwise asks about the clean", () => {
+    expect(current("booking", [...start, ans("request", "late"), ans("lco_same_day", "yes")])).toBe("waiver");
+    expect(current("booking", [...start, ans("request", "late"), ans("lco_same_day", "no")])).toBe("lco_clean_moves");
+  });
+  test("change dates goes to the calendar check; cancel goes straight to OwnerRez", () => {
+    expect(current("booking", [...start, ans("request", "dates")])).toBe("free");
+    expect(current("booking", [...start, ans("request", "cancel")])).toBe("changed");
+  });
+  test("fees are editable settings shown in the step text", () => {
+    const step = b().steps.find((s) => s.key === "eci_cleaner")!;
+    expect(fillQuestion(step.help!, {}, b().settings)).toContain("2:00 PM $55, before 1:00 PM $75");
+    const edited = b().settings!.map((x) => (x.key === "eci_fee_2pm" ? { ...x, value: "$60" } : x));
+    expect(fillQuestion(step.help!, {}, edited)).toContain("2:00 PM $60");
+    expect(fillQuestion(b().steps.find((s) => s.key === "lco_same_day")!.help!, {}, b().settings)).toContain("after noon $145");
+  });
+  test("nothing from the unapproved v2 draft", () => {
+    expect(/door code|gap fee|goodwill|\$100/i.test(JSON.stringify(b()))).toBe(false);
   });
 });
