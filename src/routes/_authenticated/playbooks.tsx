@@ -30,7 +30,10 @@ import {
 } from "@/components/ui/sheet";
 import { RequireCapability } from "@/components/RequireCapability";
 import { useRole } from "@/hooks/useRole";
-import { useSeat } from "@/hooks/useSeat";
+import { useServerFn } from "@tanstack/react-start";
+import { PlaybookEditor } from "@/components/playbooks/PlaybookEditor";
+import { canManagePlaybooks, playbookEditContent, type PlaybookContent, type PlaybookStepEdit } from "@/lib/playbook-editing";
+import { savePlaybookEdit, changePlaybookState } from "@/lib/playbook-editing.functions";
 import { CATEGORIES, labelFor } from "@/lib/tickets";
 import { FieldHint } from "@/components/FieldHint";
 import {
@@ -40,7 +43,6 @@ import {
   hasAuthoredGuidance,
   isTestPlaybook,
   parsePlaybook,
-  nextTransitions,
   type AuthoredPlaybook,
   type PlaybookRow,
   type PlaybookStatus,
@@ -49,12 +51,12 @@ import {
 export const Route = createFileRoute("/_authenticated/playbooks")({
   head: () => ({
     meta: [
-      { title: "Playbook administration — Resolve Operations" },
+      { title: "Playbook administration | Resolve Operations" },
       {
         name: "description",
         content: "Author, review and approve the guidance that reaches frontline work.",
       },
-      { property: "og:title", content: "Playbook administration — Resolve Operations" },
+      { property: "og:title", content: "Playbook administration | Resolve Operations" },
       {
         property: "og:description",
         content: "Draft, review, approve and retire operational guidance.",
@@ -102,18 +104,17 @@ function usePlaybooks() {
         .select("*")
         .order("updated_at", { ascending: false });
       if (error) throw error;
-      return (data as PlaybookRow[]).map(parsePlaybook).filter((p) => !p.isChecklist);
+      return (data as (PlaybookRow & { updated_at: string })[]).map((row) => ({ ...parsePlaybook(row), updatedAt: row.updated_at })).filter((p) => !p.isChecklist);
     },
   });
 }
 
 function PlaybooksPage() {
   const qc = useQueryClient();
-  const { readOnly } = useRole();
-  const seat = useSeat();
+  const { readOnly, roles, access } = useRole();
   // Only the Director of Operations may release guidance that carries policy,
   // money, safety or owner obligations. Database policy is the real guard.
-  const isDirector = seat.code === "director_ops";
+  const isDirector = canManagePlaybooks(roles, access.seats);
   const [filter, setFilter] = useState<PlaybookStatus | "all" | "attention">("attention");
   const [openId, setOpenId] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(false);
@@ -149,7 +150,7 @@ function PlaybooksPage() {
             date.
           </p>
         </div>
-        {!readOnly && (
+        {!readOnly && isDirector && (
           <Button onClick={() => setShowNew(true)}>
             <Plus className="size-4" /> New playbook
           </Button>
@@ -213,10 +214,12 @@ function PlaybooksPage() {
         <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-xl">
           {selected && (
             <PlaybookDetail
+              key={selected.id}
               pb={selected}
+              updatedAt={selected.updatedAt}
               isDirector={isDirector}
               readOnly={readOnly}
-              onChanged={() => qc.invalidateQueries({ queryKey: ["playbooks-admin"] })}
+              onChanged={(id) => { if (id) setOpenId(id); void qc.invalidateQueries({ queryKey: ["playbooks-admin"] }); void qc.invalidateQueries({ queryKey: ["playbooks-contextual"] }); void qc.invalidateQueries({ queryKey: ["playbooks"] }); void qc.invalidateQueries({ queryKey: ["work-types"] }); }}
             />
           )}
         </SheetContent>
@@ -254,25 +257,44 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 
 function PlaybookDetail({
   pb,
+  updatedAt,
   isDirector,
   readOnly,
   onChanged,
 }: {
   pb: AuthoredPlaybook;
+  updatedAt: string;
   isDirector: boolean;
   readOnly: boolean;
-  onChanged: () => void;
+  onChanged: (id?: string) => void;
 }) {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const drift = driftWarnings(pb);
+  const [editing, setEditing] = useState(false);
+  const saveEdit = useServerFn(savePlaybookEdit);
+  const changeState = useServerFn(changePlaybookState);
+  const qc = useQueryClient();
+  const steps = useQuery({ queryKey: ["playbook-editor-steps", pb.id], queryFn: async () => {
+    const { data, error } = await supabase.from("playbook_steps").select("instruction, detail, required, photo_required").eq("playbook_id", pb.id).order("position");
+    if (error) throw error; return data as PlaybookStepEdit[];
+  }});
+  async function save(content: PlaybookContent) {
+    setBusy(true);
+    try {
+      const result = await saveEdit({ data: { id: pb.id, expectedUpdatedAt: updatedAt, content } });
+      setEditing(false); toast.success(result.created ? `Draft version ${result.version} created.` : "Draft saved.");
+      void qc.invalidateQueries({ queryKey: ["playbook-editor-steps", result.id] }); onChanged(result.id);
+    } catch (err) { toast.error(err instanceof Error ? err.message : "Could not save the draft."); }
+    finally { setBusy(false); }
+  }
 
   const history = useQuery({
     queryKey: ["playbook-approvals", pb.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("playbook_approvals")
-        .select("*")
+        .select("*, profiles:actor_id(full_name)")
         .eq("playbook_id", pb.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -280,47 +302,15 @@ function PlaybookDetail({
     },
   });
 
-  async function move(to: PlaybookStatus, directorOnly: boolean) {
-    if (directorOnly && !isDirector) {
-      toast.error("This one needs the Director of Operations.");
-      return;
-    }
+  async function move(action: "approve" | "archive" | "note" | "submit") {
     setBusy(true);
-    const now = new Date().toISOString();
-    const { data: auth } = await supabase.auth.getUser();
-    const { error } = await supabase
-      .from("playbooks")
-      .update({
-        status: to,
-        review_note: note.trim() || null,
-        ...(to === "in_review" ? { submitted_at: now, submitted_by: auth.user?.id ?? null } : {}),
-        ...(to === "approved"
-          ? { approved_at: now, approved_by: auth.user?.id ?? null, active: true }
-          : {}),
-        ...(to === "retired" ? { retired_at: now, active: false } : {}),
-      })
-      .eq("id", pb.id);
-    if (error) {
-      setBusy(false);
-      toast.error(error.message);
-      return;
-    }
-    await supabase.from("playbook_approvals").insert({
-      playbook_id: pb.id,
-      from_status: pb.status,
-      to_status: to,
-      actor_id: auth.user?.id ?? null,
-      actor_role: isDirector ? "director_ops" : "ops_supervisor",
-      note: note.trim() || null,
-    });
-    setBusy(false);
-    setNote("");
-    toast.success(`Moved to ${STATUS_LABELS[to]}.`);
-    onChanged();
-    void history.refetch();
+    try {
+      await changeState({ data: { id: pb.id, expectedUpdatedAt: updatedAt, action, note } });
+      toast.success(action === "approve" ? "Approved and made active." : action === "archive" ? "Playbook archived." : action === "submit" ? "Sent for review." : "Review note saved.");
+      setNote(""); onChanged(); void history.refetch();
+    } catch (err) { toast.error(err instanceof Error ? err.message : "Could not save this change."); }
+    finally { setBusy(false); }
   }
-
-  const transitions = nextTransitions(pb);
 
   return (
     <div className="space-y-6">
@@ -338,6 +328,14 @@ function PlaybookDetail({
         <SheetTitle>{pb.title}</SheetTitle>
         <SheetDescription>{pb.summary ?? "No summary written yet."}</SheetDescription>
       </SheetHeader>
+
+      {isDirector && !readOnly && !editing && <div className="flex flex-wrap gap-2">
+        <Button variant="outline" disabled={steps.isLoading || steps.isError || busy} onClick={() => setEditing(true)}>Edit</Button>
+        {(pb.status === "draft" || pb.status === "in_review") && <Button disabled={busy} onClick={() => move("approve")}>Approve and make active</Button>}
+        {pb.status !== "retired" && <Button variant="outline" disabled={busy} onClick={() => { if (window.confirm("Archive this playbook? It will no longer guide new work.")) void move("archive"); }}>Archive</Button>}
+      </div>}
+      {steps.isError && <p role="alert" className="text-sm text-destructive">Could not load the steps. Reopen this playbook to try again.</p>}
+      {editing ? <PlaybookEditor initial={playbookEditContent(pb, steps.data ?? [])} busy={busy} onSave={save} onCancel={() => setEditing(false)} /> : <>
 
       {drift.length > 0 && (
         <div className="space-y-1 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">
@@ -434,40 +432,16 @@ function PlaybookDetail({
         </p>
       )}
 
-      {!readOnly && transitions.length > 0 && (
-        <div className="space-y-3 rounded-lg border border-border p-3">
-          <Label htmlFor="pb-note">Review note</Label>
-          <Textarea
-            id="pb-note"
-            rows={2}
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="What you checked, or what needs changing"
-          />
-          <div className="flex flex-wrap gap-2">
-            {transitions.map(
-              (t: { to: PlaybookStatus; label: string; effect: string; directorOnly: boolean }) => {
-                const blocked = t.directorOnly && !isDirector;
-                return (
-                  <div key={t.to} className="space-y-1">
-                    <Button
-                      size="sm"
-                      variant={t.to === "approved" ? "default" : "outline"}
-                      disabled={busy || blocked}
-                      onClick={() => move(t.to, t.directorOnly)}
-                    >
-                      {t.label}
-                    </Button>
-                    <p className="max-w-48 text-xs text-muted-foreground">
-                      {blocked ? "Director of Operations only." : t.effect}
-                    </p>
-                  </div>
-                );
-              },
-            )}
-          </div>
-        </div>
-      )}
+      <div className="space-y-3"><h3 className="font-medium">Ordered steps</h3>
+        {(steps.data ?? []).map((step, i) => <div key={i} className="text-sm"><p>{i + 1}. {step.instruction}{step.required ? " (required)" : ""}</p>{step.detail && <p className="text-muted-foreground">{step.detail}</p>}</div>)}
+        {steps.data?.length === 0 && <p className="text-sm text-muted-foreground">No steps written yet.</p>}
+      </div>
+      {!readOnly && <div className="space-y-3 border-t border-border pt-4">
+        <Label htmlFor="pb-note">Review note</Label><Textarea id="pb-note" value={note} onChange={(e) => setNote(e.target.value)} />
+        <div className="flex gap-2"><Button variant="outline" disabled={busy || !note.trim()} onClick={() => move("note")}>Save review note</Button>
+        {pb.status === "draft" && <Button variant="outline" disabled={busy} onClick={() => move("submit")}>Send for review</Button>}</div>
+      </div>}
+      </>}
 
       <div className="space-y-2">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -482,7 +456,8 @@ function PlaybookDetail({
                 {STATUS_LABELS[(h.from_status as PlaybookStatus) ?? "draft"]} →{" "}
                 {STATUS_LABELS[(h.to_status as PlaybookStatus) ?? "draft"]} ·{" "}
                 {usDateTime(h.created_at)}
-                {h.actor_role ? ` · ${h.actor_role}` : ""}
+                {` · v${(h as unknown as { version?: number }).version ?? pb.version}`}
+                {h.profiles?.full_name ? ` · ${h.profiles.full_name}` : h.actor_role ? ` · ${h.actor_role}` : ""}
                 {h.note ? ` · ${h.note}` : ""}
               </li>
             ))}
