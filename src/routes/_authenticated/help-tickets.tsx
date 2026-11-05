@@ -9,6 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useRole } from "@/hooks/useRole";
+import { bulkUpdateHelpTickets } from "@/lib/help-ticket-bulk.functions";
+import { filterHelpTickets, toggleHelpSelection, HELP_BULK_NOTIFY_DEFAULT, type HelpBulkInput } from "@/lib/help-ticket-bulk";
 import { RequireCapability } from "@/components/RequireCapability";
 import { PageHeader, SectionCard, EmptyState } from "@/components/ui/page";
 import { usDateTime } from "@/lib/dates";
@@ -48,13 +53,14 @@ function useTickets() {
   return useQuery({
     queryKey: ["help-tickets"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("help_tickets")
-        .select("*")
-        .order("submitted_at", { ascending: false })
-        .limit(500);
-      if (error) throw error;
-      return data;
+      const rows = [];
+      for (let from = 0; ; from += 500) {
+        const { data, error } = await supabase.from("help_tickets").select("*")
+          .order("submitted_at", { ascending: false }).order("id").range(from, from + 499);
+        if (error) throw error;
+        rows.push(...(data ?? []));
+        if (!data || data.length < 500) return rows;
+      }
     },
   });
 }
@@ -79,21 +85,41 @@ function TicketList({ rows: all, isLoading }: { rows: any[]; isLoading: boolean 
   const [kind, setKind] = useState<"all" | "issue" | "suggestion">("all");
   const [portal, setPortal] = useState("all");
   const [q, setQ] = useState("");
+  const qc = useQueryClient();
+  const { roles, access, readOnly } = useRole();
+  const canBulk = !readOnly && (roles.includes("admin") || Boolean(access.seats.opsDirector));
+  const updateBulk = useServerFn(bulkUpdateHelpTickets);
+  const [selection, setSelection] = useState<string[]>([]);
+  const [bulkStatus, setBulkStatus] = useState<HelpBulkInput["status"]>("closed");
+  const [note, setNote] = useState("");
+  const [notify, setNotify] = useState(HELP_BULK_NOTIFY_DEFAULT);
+  const [saving, setSaving] = useState(false);
+  const [pending, setPending] = useState<HelpBulkInput | null>(null);
+  const [confirmation, setConfirmation] = useState("");
   const portals = useMemo(() => [...new Set(all.map((r) => r.portal).filter(Boolean))] as string[], [all]);
-  const rows = all.filter((r) => {
-    if (status === "open" && !OPEN.includes(r.status)) return false;
-    if (status !== "open" && status !== "all" && r.status !== status) return false;
-    if (kind !== "all" && r.kind !== kind) return false;
-    if (portal !== "all" && r.portal !== portal) return false;
-    const needle = q.trim().toLowerCase();
-    if (needle) {
-      const hay = [r.page_title, r.route, r.submitter_name, r.submitter_email, r.description, r.property_label]
-        .join(" ")
-        .toLowerCase();
-      if (!hay.includes(needle)) return false;
-    }
-    return true;
-  });
+  const rows = filterHelpTickets(all, { status, kind, portal, q });
+  const selectedIds = selection.filter((id) => rows.some((row) => row.id === id));
+  const allSelected = rows.length > 0 && selectedIds.length === rows.length;
+  function clearSelection() { setSelection([]); setPending(null); setConfirmation(""); }
+  async function saveBulk() {
+    if (!selectedIds.length || !canBulk) return;
+    setSaving(true); setConfirmation("");
+    const data = pending ?? {
+      batchId: crypto.randomUUID(), tickets: rows.filter((row) => selectedIds.includes(row.id)).map((row) => ({ id: row.id as string, expectedUpdatedAt: row.updated_at as string })),
+      status: bulkStatus, note: note.trim(), notify,
+    };
+    setPending(data);
+    try {
+      const result = await updateBulk({ data });
+      const statusLabel = result.status === "closed" ? "Closed" : label(result.status);
+      const message = `${result.count} tickets set to ${statusLabel}`;
+      setConfirmation(message); toast.success(message);
+      if (result.failed || result.deliveryUnconfirmed) toast.warning("Tickets saved. Some notifications could not be confirmed. Check ticket history before sending again.");
+      setSelection([]); setPending(null); setNote(""); setNotify(HELP_BULK_NOTIFY_DEFAULT);
+      void qc.invalidateQueries({ queryKey: ["help-tickets"] }); void qc.invalidateQueries({ queryKey: ["help-ticket-events"] });
+    } catch (err) { toast.error(err instanceof Error ? err.message : "Could not confirm this save. Try the same selection again or refresh the list."); }
+    finally { setSaving(false); }
+  }
 
   return (
     <div className="space-y-6">
@@ -101,26 +127,36 @@ function TicketList({ rows: all, isLoading }: { rows: any[]; isLoading: boolean 
       <RecipientSetting />
       <SectionCard title="Submissions">
         <div className="mb-4 flex flex-wrap gap-2">
-          <select className={sel} value={status} onChange={(e) => setStatus(e.target.value as Filter)} aria-label="Status">
+          <select className={sel} disabled={saving} value={status} onChange={(e) => { setStatus(e.target.value as Filter); clearSelection(); }} aria-label="Status">
             <option value="open">Open</option>
             {HELP_STATUSES.map((s) => (
               <option key={s} value={s}>{label(s)}</option>
             ))}
             <option value="all">All statuses</option>
           </select>
-          <select className={sel} value={kind} onChange={(e) => setKind(e.target.value as typeof kind)} aria-label="Type">
+          <select className={sel} disabled={saving} value={kind} onChange={(e) => { setKind(e.target.value as typeof kind); clearSelection(); }} aria-label="Type">
             <option value="all">Issues & suggestions</option>
             <option value="issue">Issues</option>
             <option value="suggestion">Suggestions</option>
           </select>
-          <select className={sel} value={portal} onChange={(e) => setPortal(e.target.value)} aria-label="Portal">
+          <select className={sel} disabled={saving} value={portal} onChange={(e) => { setPortal(e.target.value); clearSelection(); }} aria-label="Portal">
             <option value="all">All portals</option>
             {portals.map((p) => (
               <option key={p} value={p}>{p}</option>
             ))}
           </select>
-          <Input className="h-9 max-w-xs" placeholder="Search page, person, text…" value={q} onChange={(e) => setQ(e.target.value)} />
+          <Input className="h-9 max-w-xs" disabled={saving} placeholder="Search page, person, text…" value={q} onChange={(e) => { setQ(e.target.value); clearSelection(); }} />
         </div>
+        {confirmation && <p role="status" className="mb-3 text-sm text-success">{confirmation}</p>}
+        {canBulk && rows.length > 0 && !isLoading && <div className="mb-3 flex items-center gap-3 text-sm">
+          <label className="flex items-center gap-2"><Checkbox aria-label="Select all" disabled={saving} checked={allSelected ? true : selectedIds.length ? "indeterminate" : false} onCheckedChange={(checked) => { setSelection(toggleHelpSelection(selectedIds, rows.map((r) => r.id), checked === true)); setPending(null); }} />Select all</label>
+          <span aria-live="polite">{selectedIds.length} selected</span>
+        </div>}
+        {canBulk && selectedIds.length > 0 && <div className="mb-4 space-y-3 border-y border-border py-4">
+          <div className="flex flex-wrap items-center gap-3"><span className="text-sm font-medium">Change status</span><Select value={bulkStatus} disabled={saving} onValueChange={(value) => { setBulkStatus(value as HelpBulkInput["status"]); setPending(null); }}><SelectTrigger aria-label="Change status" className="w-56"><SelectValue /></SelectTrigger><SelectContent>{HELP_STATUSES.map((s) => <SelectItem key={s} value={s}>{s === "closed" ? "Closed" : label(s)}</SelectItem>)}</SelectContent></Select></div>
+          <Textarea aria-label="Optional note for all selected tickets" placeholder="Optional note" value={note} maxLength={5000} disabled={saving} onChange={(e) => { setNote(e.target.value); setPending(null); }} />
+          <div className="flex flex-wrap items-center justify-between gap-3"><label className="flex items-center gap-2 text-sm"><Checkbox checked={notify} disabled={saving} onCheckedChange={(checked) => { setNotify(checked === true); setPending(null); }} />Notify submitters</label><div className="flex gap-2"><Button variant="outline" disabled={saving} onClick={clearSelection}>Cancel</Button><Button disabled={saving} onClick={() => void saveBulk()}>{saving ? "Saving…" : "Save"}</Button></div></div>
+        </div>}
         {isLoading ? (
           <Skeleton className="h-40" />
         ) : rows.length === 0 ? (
@@ -128,11 +164,12 @@ function TicketList({ rows: all, isLoading }: { rows: any[]; isLoading: boolean 
         ) : (
           <ul className="divide-y">
             {rows.map((r) => (
-              <li key={r.id}>
+              <li key={r.id} className="flex items-start gap-3">
+                {canBulk && <Checkbox className="mt-4 shrink-0" aria-label={`Select Help Ticket #${r.ticket_number}`} disabled={saving} checked={selectedIds.includes(r.id)} onCheckedChange={(checked) => { setSelection(toggleHelpSelection(selectedIds, [r.id], checked === true)); setPending(null); setConfirmation(""); }} />}
                 <Link
                   to="/help-tickets"
                   search={{ ticket: r.ticket_number }}
-                  className="block space-y-1 py-3 hover:bg-muted/40"
+                  className="block min-w-0 flex-1 space-y-1 py-3 hover:bg-muted/40"
                 >
                   <div className="flex flex-wrap items-center gap-2 text-sm">
                     <span className="font-semibold">#{r.ticket_number}</span>
