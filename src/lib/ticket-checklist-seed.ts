@@ -425,8 +425,16 @@ export const SEED_TEMPLATES: ChecklistTemplate[] = [
         showIf: { step: "eci_cleaner", answers: ["yes"] },
       },
       {
-        key: "eci_notes",
+        key: "eci_door",
         label: "3b",
+        question: "Door code sent to the guest manually?",
+        help: "When an early check-in is approved, the team sends the code by hand.",
+        options: [yes()],
+        showIf: { step: "eci_payment", answers: ["yes", "free"] },
+      },
+      {
+        key: "eci_notes",
+        label: "3c",
         question: "Breezeway and OwnerRez notes updated?",
         options: [yes()],
         showIf: { step: "eci_cleaner", answers: ["yes"] },

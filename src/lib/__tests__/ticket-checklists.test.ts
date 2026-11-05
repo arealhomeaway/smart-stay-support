@@ -156,10 +156,21 @@ describe("authority comes from existing rules", () => {
 describe("booking checklist (Notion SOP)", () => {
   const b = () => tpl("booking");
   const start = [ans("guest", "yes")];
-  test("early check-in: cleaner yes asks payment then notes; no declines to the shared steps", () => {
+  test("early check-in: cleaner yes asks payment, then the door code, then notes; no declines to the shared steps", () => {
     expect(current("booking", [...start, ans("request", "early")])).toBe("eci_cleaner");
     expect(current("booking", [...start, ans("request", "early"), ans("eci_cleaner", "yes")])).toBe("eci_payment");
     expect(current("booking", [...start, ans("request", "early"), ans("eci_cleaner", "no")])).toBe("waiver");
+    expect(current("booking", [...start, ans("request", "early"), ans("eci_cleaner", "yes"), ans("eci_payment", "yes")])).toBe("eci_door");
+    expect(current("booking", [...start, ans("request", "early"), ans("eci_cleaner", "yes"), ans("eci_payment", "free")])).toBe("eci_door");
+    expect(
+      current("booking", [
+        ...start,
+        ans("request", "early"),
+        ans("eci_cleaner", "yes"),
+        ans("eci_payment", "yes"),
+        ans("eci_door", "yes"),
+      ]),
+    ).toBe("eci_notes");
   });
   test("late checkout: same-day arrival declines, otherwise asks about the clean", () => {
     expect(current("booking", [...start, ans("request", "late"), ans("lco_same_day", "yes")])).toBe("waiver");
