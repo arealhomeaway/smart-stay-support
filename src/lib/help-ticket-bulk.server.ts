@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { notifyHelpBulk, HELP_STATUS_LABEL, type HelpBulkReceipt } from "./help-ticket-bulk";
-import { submitterEmail } from "./help-ticket-response.functions";
+import { submitterEmail } from "./help-ticket-response.server";
 import { sendEmail, emailShell } from "./email.server";
 import { verifyEmailSafety } from "./email-safety.server";
 
