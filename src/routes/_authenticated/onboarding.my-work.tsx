@@ -8,9 +8,11 @@ import {
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { EmptyState, LoadingPage, PageHeader } from "@/components/ui/page";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -26,12 +28,21 @@ import { viewTask, type WorkflowTask } from "@/lib/onboarding-workflow";
 import { projectScope, splitByScope } from "@/lib/onboarding-scope";
 import { buildReleaseContext } from "@/lib/onboarding-state";
 import {
-  groupMyWorkSimple,
   canQuickComplete,
   myWorkSelection,
   matchesWorkFilter,
   validateMyWorkSearch,
   WORK_FILTER_LABELS,
+  MY_TASKS_QUICK_LABELS,
+  MY_TASKS_PREFS_DEFAULTS,
+  loadMyTasksPrefs,
+  saveMyTasksPrefs,
+  matchesMyTasksQuick,
+  matchesMyTasksDueRange,
+  sortMyTasks,
+  groupMyTasks,
+  type MyTasksPrefs,
+  type MyTasksQuick,
   type WorkFilter,
 } from "@/lib/onboarding-work-views";
 import { isTestRecord } from "@/lib/test-data";
