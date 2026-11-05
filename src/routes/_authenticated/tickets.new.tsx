@@ -307,6 +307,8 @@ export function NewTicketForm({
         .from("playbooks")
         .select("id, title, category")
         .eq("active", true)
+        .in("status", ["approved", "active"])
+        .is("checklist", null)
         .order("title");
       if (error) throw error;
       return data;
@@ -447,9 +449,9 @@ export function NewTicketForm({
   const meta = priorityMeta(form.priority);
 
   const resolvedPlaybookId = useMemo(() => {
-    if (form.playbook_id !== "auto") return form.playbook_id === "none" ? null : form.playbook_id;
-    return workType?.playbook_id ?? null;
-  }, [form.playbook_id, workType]);
+    const id = form.playbook_id !== "auto" ? form.playbook_id : workType?.playbook_id;
+    return playbooks?.some((p) => p.id === id) ? id ?? null : null;
+  }, [form.playbook_id, workType, playbooks]);
 
   // The first line of what happened is the summary — nobody types it twice.
   const derivedTitle = (form.title.trim() || form.description.trim().split("\n")[0] || "").slice(

@@ -47,6 +47,13 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, private AS $$
 DECLARE _actor uuid := auth.uid(); _old public.playbooks; _new public.playbooks; _key text; _version integer; _step jsonb; _position integer := 0;
 BEGIN
   IF _actor IS NULL OR NOT public.can_manage_playbooks(_actor) THEN RAISE EXCEPTION 'Only Admins and Directors can edit playbooks.'; END IF;
+  IF _id IS NULL THEN
+    PERFORM set_config('resolve.playbook_write','on',true);
+    INSERT INTO public.playbooks(title,category,status,active,playbook_key,source)
+      VALUES('New draft','other','draft',false,gen_random_uuid()::text,'authored') RETURNING * INTO _old;
+    _id := _old.id;
+    _expected_updated_at := _old.updated_at;
+  END IF;
   SELECT * INTO _old FROM public.playbooks WHERE id = _id;
   IF NOT FOUND OR _old.checklist IS NOT NULL THEN RAISE EXCEPTION 'Ordinary playbook not found.'; END IF;
   _key := coalesce(_old.playbook_key, _old.id::text);

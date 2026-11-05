@@ -5,7 +5,7 @@ import { playbookContentSchema } from "./playbook-editing";
 
 export const savePlaybookEdit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ id: z.string().uuid(), expectedUpdatedAt: z.string(), content: playbookContentSchema }))
+  .inputValidator(z.object({ id: z.string().uuid().nullable(), expectedUpdatedAt: z.string().nullable(), content: playbookContentSchema }))
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("save_playbook_draft" as never, {
       _id: data.id, _expected_updated_at: data.expectedUpdatedAt, _content: data.content,
