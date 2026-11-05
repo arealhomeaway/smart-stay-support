@@ -35,9 +35,8 @@ function LeadsLayout() {
   return (
     <div className="space-y-5">
       <nav className="flex flex-wrap items-center gap-1" aria-label="Lead views">
-        <SubLink to="/leads">Today</SubLink>
+        <SubLink to="/leads">Leads</SubLink>
         <SubLink to="/leads/my-leads">My leads</SubLink>
-        <SubLink to="/leads/pipeline">Pipeline</SubLink>
         {isSupervisor ? <SubLink to="/leads/manager">Manager</SubLink> : null}
       </nav>
       <Outlet />
