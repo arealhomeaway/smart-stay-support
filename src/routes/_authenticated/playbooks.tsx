@@ -284,7 +284,7 @@ function PlaybookDetail({
   isDirector: boolean;
   readOnly: boolean;
   onChanged: (id?: string) => void;
-  sopLink?: SopLink;
+  sopLink?: SopLink | undefined;
   initialEditing?: boolean;
   activeVersion: AuthoredPlaybook | null;
   suggestedDraft: AuthoredPlaybook | null;
@@ -366,7 +366,7 @@ function PlaybookDetail({
         {pb.status !== "retired" && <Button variant="outline" disabled={busy} onClick={() => { if (window.confirm("Archive this playbook? It will no longer guide new work.")) void move("archive"); }}>Archive</Button>}
       </div>}
       {steps.isError && <p role="alert" className="text-sm text-destructive">Could not load the steps. Reopen this playbook to try again.</p>}
-      {editing ? <PlaybookEditor initial={playbookEditContent(pb, steps.data ?? [])} busy={busy} onSave={save} onCancel={() => setEditing(false)} /> : <>
+      {editing && !steps.data ? <Skeleton className="h-40 w-full" /> : editing ? <PlaybookEditor initial={playbookEditContent(pb, steps.data ?? [])} busy={busy} onSave={save} onCancel={() => setEditing(false)} /> : <>
 
       {drift.length > 0 && (
         <div className="space-y-1 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">
