@@ -92,5 +92,5 @@ export async function createLeadFromEmail(
     occurred_at: input.source.receivedAt ?? new Date().toISOString(),
   });
 
-  return { leadId: data.id, contactName: data.contact_name, source: data.source as LeadSource };
+  return { leadId: data.id, contactName: data.contact_name ?? derived.contact_name, source: data.source as LeadSource };
 }
