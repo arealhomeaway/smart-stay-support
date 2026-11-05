@@ -80,7 +80,7 @@ function HelpTicketsPage() {
   return <TicketList rows={data ?? []} isLoading={isLoading} />;
 }
 
-function TicketList({ rows: all, isLoading }: { rows: any[]; isLoading: boolean }) {
+export function TicketList({ rows: all, isLoading }: { rows: any[]; isLoading: boolean }) {
   const [status, setStatus] = useState<Filter>("open");
   const [kind, setKind] = useState<"all" | "issue" | "suggestion">("all");
   const [portal, setPortal] = useState("all");
@@ -127,25 +127,25 @@ function TicketList({ rows: all, isLoading }: { rows: any[]; isLoading: boolean 
       <RecipientSetting />
       <SectionCard title="Submissions">
         <div className="mb-4 flex flex-wrap gap-2">
-          <select className={sel} disabled={saving} value={status} onChange={(e) => { setStatus(e.target.value as Filter); clearSelection(); }} aria-label="Status">
+          <select className={sel} disabled={saving || Boolean(pending)} value={status} onChange={(e) => { setStatus(e.target.value as Filter); clearSelection(); }} aria-label="Status">
             <option value="open">Open</option>
             {HELP_STATUSES.map((s) => (
               <option key={s} value={s}>{label(s)}</option>
             ))}
             <option value="all">All statuses</option>
           </select>
-          <select className={sel} disabled={saving} value={kind} onChange={(e) => { setKind(e.target.value as typeof kind); clearSelection(); }} aria-label="Type">
+          <select className={sel} disabled={saving || Boolean(pending)} value={kind} onChange={(e) => { setKind(e.target.value as typeof kind); clearSelection(); }} aria-label="Type">
             <option value="all">Issues & suggestions</option>
             <option value="issue">Issues</option>
             <option value="suggestion">Suggestions</option>
           </select>
-          <select className={sel} disabled={saving} value={portal} onChange={(e) => { setPortal(e.target.value); clearSelection(); }} aria-label="Portal">
+          <select className={sel} disabled={saving || Boolean(pending)} value={portal} onChange={(e) => { setPortal(e.target.value); clearSelection(); }} aria-label="Portal">
             <option value="all">All portals</option>
             {portals.map((p) => (
               <option key={p} value={p}>{p}</option>
             ))}
           </select>
-          <Input className="h-9 max-w-xs" disabled={saving} placeholder="Search page, person, text…" value={q} onChange={(e) => { setQ(e.target.value); clearSelection(); }} />
+          <Input className="h-9 max-w-xs" disabled={saving || Boolean(pending)} placeholder="Search page, person, text…" value={q} onChange={(e) => { setQ(e.target.value); clearSelection(); }} />
         </div>
         {confirmation && <p role="status" className="mb-3 text-sm text-success">{confirmation}</p>}
         {canBulk && rows.length > 0 && !isLoading && <div className="mb-3 flex items-center gap-3 text-sm">
@@ -153,6 +153,7 @@ function TicketList({ rows: all, isLoading }: { rows: any[]; isLoading: boolean 
           <span aria-live="polite">{selectedIds.length} selected</span>
         </div>}
         {canBulk && selectedIds.length > 0 && <div className="mb-4 space-y-3 border-y border-border py-4">
+          {pending && !saving && <p role="alert" className="text-sm text-warning">The save was not confirmed. Save again to check the same update, or cancel and refresh the list.</p>}
           <div className="flex flex-wrap items-center gap-3"><span className="text-sm font-medium">Change status</span><Select value={bulkStatus} disabled={saving} onValueChange={(value) => { setBulkStatus(value as HelpBulkInput["status"]); setPending(null); }}><SelectTrigger aria-label="Change status" className="w-56"><SelectValue /></SelectTrigger><SelectContent>{HELP_STATUSES.map((s) => <SelectItem key={s} value={s}>{s === "closed" ? "Closed" : label(s)}</SelectItem>)}</SelectContent></Select></div>
           <Textarea aria-label="Optional note for all selected tickets" placeholder="Optional note" value={note} maxLength={5000} disabled={saving} onChange={(e) => { setNote(e.target.value); setPending(null); }} />
           <div className="flex flex-wrap items-center justify-between gap-3"><label className="flex items-center gap-2 text-sm"><Checkbox checked={notify} disabled={saving} onCheckedChange={(checked) => { setNotify(checked === true); setPending(null); }} />Notify submitters</label><div className="flex gap-2"><Button variant="outline" disabled={saving} onClick={clearSelection}>Cancel</Button><Button disabled={saving} onClick={() => void saveBulk()}>{saving ? "Saving…" : "Save"}</Button></div></div>
