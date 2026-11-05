@@ -9,7 +9,8 @@ import { formatPropertyLabel } from "@/lib/property-label";
  */
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { OutlookSourceCard } from "@/components/OutlookSourceCard";
@@ -32,13 +33,11 @@ import { stateChip } from "@/lib/semantic";
 import {
   CHANNEL_LABELS,
   LOSS_REASON_LABELS,
-  PIPELINE,
   SOURCE_LABELS,
   STAGE_LABELS,
   attentionFlags,
   followUpBucket,
   formatDate,
-  formatMoney,
   isOpen,
   nextAction,
   nextFollowUpAt,
@@ -48,9 +47,29 @@ import {
   type LeadLossReason,
   type LeadStage,
 } from "@/lib/leads";
+import {
+  LEAD_OUTCOME_LABELS,
+  OFFER_OUTCOME_LABELS,
+  finderSearchFromLead,
+  guestsPetsLabel,
+  leadFollowUpDate,
+  leadOutcome,
+  leadRegion,
+  offerOutcome,
+  sortOffers,
+  stayDatesLabel,
+  waitingOffer,
+  type LeadOffer,
+} from "@/lib/lead-offers";
+import { decideLeadOffer, updateLeadDetails } from "@/lib/lead-offers.functions";
 import type { LeadRow, LeadUpdate } from "@/lib/lead-types";
-import { rankProperties } from "@/lib/property-search";
-import { readCountedRows } from "@/lib/read-all-rows";
+
+type OfferProperty = {
+  name: string; nickname: string | null; city: string | null; bedrooms: number | null;
+  lifecycle_status: string | null; address_line1: string | null; unit: string | null;
+  state: string | null; postal_code: string | null; ownerrez_property_id: string | null;
+};
+type OfferRow = LeadOffer & { properties: OfferProperty | null };
 
 const CONTACT_CHANNELS: LeadChannel[] = ["call", "email", "text", "other"];
 
