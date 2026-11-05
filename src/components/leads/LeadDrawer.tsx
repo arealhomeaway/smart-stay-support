@@ -94,14 +94,22 @@ export function LeadDrawer({
 }) {
   const qc = useQueryClient();
   const userId = useCurrentUserId();
+  const navigate = useNavigate();
+  const decideOffer = useServerFn(decideLeadOffer);
+  const saveLeadDetails = useServerFn(updateLeadDetails);
   const [channel, setChannel] = useState<LeadChannel>("email");
   const [outcome, setOutcome] = useState("");
   const [note, setNote] = useState("");
   const [lossReason, setLossReason] = useState<LeadLossReason | "">("");
   const [lossNote, setLossNote] = useState("");
   const [keepOpen, setKeepOpen] = useState("");
-  const [reservationRef, setReservationRef] = useState("");
-  const [propertySearch, setPropertySearch] = useState("");
+  const [editingWho, setEditingWho] = useState(false);
+  const [whoForm, setWhoForm] = useState({ organization: "", contactName: "", phone: "", email: "" });
+  const [followUpOn, setFollowUpOn] = useState("");
+  const [declineId, setDeclineId] = useState<string | null>(null);
+  const [declineReason, setDeclineReason] = useState("");
+  const [choosePrompt, setChoosePrompt] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const leadId = lead?.id ?? null;
 
@@ -119,34 +127,22 @@ export function LeadDrawer({
     },
   });
 
+  // Offers live on lead_properties. The offer columns come from the staged v2
+  // SQL; until it is applied this query fails and the section says so instead
+  // of breaking the drawer.
   const candidates = useQuery({
     queryKey: ["lead-properties", leadId],
     enabled: Boolean(leadId),
+    retry: false,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("lead_properties")
         .select(
-          "id, property_id, note, properties(name, nickname, city, bedrooms, lifecycle_status, address_line1, unit, state, postal_code, ownerrez_property_id)",
+          "id, lead_id, property_id, note, presented_at, added_by, created_at, quote_total, quote_currency, outcome, outcome_reason, outcome_at, outcome_by, properties(name, nickname, city, bedrooms, lifecycle_status, address_line1, unit, state, postal_code, ownerrez_property_id)",
         )
         .eq("lead_id", leadId!);
       if (error) throw error;
-      return data;
-    },
-  });
-
-  const propertyOptions = useQuery({
-    queryKey: ["lead-property-search", propertySearch],
-    enabled: Boolean(leadId) && propertySearch.trim().length > 1,
-    queryFn: async () => {
-      const q = propertySearch.trim();
-      const { data, error } = await readCountedRows(supabase
-        .from("properties")
-        .select(
-          "id, name, nickname, listing_alias, address_line1, unit, city, state, postal_code, market, neighborhood, ownerrez_property_id, bedrooms, lifecycle_status", { count: "exact" },
-        )
-        .order("id"));
-      if (error) throw error;
-      return rankProperties(q, data ?? []);
+      return (data ?? []) as unknown as OfferRow[];
     },
   });
 
