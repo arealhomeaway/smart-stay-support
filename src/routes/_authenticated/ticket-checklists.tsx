@@ -78,7 +78,7 @@ function TicketChecklistsPage() {
     mutationFn: async () => {
       if (!draft || !live.data?.row) throw new Error("Nothing to publish.");
       const { error } = await db.rpc("publish_ticket_checklist", {
-        _playbook_id: live.data.row.id,
+        _category: cat,
         _title: draft.title,
         _sop_url: draft.sopUrl ?? null,
         _checklist: { priority: draft.priority ?? null, steps: draft.steps },
