@@ -10249,6 +10249,7 @@ export type Database = {
           note: string | null
           playbook_id: string
           to_status: string
+          version: number | null
         }
         Insert: {
           actor_id?: string | null
@@ -10259,6 +10260,7 @@ export type Database = {
           note?: string | null
           playbook_id: string
           to_status: string
+          version?: number | null
         }
         Update: {
           actor_id?: string | null
@@ -10269,6 +10271,7 @@ export type Database = {
           note?: string | null
           playbook_id?: string
           to_status?: string
+          version?: number | null
         }
         Relationships: [
           {
@@ -16106,6 +16109,7 @@ export type Database = {
       can_edit_handoff_standard: { Args: never; Returns: boolean }
       can_edit_owner_library: { Args: { _uid: string }; Returns: boolean }
       can_manage_credentials: { Args: { _user_id: string }; Returns: boolean }
+      can_manage_playbooks: { Args: { _user_id: string }; Returns: boolean }
       can_read_completed_onboarding_document: {
         Args: { _document_id: string }
         Returns: string
@@ -16125,6 +16129,15 @@ export type Database = {
           _reason?: string
           _settings?: Json
           _status?: string
+        }
+        Returns: Json
+      }
+      change_playbook_state: {
+        Args: {
+          _action: string
+          _expected_updated_at: string
+          _id: string
+          _note?: string
         }
         Returns: Json
       }
@@ -17304,6 +17317,10 @@ export type Database = {
           _title: string
         }
         Returns: string
+      }
+      save_playbook_draft: {
+        Args: { _content: Json; _expected_updated_at: string; _id: string }
+        Returns: Json
       }
       save_ticket_owner_update: {
         Args: {
