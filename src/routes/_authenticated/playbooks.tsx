@@ -18,7 +18,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usDate, usDateTime } from "@/lib/dates";
 import {
@@ -112,8 +111,7 @@ function usePlaybooks() {
 function PlaybooksPage() {
   const qc = useQueryClient();
   const { readOnly, roles, access } = useRole();
-  // Only the Director of Operations may release guidance that carries policy,
-  // money, safety or owner obligations. Database policy is the real guard.
+  // Authoring and approval use the caller-checked Admin/Director rule.
   const isDirector = canManagePlaybooks(roles, access.seats);
   const [filter, setFilter] = useState<PlaybookStatus | "all" | "attention">("attention");
   const [openId, setOpenId] = useState<string | null>(null);
