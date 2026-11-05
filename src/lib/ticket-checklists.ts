@@ -129,7 +129,7 @@ export const CHECKLIST_CATEGORIES: ChecklistCategory[] = [
   { id: "maintenance", label: "Maintenance or repair", hint: "Something is broken.", icon: "Wrench", flag: "checklist_maintenance", situation: (g) => (g ? "broken_now" : "broken_later") },
   { id: "other_complaint", label: "Other guest complaint", hint: "Wi-Fi, noise, amenities, listing.", icon: "MessageSquareWarning", flag: "checklist_other_complaint", situation: () => "guest_needs_now" },
   { id: "damage", label: "Damage and claim", hint: "Something was damaged.", icon: "ShieldAlert", flag: "checklist_damage", situation: () => "damage_claim" },
-  { id: "booking", label: "Booking or reservation issue", hint: "Dates, check-in, cancel, payment.", icon: "CalendarDays", flag: "checklist_booking", situation: () => "guest_needs_now" },
+  { id: "booking", label: "Booking or reservation issue", hint: "Dates, check-in, cancel, payment.", icon: "CalendarDays", flag: "checklist_booking", situation: () => "reservation_change" },
   { id: "other", label: "Other", hint: "Anything else.", icon: "CircleHelp", flag: null, situation: () => null },
 ];
 
