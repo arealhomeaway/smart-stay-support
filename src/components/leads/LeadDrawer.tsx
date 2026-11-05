@@ -294,36 +294,11 @@ export function LeadDrawer({
     );
   }
 
-  function convert() {
-    if (!lead) return;
-    patchLead.mutate(
-      {
-        patch: {
-          stage: "converted",
-          converted_at: new Date().toISOString(),
-          converted_by: userId,
-          converted_property_id: candidates.data?.[0]?.property_id ?? null,
-          reservation_ref: reservationRef || null,
-        },
-        log: {
-          channel: "stage_change",
-          outcome: "Booking converted",
-          from: lead.stage,
-          to: "converted",
-        },
-      },
-      { onSuccess: () => toast.success("✓ Booking converted") },
-    );
-  }
-
   function closeLost() {
     if (!lead) return;
-    if (!lossReason) {
-      toast.error("Choose a loss reason.");
-      return;
-    }
-    if (lossReason === "other" && !lossNote.trim()) {
-      toast.error("A note is required for Other.");
+    const problem = validateLeadLost(lossReason, lossNote);
+    if (problem) {
+      toast.error(problem);
       return;
     }
     patchLead.mutate(
@@ -690,18 +665,9 @@ export function LeadDrawer({
               <Separator />
               <section className="space-y-3">
                 <h3 className="text-sm font-semibold">Close the opportunity</h3>
-                <Input
-                  placeholder="Reservation reference (optional)"
-                  value={reservationRef}
-                  onChange={(e) => setReservationRef(e.target.value)}
-                />
-                <Button
-                  className="resolve-press w-full"
-                  onClick={convert}
-                  disabled={patchLead.isPending}
-                >
-                  Convert — booking confirmed
-                </Button>
+                <p className="text-xs text-muted-foreground">
+                  To mark the lead Booked, accept the offer on the home they chose under Offers.
+                </p>
 
                 <Select
                   value={lossReason}
