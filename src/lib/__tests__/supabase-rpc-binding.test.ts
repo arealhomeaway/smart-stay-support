@@ -17,7 +17,13 @@ describe("supabase rpc binding", () => {
     ) => Promise<unknown>;
     // V8: "Cannot read properties of undefined (reading 'rest')";
     // JSC: "undefined is not an object (evaluating 'this.rest')".
-    expect(() => detached("any_function", {})).toThrow(/rest/);
+    let message = "";
+    try {
+      detached("any_function", {});
+    } catch (e) {
+      message = e instanceof Error ? e.message : String(e);
+    }
+    expect(message).toContain("rest");
   });
 
   it("a bound rpc reference gets past the client and only fails on the network", async () => {
