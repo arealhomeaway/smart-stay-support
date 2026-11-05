@@ -140,15 +140,14 @@ export function LeadRowCard({
 /** List plus drawer wiring — the piece every leads view reuses. */
 export function LeadListSection({
   leads,
-  withProperties,
   canEdit,
 }: {
   leads: LeadRow[];
-  withProperties: Set<string>;
   canEdit: boolean;
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const people = useStaffDirectory().data ?? [];
+  const offerMap = useLeadOfferMap().data ?? new Map<string, OfferEntry[]>();
   // Logging contact can move a lead out of the list this view filters to. The
   // workspace should stay open on the row the coordinator is working, so the
   // last known version of it is kept until they close the drawer themselves.
@@ -167,7 +166,7 @@ export function LeadListSection({
           <LeadRowCard
             key={lead.id}
             lead={lead}
-            hasProperty={withProperties.has(lead.id)}
+            offers={offerMap.get(lead.id) ?? []}
             assigneeName={displayName(people.find((p) => p.id === lead.assigned_to))}
             onOpen={() => setOpenId(lead.id)}
           />
