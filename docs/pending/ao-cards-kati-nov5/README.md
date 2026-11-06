@@ -22,7 +22,7 @@ Undo for each is in `undo/`. `live-capture/` holds the read-only snapshot used f
 | 8 | A57 | Hours already log before closing (no gate in `ao_submit_card` or hours eligibility). Fix: it had no linked step, so it could only be unlocked by hand; now unlocks when "Hold the Owner readiness call" is done. |
 | 9 | N10 | Unchanged (opt-in, no N/A). |
 | 10 | P03, P04 | Choose from ARHA's approved standards list within the furnishing budget. |
-| 11 | P14, P15 | Text points to a Marketing photos link in the ARHA Resolve SharePoint site. Placeholder column `ao_home_plan_cards.marketing_photos_link`, nothing reads or writes it yet. |
+| 11 | P14, P15 | Text tells the owner to use "Download all photos" on the card. The earlier placeholder column was replaced by the download in `docs/pending/ao-marketing-photos/` (Nov 6). |
 | 12 | P19, P20 | Already have no linked step; pending link suggestions are rejected so they stay card-only. "Share the guest instructions with the Active Owner" (linked its owner opportunity "Review your home's guest instructions"; blocked handoff; Project Manager) is retired from version 2 and becomes new Draft card **A59** with the same owner text. |
 
 ## Who is affected
