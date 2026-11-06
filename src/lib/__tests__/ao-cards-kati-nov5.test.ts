@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { cardFilesByReview, type OwnerOnboardingFile } from "../owner-onboarding.server";
 
 const D = "docs/pending/ao-cards-kati-nov5";
@@ -18,7 +18,7 @@ describe("staged package integrity", () => {
   it("every file matches SHA256SUMS", () => {
     for (const line of read("SHA256SUMS").trim().split("\n")) {
       const [sum, name] = line.split(/\s+/);
-      expect(createHash("sha256").update(readFileSync(`${D}/${name}`)).digest("hex"), name).toBe(sum);
+      expect(createHash("sha256").update(readFileSync(`${D}/${name}`)).digest("hex")).toBe(sum);
     }
   });
   it("has no transaction lines, no em dashes and an undo for each step", () => {
@@ -51,9 +51,9 @@ describe("Active Owner cards", () => {
   it("every edit is versioned with history and checked against the captured version", () => {
     for (const code of ["A15", "A26", "A31", "A35", "A41", "A56", "A57", "P03", "P04", "P14", "P15"]) {
       const b = block(code);
-      expect(b, code).toMatch(/version = version \+ 1/);
-      expect(b, code).toMatch(/AND version = \d+ RETURNING/);
-      expect(b, code).toContain("ao_library_card_history");
+      expect(b).toMatch(/version = version \+ 1/);
+      expect(b).toMatch(/AND version = \d+ RETURNING/);
+      expect(b).toContain("ao_library_card_history");
     }
     expect(t02).not.toMatch(/\bN10\b/);
     expect(t02).not.toMatch(/ao_home_plan_cards SET/);
