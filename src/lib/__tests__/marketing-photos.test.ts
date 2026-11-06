@@ -1,4 +1,5 @@
 import { describe, expect, it, mock } from "bun:test";
+import { readFileSync } from "node:fs";
 import { unzipSync } from "fflate";
 
 mock.module("@/integrations/lovable/appUserConnector", () => ({ callAsAppUser: async () => new Response("", { status: 500 }) }));
@@ -18,7 +19,7 @@ describe("who can download", () => {
     expect(decidePhotoAccess({ isStaff: true, ownsHome: true, signedIn: false }).allow).toBe(false);
   });
   it("the download SQL checks ownership in the database too", async () => {
-    const sql = await Bun.file("docs/pending/ao-marketing-photos/01_marketing_photo_downloads.sql").text();
+    const sql = readFileSync("docs/pending/ao-marketing-photos/01_marketing_photo_downloads.sql", "utf8");
     expect(sql.includes("public.is_staff(uid) OR public.owner_property_access(_property_id, uid)")).toBe(true);
     expect(sql.includes("d.started_at IS NULL AND d.expires_at > now()")).toBe(true);
   });
