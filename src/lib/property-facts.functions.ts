@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertStaffCaller } from "@/lib/integration-staff-gate";
 import { unknownFacts, type PropertyFacts } from "./property-facts";
 
 export type PropertyFactsResult = {
@@ -13,6 +14,7 @@ export const getPropertyFactsFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ propertyId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }): Promise<PropertyFactsResult> => {
+    await assertStaffCaller(context.supabase, context.userId);
     const { data: row, error } = await context.supabase
       .from("properties")
       .select("ownerrez_property_id")
