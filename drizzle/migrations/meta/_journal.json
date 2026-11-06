@@ -1807,6 +1807,13 @@
       "when": 1793988889319,
       "tag": "0257_push_v3_624_daniel_ct",
       "breakpoints": true
+    },
+    {
+      "idx": 258,
+      "version": "7",
+      "when": 1794006418364,
+      "tag": "0258_ven07_vendor_home_access_window",
+      "breakpoints": true
     }
   ]
 }
