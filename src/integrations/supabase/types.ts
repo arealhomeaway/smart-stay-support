@@ -7210,6 +7210,90 @@ export type Database = {
           },
         ]
       }
+      marketing_photo_downloads: {
+        Row: {
+          expires_at: string
+          file_count: number
+          id: string
+          property_id: string
+          requested_at: string
+          started_at: string | null
+          token_hash: string
+          total_bytes: number
+          user_id: string
+        }
+        Insert: {
+          expires_at: string
+          file_count?: number
+          id?: string
+          property_id: string
+          requested_at?: string
+          started_at?: string | null
+          token_hash: string
+          total_bytes?: number
+          user_id: string
+        }
+        Update: {
+          expires_at?: string
+          file_count?: number
+          id?: string
+          property_id?: string
+          requested_at?: string
+          started_at?: string | null
+          token_hash?: string
+          total_bytes?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_photo_downloads_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "marketing_photo_downloads_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_photo_notices: {
+        Row: {
+          notified_at: string
+          notified_user: string | null
+          property_id: string
+        }
+        Insert: {
+          notified_at?: string
+          notified_user?: string | null
+          property_id: string
+        }
+        Update: {
+          notified_at?: string
+          notified_user?: string | null
+          property_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_photo_notices_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "marketing_photo_notices_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       metric_definitions: {
         Row: {
           business_definition: string
@@ -16141,6 +16225,13 @@ export type Database = {
         }
         Returns: Json
       }
+      claim_marketing_photo_download: {
+        Args: { _token_hash: string }
+        Returns: {
+          property_id: string
+          user_id: string
+        }[]
+      }
       classify_cleaner_account: {
         Args: {
           _classification: string
@@ -16560,6 +16651,10 @@ export type Database = {
         }[]
       }
       my_spending_approval_authority: { Args: never; Returns: boolean }
+      notify_marketing_photos_missing: {
+        Args: { _property_id: string }
+        Returns: boolean
+      }
       notify_staff: {
         Args: {
           _actor_id: string
@@ -17192,6 +17287,15 @@ export type Database = {
           _due: string
           _expense: string
           _question: string
+        }
+        Returns: string
+      }
+      request_marketing_photo_download: {
+        Args: {
+          _file_count: number
+          _property_id: string
+          _token_hash: string
+          _total_bytes: number
         }
         Returns: string
       }

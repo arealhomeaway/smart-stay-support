@@ -1814,6 +1814,13 @@
       "when": 1794006418364,
       "tag": "0258_ven07_vendor_home_access_window",
       "breakpoints": true
+    },
+    {
+      "idx": 259,
+      "version": "7",
+      "when": 1794006462094,
+      "tag": "0259_ao_marketing_photo_downloads",
+      "breakpoints": true
     }
   ]
 }
