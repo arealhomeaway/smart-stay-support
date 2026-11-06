@@ -312,7 +312,7 @@ function HubHeader({ hub }: { hub: Hub }) {
             )}
             {hub.viewer.staff && (
               <div className="mt-2">
-                <OpenPhotosFolderButton propertyId={propertyId} />
+                <OpenPhotosFolderButton propertyId={p.id} />
               </div>
             )}
             {hub.viewer.staff && hub.ownerRecord && (
