@@ -45,6 +45,7 @@ import { OwnerApprovalPanel } from "@/components/OwnerApprovalPanel";
 import { OnboardingActions } from "@/components/owner/OnboardingActions";
 import { StrReportPanel } from "@/components/owner/StrReportPanel";
 import { OwnerTaskDialog, taskDeadlineLabel } from "@/components/owner/OwnerTaskDialog";
+import { DownloadPhotosButton } from "@/components/property/MarketingPhotosButtons";
 import { ownerOnboardingActions } from "@/lib/owner-onboarding.functions";
 import type { OwnerOnboardingAction, OwnerOnboardingFile } from "@/lib/owner-onboarding.server";
 import { ownerReviewPresentation } from "@/lib/owner-review-presentation";
@@ -586,6 +587,7 @@ function OwnerHubBody({
                     readOnly={preview}
                     action={actionByReview.get(r.id) ?? null}
                     sharedFiles={onboardingQuery.data?.cardFiles?.[r.id] ?? []}
+                    photoPropertyId={onboardingQuery.data?.photoCards?.[r.id] ?? null}
                     canLogHours={canLogHours}
                     logHoursBlockedReason={logHoursBlockedReason}
                   />
@@ -623,6 +625,7 @@ function OwnerHubBody({
                   readOnly={preview}
                   action={actionByReview.get(r.id) ?? null}
                     sharedFiles={onboardingQuery.data?.cardFiles?.[r.id] ?? []}
+                    photoPropertyId={onboardingQuery.data?.photoCards?.[r.id] ?? null}
                   canLogHours={canLogHours}
                   logHoursBlockedReason={logHoursBlockedReason}
                 />
@@ -752,6 +755,7 @@ function ReviewRow({
   canLogHours = true,
   logHoursBlockedReason = null,
   sharedFiles = [],
+  photoPropertyId = null,
 }: {
   review: Review;
   properties: { propertyId: string; name: string }[];
@@ -764,6 +768,8 @@ function ReviewRow({
   logHoursBlockedReason?: string | null;
   /** Files staff shared on the card's linked onboarding step. */
   sharedFiles?: OwnerOnboardingFile[];
+  /** Set for cards that use the home's marketing photos. */
+  photoPropertyId?: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
@@ -830,6 +836,11 @@ function ReviewRow({
             ? ` · ${fileCount} file${fileCount === 1 ? "" : "s"} attached`
             : ""}
         </p>
+        {photoPropertyId && !readOnly ? (
+          <div className="mt-2">
+            <DownloadPhotosButton propertyId={photoPropertyId} />
+          </div>
+        ) : null}
       </div>
       <div className="flex shrink-0 gap-2">
         <Button size="sm" onClick={() => setResponseOpen(true)}>

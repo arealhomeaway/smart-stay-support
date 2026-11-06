@@ -74,8 +74,8 @@ describe("Active Owner cards", () => {
     expect(/stage_window = \$t\$operations\$t\$/.test(block("A56"))).toBe(true);
     expect(block("A57")).toContain("ec1afa4b-bf49-4d4b-91cf-2f5546fcfa49");
     for (const c of ["P03", "P04"]) expect(block(c)).toContain("approved standards list");
-    for (const c of ["P14", "P15"]) expect(block(c)).toContain("Marketing photos link");
-    expect(t02).toContain("ADD COLUMN marketing_photos_link text");
+    for (const c of ["P14", "P15"]) expect(block(c)).toContain("Download all photos");
+    expect(t02.includes("marketing_photos_link")).toBe(false);
   });
   it("P19 and P20 stay card-only", () => {
     expect(/card_code IN \('P19','P20'\) AND status = 'suggested'/.test(t02)).toBe(true);

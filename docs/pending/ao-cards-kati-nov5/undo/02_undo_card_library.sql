@@ -103,4 +103,3 @@ END $do$;
 UPDATE public.ao_library_cards SET status = 'retired', retired_at = now(), version = version + 1, updated_at = now() WHERE code IN ('A58','A59');
 UPDATE public.ao_card_step_link_suggestions SET status = $t$suggested$t$, decided_by = NULL, decided_at = NULL, note = $t$Guest instructions carry the approved facts and rules.$t$ WHERE id = '4675bcd1-ba9c-4f3d-bac0-8daf2c5d621f';
 UPDATE public.ao_card_step_link_suggestions SET status = $t$suggested$t$, decided_by = NULL, decided_at = NULL, note = $t$Approved photo assets are ready after this step.$t$ WHERE id = '933cdfd0-ef06-497a-b96e-d3b831f52fa5';
-ALTER TABLE public.ao_home_plan_cards DROP COLUMN marketing_photos_link;

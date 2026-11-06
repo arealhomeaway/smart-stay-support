@@ -8,6 +8,8 @@
  * functions the previous UI used.
  */
 
+import { OpenPhotosFolderButton } from "@/components/property/MarketingPhotosButtons";
+import { isPhotoStep } from "@/lib/marketing-photos";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
@@ -285,6 +287,7 @@ export function TaskDrawer({
         <SendToActiveOwnerGate propertyId={task.property_id}>{sendDialog}</SendToActiveOwnerGate>
       ) : sendDialog}
       <TaskVerifyBadge taskId={task.id} />
+      {isPhotoStep(task.title) && <OpenPhotosFolderButton propertyId={task.property_id} />}
       {task.owner_approval_status === "awaiting_owner" && (
         <span className="text-xs text-muted-foreground">
           Waiting on the homeowner since the last send.
