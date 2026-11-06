@@ -1,0 +1,33 @@
+[
+ {
+  "card_code": "P19",
+  "confidence": "medium",
+  "created_at": "2026-11-02T19:34:22.649539+00:00",
+  "decided_at": null,
+  "decided_by": null,
+  "id": "4675bcd1-ba9c-4f3d-bac0-8daf2c5d621f",
+  "note": "Guest instructions carry the approved facts and rules.",
+  "proposed_lock": null,
+  "status": "suggested",
+  "suggestion_kind": "link",
+  "template_task_ids": [
+   "cbb23216-ee09-4301-b0b0-4392a960a145"
+  ]
+ },
+ {
+  "card_code": "P20",
+  "confidence": "medium",
+  "created_at": "2026-11-02T19:34:22.649539+00:00",
+  "decided_at": null,
+  "decided_by": null,
+  "id": "933cdfd0-ef06-497a-b96e-d3b831f52fa5",
+  "note": "Approved photo assets are ready after this step.",
+  "proposed_lock": null,
+  "status": "suggested",
+  "suggestion_kind": "link",
+  "template_task_ids": [
+   "d3bc3652-f977-4e97-bab0-d202c4aafd57",
+   "473c402d-63c8-4140-879e-0e97b72d0ca1"
+  ]
+ }
+]

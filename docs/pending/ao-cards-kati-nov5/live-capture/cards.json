@@ -1,0 +1,705 @@
+[
+ {
+  "card_group": "Guide activity",
+  "code": "A15",
+  "created_at": "2026-10-31T19:27:41.776037+00:00",
+  "cutoff_business_days": 1,
+  "cutoff_rule": "next_business_day_9am",
+  "deadline_business_days": 2,
+  "deadline_calendar_days": null,
+  "deadline_text": "2 business days (shorter only for a documented guest-impact need)",
+  "documentation_note": "Evidence to keep: Retain the reviewed record, the homeowner's questions or analysis and the final written decision. Time: the homeowner enters actual minutes after doing the work; no estimated or prefilled time. Attestation: the homeowner confirms the entry reflects their own time and work for this home.",
+  "est_hours_max": 1,
+  "est_hours_min": 0.5,
+  "event_triggered": true,
+  "how_text": "1. Review the issue description, photos, recommended scope, quote and timing.\n2. Ask questions about guest impact, alternatives, warranty and what is excluded.\n3. Confirm whether the work is repair, replacement or optional upgrade.\n4. Approve, decline or request a revised bid in writing.\n5. Do not direct a vendor independently unless ARHA has agreed to coordinate the change.",
+  "id": "92e7e21c-3b22-4c55-b344-804d57159cfc",
+  "lane": "triggered",
+  "linked_template_task_ids": [],
+  "lock_rule": "until_linked_step_done",
+  "opens_text": "Locked until ARHA issues an estimate",
+  "output_fields": [
+   {
+    "key": "decision",
+    "label": "Decision",
+    "type": "text"
+   },
+   {
+    "key": "notes",
+    "label": "Notes",
+    "type": "text"
+   }
+  ],
+  "required_output": "Decision on the estimate",
+  "retired_at": null,
+  "stage_window": "operations",
+  "status": "released",
+  "takeover_text": "No response is not approval. ARHA follows the agreement's approval and emergency authority.",
+  "team_needs_this": true,
+  "title": "Review repair estimates and approve material work",
+  "updated_at": "2026-11-06T00:23:27.378895+00:00",
+  "updated_by": "40de2f41-5596-4ec1-98d7-29e16549a25f",
+  "version": 5,
+  "what_text": "Review a specific repair or improvement recommendation, compare the quoted scope and cost with the property need, and provide an approval or decision when required.\n\nWhy it matters: Material repairs need a clear homeowner decision under the agreement. A timely, specific answer keeps the home guest-ready.\n\nSteps:\n1. Review the issue description, photos, recommended scope, quote and timing.\n2. Ask questions about guest impact, alternatives, warranty and what is excluded.\n3. Confirm whether the work is repair, replacement or optional upgrade.\n4. Approve, decline or request a revised bid in writing.\n5. Do not direct a vendor independently unless ARHA has agreed to coordinate the change.\n\nWhat to submit: Decision on the estimate. Answer fields: Decision, notes.\n\nWhat to keep: Retain the reviewed record, the homeowner's questions or analysis and the final written decision.\n\nRecord only the time you personally spend on this card. Do not include time spent by ARHA, a vendor or another household member.",
+  "why_text": "Material repairs need a clear homeowner decision under the agreement. A timely, specific answer keeps the home guest-ready."
+ },
+ {
+  "card_group": "Guide activity",
+  "code": "A26",
+  "created_at": "2026-10-31T19:27:41.776037+00:00",
+  "cutoff_business_days": 1,
+  "cutoff_rule": "next_business_day_9am",
+  "deadline_business_days": 2,
+  "deadline_calendar_days": null,
+  "deadline_text": "2 business days after it unlocks, due 5:00 pm Central",
+  "documentation_note": "Evidence to keep: Retain the completed worksheet or draft, source links and any supporting screenshots used to prepare it. Time: the homeowner enters actual minutes after doing the work; no estimated or prefilled time. Attestation: the homeowner confirms the entry reflects their own time and work for this home.",
+  "est_hours_max": 2,
+  "est_hours_min": 1,
+  "event_triggered": false,
+  "how_text": "1. Open the floor plan ARHA uploaded and review each room's furniture placement.\n2. Check guest flow: clear walkways, bed access from both sides where possible, a usable workspace and seating for the stated occupancy.\n3. Flag any known measurement, door swing, outlet, window or fixture detail that may affect placement.\n4. Mark the plan Approve or Comment, and tie each comment to a specific room and item.\n5. Submit one consolidated response. ARHA verifies measurements and safety onsite before execution.",
+  "id": "60f4a24c-0dda-4f7c-bc74-cab9bab3b362",
+  "lane": "critical",
+  "linked_template_task_ids": [
+   "465ed7be-2ae9-497f-857f-447553df16c5"
+  ],
+  "lock_rule": "until_linked_step_done",
+  "opens_text": "Locked until ARHA uploads the floor plan",
+  "output_fields": [
+   {
+    "key": "approve_or_comment",
+    "label": "Approve or comment",
+    "type": "text"
+   },
+   {
+    "key": "notes",
+    "label": "Notes",
+    "type": "text"
+   }
+  ],
+  "required_output": "Floor plan response",
+  "retired_at": null,
+  "stage_window": "onboarding_early",
+  "status": "released",
+  "takeover_text": "ARHA proceeds with the floor plan as issued.",
+  "team_needs_this": true,
+  "title": "Review the floor plan",
+  "updated_at": "2026-11-06T00:21:53.778283+00:00",
+  "updated_by": "40de2f41-5596-4ec1-98d7-29e16549a25f",
+  "version": 4,
+  "what_text": "ARHA or its design partner prepares the plan from available measurements and site information. It is a setup and furnishing reference; the homeowner's remote review does not replace ARHA's onsite measurement or safety check.\n\nWhy it matters: Furniture placement decides how comfortable and functional the home feels. Catching layout issues on paper saves returns and rework.\n\nSteps:\n1. Open the floor plan ARHA uploaded and review each room's furniture placement.\n2. Check guest flow: clear walkways, bed access from both sides where possible, a usable workspace and seating for the stated occupancy.\n3. Flag any known measurement, door swing, outlet, window or fixture detail that may affect placement.\n4. Mark the plan Approve or Comment, and tie each comment to a specific room and item.\n5. Submit one consolidated response. ARHA verifies measurements and safety onsite before execution.\n\nWhat to submit: Floor plan response. Answer fields: Approve or comment, notes.\n\nWhat to keep: Retain the completed worksheet or draft, source links and any supporting screenshots used to prepare it.\n\nRecord only the time you personally spend on this card. Do not include time spent by ARHA, a vendor or another household member.",
+  "why_text": "Furniture placement decides how comfortable and functional the home feels. Catching layout issues on paper saves returns and rework."
+ },
+ {
+  "card_group": "Guide activity",
+  "code": "A31",
+  "created_at": "2026-10-31T19:27:41.776037+00:00",
+  "cutoff_business_days": 1,
+  "cutoff_rule": "none",
+  "deadline_business_days": null,
+  "deadline_calendar_days": null,
+  "deadline_text": "By the meeting time",
+  "documentation_note": "Evidence to keep: Retain the reviewed record, the homeowner's questions or analysis and the final written decision. Time: the homeowner enters actual minutes after doing the work; no estimated or prefilled time. Attestation: the homeowner confirms the entry reflects their own time and work for this home.",
+  "est_hours_max": 2,
+  "est_hours_min": 1,
+  "event_triggered": false,
+  "how_text": "1. Before the meeting, review the handoff packet ARHA shares, including open items, guest instructions and communication paths.\n2. Write down questions about anything that is unclear or that you expected to be different.\n3. Attend the meeting, confirm the operating authority and approval thresholds that apply after go-live, and ask your questions.\n4. Give any correction or direction on items that need a homeowner decision.\n5. Within the deadline, record your takeaways, questions, decisions and the open items carrying into go-live.",
+  "id": "e2af3ef9-cf44-4592-b6c8-52ea1ac63ec3",
+  "lane": "launch",
+  "linked_template_task_ids": [],
+  "lock_rule": "until_linked_step_done",
+  "opens_text": "Locked until the handoff meeting is scheduled",
+  "output_fields": [
+   {
+    "key": "takeaways",
+    "label": "Takeaways",
+    "type": "text"
+   },
+   {
+    "key": "questions",
+    "label": "Questions",
+    "type": "text"
+   }
+  ],
+  "required_output": "Meeting notes and takeaways (includes ready-for-booking notice and carry-over items)",
+  "retired_at": null,
+  "stage_window": "onboarding_launch",
+  "status": "released",
+  "takeover_text": "ARHA documents no-show and continues.",
+  "team_needs_this": false,
+  "title": "Attend the handoff meeting and review what carries into go-live",
+  "updated_at": "2026-11-04T00:44:45.994129+00:00",
+  "updated_by": "98bd6696-4018-4965-b645-0471c5ae3925",
+  "version": 3,
+  "what_text": "ARHA uses the handoff to explain the home's operating information, open items and communication paths. The homeowner confirms their understanding and raises any unresolved questions; ARHA assigns internal follow-up.\n\nWhy it matters: The handoff sets how the home runs after launch. Clear authority and open items now prevent confusion once guests arrive.\n\nSteps:\n1. Before the meeting, review the handoff packet ARHA shares, including open items, guest instructions and communication paths.\n2. Write down questions about anything that is unclear or that you expected to be different.\n3. Attend the meeting, confirm the operating authority and approval thresholds that apply after go-live, and ask your questions.\n4. Give any correction or direction on items that need a homeowner decision.\n5. Within the deadline, record your takeaways, questions, decisions and the open items carrying into go-live.\n\nWhat to submit: Meeting notes and takeaways (includes ready-for-booking notice and carry-over items). Answer fields: Takeaways, questions.\n\nWhat to keep: Retain the reviewed record, the homeowner's questions or analysis and the final written decision.\n\nRecord only the time you personally spend on this card. Do not include time spent by ARHA, a vendor or another household member.",
+  "why_text": "The handoff sets how the home runs after launch. Clear authority and open items now prevent confusion once guests arrive."
+ },
+ {
+  "card_group": "Guide activity",
+  "code": "A35",
+  "created_at": "2026-10-31T19:27:41.776037+00:00",
+  "cutoff_business_days": 1,
+  "cutoff_rule": "none",
+  "deadline_business_days": null,
+  "deadline_calendar_days": 5,
+  "deadline_text": "5 calendar days",
+  "documentation_note": "Evidence to keep: Retain the reviewed record, the homeowner's questions or analysis and the final written decision. Time: the homeowner enters actual minutes after doing the work; no estimated or prefilled time. Attestation: the homeowner confirms the entry reflects their own time and work for this home.",
+  "est_hours_max": 1,
+  "est_hours_min": 0.5,
+  "event_triggered": true,
+  "how_text": "1. Open the statement ARHA issued and confirm it is for the correct home and month.\n2. Review revenue, expenses and any maintenance or repair items listed.\n3. Identify any item that needs a homeowner decision, such as a repair approval or a recurring service change.\n4. Write specific questions tied to a line item.\n5. Submit the statement month and your questions or decisions. Reviewing for personal interest alone is not a decision; note the operating action you are taking, if any.",
+  "id": "70840bd0-27c7-4ad4-9627-a2e7453cb1c8",
+  "lane": "triggered",
+  "linked_template_task_ids": [],
+  "lock_rule": "until_linked_step_done",
+  "opens_text": "Locked until ARHA issues a statement",
+  "output_fields": [
+   {
+    "key": "statement_month",
+    "label": "Statement month",
+    "type": "text"
+   },
+   {
+    "key": "question",
+    "label": "Question",
+    "type": "text"
+   }
+  ],
+  "required_output": "Statement review with questions",
+  "retired_at": null,
+  "stage_window": "operations",
+  "status": "released",
+  "takeover_text": "No takeover.",
+  "team_needs_this": false,
+  "title": "Review operating statements",
+  "updated_at": "2026-11-04T00:44:45.994129+00:00",
+  "updated_by": "98bd6696-4018-4965-b645-0471c5ae3925",
+  "version": 3,
+  "what_text": "ARHA shares operating statements through the agreed homeowner channel and explains any item that needs a homeowner decision. The homeowner reviews the information for the home and asks questions through ARHA.\n\nWhy it matters: Statements show how the home is performing and surface decisions that need you. Questions are best raised while the month is fresh.\n\nSteps:\n1. Open the statement ARHA issued and confirm it is for the correct home and month.\n2. Review revenue, expenses and any maintenance or repair items listed.\n3. Identify any item that needs a homeowner decision, such as a repair approval or a recurring service change.\n4. Write specific questions tied to a line item.\n5. Submit the statement month and your questions or decisions. Reviewing for personal interest alone is not a decision; note the operating action you are taking, if any.\n\nWhat to submit: Statement review with questions. Answer fields: Statement month, question.\n\nWhat to keep: Retain the reviewed record, the homeowner's questions or analysis and the final written decision.\n\nRecord only the time you personally spend on this card. Do not include time spent by ARHA, a vendor or another household member.",
+  "why_text": "Statements show how the home is performing and surface decisions that need you. Questions are best raised while the month is fresh."
+ },
+ {
+  "card_group": "Guide activity",
+  "code": "A41",
+  "created_at": "2026-10-31T19:27:41.776037+00:00",
+  "cutoff_business_days": 1,
+  "cutoff_rule": "none",
+  "deadline_business_days": 5,
+  "deadline_calendar_days": null,
+  "deadline_text": "5 business days after it unlocks, due 5:00 pm Central",
+  "documentation_note": "Evidence to keep: Retain the reviewed record, the homeowner's questions or analysis and the final written decision. Time: the homeowner enters actual minutes after doing the work; no estimated or prefilled time. Attestation: the homeowner confirms the entry reflects their own time and work for this home.",
+  "est_hours_max": 2,
+  "est_hours_min": 1,
+  "event_triggered": false,
+  "how_text": "1. Open the onboarding cost summary ARHA issued.\n2. Compare each line item with the scopes, estimates and invoices you previously approved.\n3. Mark any line item that does not match or needs explanation, and write the question.\n4. Pay through the authorized channel in the service agreement once your questions are answered.\n5. Submit the line items you questioned and the answers you received.",
+  "id": "29b71e76-6f94-4fc8-bb13-d93d4439d1e3",
+  "lane": "launch",
+  "linked_template_task_ids": [],
+  "lock_rule": "until_linked_step_done",
+  "opens_text": "Locked until ARHA issues the cost summary",
+  "output_fields": [
+   {
+    "key": "line_item",
+    "label": "Line item",
+    "type": "text"
+   },
+   {
+    "key": "question",
+    "label": "Question",
+    "type": "text"
+   }
+  ],
+  "required_output": "Cost review with questions",
+  "retired_at": null,
+  "stage_window": "onboarding_launch",
+  "status": "released",
+  "takeover_text": "No takeover.",
+  "team_needs_this": false,
+  "title": "Review onboarding costs and invoices",
+  "updated_at": "2026-11-04T00:46:05.851617+00:00",
+  "updated_by": "98bd6696-4018-4965-b645-0471c5ae3925",
+  "version": 3,
+  "what_text": "ARHA prepares invoices and supporting cost details. The homeowner reviews the charges for their home and pays through the authorized channel; ARHA tracks approval and payment status.\n\nWhy it matters: Reviewing final onboarding costs confirms every charge matches what you approved before the home goes live.\n\nSteps:\n1. Open the onboarding cost summary ARHA issued.\n2. Compare each line item with the scopes, estimates and invoices you previously approved.\n3. Mark any line item that does not match or needs explanation, and write the question.\n4. Pay through the authorized channel in the service agreement once your questions are answered.\n5. Submit the line items you questioned and the answers you received.\n\nWhat to submit: Cost review with questions. Answer fields: Line item, question.\n\nWhat to keep: Retain the reviewed record, the homeowner's questions or analysis and the final written decision.\n\nRecord only the time you personally spend on this card. Do not include time spent by ARHA, a vendor or another household member.",
+  "why_text": "Reviewing final onboarding costs confirms every charge matches what you approved before the home goes live."
+ },
+ {
+  "card_group": "Guide activity",
+  "code": "A56",
+  "created_at": "2026-10-31T19:27:41.776037+00:00",
+  "cutoff_business_days": 1,
+  "cutoff_rule": "none",
+  "deadline_business_days": null,
+  "deadline_calendar_days": null,
+  "deadline_text": "By the session date",
+  "documentation_note": "Evidence to keep: Keep the provider confirmation, the session date and your notes. Time: the homeowner enters actual minutes after doing the work; no estimated or prefilled time. Attestation: the homeowner confirms the entry reflects their own time and work for this home.",
+  "est_hours_max": 2,
+  "est_hours_min": 1,
+  "event_triggered": true,
+  "how_text": "1. Confirm with your independent professional what the session must document and how long it will take.\n2. Propose two or three session windows to ARHA so access and an onsite representative can be arranged.\n3. Confirm the final date, provider name and access instructions with ARHA.\n4. Join remotely if the provider offers it, and answer the provider's property questions.\n5. Record the provider, session date and notes. ARHA or vendor time at the session is not your time.",
+  "id": "d9594872-8ddb-488f-bc46-3db02a65f3e8",
+  "lane": "triggered",
+  "linked_template_task_ids": [],
+  "lock_rule": "until_linked_step_done",
+  "opens_text": "Locked until ARHA schedules the session",
+  "output_fields": [
+   {
+    "key": "provider",
+    "label": "Provider",
+    "type": "text"
+   },
+   {
+    "key": "date",
+    "label": "Date",
+    "type": "date"
+   },
+   {
+    "key": "notes",
+    "label": "Notes",
+    "type": "text"
+   }
+  ],
+  "required_output": "Session confirmation and notes",
+  "retired_at": null,
+  "stage_window": "anytime",
+  "status": "released",
+  "takeover_text": "No takeover.",
+  "team_needs_this": false,
+  "title": "Coordinate a remote third-party home documentation session",
+  "updated_at": "2026-11-04T00:46:05.851617+00:00",
+  "updated_by": "98bd6696-4018-4965-b645-0471c5ae3925",
+  "version": 3,
+  "what_text": "ARHA can coordinate access and an onsite representative when available. The homeowner schedules the independent professional, confirms the requested documentation and obtains their own professional advice about the purpose and use of the session.\n\nWhy it matters: Some documentation requires an independent professional and onsite access. Coordinating it early avoids delays.\n\nSteps:\n1. Confirm with your independent professional what the session must document and how long it will take.\n2. Propose two or three session windows to ARHA so access and an onsite representative can be arranged.\n3. Confirm the final date, provider name and access instructions with ARHA.\n4. Join remotely if the provider offers it, and answer the provider's property questions.\n5. Record the provider, session date and notes. ARHA or vendor time at the session is not your time.\n\nWhat to submit: Session confirmation and notes. Answer fields: Provider, date, notes.\n\nWhat to keep: Keep the provider confirmation, the session date and your notes.\n\nRecord only the time you personally spend on this card. Do not include time spent by ARHA, a vendor or another household member.",
+  "why_text": "Some documentation requires an independent professional and onsite access. Coordinating it early avoids delays."
+ },
+ {
+  "card_group": "Guide activity",
+  "code": "A57",
+  "created_at": "2026-10-31T19:27:41.776037+00:00",
+  "cutoff_business_days": 1,
+  "cutoff_rule": "none",
+  "deadline_business_days": 2,
+  "deadline_calendar_days": null,
+  "deadline_text": "2 business days after the call",
+  "documentation_note": "Evidence to keep: Retain the completed worksheet or draft, source links and any supporting screenshots used to prepare it. Time: the homeowner enters actual minutes after doing the work; no estimated or prefilled time. Attestation: the homeowner confirms the entry reflects their own time and work for this home.",
+  "est_hours_max": 1.5,
+  "est_hours_min": 1,
+  "event_triggered": false,
+  "how_text": "1. Before the call, write down your goals for the home, any known issues and the decisions you expect to make.\n2. Attend the call and review the launch plan, timeline and open decisions with ARHA.\n3. Ask questions and confirm the decisions you made during the call.\n4. Within the deadline, record the decisions, open questions and next steps in this card.\n5. Correct anything in ARHA's call summary that does not match your understanding.",
+  "id": "079d3b8a-fd75-40a5-bdd9-b64af66d36e5",
+  "lane": "critical",
+  "linked_template_task_ids": [],
+  "lock_rule": "until_linked_step_done",
+  "opens_text": "Locked until the planning call is held",
+  "output_fields": [
+   {
+    "key": "decisions",
+    "label": "Decisions",
+    "type": "text"
+   },
+   {
+    "key": "questions",
+    "label": "Questions",
+    "type": "text"
+   },
+   {
+    "key": "next_steps",
+    "label": "Next steps",
+    "type": "text"
+   }
+  ],
+  "required_output": "Written takeaways from the call",
+  "retired_at": null,
+  "stage_window": "onboarding_early",
+  "status": "released",
+  "takeover_text": "No takeover; ARHA keeps its own call notes.",
+  "team_needs_this": false,
+  "title": "Document your onboarding planning call",
+  "updated_at": "2026-11-04T00:46:05.851617+00:00",
+  "updated_by": "98bd6696-4018-4965-b645-0471c5ae3925",
+  "version": 3,
+  "what_text": "ARHA leads the planning call to confirm the homeowner's goals for the home, explain the onboarding process and record decisions, questions and next steps. The homeowner documents their own participation and confirms the shared understanding.\n\nWhy it matters: The planning call sets goals, timeline and decisions for the whole onboarding. A written record keeps everyone aligned.\n\nSteps:\n1. Before the call, write down your goals for the home, any known issues and the decisions you expect to make.\n2. Attend the call and review the launch plan, timeline and open decisions with ARHA.\n3. Ask questions and confirm the decisions you made during the call.\n4. Within the deadline, record the decisions, open questions and next steps in this card.\n5. Correct anything in ARHA's call summary that does not match your understanding.\n\nWhat to submit: Written takeaways from the call. Answer fields: Decisions, questions, next steps.\n\nWhat to keep: Retain the completed worksheet or draft, source links and any supporting screenshots used to prepare it.\n\nRecord only the time you personally spend on this card. Do not include time spent by ARHA, a vendor or another household member.",
+  "why_text": "The planning call sets goals, timeline and decisions for the whole onboarding. A written record keeps everyone aligned."
+ },
+ {
+  "card_group": "New project",
+  "code": "N10",
+  "created_at": "2026-10-31T19:27:41.776037+00:00",
+  "cutoff_business_days": 1,
+  "cutoff_rule": "none",
+  "deadline_business_days": null,
+  "deadline_calendar_days": 7,
+  "deadline_text": "Target 7 calendar days",
+  "documentation_note": "Evidence to keep: Retain the reviewed record, the homeowner's questions or analysis and the final written decision. Time: the homeowner enters actual minutes after doing the work; no estimated or prefilled time. Attestation: the homeowner confirms the entry reflects their own time and work for this home. Overlap: This follows the card \"Review the guest journey and plan first-month improvements\". Exclude any repeated guest-feedback review or improvement decision.",
+  "est_hours_max": 4,
+  "est_hours_min": 3,
+  "event_triggered": true,
+  "how_text": "1. Read every review, survey and guest comment ARHA shares for the first month.\n2. Group the feedback into themes such as cleanliness, comfort, amenities, communication, location and value.\n3. For each theme, note how often it appears and quote one example.\n4. Choose one improvement that addresses a real repeated theme.\n5. Explain the guest benefit, rough cost and any upkeep, and submit your choice. ARHA decides whether and how to act.",
+  "id": "ccedfc73-a7aa-4718-9e51-67d2ac00b2b1",
+  "lane": "triggered",
+  "linked_template_task_ids": [],
+  "lock_rule": "until_linked_step_done",
+  "opens_text": "Locked until ARHA shares the first month's feedback",
+  "output_fields": [
+   {
+    "key": "feedback_theme",
+    "label": "Feedback theme",
+    "type": "text"
+   },
+   {
+    "key": "improvement",
+    "label": "Improvement",
+    "type": "text"
+   },
+   {
+    "key": "reason",
+    "label": "Reason",
+    "type": "text"
+   }
+  ],
+  "required_output": "Feedback review and chosen improvement",
+  "retired_at": null,
+  "stage_window": "operations",
+  "status": "released",
+  "takeover_text": "The card closes. ARHA reviews feedback through its normal process.",
+  "team_needs_this": false,
+  "title": "Review your first month of guest feedback and pick one improvement",
+  "updated_at": "2026-11-04T00:46:56.596678+00:00",
+  "updated_by": "98bd6696-4018-4965-b645-0471c5ae3925",
+  "version": 2,
+  "what_text": "After the first month of operation, ARHA shares the home's guest feedback. The homeowner reviews it, identifies themes and selects one improvement for ARHA to evaluate.\n\nWhy it matters: First-month feedback shows what guests actually experience. Acting on one clear theme improves reviews quickly.\n\nSteps:\n1. Read every review, survey and guest comment ARHA shares for the first month.\n2. Group the feedback into themes such as cleanliness, comfort, amenities, communication, location and value.\n3. For each theme, note how often it appears and quote one example.\n4. Choose one improvement that addresses a real repeated theme.\n5. Explain the guest benefit, rough cost and any upkeep, and submit your choice. ARHA decides whether and how to act.\n\nWhat to submit: Feedback review and chosen improvement. Answer fields: Feedback theme, improvement, reason.\n\nWhat to keep: Retain the reviewed record, the homeowner's questions or analysis and the final written decision.\n\nOverlap note: This follows the card \"Review the guest journey and plan first-month improvements\". Exclude any repeated guest-feedback review or improvement decision.\n\nRecord only the time you personally spend on this card. Do not include time spent by ARHA, a vendor or another household member.",
+  "why_text": "First-month feedback shows what guests actually experience. Acting on one clear theme improves reviews quickly."
+ },
+ {
+  "card_group": "Guide project",
+  "code": "P03",
+  "created_at": "2026-10-31T19:27:41.776037+00:00",
+  "cutoff_business_days": 1,
+  "cutoff_rule": "next_business_day_9am",
+  "deadline_business_days": 2,
+  "deadline_calendar_days": null,
+  "deadline_text": "2 business days after it unlocks, due 5:00 pm Central, and before the purchasing cutoff",
+  "documentation_note": "Evidence to keep: Retain the reviewed record, the homeowner's questions or analysis and the final written decision. Time: the homeowner enters actual minutes after doing the work; no estimated or prefilled time. Attestation: the homeowner confirms the entry reflects their own time and work for this home.",
+  "est_hours_max": 6,
+  "est_hours_min": 3,
+  "event_triggered": false,
+  "how_text": "1. Review the ARHA standard categories against the home's bed sizes, bathrooms, occupancy and planned guest use.\n2. For each category, mark either Use ARHA standard or Propose an upgrade or addition.\n3. Keep all sheets, duvet covers, bath towels, hand towels and washcloths white. Do not propose colored or patterned replacements for those turnover items.\n4. For each proposed upgrade or addition, list the item type, desired quantity, important feature, approximate budget and the guest need it addresses. A public product link may be included when the homeowner is recommending a specific item, but ARHA's internal links are not provided.\n5. Separate an actual guest-use improvement from a design preference so ARHA can evaluate durability, laundering, replacement and cost.",
+  "id": "87c4047f-8323-4cef-b529-63f8076af934",
+  "lane": "critical",
+  "linked_template_task_ids": [],
+  "lock_rule": "until_linked_step_done",
+  "opens_text": "Locked until ARHA shares bed sizes and occupancy",
+  "output_fields": [
+   {
+    "key": "category",
+    "label": "Category",
+    "type": "text"
+   },
+   {
+    "key": "decision",
+    "label": "Decision",
+    "type": "text"
+   },
+   {
+    "key": "proposed_item",
+    "label": "Proposed item",
+    "type": "text"
+   },
+   {
+    "key": "quantity",
+    "label": "Quantity",
+    "type": "number"
+   },
+   {
+    "key": "budget",
+    "label": "Budget",
+    "type": "money_text"
+   },
+   {
+    "key": "guest_need",
+    "label": "Guest need",
+    "type": "text"
+   }
+  ],
+  "required_output": "Decision sheet: use ARHA standard or propose an addition, by category",
+  "retired_at": null,
+  "stage_window": "onboarding_early",
+  "status": "released",
+  "takeover_text": "ARHA orders its standard package. Unapproved additions are not ordered.",
+  "team_needs_this": true,
+  "title": "Choose towels, linens and guest supplies",
+  "updated_at": "2026-11-04T00:46:56.596678+00:00",
+  "updated_by": "98bd6696-4018-4965-b645-0471c5ae3925",
+  "version": 3,
+  "what_text": "Review the homeowner-safe ARHA linen, bath and guest-supply standard, decide where to use the standard, and propose only the property-specific upgrades or additions that would improve the guest experience.\n\nWhy it matters: Linens and guest supplies are touched in every stay. The right choices protect reviews and keep turnovers consistent.\n\nSteps:\n1. Review the ARHA standard categories against the home's bed sizes, bathrooms, occupancy and planned guest use.\n2. For each category, mark either Use ARHA standard or Propose an upgrade or addition.\n3. Keep all sheets, duvet covers, bath towels, hand towels and washcloths white. Do not propose colored or patterned replacements for those turnover items.\n4. For each proposed upgrade or addition, list the item type, desired quantity, important feature, approximate budget and the guest need it addresses. A public product link may be included when the homeowner is recommending a specific item, but ARHA's internal links are not provided.\n5. Separate an actual guest-use improvement from a design preference so ARHA can evaluate durability, laundering, replacement and cost.\n\nWhat to submit: Decision sheet: use ARHA standard or propose an addition, by category. Answer fields: Category, decision, proposed item, quantity, budget, guest need.\n\nWhat to keep: Retain the reviewed record, the homeowner's questions or analysis and the final written decision.\n\nRecord only the time you personally spend on this card. Do not include time spent by ARHA, a vendor or another household member.",
+  "why_text": "Linens and guest supplies are touched in every stay. The right choices protect reviews and keep turnovers consistent."
+ },
+ {
+  "card_group": "Guide project",
+  "code": "P04",
+  "created_at": "2026-10-31T19:27:41.776037+00:00",
+  "cutoff_business_days": 1,
+  "cutoff_rule": "next_business_day_9am",
+  "deadline_business_days": 2,
+  "deadline_calendar_days": null,
+  "deadline_text": "2 business days after it unlocks, due 5:00 pm Central, and before the purchasing cutoff",
+  "documentation_note": "Evidence to keep: Retain the reviewed record, the homeowner's questions or analysis and the final written decision. Time: the homeowner enters actual minutes after doing the work; no estimated or prefilled time. Attestation: the homeowner confirms the entry reflects their own time and work for this home.",
+  "est_hours_max": 6,
+  "est_hours_min": 3,
+  "event_triggered": false,
+  "how_text": "1. Review the ARHA standard categories against the home's occupancy, kitchen layout, storage, guest segments and any confirmed special use.\n2. For each category, mark either Use ARHA standard or Propose an upgrade or addition.\n3. Do not attempt to recreate ARHA's complete inventory, sourcing or design system. Focus on real gaps or guest-use additions specific to this home.\n4. For each proposed addition, provide the item type, quantity, intended function, approximate budget, storage or cleaning consideration and the guest need it addresses.\n5. A public product link may be included when the homeowner is proposing a specific item. ARHA will evaluate compatibility, durability, cleaning requirements, warranty, availability and replacement ease through its normal process.\n6. Rank each proposed addition as must-have, helpful or optional so ARHA can evaluate it against the approved budget.",
+  "id": "9ae07243-01fe-47cf-8ae0-c30a784d5a3b",
+  "lane": "critical",
+  "linked_template_task_ids": [],
+  "lock_rule": "until_linked_step_done",
+  "opens_text": "Locked until ARHA shares occupancy and layout details",
+  "output_fields": [
+   {
+    "key": "category",
+    "label": "Category",
+    "type": "text"
+   },
+   {
+    "key": "decision",
+    "label": "Decision",
+    "type": "text"
+   },
+   {
+    "key": "item",
+    "label": "Item",
+    "type": "text"
+   },
+   {
+    "key": "quantity",
+    "label": "Quantity",
+    "type": "number"
+   },
+   {
+    "key": "function",
+    "label": "Function",
+    "type": "text"
+   },
+   {
+    "key": "budget",
+    "label": "Budget",
+    "type": "money_text"
+   },
+   {
+    "key": "priority",
+    "label": "Priority",
+    "type": "text"
+   }
+  ],
+  "required_output": "Prioritized decision sheet of proposed additions",
+  "retired_at": null,
+  "stage_window": "onboarding_early",
+  "status": "released",
+  "takeover_text": "ARHA orders its standard package and excludes unapproved additions.",
+  "team_needs_this": true,
+  "title": "Choose kitchen and household items",
+  "updated_at": "2026-11-04T00:46:56.596678+00:00",
+  "updated_by": "98bd6696-4018-4965-b645-0471c5ae3925",
+  "version": 3,
+  "what_text": "Review the homeowner-safe ARHA kitchen and household standard, choose where to use the standard, and recommend only additions that solve a property-specific guest need.\n\nWhy it matters: Kitchen and household items decide whether guests can actually live in the home for weeks. Real gaps matter more than extras.\n\nSteps:\n1. Review the ARHA standard categories against the home's occupancy, kitchen layout, storage, guest segments and any confirmed special use.\n2. For each category, mark either Use ARHA standard or Propose an upgrade or addition.\n3. Do not attempt to recreate ARHA's complete inventory, sourcing or design system. Focus on real gaps or guest-use additions specific to this home.\n4. For each proposed addition, provide the item type, quantity, intended function, approximate budget, storage or cleaning consideration and the guest need it addresses.\n5. A public product link may be included when the homeowner is proposing a specific item. ARHA will evaluate compatibility, durability, cleaning requirements, warranty, availability and replacement ease through its normal process.\n6. Rank each proposed addition as must-have, helpful or optional so ARHA can evaluate it against the approved budget.\n\nWhat to submit: Prioritized decision sheet of proposed additions. Answer fields: Category, decision, item, quantity, function, budget, priority.\n\nWhat to keep: Retain the reviewed record, the homeowner's questions or analysis and the final written decision.\n\nRecord only the time you personally spend on this card. Do not include time spent by ARHA, a vendor or another household member.",
+  "why_text": "Kitchen and household items decide whether guests can actually live in the home for weeks. Real gaps matter more than extras."
+ },
+ {
+  "card_group": "Guide project",
+  "code": "P14",
+  "created_at": "2026-10-31T19:27:41.776037+00:00",
+  "cutoff_business_days": 1,
+  "cutoff_rule": "next_business_day_9am",
+  "deadline_business_days": 5,
+  "deadline_calendar_days": null,
+  "deadline_text": "Drafts 5 business days after it unlocks, due 5:00 pm Central; final within 24 hours of approved assets",
+  "documentation_note": "Evidence to keep: Retain the completed worksheet or draft, source links and any supporting screenshots used to prepare it. Time: the homeowner enters actual minutes after doing the work; no estimated or prefilled time. Attestation: the homeowner confirms the entry reflects their own time and work for this home.",
+  "est_hours_max": 7,
+  "est_hours_min": 5,
+  "event_triggered": false,
+  "how_text": "1. Create six concepts covering the property introduction, design or comfort, a key amenity, the local area, an intended stay use and a referral reminder.\n2. Write the caption, on-image text if any, asset direction, accessibility description, call to action and suggested posting date for each concept.\n3. Create a concise set of relevant location and property tags without using misleading claims.\n4. Identify which concepts can use existing MLS or design material and which need final ARHA photos.\n5. Finalize the package with ARHA-approved facts, photos and listing link.",
+  "id": "37d8e88f-ec5e-4a62-a032-8bc5a4201fea",
+  "lane": "launch",
+  "linked_template_task_ids": [],
+  "lock_rule": "none",
+  "opens_text": "Draft open on day one; final step unlocks when ARHA shares approved photos and link",
+  "output_fields": [
+   {
+    "key": "post_text",
+    "label": "Post text",
+    "type": "text"
+   },
+   {
+    "key": "photo_choice",
+    "label": "Photo choice",
+    "type": "text"
+   },
+   {
+    "key": "date",
+    "label": "Date",
+    "type": "date"
+   }
+  ],
+  "required_output": "Six-post campaign",
+  "retired_at": null,
+  "stage_window": "onboarding_launch",
+  "status": "released",
+  "takeover_text": "The homeowner campaign closes; ARHA's launch continues.",
+  "team_needs_this": false,
+  "title": "Draft an Instagram launch campaign",
+  "updated_at": "2026-11-04T00:47:42.581919+00:00",
+  "updated_by": "98bd6696-4018-4965-b645-0471c5ae3925",
+  "version": 3,
+  "what_text": "Create a six-piece Instagram campaign using feed, story or short-video concepts that communicate the home's real features and local usefulness.\n\nWhy it matters: Instagram shows the home visually and can reach local and professional audiences who refer guests.\n\nSteps:\n1. Create six concepts covering the property introduction, design or comfort, a key amenity, the local area, an intended stay use and a referral reminder.\n2. Write the caption, on-image text if any, asset direction, accessibility description, call to action and suggested posting date for each concept.\n3. Create a concise set of relevant location and property tags without using misleading claims.\n4. Identify which concepts can use existing MLS or design material and which need final ARHA photos.\n5. Finalize the package with ARHA-approved facts, photos and listing link.\n\nWhat to submit: Six-post campaign. Answer fields: Post text, photo choice, date.\n\nWhat to keep: Retain the completed worksheet or draft, source links and any supporting screenshots used to prepare it.\n\nRecord only the time you personally spend on this card. Do not include time spent by ARHA, a vendor or another household member.",
+  "why_text": "Instagram shows the home visually and can reach local and professional audiences who refer guests."
+ },
+ {
+  "card_group": "Guide project",
+  "code": "P15",
+  "created_at": "2026-10-31T19:27:41.776037+00:00",
+  "cutoff_business_days": 1,
+  "cutoff_rule": "next_business_day_9am",
+  "deadline_business_days": 3,
+  "deadline_calendar_days": null,
+  "deadline_text": "Message set 3 business days after it unlocks, due 5:00 pm Central; link added within 24 hours",
+  "documentation_note": "Evidence to keep: Keep the final message set and a record of the outreach you actually sent. Time: the homeowner enters actual minutes after doing the work; no estimated or prefilled time. Attestation: the homeowner confirms the entry reflects their own time and work for this home.",
+  "est_hours_max": 4,
+  "est_hours_min": 3,
+  "event_triggered": false,
+  "how_text": "1. Divide the homeowner's existing network into family and friends, professional contacts and community contacts.\n2. Draft one short text, one group-message version, one email and one follow-up message using the homeowner's natural voice.\n3. Explain the type of stay the home may support without promising a rate, date or booking.\n4. Include the ARHA-approved link or inquiry route and a clear request to share it with someone who may need furnished housing.\n5. Finalize the messages when the live link is available and record only outreach the homeowner actually sends.",
+  "id": "7b98a961-775e-431d-802c-09628ddc369b",
+  "lane": "launch",
+  "linked_template_task_ids": [],
+  "lock_rule": "none",
+  "opens_text": "Draft open on day one; final step unlocks when ARHA shares the live link",
+  "output_fields": [
+   {
+    "key": "audience",
+    "label": "Audience",
+    "type": "text"
+   },
+   {
+    "key": "channel",
+    "label": "Channel",
+    "type": "text"
+   },
+   {
+    "key": "message",
+    "label": "Message",
+    "type": "text"
+   }
+  ],
+  "required_output": "Text and email message set",
+  "retired_at": null,
+  "stage_window": "onboarding_launch",
+  "status": "released",
+  "takeover_text": "ARHA launches without homeowner outreach.",
+  "team_needs_this": false,
+  "title": "Prepare messages for friends, family and colleagues",
+  "updated_at": "2026-11-04T00:47:42.581919+00:00",
+  "updated_by": "98bd6696-4018-4965-b645-0471c5ae3925",
+  "version": 3,
+  "what_text": "Prepare personal, human outreach that lets the homeowner's existing network know about the furnished home and how to refer an appropriate guest.\n\nWhy it matters: Personal outreach from you is one of the most trusted ways a furnished home gets its first referrals.\n\nSteps:\n1. Divide the homeowner's existing network into family and friends, professional contacts and community contacts.\n2. Draft one short text, one group-message version, one email and one follow-up message using the homeowner's natural voice.\n3. Explain the type of stay the home may support without promising a rate, date or booking.\n4. Include the ARHA-approved link or inquiry route and a clear request to share it with someone who may need furnished housing.\n5. Finalize the messages when the live link is available and record only outreach the homeowner actually sends.\n\nWhat to submit: Text and email message set. Answer fields: Audience, channel, message.\n\nWhat to keep: Keep the final message set and a record of the outreach you actually sent.\n\nRecord only the time you personally spend on this card. Do not include time spent by ARHA, a vendor or another household member.",
+  "why_text": "Personal outreach from you is one of the most trusted ways a furnished home gets its first referrals."
+ },
+ {
+  "card_group": "Guide project",
+  "code": "P19",
+  "created_at": "2026-10-31T19:27:41.776037+00:00",
+  "cutoff_business_days": 1,
+  "cutoff_rule": "next_business_day_9am",
+  "deadline_business_days": 5,
+  "deadline_calendar_days": null,
+  "deadline_text": "Draft 5 business days after it unlocks, due 5:00 pm Central; corrections within 24 hours of approved facts",
+  "documentation_note": "Evidence to keep: Retain the completed worksheet or draft, source links and any supporting screenshots used to prepare it. Time: the homeowner enters actual minutes after doing the work; no estimated or prefilled time. Attestation: the homeowner confirms the entry reflects their own time and work for this home.",
+  "est_hours_max": 5,
+  "est_hours_min": 4,
+  "event_triggered": false,
+  "how_text": "1. List the questions a referred guest, employer, insurer or relocation contact is most likely to ask about the home.\n2. Draft at least fifteen factual answers covering location context, capacity, bedrooms, bathrooms, parking, internet, workspace, pets, accessibility, amenities and stay process.\n3. Mark any question that must always be answered by ARHA, including pricing, availability, screening, agreements and exceptions.\n4. Create a short verbal description, a short written description and a standard handoff message directing the person to ARHA.\n5. Finalize every fact after ARHA provides the live listing and approved guest rules.",
+  "id": "b5c75c6a-f0c5-4e85-898d-3d897bc840d6",
+  "lane": "launch",
+  "linked_template_task_ids": [],
+  "lock_rule": "none",
+  "opens_text": "Draft open on day one; final step unlocks when ARHA shares approved facts and rules",
+  "output_fields": [
+   {
+    "key": "question",
+    "label": "Question",
+    "type": "text"
+   },
+   {
+    "key": "answer",
+    "label": "Answer",
+    "type": "text"
+   },
+   {
+    "key": "source",
+    "label": "Source",
+    "type": "text"
+   }
+  ],
+  "required_output": "FAQ draft and talking points",
+  "retired_at": null,
+  "stage_window": "onboarding_launch",
+  "status": "released",
+  "takeover_text": "ARHA uses its standard inquiry routing and property information.",
+  "team_needs_this": false,
+  "title": "Draft a property FAQ and talking points",
+  "updated_at": "2026-11-04T00:47:42.581919+00:00",
+  "updated_by": "98bd6696-4018-4965-b645-0471c5ae3925",
+  "version": 3,
+  "what_text": "Create accurate talking points and frequently asked questions so referrals can be routed to ARHA with consistent property information.\n\nWhy it matters: Consistent answers protect the home's reputation and make sure every inquiry reaches ARHA with accurate facts.\n\nSteps:\n1. List the questions a referred guest, employer, insurer or relocation contact is most likely to ask about the home.\n2. Draft at least fifteen factual answers covering location context, capacity, bedrooms, bathrooms, parking, internet, workspace, pets, accessibility, amenities and stay process.\n3. Mark any question that must always be answered by ARHA, including pricing, availability, screening, agreements and exceptions.\n4. Create a short verbal description, a short written description and a standard handoff message directing the person to ARHA.\n5. Finalize every fact after ARHA provides the live listing and approved guest rules.\n\nWhat to submit: FAQ draft and talking points. Answer fields: Question, answer, source.\n\nWhat to keep: Retain the completed worksheet or draft, source links and any supporting screenshots used to prepare it.\n\nRecord only the time you personally spend on this card. Do not include time spent by ARHA, a vendor or another household member.",
+  "why_text": "Consistent answers protect the home's reputation and make sure every inquiry reaches ARHA with accurate facts."
+ },
+ {
+  "card_group": "Guide project",
+  "code": "P20",
+  "created_at": "2026-10-31T19:27:41.776037+00:00",
+  "cutoff_business_days": 1,
+  "cutoff_rule": "next_business_day_9am",
+  "deadline_business_days": null,
+  "deadline_calendar_days": 7,
+  "deadline_text": "Draft 7 calendar days; final within 24 hours of assets",
+  "documentation_note": "Evidence to keep: Retain the completed worksheet or draft, source links and any supporting screenshots used to prepare it. Time: the homeowner enters actual minutes after doing the work; no estimated or prefilled time. Attestation: the homeowner confirms the entry reflects their own time and work for this home.",
+  "est_hours_max": 8,
+  "est_hours_min": 6,
+  "event_triggered": false,
+  "how_text": "1. Select twelve to fifteen approved content pieces from the Facebook, Instagram, local-area and outreach projects.\n2. Assign a date, channel, audience, content theme, asset, caption status, call to action and approval status to each item.\n3. Balance property features, local usefulness, guest needs, referral reminders and seasonal context without repeating the same message.\n4. Identify the content that can be completed before launch and the exact asset needed to finalize later items.\n5. Add a simple response rule directing all property inquiries to ARHA and a process for recording referrals.\n6. Update the calendar once when ARHA confirms the live date and listing link.",
+  "id": "dcbc0596-4dc7-42e5-95e3-848bf076bd83",
+  "lane": "launch",
+  "linked_template_task_ids": [],
+  "lock_rule": "none",
+  "opens_text": "Draft open on day one; final step unlocks when ARHA releases approved assets",
+  "output_fields": [
+   {
+    "key": "date",
+    "label": "Date",
+    "type": "date"
+   },
+   {
+    "key": "channel",
+    "label": "Channel",
+    "type": "text"
+   },
+   {
+    "key": "topic",
+    "label": "Topic",
+    "type": "text"
+   },
+   {
+    "key": "asset",
+    "label": "Asset",
+    "type": "text"
+   }
+  ],
+  "required_output": "Dated 30-day content calendar",
+  "retired_at": null,
+  "stage_window": "onboarding_launch",
+  "status": "released",
+  "takeover_text": "ARHA proceeds with its own content schedule.",
+  "team_needs_this": false,
+  "title": "Plan a 30-day content calendar for your home",
+  "updated_at": "2026-11-04T00:47:42.581919+00:00",
+  "updated_by": "98bd6696-4018-4965-b645-0471c5ae3925",
+  "version": 3,
+  "what_text": "Turn the approved property story and campaign assets into a coordinated thirty-day launch schedule.\n\nWhy it matters: A dated content calendar keeps launch marketing steady instead of all at once and then silent.\n\nSteps:\n1. Select twelve to fifteen approved content pieces from the Facebook, Instagram, local-area and outreach projects.\n2. Assign a date, channel, audience, content theme, asset, caption status, call to action and approval status to each item.\n3. Balance property features, local usefulness, guest needs, referral reminders and seasonal context without repeating the same message.\n4. Identify the content that can be completed before launch and the exact asset needed to finalize later items.\n5. Add a simple response rule directing all property inquiries to ARHA and a process for recording referrals.\n6. Update the calendar once when ARHA confirms the live date and listing link.\n\nWhat to submit: Dated 30-day content calendar. Answer fields: Date, channel, topic, asset.\n\nWhat to keep: Retain the completed worksheet or draft, source links and any supporting screenshots used to prepare it.\n\nRecord only the time you personally spend on this card. Do not include time spent by ARHA, a vendor or another household member.",
+  "why_text": "A dated content calendar keeps launch marketing steady instead of all at once and then silent."
+ }
+]
