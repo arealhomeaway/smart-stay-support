@@ -18,13 +18,13 @@ describe("staged package integrity", () => {
   it("every file matches SHA256SUMS", () => {
     for (const line of read("SHA256SUMS").trim().split("\n")) {
       const [sum, name] = line.split(/\s+/);
-      expect(createHash("sha256").update(readFileSync(`${D}/${name}`)).digest("hex")).toBe(sum);
+      expect(createHash("sha256").update(readFileSync(`${D}/${name ?? ""}`)).digest("hex")).toBe(sum ?? "");
     }
   });
   it("has no transaction lines, no em dashes and an undo for each step", () => {
     for (const f of ["01_standard_template.sql", "02_card_library.sql", "03_release_new_cards.sql"]) {
       const s = read(f);
-      expect(s).not.toMatch(/^\s*(BEGIN|COMMIT);/m);
+      expect(/^\s*(BEGIN|COMMIT);/m.test(s)).toBe(false);
       expect(/[\u2014\u2013]/.test(s)).toBe(false);
       expect(read(`undo/${f.replace(/^(\d+)_/, "$1_undo_")}`).length).toBeGreaterThan(100);
     }
