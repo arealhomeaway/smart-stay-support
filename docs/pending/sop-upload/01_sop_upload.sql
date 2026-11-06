@@ -1,4 +1,3 @@
-BEGIN;
 -- Dependency: approved playbooks-nov5/01_playbook_editing.sql must be applied first.
 CREATE TABLE public.sop_versions (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), title text NOT NULL, original_name text NOT NULL,
@@ -107,4 +106,3 @@ END $$;
 CREATE TRIGGER copy_sop_playbook_link AFTER INSERT ON public.playbooks FOR EACH ROW EXECUTE FUNCTION private.copy_sop_playbook_link();
 REVOKE ALL ON FUNCTION public.sop_upload_context(text),public.reserve_sop_upload(text,uuid,date),public.commit_sop_upload(uuid,jsonb,jsonb),public.sop_upload_receipt(uuid),public.abort_sop_upload(uuid),public.read_sop_playbook_links() FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.sop_upload_context(text),public.reserve_sop_upload(text,uuid,date),public.commit_sop_upload(uuid,jsonb,jsonb),public.sop_upload_receipt(uuid),public.abort_sop_upload(uuid),public.read_sop_playbook_links() TO authenticated,service_role;
-COMMIT;
