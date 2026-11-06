@@ -45,3 +45,4 @@ Homeowner cards now show files staff shared on the card's linked step (`cardFile
 - Nov 6: added 04 push for 624 Daniel Court only (Emily).
 - Nov 6: first apply of 01 stopped safely on its own check (the two step hashes were paired with the wrong step IDs in the file). Corrected the pairing only; nothing had been applied.
 - Nov 6: first apply of 04 was refused by the project safety rule (needs a signed-in Onboarding staff actor) and rolled back with nothing changed. 04 and its undo now act as Emily for that one transaction, so the rule still checks her access.
+- Nov 6: APPLIED byte-for-byte as migrations 0254 (01), 0255 (02), 0256 (03), 0257 (04). Undo order if ever needed: 04, 03, 02, 01.
