@@ -33,5 +33,5 @@ REVOKE ALL ON FUNCTION private.vendor_sees_property(uuid, uuid) FROM PUBLIC, ano
 GRANT EXECUTE ON FUNCTION private.vendor_sees_property(uuid, uuid) TO authenticated, service_role;
 
 DROP POLICY properties_select ON public.properties;
-CREATE POLICY properties_select ON public.properties FOR SELECT TO public
+CREATE POLICY properties_select ON public.properties FOR SELECT TO authenticated
   USING (private.is_staff(auth.uid()) OR private.vendor_sees_property(auth.uid(), id));
