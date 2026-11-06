@@ -75,3 +75,18 @@ export function zipEntryNames(names: string[]) {
     return dot > 0 ? `${n.slice(0, dot)} (${k})${n.slice(dot)}` : `${n} (${k})`;
   });
 }
+
+/** What staff see for "Open the photos folder". */
+export function staffFolderResult(home: PhotoHome, webUrl: string | null, summary: PhotoSummary) {
+  const path = marketingPhotosFolderPath(home);
+  return {
+    path: path ? `Documents/${path}` : null,
+    url: webUrl,
+    summary,
+    note: !path
+      ? "This home needs an address and OwnerRez ID before its photos folder can be found."
+      : webUrl
+        ? null
+        : `No folder yet. Create Documents/${path} in the ARHA Resolve site and save the photos there.`,
+  };
+}
