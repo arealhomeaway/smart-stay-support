@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertStaffCaller, isStaffCaller } from "@/lib/integration-staff-gate";
 
 export type OwnerRezResult<T> =
   { ok: true; data: T; propertyId: string } | { ok: false; error: string; propertyId: string };
@@ -7,7 +8,8 @@ export type OwnerRezResult<T> =
 /** Listings available in the connected OwnerRez account, for linking to homes. */
 export const listOwnerRezListings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async ({ context }) => {
+    await assertStaffCaller(context.supabase, context.userId);
     const { listListings, OwnerRezError } = await import("./ownerrez.server");
     try {
       const items = await listListings();
@@ -33,6 +35,7 @@ export const getPropertyStay = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data, context }) => {
+    await assertStaffCaller(context.supabase, context.userId);
     const { stayForListing, OwnerRezError } = await import("./ownerrez.server");
 
     const { data: property, error } = await context.supabase
@@ -62,6 +65,7 @@ export const getPropertyStay = createServerFn({ method: "POST" })
 export const importOwnerRezProperties = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await assertStaffCaller(context.supabase, context.userId);
     const { listListings, OwnerRezError } = await import("./ownerrez.server");
 
     let listings;
@@ -129,6 +133,10 @@ export const captureTicketReservation = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data, context }) => {
+    // Non-staff ticket creators (homeowners, vendors) quietly skip the OwnerRez read.
+    if (!(await isStaffCaller(context.supabase, context.userId))) {
+      return { applied: false as const, reason: "not_staff" as const };
+    }
     const { applyReservationSnapshot } = await import("./reservation-snapshot.server");
     return applyReservationSnapshot(context.supabase, data.ticketId);
   });

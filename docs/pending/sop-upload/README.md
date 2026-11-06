@@ -33,3 +33,5 @@ If an unfinished reservation remains, an Admin must verify SharePoint item ident
 ## Verification
 
 Mocked SharePoint/AI orchestration tests plus isolated PostgreSQL tests cover saving drafts, inactive state, v2 replacement and review projection, server permissions, failure rollback and uncertain commit receipts. Browser checks use a local Word fixture, mocked accounts/save responses, and no real session; desktop/mobile dialog and text extraction passed. Real authenticated SharePoint/AI saving remains unverified because publishing, migrations and real uploads are not approved.
+## Nov 6 2026 change
+Removed only the first line `BEGIN;` and last line `COMMIT;` from `01_sop_upload.sql` (the migration tool runs one transaction), with Emily's approval. `sha256.txt` updated.

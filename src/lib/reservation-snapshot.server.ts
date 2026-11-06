@@ -33,7 +33,8 @@ export type SnapshotOutcome =
         | "no_stay"
         | "ambiguous"
         | "demo"
-        | "error";
+        | "error"
+        | "not_staff";
     };
 
 export async function applyReservationSnapshot(db: Db, ticketId: string): Promise<SnapshotOutcome> {

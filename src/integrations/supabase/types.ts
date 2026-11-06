@@ -7210,6 +7210,90 @@ export type Database = {
           },
         ]
       }
+      marketing_photo_downloads: {
+        Row: {
+          expires_at: string
+          file_count: number
+          id: string
+          property_id: string
+          requested_at: string
+          started_at: string | null
+          token_hash: string
+          total_bytes: number
+          user_id: string
+        }
+        Insert: {
+          expires_at: string
+          file_count?: number
+          id?: string
+          property_id: string
+          requested_at?: string
+          started_at?: string | null
+          token_hash: string
+          total_bytes?: number
+          user_id: string
+        }
+        Update: {
+          expires_at?: string
+          file_count?: number
+          id?: string
+          property_id?: string
+          requested_at?: string
+          started_at?: string | null
+          token_hash?: string
+          total_bytes?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_photo_downloads_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "marketing_photo_downloads_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_photo_notices: {
+        Row: {
+          notified_at: string
+          notified_user: string | null
+          property_id: string
+        }
+        Insert: {
+          notified_at?: string
+          notified_user?: string | null
+          property_id: string
+        }
+        Update: {
+          notified_at?: string
+          notified_user?: string | null
+          property_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_photo_notices_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "marketing_photo_notices_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       metric_definitions: {
         Row: {
           business_definition: string
@@ -11931,6 +12015,102 @@ export type Database = {
           },
         ]
       }
+      sop_playbooks: {
+        Row: {
+          checklist_categories: string[]
+          playbook_id: string
+          sop_version_id: string
+        }
+        Insert: {
+          checklist_categories?: string[]
+          playbook_id: string
+          sop_version_id: string
+        }
+        Update: {
+          checklist_categories?: string[]
+          playbook_id?: string
+          sop_version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sop_playbooks_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: true
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sop_playbooks_sop_version_id_fkey"
+            columns: ["sop_version_id"]
+            isOneToOne: false
+            referencedRelation: "sop_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sop_versions: {
+        Row: {
+          draft_ids: string[]
+          drive_id: string | null
+          effective_on: string
+          file_id: string | null
+          file_url: string | null
+          id: string
+          original_name: string
+          owner_id: string
+          state: string
+          title: string
+          uploaded_at: string
+          uploaded_by: string
+          version: number
+        }
+        Insert: {
+          draft_ids?: string[]
+          drive_id?: string | null
+          effective_on: string
+          file_id?: string | null
+          file_url?: string | null
+          id?: string
+          original_name: string
+          owner_id: string
+          state?: string
+          title: string
+          uploaded_at?: string
+          uploaded_by: string
+          version: number
+        }
+        Update: {
+          draft_ids?: string[]
+          drive_id?: string | null
+          effective_on?: string
+          file_id?: string | null
+          file_url?: string | null
+          id?: string
+          original_name?: string
+          owner_id?: string
+          state?: string
+          title?: string
+          uploaded_at?: string
+          uploaded_by?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sop_versions_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sop_versions_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       special_handling: {
         Row: {
           active: boolean
@@ -15875,6 +16055,7 @@ export type Database = {
       }
     }
     Functions: {
+      abort_sop_upload: { Args: { _id: string }; Returns: undefined }
       activate_owner_program: {
         Args: {
           _expected_version: string
@@ -16141,6 +16322,13 @@ export type Database = {
         }
         Returns: Json
       }
+      claim_marketing_photo_download: {
+        Args: { _token_hash: string }
+        Returns: {
+          property_id: string
+          user_id: string
+        }[]
+      }
       classify_cleaner_account: {
         Args: {
           _classification: string
@@ -16278,6 +16466,10 @@ export type Database = {
           _review_id: string
         }
         Returns: string
+      }
+      commit_sop_upload: {
+        Args: { _drafts: Json; _file: Json; _id: string }
+        Returns: Json
       }
       complete_attachment_upload: {
         Args: {
@@ -16560,6 +16752,10 @@ export type Database = {
         }[]
       }
       my_spending_approval_authority: { Args: never; Returns: boolean }
+      notify_marketing_photos_missing: {
+        Args: { _property_id: string }
+        Returns: boolean
+      }
       notify_staff: {
         Args: {
           _actor_id: string
@@ -16978,6 +17174,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      read_sop_playbook_links: { Args: never; Returns: Json }
       reassign_staff_open_work: { Args: { _user: string }; Returns: number }
       reconcile_onboarding_delivery: {
         Args: {
@@ -17195,6 +17392,15 @@ export type Database = {
         }
         Returns: string
       }
+      request_marketing_photo_download: {
+        Args: {
+          _file_count: number
+          _property_id: string
+          _token_hash: string
+          _total_bytes: number
+        }
+        Returns: string
+      }
       request_new_vendor: {
         Args: {
           _category: string
@@ -17211,6 +17417,10 @@ export type Database = {
       request_owner_response: {
         Args: { _body: string; _id: string; _kind: string }
         Returns: string
+      }
+      reserve_sop_upload: {
+        Args: { _effective_on: string; _name: string; _owner: string }
+        Returns: Json
       }
       reset_demo_environment:
         | { Args: never; Returns: undefined }
@@ -17448,6 +17658,8 @@ export type Database = {
         Args: { _on: boolean; _user_id: string }
         Returns: undefined
       }
+      sop_upload_context: { Args: { _name: string }; Returns: Json }
+      sop_upload_receipt: { Args: { _id: string }; Returns: Json }
       staff_assignable: { Args: { _user_id: string }; Returns: boolean }
       staff_link_owner_account: {
         Args: { _program_id: string; _user_id: string }

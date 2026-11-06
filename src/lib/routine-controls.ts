@@ -29,6 +29,8 @@ export type RoutineStatus = "due" | "in_progress" | "completed" | "cancelled";
 export type RoutineOutcome = "looks_good" | "needs_follow_up" | "no_answer" | "not_applicable";
 
 const ROUTINE_CONFIG_GENERATED_ONLY = new Set<string>(["survey_review", "maintenance_review"]);
+/** Retired kinds: kept for history, never started again (Departure Review replaced Checkout). */
+export const RETIRED_ROUTINE_KINDS = new Set<string>(["checkout"]);
 
 export const ROUTINE_KINDS: RoutineKind[] = [
   "cleaning_review",
@@ -41,7 +43,7 @@ export const ROUTINE_KINDS: RoutineKind[] = [
 
 /** Kinds a person can start by hand. The others come only from real events. */
 export const MANUAL_ROUTINE_KINDS: RoutineKind[] = ROUTINE_KINDS.filter(
-  (k) => !ROUTINE_CONFIG_GENERATED_ONLY.has(k),
+  (k) => !ROUTINE_CONFIG_GENERATED_ONLY.has(k) && !RETIRED_ROUTINE_KINDS.has(k),
 );
 
 /** One prompt inside a control. Deliberately phrased as the job, not as a field. */

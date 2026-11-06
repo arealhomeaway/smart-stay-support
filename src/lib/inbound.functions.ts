@@ -1,11 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertStaffCaller } from "@/lib/integration-staff-gate";
 import { formatPropertyLabel } from "./property-label";
 
 /** Which inbound feeds are connected right now. */
 export const getInboundStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async ({ context }) => {
+    await assertStaffCaller(context.supabase, context.userId);
     return {
       ownerrez: Boolean(process.env["OWNERREZ_USERNAME"] && process.env["OWNERREZ_ACCESS_TOKEN"]),
     };
@@ -15,6 +17,7 @@ export const getInboundStatus = createServerFn({ method: "GET" })
 export const listImportedMatters = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await assertStaffCaller(context.supabase, context.userId);
     const { data, error } = await context.supabase
       .from("tickets")
       .select(
