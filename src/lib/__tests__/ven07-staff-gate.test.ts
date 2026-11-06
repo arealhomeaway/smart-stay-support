@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
 import { assertStaffCaller, isStaffCaller, STAFF_ONLY_MESSAGE } from "@/lib/integration-staff-gate";
 import { MANUAL_ROUTINE_KINDS } from "@/lib/routine-controls";
