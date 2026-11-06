@@ -27,6 +27,7 @@ export const ownerOnboardingActions = createServerFn({ method: "POST" })
           decided: [],
           homes: [],
           cardFiles: {},
+          photoCards: {},
         };
       return m.loadOwnerOnboardingPreview(context.supabase, context.userId, data.programId);
     }

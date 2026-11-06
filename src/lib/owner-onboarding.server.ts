@@ -88,6 +88,8 @@ export type OwnerOnboardingView = {
    * files; a card still waiting on ARHA shows none.
    */
   cardFiles: Record<string, OwnerOnboardingFile[]>;
+  /** Cards that use the home's marketing photos, keyed by owner review: the home to download for. */
+  photoCards: Record<string, string>;
 };
 
 const CARD_FILE_STATUSES = new Set(["awaiting_owner", "answered", "returned", "closed"]);
@@ -106,6 +108,22 @@ export function cardFilesByReview(
   return out;
 }
 
+/** Photo cards (P14, P15, P20 and others using marketing photos) for this program. Missing engine = none. */
+async function photoCardsFor(admin: Client, programId: string): Promise<Record<string, string>> {
+  const { isPhotoCard } = await import("./marketing-photos");
+  const rows = await admin
+    .from("ao_home_plan_cards")
+    .select("owner_review_id, property_id, ao_library_cards(code)")
+    .eq("program_id", programId)
+    .not("owner_review_id", "is", null);
+  if (rows.error) return {};
+  const out: Record<string, string> = {};
+  for (const r of (rows.data ?? []) as unknown as { owner_review_id: string; property_id: string; ao_library_cards: { code: string } | null }[]) {
+    if (isPhotoCard(r.ao_library_cards?.code)) out[r.owner_review_id] = r.property_id;
+  }
+  return out;
+}
+
 const EMPTY: OwnerOnboardingView = {
   inOnboarding: false,
   preview: false,
@@ -114,6 +132,7 @@ const EMPTY: OwnerOnboardingView = {
   decided: [],
   homes: [],
   cardFiles: {},
+  photoCards: {},
 };
 
 const ACTIVE_PROJECT = ["cancelled", "complete", "completed", "handed_off"];
@@ -351,6 +370,7 @@ export async function loadOwnerOnboarding(
     ...new Set(cardRows.map((r) => r.onboarding_task_id).filter((x): x is string => Boolean(x))),
   ];
   const cardFiles = cardFilesByReview(cardRows, await sharedFiles(admin, cardTaskIds, false));
+  const photoCards = await photoCardsFor(admin, programId);
 
   return {
     inOnboarding: homes.length > 0 || actions.length > 0,
@@ -359,6 +379,7 @@ export async function loadOwnerOnboarding(
     ...splitDecided(actions),
     homes,
     cardFiles,
+    photoCards,
   };
 }
 
@@ -446,5 +467,6 @@ export async function loadOwnerOnboardingPreview(
     ...splitDecided(actions),
     homes,
     cardFiles: {},
+    photoCards: {},
   };
 }
