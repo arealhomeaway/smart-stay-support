@@ -1,11 +1,22 @@
 -- STAGED, NOT APPLIED. Approved by Emily Nov 6 (Kati's Active Owner review). Run only with explicit approval to apply.
 -- No BEGIN/COMMIT: the migration tool runs the file in one transaction.
 -- Standard template (ARHA Onboarding - Standard, 84f3a777-44a8-430a-af7e-8f18dc9a7dae): working rows, then a new published version through the same snapshot the
--- publish_onboarding_template action writes. Version 1 and every home already on it are untouched. Template push stays paused.
+-- publish_onboarding_template action writes. Versions 1 and 2 and every home already on them are untouched (file 04 moves 624 Daniel Court). Template push stays paused.
 
 DO $do$ BEGIN
-  IF (SELECT max(version) FROM public.onboarding_template_versions WHERE template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae') IS DISTINCT FROM 1 THEN
-    RAISE EXCEPTION 'Standard template is no longer on version 1; nothing applied'; END IF;
+  -- Rebuilt Nov 6 on top of Kati's version 2 (published 2026-11-06 16:46 UTC). Version 1 and version 2 stay untouched.
+  IF (SELECT max(version) FROM public.onboarding_template_versions WHERE template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae') IS DISTINCT FROM 2 THEN
+    RAISE EXCEPTION 'Standard template is no longer on version 2; nothing applied'; END IF;
+  IF (SELECT md5(snapshot::text) FROM public.onboarding_template_versions WHERE template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae' AND version = 2) IS DISTINCT FROM '5126f602f39ad15e12ec6a307ae5dc81' THEN
+    RAISE EXCEPTION 'Kati''s version 2 snapshot changed since it was read; nothing applied'; END IF;
+  -- Working steps must still equal Kati's version 2 exactly (no edits since she published)
+  IF (SELECT coalesce(jsonb_agg(to_jsonb(t) - 'created_at' - 'updated_at' ORDER BY t.sort_order),'[]'::jsonb) FROM public.onboarding_template_tasks t WHERE t.template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae' AND t.is_active)
+     IS DISTINCT FROM (SELECT snapshot->'steps' FROM public.onboarding_template_versions WHERE template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae' AND version = 2) THEN
+    RAISE EXCEPTION 'Standard working steps changed since Kati''s version 2; nothing applied'; END IF;
+  IF (SELECT md5((to_jsonb(t) - 'created_at' - 'updated_at')::text) FROM public.onboarding_template_tasks t WHERE id = 'f5b2335f-3aed-44ce-af1a-c119ec66d6c3') IS DISTINCT FROM '311da1ce8e7a0721088055f9486e127f'
+     OR (SELECT md5((to_jsonb(t) - 'created_at' - 'updated_at')::text) FROM public.onboarding_template_tasks t WHERE id = '36881d78-d434-489b-bf51-fd35022fe2e3') IS DISTINCT FROM '4be286b2b658ed25c4a9f8f715553cf1'
+     OR EXISTS (SELECT 1 FROM public.onboarding_template_tasks WHERE id = '00f4e66f-ce9c-43fc-b1bb-e74fc94ad83f') THEN
+    RAISE EXCEPTION 'Kati''s version 2 step edits changed since they were read; nothing applied'; END IF;
   IF EXISTS (SELECT 1 FROM public.onboarding_template_tasks WHERE id IN ('5c1f0a52-7d4e-4b8a-9a61-2f3c8e0d1a26','5c1f0a52-7d4e-4b8a-9a61-2f3c8e0d1a58')) THEN RAISE EXCEPTION 'New steps already exist; nothing applied'; END IF;
   IF (SELECT count(*) FROM public.onboarding_template_tasks WHERE id IN ('3505c129-1c91-42db-955b-89c7bce75c11','cbb23216-ee09-4301-b0b0-4392a960a145') AND is_active AND template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae') <> 2 THEN
     RAISE EXCEPTION 'Accounting or guest-instructions step changed since capture; nothing applied'; END IF;
@@ -64,9 +75,9 @@ UPDATE public.onboarding_template_tasks SET is_active = false WHERE id = '3505c1
 -- 12. Guest instructions become card-only (card A59); the plan step is retired from future versions, never deleted
 UPDATE public.onboarding_template_tasks SET is_active = false WHERE id = 'cbb23216-ee09-4301-b0b0-4392a960a145';
 
--- Publish version 2 (same snapshot as publish_onboarding_template)
+-- Publish version 3 on top of Kati's version 2 (same snapshot as publish_onboarding_template)
 INSERT INTO public.onboarding_template_versions (template_id, version, snapshot, published_by)
-SELECT '84f3a777-44a8-430a-af7e-8f18dc9a7dae', 2, jsonb_build_object(
+SELECT '84f3a777-44a8-430a-af7e-8f18dc9a7dae', 3, jsonb_build_object(
   'stages', coalesce((SELECT jsonb_agg(jsonb_build_object('name',s.name,'sort_order',s.sort_order) ORDER BY s.sort_order)
               FROM public.onboarding_template_stages s WHERE s.template_id='84f3a777-44a8-430a-af7e-8f18dc9a7dae' AND s.active),'[]'::jsonb),
   'steps', coalesce((SELECT jsonb_agg(to_jsonb(t) - 'created_at' - 'updated_at' ORDER BY t.sort_order)
