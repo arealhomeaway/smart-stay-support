@@ -22,7 +22,7 @@ describe("staged package integrity", () => {
     }
   });
   it("has no transaction lines, no em dashes and an undo for each step", () => {
-    for (const f of ["01_standard_template.sql", "02_card_library.sql", "03_release_new_cards.sql"]) {
+    for (const f of ["01_standard_template.sql", "02_card_library.sql", "03_release_new_cards.sql", "04_push_v3_624_daniel_ct.sql"]) {
       const s = read(f);
       expect(/^\s*(BEGIN|COMMIT);/m.test(s)).toBe(false);
       expect(/[\u2014\u2013]/.test(s)).toBe(false);
@@ -37,13 +37,14 @@ describe("Standard template", () => {
     expect(new RegExp(`'${FLOOR}', ARRAY\\['lead_designer'\\]`).test(t01)).toBe(true);
   });
   it("upload of furnishing files carries the Accounting invoice request and retires the separate step", () => {
-    expect(t01).toContain("Send the invoice request to Accounting to prepare the initial invoices");
+    expect(t01).toContain("Send the initial invoice request to Accounting the usual way. The Finance portal in Resolve is under construction; this will become automatic when it's ready.");
     expect(/is_active = false WHERE id = '3505c129/.test(t01)).toBe(true);
   });
-  it("guest instructions become card-only and nothing touches homes on version 1", () => {
+  it("guest instructions become card-only and nothing touches any home; version 3 is built on version 2", () => {
     expect(/is_active = false WHERE id = 'cbb23216/.test(t01)).toBe(true);
     expect(/onboarding_projects/.test(t01)).toBe(false);
-    expect(t01).toContain("version 1; nothing applied");
+    expect(t01).toContain("no longer on version 2; nothing applied");
+    expect(t01).toContain("SELECT '84f3a777-44a8-430a-af7e-8f18dc9a7dae', 3, jsonb_build_object");
   });
 });
 
@@ -52,7 +53,7 @@ describe("Active Owner cards", () => {
     for (const code of ["A15", "A26", "A31", "A35", "A41", "A56", "A57", "P03", "P04", "P14", "P15"]) {
       const b = block(code);
       expect(/version = version \+ 1/.test(b)).toBe(true);
-      expect(/AND version = \d+ RETURNING/.test(b)).toBe(true);
+      expect(/AND version = \d+ (AND [^\n]+ )?RETURNING/.test(b)).toBe(true);
       expect(b).toContain("ao_library_card_history");
     }
     expect(/\bN10\b/.test(t02)).toBe(false);
@@ -79,6 +80,26 @@ describe("Active Owner cards", () => {
   });
   it("P19 and P20 stay card-only", () => {
     expect(/card_code IN \('P19','P20'\) AND status = 'suggested'/.test(t02)).toBe(true);
+  });
+});
+
+describe("624 Daniel Court push", () => {
+  const t04 = read("04_push_v3_624_daniel_ct.sql");
+  const u04 = read("undo/04_undo_push_v3_624_daniel_ct.sql");
+  it("touches only Daniel Court and requires it to be on version 1 with unchanged counts", () => {
+    expect(t04).toContain("e57c1c02-2600-4547-a3a9-cffa541ce4fc");
+    expect(t04).toContain("not on Standard version 1; nothing applied");
+    expect(t04).toContain("expected 144 / 13 complete / 143 assigned");
+    expect((t04.match(/UPDATE public\.onboarding_projects/g) ?? []).length).toBe(1);
+  });
+  it("never deletes Tasks and archives removed steps only when not started", () => {
+    expect(/DELETE FROM/.test(t04)).toBe(false);
+    expect(t04).toContain("r.status = 'open' AND r.completed_at IS NULL");
+    expect(t04).toContain("archived_at = now()");
+  });
+  it("undo returns the home to version 1 and removes only the added Tasks", () => {
+    expect(u04).toContain("SET template_version_id = v1");
+    expect(u04).toContain("6d24f3a1-7c1e-4c3a-9b2d-000000000a26");
   });
 });
 
