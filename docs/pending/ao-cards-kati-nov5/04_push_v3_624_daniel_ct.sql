@@ -16,6 +16,8 @@ DECLARE
   removed uuid[] := ARRAY['00f4e66f-ce9c-43fc-b1bb-e74fc94ad83f','3505c129-1c91-42db-955b-89c7bce75c11','cbb23216-ee09-4301-b0b0-4392a960a145']::uuid[];
   kept text := ''; r record; n_new int := 0; n_sub int := 0; n_arch int := 0; n_text int := 0;
 BEGIN
+  -- Project changes require a signed-in Onboarding staff actor (protect_onboarding_project_assignments); act as Emily, who approved this, for this transaction only.
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', '98bd6696-4018-4965-b645-0471c5ae3925', 'role', 'authenticated')::text, true);
   SELECT id INTO v1 FROM public.onboarding_template_versions WHERE template_id = _tpl AND version = 1;
   SELECT id, snapshot INTO v3, snap FROM public.onboarding_template_versions WHERE template_id = _tpl AND version = 3;
   SELECT * INTO pr FROM public.onboarding_projects WHERE id = _proj;

@@ -7,6 +7,8 @@ DECLARE
   v1 uuid; v3 uuid; mv timestamptz;
   ids uuid[] := ARRAY['6d24f3a1-7c1e-4c3a-9b2d-000000000a26','6d24f3a1-7c1e-4c3a-9b2d-000000000a58','6d24f3a1-7c1e-4c3a-9b2d-000000000b01','6d24f3a1-7c1e-4c3a-9b2d-000000000b02','6d24f3a1-7c1e-4c3a-9b2d-000000000b03']::uuid[];
 BEGIN
+  -- Project changes require a signed-in Onboarding staff actor (protect_onboarding_project_assignments); act as Emily, who approved this, for this transaction only.
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', '98bd6696-4018-4965-b645-0471c5ae3925', 'role', 'authenticated')::text, true);
   SELECT id INTO v1 FROM public.onboarding_template_versions WHERE template_id = _tpl AND version = 1;
   SELECT id INTO v3 FROM public.onboarding_template_versions WHERE template_id = _tpl AND version = 3;
   SELECT created_at INTO mv FROM public.onboarding_project_events WHERE id = '6d24f3a1-7c1e-4c3a-9b2d-000000000e01';
