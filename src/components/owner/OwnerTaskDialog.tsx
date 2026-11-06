@@ -118,6 +118,7 @@ export function OwnerTaskDialog({
   onLogTime,
   logTimeBlockedReason,
   onDecided,
+  sharedFiles,
 }: {
   open: boolean;
   onOpenChange: (next: boolean) => void;
@@ -131,13 +132,15 @@ export function OwnerTaskDialog({
   onLogTime: () => void;
   logTimeBlockedReason: string | null;
   onDecided: () => void;
+  /** Files shared on the card's linked onboarding step, when no decision carries them. */
+  sharedFiles?: OwnerOnboardingFile[];
 }) {
   const [response, setResponse] = useState("");
   const [note, setNote] = useState("");
   const decide = useServerFn(decideOwnerApproval);
   const deadline = deadlineState(details.respondBy ?? action?.dueOn ?? null);
   const decidable = Boolean(action?.canRespond && action?.publicationId);
-  const files = action?.files ?? [];
+  const files = action?.files?.length ? action.files : (sharedFiles ?? []);
 
   const submitDecision = useMutation({
     mutationFn: (decision: "approved" | "declined") =>
