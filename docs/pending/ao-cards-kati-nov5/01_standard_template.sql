@@ -13,8 +13,8 @@ DO $do$ BEGIN
   IF (SELECT coalesce(jsonb_agg(to_jsonb(t) - 'created_at' - 'updated_at' ORDER BY t.sort_order),'[]'::jsonb) FROM public.onboarding_template_tasks t WHERE t.template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae' AND t.is_active)
      IS DISTINCT FROM (SELECT snapshot->'steps' FROM public.onboarding_template_versions WHERE template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae' AND version = 2) THEN
     RAISE EXCEPTION 'Standard working steps changed since Kati''s version 2; nothing applied'; END IF;
-  IF (SELECT md5((to_jsonb(t) - 'created_at' - 'updated_at')::text) FROM public.onboarding_template_tasks t WHERE id = 'f5b2335f-3aed-44ce-af1a-c119ec66d6c3') IS DISTINCT FROM '311da1ce8e7a0721088055f9486e127f'
-     OR (SELECT md5((to_jsonb(t) - 'created_at' - 'updated_at')::text) FROM public.onboarding_template_tasks t WHERE id = '36881d78-d434-489b-bf51-fd35022fe2e3') IS DISTINCT FROM '4be286b2b658ed25c4a9f8f715553cf1'
+  IF (SELECT md5((to_jsonb(t) - 'created_at' - 'updated_at')::text) FROM public.onboarding_template_tasks t WHERE id = 'f5b2335f-3aed-44ce-af1a-c119ec66d6c3') IS DISTINCT FROM '4be286b2b658ed25c4a9f8f715553cf1'
+     OR (SELECT md5((to_jsonb(t) - 'created_at' - 'updated_at')::text) FROM public.onboarding_template_tasks t WHERE id = '36881d78-d434-489b-bf51-fd35022fe2e3') IS DISTINCT FROM '311da1ce8e7a0721088055f9486e127f'
      OR EXISTS (SELECT 1 FROM public.onboarding_template_tasks WHERE id = '00f4e66f-ce9c-43fc-b1bb-e74fc94ad83f') THEN
     RAISE EXCEPTION 'Kati''s version 2 step edits changed since they were read; nothing applied'; END IF;
   IF EXISTS (SELECT 1 FROM public.onboarding_template_tasks WHERE id IN ('5c1f0a52-7d4e-4b8a-9a61-2f3c8e0d1a26','5c1f0a52-7d4e-4b8a-9a61-2f3c8e0d1a58')) THEN RAISE EXCEPTION 'New steps already exist; nothing applied'; END IF;

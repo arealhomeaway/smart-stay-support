@@ -43,3 +43,4 @@ Homeowner cards now show files staff shared on the card's linked step (`cardFile
 - Nov 6: rebuilt as Standard **version 3** on top of Kati's version 2 (Emily). Kati's removal of "Send the weekly progress update" and her edits to "Send the closing congratulations and onboarding timeline" and "Work order: Remove the surveillance signs" are kept exactly.
 - Nov 6: A57 was already at v4 with the Owner readiness call link (saved by Emily at 16:00 UTC); 02 now expects v4 with that link and only changes its opens text. Its undo restores v4 content.
 - Nov 6: added 04 push for 624 Daniel Court only (Emily).
+- Nov 6: first apply of 01 stopped safely on its own check (the two step hashes were paired with the wrong step IDs in the file). Corrected the pairing only; nothing had been applied.
