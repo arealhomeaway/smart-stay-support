@@ -82,7 +82,29 @@ export type OwnerOnboardingView = {
   pending: OwnerOnboardingAction[];
   decided: OwnerOnboardingAction[];
   homes: OwnerOnboardingHome[];
+  /**
+   * Files staff shared with the homeowner on the onboarding step a card is
+   * linked to, keyed by the card's owner review. Only unlocked cards get
+   * files; a card still waiting on ARHA shows none.
+   */
+  cardFiles: Record<string, OwnerOnboardingFile[]>;
 };
+
+const CARD_FILE_STATUSES = new Set(["awaiting_owner", "answered", "returned", "closed"]);
+
+/** Pure: which shared step files each unlocked card shows. */
+export function cardFilesByReview(
+  reviews: { id: string; status: string | null; onboarding_task_id: string | null }[],
+  filesByTask: Map<string, OwnerOnboardingFile[]>,
+): Record<string, OwnerOnboardingFile[]> {
+  const out: Record<string, OwnerOnboardingFile[]> = {};
+  for (const r of reviews) {
+    if (!r.onboarding_task_id || !CARD_FILE_STATUSES.has(r.status ?? "")) continue;
+    const files = filesByTask.get(r.onboarding_task_id);
+    if (files?.length) out[r.id] = files;
+  }
+  return out;
+}
 
 const EMPTY: OwnerOnboardingView = {
   inOnboarding: false,
@@ -91,6 +113,7 @@ const EMPTY: OwnerOnboardingView = {
   pending: [],
   decided: [],
   homes: [],
+  cardFiles: {},
 };
 
 const ACTIVE_PROJECT = ["cancelled", "complete", "completed", "handed_off"];
@@ -312,12 +335,30 @@ export async function loadOwnerOnboarding(
     participation: participation.get(taskByApproval.get(a.id) ?? "") ?? null,
   }));
 
+  const cardReviews = await admin
+    .from("owner_reviews")
+    .select("id, status, onboarding_task_id")
+    .eq("program_id", programId)
+    .not("onboarding_task_id", "is", null)
+    .is("archived_at", null);
+  if (cardReviews.error) throw cardReviews.error;
+  const cardRows = (cardReviews.data ?? []) as {
+    id: string;
+    status: string | null;
+    onboarding_task_id: string | null;
+  }[];
+  const cardTaskIds = [
+    ...new Set(cardRows.map((r) => r.onboarding_task_id).filter((x): x is string => Boolean(x))),
+  ];
+  const cardFiles = cardFilesByReview(cardRows, await sharedFiles(admin, cardTaskIds, false));
+
   return {
     inOnboarding: homes.length > 0 || actions.length > 0,
     preview: false,
     programId,
     ...splitDecided(actions),
     homes,
+    cardFiles,
   };
 }
 
@@ -404,5 +445,6 @@ export async function loadOwnerOnboardingPreview(
     programId,
     ...splitDecided(actions),
     homes,
+    cardFiles: {},
   };
 }

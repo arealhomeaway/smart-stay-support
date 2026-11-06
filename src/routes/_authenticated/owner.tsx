@@ -46,7 +46,7 @@ import { OnboardingActions } from "@/components/owner/OnboardingActions";
 import { StrReportPanel } from "@/components/owner/StrReportPanel";
 import { OwnerTaskDialog, taskDeadlineLabel } from "@/components/owner/OwnerTaskDialog";
 import { ownerOnboardingActions } from "@/lib/owner-onboarding.functions";
-import type { OwnerOnboardingAction } from "@/lib/owner-onboarding.server";
+import type { OwnerOnboardingAction, OwnerOnboardingFile } from "@/lib/owner-onboarding.server";
 import { ownerReviewPresentation } from "@/lib/owner-review-presentation";
 import type { OwnerTicketRequest } from "@/lib/owner-ticket-authority";
 import { ArhaContacts } from "@/components/owner/ArhaContacts";
@@ -585,6 +585,7 @@ function OwnerHubBody({
                     onDone={invalidate}
                     readOnly={preview}
                     action={actionByReview.get(r.id) ?? null}
+                    sharedFiles={onboardingQuery.data?.cardFiles?.[r.id] ?? []}
                     canLogHours={canLogHours}
                     logHoursBlockedReason={logHoursBlockedReason}
                   />
@@ -621,6 +622,7 @@ function OwnerHubBody({
                   onDone={invalidate}
                   readOnly={preview}
                   action={actionByReview.get(r.id) ?? null}
+                    sharedFiles={onboardingQuery.data?.cardFiles?.[r.id] ?? []}
                   canLogHours={canLogHours}
                   logHoursBlockedReason={logHoursBlockedReason}
                 />
@@ -749,6 +751,7 @@ function ReviewRow({
   action = null,
   canLogHours = true,
   logHoursBlockedReason = null,
+  sharedFiles = [],
 }: {
   review: Review;
   properties: { propertyId: string; name: string }[];
@@ -759,6 +762,8 @@ function ReviewRow({
   action?: OwnerOnboardingAction | null;
   canLogHours?: boolean;
   logHoursBlockedReason?: string | null;
+  /** Files staff shared on the card's linked onboarding step. */
+  sharedFiles?: OwnerOnboardingFile[];
 }) {
   const [open, setOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
@@ -803,7 +808,7 @@ function ReviewRow({
     .filter((p) => review.propertyIds.includes(p.propertyId))
     .map((p) => p.name)
     .join(", ");
-  const fileCount = action?.files.length ?? 0;
+  const fileCount = action?.files.length ? action.files.length : sharedFiles.length;
   const timeLoggable = canLogHours && !readOnly && review.status !== "closed";
 
   return (
@@ -849,6 +854,7 @@ function ReviewRow({
           priorResponse: review.owner_response ?? null,
         }}
         action={action}
+        sharedFiles={sharedFiles}
         canRespond={canRespond}
         responding={respond.isPending}
         onRespond={(value) => respond.mutate(value)}
