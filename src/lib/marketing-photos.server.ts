@@ -115,3 +115,32 @@ export function streamPhotoZip(files: PhotoFile[], open: PhotoSource["open"]): R
     cancel() { zip.terminate(); void reader?.cancel(); },
   });
 }
+
+/** Owners reach only homes they own; staff reach any home. Decided before SharePoint is read. */
+export function decidePhotoAccess(viewer: { isStaff: boolean; ownsHome: boolean; signedIn: boolean }) {
+  if (!viewer.signedIn) return { allow: false as const, reason: "Sign in to download photos." };
+  if (viewer.isStaff || viewer.ownsHome) return { allow: true as const };
+  return { allow: false as const, reason: "You do not have access to this home's photos." };
+}
+
+export async function sha256Hex(value: string) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * Logs the download (who, when, home) and returns a single-use, two-minute
+ * link. Only the token's hash is stored.
+ */
+export async function startPhotoDownloadCore(deps: {
+  propertyId: string;
+  count: number;
+  bytes: number;
+  log: (args: { _property_id: string; _token_hash: string; _file_count: number; _total_bytes: number }) => Promise<{ error: { message: string } | null }>;
+  token?: string;
+}) {
+  const token = deps.token ?? `${crypto.randomUUID()}${crypto.randomUUID()}`.replace(/-/g, "");
+  const { error } = await deps.log({ _property_id: deps.propertyId, _token_hash: await sha256Hex(token), _file_count: deps.count, _total_bytes: deps.bytes });
+  if (error) throw new Error("The download could not be started. Nothing was downloaded.");
+  return { url: `/api/public/marketing-photos/${token}` };
+}
