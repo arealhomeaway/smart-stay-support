@@ -58,7 +58,7 @@ Thank you!
 
 Done when:
 Accounting has the request and both documents, and the Invoice 1 link is on the project once it arrives.$t$, true, 'none', true, true, true,
-  ARRAY['Upload the Furnishing Invoice Breakdown and share it with the homeowner','Upload the approved Make Ready Estimate and share it with the homeowner','Send the invoice request to Accounting to prepare the initial invoices']);
+  ARRAY['Upload the Furnishing Invoice Breakdown and share it with the homeowner','Upload the approved Make Ready Estimate and share it with the homeowner',$t$Send the initial invoice request to Accounting the usual way. The Finance portal in Resolve is under construction; this will become automatic when it's ready.$t$]);
 UPDATE public.onboarding_template_tasks SET is_active = false WHERE id = '3505c129-1c91-42db-955b-89c7bce75c11';
 
 -- 12. Guest instructions become card-only (card A59); the plan step is retired from future versions, never deleted
