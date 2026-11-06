@@ -36,3 +36,6 @@ Undo for each is in `undo/`. `live-capture/` holds the read-only snapshot used f
 
 ## Code shipped with this package
 Homeowner cards now show files staff shared on the card's linked step (`cardFilesByReview` in `src/lib/owner-onboarding.server.ts`). Safe before the SQL: it only reads.
+
+## Change log
+- Nov 6: upload step checklist item 3 now reads "Send the initial invoice request to Accounting the usual way. The Finance portal in Resolve is under construction; this will become automatic when it's ready." (Emily). No file had BEGIN/COMMIT wrapper lines.
