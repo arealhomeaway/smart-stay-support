@@ -1,0 +1,2 @@
+b355cb262ac848109e0ec7bda562e40f48954f56d6e0a0b5d88679747d2de55d  01_retire_checkout_routine.sql
+038ae7c197a4ad0a4fda060fea55e5ef68efc1fc5a5df21aa2bac685c4889948  01_undo_retire_checkout_routine.sql
