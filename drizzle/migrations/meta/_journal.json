@@ -1828,6 +1828,13 @@
       "when": 1794006537981,
       "tag": "0260_sop_upload",
       "breakpoints": true
+    },
+    {
+      "idx": 261,
+      "version": "7",
+      "when": 1794006616874,
+      "tag": "0261_retire_checkout_routine",
+      "breakpoints": true
     }
   ]
 }
