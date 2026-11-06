@@ -99,11 +99,11 @@ Record only the time you personally spend on this card. Do not include time spen
   IF NOT FOUND THEN RAISE EXCEPTION 'A56 changed since capture (expected v3); nothing applied'; END IF;
   INSERT INTO public.ao_library_card_history(card_id, version, snapshot, changed_by) VALUES (r.id, r.version, to_jsonb(r), '98bd6696-4018-4965-b645-0471c5ae3925');
 END $do$;
--- A57 Document your onboarding planning call (captured v3)
+-- A57 Document your onboarding planning call (re-read v4: Emily linked the readiness call on Nov 6 16:00 UTC; only the opens text changes now)
 DO $do$ DECLARE r public.ao_library_cards; BEGIN
   UPDATE public.ao_library_cards SET linked_template_task_ids = ARRAY['ec1afa4b-bf49-4d4b-91cf-2f5546fcfa49']::uuid[], opens_text = $t$Locked until the Owner readiness call is held$t$, version = version + 1, updated_by = '98bd6696-4018-4965-b645-0471c5ae3925', updated_at = now()
-   WHERE code = 'A57' AND version = 3 RETURNING * INTO r;
-  IF NOT FOUND THEN RAISE EXCEPTION 'A57 changed since capture (expected v3); nothing applied'; END IF;
+   WHERE code = 'A57' AND version = 4 AND linked_template_task_ids = ARRAY['ec1afa4b-bf49-4d4b-91cf-2f5546fcfa49']::uuid[] RETURNING * INTO r;
+  IF NOT FOUND THEN RAISE EXCEPTION 'A57 changed since capture (expected v4); nothing applied'; END IF;
   INSERT INTO public.ao_library_card_history(card_id, version, snapshot, changed_by) VALUES (r.id, r.version, to_jsonb(r), '98bd6696-4018-4965-b645-0471c5ae3925');
 END $do$;
 -- P03 Choose towels, linens and guest supplies (captured v3)

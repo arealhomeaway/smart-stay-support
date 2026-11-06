@@ -4,9 +4,10 @@ STAGED, NOT APPLIED. Approved by Emily for build and test only. Apply each file 
 No owner is messaged. No in-progress home's plan changes. Template push to in-progress homes stays paused.
 
 ## Files (apply in this order, verify `SHA256SUMS` first)
-1. `01_standard_template.sql`: Standard template working rows, then publishes Standard **version 2** with the same snapshot `publish_onboarding_template` writes. Version 1 is immutable and untouched.
+1. `01_standard_template.sql`: Standard template working rows on top of Kati's version 2 (Nov 6 16:46 UTC), then publishes Standard **version 3** with the same snapshot `publish_onboarding_template` writes. Versions 1 and 2 are immutable and untouched. Precheck requires max version 2, Kati's v2 snapshot hash, working rows equal to v2, and her two edited steps unchanged.
 2. `02_card_library.sql`: card edits as new card versions with history (same effect as `ao_card_save` / `ao_card_set_status`), two new Draft cards, P19/P20 suggestion decisions, and the placeholder column. Needs file 1 first (new step IDs).
-3. `03_release_new_cards.sql`: separate approval. Releases A58 and A59. Until then they are Draft and reach no home.
+3. `03_release_new_cards.sql`: approved Nov 6. Releases A58 and A59. Until then they are Draft and reach no home.
+4. `04_push_v3_624_daniel_ct.sql`: moves 624 Daniel Court from version 1 to version 3 (adds 2 steps and their checklist items, archives not-started removed steps, applies Kati's v2 wording to the two not-started edited steps, relinks any A26 card, records a project event). Undo in `undo/04_...`; run it before undoing 01.
 Undo for each is in `undo/`. `live-capture/` holds the read-only snapshot used for undo. Each file stops with "nothing applied" if a card or step changed since capture.
 
 ## What changes
@@ -39,3 +40,9 @@ Homeowner cards now show files staff shared on the card's linked step (`cardFile
 
 ## Change log
 - Nov 6: upload step checklist item 3 now reads "Send the initial invoice request to Accounting the usual way. The Finance portal in Resolve is under construction; this will become automatic when it's ready." (Emily). No file had BEGIN/COMMIT wrapper lines.
+- Nov 6: rebuilt as Standard **version 3** on top of Kati's version 2 (Emily). Kati's removal of "Send the weekly progress update" and her edits to "Send the closing congratulations and onboarding timeline" and "Work order: Remove the surveillance signs" are kept exactly.
+- Nov 6: A57 was already at v4 with the Owner readiness call link (saved by Emily at 16:00 UTC); 02 now expects v4 with that link and only changes its opens text. Its undo restores v4 content.
+- Nov 6: added 04 push for 624 Daniel Court only (Emily).
+- Nov 6: first apply of 01 stopped safely on its own check (the two step hashes were paired with the wrong step IDs in the file). Corrected the pairing only; nothing had been applied.
+- Nov 6: first apply of 04 was refused by the project safety rule (needs a signed-in Onboarding staff actor) and rolled back with nothing changed. 04 and its undo now act as Emily for that one transaction, so the rule still checks her access.
+- Nov 6: APPLIED byte-for-byte as migrations 0254 (01), 0255 (02), 0256 (03), 0257 (04). Undo order if ever needed: 04, 03, 02, 01.
