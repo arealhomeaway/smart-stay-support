@@ -169,7 +169,7 @@ Steps:
 2. Write the caption, on-image text if any, asset direction, accessibility description, call to action and suggested posting date for each concept.
 3. Create a concise set of relevant location and property tags without using misleading claims.
 4. Identify which concepts can use existing MLS or design material and which need final ARHA photos.
-5. Finalize the package with ARHA-approved facts, the listing link and the photos from your Marketing photos link. ARHA shares a Marketing photos link to your home's photos in the ARHA Resolve SharePoint site.
+5. Finalize the package with ARHA-approved facts, the listing link and your home's marketing photos. Use Download all photos on this card to get your home's marketing photos in one file.
 
 What to submit: Six-post campaign. Answer fields: Post text, photo choice, date.
 
@@ -179,7 +179,7 @@ Record only the time you personally spend on this card. Do not include time spen
 2. Write the caption, on-image text if any, asset direction, accessibility description, call to action and suggested posting date for each concept.
 3. Create a concise set of relevant location and property tags without using misleading claims.
 4. Identify which concepts can use existing MLS or design material and which need final ARHA photos.
-5. Finalize the package with ARHA-approved facts, the listing link and the photos from your Marketing photos link. ARHA shares a Marketing photos link to your home's photos in the ARHA Resolve SharePoint site.$t$, opens_text = $t$Draft open on day one; final step unlocks when ARHA shares your Marketing photos link and listing link$t$, version = version + 1, updated_by = '98bd6696-4018-4965-b645-0471c5ae3925', updated_at = now()
+5. Finalize the package with ARHA-approved facts, the listing link and your home's marketing photos. Use Download all photos on this card to get your home's marketing photos in one file.$t$, opens_text = $t$Draft open on day one; final step unlocks when your marketing photos are ready and ARHA shares the listing link$t$, version = version + 1, updated_by = '98bd6696-4018-4965-b645-0471c5ae3925', updated_at = now()
    WHERE code = 'P14' AND version = 3 RETURNING * INTO r;
   IF NOT FOUND THEN RAISE EXCEPTION 'P14 changed since capture (expected v3); nothing applied'; END IF;
   INSERT INTO public.ao_library_card_history(card_id, version, snapshot, changed_by) VALUES (r.id, r.version, to_jsonb(r), '98bd6696-4018-4965-b645-0471c5ae3925');
@@ -194,7 +194,7 @@ Steps:
 1. Divide the homeowner's existing network into family and friends, professional contacts and community contacts.
 2. Draft one short text, one group-message version, one email and one follow-up message using the homeowner's natural voice.
 3. Explain the type of stay the home may support without promising a rate, date or booking.
-4. Include the ARHA-approved link or inquiry route and a clear request to share it with someone who may need furnished housing. You can add photos from your Marketing photos link. ARHA shares a Marketing photos link to your home's photos in the ARHA Resolve SharePoint site.
+4. Include the ARHA-approved link or inquiry route and a clear request to share it with someone who may need furnished housing. You can add your home's marketing photos. Use Download all photos on this card to get your home's marketing photos in one file.
 5. Finalize the messages when the live link is available and record only outreach the homeowner actually sends.
 
 What to submit: Text and email message set. Answer fields: Audience, channel, message.
@@ -204,7 +204,7 @@ What to keep: Keep the final message set and a record of the outreach you actual
 Record only the time you personally spend on this card. Do not include time spent by ARHA, a vendor or another household member.$t$, how_text = $t$1. Divide the homeowner's existing network into family and friends, professional contacts and community contacts.
 2. Draft one short text, one group-message version, one email and one follow-up message using the homeowner's natural voice.
 3. Explain the type of stay the home may support without promising a rate, date or booking.
-4. Include the ARHA-approved link or inquiry route and a clear request to share it with someone who may need furnished housing. You can add photos from your Marketing photos link. ARHA shares a Marketing photos link to your home's photos in the ARHA Resolve SharePoint site.
+4. Include the ARHA-approved link or inquiry route and a clear request to share it with someone who may need furnished housing. You can add your home's marketing photos. Use Download all photos on this card to get your home's marketing photos in one file.
 5. Finalize the messages when the live link is available and record only outreach the homeowner actually sends.$t$, version = version + 1, updated_by = '98bd6696-4018-4965-b645-0471c5ae3925', updated_at = now()
    WHERE code = 'P15' AND version = 3 RETURNING * INTO r;
   IF NOT FOUND THEN RAISE EXCEPTION 'P15 changed since capture (expected v3); nothing applied'; END IF;
@@ -275,6 +275,4 @@ DO $do$ BEGIN
     RAISE EXCEPTION 'P19 or P20 gained a linked step since capture; nothing applied'; END IF;
 END $do$;
 
--- 11. Placeholder only: per-home Marketing photos link (delivery method pending Emily's decision; nothing reads or writes it yet)
-ALTER TABLE public.ao_home_plan_cards ADD COLUMN marketing_photos_link text;
-COMMENT ON COLUMN public.ao_home_plan_cards.marketing_photos_link IS 'Placeholder: Marketing photos link (ARHA Resolve SharePoint) for P14/P15. Delivery method pending decision.';
+-- 11. Marketing photos: delivered by Download all photos (docs/pending/ao-marketing-photos), no placeholder column.
