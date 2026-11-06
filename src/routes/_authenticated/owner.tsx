@@ -46,7 +46,7 @@ import { OnboardingActions } from "@/components/owner/OnboardingActions";
 import { StrReportPanel } from "@/components/owner/StrReportPanel";
 import { OwnerTaskDialog, taskDeadlineLabel } from "@/components/owner/OwnerTaskDialog";
 import { ownerOnboardingActions } from "@/lib/owner-onboarding.functions";
-import type { OwnerOnboardingAction } from "@/lib/owner-onboarding.server";
+import type { OwnerOnboardingAction, OwnerOnboardingFile } from "@/lib/owner-onboarding.server";
 import { ownerReviewPresentation } from "@/lib/owner-review-presentation";
 import type { OwnerTicketRequest } from "@/lib/owner-ticket-authority";
 import { ArhaContacts } from "@/components/owner/ArhaContacts";
