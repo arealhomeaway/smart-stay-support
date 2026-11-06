@@ -8,6 +8,7 @@
 import { EmailComposer } from "@/components/EmailComposer";
 import { SendToOwner } from '@/components/operations/SendToOwner';
 import { HomeContextHeader } from "@/components/property/HomeContextHeader";
+import { OpenPhotosFolderButton } from "@/components/property/MarketingPhotosButtons";
 import { TwoStepHandoff } from "@/components/onboarding/TwoStepHandoff";
 import { readHomeContext } from "@/lib/home-context.functions";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -308,6 +309,11 @@ function HubHeader({ hub }: { hub: Hub }) {
             <p className="mt-1 text-muted-foreground">{p.address || "No address on file"}</p>
             {facts.length > 0 && (
               <p className="mt-1 text-sm text-muted-foreground">{facts.join(" · ")}</p>
+            )}
+            {hub.viewer.staff && (
+              <div className="mt-2">
+                <OpenPhotosFolderButton propertyId={propertyId} />
+              </div>
             )}
             {hub.viewer.staff && hub.ownerRecord && (
               <p className="mt-2 text-sm">
