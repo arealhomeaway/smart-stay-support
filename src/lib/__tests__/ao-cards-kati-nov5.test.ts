@@ -25,7 +25,7 @@ describe("staged package integrity", () => {
     for (const f of ["01_standard_template.sql", "02_card_library.sql", "03_release_new_cards.sql"]) {
       const s = read(f);
       expect(s).not.toMatch(/^\s*(BEGIN|COMMIT);/m);
-      expect(s).not.toEqual(expect.stringMatching(/[\u2014\u2013]/));
+      expect(/[\u2014\u2013]/.test(s)).toBe(false);
       expect(read(`undo/${f.replace(/^(\d+)_/, "$1_undo_")}`).length).toBeGreaterThan(100);
     }
   });
@@ -33,16 +33,16 @@ describe("staged package integrity", () => {
 
 describe("Standard template", () => {
   it("adds Upload the floor plans for the lead designer before A26's step, with lead designer review", () => {
-    expect(t01).toEqual(expect.stringMatching(/'Upload the floor plans', 'Lead Designer', 'lead_designer', 385/));
-    expect(t01).toEqual(expect.stringMatching(new RegExp(`'${FLOOR}', ARRAY\\['lead_designer'\\]`)));
+    expect(/'Upload the floor plans', 'Lead Designer', 'lead_designer', 385/.test(t01)).toBe(true);
+    expect(new RegExp(`'${FLOOR}', ARRAY\\['lead_designer'\\]`).test(t01)).toBe(true);
   });
   it("upload of furnishing files carries the Accounting invoice request and retires the separate step", () => {
     expect(t01).toContain("Send the invoice request to Accounting to prepare the initial invoices");
-    expect(t01).toEqual(expect.stringMatching(/is_active = false WHERE id = '3505c129/));
+    expect(/is_active = false WHERE id = '3505c129/.test(t01)).toBe(true);
   });
   it("guest instructions become card-only and nothing touches homes on version 1", () => {
-    expect(t01).toEqual(expect.stringMatching(/is_active = false WHERE id = 'cbb23216/));
-    expect(t01).not.toEqual(expect.stringMatching(/onboarding_projects/));
+    expect(/is_active = false WHERE id = 'cbb23216/.test(t01)).toBe(true);
+    expect(/onboarding_projects/.test(t01)).toBe(false);
     expect(t01).toContain("version 1; nothing applied");
   });
 });
@@ -51,12 +51,12 @@ describe("Active Owner cards", () => {
   it("every edit is versioned with history and checked against the captured version", () => {
     for (const code of ["A15", "A26", "A31", "A35", "A41", "A56", "A57", "P03", "P04", "P14", "P15"]) {
       const b = block(code);
-      expect(b).toEqual(expect.stringMatching(/version = version \+ 1/));
-      expect(b).toEqual(expect.stringMatching(/AND version = \d+ RETURNING/));
+      expect(/version = version \+ 1/.test(b)).toBe(true);
+      expect(/AND version = \d+ RETURNING/.test(b)).toBe(true);
       expect(b).toContain("ao_library_card_history");
     }
-    expect(t02).not.toEqual(expect.stringMatching(/\bN10\b/));
-    expect(t02).not.toEqual(expect.stringMatching(/ao_home_plan_cards SET/));
+    expect(/\bN10\b/.test(t02)).toBe(false);
+    expect(/ao_home_plan_cards SET/.test(t02)).toBe(false);
   });
   it("A15 stays Draft and A41 goes to Draft with the replacement note", () => {
     expect(block("A15")).toContain("status = $t$draft$t$");
@@ -66,19 +66,19 @@ describe("Active Owner cards", () => {
     expect(block("A26")).toContain(FLOOR);
     expect(block("A58")).toContain(FURN);
     expect(block("A58")).toContain("Review your furnishing breakdown and payment schedule");
-    expect(block("A58")).toEqual(expect.stringMatching(/'draft', 1/));
+    expect(/'draft', 1/.test(block("A58"))).toBe(true);
   });
   it("card wording follows Kati's review", () => {
     expect(block("A31")).toContain("same handoff meeting");
     expect(block("A35")).toContain("monthly owner statement you already receive");
-    expect(block("A56")).toEqual(expect.stringMatching(/stage_window = \$t\$operations\$t\$/));
+    expect(/stage_window = \$t\$operations\$t\$/.test(block("A56"))).toBe(true);
     expect(block("A57")).toContain("ec1afa4b-bf49-4d4b-91cf-2f5546fcfa49");
     for (const c of ["P03", "P04"]) expect(block(c)).toContain("approved standards list");
     for (const c of ["P14", "P15"]) expect(block(c)).toContain("Marketing photos link");
     expect(t02).toContain("ADD COLUMN marketing_photos_link text");
   });
   it("P19 and P20 stay card-only", () => {
-    expect(t02).toEqual(expect.stringMatching(/card_code IN \('P19','P20'\) AND status = 'suggested'/));
+    expect(/card_code IN \('P19','P20'\) AND status = 'suggested'/.test(t02)).toBe(true);
   });
 });
 
