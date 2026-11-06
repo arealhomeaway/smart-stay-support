@@ -24,7 +24,8 @@ describe("VEN-07 integration lookups are staff-only", () => {
     expect(await isStaffCaller(broken, "staff1")).toBe(false);
   });
   it("lets staff through", async () => {
-    expect(await assertStaffCaller(db, "staff1")).toBeUndefined();
+    await assertStaffCaller(db, "staff1");
+    expect(await isStaffCaller(db, "staff1")).toBe(true);
   });
 
   const gated: Record<string, number> = {
