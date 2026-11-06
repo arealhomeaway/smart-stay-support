@@ -112,6 +112,7 @@ import { Route as ApiPublicHooksOwnerNotificationEmailRouteImport } from './rout
 import { Route as ApiPublicHooksOwnerNotifyRouteImport } from './routes/api/public/hooks/owner-notify'
 import { Route as ApiPublicHooksQuarterlySchedulerRouteImport } from './routes/api/public/hooks/quarterly-scheduler'
 import { Route as ApiPublicIntakeEmailRouteImport } from './routes/api/public/intake/email'
+import { Route as ApiPublicMarketingPhotosTokenRouteImport } from './routes/api/public/marketing-photos.$token'
 import { Route as ApiPublicSyncMailboxRouteImport } from './routes/api/public/sync/mailbox'
 import { Route as ApiPublicHooksBreezewayTokenRouteImport } from './routes/api/public/hooks/breezeway/$token'
 import { Route as ApiPublicHooksOutlookMessagesRouteImport } from './routes/api/public/hooks/outlook/messages'
@@ -695,6 +696,12 @@ const ApiPublicIntakeEmailRoute = ApiPublicIntakeEmailRouteImport.update({
   path: '/api/public/intake/email',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicMarketingPhotosTokenRoute =
+  ApiPublicMarketingPhotosTokenRouteImport.update({
+    id: '/api/public/marketing-photos/$token',
+    path: '/api/public/marketing-photos/$token',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicSyncMailboxRoute = ApiPublicSyncMailboxRouteImport.update({
   id: '/api/public/sync/mailbox',
   path: '/api/public/sync/mailbox',
@@ -816,6 +823,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
+  '/api/public/marketing-photos/$token': typeof ApiPublicMarketingPhotosTokenRoute
   '/api/public/sync/mailbox': typeof ApiPublicSyncMailboxRoute
   '/api/public/hooks/breezeway/$token': typeof ApiPublicHooksBreezewayTokenRoute
   '/api/public/hooks/outlook/messages': typeof ApiPublicHooksOutlookMessagesRoute
@@ -917,6 +925,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
+  '/api/public/marketing-photos/$token': typeof ApiPublicMarketingPhotosTokenRoute
   '/api/public/sync/mailbox': typeof ApiPublicSyncMailboxRoute
   '/api/public/hooks/breezeway/$token': typeof ApiPublicHooksBreezewayTokenRoute
   '/api/public/hooks/outlook/messages': typeof ApiPublicHooksOutlookMessagesRoute
@@ -1026,6 +1035,7 @@ export interface FileRoutesById {
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
+  '/api/public/marketing-photos/$token': typeof ApiPublicMarketingPhotosTokenRoute
   '/api/public/sync/mailbox': typeof ApiPublicSyncMailboxRoute
   '/api/public/hooks/breezeway/$token': typeof ApiPublicHooksBreezewayTokenRoute
   '/api/public/hooks/outlook/messages': typeof ApiPublicHooksOutlookMessagesRoute
@@ -1135,6 +1145,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/owner-notify'
     | '/api/public/hooks/quarterly-scheduler'
     | '/api/public/intake/email'
+    | '/api/public/marketing-photos/$token'
     | '/api/public/sync/mailbox'
     | '/api/public/hooks/breezeway/$token'
     | '/api/public/hooks/outlook/messages'
@@ -1236,6 +1247,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/owner-notify'
     | '/api/public/hooks/quarterly-scheduler'
     | '/api/public/intake/email'
+    | '/api/public/marketing-photos/$token'
     | '/api/public/sync/mailbox'
     | '/api/public/hooks/breezeway/$token'
     | '/api/public/hooks/outlook/messages'
@@ -1344,6 +1356,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/owner-notify'
     | '/api/public/hooks/quarterly-scheduler'
     | '/api/public/intake/email'
+    | '/api/public/marketing-photos/$token'
     | '/api/public/sync/mailbox'
     | '/api/public/hooks/breezeway/$token'
     | '/api/public/hooks/outlook/messages'
@@ -1365,6 +1378,7 @@ export interface RootRouteChildren {
   ApiPublicHooksOwnerNotifyRoute: typeof ApiPublicHooksOwnerNotifyRoute
   ApiPublicHooksQuarterlySchedulerRoute: typeof ApiPublicHooksQuarterlySchedulerRoute
   ApiPublicIntakeEmailRoute: typeof ApiPublicIntakeEmailRoute
+  ApiPublicMarketingPhotosTokenRoute: typeof ApiPublicMarketingPhotosTokenRoute
   ApiPublicSyncMailboxRoute: typeof ApiPublicSyncMailboxRoute
   ApiPublicHooksBreezewayTokenRoute: typeof ApiPublicHooksBreezewayTokenRoute
   ApiPublicHooksOutlookMessagesRoute: typeof ApiPublicHooksOutlookMessagesRoute
@@ -2093,6 +2107,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicIntakeEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/marketing-photos/$token': {
+      id: '/api/public/marketing-photos/$token'
+      path: '/api/public/marketing-photos/$token'
+      fullPath: '/api/public/marketing-photos/$token'
+      preLoaderRoute: typeof ApiPublicMarketingPhotosTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/sync/mailbox': {
       id: '/api/public/sync/mailbox'
       path: '/api/public/sync/mailbox'
@@ -2419,6 +2440,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksOwnerNotifyRoute: ApiPublicHooksOwnerNotifyRoute,
   ApiPublicHooksQuarterlySchedulerRoute: ApiPublicHooksQuarterlySchedulerRoute,
   ApiPublicIntakeEmailRoute: ApiPublicIntakeEmailRoute,
+  ApiPublicMarketingPhotosTokenRoute: ApiPublicMarketingPhotosTokenRoute,
   ApiPublicSyncMailboxRoute: ApiPublicSyncMailboxRoute,
   ApiPublicHooksBreezewayTokenRoute: ApiPublicHooksBreezewayTokenRoute,
   ApiPublicHooksOutlookMessagesRoute: ApiPublicHooksOutlookMessagesRoute,
