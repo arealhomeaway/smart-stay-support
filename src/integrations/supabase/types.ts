@@ -12161,6 +12161,69 @@ export type Database = {
           },
         ]
       }
+      scorecard_records: {
+        Row: {
+          about_imported_ticket: boolean
+          about_user_id: string | null
+          details: Json
+          id: string
+          is_demo: boolean
+          kind: string
+          note: string | null
+          property_id: string | null
+          recorded_at: string
+          recorded_by: string
+          refers_to: string | null
+          stay_ref: string | null
+          ticket_id: string | null
+        }
+        Insert: {
+          about_imported_ticket?: boolean
+          about_user_id?: string | null
+          details?: Json
+          id?: string
+          is_demo?: boolean
+          kind: string
+          note?: string | null
+          property_id?: string | null
+          recorded_at?: string
+          recorded_by: string
+          refers_to?: string | null
+          stay_ref?: string | null
+          ticket_id?: string | null
+        }
+        Update: {
+          about_imported_ticket?: boolean
+          about_user_id?: string | null
+          details?: Json
+          id?: string
+          is_demo?: boolean
+          kind?: string
+          note?: string | null
+          property_id?: string | null
+          recorded_at?: string
+          recorded_by?: string
+          refers_to?: string | null
+          stay_ref?: string | null
+          ticket_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scorecard_records_refers_to_fkey"
+            columns: ["refers_to"]
+            isOneToOne: false
+            referencedRelation: "scorecard_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scorecard_records_refers_to_fkey"
+            columns: ["refers_to"]
+            isOneToOne: false
+            referencedRelation: "scorecard_records_countable"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sop_playbooks: {
         Row: {
           checklist_categories: string[]
@@ -16199,6 +16262,39 @@ export type Database = {
         }
         Relationships: []
       }
+      scorecard_records_countable: {
+        Row: {
+          about_imported_ticket: boolean | null
+          about_user_id: string | null
+          details: Json | null
+          id: string | null
+          is_demo: boolean | null
+          kind: string | null
+          note: string | null
+          property_id: string | null
+          recorded_at: string | null
+          recorded_by: string | null
+          refers_to: string | null
+          stay_ref: string | null
+          ticket_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scorecard_records_refers_to_fkey"
+            columns: ["refers_to"]
+            isOneToOne: false
+            referencedRelation: "scorecard_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scorecard_records_refers_to_fkey"
+            columns: ["refers_to"]
+            isOneToOne: false
+            referencedRelation: "scorecard_records_countable"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       abort_sop_upload: { Args: { _id: string }; Returns: undefined }
@@ -16351,6 +16447,10 @@ export type Database = {
           _name: string
         }
         Returns: undefined
+      }
+      approve_corrective_commitment: {
+        Args: { _record_id: string }
+        Returns: Json
       }
       archive_attachment: {
         Args: { _actor_id: string; _document_id: string; _reason?: string }
@@ -16894,6 +16994,7 @@ export type Database = {
         Args: { _entry: Json; _property_ids: string[] }
         Returns: string
       }
+      log_queue_open: { Args: { _source: string }; Returns: Json }
       manage_owner_review_conversation: {
         Args: {
           _action: string
@@ -17375,6 +17476,15 @@ export type Database = {
         Args: { _id: string; _outcome: string; _reason: string }
         Returns: Json
       }
+      record_arrival_readiness: {
+        Args: {
+          _arrival_on: string
+          _note?: string
+          _property_id: string
+          _stay_ref?: string
+        }
+        Returns: Json
+      }
       record_claim_finance_treatment: {
         Args: {
           _claim_id: string
@@ -17388,6 +17498,19 @@ export type Database = {
         Args: { _claim_id: string; _decision: string }
         Returns: undefined
       }
+      record_coaching_conversation: {
+        Args: {
+          _coordinator: string
+          _follow_up?: string
+          _improvement: string
+          _strength: string
+        }
+        Returns: Json
+      }
+      record_corrective_commitment: {
+        Args: { _commitment: string; _due_on: string; _ticket_id: string }
+        Returns: Json
+      }
       record_direct_booking_follow_up: {
         Args: { _lead_id: string }
         Returns: undefined
@@ -17399,6 +17522,10 @@ export type Database = {
       record_email_job_part: {
         Args: { _errors: Json; _part: string; _result: Json; _run_id: string }
         Returns: undefined
+      }
+      record_finance_packet: {
+        Args: { _complete: boolean; _note?: string; _week_ending: string }
+        Returns: Json
       }
       record_onboarding_review_edit: {
         Args: { _note: string; _review_id: string }
@@ -17822,6 +17949,10 @@ export type Database = {
       set_demo_staff_access: {
         Args: { _on: boolean; _reason: string; _user: string }
         Returns: undefined
+      }
+      set_guest_rating_channels: {
+        Args: { _channels: string[] }
+        Returns: Json
       }
       set_onboarding_project_role: {
         Args: {

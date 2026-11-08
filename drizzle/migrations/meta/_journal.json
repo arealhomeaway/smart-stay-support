@@ -1884,6 +1884,13 @@
       "when": 1794141460643,
       "tag": "0268_menu_switches",
       "breakpoints": true
+    },
+    {
+      "idx": 269,
+      "version": "7",
+      "when": 1794148065000,
+      "tag": "0269_scorecard_records",
+      "breakpoints": true
     }
   ]
 }
