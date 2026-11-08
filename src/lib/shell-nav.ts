@@ -134,7 +134,7 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
       ["/direct-bookings", "/leads", "/inquiry-sources"].some((r) => p === r || p.startsWith(r + "/")) ||
       p === "/availability-finder",
     tabs: [
-      { label: "Requests", to: "/direct-bookings", capability: "leads_work" },
+      { label: "Requests", to: "/direct-bookings", capability: "direct_bookings_work" },
       { label: "Referral sources", to: "/inquiry-sources", capability: "work_orders_internal" },
       { label: "Settings", to: "/direct-bookings/settings", capability: "leads_work" },
     ],

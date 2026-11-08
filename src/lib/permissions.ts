@@ -66,6 +66,9 @@ export type Capability =
   | "claims_work"
   | "claims_oversight"
   | "leads_work"
+  // Direct Bookings requests (list, request page, Home "Needs you now"):
+  // Operations coordinators and leadership. Settings stay on leads_work.
+  | "direct_bookings_work"
   | "work_orders_internal"
   | "matters_all"
   | "routines"
@@ -134,6 +137,7 @@ const SUPERVISOR_CAPS: Capability[] = [
   "matters_all",
   "guest_contact",
   "leads_work",
+  "direct_bookings_work",
   "oversight",
   "analytics",
   "properties",
@@ -177,7 +181,14 @@ export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
   onboarding: [...STAFF_BASE, "onboarding_workspace", "handoff_request"],
   // Operations coordinators can see current guest/tenant contact details, the
   // shared Team Queue, and the Work Orders attached to what they are running.
-  tech: [...STAFF_BASE, "guest_contact", "work_orders_internal", "cleaner_dispatch_check", "vendor_directory"],
+  tech: [
+    ...STAFF_BASE,
+    "guest_contact",
+    "work_orders_internal",
+    "cleaner_dispatch_check",
+    "vendor_directory",
+    "direct_bookings_work",
+  ],
 
   vendor: [],
   owner: [],

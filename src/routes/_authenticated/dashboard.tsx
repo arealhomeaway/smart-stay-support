@@ -263,7 +263,7 @@ function Dashboard() {
         </p>
       )}
 
-      <DirectBookingsNeedingYou />
+      {role.can("direct_bookings_work") && <DirectBookingsNeedingYou />}
 
       {/* Compact, colourful, meaningful. Only what is worth acting on. */}
       <div className="grid gap-3 sm:grid-cols-3">
