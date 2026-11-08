@@ -1,7 +1,9 @@
-# Fix batch 1 (staged, NOT applied)
+# Fix batch 1
 
-Approved by Emily (Nov 8, 2026). Nothing in this folder has been run against the live
-database. Apply only with explicit approval, in the order below, and check `sha256.txt` first.
+APPLIED Nov 8, 2026 with Emily's written approval. See the note at the end.
+
+Approved by Emily (Nov 8, 2026). Apply only with explicit approval, in the order below, and
+check `sha256.txt` first.
 
 | Order | File | How to apply | Undo |
 | --- | --- | --- | --- |
@@ -51,3 +53,13 @@ database. Apply only with explicit approval, in the order below, and check `sha2
 
 The ticket page Reopen for ordinary closed tickets calls `reopen_ticket`. Until part 2 is
 applied that button shows a plain "not available yet" message and changes nothing.
+
+## Applied
+
+- Nov 8, 2026: `sha256.txt` checked first (all files OK). APPLIED byte-for-byte as
+  migrations 0274 (`01_notion_import_ticket_type.sql`), 0275 (`02_reopen_ticket.sql`) and
+  0276 (`04_tighten_record_tables.sql`). Each migration file matches its staged file exactly.
+  Part 3 (`03_claims_team_b.sql`) was then run with the data tool as its one UPDATE
+  statement: only the Claims work type moved from `ge_day` to `po_day`; the other 20 work
+  types kept their role links and were not touched.
+  Undo order if ever needed: 04, 03 (data tool), 02, 01.
