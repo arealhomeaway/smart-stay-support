@@ -472,3 +472,33 @@ export function buildTrail(input: {
 export function parentOf(trail: Crumb[]): Crumb | null {
   return trail.length >= 2 ? trail[trail.length - 2]! : null;
 }
+
+/**
+ * Top bar work actions. "Record work" and "Record routine work" sit side by
+ * side and follow one visibility rule: Operations staff on an Operations page.
+ * Onboarding only, vendor and owner accounts never see either. The form page
+ * itself hides both because the person is already recording work there.
+ */
+export type TopBarWorkAccess = {
+  can: (capability: Capability) => boolean;
+  canOpen: (pathname: string) => boolean;
+  vendorMode: boolean;
+  ownerMode: boolean;
+  readOnly: boolean;
+};
+
+export function topBarWorkActions(
+  pathname: string,
+  a: TopBarWorkAccess,
+): { recordWork: boolean; recordRoutine: boolean } {
+  const operationsSurface =
+    !departmentFor(pathname) && a.canOpen(pathname) && a.canOpen("/tickets/new");
+  const recordWork =
+    !a.vendorMode &&
+    !a.ownerMode &&
+    !a.readOnly &&
+    operationsSurface &&
+    a.can("ticket_create") &&
+    pathname !== "/tickets/new";
+  return { recordWork, recordRoutine: recordWork && a.can("routines") };
+}
