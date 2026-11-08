@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
 import {
   BATCH_LEASE_MS,
+  NOTION_IMPORT_COPY,
   RUN_BUTTONS,
   STALE_AFTER_MS,
   RunnerRuleError,
@@ -24,7 +25,6 @@ import {
   type RunnerState,
 } from "@/lib/notion-import/runner";
 import { ASSIGNEE_REASON_LABELS, IMPORT_GROUP_LABELS, mapNotionPage, recentCutoff, type NotionPage } from "@/lib/notion-import/mapping";
-import { NOTION_IMPORT_COPY } from "@/routes/_authenticated/integrations_.notion-import";
 import { NOTION_GROUP_COPY } from "@/components/operations/NotionImportedGroup";
 import { activityAuthorLabel, cleanNotionText, notionStatusLabel } from "@/lib/notion-ticket-display";
 

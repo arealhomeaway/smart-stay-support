@@ -19,25 +19,9 @@ import {
   type SampleRow,
 } from "@/lib/notion-import.functions";
 import { IMPORT_GROUPS, IMPORT_GROUP_LABELS, type ImportGroup } from "@/lib/notion-import/mapping";
-import { RUN_BUTTONS, assigneeRows } from "@/lib/notion-import/runner";
+import { NOTION_IMPORT_COPY, RUN_BUTTONS, assigneeRows } from "@/lib/notion-import/runner";
 import { usDate } from "@/lib/dates";
 
-export const NOTION_IMPORT_COPY = {
-  title: "Notion import",
-  intro:
-    "Brings every ticket from the Notion Maintenance Ticket Management database into Resolve, in stages. Reads Notion only. Nothing is imported until you press a Run button. Running again never makes a copy.",
-  quiet: "Imported tickets are quiet: no response clocks, alerts or notifications, and they are not counted anywhere until someone takes or reopens one.",
-  check: "Check the connection",
-  dry: "Dry run",
-  sample: "Show a sample of 20",
-  stop: "Stop",
-  resume: "Resume",
-  retryFiles: "Try failed files again",
-  keepOpen: "Keep this page open while it runs.",
-  elsewhere: "A run is going in another window. If that window was closed, Resume shows here within 3 minutes.",
-  crashed: "The run stopped unexpectedly. Press Resume to carry on from where it stopped.",
-  noDry: "Run the dry run to see how many are left.",
-} as const;
 
 export const Route = createFileRoute("/_authenticated/integrations_/notion-import")({
   component: NotionImportPage,

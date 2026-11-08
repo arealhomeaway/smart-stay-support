@@ -345,6 +345,24 @@ export const RUN_BUTTONS: { group: ImportGroup; label: string }[] = [
 ];
 export const ALL_GROUPS = IMPORT_GROUPS;
 
+/** Words on the Notion import page. */
+export const NOTION_IMPORT_COPY = {
+  title: "Notion import",
+  intro:
+    "Brings every ticket from the Notion Maintenance Ticket Management database into Resolve, in stages. Reads Notion only. Nothing is imported until you press a Run button. Running again never makes a copy.",
+  quiet: "Imported tickets are quiet: no response clocks, alerts or notifications, and they are not counted anywhere until someone takes or reopens one.",
+  check: "Check the connection",
+  dry: "Dry run",
+  sample: "Show a sample of 20",
+  stop: "Stop",
+  resume: "Resume",
+  retryFiles: "Try failed files again",
+  keepOpen: "Keep this page open while it runs.",
+  elsewhere: "A run is going in another window. If that window was closed, Resume shows here within 3 minutes.",
+  crashed: "The run stopped unexpectedly. Press Resume to carry on from where it stopped.",
+  noDry: "Run the dry run to see how many are left.",
+} as const;
+
 /** Plain words for a Notion read problem, with what to do. */
 export function explainNotionProblem(status: number | null, body: string): { reason: string; fix: string } {
   const b = body.toLowerCase();
