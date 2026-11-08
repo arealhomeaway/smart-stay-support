@@ -30,6 +30,8 @@ describe("who sees what", () => {
   it("a Property Coordinator", () => {
     expect(shape(operationsMenu(accessFor(["tech"])))).toEqual([
       ["My day", ["Home", "Team Queue", "Direct Bookings", "Vendors", "Guest Claims & Refunds"]],
+      // Fix batch 2 (Nov 8): coordinators open the Team group read only.
+      ["Team", ["Team & Coverage", "Playbooks"]],
       ["Homes and owners", ["Properties"]],
     ]);
   });
@@ -72,10 +74,12 @@ describe("who sees what", () => {
       ...accessFor(["onboarding"]),
       can: (c) => can(["onboarding"], c, { onboardingDirector: true }),
     });
-    expect(director.at(-1)).toEqual({
+    expect(director.find((g) => g.label === "Active Owner")).toEqual({
       label: "Active Owner",
       items: [{ key: "owner-programs", label: "Active Owner", to: "/owner-programs" }],
     });
+    // Fix batch 2 (Nov 8): the shared pages the Director of Onboarding may open follow Active Owner.
+    expect(director.map((g) => g.label)).toEqual(["Onboarding", "Active Owner", "Team"]);
   });
 });
 
