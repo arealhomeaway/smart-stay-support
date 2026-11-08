@@ -16,7 +16,7 @@ export const OPEN_WORK_LABEL: Record<OpenWorkItem["kind"], string> = {
   task: "Onboarding Task",
   work_order: "Work Order",
   approval: "Approval",
-  seat: "Seat",
+  seat: "Role",
 };
 
 /** Name shown in history for a deleted staff member. */
@@ -30,7 +30,7 @@ export function canDeleteNow(openWork: OpenWorkItem[]) {
 }
 
 export const DELETE_CONFIRM =
-  "Their login and all access are removed, and they leave every list, picker, seat, schedule, the on-call pattern and future on-call nights. Past on-call nights, tickets, approvals and history keep their name as \"(former)\". Their staff notifications are deleted. This cannot be undone from the screen.";
+  "Their login and all access are removed, and they leave every list, picker, role, shift, the on-call pattern and future on-call nights. Past on-call nights, tickets, approvals and history keep their name as \"(former)\". Their staff notifications are deleted. This cannot be undone from the screen.";
 export const ARCHIVE_CONFIRM =
   "Their login is turned off and they are hidden from active lists. Every hour, approval, document, work order, invoice and record stays exactly as it is. You can restore them later.";
 

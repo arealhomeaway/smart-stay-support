@@ -70,13 +70,13 @@ function statusFor(score: number | null): KpiStatus {
 function readingFor(score: number | null, criticals: number): string {
   if (score === null) return "Not enough live data to score the company yet.";
   if (criticals > 0) {
-    return "A critical threshold has been breached. Treat the exceptions below as the priority regardless of the average.";
+    return "A critical limit has been passed. Treat the exceptions below as the priority, whatever the average.";
   }
   if (score >= 85) return "Healthy. Standards are being met across the departments we can measure.";
   if (score >= 70)
     return "Steady, with soft spots. A few measures are off target and worth a look this week.";
   if (score >= 60) return "Strained. Several measures are off target at the same time.";
-  return "Off standard. Multiple departments are below their thresholds right now.";
+  return "Off standard. Several departments are below their goals right now.";
 }
 
 function scoreKpi(kpi: Kpi): number | null {

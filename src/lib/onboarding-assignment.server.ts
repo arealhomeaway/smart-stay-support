@@ -36,7 +36,7 @@ export async function resolveNewProjectAssignments(
       throw new Error("Only Onboarding leadership can assign another project manager.");
     }
     if (input.director !== null && input.director !== authority.directorId) {
-      throw new Error("The Onboarding Director comes from the protected responsibility seat.");
+      throw new Error("The Director of Onboarding comes from the protected leadership role.");
     }
   }
   const assignments = authority.canAssign

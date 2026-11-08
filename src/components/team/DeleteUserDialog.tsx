@@ -45,8 +45,8 @@ export function DeleteUserDialog({ userId, name, onClose, onDeleted }: { userId:
               <ul className="space-y-1">
                 {items.map((i) => <li key={i.kind + i.item_id}><span className="text-muted-foreground">{OPEN_WORK_LABEL[i.kind]}:</span> {link(i)}</li>)}
               </ul>
-              <p className="text-xs text-muted-foreground">One click hands tickets to their seat, then the backup seat, then the Operations Supervisor. Tasks go to the Onboarding Director, Work Orders and approvals to the Operations Supervisor, and seats are emptied. You can also reassign each item yourself.</p>
-              <Button size="sm" variant="outline" disabled={move.isPending} onClick={() => move.mutate()}>Reassign all to the seat or backup</Button>
+              <p className="text-xs text-muted-foreground">One click hands tickets to their role, then the backup role, then the Operations Supervisor. Tasks go to the Director of Onboarding, Work Orders and approvals to the Operations Supervisor, and their roles are cleared. You can also reassign each item yourself.</p>
+              <Button size="sm" variant="outline" disabled={move.isPending} onClick={() => move.mutate()}>Reassign all to the role or backup</Button>
             </div>
           ) : (
             <p>Nothing open is left in their name.</p>

@@ -239,12 +239,12 @@ function WhosOutStrip({ sunday, m, onChanged }: { sunday: string; m: Model; onCh
         <ul className="space-y-1">
           {out.map((o) => (
             <li key={o.id}>
-              <span className="font-medium">{personName(m.people, o.personId) ?? SEAT_LABELS[o.roleCode] ?? "Open seat"}</span>{" "}
+              <span className="font-medium">{personName(m.people, o.personId) ?? SEAT_LABELS[o.roleCode] ?? "Open role"}</span>{" "}
               <span className="text-muted-foreground">{fmt(o.startsAt)} to {fmt(o.endsAt)}</span>
               {" · "}
-              {o.coverUserId ? <>Covered by {personName(m.people, o.coverUserId)}</> : <span className="text-warning">Backup seat covers</span>}
+              {o.coverUserId ? <>Covered by {personName(m.people, o.coverUserId)}</> : <span className="text-warning">Backup role covers</span>}
               {m.canEdit && (
-                <button type="button" aria-label={`Remove time off for ${personName(m.people, o.personId) ?? "this seat"}`} className="ml-2 inline-flex align-middle text-muted-foreground hover:text-danger"
+                <button type="button" aria-label={`Remove time off for ${personName(m.people, o.personId) ?? "this role"}`} className="ml-2 inline-flex align-middle text-muted-foreground hover:text-danger"
                   onClick={() => remove(whosOutRemoveIds(o.id, m.overrides), "Time off removed. Back to the normal shift.")}>
                   <X className="size-3.5" />
                 </button>
@@ -661,7 +661,6 @@ function GridRowsButton({ m, onChanged }: { m: Model; onChanged: () => void }) {
       <PopoverTrigger asChild><Button size="sm" variant="outline"><Rows3 className="size-4" /> Rows shown</Button></PopoverTrigger>
       <PopoverContent className="w-80 space-y-2 text-sm">
         <p className="font-semibold">Rows on the schedule</p>
-        <p className="text-xs text-muted-foreground">Display only. Hidden seats still get work exactly as before.</p>
         <div className="max-h-72 space-y-1 overflow-y-auto">
           {m.roles.map((r) => (
             <label key={r.code} className="flex items-center gap-2">

@@ -200,7 +200,7 @@ export function RecoveryDrawer({
 
           {triggers.length > 0 ? (
             <div className="rounded-md border border-warning/40 bg-warning/10 p-3 text-xs">
-              <p className="text-sm font-medium">Involve James</p>
+              <p className="text-sm font-medium">Involve the Operations Supervisor</p>
               <ul className="mt-1 list-disc pl-4">
                 {triggers.map((t) => (
                   <li key={t}>{supervisorTriggerReason(t)}</li>

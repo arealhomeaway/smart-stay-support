@@ -114,7 +114,7 @@ export function TimeOffDialog({
           <div className="space-y-1">
             <Label htmlFor="to-cover">Who is covering (optional)</Label>
             <select id="to-cover" className="h-9 w-full rounded-md border border-input bg-background px-2" value={coverId} onChange={(e) => setCoverId(e.target.value)}>
-              <option value={NONE}>No cover, use the backup seat</option>
+              <option value={NONE}>No cover, use the backup role</option>
               {people.filter((p) => p.id !== userId).map((p) => <option key={p.id} value={p.id}>{p.full_name ?? p.email}</option>)}
             </select>
           </div>

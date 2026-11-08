@@ -76,7 +76,7 @@ it("keeps ordinary Start Onboarding available with self PM and protected Directo
   );
   await expectDenied(
     resolveNewProjectAssignments(f.db as never, pm, { projectManager: pm, director: pm }),
-    "protected responsibility seat",
+    "protected leadership role",
   );
 });
 it("only trusts assignment authority, not the legacy project Director or PM", async () => {
@@ -118,7 +118,7 @@ it("denies protected coverage actions before elevation and keeps administrator i
     };
     await expectDenied(
       responsibilitySeatWriter({ supabase: db as never, userId: pm }, code, elevate),
-      "platform administrator",
+      "Only an Admin can change this leadership role",
     );
     expect(elevated).toBe(0);
     const admin = { rpc: async () => ({ data: true, error: null }) };

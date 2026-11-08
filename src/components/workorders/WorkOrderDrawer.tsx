@@ -789,8 +789,8 @@ export function WorkOrderDrawer({
         <section className="space-y-3">
           <h3 className="font-display text-sm font-semibold">Owner approval</h3>
           <p className="text-xs text-muted-foreground">
-            Repairs over the policy threshold need the owner's sign-off. Emergency mitigation can
-            proceed anyway — approval is for the permanent fix. Notified is not the same as
+            Repairs over the owner approval limit need the owner's approval. Emergency work to stop
+            damage can go ahead; approval is for the permanent fix. Notified is not the same as
             approved.
           </p>
 

@@ -97,7 +97,7 @@ export function finalReviewRequirement(facts: FinalReviewFacts): FinalReviewRequ
   if (facts.hasClaim) reasons.push("A claim was opened from this ticket.");
   if (facts.hasRecovery) reasons.push("Guest refunds & credits was opened from this ticket.");
   if ((facts.repairAmount ?? 0) > MAJOR_REPAIR_THRESHOLD)
-    reasons.push(`Major repair — above the $${MAJOR_REPAIR_THRESHOLD} owner threshold.`);
+    reasons.push(`Major repair, above the $${MAJOR_REPAIR_THRESHOLD} owner limit.`);
   if (facts.ownerSensitive) reasons.push("The homeowner is directly involved.");
   if (facts.priority === "p2" && (facts.guest_in_residence || facts.guest_impact === "high"))
     reasons.push("P2 with a guest in the home.");

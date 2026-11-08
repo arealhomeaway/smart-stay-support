@@ -18,7 +18,7 @@ export async function responsibilitySeatWriter(
   });
   if (error || data !== true) {
     throw new Error(
-      "Only a platform administrator can change this responsibility seat or its cover.",
+      "Only an Admin can change this leadership role or its cover.",
     );
   }
   return context.supabase;

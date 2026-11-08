@@ -155,7 +155,7 @@ export const STATE_GUIDANCE: Record<SafeguardState, string> = {
   monitor: "Standard dispatch. Keep an eye on this cleaner's Attributed Cleaner Time here.",
   warning: "Consider rotating cleaner. Confirm that rotation was considered before dispatching.",
   restricted: "Standard dispatch is locked. Leadership review required: a single-clean override by the Director of Operations or an Admin.",
-  hard_block: "Standard dispatch is locked at the 95-hour operational safeguard threshold. Only a single-clean emergency override by the Director of Operations or an Admin can allow a clean.",
+  hard_block: "Standard dispatch is locked at the 95-hour safeguard limit. Only a single-clean emergency override by the Director of Operations or an Admin can allow a clean.",
   identity_required: "A company / vendor login cannot be dispatched directly. Identify the individual cleaner(s) doing the work.",
   not_tracked: "This home is not enrolled in the STR cleaner-hours safeguard.",
 };

@@ -59,9 +59,11 @@ export function ArhaContacts({ contacts, supports = null }: { contacts: Contacts
             {contacts.dayToDay.map((s) => (
               <li key={s.seat} className="rounded-lg border border-border p-3">
                 <p className="text-sm font-semibold">{s.name ?? s.seat}</p>
-                <p className="text-xs text-muted-foreground">
-                  {s.name ? s.seat : "Assigned shortly — use an escalation contact meanwhile"}
-                </p>
+                {s.name === s.seat ? null : (
+                  <p className="text-xs text-muted-foreground">
+                    {s.name ? s.seat : "Assigned shortly — use an escalation contact meanwhile"}
+                  </p>
+                )}
                 <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{s.note}</p>
               </li>
             ))}
@@ -75,7 +77,7 @@ export function ArhaContacts({ contacts, supports = null }: { contacts: Contacts
         </p>
         <ul className="mt-2 grid gap-2 sm:grid-cols-2">
           {contacts.escalation.map((c) => (
-            <ContactRow key={c.email} contact={c} />
+            <ContactRow key={c.name} contact={c} />
           ))}
         </ul>
       </div>

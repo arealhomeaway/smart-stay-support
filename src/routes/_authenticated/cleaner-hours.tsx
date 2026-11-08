@@ -116,7 +116,7 @@ function CleanerHoursPage() {
         title="STR cleaner time"
         description={
           <>
-            {ATTRIBUTED_TIME_LABEL} at homes enrolled in the STR cleaner-hours safeguard, measured against operational safeguard thresholds.
+            {ATTRIBUTED_TIME_LABEL} at homes enrolled in the STR cleaner-hours safeguard, measured against the safeguard limits.
             Each cleaner on a Breezeway clean is attributed the full elapsed Task time — a conservative exposure figure, not hours worked.
             This is an operational safeguard only; Resolve makes no tax or participation determinations.
           </>
@@ -154,7 +154,7 @@ function CleanerHoursPage() {
       {portfolio.error ? <EmptyState title="Could not load the safeguard" hint={(portfolio.error as Error).message} /> : null}
       {tab === "attention" ? (
         <div className="space-y-4">
-          <SectionCard title="Homes approaching operational safeguard thresholds" description="Cleaners in Warning, Restricted or Hard Block, and hours inversions / narrow owner participation buffers.">
+          <SectionCard title="Homes nearing the safeguard limits" description="Cleaners in Warning, Restricted or Hard Block, and hours inversions / narrow owner participation buffers.">
             {portfolio.isLoading ? <LoadingRows /> : !flagged.length ? <EmptyState title="No cleaner is in Warning or above" /> : (
               <CellTable rows={flagged} showProperty />
             )}

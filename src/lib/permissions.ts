@@ -26,7 +26,7 @@ export const ROLE_LABELS: Record<AppRole, string> = {
 };
 
 export const ROLE_BLURBS: Record<AppRole, string> = {
-  admin: "Everything in Resolve, including roles, seats, portals, settings and audit history.",
+  admin: "Everything in Resolve, including roles, shifts, portals, settings and audit history.",
   manager: "Escalations, routing, oversight, analytics, coaching and playbook publishing.",
   onboarding: "Onboarding workspace, readiness checklists and handoff requests.",
   tech: "Their own work: assigned tickets, tickets and coaching.",

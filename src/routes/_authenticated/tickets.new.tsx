@@ -1279,7 +1279,7 @@ export function NewTicketForm({
                         {role.current_seat_holder
                           ? `Currently held by ${role.current_seat_name ?? "no one yet"}`
                           : role.current_seat_name
-                            ? `${role.current_seat_name} — invitation pending, so this seat is not yet routable`
+                            ? `${role.current_seat_name}, invitation not accepted yet, so new work cannot reach this role`
                             : "No one is assigned"}{" "}
                         · {role.coverage_window}
                       </p>

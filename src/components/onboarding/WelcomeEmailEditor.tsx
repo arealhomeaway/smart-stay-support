@@ -103,7 +103,7 @@ export function WelcomeEmailEditor() {
             {template.review === "approved" ? `Approved · version ${template.version}` : `Draft — awaiting review · version ${template.version}`}
           </Badge>
           {template.review !== "approved" && (
-            <span className="text-muted-foreground">Proposed wording from Emily Jimenez. Nothing sends until it is approved.</span>
+            <span className="text-muted-foreground">Nothing sends until this wording is approved.</span>
           )}
         </div>
         <div className="space-y-2">
@@ -144,7 +144,7 @@ export function WelcomeEmailEditor() {
           <div className="rounded-md border border-border bg-muted/40 p-4 text-sm">
             <p className="font-medium">{shown.subject}</p>
             <p className="mt-2 whitespace-pre-wrap">{shown.body}</p>
-            <p className="mt-2 text-xs text-muted-foreground">Sample homeowner and home shown.</p>
+            <p className="mt-2 text-xs text-muted-foreground">Example homeowner and home shown.</p>
           </div>
         )}
         {recent.length > 0 && (

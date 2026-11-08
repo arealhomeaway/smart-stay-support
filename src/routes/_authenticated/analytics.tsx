@@ -387,7 +387,7 @@ function Analytics() {
       goodDirection: "down",
     },
     {
-      label: "Median acknowledge",
+      label: "Typical acknowledge",
       value: fmtDuration(s.medianAck),
       hint: "How long before someone owns it",
       current: s.medianAck,
@@ -395,7 +395,7 @@ function Analytics() {
       goodDirection: "down",
     },
     {
-      label: "Median time to close",
+      label: "Typical time to close",
       value: fmtDuration(s.medianClose),
       hint: `${s.resolved.length} tickets closed in this window`,
       current: s.medianClose,
@@ -774,7 +774,7 @@ function Analytics() {
       <div>
         <SectionBand
           title="By priority"
-          hint="Volume, response compliance and median time to close"
+          hint="Volume, response compliance and typical time to close"
         />
         <div className="surface overflow-x-auto">
           <table className="w-full text-sm">
@@ -784,7 +784,7 @@ function Analytics() {
                 <th className="px-5 py-2.5 text-right">Tickets</th>
                 <th className="px-5 py-2.5 text-right">Open</th>
                 <th className="px-5 py-2.5 text-right">Response SLA</th>
-                <th className="px-5 py-2.5 text-right">Median close</th>
+                <th className="px-5 py-2.5 text-right">Typical close</th>
               </tr>
             </thead>
             <tbody>

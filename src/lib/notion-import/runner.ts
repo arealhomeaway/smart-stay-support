@@ -353,7 +353,7 @@ export const NOTION_IMPORT_COPY = {
   quiet: "Imported tickets are quiet: no response clocks, alerts or notifications, and they are not counted anywhere until someone takes or reopens one.",
   check: "Check the connection",
   dry: "Dry run",
-  sample: "Show a sample of 20",
+  sample: "Preview 20 tickets",
   stop: "Stop",
   resume: "Resume",
   retryFiles: "Try failed files again",

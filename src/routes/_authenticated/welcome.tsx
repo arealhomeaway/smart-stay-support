@@ -43,10 +43,10 @@ const basics = [
   },
   {
     icon: Users,
-    title: "Work routes to seats",
+    title: "Work goes to roles",
     body: "The property determines the pod; priority and time determine who gets it. Coverage keeps routing working at lunch and after hours.",
     to: "/team" as const,
-    cta: "Seats & coverage",
+    cta: "Team & Coverage",
   },
   {
     icon: ShieldAlert,

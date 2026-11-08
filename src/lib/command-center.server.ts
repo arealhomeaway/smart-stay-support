@@ -246,7 +246,7 @@ export async function loadCommandCenter(
       }),
       kpi({
         key: "median_ack",
-        label: "Median time to acknowledge",
+        label: "Typical time to acknowledge",
         unit: "minutes",
         value: median(ackMinutes),
         previous: median(
@@ -261,7 +261,7 @@ export async function loadCommandCenter(
       }),
       kpi({
         key: "median_resolve",
-        label: "Median time to resolve",
+        label: "Typical time to resolve",
         unit: "minutes",
         value: median(resolveMinutes),
         previous: median(

@@ -161,8 +161,8 @@ export const previewWelcome = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { PORTAL_LINK, WELCOME_VIDEO_LINK } = await import("./owner-welcome.server");
     return renderWelcome(data, {
-      ownerName: "Matthew Sample",
-      propertyNames: ["1399 Sample Lane"],
+      ownerName: "Alex Example",
+      propertyNames: ["1399 Example Lane"],
       portalLink: PORTAL_LINK,
       videoLink: data.hasVideo ? (data.videoUrl ?? WELCOME_VIDEO_LINK) : null,
     });

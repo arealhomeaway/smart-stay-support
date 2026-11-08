@@ -1,11 +1,15 @@
 /**
  * Who the homeowner talks to, and when.
  *
- * Taken verbatim from the Active Owner Welcome Packet. The named people here
- * are escalation contacts: during onboarding the homeowner's day-to-day
+ * Escalation contacts are roles only, reached through the company's shared
+ * phone number and info email: during onboarding the homeowner's day-to-day
  * traffic runs through their project manager and utility manager, and after
  * handoff through their property coordinator and the Director of Onboarding.
  */
+
+/** The company's shared contact details, used for every escalation role. */
+export const ARHA_SHARED_EMAIL = "info@arealhomeaway.com";
+export const ARHA_SHARED_PHONE = "405-415-2898";
 
 export type ArhaContact = {
   name: string;
@@ -17,26 +21,26 @@ export type ArhaContact = {
 };
 
 export const KATI: ArhaContact = {
-  name: "Kati Hand",
-  role: "Director of Onboarding",
-  email: "kati@arealhomeaway.com",
-  phone: "405-415-2899",
+  name: "Director of Onboarding",
+  role: "A Real Home Away",
+  email: ARHA_SHARED_EMAIL,
+  phone: ARHA_SHARED_PHONE,
   use: "Escalations on design, setup, owner communications and handoff.",
 };
 
 export const EMILY: ArhaContact = {
-  name: "Emily Jimenez",
-  role: "Chief Operating Officer",
-  email: "emily.jimenez@arealhomeaway.com",
-  phone: "918-215-2504 ext. 5",
+  name: "Chief Operating Officer",
+  role: "A Real Home Away",
+  email: ARHA_SHARED_EMAIL,
+  phone: ARHA_SHARED_PHONE,
   use: "Escalations on program oversight, expectations and concerns during the program year.",
 };
 
 export const JAMES: ArhaContact = {
-  name: "James Miller, Jr.",
-  role: "Chief Financial Officer",
-  email: "james@arealhomeaway.com",
-  phone: "405-446-7259",
+  name: "Chief Financial Officer",
+  role: "A Real Home Away",
+  email: ARHA_SHARED_EMAIL,
+  phone: ARHA_SHARED_PHONE,
   use: "Invoicing, billing questions and ongoing owner concerns after the year-end closeout.",
 };
 

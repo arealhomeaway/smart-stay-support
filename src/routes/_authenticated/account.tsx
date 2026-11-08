@@ -246,7 +246,7 @@ function AccountPage() {
                   id="account-signature"
                   rows={4}
                   value={signature}
-                  placeholder={"Emily Jimenez\nA Real Home Away"}
+                  placeholder={"Your name\nA Real Home Away"}
                   onChange={(e) => setSignature(e.target.value)}
                 />
                 <p className="text-xs text-muted-foreground">

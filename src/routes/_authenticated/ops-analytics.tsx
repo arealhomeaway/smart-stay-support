@@ -21,12 +21,12 @@ export const Route = createFileRoute("/_authenticated/ops-analytics")({
       {
         name: "description",
         content:
-          "Ticket volume, SLA compliance, response and resolution medians, and per-person contribution credit drawn from the immutable Resolve activity log.",
+          "Ticket volume, SLA compliance, typical response and resolution times, and per-person contribution credit drawn from the immutable Resolve activity log.",
       },
       { property: "og:title", content: "Operations performance — Resolve" },
       {
         property: "og:description",
-        content: "SLA compliance, timing medians and contributor credit for the operations team.",
+        content: "SLA compliance, typical times and contributor credit for the operations team.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -58,8 +58,8 @@ const CSV_COLUMNS: { key: keyof ContributorRow; label: string }[] = [
   { key: "notes", label: "Notes logged" },
   { key: "handoffsGiven", label: "Handoffs given" },
   { key: "handoffsAccepted", label: "Handoffs accepted" },
-  { key: "medianResponseMinutes", label: "Median response (min)" },
-  { key: "medianResolutionMinutes", label: "Median resolution (min)" },
+  { key: "medianResponseMinutes", label: "Typical response (min)" },
+  { key: "medianResolutionMinutes", label: "Typical resolution (min)" },
   { key: "currentlyOwned", label: "Open tickets owned" },
   { key: "currentlyOverdue", label: "Open and overdue" },
   { key: "lastActivityAt", label: "Last activity" },
@@ -139,12 +139,12 @@ function OpsAnalyticsPage() {
               hint={`${data?.volume.resolved ?? 0} resolved · ${data?.volume.open ?? 0} open`}
             />
             <StatTile
-              label="Median response"
+              label="Typical response"
               value={fmtDuration(data?.timing.medianResponseMinutes ?? null)}
               hint={`Average ${fmtDuration(data?.timing.averageResponseMinutes ?? null)}`}
             />
             <StatTile
-              label="Median resolution"
+              label="Typical resolution"
               value={fmtDuration(data?.timing.medianResolutionMinutes ?? null)}
               hint={`Average ${fmtDuration(data?.timing.averageResolutionMinutes ?? null)}`}
             />
@@ -165,7 +165,7 @@ function OpsAnalyticsPage() {
           <div>
             <SectionBand
               title="Timing by priority"
-              hint="Median time from report to first response and to resolution"
+              hint="Typical time from report to first response and to resolution"
             />
             <div className="surface overflow-x-auto">
               <table className="w-full text-sm">
@@ -173,9 +173,9 @@ function OpsAnalyticsPage() {
                   <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
                     <th className="px-5 py-2.5">Priority</th>
                     <th className="px-5 py-2.5 text-right">Responded</th>
-                    <th className="px-5 py-2.5 text-right">Median response</th>
+                    <th className="px-5 py-2.5 text-right">Typical response</th>
                     <th className="px-5 py-2.5 text-right">Resolved</th>
-                    <th className="px-5 py-2.5 text-right">Median resolution</th>
+                    <th className="px-5 py-2.5 text-right">Typical resolution</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -257,7 +257,7 @@ function OpsAnalyticsPage() {
                       <th className="px-5 py-2.5 text-right">Touched</th>
                       <th className="px-5 py-2.5 text-right">Resolved</th>
                       <th className="px-5 py-2.5 text-right">First responses</th>
-                      <th className="px-5 py-2.5 text-right">Median response</th>
+                      <th className="px-5 py-2.5 text-right">Typical response</th>
                       <th className="px-5 py-2.5 text-right">Open owned</th>
                       <th className="px-5 py-2.5 text-right">Overdue</th>
                     </tr>

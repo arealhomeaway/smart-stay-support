@@ -389,7 +389,7 @@ export function driftWarnings(pb: AuthoredPlaybook): string[] {
   ];
   return texts
     .filter((t) => THRESHOLD_PATTERN.test(t))
-    .map((t) => `Authored guidance states a threshold, which the policy engine owns: "${t}"`);
+    .map((t) => `This guidance states a limit that needs review: "${t}"`);
 }
 
 /**

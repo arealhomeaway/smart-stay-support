@@ -213,7 +213,7 @@ function TicketChecklistsPage() {
               template={draft}
               answers={previewAnswers}
               activeGuest={previewGuest}
-              facts={{ guest: previewGuest ? "Sample guest, in home" : null, lockSystem: "Yale", reservation: null, lastStay: "Sample guest", nextClean: null, nextArrival: null }}
+              facts={{ guest: previewGuest ? "Example guest, in home" : null, lockSystem: "Yale", reservation: null, lastStay: "Example guest", nextClean: null, nextArrival: null }}
               readOnly={false}
               busy={false}
               onAnswer={(step, a) =>

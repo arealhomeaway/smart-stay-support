@@ -78,7 +78,7 @@ function DispatchCheckPage() {
       <PageHeader
         eyebrow="Operations"
         title="Cleaner hours check"
-        description="Run this before assigning a cleaner to a clean at an enrolled STR home. It shows the cleaner's Attributed Cleaner Time against the operational safeguard thresholds. It is an operational safeguard only — not a tax determination."
+        description="Run this before assigning a cleaner to a clean at an enrolled STR home. It shows the cleaner's Attributed Cleaner Time against the safeguard limits. It is an operational safeguard only — not a tax determination."
       />
       {options.isLoading ? <LoadingRows /> : options.error ? (
         <EmptyState title="Could not load" hint={(options.error as Error).message} />

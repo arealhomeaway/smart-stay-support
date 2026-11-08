@@ -283,7 +283,7 @@ function VendorJob() {
       {steps.length > 0 && (
         <SectionCard
           title="Required steps"
-          description="These come from our playbook for this kind of work. Everything marked required has to be done before the job can be signed off."
+          description="These come from our playbook for this kind of work. Everything marked required has to be done before the job is complete."
         >
           <div className="space-y-1.5">
             {steps.map((step) => (

@@ -63,7 +63,7 @@ export function ticketNextAction(t: TicketNextActionInput): TicketNextAction | n
   if (t.resolved_at && status === "resolved") {
     return {
       label: "Close it out",
-      because: "The work is done and signed off — closing it stops the clock for good.",
+      because: "The work is done and checked. Closing it stops the clock for good.",
     };
   }
 

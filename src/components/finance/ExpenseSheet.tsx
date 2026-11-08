@@ -313,7 +313,6 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
           <div>
             <Label>Proposed statement period (optional)</Label>
             <Input type="month" value={(v.proposed_statement_period ?? "").slice(0, 7)} onChange={(x) => set("proposed_statement_period", x.target.value ? `${x.target.value}-01` : null)} />
-            <p className="mt-1 text-xs text-muted-foreground">A proposal only — not statement treatment.</p>
           </div>
         </div>
         <div><Label>Reason</Label><Textarea rows={2} value={txt("reason")} onChange={(x) => set("reason", x.target.value)} /></div>

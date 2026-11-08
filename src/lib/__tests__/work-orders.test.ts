@@ -178,10 +178,10 @@ describe("second quote", () => {
 });
 
 describe("vendor commitments and checkpoints", () => {
-  it("H — two missed commitments recommend a backup vendor and notify James", () => {
+  it("H — two missed commitments recommend a backup vendor and notify the Operations Supervisor", () => {
     const status = commitmentStatus({ missed_commitments: 2 }, NOW);
-    expect(status.action).toContain("Backup vendor");
-    expect(status.action).toContain("James");
+    expect(status.action).toContain("backup vendor");
+    expect(status.action).toContain("notify the Operations Supervisor");
   });
 
   it("a first miss is a coordinator follow-up, not an escalation", () => {
@@ -189,7 +189,7 @@ describe("vendor commitments and checkpoints", () => {
   });
 
   it("a repeated pattern goes to a performance review", () => {
-    expect(commitmentStatus({ missed_commitments: 3 }, NOW).action).toContain("Micah");
+    expect(commitmentStatus({ missed_commitments: 3 }, NOW).action).toContain("performance review with the Director of Operations");
   });
 
   it("a P1 without acknowledgment inside ten minutes moves to the backup", () => {

@@ -52,7 +52,7 @@ const steps: TourStep[] = [
   {
     target: '[data-tour="team"]',
     route: "/team",
-    title: "Seats & coverage",
+    title: "Team & Coverage",
     body: "Work goes to roles, not people. Choose who covers each role and who covers lunch, so work keeps moving when someone steps away.",
   },
   {
@@ -65,7 +65,7 @@ const steps: TourStep[] = [
     target: '[data-tour="help"]',
     route: "/dashboard",
     title: "Help is always here",
-    body: "The Help page holds the walkthrough video and a quick refresher on how tickets, playbooks, seats and handoffs work. Send new coordinators here first.",
+    body: "The Help page holds the walkthrough video and a quick refresher on how tickets, playbooks, roles and handoffs work. Send new coordinators here first.",
   },
   {
     target: null,

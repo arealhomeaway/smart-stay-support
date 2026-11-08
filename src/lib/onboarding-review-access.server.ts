@@ -43,7 +43,7 @@ export async function assertOnboardingStageAccess(
     throw new Error(
       reviewing
         ? "The Director of Onboarding must review this stage."
-        : "This stage work is not assigned to you as PM; review access follows the protected leadership seats.",
+        : "This stage work is not assigned to you as PM; review access follows the protected leadership roles.",
     );
   return capabilities;
 }

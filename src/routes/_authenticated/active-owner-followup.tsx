@@ -71,7 +71,7 @@ function FollowupPage() {
     return <div className="space-y-6">{header}<EmptyState title="Not switched on yet" hint="This page will fill in once the after-handoff plan is turned on." /></div>;
 
   if (!data.canManage)
-    return <div className="space-y-6">{header}<EmptyState title="Not available" hint="This page is for the Active Owner follow-up seat, its cover, the Director of Operations and Admins." /></div>;
+    return <div className="space-y-6">{header}<EmptyState title="Not available" hint="This page is for the Active Owner follow-up role, its cover, the Director of Operations and Admins." /></div>;
 
   const today = todayChicago();
   const home = (id: string | null) => (id ? data.homes[id] ?? "Home" : "Home");
