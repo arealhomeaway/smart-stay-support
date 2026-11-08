@@ -19,7 +19,7 @@ import { join, relative } from "node:path";
  * - The generated database types (src/integrations) and generated route tree.
  * - FROZEN below: text that needs its own approval to change. Its count may only go down.
  */
-const ROOT = join(import.meta.dir, "..", "..");
+const ROOT = join(process.cwd(), "src");
 
 const WORDS: Record<string, RegExp> = {
   seat: /\bseats?\b/i,
