@@ -147,7 +147,7 @@ export async function runSharePointReadOnlyValidation(userId: string) {
   probes.push(
     await probe(
       key,
-      "Josh's OneDrive (known UPN)",
+      "A staff member's OneDrive (known account)",
       `/users/${JOSH_UPN}/drive?$select=id,name`,
       "deny",
     ),

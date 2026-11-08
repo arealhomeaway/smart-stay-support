@@ -215,7 +215,7 @@ export const SEED_TEMPLATES: ChecklistTemplate[] = [
         key: "quote",
         label: "5",
         question: "Quote or estimated cost.",
-        help: "Thresholds are per issue and cumulative.",
+        help: "Limits are per issue and add up.",
         options: [{ value: "saved", label: "Save" }],
         fields: [{ key: "amount", label: "Quote or estimate ($)", required: true, kind: "money" }],
         facts: ["repair_band"],
@@ -230,7 +230,7 @@ export const SEED_TEMPLATES: ChecklistTemplate[] = [
       {
         key: "owner_email",
         label: "7",
-        question: "Owner email sent within 1 business day, CC Micah Sinor and James Miller?",
+        question: "Owner email sent within 1 business day, CC the Director of Operations and the Chief Financial Officer?",
         options: [yes()],
         showIfApproval: { step: "quote", field: "amount" },
       },
