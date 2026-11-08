@@ -3,6 +3,8 @@ export const OPERATIONS_SEARCH_KEYS = [
   "view", "lens", "sort", "month", "pin", "lat", "lng", "zoom", "assignee", "homeTeam", "priority",
   "status", "property", "market", "city", "state", "workType", "kind", "vendor", "dispatch",
   "acceptance", "completion", "dateFrom", "dateTo", "due", "age", "flags", "q",
+  // Team Queue team chip: a, b, all or unclaimed.
+  "team",
 ] as const;
 
 export type OperationsView = "list" | "kanban" | "map" | "calendar";
