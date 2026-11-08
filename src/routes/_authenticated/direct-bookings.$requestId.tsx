@@ -38,6 +38,7 @@ import {
   money,
   NOT_BOOKED_REASONS,
   replyClock,
+  clockStart,
   replyValues,
   requestStatus,
   SEARCH_DISTANCES,
@@ -211,7 +212,7 @@ function RequestView({ d, refetch }: { d: Detail; refetch: () => void }) {
 
 function SentBanner({ d }: { d: Detail }) {
   const lead = d.lead;
-  const took = replyClock(lead.created_at, lead.reply_sent_at, new Date(), d.settings.replyTargetMinutes);
+  const took = replyClock(clockStart(lead), lead.reply_sent_at, new Date(), d.settings.replyTargetMinutes);
   const due = followUpDueAt(lead);
   const parts = [
     `Sent in ${clockLabel(took.seconds)}${lead.reply_sent_via === "manual" ? " from Outlook" : ""}.`,
