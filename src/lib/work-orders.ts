@@ -127,6 +127,8 @@ function num(value: number | string | null | undefined): number | null {
 
 /* ------------------------------------------------------------------ */
 /* Authority                                                           */
+/* ------------------------------------------------------------------ */
+
 export type AuthorityLevel = "self" | "supervisor" | "owner" | "emergency";
 
 export type AuthorityVerdict = {
