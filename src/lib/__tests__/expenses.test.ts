@@ -91,9 +91,10 @@ describe("documentation readiness", () => {
     expect(canCreateExpense({ payee: "X", amount: 10 })).toBe(true);
     expect(canCreateExpense({ property_id: "p", reason: "Leak" })).toBe(true);
   });
-  test("maintenance thresholds unchanged", () => {
+  test("maintenance thresholds are repair policy v3", () => {
     expect(MAINTENANCE_POLICY.ownerApprovalThreshold).toBe(350);
-    expect(MAINTENANCE_POLICY.supervisorApprovalThreshold).toBe(200);
+    expect(MAINTENANCE_POLICY.supervisorApprovalThreshold).toBe(250);
+    expect(MAINTENANCE_POLICY.ownerThresholdInclusive).toBe(true);
   });
 });
 
