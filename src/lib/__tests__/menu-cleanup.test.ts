@@ -40,6 +40,8 @@ describe("who sees what", () => {
       ["Team", ["Team & Coverage", "Playbooks"]],
       ["Homes and owners", ["Properties", "Onboarding", "Active Owner"]],
       ["Insight", ["Analytics"]],
+      // Admin as today: Supervisors open it at the first Admin page they can open.
+      ["Admin", ["Admin"]],
     ]);
   });
 
