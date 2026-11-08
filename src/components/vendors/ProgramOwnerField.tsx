@@ -24,7 +24,7 @@ export function ProgramOwnerField({
   value: string | null;
   canManage: boolean;
   /** Plain label shown under the read-only value for vendor editors who are not Operations leadership. */
-  readOnlyNote?: string;
+  readOnlyNote?: string | undefined;
 }) {
   const invalidate = useInvalidateVendors();
   const choices = useQuery({
