@@ -52,7 +52,7 @@ export const Route = createFileRoute("/_authenticated/oversight")({
       {
         name: "description",
         content:
-          "The supervisor exception board: unacknowledged work, overdue actions, waiting past review, unassigned work, handoffs, approvals and workload by seat.",
+          "The supervisor exception board: unacknowledged work, overdue actions, waiting past review, unassigned work, handoffs, approvals and workload by role.",
       },
       { property: "og:title", content: "Operations oversight — Resolve" },
       {

@@ -211,7 +211,7 @@ export function seatsHeldBy(roles: SRole[], userId: string) {
 export function planTimeOff(input: { roles: SRole[]; userId: string; startsAt: string; endsAt: string; note: string; coverUserId: string | null }): CoverageAction[] {
   if (new Date(input.endsAt) <= new Date(input.startsAt)) throw new Error("The time off needs an end after its start.");
   const seats = seatsHeldBy(input.roles, input.userId);
-  if (seats.length === 0) throw new Error("This person does not hold a seat yet, so time off cannot be saved for them.");
+  if (seats.length === 0) throw new Error("This person is not on the schedule yet, so time off cannot be saved for them.");
   if (input.coverUserId === input.userId) throw new Error("Choose someone else to cover.");
   const out: CoverageAction[] = [];
   // Off first, then cover: the newest override wins, so the cover person takes the work.

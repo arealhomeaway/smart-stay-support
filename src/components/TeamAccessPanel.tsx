@@ -40,9 +40,8 @@ export function TeamAccessPanel() {
           <ShieldCheck className="size-4" /> Team access
         </CardTitle>
         <CardDescription>
-          Permission role decides what a person may do. Their seat and team, set on the Seats board
-          below, decide what work they own. Changing a role here takes effect everywhere, including
-          the database.
+          Permission role decides what a person may do. Their team and shift, set on the schedule
+          below, decide what work they own. A change here takes effect everywhere.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">

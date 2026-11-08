@@ -80,7 +80,7 @@ export function StepReviewSection({ stepId, steps, stages }: { stepId: string; s
     <div className="mt-2 space-y-3 rounded-md border border-border p-3" aria-label="Review">
       <p className="text-sm font-medium">Review</p>
       <p className="text-xs text-muted-foreground">
-        Choose who must approve this step before it counts as done. Reviewers come from each home's Project Team, or whoever is covering that seat. Leave both empty for no review.
+        Choose who must approve this step before it counts as done. Reviewers come from each home's Project Team, or whoever is covering that role. Leave both empty for no review.
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
         {picker(first, setFirst, "First reviewer", second)}

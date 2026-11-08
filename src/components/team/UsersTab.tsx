@@ -92,7 +92,7 @@ export function UsersTab() {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Role</TableHead>
-                <TableHead>Seat and team</TableHead><TableHead>Status</TableHead><TableHead>Last sign-in</TableHead>
+                <TableHead>Team and shift</TableHead><TableHead>Status</TableHead><TableHead>Last sign-in</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -101,7 +101,7 @@ export function UsersTab() {
                   <TableCell className="font-medium">{r.name}{isTestAccount(people.find((p) => p.id === r.id)!, testIds) && <Badge variant="outline" className="ml-2">Test</Badge>}</TableCell>
                   <TableCell className="text-muted-foreground">{r.email}</TableCell>
                   <TableCell>{r.role}</TableCell>
-                  <TableCell>{r.seat === "None" ? "None" : `${r.seat} · ${r.team}`}</TableCell>
+                  <TableCell>{r.seat === "None" ? "Not on the schedule yet" : `${r.seat} · ${r.team}`}</TableCell>
                   <TableCell><Badge variant={r.status === "Off" ? "destructive" : r.status === "Active" ? "secondary" : "outline"}>{r.status}</Badge></TableCell>
                   <TableCell className="text-muted-foreground">{r.lastSignIn ? usDateTime(r.lastSignIn) : "Never"}</TableCell>
                 </TableRow>
@@ -186,7 +186,7 @@ function UserPanel({
         </section>
         <section className="space-y-1 text-sm">
           <h3 className="font-semibold">Schedule</h3>
-          <p>Seat: {row.seat}</p>
+          <p>Team and shift: {row.seat === "None" ? "Not on the schedule yet" : row.seat}</p>
           {myShifts.length === 0 ? (
             <p className="text-muted-foreground">No recurring shifts.</p>
           ) : (

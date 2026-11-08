@@ -84,8 +84,8 @@ export function VendorDispatchPanel({
       <CardContent className="space-y-3">
         {list.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No vendor logins yet. Have the vendor sign up, then set them to “Vendor” on the Seats
-            page.
+            No vendor logins yet. Have the vendor sign up, then set them to “Vendor” on the Team
+            & Coverage page.
           </p>
         ) : (
           <>

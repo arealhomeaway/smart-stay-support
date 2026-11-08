@@ -26,7 +26,7 @@ export function accountScope(p: ScopeInput): { inScope: boolean; reason: string 
   if (outsideRoles.length)
     return { inScope: false, reason: `Also holds ${outsideRoles.join(", ")} access — an administrator manages this account.` };
   if (p.seatCodes.length)
-    return { inScope: false, reason: "Holds a responsibility seat — an administrator manages this account." };
+    return { inScope: false, reason: "Holds a leadership role. An Admin manages this account." };
   const outsidePools = p.poolCodes.filter((c) => !ONBOARDING_POOL_CODES.has(c));
   if (outsidePools.length)
     return { inScope: false, reason: "Belongs to a team outside Onboarding — an administrator manages this account." };
