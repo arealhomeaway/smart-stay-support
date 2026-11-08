@@ -74,7 +74,7 @@ function SettingsPage() {
           ))}
         </div>
       </SectionCard>
-      <SectionCard title="Overnight requests" description="For requests that arrive between 10 PM and 8 AM.">
+      <SectionCard title="Overnight requests" description="For requests that arrive overnight.">
         <div className="max-w-xs space-y-1">
           <Label htmlFor="overnight-clock-start">Overnight reply clock starts at</Label>
           <Input id="overnight-clock-start" className="h-11" type="time" value={clockStart} onChange={(e) => setClockStart(e.target.value)} disabled={!canEdit} />
