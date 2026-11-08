@@ -287,28 +287,57 @@ function NotBookedPanel({ d, onClose, onDone }: { d: Detail; onClose: () => void
 
 function ApprovedPanel({ d, onLost, onDone }: { d: Detail; onLost: () => void; onDone: () => void }) {
   const outcome = useServerFn(markDirectBookingOutcome);
-  const offered = d.lead.offered_property_ids ?? [];
+  const offered = d.offeredHomes;
+  const [asking, setAsking] = useState(false);
+  // One home offered: it is that home. Several: the coordinator picks, or leaves it as not sure yet.
+  const [home, setHome] = useState(offered.length === 1 ? offered[0]!.id : "");
+  const [moveIn, setMoveIn] = useState("");
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    setBusy(true);
+    try {
+      await outcome({ data: { id: d.lead.id, outcome: "booked", propertyId: home || null, moveIn: moveIn || null } });
+      toast.success("Marked as booked.");
+      onDone();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not save.");
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
     <Panel tone="green">
       <strong className="text-base">{DB_COPY.approvedTitle}</strong>
       {d.lead.partner_approved_note ? <span className="text-sm">{d.lead.partner_approved_note}</span> : null}
+      {asking ? (
+        <div className="flex flex-wrap items-end gap-2.5">
+          {offered.length > 1 ? (
+            <label className="flex flex-col gap-1 text-xs">
+              {DB_COPY.bookedHome}
+              <select className={cn(FIELD, "min-w-[260px] rounded-md border border-input bg-background px-2.5")} value={home} onChange={(e) => setHome(e.target.value)}>
+                <option value="">{DB_COPY.bookedHomeUnknown}</option>
+                {offered.map((h) => <option key={h.id} value={h.id}>{h.label}</option>)}
+              </select>
+            </label>
+          ) : null}
+          <label className="flex flex-col gap-1 text-xs">
+            {DB_COPY.bookedMoveIn}
+            <Input type="date" className={cn(FIELD, "w-[190px]")} value={moveIn} onChange={(e) => setMoveIn(e.target.value)} />
+          </label>
+        </div>
+      ) : null}
       <div className="flex flex-wrap gap-2">
-        <Button
-          className={BIG}
-          onClick={async () => {
-            try {
-              // One home offered: record it. Several: the booked home is not guessed.
-              await outcome({ data: { id: d.lead.id, outcome: "booked", propertyId: offered.length === 1 ? offered[0]! : null, moveIn: null } });
-              toast.success("Marked as booked.");
-              onDone();
-            } catch (e) {
-              toast.error(e instanceof Error ? e.message : "Could not save.");
-            }
-          }}
-        >
-          {DB_COPY.markBooked}
-        </Button>
-        <Button variant="outline" className={cn(BIG, "border-primary text-primary")} onClick={onLost}>{DB_COPY.markNotBooked}</Button>
+        {asking ? (
+          <>
+            <Button className={BIG} disabled={busy} onClick={save}>{DB_COPY.bookedSave}</Button>
+            <Button variant="outline" className={BIG} disabled={busy} onClick={() => setAsking(false)}>Cancel</Button>
+          </>
+        ) : (
+          <>
+            <Button className={BIG} onClick={() => setAsking(true)}>{DB_COPY.markBooked}</Button>
+            <Button variant="outline" className={cn(BIG, "border-primary text-primary")} onClick={onLost}>{DB_COPY.markNotBooked}</Button>
+          </>
+        )}
       </div>
     </Panel>
   );
