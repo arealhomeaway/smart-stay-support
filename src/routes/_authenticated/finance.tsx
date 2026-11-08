@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { RequireCapability } from "@/components/RequireCapability";
+import { RequireAnyCapability } from "@/components/RequireCapability";
+import { financeViewOnly } from "@/lib/finance-view";
 import { EmptyState, LoadingRows, PageHeader, SectionCard, SegmentedControl } from "@/components/ui/page";
 import { Button } from "@/components/ui/button";
 import { useDemo } from "@/components/DemoProvider";
@@ -25,9 +26,9 @@ export const Route = createFileRoute("/_authenticated/finance")({
     ],
   }),
   component: () => (
-    <RequireCapability capability="finance_workspace" title="Only Finance, leadership and administrators can open Finance">
+    <RequireAnyCapability capabilities={["finance_workspace", "finance_view"]} title="Only Finance, leadership and administrators can open Finance">
       <FinancePage />
-    </RequireCapability>
+    </RequireAnyCapability>
   ),
 });
 
@@ -47,6 +48,8 @@ const TABS: { value: Tab; label: string }[] = [
 function FinancePage() {
   const { demoMode } = useDemo();
   const role = useRole();
+  // The Director of Onboarding views Finance read only.
+  const viewOnly = financeViewOnly(role.can);
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>("review");
   const [open, setOpen] = useState<string | null>(null);
@@ -76,14 +79,14 @@ function FinancePage() {
         eyebrow="Finance"
         title="Property expenses"
         description="Operations records facts and documents; Finance reviews and sets treatment. QuickBooks stays the accounting record and OwnerRez the statement record. No cutoff or review deadline is applied."
-        actions={!role.readOnly && <Button onClick={() => setCreating(true)}>Enter invoice</Button>}
+        actions={!role.readOnly && !viewOnly && <Button onClick={() => setCreating(true)}>Enter invoice</Button>}
       />
       <SegmentedControl ariaLabel="Finance queues" value={tab} onChange={setTab} options={TABS.map((t) => (t.value === "period" || t.value === "statement" || t.value === "claims" ? t : { ...t, count: grouped.get(t.value)?.length ?? 0 }))} />
       <SectionCard>
         {tab === "claims" ? (
-          <UnsettledClaims demoMode={demoMode} />
+          <UnsettledClaims demoMode={demoMode} viewOnly={viewOnly} />
         ) : tab === "statement" ? (
-          <StatementReadiness demoMode={demoMode} onOpenExpense={setOpen} />
+          <StatementReadiness demoMode={demoMode} onOpenExpense={setOpen} viewOnly={viewOnly} />
         ) : q.isLoading ? (
           <LoadingRows />
         ) : rows.length === 0 ? (

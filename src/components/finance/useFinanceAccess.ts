@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
+import { financeViewOnly } from "@/lib/finance-view";
 
 /**
  * Finance authority for the signed-in user. Mirrors the database rules
@@ -22,8 +23,11 @@ export function useFinanceAccess() {
       return { lead: lead.data === true, accounting: acct.data === true, director: dir.data === true };
     },
   });
-  const readOnly = role.readOnly;
+  // The Director of Onboarding views Finance read only.
+  const viewOnly = financeViewOnly(role.can);
+  const readOnly = role.readOnly || viewOnly;
   return {
+    viewOnly,
     userId: role.userId,
     isLead: !readOnly && Boolean(q.data?.lead),
     isAccounting: !readOnly && Boolean(q.data?.accounting),

@@ -10,7 +10,7 @@ import { awaitingReceipt, financeTreatmentPending, financiallySettled, formatMon
  * Finance outstanding work: every claim whose money is not settled, whatever its
  * operational stage. Closing a claim never removes it from this list.
  */
-export function UnsettledClaims({ demoMode }: { demoMode: boolean }) {
+export function UnsettledClaims({ demoMode, viewOnly = false }: { demoMode: boolean; viewOnly?: boolean }) {
   const claims = useClaims();
   const names = usePropertyNames();
   const [open, setOpen] = useState<string | null>(null);
@@ -52,7 +52,7 @@ export function UnsettledClaims({ demoMode }: { demoMode: boolean }) {
       <ClaimDrawer
         claim={rows.find((c) => c.id === open) ?? (claims.data ?? []).find((c) => c.id === open) ?? null}
         people={people}
-        canEdit={!readOnly}
+        canEdit={!readOnly && !viewOnly}
         propertyName={names.data?.get((claims.data ?? []).find((c) => c.id === open)?.property_id ?? "") ?? ""}
         onClose={() => setOpen(null)}
       />
