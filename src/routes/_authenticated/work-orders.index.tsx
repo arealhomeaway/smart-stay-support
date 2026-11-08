@@ -72,7 +72,9 @@ function WorkOrdersHome() {
   const propertyPhotos = useWorkOrderPropertyPhotos().data ?? new Map<string, string | null>();
   const people = useStaffDirectory().data ?? [];
   const originToken = useAmbientOrigin("Work Orders");
-  const { readOnly } = useRole();
+  const { readOnly: previewOnly, can } = useRole();
+  // The Director of Onboarding and Project Managers see Work Orders read only.
+  const readOnly = previewOnly || !can("work_orders_internal");
 
   const reqMap = requirements.data ?? new Map<string, RequirementLike[]>();
   const nameFor = (id: string | null) =>
