@@ -1,19 +1,32 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useDemo } from "@/components/DemoProvider";
 import { RequireCapability } from "@/components/RequireCapability";
-import { PageHeader, SectionCard } from "@/components/ui/page";
-import { StatusBadge, type StatusTone } from "@/components/ui/status";
+import { PageHeader } from "@/components/ui/page";
+import { StatusBadge } from "@/components/ui/status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { createDirectBooking, listDirectBookings, startDirectBooking, type DirectBookingDetails, type DirectBookingRow } from "@/lib/direct-bookings.functions";
-import { clockLabel, replyClock, requestStatus, STATUS_LABEL, type RequestStatus } from "@/lib/direct-bookings";
+import {
+  approvalStrip,
+  boardTiles,
+  DB_COPY,
+  longDate,
+  requestStatus,
+  statusChip,
+  viewCounts,
+  viewOf,
+  VIEWS,
+  type RequestStatus,
+  type ViewKey,
+} from "@/lib/direct-bookings";
 
 export const Route = createFileRoute("/_authenticated/direct-bookings/")({
   head: () => ({
@@ -33,15 +46,6 @@ export const Route = createFileRoute("/_authenticated/direct-bookings/")({
   ),
 });
 
-export const STATUS_TONE: Record<RequestStatus, StatusTone> = {
-  new: "escalated",
-  working: "progress",
-  waiting_approval: "review",
-  sent: "waiting",
-  booked: "resolved",
-  not_booked: "closed",
-};
-
 function useNow(ms = 1000) {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -51,8 +55,38 @@ function useNow(ms = 1000) {
   return now;
 }
 
-function partnerOf(r: Pick<DirectBookingRow, "partner_name" | "company" | "contact_name">) {
+export function partnerOf(r: Pick<DirectBookingRow, "partner_name" | "company" | "contact_name">) {
   return r.partner_name || r.company || r.contact_name || "Partner not named yet";
+}
+
+/** What they need: bedrooms, people, pets and the place. */
+export function summaryLine(r: DirectBookingRow) {
+  const beds = r.bedrooms
+    ? `${r.bedrooms} or more bedrooms${r.preferred_bedrooms && r.preferred_bedrooms !== r.bedrooms ? ` (${r.preferred_bedrooms} preferred)` : ""}`
+    : null;
+  const parts = [
+    beds,
+    r.guests ? `${r.guests} ${r.guests === 1 ? "person" : "people"}` : null,
+    r.dogs ? `${r.dogs} dog${r.dogs === 1 ? "" : "s"}` : null,
+    r.cats ? `${r.cats} cat${r.cats === 1 ? "" : "s"}` : null,
+    r.search_region || r.market,
+  ].filter(Boolean);
+  return parts.length ? parts.join(" · ") : r.subject || "Details still to fill in";
+}
+
+/** When: the dates, or as soon as possible and the length. */
+export function datesLine(r: DirectBookingRow) {
+  if (r.desired_move_in && r.desired_check_out) return `${longDate(r.desired_move_in)} to ${longDate(r.desired_check_out)}`;
+  if (r.desired_move_in) return `From ${longDate(r.desired_move_in)}${r.stay_length ? ` for ${r.stay_length}` : ""}`;
+  if (r.asap) return `As soon as possible${r.stay_length ? ` for ${r.stay_length}` : ""}`;
+  return "Dates not given yet";
+}
+
+function detailLine(r: DirectBookingRow, s: RequestStatus) {
+  const when = datesLine(r);
+  if (s === "working") return `${when} · ${DB_COPY.coordinatorOnIt}`;
+  if (s === "not_booked") return r.not_booked_reason ? `${when} · Not booked: ${r.not_booked_reason}` : when;
+  return when;
 }
 
 function DirectBookingsPage() {
@@ -63,7 +97,7 @@ function DirectBookingsPage() {
   const navigate = useNavigate();
   const now = useNow();
   const [newOpen, setNewOpen] = useState(false);
-  const [showPast, setShowPast] = useState(false);
+  const [view, setView] = useState<ViewKey>("open");
   const { data, refetch } = useQuery({
     queryKey: ["direct-bookings", demoMode],
     queryFn: () => list({ data: { demo: demoMode } }),
@@ -71,20 +105,22 @@ function DirectBookingsPage() {
   });
 
   const requests = data?.requests ?? [];
-  const status = (r: DirectBookingRow) =>
-    requestStatus({ ...r, pending_approval: (data?.pending ?? []).includes(r.id) });
-  const open = requests.filter((r) => !r.outcome);
-  const counts = {
-    new: open.filter((r) => status(r) === "new").length,
-    working: open.filter((r) => ["working", "waiting_approval"].includes(status(r))).length,
-    sent: open.filter((r) => status(r) === "sent").length,
-    done: requests.filter((r) => r.outcome).length,
-  };
+  const pending = useMemo(() => new Set(data?.pending ?? []), [data?.pending]);
+  const board = requests.map((r) => ({ ...r, status: requestStatus({ ...r, pending_approval: pending.has(r.id) }) }));
+  const counts = viewCounts(board);
+  const tiles = boardTiles(board, now, data?.settings.replyTargetMinutes);
+  const shown = board
+    .filter((r) => viewOf(r.status) === view)
+    .sort((a, b) => (view === "open" ? a.created_at.localeCompare(b.created_at) : b.created_at.localeCompare(a.created_at)));
+  const strip = data?.settings
+    ? approvalStrip(data.pendingApprovals ?? [], { isSupervisor: data.isSupervisor, isDirector: data.isDirector }, data.settings, now)
+    : null;
+  const earlier = (data?.past ?? []).filter((p) => (view === "booked" ? p.stage === "converted" : view === "not_booked" ? p.stage === "lost" : false));
 
   async function onStart(id: string) {
     try {
       const result = await start({ data: { id } });
-      if (!result.won) toast.info(`${result.owner_name ?? "A teammate"} already owns this request.`);
+      if (!result.won) toast.info(DB_COPY.someoneElseOwns);
       navigate({ to: "/direct-bookings/$requestId", params: { requestId: id } });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not start.");
@@ -96,16 +132,25 @@ function DirectBookingsPage() {
     <div className="space-y-5">
       <PageHeader
         title="Direct Bookings"
-        description="Requests from insurance companies and referral partners. Reply to each one within 3 minutes."
+        description={DB_COPY.subtitle}
         actions={
           <>
-            <Button variant="outline" asChild>
+            <Button variant="outline" className="min-h-12 px-5 text-[15px] font-semibold" asChild>
               <Link to="/inquiry-sources">Referral sources</Link>
             </Button>
-            <Button onClick={() => setNewOpen(true)}>New request</Button>
+            <Button className="min-h-12 px-6 text-[15px] font-semibold" onClick={() => setNewOpen(true)}>New request</Button>
           </>
         }
       />
+
+      {strip ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3">
+          <strong className="text-base text-destructive">{strip.text}</strong>
+          <Button variant="destructive" className="min-h-11 px-5 font-semibold" asChild>
+            <Link to="/direct-bookings/$requestId" params={{ requestId: strip.openId }}>{DB_COPY.reviewNow}</Link>
+          </Button>
+        </div>
+      ) : null}
 
       {data && !data.ready ? (
         <p className="rounded-lg border border-border bg-secondary/40 px-3 py-2 text-sm text-muted-foreground">
@@ -113,72 +158,87 @@ function DirectBookingsPage() {
         </p>
       ) : null}
 
-      <div className="grid gap-3 sm:grid-cols-4">
-        <Count label="New" value={counts.new} />
-        <Count label="In progress" value={counts.working} />
-        <Count label="Reply sent" value={counts.sent} />
-        <Count label="Finished" value={counts.done} />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {tiles.map((t) => (
+          <div
+            key={t.key}
+            className={cn("flex flex-col gap-1 rounded-xl border p-3.5", t.red ? "border-destructive/40 bg-destructive/10" : "border-border bg-card")}
+          >
+            <span className="text-[13px] text-muted-foreground">{t.label}</span>
+            <strong className={cn("text-[26px] leading-tight", t.red ? "text-destructive" : "text-foreground")}>{t.value}</strong>
+          </div>
+        ))}
       </div>
 
-      <SectionCard bodyClassName="space-y-2">
-        {requests.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">Nothing here right now.</p>
-        ) : (
-          requests.map((r) => {
-            const s = status(r);
-            const clock = replyClock(r.created_at, r.reply_sent_at, now);
-            return (
-              <div key={r.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-border px-3 py-2.5">
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-semibold">{partnerOf(r)}</span>
-                    <StatusBadge tone={STATUS_TONE[s]}>{STATUS_LABEL[s]}</StatusBadge>
-                  </div>
-                  <p className="truncate text-sm">{summary(r)}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {detailLine(r, s, clock.seconds, data?.names ?? {})}
-                  </p>
-                </div>
-                {s === "new" ? (
-                  <Button size="sm" onClick={() => onStart(r.id)}>Start</Button>
-                ) : (
-                  <Button size="sm" variant="outline" asChild>
-                    <Link to="/direct-bookings/$requestId" params={{ requestId: r.id }}>Open</Link>
-                  </Button>
-                )}
-              </div>
-            );
-          })
-        )}
-      </SectionCard>
+      <div role="tablist" aria-label="Views" className="flex flex-wrap gap-1.5">
+        {VIEWS.map((v) => {
+          const on = v.key === view;
+          return (
+            <button
+              key={v.key}
+              type="button"
+              role="tab"
+              aria-selected={on}
+              onClick={() => setView(v.key)}
+              className={cn(
+                "min-h-11 rounded-full border px-[18px] text-sm font-semibold transition-colors",
+                on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-foreground hover:bg-secondary",
+              )}
+            >
+              {v.label} <span className="opacity-80">{counts[v.key]}</span>
+            </button>
+          );
+        })}
+      </div>
 
-      <SectionCard
-        title="Past requests"
-        description="Earlier leads, kept for reference. You can read them here."
-        actions={
-          <Button size="sm" variant="ghost" onClick={() => setShowPast((v) => !v)}>
-            {showPast ? "Hide" : "Show"}
-          </Button>
-        }
-        bodyClassName="space-y-1"
-      >
-        {showPast ? (
-          (data?.past ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nothing here right now.</p>
-          ) : (
-            (data?.past ?? []).map((p) => (
-              <div key={p.id} className="flex flex-wrap justify-between gap-2 border-b border-border py-1.5 text-sm last:border-0">
-                <span>{p.company || p.contact_name || "Not recorded"}</span>
-                <span className="text-muted-foreground">
-                  {p.desired_move_in ? `Move in ${p.desired_move_in}` : "No date"} · {new Date(p.created_at).toLocaleDateString()}
-                </span>
+      <div className="space-y-3">
+        {shown.map((r) => {
+          const chip = statusChip(r.status, r, now, data?.settings.replyTargetMinutes);
+          const startable = r.status === "new";
+          return (
+            <div
+              key={r.id}
+              className={cn(
+                "flex flex-wrap items-center justify-between gap-4 rounded-2xl border bg-card p-4",
+                chip.late ? "border-destructive/60" : "border-border",
+              )}
+            >
+              <div className="flex min-w-0 flex-[1_1_520px] flex-col gap-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <strong className="text-[17px]">{partnerOf(r)}</strong>
+                  <StatusBadge tone={chip.tone} className="text-[13px] font-semibold">{chip.text}</StatusBadge>
+                </div>
+                <span className="text-[15px]">{summaryLine(r)}</span>
+                <span className="text-[13px] text-muted-foreground">{detailLine(r, r.status)}</span>
               </div>
-            ))
-          )
-        ) : (
-          <p className="text-sm text-muted-foreground">{(data?.past ?? []).length} earlier requests.</p>
-        )}
-      </SectionCard>
+              {startable ? (
+                <Button className="min-h-12 px-6 text-[15px] font-semibold" onClick={() => onStart(r.id)}>{DB_COPY.startQuote}</Button>
+              ) : (
+                <Button className="min-h-12 px-6 text-[15px] font-semibold" asChild>
+                  <Link to="/direct-bookings/$requestId" params={{ requestId: r.id }}>{DB_COPY.open}</Link>
+                </Button>
+              )}
+            </div>
+          );
+        })}
+        {shown.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border p-7 text-center text-[15px] text-muted-foreground">{DB_COPY.empty}</div>
+        ) : null}
+      </div>
+
+      {earlier.length > 0 ? (
+        <div className="space-y-1.5">
+          <h2 className="text-sm font-semibold text-muted-foreground">Earlier requests</h2>
+          {earlier.map((p) => (
+            <div key={p.id} className="flex flex-wrap justify-between gap-2 rounded-lg border border-border px-3 py-2.5 text-sm">
+              <span>{p.company || p.contact_name || "Not recorded"}</span>
+              <span className="text-muted-foreground">
+                {p.desired_move_in ? `Move in ${longDate(p.desired_move_in)}` : "No date"} · {longDate(p.created_at.slice(0, 10))}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       <NewRequestDialog
         open={newOpen}
@@ -189,35 +249,6 @@ function DirectBookingsPage() {
           navigate({ to: "/direct-bookings/$requestId", params: { requestId: created.id } });
         }}
       />
-    </div>
-  );
-}
-
-function summary(r: DirectBookingRow) {
-  const parts = [
-    r.bedrooms ? `${r.bedrooms} bedrooms` : null,
-    r.guests ? `${r.guests} people` : null,
-    r.dogs ? `${r.dogs} dog${r.dogs === 1 ? "" : "s"}` : null,
-    r.search_region || r.market,
-    r.desired_move_in ? `from ${r.desired_move_in}` : null,
-  ].filter(Boolean);
-  return parts.length ? parts.join(", ") : r.subject || "Details still to fill in";
-}
-
-function detailLine(r: DirectBookingRow, s: RequestStatus, seconds: number, names: Record<string, string>) {
-  if (s === "new") return `Waiting ${clockLabel(seconds)}. Press Start to own it.`;
-  if (s === "working") return `${names[r.owned_by ?? ""] ?? "A teammate"} is on it. ${clockLabel(seconds)} so far.`;
-  if (s === "waiting_approval") return `Waiting for approval. ${clockLabel(seconds)} so far.`;
-  if (s === "sent") return `Reply sent by ${names[r.reply_sent_by ?? ""] ?? "a teammate"} in ${clockLabel(seconds)}.`;
-  if (s === "booked") return "Booked. Well done.";
-  return r.not_booked_reason ? `Not booked: ${r.not_booked_reason}` : "Not booked";
-}
-
-function Count({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="surface px-4 py-3">
-      <div className="text-2xl font-semibold">{value}</div>
-      <div className="text-sm text-muted-foreground">{label}</div>
     </div>
   );
 }
@@ -261,8 +292,9 @@ function NewRequestDialog({
           <Textarea value={f.requirements} onChange={set("requirements")} rows={3} />
         </div>
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" className="min-h-11" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button
+            className="min-h-11"
             disabled={saving}
             onClick={async () => {
               setSaving(true);
@@ -288,7 +320,7 @@ function Field({ label, value, onChange, type = "text" }: { label: string; value
   return (
     <div className="space-y-1">
       <Label>{label}</Label>
-      <Input type={type} value={value} onChange={onChange} />
+      <Input className="h-11" type={type} value={value} onChange={onChange} />
     </div>
   );
 }
