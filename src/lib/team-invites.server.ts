@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { assertAdmin, applyRole, type AppRole } from "./access.server";
+import { applyRole, assertCanInvite, inviteScope, OPS_INVITE_ROLES, type AppRole } from "./access.server";
 import { isProtectedResponsibilitySeat } from "./responsibility-seats.server";
 
 type Client = SupabaseClient<Database>;
@@ -16,25 +16,37 @@ function newInviteCode() {
   return `${pick()}-${pick()}`;
 }
 
-export async function loadTeamInvites(supabase: Client) {
-  const { data, error } = await supabase
+/** Invite codes the caller may see: every code for Admin, Coordinator and Supervisor codes for Operations leadership. */
+export async function loadTeamInvites(supabase: Client, scope: "all" | "operations" = "all") {
+  let q = supabase
     .from("team_invites")
     .select(
       "id, code, role, invitee_email, invitee_name, note, expires_at, revoked_at, redeemed_at",
-    )
-    .order("created_at", { ascending: false })
-    .limit(100);
+    );
+  if (scope === "operations") q = q.in("role", OPS_INVITE_ROLES);
+  const { data, error } = await q.order("created_at", { ascending: false }).limit(100);
   if (error) throw error;
   return data ?? [];
 }
 
-/** Admin-only: issue a single-use code that grants one role when redeemed. */
+/** Throws unless the caller may manage this existing invite (its account type decides). */
+async function assertCanManageInvite(supabase: Client, userId: string, inviteId: string) {
+  const scope = await inviteScope(supabase, userId);
+  if (scope === "all") return;
+  if (scope === "none") throw new Error("Only an admin can change team access.");
+  const { data, error } = await supabase.from("team_invites").select("role").eq("id", inviteId).maybeSingle();
+  if (error) throw error;
+  if (!data || !OPS_INVITE_ROLES.includes(data.role as AppRole))
+    throw new Error("You can manage Property Coordinator and Supervisor codes only.");
+}
+
+/** Admin (any account type) or Operations leadership (Coordinator and Supervisor): issue a single-use code. */
 export async function createTeamInvite(
   supabase: Client,
   userId: string,
   input: { role: AppRole; email: string; name: string; note: string; expiresInDays: number },
 ) {
-  await assertAdmin(supabase, userId);
+  await assertCanInvite(supabase, userId, input.role);
   const expires = new Date(Date.now() + input.expiresInDays * 24 * 60 * 60 * 1000).toISOString();
 
   for (let attempt = 0; attempt < 5; attempt++) {
@@ -126,7 +138,7 @@ export async function sendInviteEmail(input: {
 }
 
 export async function revokeTeamInvite(supabase: Client, userId: string, inviteId: string) {
-  await assertAdmin(supabase, userId);
+  await assertCanManageInvite(supabase, userId, inviteId);
   const { error } = await supabase
     .from("team_invites")
     .update({ revoked_at: new Date().toISOString() })
@@ -237,7 +249,7 @@ export async function redeemTeamInvite(
 
 /** Admin: re-send an existing, still-usable invite code to its locked email address. */
 export async function resendTeamInvite(supabase: Client, userId: string, inviteId: string) {
-  await assertAdmin(supabase, userId);
+  await assertCanManageInvite(supabase, userId, inviteId);
   const { data, error } = await supabase
     .from("team_invites")
     .select("code, role, invitee_email, invitee_name, note, expires_at, revoked_at, redeemed_at")

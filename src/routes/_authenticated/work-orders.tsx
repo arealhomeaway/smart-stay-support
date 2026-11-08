@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { RequireCapability } from "@/components/RequireCapability";
+import { RequireAnyCapability } from "@/components/RequireCapability";
 import { useRole } from "@/hooks/useRole";
 
 export const Route = createFileRoute("/_authenticated/work-orders")({
@@ -23,22 +23,23 @@ export const Route = createFileRoute("/_authenticated/work-orders")({
     ],
   }),
   component: () => (
-    // Same capability the navigation uses, so nobody can reach by URL a
-    // portal Resolve does not show them.
-    <RequireCapability capability="work_orders_internal" title="Work Orders">
+    // Same rule the navigation uses, so nobody can reach by URL a portal
+    // Resolve does not show them. Read-only viewers hold work_orders_view.
+    <RequireAnyCapability capabilities={["work_orders_internal", "work_orders_view"]} title="Work Orders">
       <WorkOrdersLayout />
-    </RequireCapability>
+    </RequireAnyCapability>
   ),
   errorComponent: () => <p className="text-muted-foreground">Work Orders could not be loaded.</p>,
 });
 
 function WorkOrdersLayout() {
-  const { isSupervisor } = useRole();
+  const { isSupervisor, can } = useRole();
+  const works = can("work_orders_internal");
   return (
     <div className="space-y-5">
       <nav className="flex flex-wrap items-center gap-1" aria-label="Work order views">
         <SubLink to="/work-orders">Today</SubLink>
-        <SubLink to="/work-orders/my-work-orders">Mine</SubLink>
+        {works ? <SubLink to="/work-orders/my-work-orders">Mine</SubLink> : null}
         <SubLink to="/work-orders/calendar">Calendar</SubLink>
         {isSupervisor ? <SubLink to="/work-orders/manager">Manager</SubLink> : null}
       </nav>

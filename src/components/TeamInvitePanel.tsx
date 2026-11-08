@@ -44,23 +44,30 @@ export function visibleInvites<T extends InviteLike>(list: T[], showUsed: boolea
     .sort((a, b) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")));
 }
 
-/** Admin-only: issue single-use codes that grant a role when the new teammate signs up. */
-export function TeamInvitePanel() {
-  const { isAdmin, isLoading: roleLoading } = useRole();
+/**
+ * Issue single-use codes that grant a role when the new teammate signs up.
+ * Admin: every account type. Operations leadership passes `allowedRoles`
+ * (Coordinator and Supervisor); the server checks the same rule.
+ */
+export function TeamInvitePanel({ allowedRoles }: { allowedRoles?: InviteRole[] } = {}) {
+  const { isAdmin, isLoading: roleLoading, can } = useRole();
+  const limited = !isAdmin && Boolean(allowedRoles?.length) && can("ops_user_invite");
+  const canUse = isAdmin || limited;
+  const roleChoices = (Object.keys(ROLE_LABEL) as InviteRole[]).filter((r) => !limited || allowedRoles!.includes(r));
   const qc = useQueryClient();
   const listFn = useServerFn(listTeamInvites);
   const createFn = useServerFn(createTeamInvite);
   const revokeFn = useServerFn(revokeTeamInvite);
   const emailFn = useServerFn(emailTeamInvite);
 
-  const [role, setRole] = useState<InviteRole>("tech");
+  const [role, setRole] = useState<InviteRole>(roleChoices.includes("tech") ? "tech" : (roleChoices[0] ?? "tech"));
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [showUsed, setShowUsed] = useState(false);
 
   const invites = useQuery({
     queryKey: ["team-invites"],
-    enabled: isAdmin,
+    enabled: canUse,
     queryFn: () => listFn(),
   });
 
@@ -114,7 +121,7 @@ Your access is set the moment the code is redeemed. Codes are single-use and exp
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (roleLoading || !isAdmin) return null;
+  if (roleLoading || !canUse) return null;
 
   const all = invites.data?.invites ?? [];
   const rows = visibleInvites(all, showUsed);
@@ -126,10 +133,14 @@ Your access is set the moment the code is redeemed. Codes are single-use and exp
           <Ticket className="size-4" /> Invite codes
         </CardTitle>
         <CardDescription>
+          {limited ? (
+            "Create a code for a new Property Coordinator or Supervisor. Email it with the Email code button, or copy the invite and send it yourself. Each code works once and expires after 30 days."
+          ) : (<>
           Create a code for a new team member or vendor. Email it with the Email code button, or
           copy the invite and send it yourself. They sign up, then enter the code to get their
           access. Each code works once and expires after 30 days. To add Onboarding staff or
           homeowners, use Onboarding &gt; Team instead.
+          </>)}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -141,7 +152,7 @@ Your access is set the moment the code is redeemed. Codes are single-use and exp
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(Object.keys(ROLE_LABEL) as InviteRole[]).map((r) => (
+                {roleChoices.map((r) => (
                   <SelectItem key={r} value={r}>
                     {ROLE_LABEL[r]}
                   </SelectItem>

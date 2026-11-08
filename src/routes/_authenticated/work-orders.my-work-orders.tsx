@@ -20,7 +20,9 @@ function MyWorkOrders() {
   const workOrders = useWorkOrders();
   const requirements = useWorkOrderRequirements();
   const propertyNames = useWorkOrderPropertyNames();
-  const { readOnly } = useRole();
+  const { readOnly: previewOnly, can } = useRole();
+  // The Director of Onboarding and Project Managers see Work Orders read only.
+  const readOnly = previewOnly || !can("work_orders_internal");
   const userId = useCurrentUserId();
 
   const rows = [...(workOrders.data ?? [])]

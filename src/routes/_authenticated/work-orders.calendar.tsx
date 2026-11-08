@@ -133,7 +133,9 @@ function WorkOrderCalendar() {
   const propertyPhotos = useWorkOrderPropertyPhotos().data ?? new Map<string, string | null>();
   const people = useStaffDirectory().data ?? [];
   const originToken = useAmbientOrigin("Work order calendar");
-  const { readOnly } = useRole();
+  const { readOnly: previewOnly, can } = useRole();
+  // The Director of Onboarding and Project Managers see Work Orders read only.
+  const readOnly = previewOnly || !can("work_orders_internal");
 
   const rows = useMemo(() => workOrders.data ?? [], [workOrders.data]);
   const [filters, setFilters] = useState<CalendarFilters>(DEFAULT_FILTERS);

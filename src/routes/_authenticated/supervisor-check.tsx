@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { SupervisorOnly } from "@/components/SupervisorOnly";
+import { RequireCapability } from "@/components/RequireCapability";
 import { QueueOpenLogger } from "@/components/scorecard/QueueOpenLogger";
 import { RatingChannelsCard } from "@/components/scorecard/RatingChannelsCard";
 import { SectionCard } from "@/components/ui/page";
@@ -26,9 +26,9 @@ export const Route = createFileRoute("/_authenticated/supervisor-check")({
     ],
   }),
   component: () => (
-    <SupervisorOnly>
+    <RequireCapability capability="oversight" title="Oversight">
       <SupervisorCheck />
-    </SupervisorOnly>
+    </RequireCapability>
   ),
 });
 

@@ -2,8 +2,8 @@
  * Contextual Email Composer — server calls.
  *
  * Any operations employee can write and send from the shared mailbox on a
- * record they can already open. Only supervisors can add or change the
- * templates everyone shares.
+ * record they can already open. Only supervisors and the Director of
+ * Onboarding can add or change the templates everyone shares.
  */
 
 import { createServerFn } from "@tanstack/react-start";
@@ -20,9 +20,20 @@ async function assertStaff(context: Ctx) {
   if (!data) throw new Error("Only the operations team can send messages from Resolve.");
 }
 
+const TEMPLATE_NOT_SAVED = "The template was not saved. Ask an Admin to check your template access.";
+
+/** Shared templates are saved by Supervisors and the Director of Onboarding. Reading is for all staff. */
+async function canManageEmailTemplates(context: Ctx) {
+  const [sup, director] = await Promise.all([
+    context.supabase.rpc("is_supervisor", { _user_id: context.userId }),
+    context.supabase.rpc("is_onboarding_director", { _user_id: context.userId }),
+  ]);
+  return sup.data === true || director.data === true;
+}
+
 async function assertSupervisor(context: Ctx) {
-  const { data } = await context.supabase.rpc("is_supervisor", { _user_id: context.userId });
-  if (!data) throw new Error("Only supervisors can change the shared templates.");
+  if (!(await canManageEmailTemplates(context)))
+    throw new Error("Only supervisors and the Director of Onboarding can change the shared templates.");
 }
 
 type ProfileBits = { full_name: string | null; email_signature: string | null };
@@ -95,9 +106,7 @@ export const getComposerContext = createServerFn({ method: "GET" })
       .eq("active", true)
       .order("name");
 
-    const { data: canManage } = await context.supabase.rpc("is_supervisor", {
-      _user_id: context.userId,
-    });
+    const canManage = await canManageEmailTemplates(context as never as Ctx);
 
     return {
       ...gathered,
@@ -287,11 +296,14 @@ export const saveEmailTemplate = createServerFn({ method: "POST" })
     };
 
     if (data.id) {
-      const { error } = await context.supabase
+      const { data: saved, error } = await context.supabase
         .from("email_templates")
         .update(row as never)
-        .eq("id", data.id);
+        .eq("id", data.id)
+        .select("id");
       if (error) throw new Error(error.message);
+      // A save the database did not keep is never reported as saved.
+      if (!(saved as unknown[] | null)?.length) throw new Error(TEMPLATE_NOT_SAVED);
       return { id: data.id };
     }
 
@@ -313,10 +325,12 @@ export const retireEmailTemplate = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     await assertSupervisor(context as never as Ctx);
-    const { error } = await context.supabase
+    const { data: saved, error } = await context.supabase
       .from("email_templates")
       .update({ active: false, updated_by: context.userId } as never)
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .select("id");
     if (error) throw new Error(error.message);
+    if (!(saved as unknown[] | null)?.length) throw new Error(TEMPLATE_NOT_SAVED);
     return { ok: true };
   });
