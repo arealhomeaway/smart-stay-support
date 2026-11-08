@@ -159,11 +159,11 @@ export function CoverageSchedulePanel() {
       <details className="group surface">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
           <span>
-            <span className="font-semibold">Manage seats, schedules and on-call</span>
+            <span className="font-semibold">Manage roles, shifts and on-call</span>
             <span className="block text-sm text-muted-foreground">
               {canEdit
                 ? "Change who covers a role, a recurring shift, a temporary override or the overnight roster."
-                : "View the seat holders, recurring shifts and the overnight roster."}
+                : "View who holds each role, the recurring shifts and the overnight roster."}
             </span>
           </span>
           <span className="text-sm text-primary group-open:hidden">Open</span>
@@ -270,7 +270,7 @@ function WeekCalendar({
       <div className="overflow-x-auto p-4">
         <div className="min-w-[52rem] space-y-1.5">
           <div className="grid grid-cols-[16rem_repeat(7,1fr)] gap-1.5">
-            <div className="eyebrow self-end">Seat</div>
+            <div className="eyebrow self-end">Role</div>
             {DAYS.map((d) => (
               <div key={d} className="pb-1 text-center text-xs font-semibold">
                 {d.slice(0, 3)}
@@ -361,7 +361,7 @@ function WeekCalendar({
               <span className="font-semibold">
                 On-call, every night {clock(nightStart)}–{clock(nightEnd)} Central.
               </span>{" "}
-              The overnight roster takes precedence over every seat schedule above.
+              The overnight roster comes first, before every shift above.
             </span>
           </div>
         </div>
@@ -397,12 +397,11 @@ function SeatsCard({
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
-          <CalendarClock className="size-4" /> Seats &amp; coverage windows
+          <CalendarClock className="size-4" /> Roles &amp; shift hours
         </CardTitle>
         <CardDescription>
-          The hours each seat is on duty, in Central time and adjusted automatically for daylight
-          saving. This is the same plan the routing engine uses — a change takes effect on the next
-          new ticket and never moves work somebody already owns.
+          The hours each role is on duty, in Central time. A change applies to the next new ticket
+          and never moves work someone already owns.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
@@ -427,9 +426,7 @@ function SeatsCard({
                   </p>
                   {role.current_seat_name && !role.current_seat_holder && (
                     <p className="text-warning">
-                      Pending — this person has not redeemed their invitation yet, so work cannot
-                      route to the seat until their account exists. It is seated automatically the
-                      moment they join.
+                      Invitation not accepted yet. New work reaches this role once they join.
                     </p>
                   )}
                   {unavailable && (
@@ -483,7 +480,7 @@ function SeatsCard({
                         <Badge variant="outline" className="mr-2">
                           {o.kind === "off" ? "Off" : "Temporary cover"}
                         </Badge>
-                        {o.kind === "cover" ? nameFor(people, o.user_id) : "Seat off duty"}{" "}
+                        {o.kind === "cover" ? nameFor(people, o.user_id) : "Role off duty"}{" "}
                         <span className="text-muted-foreground">
                           {usDateTime(o.starts_at)} → {usDateTime(o.ends_at)}
                         </span>
@@ -537,7 +534,7 @@ function SeatsCard({
                             },
                           });
                           toast.success(
-                            unavailable ? "Seat is available again." : "Seat marked unavailable.",
+                            unavailable ? "Role is available again." : "Role marked unavailable.",
                           );
                           onChanged();
                         } catch (e) {
@@ -599,7 +596,7 @@ function SeatEditor({
   return (
     <div className="space-y-4 rounded-lg border border-border p-3">
       <div className="space-y-1.5">
-        <Label>Seat holder</Label>
+        <Label>Person in this role</Label>
         <div className="flex gap-2">
           <Select value={holder} onValueChange={setHolder}>
             <SelectTrigger>
@@ -619,11 +616,11 @@ function SeatEditor({
             onClick={() =>
               run(
                 () => setSeatHolder({ data: { roleCode: role.code, userId: holder } }),
-                "Seat updated.",
+                "Role updated.",
               )
             }
           >
-            <UserCheck className="mr-1 size-3" /> Seat
+            <UserCheck className="mr-1 size-3" /> Assign
           </Button>
           <Button
             size="sm"
@@ -632,7 +629,7 @@ function SeatEditor({
             onClick={() =>
               run(
                 () => setSeatHolder({ data: { roleCode: role.code, userId: null } }),
-                "Seat cleared.",
+                "Role cleared.",
               )
             }
           >
@@ -640,8 +637,8 @@ function SeatEditor({
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
-          Only people with a Resolve account appear here. Invited staff are seated automatically
-          when they redeem their invitation — no second account is ever created.
+          Only people with a Resolve account appear here. Invited staff join this role when they
+          accept their invitation.
         </p>
       </div>
 
@@ -693,8 +690,8 @@ function SeatEditor({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="cover">Someone covers this seat</SelectItem>
-              <SelectItem value="off">Seat is off duty</SelectItem>
+              <SelectItem value="cover">Someone covers this role</SelectItem>
+              <SelectItem value="off">Role is off duty</SelectItem>
             </SelectContent>
           </Select>
           {ovKind === "cover" && (
@@ -763,8 +760,8 @@ function TriageCard({ windows, roles }: { windows: Triage[]; roles: Role[] }) {
       <CardHeader className="pb-3">
         <CardTitle className="text-base">Approved cross-team triage windows</CardTitle>
         <CardDescription>
-          Hours where Property Operations is off duty on purpose and a Guest Experience seat handles
-          triage. These are covered hours, not gaps — new Breezeway work routes to the named seat.
+          Hours where Property Operations is off duty on purpose and a Guest Experience coordinator
+          handles triage. These hours are covered, not gaps. New Breezeway work goes to that role.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-1 text-sm">
