@@ -17539,6 +17539,15 @@ export type Database = {
         Args: { _field_id: string }
         Returns: string
       }
+      reopen_notion_ticket: {
+        Args: {
+          _action_due_at: string
+          _reason: string
+          _response_due_at: string
+          _ticket_id: string
+        }
+        Returns: Json
+      }
       reopen_owner_request: { Args: { _id: string }; Returns: undefined }
       reorder_arha_opportunities: {
         Args: { _ids: string[]; _property_id: string }
