@@ -62,6 +62,8 @@ CREATE FUNCTION private.is_staff(_user_id uuid) RETURNS boolean LANGUAGE sql STA
 CREATE FUNCTION private.is_vendor_admin(_user_id uuid, _org uuid) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT false $$;
 CREATE FUNCTION private.is_vendor_member(_user_id uuid, _org uuid) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT false $$;
 ${readFileSync(`${DIR}/live-capture/can_manage_playbooks.sql`, "utf8")};
+-- Row type the playbook save function declares (its body runs only when called).
+CREATE TABLE public.playbooks(id uuid PRIMARY KEY DEFAULT gen_random_uuid());
 
 -- Live policies copied from the real tables (read on Nov 8).
 CREATE TABLE public.team_invites(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), role public.app_role, note text);
