@@ -17781,6 +17781,15 @@ export type Database = {
         Returns: Json
       }
       reopen_owner_request: { Args: { _id: string }; Returns: undefined }
+      reopen_ticket: {
+        Args: {
+          _action_due_at: string
+          _reason: string
+          _response_due_at: string
+          _ticket_id: string
+        }
+        Returns: Json
+      }
       reorder_arha_opportunities: {
         Args: { _ids: string[]; _property_id: string }
         Returns: undefined
