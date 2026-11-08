@@ -187,12 +187,14 @@ describe("overnight: nobody is alerted and the request waits for the morning", (
   });
 
   it("a failure in the morning check never stops the Director check", async () => {
+    const id = await overnightRequest(db, at("08", "23:00"));
     await db.exec("ALTER TABLE public.staff_notifications RENAME TO staff_notifications_x");
     try {
-      await overnightRequest(db, at("08", "23:00")).catch(() => null);
       await db.exec("TRUNCATE public.escalations_run");
-      await db.exec("SELECT public.escalate_direct_booking_approvals(); SELECT public.release_overnight_direct_bookings();");
+      await db.exec(`SELECT public.escalate_direct_booking_approvals(); SELECT public.release_overnight_direct_bookings('${at("09", "08:00")}');`);
       expect((await db.query("SELECT 1 FROM public.escalations_run")).rows.length).toBe(1);
+      // Nothing half done: the request is still waiting and will be alerted on the next run.
+      expect((await db.query<{ a: string | null }>("SELECT morning_alerted_at a FROM public.leads WHERE id = $1", [id])).rows[0]!.a).toBeNull();
     } finally {
       await db.exec("ALTER TABLE public.staff_notifications_x RENAME TO staff_notifications");
     }
