@@ -63,6 +63,18 @@ export const CLAIM_STAGE_LABELS: Record<ClaimStage, string> = {
   closed: "Closed",
 };
 
+/**
+ * The stage shown on screens. A claim imported from a Notion ticket that was in
+ * claim review reads "Claim review" while it is still at an early stage. This
+ * is a label over the existing stages, never a stage of its own.
+ */
+export function claimStageLabel(claim: { stage: ClaimStage; incident_description?: string | null }): string {
+  if ((claim.stage === "potential" || claim.stage === "gathering") && /^Notion status: Claim review$/m.test(claim.incident_description ?? "")) {
+    return "Claim review";
+  }
+  return CLAIM_STAGE_LABELS[claim.stage];
+}
+
 export const CLAIM_PIPELINE: ClaimStage[] = [
   "potential",
   "gathering",

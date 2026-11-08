@@ -32,6 +32,7 @@ import { stateChip } from "@/lib/semantic";
 import {
   CLAIM_PIPELINE,
   CLAIM_STAGE_LABELS,
+  claimStageLabel,
   CLAIM_TYPE_LABELS,
   DISPOSITION_LABELS,
   RECOVERY_SOURCE,
@@ -233,7 +234,7 @@ export function ClaimDrawer({
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Chip className={stateChip(stageState(claim.stage))}>
-            {CLAIM_STAGE_LABELS[claim.stage]}
+            {claimStageLabel(claim)}
           </Chip>
           <Chip>{CLAIM_TYPE_LABELS[claim.claim_type]}</Chip>
           <Chip>Recover from {RECOVERY_SOURCE[claim.claim_type]}</Chip>
