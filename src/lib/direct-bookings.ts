@@ -291,3 +291,37 @@ export function isMissingColumn(error: { code?: string; message?: string } | nul
   if (!error) return false;
   return error.code === "42703" || error.code === "PGRST204" || /column .* does not exist|Could not find the .* column/i.test(error.message ?? "");
 }
+
+/** A Direct Booking row as Home's Needs you now reads it. */
+export type HomeBookingRow = {
+  id: string;
+  partner_name: string | null;
+  company: string | null;
+  subject: string | null;
+  created_at: string;
+  reply_sent_at: string | null;
+  owned_by: string | null;
+  outcome: string | null;
+};
+
+/**
+ * Needs you now for Direct Bookings. Before anyone presses Start, a request
+ * shows for everyone it alerted (the alert list is decided once, in the
+ * database, by who is on shift). After Start it shows only for the owner,
+ * until the reply is sent or an outcome is saved.
+ */
+export function homeDirectBookings(rows: HomeBookingRow[], alertedIds: Iterable<string>, userId: string) {
+  const alerted = new Set(alertedIds);
+  const seen = new Set<string>();
+  return rows
+    .filter((r) => !r.reply_sent_at && !r.outcome)
+    .filter((r) => (r.owned_by ? r.owned_by === userId : alerted.has(r.id)))
+    .filter((r) => (seen.has(r.id) ? false : (seen.add(r.id), true)))
+    .sort((a, b) => a.created_at.localeCompare(b.created_at))
+    .map((r) => ({ ...r, waitingForStart: !r.owned_by }));
+}
+
+export const HOME_BOOKING_COPY = {
+  waitingForStart: "New request. Press Start to own it and reply within 3 minutes.",
+  started: "Direct booking you started. Reply within 3 minutes.",
+} as const;
