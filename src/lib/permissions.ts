@@ -115,6 +115,20 @@ export type Capability =
   // Active Owner enrollment, welcome Retry and uncertain-delivery Reconcile:
   // the Onboarding Director seat and Platform Owners only (never Supervisor alone).
   | "active_owner_enroll"
+  // Team & Coverage, read only (Schedule and shifts): every internal staff
+  // account. Changing the schedule stays with Operations leadership.
+  | "team_schedule_view"
+  // Add Operations users (Coordinator and Supervisor account types only): the
+  // Operations Supervisor and the Director of Operations. Admin manages everyone.
+  | "ops_user_invite"
+  // Work Orders, read only: the Director of Onboarding and Project Managers.
+  | "work_orders_view"
+  // Finance page, read only: the Director of Onboarding.
+  | "finance_view"
+  // Optional Opportunity Library and Participation insight, opening the pages:
+  // leadership and the Director of Onboarding. Library editing stays on
+  // owner_program_admin.
+  | "owner_insight_view"
   | "view_as";
 
 // Creating a ticket is internal-staff work. Vendors and homeowners never get it.
@@ -130,6 +144,8 @@ const STAFF_BASE: Capability[] = [
   // Frontline coordinators need operational read access to Property Hub.
   // Administrative property actions stay permission-controlled inside the page.
   "properties",
+  // Team & Coverage Schedule, read only. Editing is checked separately.
+  "team_schedule_view",
 ];
 
 const SUPERVISOR_CAPS: Capability[] = [
@@ -162,6 +178,7 @@ const SUPERVISOR_CAPS: Capability[] = [
   "work_orders_internal",
   "cleaner_hours",
   "cleaner_dispatch_check",
+  "owner_insight_view",
 ];
 
 export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
