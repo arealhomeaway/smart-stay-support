@@ -19,11 +19,28 @@ export function RequireCapability({
   title?: string;
   children: ReactNode;
 }) {
+  return (
+    <RequireAnyCapability capabilities={[capability]} title={title}>
+      {children}
+    </RequireAnyCapability>
+  );
+}
+
+/** Same as RequireCapability, opened by any one of the listed capabilities. */
+export function RequireAnyCapability({
+  capabilities,
+  title = "You do not have access to this area",
+  children,
+}: {
+  capabilities: Capability[];
+  title?: string;
+  children: ReactNode;
+}) {
   const { can, isLoading, landing } = useRole();
 
   if (isLoading) return <Skeleton className="h-96 w-full" />;
 
-  if (!can(capability)) {
+  if (!capabilities.some((c) => can(c))) {
     return (
       <div className="mx-auto max-w-md space-y-4 rounded-lg border border-border p-8 text-center">
         <ShieldAlert className="mx-auto size-8 text-muted-foreground" />
