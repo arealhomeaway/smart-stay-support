@@ -60,8 +60,8 @@ export const DEPARTMENTS: Department[] = [
       { label: "Programs", to: "/owner-programs", capability: "owner_programs" },
       { label: "Program oversight", to: "/owner-oversight", capability: "owner_oversight" },
       { label: "Homeowners", to: "/homeowners", capability: "homeowner_directory" },
-      { label: "Participation insight", to: "/owner-analytics", capability: "owner_program_admin" },
-      { label: "Optional Opportunity Library", to: "/owner-library", capability: "owner_program_admin" },
+      { label: "Participation insight", to: "/owner-analytics", capability: "owner_insight_view" },
+      { label: "Optional Opportunity Library", to: "/owner-library", capability: "owner_insight_view" },
       { label: "After handoff plan", to: "/owner-handoff-plan", capability: "owner_programs" },
       { label: "Active Owner follow-up", to: "/active-owner-followup", capability: "owner_programs" },
       { label: "Card library", to: "/owner-card-library", capability: "owner_card_library" },
@@ -126,7 +126,7 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
     key: "playbooks",
     match: (p) => p === "/playbooks" || p === "/ticket-checklists",
     tabs: [
-      { label: "Playbooks", to: "/playbooks", capability: "playbooks_edit" },
+      { label: "Playbooks", to: "/playbooks", capability: "playbooks_view" },
       { label: "Ticket checklists", to: "/ticket-checklists", capability: "playbooks_edit" },
     ],
   },
@@ -325,8 +325,8 @@ const OPERATIONS_MENU: MenuGroup[] = [
   {
     label: "Team",
     items: [
-      { key: "team", label: "Team & Coverage", to: "/team", capability: "user_management" },
-      { key: "playbooks", label: "Playbooks", to: "/playbooks", capability: "playbooks_edit", alsoActive: ["/ticket-checklists"] },
+      { key: "team", label: "Team & Coverage", to: "/team", capability: "team_schedule_view" },
+      { key: "playbooks", label: "Playbooks", to: "/playbooks", capability: "playbooks_view", alsoActive: ["/ticket-checklists"] },
     ],
   },
   {
@@ -393,6 +393,34 @@ export function onboardingOnlyMenu(access: NavAccess): MenuGroup[] {
       label: "Active Owner",
       items: [{ key: "owner-programs", label: "Active Owner", to: "/owner-programs" }],
     });
+  // Shared pages Onboarding may open (decided Nov 8): each follows its own
+  // permission rule and switch, exactly as in the Operations menu.
+  const allowed = (i: MenuItem) =>
+    access.canOpen(i.to) && (!i.capability || access.can(i.capability)) && flagOn(access, i.flag);
+  const shared: MenuGroup[] = [
+    {
+      label: "Team",
+      items: [
+        { key: "team", label: "Team & Coverage", to: "/team", capability: "team_schedule_view" },
+        { key: "playbooks", label: "Playbooks", to: "/playbooks", capability: "playbooks_view" },
+      ],
+    },
+    {
+      label: "Vendors",
+      items: [
+        { key: "vendors", label: "Vendors", to: "/vendors", capability: "vendor_directory" },
+        { key: "work-orders", label: "Work Orders", to: "/work-orders", capability: "work_orders_view", flag: "work_orders_page" },
+      ],
+    },
+    {
+      label: "Insight",
+      items: [{ key: "finance", label: "Finance", to: "/finance", capability: "finance_view" }],
+    },
+  ];
+  for (const g of shared) {
+    const items = g.items.filter(allowed);
+    if (items.length) groups.push({ label: g.label, items });
+  }
   return groups;
 }
 
