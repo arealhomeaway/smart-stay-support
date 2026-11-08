@@ -207,3 +207,9 @@
 - [x] Checkout and Cleaning review retired from the panel and Routine Work lists (data kept)
 - [x] Save records who, when, home and answers; found issue opens a linked ticket (after SQL)
 - [ ] Apply docs/pending/record-routine/01, 02, 03 (waits on Emily's approval)
+
+## Nov 8 Left menu cleanup (build only)
+- [x] New groups: My day, Team, Homes and owners, Insight, Admin
+- [x] My Work, Work Orders (switch), Work Map (switch), Program Oversight, Homeowners, old booking pages off the menu; pages kept
+- [x] Vendors in My day; Reports renamed Analytics
+- [ ] Apply docs/pending/menu-cleanup/01_menu_switches.sql (waits on Emily's approval)
