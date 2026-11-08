@@ -49,11 +49,11 @@ describe("the backup reads every table, with secrets left out", () => {
     expect(Object.keys(by).sort()).toEqual(
       ["app_user_connections", "composite", "full_backups", "integration_tokens", "no_key", "profiles", "property_credentials", "user_roles"],
     );
-    expect(Number(by.property_credentials!.row_count)).toBe(2500);
-    expect(by.property_credentials!.withheld_columns).toEqual(["secret_ciphertext", "secret_nonce"]);
-    expect(by.integration_tokens!.withheld_columns).toEqual(["access_token_enc", "refresh_token_enc"]);
-    expect(by.app_user_connections!.withheld_columns).toEqual(["connection_key_ciphertext"]);
-    expect(by.no_key!.withheld_columns).toEqual([]);
+    expect(Number(by["property_credentials"]!.row_count)).toBe(2500);
+    expect(by["property_credentials"]!.withheld_columns).toEqual(["secret_ciphertext", "secret_nonce"]);
+    expect(by["integration_tokens"]!.withheld_columns).toEqual(["access_token_enc", "refresh_token_enc"]);
+    expect(by["app_user_connections"]!.withheld_columns).toEqual(["connection_key_ciphertext"]);
+    expect(by["no_key"]!.withheld_columns).toEqual([]);
   });
 
   it("never returns a secret value, and keeps every other column", async () => {
@@ -151,7 +151,11 @@ describe("Back up everything is Admin only", () => {
   it("every server step checks Admin before anything else", () => {
     const handlers = fns.split(".handler(async").slice(1);
     expect(handlers.length).toBe(3);
-    for (const h of handlers) expect(h.indexOf("await requireAdmin(")).toBeLessThan(h.indexOf("supabaseAdmin") === -1 ? Infinity : h.indexOf("supabaseAdmin"));
+    for (const h of handlers) {
+      const check = h.indexOf("await requireAdmin(");
+      const admin = h.indexOf("supabaseAdmin");
+      expect(check >= 0 && (admin === -1 || check < admin)).toBe(true);
+    }
     expect(fns).toContain('_role: "admin"');
   });
   it("the panel shows only for Admins, on the Admin tools page", () => {

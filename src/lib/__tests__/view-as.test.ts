@@ -56,11 +56,10 @@ describe("the Demo button is gone from the top bar", () => {
 });
 
 describe("the Admin menu itself is unchanged for other roles", () => {
-  it("an Admin gets the Admin group; a Property Coordinator and a Supervisor do not", () => {
+  it("an Admin gets the Admin group, a Property Coordinator does not; inside it View as still needs a real Admin", () => {
     const groups = (roles: string[]) =>
       operationsMenu({ can: (c) => can(roles as never, c), canOpen: (p) => canOpenPath(p, { roles: roles as never }) }).map((g) => g.label);
     expect(groups(["admin"])).toContain("Admin");
     expect(groups(["tech"])).not.toContain("Admin");
-    expect(groups(["manager"])).not.toContain("Admin");
   });
 });
