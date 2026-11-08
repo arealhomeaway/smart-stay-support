@@ -78,6 +78,7 @@ import {
   departmentFor,
   onboardingOnlyMenu,
   operationsMenu,
+  topBarWorkActions,
   type MenuGroup,
 } from "@/lib/shell-nav";
 
@@ -247,15 +248,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Reporting a property issue is an Operations workflow. Problems with
   // Resolve itself go through the global ? Help & Feedback control, so this
   // never appears outside Operations surfaces (Onboarding, Active Owner admin).
-  const operationsSurface =
-    !departmentFor(pathname) && canOpen(pathname) && canOpen("/tickets/new");
-  const showLogTicket =
-    !vendorMode &&
-    !ownerMode &&
-    !readOnly &&
-    operationsSurface &&
-    can("ticket_create") &&
-    pathname !== "/tickets/new";
+  // "Record routine work" sits right beside it under the same rule.
+  const { recordWork: showLogTicket, recordRoutine: showRecordRoutine } = topBarWorkActions(
+    pathname,
+    { can, canOpen, vendorMode, ownerMode, readOnly },
+  );
   const quietLogTicket = [
     "/leads",
     "/onboarding",
@@ -399,28 +396,36 @@ export function AppShell({ children }: { children: ReactNode }) {
 
               <div className="ml-auto flex flex-1 flex-wrap items-center justify-end gap-2">
                 <GlobalSearch targets={searchTargets} />
-                {pathname === "/dashboard" && !vendorMode && !ownerMode && can("routines") && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="min-h-11 md:min-h-9"
-                    onClick={() => openRecordRoutine()}
-                  >
-                    <ClipboardCheck className="size-4" aria-hidden="true" /> Record routine work
-                  </Button>
-                )}
-                {showLogTicket && (
-                  <Button
-                    asChild
-                    data-tour="log"
-                    size="sm"
-                    variant={quietLogTicket ? "outline" : "default"}
-                    className="min-h-11 md:min-h-9"
-                  >
-                    <Link to="/tickets/new" search={ticketContext}>
-                      <Plus className="size-4" aria-hidden="true" /> Record work
-                    </Link>
-                  </Button>
+                {(showLogTicket || showRecordRoutine) && (
+                  <div className="flex items-center gap-2" data-testid="top-bar-work-actions">
+                    {showLogTicket && (
+                      <Button
+                        asChild
+                        data-tour="log"
+                        size="sm"
+                        variant={quietLogTicket ? "outline" : "default"}
+                        className="min-h-11 md:min-h-9"
+                      >
+                        <Link to="/tickets/new" search={ticketContext}>
+                          <Plus className="size-4" aria-hidden="true" /> Record work
+                        </Link>
+                      </Button>
+                    )}
+                    {showRecordRoutine && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={quietLogTicket ? "outline" : "default"}
+                        className="min-h-11 md:min-h-9"
+                        aria-label="Record routine work"
+                        onClick={() => openRecordRoutine()}
+                      >
+                        <ClipboardCheck className="size-4" aria-hidden="true" />
+                        <span className="sm:hidden">Routine work</span>
+                        <span className="hidden sm:inline">Record routine work</span>
+                      </Button>
+                    )}
+                  </div>
                 )}
                 {!vendorMode && !ownerMode && can("oversight") && (
                   <IconAction to="/oversight" label="Alerts and escalations">
@@ -480,7 +485,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   )}
                   <TicketDrawerHost>
                     {children}
-                    {!ownerMode && !vendorMode && can("routines") && <RecordRoutineHost />}
+                    {(showRecordRoutine || (!ownerMode && !vendorMode && can("routines"))) && <RecordRoutineHost />}
                   </TicketDrawerHost>
                 </>
               )}
