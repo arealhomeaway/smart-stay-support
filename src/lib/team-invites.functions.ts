@@ -4,17 +4,18 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const roleSchema = z.enum(["admin", "manager", "onboarding", "tech", "vendor", "owner"]);
 
-/** Admin: every invite code issued for staff and vendors. */
+/** Admin: every invite code. Operations leadership: Coordinator and Supervisor codes. */
 export const listTeamInvites = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { assertAdmin } = await import("./access.server");
+    const { inviteScope } = await import("./access.server");
     const { loadTeamInvites } = await import("./team-invites.server");
-    await assertAdmin(context.supabase, context.userId);
-    return { invites: await loadTeamInvites(context.supabase) };
+    const scope = await inviteScope(context.supabase, context.userId);
+    if (scope === "none") throw new Error("Only an admin can change team access.");
+    return { invites: await loadTeamInvites(context.supabase, scope) };
   });
 
-/** Admin: issue a single-use code that grants one role when redeemed. */
+/** Admin (any account type) or Operations leadership (Coordinator and Supervisor): issue a single-use code. */
 export const createTeamInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
