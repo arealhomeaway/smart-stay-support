@@ -1623,9 +1623,9 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                   kind: activityKindFor(a.kind, a.event_type, a.body),
                   label: (
                     <>
-                      {humanizeHistoryText(a.body)}{" "}
+                      {humanizeHistoryText(cleanNotionText(a.body))}{" "}
                       <span className="text-muted-foreground">
-                        — {a.author?.full_name ?? a.author?.email ?? "Team member"}
+                        — {activityAuthorLabel(a as { external_author_name?: string | null; author?: { full_name?: string | null; email?: string | null } | null })}
                       </span>
                     </>
                   ),
