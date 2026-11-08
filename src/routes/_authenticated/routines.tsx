@@ -61,7 +61,6 @@ export const Route = createFileRoute("/_authenticated/routines")({
 });
 
 function RoutinesPage() {
-  const qc = useQueryClient();
   const { demoMode } = useDemo();
   const seat = useSeat();
   const flags = useFeatureFlags();

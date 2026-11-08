@@ -105,6 +105,10 @@ export const CHECKS: Record<LiveCheck, CheckDef> = {
   },
 };
 
+export function isLiveCheck(kind: string): kind is LiveCheck {
+  return kind === "guest_touch_base" || kind === "maintenance_review" || kind === "guest_review" || kind === "survey_review";
+}
+
 const ORDER: LiveCheck[] = ["guest_touch_base", "guest_review", "survey_review", "maintenance_review"];
 
 export type PanelCheck = { kind: LiveCheck; mine: boolean };

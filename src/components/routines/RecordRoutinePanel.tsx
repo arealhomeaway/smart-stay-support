@@ -61,20 +61,25 @@ import {
 
 export const RECORD_ROUTINE_EVENT = "resolve:record-routine";
 
-/** Opens the panel from anywhere inside the app frame. */
-export function openRecordRoutine() {
-  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent(RECORD_ROUTINE_EVENT));
+/** Opens the panel from anywhere inside the app frame, optionally at one check. */
+export function openRecordRoutine(detail?: { kind?: LiveCheck }) {
+  if (typeof window !== "undefined")
+    window.dispatchEvent(new CustomEvent(RECORD_ROUTINE_EVENT, { detail: detail ?? {} }));
 }
 
 /** Mounted once by the app frame. */
 export function RecordRoutineHost() {
   const [open, setOpen] = useState(false);
+  const [startAt, setStartAt] = useState<LiveCheck | null>(null);
   useEffect(() => {
-    const on = () => setOpen(true);
+    const on = (e: Event) => {
+      setStartAt((e as CustomEvent<{ kind?: LiveCheck }>).detail?.kind ?? null);
+      setOpen(true);
+    };
     window.addEventListener(RECORD_ROUTINE_EVENT, on);
     return () => window.removeEventListener(RECORD_ROUTINE_EVENT, on);
   }, []);
-  return <RecordRoutinePanel open={open} onOpenChange={setOpen} />;
+  return <RecordRoutinePanel open={open} onOpenChange={setOpen} startAt={startAt} />;
 }
 
 const PROP_FIELDS = "name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id";
@@ -109,11 +114,19 @@ type View =
   | { name: "byhand" }
   | { name: "saved"; ticketId: string | null; kind: LiveCheck };
 
-export function RecordRoutinePanel({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+export function RecordRoutinePanel({
+  open,
+  onOpenChange,
+  startAt = null,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  startAt?: LiveCheck | null;
+}) {
   const [view, setView] = useState<View>({ name: "list" });
   useEffect(() => {
-    if (open) setView({ name: "list" });
-  }, [open]);
+    if (open) setView(startAt ? { name: "check", kind: startAt } : { name: "list" });
+  }, [open, startAt]);
   const data = usePanelData(open);
   const role = useRole();
   const { homeTeamOf } = useHomeTeams();
