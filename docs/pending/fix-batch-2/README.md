@@ -1,4 +1,6 @@
-# Fix batch 2: access blockers (staged, NOT applied)
+# Fix batch 2: access blockers
+
+APPLIED Nov 8, 2026 with Emily's written approval. See the note at the end.
 
 Approved by Emily (Nov 8, 2026). Nothing in this folder has been run against the live
 database. Apply only with explicit approval, in the order below, with the migration tool,
@@ -55,3 +57,20 @@ invite codes (2, the list shows empty), Director of Onboarding template saves (3
 template was not saved"), vendor saves by the Director of Onboarding, Project Manager and
 Utilities (4, the existing Supervisor rule is used until `can_edit_vendors` exists), and Admin
 Direct Bookings settings saves (5).
+
+## Screen change made with the apply (Nov 8, 2026)
+
+Emily's answer: the Director of Onboarding, Project Managers and Utilities do not see the
+Database tab, Needs Review or the screening panel on the Vendors page (hidden, not shown and
+refused). They keep the vendor list, profiles and the edits in part 4. Rule in
+`src/lib/vendor-page-views.ts`, test `src/lib/__tests__/vendor-page-views.test.ts`.
+
+## Applied
+
+- Nov 8, 2026: `sha256.txt` checked first (all files OK). APPLIED byte-for-byte as
+  migrations 0284 (`01_playbook_supervisor_save.sql`), 0285 (`02_operations_invites.sql`),
+  0286 (`03_email_templates_onboarding_director.sql`), 0287 (`04_vendor_editors.sql`) and
+  0288 (`05_direct_booking_settings_admin.sql`). Each migration file matches its staged file
+  exactly. The two replaced functions differ from `live-capture/` only in the staged
+  permission line and its message.
+  Undo order if ever needed: 05, 04, 03, 02, 01.
