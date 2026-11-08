@@ -358,10 +358,10 @@ function FilterPopover({
               ariaLabel="Filter by priority"
               value={priority}
               onChange={setPriority}
-              options={["all", ...PRIORITIES.map((p) => p.value)].map((p) => ({
-                value: p,
-                label: p === "all" ? "All" : p.toUpperCase(),
-              }))}
+              options={[
+                { value: "all", label: "All" },
+                ...PRIORITIES.map((p) => ({ value: p.value as string, label: p.name as string })),
+              ]}
             />
           </div>
           <div>

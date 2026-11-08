@@ -40,10 +40,17 @@ export const RECORD_TYPES = [
   },
 ] as const;
 
+/**
+ * Urgency names, one place for every screen, alert, email and filter:
+ * Right now (P1), Today (P2), Routine (P3). The codes p1, p2, p3 stay internal.
+ */
+export const URGENCY_NAMES = { p1: "Right now", p2: "Today", p3: "Routine" } as const;
+
 export const PRIORITIES = [
   {
     value: "p1",
-    label: "P1 — Critical (immediate action)",
+    name: URGENCY_NAMES.p1,
+    label: `${URGENCY_NAMES.p1} (P1)`,
     short: "P1",
     responseMinutes: 3,
     actionMinutes: 5,
@@ -52,7 +59,8 @@ export const PRIORITIES = [
   },
   {
     value: "p2",
-    label: "P2 — Time-sensitive",
+    name: URGENCY_NAMES.p2,
+    label: `${URGENCY_NAMES.p2} (P2)`,
     short: "P2",
     responseMinutes: 30,
     actionMinutes: 60,
@@ -61,12 +69,13 @@ export const PRIORITIES = [
   },
   {
     value: "p3",
-    label: "P3 — Standard (planned work)",
+    name: URGENCY_NAMES.p3,
+    label: `${URGENCY_NAMES.p3} (P3)`,
     short: "P3",
     responseMinutes: 120,
     actionMinutes: 480,
     summary:
-      "Routine, preventive, reporting or planned work. Complete in queue order after P1 and time-sensitive P2 work.",
+      "Routine, preventive, reporting or planned work. Complete in queue order after Right now and Today work.",
   },
 ] as const;
 
@@ -213,7 +222,7 @@ export const HANDOFF_TYPES = [
   {
     value: "lunch_coverage",
     label: "Lunch coverage",
-    hint: "New P1 or time-sensitive P2 while you step away.",
+    hint: "New Right now or Today work while you step away.",
   },
   {
     value: "supervisor_intervention",

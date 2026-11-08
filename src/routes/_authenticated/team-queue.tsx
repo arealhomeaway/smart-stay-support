@@ -575,7 +575,7 @@ function TeamQueuePage() {
                 onChange={(v) => setParam({ priority: v === "all" ? undefined : v })}
                 options={[
                   { value: "all", label: "Any priority" },
-                  ...PRIORITIES.map((p) => ({ value: p.value, label: p.value.toUpperCase() })),
+                  ...PRIORITIES.map((p) => ({ value: p.value, label: p.name })),
                 ]}
               />
               <FilterSelect
