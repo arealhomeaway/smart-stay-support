@@ -2115,6 +2115,13 @@
       "when": 1794178747201,
       "tag": "0301_alerts_03_approval_links",
       "breakpoints": true
+    },
+    {
+      "idx": 302,
+      "version": "7",
+      "when": 1794178798562,
+      "tag": "0302_alerts_04_claim_approval",
+      "breakpoints": true
     }
   ]
 }

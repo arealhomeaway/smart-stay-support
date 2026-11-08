@@ -1929,6 +1929,14 @@ export type Database = {
       claims: {
         Row: {
           actual_cost: number | null
+          approval_amount: number | null
+          approval_authority: string | null
+          approval_decided_at: string | null
+          approval_decided_by: string | null
+          approval_reason: string | null
+          approval_requested_at: string | null
+          approval_requested_by: string | null
+          approval_status: string | null
           approved_amount: number | null
           assigned_to: string | null
           booking_source: string | null
@@ -1992,6 +2000,14 @@ export type Database = {
         }
         Insert: {
           actual_cost?: number | null
+          approval_amount?: number | null
+          approval_authority?: string | null
+          approval_decided_at?: string | null
+          approval_decided_by?: string | null
+          approval_reason?: string | null
+          approval_requested_at?: string | null
+          approval_requested_by?: string | null
+          approval_status?: string | null
           approved_amount?: number | null
           assigned_to?: string | null
           booking_source?: string | null
@@ -2055,6 +2071,14 @@ export type Database = {
         }
         Update: {
           actual_cost?: number | null
+          approval_amount?: number | null
+          approval_authority?: string | null
+          approval_decided_at?: string | null
+          approval_decided_by?: string | null
+          approval_reason?: string | null
+          approval_requested_at?: string | null
+          approval_requested_by?: string | null
+          approval_status?: string | null
           approved_amount?: number | null
           assigned_to?: string | null
           booking_source?: string | null
@@ -17129,6 +17153,10 @@ export type Database = {
         Returns: string
       }
       create_owner_program: { Args: { _property_id: string }; Returns: Json }
+      decide_claim_approval: {
+        Args: { _claim_id: string; _decision: string; _reason: string }
+        Returns: undefined
+      }
       decide_claim_waiver: {
         Args: { _approve: boolean; _notes: string; _waiver_id: string }
         Returns: undefined
@@ -18024,6 +18052,10 @@ export type Database = {
       report_wording_save: {
         Args: { _note?: string; _sentences: Json }
         Returns: number
+      }
+      request_claim_approval: {
+        Args: { _amount: number; _claim_id: string }
+        Returns: string
       }
       request_claim_waiver: {
         Args: { _claim_id: string; _context?: string; _reason: string }
