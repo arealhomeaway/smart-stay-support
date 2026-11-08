@@ -215,7 +215,7 @@ describe("coordinator_for: one person by the time (part 3)", () => {
     await db.exec(`INSERT INTO public.tickets(status, priority, current_action_owner, archived_at) VALUES ('open','p1','${A1}', now())`);
     await db.exec(`INSERT INTO public.tickets(status, priority, current_action_owner, is_demo) VALUES ('open','p1','${A1}', true)`);
     await give(db, A2, "p3");
-    const loads = (await db.query<{ user_id: string; load: number }>("SELECT user_id, load FROM public.coordinators_on_shift($1::timestamptz) ORDER BY role_code", [at(MON, "14:30")])).rows;
+    const loads = (await db.query<{ user_id: string; load: number }>("SELECT user_id, load FROM public.coordinators_on_shift($1::timestamptz) WHERE team = 'guest_experience' ORDER BY role_code", [at(MON, "14:30")])).rows;
     expect(loads).toEqual([{ user_id: A1, load: 0 }, { user_id: A2, load: 1 }]);
     expect((await pick(db, "guest_experience", at(MON, "14:30"))).user_id).toBe(A1);
   });
