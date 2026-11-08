@@ -79,6 +79,6 @@ describe("Team Queue: overnight requests wait at the top as Right now for Team A
     const page = readFileSync("src/routes/_authenticated/team-queue.tsx", "utf8");
     const group = page.indexOf('{can("direct_bookings_work") && <OvernightDirectBookings demoMode={demoMode} />}');
     expect(group).toBeGreaterThan(-1);
-    expect(group).toBeLessThan(page.indexOf("<NotionImportedGroup"));
+    expect(group < page.indexOf("<NotionImportedGroup")).toBe(true);
   });
 });
