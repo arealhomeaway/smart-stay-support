@@ -65,7 +65,7 @@ const RULES: Rule[] = [
   { prefix: "/ops-analytics", capability: "analytics" },
   // Work order oversight stays Operations only; the Work Orders pages also open read only
   // for the Director of Onboarding and Project Managers.
-  { prefix: "/work-orders/manager", portal: "operations", capability: "claims_oversight" },
+  { prefix: "/work-orders/manager", portal: "operations" },
   { prefix: "/work-orders", capability: ["work_orders_internal", "work_orders_view"] },
   { prefix: "/imported-tickets", capability: "audit_history" },
   { prefix: "/cleaner-hours", capability: "cleaner_hours" },
