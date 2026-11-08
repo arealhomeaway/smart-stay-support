@@ -713,7 +713,34 @@ export type HomeBookingRow = {
   last_follow_up_at?: string | null;
   follow_up_due_at?: string | null;
   partner_approved_at?: string | null;
+  overnight_until?: string | null;
+  /** The Overnight reply clock starts at setting, sent with the rows. */
+  overnight_clock_start?: string | null;
 };
+
+/** The Home line for a Direct Booking row (register D3: overnight rows before the clock starts). */
+export function homeBookingLine(
+  r: Pick<HomeBookingRow, "created_at" | "reply_sent_at" | "overnight_until" | "overnight_clock_start"> & { followUp: boolean; waitingForStart: boolean },
+  at: Date = new Date(),
+) {
+  if (r.followUp) return HOME_BOOKING_COPY.followUp;
+  const start = r.overnight_clock_start ?? OVERNIGHT_CLOCK_START;
+  if (beforeOvernightClock(r, at, start)) {
+    const time = clockTimeLabel(start);
+    return r.waitingForStart ? HOME_BOOKING_COPY.overnightWaiting(time) : HOME_BOOKING_COPY.overnightStarted(time);
+  }
+  return r.waitingForStart ? HOME_BOOKING_COPY.waitingForStart : HOME_BOOKING_COPY.started;
+}
+
+/**
+ * Overnight requests count in the number on Home's Team Queue link (register D2, Emily
+ * Nov 8): they wait in the Team Queue for Team A, so they count for Team A people and for
+ * people with no team, never in ticket totals.
+ */
+export function overnightUnclaimedCount<T extends OvernightQueueRow>(rows: T[], myTeam: string | null) {
+  if (myTeam && myTeam !== "guest_experience") return 0;
+  return overnightQueueRows(rows).length;
+}
 
 /**
  * Needs you now for Direct Bookings. Before anyone presses Start, a request
@@ -786,5 +813,8 @@ export function overnightQueueRows<T extends OvernightQueueRow>(rows: T[]): T[] 
 export const HOME_BOOKING_COPY = {
   waitingForStart: "New request. Press Start to own it and reply within 3 minutes.",
   started: "Direct booking you started. Reply within 3 minutes.",
+  /** Overnight requests before their reply clock starts (register D3). */
+  overnightWaiting: (time: string) => `New request. Press Start to own it. Reply clock starts at ${time}.`,
+  overnightStarted: (time: string) => `Direct booking you started. Reply clock starts at ${time}.`,
   followUp: "Follow-up due. Check in with the partner in the same email thread.",
 } as const;

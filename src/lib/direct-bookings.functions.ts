@@ -734,6 +734,7 @@ export const saveDirectBookingSettings = createServerFn({ method: "POST" })
       approvalEnd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       requireApprovalAfterEnd: z.boolean(),
       nightlyRates: z.record(z.string(), z.number().positive().max(2000)),
+      overnightClockStart: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Choose a time.").optional(),
     }).refine((v) => v.approvalEnd >= v.approvalStart, "The end date must be after the start date.").parse(input),
   )
   .handler(async ({ context, data }) => {
@@ -752,6 +753,7 @@ export const myDirectBookings = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const base = "id, partner_name, company, subject, created_at, reply_sent_at, outcome, owned_by, last_follow_up_at";
     const withDue = `${base}, follow_up_due_at, partner_approved_at`;
+    const withNight = `${withDue}, overnight_until`;
     const owned = (cols: string) =>
       context.supabase
         .from("leads")
@@ -762,8 +764,12 @@ export const myDirectBookings = createServerFn({ method: "POST" })
         .is("outcome" as never, null)
         .order("created_at", { ascending: true })
         .limit(50);
-    let cols = withDue;
+    let cols = withNight;
     let { data: rows, error } = await owned(cols);
+    if (error && isMissingColumn(error)) {
+      cols = withDue;
+      ({ data: rows, error } = await owned(cols));
+    }
     if (error && isMissingColumn(error)) {
       cols = base;
       ({ data: rows, error } = await owned(cols));
@@ -806,5 +812,7 @@ export const myDirectBookings = createServerFn({ method: "POST" })
       waiting = [...waiting, ...((open ?? []) as unknown as HomeBookingRow[])];
     }
     const visibleIds = homeStartIds(alertedIds, eligibleNow, waiting.map((w) => w.id));
-    return homeDirectBookings([...((rows ?? []) as unknown as HomeBookingRow[]), ...waiting], visibleIds, context.userId);
+    const overnightStart = (await loadSettings(context.supabase)).overnightClockStart;
+    return homeDirectBookings([...((rows ?? []) as unknown as HomeBookingRow[]), ...waiting], visibleIds, context.userId)
+      .map((r) => ({ ...r, overnight_clock_start: overnightStart }));
   });
