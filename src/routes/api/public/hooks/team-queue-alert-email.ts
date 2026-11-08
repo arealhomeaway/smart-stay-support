@@ -1,14 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
 
 /**
- * Every-minute email run for the Team Queue alerts only (Emily, Nov 8, 2026): the Supervisor
- * alert at 10 minutes and the Director alert at 15 are emailed within a minute instead of on
- * the 5-minute pass. The in-app alert is already written by the database minute check.
+ * Instant email copy of one Team Queue alert (Emily, Nov 8, 2026): the Supervisor alert at 10
+ * minutes and the Director alert at 15 are emailed the moment the database writes them, not on
+ * the 5-minute pass. Called by the database trigger staff_notifications_team_queue_email_now
+ * with the alert's id; the in-app alert is already saved.
  *
- * Same sender, same safety checks (demo rows never emailed, staff-only recipients, personal
- * settings, retries) as every other staff email. The 5-minute pass skips these two kinds, so
- * each is emailed by exactly one run. It does not open an email job run, so it can never hold
- * up or be held up by the 5-minute pass.
+ * Same sender and safety checks as every other staff email (demo never emailed, staff-only
+ * recipients, personal settings). Only these two alert kinds can be sent from here. It opens
+ * no email job run, so it never holds up the 5-minute pass. A failed send stays waiting and the
+ * 5-minute pass sends it after 10 minutes.
  * The caller must present the database-held scheduler token (x-cron-secret).
  */
 export const Route = createFileRoute("/api/public/hooks/team-queue-alert-email")({
@@ -24,15 +26,16 @@ export const Route = createFileRoute("/api/public/hooks/team-queue-alert-email")
         if (verified.error || verified.data !== true)
           return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
+        const parsed = z.object({ id: z.string().uuid() }).safeParse(await request.json().catch(() => null));
+        if (!parsed.success) return Response.json({ ok: false, error: "Invalid request" }, { status: 400 });
+
         const { drainStaffNotifications } = await import("@/lib/staff-notify.server");
         try {
-          const result = await drainStaffNotifications(supabaseAdmin, 20, undefined, undefined, "fast");
-          return Response.json(result, { status: 200 });
+          const result = await drainStaffNotifications(supabaseAdmin, 1, undefined, undefined, parsed.data.id);
+          return Response.json({ ok: true, emailed: result.emailed });
         } catch (err) {
-          return Response.json(
-            { ok: false, error: err instanceof Error ? err.message : "Delivery failed" },
-            { status: 500 },
-          );
+          console.error("Team Queue alert email failed:", err);
+          return Response.json({ ok: false, error: "Delivery failed" }, { status: 500 });
         }
       },
     },
