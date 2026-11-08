@@ -1,6 +1,7 @@
 # Scorecard capture and archive instead of delete: pending database change
 
-NOT APPLIED. Staged Nov 8, 2026. Apply only with Emily's written approval, byte for byte,
+APPLIED Nov 8, 2026 with Emily's written approval. See the note at the end.
+Staged Nov 8, 2026. Apply only with Emily's written approval, byte for byte,
 in this order, after checking `sha256.txt`. The migration tool runs each file in one
 transaction, so none has BEGIN/COMMIT lines. Capture only: nothing here scores or counts.
 

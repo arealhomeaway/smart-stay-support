@@ -1,6 +1,7 @@
 # Notion import runner: pending database change
 
-NOT APPLIED. Staged Nov 8, 2026. Apply only with Emily's written approval, byte for byte,
+APPLIED Nov 8, 2026 with Emily's written approval. See the note at the end.
+Staged Nov 8, 2026. Apply only with Emily's written approval, byte for byte,
 after checking `sha256.txt`.
 
 The runner works without this file: it already skips tickets that were reopened or taken,
