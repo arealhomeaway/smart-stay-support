@@ -71,3 +71,27 @@ live schedule) and `src/lib/__tests__/direct-bookings-overnight.test.ts` (clock,
   - Sunday 9 AM: not held, alerts the Operations Supervisor and the Director of Operations (as before).
   - Afterwards: leads 1, Direct Booking requests 0, staff alerts 584, tickets 42, settings 11,
     after hours window 10 PM to 8 AM. Same as before.
+
+## Change: the overnight reply clock starts at 9:00 AM (Emily, Nov 8, 2026)
+
+Replaces the earlier default (clock from 8:00 AM, or from an earlier Start). Register D3 and K2.
+
+- The clock is timed only in the app (no database rule times replies), so the only database
+  step is data: `02_overnight_clock_setting.sql` adds `overnightClockStart: "09:00"` to the
+  existing `direct_booking_settings` value, keeping every other key, with one history line.
+  APPLIED Nov 8, 2026 through the database query tool (data, not a migration). Undo:
+  `02_undo_overnight_clock_setting.sql` (removes the key; the app default is also 9:00 AM).
+- The app reads the setting on the Direct Bookings list (chips and tiles), the request page
+  (chip and time taken) and the Team Queue overnight group.
+- Until the clock starts: the real arrival time and "Reply clock starts at 9:00 AM.", no red,
+  no late count. A Start before 9:00 AM does not move the clock earlier. If the setting is ever
+  earlier than the end of the overnight window, the clock starts when the window ends.
+- Not changed: the 8:00 AM morning alert, who it goes to, the Team Queue group, daytime clocks.
+- Out of date wording left as is (changing it needs a database change): migration 0295's
+  header and the comment on `leads.overnight_until` still say the clock starts there.
+- Cancelled live check (nothing kept): an 11 PM Sunday request saved overnight_until 8:00 AM
+  Monday and 0 alerts; with the live setting it shows "Arrived overnight at 11:00 PM. Reply
+  clock starts at 9:00 AM." at 11:30 PM, 8:00 AM and 8:45 AM (not late); "3 minutes left." at
+  9:00 AM; red "Waiting 3 minutes. Reply now." at 9:03 AM. A Wednesday 2 PM request: no
+  overnight mark, "Opened just now. 3 minutes left." at 2:00 PM, red at 2:03 PM. Afterwards
+  leads 1, Direct Booking requests 0, alerts 584, tickets 42, settings 11, window 10 PM to 8 AM.
