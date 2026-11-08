@@ -285,3 +285,9 @@ export const DEFAULT_FOLLOW_UP_TEMPLATE =
 
 /** Words never shown on any Direct Bookings screen. */
 export const BANNED_SCREEN_WORDS = [/\bseat\b/i, /\bhit\b/i, /\bmedian\b/i];
+
+/** True when the database does not have a column or function yet (staged change not applied). */
+export function isMissingColumn(error: { code?: string; message?: string } | null | undefined) {
+  if (!error) return false;
+  return error.code === "42703" || error.code === "PGRST204" || /column .* does not exist|Could not find the .* column/i.test(error.message ?? "");
+}

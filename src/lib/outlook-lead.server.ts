@@ -10,6 +10,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { deriveLeadFromEmail, type OutlookSource } from "./outlook-email";
+import { isMissingColumn } from "./direct-bookings";
 
 type Db = SupabaseClient<Database>;
 type LeadSource = Database["public"]["Enums"]["lead_source"];
@@ -27,12 +28,6 @@ const KNOWN_SOURCES: LeadSource[] = [
   "social",
   "other",
 ];
-
-/** True when the database does not have a column yet (staged change not applied). */
-export function isMissingColumn(error: { code?: string; message?: string } | null | undefined) {
-  if (!error) return false;
-  return error.code === "42703" || error.code === "PGRST204" || /column .* does not exist|Could not find the .* column/i.test(error.message ?? "");
-}
 
 export type LeadIntakeResult = { leadId: string; contactName: string; source: LeadSource };
 

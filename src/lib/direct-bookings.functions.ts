@@ -20,9 +20,9 @@ import {
   directorMayApprove,
   validateNotBooked,
   SEARCH_DISTANCES,
+  isMissingColumn,
   type HomeCandidate,
 } from "./direct-bookings";
-import { isMissingColumn } from "./outlook-lead.server";
 
 type Client = SupabaseClient<Database>;
 // The staged functions and columns are not in the generated types yet.
