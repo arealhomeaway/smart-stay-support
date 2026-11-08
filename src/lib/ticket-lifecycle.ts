@@ -12,6 +12,7 @@
  * same reason the server would refuse it.
  */
 
+import { cleanNotionText } from "@/lib/notion-ticket-display";
 import { FINAL_REVIEW_SATISFIED } from "@/lib/final-review";
 
 export const TICKET_STATUSES = [
@@ -316,7 +317,8 @@ export function allowedTransitions(
  */
 export function humanizeHistoryText(body: string | null | undefined): string {
   if (!body) return "";
-  let out = body;
+  // History copied from Notion never shows the claim review status name.
+  let out = cleanNotionText(body);
   for (const status of TICKET_STATUSES) {
     if (!status.includes("_")) continue;
     out = out.replace(new RegExp(`\\b${status}\\b`, "g"), TICKET_STATUS_LABELS[status]);
