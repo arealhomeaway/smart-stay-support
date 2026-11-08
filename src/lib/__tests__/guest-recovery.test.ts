@@ -317,7 +317,7 @@ describe("next action", () => {
       },
       { now },
     );
-    expect(action).toContain("James");
+    expect(action).toContain("the Operations Supervisor's approval");
   });
 
   it("routes to the Director above the limit", () => {

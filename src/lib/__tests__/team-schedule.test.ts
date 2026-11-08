@@ -90,8 +90,8 @@ describe("Time off", () => {
     const a = planTimeOff({ roles, userId: A, startsAt, endsAt, note: "Doctor", coverUserId: C });
     expect(a.map((x) => x.type === "override" && x.kind)).toEqual(["off", "cover"]);
   });
-  it("refuses a person with no seat", () => {
-    expect(() => planTimeOff({ roles, userId: C, startsAt, endsAt, note: "", coverUserId: null })).toThrow("does not hold a seat");
+  it("refuses a person who is not on the schedule", () => {
+    expect(() => planTimeOff({ roles, userId: C, startsAt, endsAt, note: "", coverUserId: null })).toThrow("is not on the schedule yet");
   });
   it("shows Out on the grid and in Who's out", () => {
     const off = { id: "o1", role_code: "ge_day", kind: "off", user_id: null, starts_at: startsAt, ends_at: endsAt, note: null };
