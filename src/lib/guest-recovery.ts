@@ -320,8 +320,8 @@ export type AuthorityVerdict = {
 
 export const AUTHORITY_LABELS: Record<AuthorityLevel, string> = {
   pc: "Coordinator may approve",
-  supervisor: "Needs Supervisor approval (James)",
-  director: "Needs Director approval (Micah)",
+  supervisor: "Needs Operations Supervisor approval",
+  director: "Needs Director of Operations approval",
   emergency: "Emergency: act now and notify leadership",
 };
 
@@ -609,7 +609,7 @@ export function nextAction(recovery: RecoveryLike, ctx: NextActionContext = {}):
   }
 
   if (recovery.outcome === "guest_disputed") {
-    return "Guest is still unhappy. Call them, then reassess the remedy with James.";
+    return "Guest is still unhappy. Call them, then reassess the remedy with the Operations Supervisor.";
   }
 
   if (recovery.approval_status === "returned") {
@@ -617,7 +617,7 @@ export function nextAction(recovery: RecoveryLike, ctx: NextActionContext = {}):
   }
 
   if (recovery.approval_status === "declined") {
-    return "Approval declined. Agree the alternative remedy with James before contacting the guest.";
+    return "Approval declined. Agree the alternative remedy with the Operations Supervisor before contacting the guest.";
   }
 
   if (recovery.stage === "completed") {
@@ -672,7 +672,7 @@ export function nextAction(recovery: RecoveryLike, ctx: NextActionContext = {}):
     return "Confirm whether this fits normal Airbnb refund/discount policy — it decides who approves.";
   }
   if (verdict.level === "director") return `Request Director approval. ${verdict.reason}`;
-  if (verdict.level === "supervisor") return `Request James's approval. ${verdict.reason}`;
+  if (verdict.level === "supervisor") return `Request the Operations Supervisor's approval. ${verdict.reason}`;
 
   const checkout = daysUntil(recovery.stay_departure, now);
   if (checkout !== null && checkout <= 1) {

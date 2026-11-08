@@ -431,9 +431,9 @@ export function commitmentStatus(wo: WorkOrderLike, now = new Date()): Commitmen
 
   let action: string | null = null;
   if (misses >= MAINTENANCE_POLICY.missPerformanceReview) {
-    action = "Repeated missed commitments — open a vendor performance review with Micah.";
+    action = "Repeated missed commitments. Open a vendor performance review with the Director of Operations.";
   } else if (misses >= MAINTENANCE_POLICY.missNotifySupervisor) {
-    action = "Backup vendor should be considered — two commitments missed. Notify James.";
+    action = "Two commitments missed. Consider a backup vendor and notify the Operations Supervisor.";
   } else if (misses >= MAINTENANCE_POLICY.missFollowUp) {
     action = "Vendor missed a commitment — follow up before it becomes a second miss.";
   } else if (acknowledgeOverdue) {
