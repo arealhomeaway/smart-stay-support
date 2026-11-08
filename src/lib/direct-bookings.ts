@@ -8,6 +8,8 @@
  */
 
 export const REPLY_TARGET_MINUTES = 3;
+/** Overnight reply clock starts at (Central, 24 hour "HH:MM"). Emily, Nov 8, 2026 (register D3, K2). */
+export const OVERNIGHT_CLOCK_START = "09:00";
 export const APPROVAL_WAIT_MINUTES = 2;
 export const FOLLOW_UP_HOURS = 48;
 export const SEARCH_DISTANCES = [5, 10, 20] as const;
@@ -34,6 +36,8 @@ export type DirectBookingSettings = {
   requireApprovalAfterEnd: boolean;
   approvalWaitMinutes: number;
   replyTargetMinutes: number;
+  /** Overnight reply clock starts at, Central "HH:MM". */
+  overnightClockStart: string;
   /** Flat nightly rate by bedroom count. A missing count means "not set". */
   nightlyRates: Record<string, number>;
   /** Referral source records (by id) that get the rent discount. */
@@ -47,10 +51,13 @@ export const DEFAULT_SETTINGS: DirectBookingSettings = {
   requireApprovalAfterEnd: false,
   approvalWaitMinutes: APPROVAL_WAIT_MINUTES,
   replyTargetMinutes: REPLY_TARGET_MINUTES,
+  overnightClockStart: OVERNIGHT_CLOCK_START,
   nightlyRates: { "3": 189, "4": 199 },
   discountSourceIds: [...DISCOUNT_SOURCE_IDS],
   discountPercent: 5,
 };
+
+const CLOCK_TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export function readSettings(value: unknown): DirectBookingSettings {
   const v = (value && typeof value === "object" ? value : {}) as Partial<DirectBookingSettings>;
@@ -64,6 +71,7 @@ export function readSettings(value: unknown): DirectBookingSettings {
     requireApprovalAfterEnd: v.requireApprovalAfterEnd === true,
     approvalWaitMinutes: typeof v.approvalWaitMinutes === "number" ? v.approvalWaitMinutes : APPROVAL_WAIT_MINUTES,
     replyTargetMinutes: typeof v.replyTargetMinutes === "number" ? v.replyTargetMinutes : REPLY_TARGET_MINUTES,
+    overnightClockStart: typeof v.overnightClockStart === "string" && CLOCK_TIME.test(v.overnightClockStart) ? v.overnightClockStart : OVERNIGHT_CLOCK_START,
     nightlyRates: rates,
     discountSourceIds: ids && ids.length ? ids : [...DEFAULT_SETTINGS.discountSourceIds],
     discountPercent: typeof v.discountPercent === "number" ? v.discountPercent : DEFAULT_SETTINGS.discountPercent,
@@ -292,21 +300,44 @@ export function requestStatus(r: RequestState): RequestStatus {
   return r.owned_by ? "working" : "new";
 }
 
-/**
- * Where the 3 minute clock starts. A daytime request: when it was created in Resolve.
- * A request that arrived overnight (overnight_until set by the database): when the morning
- * shift begins, or earlier if someone pressed Start before then. Waiting never counts
- * against anyone. Emily's default, Nov 8, 2026 (register K2).
- */
-export function clockStart(r: { created_at: string; overnight_until?: string | null; started_at?: string | null }) {
-  if (!r.overnight_until) return r.created_at;
-  if (r.started_at && Date.parse(r.started_at) < Date.parse(r.overnight_until)) return r.started_at;
-  return r.overnight_until;
+/** Minutes past midnight, Central, for an instant. */
+function centralMinutes(ms: number) {
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(ms));
+  const n = (t: string) => Number(parts.find((x) => x.type === t)?.value ?? 0);
+  return n("hour") * 60 + n("minute");
 }
 
-/** True while an overnight request is still waiting for the morning shift. */
-export function waitingForMorning(r: { overnight_until?: string | null; owned_by?: string | null; reply_sent_at?: string | null }, at: Date = new Date()) {
-  return Boolean(r.overnight_until && !r.owned_by && !r.reply_sent_at && Date.parse(r.overnight_until) > at.getTime());
+/**
+ * Where the 3 minute clock starts. A daytime request: when it was created in Resolve.
+ * A request that arrived overnight (overnight_until set by the database, the moment the
+ * window ends): at the overnight clock start time that morning, a setting, default 9:00 AM,
+ * so the reply is due by 9:03 AM. Never earlier than the end of the window. Emily, Nov 8,
+ * 2026 (register D3, K2).
+ */
+export function clockStart(
+  r: { created_at: string; overnight_until?: string | null },
+  overnightStart: string = OVERNIGHT_CLOCK_START,
+) {
+  if (!r.overnight_until) return r.created_at;
+  const end = Date.parse(r.overnight_until);
+  const [h, m] = (CLOCK_TIME.test(overnightStart) ? overnightStart : OVERNIGHT_CLOCK_START).split(":").map(Number);
+  const wait = Math.max(0, h! * 60 + m! - centralMinutes(end));
+  return new Date(end + wait * 60_000).toISOString();
+}
+
+/** True while an overnight request's reply clock has not started yet. */
+export function beforeOvernightClock(
+  r: { created_at: string; overnight_until?: string | null; reply_sent_at?: string | null },
+  at: Date = new Date(),
+  overnightStart: string = OVERNIGHT_CLOCK_START,
+) {
+  return Boolean(r.overnight_until && !r.reply_sent_at && Date.parse(clockStart(r, overnightStart)) > at.getTime());
+}
+
+/** "09:00" -> "9:00 AM". */
+export function clockTimeLabel(hhmm: string = OVERNIGHT_CLOCK_START) {
+  const [h, m] = (CLOCK_TIME.test(hhmm) ? hhmm : OVERNIGHT_CLOCK_START).split(":").map(Number);
+  return `${h! % 12 || 12}:${String(m).padStart(2, "0")} ${h! < 12 ? "AM" : "PM"}`;
 }
 
 /** Real arrival time, Central: "11:04 PM". */
@@ -364,19 +395,20 @@ export function statusChip(
   r: { created_at: string; reply_sent_at: string | null; last_follow_up_at?: string | null; follow_up_due_at?: string | null; overnight_until?: string | null; started_at?: string | null; owned_by?: string | null },
   at: Date = new Date(),
   targetMinutes = REPLY_TARGET_MINUTES,
+  overnightStart: string = OVERNIGHT_CLOCK_START,
 ): { text: string; tone: ChipTone; late: boolean } {
   if (status === "new" || status === "working") {
-    if (waitingForMorning(r, at)) {
-      return { text: `${OVERNIGHT_COPY.arrived(arrivalTime(r.created_at))} ${OVERNIGHT_COPY.waits}`, tone: "brand", late: false };
+    if (beforeOvernightClock(r, at, overnightStart)) {
+      return { text: `${OVERNIGHT_COPY.arrived(arrivalTime(r.created_at))} ${OVERNIGHT_COPY.clockStarts(clockTimeLabel(overnightStart))}`, tone: "brand", late: false };
     }
-    const clock = replyClock(clockStart(r), null, at, targetMinutes);
+    const clock = replyClock(clockStart(r, overnightStart), null, at, targetMinutes);
     const m = Math.floor(clock.seconds / 60);
     if (clock.late) return { text: `Waiting ${minutes(m)}. Reply now.`, tone: "escalated", late: true };
     const opened = r.overnight_until ? OVERNIGHT_COPY.arrived(arrivalTime(r.created_at)) : m === 0 ? "Opened just now." : `Opened ${minutes(m)} ago.`;
     return { text: `${opened} ${minutes(targetMinutes - m)} left.`, tone: "brand", late: false };
   }
   if (status === "waiting_approval") {
-    const late = replyClock(clockStart(r), null, at, targetMinutes).late;
+    const late = replyClock(clockStart(r, overnightStart), null, at, targetMinutes).late;
     return { text: "Waiting for a supervisor", tone: "waiting", late };
   }
   if (status === "sent") {
@@ -428,8 +460,8 @@ export function viewCounts(rows: BoardRow[]) {
 }
 
 /** The three tiles. A tile turns red when a reply in it is past the 3 minutes. */
-export function boardTiles(rows: BoardRow[], at: Date = new Date(), targetMinutes = REPLY_TARGET_MINUTES) {
-  const late = (r: BoardRow) => replyClock(clockStart(r), r.reply_sent_at, at, targetMinutes).late;
+export function boardTiles(rows: BoardRow[], at: Date = new Date(), targetMinutes = REPLY_TARGET_MINUTES, overnightStart: string = OVERNIGHT_CLOCK_START) {
+  const late = (r: BoardRow) => replyClock(clockStart(r, overnightStart), r.reply_sent_at, at, targetMinutes).late;
   const needs = rows.filter((r) => r.status === "new" || r.status === "working");
   const supervisor = rows.filter((r) => r.status === "waiting_approval");
   const followUps = rows.filter((r) => followUpDue(r, at));
@@ -721,7 +753,7 @@ export function homeStartIds(alertedIds: Iterable<string>, eligibleNow: boolean,
 /** Overnight requests (register D2): wording on the request chip and the Team Queue. */
 export const OVERNIGHT_COPY = {
   arrived: (time: string) => `Arrived overnight at ${time}.`,
-  waits: "Waits for the morning team.",
+  clockStarts: (time: string) => `Reply clock starts at ${time}.`,
   queueTitle: "Direct Bookings from overnight",
   queueHint: "Arrived after hours. The first to press Start owns it.",
   urgency: "Right now",
