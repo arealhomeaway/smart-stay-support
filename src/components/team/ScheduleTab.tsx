@@ -661,7 +661,6 @@ function GridRowsButton({ m, onChanged }: { m: Model; onChanged: () => void }) {
       <PopoverTrigger asChild><Button size="sm" variant="outline"><Rows3 className="size-4" /> Rows shown</Button></PopoverTrigger>
       <PopoverContent className="w-80 space-y-2 text-sm">
         <p className="font-semibold">Rows on the schedule</p>
-        <p className="text-xs text-muted-foreground">Display only. Hidden seats still get work exactly as before.</p>
         <div className="max-h-72 space-y-1 overflow-y-auto">
           {m.roles.map((r) => (
             <label key={r.code} className="flex items-center gap-2">
