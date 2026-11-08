@@ -234,7 +234,7 @@
 - [ ] Week two: lunch times editing on Team & Coverage, and a lunch for a newly added shift (left for week one by decision)
 
 ## Nov 8 Fix batch 2 apply
-- [x] Vendors page: Database tab, Needs Review and screening panel hidden from the Director of Onboarding, Project Managers and Utilities
+- [x] Vendors page (corrected Nov 8): Director of Onboarding, Project Managers and Utilities see every tab and record; status, Gold Standard, compliance, screening, documents, logins and imports read only for them
 - [x] Fix batch 2 applied (0284 to 0288) and checked in a cancelled database step
 - [ ] Next audit (report only, no changes): Ticket checklists and the Admin pages, what each decides for a coordinator
 - [ ] Direct Bookings fix parts 3 to 5: waiting on Emily's choice of the Director alert schedule
