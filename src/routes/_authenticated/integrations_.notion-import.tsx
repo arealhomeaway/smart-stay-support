@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
 import { PageHeader, SectionCard, EmptyState } from "@/components/ui/page";
-import { StatusBadge } from "@/components/ui/status";
+import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { Button } from "@/components/ui/button";
 import { useRole } from "@/hooks/useRole";
 import {
@@ -55,11 +55,11 @@ export const Route = createFileRoute("/_authenticated/integrations_/notion-impor
 
 type Check = { ok: boolean; reason: string; fix: string | null; ticket?: string };
 
-const STATUS_TEXT: Record<string, { label: string; tone: "resolved" | "waiting" | "escalated" | "open" }> = {
-  idle: { label: "Nothing has run yet", tone: "open" },
-  running: { label: "Running", tone: "waiting" },
+const STATUS_TEXT: Record<string, { label: string; tone: StatusTone }> = {
+  idle: { label: "Nothing has run yet", tone: "closed" },
+  running: { label: "Running", tone: "progress" },
   stopping: { label: "Stopping after this batch", tone: "waiting" },
-  stopped: { label: "Stopped", tone: "open" },
+  stopped: { label: "Stopped", tone: "review" },
   done: { label: "Finished", tone: "resolved" },
   failed: { label: "Stopped on an error", tone: "escalated" },
   crashed: { label: "Stopped unexpectedly", tone: "escalated" },
@@ -137,7 +137,7 @@ function NotionImportPage() {
 
   const start = (kind: "dry_run" | "run", group?: ImportGroup) =>
     act(kind === "dry_run" ? "dry" : `run_${group}`, async () => {
-      const v = await startFn({ data: { kind, group } });
+      const v = await startFn({ data: group ? { kind, group } : { kind } });
       void drive(v);
     });
   const stop = () =>
@@ -156,7 +156,7 @@ function NotionImportPage() {
   if (!canRun) return <EmptyState title="Admin only" hint="Only an Admin can run the Notion import." />;
 
   const job = view?.job ?? null;
-  const st = STATUS_TEXT[state] ?? STATUS_TEXT.idle!;
+  const st = STATUS_TEXT[state] ?? STATUS_TEXT["idle"]!;
   const disabled = !!busy || driving || going;
 
   return (
