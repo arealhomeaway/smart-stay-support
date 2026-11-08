@@ -11,6 +11,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { withoutQuietNotion } from "@/lib/notion-ticket-display";
 
 type Client = SupabaseClient<Database>;
 
@@ -131,7 +132,7 @@ export async function loadOpsAnalytics(
   const base = supabase
     .from("tickets")
     .select(
-      "id, priority, status, category, source_channel, reported_at, acknowledged_at, action_started_at, resolved_at, response_due_at, action_due_at, assigned_to, current_action_owner, accountable_owner",
+      "id, priority, status, category, source_channel, reported_at, acknowledged_at, action_started_at, resolved_at, response_due_at, action_due_at, assigned_to, current_action_owner, accountable_owner, external_source, external_status",
     )
     .is("archived_at", null)
     .gte("reported_at", since);
@@ -139,7 +140,8 @@ export async function loadOpsAnalytics(
     ? base.eq("is_demo", true)
     : base.or("is_demo.is.null,is_demo.eq.false"));
   if (tickets.error) throw tickets.error;
-  const rows = tickets.data ?? [];
+  // Imported Notion tickets never count toward a rate until reopened in Resolve.
+  const rows = withoutQuietNotion(tickets.data ?? []);
   const ids = rows.map((t) => t.id);
 
   const now = Date.now();
