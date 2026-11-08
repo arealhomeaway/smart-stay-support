@@ -28,6 +28,7 @@ import { JobMap, type MapViewport } from "@/components/JobMap";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import type { WorkOrderRow } from "@/lib/work-order-types";
 import { standaloneOperationsOrders } from "@/lib/operations-population";
+import { AutomatedSourceQueue } from "@/components/operations/AutomatedSourceQueue";
 import { withoutImportHeld } from "@/lib/import-hold";
 import { operationsCalendarDays, operationsCalendarMonth, operationsView, parseOperationsSearch, shiftOperationsMonth, withOperationsView } from "@/lib/operations-view-state";
 import { Chip, EmptyState, LoadingRows, PageHeader } from "@/components/ui/page";
@@ -95,7 +96,7 @@ function TeamQueuePage() {
   const userId = useCurrentUserId();
   const { data: staff } = useStaffDirectory();
   const { homeTeamOf } = useHomeTeams();
-  const { can, isLoading: rolesLoading } = useRole();
+  const { can, isLoading: rolesLoading, readOnly } = useRole();
   const operationsAccess = can("work_orders_internal");
   const lens = params["lens"] === "mine" ? "mine" : "team";
   const view = operationsView(params);
@@ -198,7 +199,7 @@ function TeamQueuePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tickets")
-        .select("*, properties(name, nickname, market, city, state, address_line1, unit, postal_code, ownerrez_property_id), work_types(name), claims(id)")
+        .select("*, properties(name, nickname, market, city, state, address_line1, unit, postal_code, ownerrez_property_id), work_types(name, functional_role_code), claims(id)")
         .eq("is_demo", demoMode)
         .is("archived_at", null)
         .order("reported_at", { ascending: false });
@@ -685,6 +686,14 @@ function TeamQueuePage() {
       </div>
 
       {can("direct_bookings_work") && <OvernightDirectBookings demoMode={demoMode} />}
+
+      <AutomatedSourceQueue
+        rows={all as unknown as Parameters<typeof AutomatedSourceQueue>[0]["rows"]}
+        userId={userId}
+        canTake={operationsAccess && !readOnly}
+        originSearch={originSearch}
+        onTaken={refetch}
+      />
 
       <NotionImportedGroup
         rows={(data ?? []) as unknown as Parameters<typeof NotionImportedGroup>[0]["rows"]}

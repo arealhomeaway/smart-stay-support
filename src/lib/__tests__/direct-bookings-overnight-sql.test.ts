@@ -250,3 +250,149 @@ describe("undo", () => {
     expect(body(liveHere("direct_booking_on_shift"))).toBe(body(read(`${TWEAKS}/02_direct_booking_on_call.sql`)));
   });
 });
+
+/**
+ * Fix batch 4 (Emily, Nov 7 and Nov 8, 2026; register T15, D2, D3), built on top of everything
+ * above: docs/pending/fix-batch-4/01 (automated sources stay unowned) and 02 (morning alert wording).
+ */
+const FB4 = "docs/pending/fix-batch-4";
+const FB4_01 = read(`${FB4}/01_automated_sources_unowned.sql`);
+const FB4_01_UNDO = read(`${FB4}/01_undo_automated_sources_unowned.sql`);
+const FB4_02 = read(`${FB4}/02_overnight_alert_wording.sql`);
+const FB4_02_UNDO = read(`${FB4}/02_undo_overnight_alert_wording.sql`);
+const fb4Live = (n: string) => read(`${FB4}/live-capture/public.${n}.sql`).trimEnd();
+
+async function withTicketTrigger(d: PGlite) {
+  await d.exec("ALTER TABLE public.tickets ADD COLUMN source_channel text DEFAULT 'internal'");
+  await d.exec("CREATE TRIGGER tickets_auto_assign BEFORE INSERT ON public.tickets FOR EACH ROW EXECUTE FUNCTION public.auto_assign_ticket()");
+  const wt = async (name: string, code: string) =>
+    (await d.query<{ id: string }>("INSERT INTO public.work_types(name, functional_role_code) VALUES ($1, $2) RETURNING id", [name, code])).rows[0]!.id;
+  return { guest: await wt("Current or past guest request", "ge_day"), review: await wt("Guest review, survey and rating logs", "ge_day"), maint: await wt("Ongoing maintenance", "po_day") };
+}
+const newTicket = async (d: PGlite, cols: Record<string, string | null>) => {
+  const keys = Object.keys(cols);
+  return (await d.query<{ assigned_to: string | null; current_action_owner: string | null; assignment_source: string | null; assignment_note: string | null }>(
+    `INSERT INTO public.tickets(${keys.join(", ")}) VALUES (${keys.map((_, i) => `$${i + 1}`).join(", ")}) RETURNING assigned_to, current_action_owner, assignment_source, assignment_note`,
+    Object.values(cols),
+  )).rows[0]!;
+};
+const routeNow = async (d: PGlite, wt: string) =>
+  (await d.query<{ user_id: string | null }>("SELECT user_id FROM public.ticket_route_at(NULL, $1::uuid, now())", [wt])).rows[0]!.user_id;
+
+describe("fix batch 4 part 1: automated sources stay unowned (register T15)", () => {
+  const WAITING = { assigned_to: null, current_action_owner: null, assignment_source: null, assignment_note: "Waiting in the Team Queue for the team to take it." };
+
+  it("the staged rule is today's live rule plus the one source check, nothing else", () => {
+    const live = fb4Live("auto_assign_ticket");
+    const block = FB4_01.slice(FB4_01.indexOf("  -- Automated sources stay unowned"), FB4_01.indexOf("  SELECT * INTO r FROM public.ticket_route_at"));
+    const staged = FB4_01.slice(FB4_01.indexOf("CREATE OR REPLACE FUNCTION"), FB4_01.lastIndexOf("$function$") + 10);
+    expect(staged.replace(block, "")).toBe(live);
+    expect(block).toContain("IN ('email', 'ownerrez', 'breezeway')");
+    // The live capture is the rule the routing tests above were built on.
+    const base = read(`${BASE}/03_coordinator_routing.sql`);
+    const i = base.indexOf("CREATE OR REPLACE FUNCTION public.auto_assign_ticket()");
+    expect(base.slice(i, base.indexOf("$function$", base.indexOf("AS $function$", i) + 13) + 10)).toBe(live);
+  });
+
+  it("the info inbox, OwnerRez, an OwnerRez review follow up and Breezeway are created with no owner", async () => {
+    const d = await fresh();
+    const wt = await withTicketTrigger(d);
+    await d.exec(FB4_01);
+    expect(await newTicket(d, { external_source: "email", source_channel: "email" })).toEqual(WAITING);
+    expect(await newTicket(d, { external_source: "ownerrez", source_channel: "ownerrez" })).toEqual(WAITING);
+    expect(await newTicket(d, { external_source: "OwnerRez" })).toEqual(WAITING);
+    expect(await newTicket(d, { external_source: "ownerrez", source_channel: "ownerrez", work_type_id: wt.review })).toEqual(WAITING);
+    expect(await newTicket(d, { external_source: "breezeway", source_channel: "breezeway" })).toEqual(WAITING);
+    expect(await newTicket(d, { external_source: "breezeway", work_type_id: wt.maint })).toEqual(WAITING);
+  });
+
+  it("a Record work ticket still routes exactly as before, even when the guest used email or OwnerRez", async () => {
+    const before = await fresh();
+    const wtB = await withTicketTrigger(before);
+    const after = await fresh();
+    const wtA = await withTicketTrigger(after);
+    await after.exec(FB4_01);
+    for (const [key, channel] of [["guest", "email"], ["guest", "ownerrez"], ["maint", "internal"], ["review", "guest_message"]] as const) {
+      const b = await newTicket(before, { work_type_id: wtB[key], source_channel: channel });
+      const a = await newTicket(after, { work_type_id: wtA[key], source_channel: channel });
+      expect(a).toEqual(b);
+      expect(a.assigned_to).toBe(await routeNow(after, wtA[key]));
+      expect(a.assignment_note).not.toBe(WAITING.assignment_note);
+    }
+    // No work type and no source: the Operations Supervisor, as before.
+    expect((await newTicket(after, { source_channel: "phone" })).assigned_to).toBe((await newTicket(before, { source_channel: "phone" })).assigned_to);
+  });
+
+  it("a closed ticket and a Notion import are untouched", async () => {
+    const d = await fresh();
+    await withTicketTrigger(d);
+    await d.exec(FB4_01);
+    expect(await newTicket(d, { status: "closed", external_source: "email" })).toEqual({ assigned_to: null, current_action_owner: null, assignment_source: null, assignment_note: null });
+    expect((await newTicket(d, { external_source: "notion" })).assignment_note).not.toBe(WAITING.assignment_note);
+  });
+
+  it("undo puts back today's rule: an inbox ticket routes again", async () => {
+    const d = await fresh();
+    await withTicketTrigger(d);
+    await d.exec(FB4_01);
+    await d.exec(FB4_01_UNDO);
+    const def = (await d.query<{ d: string }>("SELECT pg_get_functiondef('public.auto_assign_ticket()'::regprocedure) d")).rows[0]!.d.trimEnd();
+    expect(def).toBe(fb4Live("auto_assign_ticket"));
+    expect((await newTicket(d, { external_source: "email" })).assigned_to).not.toBeNull();
+  });
+});
+
+describe("fix batch 4 part 2: the morning alert says when the reply clock starts (register D3)", () => {
+  const alertBody = async (d: PGlite, id: string) =>
+    (await d.query<{ body: string }>("SELECT body FROM public.staff_notifications WHERE entity_id = $1", [id])).rows.map((r) => r.body);
+
+  it("at 8:00 AM: Reply clock starts at 9:00 AM, to the same person, once", async () => {
+    const d = await fresh();
+    await d.exec(FB4_02);
+    const id = await overnightRequest(d, at("08", "23:00"));
+    expect(await release(d, at("09", "08:00"))).toBe(1);
+    expect(await notified(d, id)).toEqual([PO_DAY]);
+    expect(await alertBody(d, id)).toEqual(["Practice partner wrote overnight and is waiting. Press Start to own it. Reply clock starts at 9:00 AM."]);
+    expect(await release(d, at("09", "08:00:20"))).toBe(0);
+    expect(await notified(d, id)).toEqual([PO_DAY]);
+  });
+
+  it("reads the Overnight reply clock starts at setting; a bad value falls back to 9:00 AM", async () => {
+    const d = await fresh();
+    await d.exec(FB4_02);
+    await d.exec(`INSERT INTO public.app_settings VALUES ('direct_booking_settings', '{"overnightClockStart":"09:30"}')`);
+    const a = await overnightRequest(d, at("08", "23:00"));
+    await release(d, at("09", "08:00"));
+    expect((await alertBody(d, a))[0]!.endsWith("Reply clock starts at 9:30 AM.")).toBe(true);
+    await d.exec(`UPDATE public.app_settings SET value = '{"overnightClockStart":"nine"}' WHERE key = 'direct_booking_settings'`);
+    const b = await overnightRequest(d, at("09", "23:00"));
+    await release(d, at("10", "08:00"));
+    expect((await alertBody(d, b))[0]!.endsWith("Reply clock starts at 9:00 AM.")).toBe(true);
+  });
+
+  it("pressing Start overnight makes that person the owner and cancels the morning alert", async () => {
+    const d = await fresh();
+    await d.exec(FB4_02);
+    const id = await overnightRequest(d, at("08", "23:00"));
+    await d.query("UPDATE public.leads SET owned_by = $2, started_at = $3 WHERE id = $1", [id, SUP, at("09", "02:00")]);
+    expect(await release(d, at("09", "08:00"))).toBe(0);
+    expect(await notified(d, id)).toEqual([]);
+  });
+
+  it("only the wording changes; undo puts back the live function and note", async () => {
+    const live = fb4Live("release_overnight_direct_bookings");
+    const staged = FB4_02.slice(FB4_02.indexOf("CREATE OR REPLACE FUNCTION"), FB4_02.lastIndexOf("$function$") + 10);
+    const strip = (s: string) => s
+      .replace(" _start text; _clock text;", "")
+      .replace(/\n  -- The Overnight reply clock starts at setting[\s\S]*?'FMHH12:MI AM'\);/, "")
+      .replace("' wrote overnight and is waiting. Press Start to own it. Reply clock starts at ' || _clock || '.',", "' wrote overnight and is waiting. Press Start to own it and reply within 3 minutes.',");
+    expect(strip(staged)).toBe(live);
+    const d = await fresh();
+    await d.exec(FB4_02);
+    await d.exec(FB4_02_UNDO);
+    const def = (await d.query<{ d: string }>("SELECT pg_get_functiondef('public.release_overnight_direct_bookings(timestamptz)'::regprocedure) d")).rows[0]!.d.trimEnd();
+    expect(def).toBe(live);
+    const note = (await d.query<{ c: string }>("SELECT col_description('public.leads'::regclass, (SELECT attnum FROM pg_attribute WHERE attrelid = 'public.leads'::regclass AND attname = 'overnight_until')) c")).rows[0]!.c;
+    expect(note).toBe(read(`${FB4}/live-capture/comment.leads.overnight_until.txt`).trim());
+  });
+});

@@ -173,9 +173,15 @@ export type FeedbackRow = Database["public"]["Tables"]["guest_feedback"]["Row"];
 /**
  * Creates the Guest Feedback Follow-Up Ticket for one sub-5-star record.
  * Idempotent: a record that already has a Ticket is left alone.
- * Normal routing applies (lands in the Team Queue). Completed stay → prior
- * guest, no active-stay cadence.
+ * A follow-up from an OwnerRez review is marked as from OwnerRez, so it is created with no
+ * owner and waits in the Team Queue (register T15). A survey follow-up keeps normal routing.
+ * Completed stay → prior guest, no active-stay cadence.
  */
+/** OwnerRez review follow-ups carry their source (register T15); survey follow-ups do not. */
+export function followUpSource(fb: Pick<FeedbackRow, "id" | "source">): { external_source?: string; external_id?: string; source_channel?: string } {
+  return fb.source === "ownerrez" ? { external_source: "ownerrez", external_id: `review_followup:${fb.id}`, source_channel: "ownerrez" } : {};
+}
+
 export async function createFollowUpTicket(admin: Admin, fb: FeedbackRow): Promise<string | null> {
   if (fb.ticket_id || !needsFollowUp(fb.rating) || !fb.property_id) return fb.ticket_id ?? null;
   const { data: wt } = await admin.from("work_types").select("id, default_priority").eq("name", FEEDBACK_WORK_TYPE).maybeSingle();
@@ -203,6 +209,7 @@ export async function createFollowUpTicket(admin: Admin, fb: FeedbackRow): Promi
       reservation_channel: fb.booking_platform,
       guest_feedback_id: fb.id,
       is_demo: fb.is_demo,
+      ...followUpSource(fb),
     } as never)
     .select("id")
     .single();

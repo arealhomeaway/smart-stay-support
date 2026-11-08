@@ -4,7 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { myDirectBookings } from "@/lib/direct-bookings.functions";
-import { HOME_BOOKING_COPY } from "@/lib/direct-bookings";
+import { homeBookingLine, overnightUnclaimedCount } from "@/lib/direct-bookings";
+import { loadOvernightDirectBookings, overnightQueueKey } from "@/components/operations/OvernightDirectBookings";
 import { supabase } from "@/integrations/supabase/client";
 import { useDemo } from "@/components/DemoProvider";
 import { useRole } from "@/hooks/useRole";
@@ -156,7 +157,16 @@ function Dashboard() {
   const firstName = (me?.full_name ?? "").trim().split(/\s+/)[0] ?? "";
 
   const rows = mine.data ?? [];
-  const unclaimed = unclaimedCount(unowned.data ?? [], myTeam);
+  // Overnight Direct Bookings wait in the Team Queue for Team A and count here too (register D2).
+  const overnight = useQuery({
+    queryKey: overnightQueueKey(demoMode),
+    enabled: role.can("direct_bookings_work"),
+    staleTime: 30_000,
+    queryFn: () => loadOvernightDirectBookings(demoMode),
+  });
+  const unclaimed =
+    unclaimedCount(unowned.data ?? [], myTeam) +
+    (role.can("direct_bookings_work") ? overnightUnclaimedCount(overnight.data ?? [], myTeam) : 0);
   const openForOrigin = rows.filter(
     (t) => (isResolveWork(t) && OPEN_STATUSES.includes(t.status)) || isMyRecentImport(t, userId),
   );
@@ -261,7 +271,7 @@ function NeedsYouNow({ rows, userId, originSearch }: { rows: Row[]; userId: stri
               {r.partner_name || r.company || r.subject || "Direct booking request"}
             </span>
             <span className="block text-sm text-muted-foreground">
-              {r.followUp ? HOME_BOOKING_COPY.followUp : r.waitingForStart ? HOME_BOOKING_COPY.waitingForStart : HOME_BOOKING_COPY.started}
+              {homeBookingLine(r)}
             </span>
           </span>
           <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
