@@ -1870,6 +1870,13 @@
       "when": 1794141409937,
       "tag": "0266_survey_switch",
       "breakpoints": true
+    },
+    {
+      "idx": 267,
+      "version": "7",
+      "when": 1794141428541,
+      "tag": "0267_close_legacy_rows",
+      "breakpoints": true
     }
   ]
 }
