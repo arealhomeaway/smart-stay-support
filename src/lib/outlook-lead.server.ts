@@ -84,7 +84,7 @@ export async function createLeadFromEmail(
     .select("id, contact_name, source")
     .single();
   if (result.error && isMissingColumn(result.error)) {
-    result = await db.from("leads").insert(row).select("id, contact_name, source").single();
+    result = await db.from("leads").insert(row as never).select("id, contact_name, source").single();
   }
   const { data, error } = result;
   if (error || !data) throw new Error(error?.message ?? "The request could not be saved.");
