@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Download, Gauge } from "lucide-react";
 import { opsAnalytics } from "@/lib/ops-analytics.functions";
 import type { ContributorRow } from "@/lib/ops-analytics.server";
-import { SupervisorOnly } from "@/components/SupervisorOnly";
+import { RequireCapability } from "@/components/RequireCapability";
 import { ReportingBaselineNote } from "@/components/ReportingBaselineNote";
 import { useDemo } from "@/components/DemoProvider";
 import { Badge } from "@/components/ui/badge";
@@ -33,9 +33,9 @@ export const Route = createFileRoute("/_authenticated/ops-analytics")({
     ],
   }),
   component: () => (
-    <SupervisorOnly>
+    <RequireCapability capability="analytics" title="Analytics">
       <OpsAnalyticsPage />
-    </SupervisorOnly>
+    </RequireCapability>
   ),
 });
 

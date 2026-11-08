@@ -7,7 +7,7 @@ import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { SupervisorOnly } from "@/components/SupervisorOnly";
+import { RequireCapability } from "@/components/RequireCapability";
 import { CATEGORIES, OPEN_STATUSES, PRIORITIES, priorityMeta } from "@/lib/tickets";
 import { ReportingBaselineNote } from "@/components/ReportingBaselineNote";
 import { withoutQuietNotion } from "@/lib/notion-ticket-display";
@@ -32,9 +32,9 @@ export const Route = createFileRoute("/_authenticated/analytics")({
     ],
   }),
   component: () => (
-    <SupervisorOnly>
+    <RequireCapability capability="analytics" title="Analytics">
       <Analytics />
-    </SupervisorOnly>
+    </RequireCapability>
   ),
 });
 

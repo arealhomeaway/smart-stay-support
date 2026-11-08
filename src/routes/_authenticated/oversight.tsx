@@ -35,7 +35,7 @@ import {
   slaState,
   statusTone,
 } from "@/lib/tickets";
-import { SupervisorOnly } from "@/components/SupervisorOnly";
+import { RequireCapability } from "@/components/RequireCapability";
 import { finalReviewRequirement } from "@/lib/final-review";
 import { ReportingBaselineNote } from "@/components/ReportingBaselineNote";
 import { OnCallNowCard } from "@/components/OnCallNowCard";
@@ -64,9 +64,9 @@ export const Route = createFileRoute("/_authenticated/oversight")({
     ],
   }),
   component: () => (
-    <SupervisorOnly>
+    <RequireCapability capability="oversight" title="Oversight">
       <Oversight />
-    </SupervisorOnly>
+    </RequireCapability>
   ),
 });
 
