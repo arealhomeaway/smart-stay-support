@@ -15,9 +15,11 @@ import {
   MAINTENANCE_POLICY,
   MAINTENANCE_POLICY_VERSION,
   SECOND_QUOTE_LABELS,
+  inOwnerTier,
   money,
   minutesSince,
   normalisePriority,
+  policyForVersion,
   type EmergencyReason,
   type Priority,
   type SecondQuoteSignal,
@@ -608,9 +610,14 @@ export function nextAction(wo: WorkOrderLike, now = new Date()): string {
     if (sup === "pending") return "Waiting on the supervisor's decision on this amount.";
     if (sup === "declined")
       return "Supervisor declined — record the alternative before going further.";
+    if (verdict.ownerApprovalRequired)
+      return "Request the Operations Supervisor's approval for this amount. The owner approves too.";
+    if (verdict.ownerNoticeSameDay)
+      return "Request the Operations Supervisor's approval for this amount, then tell the owner the same day.";
     return "Request spending approval for this amount, then tell the homeowner once it is authorised.";
   }
   if (verdict.ownerFyiRequired && supervisorApproved(wo) && !wo.owner_fyi_at && !wo.closed_at) {
+    if (verdict.ownerNoticeSameDay) return "Approved. Tell the owner today that this work is going ahead.";
     return "Approved — send the homeowner the FYI that this work is going ahead.";
   }
 
