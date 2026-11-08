@@ -101,7 +101,9 @@ import { Chip } from "@/components/ui/page";
 import { PersonChip } from "@/components/PersonAvatar";
 import { stateChip } from "@/lib/semantic";
 import { Badge } from "@/components/ui/badge";
-import { IMPORT_HOLD_LABELS, isImportHeld, isNotionImported, type ImportHold } from "@/lib/import-hold";
+import { IMPORT_HOLD_LABELS, isImportHeld, type ImportHold } from "@/lib/import-hold";
+import { claimStepsAvailable, notionBadge, parseNotionBlock, showsAssignee } from "@/lib/notion-ticket-display";
+import { NotionImportBlock } from "@/components/tickets/NotionImportBlock";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -1212,6 +1214,11 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
           />
         </div>
 
+        <NotionImportBlock
+          ticket={ticket as unknown as Parameters<typeof NotionImportBlock>[0]["ticket"]}
+          canWorkTickets={role.can("work_orders_internal") && !role.readOnly}
+          onChanged={refresh}
+        />
 
 
         <div className="space-y-5">
@@ -1585,7 +1592,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             {(ticket as { entry_kind?: string | null }).entry_kind !== "activity" && ticket.record_type !== "completed_interaction" && (
               <TicketRecoveryPanel ticket={ticket} openSignal={refundSignal} />
             )}
-            {activeBranch.claim ? (
+            {claimStepsAvailable(activeBranch.claim, ticket) ? (
               <div data-ticket-claim><TicketClaimPanel ticket={ticket} /></div>
             ) : (
               (ticket as { entry_kind?: string | null }).entry_kind !== "activity" &&
@@ -1665,16 +1672,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                     </span>
                   )}
                   {guestComm.impact === "yes" && <StatusBadge tone="brand">Affects active stay</StatusBadge>}
-                  {isNotionImported(ticket) && (
-                    <span className="inline-flex items-center gap-1.5 text-sm">
-                      <StatusBadge tone="context">Imported from Notion</StatusBadge>
-                      {ticket.external_url && (
-                        <a href={ticket.external_url} target="_blank" rel="noreferrer" className="font-medium text-primary underline-offset-2 hover:underline">
-                          Open in Notion
-                        </a>
-                      )}
-                    </span>
-                  )}
+                  {notionBadge(ticket) && <StatusBadge tone="context">{notionBadge(ticket)}</StatusBadge>}
                   {isImportHeld(ticket as unknown as { import_hold?: string | null }) && (
                     <StatusBadge tone="waiting">{IMPORT_HOLD_LABELS[(ticket as unknown as { import_hold: ImportHold }).import_hold]}</StatusBadge>
                   )}
@@ -1704,7 +1702,11 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                 )}
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="text-muted-foreground">Assigned to</span>
-                  <PersonChip userId={ownerId} name={assigneeName} size="xs" />
+                  {showsAssignee(ticket) ? (
+                    <PersonChip userId={ownerId} name={assigneeName} size="xs" />
+                  ) : (
+                    <span className="text-muted-foreground">No assignee</span>
+                  )}
                 </div>
                 <Field label="Priority" value={meta.short} />
                 {ticket.entry_kind && (
@@ -1799,7 +1801,9 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">
                     Description
                   </p>
-                  <p className="mt-1 whitespace-pre-wrap">{ticket.description}</p>
+                  <p className="mt-1 whitespace-pre-wrap">
+                    {ticket.external_source === "notion" ? parseNotionBlock(ticket.description).body : ticket.description}
+                  </p>
                 </div>
               )}
               {ticket.closure_evidence && (
