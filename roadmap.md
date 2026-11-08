@@ -213,3 +213,8 @@
 - [x] My Work, Work Orders (switch), Work Map (switch), Program Oversight, Homeowners, old booking pages off the menu; pages kept
 - [x] Vendors in My day; Reports renamed Analytics
 - [ ] Apply docs/pending/menu-cleanup/01_menu_switches.sql (waits on Emily's approval)
+
+## Notion import runner (Nov 8)
+- [x] Admin page: Check the connection, Dry run, Sample of 20, three Run buttons, Stop, Resume, live status, failed files retry
+- [x] Rules, runner state, tests; staged guard SQL in docs/pending/notion-runner/ (not applied)
+- [ ] Signed-in run of the page not tried: sign-in not approved; no import run (by instruction)

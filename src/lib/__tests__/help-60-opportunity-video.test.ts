@@ -15,7 +15,8 @@ describe("Help ticket 60: Opportunity video attachments", () => {
     const r = await prepareUploadSelection([new File([zip as BlobPart], "walkthrough.zip", { type: "application/x-zip-compressed" })], true);
     expect(r.messages).toEqual([]);
     expect(r.files.map(f => [f.name, f.type])).toEqual([["walkthrough.mp4", "video/mp4"]]);
-  });
+    // Builds and unpacks 58 MB in memory: about 4 s alone, slower when the whole suite runs at once.
+  }, 30_000);
 
   it("a ZIP using Deflate64 says exactly why and what to do", async () => {
     const zip = zipSync({ "walkthrough.mp4": [bytes(1024), { level: 0 }] }); const v = new DataView(zip.buffer);
