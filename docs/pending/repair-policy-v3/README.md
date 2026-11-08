@@ -58,3 +58,22 @@ Resolve v3", Supervisor 250, owner 350, the three v3 flags, and v2 kept under
 
 `src/lib/__tests__/repair-policy-v3-sql.test.ts` (isolated database) and
 `src/lib/__tests__/repair-policy-v3.test.ts` (screens and rules).
+
+## Applied
+
+- Nov 8, 2026, approved by Emily. Checksums in `sha256.txt` matched before anything ran, and the
+  live function matched `live-capture/` exactly (body md5 2b00445066e5f2a3f4371230414a9b8e).
+  01 APPLIED byte-for-byte as migration 0290 (`drizzle/migrations/0290_repair_policy_v3_expense_authorization.sql`,
+  sha256 f16bfcb46905e346eff5ea113c5a5c628b15274d75ee2efa653c1823415882ef, identical to the staged file).
+  02 APPLIED with the data tool (one row in `app_settings`).
+- Between 01 and 02 all 16 expenses decided exactly as before, word for word. After 02: Finance
+  records linked to v2 Work Orders keep the v2 result and wording; records with no Work Order
+  follow v3.
+- Counts unchanged before and after: work_orders 4, expenses 16, approvals 21, app_settings 11.
+  Every Work Order still carries its v2 stamp. One database function reads the numbers.
+- Cancelled live check (nothing kept, checked afterwards): $200 and $249 proceed; $250 needs the
+  Operations Supervisor, is covered once the Supervisor approves, and the owner notice saves the
+  same day; $350 needs both, is not covered by the Supervisor alone or the owner alone, and is
+  covered once both approve. The approvals reference counter moved forward by one (counters do
+  not roll back).
+- Undo if ever needed: `02_policy_v3_value.undo.sql`, then `01_expense_authorization_v3.undo.sql`.
