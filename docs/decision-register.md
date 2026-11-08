@@ -2,7 +2,7 @@
 The current state of every decision. One line each; the latest decision wins. Mockup boards are the master for how a screen looks and reads; this register is the master for how it works.
 
 ## 1. House rules for every screen
-H1 Roles only. Never a person's name in a screen, rule, alert, email, template, error message, tour or column name (imported Notion history text excepted). Roles: Property Coordinator, Operations Supervisor, Director of Operations, Director of Onboarding, Project Manager, Utilities, Design, Finance lead, COO, CEO, Admin.
+H1 Roles only. Never a person's name written into a screen, rule, alert, email, template, error message, tour or column name. A real user's name shown as data (assignee, author, history line) and imported Notion history text are fine.
 H2 Plain short words; the overseas team is smart; wording quietly encourages ownership and pride. A screen never explains how it works (no auto-generated, sample, threshold, daily photo, internal field names).
 H3 Never on a screen: the word seat; Hit; Median (say Typical); tracking codes like PC1 or J1; where a rule came from (proposal, draft, who approved); the Notion status Pending Claim Review with Josh (say Claim review); developer language; long dashes; emoji.
 H4 Urgency names: Right now (P1), Today (P2), Routine (P3). Codes stay internal.
@@ -30,7 +30,7 @@ A11 Direct Bookings: Coordinator, Supervisor, Director of Operations, Finance, A
 A12 Properties: Coordinator, Supervisor, Director of Operations, Director of Onboarding, Project Manager, Design, Admin Edit; Utilities edits the Utilities tab; Finance View; Active Owner Hidden.
 A13 Schedule: Coordinator View; onboarding roles View; Supervisor, Director of Operations, Admin Edit; Finance Hidden.
 A14 Users: Supervisors and Directors add users in their own department; Admin manages everyone; coordinators do not see the full user list.
-A15 Playbooks and SOPs: Supervisor, Director of Operations, Director of Onboarding, Admin edit, approve or publish, archive and upload; Coordinator, Project Manager, Utilities, Design and Finance View.
+A15 Playbooks and SOPs: Supervisor, Director of Operations, Director of Onboarding, Admin edit, approve or publish, archive and upload; Coordinator, Project Manager, Utilities, Design and Finance View. Ticket checklists follow the same rule.
 A16 Onboarding board, projects and plans: Director of Onboarding, Admin Edit; Project Manager, Utilities, Design Own; Director of Operations and Finance View; Coordinator and Supervisor Hidden. Templates: Director of Onboarding, Admin Edit; Director of Operations View.
 A17 Active Owner staff side: Director of Operations, Director of Onboarding, Admin Edit; Supervisor View; Project Manager Own; Coordinator Own (post handoff work).
 A18 Finance: Finance lead, Admin Edit; Director of Operations and Director of Onboarding View.
@@ -137,4 +137,4 @@ O5 Active Owner: owners may log hours before closing; opportunities open at enro
 O6 Phase 2: the full homeowner portal and the onboarding integrations.
 
 ## 12. Defaults and open items
-K2 Defaults chosen so work could continue: import name match ignores capitals and spaces; lunch cover same team first; the on call person also gets a Direct Booking alert overnight; Median becomes Typical; the homeowner contact list shows roles with the company shared phone and info email; the import button reads Preview 20 tickets; only an Admin deletes users; the Supervisor's shifts stay as data and are not listed; a handoff to a role goes to the person on shift in that role; a Direct Booking follow up is 48 hours after each follow up.
+K2 Defaults chosen so work could continue: import name match ignores capitals and spaces; lunch cover same team first; the on call person also gets a Direct Booking alert overnight; Median becomes Typical; the homeowner contact list shows roles with the company shared phone and info email; the import button reads Preview 20 tickets; only an Admin deletes users; the Supervisor's shifts stay as data and are not listed; a handoff to a role goes to the person on shift in that role; a Direct Booking follow up is 48 hours after each follow up. Ticket checklists follow the playbook rule; onboarding cost requests keep their own rule for now.
