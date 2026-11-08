@@ -1,4 +1,5 @@
 import { formatPropertyLabel } from "@/lib/property-label";
+import { MAINTENANCE_POLICY_VERSION } from "@/lib/maintenance-policy";
 /**
  * Breezeway outbound task creation (server-only).
  *
