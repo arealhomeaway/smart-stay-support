@@ -288,7 +288,7 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
           <p className="text-xs text-muted-foreground">Excluded from Finance queues and totals. History is kept.</p>
         </div>
       )}
-      <fieldset disabled={archived} className="space-y-6 disabled:opacity-70">
+      <fieldset disabled={archived || access.viewOnly} className="space-y-6 disabled:opacity-70">
 
       {/* Facts — Operations */}
       <section className="space-y-3">

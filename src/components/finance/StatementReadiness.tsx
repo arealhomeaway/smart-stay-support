@@ -33,7 +33,7 @@ import {
 const fmt = (d: string | null | undefined) => (d ? new Date(d.length === 10 ? d + "T12:00:00Z" : d).toLocaleDateString("en-US") : "not recorded");
 const CLOSED_TASK = ["done", "closed", "completed", "archived", "cancelled"];
 
-export function StatementReadiness({ demoMode, onOpenExpense }: { demoMode: boolean; onOpenExpense: (id: string) => void }) {
+export function StatementReadiness({ demoMode, onOpenExpense, viewOnly = false }: { demoMode: boolean; onOpenExpense: (id: string) => void; viewOnly?: boolean }) {
   const qc = useQueryClient();
   const { access } = useRole();
   const isFinance = access.seats.finance === true;
@@ -151,7 +151,7 @@ export function StatementReadiness({ demoMode, onOpenExpense }: { demoMode: bool
           <ul className="space-y-3">
             {items.map((i) => (
               <ItemCard key={i.id} item={i} period={period} current={data.data!.dispositions.find((d) => d.expense_id === i.id && !d.superseded_at) ?? null}
-                canDecide={isFinance} onOpen={() => onOpenExpense(i.id)} onDone={refresh} />
+                canDecide={isFinance && !viewOnly} onOpen={() => onOpenExpense(i.id)} onDone={refresh} />
             ))}
           </ul>
 
@@ -164,7 +164,7 @@ export function StatementReadiness({ demoMode, onOpenExpense }: { demoMode: bool
             </div>
           ) : null}
 
-          <SignOff propertyId={propertyId} period={period} canSign={lead.data === true} signoffs={data.data!.signoffs} onDone={refresh} />
+          <SignOff propertyId={propertyId} period={period} canSign={lead.data === true && !viewOnly} signoffs={data.data!.signoffs} onDone={refresh} />
         </>
       )}
     </div>
