@@ -38,6 +38,23 @@ export function QueueChip({ children, className }: { children: ReactNode; classN
   return <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${className}`}>{children}</span>;
 }
 
+/**
+ * A row the viewer just took, accepted or declined. It stays in place, as drawn, until the
+ * page is left, so Give it back or Undo is one press away.
+ */
+export type DoneEntry = {
+  kind: "took" | "accepted" | "declined" | "notion_took";
+  group: string;
+  team: string | null;
+  snapshot: Record<string, unknown>;
+  before?: Record<string, unknown> | null;
+  handoffId?: string;
+};
+export type DoneProps = {
+  done: Record<string, DoneEntry>;
+  setDone: (id: string, entry: DoneEntry | null) => void;
+};
+
 export type QueueRowDone = {
   title: string;
   ticketId: string;
