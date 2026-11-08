@@ -338,7 +338,7 @@ export function BreezewayConnectionPanel() {
               <MappingList title="In Breezeway only" rows={report.unmatchedBreezeway} />
               <MappingList title="In Resolve only" rows={report.unmatchedResolve} />
               <p className="text-xs text-muted-foreground">
-                Suggestions are proposals only. Nothing was linked, created, merged or reclassified.
+                These are suggestions only. Nothing was linked, created, merged or reclassified.
               </p>
             </div>
           </>

@@ -383,7 +383,7 @@ function independentProjectBlockers(input: ProjectInput): Blocker[] {
   if (result.extras.pendingFacts)
     rows.push({
       taskId: "",
-      what: result.extras.pendingFacts + " property fact proposal(s) await review",
+      what: result.extras.pendingFacts + " property fact change(s) await review",
       owner: "Reviewer",
       followUp: null,
       kind: "review",

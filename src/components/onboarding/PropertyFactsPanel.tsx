@@ -330,8 +330,8 @@ export function PropertyFactsPanel({
                 ) : null}
                 {isStaleFact(f, currentValue(f.field_key, f.asset_id)) ? (
                   <p role="status" className="text-warning">
-                    The current value changed after this proposal. Keep the current value, then
-                    submit a fresh proposal if needed.
+                    The current value changed after this change was sent. Keep the current value,
+                    then send a new change if needed.
                   </p>
                 ) : null}
                 {canEdit ? (
