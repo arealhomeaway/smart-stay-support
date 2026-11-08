@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { canOpenPath } from "@/lib/route-access";
 import { capabilitiesFor, seatsFromRoleCodes, type AccessSeats, type AppRole, type Capability } from "@/lib/permissions";
-import { onboardingOnlyMenu, OPERATIONS_MENU_FOR_TEST } from "@/lib/shell-nav";
+import { onboardingOnlyMenu, operationsMenu } from "@/lib/shell-nav";
 import { canManagePlaybooks, canSavePlaybooks } from "@/lib/playbook-editing";
 import { financeViewOnly } from "@/lib/finance-view";
 import { releaseAfterLog, SHOW_NOT_LOGGED } from "@/lib/credentials.server";
@@ -128,9 +128,8 @@ describe("7. Playbook library read only", () => {
     }
   });
   it("the Team group in the Operations menu shows Team & Coverage and Playbooks to coordinators", () => {
-    const team = OPERATIONS_MENU_FOR_TEST.find((g) => g.label === "Team")!;
-    const visible = team.items.filter((i) => !i.capability || has(PC.roles, PC.seats, i.capability)).map((i) => i.label);
-    expect(visible).toEqual(["Team & Coverage", "Playbooks"]);
+    const menu = operationsMenu({ can: (c) => has(PC.roles, PC.seats, c), canOpen: (path) => canOpenPath(path, PC) });
+    expect(menu.find((g) => g.label === "Team")?.items.map((i) => i.label)).toEqual(["Team & Coverage", "Playbooks"]);
   });
 });
 
