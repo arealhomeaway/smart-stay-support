@@ -253,7 +253,7 @@ export function VendorDocumentsPanel({
               Record identity verified
             </Button>
           </div>
-        </>
+        </fieldset>
       )}
     </div>
   );
