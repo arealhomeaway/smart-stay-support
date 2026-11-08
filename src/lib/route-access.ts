@@ -21,8 +21,8 @@ type Rule = {
   prefix: string;
   /** Portal the person must be authorised to work in. */
   portal?: "operations" | "onboarding" | "homeowner" | "vendor";
-  /** Capability the person must hold (leadership / administration areas). */
-  capability?: Capability;
+  /** Capability the person must hold (leadership / administration areas). A list means any one of them. */
+  capability?: Capability | Capability[];
   /** Alternative capability that also opens it (read-only owner preview). */
   orCapability?: Capability;
   /** Anyone signed in with a role may open it (their own account etc.). */
@@ -39,8 +39,8 @@ const RULES: Rule[] = [
   { prefix: "/onboarding", portal: "onboarding" },
   { prefix: "/owner-programs", capability: "owner_programs" },
   { prefix: "/owner-oversight", capability: "owner_oversight" },
-  { prefix: "/owner-analytics", capability: "owner_program_admin" },
-  { prefix: "/owner-library", capability: "owner_program_admin" },
+  { prefix: "/owner-analytics", capability: "owner_insight_view" },
+  { prefix: "/owner-library", capability: "owner_insight_view" },
   { prefix: "/owner-card-library", capability: "owner_card_library" },
   { prefix: "/owner-report-wording", capability: "owner_program_admin" },
   { prefix: "/owner-handoff-plan", capability: "owner_programs" },
@@ -55,12 +55,23 @@ const RULES: Rule[] = [
   { prefix: "/audit", capability: "audit_history" },
   { prefix: "/oversight-access-log", capability: "audit_history" },
   { prefix: "/integrations", capability: "integrations" },
-  { prefix: "/playbooks", capability: "playbooks_edit" },
+  // The playbook library opens read only for every staff account; saving is checked separately.
+  { prefix: "/playbooks", capability: "playbooks_view" },
+  // Team & Coverage: Schedule read only for every staff account (Operations and Onboarding).
+  { prefix: "/team", capability: "team_schedule_view" },
+  { prefix: "/oversight", capability: "oversight" },
+  { prefix: "/supervisor-check", capability: "oversight" },
+  { prefix: "/analytics", capability: "analytics" },
+  { prefix: "/ops-analytics", capability: "analytics" },
+  // Work order oversight stays Operations only; the Work Orders pages also open read only
+  // for the Director of Onboarding and Project Managers.
+  { prefix: "/work-orders/manager", portal: "operations", capability: "claims_oversight" },
+  { prefix: "/work-orders", capability: ["work_orders_internal", "work_orders_view"] },
   { prefix: "/imported-tickets", capability: "audit_history" },
   { prefix: "/cleaner-hours", capability: "cleaner_hours" },
   { prefix: "/str-participation-report", capability: "str_participation_report" },
   { prefix: "/str-dispatch-check", capability: "cleaner_dispatch_check" },
-  { prefix: "/finance", capability: "finance_workspace" },
+  { prefix: "/finance", capability: ["finance_workspace", "finance_view"] },
   { prefix: "/direct-bookings/settings", capability: "leads_work" },
   { prefix: "/direct-bookings", capability: "direct_bookings_work" },
 ];
@@ -92,7 +103,11 @@ export function canOpenPath(pathname: string, ctx: AccessContext): boolean {
     if (!rule.orCapability || !capabilitiesFor(ctx.roles, ctx.seats).has(rule.orCapability))
       return false;
   }
-  if (rule.capability && !capabilitiesFor(ctx.roles, ctx.seats).has(rule.capability)) return false;
+  if (rule.capability) {
+    const caps = capabilitiesFor(ctx.roles, ctx.seats);
+    const needed = Array.isArray(rule.capability) ? rule.capability : [rule.capability];
+    if (!needed.some((c) => caps.has(c))) return false;
+  }
   return true;
 }
 
