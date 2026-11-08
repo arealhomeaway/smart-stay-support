@@ -115,7 +115,7 @@ function usePlaybooks() {
 
 function PlaybooksPage() {
   const qc = useQueryClient();
-  const { readOnly: previewOnly, roles, access, can } = useRole();
+  const { readOnly: previewOnly, roles, access } = useRole();
   // One editor rule for saving, approving, archiving and SOP upload (DB
   // can_save_playbooks). Everyone else reads the library.
   const isDirector = canEditPlaybooks(roles, access.seats);
