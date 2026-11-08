@@ -69,7 +69,8 @@ describe("maintenance authority", () => {
   it("C — a $650 permanent repair needs the owner, and says why", () => {
     const v = evaluateAuthority({ phase: "permanent", quote_amount: 650 });
     expect(v.level).toBe("owner");
-    expect(v.reason).toContain("exceeds $350");
+    expect(v.reason).toBe("$650 needs the Operations Supervisor and the owner to approve before work starts.");
+    expect(v.supervisorApprovalRequired).toBe(true);
   });
 
   it("a recorded contractual exception keeps a large repair with James", () => {
@@ -243,7 +244,9 @@ describe("stage, queue and closure", () => {
       "quote_received",
     );
     expect(derivedStage({ quote_amount: 900 })).toBe("awaiting_approval");
-    expect(derivedStage({ quote_amount: 900, approval_status: "approved" })).toBe("approved");
+    // Repair policy v3: the owner tier needs the Operations Supervisor as well.
+    expect(derivedStage({ quote_amount: 900, approval_status: "approved" })).toBe("awaiting_approval");
+    expect(derivedStage({ quote_amount: 900, approval_status: "approved", supervisor_approval_status: "approved" })).toBe("approved");
     expect(derivedStage({ vendor_arrived_at: ago(30) })).toBe("in_progress");
     expect(derivedStage({ closed_at: ago(1) })).toBe("closed");
   });

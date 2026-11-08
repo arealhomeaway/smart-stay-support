@@ -217,8 +217,8 @@ export function evaluateAuthority(input: WorkOrderLike): AuthorityVerdict {
           : "Owner approval required"
         : "Owner approval required",
       reason: v3
-        ? `${money(amount)} is ${money(threshold)} or more, so ${
-            both ? "the Operations Supervisor and the owner both approve" : "the owner approves"
+        ? `${money(amount)} needs ${
+            both ? "the Operations Supervisor and the owner to approve" : "the owner to approve"
           } before work starts.`
         : `Owner approval is required because the permanent repair of ${money(amount)} exceeds ${money(threshold)}.`,
       ownerApprovalRequired: true,
@@ -236,7 +236,7 @@ export function evaluateAuthority(input: WorkOrderLike): AuthorityVerdict {
       level: "supervisor",
       label: v3 ? "Operations Supervisor approval" : "Spending approval",
       reason: v3
-        ? `${money(amount)} is ${money(threshold)} or more, but a recorded contractual exception applies, so the Operations Supervisor approves and the owner is told ${sameDay ? "the same day" : "afterwards"}.`
+        ? `${money(amount)} is ${money(threshold)} or more, but a recorded contractual exception applies, so it needs the Operations Supervisor's approval and the owner is told ${sameDay ? "the same day" : "afterwards"}.`
         : `${money(amount)} exceeds ${money(threshold)}, but a recorded contractual exception applies, so a supervisor approves and the homeowner is told afterwards.`,
       ownerApprovalRequired: false,
       supervisorApprovalRequired: true,
@@ -269,7 +269,7 @@ export function evaluateAuthority(input: WorkOrderLike): AuthorityVerdict {
     level: "supervisor",
     label: v3 ? "Operations Supervisor approval" : "Spending approval",
     reason: v3
-      ? `${money(amount)} is ${money(supThreshold)} or more and under ${money(threshold)}, so the Operations Supervisor approves before work starts and the owner is told ${sameDay ? "the same day" : "afterwards"}.`
+      ? `${money(amount)} needs the Operations Supervisor's approval before work starts, and the owner is told ${sameDay ? "the same day" : "afterwards"}.`
       : `${money(amount)} falls between ${money(supThreshold)} and ${money(threshold)}, so a supervisor approves before work starts and the homeowner is told afterwards.`,
     ownerApprovalRequired: false,
     supervisorApprovalRequired: true,
