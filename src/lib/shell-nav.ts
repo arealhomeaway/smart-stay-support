@@ -192,7 +192,8 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
       { label: "Analytics", to: "/analytics", capability: "analytics" },
       { label: "Owner Participation", to: "/owner-analytics", capability: "owner_programs" },
       { label: "STR Cleaner Time", to: "/cleaner-hours", capability: "cleaner_hours" },
-      { label: "Finance", to: "/finance", capability: "finance_workspace" },
+      // Who opens Finance (to work, or to view) is decided by the page rule.
+      { label: "Finance", to: "/finance" },
       { label: "Executive View", to: "/command-center", capability: "command_center" },
     ],
   },
