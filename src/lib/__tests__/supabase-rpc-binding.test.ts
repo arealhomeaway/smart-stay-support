@@ -1,5 +1,14 @@
 import { describe, expect, it } from "bun:test";
-import { createClient } from "@supabase/supabase-js";
+import { createRequire } from "node:module";
+
+// Load the real library file directly. Other test files replace
+// "@supabase/supabase-js" with a stand-in for the whole run, and that stand-in
+// has no `this.rest`, so importing by package name made this guard fail only
+// when the full suite ran.
+const realSupabase = createRequire(import.meta.url)(
+  "../../../node_modules/@supabase/supabase-js/dist/index.cjs",
+) as typeof import("@supabase/supabase-js");
+const { createClient } = realSupabase;
 
 /**
  * Regression guard for Help Ticket #62: supabase-js `rpc` reads `this.rest`,
