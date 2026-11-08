@@ -2094,6 +2094,13 @@
       "when": 1794174191677,
       "tag": "0298_full_backups",
       "breakpoints": true
+    },
+    {
+      "idx": 299,
+      "version": "7",
+      "when": 1794178631659,
+      "tag": "0299_alerts_01_team_queue_and_waiting_alerts",
+      "breakpoints": true
     }
   ]
 }

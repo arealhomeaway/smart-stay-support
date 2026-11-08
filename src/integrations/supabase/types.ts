@@ -13211,6 +13211,51 @@ export type Database = {
           },
         ]
       }
+      ticket_timed_alerts: {
+        Row: {
+          created_at: string
+          episode_at: string
+          id: string
+          kind: string
+          notification_id: string | null
+          recipient: string | null
+          ticket_id: string
+        }
+        Insert: {
+          created_at?: string
+          episode_at: string
+          id?: string
+          kind: string
+          notification_id?: string | null
+          recipient?: string | null
+          ticket_id: string
+        }
+        Update: {
+          created_at?: string
+          episode_at?: string
+          id?: string
+          kind?: string
+          notification_id?: string | null
+          recipient?: string | null
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_timed_alerts_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "ticket_timed_alerts_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_troubleshooting_answers: {
         Row: {
           answered_at: string
@@ -13489,6 +13534,7 @@ export type Database = {
           suggested_priority: string | null
           supervisor_caught: boolean
           title: string
+          unowned_since: string | null
           updated_at: string
           vendor_accepted_at: string | null
           vendor_brief: string | null
@@ -13625,6 +13671,7 @@ export type Database = {
           suggested_priority?: string | null
           supervisor_caught?: boolean
           title: string
+          unowned_since?: string | null
           updated_at?: string
           vendor_accepted_at?: string | null
           vendor_brief?: string | null
@@ -13761,6 +13808,7 @@ export type Database = {
           suggested_priority?: string | null
           supervisor_caught?: boolean
           title?: string
+          unowned_since?: string | null
           updated_at?: string
           vendor_accepted_at?: string | null
           vendor_brief?: string | null
@@ -18104,6 +18152,7 @@ export type Database = {
           work_type: string
         }[]
       }
+      run_ticket_timed_alerts: { Args: never; Returns: number }
       save_arha_opportunity: {
         Args: {
           _content: Json
