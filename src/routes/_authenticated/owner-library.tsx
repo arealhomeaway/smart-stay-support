@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { ArrowDown, ArrowUp, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { RequireCapability } from "@/components/RequireCapability";
+import { useRole } from "@/hooks/useRole";
 import { LoadingPage, PageHeader } from "@/components/ui/page";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,7 +36,7 @@ export const Route = createFileRoute("/_authenticated/owner-library")({
     ],
   }),
   component: () => (
-    <RequireCapability capability="owner_programs">
+    <RequireCapability capability="owner_insight_view">
       <LibraryPage />
     </RequireCapability>
   ),
@@ -54,6 +55,9 @@ function LibraryPage() {
   const reorder = useServerFn(reorderOptionalLibrary);
   const q = useQuery({ queryKey: ["optional-library-manage"], queryFn: () => list() });
   const [editing, setEditing] = useState<Draft | null>(null);
+  // Editing stays with leadership (the library save rule). Others who may open it see it read only.
+  const { can, readOnly } = useRole();
+  const canEdit = can("owner_program_admin") && !readOnly;
   const move = useMutation({
     mutationFn: (ids: string[]) => reorder({ data: { ids } }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["optional-library-manage"] }),
@@ -75,7 +79,7 @@ function LibraryPage() {
         eyebrow="Active Owner"
         title="Optional Opportunity Library"
         description="Remote, optional ideas homeowners may start on one of their homes. Templates are never assigned or required; starting one creates a single Opportunity for that home."
-        actions={<Button onClick={() => setEditing({ ...blank })}><Plus className="size-4" /> New template</Button>}
+        actions={canEdit ? <Button onClick={() => setEditing({ ...blank })}><Plus className="size-4" /> New template</Button> : undefined}
       />
       <ul className="space-y-3">
         {rows.map((t, i) => (
@@ -89,11 +93,11 @@ function LibraryPage() {
               </div>
               <p className="line-clamp-2 text-sm text-muted-foreground">{t.summary}</p>
             </div>
-            <div className="flex shrink-0 items-start gap-1">
+            {canEdit && <div className="flex shrink-0 items-start gap-1">
               <Button size="icon" variant="ghost" aria-label="Move up" disabled={i === 0 || move.isPending} onClick={() => shift(i, -1)}><ArrowUp className="size-4" /></Button>
               <Button size="icon" variant="ghost" aria-label="Move down" disabled={i === rows.length - 1 || move.isPending} onClick={() => shift(i, 1)}><ArrowDown className="size-4" /></Button>
               <Button size="sm" variant="outline" onClick={() => setEditing({ ...t })}>Edit</Button>
-            </div>
+            </div>}
           </li>
         ))}
       </ul>

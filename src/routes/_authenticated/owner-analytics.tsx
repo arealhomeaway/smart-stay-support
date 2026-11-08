@@ -38,7 +38,7 @@ export const Route = createFileRoute("/_authenticated/owner-analytics")({
     ],
   }),
   component: () => (
-    <RequireCapability capability="owner_programs">
+    <RequireCapability capability="owner_insight_view">
       <OwnerAnalyticsPage />
     </RequireCapability>
   ),
