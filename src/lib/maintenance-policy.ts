@@ -186,27 +186,47 @@ export function normalisePriority(value: string | null | undefined): Priority {
 /* ------------------------------------------------------------------ */
 
 /**
- * Who decides a given amount of spend. One ladder for the whole app:
+ * Who decides a given amount of spend. One ladder for the whole app (v3):
  *
- *  - under $200 — ARHA proceeds, cost recorded;
- *  - $200 to $350 — supervisor decides, homeowner told afterwards;
- *  - above $350 — the homeowner decides before work starts;
- *  - emergency — mitigation proceeds under a documented exception.
+ *  - $249 and under: it proceeds and the cost is recorded;
+ *  - $250 to $349: the Operations Supervisor approves, the owner is told the same day;
+ *  - $350 and up: the Operations Supervisor and the owner both approve first;
+ *  - emergency: mitigation proceeds under a documented exception.
+ *
+ * A policy without the v3 flags (older versions, and the separate onboarding
+ * cost policy) keeps its original rule and wording.
  */
 export type AuthorityTier = "proceed" | "supervisor" | "owner" | "emergency";
 export type AuthorityPolicy = {
   version: string;
   supervisorApprovalThreshold: number;
   ownerApprovalThreshold: number;
+  ownerThresholdInclusive?: boolean;
+  supervisorAlsoApprovesOwnerTier?: boolean;
+  ownerNoticeSameDay?: boolean;
 };
 
-/** Missing configuration uses the approved baseline; malformed configuration fails closed. */
+/**
+ * The policy a Work Order was decided under. A known older version keeps its
+ * own numbers; anything else (new work, unknown or missing) uses the current one.
+ */
+export function policyForVersion(version: string | null | undefined): AuthorityPolicy {
+  if (version && version === MAINTENANCE_POLICY_V2.version && version !== MAINTENANCE_POLICY.version)
+    return MAINTENANCE_POLICY_V2;
+  return MAINTENANCE_POLICY;
+}
+
+/**
+ * Missing onboarding configuration uses the onboarding baseline; malformed
+ * configuration fails closed. Onboarding cost requests have their own setting
+ * and database check, so their baseline stays on the version they use today.
+ */
 export function readAuthorityPolicy(value: unknown): AuthorityPolicy {
   if (value == null)
     return {
-      version: MAINTENANCE_POLICY.version,
-      supervisorApprovalThreshold: MAINTENANCE_POLICY.supervisorApprovalThreshold,
-      ownerApprovalThreshold: MAINTENANCE_POLICY.ownerApprovalThreshold,
+      version: MAINTENANCE_POLICY_V2.version,
+      supervisorApprovalThreshold: MAINTENANCE_POLICY_V2.supervisorApprovalThreshold,
+      ownerApprovalThreshold: MAINTENANCE_POLICY_V2.ownerApprovalThreshold,
     };
   if (typeof value !== "object" || Array.isArray(value))
     throw new Error("Invalid authority policy configuration.");
@@ -241,6 +261,13 @@ export const AUTHORITY_TIER_LABELS: Record<AuthorityTier, string> = {
   emergency: "Emergency exception",
 };
 
+/** True when this amount is in the owner tier under the given policy. */
+export function inOwnerTier(value: number, policy: AuthorityPolicy = MAINTENANCE_POLICY): boolean {
+  return policy.ownerThresholdInclusive
+    ? value >= policy.ownerApprovalThreshold
+    : value > policy.ownerApprovalThreshold;
+}
+
 export function authorityTier(
   amount: number | null | undefined,
   options: { emergency?: boolean; policy?: AuthorityPolicy } = {},
@@ -249,8 +276,29 @@ export function authorityTier(
   const value = Number(amount ?? 0);
   const policy = options.policy ?? MAINTENANCE_POLICY;
   if (!Number.isFinite(value) || value < policy.supervisorApprovalThreshold) return "proceed";
-  if (value <= policy.ownerApprovalThreshold) return "supervisor";
-  return "owner";
+  if (inOwnerTier(value, policy)) return "owner";
+  return "supervisor";
+}
+
+/** "$249", from a $250 limit: the last whole dollar below a limit. */
+function dollarBelow(limit: number) {
+  return money(Math.ceil(limit) - 1);
+}
+
+/** The v3 ladder in plain words, one line per tier, in order. */
+export function plainLadderLines(policy: AuthorityPolicy = MAINTENANCE_POLICY): string[] {
+  const sup = policy.supervisorApprovalThreshold;
+  const own = policy.ownerApprovalThreshold;
+  const ownerTier = policy.supervisorAlsoApprovesOwnerTier
+    ? "the Operations Supervisor and the owner both approve before work starts"
+    : "the owner approves before work starts";
+  const notice = policy.ownerNoticeSameDay ? "the owner is told the same day" : "the owner is told afterwards";
+  return [
+    `${dollarBelow(sup)} and under: it proceeds and the cost is recorded.`,
+    `${money(sup)} to ${dollarBelow(own)}: the Operations Supervisor approves and ${notice}.`,
+    `${money(own)} and up: ${ownerTier}.`,
+    `Emergencies: mitigate under a documented exception.`,
+  ];
 }
 
 /** Plain-language sentence for the tier a given amount falls into. */
@@ -259,8 +307,22 @@ export function authorityGuidance(
   options: { emergency?: boolean; policy?: AuthorityPolicy } = {},
 ): string {
   const tier = authorityTier(amount, options);
-  const sup = money((options.policy ?? MAINTENANCE_POLICY).supervisorApprovalThreshold);
-  const own = money((options.policy ?? MAINTENANCE_POLICY).ownerApprovalThreshold);
+  const policy = options.policy ?? MAINTENANCE_POLICY;
+  if (policy.ownerThresholdInclusive) {
+    const lines = plainLadderLines(policy);
+    switch (tier) {
+      case "emergency":
+        return `Emergencies: mitigate now under a documented exception. Record the reason, scope, amount, who decided and evidence. Anything beyond stopping the immediate problem follows the normal ladder.`;
+      case "proceed":
+        return lines[0] as string;
+      case "supervisor":
+        return lines[1] as string;
+      case "owner":
+        return lines[2] as string;
+    }
+  }
+  const sup = money(policy.supervisorApprovalThreshold);
+  const own = money(policy.ownerApprovalThreshold);
   switch (tier) {
     case "emergency":
       return `Emergency: mitigate now and record the exception — reason, scope, amount, who decided and evidence. Anything beyond stopping the immediate problem still follows the normal ladder.`;
@@ -275,6 +337,7 @@ export function authorityGuidance(
 
 /** The full ladder, for guidance panels that explain it up front. */
 export function authorityLadder(policy: AuthorityPolicy = MAINTENANCE_POLICY): string[] {
+  if (policy.ownerThresholdInclusive) return plainLadderLines(policy);
   const sup = money(policy.supervisorApprovalThreshold);
   const own = money(policy.ownerApprovalThreshold);
   return [
@@ -283,6 +346,13 @@ export function authorityLadder(policy: AuthorityPolicy = MAINTENANCE_POLICY): s
     `Above ${own} — homeowner approves before work starts.`,
     `Emergency — mitigate now under a documented exception: reason, scope, amount, who decided, evidence.`,
   ];
+}
+
+/** The help line above a Work Order's owner approval section. */
+export function ownerApprovalHelp(policy: AuthorityPolicy = MAINTENANCE_POLICY): string {
+  if (policy.ownerThresholdInclusive)
+    return `${plainLadderLines(policy)[2]} Emergency work to stop damage can go ahead; approval is for the permanent fix. Notified is not the same as approved.`;
+  return "Repairs over the owner approval limit need the owner's approval. Emergency work to stop damage can go ahead; approval is for the permanent fix. Notified is not the same as approved.";
 }
 
 /**
@@ -300,6 +370,9 @@ export function applyStoredMaintenancePolicy(value: unknown): boolean {
   const target = MAINTENANCE_POLICY as unknown as Record<string, unknown>;
   target["supervisorApprovalThreshold"] = sup;
   target["ownerApprovalThreshold"] = own;
+  for (const flag of ["ownerThresholdInclusive", "supervisorAlsoApprovesOwnerTier", "ownerNoticeSameDay"]) {
+    target[flag] = v[flag] === true;
+  }
   if (typeof v['version'] === "string" && v['version']) target["version"] = v['version'];
   return true;
 }
