@@ -15,9 +15,11 @@ import {
   MAINTENANCE_POLICY,
   MAINTENANCE_POLICY_VERSION,
   SECOND_QUOTE_LABELS,
+  inOwnerTier,
   money,
   minutesSince,
   normalisePriority,
+  policyForVersion,
   type EmergencyReason,
   type Priority,
   type SecondQuoteSignal,
@@ -86,7 +88,9 @@ export type WorkOrderLike = {
 
   approval_status?: ApprovalStatus | string | null;
   approved_amount?: number | string | null;
-  /** Supervisor decision for the $200–$350 band. */
+  /** The policy version this Work Order was decided under. */
+  policy_version?: string | null;
+  /** Supervisor decision (supervisor band, and the owner band from policy v3). */
   supervisor_approval_status?: ApprovalStatus | string | null;
   /** When the homeowner was told about supervisor-authorised work. */
   owner_fyi_at?: string | null;
@@ -134,10 +138,12 @@ export type AuthorityVerdict = {
   label: string;
   reason: string;
   ownerApprovalRequired: boolean;
-  /** True in the $200–$350 band: a supervisor decides before work starts. */
+  /** True when the Operations Supervisor decides before work starts (supervisor band, and the owner band from v3). */
   supervisorApprovalRequired: boolean;
-  /** True when the homeowner is told afterwards rather than asked first. */
+  /** True when the homeowner is told rather than asked first. */
   ownerFyiRequired: boolean;
+  /** True when that notice is owed the same day (policy v3). */
+  ownerNoticeSameDay: boolean;
   /** True when mitigation may proceed but the permanent repair still cannot. */
   mitigationOnly: boolean;
   policyVersion: string;
@@ -145,18 +151,25 @@ export type AuthorityVerdict = {
 };
 
 /**
- * Who may authorise this work — one ladder, matching the maintenance policy:
+ * Who may authorise this work. One ladder, read from the policy the Work
+ * Order was decided under (`policy_version`); new work uses the current one:
  *
- *  - under $200 — proceed, record the cost;
- *  - $200 to $350 — a supervisor approves first, the homeowner is told after;
- *  - above $350 — the homeowner decides before work starts;
- *  - emergency mitigation — proceeds under a documented exception, and never
+ *  - $249 and under: proceed, record the cost;
+ *  - $250 to $349: the Operations Supervisor approves first, the owner is told the same day;
+ *  - $350 and up: the Operations Supervisor and the owner both approve first;
+ *  - emergency mitigation: proceeds under a documented exception, and never
  *    carries the permanent repair with it.
+ *
+ * A Work Order stamped with policy v2 keeps v2's rule and wording.
  */
 export function evaluateAuthority(input: WorkOrderLike): AuthorityVerdict {
   const amount = num(input.quote_amount) ?? num(input.approved_amount);
-  const threshold = MAINTENANCE_POLICY.ownerApprovalThreshold;
-  const supThreshold = MAINTENANCE_POLICY.supervisorApprovalThreshold;
+  const policy = policyForVersion(input.policy_version);
+  const v3 = Boolean(policy.ownerThresholdInclusive);
+  const policyVersion = policy.version;
+  const threshold = policy.ownerApprovalThreshold;
+  const supThreshold = policy.supervisorApprovalThreshold;
+  const sameDay = Boolean(policy.ownerNoticeSameDay);
   const phase: WorkOrderPhase = input.phase === "mitigation" ? "mitigation" : "permanent";
   const emergency = input.emergency_reason as EmergencyReason | null | undefined;
 
@@ -169,8 +182,9 @@ export function evaluateAuthority(input: WorkOrderLike): AuthorityVerdict {
       ownerApprovalRequired: false,
       supervisorApprovalRequired: false,
       ownerFyiRequired: true,
+      ownerNoticeSameDay: false,
       mitigationOnly: true,
-      policyVersion: MAINTENANCE_POLICY_VERSION,
+      policyVersion,
       amount,
     };
   }
@@ -184,36 +198,52 @@ export function evaluateAuthority(input: WorkOrderLike): AuthorityVerdict {
       ownerApprovalRequired: false,
       supervisorApprovalRequired: false,
       ownerFyiRequired: false,
+      ownerNoticeSameDay: false,
       mitigationOnly: false,
-      policyVersion: MAINTENANCE_POLICY_VERSION,
+      policyVersion,
       amount: null,
     };
   }
 
-  if (amount > threshold && !input.contractual_exception) {
+  const ownerTier = inOwnerTier(amount, policy);
+
+  if (ownerTier && !input.contractual_exception) {
+    const both = Boolean(policy.supervisorAlsoApprovesOwnerTier);
     return {
       level: "owner",
-      label: "Owner approval required",
-      reason: `Owner approval is required because the permanent repair of ${money(amount)} exceeds ${money(threshold)}.`,
+      label: v3
+        ? both
+          ? "Operations Supervisor and owner approval required"
+          : "Owner approval required"
+        : "Owner approval required",
+      reason: v3
+        ? `${money(amount)} needs ${
+            both ? "the Operations Supervisor and the owner to approve" : "the owner to approve"
+          } before work starts.`
+        : `Owner approval is required because the permanent repair of ${money(amount)} exceeds ${money(threshold)}.`,
       ownerApprovalRequired: true,
-      supervisorApprovalRequired: false,
+      supervisorApprovalRequired: both,
       ownerFyiRequired: false,
+      ownerNoticeSameDay: false,
       mitigationOnly: false,
-      policyVersion: MAINTENANCE_POLICY_VERSION,
+      policyVersion,
       amount,
     };
   }
 
-  if (amount > threshold && input.contractual_exception) {
+  if (ownerTier && input.contractual_exception) {
     return {
       level: "supervisor",
-      label: "Spending approval",
-      reason: `${money(amount)} exceeds ${money(threshold)}, but a recorded contractual exception applies, so a supervisor approves and the homeowner is told afterwards.`,
+      label: v3 ? "Operations Supervisor approval" : "Spending approval",
+      reason: v3
+        ? `${money(amount)} is ${money(threshold)} or more, but a recorded contractual exception applies, so it needs the Operations Supervisor's approval and the owner is told ${sameDay ? "the same day" : "afterwards"}.`
+        : `${money(amount)} exceeds ${money(threshold)}, but a recorded contractual exception applies, so a supervisor approves and the homeowner is told afterwards.`,
       ownerApprovalRequired: false,
       supervisorApprovalRequired: true,
       ownerFyiRequired: true,
+      ownerNoticeSameDay: sameDay,
       mitigationOnly: false,
-      policyVersion: MAINTENANCE_POLICY_VERSION,
+      policyVersion,
       amount,
     };
   }
@@ -221,26 +251,32 @@ export function evaluateAuthority(input: WorkOrderLike): AuthorityVerdict {
   if (amount < supThreshold) {
     return {
       level: "self",
-      label: "Proceed — no approval needed",
-      reason: `${money(amount)} is under ${money(supThreshold)}, so ARHA proceeds and records the cost.`,
+      label: v3 ? "Proceed, no approval needed" : "Proceed — no approval needed",
+      reason: v3
+        ? `${money(amount)} is under ${money(supThreshold)}, so it proceeds and the cost is recorded.`
+        : `${money(amount)} is under ${money(supThreshold)}, so ARHA proceeds and records the cost.`,
       ownerApprovalRequired: false,
       supervisorApprovalRequired: false,
       ownerFyiRequired: false,
+      ownerNoticeSameDay: false,
       mitigationOnly: false,
-      policyVersion: MAINTENANCE_POLICY_VERSION,
+      policyVersion,
       amount,
     };
   }
 
   return {
     level: "supervisor",
-    label: "Spending approval",
-    reason: `${money(amount)} falls between ${money(supThreshold)} and ${money(threshold)}, so a supervisor approves before work starts and the homeowner is told afterwards.`,
+    label: v3 ? "Operations Supervisor approval" : "Spending approval",
+    reason: v3
+      ? `${money(amount)} needs the Operations Supervisor's approval before work starts, and the owner is told ${sameDay ? "the same day" : "afterwards"}.`
+      : `${money(amount)} falls between ${money(supThreshold)} and ${money(threshold)}, so a supervisor approves before work starts and the homeowner is told afterwards.`,
     ownerApprovalRequired: false,
     supervisorApprovalRequired: true,
     ownerFyiRequired: true,
+    ownerNoticeSameDay: sameDay,
     mitigationOnly: false,
-    policyVersion: MAINTENANCE_POLICY_VERSION,
+    policyVersion,
     amount,
   };
 }
@@ -509,7 +545,7 @@ export function derivedStage(wo: WorkOrderLike): WorkOrderStage {
   return "needs_diagnosis";
 }
 
-/** Has a supervisor signed off the $200–$350 band? */
+/** Has the Operations Supervisor signed off this amount? */
 export function supervisorApproved(wo: WorkOrderLike): boolean {
   return wo.supervisor_approval_status === "approved";
 }
@@ -574,9 +610,14 @@ export function nextAction(wo: WorkOrderLike, now = new Date()): string {
     if (sup === "pending") return "Waiting on the supervisor's decision on this amount.";
     if (sup === "declined")
       return "Supervisor declined — record the alternative before going further.";
+    if (verdict.ownerApprovalRequired)
+      return "Request the Operations Supervisor's approval for this amount. The owner approves too.";
+    if (verdict.ownerNoticeSameDay)
+      return "Request the Operations Supervisor's approval for this amount, then tell the owner the same day.";
     return "Request spending approval for this amount, then tell the homeowner once it is authorised.";
   }
   if (verdict.ownerFyiRequired && supervisorApproved(wo) && !wo.owner_fyi_at && !wo.closed_at) {
+    if (verdict.ownerNoticeSameDay) return "Approved. Tell the owner today that this work is going ahead.";
     return "Approved — send the homeowner the FYI that this work is going ahead.";
   }
 
@@ -694,7 +735,7 @@ export function workOrderBucket(wo: WorkOrderLike, now = new Date()): WorkOrderB
   }
 }
 
-export { EMERGENCY_REASON_LABELS, MAINTENANCE_POLICY_VERSION, money };
+export { EMERGENCY_REASON_LABELS, MAINTENANCE_POLICY, MAINTENANCE_POLICY_VERSION, money };
 
 /* ------------------------------------------------------------------ */
 /* Ownership                                                           */
@@ -748,7 +789,7 @@ export const OWNER_APPROVAL_KIND = "maintenance_owner_approval";
 /** The same approvals architecture, asked of a supervisor instead of the owner. */
 export const SUPERVISOR_APPROVAL_KIND = "maintenance_supervisor_approval";
 
-/** The supervisor request for the $200–$350 band. */
+/** The Operations Supervisor request (supervisor band, and the owner band from policy v3). */
 export function supervisorApprovalRequest(
   wo: WorkOrderLike & {
     id?: string;

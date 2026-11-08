@@ -1,4 +1,4 @@
-import { MAINTENANCE_POLICY } from './maintenance-policy';
+import { MAINTENANCE_POLICY, inOwnerTier, plainLadderLines } from './maintenance-policy';
 export type OwnerSendType = 'owner_task' | 'ticket_update' | 'approval' | 'review';
 export const OWNER_SEND_TYPES = [
   { type: 'owner_task', label: 'Owner task', description: 'Ask the owner to complete a standalone activity.' },
@@ -11,6 +11,11 @@ export function ownerSendTypes(ticketId?: string) {
 }
 export function approvalPolicyLine(amount: number) {
   const { supervisorApprovalThreshold: supervisor, ownerApprovalThreshold: owner } = MAINTENANCE_POLICY;
+  if (MAINTENANCE_POLICY.ownerThresholdInclusive) {
+    const lines = plainLadderLines(MAINTENANCE_POLICY);
+    if (amount < supervisor) return lines[0] as string;
+    return (inOwnerTier(amount, MAINTENANCE_POLICY) ? lines[2] : lines[1]) as string;
+  }
   if (amount < supervisor) return `Under $${supervisor}: no owner approval needed.`;
   if (amount <= owner) return `$${supervisor} to $${owner}: Supervisor approves and the owner is told afterward.`;
   return `Over $${owner}: owner approves before work starts.`;

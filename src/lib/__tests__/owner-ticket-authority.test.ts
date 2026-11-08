@@ -26,7 +26,7 @@ it("does not confuse missing quotes or internal approval with permission to proc
     { quote_amount: MAINTENANCE_POLICY.supervisorApprovalThreshold },
   ]);
   expect(request.ownerActionRequired).toBe(false);
-  expect(request.why).toContain("supervisor approves before work starts");
+  expect(request.why).toContain("needs the Operations Supervisor's approval before work starts, and the owner is told the same day");
 });
 it("preserves mitigation limits and completed owner decisions in the explanation", () => {
   const mitigation = ownerTicketRequest([

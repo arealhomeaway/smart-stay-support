@@ -67,7 +67,7 @@ T15 Routing by the time: a new ticket goes to the coordinator on shift now on th
 C1 Claims and refunds are steps on the ticket (a Claim card and a Refund or credit card). The Claims and Refunds pages are hidden. Databases is the window, with a Claims to work filter.
 C2 Approval authority for claims and refunds: a coordinator up to and including $500; the Supervisor above $500 up to and including $1,500; the Director of Operations above that.
 C3 Claim tickets are always workable, whatever their age or status; they show in Needs you now and My work only when a person owns them or a deadline is due. Team B handles guest damage claims. The CEO does not review claims. Pending Claim Review with Josh becomes the claim stage Claim review.
-C4 Repair card on the work order flow in plain words: choose a vendor, the vendor accepts, check the approval, then the work. Approval limits use the verified SOP numbers (open item K1).
+C4 Repair card on the work order flow in plain words: choose a vendor, the vendor accepts, check the approval, then the work. Approval ladder (policy v3): $249 and under proceeds and the cost is recorded; $250 to $349 the Operations Supervisor approves and the owner is told the same day; $350 and up the Operations Supervisor and the owner both approve before work starts (exactly $350 needs the owner); emergencies mitigate under a documented exception.
 C5 Vendor invoices: the coordinator adds each invoice to the ticket's work order; the Operations Supervisor approves it with a Bill To (ARHA, Home Owner, Tenant, Onboarding or Needs Review); Finance sees approved invoices and records payment; an invoice must link to a ticket.
 C6 Work order reviews: Resolve creates a review task for each finished work order (lawn too) with the Breezeway link; the coordinator reviews in Breezeway and marks it reviewed in Resolve. The Supervisor's check on daily logs and work order reviews is recorded automatically.
 C7 Current people appear in every picklist.
@@ -137,5 +137,4 @@ O5 Active Owner: owners may log hours before closing; opportunities open at enro
 O6 Phase 2: the full homeowner portal and the onboarding integrations.
 
 ## 12. Defaults and open items
-K1 OPEN: repair approval limits. Live app: $200 alone, $200 to $350 the Supervisor, over $350 the owner. Repair Approval SOP: $250 Supervisor and $350 owner. Decided to use the verified SOP's numbers; which SOP is not confirmed.
 K2 Defaults chosen so work could continue: import name match ignores capitals and spaces; lunch cover same team first; the on call person also gets a Direct Booking alert overnight; Median becomes Typical; the homeowner contact list shows roles with the company shared phone and info email; the import button reads Preview 20 tickets; only an Admin deletes users; the Supervisor's shifts stay as data and are not listed; a handoff to a role goes to the person on shift in that role; a Direct Booking follow up is 48 hours after each follow up.

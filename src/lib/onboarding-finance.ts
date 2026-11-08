@@ -9,6 +9,7 @@ import {
   authorityTier,
   money,
   type AuthorityTier,
+  readAuthorityPolicy,
   type AuthorityPolicy,
 } from "./maintenance-policy";
 
@@ -94,7 +95,8 @@ export function tierFor(
     return row.authority_tier as AuthorityTier;
   return authorityTier(row.estimate_amount, {
     emergency: row.emergency,
-    ...(row.authority_policy ? { policy: row.authority_policy } : {}),
+    // Onboarding cost requests keep their own rule; repair policy v3 does not change it.
+    policy: row.authority_policy ?? readAuthorityPolicy(null),
   });
 }
 

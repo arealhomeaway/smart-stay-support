@@ -83,7 +83,10 @@ export function authorizationState(wo: DispatchWorkOrder): AuthorizationState {
   const v = evaluateAuthority(wo);
   const who = v.ownerApprovalRequired ? "owner" : v.supervisorApprovalRequired ? "supervisor" : null;
   const stale = !!wo.authorization_stale;
-  const approved = who === "owner" ? wo.approval_status === "approved" : who === "supervisor" ? wo.supervisor_approval_status === "approved" : true;
+  const ownerOk = wo.approval_status === "approved";
+  const supervisorOk = wo.supervisor_approval_status === "approved";
+  // Policy v3: in the owner band the Operations Supervisor approves as well.
+  const approved = who === "owner" ? ownerOk && (!v.supervisorApprovalRequired || supervisorOk) : who === "supervisor" ? supervisorOk : true;
   const satisfied = who === null ? true : approved && !stale;
   const vendorChanged = !!wo.authorized_vendor_org_id && wo.vendor_org_id !== wo.authorized_vendor_org_id;
   const label = stale
@@ -91,8 +94,8 @@ export function authorizationState(wo: DispatchWorkOrder): AuthorizationState {
       ? "Approval was for a different vendor — request approval for the replacement vendor"
       : "Approval no longer covers this scope or amount — request again"
     : who === null ? "No approval required"
-    : satisfied ? (who === "owner" ? "Owner approved" : "Supervisor approved")
-    : who === "owner" ? "Waiting on owner approval" : "Waiting on supervisor approval";
+    : satisfied ? (who === "owner" ? (v.supervisorApprovalRequired ? "Operations Supervisor and owner approved" : "Owner approved") : "Supervisor approved")
+    : who === "owner" ? (ownerOk ? "Waiting on supervisor approval" : "Waiting on owner approval") : "Waiting on supervisor approval";
   return { required: who !== null, who, satisfied, stale, label, reason: v.reason };
 }
 

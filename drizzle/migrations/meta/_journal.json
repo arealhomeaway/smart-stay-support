@@ -2031,6 +2031,13 @@
       "when": 1794164622833,
       "tag": "0289_playbooks_supervisor",
       "breakpoints": true
+    },
+    {
+      "idx": 290,
+      "version": "7",
+      "when": 1794167327942,
+      "tag": "0290_repair_policy_v3_expense_authorization",
+      "breakpoints": true
     }
   ]
 }

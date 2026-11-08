@@ -195,7 +195,7 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
       const woIds = (links.data ?? []).filter((l) => l.link_type === "work_order").map((l) => l.target_id);
       let wo: AuthorizationContext = null;
       if (woIds.length) {
-        const { data: w } = await supabase.from("work_orders").select("phase, emergency_reason, contractual_exception, approval_status, supervisor_approval_status").in("id", woIds).limit(1);
+        const { data: w } = await supabase.from("work_orders").select("phase, emergency_reason, contractual_exception, approval_status, supervisor_approval_status, policy_version").in("id", woIds).limit(1);
         wo = ((w ?? [])[0] as AuthorizationContext) ?? null;
       }
       const authRes = await supabase.rpc("expense_authorization_status", { _expense: expenseId });

@@ -12,14 +12,19 @@ describe("vendor sourcing", () => {
     expect(visitNeedsFollowUp("no_issue_found")).toBe(false);
     expect(visitNeedsFollowUp("diagnosed_only")).toBe(true);
   });
-  it("reuses the authority ladder unchanged ($200 / $350)", () => {
+  it("reuses the authority ladder, repair policy v3 ($250 / $350 inclusive)", () => {
     expect(authorizationState({ quote_amount: 150 }).required).toBe(false);
+    expect(authorizationState({ quote_amount: 249.99 }).required).toBe(false);
+    expect(authorizationState({ quote_amount: 250 }).who).toBe("supervisor");
     expect(authorizationState({ quote_amount: 300 }).who).toBe("supervisor");
+    expect(authorizationState({ quote_amount: 350 }).who).toBe("owner");
     expect(authorizationState({ quote_amount: 500 }).who).toBe("owner");
-    expect(authorizationState({ quote_amount: 500, approval_status: "approved" }).satisfied).toBe(true);
+    // The owner tier needs the Operations Supervisor as well.
+    expect(authorizationState({ quote_amount: 500, approval_status: "approved" }).satisfied).toBe(false);
+    expect(authorizationState({ quote_amount: 500, approval_status: "approved", supervisor_approval_status: "approved" }).satisfied).toBe(true);
   });
   it("stale approval does not count", () => {
-    const a = authorizationState({ quote_amount: 500, approval_status: "approved", authorization_stale: true });
+    const a = authorizationState({ quote_amount: 500, approval_status: "approved", supervisor_approval_status: "approved", authorization_stale: true });
     expect(a.satisfied).toBe(false);
     expect(a.stale).toBe(true);
   });

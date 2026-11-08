@@ -1,4 +1,5 @@
 import { formatPropertyLabel } from "@/lib/property-label";
+import { MAINTENANCE_POLICY_VERSION } from "@/lib/maintenance-policy";
 /**
  * Breezeway outbound task creation (server-only).
  *
@@ -468,6 +469,8 @@ export async function createOutboundTask(
           created_by: actorId,
           assigned_to: actorId,
           is_demo: ticketRow.data?.is_demo ?? false,
+          // The database default still names policy v2; new work is decided under the current one.
+          policy_version: MAINTENANCE_POLICY_VERSION,
         })
         .select("id")
         .single();

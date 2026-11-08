@@ -62,10 +62,12 @@ describe("branching", () => {
     expect(current("other_complaint", about("noise"))).toBe("safety");
     expect(current("other_complaint", about("wifi"))).toBe("resolved");
   });
-  test("maintenance: owner email step only at $200 or more", () => {
+  test("maintenance: owner email step only at $250 or more (repair policy v3)", () => {
     const steps = (amt: string) => tpl("maintenance").steps.filter((s) => s.key !== "owner_email" || true) && checklistProgress(tpl("maintenance"), [ans("quote", "yes", { fields: { amount: amt } })], false).total;
-    expect(steps("350")).toBe(steps("200"));
-    expect(steps("199")).toBe(steps("200") - 1);
+    expect(steps("350")).toBe(steps("250"));
+    expect(steps("349.99")).toBe(steps("250"));
+    expect(steps("249.99")).toBe(steps("250") - 1);
+    expect(steps("200")).toBe(steps("249.99"));
   });
   test("'Not yet' keeps the step open", () => {
     const p = checklistProgress(tpl("lockout"), [ans("guest", "not_yet")], true);

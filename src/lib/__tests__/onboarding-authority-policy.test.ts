@@ -4,12 +4,19 @@ import { tierFor } from "../onboarding-finance";
 import { setOnboardingPolicy } from "../onboarding-policy.server";
 
 describe("onboarding authority configuration", () => {
-  it("preserves the approved baseline for existing Operations callers", () => {
-    expect(authorityTier(199)).toBe("proceed");
-    expect(authorityTier(200)).toBe("supervisor");
-    expect(authorityTier(350)).toBe("supervisor");
+  it("Operations callers use repair policy v3; the onboarding baseline is unchanged", () => {
+    expect(authorityTier(249.99)).toBe("proceed");
+    expect(authorityTier(250)).toBe("supervisor");
+    expect(authorityTier(349.99)).toBe("supervisor");
+    expect(authorityTier(350)).toBe("owner");
     expect(authorityTier(351)).toBe("owner");
-    expect(readAuthorityPolicy(null).ownerApprovalThreshold).toBe(350);
+    const baseline = readAuthorityPolicy(null);
+    expect(baseline.supervisorApprovalThreshold).toBe(200);
+    expect(baseline.ownerApprovalThreshold).toBe(350);
+    expect(authorityTier(199, { policy: baseline })).toBe("proceed");
+    expect(authorityTier(200, { policy: baseline })).toBe("supervisor");
+    expect(authorityTier(350, { policy: baseline })).toBe("supervisor");
+    expect(authorityTier(351, { policy: baseline })).toBe("owner");
   });
   it("uses an explicit policy for new requests and matching guidance", () => {
     const policy = readAuthorityPolicy({

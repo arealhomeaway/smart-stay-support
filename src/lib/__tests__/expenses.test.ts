@@ -53,12 +53,14 @@ describe("documentation readiness", () => {
     const sup = MAINTENANCE_POLICY.supervisorApprovalThreshold;
     expect(authorizationNeed({ expense_type: "vendor_service", amount: sup - 1 }).required).toBe(false);
     expect(authorizationNeed({ expense_type: "vendor_service", amount: sup }).who).toBe("supervisor");
-    expect(authorizationNeed({ expense_type: "vendor_service", amount: own }).who).toBe("supervisor");
+    expect(authorizationNeed({ expense_type: "vendor_service", amount: own - 0.01 }).who).toBe("supervisor");
+    // Policy v3: exactly the owner amount needs the owner, and the Supervisor approves too.
+    expect(authorizationNeed({ expense_type: "vendor_service", amount: own })).toMatchObject({ who: "owner", alsoSupervisor: true });
     expect(authorizationNeed({ expense_type: "vendor_service", amount: own + 1 }).who).toBe("owner");
     // Purchases are not maintenance authority decisions.
     expect(authorizationRequired({ expense_type: "purchase", amount: own + 1 })).toBe(false);
     expect(missingDocumentation({ ...base, amount: own + 1 })).toContain(
-      "Owner authorization evidence (required by the Maintenance Authority Policy)",
+      "Operations Supervisor and owner approval evidence (required by the Maintenance Authority Policy)",
     );
     // A note or unverified approval link never satisfies a required approval.
     expect(missingDocumentation({ ...base, amount: own + 1, approval_id: "a" })).toHaveLength(1);
@@ -74,7 +76,9 @@ describe("documentation readiness", () => {
   });
   test("approval recorded on the linked Work Order counts as evidence", () => {
     const own = MAINTENANCE_POLICY.ownerApprovalThreshold;
-    expect(missingDocumentation({ ...base, amount: own + 1 }, { approval_status: "approved" })).toEqual([]);
+    expect(missingDocumentation({ ...base, amount: own + 1 }, { approval_status: "approved", supervisor_approval_status: "approved" })).toEqual([]);
+    // Policy v3: owner approval alone does not cover the owner tier.
+    expect(missingDocumentation({ ...base, amount: own + 1 }, { approval_status: "approved" })).toHaveLength(1);
     expect(missingDocumentation({ ...base, amount: own + 1 }, { approval_status: "pending" })).toHaveLength(1);
   });
   test("reservation: not applicable is reviewable, required-unresolved blocks", () => {
@@ -91,9 +95,10 @@ describe("documentation readiness", () => {
     expect(canCreateExpense({ payee: "X", amount: 10 })).toBe(true);
     expect(canCreateExpense({ property_id: "p", reason: "Leak" })).toBe(true);
   });
-  test("maintenance thresholds unchanged", () => {
+  test("maintenance thresholds are repair policy v3", () => {
     expect(MAINTENANCE_POLICY.ownerApprovalThreshold).toBe(350);
-    expect(MAINTENANCE_POLICY.supervisorApprovalThreshold).toBe(200);
+    expect(MAINTENANCE_POLICY.supervisorApprovalThreshold).toBe(250);
+    expect(MAINTENANCE_POLICY.ownerThresholdInclusive).toBe(true);
   });
 });
 

@@ -40,7 +40,7 @@ import { displayName, useCurrentUserId, type TeamMember } from "@/hooks/useTeam"
 import { useRole } from "@/hooks/useRole";
 import { stateChip } from "@/lib/semantic";
 import { evidenceProgress, type RequirementLike } from "@/lib/claims";
-import { WARRANTY_OVERRIDE_LABELS, type WarrantyOverrideReason } from "@/lib/maintenance-policy";
+import { WARRANTY_OVERRIDE_LABELS, ownerApprovalHelp, policyForVersion, type WarrantyOverrideReason } from "@/lib/maintenance-policy";
 import {
   APPROVAL_STATUS_LABELS,
   BUCKET_LABELS,
@@ -345,7 +345,7 @@ export function WorkOrderDrawer({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  /** $200–$350: a supervisor decides first, on the same approvals record. */
+  /** The Operations Supervisor decides first, on the same approvals record. */
   const requestSupervisorApproval = useMutation({
     mutationFn: async () => {
       if (!workOrder) return;
@@ -755,7 +755,7 @@ export function WorkOrderDrawer({
                 </div>
               )}
 
-              {supervisorApproved(workOrder) && !workOrder.owner_fyi_at ? (
+              {supervisorApproved(workOrder) && verdict.ownerFyiRequired && !workOrder.owner_fyi_at ? (
                 <div className="space-y-2">
                   <Label className="text-xs">What the homeowner was told, and where</Label>
                   <Textarea
@@ -789,9 +789,7 @@ export function WorkOrderDrawer({
         <section className="space-y-3">
           <h3 className="font-display text-sm font-semibold">Owner approval</h3>
           <p className="text-xs text-muted-foreground">
-            Repairs over the owner approval limit need the owner's approval. Emergency work to stop
-            damage can go ahead; approval is for the permanent fix. Notified is not the same as
-            approved.
+            {ownerApprovalHelp(policyForVersion(workOrder.policy_version as string | null | undefined))}
           </p>
 
           {verdict.ownerApprovalRequired ? (
