@@ -116,6 +116,9 @@ async function graph(path: string, init?: RequestInit) {
   return res;
 }
 
+/** Graph access for other server-only mailbox features (always the one authorised mailbox). */
+export const mailboxGraph = graph;
+
 /**
  * Writes the message's categories back.
  *
