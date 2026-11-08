@@ -2,8 +2,8 @@
  * Contextual Email Composer — server calls.
  *
  * Any operations employee can write and send from the shared mailbox on a
- * record they can already open. Only supervisors can add or change the
- * templates everyone shares.
+ * record they can already open. Only supervisors and the Director of
+ * Onboarding can add or change the templates everyone shares.
  */
 
 import { createServerFn } from "@tanstack/react-start";

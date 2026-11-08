@@ -36,6 +36,21 @@ export async function assertSupervisor(db: Client, userId: string) {
   if (!data) throw new Error("Only supervisors and platform owners can change vendor records.");
 }
 
+/**
+ * Vendor record editing: Supervisors and Admin, plus the Director of
+ * Onboarding, Project Manager and Utilities roles (DB can_edit_vendors).
+ * Until that staged rule exists the existing Supervisor rule applies.
+ * Status, Gold Standard and compliance fields, vendor logins and imports keep
+ * their own Operations leadership checks.
+ */
+export async function assertVendorEditor(db: Client, userId: string) {
+  type Loose = { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { code?: string; message?: string } | null }> };
+  const { data, error } = await (db as unknown as Loose).rpc("can_edit_vendors", { _user_id: userId });
+  if (error && (error.code === "PGRST202" || error.code === "42883")) return assertSupervisor(db, userId);
+  if (error) throw new Error("Could not verify your access level.");
+  if (data !== true) throw new Error("Only supervisors, the Director of Onboarding, Project Managers and Utilities can change vendor records.");
+}
+
 async function actorLabel(db: Client, userId: string) {
   const { data } = await db
     .from("profiles")
