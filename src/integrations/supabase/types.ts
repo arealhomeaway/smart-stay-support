@@ -16561,6 +16561,10 @@ export type Database = {
         Args: { _actor?: string }
         Returns: undefined
       }
+      archive_ticket: {
+        Args: { _reason: string; _ticket_id: string }
+        Returns: Json
+      }
       backup_verify_cron_token: { Args: { _token: string }; Returns: boolean }
       begin_attachment_upload: {
         Args: { _actor_id: string; _input: Json }
@@ -17875,6 +17879,7 @@ export type Database = {
         }
         Returns: string
       }
+      restore_ticket: { Args: { _ticket_id: string }; Returns: Json }
       resubmit_owner_time_entry: {
         Args: {
           _activity: string
