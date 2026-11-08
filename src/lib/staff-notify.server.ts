@@ -57,31 +57,34 @@ function actionLabel(kind: string) {
 }
 
 /**
- * The Team Queue alerts (Supervisor at 10 minutes, Director at 15) are emailed by their own
- * every-minute run (Emily, Nov 8, 2026), so the 5-minute pass leaves them alone and each is
- * emailed by exactly one run.
+ * The Team Queue alerts (Supervisor at 10 minutes, Director at 15) are emailed the moment they
+ * are written (Emily, Nov 8, 2026): the database asks for each one by id. The 5-minute pass
+ * leaves them alone for 10 minutes, then sends any still waiting, so each is emailed once.
  */
 export const FAST_EMAIL_KINDS = ["team_queue_supervisor", "team_queue_director"] as const;
+export const FAST_EMAIL_BACKSTOP_MINUTES = 10;
 
 /**
  * Sends staff notifications still waiting on email. Safe to run on a schedule.
- * `scope` "fast" sends only the Team Queue alerts; the default sends everything else.
+ * With `fastId`, sends only that one Team Queue alert; otherwise sends everything else, plus
+ * Team Queue alerts still waiting after the backstop.
  */
 export async function drainStaffNotifications(
   supabase: Client,
   limit = 50,
   delivery?: Delivery,
   jobRunId?: string,
-  scope: "default" | "fast" = "default",
+  fastId?: string,
+  now: Date = new Date(),
 ) {
   const pending = supabase
     .from("staff_notifications")
     .select("id, user_id, kind, title, body, link_path, priority, email_attempts, is_demo")
     .eq("email_status", "pending");
-  const scoped =
-    scope === "fast"
-      ? pending.in("kind", [...FAST_EMAIL_KINDS])
-      : pending.not("kind", "in", `(${FAST_EMAIL_KINDS.join(",")})`);
+  const backstop = new Date(now.getTime() - FAST_EMAIL_BACKSTOP_MINUTES * 60_000).toISOString();
+  const scoped = fastId
+    ? pending.eq("id", fastId).in("kind", [...FAST_EMAIL_KINDS])
+    : pending.or(`kind.not.in.(${FAST_EMAIL_KINDS.join(",")}),created_at.lt.${backstop}`);
   const { data, error } = await scoped.order("created_at").limit(limit);
   if (error) throw error;
 
