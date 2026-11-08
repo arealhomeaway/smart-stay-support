@@ -42,7 +42,7 @@ const ACTIONS: Capability[] = [
   "finance_view", // view Finance read only
   "owner_program_admin", // edit the Opportunity Library
   "owner_insight_view", // open the Opportunity Library and Participation insight
-  "playbooks_edit", // Ticket checklists menu; playbook editing reads canEditPlaybooks (see PLAYBOOKS)
+  "playbooks_edit", // no longer gates a screen: Ticket checklists and playbook editing read canEditPlaybooks (see PLAYBOOKS)
   "user_management",
   "team_schedule_view", // Team & Coverage Schedule
   "oversight",
