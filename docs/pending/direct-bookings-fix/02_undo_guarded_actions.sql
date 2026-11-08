@@ -30,8 +30,7 @@ BEGIN
     'direct_booking_approval', 'A direct booking reply needs your approval',
     'Check the homes and the reply. The clock is running.', _lead_id);
   RETURN jsonb_build_object('approval_required', true, 'approval_id', _approval);
-END $function$
-;
+END $function$;
 
 CREATE OR REPLACE FUNCTION public.decide_direct_booking_approval(_lead_id uuid, _decision text, _note text DEFAULT NULL::text)
  RETURNS jsonb
@@ -57,8 +56,7 @@ BEGIN
       'Your direct booking reply needs a change', coalesce(_note, ''), _lead_id);
   END IF;
   RETURN jsonb_build_object('approval_id', _a.id, 'decided_as', _as, 'reply', _a.reply);
-END $function$
-;
+END $function$;
 
 CREATE OR REPLACE FUNCTION public.record_direct_booking_reply(_lead_id uuid, _via text)
  RETURNS timestamp with time zone
@@ -91,8 +89,7 @@ BEGIN
       'direct_booking_sent_copy', 'A direct booking reply was sent', coalesce(_lead.reply_subject, ''), _lead_id);
   END IF;
   RETURN _sent;
-END $function$
-;
+END $function$;
 
 CREATE OR REPLACE FUNCTION public.record_direct_booking_follow_up(_lead_id uuid)
  RETURNS void
@@ -105,8 +102,7 @@ BEGIN
   UPDATE public.leads SET last_follow_up_at = now(), last_contact_at = now(), updated_at = now()
    WHERE id = _lead_id AND kind = 'direct_booking' AND reply_sent_at IS NOT NULL;
   IF NOT FOUND THEN RAISE EXCEPTION 'Send the first reply before a follow-up.'; END IF;
-END $function$
-;
+END $function$;
 
 CREATE OR REPLACE FUNCTION public.mark_direct_booking_outcome(_lead_id uuid, _outcome text, _property_id uuid DEFAULT NULL::uuid, _move_in date DEFAULT NULL::date, _reason text DEFAULT NULL::text, _note text DEFAULT NULL::text)
  RETURNS void
@@ -135,8 +131,7 @@ BEGIN
      WHERE id = _lead_id;
   ELSE RAISE EXCEPTION 'Choose booked or not booked.';
   END IF;
-END $function$
-;
+END $function$;
 
 DROP FUNCTION IF EXISTS public.mark_direct_booking_partner_approved(uuid, text);
 DROP FUNCTION IF EXISTS public.direct_booking_cc_emails();
