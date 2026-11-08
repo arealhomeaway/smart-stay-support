@@ -17013,6 +17013,7 @@ export type Database = {
         Returns: boolean
       }
       direct_booking_daily_summary: { Args: { _at?: string }; Returns: number }
+      direct_booking_eligible_now: { Args: never; Returns: boolean }
       direct_booking_notify: {
         Args: {
           _body: string
