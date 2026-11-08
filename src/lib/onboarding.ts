@@ -215,11 +215,15 @@ export function validateHandoff(
         ]
       : []),
     {
+      // A handoff never blocks (register O4): open handoff tasks become carry over items.
       key: "tasks",
-      label: "Blocking onboarding tasks complete",
+      label: "Open handoff tasks carry over",
       passed: openBlocking.length === 0,
-      blocking: true,
-      detail: `${openBlocking.length} blocking task(s) still open.`,
+      blocking: false,
+      detail:
+        openBlocking.length === 0
+          ? "No handoff tasks are open."
+          : `${openBlocking.length} open handoff task${openBlocking.length === 1 ? "" : "s"} will carry over to Operations.`,
     },
     {
       key: "approvals",
