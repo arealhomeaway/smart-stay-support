@@ -52,6 +52,7 @@ async function eligibleStaffRecipient(supabase: Client, userId: string) {
 function actionLabel(kind: string) {
   if (kind.startsWith("handoff")) return "Open the handoff";
   if (kind === "approval_required") return "Review the approval";
+  if (kind === "ticket_note" || kind === "note_mention" || kind.startsWith("team_queue")) return "Open the ticket";
   return "Open in Resolve";
 }
 

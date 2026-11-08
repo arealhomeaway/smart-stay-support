@@ -35,6 +35,11 @@ export const KIND_LABELS: Record<string, string> = {
   cleaner_safeguard_activated: "STR cleaner time",
   cleaner_safeguard_digest: "STR cleaner weekly summary",
   closure_qa: "Closure check",
+  approval_decided: "Approval decided",
+  note_mention: "You were mentioned",
+  team_queue_director: "Team Queue: nobody has taken it",
+  team_queue_supervisor: "Team Queue: nobody has taken it",
+  ticket_note: "New note",
   handoff_accepted: "Handoff accepted",
   handoff_pending: "Handoff waiting",
   handoff_rejected: "Handoff sent back",
@@ -69,6 +74,8 @@ export function notificationLink(row: FeedRow, approval?: ApprovalTarget | null)
   const id = row.entity_id && UUID.test(row.entity_id) ? row.entity_id : null;
 
   if (row.kind === "approval_required") {
+    // Approval alerts open the exact ticket when the database stored one (Emily, Nov 7, 2026).
+    if (stored && /^\/tickets\/[0-9a-f-]{36}$/i.test(stored)) return stored;
     if (approval && approval.entity_id && UUID.test(approval.entity_id)) {
       if (approval.kind === "onboarding_task" && approval.property_id && UUID.test(approval.property_id)) {
         return `/onboarding/${approval.property_id}?tab=work&task=${approval.entity_id}`;

@@ -11,7 +11,9 @@ export type NotificationCategory =
   | "approvals"
   | "escalations"
   | "handoffs"
-  | "work_orders";
+  | "work_orders"
+  | "notes_mentions"
+  | "team_queue";
 
 export type CategoryMeta = {
   key: NotificationCategory;
@@ -45,6 +47,16 @@ export const NOTIFICATION_CATEGORIES: CategoryMeta[] = [
     label: "Work Orders and closure checks",
     description: "Vendor work and the checks before a job is closed.",
   },
+  {
+    key: "notes_mentions",
+    label: "Notes and mentions",
+    description: "Someone adds a note to your ticket or mentions you.",
+  },
+  {
+    key: "team_queue",
+    label: "Team Queue",
+    description: "Right now work nobody has taken yet.",
+  },
 ];
 
 export type NotificationPreferences = {
@@ -59,6 +71,8 @@ const ALL_ON: Record<NotificationCategory, boolean> = {
   escalations: true,
   handoffs: true,
   work_orders: true,
+  notes_mentions: true,
+  team_queue: true,
 };
 
 export const DEFAULT_PREFERENCES: NotificationPreferences = {
@@ -69,6 +83,8 @@ export const DEFAULT_PREFERENCES: NotificationPreferences = {
 
 /** The notification kinds the database writes, mapped onto a person's settings. */
 export function categoryForKind(kind: string): NotificationCategory {
+  if (kind === "ticket_note" || kind === "note_mention") return "notes_mentions";
+  if (kind.startsWith("team_queue")) return "team_queue";
   if (kind.startsWith("handoff")) return "handoffs";
   if (kind.includes("approval")) return "approvals";
   if (kind.includes("escalat") || kind.includes("overdue") || kind.includes("breach"))
