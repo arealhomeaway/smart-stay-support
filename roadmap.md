@@ -242,3 +242,11 @@
 ## Nov 8 playbooks: Supervisor edits, everyone else views
 - [x] Supervisor (holder or cover) saves, approves, archives and uploads SOPs; viewers see no edit controls; applied as migration 0289 with cancelled live check
 - [ ] Decide: approval history labels Supervisor actions as general staff; Ticket checklists still editable by every Supervisor account type, including Finance
+
+## Nov 8 Answers, finish Direct Bookings (no publish)
+- [ ] A. Apply Direct Bookings parts 3 (review line only), 4, 5; verify; cancelled live test
+- [ ] C. Vendors: Documents upload and program owner field shown read only to onboarding roles; test
+- [ ] D1. New playbook history lines record Operations Supervisor role
+- [ ] D2. Ticket checklists edit rule = playbook rule (DB + screen + tests)
+- [ ] E2. v3 as database default for new Work Orders (staged + applied + test)
+- [ ] F. Register edits H1, A15, K2
