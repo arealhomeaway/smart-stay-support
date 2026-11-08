@@ -25,7 +25,7 @@ import {
 } from "@/lib/tickets";
 import { usDateTime } from "@/lib/dates";
 import { useCurrentUserId } from "@/hooks/useTeam";
-import { handoffAcceptPatch, handoffSelfAcceptCheck } from "@/lib/handoff-accept";
+import { handoffAcceptPatch, handoffSelfAcceptCheck, settleHandoff } from "@/lib/handoff-accept";
 
 type Ticket = {
   id: string;
@@ -179,6 +179,16 @@ export function HandoffPanel({
     }
   }
 
+  /** The ticket's handoff fields as saved now, so a failed handoff record can put them back. */
+  async function ticketHandoffState() {
+    const { data } = await supabase
+      .from("tickets")
+      .select("handoff_status, pending_handoff_to, current_action_owner, assignment_source, assignment_note")
+      .eq("id", ticket.id)
+      .maybeSingle();
+    return data ?? null;
+  }
+
   async function accept(handoffId: string, requestedFrom: string | null) {
     const { data: userData } = await supabase.auth.getUser();
     const check = handoffSelfAcceptCheck(userData.user?.id, requestedFrom);
@@ -189,24 +199,41 @@ export function HandoffPanel({
     // The designated recipient (to_user) is never overwritten here — who it
     // was offered to and who actually accepted are two different facts, each
     // kept in its own column. See handoffAcceptPatch for the exact shape.
-    const { error } = await supabase
-      .from("handoffs")
-      .update(handoffAcceptPatch(userData.user?.id ?? null, new Date().toISOString()))
-      .eq("id", handoffId);
-    if (error) {
-      toast.error(error.message);
+    // The ticket moves first; the handoff is recorded only once it really did.
+    const before = await ticketHandoffState();
+    const result = await settleHandoff("accept", {
+      saveTicket: async () => {
+        const { data, error } = await supabase
+          .from("tickets")
+          .update({
+            handoff_status: "accepted",
+            pending_handoff_to: null,
+            current_action_owner: userData.user?.id ?? null,
+            assignment_source: "manual",
+            assignment_note: null,
+          })
+          .eq("id", ticket.id)
+          .select("id");
+        return { error, rows: data?.length ?? 0 };
+      },
+      saveHandoff: async () => {
+        const { data, error } = await supabase
+          .from("handoffs")
+          .update(handoffAcceptPatch(userData.user?.id ?? null, new Date().toISOString()))
+          .eq("id", handoffId)
+          .select("id");
+        return { error, rows: data?.length ?? 0 };
+      },
+      undoTicket: async () => {
+        if (before) await supabase.from("tickets").update(before).eq("id", ticket.id);
+      },
+    });
+    if (!result.ok) {
+      toast.error(result.message);
+      await refetch();
+      await onChanged();
       return;
     }
-    await supabase
-      .from("tickets")
-      .update({
-        handoff_status: "accepted",
-        pending_handoff_to: null,
-        current_action_owner: userData.user?.id ?? null,
-        assignment_source: "manual",
-        assignment_note: null,
-      })
-      .eq("id", ticket.id);
     await log("Reassignment accepted — ownership of the next action transferred.", "handoff_accepted");
     await refetch();
     await onChanged();
@@ -218,22 +245,38 @@ export function HandoffPanel({
       toast.error("A rejected reassignment must include a reason.");
       return;
     }
-    const { error } = await supabase
-      .from("handoffs")
-      .update({
-        status: "rejected",
-        responded_at: new Date().toISOString(),
-        response_reason: rejectReason.trim(),
-      })
-      .eq("id", handoffId);
-    if (error) {
-      toast.error(error.message);
+    const before = await ticketHandoffState();
+    const result = await settleHandoff("decline", {
+      saveTicket: async () => {
+        const { data, error } = await supabase
+          .from("tickets")
+          .update({ handoff_status: "rejected", pending_handoff_to: null })
+          .eq("id", ticket.id)
+          .select("id");
+        return { error, rows: data?.length ?? 0 };
+      },
+      saveHandoff: async () => {
+        const { data, error } = await supabase
+          .from("handoffs")
+          .update({
+            status: "rejected",
+            responded_at: new Date().toISOString(),
+            response_reason: rejectReason.trim(),
+          })
+          .eq("id", handoffId)
+          .select("id");
+        return { error, rows: data?.length ?? 0 };
+      },
+      undoTicket: async () => {
+        if (before) await supabase.from("tickets").update(before).eq("id", ticket.id);
+      },
+    });
+    if (!result.ok) {
+      toast.error(result.message);
+      await refetch();
+      await onChanged();
       return;
     }
-    await supabase
-      .from("tickets")
-      .update({ handoff_status: "rejected", pending_handoff_to: null })
-      .eq("id", ticket.id);
     await log(
       `Reassignment rejected: ${rejectReason.trim()} — returned to the original owner.`,
       "handoff_rejected",
