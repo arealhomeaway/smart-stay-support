@@ -2,6 +2,7 @@
  * Team Queue: open tickets imported from Notion in the last 30 days, collapsed
  * by default and grouped Team A, Team B and Unassigned. Quiet on purpose: not
  * counted anywhere, no clocks and no alerts. Rules in notion-ticket-display.ts.
+ * Tickets that still need a home show under Unassigned with a label.
  */
 import { Link } from "@tanstack/react-router";
 import { formatPropertyLabel, type PropertyLabelFields } from "@/lib/property-label";
@@ -10,9 +11,9 @@ import {
   NOTION_GROUPS,
   notionQueueGroups,
   parseNotionBlock,
-  type NotionTicketLike,
+  type NotionQueueRow,
 } from "@/lib/notion-ticket-display";
-import { withoutImportHeld } from "@/lib/import-hold";
+import { IMPORT_HOLD_LABELS } from "@/lib/import-hold";
 
 export const NOTION_GROUP_COPY = {
   title: "Imported from Notion",
@@ -20,27 +21,24 @@ export const NOTION_GROUP_COPY = {
   empty: "None here.",
 } as const;
 
-type Row = NotionTicketLike & {
+type Row = NotionQueueRow & {
   id: string;
   ref?: number | null;
   title?: string | null;
   description?: string | null;
-  import_hold?: string | null;
   properties?: PropertyLabelFields | null;
 };
 
 export function NotionImportedGroup({
   rows,
-  staff,
   homeTeamOf,
   originSearch,
 }: {
   rows: Row[];
-  staff: { id: string; full_name: string | null }[];
   homeTeamOf: (userId: string | null) => string | null;
   originSearch: { from: string };
 }) {
-  const groups = notionQueueGroups(withoutImportHeld(rows), staff, homeTeamOf);
+  const groups = notionQueueGroups(rows, homeTeamOf);
   const total = groups.team_a.length + groups.team_b.length + groups.unassigned.length;
   if (total === 0) return null;
   return (
@@ -60,6 +58,7 @@ export function NotionImportedGroup({
             ) : (
               groups[g.value].map((t) => {
                 const assignee = parseNotionBlock(t.description).assigneeName;
+                const needsHome = t.import_hold === "needs_home";
                 return (
                   <Link
                     key={t.id}
@@ -70,7 +69,7 @@ export function NotionImportedGroup({
                   >
                     <span className="block truncate font-medium">{t.title ?? "Imported ticket"}</span>
                     <span className="block truncate text-xs text-muted-foreground">
-                      {formatPropertyLabel(t.properties).full}
+                      {needsHome ? IMPORT_HOLD_LABELS.needs_home : formatPropertyLabel(t.properties).full}
                       {t.reported_at ? ` · Created ${usDate(t.reported_at)}` : ""}
                       {assignee ? ` · In Notion: ${assignee}` : ""}
                     </span>

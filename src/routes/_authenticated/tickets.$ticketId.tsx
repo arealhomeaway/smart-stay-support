@@ -102,7 +102,7 @@ import { PersonChip } from "@/components/PersonAvatar";
 import { stateChip } from "@/lib/semantic";
 import { Badge } from "@/components/ui/badge";
 import { IMPORT_HOLD_LABELS, isImportHeld, type ImportHold } from "@/lib/import-hold";
-import { claimStepsAvailable, notionBadge, parseNotionBlock, showsAssignee } from "@/lib/notion-ticket-display";
+import { activityAuthorLabel, claimStepsAvailable, cleanNotionText, notionBadge, parseNotionBlock, showsAssignee } from "@/lib/notion-ticket-display";
 import { NotionImportBlock } from "@/components/tickets/NotionImportBlock";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -1623,9 +1623,9 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                   kind: activityKindFor(a.kind, a.event_type, a.body),
                   label: (
                     <>
-                      {humanizeHistoryText(a.body)}{" "}
+                      {humanizeHistoryText(cleanNotionText(a.body))}{" "}
                       <span className="text-muted-foreground">
-                        — {a.author?.full_name ?? a.author?.email ?? "Team member"}
+                        — {activityAuthorLabel(a as { external_author_name?: string | null; author?: { full_name?: string | null; email?: string | null } | null })}
                       </span>
                     </>
                   ),

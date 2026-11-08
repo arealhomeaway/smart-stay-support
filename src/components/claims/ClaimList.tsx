@@ -20,6 +20,7 @@ import { displayName, useCurrentUserId, useStaffDirectory } from "@/hooks/useTea
 import { ClaimDrawer } from "@/components/claims/ClaimDrawer";
 import {
   CLAIM_STAGE_LABELS,
+  claimStageLabel,
   CLAIM_TYPE_LABELS,
   amountAtRisk,
   deadlineLabel,
@@ -158,7 +159,7 @@ export function ClaimRowCard({
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold">{propertyName}</span>
             <Chip className={stateChip(stageState(claim.stage))}>
-              {CLAIM_STAGE_LABELS[claim.stage]}
+              {claimStageLabel(claim)}
             </Chip>
             <Chip>{CLAIM_TYPE_LABELS[claim.claim_type]}</Chip>
             {deadline === "overdue" ? (

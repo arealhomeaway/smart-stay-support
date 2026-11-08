@@ -29,6 +29,7 @@ import { useRole } from "@/hooks/useRole";
 import { stateChip } from "@/lib/semantic";
 import {
   CLAIM_STAGE_LABELS,
+  claimStageLabel,
   CLAIM_TYPE_LABELS,
   RECOVERY_SOURCE,
   deadlineLabel,
@@ -239,7 +240,7 @@ export function TicketClaimPanel({
           >
             <div className="flex flex-wrap items-center gap-2">
               <Chip className={stateChip(stageState(claim.stage))}>
-                {CLAIM_STAGE_LABELS[claim.stage]}
+                {claimStageLabel(claim)}
               </Chip>
               <Chip>{CLAIM_TYPE_LABELS[claim.claim_type]}</Chip>
             </div>

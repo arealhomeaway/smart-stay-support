@@ -16,7 +16,7 @@
  * the last edit and never the date it was copied into Resolve.
  */
 import { OPEN_STATUSES, slaDueDates } from "@/lib/tickets";
-import { NOTION_CLAIM_REVIEW_STATUS } from "@/lib/notion-import/mapping";
+import { importTeamGroup } from "@/lib/notion-import/mapping";
 
 export const NOTION_RECENT_DAYS = 30;
 /** Written to tickets.external_status by the reopen action. */
@@ -31,12 +31,15 @@ export type NotionTicketLike = {
   external_status?: string | null;
   status: string;
   reported_at?: string | null;
+  import_hold?: string | null;
 };
 
 export function notionTicketState(t: NotionTicketLike, now: number = Date.now()): NotionState {
   if (t.external_source !== "notion") return "none";
   if (t.external_status === NOTION_LIVE_STATUS) return "live";
   if (!OPEN_STATUSES.includes(t.status)) return "historical";
+  // The import holds every older open ticket (and any with a blank created date) as Backlog review.
+  if (t.import_hold === "backlog_review") return "older_open";
   const created = Date.parse(t.reported_at ?? "");
   if (!Number.isFinite(created)) return "older_open";
   return now - created <= NOTION_RECENT_DAYS * 86_400_000 ? "recent_open" : "older_open";
@@ -144,10 +147,10 @@ export function claimStepsAvailable(hasClaim: boolean, _t?: NotionTicketLike): b
 
 // ---------- wording ----------
 
-// The Notion claim review status names a person. It never reaches a screen.
-const hiddenPattern = NOTION_CLAIM_REVIEW_STATUS.trim().split(/\s+/).map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("\\s+");
-const HIDDEN_STATUS = new RegExp(hiddenPattern, "gi");
-const HIDDEN_STATUS_ONE = new RegExp(hiddenPattern, "i");
+// The Notion claim review status names a person. It never reaches a screen:
+// "Pending Claim Review" plus any "with <name>" is always shown as "Claim review".
+const HIDDEN_STATUS = /pending\s+claim\s+review(?:\s+with\s+[\p{L}.'-]+)?/giu;
+const HIDDEN_STATUS_ONE = /pending\s+claim\s+review/iu;
 
 /** The Notion status shown on a screen. The claim review status is always "Claim review". */
 export function notionStatusLabel(status: string | null | undefined): string {
@@ -221,39 +224,52 @@ export const NOTION_GROUPS: { value: NotionGroup; label: string }[] = [
   { value: "unassigned", label: "Unassigned" },
 ];
 
-const norm = (s: string | null | undefined) => (s ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+
+export type NotionQueueRow = NotionTicketLike & {
+  assigned_to?: string | null;
+  /** The linked claim, if any (tickets.claims embed). */
+  claims?: { id: string }[] | { id: string } | null;
+};
+
+export function hasLinkedClaim(t: { claims?: { id: string }[] | { id: string } | null }): boolean {
+  const c = t.claims;
+  return Array.isArray(c) ? c.length > 0 : !!c;
+}
 
 /**
- * Which sub group an open imported ticket sits in: the home team of the staff
- * member whose name exactly matches the Notion assignee text. No exact match,
- * or a person with no home team, is Unassigned.
+ * Which sub group an open imported ticket sits in (one rule with the runner,
+ * importTeamGroup): Needs a home is Unassigned, an open claim is Team B,
+ * otherwise the team of the person the import assigned. No person is Unassigned.
  */
-export function notionGroupFor(
-  assigneeName: string | null,
-  staff: { id: string; full_name: string | null }[],
-  homeTeamOf: (userId: string | null) => string | null,
-): NotionGroup {
-  const n = norm(assigneeName);
-  if (!n) return "unassigned";
-  const hits = staff.filter((s) => norm(s.full_name) === n);
-  if (hits.length !== 1) return "unassigned";
-  const team = homeTeamOf(hits[0]!.id);
-  if (team === "guest_experience") return "team_a";
-  if (team === "property_operations") return "team_b";
-  return "unassigned";
+export function notionGroupFor(t: NotionQueueRow, homeTeamOf: (userId: string | null) => string | null): NotionGroup {
+  return importTeamGroup(
+    { assigned_to: t.assigned_to ?? null, needs_home: t.import_hold === "needs_home", has_claim: hasLinkedClaim(t) },
+    homeTeamOf,
+  );
 }
 
 /** Only open imports created in the last 30 days, grouped Team A, Team B, Unassigned. */
-export function notionQueueGroups<T extends NotionTicketLike & { description?: string | null }>(
+export function notionQueueGroups<T extends NotionQueueRow>(
   rows: T[],
-  staff: { id: string; full_name: string | null }[],
   homeTeamOf: (userId: string | null) => string | null,
   now: number = Date.now(),
 ): Record<NotionGroup, T[]> {
   const out: Record<NotionGroup, T[]> = { team_a: [], team_b: [], unassigned: [] };
   for (const t of rows) {
     if (notionTicketState(t, now) !== "recent_open") continue;
-    out[notionGroupFor(parseNotionBlock(t.description).assigneeName, staff, homeTeamOf)].push(t);
+    out[notionGroupFor(t, homeTeamOf)].push(t);
   }
   return out;
+}
+
+// ---------- imported comments ----------
+
+/** Who wrote a history line. Imported Notion comments keep the original author as text. */
+export function activityAuthorLabel(a: {
+  external_author_name?: string | null;
+  author?: { full_name?: string | null; email?: string | null } | null;
+}): string {
+  const ext = (a.external_author_name ?? "").trim();
+  if (ext) return `${ext} in Notion`;
+  return a.author?.full_name ?? a.author?.email ?? "Team member";
 }

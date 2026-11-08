@@ -14,7 +14,8 @@ import {
   showsAssignee,
   withoutQuietNotion,
 } from "@/lib/notion-ticket-display";
-import { NOTION_CLAIM_REVIEW_STATUS } from "@/lib/notion-import/mapping";
+// The Notion status as it is written in Notion: the claim review words plus a person.
+const NOTION_CLAIM_REVIEW_STATUS = "Pending Claim Review with Pat";
 import { slaState } from "@/lib/tickets";
 
 const NOW = Date.parse("2026-11-09T15:00:00Z");
@@ -144,27 +145,28 @@ describe("Notion wording on screens", () => {
 });
 
 describe("Imported from Notion group in the Team Queue", () => {
-  const staff = [
-    { id: "a", full_name: "Pat Example" },
-    { id: "b", full_name: "Sam Sample" },
-  ];
   const teams: Record<string, string> = { a: "guest_experience", b: "property_operations" };
   const homeTeamOf = (id: string | null) => (id ? (teams[id] ?? null) : null);
-  const block = (name: string) => `Leak\n\nImported from Notion\nAssigned in Notion to: ${name}`;
 
-  it("only open imports from the past 30 days, split Team A, Team B and Unassigned", () => {
+  it("only open imports from the past 30 days, by the assigned person's team, a claim to Team B, no home to Unassigned", () => {
     const rows = [
-      notion({ id: "1", description: block("Pat Example") }),
-      notion({ id: "2", description: block("Sam Sample") }),
-      notion({ id: "3", description: block("Someone Else") }),
-      notion({ id: "4", description: "No block" }),
-      notion({ id: "5", description: block("Pat Example"), reported_at: daysAgo(31) }),
-      notion({ id: "6", description: block("Pat Example"), status: "closed" }),
-      notion({ id: "7", description: block("Pat Example"), external_status: "reopened_in_resolve" }),
+      notion({ id: "1", assigned_to: "a" }),
+      notion({ id: "2", assigned_to: "b" }),
+      notion({ id: "3", assigned_to: null }),
+      notion({ id: "4", assigned_to: "a", claims: [{ id: "c1" }] }),
+      notion({ id: "5", assigned_to: null, import_hold: "needs_home", claims: [{ id: "c2" }] }),
+      notion({ id: "6", assigned_to: "a", reported_at: daysAgo(31) }),
+      notion({ id: "7", assigned_to: "a", status: "closed" }),
+      notion({ id: "8", assigned_to: "a", external_status: "reopened_in_resolve" }),
+      notion({ id: "9", assigned_to: null, import_hold: "backlog_review" }),
     ];
-    const g = notionQueueGroups(rows, staff, homeTeamOf, NOW);
+    const g = notionQueueGroups(rows, homeTeamOf, NOW);
     expect(g.team_a.map((t) => t.id)).toEqual(["1"]);
-    expect(g.team_b.map((t) => t.id)).toEqual(["2"]);
-    expect(g.unassigned.map((t) => t.id)).toEqual(["3", "4"]);
+    expect(g.team_b.map((t) => t.id)).toEqual(["2", "4"]);
+    expect(g.unassigned.map((t) => t.id)).toEqual(["3", "5"]);
+  });
+
+  it("a ticket held as Backlog review is always older, even with a recent date", () => {
+    expect(notionTicketState(notion({ import_hold: "backlog_review", reported_at: daysAgo(2) }), NOW)).toBe("older_open");
   });
 });

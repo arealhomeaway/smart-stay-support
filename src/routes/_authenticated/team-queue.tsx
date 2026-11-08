@@ -196,7 +196,7 @@ function TeamQueuePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tickets")
-        .select("*, properties(name, nickname, market, city, state, address_line1, unit, postal_code, ownerrez_property_id), work_types(name)")
+        .select("*, properties(name, nickname, market, city, state, address_line1, unit, postal_code, ownerrez_property_id), work_types(name), claims(id)")
         .eq("is_demo", demoMode)
         .is("archived_at", null)
         .order("reported_at", { ascending: false });
@@ -683,7 +683,6 @@ function TeamQueuePage() {
 
       <NotionImportedGroup
         rows={(data ?? []) as unknown as Parameters<typeof NotionImportedGroup>[0]["rows"]}
-        staff={(staff ?? []).map((s) => ({ id: s.id, full_name: s.full_name ?? null }))}
         homeTeamOf={homeTeamOf}
         originSearch={originSearch}
       />
