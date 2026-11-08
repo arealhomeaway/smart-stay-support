@@ -217,7 +217,35 @@ export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
  * department without needing the leadership (`manager`) role, which would also
  * open Operations.
  */
-export type AccessSeats = { onboardingDirector?: boolean; opsDirector?: boolean; finance?: boolean };
+export type AccessSeats = {
+  onboardingDirector?: boolean;
+  opsDirector?: boolean;
+  finance?: boolean;
+  /** Holds or covers the Operations Supervisor role. */
+  opsSupervisor?: boolean;
+  /** Holds a Project Manager role (Onboarding or leadership). */
+  projectManager?: boolean;
+  /** Holds the Utilities role. */
+  utilities?: boolean;
+};
+
+/** Team role codes that carry a permission on their own. */
+export const PROJECT_MANAGER_ROLE_CODES = ["onboarding_project_manager", "project_manager"] as const;
+export const UTILITIES_ROLE_CODES = ["utilities"] as const;
+export const OPS_SUPERVISOR_ROLE_CODE = "ops_supervisor";
+
+/** Turn the team role codes a person holds into the seats that grant access. */
+export function seatsFromRoleCodes(codes: readonly string[]): Pick<AccessSeats, "opsSupervisor" | "projectManager" | "utilities"> {
+  const has = (list: readonly string[]) => codes.some((c) => list.includes(c));
+  return {
+    opsSupervisor: codes.includes(OPS_SUPERVISOR_ROLE_CODE),
+    projectManager: has(PROJECT_MANAGER_ROLE_CODES),
+    utilities: has(UTILITIES_ROLE_CODES),
+  };
+}
+
+/** Vendor editing (open and edit): Director of Onboarding, Project Manager, Utilities. Design stays out. */
+const VENDOR_EDITOR_CAPS: Capability[] = ["vendor_directory", "vendor_admin"];
 
 export const ONBOARDING_DIRECTOR_CAPS: Capability[] = [
   "playbooks_edit",
@@ -232,6 +260,11 @@ export const ONBOARDING_DIRECTOR_CAPS: Capability[] = [
   "homeowner_directory",
   "active_owner_enroll",
   "owner_card_library",
+  ...VENDOR_EDITOR_CAPS,
+  "work_orders_view",
+  "team_schedule_view",
+  "finance_view",
+  "owner_insight_view",
 ];
 
 export function capabilitiesFor(roles: AppRole[], seats: AccessSeats = {}): Set<Capability> {
@@ -243,8 +276,15 @@ export function capabilitiesFor(roles: AppRole[], seats: AccessSeats = {}): Set<
     set.add("str_participation_report");
     set.add("vendor_admin");
     set.add("finance_workspace");
+    set.add("ops_user_invite");
   }
   if (seats.finance) set.add("finance_workspace");
+  if (seats.opsSupervisor) set.add("ops_user_invite");
+  if (seats.projectManager) {
+    for (const cap of VENDOR_EDITOR_CAPS) set.add(cap);
+    set.add("work_orders_view");
+  }
+  if (seats.utilities) for (const cap of VENDOR_EDITOR_CAPS) set.add(cap);
   return set;
 }
 
