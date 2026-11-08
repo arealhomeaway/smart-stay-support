@@ -93,6 +93,8 @@ import { Badge } from "@/components/ui/badge";
 import { IMPORT_HOLD_LABELS, isImportHeld, type ImportHold } from "@/lib/import-hold";
 import { activityAuthorLabel, claimStepsAvailable, cleanNotionText, notionBadge, parseNotionBlock, showsAssignee } from "@/lib/notion-ticket-display";
 import { NotionImportBlock } from "@/components/tickets/NotionImportBlock";
+import { ReopenTicketDialog } from "@/components/tickets/ReopenTicketDialog";
+import { REOPEN_COPY, reopenPathFor, type ReopenTicketLike } from "@/lib/ticket-reopen";
 import { ArchiveTicketButton, ArchivedTicketBanner } from "@/components/scorecard/TicketArchive";
 import { CorrectiveCommitments } from "@/components/scorecard/CorrectiveCommitments";
 import { canArchiveTicket, canRestoreTicket, isGuestIssueTicket } from "@/lib/scorecard-capture";
@@ -185,6 +187,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   const { origin, token } = useRecordOrigin("ticket");
   const [propertyOpen, setPropertyOpen] = useState(false);
   const [showCelebrate, setShowCelebrate] = useState(false);
+  const [reopenOpen, setReopenOpen] = useState(false);
   // Owned here, not inside TicketWorkOrderPanel: creating a Work Order
   // changes this ticket's derived stage immediately, and a different
   // TicketWorkOrderPanel instance renders per stage — state kept in the
@@ -444,6 +447,10 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   const requiredOpen = steps.filter((s) => s.required && !s.completed);
   const done = steps.filter((s) => s.completed).length;
   const closed = isClosed(ticket.status);
+  const reopenPath = reopenPathFor(
+    ticket as unknown as ReopenTicketLike,
+    role.can("work_orders_internal") && !role.readOnly,
+  );
   const checklistActiveGuest = isActiveGuest({
     inHome: occupancy.state === "in_home" || Boolean(ticket.guest_in_residence),
     nextArrival: occupancy.nextArrival ?? null,
@@ -1559,10 +1566,25 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                       }}
                     />
                   )}
-                  {ticket.record_type !== "completed_interaction" && (
+                  {reopenPath === "resolved" && (
                     <Button variant="outline" onClick={reopen}>
-                      Reopen this ticket
+                      {REOPEN_COPY.button}
                     </Button>
+                  )}
+                  {reopenPath === "closed" && (
+                    <>
+                      <Button variant="outline" onClick={() => setReopenOpen(true)}>
+                        {REOPEN_COPY.button}
+                      </Button>
+                      <ReopenTicketDialog
+                        ticketId={String(ticket.id)}
+                        open={reopenOpen}
+                        onOpenChange={setReopenOpen}
+                        onReopened={async () => {
+                          await refresh();
+                        }}
+                      />
+                    </>
                   )}
                 </div>
               )}
