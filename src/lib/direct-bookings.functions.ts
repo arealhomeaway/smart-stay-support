@@ -61,7 +61,7 @@ export type DirectBookingRow = {
   company: string | null;
   email: string | null;
   phone: string | null;
-  source_detail: Record<string, unknown> | null;
+  source_detail: Record<string, string | number | boolean | null> | null;
   search_region: string | null;
   market: string | null;
   desired_move_in: string | null;
