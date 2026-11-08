@@ -143,8 +143,7 @@ BEGIN
   NEW.assignment_note := 'Not auto-assigned: no owning seat and no eligible Operations Supervisor. Needs a manual assignment.';
   RETURN NEW;
 END;
-$function$
-
+$function$;
 REVOKE ALL ON FUNCTION public.auto_assign_ticket() FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.auto_assign_ticket() TO service_role;
 
@@ -163,8 +162,7 @@ AS $function$
   CROSS JOIN t
   WHERE cs.active AND cs.weekday = t.wd AND t.m >= cs.start_minute AND t.m < cs.end_minute
     AND (t.wd IN (0, 6) OR cs.role_code IN ('ge_day', 'ge_evening'));
-$function$
-
+$function$;
 REVOKE ALL ON FUNCTION public.direct_booking_on_shift(timestamp with time zone) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.direct_booking_on_shift(timestamp with time zone) TO service_role;
 
