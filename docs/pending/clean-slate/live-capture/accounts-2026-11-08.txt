@@ -1,0 +1,36 @@
+id|name|email_domain|roles|last_sign_in|removed|banned
+98bd6696-4018-4965-b645-0471c5ae3925|Emily Jimenez|arealhomeaway.com|tech,admin|2026-11-07|false|false
+82bdbc3a-791c-433a-9944-651661f89eb1|Iveth Sabillon|arealhomeaway.com|onboarding|2026-10-29|false|false
+644ffc2f-b0a1-4bc7-8eb1-bb4e959cadce|James Miller Jr|arealhomeaway.com|manager|2026-09-03|false|false
+ea6708cd-7f53-4b36-bec8-f5b2a597e6db|James Almario|arealhomeaway.com|manager|2026-08-31|false|false
+f8c6e258-6679-4517-a8bc-4817ec1cb5de|Joshua Dunham|arealhomeaway.com|admin|2026-09-24|false|false
+40de2f41-5596-4ec1-98d7-29e16549a25f|Kati Hand|arealhomeaway.com|onboarding|2026-11-04|false|false
+452f6db5-ba38-44bf-a8bd-f4b9197a0032|Micah Sinor|arealhomeaway.com|manager|2026-10-29|false|false
+3dbc382b-cc50-426a-bba9-64141b62b4f4|Mike Cacatian|arealhomeaway.com|tech|2026-10-31|false|false
+29380b2b-a59f-4de4-8588-7bcfebfc2d36|Qym Fuenteblanca|arealhomeaway.com|tech|2026-11-04|false|false
+1a4b8de5-0824-4066-8691-8e6bb912f964|Romeo Canales|arealhomeaway.com|tech|2026-08-31|false|false
+f2a762fa-f28b-4df3-8f33-a94461c6837f|Sofia Alvarez|arealhomeaway.com|onboarding|2026-11-05|false|false
+81a80bac-2655-4994-9651-a9afb81ec721|Riley Alder (DEMO)|demo.arha.test|owner|2026-08-28|false|true
+ea98f339-1ccc-437a-88bb-06ac94be655a|Emily Jimenez|example.com|<nil>|<nil>|true|true
+77a301f0-161c-40a4-8266-0c0e05cefa45|pr10-owner-a-20260917@example.invalid|example.invalid|owner|2026-09-17|false|true
+f44ecf9a-a358-430c-9c64-0ffaa31740b4|pr10-owner-b-20260917@example.invalid|example.invalid|owner|2026-09-17|false|true
+bb286c4d-7751-47b5-bba2-e1590ba50841|Dana Syska|gmail.com|owner|2026-11-03|false|false
+e3c913e4-1562-4143-a6ff-1f17cd5deda6|Emma Renee|gmail.com|<nil>|2026-10-20|true|true
+830332a2-3cee-4967-bd57-7cd625f8f9f9|Lindsey Lee|gmail.com|owner|2026-11-02|false|false
+80c6e551-e370-4ab3-bdfd-1cd7f5c39448|Rachel Ramsey|gmail.com|owner|<nil>|false|false
+68ad7bb6-458f-4c0c-921f-3299251ac3fa|Ryan Lee|gmail.com|owner|2026-11-02|false|false
+e4a697e6-e392-46af-a9c6-a49f815db103|Victor Puodziunas|gmail.com|owner|2026-10-30|false|false
+bc62d95a-94fb-4b59-838b-55b9a25db6b9|Matthew Linder|outlook.com|owner|2026-11-03|false|false
+ec5405ff-4722-4a85-a22e-069e68bd3c7f|QA James|resolve-test.invalid|manager,admin|2026-08-28|false|true
+d1dafc2e-ba9a-450a-94e3-ad9c11c10ef8|QA Kati|resolve-test.invalid|onboarding|2026-08-28|false|false
+8fac5aa5-ba70-42f2-afa0-6d77382383b3|QA Micah|resolve-test.invalid|manager|2026-08-28|false|false
+d13885de-6178-4f32-8560-997d182f245f|QA Test Outsider|resolve-test.invalid|owner|2026-08-28|false|true
+f8a9d111-3416-47f7-abc1-48f5e8aac2ab|Avery Lindqvist (demo owner)|resolve-test.invalid|owner|2026-09-29|false|false
+eeaf39c4-3b22-4733-9ba5-b275476bc5a8|QA Signup Test|resolve-test.invalid|owner|2026-08-28|false|false
+d1b80a3e-3b42-46e5-aacb-43276ef272eb|QA Test Tech|resolve-test.invalid|tech|2026-08-28|false|true
+0a6d5dc9-8159-4850-9b5e-421308d2e464|qa.um.admin|resolve-test.invalid|admin|2026-09-29|false|true
+06fd8599-c7aa-40b2-8161-cafae4da99b7|QA UM Manager|resolve-test.invalid|manager|2026-09-29|false|true
+3a476833-49ff-4aa3-996d-18913422f8e4|qa.um.pending@resolve-test.invalid|resolve-test.invalid|<nil>|<nil>|false|true
+c6579620-2ee4-41fe-ad10-07f451d7ae97|Quinnie Targetson|resolve-test.invalid|tech|2026-09-29|false|true
+5557f537-6847-4f33-af90-1e78b5c344fa|qa.um.tech|resolve-test.invalid|tech|2026-09-29|false|true
+9f3b6143-b693-4067-9a3c-d645b5ecd716|QA Vendor|resolve-test.invalid|vendor|<nil>|false|true
