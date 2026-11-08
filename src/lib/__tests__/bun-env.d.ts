@@ -10,7 +10,7 @@
 declare module "bun:test" {
   export function describe(name: string, fn: () => void): void;
   export const it: {
-    (name: string, fn: () => void | Promise<void>): void;
+    (name: string, fn: () => void | Promise<void>, timeoutMs?: number): void;
     skip(name: string, fn: () => void | Promise<void>): void;
   };
   export function beforeEach(fn: () => void | Promise<void>): void;
