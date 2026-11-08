@@ -49,12 +49,12 @@ function SettingsPage() {
   const canEdit = Boolean(data?.canEdit);
   return (
     <div className="space-y-5">
-      <Link to="/direct-bookings" className="text-sm font-medium text-primary hover:underline">← Back to Direct Bookings</Link>
+      <div><Button variant="outline" className="min-h-11 border-primary px-4 font-semibold text-primary" asChild><Link to="/direct-bookings">← Back to Direct Bookings</Link></Button></div>
       <PageHeader title="Direct Bookings settings" description={canEdit ? "The Operations Supervisor and the Director of Operations can change these." : "Only the Operations Supervisor and the Director of Operations can change these."} />
       <SectionCard title="Approval period" description="During these dates every reply waits for the Operations Supervisor before it sends.">
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1"><Label>Starts</Label><Input type="date" value={start} onChange={(e) => setStart(e.target.value)} disabled={!canEdit} /></div>
-          <div className="space-y-1"><Label>Ends</Label><Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} disabled={!canEdit} /></div>
+          <div className="space-y-1"><Label>Starts</Label><Input className="h-11" type="date" value={start} onChange={(e) => setStart(e.target.value)} disabled={!canEdit} /></div>
+          <div className="space-y-1"><Label>Ends</Label><Input className="h-11" type="date" value={end} onChange={(e) => setEnd(e.target.value)} disabled={!canEdit} /></div>
         </div>
         <label className="mt-3 flex items-center gap-2 text-sm">
           <Switch checked={after} onCheckedChange={setAfter} disabled={!canEdit} />
@@ -67,7 +67,7 @@ function SettingsPage() {
           {BEDROOMS.map((b) => (
             <div key={b} className="space-y-1">
               <Label>{b} bedrooms</Label>
-              <Input type="number" value={rates[b] ?? ""} onChange={(e) => setRates((r) => ({ ...r, [b]: e.target.value }))} disabled={!canEdit} placeholder="Not set" />
+              <Input className="h-11" type="number" value={rates[b] ?? ""} onChange={(e) => setRates((r) => ({ ...r, [b]: e.target.value }))} disabled={!canEdit} placeholder="Not set" />
             </div>
           ))}
         </div>
@@ -75,6 +75,7 @@ function SettingsPage() {
       {canEdit ? (
         <div className="flex justify-end">
           <Button
+            className="min-h-11 px-5 font-semibold"
             onClick={async () => {
               try {
                 const nightlyRates = Object.fromEntries(Object.entries(rates).filter(([, v]) => v !== "").map(([k, v]) => [k, Number(v)]));

@@ -261,7 +261,7 @@ function NeedsYouNow({ rows, userId, originSearch }: { rows: Row[]; userId: stri
               {r.partner_name || r.company || r.subject || "Direct booking request"}
             </span>
             <span className="block text-sm text-muted-foreground">
-              {r.waitingForStart ? HOME_BOOKING_COPY.waitingForStart : HOME_BOOKING_COPY.started}
+              {r.followUp ? HOME_BOOKING_COPY.followUp : r.waitingForStart ? HOME_BOOKING_COPY.waitingForStart : HOME_BOOKING_COPY.started}
             </span>
           </span>
           <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
