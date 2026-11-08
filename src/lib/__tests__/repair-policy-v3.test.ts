@@ -144,11 +144,11 @@ describe("the Repair card, Work Orders and Finance show the same ladder", () => 
       expect(card.label).toBe(wo.label);
       expect([card.ownerApprovalRequired, card.supervisorApprovalRequired]).toEqual([wo.ownerApprovalRequired, wo.supervisorApprovalRequired]);
       expect(fin.required ? fin.reason : null).toBe(fin.required ? wo.reason : null);
-      expect(approvalPolicyLine(amount)).toBe(LADDER[amount < 250 ? 0 : amount < 350 ? 1 : 2]);
+      expect(approvalPolicyLine(amount)).toBe(LADDER[amount < 250 ? 0 : amount < 350 ? 1 : 2]!);
     });
   }
   it("the Work Order owner approval help states the same line", () => {
-    expect(ownerApprovalHelp()).toStartWith(LADDER[2]!);
+    expect(ownerApprovalHelp().startsWith(LADDER[2]!)).toBe(true);
   });
 });
 
