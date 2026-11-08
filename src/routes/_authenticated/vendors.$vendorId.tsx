@@ -16,6 +16,7 @@ import { VendorOrgSheet } from "@/components/VendorOrgSheet";
 import { VENDOR_STATUS_BLURBS, VENDOR_STATUS_LABELS, type VendorStatus } from "@/lib/vendors";
 import { DISPATCH_METHOD_LABELS, type DispatchMethod } from "@/lib/vendor-gold";
 import { usDate } from "@/lib/dates";
+import { vendorPageAccess } from "@/lib/vendor-page-views";
 import { STATUS_TONE } from "@/components/vendors/VendorDirectory";
 import { coverageFor, useVendorWorkspace } from "@/components/vendors/useVendorWorkspace";
 
@@ -37,7 +38,9 @@ export const Route = createFileRoute("/_authenticated/vendors/$vendorId")({
 function VendorProfile() {
   const { vendorId } = Route.useParams();
   const { can, readOnly } = useRole();
-  const canManage = can("vendor_admin") && !readOnly;
+  const access = vendorPageAccess(can, readOnly);
+  const canManage = access.edit;
+  const canLead = access.lead;
   const ws = useVendorWorkspace();
   const { gate } = Route.useSearch();
   const [sheet, setSheet] = useState(Boolean(gate));
@@ -125,7 +128,7 @@ function VendorProfile() {
 
       <section className="space-y-2">
         <SectionBand title="Gold Standard" />
-        <ProgramOwnerField orgId={v.id} value={v.program_owner} canManage={canManage} />
+        <ProgramOwnerField orgId={v.id} value={v.program_owner} canManage={canLead} />
         <dl className="grid gap-2 text-sm sm:grid-cols-3">
           <Field k="Qualification score" v={String(v.qualification_score ?? 0)} />
           <Field k="Performance score" v={v.performance_score == null ? null : String(v.performance_score)} />
@@ -152,6 +155,7 @@ function VendorProfile() {
         onOpenChange={(o) => setSheet(o)}
         properties={properties.data ?? []}
         canManage={canManage}
+        canLead={canLead}
         focusRequirementId={gate ?? null}
       />
     </div>
