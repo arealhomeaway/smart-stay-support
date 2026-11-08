@@ -163,7 +163,7 @@ export function needsYouNow(
 
 /** Routine work for a person's team, without the retired checkout kind. */
 export const ROUTINE_SECTION_TITLE = "Routine work due today";
-export const ROUTINE_SECTION_HINT = "Cleaning Reviews, Guest Reviews and Guest Touch Bases for your team.";
+export const ROUTINE_SECTION_HINT = "Guest touch bases, guest reviews and work order reviews for your team.";
 
 /** Home's words. Kept here so the word check can read every one of them. */
 export const HOME_COPY = {
