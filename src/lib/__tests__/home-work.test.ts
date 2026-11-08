@@ -65,7 +65,7 @@ describe("My work and Needs you now", () => {
     ];
     for (const r of rows) {
       for (const tab of HOME_TABS) expect(inHomeTab(r, tab.value, ME)).toBe(false);
-      expect(matchesMyWorkView(r as never, "mine", ME)).toBe(false);
+      expect(matchesMyWorkView(r as never, "active", ME)).toBe(false);
     }
   });
 
