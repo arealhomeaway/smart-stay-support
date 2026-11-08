@@ -11,7 +11,7 @@
  * hard-coded workflow.
  */
 
-import { authorityLadder } from "./maintenance-policy";
+import { authorityLadder, readAuthorityPolicy } from "./maintenance-policy";
 
 export type FurnishingScope = "full_furnishing" | "owner_furnished" | "no_furnishing";
 
@@ -329,10 +329,11 @@ export function splitByScope<
 /* --------------------------------------------------- repair spend authority */
 
 /**
- * Onboarding repairs follow the same authority policy Operations uses — the
- * threshold is never restated here, only read.
+ * Onboarding repairs follow the onboarding cost policy (its own setting and
+ * database check), so the guidance matches what an onboarding cost request
+ * enforces. The threshold is never restated here, only read.
  */
 export function repairApprovalGuidance(title: string): string | null {
   if (!/\brepair|make[- ]ready|estimate|quote\b/i.test(title ?? "")) return null;
-  return authorityLadder().join(" ");
+  return authorityLadder(readAuthorityPolicy(null)).join(" ");
 }

@@ -735,7 +735,7 @@ export function workOrderBucket(wo: WorkOrderLike, now = new Date()): WorkOrderB
   }
 }
 
-export { EMERGENCY_REASON_LABELS, MAINTENANCE_POLICY_VERSION, money };
+export { EMERGENCY_REASON_LABELS, MAINTENANCE_POLICY, MAINTENANCE_POLICY_VERSION, money };
 
 /* ------------------------------------------------------------------ */
 /* Ownership                                                           */
