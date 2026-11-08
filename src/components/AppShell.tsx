@@ -14,7 +14,6 @@ import {
   Home,
   KeyRound,
   ListChecks,
-  MapPinned,
   LogOut,
   PackageCheck,
   Plus,
@@ -74,7 +73,6 @@ import { OwnerSidebarNav } from "@/components/owner/OwnerSidebarNav";
 import { useRole } from "@/hooks/useRole";
 import { useSeat } from "@/hooks/useSeat";
 import { useFeatureFlags } from "@/lib/feature-flags";
-import { type Capability } from "@/lib/permissions";
 import { parseOperationsSearch } from "@/lib/operations-view-state";
 import {
   departmentFor,
@@ -176,7 +174,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     can,
     isVendor,
     isOwner,
-    isSupervisor,
     readOnly,
     identityLabel,
     isLoading: rolesLoading,
@@ -217,6 +214,20 @@ export function AppShell({ children }: { children: ReactNode }) {
   const onOnboardingProperty =
     /^\/onboarding\/[^/]+$/.test(pathname) && !pathname.startsWith("/onboarding/my-work");
   const contextPropertyId = routeParams?.propertyId;
+  // Navigation is generated from route authorization: a link only appears when
+  // the same rule that guards the page lets this person open it.
+  const navAccess = {
+    can,
+    canOpen,
+    guestExperienceSeat: seat.isGuestExperience,
+    flagEnabled: (key: string) => flagEnabled(key),
+  };
+  const groups: NavGroup[] = vendorMode
+    ? vendorGroups
+    : ownerMode
+      ? ownerGroups
+      : withIcons(onboardingOnly ? onboardingOnlyMenu(navAccess) : operationsMenu(navAccess));
+
   // Whatever page they are on is a named place to come back to, so a detour
   // into Log work never strands anyone.
   const hereLabel =
@@ -258,20 +269,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     "/playbooks",
     "/ticket-checklists",
   ].some((p) => pathname === p || pathname.startsWith(`${p}/`));
-
-  // Navigation is generated from route authorization: a link only appears when
-  // the same rule that guards the page lets this person open it.
-  const navAccess = {
-    can,
-    canOpen,
-    guestExperienceSeat: seat.isGuestExperience,
-    flagEnabled: (key: string) => flagEnabled(key),
-  };
-  const groups: NavGroup[] = vendorMode
-    ? vendorGroups
-    : ownerMode
-      ? ownerGroups
-      : withIcons(onboardingOnly ? onboardingOnlyMenu(navAccess) : operationsMenu(navAccess));
 
   const workspace = vendorMode
     ? "Vendor Portal"
