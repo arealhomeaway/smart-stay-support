@@ -127,7 +127,7 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
     match: (p) => p === "/playbooks" || p === "/ticket-checklists",
     tabs: [
       { label: "Playbooks", to: "/playbooks", capability: "playbooks_view" },
-      { label: "Ticket checklists", to: "/ticket-checklists", capability: "playbooks_edit" },
+      { label: "Ticket checklists", to: "/ticket-checklists", capability: "playbooks_view" },
     ],
   },
   {

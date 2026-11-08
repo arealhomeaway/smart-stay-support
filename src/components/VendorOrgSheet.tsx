@@ -405,6 +405,7 @@ export function VendorOrgSheet({
                   orgId={org.id}
                   documents={data.documents}
                   canManage={canLead}
+                  showDisabled={canManage && !canLead}
                   onChanged={refresh}
                 />
               </TabsContent>

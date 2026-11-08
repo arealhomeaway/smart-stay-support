@@ -51,11 +51,14 @@ export function VendorDocumentsPanel({
   orgId,
   documents,
   canManage,
+  showDisabled = false,
   onChanged,
 }: {
   orgId: string;
   documents: DocRow[];
   canManage: boolean;
+  /** Vendor editors who are not Operations leadership see the filing forms disabled, never hidden. */
+  showDisabled?: boolean;
   onChanged: () => void;
 }) {
   const fileDoc = useServerFn(fileVendorDocument);
@@ -144,12 +147,13 @@ export function VendorDocumentsPanel({
         </div>
       )}
 
-      {canManage && (
-        <>
+      {(canManage || showDisabled) && (
+        <fieldset disabled={!canManage} aria-label={canManage ? undefined : "Filed by Operations leadership"} className="contents">
           <Separator />
           <div className="space-y-2 rounded-lg border p-3">
             <Label>File a document</Label>
             <Select
+              disabled={!canManage}
               value={docType}
               onValueChange={(v) => {
                 setDocType(v);
@@ -213,7 +217,7 @@ export function VendorDocumentsPanel({
               onChange={(e) => setSubject(e.target.value)}
               maxLength={120}
             />
-            <Select value={method} onValueChange={setMethod}>
+            <Select disabled={!canManage} value={method} onValueChange={setMethod}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -250,7 +254,7 @@ export function VendorDocumentsPanel({
               Record identity verified
             </Button>
           </div>
-        </>
+        </fieldset>
       )}
     </div>
   );

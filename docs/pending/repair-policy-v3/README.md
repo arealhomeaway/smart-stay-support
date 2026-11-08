@@ -50,8 +50,7 @@ Resolve v3", Supervisor 250, owner 350, the three v3 flags, and v2 kept under
 
 - `public.create_onboarding_financial_request` and the separate `onboarding_authority_policy`
   setting (onboarding cost requests keep their own rule; see the reply for the open decision).
-- The `work_orders.policy_version` column default (it still names v2; the app now stamps v3 on
-  every Work Order it creates).
+- The `work_orders.policy_version` column default (it still named v2 here; part 3 below changes it).
 - Every Work Order row: each keeps the `policy_version` it was stamped with.
 
 ## Proof run before applying
@@ -77,3 +76,14 @@ Resolve v3", Supervisor 250, owner 350, the three v3 flags, and v2 kept under
   covered once both approve. The approvals reference counter moved forward by one (counters do
   not roll back).
 - Undo if ever needed: `02_policy_v3_value.undo.sql`, then `01_expense_authorization_v3.undo.sql`.
+
+## Part 3: new Work Orders default to v3 (Emily, answer E2)
+
+- `03_work_order_default_v3.sql` changes only the `work_orders.policy_version` column default from
+  v2 to `ARHA Maintenance Authority Policy for Resolve v3` (the exact stored policy version).
+  Undo: `03_work_order_default_v3.undo.sql` (restores the v2 default exactly).
+- Proof: `src/lib/__tests__/work-order-default-v3.test.ts` (isolated database: new rows get v3, rows
+  already stamped v2 keep v2, undo restores the v2 default).
+- APPLIED Nov 8, 2026 byte-for-byte as migration 0294 (`drizzle/migrations/0294_work_order_default_v3.sql`,
+  identical to the staged file). Read back: the default is v3; the four existing Work Orders still
+  carry v2. Onboarding cost requests are untouched (answer E1).

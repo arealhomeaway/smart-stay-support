@@ -1,3 +1,4 @@
+-- lovable-cron-fallback-reviewed: Emily approved a 20 second check (4,320 runs a day) so the Director of Operations is alerted 2:00 to 2:20 after a request with no screen open.
 -- Direct Bookings fix, part 3: the Director of Operations' 2 minute alert runs on the server.
 -- Staged only. Not applied until approved. Undo: 03_undo_escalation_schedule.sql
 -- No BEGIN/COMMIT. Needs the pg_cron extension (installed, version 1.6).

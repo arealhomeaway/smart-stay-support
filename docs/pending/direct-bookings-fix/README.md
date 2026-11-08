@@ -1,6 +1,6 @@
 # Direct Bookings fix: match the approved mockup and close the audit findings
 
-PARTLY APPLIED Nov 8, 2026 (parts 1 and 2 only). See the note at the end.
+APPLIED Nov 8, 2026 (parts 1 to 5). See the notes at the end.
 
 Staged only. Nothing here is applied. Apply only with Emily's approval, in this order,
 and check `sha256.txt` first (`sha256sum -c sha256.txt` from this folder).
@@ -43,3 +43,19 @@ identical to today's and everything added is gone. Part 3 cannot run there (no s
   first line, so it would no longer be byte for byte. Stopped there as instructed. Parts 3, 4
   and 5 are waiting for a decision.
   Undo order if ever needed: 02, then 01.
+
+- Nov 8, 2026, later: Emily kept the every 20 seconds check (about 4,320 runs a day; the
+  Director of Operations is alerted between 2:00 and 2:20 after the request). `sha256.txt` was
+  checked first (all OK). The ONLY difference from byte for byte: one comment line was added at
+  the top of `03_escalation_schedule.sql`, the review line the database tool needs
+  (`-- lovable-cron-fallback-reviewed: ...`). It changes no SQL. The edited file was then applied
+  byte for byte as migration 0291 (identical to this file). Parts 4 and 5 were applied with the
+  data tool, unchanged.
+- Verified read only: the job `direct-booking-approval-escalation` is active every 20 seconds
+  and its first 6 runs succeeded; the reply template now has subject `RE: {{subject}}` and the
+  approved body; the settings hold the three discount source records with 5 percent.
+- Cancelled live check (nothing kept): a MyMetis request for a 3 bedroom home built $180 a night
+  and $5,390 a month; a 4 bedroom from Individual built $199 and $5,970; fee lines in order
+  (Cleaning, Application, Pet, Refundable deposit). A request at 2:01 alerted the Director once;
+  a second run did nothing; a request at 1:59 was not alerted.
+  Undo order if ever needed: 05, 04, 03, then 02, then 01.

@@ -237,8 +237,16 @@
 - [x] Vendors page (corrected Nov 8): Director of Onboarding, Project Managers and Utilities see every tab and record; status, Gold Standard, compliance, screening, documents, logins and imports read only for them
 - [x] Fix batch 2 applied (0284 to 0288) and checked in a cancelled database step
 - [ ] Next audit (report only, no changes): Ticket checklists and the Admin pages, what each decides for a coordinator
-- [ ] Direct Bookings fix parts 3 to 5: waiting on Emily's choice of the Director alert schedule
+- [x] Direct Bookings fix parts 3 to 5: waiting on Emily's choice of the Director alert schedule
 
 ## Nov 8 playbooks: Supervisor edits, everyone else views
 - [x] Supervisor (holder or cover) saves, approves, archives and uploads SOPs; viewers see no edit controls; applied as migration 0289 with cancelled live check
-- [ ] Decide: approval history labels Supervisor actions as general staff; Ticket checklists still editable by every Supervisor account type, including Finance
+- [x] Decide: approval history labels Supervisor actions as general staff; Ticket checklists still editable by every Supervisor account type, including Finance
+
+## Nov 8 Answers, finish Direct Bookings (no publish)
+- [x] A. Apply Direct Bookings parts 3 (review line only), 4, 5; verify; cancelled live test
+- [x] C. Vendors: Documents upload and program owner field shown read only to onboarding roles; test
+- [x] D1. New playbook history lines record Operations Supervisor role
+- [x] D2. Ticket checklists edit rule = playbook rule (DB + screen + tests)
+- [x] E2. v3 as database default for new Work Orders (staged + applied + test)
+- [x] F. Register edits H1, A15, K2
