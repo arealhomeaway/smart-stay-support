@@ -3305,6 +3305,8 @@ export type Database = {
           created_by: string | null
           end_minute: number
           id: string
+          lunch_end_minute: number | null
+          lunch_start_minute: number | null
           note: string | null
           role_code: string
           start_minute: number
@@ -3317,6 +3319,8 @@ export type Database = {
           created_by?: string | null
           end_minute: number
           id?: string
+          lunch_end_minute?: number | null
+          lunch_start_minute?: number | null
           note?: string | null
           role_code: string
           start_minute: number
@@ -3329,6 +3333,8 @@ export type Database = {
           created_by?: string | null
           end_minute?: number
           id?: string
+          lunch_end_minute?: number | null
+          lunch_start_minute?: number | null
           note?: string | null
           role_code?: string
           start_minute?: number

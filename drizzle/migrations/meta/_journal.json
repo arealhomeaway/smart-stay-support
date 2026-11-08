@@ -1940,6 +1940,13 @@
       "when": 1794159305363,
       "tag": "0276_tighten_record_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 277,
+      "version": "7",
+      "when": 1794160647372,
+      "tag": "0277_lunch_times",
+      "breakpoints": true
     }
   ]
 }
