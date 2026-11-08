@@ -8,7 +8,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useRole } from "@/hooks/useRole";
 import { useSeat } from "@/hooks/useSeat";
-import { pageTabGroupFor } from "@/lib/shell-nav";
+import { pageTabGroupFor, visiblePageTabs } from "@/lib/shell-nav";
 import { cn } from "@/lib/utils";
 
 export function GroupTabs() {
@@ -18,9 +18,7 @@ export function GroupTabs() {
   const seat = useSeat();
   const group = pageTabGroupFor(pathname);
   if (!group) return null;
-  const tabs = group.tabs.filter((t) =>
-      (!t.capability || can(t.capability) || (t.capability === "leads_work" && seat.isGuestExperience)) &&
-      canOpen(t.to));
+  const tabs = visiblePageTabs(group, { can, canOpen, guestExperienceSeat: seat.isGuestExperience });
   if (tabs.length < 2) return null;
 
   return (

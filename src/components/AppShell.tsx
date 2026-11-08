@@ -392,23 +392,28 @@ export function AppShell({ children }: { children: ReactNode }) {
                 ),
               }))
               .filter((g) => g.items.length > 0);
-            // Bookings & Leads: one item for Leads and Inquiry Sources, opening
-            // the first of the two this person can open (same visibility as before).
+            // Direct Bookings replaces Bookings & Leads: one item where Leads and
+            // Referral sources used to sit. Where it opens is decided by
+            // directBookingsMenuTarget (lib/shell-nav.ts), the tested rule.
+            const bookingTarget = directBookingsMenuTarget({
+              can,
+              canOpen,
+              guestExperienceSeat: seat.isGuestExperience,
+            });
+            const isBooking = (to: string) => to === "/leads" || to === "/inquiry-sources";
             for (const g of visible) {
-              const booking = g.items.filter((i) => i.to === "/leads" || i.to === "/inquiry-sources");
-              if (!booking.length) continue;
-              const first = booking.find((i) => i.to === "/leads") ?? booking[0]!;
-              const directBookings = can("leads_work");
-              const at = g.items.indexOf(booking[0]!);
-              g.items = g.items.filter((i) => !booking.includes(i));
+              const original = navGroups.find((o) => o.label === g.label)?.items ?? [];
+              const slot = original.findIndex((i) => isBooking(i.to));
+              if (slot < 0) continue;
+              g.items = g.items.filter((i) => !isBooking(i.to));
+              if (!bookingTarget) continue;
+              const at = g.items.filter((i) => original.findIndex((o) => o.to === i.to) < slot).length;
               g.items.splice(at, 0, {
-                // Direct Bookings replaces Bookings & Leads. Old Leads and the
-                // Finder stay reachable by link but are no longer in the menu.
-                to: directBookings ? "/direct-bookings" : first.to,
+                to: bookingTarget,
                 label: "Direct Bookings",
-                icon: first.icon,
+                icon: UserPlus,
                 tour: "bookings-leads",
-                alsoActive: ["/direct-bookings", "/leads", "/inquiry-sources", "/availability-finder"],
+                alsoActive: DIRECT_BOOKINGS_MENU_PATHS,
               });
             }
             // One sidebar item per grouped area; the group's other pages are
