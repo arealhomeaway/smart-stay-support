@@ -1,8 +1,12 @@
 /**
  * Breezeway-origin Ticket routing (server-only).
  *
- * Scope, deliberately narrow:
- *   - A NEW Ticket created out of a Breezeway Work Order follows the real
+ * Since fix batch 4 (Emily, Nov 7, 2026; register T15) a NEW Ticket created out of a
+ * Breezeway Work Order is created with no owner and waits in the Team Queue for Team B.
+ * `routeBreezewayTicket` below is kept, read-only, and no longer called on creation.
+ *
+ * Scope, deliberately narrow (before fix batch 4):
+ *   - A NEW Ticket created out of a Breezeway Work Order followed the real
  *     coverage model: overnight on-call, then the Team B / Property Operations
  *     weighted queue, then the approved cross-team triage role, then an
  *     ON-DUTY Operations Supervisor, then unassigned (surfaced in Oversight).
@@ -33,6 +37,9 @@ export { TEAM_B_ROLE_CODES, isWithinWindow, pickLightestCandidate };
 export type { RoutingDecision };
 
 export const AUTO_ROUTE_SOURCE = "breezeway_auto_route";
+
+/** Shown after a Breezeway Work Order becomes a Ticket. */
+export const BREEZEWAY_TICKET_NOTE = "Waiting in the Team Queue for Team B.";
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -204,8 +211,8 @@ export type EscalateResult =
   | { ok: false; message: string };
 
 /**
- * Creates ONE Resolve Ticket from a mirrored Breezeway Work Order and applies
- * Team B routing. Idempotent per Work Order: if the Work Order is already
+ * Creates ONE Resolve Ticket from a mirrored Breezeway Work Order, with no owner: it waits
+ * in the Team Queue for Team B (register T15). Idempotent per Work Order: if the Work Order is already
  * linked to a ticket, that ticket is returned and its ownership is untouched.
  */
 export async function createTicketFromWorkOrder(
@@ -241,7 +248,6 @@ export async function createTicketFromWorkOrder(
     }
   }
 
-  const decision = await routeBreezewayTicket();
   const now = new Date().toISOString();
 
   const { data: inserted, error } = await db
@@ -272,27 +278,9 @@ export async function createTicketFromWorkOrder(
   if (error || !inserted) return { ok: false, message: "Could not create the Ticket." };
   const ticket = inserted as unknown as { id: string; ref: number | null };
 
-  // Overwrite whatever the generic assignment trigger chose: a Breezeway-origin
-  // ticket belongs to the Team B weighted queue, and the source is recorded.
-  await db
-    .from("tickets")
-    .update({
-      current_action_owner: decision.userId,
-      assigned_to: decision.userId,
-      assignment_source: AUTO_ROUTE_SOURCE,
-      assignment_note: decision.reason,
-    } as never)
-    .eq("id", ticket.id);
-
-  await db.from("ticket_activity").insert({
-    ticket_id: ticket.id,
-    author_id: actorId,
-    kind: "assignment",
-    event_type: "assigned",
-    channel: AUTO_ROUTE_SOURCE,
-    to_owner: decision.userId,
-    body: decision.reason,
-  } as never);
+  // No owner (register T15): the ticket waits in the Team Queue under From Breezeway for
+  // Team B, and a coordinator presses Take it. The database rule skips Breezeway tickets;
+  // nothing here sets or overwrites an owner.
 
   await linkWorkOrderToTicket(wo.id, ticket.id);
 
@@ -300,7 +288,7 @@ export async function createTicketFromWorkOrder(
     ok: true,
     ticketId: ticket.id,
     ref: ticket.ref,
-    assignedTo: decision.userId,
-    note: decision.reason,
+    assignedTo: null,
+    note: BREEZEWAY_TICKET_NOTE,
   };
 }
