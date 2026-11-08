@@ -17035,10 +17035,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      direct_booking_active_owner_homes: {
+        Args: { _ids: string[] }
+        Returns: string[]
+      }
       direct_booking_approval_required: {
         Args: { _at?: string }
         Returns: boolean
       }
+      direct_booking_cc_emails: { Args: never; Returns: string[] }
       direct_booking_daily_summary: { Args: { _at?: string }; Returns: number }
       direct_booking_eligible_now: { Args: never; Returns: boolean }
       direct_booking_notify: {
@@ -17165,6 +17170,10 @@ export type Database = {
           _reason?: string
         }
         Returns: undefined
+      }
+      mark_direct_booking_partner_approved: {
+        Args: { _lead_id: string; _note?: string }
+        Returns: string
       }
       mark_owner_alerts_read: { Args: { _ids: string[] }; Returns: number }
       mark_owner_opportunity_viewed: {
