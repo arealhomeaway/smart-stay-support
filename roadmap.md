@@ -218,3 +218,12 @@
 - [x] Admin page: Check the connection, Dry run, Sample of 20, three Run buttons, Stop, Resume, live status, failed files retry
 - [x] Rules, runner state, tests; staged guard SQL in docs/pending/notion-runner/ (not applied)
 - [ ] Signed-in run of the page not tried: sign-in not approved; no import run (by instruction)
+
+## Scorecard capture and archive instead of delete (Nov 8)
+- [x] Permanent record table, role-checked record functions, server time, Notion flag, countable view (staged in docs/pending/scorecard-capture/, not applied)
+- [x] Ready for arrival (home page), coaching and finance packet (Supervisor's Home), commitments with COO approval (guest issue tickets)
+- [x] Queue sweeps logged automatically on page open (no button, per decisions); weekly numbers not built (Supervisor never types numbers)
+- [x] Receipt time lock, server time on history, next action and Waiting log; routine check lock with corrections
+- [x] Archive replaces delete; Admin restore and archived list on Admin tools; rating channels setting
+- [ ] Apply staged SQL: waits on Emily's approval
+- [ ] COO role needs a person assigned in Team & coverage before approvals can be given
