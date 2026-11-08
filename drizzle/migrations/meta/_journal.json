@@ -2108,6 +2108,13 @@
       "when": 1794178683354,
       "tag": "0300_alerts_02_note_alerts",
       "breakpoints": true
+    },
+    {
+      "idx": 301,
+      "version": "7",
+      "when": 1794178747201,
+      "tag": "0301_alerts_03_approval_links",
+      "breakpoints": true
     }
   ]
 }
