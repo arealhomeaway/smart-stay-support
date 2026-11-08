@@ -3,7 +3,7 @@
  * read-only data source query (a POST that reads) are ever sent. Calls are
  * spaced to respect Notion's rate limit and retried on 429.
  */
-import { NOTION_TICKET_DATA_SOURCE_ID, SCOPE_DAYS, type NotionPage } from "./mapping";
+import { NOTION_CLAIM_REVIEW_STATUS, NOTION_TICKET_DATA_SOURCE_ID, SCOPE_DAYS, type NotionPage } from "./mapping";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/notion/v1";
 const MIN_GAP_MS = 350;
