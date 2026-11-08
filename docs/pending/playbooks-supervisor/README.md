@@ -46,3 +46,17 @@ which is unchanged and is the editor rule.
 from its live copy only in the permission line; the Supervisor, the Supervisor cover, both
 Directors and Admin save, approve, archive and upload with history; a coordinator, a Project
 Manager and Finance are refused each and nothing is written; the undo restores the live rule.
+
+## Applied
+
+- Nov 8, 2026: `sha256.txt` checked first (all files OK); the six live functions were re-read
+  and matched `live-capture/` exactly. APPLIED byte-for-byte as migration 0289
+  (`01_playbooks_supervisor.sql`); the migration file matches the staged file exactly
+  (sha256 71cf611d...c8c7) and each live function now matches its staged body. Grants and
+  the six playbook triggers are unchanged. Counts before and after: playbooks 35, steps 114,
+  approval history 0, SOP versions 0, SOP links 0.
+- Cancelled live check (nothing kept): the Operations Supervisor saved, approved, saved a new
+  version, published it, archived it, uploaded an SOP and cancelled a spare upload, with four
+  history lines; a coordinator, a Project Manager and Finance were refused every change and
+  still read everything.
+  Undo if ever needed: `01_playbooks_supervisor.undo.sql`.
