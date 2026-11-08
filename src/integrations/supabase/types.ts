@@ -16864,6 +16864,29 @@ export type Database = {
         Args: { _org: string; _status: string }
         Returns: undefined
       }
+      coordinator_for: {
+        Args: { _at?: string; _team: string }
+        Returns: {
+          note: string
+          path: string
+          role_code: string
+          user_id: string
+        }[]
+      }
+      coordinator_role_label: { Args: { _code: string }; Returns: string }
+      coordinator_team_label: { Args: { _team: string }; Returns: string }
+      coordinators_on_shift: {
+        Args: { _at?: string }
+        Returns: {
+          at_lunch: boolean
+          covering: boolean
+          last_given: string
+          load: number
+          role_code: string
+          team: string
+          user_id: string
+        }[]
+      }
       correct_actual_closing: {
         Args: { _new_date: string; _property_id: string; _reason: string }
         Returns: Json
@@ -17931,6 +17954,17 @@ export type Database = {
         }
         Returns: string
       }
+      routing_dry_run: {
+        Args: { _times: string[] }
+        Returns: {
+          at: string
+          note: string
+          role_code: string
+          team: string
+          user_id: string
+          work_type: string
+        }[]
+      }
       save_arha_opportunity: {
         Args: {
           _content: Json
@@ -18162,6 +18196,15 @@ export type Database = {
         Returns: undefined
       }
       template_bulk_v2_ready: { Args: never; Returns: boolean }
+      ticket_route_at: {
+        Args: { _at?: string; _role_code: string; _work_type_id: string }
+        Returns: {
+          note: string
+          role_code: string
+          source: string
+          user_id: string
+        }[]
+      }
       unlink_demo_owner_account: {
         Args: { _program_id: string; _reason: string }
         Returns: string
