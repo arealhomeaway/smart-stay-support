@@ -98,6 +98,28 @@ describe("Vendors page: onboarding sees the full vendor database", () => {
     expect(profile).toContain("value={v.program_owner} canManage={canLead}");
     expect(database).toContain("{canLead && c.field && (");
   });
+
+  it("Documents upload and Program Owner show to onboarding vendor editors, disabled with a plain label", () => {
+    const profile = readFileSync("src/routes/_authenticated/vendors.$vendorId.tsx", "utf8");
+    const sheet = readFileSync("src/components/VendorOrgSheet.tsx", "utf8");
+    const docs = readFileSync("src/components/VendorDocumentsPanel.tsx", "utf8");
+    const owner = readFileSync("src/components/vendors/ProgramOwnerField.tsx", "utf8");
+    // Editors who are not leadership (Director of Onboarding, Project Manager, Utilities).
+    for (const p of [DIRECTOR_ONB, PROJECT_MANAGER, UTILITIES]) {
+      const a = accessFor(p);
+      expect(a.edit && !a.lead).toBe(true);
+    }
+    // Documents: the filing forms render for them, disabled, never hidden; leadership keeps the working form.
+    expect(sheet).toContain("canManage={canLead}\n                  showDisabled={canManage && !canLead}");
+    expect(docs).toContain("{(canManage || showDisabled) && (");
+    expect(docs).toContain('<fieldset disabled={!canManage} aria-label={canManage ? undefined : "Filed by Operations leadership"}');
+    expect(docs.match(/<Select\s+disabled=\{!canManage\}/g)?.length).toBe(2);
+    expect(sheet).toContain("Documents are filed by Operations leadership.");
+    // Program Owner: value shown read only with a plain label; only leadership gets the picker.
+    expect(profile).toContain('canManage={canLead} readOnlyNote={canManage && !canLead ? "Set by Operations leadership." : undefined}');
+    expect(owner).toContain("{readOnlyNote && <p className=\"text-xs text-muted-foreground\">{readOnlyNote}</p>}");
+    expect(owner).toContain("{canManage ? (");
+  });
 });
 
 // ---------------------------------------------------------------------------
