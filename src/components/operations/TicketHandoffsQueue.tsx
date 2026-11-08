@@ -23,6 +23,7 @@ import {
   ticketTeam,
   waitLine,
   type HandoffQueueRow,
+  type QueueTiming,
 } from "@/lib/team-queue-board";
 import { QueueGroup, QueueRow, type DoneProps } from "./QueueRow";
 import { rowBreezeway, rowHome, rowType, type SourceRow } from "./AutomatedSourceQueue";

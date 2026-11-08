@@ -206,7 +206,7 @@ export function AutomatedSourceQueue({
                 guest={Boolean(t.guest_in_residence)}
                 home={rowHome(t)}
                 wait={{ text: waitLine(since, now, late), late }}
-                alert={entry ? null : alertLine(t.priority, sentAlertsFor(sent.data ?? [], since, t.id), cfg)}
+                alert={alertLine(t.priority, sentAlertsFor(sent.data ?? [], since, t.id), cfg)}
                 breezewayUrl={rowBreezeway(t)}
                 nextStep={t.next_action ?? null}
                 done={
