@@ -19,7 +19,8 @@ saved." and the automatic sweep log quietly records nothing. Nothing else change
   Add only: a trigger refuses every update, delete and truncate; RLS has a read policy only,
   so direct writes are refused. Correction (Nov 8, 2026): as applied, signed-in and
   signed-out sessions still hold the default insert, update, delete and truncate rights on
-  this table, `ticket_state_log` and `routine_check_corrections`; removing them is staged in
+  this table, `ticket_state_log` and `routine_check_corrections` (RLS and the add-only
+  triggers still refuse those writes); removing insert, update and delete is staged in
   `docs/pending/fix-batch-1/04_tighten_record_tables.sql`. The time is always `now()`.
 - `public.scorecard_records_countable` (view): leaves out demo rows, Notion imports and
   archived tickets, so future counts have one filter.

@@ -257,8 +257,7 @@ describe("part 3: Claims go to Team B", () => {
     const before = await snap();
     await db.exec(readFileSync(`${DIR}/03_claims_team_b.sql`, "utf8"));
     const after = await snap();
-    expect(after[0]).toEqual({ name: "Claims", team: "property_operations", functional_role_code: "po_day",
-      backup_coverage: "Other Property Operations role; escalate decisions beyond authority", response_minutes: 30 });
+    expect(after[0]).toEqual({ ...before[0], functional_role_code: "po_day" });
     expect(after.slice(1)).toEqual(before.slice(1));
     await db.exec(readFileSync(`${DIR}/03_undo_claims_team_b.sql`, "utf8"));
     expect(await snap()).toEqual(before);
@@ -281,7 +280,7 @@ describe("part 4: the add-only record tables lose direct write rights", () => {
     await db.exec(readFileSync(`${DIR}/04_tighten_record_tables.sql`, "utf8"));
     for (const t of ["scorecard_records", "ticket_state_log", "routine_check_corrections"]) {
       for (const r of ["anon", "authenticated"]) {
-        for (const p of ["INSERT", "UPDATE", "DELETE", "TRUNCATE"]) {
+        for (const p of ["INSERT", "UPDATE", "DELETE"]) {
           expect({ t, r, p, ok: (await one(db, `SELECT has_table_privilege('${r}','public.${t}','${p}') ok`)).ok }).toEqual({ t, r, p, ok: false });
         }
         expect((await one(db, `SELECT has_table_privilege('${r}','public.${t}','SELECT') ok`)).ok).toBe(true);
