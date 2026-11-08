@@ -160,3 +160,14 @@ describe("d. who can Take or Reopen", () => {
       expect(capabilitiesFor([r]).has("work_orders_internal")).toBe(true);
   });
 });
+
+describe("a. Routine Work page", () => {
+  it("no longer shows a My Work tab, so no tab bar appears", async () => {
+    const { pageTabGroupFor, visiblePageTabs } = await import("@/lib/shell-nav");
+    const group = pageTabGroupFor("/routines");
+    expect(group?.tabs.map((x) => x.label)).toEqual(["Routine Work"]);
+    const tabs = visiblePageTabs(group!, { can: () => true, canOpen: () => true, guestExperienceSeat: false, flagEnabled: () => true });
+    expect(tabs.map((x) => x.label)).not.toContain("My Work");
+    expect(tabs.length).toBeLessThan(2);
+  });
+});
