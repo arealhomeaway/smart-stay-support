@@ -550,9 +550,10 @@ export const myDirectBookings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ demo: z.boolean() }).parse(input))
   .handler(async ({ context, data }) => {
+    const cols = "id, partner_name, company, subject, created_at, reply_sent_at, outcome, owned_by";
     const { data: rows, error } = await context.supabase
       .from("leads")
-      .select("id, partner_name, company, subject, created_at, reply_sent_at, outcome" as never)
+      .select(cols as never)
       .eq("is_demo", data.demo)
       .eq("kind" as never, "direct_booking" as never)
       .eq("owned_by" as never, context.userId as never)
@@ -560,6 +561,31 @@ export const myDirectBookings = createServerFn({ method: "POST" })
       .order("created_at", { ascending: true })
       .limit(20);
     if (error) return [];
-    return ((rows ?? []) as unknown as { id: string; partner_name: string | null; company: string | null; subject: string | null; created_at: string; reply_sent_at: string | null }[])
-      .filter((r) => !r.reply_sent_at);
+    // Requests nobody has started yet that alerted this person (the database
+    // chose who to alert by who is on shift; one alert row per person).
+    const { data: alerts } = await context.supabase
+      .from("staff_notifications")
+      .select("entity_id")
+      .eq("user_id", context.userId)
+      .eq("kind", "direct_booking_new")
+      .eq("entity_type", "lead")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    const alertedIds = ((alerts ?? []) as { entity_id: string | null }[])
+      .map((a) => a.entity_id)
+      .filter((id): id is string => !!id);
+    let waiting: HomeBookingRow[] = [];
+    if (alertedIds.length > 0) {
+      const { data: open } = await context.supabase
+        .from("leads")
+        .select(cols as never)
+        .eq("is_demo", data.demo)
+        .eq("kind" as never, "direct_booking" as never)
+        .is("owned_by" as never, null)
+        .is("outcome" as never, null)
+        .in("id", alertedIds)
+        .limit(20);
+      waiting = (open ?? []) as unknown as HomeBookingRow[];
+    }
+    return homeDirectBookings([...((rows ?? []) as unknown as HomeBookingRow[]), ...waiting], alertedIds, context.userId);
   });
