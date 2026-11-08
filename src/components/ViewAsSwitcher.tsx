@@ -70,10 +70,7 @@ export function ViewAsRoleBanner() {
   return (
     <div role="status" className="border-b border-primary/30 bg-primary/10 text-foreground" data-testid="view-as-banner">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm">
-        <p className="min-w-0">
-          <strong className="mr-1">{VIEW_AS_COPY.menu}</strong>
-          {VIEW_AS_COPY.banner(identityLabel)}
-        </p>
+        <p className="min-w-0 font-medium">{VIEW_AS_COPY.banner(identityLabel)}</p>
         <Button
           size="sm"
           variant="outline"
