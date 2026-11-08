@@ -124,11 +124,8 @@ export function notionStatusLabel(status: string | null | undefined): string {
   const s = (status ?? "").trim();
   if (!s) return "";
   if (s === NOTION_LIVE_STATUS) return "Reopened in Resolve";
-  if (HIDDEN_STATUS.test(s)) {
-    HIDDEN_STATUS.lastIndex = 0;
-    return "Claim review";
-  }
-  return s;
+  if (/pending\s+claim\s+review\s+with\s+josh/i.test(s)) return "Claim review";
+  return cleanNotionText(s);
 }
 
 /** Cleans any text that came from Notion before it reaches a screen. */
