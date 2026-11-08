@@ -20,28 +20,33 @@ import {
 
 type Db = { from: (t: string) => any };
 
+export const overnightQueueKey = (demoMode: boolean) => ["team-queue-overnight-direct-bookings", demoMode] as const;
+
+/** Overnight requests nobody has started (shared by the Team Queue and Home's unclaimed count). */
+export async function loadOvernightDirectBookings(demoMode: boolean): Promise<OvernightQueueRow[]> {
+  const { data, error } = await (supabase as unknown as Db)
+    .from("leads")
+    .select("id, partner_name, company, subject, created_at, overnight_until, owned_by, reply_sent_at, outcome")
+    .eq("is_demo", demoMode)
+    .eq("kind", "direct_booking")
+    .not("overnight_until", "is", null)
+    .is("owned_by", null)
+    .is("outcome", null)
+    .order("created_at", { ascending: true })
+    .limit(20);
+  // Before the database step is applied the column is missing: show nothing.
+  if (error) {
+    if (isMissingColumn(error)) return [];
+    throw error;
+  }
+  return (data ?? []) as OvernightQueueRow[];
+}
+
 export function OvernightDirectBookings({ demoMode }: { demoMode: boolean }) {
   const q = useQuery({
-    queryKey: ["team-queue-overnight-direct-bookings", demoMode],
+    queryKey: overnightQueueKey(demoMode),
     refetchInterval: 60_000,
-    queryFn: async () => {
-      const { data, error } = await (supabase as unknown as Db)
-        .from("leads")
-        .select("id, partner_name, company, subject, created_at, overnight_until, owned_by, reply_sent_at, outcome")
-        .eq("is_demo", demoMode)
-        .eq("kind", "direct_booking")
-        .not("overnight_until", "is", null)
-        .is("owned_by", null)
-        .is("outcome", null)
-        .order("created_at", { ascending: true })
-        .limit(20);
-      // Before the database step is applied the column is missing: show nothing.
-      if (error) {
-        if (isMissingColumn(error)) return [] as OvernightQueueRow[];
-        throw error;
-      }
-      return (data ?? []) as OvernightQueueRow[];
-    },
+    queryFn: () => loadOvernightDirectBookings(demoMode),
   });
   // The overnight clock start time is a setting (register D3); read, never hardcoded.
   const settings = useQuery({
