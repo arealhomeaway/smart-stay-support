@@ -45,4 +45,18 @@ Record work page), and Notion imports are quiet and never reach the trigger.
 
 ## Applied
 
-See the end of this file.
+- Nov 8, 2026, approved by Emily. `sha256.txt` checked first (all OK).
+- `01` APPLIED byte-for-byte as migration 0296, `02` as migration 0297 (each migration file is
+  identical to its staged file). `03` run with the data tool as written.
+- Read back: the live `auto_assign_ticket` and `release_overnight_direct_bookings` equal the staged
+  bodies; grants unchanged (owner and service role only); both ticket triggers enabled and
+  unchanged; `ticket_route_at` and `audit_ticket_auto_assign` byte-identical to the captures; the
+  column note is the new one; triage windows 4 of 8 active (the weekend four).
+- Routing preview for every work type at Tuesday 9 AM and Wednesday 7 PM: 42 rows, fingerprint
+  e9323f81457c0affc44bab2979c15702 before and after, identical.
+- Cancelled live check (nothing kept): one ticket each from the info inbox, the OwnerRez relay, an
+  OwnerRez review follow up and a Breezeway work order were created with no owner and the line
+  "Waiting in the Team Queue for the team to take it."; a Record work ticket went to the Guest
+  Experience evening coordinator, the same person the routing rule names. Afterwards tickets 42,
+  practice tickets 0, leads 1, alerts 584, settings 11. The ticket number sequence moved on by
+  five (a cancelled step cannot give numbers back).
