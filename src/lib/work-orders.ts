@@ -86,7 +86,9 @@ export type WorkOrderLike = {
 
   approval_status?: ApprovalStatus | string | null;
   approved_amount?: number | string | null;
-  /** Supervisor decision for the $200–$350 band. */
+  /** The policy version this Work Order was decided under. */
+  policy_version?: string | null;
+  /** Supervisor decision (supervisor band, and the owner band from policy v3). */
   supervisor_approval_status?: ApprovalStatus | string | null;
   /** When the homeowner was told about supervisor-authorised work. */
   owner_fyi_at?: string | null;
