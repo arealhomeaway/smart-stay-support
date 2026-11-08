@@ -1,0 +1,1 @@
+Direct Bookings: set when a request arrives in the after hours window, to the moment the window ends. Waits in the Team Queue until then; the reply clock starts here.

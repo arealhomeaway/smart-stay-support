@@ -1,0 +1,10 @@
+id|weekday|start_minute|end_minute|covers_team|role_code|active|note
+19c12e14-9159-4b19-a672-74184a6f9a1d|0|480|780|property_operations|ge_day|t|Sunday morning cross-team triage
+5b2c483d-4485-4191-a40e-1ff78ca12eec|0|1020|1320|property_operations|ge_evening|t|Sunday evening cross-team triage
+dcf1e26c-0e3c-443a-9f75-88c8e9336b08|1|1020|1320|property_operations|ge_evening|t|Monday evening cross-team triage
+ade37145-24fd-4ca7-b760-131a8b2a53c9|2|480|780|property_operations|po_day|t|Tuesday morning cross-team triage
+9e00af58-38c5-401c-ba87-2beecd0ae379|2|1020|1320|property_operations|ge_evening|t|Tuesday evening cross-team triage
+564376d6-5cdd-4a12-ad09-f0089cc38eb7|3|1020|1320|property_operations|ge_evening|t|Wednesday evening cross-team triage
+22cce2bc-745e-4f3d-8b99-37b009ea521a|6|480|780|property_operations|ge_day|t|Saturday morning cross-team triage
+9471e31f-5e96-453f-bcd7-dac6af89ee09|6|1020|1320|property_operations|ge_evening|t|Saturday evening cross-team triage
+(8 rows)
