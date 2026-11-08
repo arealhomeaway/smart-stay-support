@@ -6401,6 +6401,47 @@ export type Database = {
           },
         ]
       }
+      handoff_reminders: {
+        Row: {
+          created_at: string
+          handoff_on: string
+          id: string
+          kind: string
+          project_id: string
+          property_id: string
+          recipients: string[]
+          sent_on: string
+        }
+        Insert: {
+          created_at?: string
+          handoff_on: string
+          id?: string
+          kind: string
+          project_id: string
+          property_id: string
+          recipients?: string[]
+          sent_on: string
+        }
+        Update: {
+          created_at?: string
+          handoff_on?: string
+          id?: string
+          kind?: string
+          project_id?: string
+          property_id?: string
+          recipients?: string[]
+          sent_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "handoff_reminders_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       handoff_requirements: {
         Row: {
           category: string
@@ -7833,6 +7874,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      onboarding_flag_snapshots: {
+        Row: {
+          blocks_handoff: boolean
+          is_required: boolean
+          row_id: string
+          snapshot_key: string
+          table_name: string
+          taken_at: string
+          updated_at: string | null
+        }
+        Insert: {
+          blocks_handoff: boolean
+          is_required: boolean
+          row_id: string
+          snapshot_key: string
+          table_name: string
+          taken_at?: string
+          updated_at?: string | null
+        }
+        Update: {
+          blocks_handoff?: boolean
+          is_required?: boolean
+          row_id?: string
+          snapshot_key?: string
+          table_name?: string
+          taken_at?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       onboarding_follows: {
         Row: {
@@ -18196,6 +18267,7 @@ export type Database = {
           work_type: string
         }[]
       }
+      run_handoff_reminders: { Args: { _now?: string }; Returns: number }
       run_ticket_timed_alerts: { Args: never; Returns: number }
       save_arha_opportunity: {
         Args: {

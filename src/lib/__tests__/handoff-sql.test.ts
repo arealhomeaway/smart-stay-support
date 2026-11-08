@@ -216,7 +216,7 @@ describe("handoff never blocks (02, 03)", () => {
     expect(await n("SELECT count(*) n FROM public.onboarding_flag_snapshots")).toBe(1515);
   });
 
-  it("refuses to run twice and refuses when the plan moved off version 3", async () => {
+  it("refuses to run twice", async () => {
     await db.exec(read("03_clear_handoff_flags.sql"));
     await expect(db.exec(read("03_clear_handoff_flags.sql"))).rejects.toThrow("already run");
   });
