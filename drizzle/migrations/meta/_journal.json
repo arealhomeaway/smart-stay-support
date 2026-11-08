@@ -2122,6 +2122,13 @@
       "when": 1794178798562,
       "tag": "0302_alerts_04_claim_approval",
       "breakpoints": true
+    },
+    {
+      "idx": 303,
+      "version": "7",
+      "when": 1794178904320,
+      "tag": "0303_alerts_05_notification_categories",
+      "breakpoints": true
     }
   ]
 }

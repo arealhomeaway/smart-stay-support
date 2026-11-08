@@ -13985,11 +13985,15 @@ export type Database = {
           email_enabled: boolean
           email_escalations: boolean
           email_handoffs: boolean
+          email_notes_mentions: boolean
+          email_team_queue: boolean
           email_work_orders: boolean
           inapp_approvals: boolean
           inapp_assignments: boolean
           inapp_escalations: boolean
           inapp_handoffs: boolean
+          inapp_notes_mentions: boolean
+          inapp_team_queue: boolean
           inapp_work_orders: boolean
           updated_at: string
           user_id: string
@@ -14001,11 +14005,15 @@ export type Database = {
           email_enabled?: boolean
           email_escalations?: boolean
           email_handoffs?: boolean
+          email_notes_mentions?: boolean
+          email_team_queue?: boolean
           email_work_orders?: boolean
           inapp_approvals?: boolean
           inapp_assignments?: boolean
           inapp_escalations?: boolean
           inapp_handoffs?: boolean
+          inapp_notes_mentions?: boolean
+          inapp_team_queue?: boolean
           inapp_work_orders?: boolean
           updated_at?: string
           user_id: string
@@ -14017,11 +14025,15 @@ export type Database = {
           email_enabled?: boolean
           email_escalations?: boolean
           email_handoffs?: boolean
+          email_notes_mentions?: boolean
+          email_team_queue?: boolean
           email_work_orders?: boolean
           inapp_approvals?: boolean
           inapp_assignments?: boolean
           inapp_escalations?: boolean
           inapp_handoffs?: boolean
+          inapp_notes_mentions?: boolean
+          inapp_team_queue?: boolean
           inapp_work_orders?: boolean
           updated_at?: string
           user_id?: string
