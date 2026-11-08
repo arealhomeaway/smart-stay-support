@@ -12,6 +12,7 @@ import {
   replyClock,
   requestStatus,
   validateNotBooked,
+  NOT_BOOKED_REASONS,
   type HomeCandidate,
 } from "./direct-bookings";
 import { DIRECT_BOOKING_TAGS, hasTag } from "./mail-categories";
@@ -99,7 +100,7 @@ describe("outcomes", () => {
   it("not booked needs a reason and a note", () => {
     expect(validateNotBooked("", "x")).not.toBeNull();
     expect(validateNotBooked("Too expensive", "")).not.toBeNull();
-    expect(validateNotBooked("Too expensive", "Went elsewhere")).toBeNull();
+    expect(validateNotBooked(NOT_BOOKED_REASONS[0], "Went elsewhere")).toBeNull();
   });
 });
 
