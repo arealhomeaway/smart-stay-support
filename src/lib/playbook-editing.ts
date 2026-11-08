@@ -2,8 +2,13 @@ import { z } from "zod";
 import type { AccessSeats, AppRole } from "./permissions";
 import type { AuthoredPlaybook } from "./playbooks";
 
+/** Approve, archive and upload SOPs: Admin and the two Directors (DB can_manage_playbooks). */
 export function canManagePlaybooks(roles: readonly AppRole[], seats: AccessSeats = {}) {
   return roles.includes("admin") || Boolean(seats.opsDirector || seats.onboardingDirector);
+}
+/** Save a playbook draft: the same people plus the Operations Supervisor (DB can_save_playbooks). */
+export function canSavePlaybooks(roles: readonly AppRole[], seats: AccessSeats = {}) {
+  return canManagePlaybooks(roles, seats) || Boolean(seats.opsSupervisor);
 }
 export const playbookStepSchema = z.object({
   instruction: z.string().trim().min(1), detail: z.string().nullable(),

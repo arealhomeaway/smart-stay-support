@@ -35,7 +35,7 @@ import { SopVersionComparison } from "@/components/playbooks/SopVersionCompariso
 import { SopUpload } from "@/components/playbooks/SopUpload";
 import { getSopPlaybookLinks } from "@/lib/sop-upload.functions";
 import { sopNeedsReview, type SopLink } from "@/lib/sop-upload";
-import { canManagePlaybooks, playbookEditContent, type PlaybookContent, type PlaybookStepEdit } from "@/lib/playbook-editing";
+import { canManagePlaybooks, canSavePlaybooks, playbookEditContent, type PlaybookContent, type PlaybookStepEdit } from "@/lib/playbook-editing";
 import { savePlaybookEdit, changePlaybookState } from "@/lib/playbook-editing.functions";
 import { CATEGORIES, labelFor } from "@/lib/tickets";
 import { FieldHint } from "@/components/FieldHint";
@@ -68,9 +68,10 @@ export const Route = createFileRoute("/_authenticated/playbooks")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  // Administration is supervisor work. Coordinators get guidance in context.
+  // Every staff account can read the library. Saving, approving and review
+  // notes are checked below and by the database.
   component: () => (
-    <RequireCapability capability="playbooks_edit" title="Playbook administration">
+    <RequireCapability capability="playbooks_view" title="Playbooks">
       <PlaybooksPage />
     </RequireCapability>
   ),
@@ -114,10 +115,15 @@ function usePlaybooks() {
 
 function PlaybooksPage() {
   const qc = useQueryClient();
-  const { readOnly, roles, access } = useRole();
-  // Authoring and approval use the caller-checked Admin/Director rule.
+  const { readOnly: previewOnly, roles, access, can } = useRole();
+  // Approval and SOP upload use the caller-checked Admin/Director rule;
+  // saving drafts also allows the Operations Supervisor.
   const isDirector = canManagePlaybooks(roles, access.seats);
-  const [filter, setFilter] = useState<PlaybookStatus | "all" | "attention">("attention");
+  const canSave = canSavePlaybooks(roles, access.seats);
+  // The library opens read only for people without playbook administration.
+  const libraryOnly = !can("playbooks_edit");
+  const readOnly = previewOnly || libraryOnly;
+  const [filter, setFilter] = useState<PlaybookStatus | "all" | "attention">(libraryOnly ? "approved" : "attention");
   const [openId, setOpenId] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(false);
   const [editUploaded, setEditUploaded] = useState<string | null>(null);
@@ -148,16 +154,16 @@ function PlaybooksPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold">Playbook administration</h1>
+          <h1 className="text-3xl font-semibold">{libraryOnly ? "Playbooks" : "Playbook administration"}</h1>
           <p className="mt-1 max-w-2xl text-muted-foreground">
-            {counts.in_review} awaiting review · {counts.draft} in draft · {counts.approved} guiding
-            work today. Only approved guidance reaches a coordinator, and only from its effective
-            date.
+            {libraryOnly
+              ? `${counts.approved} playbooks guiding work today.`
+              : `${counts.in_review} awaiting review · ${counts.draft} in draft · ${counts.approved} guiding work today. Only approved guidance reaches a coordinator, and only from its effective date.`}
           </p>
         </div>
-        {!readOnly && isDirector && (
+        {!readOnly && canSave && (
           <div className="flex flex-wrap items-start gap-2">
-          <SopUpload onSaved={(receipt) => { setFilter("all"); setOpenId(receipt.draftIds[0] ?? null); setEditUploaded(receipt.draftIds[0] ?? null); void qc.invalidateQueries({ queryKey: ["playbooks-admin"] }); void qc.invalidateQueries({ queryKey: ["sop-playbook-links"] }); toast.success(`${receipt.draftIds.length} draft playbooks created.`); }} />
+          {isDirector && <SopUpload onSaved={(receipt) => { setFilter("all"); setOpenId(receipt.draftIds[0] ?? null); setEditUploaded(receipt.draftIds[0] ?? null); void qc.invalidateQueries({ queryKey: ["playbooks-admin"] }); void qc.invalidateQueries({ queryKey: ["sop-playbook-links"] }); toast.success(`${receipt.draftIds.length} draft playbooks created.`); }} />}
           <Button onClick={() => setShowNew(true)}>
             <Plus className="size-4" /> New playbook
           </Button>
