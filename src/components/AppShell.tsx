@@ -78,6 +78,7 @@ import {
   departmentFor,
   onboardingOnlyMenu,
   operationsMenu,
+  topBarWorkActions,
   type MenuGroup,
 } from "@/lib/shell-nav";
 
