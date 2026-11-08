@@ -14,6 +14,27 @@ const TECH = "00000000-0000-4000-8000-000000000002";
 const ONBOARDING = "00000000-0000-4000-8000-000000000004";
 const OLD_PERSON = "00000000-0000-4000-8000-000000000009";
 
+// The live quiet triggers the import migrations rewrite (same list as notion-runner-sql.test.ts).
+const QUIET = [
+  ["tickets_auto_assign", "BEFORE INSERT", "auto_assign_ticket"],
+  ["tickets_audit_auto_assign", "AFTER INSERT", "audit_ticket_auto_assign"],
+  ["tickets_priority_authority", "BEFORE INSERT OR UPDATE OF priority", "enforce_ticket_priority_authority"],
+  ["notify_ticket_events_trg", "AFTER INSERT OR UPDATE", "notify_ticket_events"],
+  ["notify_ticket_flow_events_trg", "AFTER UPDATE", "notify_ticket_flow_events"],
+  ["sync_ticket_work_item", "AFTER INSERT OR UPDATE", "sync_ticket_work_item"],
+  ["tickets_notify_owner", "AFTER INSERT OR UPDATE", "notify_owner_of_ticket"],
+  ["tickets_owner_opportunity", "AFTER INSERT OR UPDATE", "sync_ticket_opportunity_trigger"],
+  ["tickets_insurance_risk_log", "AFTER INSERT OR UPDATE OF insurance_risk", "log_ticket_insurance_risk"],
+  ["tickets_feedback_linked_work", "AFTER INSERT", "log_feedback_linked_work"],
+  ["tickets_roll_quarterly_review", "AFTER UPDATE", "roll_quarterly_review"],
+  ["handoff_carryover_ticket_completed", "AFTER UPDATE OF status", "complete_handoff_carryover_tasks"],
+];
+const QUIET_SQL = `
+CREATE TABLE public.fired_log(name text);
+${QUIET.map(([name, , fn]) => `CREATE FUNCTION public.${fn}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN INSERT INTO public.fired_log VALUES ('${name}'); RETURN NEW; END $$;`).join("\n")}
+${QUIET.map(([name, ev, fn]) => `CREATE TRIGGER ${name} ${ev} ON public.tickets FOR EACH ROW EXECUTE FUNCTION public.${fn}();`).join("\n")}
+`;
+
 const BASE = `
 CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
 CREATE SCHEMA auth;
@@ -61,6 +82,7 @@ const LIVE_IMPORT = [
 async function fresh(extra: string[] = []) {
   const db = new PGlite();
   await db.exec(BASE);
+  await db.exec(QUIET_SQL);
   for (const f of [...LIVE_IMPORT, ...extra]) await db.exec(readFileSync(f, "utf8"));
   return db;
 }
