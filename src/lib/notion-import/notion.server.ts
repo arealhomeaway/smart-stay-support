@@ -71,16 +71,27 @@ const openFilter = {
   and: CLOSED_NOTION_STATUSES.map((s) => ({ property: "Issue Status", status: { does_not_equal: s } })),
 };
 
-/** Narrows the Notion query to one group. The mapping rules still decide; this only saves reads. */
+const dayShift = (iso: string, days: number) => new Date(Date.parse(iso) + days * 86_400_000).toISOString().slice(0, 10);
+
+/**
+ * Narrows the Notion query to one group, with a day of overlap on each side of
+ * the 30 day line so no ticket falls between two runs. The mapping rules still
+ * decide the group; a row that belongs to the other group is passed over.
+ */
 export function groupFilter(group: ImportGroup | null, cutoffIso: string) {
-  const day = cutoffIso.slice(0, 10);
   if (group === "closed") return { or: CLOSED_NOTION_STATUSES.map((s) => ({ property: "Issue Status", status: { equals: s } })) };
-  if (group === "recent_open") return { and: [...openFilter.and, { property: "Created Date", date: { on_or_after: day } }] };
+  if (group === "recent_open")
+    return { and: [...openFilter.and, { property: "Created Date", date: { on_or_after: dayShift(cutoffIso, -1) } }] };
   if (group === "older_open")
     return {
       and: [
         ...openFilter.and,
-        { or: [{ property: "Created Date", date: { before: day } }, { property: "Created Date", date: { is_empty: true } }] },
+        {
+          or: [
+            { property: "Created Date", date: { before: dayShift(cutoffIso, 1) } },
+            { property: "Created Date", date: { is_empty: true } },
+          ],
+        },
       ],
     };
   return undefined;
