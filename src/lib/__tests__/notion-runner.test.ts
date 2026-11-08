@@ -5,7 +5,6 @@ import {
   NOTION_IMPORT_COPY,
   RUN_BUTTONS,
   STALE_AFTER_MS,
-  RunnerRuleError,
   claimBatch,
   countOutcome,
   effectiveStatus,
@@ -53,7 +52,7 @@ describe("stop and resume", () => {
     s = finishBatch(s, "run-0001", batch(3), "cursor-2", T0 + 2000);
     expect(s.job!.status).toBe("stopped");
     expect(s.job!.cursor).toBe("cursor-2");
-    expect(() => claimBatch(s, "run-0001", T0 + 2500)).toThrow(RunnerRuleError);
+    expect(() => claimBatch(s, "run-0001", T0 + 2500)).toThrow(/not going/);
   });
 
   it("Resume carries on from the saved cursor with the same counts and 30 day line", () => {
@@ -135,7 +134,7 @@ describe("Notion rate limit", () => {
     expect(retryDelayMs(0, null, 0)).toBe(1000);
     expect(retryDelayMs(2, null, 0)).toBe(4000);
     expect(retryDelayMs(10, null, 0)).toBe(30_000);
-    expect(retryDelayMs(0, null, 0.999)).toBeLessThan(1500);
+    expect(retryDelayMs(0, null, 0.999) < 1500).toBe(true);
   });
   it("explains why the connection cannot read the database and what to do", () => {
     expect(explainNotionProblem(404, '{"code":"object_not_found"}').reason).toMatch(/not shared with the Notion connection/);
