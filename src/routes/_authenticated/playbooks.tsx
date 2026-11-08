@@ -182,7 +182,7 @@ function PlaybooksPage() {
             {f.label}
           </Button>
         ))}
-      </div>
+      </div>}
 
       {visible.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border p-8 text-center text-muted-foreground">
@@ -233,6 +233,7 @@ function PlaybooksPage() {
               pb={selected}
               updatedAt={selected.updatedAt}
               isDirector={isDirector}
+              canSave={canSave}
               readOnly={readOnly}
               sopLink={links.data?.[selected.id]}
               initialEditing={editUploaded === selected.id}
@@ -278,6 +279,7 @@ function PlaybookDetail({
   pb,
   updatedAt,
   isDirector,
+  canSave,
   readOnly,
   onChanged,
   sopLink,
@@ -288,6 +290,7 @@ function PlaybookDetail({
   pb: AuthoredPlaybook;
   updatedAt: string;
   isDirector: boolean;
+  canSave: boolean;
   readOnly: boolean;
   onChanged: (id?: string) => void;
   sopLink?: SopLink | undefined;
@@ -366,10 +369,10 @@ function PlaybookDetail({
       {sopLink && activeVersion && <SopVersionComparison active={activeVersion} draft={pb} />}
       {sopLink && suggestedDraft && <SopVersionComparison active={pb} draft={suggestedDraft} />}
 
-      {isDirector && !readOnly && !editing && <div className="flex flex-wrap gap-2">
+      {canSave && !readOnly && !editing && <div className="flex flex-wrap gap-2">
         <Button variant="outline" disabled={steps.isLoading || steps.isError || busy} onClick={() => setEditing(true)}>Edit</Button>
-        {(pb.status === "draft" || pb.status === "in_review") && <Button disabled={busy} onClick={() => move("approve")}>Approve and make active</Button>}
-        {pb.status !== "retired" && <Button variant="outline" disabled={busy} onClick={() => { if (window.confirm("Archive this playbook? It will no longer guide new work.")) void move("archive"); }}>Archive</Button>}
+        {isDirector && (pb.status === "draft" || pb.status === "in_review") && <Button disabled={busy} onClick={() => move("approve")}>Approve and make active</Button>}
+        {isDirector && pb.status !== "retired" && <Button variant="outline" disabled={busy} onClick={() => { if (window.confirm("Archive this playbook? It will no longer guide new work.")) void move("archive"); }}>Archive</Button>}
       </div>}
       {steps.isError && <p role="alert" className="text-sm text-destructive">Could not load the steps. Reopen this playbook to try again.</p>}
       {editing && !steps.data ? <Skeleton className="h-40 w-full" /> : editing ? <PlaybookEditor initial={playbookEditContent(pb, steps.data ?? [])} busy={busy} onSave={save} onCancel={() => setEditing(false)} /> : <>
