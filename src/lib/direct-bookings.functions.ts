@@ -30,6 +30,7 @@ import {
   centralDate,
   availableFrom,
   looksLikePartnerApproval,
+  longDate,
   DB_COPY,
   type HomeBookingRow,
   type HomeCandidate,
@@ -276,6 +277,8 @@ export const getDirectBooking = createServerFn({ method: "POST" })
       source,
       sources: sources ?? [],
       mailboxConnected: mailboxReadEnabled(),
+      /** Only for "Copy reply" when the mailbox cannot send; the screen shows the two role names. */
+      ccEmails: await ccEmails(db),
     };
   });
 
@@ -453,7 +456,9 @@ export const searchDirectBookingHomes = createServerFn({ method: "POST" })
           const rent = rentFor(h.bedrooms, lead.inquiry_source_id, settings);
           const step = stepOf(h);
           const freeFrom = availableFrom(checkIn, h.strConflicts);
+          const asapStart = Boolean(lead.asap && !lead.desired_move_in);
           return {
+            availability: asapStart && freeFrom === checkIn ? "As soon as possible" : longDate(freeFrom),
             id: h.id,
             name: h.name,
             address: h.address,

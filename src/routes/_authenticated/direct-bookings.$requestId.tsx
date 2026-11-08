@@ -414,7 +414,7 @@ function ApprovalBanner({ d, refetch }: { d: Detail; refetch: () => void }) {
         <>
           <span className="text-sm">{DB_COPY.approvalSupervisor}</span>
           <div className="flex flex-wrap gap-2">
-            <Button className={cn(BIG, "bg-sage text-white hover:bg-sage/90")} disabled={busy} onClick={() => run("approved")}>{DB_COPY.approve}</Button>
+            <Button className={cn(BIG, "bg-sage text-primary-foreground hover:bg-sage/90")} disabled={busy} onClick={() => run("approved")}>{DB_COPY.approve}</Button>
             <Button variant="outline" className={cn(BIG, "border-primary text-primary")} disabled={busy} onClick={() => setBackOpen(true)}>{DB_COPY.sendBack}</Button>
           </div>
           {backOpen ? (
@@ -707,7 +707,7 @@ function ReplySection({ d, editable, picked, partner, onDone }: { d: Detail; edi
         distanceMiles: h.distanceMiles,
         bedrooms: h.bedrooms,
         bathrooms: h.bathrooms,
-        availability: lead.asap && !lead.desired_move_in && h.freeFrom === picked[0]?.freeFrom && h.shortStays === 0 ? "As soon as possible" : longDate(h.freeFrom),
+        availability: h.availability,
         monthly: h.rent.ok ? h.rent.monthly : 0,
         nightly: h.rent.ok ? h.rent.nightly : 0,
       })),
@@ -778,7 +778,7 @@ function ReplySection({ d, editable, picked, partner, onDone }: { d: Detail; edi
         {editable && help ? <span className="text-[13px] text-muted-foreground">{help}</span> : null}
         {showManual ? (
           <>
-            <Button variant="outline" className={BTN} onClick={() => navigator.clipboard.writeText(`To: ${to}\nCc: ${CC_ROLE_LINE}\nSubject: ${subject}\n\n${body}`).then(() => toast.success("Copied."))}>
+            <Button variant="outline" className={BTN} onClick={() => navigator.clipboard.writeText(`To: ${to}\nCc: ${d.ccEmails.join(", ")}\nSubject: ${subject}\n\n${body}`).then(() => toast.success("Copied."))}>
               Copy reply
             </Button>
             <Button
