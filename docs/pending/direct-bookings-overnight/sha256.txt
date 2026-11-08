@@ -1,5 +1,6 @@
 b0e72de1d0df8d4c4e72689654026e87148fd89d8fe22bebf5d22d0cb902ac53  ./01_overnight_queue.sql
 80dbec68df55ad369128233a53ffd3072cc1d0d95c93754f887beb88faa08661  ./01_undo_overnight_queue.sql
+f77f7883a1acd0ebcbfe54008ae2ffeecf9861b426d5a8cbd824b6d96f3332cf  ./README.md
 5b32ca15e3522fd6d13af4127da35ca457109d3736699e34b0d5f50db306d615  ./live-capture/cron.direct-booking-approval-escalation.txt
 a47e81576eb3304729ca333a415813d0f06a8e1afc5de6660461ff8679ce7689  ./live-capture/public.direct_booking_alert_new.sql
 ad92019cc4faded6e24f75d6eb709fa5c02335738742476d74e1e73b6f5783b3  ./live-capture/public.direct_booking_eligible_now.sql

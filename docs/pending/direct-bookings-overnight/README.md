@@ -51,4 +51,23 @@ live schedule) and `src/lib/__tests__/direct-bookings-overnight.test.ts` (clock,
 
 ## Applied
 
-See the end of this file once applied.
+- Nov 8, 2026, approved by Emily. `sha256.txt` checked first (all OK); the live
+  `direct_booking_on_shift` matched `live-capture/` exactly.
+- APPLIED byte-for-byte as migration 0295 (`drizzle/migrations/0295_direct_booking_overnight_queue.sql`,
+  identical to `01_overnight_queue.sql`).
+- Read back: the four functions are security definer with grants to service_role only; leads has
+  the new BEFORE INSERT trigger beside the unchanged alert and updated-at triggers; the job runs
+  every 20 seconds with the new command, active, 9 runs in the first 3 minutes, all succeeded.
+- These live rules are byte-identical before and after (md5 of their definitions):
+  auto_assign_ticket, coordinator_for, coordinators_on_shift, oncall_user_for_night,
+  direct_booking_alert_new, direct_booking_notify, direct_booking_eligible_now,
+  start_direct_booking, escalate_direct_booking_approvals.
+- Cancelled live check (nothing kept, checked afterwards):
+  - A request inserted inside the window: 0 alerts, marked to wait.
+  - Arrived 11 PM Sunday: would alert nobody, waits until Mon 8:00 AM, shows in the Team Queue, 0 alerts.
+  - 7:59 AM: nothing released. 8:00 AM: released, one alert, to the Property Operations weekday
+    coordinator; again at 8:00:20: nothing more. Eligible for Needs you now at 8:00: the same person.
+  - Wednesday 2 PM: not held, alerts the Guest Experience evening coordinator (as before).
+  - Sunday 9 AM: not held, alerts the Operations Supervisor and the Director of Operations (as before).
+  - Afterwards: leads 1, Direct Booking requests 0, staff alerts 584, tickets 42, settings 11,
+    after hours window 10 PM to 8 AM. Same as before.
