@@ -25,9 +25,10 @@ function actions(
   roles: AppRole[],
   opts: { seats?: AccessSeats; vendorMode?: boolean; ownerMode?: boolean; readOnly?: boolean } = {},
 ) {
+  const seats = opts.seats ?? {};
   return topBarWorkActions(pathname, {
-    can: (c) => can(roles, c, opts.seats),
-    canOpen: (p) => canOpenPath(p, { roles, seats: opts.seats }),
+    can: (c) => can(roles, c, seats),
+    canOpen: (p) => canOpenPath(p, { roles, seats }),
     vendorMode: opts.vendorMode ?? roles.includes("vendor"),
     ownerMode: opts.ownerMode ?? roles.includes("owner"),
     readOnly: opts.readOnly ?? false,
@@ -35,11 +36,11 @@ function actions(
 }
 
 describe("who sees Record routine work in the top bar", () => {
-  const opsPeople: Array<[string, AppRole[], AccessSeats | undefined]> = [
-    ["Property Coordinator", ["tech"], undefined],
-    ["Operations Supervisor", ["manager"], undefined],
+  const opsPeople: Array<[string, AppRole[], AccessSeats]> = [
+    ["Property Coordinator", ["tech"], {}],
+    ["Operations Supervisor", ["manager"], {}],
     ["Director of Operations", ["manager"], { opsDirector: true }],
-    ["Admin", ["admin"], undefined],
+    ["Admin", ["admin"], {}],
   ];
 
   for (const [label, roles, seats] of opsPeople) {
@@ -94,7 +95,7 @@ describe("the top bar button opens the panel in place", () => {
 
   it("sits directly beside Record work, same size", () => {
     expect(bar.indexOf("Record work")).toBeGreaterThan(-1);
-    expect(bar.indexOf("Record work")).toBeLessThan(bar.indexOf("{showRecordRoutine && ("));
+    expect(bar.indexOf("{showRecordRoutine && (")).toBeGreaterThan(bar.indexOf("Record work"));
     expect(routineButton).toContain('size="sm"');
     expect(routineButton).toContain('className="min-h-11 md:min-h-9"');
   });
