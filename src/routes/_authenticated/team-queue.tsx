@@ -66,6 +66,8 @@ import {
   urgencyChipClass,
   urgencyName,
   type QueueScope,
+  DEFAULT_QUEUE_TIMING,
+  readQueueTiming,
 } from "@/lib/team-queue-board";
 import {
   AGE_OPTIONS,
