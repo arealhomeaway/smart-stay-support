@@ -29,7 +29,7 @@ CREATE FUNCTION private.is_supervisor(_user_id uuid) RETURNS boolean LANGUAGE sq
   $$ SELECT EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = _user_id AND role IN ('admin','manager')) $$;
 CREATE FUNCTION private.is_synthetic_account() RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT false $$;
 CREATE FUNCTION private.demo_notify_ok(_user_id uuid) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT false $$;
-CREATE TABLE public.functional_roles(code text PRIMARY KEY, current_seat_holder uuid);
+CREATE TABLE public.functional_roles(code text PRIMARY KEY, current_seat_holder uuid, current_seat_name text);
 CREATE FUNCTION public.seat_override_at(_role_code text, _at timestamptz) RETURNS TABLE(user_id uuid, kind text) LANGUAGE sql STABLE AS
   $$ SELECT NULL::uuid, NULL::text WHERE false $$;
 CREATE TABLE public.app_settings(key text PRIMARY KEY, value jsonb);
@@ -75,7 +75,7 @@ async function fresh() {
     CREATE TRIGGER notify_recovery_approval_trg AFTER INSERT OR UPDATE ON public.guest_recovery FOR EACH ROW EXECUTE FUNCTION public.notify_recovery_approval();`);
   for (const [u, r] of [[COORD, "tech"], [OWNER, "tech"], [MENTIONED, "tech"], [SUP, "manager"], [DIR_OPS, "manager"], [ADMIN, "admin"], [VENDOR, "vendor"]] as const)
     await db.query("INSERT INTO public.user_roles VALUES ($1, $2)", [u, r]);
-  await db.query("INSERT INTO public.functional_roles VALUES ('ops_supervisor', $1), ('director_ops', $2)", [SUP, DIR_OPS]);
+  await db.query("INSERT INTO public.functional_roles(code, current_seat_holder) VALUES ('ops_supervisor', $1), ('director_ops', $2)", [SUP, DIR_OPS]);
   for (const p of PARTS) await db.exec(read(`${DIR}/${p}.sql`));
   await db.exec(read(`${DIR}/06_team_queue_timing_setting.sql`));
 }
