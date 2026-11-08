@@ -105,7 +105,7 @@ describe("Vendors page: onboarding sees the full vendor database", () => {
     const docs = readFileSync("src/components/VendorDocumentsPanel.tsx", "utf8");
     const owner = readFileSync("src/components/vendors/ProgramOwnerField.tsx", "utf8");
     // Editors who are not leadership (Director of Onboarding, Project Manager, Utilities).
-    for (const p of [DIRECTOR_ONB, PROJECT_MANAGER, UTILITIES]) {
+    for (const p of Object.values(ONBOARDING_EDITORS)) {
       const a = accessFor(p);
       expect(a.edit && !a.lead).toBe(true);
     }
