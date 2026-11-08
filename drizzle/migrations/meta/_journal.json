@@ -1898,6 +1898,13 @@
       "when": 1794148153146,
       "tag": "0270_ticket_times_and_states",
       "breakpoints": true
+    },
+    {
+      "idx": 271,
+      "version": "7",
+      "when": 1794148227927,
+      "tag": "0271_routine_check_lock",
+      "breakpoints": true
     }
   ]
 }

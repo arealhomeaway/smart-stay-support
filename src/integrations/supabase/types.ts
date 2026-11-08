@@ -12012,6 +12012,41 @@ export type Database = {
         }
         Relationships: []
       }
+      routine_check_corrections: {
+        Row: {
+          corrected_at: string
+          corrected_by: string
+          id: string
+          is_demo: boolean
+          note: string
+          routine_control_id: string
+        }
+        Insert: {
+          corrected_at?: string
+          corrected_by: string
+          id?: string
+          is_demo?: boolean
+          note: string
+          routine_control_id: string
+        }
+        Update: {
+          corrected_at?: string
+          corrected_by?: string
+          id?: string
+          is_demo?: boolean
+          note?: string
+          routine_control_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routine_check_corrections_routine_control_id_fkey"
+            columns: ["routine_control_id"]
+            isOneToOne: false
+            referencedRelation: "routine_controls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       routine_controls: {
         Row: {
           answers: Json
@@ -16382,6 +16417,10 @@ export type Database = {
           _full_name: string
           _program_id: string
         }
+        Returns: Json
+      }
+      add_routine_correction: {
+        Args: { _note: string; _routine_id: string }
         Returns: Json
       }
       after_handoff_access: {
