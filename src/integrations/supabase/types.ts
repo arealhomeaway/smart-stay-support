@@ -16659,6 +16659,7 @@ export type Database = {
       can_correct_actual_closing: { Args: never; Returns: boolean }
       can_edit_handoff_standard: { Args: never; Returns: boolean }
       can_edit_owner_library: { Args: { _uid: string }; Returns: boolean }
+      can_edit_vendors: { Args: { _user_id: string }; Returns: boolean }
       can_invite_operations_users: {
         Args: { _user_id: string }
         Returns: boolean

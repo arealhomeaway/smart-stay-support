@@ -2010,6 +2010,13 @@
       "when": 1794162369775,
       "tag": "0286_email_templates_onboarding_director",
       "breakpoints": true
+    },
+    {
+      "idx": 287,
+      "version": "7",
+      "when": 1794162465981,
+      "tag": "0287_vendor_editors",
+      "breakpoints": true
     }
   ]
 }
