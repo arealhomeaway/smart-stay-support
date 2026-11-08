@@ -49,6 +49,7 @@ CREATE TABLE public.guest_recovery(id uuid PRIMARY KEY DEFAULT gen_random_uuid()
   approval_status text, approval_authority text, requested_by uuid, is_demo boolean DEFAULT false);
 CREATE TABLE public.claims(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), ticket_id uuid, title text DEFAULT 'Broken table', stage text DEFAULT 'gathering',
   estimated_amount numeric, submitted_amount numeric, assigned_to uuid, is_demo boolean DEFAULT false);
+CREATE TABLE public.claim_waivers(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), claim_id uuid, status text, requested_by uuid, routed_to uuid);
 CREATE TABLE public.claim_activity(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), claim_id uuid, author_id uuid, event_type text, body text, detail jsonb, is_demo boolean);
 `;
 
