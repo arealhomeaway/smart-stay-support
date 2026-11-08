@@ -124,7 +124,10 @@ export function ownerSectionRelevant(
   const costs = [num(ticket.estimated_cost), ...workOrderCosts.map(num)].filter(
     (n): n is number => n !== null,
   );
-  if (costs.some((c) => c > threshold)) reasons.push(`Cost is over $${threshold}`);
+  // Policy v3: exactly the owner amount already needs the owner.
+  const inclusive = Boolean(MAINTENANCE_POLICY.ownerThresholdInclusive);
+  if (costs.some((c) => (inclusive ? c >= threshold : c > threshold)))
+    reasons.push(inclusive ? `Cost is $${threshold} or more` : `Cost is over $${threshold}`);
   if (ticket.insurance_risk === "yes") reasons.push("Potential insurance-related event");
   if (ticket.insurance_risk === "unsure") reasons.push("Insurance-related status unsure — confirm");
   return { relevant: reasons.length > 0, reasons };
