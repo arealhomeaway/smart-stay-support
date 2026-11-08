@@ -57,9 +57,9 @@ describe("My work and Needs you now", () => {
     expect(HOME_TABS.map((x) => x.label)).toEqual(["Active", "Waiting", "Done recently"]);
   });
 
-  it("imported Notion tickets never appear in My work, even when assigned", () => {
+  it("older open and closed Notion imports never appear in My work, even when assigned", () => {
+    // Recent open imports assigned to a person show under Active: see notion-open-counts-my-work.test.ts.
     const rows = [
-      t({ assigned_to: ME, external_source: "notion", reported_at: daysAgo(3) }),
       t({ assigned_to: ME, external_source: "notion", reported_at: daysAgo(60) }),
       t({ assigned_to: ME, external_source: "notion", status: "closed", resolved_at: daysAgo(1) }),
     ];
