@@ -46,6 +46,7 @@ import { PropertyDetailSections } from "@/components/PropertyDetailSections";
 import { PropertyDocumentLibrary } from "@/components/PropertyDocumentLibrary";
 import { OwnerLinkPanel } from "@/components/OwnerLinkPanel";
 import { HomeownerCard } from "@/components/property/HomeownerCard";
+import { ArrivalReadyCard } from "@/components/scorecard/ArrivalReadyCard";
 import { ActiveOwnerPanel } from "@/components/property/ActiveOwnerPanel";
 import { LifecycleSwitcher } from "@/components/property/LifecycleSwitcher";
 import { BackControl, useRecordOrigin, useWorkspaceOrigin } from "@/components/nav/NavContext";
@@ -165,6 +166,8 @@ function PropertyHubPage() {
           ))}
         </div>
       )}
+
+      {hub.viewer.staff && <ArrivalReadyCard propertyId={propertyId} />}
 
       {hub.viewer.staff && <HomeownerCard propertyId={propertyId} canManage={hub.viewer.staff} />}
 

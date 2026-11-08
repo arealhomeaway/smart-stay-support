@@ -29,6 +29,7 @@ import {
 } from "@/lib/routine-controls";
 import { usDate } from "@/lib/dates";
 import { RoutineSourceDetails } from "@/components/routines/RoutineSourceDetails";
+import { RoutineCorrections } from "@/components/routines/RoutineCorrections";
 
 export type RoutineRow = {
   id: string;
@@ -235,6 +236,7 @@ export function RoutineDrawer({
                 Open the follow-up ticket <ExternalLink className="size-3.5" />
               </Link>
             )}
+            {!row.draft && <RoutineCorrections routineId={row.id} />}
           </div>
         ) : (
           <>

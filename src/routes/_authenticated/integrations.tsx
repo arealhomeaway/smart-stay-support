@@ -20,6 +20,8 @@ import { DocumentCompletionPanel } from "@/components/DocumentCompletionPanel";
 import { BreezewaySendingPanel } from "@/components/BreezewaySendingPanel";
 import { ReviewImportStatusPanel } from "@/components/feedback/ReviewImportStatusPanel";
 import { notionStatusLabel } from "@/lib/notion-ticket-display";
+import { ArchivedTicketsPanel } from "@/components/scorecard/ArchivedTicketsPanel";
+import { useRole } from "@/hooks/useRole";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
   component: () => (
@@ -64,6 +66,7 @@ function IntegrationsPage() {
   const imported = useQuery({ queryKey: ["imported-matters"], queryFn: () => importedFn() });
 
   const rows = imported.data?.data ?? [];
+  const isAdmin = useRole().isAdmin;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -137,6 +140,8 @@ function IntegrationsPage() {
           </p>
         </div>
       </SectionCard>
+
+      {isAdmin && <ArchivedTicketsPanel />}
 
       <SectionCard
         title="Imported tickets"

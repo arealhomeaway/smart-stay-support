@@ -31,6 +31,7 @@ import { standaloneOperationsOrders } from "@/lib/operations-population";
 import { withoutImportHeld } from "@/lib/import-hold";
 import { operationsCalendarDays, operationsCalendarMonth, operationsView, parseOperationsSearch, shiftOperationsMonth, withOperationsView } from "@/lib/operations-view-state";
 import { Chip, EmptyState, LoadingRows, PageHeader } from "@/components/ui/page";
+import { QueueOpenLogger } from "@/components/scorecard/QueueOpenLogger";
 import { StatusBadge, ticketTone } from "@/components/ui/status";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
@@ -415,6 +416,7 @@ function TeamQueuePage() {
 
   return (
     <div className="space-y-6">
+      <QueueOpenLogger source="team_queue" />
       <PageHeader
         title="Team Queue"
         description="Every active ticket the team is carrying. Coverage overlaps all day, so this is open to everyone — pick up what needs picking up."

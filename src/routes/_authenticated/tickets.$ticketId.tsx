@@ -86,17 +86,6 @@ import { ticketNextAction } from "@/lib/ticket-next-action";
 import { ticketCurrentAction } from "@/lib/ticket-current-action";
 import { ensureTicketActionStarted } from "@/lib/ticket-action-start";
 import { classifyTicketText } from "@/lib/ticket-classify";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Chip } from "@/components/ui/page";
 import { PersonChip } from "@/components/PersonAvatar";
 import { stateChip } from "@/lib/semantic";
@@ -104,6 +93,9 @@ import { Badge } from "@/components/ui/badge";
 import { IMPORT_HOLD_LABELS, isImportHeld, type ImportHold } from "@/lib/import-hold";
 import { activityAuthorLabel, claimStepsAvailable, cleanNotionText, notionBadge, parseNotionBlock, showsAssignee } from "@/lib/notion-ticket-display";
 import { NotionImportBlock } from "@/components/tickets/NotionImportBlock";
+import { ArchiveTicketButton, ArchivedTicketBanner } from "@/components/scorecard/TicketArchive";
+import { CorrectiveCommitments } from "@/components/scorecard/CorrectiveCommitments";
+import { canArchiveTicket, canRestoreTicket, isGuestIssueTicket } from "@/lib/scorecard-capture";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -222,7 +214,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
         supabase
           .from("tickets")
           .select(
-            "*, properties(id, name, nickname, address_line1, city, market, access_notes, notes, ownerrez_property_id, primary_photo_url, unit, state, postal_code), work_types(name, response_minutes, action_start_minutes, completion_target, required_closure_evidence, guest_communication_required)",
+            "*, properties(id, name, nickname, address_line1, city, market, access_notes, notes, ownerrez_property_id, primary_photo_url, unit, state, postal_code), work_types(name, category, response_minutes, action_start_minutes, completion_target, required_closure_evidence, guest_communication_required)",
           )
           .eq("id", ticketId)
           .eq("is_demo", demoMode)
@@ -712,14 +704,9 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     toast.success("Status updated.");
   }
 
-  /** Supervisor cleanup for duplicates, tests and junk — never a frontline action. */
-  async function deleteTicket() {
-    const { error } = await supabase.from("tickets").delete().eq("id", ticketId);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Ticket deleted.");
+  /** Archive replaces delete: the ticket leaves lists and counts, its history stays. */
+  async function afterArchive() {
+    await refresh();
     if (onClose) onClose();
     else void navigate({ to: "/tickets" });
   }
@@ -1210,15 +1197,31 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             branches={activeBranch}
             onChanged={refresh}
             onStatus={changeStatus}
-            onDelete={deleteTicket}
+            onArchived={afterArchive}
           />
         </div>
+
+        {ticket["archived_at"] ? (
+          <ArchivedTicketBanner
+            ticketId={String(ticket["id"])}
+            archivedAt={String(ticket["archived_at"])}
+            reason={(ticket["archive_reason"] as string | null) ?? null}
+            canRestore={canRestoreTicket(role)}
+            onDone={refresh}
+          />
+        ) : null}
 
         <NotionImportBlock
           ticket={ticket as unknown as Parameters<typeof NotionImportBlock>[0]["ticket"]}
           canWorkTickets={role.can("work_orders_internal") && !role.readOnly}
           onChanged={refresh}
         />
+
+        {isGuestIssueTicket({
+          category: ticket.category as string | null,
+          linked_feedback_id: (ticket["linked_feedback_id"] as string | null) ?? null,
+          work_type_category: ((ticket["work_types"] as { category?: string | null } | null)?.category) ?? null,
+        }) && <CorrectiveCommitments ticketId={String(ticket["id"])} closed={closed} />}
 
 
         <div className="space-y-5">
@@ -1913,7 +1916,7 @@ function MoreActions({
   branches,
   onChanged,
   onStatus,
-  onDelete,
+  onArchived,
 }: {
   ticket: Record<string, unknown> & { id: string; status: string; record_type?: string | null };
   closed: boolean;
@@ -1921,7 +1924,7 @@ function MoreActions({
   branches: { claim: boolean; recovery: boolean };
   onChanged: () => Promise<void> | void;
   onStatus: (status: string) => void;
-  onDelete: () => void;
+  onArchived: () => Promise<void> | void;
 }) {
   return (
     <Sheet>
@@ -2007,31 +2010,14 @@ function MoreActions({
               )}
             </div>
           )}
-          {role.isSupervisor && (
+          {canArchiveTicket({ isSupervisor: role.isSupervisor, supervisorRole: false }) && !ticket["archived_at"] && (
             <div className="space-y-2 border-t border-border pt-4">
-              <Label className="text-xs text-muted-foreground">Danger zone</Label>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline" className="w-full text-danger">
-                    Delete ticket
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      Delete ticket #{String(ticket["ref"] ?? "")}?
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action permanently removes this ticket from normal Resolve records. Use
-                      it for duplicates, accidental tickets, tests and junk records.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={onDelete}>Delete ticket</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <Label className="text-xs text-muted-foreground">Archive</Label>
+              <ArchiveTicketButton
+                ticketId={String(ticket["id"])}
+                ticketRef={String(ticket["ref"] ?? "")}
+                onDone={() => void onArchived()}
+              />
             </div>
           )}
         </div>
