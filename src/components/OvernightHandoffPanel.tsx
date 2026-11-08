@@ -8,6 +8,7 @@ import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { StatusBadge, ticketTone } from "@/components/ui/status";
 import { usDateTime } from "@/lib/dates";
 import { OPEN_STATUSES, STATUSES, labelFor, priorityMeta } from "@/lib/tickets";
+import { withoutQuietNotion } from "@/lib/notion-ticket-display";
 import { lastAfterHoursWindow, windowLabel, type CoverageConfig } from "@/lib/coverage";
 
 /**
@@ -60,7 +61,7 @@ export function OvernightHandoffPanel({ className }: { className?: string | unde
       const { data: rows, error } = await supabase
         .from("tickets")
         .select(
-          "id, title, status, priority, reported_at, vendor_status, vendor_dispatched_at, vendor_completed_at, next_review_at, handoff_status, guest_in_residence, assignment_note, properties(name, nickname, primary_photo_url, address_line1, unit, city, state, postal_code, ownerrez_property_id)",
+          "id, title, status, priority, reported_at, external_source, external_status, vendor_status, vendor_dispatched_at, vendor_completed_at, next_review_at, handoff_status, guest_in_residence, assignment_note, properties(name, nickname, primary_photo_url, address_line1, unit, city, state, postal_code, ownerrez_property_id)",
         )
         .eq("is_demo", false)
         .is("archived_at", null)
@@ -70,7 +71,8 @@ export function OvernightHandoffPanel({ className }: { className?: string | unde
         .limit(200);
       if (error) throw error;
 
-      const open = ((rows ?? []) as unknown as Row[]).filter((t) =>
+      // Overnight review is oversight: imports from Notion stay quiet here until taken.
+      const open = withoutQuietNotion((rows ?? []) as unknown as Row[]).filter((t) =>
         OPEN_STATUSES.includes(t.status),
       );
       return { cfg: (cfg ?? null) as CoverageConfig | null, window, rows: open };
