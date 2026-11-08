@@ -53,6 +53,32 @@ export function withoutQuietNotion<T>(rows: T[], now: number = Date.now()): T[] 
   return rows.filter((r) => !isQuietNotion(r as unknown as NotionTicketLike, now));
 }
 
+/** An open import created in the past 30 days that nobody has started in Resolve yet. */
+export function isRecentOpenImport(t: NotionTicketLike, now: number = Date.now()): boolean {
+  return notionTicketState(t, now) === "recent_open";
+}
+
+/**
+ * Whether a ticket belongs in an "open tickets" total: a home's page, the
+ * homes list, the Hub and the map. Closed (historical) imports and open
+ * imports older than 30 days never count. Recent open imports still count
+ * here, but never in the unclaimed count, Needs you now, Oversight or any
+ * scorecard (those use withoutQuietNotion).
+ */
+export function countsInOpenTotal(t: NotionTicketLike, now: number = Date.now()): boolean {
+  const s = notionTicketState(t, now);
+  return s !== "historical" && s !== "older_open";
+}
+
+/** The open tickets total for a list of tickets, using the rule above. */
+export function openTicketTotal<T extends NotionTicketLike>(
+  rows: T[],
+  isOpen: (status: string) => boolean = (s) => OPEN_STATUSES.includes(s),
+  now: number = Date.now(),
+): T[] {
+  return rows.filter((t) => isOpen(String(t.status)) && countsInOpenTotal(t, now));
+}
+
 /** The badge shown wherever the ticket appears. Null when no badge applies. */
 export function notionBadge(t: NotionTicketLike, now: number = Date.now()): string | null {
   switch (notionTicketState(t, now)) {
