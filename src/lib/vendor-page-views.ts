@@ -23,6 +23,3 @@ export function vendorPageAccess(can: (c: Capability) => boolean, readOnly = fal
     : [];
   return { tabs, edit, lead, screening: tabs.length > 0 };
 }
-
-/** Plain label shown where Operations leadership keeps the control. */
-export const LEADERSHIP_ONLY_LABEL = "Changed by Operations leadership.";

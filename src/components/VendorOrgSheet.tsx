@@ -236,7 +236,7 @@ export function VendorOrgSheet({
 
                 {canManage && !canLead && (
                   <p className="text-xs text-muted-foreground">
-                    Status, Gold Standard, compliance and screening results: {LEADERSHIP_ONLY_LABEL.toLowerCase()}
+                    Status, Gold Standard, compliance and screening results are changed by Operations leadership.
                   </p>
                 )}
 
@@ -399,7 +399,7 @@ export function VendorOrgSheet({
 
               <TabsContent value="documents">
                 {canManage && !canLead && (
-                  <p className="pt-4 text-xs text-muted-foreground">Documents: {LEADERSHIP_ONLY_LABEL.toLowerCase()}</p>
+                  <p className="pt-4 text-xs text-muted-foreground">Documents are filed by Operations leadership.</p>
                 )}
                 <VendorDocumentsPanel
                   orgId={org.id}
