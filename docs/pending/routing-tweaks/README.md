@@ -1,4 +1,6 @@
-# Routing tweaks (staged, NOT applied)
+# Routing tweaks
+
+APPLIED Nov 8, 2026 with Emily's written approval. See the note at the end.
 
 Approved by Emily (Nov 8, 2026), answering the open routing questions. Apply only with explicit
 approval, after `docs/pending/routing-by-time/01_lunch_times.sql` and `03_coordinator_routing.sql`,
@@ -38,3 +40,11 @@ Each undo restores the routing-by-time part 3 definition word for word (the test
 and 3, then these three files into an isolated database: import load, overnight alerts with the
 weekday pattern and a dated entry, no one on call, daytime unchanged, ticket routing overnight
 unchanged, the Home question for eligible and other people, rights, and every undo.
+
+## Applied
+
+- Nov 8, 2026: `sha256.txt` checked first (all files OK). APPLIED byte-for-byte, after
+  routing-by-time 0277 and 0278, as migrations 0279 (`01_quiet_imports_load.sql`), 0280
+  (`02_direct_booking_on_call.sql`) and 0281 (`03_home_eligible_now.sql`). Each migration file
+  matches its staged file exactly.
+  Undo order if ever needed: 03, 02, 01, then the routing-by-time undo.
