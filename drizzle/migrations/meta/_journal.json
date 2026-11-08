@@ -2101,6 +2101,13 @@
       "when": 1794178631659,
       "tag": "0299_alerts_01_team_queue_and_waiting_alerts",
       "breakpoints": true
+    },
+    {
+      "idx": 300,
+      "version": "7",
+      "when": 1794178683354,
+      "tag": "0300_alerts_02_note_alerts",
+      "breakpoints": true
     }
   ]
 }
