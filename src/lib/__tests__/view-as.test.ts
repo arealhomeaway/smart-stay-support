@@ -1,7 +1,9 @@
 import { describe, expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
 import { VIEW_AS_COPY, VIEW_AS_OPTIONS, canUseViewAs } from "../view-as";
-import { menuGroups } from "../shell-nav";
+import { operationsMenu } from "../shell-nav";
+import { can } from "../permissions";
+import { canOpenPath } from "../route-access";
 
 /** Clean slate (Emily, Nov 7, 2026; register M5): no Demo button in the top bar, an Admin only
  *  View as switcher in the Admin menu that does not depend on demo mode and changes no data. */
@@ -54,14 +56,11 @@ describe("the Demo button is gone from the top bar", () => {
 });
 
 describe("the Admin menu itself is unchanged for other roles", () => {
-  it("no Admin group for a Property Coordinator", () => {
-    const access = { roles: ["tech"] as never, seats: {}, can: () => false, canOpen: () => true, flags: {} } as never;
-    let groups: { label: string }[] = [];
-    try {
-      groups = menuGroups(access) as never;
-    } catch {
-      groups = [];
-    }
-    expect(groups.some((g) => g.label === "Admin")).toBe(false);
+  it("an Admin gets the Admin group; a Property Coordinator and a Supervisor do not", () => {
+    const groups = (roles: string[]) =>
+      operationsMenu({ can: (c) => can(roles as never, c), canOpen: (p) => canOpenPath(p, { roles: roles as never }) }).map((g) => g.label);
+    expect(groups(["admin"])).toContain("Admin");
+    expect(groups(["tech"])).not.toContain("Admin");
+    expect(groups(["manager"])).not.toContain("Admin");
   });
 });
