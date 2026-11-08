@@ -8,11 +8,10 @@
  * completion and reporting — but each one gets a purpose-built interface
  * because the job the person is doing is genuinely different.
  *
- * The four controls are fixed:
- *   Cleaning Review   — Property Operations reviews a completed departure clean
- *   Guest Review      — Guest Experience reads and responds to guest feedback
- *   Checkout          — a short guided post-stay pass, replacing the old intake form
- *   Guest Touch Base  — a proactive mid-stay contact
+ * Live controls: Guest Touch Base, Guest Review, Maintenance Review (work
+ * order review) and Survey Review (hidden until surveys go live). Checkout and
+ * Cleaning Review are retired and kept for history only; the panel rules live
+ * in src/lib/record-routine.ts.
  *
  * No thresholds, SLAs or authority live here. Those belong to the policy
  * engines, exactly as they do for tickets.
@@ -29,8 +28,12 @@ export type RoutineStatus = "due" | "in_progress" | "completed" | "cancelled";
 export type RoutineOutcome = "looks_good" | "needs_follow_up" | "no_answer" | "not_applicable";
 
 const ROUTINE_CONFIG_GENERATED_ONLY = new Set<string>(["survey_review", "maintenance_review"]);
-/** Retired kinds: kept for history, never started again (Departure Review replaced Checkout). */
-export const RETIRED_ROUTINE_KINDS = new Set<string>(["checkout"]);
+/**
+ * Retired kinds: kept for history, never started again. The Departure Review
+ * in the Team Queue covers Checkout and Cleaning Review, including the host
+ * review of the guest.
+ */
+export const RETIRED_ROUTINE_KINDS = new Set<string>(["checkout", "cleaning_review"]);
 
 export const ROUTINE_KINDS: RoutineKind[] = [
   "cleaning_review",
