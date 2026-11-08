@@ -51,6 +51,7 @@ import { currentOwnerId, queueSort } from "@/lib/matters";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 import { DepartureReviewQueue } from "@/components/departure/DepartureReviewQueue";
 import { NotionImportedGroup } from "@/components/operations/NotionImportedGroup";
+import { OvernightDirectBookings } from "@/components/operations/OvernightDirectBookings";
 import { withoutQuietNotion } from "@/lib/notion-ticket-display";
 import {
   AGE_OPTIONS,
@@ -682,6 +683,8 @@ function TeamQueuePage() {
           </PopoverContent>
         </Popover>
       </div>
+
+      {can("direct_bookings_work") && <OvernightDirectBookings demoMode={demoMode} />}
 
       <NotionImportedGroup
         rows={(data ?? []) as unknown as Parameters<typeof NotionImportedGroup>[0]["rows"]}
