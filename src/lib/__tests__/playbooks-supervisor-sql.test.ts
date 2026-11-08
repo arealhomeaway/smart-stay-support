@@ -89,7 +89,7 @@ beforeAll(async () => {
    $$ SELECT coalesce((SELECT user_id FROM public.cover WHERE role_code=_role_code LIMIT 1),(SELECT current_seat_holder FROM public.functional_roles WHERE code=_role_code)) $$;
  CREATE TABLE public.playbooks(${columns});
  CREATE TABLE public.playbook_steps(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),playbook_id uuid,position integer,instruction text,detail text,required boolean DEFAULT true,photo_required boolean DEFAULT false);
- CREATE TABLE public.playbook_approvals(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),playbook_id uuid,from_status text,to_status text,actor_id uuid,actor_role text,note text,version integer,created_at timestamptz DEFAULT now());
+ CREATE TABLE public.playbook_approvals(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),playbook_id uuid,from_status text,to_status text,actor_id uuid,actor_role text,note text,created_at timestamptz DEFAULT now());
  CREATE TABLE public.work_types(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),playbook_id uuid);
  CREATE TABLE public.tickets(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),playbook_id uuid);
  CREATE FUNCTION public.qa_updated() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN NEW.updated_at=clock_timestamp(); RETURN NEW; END $$;
