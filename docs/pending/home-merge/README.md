@@ -1,6 +1,6 @@
 # Home and Team Queue: reopen tickets imported from Notion
 
-Staged only. Nothing here has been applied. Apply only with written approval.
+APPLIED Nov 8, 2026 with Emily's written approval. See the note at the end.
 
 ## Order
 
@@ -38,3 +38,7 @@ function exists.
 
 `src/lib/__tests__/notion-reopen-sql.test.ts` runs this file and its undo in an
 isolated PostgreSQL (PGlite). Checksums are in `sha256.txt`.
+
+## Applied
+
+- Nov 8, 2026: APPLIED byte-for-byte as migration 0264 (`01_notion_reopen.sql`). Undo if ever needed: `01_undo_notion_reopen.sql`.

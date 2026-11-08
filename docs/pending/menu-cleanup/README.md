@@ -1,6 +1,6 @@
 # Menu cleanup
 
-Staged only. Not applied.
+APPLIED Nov 8, 2026 with Emily's written approval. See the note at the end.
 
 ## `01_menu_switches.sql`
 
@@ -15,3 +15,7 @@ turned on without a code change.
 Undo: `01_undo_menu_switches.sql` removes each row while it is still off.
 
 Checksums are in `sha256.txt`.
+
+## Applied
+
+- Nov 8, 2026: APPLIED byte-for-byte as migration 0268 (`01_menu_switches.sql`). Both switches are off. Undo if ever needed: `01_undo_menu_switches.sql`.
