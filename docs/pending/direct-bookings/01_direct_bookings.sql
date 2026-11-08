@@ -103,12 +103,12 @@ $$;
 REVOKE ALL ON FUNCTION public.direct_booking_approval_required(timestamptz) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.direct_booking_approval_required(timestamptz) TO authenticated, service_role;
 
--- Only Admins and the Operations Supervisor change settings.
+-- Only the Operations Supervisor and Director of Operations roles change settings.
 CREATE OR REPLACE FUNCTION public.save_direct_booking_settings(_value jsonb)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
-  IF NOT (public.has_role(auth.uid(), 'admin') OR public.holds_functional_role(auth.uid(), 'ops_supervisor')) THEN
-    RAISE EXCEPTION 'Only an Admin or the Operations Supervisor can change these settings.';
+  IF NOT (public.holds_functional_role(auth.uid(), 'ops_supervisor') OR public.holds_functional_role(auth.uid(), 'director_ops')) THEN
+    RAISE EXCEPTION 'Only the Operations Supervisor or the Director of Operations can change these settings.';
   END IF;
   INSERT INTO public.app_settings(key, value, updated_by, updated_at)
   VALUES ('direct_booking_settings', _value, auth.uid(), now())

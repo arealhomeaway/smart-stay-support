@@ -74,7 +74,12 @@ import { useSeat } from "@/hooks/useSeat";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { type Capability } from "@/lib/permissions";
 import { parseOperationsSearch } from "@/lib/operations-view-state";
-import { DEPARTMENTS, departmentFor } from "@/lib/shell-nav";
+import {
+  DEPARTMENTS,
+  DIRECT_BOOKINGS_MENU_PATHS,
+  departmentFor,
+  directBookingsMenuTarget,
+} from "@/lib/shell-nav";
 
 const ONBOARDING_ICONS: Record<string, typeof Home> = {
   "Onboarding Home": Home,
