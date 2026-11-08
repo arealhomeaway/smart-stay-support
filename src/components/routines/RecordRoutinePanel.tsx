@@ -685,7 +685,7 @@ function CheckForm({
       </div>
 
       {outcome === "needs_follow_up" && (
-        <div className="space-y-3 rounded-lg border border-attention/40 bg-attention/5 p-4">
+        <div className="space-y-3 rounded-lg border border-warning/40 bg-warning/5 p-4">
           <div className="space-y-1.5">
             <Label htmlFor="rr-issue">{PANEL_COPY.whatNeedsFixing}</Label>
             <Textarea
@@ -734,7 +734,7 @@ function ReviewCard({ r }: { r: NonNullable<Item["review"]> }) {
       <div className="flex flex-wrap items-center gap-2">
         {r.rating != null && (
           <span className="inline-flex items-center gap-1 font-medium">
-            <Star className="size-4 text-attention" aria-hidden="true" /> {r.rating} of 5
+            <Star className="size-4 text-warning" aria-hidden="true" /> {r.rating} of 5
           </span>
         )}
         {reviewTracker(r.rating) && (
@@ -797,7 +797,7 @@ function ChoiceRow<T extends string>({
 }
 
 function Notice({ text }: { text: string }) {
-  return <p className="rounded-lg border border-attention/40 bg-attention/5 px-4 py-3 text-sm font-medium">{text}</p>;
+  return <p className="rounded-lg border border-warning/40 bg-warning/5 px-4 py-3 text-sm font-medium">{text}</p>;
 }
 
 function BackButton({ onClick }: { onClick: () => void }) {
