@@ -8,7 +8,7 @@
 import { TEAM_A, TEAM_B } from "@/lib/coverage-model";
 import { localParts, isConfigured, type CoverageConfig } from "@/lib/coverage";
 import { URGENCY_NAMES } from "@/lib/tickets";
-import { automatedTeam, type AutomatedSource, type AutomatedTicket } from "@/lib/automated-sources";
+import { automatedQueueGroups, automatedTeam, type AutomatedSource, type AutomatedTicket } from "@/lib/automated-sources";
 
 export type QueueScope = "a" | "b" | "all" | "unclaimed";
 export const QUEUE_SCOPES: readonly QueueScope[] = ["a", "b", "all", "unclaimed"];
@@ -217,6 +217,34 @@ export function groupCountLine(sinces: (string | null | undefined)[], now: Date)
 
 /** Board order of the source groups after Handoffs waiting for you. */
 export const SOURCE_GROUP_ORDER: readonly AutomatedSource[] = ["email", "breezeway", "ownerrez"];
+
+/**
+ * Every ticket waiting in a source group, with its team and source, from the one rule in
+ * automated-sources.ts (open, nobody owns it, not archived, from the info inbox, OwnerRez
+ * or Breezeway).
+ */
+export function automatedWaiting<T extends AutomatedTicket>(rows: T[]): { row: T; team: string | null; source: AutomatedSource }[] {
+  return automatedQueueGroups(rows).flatMap((g) =>
+    g.sources.flatMap((s) => s.rows.map((row) => ({ row, team: g.team, source: s.source }))),
+  );
+}
+
+/** The source groups for one chip, in board order, each sorted as drawn. Empty groups drop out. */
+export function sourceGroups<T extends AutomatedTicket & { priority?: string | null }>(
+  rows: T[],
+  scope: QueueScope,
+  myTeam: string | null,
+): { source: AutomatedSource; rows: { row: T; team: string | null }[] }[] {
+  const waiting = automatedWaiting(rows).filter((w) => inScope(w.team, scope));
+  return SOURCE_GROUP_ORDER.map((source) => ({
+    source,
+    rows: sortPickRows(
+      waiting.filter((w) => w.source === source),
+      (w) => ({ priority: w.row.priority ?? null, team: w.team, since: w.row.reported_at ?? null }),
+      myTeam,
+    ),
+  })).filter((g) => g.rows.length > 0);
+}
 
 /**
  * Chip counts: how many wait for an owner in each chip. Team chips and All teams count the
