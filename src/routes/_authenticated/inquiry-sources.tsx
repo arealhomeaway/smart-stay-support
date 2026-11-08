@@ -13,9 +13,9 @@ import { searchSources, type InquirySource } from "@/lib/inquiry-sources";
 export const Route = createFileRoute("/_authenticated/inquiry-sources")({
   head: () => ({
     meta: [
-      { title: "Inquiry Sources | ARHA Resolve" },
+      { title: "Referral sources | ARHA Resolve" },
       { name: "description", content: "Booking sources and their standing fee, referral and deposit settings." },
-      { property: "og:title", content: "Inquiry Sources | ARHA Resolve" },
+      { property: "og:title", content: "Referral sources | ARHA Resolve" },
       { property: "og:description", content: "Booking sources and their standing fee, referral and deposit settings." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -41,10 +41,10 @@ function InquirySourcesPage() {
     : all;
 
   if (isLoading) return <p role="status" className="p-6">Checking access…</p>;
-  if (!allowed) return <p role="alert" className="p-6">Inquiry Sources is for authorized Operations staff only.</p>;
+  if (!allowed) return <p role="alert" className="p-6">Referral sources is for authorized Operations staff only.</p>;
 
   return <div className="space-y-6 p-4 md:p-6">
-    <PageHeader title="Inquiry Sources" description="Every company, portal and partner we take bookings through, with the fees, referral terms and documents that apply. Blank means not recorded; $0 means zero." />
+    <PageHeader title="Referral sources" description="Every company, portal and partner we take bookings through, with the fees, referral terms and documents that apply. Blank means not recorded; $0 means zero." />
     <div className="flex flex-wrap items-center gap-3">
       <Input className="max-w-sm" value={term} onChange={(event) => setTerm(event.target.value)} placeholder="Search sources" aria-label="Search sources" />
       <Button onClick={() => setAdding(true)}>Add inquiry source</Button>

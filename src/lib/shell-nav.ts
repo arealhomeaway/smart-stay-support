@@ -131,11 +131,12 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
   {
     key: "bookings-leads",
     match: (p) =>
-      ["/leads", "/inquiry-sources"].some((r) => p === r || p.startsWith(r + "/")) || p === "/availability-finder",
+      ["/direct-bookings", "/leads", "/inquiry-sources"].some((r) => p === r || p.startsWith(r + "/")) ||
+      p === "/availability-finder",
     tabs: [
-      { label: "Leads", to: "/leads", capability: "leads_work" },
-      { label: "Availability Finder", to: "/availability-finder", capability: "work_orders_internal" },
-      { label: "Inquiry Sources", to: "/inquiry-sources", capability: "work_orders_internal" },
+      { label: "Requests", to: "/direct-bookings", capability: "leads_work" },
+      { label: "Referral sources", to: "/inquiry-sources", capability: "work_orders_internal" },
+      { label: "Settings", to: "/direct-bookings/settings", capability: "leads_work" },
     ],
   },
   {

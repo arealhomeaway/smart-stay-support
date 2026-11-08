@@ -53,7 +53,7 @@ export const Route = createFileRoute("/_authenticated/direct-bookings/$requestId
     ],
   }),
   component: () => (
-    <RequireCapability capability="matters_assigned" title="Direct Bookings">
+    <RequireCapability capability="leads_work" title="Direct Bookings">
       <RequestPage />
     </RequireCapability>
   ),
