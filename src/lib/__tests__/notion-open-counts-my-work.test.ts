@@ -168,6 +168,6 @@ describe("a. Routine Work page", () => {
     expect(group?.tabs.map((x) => x.label)).toEqual(["Routine Work"]);
     const tabs = visiblePageTabs(group!, { can: () => true, canOpen: () => true, guestExperienceSeat: false, flagEnabled: () => true });
     expect(tabs.map((x) => x.label)).not.toContain("My Work");
-    expect(tabs.length).toBeLessThan(2);
+    expect(tabs.length < 2).toBe(true);
   });
 });
