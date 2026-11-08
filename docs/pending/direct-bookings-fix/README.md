@@ -1,5 +1,7 @@
 # Direct Bookings fix: match the approved mockup and close the audit findings
 
+PARTLY APPLIED Nov 8, 2026 (parts 1 and 2 only). See the note at the end.
+
 Staged only. Nothing here is applied. Apply only with Emily's approval, in this order,
 and check `sha256.txt` first (`sha256sum -c sha256.txt` from this folder).
 
@@ -30,3 +32,14 @@ The app already works without these parts:
 applied helpers from `drizzle/migrations/0262_direct_bookings.sql` into an isolated database, applies
 parts 1 and 2, checks every rule, then runs both undo files and confirms the five functions are
 identical to today's and everything added is gone. Part 3 cannot run there (no scheduler); its text is checked.
+
+## Applied
+
+- Nov 8, 2026: `sha256.txt` checked first (all files OK). Parts 1 and 2 APPLIED byte-for-byte
+  as migrations 0282 (`01_request_fields.sql`) and 0283 (`02_guarded_actions.sql`). Each
+  migration file matches its staged file exactly.
+- Part 3 (`03_escalation_schedule.sql`) was NOT applied: the database tool held back the
+  every 20 seconds schedule (4,320 runs a day) for review, and applying it would need a new
+  first line, so it would no longer be byte for byte. Stopped there as instructed. Parts 3, 4
+  and 5 are waiting for a decision.
+  Undo order if ever needed: 02, then 01.

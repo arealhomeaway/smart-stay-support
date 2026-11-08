@@ -1,4 +1,6 @@
-# Route new work by the time (staged, NOT applied)
+# Route new work by the time
+
+APPLIED Nov 8, 2026 with Emily's written approval. See the note at the end.
 
 Approved by Emily (Nov 8, 2026). Nothing in this folder has been run against the live
 database. Apply only with explicit approval, in this order, after checking `sha256.txt`.
@@ -66,3 +68,12 @@ clocks, SLAs, escalation and every work type to role link.
 - Live dry run (Nov 8, 2026) inside one step cancelled at the end, nothing kept: parts 1 and 3
   installed (function bodies matched these files), then `routing_dry_run` for the six sample
   times. Results are in the build reply.
+
+## Applied
+
+- Nov 8, 2026: `sha256.txt` checked first (all files OK). APPLIED byte-for-byte as migrations
+  0277 (`01_lunch_times.sql`) and 0278 (`03_coordinator_routing.sql`). Each migration file
+  matches its staged file exactly. Then the routing tweaks folder (0279 to 0281). Part 2
+  (`02_lunch_notes.sql`) was then run with the data tool as its four UPDATE statements: only
+  the lunch note text on `ge_day`, `ge_evening`, `po_day` and `po_evening` changed.
+  Undo order if ever needed: routing tweaks undo first, then 03, 02 (data tool), 01.

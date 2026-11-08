@@ -618,6 +618,10 @@ export const DB_COPY = {
   lostSave: "Save as not booked",
   approvedTitle: "The partner says it is approved.",
   markBooked: "Mark as booked",
+  bookedHome: "Which home did they book? (optional)",
+  bookedHomeUnknown: "Not sure yet",
+  bookedMoveIn: "Move-in date (optional)",
+  bookedSave: "Save as booked",
   markNotBooked: "Mark as not booked",
   followTitle: "Follow up",
   followHint: `It has been quiet. This goes in the same email thread. Cc: ${CC_ROLE_LINE}`,
@@ -674,6 +678,17 @@ export function homeDirectBookings(rows: HomeBookingRow[], alertedIds: Iterable<
     .filter((r) => (seen.has(r.id) ? false : (seen.add(r.id), true)))
     .sort((a, b) => a.created_at.localeCompare(b.created_at))
     .map((r) => ({ ...r, waitingForStart: !r.owned_by && !r.reply_sent_at, followUp: Boolean(r.reply_sent_at) }));
+}
+
+/**
+ * Which unstarted requests a person sees on Home: every request that alerted them, plus,
+ * while a request is still unstarted, every one a new request would alert them for right
+ * now (the routing rule, asked of the database). Pressing Start ends both.
+ */
+export function homeStartIds(alertedIds: Iterable<string>, eligibleNow: boolean, unstartedIds: Iterable<string>): string[] {
+  const out = new Set(alertedIds);
+  if (eligibleNow) for (const id of unstartedIds) out.add(id);
+  return [...out];
 }
 
 export const HOME_BOOKING_COPY = {
