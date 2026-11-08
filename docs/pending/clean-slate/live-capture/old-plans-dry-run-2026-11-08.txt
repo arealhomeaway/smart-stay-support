@@ -1,0 +1,9 @@
+home|tkey|version|status|handoff_state|tasks|completed|exceptions|open|open_matching_std|open_not_in_std|done_matching_std|std_new_for_home|notes|file_links|files
+3400 N Fern Avenue|arha_full_plan|1|active|in_progress|147|0|0|147|6|141|0|138|0|0|0
+8602 E. Galveston St.|arha_full_plan|1|active|in_progress|147|0|0|147|6|141|0|138|0|0|0
+624 Daniel Court|arha_onboarding_standard|3|active|in_progress|143|13|0|130|130|0|13|1|0|0|0
+1399 Foxtail Ln.|arha_v2|1|active|in_progress|182|0|0|182|6|176|0|138|0|0|0
+1464 Buckland Ct.|arha_v2|1|active|in_progress|182|0|0|182|6|176|0|138|0|0|0
+3915 W 104th St. S.|arha_v2|1|active|in_progress|182|0|0|182|6|176|0|138|0|0|0
+9211 Fitzgerald Dr.|arha_v2|1|active|in_progress|182|7|0|175|6|169|0|138|0|0|16
+(7 rows)

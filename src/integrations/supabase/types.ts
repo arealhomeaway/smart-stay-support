@@ -5478,6 +5478,75 @@ export type Database = {
           },
         ]
       }
+      full_backups: {
+        Row: {
+          counts: Json | null
+          created_at: string
+          created_by: string
+          error: string | null
+          finished_at: string | null
+          folder: string
+          id: string
+          manifest_sha256: string | null
+          status: string
+          table_count: number | null
+          total_rows: number | null
+          verified_at: string | null
+          verified_by: string | null
+          verify_ok: boolean | null
+          verify_result: Json | null
+        }
+        Insert: {
+          counts?: Json | null
+          created_at?: string
+          created_by: string
+          error?: string | null
+          finished_at?: string | null
+          folder: string
+          id?: string
+          manifest_sha256?: string | null
+          status?: string
+          table_count?: number | null
+          total_rows?: number | null
+          verified_at?: string | null
+          verified_by?: string | null
+          verify_ok?: boolean | null
+          verify_result?: Json | null
+        }
+        Update: {
+          counts?: Json | null
+          created_at?: string
+          created_by?: string
+          error?: string | null
+          finished_at?: string | null
+          folder?: string
+          id?: string
+          manifest_sha256?: string | null
+          status?: string
+          table_count?: number | null
+          total_rows?: number | null
+          verified_at?: string | null
+          verified_by?: string | null
+          verify_ok?: boolean | null
+          verify_result?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "full_backups_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "full_backups_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       functional_role_members: {
         Row: {
           added_by: string | null
@@ -16604,6 +16673,19 @@ export type Database = {
         Args: { _reason: string; _ticket_id: string }
         Returns: Json
       }
+      backup_list_tables: {
+        Args: never
+        Returns: {
+          row_count: number
+          table_name: string
+          withheld_columns: string[]
+        }[]
+      }
+      backup_read_table: {
+        Args: { _limit: number; _offset: number; _table: string }
+        Returns: Json
+      }
+      backup_secret_column: { Args: { _column: string }; Returns: boolean }
       backup_verify_cron_token: { Args: { _token: string }; Returns: boolean }
       begin_attachment_upload: {
         Args: { _actor_id: string; _input: Json }
