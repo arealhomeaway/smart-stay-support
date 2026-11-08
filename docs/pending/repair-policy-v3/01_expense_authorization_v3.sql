@@ -8,7 +8,7 @@
 CREATE OR REPLACE FUNCTION private.expense_authorization_detail(e public.expenses)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public','private' AS $$
 DECLARE wo public.work_orders; ap public.approvals; pol jsonb; rec jsonb; sup numeric; own numeric; who text;
-  incl boolean; both boolean; owner_ok boolean := false; sup_ok boolean := false;
+  incl boolean; also_sup boolean; owner_ok boolean := false; sup_ok boolean := false;
 BEGIN
   IF e.expense_type IS DISTINCT FROM 'vendor_service' OR e.amount IS NULL THEN
     RETURN jsonb_build_object('required',false,'ok',true,'reason','Not required by the Maintenance Authority Policy.');
@@ -29,7 +29,7 @@ BEGIN
     RETURN jsonb_build_object('required',true,'ok',false,'who','owner','reason','The Maintenance Authority Policy is not configured, so authorization cannot be confirmed.');
   END IF;
   incl := coalesce(rec->'ownerThresholdInclusive' = 'true'::jsonb, false);
-  both := coalesce(rec->'supervisorAlsoApprovesOwnerTier' = 'true'::jsonb, false);
+  also_sup := coalesce(rec->'supervisorAlsoApprovesOwnerTier' = 'true'::jsonb, false);
   IF wo.id IS NOT NULL AND wo.phase = 'mitigation' AND wo.emergency_reason IS NOT NULL THEN
     RETURN jsonb_build_object('required',false,'ok',true,'reason','Emergency mitigation exception recorded on the linked Work Order.');
   END IF;
@@ -55,9 +55,9 @@ BEGIN
       AND coalesce(wo.authorized_amount,0) >= e.amount THEN
       sup_ok := true;
     END IF;
-    IF who = 'owner' AND owner_ok AND (NOT both OR sup_ok) THEN
+    IF who = 'owner' AND owner_ok AND (NOT also_sup OR sup_ok) THEN
       RETURN jsonb_build_object('required',true,'ok',true,'who',who,'reason',
-        CASE WHEN both THEN 'Operations Supervisor and owner approvals recorded on the linked Work Order cover this amount.'
+        CASE WHEN also_sup THEN 'Operations Supervisor and owner approvals recorded on the linked Work Order cover this amount.'
           ELSE 'Owner approval recorded on the linked Work Order covers this amount.' END);
     ELSIF who = 'supervisor' AND sup_ok THEN
       RETURN jsonb_build_object('required',true,'ok',true,'who',who,'reason','Supervisor approval recorded on the linked Work Order covers this amount.','decided_by',wo.supervisor_approval_decided_by);
@@ -70,17 +70,17 @@ BEGIN
     IF ap.id IS NOT NULL AND who = 'owner' AND ap.approver_role = 'owner' THEN
       owner_ok := true;
     END IF;
-    IF ap.id IS NOT NULL AND ((who = 'owner' AND ap.approver_role = 'owner' AND (NOT both OR sup_ok))
+    IF ap.id IS NOT NULL AND ((who = 'owner' AND ap.approver_role = 'owner' AND (NOT also_sup OR sup_ok))
       OR (who = 'supervisor' AND private.can_approve_spending(ap.approver_id))) THEN
       RETURN jsonb_build_object('required',true,'ok',true,'who',who,'reason','A linked approval by an authorized decision-maker covers this amount.','decided_by',CASE WHEN who='supervisor' THEN ap.approver_id END);
     END IF;
   END IF;
   RETURN jsonb_build_object('required',true,'ok',false,'who',who,
     'reason', CASE
-      WHEN who = 'owner' AND both AND owner_ok
+      WHEN who = 'owner' AND also_sup AND owner_ok
       THEN 'Approval by the Operations Supervisor or Director of Operations, covering this amount, is not recorded on the linked Work Order. A written note does not count.'
-      WHEN who = 'owner' AND both
-      THEN 'The Operations Supervisor and the owner must both approve this amount on the linked Work Order before work starts. A written note does not count.'
+      WHEN who = 'owner' AND also_sup
+      THEN 'The Operations Supervisor and the owner must also_sup approve this amount on the linked Work Order before work starts. A written note does not count.'
       WHEN who = 'owner'
       THEN 'Owner approval covering this amount is not recorded on the linked Work Order. A written note does not count.'
       ELSE 'Approval by the Operations Supervisor or Director of Operations, covering this amount, is not recorded on the linked Work Order. A written note does not count.' END);
