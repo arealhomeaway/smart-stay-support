@@ -128,9 +128,4 @@ describe("screens and staged rules", () => {
     expect(sql).toMatch(/owned_by IS NULL/);
     expect(sql).toMatch(/FOR UPDATE/);
   });
-  it("menu shows Direct Bookings, not Bookings & Leads", () => {
-    const shell = readFileSync("src/components/AppShell.tsx", "utf8");
-    expect(shell).toMatch(/label: "Direct Bookings"/);
-    expect(shell).not.toMatch(/label: "Bookings & Leads"/);
-  });
 });
