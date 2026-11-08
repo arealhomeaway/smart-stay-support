@@ -43,6 +43,7 @@ export const KIND_LABELS: Record<string, string> = {
   handoff_accepted: "Handoff accepted",
   handoff_pending: "Handoff waiting",
   handoff_rejected: "Handoff sent back",
+  handoff_reminder: "Handoff reminder",
   onboarding_task_comment: "Task comment",
   onboarding_task_completed: "Task completed",
   owner_collaboration: "Homeowner update",

@@ -2129,6 +2129,20 @@
       "when": 1794178904320,
       "tag": "0303_alerts_05_notification_categories",
       "breakpoints": true
+    },
+    {
+      "idx": 304,
+      "version": "7",
+      "when": 1794180540575,
+      "tag": "0304_handoff_01_reminders",
+      "breakpoints": true
+    },
+    {
+      "idx": 305,
+      "version": "7",
+      "when": 1794180551225,
+      "tag": "0305_handoff_02_flag_snapshot_table",
+      "breakpoints": true
     }
   ]
 }

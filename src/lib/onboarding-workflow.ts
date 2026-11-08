@@ -372,9 +372,6 @@ export function whyThisTaskExists(view: TaskView, all: WorkflowTask[]): string[]
     lines.push("Fulfilled by a Breezeway New House Setup Work Order.");
   }
 
-  if (task.blocks_handoff) {
-    lines.push("Blocks handoff to Operations while it is open.");
-  }
   if (task.exception_reason) {
     lines.push(`An authorised exception is recorded: ${task.exception_reason}`);
   }
