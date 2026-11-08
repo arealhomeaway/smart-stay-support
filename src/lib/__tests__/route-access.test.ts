@@ -10,8 +10,12 @@ describe("route authorization", () => {
   it("Onboarding Director works all of Onboarding without Operations", () => {
     for (const p of ["/onboarding", "/onboarding/abc", "/onboarding/team", "/onboarding/templates", "/onboarding/my-work"])
       expect(canOpenPath(p, kati)).toBe(true);
-    for (const p of ["/dashboard", "/oversight", "/team", "/team-queue", "/tickets", "/tickets/new", "/vendors", "/owner-library", "/owner-analytics", "/command-center", "/audit", "/oversight-access-log"])
+    for (const p of ["/dashboard", "/oversight", "/team-queue", "/tickets", "/tickets/new", "/command-center", "/audit", "/oversight-access-log"])
       expect(canOpenPath(p, kati)).toBe(false);
+    // Fix batch 2 (Nov 8): shared pages the Director of Onboarding now opens (Team & Coverage
+    // read only, Vendors, the Opportunity Library and Participation insight).
+    for (const p of ["/team", "/vendors", "/owner-library", "/owner-analytics"])
+      expect(canOpenPath(p, kati)).toBe(true);
     for (const p of ["/owner-programs", "/owner-oversight", "/homeowners"])
       expect(canOpenPath(p, kati)).toBe(true);
     expect(homePathFor(kati)).toBe("/onboarding");
