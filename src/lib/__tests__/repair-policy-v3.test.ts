@@ -172,7 +172,8 @@ describe("word check on the new ladder text", () => {
       .join(" "),
   ];
   it("no seat, Median, threshold, long dash or person's name", () => {
-    for (const t of texts) for (const re of banned) expect(`${re}: ${t}`).not.toMatch(new RegExp(`^${re.source.replace(/[\\^$]/g, "")}: .*${re.source}`));
-    for (const t of texts) for (const re of banned) expect(re.test(t)).toBe(false);
+    expect(texts.every((t) => t.length > 0)).toBe(true);
+    const hits = texts.flatMap((t) => banned.filter((re) => re.test(t)).map((re) => `${re} in "${t}"`));
+    expect(hits).toEqual([]);
   });
 });
