@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { createDirectBooking, listDirectBookings, startDirectBooking, type DirectBookingRow } from "@/lib/direct-bookings.functions";
+import { createDirectBooking, listDirectBookings, startDirectBooking, type DirectBookingDetails, type DirectBookingRow } from "@/lib/direct-bookings.functions";
 import { clockLabel, replyClock, requestStatus, STATUS_LABEL, type RequestStatus } from "@/lib/direct-bookings";
 
 export const Route = createFileRoute("/_authenticated/direct-bookings/")({
@@ -221,7 +221,7 @@ function Count({ label, value }: { label: string; value: number }) {
   );
 }
 
-type NewPayload = Parameters<typeof createDirectBooking>[0]["data"];
+type NewPayload = DirectBookingDetails;
 
 function NewRequestDialog({
   open,

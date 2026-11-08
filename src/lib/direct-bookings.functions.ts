@@ -227,6 +227,8 @@ const details = z.object({
   inquiry_source_id: z.string().uuid().nullable().optional(),
 });
 
+export type DirectBookingDetails = z.infer<typeof details>;
+
 export const createDirectBooking = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => details.parse(input))
