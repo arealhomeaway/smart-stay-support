@@ -2,7 +2,7 @@ import { OPEN_STATUSES, isClosed, slaState } from "@/lib/tickets";
 import { isMine, type MatterOwnership } from "@/lib/matters";
 import { isBlocked, isEscalated } from "@/lib/team-queue";
 import { isImportHeld } from "@/lib/import-hold";
-import { isQuietNotion, type NotionTicketLike } from "@/lib/notion-ticket-display";
+import { isQuietNotion, isRecentOpenImport, type NotionTicketLike } from "@/lib/notion-ticket-display";
 
 export type MyWorkView =
   "active" | "attention" | "waiting" | "blocked" | "scheduled" | "escalated" | "completed";
@@ -50,8 +50,10 @@ export function matchesMyWorkView(
   now = Date.now(),
 ) {
   if (isImportHeld(ticket as { import_hold?: string | null })) return false;
-  // Imported Notion tickets join My work only once someone reopens or takes them.
-  if (isQuietNotion(ticket as unknown as NotionTicketLike, now)) return false;
+  // A recent open import assigned to this person shows under Active only, and
+  // stays quiet until they take it. Other imports join only once reopened.
+  if (isQuietNotion(ticket as unknown as NotionTicketLike, now))
+    return view === "active" && isRecentOpenImport(ticket as unknown as NotionTicketLike, now) && isMine(ticket, userId);
   if (!isMine(ticket, userId)) return false;
   const active = OPEN_STATUSES.includes(ticket.status);
   if (view === "completed") return isClosed(ticket.status);
