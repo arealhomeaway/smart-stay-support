@@ -63,6 +63,7 @@ function fixture(recipients: Recipient[]) {
           return query;
         },
         in: () => query,
+        not: () => query,
         order: () => query,
         limit: () => query,
         then: (resolve: (result: unknown) => unknown) => {

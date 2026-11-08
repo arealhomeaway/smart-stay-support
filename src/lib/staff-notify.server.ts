@@ -56,14 +56,33 @@ function actionLabel(kind: string) {
   return "Open in Resolve";
 }
 
-/** Sends every staff notification still waiting on email. Safe to run on a schedule. */
-export async function drainStaffNotifications(supabase: Client, limit = 50, delivery?: Delivery, jobRunId?: string) {
-  const { data, error } = await supabase
+/**
+ * The Team Queue alerts (Supervisor at 10 minutes, Director at 15) are emailed by their own
+ * every-minute run (Emily, Nov 8, 2026), so the 5-minute pass leaves them alone and each is
+ * emailed by exactly one run.
+ */
+export const FAST_EMAIL_KINDS = ["team_queue_supervisor", "team_queue_director"] as const;
+
+/**
+ * Sends staff notifications still waiting on email. Safe to run on a schedule.
+ * `scope` "fast" sends only the Team Queue alerts; the default sends everything else.
+ */
+export async function drainStaffNotifications(
+  supabase: Client,
+  limit = 50,
+  delivery?: Delivery,
+  jobRunId?: string,
+  scope: "default" | "fast" = "default",
+) {
+  const pending = supabase
     .from("staff_notifications")
     .select("id, user_id, kind, title, body, link_path, priority, email_attempts, is_demo")
-    .eq("email_status", "pending")
-    .order("created_at")
-    .limit(limit);
+    .eq("email_status", "pending");
+  const scoped =
+    scope === "fast"
+      ? pending.in("kind", [...FAST_EMAIL_KINDS])
+      : pending.not("kind", "in", `(${FAST_EMAIL_KINDS.join(",")})`);
+  const { data, error } = await scoped.order("created_at").limit(limit);
   if (error) throw error;
 
   const rows = data ?? [];
