@@ -377,9 +377,9 @@ describe("13. Active Owner homes", () => {
     const fns = readFileSync("src/lib/direct-bookings.functions.ts", "utf8");
     const submit = fns.slice(fns.indexOf("export const submitDirectBookingReply"), fns.indexOf("export const decideDirectBookingApproval"));
     expect(submit.indexOf("assertNoActiveOwner")).toBeGreaterThan(-1);
-    expect(submit.indexOf("assertNoActiveOwner")).toBeLessThan(submit.indexOf("request_direct_booking_approval"));
+    expect(submit.indexOf("assertNoActiveOwner") < submit.indexOf("request_direct_booking_approval")).toBe(true);
     const decide = fns.slice(fns.indexOf("export const decideDirectBookingApproval"), fns.indexOf("export const checkDirectBookingApprovals"));
-    expect(decide.indexOf("assertNoActiveOwner")).toBeLessThan(decide.indexOf("decide_direct_booking_approval"));
+    expect(decide.indexOf("assertNoActiveOwner") < decide.indexOf("decide_direct_booking_approval")).toBe(true);
     expect(DB_COPY.activeOwnerRefused).toBe("A home you picked is in the Active Owner program and cannot be offered. Remove it and pick another home.");
   });
 });
