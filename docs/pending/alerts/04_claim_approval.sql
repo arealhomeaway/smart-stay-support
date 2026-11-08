@@ -206,9 +206,9 @@ BEGIN
     _amount := coalesce(NEW.submitted_amount, NEW.estimated_amount);
     _needed := private.claim_required_authority(_amount);
     IF _needed <> 'coordinator'
-       AND NOT (NEW.approval_status = 'approved'
+       AND NOT coalesce(NEW.approval_status = 'approved'
                 AND NEW.approval_amount >= _amount
-                AND (_needed = 'supervisor' OR NEW.approval_authority = 'director')) THEN
+                AND (_needed = 'supervisor' OR NEW.approval_authority = 'director'), false) THEN
       RAISE EXCEPTION '%', CASE WHEN _needed = 'director'
         THEN 'A claim over $1,500 needs the Director of Operations to approve it before it is sent.'
         ELSE 'A claim over $500 needs the Operations Supervisor to approve it before it is sent.' END
