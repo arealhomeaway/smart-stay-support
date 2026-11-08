@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { createVendor } from "@/lib/vendors.functions";
 import { VENDOR_CLASSES, VENDOR_CLASS_LABELS, type VendorClass } from "@/lib/vendors";
+import { vendorPageViews } from "@/lib/vendor-page-views";
 import { useRole } from "@/hooks/useRole";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page";
@@ -60,7 +61,8 @@ function VendorsWorkspace() {
   const { can, roles, readOnly } = useRole();
   const canManage = can("vendor_admin") && !readOnly;
   const isLead = roles.includes("admin");
-  const current: Tab = tab === "database" && !canManage ? "directory" : tab;
+  const views = vendorPageViews(can);
+  const current: Tab = (tab === "database" && !(canManage && views.database)) || (tab === "review" && !views.review) ? "directory" : tab;
 
   return (
     <div className="space-y-6">
@@ -73,18 +75,18 @@ function VendorsWorkspace() {
       <Tabs value={current} onValueChange={(v) => void navigate({ search: { tab: v as Tab } })}>
         <TabsList className="flex-wrap">
           <TabsTrigger value="directory">Directory</TabsTrigger>
-          {canManage && <TabsTrigger value="database">Database</TabsTrigger>}
+          {canManage && views.database && <TabsTrigger value="database">Database</TabsTrigger>}
           <TabsTrigger value="gold">Gold Standard</TabsTrigger>
           <TabsTrigger value="coverage">Market Coverage</TabsTrigger>
-          <TabsTrigger value="review">Needs Review</TabsTrigger>
+          {views.review && <TabsTrigger value="review">Needs Review</TabsTrigger>}
         </TabsList>
         <TabsContent value="directory" className="space-y-6 pt-4"><VendorDirectory /><AccountArchiveList kind="vendor" /></TabsContent>
-        {canManage && (
+        {canManage && views.database && (
           <TabsContent value="database" className="pt-4"><VendorDatabase canManage={canManage} isLead={isLead} /></TabsContent>
         )}
         <TabsContent value="gold" className="pt-4"><VendorGoldStandard /></TabsContent>
         <TabsContent value="coverage" className="pt-4"><VendorMarketCoverage /></TabsContent>
-        <TabsContent value="review" className="pt-4"><VendorNeedsReview canManage={canManage} /></TabsContent>
+        {views.review && <TabsContent value="review" className="pt-4"><VendorNeedsReview canManage={canManage} /></TabsContent>}
       </Tabs>
     </div>
   );
