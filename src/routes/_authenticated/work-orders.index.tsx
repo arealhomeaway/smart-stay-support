@@ -54,7 +54,7 @@ export const Route = createFileRoute("/_authenticated/work-orders/")({
 const BUCKET_HELP: Record<WorkOrderBucket, string> = {
   needs_action: "Nobody has moved this on, or a vendor commitment has been missed.",
   waiting_quote: "The cost is unknown, so authority cannot be decided yet.",
-  waiting_owner: "Above the ARHA owner threshold — waiting on the owner's decision.",
+  waiting_owner: "Above the ARHA owner limit, waiting on the owner's decision.",
   warranty_pending: "The warranty route is open. Do not pay for covered work.",
   waiting_vendor: "Scheduled with a vendor. Watch the acknowledgment and arrival checkpoints.",
   evidence_missing: "Work is done but the record is not — photos, report or invoice.",

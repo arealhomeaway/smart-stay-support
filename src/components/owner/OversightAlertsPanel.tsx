@@ -97,7 +97,7 @@ export function OversightAlertsPanel({ rows }: { rows: OversightRow[] }) {
   return (
     <SectionCard
       title="Follow-up alerts"
-      description="Homeowners worth a call today, using the thresholds your team set."
+      description="Homeowners worth a call today, using the limits your team set."
       actions={
         <Dialog
           open={open}

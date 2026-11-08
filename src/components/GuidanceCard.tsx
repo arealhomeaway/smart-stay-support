@@ -167,8 +167,7 @@ export function GuidanceCard({
           <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-2 text-sm">
             <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
             <span>
-              This Playbook states a threshold the policy engine owns. It is flagged for supervisor
-              review and its guidance is withheld until then.
+              This Playbook needs a supervisor review before its guidance is shown.
             </span>
           </div>
         )}

@@ -79,7 +79,7 @@ export const VENDOR_DOC_TYPES: VendorDocType[] = [
   },
   {
     code: "invoice_sample",
-    label: "Sample invoice",
+    label: "Example invoice",
     blurb: "Reference for how this vendor bills, so coding stays consistent.",
     retention: "store",
     restrictedByDefault: false,

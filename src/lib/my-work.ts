@@ -20,7 +20,7 @@ export const MY_WORK_VIEWS: { value: MyWorkView; label: string; hint: string }[]
   {
     value: "escalated",
     label: "Escalated",
-    hint: "Your work that has crossed an escalation threshold.",
+    hint: "Your work that has been escalated.",
   },
   {
     value: "completed",

@@ -30,7 +30,7 @@ export const Route = createFileRoute("/_authenticated/integrations_/notion-impor
       { title: "Notion import | Resolve" },
       { name: "description", content: "Admin tool to bring every Notion maintenance ticket, with comments and files, into Resolve in safe stages." },
       { property: "og:title", content: "Notion import | Resolve" },
-      { property: "og:description", content: "Check the connection, dry run, sample and staged runs for the Notion ticket import." },
+      { property: "og:description", content: "Check the connection, dry run, preview and staged runs for the Notion ticket import." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -333,7 +333,7 @@ function DryRunCard({ d }: { d: NonNullable<NotionImportView["dryRun"]> }) {
 
 function SampleCard({ rows }: { rows: SampleRow[] }) {
   return (
-    <SectionCard title={`Sample of ${rows.length}`} description="Read only. This is how each ticket would be imported. Nothing was written.">
+    <SectionCard title={`Preview of ${rows.length}`} description="Read only. This is how each ticket would be imported. Nothing was written.">
       <ul className="divide-y divide-border">
         {rows.map((r) => (
           <li key={r.pageId} className="space-y-1 py-3 text-sm">

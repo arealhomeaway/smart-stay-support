@@ -35,7 +35,7 @@ export function StateBadge({ state, className }: { state: SafeguardState; classN
 export function ExposureBar({ hoursValue }: { hoursValue: number | string | null | undefined }) {
   const pct = pctOfRestricted(hoursValue);
   return (
-    <div className="flex items-center gap-2" title={`${pct}% of the 75 h Restricted threshold`}>
+    <div className="flex items-center gap-2" title={`${pct}% of the 75 h Restricted limit`}>
       <div className="h-1.5 w-24 overflow-hidden rounded-full bg-muted">
         <div className={cn("h-full", pct >= 100 ? "bg-danger" : pct >= 67 ? "bg-warning" : "bg-primary")} style={{ width: `${pct}%` }} />
       </div>

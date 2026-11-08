@@ -188,7 +188,7 @@ export function readAuthorityPolicy(value: unknown): AuthorityPolicy {
     policy.ownerApprovalThreshold > 1000000
   ) {
     throw new Error(
-      "Enter a policy version and valid supervisor/owner thresholds in ascending order.",
+      "Enter a policy version and valid supervisor and owner limits, lowest first.",
     );
   }
   return {

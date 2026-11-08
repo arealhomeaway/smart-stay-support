@@ -53,8 +53,8 @@ export function OnboardingAuthorityPanel({
         }}
       >
         <p className="text-sm text-muted-foreground">
-          Administrator setting for future onboarding requests. Enter leadership's approved
-          thresholds and reference. Existing requests retain their recorded authority.
+          Admin setting for future onboarding requests. Enter leadership's approved limits and
+          reference. Existing requests keep their recorded authority.
         </p>
         <Label htmlFor="authority-version">Policy version</Label>
         <Input

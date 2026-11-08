@@ -76,7 +76,7 @@ export function CompanyHealthPanel({ data }: { data: CommandCenter }) {
                 </DialogHeader>
                 <ol className="list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
                   <li>
-                    Each KPI is scored against its own configured thresholds: on standard{" "}
+                    Each measure is scored against its own goal: on standard{" "}
                     {STATUS_SCORE.green}, watch {STATUS_SCORE.yellow}, off standard{" "}
                     {STATUS_SCORE.red}.
                   </li>
@@ -126,7 +126,7 @@ export function CompanyHealthPanel({ data }: { data: CommandCenter }) {
               />
               <div className="text-sm">
                 <p className="font-medium text-destructive">
-                  Critical threshold breached ({health.criticalBreaches.length})
+                  Critical limit passed ({health.criticalBreaches.length})
                 </p>
                 <p className="text-muted-foreground">
                   {health.criticalBreaches
