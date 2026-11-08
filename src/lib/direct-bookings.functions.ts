@@ -381,13 +381,14 @@ const replyInput = z.object({
 
 async function sendAndRecord(db: Client, userId: string, leadId: string, reply: { to: string; cc: string[]; subject: string; body: string }) {
   const { data: lead } = await db.from("leads").select("is_demo, source_detail").eq("id", leadId).maybeSingle();
-  const detail = (lead?.source_detail ?? {}) as Record<string, unknown>;
+  if (!lead) throw new Error("This request was not found.");
+  const detail = (lead.source_detail ?? {}) as Record<string, unknown>;
   const { sendDirectBookingEmail } = await import("./direct-bookings-mail.server");
   const outcome = await sendDirectBookingEmail(db, {
     ...reply,
     leadId,
     threadMessageId: typeof detail["message_id"] === "string" ? (detail["message_id"] as string) : null,
-    isDemo: Boolean(lead?.is_demo),
+    isDemo: lead.is_demo,
     sentBy: userId,
   });
   if (!outcome.sent) return outcome;
@@ -466,12 +467,13 @@ export const sendDirectBookingFollowUp = createServerFn({ method: "POST" })
     const db = context.supabase;
     if (!data.byHand) {
       const { data: lead } = await db.from("leads").select("is_demo, source_detail").eq("id", data.id).maybeSingle();
-      const detail = (lead?.source_detail ?? {}) as Record<string, unknown>;
+      if (!lead) throw new Error("This request was not found.");
+      const detail = (lead.source_detail ?? {}) as Record<string, unknown>;
       const { sendDirectBookingEmail } = await import("./direct-bookings-mail.server");
       const sent = await sendDirectBookingEmail(db, {
         to: data.to, cc: data.cc, subject: data.subject, body: data.body, leadId: data.id,
         threadMessageId: typeof detail["message_id"] === "string" ? (detail["message_id"] as string) : null,
-        isDemo: Boolean(lead?.is_demo), sentBy: context.userId,
+        isDemo: lead.is_demo, sentBy: context.userId,
       });
       if (!sent.sent) return { state: "not_sent" as const, detail: sent.detail };
     }
@@ -516,11 +518,12 @@ export const getDirectBookingSettings = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const db = context.supabase;
     await assertStaff(db, context.userId);
-    const [{ data: admin }, supervisor] = await Promise.all([
-      db.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
+    // Same rule as the database: the Operations Supervisor or Director of Operations role.
+    const [supervisor, director] = await Promise.all([
       holds(db, context.userId, "ops_supervisor"),
+      holds(db, context.userId, "director_ops"),
     ]);
-    return { settings: await loadSettings(db), canEdit: admin === true || supervisor };
+    return { settings: await loadSettings(db), canEdit: supervisor || director };
   });
 
 export const saveDirectBookingSettings = createServerFn({ method: "POST" })

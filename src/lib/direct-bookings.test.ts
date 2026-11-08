@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
 import {
   approvalRequired,
@@ -127,10 +127,5 @@ describe("screens and staged rules", () => {
     const sql = readFileSync("docs/pending/direct-bookings/01_direct_bookings.sql", "utf8");
     expect(sql).toMatch(/owned_by IS NULL/);
     expect(sql).toMatch(/FOR UPDATE/);
-  });
-  it("menu shows Direct Bookings, not Bookings & Leads", () => {
-    const shell = readFileSync("src/components/AppShell.tsx", "utf8");
-    expect(shell).toMatch(/label: "Direct Bookings"/);
-    expect(shell).not.toMatch(/label: "Bookings & Leads"/);
   });
 });

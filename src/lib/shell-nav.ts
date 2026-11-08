@@ -134,7 +134,7 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
       ["/direct-bookings", "/leads", "/inquiry-sources"].some((r) => p === r || p.startsWith(r + "/")) ||
       p === "/availability-finder",
     tabs: [
-      { label: "Requests", to: "/direct-bookings", capability: "leads_work" },
+      { label: "Requests", to: "/direct-bookings", capability: "direct_bookings_work" },
       { label: "Referral sources", to: "/inquiry-sources", capability: "work_orders_internal" },
       { label: "Settings", to: "/direct-bookings/settings", capability: "leads_work" },
     ],
@@ -213,6 +213,41 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
 
 export function pageTabGroupFor(pathname: string): PageTabGroup | null {
   return PAGE_TAB_GROUPS.find((g) => g.match(pathname)) ?? null;
+}
+
+/** What the menu and tab bar need to know about the person looking at them. */
+export type NavAccess = {
+  can: (capability: Capability) => boolean;
+  canOpen: (pathname: string) => boolean;
+  /** Guest Experience and Reservations team members may also open old Leads. */
+  guestExperienceSeat?: boolean;
+};
+
+/** Tabs this person sees on a grouped page. */
+export function visiblePageTabs(group: PageTabGroup, access: NavAccess): DepartmentLink[] {
+  return group.tabs.filter(
+    (t) =>
+      (!t.capability ||
+        access.can(t.capability) ||
+        // The team exception covers old Leads only, never Direct Bookings settings.
+        (t.capability === "leads_work" && t.to === "/leads" && Boolean(access.guestExperienceSeat))) &&
+      access.canOpen(t.to),
+  );
+}
+
+/** Pages the one "Direct Bookings" menu item stands for. */
+export const DIRECT_BOOKINGS_MENU_PATHS = ["/direct-bookings", "/leads", "/inquiry-sources", "/availability-finder"];
+
+/**
+ * Where the one "Direct Bookings" menu item opens for this person, or null
+ * when they see no item. Requests first; the old pages only for people who
+ * could open them before and cannot open Requests.
+ */
+export function directBookingsMenuTarget(access: NavAccess): string | null {
+  if (access.can("direct_bookings_work") && access.canOpen("/direct-bookings")) return "/direct-bookings";
+  if (access.canOpen("/leads") && (access.can("leads_work") || access.guestExperienceSeat)) return "/leads";
+  if (access.canOpen("/inquiry-sources") && access.can("work_orders_internal")) return "/inquiry-sources";
+  return null;
 }
 
 /** Last path segment → page label for department sub-pages. */

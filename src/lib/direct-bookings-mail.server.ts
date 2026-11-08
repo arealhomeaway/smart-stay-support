@@ -25,8 +25,12 @@ export async function sendDirectBookingEmail(
   input: OutgoingReply & { leadId: string; threadMessageId: string | null; isDemo: boolean; sentBy: string },
 ): Promise<SendOutcome> {
   if (!mailboxReadEnabled()) return { sent: false, reason: "not_connected", detail: "The team mailbox is not connected." };
+  // The database guard has no "lead" record type, so naming one would refuse
+  // every send. The demo check runs here from the saved lead (isDemo, read by
+  // the caller, which refuses when the lead is missing); the database guard
+  // still checks every recipient and the sender.
   const blocked = await verifyEmailSafety(
-    { to: input.to, cc: input.cc, isDemo: input.isDemo, entity: { type: "lead", id: input.leadId }, sentBy: input.sentBy },
+    { to: input.to, cc: input.cc, isDemo: input.isDemo, entity: null, sentBy: input.sentBy },
     db,
   );
   if (blocked) return { sent: false, reason: "blocked", detail: blocked };

@@ -50,7 +50,7 @@ function SettingsPage() {
   return (
     <div className="space-y-5">
       <Link to="/direct-bookings" className="text-sm font-medium text-primary hover:underline">← Back to Direct Bookings</Link>
-      <PageHeader title="Direct Bookings settings" description={canEdit ? "The Operations Supervisor and Admins can change these." : "Only the Operations Supervisor and Admins can change these."} />
+      <PageHeader title="Direct Bookings settings" description={canEdit ? "The Operations Supervisor and the Director of Operations can change these." : "Only the Operations Supervisor and the Director of Operations can change these."} />
       <SectionCard title="Approval period" description="During these dates every reply waits for the Operations Supervisor before it sends.">
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1"><Label>Starts</Label><Input type="date" value={start} onChange={(e) => setStart(e.target.value)} disabled={!canEdit} /></div>

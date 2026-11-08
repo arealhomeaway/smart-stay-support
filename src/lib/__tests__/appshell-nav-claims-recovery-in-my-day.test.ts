@@ -41,8 +41,11 @@ describe("AppShell — Simplification Pass 1 sidebar structure", () => {
     for (const gone of ["/map", "/availability-finder", "/routines", "/recovery", "/str-dispatch-check"])
       expect(body).not.toContain(`to: "${gone}"`);
     // The tab bars pick them up instead.
-    for (const tab of ["/map", "/availability-finder", "/routines", "/recovery", "/str-dispatch-check", "/vendors"])
+    for (const tab of ["/map", "/routines", "/recovery", "/str-dispatch-check", "/vendors"])
       expect(shellNav).toContain(`to: "${tab}"`);
+    // Availability Finder is no longer a tab: Direct Bookings requests run the
+    // home search, and the Direct Bookings menu item stays lit on the old page.
+    expect(shellNav).toContain('"/availability-finder"');
   });
 
   it("the Oversight group holds Oversight, Onboarding, Program Oversight and Quarterly Reviews", () => {
