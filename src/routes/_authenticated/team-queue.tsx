@@ -681,6 +681,13 @@ function TeamQueuePage() {
         </Popover>
       </div>
 
+      <NotionImportedGroup
+        rows={(data ?? []) as unknown as Parameters<typeof NotionImportedGroup>[0]["rows"]}
+        staff={(staff ?? []).map((s) => ({ id: s.id, full_name: s.full_name ?? null }))}
+        homeTeamOf={homeTeamOf}
+        originSearch={originSearch}
+      />
+
       {isError || (operationsAccess && (orders.isError || dispatches.isError || propertyCatalog.isError)) ? (
         <EmptyState
           title="The queue could not be loaded."
