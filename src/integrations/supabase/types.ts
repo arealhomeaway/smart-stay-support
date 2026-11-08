@@ -7114,6 +7114,7 @@ export type Database = {
       }
       leads: {
         Row: {
+          asap: boolean | null
           assigned_to: string | null
           bedrooms: number | null
           booked_move_in: string | null
@@ -7130,8 +7131,10 @@ export type Database = {
           date_flexible: boolean | null
           desired_check_out: string | null
           desired_move_in: string | null
+          distance_wanted: string | null
           dogs: number | null
           email: string | null
+          follow_up_due_at: string | null
           guests: number | null
           id: string
           inquiry_source_id: string | null
@@ -7146,6 +7149,7 @@ export type Database = {
           lost_reason: Database["public"]["Enums"]["lead_loss_reason"] | null
           market: string | null
           min_bathrooms: number | null
+          near_address: string | null
           next_follow_up_on: string | null
           not_booked_note: string | null
           not_booked_reason: string | null
@@ -7155,9 +7159,13 @@ export type Database = {
           outcome_at: string | null
           outcome_by: string | null
           owned_by: string | null
+          partner_approved_at: string | null
+          partner_approved_by: string | null
+          partner_approved_note: string | null
           partner_name: string | null
           pets: boolean | null
           phone: string | null
+          preferred_bedrooms: number | null
           preferred_channel: Database["public"]["Enums"]["lead_channel"] | null
           quote_amount: number | null
           quote_note: string | null
@@ -7176,10 +7184,12 @@ export type Database = {
           source_detail: Json
           stage: Database["public"]["Enums"]["lead_stage"]
           started_at: string | null
+          stay_length: string | null
           subject: string | null
           updated_at: string
         }
         Insert: {
+          asap?: boolean | null
           assigned_to?: string | null
           bedrooms?: number | null
           booked_move_in?: string | null
@@ -7196,8 +7206,10 @@ export type Database = {
           date_flexible?: boolean | null
           desired_check_out?: string | null
           desired_move_in?: string | null
+          distance_wanted?: string | null
           dogs?: number | null
           email?: string | null
+          follow_up_due_at?: string | null
           guests?: number | null
           id?: string
           inquiry_source_id?: string | null
@@ -7212,6 +7224,7 @@ export type Database = {
           lost_reason?: Database["public"]["Enums"]["lead_loss_reason"] | null
           market?: string | null
           min_bathrooms?: number | null
+          near_address?: string | null
           next_follow_up_on?: string | null
           not_booked_note?: string | null
           not_booked_reason?: string | null
@@ -7221,9 +7234,13 @@ export type Database = {
           outcome_at?: string | null
           outcome_by?: string | null
           owned_by?: string | null
+          partner_approved_at?: string | null
+          partner_approved_by?: string | null
+          partner_approved_note?: string | null
           partner_name?: string | null
           pets?: boolean | null
           phone?: string | null
+          preferred_bedrooms?: number | null
           preferred_channel?: Database["public"]["Enums"]["lead_channel"] | null
           quote_amount?: number | null
           quote_note?: string | null
@@ -7242,10 +7259,12 @@ export type Database = {
           source_detail?: Json
           stage?: Database["public"]["Enums"]["lead_stage"]
           started_at?: string | null
+          stay_length?: string | null
           subject?: string | null
           updated_at?: string
         }
         Update: {
+          asap?: boolean | null
           assigned_to?: string | null
           bedrooms?: number | null
           booked_move_in?: string | null
@@ -7262,8 +7281,10 @@ export type Database = {
           date_flexible?: boolean | null
           desired_check_out?: string | null
           desired_move_in?: string | null
+          distance_wanted?: string | null
           dogs?: number | null
           email?: string | null
+          follow_up_due_at?: string | null
           guests?: number | null
           id?: string
           inquiry_source_id?: string | null
@@ -7278,6 +7299,7 @@ export type Database = {
           lost_reason?: Database["public"]["Enums"]["lead_loss_reason"] | null
           market?: string | null
           min_bathrooms?: number | null
+          near_address?: string | null
           next_follow_up_on?: string | null
           not_booked_note?: string | null
           not_booked_reason?: string | null
@@ -7287,9 +7309,13 @@ export type Database = {
           outcome_at?: string | null
           outcome_by?: string | null
           owned_by?: string | null
+          partner_approved_at?: string | null
+          partner_approved_by?: string | null
+          partner_approved_note?: string | null
           partner_name?: string | null
           pets?: boolean | null
           phone?: string | null
+          preferred_bedrooms?: number | null
           preferred_channel?: Database["public"]["Enums"]["lead_channel"] | null
           quote_amount?: number | null
           quote_note?: string | null
@@ -7308,6 +7334,7 @@ export type Database = {
           source_detail?: Json
           stage?: Database["public"]["Enums"]["lead_stage"]
           started_at?: string | null
+          stay_length?: string | null
           subject?: string | null
           updated_at?: string
         }
