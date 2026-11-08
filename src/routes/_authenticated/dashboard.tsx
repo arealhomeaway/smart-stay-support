@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { myDirectBookings } from "@/lib/direct-bookings.functions";
+import { HOME_BOOKING_COPY } from "@/lib/direct-bookings";
 import { supabase } from "@/integrations/supabase/client";
 import { useDemo } from "@/components/DemoProvider";
 import { useRole } from "@/hooks/useRole";
@@ -259,7 +260,9 @@ function NeedsYouNow({ rows, userId, originSearch }: { rows: Row[]; userId: stri
             <span className="block truncate font-medium">
               {r.partner_name || r.company || r.subject || "Direct booking request"}
             </span>
-            <span className="block text-sm text-muted-foreground">Direct booking you started. Reply within 3 minutes.</span>
+            <span className="block text-sm text-muted-foreground">
+              {r.waitingForStart ? HOME_BOOKING_COPY.waitingForStart : HOME_BOOKING_COPY.started}
+            </span>
           </span>
           <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
         </Link>
