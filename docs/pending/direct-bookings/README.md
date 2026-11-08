@@ -6,3 +6,5 @@ Apply in order, only when approved:
 
 Undo in reverse: `02_undo_seed_direct_bookings.sql`, then `01_undo_direct_bookings.sql`.
 All changes are additive; existing lead rows are not changed. Checksums in `sha256.txt`.
+
+Correction: `01_direct_bookings.sql` was corrected before it was applied (a missing AS in `::date AS day`, line 97). Nothing else changed.
