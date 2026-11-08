@@ -1,6 +1,7 @@
 # Scorecard capture and archive instead of delete: pending database change
 
-NOT APPLIED. Staged Nov 8, 2026. Apply only with Emily's written approval, byte for byte,
+APPLIED Nov 8, 2026 with Emily's written approval. See the note at the end.
+Staged Nov 8, 2026. Apply only with Emily's written approval, byte for byte,
 in this order, after checking `sha256.txt`. The migration tool runs each file in one
 transaction, so none has BEGIN/COMMIT lines. Capture only: nothing here scores or counts.
 
@@ -84,3 +85,11 @@ Undo order: 04, 03, 02, 01.
 `src/lib/__tests__/scorecard-capture-sql.test.ts` loads all four files into an isolated
 PostgreSQL with stubbed tables, checks every rule above, then runs the four undo files.
 Nothing touches the real database.
+
+## Applied
+
+- Nov 8, 2026: APPLIED byte-for-byte as migrations 0269 (`01_scorecard_records.sql`),
+  0270 (`02_ticket_times_and_states.sql`), 0271 (`03_routine_check_lock.sql`) and 0272
+  (`04_ticket_archive.sql`). Each migration file matches its staged file exactly.
+  The COO role was then given its holder as a one-time data change (no file holds who).
+  Undo order if ever needed: 04, 03, 02, 01.
