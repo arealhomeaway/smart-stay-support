@@ -10,7 +10,10 @@ import { PriorityRail } from "@/components/ui/page";
 import {
   OVERNIGHT_COPY,
   arrivalTime,
+  beforeOvernightClock,
+  clockTimeLabel,
   isMissingColumn,
+  readSettings,
   overnightQueueRows,
   type OvernightQueueRow,
 } from "@/lib/direct-bookings";
@@ -40,6 +43,17 @@ export function OvernightDirectBookings({ demoMode }: { demoMode: boolean }) {
       return (data ?? []) as OvernightQueueRow[];
     },
   });
+  // The overnight clock start time is a setting (register D3); read, never hardcoded.
+  const settings = useQuery({
+    queryKey: ["direct-booking-settings-overnight-start"],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data } = await (supabase as unknown as Db).from("app_settings").select("value").eq("key", "direct_booking_settings").maybeSingle();
+      return readSettings(data?.value).overnightClockStart;
+    },
+  });
+  const start = settings.data;
+  const now = new Date();
   const rows = overnightQueueRows(q.data ?? []);
   if (rows.length === 0) return null;
   return (
@@ -63,7 +77,10 @@ export function OvernightDirectBookings({ demoMode }: { demoMode: boolean }) {
               <span className="font-medium">{r.partner_name || r.company || "Partner"}</span>
               {r.subject ? <span className="min-w-0 truncate text-muted-foreground">{r.subject}</span> : null}
               <span className="text-muted-foreground">{OVERNIGHT_COPY.team}</span>
-              <span className="ml-auto text-xs text-muted-foreground">{OVERNIGHT_COPY.arrived(arrivalTime(r.created_at))}</span>
+              <span className="ml-auto text-xs text-muted-foreground">
+                {OVERNIGHT_COPY.arrived(arrivalTime(r.created_at))}
+                {start && beforeOvernightClock(r, now, start) ? ` ${OVERNIGHT_COPY.clockStarts(clockTimeLabel(start))}` : ""}
+              </span>
             </Link>
           </li>
         ))}

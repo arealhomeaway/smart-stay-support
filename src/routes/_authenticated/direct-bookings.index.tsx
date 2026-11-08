@@ -108,7 +108,7 @@ function DirectBookingsPage() {
   const pending = useMemo(() => new Set(data?.pending ?? []), [data?.pending]);
   const board = requests.map((r) => ({ ...r, status: requestStatus({ ...r, pending_approval: pending.has(r.id) }) }));
   const counts = viewCounts(board);
-  const tiles = boardTiles(board, now, data?.settings.replyTargetMinutes);
+  const tiles = boardTiles(board, now, data?.settings.replyTargetMinutes, data?.settings.overnightClockStart);
   const shown = board
     .filter((r) => viewOf(r.status) === view)
     .sort((a, b) => (view === "open" ? a.created_at.localeCompare(b.created_at) : b.created_at.localeCompare(a.created_at)));
@@ -193,7 +193,7 @@ function DirectBookingsPage() {
 
       <div className="space-y-3">
         {shown.map((r) => {
-          const chip = statusChip(r.status, r, now, data?.settings.replyTargetMinutes);
+          const chip = statusChip(r.status, r, now, data?.settings.replyTargetMinutes, data?.settings.overnightClockStart);
           const startable = r.status === "new";
           return (
             <div
