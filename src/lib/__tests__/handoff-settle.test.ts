@@ -58,7 +58,8 @@ describe("settleHandoff: the ticket must move before a handoff counts", () => {
 
   it("the error words are plain and never claim it was done", () => {
     for (const m of [...Object.values(HANDOFF_SETTLE_COPY.ticketNotMoved), ...Object.values(HANDOFF_SETTLE_COPY.handoffNotSaved)]) {
-      expect(m).not.toMatch(/accepted\.|declined\.|row-level|RLS|error code/i);
+      expect(m).toMatch(/\bnot\b/);
+      expect(m).not.toMatch(/^(Reassignment|Handoff) (accepted|rejected|declined)|row-level|RLS|error code/i);
       expect(m).not.toContain("—");
     }
   });

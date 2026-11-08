@@ -52,7 +52,7 @@ CREATE TABLE public.tickets(
   due_at timestamptz, resolved_at timestamptz, breezeway_task_url text, waiting_on text, waiting_reason text,
   source_channel text, source_reference text, external_source text, external_id text, external_status text,
   external_url text, external_synced_at timestamptz, is_demo boolean DEFAULT false, escalation_level text DEFAULT 'none',
-  assignment_source text, assignment_note text, response_due_at timestamptz, action_due_at timestamptz,
+  assignment_source text, assignment_note text, response_due_at timestamptz, action_due_at timestamptz, insurance_risk text,
   acknowledged_at timestamptz, action_started_at timestamptz, next_review_at timestamptz,
   handoff_status text DEFAULT 'none', pending_handoff_to uuid, current_action_owner uuid, record_owner uuid,
   accountable_owner uuid, archived_at timestamptz, last_reopened_at timestamptz, reopen_count int DEFAULT 0,
