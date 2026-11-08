@@ -64,6 +64,19 @@ describe("staged files change only the permission line", () => {
   });
 });
 
+describe("screens read the one editor rule", () => {
+  it("the Playbooks page and the work-screen guidance link show edit, approve, archive and upload only to editors", () => {
+    const page = readFileSync("src/routes/_authenticated/playbooks.tsx", "utf8");
+    const card = readFileSync("src/components/GuidanceCard.tsx", "utf8");
+    expect(page).toContain("const isDirector = canEditPlaybooks(roles, access.seats);");
+    expect(page).toContain("const canSave = isDirector;");
+    expect(page).toContain("const libraryOnly = !isDirector;");
+    expect(page).not.toContain('can("playbooks_edit")');
+    expect(card).toContain("const canEdit = canEditPlaybooks(roles, access.seats);");
+    expect(card).not.toContain('can("playbooks_edit")');
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Behaviour: earlier staged playbook and SOP files build the tables, then the
 // live editor rule and this folder's functions are loaded on top.
