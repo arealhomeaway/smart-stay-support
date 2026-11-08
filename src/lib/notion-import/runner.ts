@@ -41,7 +41,7 @@ export type DryRunSummary = {
   blankCreatedDate: number;
 };
 
-export type Failure = { pageId: string; title: string; error: string; at: string };
+export type Failure = { pageId: string; group: ImportGroup | null; title: string; error: string; at: string };
 export type FailedFile = { pageId: string; ticketId: string; key: string; name: string; error: string; at: string };
 
 export type Job = {
@@ -154,7 +154,7 @@ export function startJob(
   if (input.kind === "dry_run") next.dryRun = emptyDryRun();
   else {
     next.progress = { ...state.progress, [input.group!]: emptyProgress() };
-    next.failures = state.failures.filter((f) => f.pageId && !f.pageId.startsWith(`${input.group}:`));
+    next.failures = state.failures.filter((f) => f.group !== input.group);
   }
   return next;
 }

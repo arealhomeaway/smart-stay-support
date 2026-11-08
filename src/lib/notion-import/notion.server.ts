@@ -1,19 +1,27 @@
 /**
  * Read-only Notion access for the ticket import. Only GET requests and the
  * read-only data source query (a POST that reads) are ever sent. Calls are
- * spaced to respect Notion's rate limit and retried on 429.
+ * spaced to respect Notion's rate limit (about 3 a second) and retried with
+ * backoff on 429, timeouts, server errors and dropped connections.
  */
-import { NOTION_CLAIM_REVIEW_STATUS, NOTION_TICKET_DATA_SOURCE_ID, SCOPE_DAYS, type NotionPage } from "./mapping";
+import { CLOSED_NOTION_STATUSES, NOTION_TICKET_DATA_SOURCE_ID, type ImportGroup, type NotionPage } from "./mapping";
+import { NOTION_ATTEMPTS, isRetryableStatus, retryDelayMs } from "./runner";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/notion/v1";
 const MIN_GAP_MS = 350;
 let lastCall = 0;
 
+export class NotionError extends Error {
+  constructor(public status: number | null, public body: string) {
+    super(`Notion request failed${status ? ` [${status}]` : ""}: ${body.slice(0, 300)}`);
+  }
+}
+
 function headers() {
   const lovable = process.env["LOVABLE_API_KEY"];
   const notion = process.env["NOTION_API_KEY"];
-  if (!lovable) throw new Error("LOVABLE_API_KEY is not configured");
-  if (!notion) throw new Error("The Notion connection is not linked");
+  if (!lovable) throw new NotionError(null, "LOVABLE_API_KEY is not configured");
+  if (!notion) throw new NotionError(null, "The Notion connection is not linked (NOTION_API_KEY missing)");
   return {
     Authorization: `Bearer ${lovable}`,
     "X-Connection-Api-Key": notion,
@@ -30,47 +38,72 @@ async function notion<T>(path: string, init?: { method?: "GET" | "POST"; body?: 
   if (method === "POST" && !/^\/data_sources\/[^/]+\/query$/.test(path)) {
     throw new Error("The import only reads from Notion");
   }
-  for (let attempt = 0; attempt < 6; attempt++) {
+  let last: NotionError | null = null;
+  for (let attempt = 0; attempt < NOTION_ATTEMPTS; attempt++) {
     const wait = lastCall + MIN_GAP_MS - Date.now();
     if (wait > 0) await sleep(wait);
     lastCall = Date.now();
-    const res = await fetch(`${GATEWAY_URL}${path}`, {
-      method,
-      headers: headers(),
-      ...(init?.body ? { body: JSON.stringify(init.body) } : {}),
-    });
-    if (res.status === 429 || res.status >= 500) {
-      const retry = Number(res.headers.get("retry-after")) || 2 ** attempt;
-      await sleep(Math.min(retry, 30) * 1000);
+    let res: Response;
+    try {
+      res = await fetch(`${GATEWAY_URL}${path}`, {
+        method,
+        headers: headers(),
+        ...(init?.body ? { body: JSON.stringify(init.body) } : {}),
+      });
+    } catch (e) {
+      if (e instanceof NotionError) throw e;
+      last = new NotionError(null, e instanceof Error ? e.message : String(e));
+      await sleep(retryDelayMs(attempt, null));
       continue;
     }
-    if (!res.ok) {
-      const body = await res.text();
-      throw new Error(`Notion request failed [${res.status}]: ${body.slice(0, 300)}`);
+    if (isRetryableStatus(res.status)) {
+      last = new NotionError(res.status, await res.text().catch(() => ""));
+      await sleep(retryDelayMs(attempt, res.headers.get("retry-after")));
+      continue;
     }
+    if (!res.ok) throw new NotionError(res.status, await res.text().catch(() => ""));
     return (await res.json()) as T;
   }
-  throw new Error("Notion kept rate limiting; try again shortly. Nothing is lost.");
+  throw last ?? new NotionError(429, "Notion kept rate limiting");
 }
 
-export function scopeFilter(now = Date.now()) {
-  const cutoff = new Date(now - SCOPE_DAYS * 86_400_000).toISOString();
-  return {
-    or: [
-      { property: "Issue Status", status: { equals: "In progress" } },
-      { property: "Issue Status", status: { equals: NOTION_CLAIM_REVIEW_STATUS } },
-      { timestamp: "last_edited_time", last_edited_time: { on_or_after: cutoff } },
-      { timestamp: "created_time", created_time: { on_or_after: cutoff } },
-      { property: "Created Date", date: { on_or_after: cutoff } },
-    ],
-  };
+const openFilter = {
+  and: CLOSED_NOTION_STATUSES.map((s) => ({ property: "Issue Status", status: { does_not_equal: s } })),
+};
+
+/** Narrows the Notion query to one group. The mapping rules still decide; this only saves reads. */
+export function groupFilter(group: ImportGroup | null, cutoffIso: string) {
+  const day = cutoffIso.slice(0, 10);
+  if (group === "closed") return { or: CLOSED_NOTION_STATUSES.map((s) => ({ property: "Issue Status", status: { equals: s } })) };
+  if (group === "recent_open") return { and: [...openFilter.and, { property: "Created Date", date: { on_or_after: day } }] };
+  if (group === "older_open")
+    return {
+      and: [
+        ...openFilter.and,
+        { or: [{ property: "Created Date", date: { before: day } }, { property: "Created Date", date: { is_empty: true } }] },
+      ],
+    };
+  return undefined;
 }
 
-export async function queryTicketPage(cursor: string | null, pageSize = 25) {
-  return notion<{ results: NotionPage[]; has_more: boolean; next_cursor: string | null }>(
-    `/data_sources/${NOTION_TICKET_DATA_SOURCE_ID}/query`,
-    { method: "POST", body: { page_size: pageSize, filter: scopeFilter(), ...(cursor ? { start_cursor: cursor } : {}) } },
-  );
+export type TicketPageResult = { results: NotionPage[]; has_more: boolean; next_cursor: string | null };
+
+export async function queryTicketPage(opts: { cursor: string | null; pageSize: number; group: ImportGroup | null; cutoffIso: string }) {
+  const filter = groupFilter(opts.group, opts.cutoffIso);
+  return notion<TicketPageResult>(`/data_sources/${NOTION_TICKET_DATA_SOURCE_ID}/query`, {
+    method: "POST",
+    body: {
+      page_size: opts.pageSize,
+      sorts: [{ timestamp: "created_time", direction: "ascending" }],
+      ...(filter ? { filter } : {}),
+      ...(opts.cursor ? { start_cursor: opts.cursor } : {}),
+    },
+  });
+}
+
+/** True when Notion refused a saved cursor (it has expired); the job restarts that group safely. */
+export function isBadCursor(e: unknown): boolean {
+  return e instanceof NotionError && e.status === 400 && /start_cursor/i.test(e.body);
 }
 
 const pidCache = new Map<string, { ownerRez: string | null; label: string | null }>();
@@ -89,6 +122,13 @@ export async function pidOwnerRez(pageId: string) {
   const out = { ownerRez, label };
   pidCache.set(pageId, out);
   return out;
+}
+/** Seeds the home cache from the saved run state so a new server instance does not reread every home. */
+export function seedPidCache(entries: Record<string, { ownerRez: string | null; label: string | null }>) {
+  for (const [k, v] of Object.entries(entries)) if (!pidCache.has(k)) pidCache.set(k, v);
+}
+export function pidCacheSnapshot(): Record<string, { ownerRez: string | null; label: string | null }> {
+  return Object.fromEntries(pidCache);
 }
 
 function readAny(p: Record<string, unknown> & { type: string }): string | null {
@@ -128,15 +168,15 @@ export type NotionComment = {
   attachments?: { category?: string; file?: { url: string }; name?: string }[];
 };
 
-export async function listComments(pageId: string): Promise<NotionComment[]> {
+export async function listComments(pageId: string, limit = Infinity): Promise<NotionComment[]> {
   const out: NotionComment[] = [];
   let cursor: string | null = null;
   do {
-    const q = new URLSearchParams({ block_id: pageId, page_size: "100" });
+    const q = new URLSearchParams({ block_id: pageId, page_size: String(Math.min(100, limit)) });
     if (cursor) q.set("start_cursor", cursor);
     const r = await notion<{ results: NotionComment[]; has_more: boolean; next_cursor: string | null }>(`/comments?${q}`);
     out.push(...r.results);
-    cursor = r.has_more ? r.next_cursor : null;
+    cursor = r.has_more && out.length < limit ? r.next_cursor : null;
   } while (cursor);
   return out;
 }
