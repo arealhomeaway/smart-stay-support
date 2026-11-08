@@ -14,13 +14,44 @@ then 06 with the data tool. Each file has its own undo.
 | `04_claim_approval.sql` | migration | Claim approval columns on `claims`, `private.claim_required_authority()`, `request_claim_approval()`, `decide_claim_approval()` and trigger `guard_claim_approval` (approval fields change only through the two functions; a claim over $500 cannot move to Submitted or later without an approval at the right level for at least that amount). |
 | `05_notification_categories.sql` | migration | Four preference columns, all default on: Notes and mentions, Team Queue (email and in app). |
 | `06_team_queue_timing_setting.sql` | data | `app_settings` key `team_queue_timing`: 3, 10 and 15 minutes; Today day shift ends 17:00, night shift ends 22:00, red 120 minutes before; Routine default 24 hours. |
-| `0N_undo_*.sql` | undo | One per file. Undo 01 and 03 restore the live captures exactly. |
+| `0N_undo_*.sql` | undo | One per file. Undo 01 and 03 restore the live captures exactly; the others remove only what their file added. |
 | `live-capture/` | evidence | Live definitions before the change. |
 
 ## Differences from byte for byte
 
 The first line of `01` is the review comment the migration tool needs for a scheduled job
-(`lovable-cron-fallback-reviewed`). It is a comment and changes no SQL.
+(`lovable-cron-fallback-reviewed`). It is a comment and changes no SQL. The first comment line of
+`03` was corrected from "part 4" to "part 3" before applying; also a comment only.
+
+## Applied (Nov 8, 2026)
+
+| File | Applied as |
+|---|---|
+| 01 | `drizzle/migrations/0299_alerts_01_team_queue_and_waiting_alerts.sql` |
+| 02 | `drizzle/migrations/0300_alerts_02_note_alerts.sql` |
+| 03 | `drizzle/migrations/0301_alerts_03_approval_links.sql` |
+| 04 | `drizzle/migrations/0302_alerts_04_claim_approval.sql` |
+| 05 | `drizzle/migrations/0303_alerts_05_notification_categories.sql` |
+| 06 | data tool, one `app_settings` row |
+
+Each applied file is byte-identical to the staged file (checked with diff). Live captures were
+re-read just before applying and still matched.
+
+Cancelled live check (nothing kept, counts checked afterwards: 42 tickets, 9 claims, 0 timed
+alert rows, no test notes, notifications or approvals left):
+- Right now at 3 minutes: no alert. At 10 minutes: the Operations Supervisor once. At 15 minutes
+  (Supervisor already alerted): the Director of Operations once. A second run sent nothing.
+- Today ticket unowned 5 hours: no alert.
+- Waiting ticket past its return time: its owner once; a second run nothing; moving it back to
+  open by hand added no second alert.
+- Taken after 12 minutes with no owner: response and work start due times moved 12 minutes.
+- Note by the Supervisor mentioning a coordinator: the coordinator got "You were mentioned", the
+  owner got "New note", the author nothing.
+- Approval alert link: `/tickets/<id>`.
+- Claims: $400 needs no approval; $600 goes to the Operations Supervisor, $1,600 to the Director of
+  Operations, both alerts link to the ticket; a coordinator cannot decide; the Supervisor cannot
+  decide $1,600; a decision with no reason is refused; the approval fields cannot be edited directly.
+- Every alert above queued an email (status pending); none was sent because nothing was kept.
 
 ## Not changed
 
