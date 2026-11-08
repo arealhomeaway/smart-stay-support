@@ -4,7 +4,7 @@ import { PGlite } from "@electric-sql/pglite";
 import { readFileSync } from "node:fs";
 import { canEditPlaybooks } from "../playbook-editing";
 import { capabilitiesFor } from "../permissions";
-import { canAccessRoute } from "../route-access";
+import { canOpenPath } from "../route-access";
 
 /**
  * docs/pending/playbook-roles-checklists/ (Emily, answers D1 and D2; register A15).
@@ -67,12 +67,12 @@ describe("Ticket checklists screen follows the playbook rule", () => {
     it(`${name}: opens the page and ${a.edit ? "edits" : "views only"}`, () => {
       expect(canEditPlaybooks(a.roles as never, a.seats)).toBe(a.edit);
       expect(capabilitiesFor(a.roles as never, a.seats).has("playbooks_view")).toBe(true);
-      expect(canAccessRoute("/ticket-checklists", { roles: a.roles as never, seats: a.seats } as never)).toBe(true);
+      expect(canOpenPath("/ticket-checklists", { roles: a.roles as never, seats: a.seats } as never)).toBe(true);
     });
   }
   it("homeowners and vendors never open it", () => {
-    expect(canAccessRoute("/ticket-checklists", { roles: ["owner"], seats: {} } as never)).toBe(false);
-    expect(canAccessRoute("/ticket-checklists", { roles: ["vendor"], seats: {} } as never)).toBe(false);
+    expect(canOpenPath("/ticket-checklists", { roles: ["owner"], seats: {} } as never)).toBe(false);
+    expect(canOpenPath("/ticket-checklists", { roles: ["vendor"], seats: {} } as never)).toBe(false);
   });
 });
 
