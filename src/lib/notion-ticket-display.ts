@@ -224,7 +224,6 @@ export const NOTION_GROUPS: { value: NotionGroup; label: string }[] = [
   { value: "unassigned", label: "Unassigned" },
 ];
 
-const norm = (s: string | null | undefined) => (s ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 
 export type NotionQueueRow = NotionTicketLike & {
   assigned_to?: string | null;
