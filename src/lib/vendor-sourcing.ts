@@ -83,7 +83,10 @@ export function authorizationState(wo: DispatchWorkOrder): AuthorizationState {
   const v = evaluateAuthority(wo);
   const who = v.ownerApprovalRequired ? "owner" : v.supervisorApprovalRequired ? "supervisor" : null;
   const stale = !!wo.authorization_stale;
-  const approved = who === "owner" ? wo.approval_status === "approved" : who === "supervisor" ? wo.supervisor_approval_status === "approved" : true;
+  const ownerOk = wo.approval_status === "approved";
+  const supervisorOk = wo.supervisor_approval_status === "approved";
+  // Policy v3: in the owner band the Operations Supervisor approves as well.
+  const approved = who === "owner" ? ownerOk && (!v.supervisorApprovalRequired || supervisorOk) : who === "supervisor" ? supervisorOk : true;
   const satisfied = who === null ? true : approved && !stale;
   const vendorChanged = !!wo.authorized_vendor_org_id && wo.vendor_org_id !== wo.authorized_vendor_org_id;
   const label = stale
