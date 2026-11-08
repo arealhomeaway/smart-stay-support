@@ -23,6 +23,7 @@ import { propertyAddress } from "@/lib/property-address";
 import { isWorkingStatus } from "@/lib/ticket-lifecycle";
 import { attachmentMatchesCurrentProperty } from "@/lib/attachments.server";
 import { isExternalOwner, ownerPropertyAccess } from "@/lib/owner-property-access.server";
+import { notionBadge, showsAssignee } from "@/lib/notion-ticket-display";
 
 type Client = SupabaseClient<Database>;
 
@@ -182,7 +183,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
         .order("sort_order"),
       supabaseAdmin
         .from("tickets")
-        .select("id, ref, title, status, priority, created_at, assigned_to, work_type_id")
+        .select("id, ref, title, status, priority, created_at, reported_at, assigned_to, work_type_id, external_source, external_status")
         .eq("property_id", propertyId)
         .eq("is_demo", p.is_demo)
         .is("archived_at", null)
@@ -819,7 +820,9 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
             status: t.status,
             priority: t.priority,
             createdAt: t.created_at,
-            assigned: Boolean(t.assigned_to),
+            // A historical Notion record never shows an assignee.
+            assigned: showsAssignee(t) && Boolean(t.assigned_to),
+            notionBadge: notionBadge(t),
           })),
           workOrders: (outbound.data ?? []).map((o) => ({
             id: o.id,

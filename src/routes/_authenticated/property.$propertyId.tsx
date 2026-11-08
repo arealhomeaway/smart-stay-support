@@ -760,6 +760,7 @@ function OperationsTab({ hub }: { hub: Hub }) {
                   <span className="font-medium">ARHA-{t.ref}</span> {t.title}
                 </span>
                 <span className="flex items-center gap-2">
+                  {t.notionBadge && <StatusBadge tone="context">{t.notionBadge}</StatusBadge>}
                   <StatusBadge tone={t.priority === "p1" ? "escalated" : "context"}>
                     {String(t.priority).toUpperCase()}
                   </StatusBadge>
