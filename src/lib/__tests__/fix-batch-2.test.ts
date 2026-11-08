@@ -34,9 +34,11 @@ describe("team roles that carry a permission", () => {
 });
 
 describe("1. Playbooks: the Operations Supervisor can save", () => {
-  it("saves drafts but cannot approve or upload SOPs", () => {
+  // Widened Nov 8, 2026 (Emily, docs/pending/playbooks-supervisor): the Supervisor
+  // also approves, archives and uploads SOPs.
+  it("saves drafts, and also approves and uploads SOPs", () => {
     expect(canSavePlaybooks(SUP.roles, SUP.seats)).toBe(true);
-    expect(canManagePlaybooks(SUP.roles, SUP.seats)).toBe(false);
+    expect(canManagePlaybooks(SUP.roles, SUP.seats)).toBe(true);
   });
   it("a manager account without the role still cannot save", () => {
     expect(canSavePlaybooks(["manager"], {})).toBe(false);

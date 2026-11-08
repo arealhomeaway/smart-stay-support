@@ -35,7 +35,7 @@ import { SopVersionComparison } from "@/components/playbooks/SopVersionCompariso
 import { SopUpload } from "@/components/playbooks/SopUpload";
 import { getSopPlaybookLinks } from "@/lib/sop-upload.functions";
 import { sopNeedsReview, type SopLink } from "@/lib/sop-upload";
-import { canManagePlaybooks, canSavePlaybooks, playbookEditContent, type PlaybookContent, type PlaybookStepEdit } from "@/lib/playbook-editing";
+import { canEditPlaybooks, playbookEditContent, type PlaybookContent, type PlaybookStepEdit } from "@/lib/playbook-editing";
 import { savePlaybookEdit, changePlaybookState } from "@/lib/playbook-editing.functions";
 import { CATEGORIES, labelFor } from "@/lib/tickets";
 import { FieldHint } from "@/components/FieldHint";
@@ -115,13 +115,12 @@ function usePlaybooks() {
 
 function PlaybooksPage() {
   const qc = useQueryClient();
-  const { readOnly: previewOnly, roles, access, can } = useRole();
-  // Approval and SOP upload use the caller-checked Admin/Director rule;
-  // saving drafts also allows the Operations Supervisor.
-  const isDirector = canManagePlaybooks(roles, access.seats);
-  const canSave = canSavePlaybooks(roles, access.seats);
-  // The library opens read only for people without playbook administration.
-  const libraryOnly = !can("playbooks_edit");
+  const { readOnly: previewOnly, roles, access } = useRole();
+  // One editor rule for saving, approving, archiving and SOP upload (DB
+  // can_save_playbooks). Everyone else reads the library.
+  const isDirector = canEditPlaybooks(roles, access.seats);
+  const canSave = isDirector;
+  const libraryOnly = !isDirector;
   const readOnly = previewOnly || libraryOnly;
   const [filter, setFilter] = useState<PlaybookStatus | "all" | "attention">(libraryOnly ? "approved" : "attention");
   const [openId, setOpenId] = useState<string | null>(null);

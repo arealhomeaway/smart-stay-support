@@ -20,6 +20,7 @@ import { matchPlaybook, NO_APPROVED_GUIDANCE, type MatchContext } from "@/lib/pl
 import { isTestPlaybook, parsePlaybook, type PlaybookRow } from "@/lib/playbooks";
 import { recordGuidanceEvent } from "@/lib/guidance.functions";
 import { useRole } from "@/hooks/useRole";
+import { canEditPlaybooks } from "@/lib/playbook-editing";
 
 export type GuidanceCardProps = {
   subjectType: "ticket" | "work_order" | "recovery" | "claim";
@@ -86,7 +87,8 @@ export function GuidanceCard({
   vendorEngaged = false,
 }: GuidanceCardProps) {
   const playbooks = useActivePlaybooks();
-  const canEdit = useRole().can("playbooks_edit");
+  const { roles, access } = useRole();
+  const canEdit = canEditPlaybooks(roles, access.seats);
   const [expanded, setExpanded] = useState(false);
 
   const result = useMemo(
