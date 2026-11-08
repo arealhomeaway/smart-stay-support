@@ -1,0 +1,141 @@
+# Resolve decision register (current), Nov 8, 2026
+The current state of every decision. One line each; the latest decision wins. Mockup boards are the master for how a screen looks and reads; this register is the master for how it works.
+
+## 1. House rules for every screen
+H1 Roles only. Never a person's name in a screen, rule, alert, email, template, error message, tour or column name (imported Notion history text excepted). Roles: Property Coordinator, Operations Supervisor, Director of Operations, Director of Onboarding, Project Manager, Utilities, Design, Finance lead, COO, CEO, Admin.
+H2 Plain short words; the overseas team is smart; wording quietly encourages ownership and pride. A screen never explains how it works (no auto-generated, sample, threshold, daily photo, internal field names).
+H3 Never on a screen: the word seat; Hit; Median (say Typical); tracking codes like PC1 or J1; where a rule came from (proposal, draft, who approved); the Notion status Pending Claim Review with Josh (say Claim review); developer language; long dashes; emoji.
+H4 Urgency names: Right now (P1), Today (P2), Routine (P3). Codes stay internal.
+H5 Tiers: Below goal, Goal met, Strong, Exceeds. Waiting on someone else never counts against anyone.
+H6 Mobile first, tap targets at least 44px.
+H7 Mockup boards are the master for layout and wording; sample names in a board are placeholders.
+H8 Resolve is the record. Notion is retired; never ask anyone to edit Notion.
+H9 Nothing is deleted: pages are hidden behind switches; tickets are archived (reason required, hidden from lists and counts, history kept, only an Admin restores).
+H10 Door, lock and Wi-Fi codes stay behind a logged Show; if the log fails the code is not shown; never in reports.
+H11 Where a decision says automatic, build it automatic with no button.
+H12 Protect what exists: change only what a decision or request names; list every existing file modified; run the whole suite, type check and build before and after; never weaken a test. A decision overrides old code.
+
+## 2. Who sees what (Edit = works and changes; View = read only; Own = only their own; Hidden = not in the menu and not reachable by address)
+A1 Operations stays in Operations, Onboarding in Onboarding. Only shared work crosses (handoff, carry over, Send to Operations, Send to Onboarding).
+A2 Account types today: Admin, Supervisor, Coordinator, Onboarding, Owner, Vendor. Directors, Project Manager, Utilities, Design, Finance lead, COO, CEO are roles on top. Real Finance, Director and Utilities account types are week one.
+A3 CEO sees everything an Admin sees and edits only scorecard metrics. COO opens every view below the CEO. Emily holds the COO role.
+A4 Home: everyone Edit, Finance View, Active Owner Hidden on the staff side.
+A5 Record work and Record routine work: Operations only (Coordinator, Supervisor, Director of Operations, Admin). Never Onboarding.
+A6 Team Queue: Coordinator, Supervisor, Director of Operations, Admin. Everyone else Hidden.
+A7 Oversight and Supervisor check: Supervisor, Director of Operations, Admin. A coordinator is refused even by typing the address.
+A8 Work orders: Coordinator, Supervisor, Director of Operations, Admin Edit; Director of Onboarding, Project Manager, Finance View.
+A9 Vendors: Coordinator View; Supervisor, Director of Operations, Director of Onboarding, Project Manager, Utilities, Admin Edit; Finance View; Design and Active Owner Hidden. Onboarding roles see every tab and the full vendor database; vendor status, compliance, screening, documents, logins and imports stay with operations leadership (read only, never hidden).
+A10 Claims and refunds: Coordinator, Supervisor, Director of Operations, Admin Edit; Finance View.
+A11 Direct Bookings: Coordinator, Supervisor, Director of Operations, Finance, Admin; others Hidden. Admin saves settings; approving a quote stays with the Supervisor, and the Director after 2 minutes.
+A12 Properties: Coordinator, Supervisor, Director of Operations, Director of Onboarding, Project Manager, Design, Admin Edit; Utilities edits the Utilities tab; Finance View; Active Owner Hidden.
+A13 Schedule: Coordinator View; onboarding roles View; Supervisor, Director of Operations, Admin Edit; Finance Hidden.
+A14 Users: Supervisors and Directors add users in their own department; Admin manages everyone; coordinators do not see the full user list.
+A15 Playbooks and SOPs: Supervisor, Director of Operations, Director of Onboarding, Admin edit, approve or publish, archive and upload; Coordinator, Project Manager, Utilities, Design and Finance View.
+A16 Onboarding board, projects and plans: Director of Onboarding, Admin Edit; Project Manager, Utilities, Design Own; Director of Operations and Finance View; Coordinator and Supervisor Hidden. Templates: Director of Onboarding, Admin Edit; Director of Operations View.
+A17 Active Owner staff side: Director of Operations, Director of Onboarding, Admin Edit; Supervisor View; Project Manager Own; Coordinator Own (post handoff work).
+A18 Finance: Finance lead, Admin Edit; Director of Operations and Director of Onboarding View.
+A19 Scorecards: the Supervisor reviews coordinators, the Director of Operations the Supervisor, the COO the Director, the CEO the COO later; each person views their own, read only.
+A20 Help tickets: everyone Own, Admin Edit. Admin pages (Integrations, Workflow controls, Notion import): Admin only. Owner portal: the owner Owns it; Directors View.
+A21 A permission test records the full role by page table; any change must be approved.
+
+## 3. Left menu and top bar
+M1 Five groups in order: My day (Home with tabs My home and Oversight, Team Queue, Direct Bookings, Vendors, Databases); Team (Team and Coverage, Playbooks); Homes and owners (Properties, Onboarding, Active Owner with Program oversight and Homeowners inside); Insight (Analytics, Reports); Admin (Logic and Automations, Admin tools).
+M2 Hidden, not deleted: My Work page, Work Orders (until the vendor portal), Work Map, the Claims and Refunds pages (until Databases exists Guest Claims and Refunds stays visible at the end of My day), Leads and Availability Finder, Quarterly Reviews.
+M3 Sub pages are tabs at the top of the page. Finance goes in Admin tools later. The CEO opens Analytics first. Imported Notion tickets are not a Databases list and not an Admin page.
+M4 Top bar on every operations page: Record work and Record routine work side by side, one tap each on a phone; routine work opens as an overlay; onboarding, vendor and owner accounts never see either.
+M5 Clean slate removes the Demo button and adds an Admin only View as switcher that does not depend on demo mode.
+M6 Coordinators see My day, Team (Team and Coverage read only, Playbooks) and Properties; Supervisors add Oversight, Onboarding and Active Owner view, Analytics; Directors add their department and Logic and Automations (view); the COO sees everything except the frontline work lists; the CEO matches Admin.
+
+## 4. Home, Team Queue, Record work, tickets and routing
+T1 Home: banner with a real home photo that changes daily and a small caption (home name and city), greeting and date; My scorecard button only for people with a scorecard; Needs you now; My work; Routine work due today; My shift; Recent activity collapsed.
+T2 Needs you now: only what needs this person (handoffs waiting, overdue or Right now work, approvals waiting, Direct Bookings alerted to or started). Each row says what and why; a click opens a side panel; Supervisors and above get a See all link to Oversight. Never Team Queue items.
+T3 My work: tabs Active, Waiting, Done recently (7 days), search and filter, List or Board; a Team queue link with the unclaimed count. No separate My Work page.
+T4 My shift: today's hours, who is on call tonight, Request time off, End my shift. Time off requests start Nov 16.
+T5 Wording: Start work: 3 days late; Next step: [role]; Continue.
+T6 Handoffs, three kinds, all in Needs you now with Accept and Decline (a decline needs a reason); tagging is never a handoff. Shift handoff: End my shift walks the open items, each to the next person on shift with done so far, next step and due, or Nothing to hand off. Team handoff: a Hand off action on any ticket. Department handoff: onboarding home handoffs and carry over items. Ownership moves only when accepted; an unaccepted Right now handoff alerts the receiver and the Supervisor after 15 minutes. A handoff to a role goes to the person on shift in that role.
+T7 Team Queue: whole team visible, Team A and Team B filters. Imported Notion tickets sit in a collapsed group, Imported from Notion, under Team A, Team B and Unassigned, with no clocks, alerts or counts.
+T8 Record work: one ticket type; the button reads Create Maintenance Ticket; Which home; Describe the problem or request (photo and speak buttons, an example under the box); a Resolve understood line. The kind of ops work and choose what happened questions are removed or automated.
+T9 A guest in the home counts as affected automatically; a Supervisor can correct urgency with a reason. Insurance risk shows a red box: This could be an insurance claim. Escalate this ticket before taking action, with an Escalate button, then an Escalated state.
+T10 20 problem types in a table Emily edits on an admin screen. Claim Yes or No set automatically from a platform name in the text (Aircover, VRBO, Direct Booking, Booking.com, Airbnb). Repair needed at the home Yes or No set from the text. Home details show by problem type; codes hide behind a logged Show.
+T11 One touch log: home, description, what you did; problem type automatic; saved to the home's history with no ticket and no clocks; counted by problem type per home with a repeat flag as drawn.
+T12 Close ticket and Reopen ticket always visible. Reopen: any staff who work tickets, any closed ticket, a short reason (3 to 500 characters), fresh clocks, assigned to the person who reopens, one history line; only later work is credited. Onboarding accounts cannot Reopen or Take.
+T13 Waiting is only for waiting on someone else, with a reason and a future review time; it never counts against the person or a scorecard. Next step with a due time is on the ticket. Archive (Supervisor or Admin, reason required) replaces delete.
+T14 Routine work: live controls are Guest Touch Base, Guest Review, Maintenance Review (work order review) and Survey Review (hidden until surveys go live); Checkout and Cleaning Review are retired; 14 day window.
+T15 Routing by the time: a new ticket goes to the coordinator on shift now on the ticket's team (Team A Guest Experience and Reservations, Team B Property Operations); two on shift share by lightest load (Right now 5, Today 3, Routine 1; Waiting tickets and quiet imports do not count). If nobody on the team is on shift it goes to the coordinator working on any team. Overnight (10 PM to 8 AM) the on call person; then the Supervisor. Lunch hour is skipped while another coordinator is on shift (same team first). Approved time off and cover apply. Weekends the Day and Weekend and Evening Guest Experience roles cover both teams. Work types for the Director of Operations are unchanged. Claims go to Team B. No note or screen says seat.
+
+## 5. Claims, refunds, repairs, vendors and money
+C1 Claims and refunds are steps on the ticket (a Claim card and a Refund or credit card). The Claims and Refunds pages are hidden. Databases is the window, with a Claims to work filter.
+C2 Approval authority for claims and refunds: a coordinator up to and including $500; the Supervisor above $500 up to and including $1,500; the Director of Operations above that.
+C3 Claim tickets are always workable, whatever their age or status; they show in Needs you now and My work only when a person owns them or a deadline is due. Team B handles guest damage claims. The CEO does not review claims. Pending Claim Review with Josh becomes the claim stage Claim review.
+C4 Repair card on the work order flow in plain words: choose a vendor, the vendor accepts, check the approval, then the work. Approval limits use the verified SOP numbers (open item K1).
+C5 Vendor invoices: the coordinator adds each invoice to the ticket's work order; the Operations Supervisor approves it with a Bill To (ARHA, Home Owner, Tenant, Onboarding or Needs Review); Finance sees approved invoices and records payment; an invoice must link to a ticket.
+C6 Work order reviews: Resolve creates a review task for each finished work order (lawn too) with the Breezeway link; the coordinator reviews in Breezeway and marks it reviewed in Resolve. The Supervisor's check on daily logs and work order reviews is recorded automatically.
+C7 Current people appear in every picklist.
+C8 Extension holds: a 3 month extension block on every mid term booking.
+C9 Expenses (Ramp): Resolve does not track expenses; old expense screens are hidden; a Ramp purchase becomes an Expense ticket; Resolve suggests a matching ticket and the coordinator confirms with one tap; an Incomplete in Ramp list shows what is missing; hard cutoffs Friday 5 PM and month end 5 PM; the Finance lead owns the Ramp queue.
+C10 Finance back end now, Finance screens later: a required reason on every money record; Finance ready check and flags; a read only Finance role; vendor invoice fields on work orders; month end owner statement data per property. Until the finance portal is built the team follows the previous process.
+
+## 6. Direct Bookings (the mockup board is the exact layout)
+D1 Page named Direct Bookings. Views: Open, Waiting on the partner, Approved, Booked, Not booked, with counts; three tiles: Needs a reply, Waiting for a supervisor, Follow-ups due. A red strip tells the Supervisor and the Director: N quotes are waiting for your OK, with Review now. Referral sources opens Inquiry Sources until Databases exists. New request covers a phone call or walk in. Earlier requests stay read only.
+D2 Who is alerted: every coordinator on shift on Team A; the first to press Start the quote owns it. It shows in Needs you now for everyone alerted until Start, then only for the owner. Never Team Queue. If nobody on Team A is on shift, the coordinators working on any team; overnight the on call person too; if nobody is working, the Operations Supervisor and the Director of Operations.
+D3 The 3 minute clock starts when the request exists in Resolve and runs until the reply is sent. The intake must create the request within about a minute.
+D4 For two weeks (Nov 9 to Nov 23, a setting) the Operations Supervisor approves every quote. If not approved within 2 minutes the Director of Operations is alerted, on the server, and can approve. After the period quotes send straight away with a Supervisor copy (setting, default off).
+D5 The reply fills in from an editable template, in the same email thread, subject RE: their subject. Copies: the Operations Supervisor and the Director of Operations always, the COO never, enforced on the server. Sender name is the signed in person. Per home: Address, Property Link, Distance line only when an address was given, Beds, Baths, Availability, Nightly Rate, Monthly Rent. One Time Fees in order: Cleaning $350, Application $89 (one adult required), Pet $250 per pet (total in brackets when more than one), Refundable deposit ($1,500, or $1,000 for MyMetis and Owl Marketplace); no $0 lines; the closing line, Thank you, first name, signature block.
+D6 Rent: flat nightly rate times 30, less the source discount, to the nearest $10: 3 bedroom $189, 4 bedroom $199. 5 percent off for MyMetis, Owl Marketplace and Travelers Haven. Nightly shown is monthly divided by 30 to the dollar. 2 and 5 bedroom rates are not set: those homes show Rate not set and cannot be sent.
+D7 Homes: remove homes below the minimum bedrooms or bathrooms, that cannot sleep the guests, that refuse the pets, that have more than 2 short stays in the way, and every Active Owner home (checked again at send). Order: 30D FIRM free homes (closest first), other free homes, homes with 1 or 2 short stays (with a note). Inside each step the preferred bedroom count first, then closest. 30D FIRM is read from the OwnerRez title. Pick up to 3; search within 5, 10 or 20 miles, starting at 20.
+D8 Stages: New request, Quote sent, Approved, Booked, Not booked. Mark as booked does not create the booking in OwnerRez; it can record the home and move in date, both optional. Follow up: 48 hours after the quote and after each follow up, a ready message in the same thread, shown in Needs you now for the owner.
+D9 Not booked needs a reason from the list (Stayed with family, Chose another home, No reply from the partner, Price was too high, No home was available, Other) plus a short note, enforced in the database.
+
+## 7. Notion import, clean slate and cutover
+N1 Import every Notion ticket (2,892) with fields, linked claims, comments and files, once, no two way sync. Age means the Notion created date; a blank date counts as older.
+N2 Closed, any age: Historical record from Notion, no assignee, never in a queue or any count. Open and created in the past 30 days: the quiet group Imported from Notion in Team Queue. Open and older than 30 days: kept, not in the queue, labelled Older open ticket from Notion.
+N3 Assignment (recent open only): the Notion assignee when the name matches (capitals and spaces ignored) one active staff member who has a login; the Director of Operations' tickets, General and blank stay Unassigned; an open claim ticket goes to Team B; no home means Unassigned with Needs a home.
+N4 Imports are quiet: no clocks, alerts or counts (not the unclaimed count, Needs you now, Oversight, Analytics or scorecards) until someone takes or reopens one. Recent open imports do count in the open ticket totals on Home, home pages and the map.
+N5 Urgent to Right now, High to Today, Medium, Low and blank to Routine; category Other; a linked claim wherever Will this be a claim is Yes or the status is Pending Claim Review, closed too; the 30 tickets with no matching home imported as Needs a home; 21036 Owens Rd is no longer managed and stays unlinked; comments come in read only with the original author as text; files are downloaded and re uploaded; every imported ticket is an ordinary active task.
+N6 Admin page: Check the connection, Dry run, Preview 20 tickets, then three runs (the shown set, older open, closed history), Stop and Resume; safe to repeat. Emily reviews the preview of 20 first.
+N7 Ticket property history shows same category history from all dates by default with a toggle for full history.
+N8 Clean slate before the import, after a full backup: delete every ticket including demo and test ones; delete the fake and demo users; remove the Demo button and add View as; move the 6 homes on old plans to Standard version 3 keeping completed work (dry run first); delete the old onboarding templates once unused. Nothing runs without a full backup and Emily's go.
+N9 Monday Nov 9 the whole coordinator team works only in Resolve. Notion stays editable until Resolve passes Emily's click through; then the full Notion export goes to SharePoint and Notion becomes view only for coordinators.
+N10 A nightly Resolve export to SharePoint covering every database and a supervisor double check view are promised and not built.
+
+## 8. Team and coverage, Users, on call, schedule
+Hours: Operations Supervisor Mon to Fri 8 to 5 (lunch 2 to 3). Guest Experience Day and Weekend (Team A) Thu to Mon 8 to 5 (lunch 1 to 2). Guest Experience Evening (A) Sat to Wed 1 to 10 (lunch 4 to 5). Guest Experience Part time (A) Tue and Wed 8 to 1, Thu and Fri 5 to 10, no lunch. Property Operations Weekday Day (Team B) Mon to Fri 8 to 5 (lunch 1 to 2). Property Operations Evening and Weekend (B) Mon to Fri 1 to 10 (lunch 3 to 4).
+S1 Weekends the Day and Weekend and the Evening Guest Experience roles cover both teams. A lunch break may never leave a window uncovered: the person documents and hands off active Right now or time sensitive Today work first.
+S2 The Director of Operations approves schedules; the Operations Supervisor owns daily adherence and backup activation; the COO approves material staffing changes. When a person changes roles only the holder and access change, never the role name.
+S3 The Schedule screen shows only the people coverage needs: operations coordinators, project managers, the accounting team and the utilities coordinator; no supervisor or manager schedules are listed (their shifts stay as data for routing). Shifts are added and removed by clicking; a recurring day off can be marked.
+S4 Coordinators open Team and Coverage read only (no Users tab, no full user list) and have Request time off and My shift on Home. Time off requests start Nov 16 and go to the Supervisor, who can give the shift to someone else; the Supervisor enters time off for anyone and chooses who covers.
+S5 The Users tab is called Users, looks like the Microsoft Users page, lists staff only: Add a user (an invite with a role), a person's profile (edit, Can be on call, test account), recurring shifts, time off. An Admin edits specific access for one person regardless of role. Removed: no recurring hours, assignment exceptions, the single coordinator coverage rule, the owners and vendors section. The column reads Team and shift; a person not placed reads Not on the schedule yet.
+S6 A person who no longer works here can be deleted; their name stays on their history as (former); a departing homeowner is archived instead; Admin only deletes.
+S7 On call: a Monday to Sunday weekday pattern with date changes on top (one night, a date range, a swap, a holiday); the on call list holds ops leadership only; a warning shows when the pattern is not saved. Resolve does not change Grasshopper forwarding.
+S8 Invites are single use, last 30 days, the person sets their own password; no temporary passwords. The Finance lead stays a Supervisor account for now, view only for a while, with a proper Finance role in week one.
+
+## 9. Scorecards, Analytics, Reports, Logic and Automations
+B1 The Director of Operations and the Operations Supervisor are eligible from Nov 9; coordinators from Dec 1; November is a practice month. Only work created in Resolve from Nov 9 is scored; Notion imports never count; system affected items are left out. Until Dec 1 Resolve captures facts only: no tiers or money on screen.
+B2 Director of Operations guest rating target (pilot Nov 9 to Dec 31, 2026): Goal met 4.81, Strong 4.83, Exceeds 4.85; Q1 2027 4.85, 4.875, 4.90; from Q2 2027 4.91, 4.93, 4.95. One score per stay: the public review star rating on an approved channel (Airbnb and Vrbo by default, Google excluded, a setting), otherwise the guest survey rating.
+B3 Vendor coverage: 48 slots (HVAC, plumbing, handyman, electrical, times six markets OKC, Tulsa, DFW, Indy, Eufaula, Houston, times a primary and a backup) filled with Approved or Gold vendors.
+B4 Queue sweeps are clocked automatically when the Supervisor opens the Team Queue or Supervisor check (first 30 minutes, midpoint, last 30 minutes of the scheduled shift); never a button. The weekly scorecard is auto built for the Supervisor to review and send, due Thursday 3 PM Central. The record check tool has a review step by the Director of Operations. The coaching log: date, strength, improvement, follow up. Ready for arrival on a home, or flagged with a backup plan. A corrective commitment on guest issue tickets the COO approves. The Friday finance packet. A fix plan on every 1 to 3 star review and repeat problem with a deadline and Emily's approval.
+B5 Only the COO or the CEO change a scorecard metric, on Logic and Automations, with 30 days' written notice, effective going forward, recorded, with the built in automation Scorecard change notice.
+B6 Analytics is one page with a view per role: My scorecard, My team, Operations, Onboarding, Company dashboard, CEO dashboard. Number tiles first, then simple bar panels, then detail behind a number; every number shows how it is calculated; no leaderboards.
+B7 Company dashboard: 12 company metrics as cards with a Provisional badge. CEO dashboard drawn in Resolve from Emily's PriceLabs dashboard. Six department measures: review capture, cleanliness complaints, issue aging, handoff reliability, budget variance, launch defects.
+B8 Reports page: nine ready made reports; only the COO changes schedules; a My reports builder; restricted fields never offered; custom reports never feed a scorecard.
+B9 Logic and Automations: rules move out of the code into a settings store with a page.
+
+## 10. Properties, Databases, Vendors, Playbooks
+P1 The property page is organized exactly like the Notion PID, with its section names and field labels; linked databases appear as tabs; photos and files sit next to the item they belong to; empty fields hide behind Show empty fields; sections collapse with a jump menu.
+P2 Labels on homes: an Admin creates, renames, removes and assigns labels (one home or many); other staff who edit a property pick from the list on a single home and can remove one; gray chips under the home's name and on the Properties list; every change records person and time. Active Owner stays a program status, not a label.
+P3 Databases is one hub every role opens, twenty cards in four groups, each opening a list with a back link and filters; the work is done elsewhere, Databases is the window.
+P4 Vendors page tabs: Directory, Database, Gold Standard, Market Coverage, Needs Review.
+P5 SOP files live in SharePoint. An Upload button, with hover text Upload an SOP here to turn it into a playbook.
+P6 Quarterly inspections stay in the separate inspections portal until built in Resolve.
+
+## 11. Onboarding and Active Owner
+O1 Onboarding Home: a banner with a real home photo and its address only, Add a home and My tasks buttons. A home's page has a photo header and the tabs Overview, Tasks, Active Owner, Property Details, Files and History, Handoff. Design is a files section. No system language.
+O2 The Standard version 3 plan stays as approved. A Project Manager sees only their own homes; Utilities sees only utilities work.
+O3 Onboarding Board matches the Notion Onboarding Project Database. Committed Handoff Date is set once, then locked. Status uses Notion's 12 stages, set by the Project Manager.
+O4 A handoff never blocks; open items become carry over items that turn into tickets. The Director of Onboarding marks ready; the Director of Operations or Admin accepts. The Operations Supervisor and the Director of Operations get a reminder 7 days before, 2 days before and on the day, from the Committed Handoff Date (a daily 8 AM Central job).
+O5 Active Owner: owners may log hours before closing; opportunities open at enrollment with no staff gate; Program oversight and Homeowners live inside Active Owner. The owner portal shows only the owner's own home; the owner opens and completes opportunities; staff are notified.
+O6 Phase 2: the full homeowner portal and the onboarding integrations.
+
+## 12. Defaults and open items
+K1 OPEN: repair approval limits. Live app: $200 alone, $200 to $350 the Supervisor, over $350 the owner. Repair Approval SOP: $250 Supervisor and $350 owner. Decided to use the verified SOP's numbers; which SOP is not confirmed.
+K2 Defaults chosen so work could continue: import name match ignores capitals and spaces; lunch cover same team first; the on call person also gets a Direct Booking alert overnight; Median becomes Typical; the homeowner contact list shows roles with the company shared phone and info email; the import button reads Preview 20 tickets; only an Admin deletes users; the Supervisor's shifts stay as data and are not listed; a handoff to a role goes to the person on shift in that role; a Direct Booking follow up is 48 hours after each follow up.
