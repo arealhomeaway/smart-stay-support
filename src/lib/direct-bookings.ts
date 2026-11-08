@@ -292,7 +292,29 @@ export function requestStatus(r: RequestState): RequestStatus {
   return r.owned_by ? "working" : "new";
 }
 
-/** The clock runs from creation in Resolve until the reply is sent, approval wait included. */
+/**
+ * Where the 3 minute clock starts. A daytime request: when it was created in Resolve.
+ * A request that arrived overnight (overnight_until set by the database): when the morning
+ * shift begins, or earlier if someone pressed Start before then. Waiting never counts
+ * against anyone. Emily's default, Nov 8, 2026 (register K2).
+ */
+export function clockStart(r: { created_at: string; overnight_until?: string | null; started_at?: string | null }) {
+  if (!r.overnight_until) return r.created_at;
+  if (r.started_at && Date.parse(r.started_at) < Date.parse(r.overnight_until)) return r.started_at;
+  return r.overnight_until;
+}
+
+/** True while an overnight request is still waiting for the morning shift. */
+export function waitingForMorning(r: { overnight_until?: string | null; owned_by?: string | null; reply_sent_at?: string | null }, at: Date = new Date()) {
+  return Boolean(r.overnight_until && !r.owned_by && !r.reply_sent_at && Date.parse(r.overnight_until) > at.getTime());
+}
+
+/** Real arrival time, Central: "11:04 PM". */
+export function arrivalTime(createdAt: string) {
+  return new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", hour: "numeric", minute: "2-digit", hour12: true }).format(new Date(createdAt));
+}
+
+/** The clock runs from its start (see clockStart) until the reply is sent, approval wait included. */
 export function replyClock(createdAt: string, replySentAt: string | null, at: Date = new Date(), targetMinutes = REPLY_TARGET_MINUTES) {
   const end = replySentAt ? Date.parse(replySentAt) : at.getTime();
   const seconds = Math.max(0, Math.floor((end - Date.parse(createdAt)) / 1000));
@@ -339,19 +361,22 @@ export type ChipTone = "progress" | "waiting" | "review" | "escalated" | "resolv
 /** The status chip on the list and the request page, with its colour. */
 export function statusChip(
   status: RequestStatus,
-  r: { created_at: string; reply_sent_at: string | null; last_follow_up_at?: string | null; follow_up_due_at?: string | null },
+  r: { created_at: string; reply_sent_at: string | null; last_follow_up_at?: string | null; follow_up_due_at?: string | null; overnight_until?: string | null; started_at?: string | null; owned_by?: string | null },
   at: Date = new Date(),
   targetMinutes = REPLY_TARGET_MINUTES,
 ): { text: string; tone: ChipTone; late: boolean } {
   if (status === "new" || status === "working") {
-    const clock = replyClock(r.created_at, null, at, targetMinutes);
+    if (waitingForMorning(r, at)) {
+      return { text: `${OVERNIGHT_COPY.arrived(arrivalTime(r.created_at))} ${OVERNIGHT_COPY.waits}`, tone: "brand", late: false };
+    }
+    const clock = replyClock(clockStart(r), null, at, targetMinutes);
     const m = Math.floor(clock.seconds / 60);
     if (clock.late) return { text: `Waiting ${minutes(m)}. Reply now.`, tone: "escalated", late: true };
-    const opened = m === 0 ? "Opened just now." : `Opened ${minutes(m)} ago.`;
+    const opened = r.overnight_until ? OVERNIGHT_COPY.arrived(arrivalTime(r.created_at)) : m === 0 ? "Opened just now." : `Opened ${minutes(m)} ago.`;
     return { text: `${opened} ${minutes(targetMinutes - m)} left.`, tone: "brand", late: false };
   }
   if (status === "waiting_approval") {
-    const late = replyClock(r.created_at, null, at, targetMinutes).late;
+    const late = replyClock(clockStart(r), null, at, targetMinutes).late;
     return { text: "Waiting for a supervisor", tone: "waiting", late };
   }
   if (status === "sent") {
@@ -387,6 +412,8 @@ export function viewOf(status: RequestStatus): ViewKey {
 export type BoardRow = {
   status: RequestStatus;
   created_at: string;
+  overnight_until?: string | null;
+  started_at?: string | null;
   reply_sent_at: string | null;
   last_follow_up_at?: string | null;
   follow_up_due_at?: string | null;
@@ -402,7 +429,7 @@ export function viewCounts(rows: BoardRow[]) {
 
 /** The three tiles. A tile turns red when a reply in it is past the 3 minutes. */
 export function boardTiles(rows: BoardRow[], at: Date = new Date(), targetMinutes = REPLY_TARGET_MINUTES) {
-  const late = (r: BoardRow) => replyClock(r.created_at, r.reply_sent_at, at, targetMinutes).late;
+  const late = (r: BoardRow) => replyClock(clockStart(r), r.reply_sent_at, at, targetMinutes).late;
   const needs = rows.filter((r) => r.status === "new" || r.status === "working");
   const supervisor = rows.filter((r) => r.status === "waiting_approval");
   const followUps = rows.filter((r) => followUpDue(r, at));
@@ -689,6 +716,39 @@ export function homeStartIds(alertedIds: Iterable<string>, eligibleNow: boolean,
   const out = new Set(alertedIds);
   if (eligibleNow) for (const id of unstartedIds) out.add(id);
   return [...out];
+}
+
+/** Overnight requests (register D2): wording on the request chip and the Team Queue. */
+export const OVERNIGHT_COPY = {
+  arrived: (time: string) => `Arrived overnight at ${time}.`,
+  waits: "Waits for the morning team.",
+  queueTitle: "Direct Bookings from overnight",
+  queueHint: "Arrived after hours. The first to press Start owns it.",
+  urgency: "Right now",
+  team: "Team A",
+} as const;
+
+/** A Direct Booking request as the Team Queue reads it. */
+export type OvernightQueueRow = {
+  id: string;
+  partner_name: string | null;
+  company: string | null;
+  subject: string | null;
+  created_at: string;
+  overnight_until: string | null;
+  owned_by: string | null;
+  reply_sent_at: string | null;
+  outcome: string | null;
+};
+
+/**
+ * Team Queue: requests that arrived overnight and nobody has started yet. They wait at the
+ * top as Right now for Team A until someone presses Start. Daytime requests never show here.
+ */
+export function overnightQueueRows<T extends OvernightQueueRow>(rows: T[]): T[] {
+  return rows
+    .filter((r) => r.overnight_until && !r.owned_by && !r.reply_sent_at && !r.outcome)
+    .sort((a, b) => a.created_at.localeCompare(b.created_at));
 }
 
 export const HOME_BOOKING_COPY = {
