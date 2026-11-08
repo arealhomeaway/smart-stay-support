@@ -40,7 +40,7 @@ import { displayName, useCurrentUserId, type TeamMember } from "@/hooks/useTeam"
 import { useRole } from "@/hooks/useRole";
 import { stateChip } from "@/lib/semantic";
 import { evidenceProgress, type RequirementLike } from "@/lib/claims";
-import { WARRANTY_OVERRIDE_LABELS, type WarrantyOverrideReason } from "@/lib/maintenance-policy";
+import { WARRANTY_OVERRIDE_LABELS, ownerApprovalHelp, policyForVersion, type WarrantyOverrideReason } from "@/lib/maintenance-policy";
 import {
   APPROVAL_STATUS_LABELS,
   BUCKET_LABELS,
@@ -345,7 +345,7 @@ export function WorkOrderDrawer({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  /** $200–$350: a supervisor decides first, on the same approvals record. */
+  /** The Operations Supervisor decides first, on the same approvals record. */
   const requestSupervisorApproval = useMutation({
     mutationFn: async () => {
       if (!workOrder) return;
