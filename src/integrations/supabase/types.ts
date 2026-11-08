@@ -12938,6 +12938,54 @@ export type Database = {
           },
         ]
       }
+      ticket_state_log: {
+        Row: {
+          actor_id: string | null
+          change: string
+          field: string
+          id: string
+          is_demo: boolean
+          is_imported: boolean
+          next_action: string | null
+          next_action_due_at: string | null
+          next_review_at: string | null
+          recorded_at: string
+          ticket_id: string
+          waiting_on: string | null
+          waiting_reason: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          change: string
+          field: string
+          id?: string
+          is_demo?: boolean
+          is_imported?: boolean
+          next_action?: string | null
+          next_action_due_at?: string | null
+          next_review_at?: string | null
+          recorded_at?: string
+          ticket_id: string
+          waiting_on?: string | null
+          waiting_reason?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          change?: string
+          field?: string
+          id?: string
+          is_demo?: boolean
+          is_imported?: boolean
+          next_action?: string | null
+          next_action_due_at?: string | null
+          next_review_at?: string | null
+          recorded_at?: string
+          ticket_id?: string
+          waiting_on?: string | null
+          waiting_reason?: string | null
+        }
+        Relationships: []
+      }
       ticket_steps: {
         Row: {
           answer: string | null
