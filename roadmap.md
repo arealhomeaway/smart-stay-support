@@ -258,3 +258,5 @@
 - [ ] Clean slate (register N8): staged in docs/pending/clean-slate, waits for Emily's go and a fresh checked backup
 - [ ] Week one: nightly schedule for Back up everything
 - [ ] Report only so far: 6 homes on old plans to Standard v3; unused old templates
+- [x] Team Queue matches the approved board (Pick up work groups, Take it, Accept/Decline, quiet Notion group, Everyone's work filters)
+- [ ] Team Queue: decisions open on All unclaimed meaning, Give it back for Notion takes, Departure Reviews block placement (waiting on Emily)
