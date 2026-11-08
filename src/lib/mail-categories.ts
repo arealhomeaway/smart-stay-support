@@ -13,6 +13,12 @@
 export const CREATE_TICKET_TAG = "Resolve: create ticket";
 /** Applied by a person. Opens exactly one Lead in the Tenant Lead workflow. */
 export const CREATE_LEAD_TAG = "Resolve: lead management- create a ticket";
+/** Applied by an Outlook rule or a person. Opens one Direct Booking request. */
+export const DIRECT_BOOKING_TAG = "Resolve: direct booking";
+/** The same old lead tag with a space before the dash; matched during the overlap. */
+export const CREATE_LEAD_TAG_SPACED = "Resolve: lead management - create a ticket";
+/** Every tag that opens a Direct Booking request. */
+export const DIRECT_BOOKING_TAGS = [DIRECT_BOOKING_TAG, CREATE_LEAD_TAG, CREATE_LEAD_TAG_SPACED];
 /** Applied by Resolve, only once the Ticket or Lead exists and is saved. */
 export const CREATED_TAG = "Resolve: ticket created";
 /** Applied by Resolve when the linked record reaches a terminal state. */
@@ -38,6 +44,8 @@ export const LEGACY_COMPLETED_TAG = "Resolve task: task completed";
 export const RESOLVE_TAGS = [
   CREATE_TICKET_TAG,
   CREATE_LEAD_TAG,
+  DIRECT_BOOKING_TAG,
+  CREATE_LEAD_TAG_SPACED,
   CREATED_TAG,
   CLOSED_TAG,
   OWNER_RESPONSE_TAG,
@@ -69,7 +77,7 @@ export function hasTag(categories: Categories, tag: string) {
  * creating the wrong object type is worse than creating the narrower one.
  */
 export function triggerKind(categories: Categories): TriggerKind | null {
-  if (hasTag(categories, CREATE_LEAD_TAG)) return "lead";
+  if (DIRECT_BOOKING_TAGS.some((tag) => hasTag(categories, tag))) return "lead";
   if (hasTag(categories, CREATE_TICKET_TAG)) return "ticket";
   return null;
 }
