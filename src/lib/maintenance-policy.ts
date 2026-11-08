@@ -1,32 +1,68 @@
 /**
- * ARHA Maintenance Authority Policy for Resolve — v2.
+ * ARHA Maintenance Authority Policy for Resolve, v3 (decided Nov 7, 2026).
  *
  * Every maintenance dollar threshold, emergency reason and vendor response
  * benchmark lives here. Nothing else in the app restates a number: when
  * leadership changes a threshold this file changes, and each Work Order keeps
- * the version it was decided under.
+ * the version it was decided under (see `policyForVersion`).
+ *
+ *  - $249 and under: it proceeds and the cost is recorded;
+ *  - $250 to $349: the Operations Supervisor approves, the owner is told the same day;
+ *  - $350 and up: the Operations Supervisor AND the owner approve before work starts;
+ *  - emergencies: mitigate under a documented exception.
  */
 
 export type Priority = "p1" | "p2" | "p3";
 
-export const MAINTENANCE_POLICY_VERSION = "ARHA Maintenance Authority Policy for Resolve — v2";
+export const MAINTENANCE_POLICY_VERSION = "ARHA Maintenance Authority Policy for Resolve v3";
+
+/** How one version of the ladder decides. Older versions keep their own record. */
+export type MaintenancePolicyRecord = {
+  version: string;
+  supervisorApprovalThreshold: number;
+  ownerApprovalThreshold: number;
+  /** True: exactly the owner amount already needs the owner. */
+  ownerThresholdInclusive: boolean;
+  /** True: in the owner tier the Operations Supervisor approves as well. */
+  supervisorAlsoApprovesOwnerTier: boolean;
+  /** True: in the supervisor tier the owner is told the same day. */
+  ownerNoticeSameDay: boolean;
+};
+
+/**
+ * Policy v2, kept so every Work Order stamped with it keeps the result it was
+ * decided under: Supervisor from $200, owner only above $350, owner tier
+ * without the Supervisor. Never used for new work.
+ */
+export const MAINTENANCE_POLICY_V2: MaintenancePolicyRecord = {
+  version: "ARHA Maintenance Authority Policy for Resolve — v2",
+  supervisorApprovalThreshold: 200,
+  ownerApprovalThreshold: 350,
+  ownerThresholdInclusive: false,
+  supervisorAlsoApprovesOwnerTier: false,
+  ownerNoticeSameDay: false,
+};
 
 export const MAINTENANCE_POLICY = {
   version: MAINTENANCE_POLICY_VERSION,
 
   /**
-   * ARHA may proceed with a permanent repair up to this amount under normal
-   * management authority. Above it, the owner decides — unless a recorded
-   * contractual exception applies.
+   * From this amount up (inclusive) the owner approves before work starts,
+   * together with the Operations Supervisor, unless a recorded contractual
+   * exception applies.
    */
   ownerApprovalThreshold: 350,
 
   /**
    * Below this amount ARHA proceeds on its own authority and records the cost.
-   * From here up to the owner threshold a supervisor decides and the owner is
-   * told afterwards.
+   * From here up to the owner threshold the Operations Supervisor approves and
+   * the owner is told the same day.
    */
-  supervisorApprovalThreshold: 200,
+  supervisorApprovalThreshold: 250,
+
+  ownerThresholdInclusive: true,
+  supervisorAlsoApprovesOwnerTier: true,
+  ownerNoticeSameDay: true,
 
   /** Vendor contact and acknowledgment benchmarks, in minutes, by priority. */
   vendorContactMinutes: { p1: 10, p2: 30, p3: 120 } as Record<Priority, number>,
