@@ -238,3 +238,7 @@
 - [x] Fix batch 2 applied (0284 to 0288) and checked in a cancelled database step
 - [ ] Next audit (report only, no changes): Ticket checklists and the Admin pages, what each decides for a coordinator
 - [ ] Direct Bookings fix parts 3 to 5: waiting on Emily's choice of the Director alert schedule
+
+## Nov 8 playbooks: Supervisor edits, everyone else views
+- [x] Supervisor (holder or cover) saves, approves, archives and uploads SOPs; viewers see no edit controls; applied as migration 0289 with cancelled live check
+- [ ] Decide: approval history labels Supervisor actions as general staff; Ticket checklists still editable by every Supervisor account type, including Finance
