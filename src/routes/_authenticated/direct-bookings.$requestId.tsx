@@ -152,7 +152,7 @@ function RequestView({ d, refetch }: { d: Detail; refetch: () => void }) {
   const lead = d.lead;
   const now = useNow();
   const status = requestStatus({ ...lead, pending_approval: Boolean(d.pending) });
-  const chip = statusChip(status, lead, now, d.settings.replyTargetMinutes);
+  const chip = statusChip(status, lead, now, d.settings.replyTargetMinutes, d.settings.overnightClockStart);
   const mine = lead.owned_by === d.me;
   const editable = mine && !lead.reply_sent_at && !d.pending;
   const partner = lead.partner_name || lead.company || lead.contact_name || "Partner not named yet";
@@ -212,7 +212,7 @@ function RequestView({ d, refetch }: { d: Detail; refetch: () => void }) {
 
 function SentBanner({ d }: { d: Detail }) {
   const lead = d.lead;
-  const took = replyClock(clockStart(lead), lead.reply_sent_at, new Date(), d.settings.replyTargetMinutes);
+  const took = replyClock(clockStart(lead, d.settings.overnightClockStart), lead.reply_sent_at, new Date(), d.settings.replyTargetMinutes);
   const due = followUpDueAt(lead);
   const parts = [
     `Sent in ${clockLabel(took.seconds)}${lead.reply_sent_via === "manual" ? " from Outlook" : ""}.`,
