@@ -113,9 +113,8 @@ BEGIN
   INSERT INTO public.app_settings(key, value, updated_by, updated_at)
   VALUES ('direct_booking_settings', _value, auth.uid(), now())
   ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_by = EXCLUDED.updated_by, updated_at = now();
-  INSERT INTO public.audit_log(table_name, record_id, action, changed_by, new_data)
-  SELECT 'app_settings', NULL, 'direct_booking_settings', auth.uid(), _value
-  WHERE EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='audit_log' AND column_name='new_data');
+  INSERT INTO public.audit_log(actor_id, action, entity_type, entity_label, after_value)
+  VALUES (auth.uid(), 'direct_booking_settings_changed', 'app_settings', 'Direct Bookings settings', _value);
   RETURN public.direct_booking_settings();
 END $$;
 REVOKE ALL ON FUNCTION public.save_direct_booking_settings(jsonb) FROM PUBLIC, anon;
@@ -207,8 +206,7 @@ BEGIN
       'owner_name', (SELECT full_name FROM public.profiles WHERE id = _owner));
   END IF;
   INSERT INTO public.lead_activity(lead_id, channel, outcome, note, actor_id, occurred_at)
-  SELECT _lead_id, 'system', 'Started', 'Owns this request', auth.uid(), now()
-  WHERE EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='lead_activity' AND column_name='actor_id');
+  VALUES (_lead_id, 'system', 'Started', 'Owns this request', auth.uid(), now());
   RETURN jsonb_build_object('won', true, 'owner', auth.uid(),
     'owner_name', (SELECT full_name FROM public.profiles WHERE id = auth.uid()));
 END $$;
