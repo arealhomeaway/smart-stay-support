@@ -2003,6 +2003,13 @@
       "when": 1794162263374,
       "tag": "0285_operations_invites",
       "breakpoints": true
+    },
+    {
+      "idx": 286,
+      "version": "7",
+      "when": 1794162369775,
+      "tag": "0286_email_templates_onboarding_director",
+      "breakpoints": true
     }
   ]
 }
