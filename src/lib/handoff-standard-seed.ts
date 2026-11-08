@@ -1,5 +1,5 @@
 import type {StandardRequirement} from "./handoff-standard";
-/** Local proposed preview only while the approved database update is pending. Never saved on page load. */
+/** Local preview only while the database update is pending. Never saved on page load. */
 export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
   {
     "id": "1e1e61e1-9556-5ab2-9d20-2fdb40503d93",
@@ -10,7 +10,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Pass only if the required number and locations are confirmed, alarms test successfully, units are within manufacturer service life, and photos/location inventory match the PID.",
     "proof_needed": "Alarm-location inventory; label photos; test date/result; tester name.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 0,
     "template_step_ids": []
   },
@@ -23,7 +23,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "All legally or contractually required CO alarms present, within service life and tested; PID and listing tell the same story.",
     "proof_needed": "Location/photo; date labels; test result; applicability reason.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 10,
     "template_step_ids": []
   },
@@ -36,7 +36,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Required extinguisher present, accessible and in acceptable condition; tag/gauge/service requirement reviewed.",
     "proof_needed": "Placement photo; tag/gauge photo; inspection date.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 20,
     "template_step_ids": []
   },
@@ -49,7 +49,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Exits open freely; no blocked required exit or material fall hazard; relevant defect corrected.",
     "proof_needed": "Walkthrough/video; defect photos and repairs.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 30,
     "template_step_ids": []
   },
@@ -62,7 +62,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Present and usable; location appears in property instructions.",
     "proof_needed": "Photo and kit location.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 40,
     "template_step_ids": []
   },
@@ -75,7 +75,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Vent fully cleaned during onboarding, dryer runs normally, and before/after photos and cleaning date are recorded.",
     "proof_needed": "Service invoice/photos or documented inspection and appliance test.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 50,
     "template_step_ids": []
   },
@@ -88,7 +88,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Entry succeeds using guest directions; deadbolt extends/retracts freely; code is current; emergency egress operates.",
     "proof_needed": "Timestamped video of closing, locking, unlocking; entry instructions; test result.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 60,
     "template_step_ids": []
   },
@@ -101,7 +101,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Every required key is present, tagged and tested, and Operations can enter if primary electronics or network fail.",
     "proof_needed": "Test record, key inventory photo, approved secure storage location (codes restricted).",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 70,
     "template_step_ids": []
   },
@@ -114,7 +114,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Every guest entrance follows approved hardware design and operates correctly without forcing.",
     "proof_needed": "Door-hardware photos and operation video.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 80,
     "template_step_ids": []
   },
@@ -127,7 +127,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Advertised garage access works; guest cannot accidentally lose essential property entry; equipment passes manufacturer safety checks.",
     "proof_needed": "Count, photos, test result, operating notes.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 90,
     "template_step_ids": []
   },
@@ -140,7 +140,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Lock reliably accepts valid code, responds to control system where required, and power/low-battery details are recorded.",
     "proof_needed": "Connection screenshot, code test video (mask secret), battery date/brand.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 100,
     "template_step_ids": []
   },
@@ -153,7 +153,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Operations can manage equipment without triggering avoidable alarm or losing access; instructions and contacts verified.",
     "proof_needed": "Equipment photo, authorized test notes, restricted credential record.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 110,
     "template_step_ids": []
   },
@@ -166,7 +166,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Guests can access every advertised/essential feature during its advertised season and hours.",
     "proof_needed": "Fob photo/count, test date, rule/source verification.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 120,
     "template_step_ids": []
   },
@@ -179,7 +179,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "All cameras are on ARHA accounts, the monitoring plan is active, no indoor cameras, and every camera is accurately disclosed on every listing channel.",
     "proof_needed": "Camera location photos, account screenshot, plan expiration date, listing disclosure screenshot.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 130,
     "template_step_ids": []
   },
@@ -192,7 +192,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Operations has reliable isolation instructions or a documented qualified emergency response arrangement; accuracy verified on site.",
     "proof_needed": "Wide-location photo, valve close-up, directions, verifier and safe test/pro confirmation.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 140,
     "template_step_ids": []
   },
@@ -205,7 +205,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "No active leak or unexplained material water damage remains unresolved; known prior damage documented.",
     "proof_needed": "Inspection photos, repair records, follow-up test.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 150,
     "template_step_ids": []
   },
@@ -218,7 +218,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "All fixtures work normally without leak, backup, persistent running or guest-impacting blockage.",
     "proof_needed": "Fixture checklist by room; issue photos; repair confirmation.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 160,
     "template_step_ids": []
   },
@@ -231,7 +231,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Every advertised bathing fixture is usable, supplies hot water and drains without visible leak.",
     "proof_needed": "Test result by bathroom, photos of issues, verifier.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 170,
     "template_step_ids": []
   },
@@ -244,7 +244,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Accurate location and emergency action documented; no active hazard; key available information or documented unknown with follow-up where truly noncritical.",
     "proof_needed": "Label photo, location photo, condition evidence and any service report.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 180,
     "template_step_ids": []
   },
@@ -257,7 +257,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Essential climate control works for season and booked period; filter/service instructions are documented.",
     "proof_needed": "Thermostat and equipment photos; test result; model/filter detail.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 190,
     "template_step_ids": []
   },
@@ -270,7 +270,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Power operational and no known accessible electrical hazard remains.",
     "proof_needed": "Panel location photo; issues log; qualified service confirmation if relevant.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 200,
     "template_step_ids": []
   },
@@ -283,7 +283,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Advertised internet functions, smart devices remain connected, and staff can find router and approved troubleshooting steps.",
     "proof_needed": "Connection test date/result, router photo, network identification (password stored securely).",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 210,
     "template_step_ids": []
   },
@@ -296,7 +296,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Installed advertised appliances operate without error, backing up or leak.",
     "proof_needed": "Test log, photos of equipment and under-sink area.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 220,
     "template_step_ids": []
   },
@@ -309,7 +309,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Laundry appliances work as advertised without leaks or safety warning signs.",
     "proof_needed": "Cycle result; model labels; appliance photos.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 230,
     "template_step_ids": []
   },
@@ -322,7 +322,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Cooking and food-storage essentials work and listing does not promise broken features.",
     "proof_needed": "Room/appliance checklist, model labels, exception notes.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 240,
     "template_step_ids": []
   },
@@ -335,7 +335,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "TVs work as described without exposing owner personal accounts or payments.",
     "proof_needed": "TV inventory, model photos, working-menu photo without private details.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 250,
     "template_step_ids": []
   },
@@ -348,7 +348,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Property is free of visible dirt, odors, debris, residue or conditions that will reasonably trigger first-arrival cleanliness complaints.",
     "proof_needed": "Dated completed-clean record and room photos; supervisor review.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 260,
     "template_step_ids": []
   },
@@ -361,7 +361,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "First pest control service completed and no known active infestation.",
     "proof_needed": "Findings photo, treatment/service details where applicable.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 270,
     "template_step_ids": []
   },
@@ -374,7 +374,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Baseline reasonably documents existing condition and known exceptions without concealing damage.",
     "proof_needed": "Dated full video, room photos, issue inventory linked to repairs.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 280,
     "template_step_ids": []
   },
@@ -387,7 +387,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "All known items accounted for, safety/property issues corrected, and owner refusals/disclosures retained; no critical unresolved item hidden.",
     "proof_needed": "Report, item-by-item tracker, owner decision records, photos.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 290,
     "template_step_ids": []
   },
@@ -400,7 +400,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Every advertised sleeping place is usable and correctly outfitted; backup linens inventoried and secured.",
     "proof_needed": "Room-by-room bed photo and count; linen-storage photo.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 300,
     "template_step_ids": []
   },
@@ -410,10 +410,10 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "name": "Towels and basic bathroom supplies",
     "category": "Linens and bath",
     "tier": "essential",
-    "done_when": "Guest and backup supply minimums meet approved per-occupancy standard; each toilet has a usable plunger under proposed ARHA standard.",
+    "done_when": "Guest and backup supply minimums meet approved per-occupancy standard; each toilet has a usable plunger under the ARHA standard.",
     "proof_needed": "Count by room, storage photo.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 310,
     "template_step_ids": []
   },
@@ -426,7 +426,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Count meets company standard and capacity; damaged or unsafe items replaced.",
     "proof_needed": "Inventory count and kitchen/cabinet photos.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 320,
     "template_step_ids": []
   },
@@ -439,7 +439,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "No Never-Buy items in the home, storage and shelving in place, and no stained or damaged soft goods remain.",
     "proof_needed": "Room photos, closet and storage photos, purchase list checked against the Never-Buy List.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 330,
     "template_step_ids": []
   },
@@ -452,7 +452,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Owner items and restricted supplies secured; authorized team can open storage; supplies needed for essential operations available.",
     "proof_needed": "Storage location and lock test; inventory photo; secure access method.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 340,
     "template_step_ids": []
   },
@@ -465,7 +465,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Accurate pickup instructions, adequate cans and no expected HOA violation from normal guest use.",
     "proof_needed": "Provider/source/date, cart photo and location.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 350,
     "template_step_ids": []
   },
@@ -478,7 +478,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Service arranged as needed for safe operations and property protection; all provider details accessible to Operations.",
     "proof_needed": "Provider/contact, service schedule, work confirmation, current photos.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 360,
     "template_step_ids": []
   },
@@ -491,7 +491,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Owner decision and operational response are clear, viable and compatible with current bookings.",
     "proof_needed": "Owner written instruction, provider/contact, plan/date.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 370,
     "template_step_ids": []
   },
@@ -504,7 +504,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "For each relevant device Operations can identify it, access it, know who maintains it, when service is due, and what owner approval/restrictions apply.",
     "proof_needed": "Label photo, equipment sheet, routine schedule and responsibility.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 380,
     "template_step_ids": []
   },
@@ -517,7 +517,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Device works if promised and has a documented maintenance owner; owner/guest accounts not exposed.",
     "proof_needed": "Working test, model photo, cleaning schedule and named owner.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 390,
     "template_step_ids": []
   },
@@ -530,7 +530,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Operations can make time-sensitive decisions without guessing who may approve expense or maintain equipment.",
     "proof_needed": "Signed agreement reference, decision record, authorized contacts; restrict sensitive details.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 400,
     "template_step_ids": []
   },
@@ -543,7 +543,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Guest cannot access sensitive owner property and ARHA can identify existing stored items.",
     "proof_needed": "Storage photo and item inventory where appropriate.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 410,
     "template_step_ids": []
   },
@@ -556,7 +556,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "ARHA understands applicable restrictions and can operate the planned stay type without known material conflict.",
     "proof_needed": "Rule copies/source/date, parking instructions, owner acknowledgment.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 420,
     "template_step_ids": []
   },
@@ -569,7 +569,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Outreach, if required, complies with applicable law and community rules. Do NOT place unstamped flyers in mailboxes.",
     "proof_needed": "Method/date/contact note, permission if needed.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 430,
     "template_step_ids": []
   },
@@ -582,7 +582,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "No material promise is wrong or inconsistent; limited/unavailable features correctly disclosed before guests book.",
     "proof_needed": "Signed listing comparison, screenshots from channels, property photos.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 440,
     "template_step_ids": []
   },
@@ -595,7 +595,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Instructions work for someone unfamiliar with home and agree with actual configuration.",
     "proof_needed": "Current message and guidebook version; test results.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 450,
     "template_step_ids": []
   },
@@ -608,20 +608,20 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Configured amount and program match documented currently approved company terms.",
     "proof_needed": "Plan screenshot, pricing owner confirmation and setup record.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 460,
     "template_step_ids": []
   },
   {
     "id": "5febbd57-e978-55f0-a031-b238d6483a44",
     "code": "SYS-01",
-    "name": "Systems setup confirmed by Kati",
+    "name": "Systems setup confirmed by the Director of Onboarding",
     "category": "Systems",
     "tier": "essential",
-    "done_when": "Kati confirms every platform is complete and accurate, with no missing or placeholder data.",
-    "proof_needed": "Kati's sign-off with date; PID % Complete at 100%.",
+    "done_when": "The Director of Onboarding confirms every platform is complete and accurate, with no missing or placeholder data.",
+    "proof_needed": "Director of Onboarding approval with date; PID % Complete at 100%.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 470,
     "template_step_ids": []
   },
@@ -634,7 +634,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "Tester completes all critical arrival steps unassisted; every issue corrected and retested before Ops Live approval.",
     "proof_needed": "Tester name/date, step-by-step test record, entry video, screenshots with secrets hidden.",
     "status": "retired",
-    "notes": "Proposed removal",
+    "notes": "No longer required.",
     "sort_order": 480,
     "template_step_ids": []
   },
@@ -647,7 +647,7 @@ export const PROPOSED_HANDOFF_STANDARD:StandardRequirement[]=[
     "done_when": "No open essential gaps or expired exceptions; final home is in same approved state and Operations has all response information.",
     "proof_needed": "Approval record, exception log, last condition check, assignment confirmation.",
     "status": "proposed",
-    "notes": "Proposed. Micah and Kati have not signed off.",
+    "notes": "",
     "sort_order": 490,
     "template_step_ids": []
   }
