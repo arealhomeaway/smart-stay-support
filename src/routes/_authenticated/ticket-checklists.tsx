@@ -6,6 +6,7 @@ import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
 import { useFeatureFlags } from "@/lib/feature-flags";
+import { canEditPlaybooks } from "@/lib/playbook-editing";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,7 +47,9 @@ function TicketChecklistsPage() {
   const role = useRole();
   const flags = useFeatureFlags();
   const qc = useQueryClient();
-  const canEdit = role.isAdmin || role.access.seats.opsDirector === true;
+  // Ticket checklists follow the playbook rule (A15): one editor rule, mirrored by DB
+  // can_save_playbooks inside publish_ticket_checklist. Everyone else, Finance included, views.
+  const canEdit = canEditPlaybooks(role.roles, role.access.seats);
   const [cat, setCat] = useState<ChecklistCategoryId>("lockout");
 
   const live = useQuery({
@@ -109,7 +112,7 @@ function TicketChecklistsPage() {
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold">Ticket checklists</h1>
         <p className="text-sm text-muted-foreground">
-          The step-by-step questions on each kind of ticket. Edits apply to new tickets only. Admins and the Director of Operations can edit.
+          The step-by-step questions on each kind of ticket. Edits apply to new tickets only. The Operations Supervisor, the Directors and Admins edit.
         </p>
       </header>
 

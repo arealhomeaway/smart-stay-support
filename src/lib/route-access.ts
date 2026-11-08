@@ -57,6 +57,8 @@ const RULES: Rule[] = [
   { prefix: "/integrations", capability: "integrations" },
   // The playbook library opens read only for every staff account; saving is checked separately.
   { prefix: "/playbooks", capability: "playbooks_view" },
+  // Ticket checklists follow the playbook rule: every staff account views, editing is checked separately.
+  { prefix: "/ticket-checklists", capability: "playbooks_view" },
   // Team & Coverage: Schedule read only for every staff account (Operations and Onboarding).
   { prefix: "/team", capability: "team_schedule_view" },
   { prefix: "/oversight", capability: "oversight" },
