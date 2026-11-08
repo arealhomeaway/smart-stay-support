@@ -543,7 +543,7 @@ export function derivedStage(wo: WorkOrderLike): WorkOrderStage {
   if (wo.quote_received_at || num(wo.quote_amount) != null) return "quote_received";
   if (wo.quote_requested_at) return "quote_requested";
   return "needs_diagnosis";
-}
+/** Has the Operations Supervisor signed off this amount? */
 
 /** Has a supervisor signed off the $200–$350 band? */
 export function supervisorApproved(wo: WorkOrderLike): boolean {
@@ -782,7 +782,7 @@ export function workOrderReassignment(input: {
 /**
  * The owner approval request Resolve sends into the existing approvals
  * architecture. There is no second approval system: `approvals` stays the
- * record, and the Work Order keeps the mirror of the decision.
+/** The Operations Supervisor request (supervisor band, and the owner band from policy v3). */
  */
 export const OWNER_APPROVAL_KIND = "maintenance_owner_approval";
 
