@@ -128,7 +128,7 @@ function VendorProfile() {
 
       <section className="space-y-2">
         <SectionBand title="Gold Standard" />
-        <ProgramOwnerField orgId={v.id} value={v.program_owner} canManage={canLead} />
+        <ProgramOwnerField orgId={v.id} value={v.program_owner} canManage={canLead} readOnlyNote={canManage && !canLead ? "Set by Operations leadership." : undefined} />
         <dl className="grid gap-2 text-sm sm:grid-cols-3">
           <Field k="Qualification score" v={String(v.qualification_score ?? 0)} />
           <Field k="Performance score" v={v.performance_score == null ? null : String(v.performance_score)} />

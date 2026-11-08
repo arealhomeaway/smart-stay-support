@@ -153,6 +153,7 @@ export function VendorDocumentsPanel({
           <div className="space-y-2 rounded-lg border p-3">
             <Label>File a document</Label>
             <Select
+              disabled={!canManage}
               value={docType}
               onValueChange={(v) => {
                 setDocType(v);
@@ -216,7 +217,7 @@ export function VendorDocumentsPanel({
               onChange={(e) => setSubject(e.target.value)}
               maxLength={120}
             />
-            <Select value={method} onValueChange={setMethod}>
+            <Select disabled={!canManage} value={method} onValueChange={setMethod}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>

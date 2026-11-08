@@ -14,7 +14,18 @@ import { errorText, useInvalidateVendors } from "./useVendorWorkspace";
 
 const NONE = "__none";
 
-export function ProgramOwnerField({ orgId, value, canManage }: { orgId: string; value: string | null; canManage: boolean }) {
+export function ProgramOwnerField({
+  orgId,
+  value,
+  canManage,
+  readOnlyNote,
+}: {
+  orgId: string;
+  value: string | null;
+  canManage: boolean;
+  /** Plain label shown under the read-only value for vendor editors who are not Operations leadership. */
+  readOnlyNote?: string;
+}) {
   const invalidate = useInvalidateVendors();
   const choices = useQuery({
     queryKey: ["vendor-program-owner-choices"],
@@ -74,7 +85,10 @@ export function ProgramOwnerField({ orgId, value, canManage }: { orgId: string; 
           </SelectContent>
         </Select>
       ) : (
-        <p>{value ? (current.data ?? "…") : "Not assigned"}</p>
+        <>
+          <p>{value ? (current.data ?? "…") : "Not assigned"}</p>
+          {readOnlyNote && <p className="text-xs text-muted-foreground">{readOnlyNote}</p>}
+        </>
       )}
       <p className="text-xs text-muted-foreground">
         Handles qualification and compliance follow-up and gets expiry reminders with Admins and the Director of Operations.
