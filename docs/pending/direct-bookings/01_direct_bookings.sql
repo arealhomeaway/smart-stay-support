@@ -94,7 +94,7 @@ GRANT EXECUTE ON FUNCTION public.direct_booking_settings() TO authenticated, ser
 
 CREATE OR REPLACE FUNCTION public.direct_booking_approval_required(_at timestamptz DEFAULT now())
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  WITH s AS (SELECT public.direct_booking_settings() v), d AS (SELECT (_at AT TIME ZONE 'America/Chicago')::date day)
+  WITH s AS (SELECT public.direct_booking_settings() v), d AS (SELECT (_at AT TIME ZONE 'America/Chicago')::date AS day)
   SELECT CASE
     WHEN d.day BETWEEN (s.v->>'approvalStart')::date AND (s.v->>'approvalEnd')::date THEN true
     ELSE coalesce((s.v->>'requireApprovalAfterEnd')::boolean, false) END
