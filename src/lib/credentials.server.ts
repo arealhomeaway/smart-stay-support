@@ -214,7 +214,7 @@ export async function revealCredential(
     throw new Error("This credential could not be unlocked. Ask an Admin to re-enter it.");
   }
 
-  await supabaseAdmin.from("credential_access_log").insert({
+  const log = await supabaseAdmin.from("credential_access_log").insert({
     credential_id: data.id as string,
     property_id: data.property_id as string,
     user_id: viewer.userId,
@@ -222,6 +222,18 @@ export async function revealCredential(
     user_agent_hash: userAgentHash ?? null,
   });
 
+  return releaseAfterLog(log, value);
+}
+
+export const SHOW_NOT_LOGGED =
+  "The code was not shown because this view could not be recorded. Try again in a moment.";
+
+/** A code is released only when its Show was recorded. A failed or unknown log refuses. */
+export function releaseAfterLog(
+  log: { error: unknown } | null | undefined,
+  value: string,
+): { value: string } {
+  if (!log || log.error) throw new Error(SHOW_NOT_LOGGED);
   return { value };
 }
 
