@@ -1835,6 +1835,13 @@
       "when": 1794006616874,
       "tag": "0261_retire_checkout_routine",
       "breakpoints": true
+    },
+    {
+      "idx": 262,
+      "version": "7",
+      "when": 1794116935066,
+      "tag": "0262_direct_bookings",
+      "breakpoints": true
     }
   ]
 }

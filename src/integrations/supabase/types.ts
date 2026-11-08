@@ -3937,6 +3937,59 @@ export type Database = {
           },
         ]
       }
+      direct_booking_approvals: {
+        Row: {
+          decided_as: string | null
+          decided_at: string | null
+          decided_by: string | null
+          decision: string | null
+          escalated_at: string | null
+          id: string
+          lead_id: string
+          note: string | null
+          property_ids: string[]
+          reply: Json
+          requested_at: string
+          requested_by: string
+        }
+        Insert: {
+          decided_as?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string | null
+          escalated_at?: string | null
+          id?: string
+          lead_id: string
+          note?: string | null
+          property_ids?: string[]
+          reply: Json
+          requested_at?: string
+          requested_by: string
+        }
+        Update: {
+          decided_as?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string | null
+          escalated_at?: string | null
+          id?: string
+          lead_id?: string
+          note?: string | null
+          property_ids?: string[]
+          reply?: Json
+          requested_at?: string
+          requested_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "direct_booking_approvals_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_recipient_events: {
         Row: {
           actor_id: string
@@ -7057,6 +7110,8 @@ export type Database = {
         Row: {
           assigned_to: string | null
           bedrooms: number | null
+          booked_move_in: string | null
+          booked_property_id: string | null
           budget_monthly: number | null
           cats: number | null
           company: string | null
@@ -7076,31 +7131,53 @@ export type Database = {
           inquiry_source_id: string | null
           is_demo: boolean
           keep_open_reason: string | null
+          kind: string | null
           last_contact_at: string | null
+          last_follow_up_at: string | null
           length_of_stay_days: number | null
           lost_at: string | null
           lost_note: string | null
           lost_reason: Database["public"]["Enums"]["lead_loss_reason"] | null
           market: string | null
+          min_bathrooms: number | null
           next_follow_up_on: string | null
+          not_booked_note: string | null
+          not_booked_reason: string | null
           notes: string | null
+          offered_property_ids: string[] | null
+          outcome: string | null
+          outcome_at: string | null
+          outcome_by: string | null
+          owned_by: string | null
+          partner_name: string | null
           pets: boolean | null
           phone: string | null
           preferred_channel: Database["public"]["Enums"]["lead_channel"] | null
           quote_amount: number | null
           quote_note: string | null
           quote_sent_at: string | null
+          reply_body: string | null
+          reply_cc: string[] | null
+          reply_sent_at: string | null
+          reply_sent_by: string | null
+          reply_sent_via: string | null
+          reply_subject: string | null
+          reply_to: string | null
           requirements: string | null
           reservation_ref: string | null
           search_region: string | null
           source: Database["public"]["Enums"]["lead_source"]
           source_detail: Json
           stage: Database["public"]["Enums"]["lead_stage"]
+          started_at: string | null
+          subject: string | null
           updated_at: string
         }
         Insert: {
           assigned_to?: string | null
           bedrooms?: number | null
+          booked_move_in?: string | null
+          booked_property_id?: string | null
           budget_monthly?: number | null
           cats?: number | null
           company?: string | null
@@ -7120,31 +7197,53 @@ export type Database = {
           inquiry_source_id?: string | null
           is_demo?: boolean
           keep_open_reason?: string | null
+          kind?: string | null
           last_contact_at?: string | null
+          last_follow_up_at?: string | null
           length_of_stay_days?: number | null
           lost_at?: string | null
           lost_note?: string | null
           lost_reason?: Database["public"]["Enums"]["lead_loss_reason"] | null
           market?: string | null
+          min_bathrooms?: number | null
           next_follow_up_on?: string | null
+          not_booked_note?: string | null
+          not_booked_reason?: string | null
           notes?: string | null
+          offered_property_ids?: string[] | null
+          outcome?: string | null
+          outcome_at?: string | null
+          outcome_by?: string | null
+          owned_by?: string | null
+          partner_name?: string | null
           pets?: boolean | null
           phone?: string | null
           preferred_channel?: Database["public"]["Enums"]["lead_channel"] | null
           quote_amount?: number | null
           quote_note?: string | null
           quote_sent_at?: string | null
+          reply_body?: string | null
+          reply_cc?: string[] | null
+          reply_sent_at?: string | null
+          reply_sent_by?: string | null
+          reply_sent_via?: string | null
+          reply_subject?: string | null
+          reply_to?: string | null
           requirements?: string | null
           reservation_ref?: string | null
           search_region?: string | null
           source?: Database["public"]["Enums"]["lead_source"]
           source_detail?: Json
           stage?: Database["public"]["Enums"]["lead_stage"]
+          started_at?: string | null
+          subject?: string | null
           updated_at?: string
         }
         Update: {
           assigned_to?: string | null
           bedrooms?: number | null
+          booked_move_in?: string | null
+          booked_property_id?: string | null
           budget_monthly?: number | null
           cats?: number | null
           company?: string | null
@@ -7164,29 +7263,63 @@ export type Database = {
           inquiry_source_id?: string | null
           is_demo?: boolean
           keep_open_reason?: string | null
+          kind?: string | null
           last_contact_at?: string | null
+          last_follow_up_at?: string | null
           length_of_stay_days?: number | null
           lost_at?: string | null
           lost_note?: string | null
           lost_reason?: Database["public"]["Enums"]["lead_loss_reason"] | null
           market?: string | null
+          min_bathrooms?: number | null
           next_follow_up_on?: string | null
+          not_booked_note?: string | null
+          not_booked_reason?: string | null
           notes?: string | null
+          offered_property_ids?: string[] | null
+          outcome?: string | null
+          outcome_at?: string | null
+          outcome_by?: string | null
+          owned_by?: string | null
+          partner_name?: string | null
           pets?: boolean | null
           phone?: string | null
           preferred_channel?: Database["public"]["Enums"]["lead_channel"] | null
           quote_amount?: number | null
           quote_note?: string | null
           quote_sent_at?: string | null
+          reply_body?: string | null
+          reply_cc?: string[] | null
+          reply_sent_at?: string | null
+          reply_sent_by?: string | null
+          reply_sent_via?: string | null
+          reply_subject?: string | null
+          reply_to?: string | null
           requirements?: string | null
           reservation_ref?: string | null
           search_region?: string | null
           source?: Database["public"]["Enums"]["lead_source"]
           source_detail?: Json
           stage?: Database["public"]["Enums"]["lead_stage"]
+          started_at?: string | null
+          subject?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "leads_booked_property_id_fkey"
+            columns: ["booked_property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "leads_booked_property_id_fkey"
+            columns: ["booked_property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "leads_converted_property_id_fkey"
             columns: ["converted_property_id"]
@@ -16547,6 +16680,7 @@ export type Database = {
         Args: { _wo_id: string }
         Returns: string
       }
+      create_direct_booking: { Args: { _details: Json }; Returns: string }
       create_onboarding_financial_request: {
         Args: { _actor_id: string; _property_id: string; _request: Json }
         Returns: Json
@@ -16597,6 +16731,10 @@ export type Database = {
         Args: { _approve: boolean; _notes: string; _waiver_id: string }
         Returns: undefined
       }
+      decide_direct_booking_approval: {
+        Args: { _decision: string; _lead_id: string; _note?: string }
+        Returns: Json
+      }
       decide_home_handoff_requirement: {
         Args: {
           _property_id: string
@@ -16637,6 +16775,23 @@ export type Database = {
         }
         Returns: undefined
       }
+      direct_booking_approval_required: {
+        Args: { _at?: string }
+        Returns: boolean
+      }
+      direct_booking_daily_summary: { Args: { _at?: string }; Returns: number }
+      direct_booking_notify: {
+        Args: {
+          _body: string
+          _kind: string
+          _lead: string
+          _title: string
+          _users: string[]
+        }
+        Returns: number
+      }
+      direct_booking_on_shift: { Args: { _at?: string }; Returns: string[] }
+      direct_booking_settings: { Args: never; Returns: Json }
       email_delivery_allowed: {
         Args: {
           _actor_id?: string
@@ -16651,6 +16806,7 @@ export type Database = {
         Args: { _owner_user_id: string; _property_id: string }
         Returns: Json
       }
+      escalate_direct_booking_approvals: { Args: never; Returns: number }
       expense_authorization_status: {
         Args: { _expense: string }
         Returns: Json
@@ -16660,6 +16816,7 @@ export type Database = {
         Returns: Json
       }
       format_property_label: { Args: { _property: Json }; Returns: Json }
+      functional_role_holders: { Args: { _code: string }; Returns: string[] }
       handoff_duplicate_task_ids: {
         Args: { _property_id: string }
         Returns: string[]
@@ -16671,6 +16828,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      holds_functional_role: {
+        Args: { _code: string; _user_id: string }
         Returns: boolean
       }
       home_handoff_requirement_states: {
@@ -16729,6 +16890,17 @@ export type Database = {
           _title?: string
           _what?: string
           _why?: string
+        }
+        Returns: undefined
+      }
+      mark_direct_booking_outcome: {
+        Args: {
+          _lead_id: string
+          _move_in?: string
+          _note?: string
+          _outcome: string
+          _property_id?: string
+          _reason?: string
         }
         Returns: undefined
       }
@@ -17203,6 +17375,14 @@ export type Database = {
         Args: { _claim_id: string; _decision: string }
         Returns: undefined
       }
+      record_direct_booking_follow_up: {
+        Args: { _lead_id: string }
+        Returns: undefined
+      }
+      record_direct_booking_reply: {
+        Args: { _lead_id: string; _via: string }
+        Returns: string
+      }
       record_email_job_part: {
         Args: { _errors: Json; _part: string; _result: Json; _run_id: string }
         Returns: undefined
@@ -17383,6 +17563,10 @@ export type Database = {
         Args: { _claim_id: string; _context?: string; _reason: string }
         Returns: string
       }
+      request_direct_booking_approval: {
+        Args: { _lead_id: string; _property_ids: string[]; _reply: Json }
+        Returns: Json
+      }
       request_expense_clarification: {
         Args: {
           _assignee: string
@@ -17507,6 +17691,7 @@ export type Database = {
         Args: { _home_ids: string[]; _mode: string }
         Returns: undefined
       }
+      save_direct_booking_settings: { Args: { _value: Json }; Returns: Json }
       save_handoff_requirement: { Args: { _value: Json }; Returns: string }
       save_owner_alert_preferences: {
         Args: {
@@ -17673,6 +17858,7 @@ export type Database = {
           label: string
         }[]
       }
+      start_direct_booking: { Args: { _lead_id: string }; Returns: Json }
       start_optional_opportunity: {
         Args: { _property_id: string; _template_id: string }
         Returns: string
