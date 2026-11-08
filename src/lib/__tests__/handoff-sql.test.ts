@@ -224,13 +224,13 @@ describe("handoff never blocks (02, 03)", () => {
   it("refuses when the live plan differs from version 3, changing nothing", async () => {
     await db.exec("UPDATE public.onboarding_template_tasks SET title = 'Edited' WHERE title = 'Other step 1'");
     await expect(db.exec(read("03_clear_handoff_flags.sql"))).rejects.toThrow("differs from version 3");
-    expect((await counts()).home_blocking).toBe(1550);
+    expect((await counts())["home_blocking"]).toBe(1550);
   });
 
   it("refuses when a count is not what was reported, changing nothing", async () => {
     await db.exec("UPDATE public.onboarding_tasks SET status = 'complete', completed_at = now() WHERE title = 'Home task 100'");
     await expect(db.exec(read("03_clear_handoff_flags.sql"))).rejects.toThrow("Expected 1,490");
-    expect((await counts()).home_blocking).toBe(1550);
+    expect((await counts())["home_blocking"]).toBe(1550);
     expect(await n("SELECT count(*) n FROM public.onboarding_flag_snapshots")).toBe(0);
   });
 
