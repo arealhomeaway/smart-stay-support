@@ -90,6 +90,7 @@
   --color-team-a: var(--team-a);
   --color-team-b: var(--team-b);
   --color-leadership: var(--leadership);
+  --color-unowned: var(--unowned);
   /* Where the work is in its process. */
   --color-state-active: var(--state-active);
   --color-state-waiting: var(--state-waiting);
@@ -181,6 +182,7 @@
   /* --- Ownership -------------------------------------------------------- */
   --team-a: oklch(0.555 0.115 262); /* Guest Experience */
   --team-b: oklch(0.5 0.076 205); /* Property Operations */
+  --unowned: oklch(0.47 0.13 45); /* work nobody owns yet */
   --leadership: var(--lavender);
 
   /* --- Process state ---------------------------------------------------- */
@@ -265,6 +267,7 @@
 
   --team-a: oklch(0.72 0.11 262);
   --team-b: oklch(0.72 0.108 203.1);
+  --unowned: oklch(0.76 0.13 55);
   --leadership: var(--lavender);
   --state-active: var(--sky);
   --state-waiting: var(--amber);
