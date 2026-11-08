@@ -257,7 +257,7 @@ describe("Everyone's work", () => {
   it("every button and field on the queue is at least 44px tall", () => {
     for (const f of ["src/components/operations/QueueRow.tsx", "src/components/operations/TicketHandoffsQueue.tsx", "src/components/operations/NotionImportedGroup.tsx", "src/routes/_authenticated/team-queue.tsx"]) {
       const src = read(f);
-      for (const m of src.matchAll(/<(Button|Input|SelectTrigger)\b[^>]*>/g)) {
+      for (const m of src.matchAll(/<(Button|Input|SelectTrigger)\b(?:=>|[^>])*>/g)) {
         const tag = m[0];
         if (/asChild/.test(tag) && !/className/.test(tag)) continue;
         expect({ f, tag, tall: /(min-h-1[12]|h-11)/.test(tag) }).toEqual({ f, tag, tall: true });
