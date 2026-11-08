@@ -187,7 +187,7 @@ export function AutomatedSourceQueue({
                 wait={{ text: waitLine(t.reported_at, now, late), late }}
                 alert={alertLine(t.priority, t.escalation_level)}
                 breezewayUrl={rowBreezeway(t)}
-                nextStep={t.next_action}
+                nextStep={t.next_action ?? null}
                 done={
                   entry
                     ? {
