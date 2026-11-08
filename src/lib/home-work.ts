@@ -6,7 +6,7 @@
  */
 import { isImportHeld } from "@/lib/import-hold";
 import { currentOwnerId, isMine, type MatterOwnership } from "@/lib/matters";
-import { isQuietNotion, type NotionTicketLike } from "@/lib/notion-ticket-display";
+import { isQuietNotion, isRecentOpenImport, type NotionTicketLike } from "@/lib/notion-ticket-display";
 import { matchesPropertySearch, formatPropertyLabel, type PropertyLabelFields } from "@/lib/property-label";
 import { OPEN_STATUSES, STATUSES, isClosed, slaState } from "@/lib/tickets";
 import { teamOf } from "@/lib/coverage-model";
@@ -51,7 +51,18 @@ export function isResolveWork(t: HomeTicket, now: number = Date.now()): boolean 
 
 const WAITING = new Set(["waiting", "awaiting_guest"]);
 
+/**
+ * A recent open Notion import (past 30 days) assigned to this person. It shows
+ * in their My work under Active with the "Imported from Notion" badge, but it
+ * stays quiet: no clocks, no alerts, and it counts nowhere (unclaimed count,
+ * Needs you now, Oversight, scorecards) until they press Take this ticket.
+ */
+export function isMyRecentImport(t: HomeTicket, userId: string | null, now: number = Date.now()): boolean {
+  return !isImportHeld(t) && isRecentOpenImport(t, now) && isMine(t, userId);
+}
+
 export function inHomeTab(t: HomeTicket, tab: HomeTab, userId: string | null, now: number = Date.now()): boolean {
+  if (isMyRecentImport(t, userId, now)) return tab === "active";
   if (!isResolveWork(t, now) || !isMine(t, userId)) return false;
   if (tab === "done") {
     if (!isClosed(t.status)) return false;
@@ -94,10 +105,16 @@ export function boardColumns(tab: HomeTab): { value: string; label: string }[] {
   return STATUSES.filter((s) => keep(s.value)).map((s) => ({ value: s.value, label: s.label }));
 }
 
-/** How urgent, in plain words: priority plus the live clock. */
-export function urgencyLabel(t: HomeTicket): string {
+/** The board column a row sits in. A recent import shown under Active always sits in Open. */
+export function boardColumnOf(t: HomeTicket, tab: HomeTab, now: number = Date.now()): string {
+  if (tab === "active" && isRecentOpenImport(t, now) && WAITING.has(t.status)) return "open";
+  return t.status;
+}
+
+/** How urgent, in plain words: priority plus the live clock. Quiet imports have no clock. */
+export function urgencyLabel(t: HomeTicket, now: number = Date.now()): string {
   const p = (t.priority ?? "p3").toUpperCase();
-  if (isClosed(t.status)) return p;
+  if (isClosed(t.status) || isQuietNotion(t, now)) return p;
   const sla = slaState(t);
   if (sla.escalation) return `${p} · Escalated`;
   if (sla.breached) return `${p} · Overdue`;
@@ -179,6 +196,8 @@ export const HOME_COPY = {
   routineHint: ROUTINE_SECTION_HINT,
   routineButton: "Record routine work",
   routineEmpty: "No routine checks due today.",
+  importBadge: "Imported from Notion",
+  importNext: "Open it and press Take this ticket to start",
   activityTitle: "Recent activity",
   activityEmpty: "Nothing has moved in your work yet today.",
 } as const;

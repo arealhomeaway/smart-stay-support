@@ -10,6 +10,7 @@ import { useDemo } from "@/components/DemoProvider";
 import { useRole } from "@/hooks/useRole";
 import { portalsFor, recentPortalId } from "@/lib/portals";
 import { OPEN_STATUSES } from "@/lib/tickets";
+import { openTicketsForTotal } from "@/lib/notion-ticket-display";
 
 export const Route = createFileRoute("/_authenticated/hub")({
   head: () => ({
@@ -50,14 +51,16 @@ function Hub() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tickets")
-        .select("status, priority")
+        .select("status, priority, reported_at, external_source, external_status")
         .eq("is_demo", demoMode)
         .is("archived_at", null)
         .in("status", OPEN_STATUSES);
 
       if (error) throw error;
-      const open = data?.length ?? 0;
-      const urgent = (data ?? []).filter((t) => t.priority === "p1").length;
+      // Notion imports that are closed or older than 30 days never count as open.
+      const rows = openTicketsForTotal(data ?? []);
+      const open = rows.length;
+      const urgent = rows.filter((t) => t.priority === "p1").length;
       return { open, urgent };
     },
   });

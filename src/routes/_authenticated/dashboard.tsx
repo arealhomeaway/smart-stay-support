@@ -10,6 +10,8 @@ import { useRole } from "@/hooks/useRole";
 import { useHomeTeams } from "@/hooks/useHomeTeam";
 import { useStaffDirectory, displayName } from "@/hooks/useTeam";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status";
+import { isRecentOpenImport } from "@/lib/notion-ticket-display";
 import { Input } from "@/components/ui/input";
 import { EmptyState, LoadingPage, PageHero, PriorityRail, SectionCard, SegmentedControl } from "@/components/ui/page";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
@@ -36,9 +38,11 @@ import { SURVEY_CHECK_FLAG } from "@/lib/record-routine";
 import {
   HOME_COPY,
   HOME_TABS,
+  boardColumnOf,
   boardColumns,
   homeSearchMatch,
   inHomeTab,
+  isMyRecentImport,
   isResolveWork,
   needsYouNow,
   unclaimedCount,
@@ -151,7 +155,9 @@ function Dashboard() {
 
   const rows = mine.data ?? [];
   const unclaimed = unclaimedCount(unowned.data ?? [], myTeam);
-  const openForOrigin = rows.filter((t) => isResolveWork(t) && OPEN_STATUSES.includes(t.status));
+  const openForOrigin = rows.filter(
+    (t) => (isResolveWork(t) && OPEN_STATUSES.includes(t.status)) || isMyRecentImport(t, userId),
+  );
   const { originSearch } = useWorkspaceOrigin(
     "Home",
     openForOrigin.map((t) => ({ id: t.id, label: t.title, sub: formatPropertyLabel(t.properties).primary })),
@@ -401,7 +407,7 @@ function MyWork({
       ) : layout === "board" ? (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {boardColumns(tab).map((col) => {
-            const colRows = shown.filter((t) => t.status === col.value);
+            const colRows = shown.filter((t) => boardColumnOf(t, tab) === col.value);
             return (
               <section key={col.value} aria-label={col.label} className="rounded-xl border bg-muted/20 p-3">
                 <h3 className="mb-2 text-sm font-semibold">
@@ -429,7 +435,11 @@ function MyWork({
 
 /** One line of work: the home by full address, the problem, how urgent and the next step. */
 function WorkRow({ t, origin, compact = false }: { t: Row; origin: { from: string }; compact?: boolean }) {
-  const next = OPEN_STATUSES.includes(t.status)
+  // A recent Notion import stays quiet until someone takes it: badge, no clock.
+  const imported = isRecentOpenImport(t);
+  const next = imported
+    ? { label: HOME_COPY.importNext }
+    : OPEN_STATUSES.includes(t.status)
     ? ticketNextAction({
         status: t.status,
         acknowledged_at: t.acknowledged_at ?? null,
@@ -462,6 +472,7 @@ function WorkRow({ t, origin, compact = false }: { t: Row; origin: { from: strin
           <span className="font-medium text-primary">{next ? next.label : "Done"}</span>
         </span>
       </span>
+      {imported && <StatusBadge tone="context">{HOME_COPY.importBadge}</StatusBadge>}
       <Badge variant="outline" className={/Overdue|Escalated/.test(urgent) ? "border-danger/40 text-danger" : ""}>
         {urgent}
       </Badge>

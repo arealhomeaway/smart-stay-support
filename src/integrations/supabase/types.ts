@@ -12014,6 +12014,7 @@ export type Database = {
       }
       routine_controls: {
         Row: {
+          answers: Json
           assigned_role_code: string | null
           assigned_to: string | null
           completed_at: string | null
@@ -12026,6 +12027,7 @@ export type Database = {
           evidence_urls: string[]
           findings: string | null
           follow_up_ticket_id: string | null
+          guest_feedback_id: string | null
           guest_name: string | null
           id: string
           is_demo: boolean
@@ -12044,6 +12046,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          answers?: Json
           assigned_role_code?: string | null
           assigned_to?: string | null
           completed_at?: string | null
@@ -12056,6 +12059,7 @@ export type Database = {
           evidence_urls?: string[]
           findings?: string | null
           follow_up_ticket_id?: string | null
+          guest_feedback_id?: string | null
           guest_name?: string | null
           id?: string
           is_demo?: boolean
@@ -12074,6 +12078,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          answers?: Json
           assigned_role_code?: string | null
           assigned_to?: string | null
           completed_at?: string | null
@@ -12086,6 +12091,7 @@ export type Database = {
           evidence_urls?: string[]
           findings?: string | null
           follow_up_ticket_id?: string | null
+          guest_feedback_id?: string | null
           guest_name?: string | null
           id?: string
           is_demo?: boolean
@@ -12116,6 +12122,13 @@ export type Database = {
             columns: ["follow_up_ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routine_controls_guest_feedback_id_fkey"
+            columns: ["guest_feedback_id"]
+            isOneToOne: false
+            referencedRelation: "guest_feedback"
             referencedColumns: ["id"]
           },
           {
@@ -17459,6 +17472,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      record_routine_check: { Args: { _check: Json }; Returns: Json }
       record_staff_work_order_owner_decision: {
         Args: {
           _approved_amount: number
@@ -17538,6 +17552,15 @@ export type Database = {
       remove_vendor_custom_field: {
         Args: { _field_id: string }
         Returns: string
+      }
+      reopen_notion_ticket: {
+        Args: {
+          _action_due_at: string
+          _reason: string
+          _response_due_at: string
+          _ticket_id: string
+        }
+        Returns: Json
       }
       reopen_owner_request: { Args: { _id: string }; Returns: undefined }
       reorder_arha_opportunities: {

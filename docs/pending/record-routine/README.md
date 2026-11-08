@@ -1,6 +1,6 @@
 # Record routine work
 
-Staged only. Nothing here has been applied. Apply only with written approval,
+APPLIED Nov 8, 2026 with Emily's written approval (see the note at the end),
 in this order. The migration tool runs each file in one transaction, so none
 has BEGIN/COMMIT lines.
 
@@ -57,3 +57,7 @@ found the usual ticket form opens next, already linked to the check.
 
 `src/lib/__tests__/record-routine-sql.test.ts` runs every file and undo here in
 an isolated PostgreSQL (PGlite). Checksums are in `sha256.txt`.
+
+## Applied
+
+- Nov 8, 2026: APPLIED byte-for-byte as migrations 0265 (`01_record_routine.sql`), 0266 (`02_survey_switch.sql`) and 0267 (`03_close_legacy_rows.sql`). Exactly the 7 legacy rows were closed. Undo order if ever needed: 03, 02, 01.

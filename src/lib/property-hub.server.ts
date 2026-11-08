@@ -20,10 +20,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { buildPropertyDetailGroups } from "@/lib/property-details";
 import { propertyAddress } from "@/lib/property-address";
-import { isWorkingStatus } from "@/lib/ticket-lifecycle";
+import { WORKING_STATUSES, isWorkingStatus } from "@/lib/ticket-lifecycle";
 import { attachmentMatchesCurrentProperty } from "@/lib/attachments.server";
 import { isExternalOwner, ownerPropertyAccess } from "@/lib/owner-property-access.server";
-import { notionBadge, showsAssignee } from "@/lib/notion-ticket-display";
+import { isQuietNotion, notionBadge, openTicketsForTotal, showsAssignee } from "@/lib/notion-ticket-display";
 
 type Client = SupabaseClient<Database>;
 
@@ -170,7 +170,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
   }
   const owns = !staff;
 
-  const [tasks, tickets, docs, approvals, handoff, programLink, outbound, links, conflicts] =
+  const [tasks, tickets, docs, approvals, handoff, programLink, outbound, links, conflicts, openRows] =
     await Promise.all([
       supabaseAdmin
         .from("onboarding_tasks")
@@ -250,6 +250,16 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
             .eq("entity_id", propertyId)
             .eq("status", "open")
         : Promise.resolve({ data: [], error: null }),
+      // Every open ticket on this home, for the open tickets total. Read on its
+      // own so the 25-row recent list above never cuts the count short.
+      supabaseAdmin
+        .from("tickets")
+        .select("id, status, priority, reported_at, external_source, external_status")
+        .eq("property_id", propertyId)
+        .eq("is_demo", p.is_demo)
+        .is("archived_at", null)
+        .in("status", WORKING_STATUSES)
+        .limit(2000),
     ]);
 
   // Quarterly reviews ship behind a launch-state flag. While the flag is OFF
@@ -276,7 +286,8 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
 
   // Resolved and closed both mean the frontline work is finished, so neither
   // belongs in an "open tickets" count. Only working statuses are open.
-  const openTickets = (tickets.data ?? []).filter((t) => isWorkingStatus(String(t.status)));
+  // Imports from Notion that are closed or older than 30 days never count.
+  const openTickets = openTicketsForTotal(openRows.data ?? [], isWorkingStatus);
   const program = staff
     ? ((programLink.data ?? [])[0]?.owner_programs as unknown as ProgramSummary | null)
     : ownerProgram;
@@ -630,7 +641,8 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
   // Things a person should see before they start work on this home.
   const alerts: { id: string; tone: "danger" | "warn" | "info"; text: string }[] = [];
   if (staff) {
-    const p1 = openTickets.filter((t) => t.priority === "p1").length;
+    // Recent imports count as open but stay quiet: never in an alert.
+    const p1 = openTickets.filter((t) => t.priority === "p1" && !isQuietNotion(t)).length;
     if (p1 > 0)
       alerts.push({
         id: "p1",

@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { OPEN_STATUSES } from "@/lib/tickets";
+import { countsInOpenTotal, openTicketsForTotal } from "@/lib/notion-ticket-display";
 import { listOwnerRezListings } from "@/lib/ownerrez.functions";
 import { syncPropertyEnrichment } from "@/lib/property-enrichment.functions";
 import { AddPropertyDialog } from "@/components/property/AddPropertyDialog";
@@ -119,7 +120,7 @@ function PropertiesPage() {
         supabase.from("properties").select("*").order("name"),
         supabase
           .from("tickets")
-          .select("id, property_id, status")
+          .select("id, property_id, status, reported_at, external_source, external_status")
           .eq("is_demo", false)
           .is("archived_at", null),
         supabase.from("property_owners").select("id, name"),
@@ -165,7 +166,7 @@ function PropertiesPage() {
     if (marketFilter !== "all" && p.market !== marketFilter) return false;
     if (statusFilter === "open") {
       const has = (data?.tickets ?? []).some(
-        (t) => t.property_id === p.id && OPEN_STATUSES.includes(t.status),
+        (t) => t.property_id === p.id && OPEN_STATUSES.includes(t.status) && countsInOpenTotal(t),
       );
       if (!has) return false;
     } else if (statusFilter !== "all" && p.lifecycle_status !== statusFilter) {
@@ -272,7 +273,8 @@ function PropertiesPage() {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {visible.map((p) => {
             const all = data.tickets.filter((t) => t.property_id === p.id);
-            const openCount = all.filter((t) => OPEN_STATUSES.includes(t.status)).length;
+            // Notion imports that are closed or older than 30 days never count as open.
+            const openCount = openTicketsForTotal(all).length;
             const owner = p.owner_record_id ? data.ownerName.get(p.owner_record_id) : null;
             return (
               // A photo-led grid card: the image bleeds to the card edge and the

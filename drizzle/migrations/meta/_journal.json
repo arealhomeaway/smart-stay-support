@@ -1849,6 +1849,41 @@
       "when": 1794116963647,
       "tag": "0263_seed_direct_bookings",
       "breakpoints": true
+    },
+    {
+      "idx": 264,
+      "version": "7",
+      "when": 1794141258632,
+      "tag": "0264_notion_reopen",
+      "breakpoints": true
+    },
+    {
+      "idx": 265,
+      "version": "7",
+      "when": 1794141333988,
+      "tag": "0265_record_routine",
+      "breakpoints": true
+    },
+    {
+      "idx": 266,
+      "version": "7",
+      "when": 1794141409937,
+      "tag": "0266_survey_switch",
+      "breakpoints": true
+    },
+    {
+      "idx": 267,
+      "version": "7",
+      "when": 1794141428541,
+      "tag": "0267_close_legacy_rows",
+      "breakpoints": true
+    },
+    {
+      "idx": 268,
+      "version": "7",
+      "when": 1794141460643,
+      "tag": "0268_menu_switches",
+      "breakpoints": true
     }
   ]
 }

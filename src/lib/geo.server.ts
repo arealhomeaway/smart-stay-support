@@ -11,6 +11,7 @@ import { formatPropertyLabel } from "@/lib/property-label";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { OPEN_STATUSES } from "@/lib/tickets";
+import { openTicketsForTotal } from "@/lib/notion-ticket-display";
 import { validCoordinates, type MapPin } from "@/lib/geo";
 
 type Client = SupabaseClient<Database>;
@@ -183,7 +184,7 @@ export async function loadJobMap(supabase: Client) {
         .is("archived_at", null),
       supabase
         .from("tickets")
-        .select("id, ref, title, priority, status, due_at, property_id, vendor_name, vendor_status")
+        .select("id, ref, title, priority, status, due_at, property_id, vendor_name, vendor_status, reported_at, external_source, external_status")
         .in("status", OPEN_STATUSES)
         .eq("is_demo", false)
         .is("archived_at", null)
@@ -193,7 +194,8 @@ export async function loadJobMap(supabase: Client) {
   if (ticketError) throw ticketError;
 
   const byProperty = new Map<string, MapPin["openJobs"]>();
-  for (const t of tickets ?? []) {
+  // Notion imports that are closed or older than 30 days never count as open.
+  for (const t of openTicketsForTotal(tickets ?? [])) {
     const list = byProperty.get(t.property_id as string) ?? [];
     list.push({
       id: t.id,
