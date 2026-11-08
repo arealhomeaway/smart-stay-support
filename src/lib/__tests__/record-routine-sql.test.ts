@@ -178,7 +178,7 @@ describe("closing the 7 legacy rows", () => {
     const d = new PGlite();
     await d.exec(STUBS);
     for (const [id, kind, status] of LEGACY)
-      await d.query("INSERT INTO public.routine_controls(id, kind, event_key, title, status) VALUES ($1,$2,$1,'Legacy',$3)", [id, kind, status]);
+      await d.query("INSERT INTO public.routine_controls(id, kind, event_key, title, status) VALUES ($1::uuid,$2,$4,'Legacy',$3)", [id, kind, status, id]);
     await d.query("INSERT INTO public.routine_controls(kind, event_key, title, status) VALUES ('guest_touch_base','keep','Keep','due')");
     await d.exec(readFileSync(`${DIR}/03_close_legacy_rows.sql`, "utf8"));
     const closed = (await d.query("SELECT count(*)::int n FROM public.routine_controls WHERE status='cancelled' AND notes='Closed: legacy test row'")).rows[0].n;
