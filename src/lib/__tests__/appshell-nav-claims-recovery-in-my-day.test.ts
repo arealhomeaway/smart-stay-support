@@ -2,68 +2,46 @@ import { describe, expect, it } from "bun:test";
 import { readFileSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
+import { can, type AppRole } from "../permissions";
+import { canOpenPath } from "../route-access";
+import { operationsMenu, PAGE_TAB_GROUPS } from "../shell-nav";
 
 /**
- * Simplification Pass 1 (approved by Emily, 2026-10-21): the Operations
- * sidebar is grouped as My day / Oversight / Team / Owners & Programs /
- * Reports / Admin. Grouped destinations (Work Map, Routine Work, Vendors,
- * Refunds & Credits…) moved out of the sidebar into top-of-page tab bars
- * (PAGE_TAB_GROUPS in lib/shell-nav.ts). This is a source-level regression
- * guard for that structure.
+ * Menu cleanup (approved by Emily, Nov 8 2026) replaced Simplification Pass 1:
+ * the Operations menu is My day / Team / Homes and owners / Insight / Admin.
+ * Grouped destinations (Routine Work, Refunds & Credits, Supervisor check...)
+ * still live as top-of-page tabs (PAGE_TAB_GROUPS in lib/shell-nav.ts).
+ * Checked through the real permission model, not the file text.
  */
-describe("AppShell — Simplification Pass 1 sidebar structure", () => {
-  const here = dirname(fileURLToPath(import.meta.url));
-  const src = readFileSync(join(here, "../../components/AppShell.tsx"), "utf8");
-  const shellNav = readFileSync(join(here, "../shell-nav.ts"), "utf8");
+const menuFor = (roles: AppRole[]) =>
+  operationsMenu({ can: (c) => can(roles, c), canOpen: (p) => canOpenPath(p, { roles }) });
+const myDay = (roles: AppRole[]) => menuFor(roles).find((g) => g.label === "My day")?.items ?? [];
 
-  const frontlineGroupMatch = src.match(/const frontlineGroup: NavGroup = \{[\s\S]*?\n\};/);
-  const oversightGroupMatch = src.match(/\{\s*label: "Oversight",\s*items: \[[\s\S]*?\],\s*\},/);
-
-  it("frontlineGroup ('My day') keeps the frontline destinations with one item per group", () => {
-    expect(frontlineGroupMatch).not.toBeNull();
-    const body = frontlineGroupMatch?.[0] ?? "";
-    expect(body).toContain('to: "/dashboard"');
-    expect(body).toContain('to: "/tickets"');
-    expect(body).toContain('label: "My Work"');
-    expect(body).toContain('to: "/team-queue"');
-    expect(body).toContain('to: "/properties"');
-    expect(body).toContain('to: "/work-orders"');
-    expect(body).toContain('label: "Work Orders"');
-    expect(body).toContain('to: "/claims"');
-    expect(body).toContain('label: "Guest Claims & Refunds"');
-    expect(body).toContain('to: "/inquiry-sources"');
-    // Record work lives only in the top bar now.
-    expect(body).not.toContain('to: "/tickets/new"');
+describe("AppShell menu: My day and tab pages", () => {
+  it("My day keeps Home and Team Queue first, and Record work stays in the top bar only", () => {
+    const items = myDay(["tech"]);
+    expect(items.slice(0, 2).map((i) => i.to)).toEqual(["/dashboard", "/team-queue"]);
+    expect(items.map((i) => i.to)).not.toContain("/tickets/new");
   });
 
-  it("grouped destinations left the sidebar for top-of-page tabs", () => {
-    const body = frontlineGroupMatch?.[0] ?? "";
+  it("grouped destinations stay out of the menu and on the tab bars", () => {
+    const all = menuFor(["admin"]).flatMap((g) => g.items.map((i) => i.to));
     for (const gone of ["/map", "/availability-finder", "/routines", "/recovery", "/str-dispatch-check"])
-      expect(body).not.toContain(`to: "${gone}"`);
-    // The tab bars pick them up instead.
-    for (const tab of ["/map", "/routines", "/recovery", "/str-dispatch-check", "/vendors"])
-      expect(shellNav).toContain(`to: "${tab}"`);
-    // Availability Finder is no longer a tab: Direct Bookings requests run the
-    // home search, and the Direct Bookings menu item stays lit on the old page.
-    expect(shellNav).toContain('"/availability-finder"');
+      expect(all).not.toContain(gone);
+    const tabs = PAGE_TAB_GROUPS.flatMap((g) => g.tabs.map((t) => t.to));
+    for (const tab of ["/map", "/routines", "/recovery", "/vendors"]) expect(tabs).toContain(tab);
   });
 
-  it("the Oversight group holds Oversight, Onboarding, Program Oversight and Quarterly Reviews", () => {
-    expect(oversightGroupMatch).not.toBeNull();
-    const body = oversightGroupMatch?.[0] ?? "";
-    expect(body).toContain('to: "/oversight"');
-    expect(body).toContain('to: "/onboarding"');
-    expect(body).toContain('to: "/owner-oversight"');
-    expect(body).toContain('to: "/quarterly"');
+  it("Guest Claims & Refunds stays visible and gated on claims_work", () => {
+    const claims = myDay(["tech"]).find((i) => i.to === "/claims");
+    expect(claims?.label).toBe("Guest Claims & Refunds");
+    expect(claims?.capability).toBe("claims_work");
+    expect(myDay(["onboarding"]).map((i) => i.to)).not.toContain("/claims");
   });
 
-  it("Claims stays gated on claims_work, matching what the pages require", () => {
-    const body = frontlineGroupMatch?.[0] ?? "";
-    const claimsMatch = body.match(/\{\s*to: "\/claims",[\s\S]*?\},/);
-    expect(claimsMatch?.[0]).toContain('capability: "claims_work"');
-  });
-
-  it("Ask the Coach and Help left the sidebar for the Help & Feedback menu", () => {
+  it("Ask the Coach and Help left the menu for the Help & Feedback menu", () => {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const src = readFileSync(join(here, "../../components/AppShell.tsx"), "utf8");
     expect(src).not.toContain('to: "/coach"');
     expect(src).not.toContain('to: "/welcome"');
     const help = readFileSync(join(here, "../../components/HelpFeedback.tsx"), "utf8");
