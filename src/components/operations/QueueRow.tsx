@@ -113,7 +113,7 @@ export function QueueRow({
             {done.secondary ? (
               <Button
                 variant="outline"
-                className="min-h-12 rounded-[10px] border-primary px-4 text-[15px] font-bold text-primary"
+                className="min-h-12 rounded-[10px] border-primary bg-card px-4 text-[15px] font-bold text-primary hover:bg-primary/10 hover:text-primary"
                 disabled={done.secondary.busy}
                 onClick={done.secondary.onClick}
               >
