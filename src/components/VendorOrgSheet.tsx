@@ -63,12 +63,15 @@ export function VendorOrgSheet({
   onOpenChange,
   properties,
   canManage,
+  showScreening = true,
   focusRequirementId,
 }: {
   orgId: string | null;
   onOpenChange: (open: boolean) => void;
   properties: PropertyOption[];
   canManage: boolean;
+  /** False for the Director of Onboarding, Project Manager and Utilities: the Screening tab is hidden. */
+  showScreening?: boolean;
   focusRequirementId?: string | null;
 }) {
   useEffect(() => {
@@ -179,9 +182,9 @@ export function VendorOrgSheet({
               </SheetDescription>
             </SheetHeader>
 
-            <Tabs defaultValue="screening" className="mt-4">
-              <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6">
-                <TabsTrigger value="screening">Screening</TabsTrigger>
+            <Tabs defaultValue={showScreening ? "screening" : "coverage"} className="mt-4">
+              <TabsList className={showScreening ? "grid w-full grid-cols-3 sm:grid-cols-6" : "grid w-full grid-cols-3 sm:grid-cols-5"}>
+                {showScreening && <TabsTrigger value="screening">Screening</TabsTrigger>}
                 <TabsTrigger value="coverage">Coverage</TabsTrigger>
                 <TabsTrigger value="territory">Territory</TabsTrigger>
                 <TabsTrigger value="documents">Documents</TabsTrigger>
@@ -189,6 +192,7 @@ export function VendorOrgSheet({
                 <TabsTrigger value="history">History</TabsTrigger>
               </TabsList>
 
+              {showScreening && (
               <TabsContent value="screening" className="space-y-4 pt-4">
                 <div className="rounded-lg border p-3 text-sm">
                   <p className="font-medium">
@@ -272,6 +276,7 @@ export function VendorOrgSheet({
                   </>
                 )}
               </TabsContent>
+              )}
 
               <TabsContent value="coverage" className="space-y-4 pt-4">
                 {data.coverage.length === 0 ? (
