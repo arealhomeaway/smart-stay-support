@@ -51,6 +51,7 @@ import {
   CREATED_TAG,
   CREATE_LEAD_TAG,
   CREATE_TICKET_TAG,
+  DIRECT_BOOKING_TAGS,
   OWNER_RESPONSE_TAG,
   type TriggerKind,
 } from "./mail-categories";
