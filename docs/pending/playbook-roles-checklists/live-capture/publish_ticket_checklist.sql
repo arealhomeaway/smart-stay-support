@@ -34,5 +34,4 @@ BEGIN
       CASE WHEN cur.id IS NULL THEN NULL ELSE jsonb_build_object('id', cur.id, 'version', cur.version) END,
       jsonb_build_object('category', _category, 'version', coalesce(cur.version, 0) + 1));
   RETURN new_id;
-END $function$
-
+END $function$;

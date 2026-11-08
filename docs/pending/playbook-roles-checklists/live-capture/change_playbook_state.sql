@@ -36,5 +36,4 @@ BEGIN
     submitted_by=CASE WHEN _action='submit' THEN _actor ELSE submitted_by END, submitted_at=CASE WHEN _action='submit' THEN now() ELSE submitted_at END WHERE id=_id;
   INSERT INTO public.playbook_approvals(playbook_id,from_status,to_status,actor_id,actor_role,note,version) VALUES(_id,_old.status,_to,_actor,_role,nullif(trim(_note),''),_old.version);
   RETURN jsonb_build_object('id',_id,'version',_old.version);
-END $function$
-
+END $function$;

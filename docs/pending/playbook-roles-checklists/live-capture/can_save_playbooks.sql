@@ -7,5 +7,4 @@ AS $function$
   SELECT public.can_manage_playbooks(_user_id)
       OR public.holds_functional_role(_user_id, 'ops_supervisor')
       OR public.seat_holder_at('ops_supervisor') = _user_id
-$function$
-
+$function$;
