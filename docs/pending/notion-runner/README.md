@@ -30,3 +30,8 @@ and gives `service_role` execute back.
 `src/lib/__tests__/notion-runner-sql.test.ts` loads the live import functions, the live
 reopen protection and this file into an isolated PostgreSQL and checks both guards, the
 duplicate rule and the undo. Nothing touches the real database.
+
+## Applied
+
+- Nov 8, 2026: APPLIED byte-for-byte as migration 0273 (`01_import_guard.sql`).
+  Undo if ever needed: `01_undo_import_guard.sql`.
