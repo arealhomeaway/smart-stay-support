@@ -29,7 +29,9 @@ import { portalsFor, rememberPortal } from "@/lib/portals";
 export function PortalSwitcher() {
   const router = useRouter();
   const { actualRoles, roles } = useRole();
-  const { demoMode, enterDemo, exitDemo } = useDemo();
+  // The Demo entry was removed from this menu (Emily, Nov 8, 2026; register N8). Anyone still in
+  // demo mode leaves it from the demo banner.
+  const { demoMode } = useDemo();
   const portals = portalsFor(roles);
 
   if (!actualRoles.includes("admin")) return null;
@@ -65,38 +67,6 @@ export function PortalSwitcher() {
             </DropdownMenuItem>
           ))}
           <DropdownMenuItem onSelect={() => go("/hub")}>All my portals</DropdownMenuItem>
-
-          <DropdownMenuSeparator />
-          {demoMode ? (
-            <>
-              <DropdownMenuItem onSelect={() => go("/demo")}>
-                <FlaskConical className="size-4" /> Demo home
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onSelect={() => {
-                  exitDemo();
-                  go("/hub");
-                }}
-              >
-                <EyeOff className="size-4" /> Leave demo
-              </DropdownMenuItem>
-            </>
-          ) : (
-            <DropdownMenuItem
-              className="flex flex-col items-start gap-0.5"
-              onSelect={() => {
-                enterDemo();
-                go("/demo");
-              }}
-            >
-              <span className="flex items-center gap-2">
-                <FlaskConical className="size-3.5" /> Demo
-              </span>
-              <span className="text-xs text-muted-foreground">
-                Try any portal you have access to, using demo records only
-              </span>
-            </DropdownMenuItem>
-          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

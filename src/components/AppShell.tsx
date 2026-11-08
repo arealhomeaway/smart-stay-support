@@ -58,11 +58,7 @@ import { GroupTabs } from "@/components/nav/GroupTabs";
 import { readOrigin } from "@/lib/nav-context";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import {
-  DemoSidebarItem,
-  PortalSwitcher,
-  ViewAsBanner,
-} from "@/components/PortalSwitcher";
+import { PortalSwitcher, ViewAsBanner } from "@/components/PortalSwitcher";
 import { AccountSidebarItem } from "@/components/AccountSidebarItem";
 import { ViewAsMenuItem, ViewAsRoleBanner } from "@/components/ViewAsSwitcher";
 import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
@@ -378,7 +374,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           ))}
         </SidebarContent>
         <SidebarFooter>
-          <DemoSidebarItem />
+          {/* The Demo menu item was removed (Emily, Nov 8, 2026; register N8). View as replaces it. */}
           <AccountSidebarItem />
           <p className="px-2 pb-1 text-[0.65rem] leading-relaxed text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden">
             Every home. Every guest. Every time.
