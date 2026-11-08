@@ -11,6 +11,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { MentionTextarea, useMentionPeople } from "@/components/tickets/MentionTextarea";
+import { mentionsInText } from "@/lib/mentions";
 import {
   Select,
   SelectContent,
@@ -61,6 +63,8 @@ export function MatterOwnershipPanel({
 
   const [assignee, setAssignee] = useState<string>("");
   const [note, setNote] = useState("");
+  const [notePicked, setNotePicked] = useState<string[]>([]);
+  const mentionPeople = useMentionPeople();
   const [internal, setInternal] = useState(true);
   const [exception, setException] = useState("");
   const [archiveReason, setArchiveReason] = useState("");
@@ -142,9 +146,12 @@ export function MatterOwnershipPanel({
   const addNote = () =>
     run(async () => {
       if (!note.trim()) return;
-      const mentions = extractMentions(note, people);
+      const mentions = Array.from(
+        new Set([...mentionsInText(note, notePicked, mentionPeople.data ?? []), ...extractMentions(note, people)]),
+      );
       await log("note", note.trim(), internal ? "internal_note" : "note", { internal, mentions });
       setNote("");
+      setNotePicked([]);
       toast.success(
         mentions.length ? `Note added, ${mentions.length} teammate(s) mentioned.` : "Note added.",
       );
@@ -275,9 +282,11 @@ export function MatterOwnershipPanel({
 
             <div className="space-y-2">
               <Label className="text-xs">Note for the team</Label>
-              <Textarea
+              <MentionTextarea
                 value={note}
-                onChange={(e) => setNote(e.target.value)}
+                onChange={setNote}
+                picked={notePicked}
+                onPickedChange={setNotePicked}
                 placeholder="What you found, what you tried, who you called. Use @name to pull someone in."
                 rows={3}
               />
