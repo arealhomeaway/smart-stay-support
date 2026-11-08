@@ -94,8 +94,8 @@ export function authorizationState(wo: DispatchWorkOrder): AuthorizationState {
       ? "Approval was for a different vendor — request approval for the replacement vendor"
       : "Approval no longer covers this scope or amount — request again"
     : who === null ? "No approval required"
-    : satisfied ? (who === "owner" ? "Owner approved" : "Supervisor approved")
-    : who === "owner" ? "Waiting on owner approval" : "Waiting on supervisor approval";
+    : satisfied ? (who === "owner" ? (v.supervisorApprovalRequired ? "Operations Supervisor and owner approved" : "Owner approved") : "Supervisor approved")
+    : who === "owner" ? (ownerOk ? "Waiting on supervisor approval" : "Waiting on owner approval") : "Waiting on supervisor approval";
   return { required: who !== null, who, satisfied, stale, label, reason: v.reason };
 }
 
