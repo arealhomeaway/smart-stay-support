@@ -58,7 +58,7 @@ export function scopeFilter(now = Date.now()) {
   return {
     or: [
       { property: "Issue Status", status: { equals: "In progress" } },
-      { property: "Issue Status", status: { equals: "Pending Claim Review with Josh" } },
+      { property: "Issue Status", status: { equals: NOTION_CLAIM_REVIEW_STATUS } },
       { timestamp: "last_edited_time", last_edited_time: { on_or_after: cutoff } },
       { timestamp: "created_time", created_time: { on_or_after: cutoff } },
       { property: "Created Date", date: { on_or_after: cutoff } },
