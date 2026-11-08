@@ -290,7 +290,7 @@ export async function createVendorOrg(
     notes?: string | null | undefined;
   },
 ) {
-  await assertSupervisor(db, userId);
+  await assertVendorEditor(db, userId);
 
   const { data: dupes, error: dupeError } = await db
     .from("vendor_orgs")
@@ -477,7 +477,7 @@ export async function addCoverage(
     accessRequirements?: string | null | undefined;
   },
 ) {
-  await assertSupervisor(db, userId);
+  await assertVendorEditor(db, userId);
   const { data: org } = await db
     .from("vendor_orgs")
     .select("status, is_active")
@@ -503,7 +503,7 @@ export async function addCoverage(
 }
 
 export async function removeCoverage(db: Client, userId: string, coverageId: string) {
-  await assertSupervisor(db, userId);
+  await assertVendorEditor(db, userId);
   const { error } = await db.from("property_vendor_coverage").delete().eq("id", coverageId);
   if (error) throw new Error(error.message);
   return { ok: true };
@@ -591,7 +591,7 @@ export async function addServiceArea(
     travelNote?: string | null | undefined;
   },
 ) {
-  await assertSupervisor(db, userId);
+  await assertVendorEditor(db, userId);
   const { zips, rejected } = parseZipList(input.zipText);
   if (zips.length === 0) {
     throw new Error("No usable five-digit ZIP codes in that list.");
@@ -625,7 +625,7 @@ export async function addServiceArea(
 }
 
 export async function removeServiceArea(db: Client, userId: string, areaId: string) {
-  await assertSupervisor(db, userId);
+  await assertVendorEditor(db, userId);
   const { error } = await db.from("vendor_service_areas").delete().eq("id", areaId);
   if (error) throw new Error(error.message);
   return { ok: true };
