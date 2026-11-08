@@ -20,9 +20,18 @@ async function assertStaff(context: Ctx) {
   if (!data) throw new Error("Only the operations team can send messages from Resolve.");
 }
 
+/** Shared templates are saved by Supervisors and the Director of Onboarding. Reading is for all staff. */
+async function canManageEmailTemplates(context: Ctx) {
+  const [sup, director] = await Promise.all([
+    context.supabase.rpc("is_supervisor", { _user_id: context.userId }),
+    context.supabase.rpc("is_onboarding_director", { _user_id: context.userId }),
+  ]);
+  return sup.data === true || director.data === true;
+}
+
 async function assertSupervisor(context: Ctx) {
-  const { data } = await context.supabase.rpc("is_supervisor", { _user_id: context.userId });
-  if (!data) throw new Error("Only supervisors can change the shared templates.");
+  if (!(await canManageEmailTemplates(context)))
+    throw new Error("Only supervisors and the Director of Onboarding can change the shared templates.");
 }
 
 type ProfileBits = { full_name: string | null; email_signature: string | null };
@@ -95,9 +104,7 @@ export const getComposerContext = createServerFn({ method: "GET" })
       .eq("active", true)
       .order("name");
 
-    const { data: canManage } = await context.supabase.rpc("is_supervisor", {
-      _user_id: context.userId,
-    });
+    const canManage = await canManageEmailTemplates(context as never as Ctx);
 
     return {
       ...gathered,
