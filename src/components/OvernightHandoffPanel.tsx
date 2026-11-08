@@ -22,6 +22,8 @@ type Row = {
   status: string;
   priority: string;
   reported_at: string;
+  external_source?: string | null;
+  external_status?: string | null;
   vendor_status: string | null;
   vendor_dispatched_at: string | null;
   vendor_completed_at: string | null;

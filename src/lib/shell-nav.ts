@@ -142,12 +142,11 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
     ],
   },
   {
+    // My Work is retired (it is part of Home), so it is no longer a tab here.
+    // One tab alone never shows a tab bar.
     key: "my-work",
     match: (p) => p.startsWith("/tickets") || p === "/routines",
-    tabs: [
-      { label: "My Work", to: "/tickets", exact: true },
-      { label: "Routine Work", to: "/routines", capability: "routines" },
-    ],
+    tabs: [{ label: "Routine Work", to: "/routines", capability: "routines" }],
   },
   {
     key: "properties",
