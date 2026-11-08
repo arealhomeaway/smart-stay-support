@@ -14,7 +14,6 @@ import {
   Home,
   KeyRound,
   ListChecks,
-  MapPinned,
   LogOut,
   PackageCheck,
   Plus,
@@ -74,13 +73,12 @@ import { OwnerSidebarNav } from "@/components/owner/OwnerSidebarNav";
 import { useRole } from "@/hooks/useRole";
 import { useSeat } from "@/hooks/useSeat";
 import { useFeatureFlags } from "@/lib/feature-flags";
-import { type Capability } from "@/lib/permissions";
 import { parseOperationsSearch } from "@/lib/operations-view-state";
 import {
-  DEPARTMENTS,
-  DIRECT_BOOKINGS_MENU_PATHS,
   departmentFor,
-  directBookingsMenuTarget,
+  onboardingOnlyMenu,
+  operationsMenu,
+  type MenuGroup,
 } from "@/lib/shell-nav";
 
 const ONBOARDING_ICONS: Record<string, typeof Home> = {
@@ -91,158 +89,67 @@ const ONBOARDING_ICONS: Record<string, typeof Home> = {
   "Workflow Templates": Workflow,
 };
 
+/** Menu icons by item key (lib/shell-nav.ts), then by destination. */
+const ITEM_ICONS: Record<string, typeof Home> = {
+  dashboard: Home,
+  "team-queue": Users,
+  "bookings-leads": UserPlus,
+  vendors: HardHat,
+  "work-orders": Wrench,
+  oversight: ShieldAlert,
+  claims: ReceiptText,
+  team: Users,
+  playbooks: ListChecks,
+  properties: Building2,
+  onboarding: PackageCheck,
+  "owner-programs": KeyRound,
+  quarterly: CalendarCheck,
+};
+const ROUTE_ICONS: Record<string, typeof Home> = {
+  "/analytics": BarChart3,
+  "/owner-analytics": KeyRound,
+  "/cleaner-hours": Timer,
+  "/finance": ReceiptText,
+  "/command-center": Gauge,
+  "/integrations": PlugZap,
+  "/audit": History,
+  "/help-tickets": CircleHelp,
+};
+
 type NavItem = {
   to: string;
   search?: Record<string, string>;
   label: string;
   icon: typeof Home;
   tour: string;
-  /** Omit for items every internal person may open. */
-  capability?: Capability;
-  /** The page itself is supervisor-gated — never show a dead-end link. */
-  supervisorOnly?: boolean;
-  /** Launch-state gate: hidden while the workstream is not part of the beta. */
-  flag?: string;
   /** Other pages that also highlight this item (grouped tab pages). */
   alsoActive?: string[];
 };
 
 type NavGroup = { label: string; items: NavItem[] };
 
-// One list, grouped the way the business is run: the work itself, the
-// operation that staffs it, the programmes we run for owners, then the
-// administrative surfaces. Visibility is still driven by capability — never by
-// a hand-maintained copy of the menu.
-
-// Frontline navigation follows the working day, not the data model: what needs
-// me, my work, the properties I look after, and how to report something.
-// Everything supervisory or administrative is a separate, capability-gated
-// group so a coordinator never navigates the app's architecture. Grouped
-// destinations (Work Map, Routine Work, Vendors, Refunds & Credits…) live as
-// top-of-page tabs on their group — see PAGE_TAB_GROUPS in lib/shell-nav.ts.
-const frontlineGroup: NavGroup = {
-  label: "My day",
-  items: [
-    { to: "/dashboard", label: "Home", icon: Home, tour: "dashboard" },
-    { to: "/tickets", label: "My Work", icon: ClipboardList, tour: "tickets" },
-    // Coverage overlaps all day and the next available person still has to
-    // handle the work, so the shared queue is open to every coordinator.
-    { to: "/team-queue", label: "Team Queue", icon: Users, tour: "team-queue" },
-    {
-      to: "/properties",
-      label: "Properties",
-      icon: Building2,
-      tour: "properties",
-      capability: "properties",
-    },
-    {
-      to: "/work-orders",
-      label: "Work Orders",
-      icon: Wrench,
-      tour: "work-orders",
-      capability: "work_orders_internal",
-    },
-    // Frontline/team workflows — PCs and operations staff perform this work
-    // directly. Gated on claims_work, matching what /claims and /recovery
-    // already require to open.
-    {
-      to: "/claims",
-      label: "Guest Claims & Refunds",
-      icon: ReceiptText,
-      tour: "claims",
-      capability: "claims_work",
-    },
-    {
-      to: "/inquiry-sources",
-      label: "Referral sources",
-      icon: MapPinned,
-      tour: "inquiry-sources",
-      capability: "work_orders_internal",
-    },
-    // Lead Management is Operations work (Guest Experience & Reservations).
-    { to: "/leads", label: "Lead Management", icon: UserPlus, tour: "leads", capability: "leads_work" },
-  ],
-};
-
-const navGroups: NavGroup[] = [
-  frontlineGroup,
-  {
-    label: "Oversight",
-    items: [
-      {
-        to: "/oversight",
-        label: "Oversight",
-        icon: ShieldAlert,
-        tour: "oversight",
-        capability: "oversight",
-      },
-      {
-        to: "/onboarding",
-        label: "Onboarding",
-        icon: PackageCheck,
-        tour: "onboarding",
-        capability: "onboarding_workspace",
-      },
-      {
-        to: "/owner-oversight",
-        label: "Program Oversight",
-        icon: KeyRound,
-        tour: "owner-oversight",
-        capability: "owner_oversight",
-      },
-      {
-        to: "/quarterly",
-        label: "Quarterly Reviews",
-        icon: CalendarCheck,
-        tour: "quarterly",
-        capability: "vendor_admin",
-        flag: "quarterly_reviews",
-      },
-    ],
-  },
-  {
-    label: "Team",
-    items: [
-      {
-        to: "/team",
-        label: "Team & Coverage",
-        icon: Users,
-        tour: "team",
-        capability: "user_management",
-      },
-      {
-        to: "/playbooks",
-        label: "Playbooks",
-        icon: ListChecks,
-        tour: "playbooks",
-        capability: "playbooks_edit",
-      },
-    ],
-  },
-  {
-    label: "Owners & Programs",
-    items: [
-      {
-        to: "/owner-programs",
-        label: "Active Owner",
-        icon: KeyRound,
-        tour: "owner-programs",
-        capability: "owner_programs",
-      },
-      {
-        to: "/homeowners",
-        label: "Homeowners",
-        icon: Users,
-        tour: "homeowners",
-        capability: "homeowner_directory",
-      },
-    ],
-  },
-  // "Reports" and "Admin" are single sidebar items that open the first page
-  // the person can open; the rest of each group appears as top-of-page tabs.
-  // They are computed inside the component because the target depends on
-  // this person's capabilities.
-];
+// The Operations menu follows the working day: My day, Team, Homes and
+// owners, Insight, Admin. Which items exist, their order and who sees them
+// live in operationsMenu / onboardingOnlyMenu (lib/shell-nav.ts), the tested
+// rule; this file only adds icons. Grouped destinations (Routine Work,
+// Refunds & Credits, Supervisor check...) are top-of-page tabs, see
+// PAGE_TAB_GROUPS.
+const withIcons = (groups: MenuGroup[]): NavGroup[] =>
+  groups.map((g) => ({
+    label: g.label,
+    items: g.items.map((i) => ({
+      to: i.to,
+      ...(i.search ? { search: i.search } : {}),
+      label: i.label,
+      icon:
+        ITEM_ICONS[i.key] ??
+        ROUTE_ICONS[i.to] ??
+        (i.key.startsWith("onboarding-") ? ONBOARDING_ICONS[i.label] : undefined) ??
+        PackageCheck,
+      tour: i.key,
+      ...(i.alsoActive ? { alsoActive: i.alsoActive } : {}),
+    })),
+  }));
 
 const vendorGroups: NavGroup[] = [
   {
@@ -267,7 +174,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     can,
     isVendor,
     isOwner,
-    isSupervisor,
     readOnly,
     identityLabel,
     isLoading: rolesLoading,
@@ -308,10 +214,24 @@ export function AppShell({ children }: { children: ReactNode }) {
   const onOnboardingProperty =
     /^\/onboarding\/[^/]+$/.test(pathname) && !pathname.startsWith("/onboarding/my-work");
   const contextPropertyId = routeParams?.propertyId;
+  // Navigation is generated from route authorization: a link only appears when
+  // the same rule that guards the page lets this person open it.
+  const navAccess = {
+    can,
+    canOpen,
+    guestExperienceSeat: seat.isGuestExperience,
+    flagEnabled: (key: string) => flagEnabled(key),
+  };
+  const groups: NavGroup[] = vendorMode
+    ? vendorGroups
+    : ownerMode
+      ? ownerGroups
+      : withIcons(onboardingOnly ? onboardingOnlyMenu(navAccess) : operationsMenu(navAccess));
+
   // Whatever page they are on is a named place to come back to, so a detour
   // into Log work never strands anyone.
   const hereLabel =
-    navGroups
+    groups
       .flatMap((g) => g.items)
       .find((i) => i.to !== "/dashboard" && pathname.startsWith(i.to))?.label ??
     (pathname.startsWith("/tickets/") ? "the ticket" : "Home");
@@ -349,109 +269,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     "/playbooks",
     "/ticket-checklists",
   ].some((p) => pathname === p || pathname.startsWith(`${p}/`));
-
-  // Navigation is generated from route authorization: a link only appears when
-  // the same rule that guards the page lets this person open it.
-  const onboardingGroup: NavGroup = {
-    label: "Onboarding",
-    items: (DEPARTMENTS.find((d) => d.key === "onboarding")?.links ?? [])
-      .filter((l) => !l.capability || can(l.capability))
-      .map((l) => ({
-        to: l.to,
-        ...(l.search ? { search: l.search } : {}),
-        label: l.label,
-        icon: ONBOARDING_ICONS[l.label] ?? PackageCheck,
-        tour: `onboarding-${l.label}`,
-      })),
-  };
-  const groups: NavGroup[] = vendorMode
-    ? vendorGroups
-    : ownerMode
-      ? ownerGroups
-      : onboardingOnly
-        ? [
-            onboardingGroup,
-            // A single, authorised doorway into Active Owner management; the
-            // Active Owner menu itself appears once she is there.
-            ...(can("owner_programs")
-              ? [
-                  {
-                    label: "Active Owner",
-                    items: [
-                      { to: "/owner-programs", label: "Active Owner", icon: KeyRound, tour: "owner-programs" },
-                    ],
-                  } as NavGroup,
-                ]
-              : []),
-          ]
-        : (() => {
-            const visible = navGroups
-              .map((g) => ({
-                ...g,
-                items: g.items.filter(
-                  (i) =>
-                    canOpen(i.to) &&
-                    (!i.capability ||
-                      can(i.capability) ||
-                      (i.capability === "leads_work" && seat.isGuestExperience)) &&
-                    (!i.supervisorOnly || isSupervisor) &&
-                    (!i.flag || flagEnabled(i.flag)),
-                ),
-              }))
-              .filter((g) => g.items.length > 0);
-            // Direct Bookings replaces Bookings & Leads: one item where Leads and
-            // Referral sources used to sit. Where it opens is decided by
-            // directBookingsMenuTarget (lib/shell-nav.ts), the tested rule.
-            const bookingTarget = directBookingsMenuTarget({
-              can,
-              canOpen,
-              guestExperienceSeat: seat.isGuestExperience,
-            });
-            const isBooking = (to: string) => to === "/leads" || to === "/inquiry-sources";
-            for (const g of visible) {
-              const original = navGroups.find((o) => o.label === g.label)?.items ?? [];
-              const slot = original.findIndex((i) => isBooking(i.to));
-              if (slot < 0) continue;
-              g.items = g.items.filter((i) => !isBooking(i.to));
-              if (!bookingTarget) continue;
-              const at = g.items.filter((i) => original.findIndex((o) => o.to === i.to) < slot).length;
-              g.items.splice(at, 0, {
-                to: bookingTarget,
-                label: "Direct Bookings",
-                icon: UserPlus,
-                tour: "bookings-leads",
-                alsoActive: DIRECT_BOOKINGS_MENU_PATHS,
-              });
-            }
-            // One sidebar item per grouped area; the group's other pages are
-            // top-of-page tabs (PAGE_TAB_GROUPS). The item opens the first
-            // page this person can open.
-            const firstOpen = (candidates: { to: string; capability: Capability; icon: typeof Home }[]) =>
-              candidates.find((c) => can(c.capability) && canOpen(c.to));
-            const reports = firstOpen([
-              { to: "/analytics", capability: "analytics", icon: BarChart3 },
-              { to: "/owner-analytics", capability: "owner_programs", icon: KeyRound },
-              { to: "/cleaner-hours", capability: "cleaner_hours", icon: Timer },
-              { to: "/finance", capability: "finance_workspace", icon: ReceiptText },
-              { to: "/command-center", capability: "command_center", icon: Gauge },
-            ]);
-            if (reports)
-              visible.push({
-                label: "Reports",
-                items: [{ to: reports.to, label: "Reports", icon: reports.icon, tour: "reports" }],
-              });
-            const admin = firstOpen([
-              { to: "/integrations", capability: "integrations", icon: PlugZap },
-              { to: "/audit", capability: "audit_history", icon: History },
-              { to: "/help-tickets", capability: "audit_history", icon: CircleHelp },
-            ]);
-            if (admin)
-              visible.push({
-                label: "Admin",
-                items: [{ to: admin.to, label: "Admin", icon: admin.icon, tour: "admin" }],
-              });
-            return visible;
-          })();
 
   const workspace = vendorMode
     ? "Vendor Portal"

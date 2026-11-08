@@ -40,6 +40,9 @@ export const FLAG_KEYS = [
   "checklist_booking",
   // Survey reviews in Record routine work (src/lib/record-routine.ts). Off until surveys go live.
   "survey_review_check",
+  // Menu cleanup (lib/shell-nav.ts). Off: the pages stay reachable by direct link.
+  "work_orders_page",
+  "work_map",
 ] as const;
 
 export type FlagKey = (typeof FLAG_KEYS)[number];

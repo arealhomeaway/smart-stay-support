@@ -17,6 +17,8 @@ export type DepartmentLink = {
   to: string;
   search?: Record<string, string>;
   capability?: Capability;
+  /** Feature switch that must be on (Admin, Workflow controls). Unknown switches count as off. */
+  flag?: string;
   /** Treat as active only on an exact path match with this search. */
   exact?: boolean;
 };
@@ -153,7 +155,7 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
       p === "/properties" || p.startsWith("/property/") || p === "/map",
     tabs: [
       { label: "Properties", to: "/properties", capability: "properties" },
-      { label: "Work Map", to: "/map", capability: "work_orders_internal" },
+      { label: "Work Map", to: "/map", capability: "work_orders_internal", flag: "work_map" },
     ],
   },
   {
@@ -161,7 +163,7 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
     match: (p) =>
         p === "/work-orders" || p.startsWith("/work-orders/") || p === "/vendors" || p.startsWith("/vendors/"),
     tabs: [
-      { label: "Work Orders", to: "/work-orders", capability: "work_orders_internal" },
+      { label: "Work Orders", to: "/work-orders", capability: "work_orders_internal", flag: "work_orders_page" },
       { label: "Vendors", to: "/vendors", capability: "vendor_directory" },
     ],
   },
@@ -221,12 +223,17 @@ export type NavAccess = {
   canOpen: (pathname: string) => boolean;
   /** Guest Experience and Reservations team members may also open old Leads. */
   guestExperienceSeat?: boolean;
+  /** Feature switches. Missing means every switch counts as off. */
+  flagEnabled?: (key: string) => boolean;
 };
+
+const flagOn = (access: NavAccess, flag?: string) => !flag || Boolean(access.flagEnabled?.(flag));
 
 /** Tabs this person sees on a grouped page. */
 export function visiblePageTabs(group: PageTabGroup, access: NavAccess): DepartmentLink[] {
   return group.tabs.filter(
     (t) =>
+      flagOn(access, t.flag) &&
       (!t.capability ||
         access.can(t.capability) ||
         // The team exception covers old Leads only, never Direct Bookings settings.
@@ -248,6 +255,146 @@ export function directBookingsMenuTarget(access: NavAccess): string | null {
   if (access.canOpen("/leads") && (access.can("leads_work") || access.guestExperienceSeat)) return "/leads";
   if (access.canOpen("/inquiry-sources") && access.can("work_orders_internal")) return "/inquiry-sources";
   return null;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Left menu                                                                  */
+/* ------------------------------------------------------------------------- */
+
+export type MenuItem = {
+  /** Stable name for icons and the guided tour. */
+  key: string;
+  label: string;
+  to: string;
+  search?: Record<string, string>;
+  capability?: Capability;
+  flag?: string;
+  /** Other pages that also light up this item (its tab pages). */
+  alsoActive?: string[];
+};
+export type MenuGroup = { label: string; items: MenuItem[] };
+
+/** Pages that are kept but no longer shown in the menu. Reachable by direct link. */
+export const OFF_MENU_PATHS = [
+  "/tickets", // My Work, now part of Home
+  "/map", // Work Map, a Properties tab behind the work_map switch
+  "/owner-oversight", // Program oversight, in the Active Owner menu
+  "/homeowners", // Homeowners, in the Active Owner menu
+  "/leads",
+  "/availability-finder",
+] as const;
+
+/** Where the one "Analytics" item opens: the first of these this person can open. */
+export const ANALYTICS_TARGETS: { to: string; capability: Capability }[] = [
+  { to: "/analytics", capability: "analytics" },
+  { to: "/owner-analytics", capability: "owner_programs" },
+  { to: "/cleaner-hours", capability: "cleaner_hours" },
+  { to: "/finance", capability: "finance_workspace" },
+  { to: "/command-center", capability: "command_center" },
+];
+/** Where the one "Admin" item opens: the first of these this person can open. */
+export const ADMIN_TARGETS: { to: string; capability: Capability }[] = [
+  { to: "/integrations", capability: "integrations" },
+  { to: "/audit", capability: "audit_history" },
+  { to: "/help-tickets", capability: "audit_history" },
+];
+
+const tabPaths = (key: string) =>
+  (PAGE_TAB_GROUPS.find((g) => g.key === key)?.tabs ?? []).map((t) => t.to);
+
+/**
+ * The Operations menu, in order. Each item still follows the page's own
+ * permission rule (capability and canOpen) and its switch, so people only
+ * see what they can open.
+ */
+const OPERATIONS_MENU: MenuGroup[] = [
+  {
+    label: "My day",
+    items: [
+      { key: "dashboard", label: "Home", to: "/dashboard" },
+      { key: "team-queue", label: "Team Queue", to: "/team-queue" },
+      // Placeholder: where Direct Bookings opens is decided per person below.
+      { key: "bookings-leads", label: "Direct Bookings", to: "/direct-bookings", alsoActive: DIRECT_BOOKINGS_MENU_PATHS },
+      { key: "vendors", label: "Vendors", to: "/vendors", capability: "vendor_directory" },
+      // Returns with the vendor portal. Work Orders stay reachable from the ticket.
+      { key: "work-orders", label: "Work Orders", to: "/work-orders", capability: "work_orders_internal", flag: "work_orders_page" },
+      { key: "oversight", label: "Oversight", to: "/oversight", capability: "oversight", alsoActive: ["/supervisor-check"] },
+      // Stays until the page that will hold claims history exists.
+      { key: "claims", label: "Guest Claims & Refunds", to: "/claims", capability: "claims_work", alsoActive: ["/recovery"] },
+    ],
+  },
+  {
+    label: "Team",
+    items: [
+      { key: "team", label: "Team & Coverage", to: "/team", capability: "user_management" },
+      { key: "playbooks", label: "Playbooks", to: "/playbooks", capability: "playbooks_edit", alsoActive: ["/ticket-checklists"] },
+    ],
+  },
+  {
+    label: "Homes and owners",
+    items: [
+      { key: "properties", label: "Properties", to: "/properties", capability: "properties", alsoActive: ["/property"] },
+      { key: "onboarding", label: "Onboarding", to: "/onboarding", capability: "onboarding_workspace" },
+      { key: "owner-programs", label: "Active Owner", to: "/owner-programs", capability: "owner_programs" },
+      { key: "quarterly", label: "Quarterly Reviews", to: "/quarterly", capability: "vendor_admin", flag: "quarterly_reviews" },
+    ],
+  },
+];
+
+/** The left menu for Operations staff. Pure, so who sees what is testable. */
+export function operationsMenu(access: NavAccess): MenuGroup[] {
+  const allowed = (i: { to: string; capability?: Capability; flag?: string }) =>
+    access.canOpen(i.to) && (!i.capability || access.can(i.capability)) && flagOn(access, i.flag);
+  const bookingTarget = directBookingsMenuTarget(access);
+  const groups: MenuGroup[] = OPERATIONS_MENU.map((g) => ({
+    label: g.label,
+    items: g.items.flatMap((i) => {
+      if (i.key === "bookings-leads") return bookingTarget ? [{ ...i, to: bookingTarget }] : [];
+      return allowed(i) ? [i] : [];
+    }),
+  }));
+  const first = (list: { to: string; capability: Capability }[]) =>
+    list.find((c) => access.can(c.capability) && access.canOpen(c.to));
+  const analytics = first(ANALYTICS_TARGETS);
+  if (analytics)
+    groups.push({
+      label: "Insight",
+      items: [{ key: "analytics", label: "Analytics", to: analytics.to, alsoActive: tabPaths("reports") }],
+    });
+  const admin = first(ADMIN_TARGETS);
+  if (admin)
+    groups.push({
+      label: "Admin",
+      items: [{ key: "admin", label: "Admin", to: admin.to, alsoActive: tabPaths("admin") }],
+    });
+  return groups.filter((g) => g.items.length > 0);
+}
+
+/**
+ * The menu for onboarding-only accounts: the Onboarding department links,
+ * plus one doorway into Active Owner for people who can open it.
+ */
+export function onboardingOnlyMenu(access: NavAccess): MenuGroup[] {
+  const onboarding = DEPARTMENTS.find((d) => d.key === "onboarding")?.links ?? [];
+  const groups: MenuGroup[] = [
+    {
+      label: "Onboarding",
+      items: onboarding
+        .filter((l) => !l.capability || access.can(l.capability))
+        .map((l) => ({
+          key: `onboarding-${l.label}`,
+          label: l.label,
+          to: l.to,
+          ...(l.search ? { search: l.search } : {}),
+        })),
+    },
+  ];
+  if (access.can("owner_programs"))
+    groups.push({
+      label: "Active Owner",
+      items: [{ key: "owner-programs", label: "Active Owner", to: "/owner-programs" }],
+    });
+  return groups;
 }
 
 /** Last path segment → page label for department sub-pages. */
