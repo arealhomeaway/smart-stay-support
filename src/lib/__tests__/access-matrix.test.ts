@@ -51,6 +51,9 @@ const ACTIONS: Capability[] = [
   "leads_work",
 ];
 
+// Ticket checklists follow the same rule (register A15, Emily answer D2): the Director of
+// Onboarding, Project Manager, Utilities and Design now open /ticket-checklists (view; the
+// Director of Onboarding edits). Approved in writing; see playbook-roles-checklists.test.ts.
 // Playbooks (Nov 8, 2026, Emily): coordinators view, Supervisor edit, Director of Operations
 // edit, Director of Onboarding edit, Admin edit, Project Manager, Utilities, Design and
 // Finance view. Edit = save, approve or publish a new version, archive and upload SOPs.
@@ -79,25 +82,25 @@ const EXPECTED: Record<string, { pages: string[]; actions: string[]; savePlayboo
     approvePlaybooks: true,
   },
   DirOnb: {
-    pages: ["/vendors", "/work-orders", "/team", "/playbooks", "/finance", "/owner-library", "/owner-analytics", "/owner-programs", "/onboarding", "/owner"],
+    pages: ["/vendors", "/work-orders", "/team", "/playbooks", "/ticket-checklists", "/finance", "/owner-library", "/owner-analytics", "/owner-programs", "/onboarding", "/owner"],
     actions: ["vendor_admin", "work_orders_view", "finance_view", "owner_insight_view", "playbooks_edit", "team_schedule_view"],
     savePlaybooks: true,
     approvePlaybooks: true,
   },
   PM: {
-    pages: ["/vendors", "/work-orders", "/team", "/playbooks", "/onboarding"],
+    pages: ["/vendors", "/work-orders", "/team", "/playbooks", "/ticket-checklists", "/onboarding"],
     actions: ["vendor_admin", "work_orders_view", "team_schedule_view"],
     savePlaybooks: false,
     approvePlaybooks: false,
   },
   Utilities: {
-    pages: ["/vendors", "/team", "/playbooks", "/onboarding"],
+    pages: ["/vendors", "/team", "/playbooks", "/ticket-checklists", "/onboarding"],
     actions: ["vendor_admin", "team_schedule_view"],
     savePlaybooks: false,
     approvePlaybooks: false,
   },
   Design: {
-    pages: ["/team", "/playbooks", "/onboarding"],
+    pages: ["/team", "/playbooks", "/ticket-checklists", "/onboarding"],
     actions: ["team_schedule_view"],
     savePlaybooks: false,
     approvePlaybooks: false,
