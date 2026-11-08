@@ -115,9 +115,11 @@ export function mapPriority(v: string | null): "p1" | "p2" | "p3" {
   return "p3";
 }
 
-export const OPEN_NOTION_STATUSES = ["In progress", "Pending Claim Review with Josh"];
+/** The Notion claim status, matched exactly. Shown on screens only as "Claim review". */
+export const NOTION_CLAIM_REVIEW_STATUS = "Pending Claim Review with Josh";
+export const OPEN_NOTION_STATUSES = ["In progress", NOTION_CLAIM_REVIEW_STATUS];
 export function mapStatus(v: string | null): { status: "in_progress" | "closed"; waitingOnClaimReview: boolean } {
-  if (v === "Pending Claim Review with Josh") return { status: "in_progress", waitingOnClaimReview: true };
+  if (v === NOTION_CLAIM_REVIEW_STATUS) return { status: "in_progress", waitingOnClaimReview: true };
   if (v === "Done" || v === "Completed Same Day") return { status: "closed", waitingOnClaimReview: false };
   return { status: "in_progress", waitingOnClaimReview: false };
 }
@@ -185,7 +187,10 @@ export function mapNotionPage(
   }
   const formerProperty = !propertyId && homeOwnerRezId ? FORMER_PROPERTY_OWNERREZ[homeOwnerRezId] ?? null : null;
 
-  const { userId, missingLogin } = resolveAssignee(select(page, "Assignee"), ctx.staff);
+  // The Notion assignee is kept as text only (Emily, Nov 8). It is never the
+  // Resolve assignee: the ticket gets one only when someone reopens or takes it.
+  const notionAssignee = select(page, "Assignee");
+  const { missingLogin } = resolveAssignee(notionAssignee, ctx.staff);
 
   const createdIso = date(page, "Created Date") ?? page.created_time;
   const createdYear = new Date(createdIso).getUTCFullYear();
@@ -208,8 +213,8 @@ export function mapNotionPage(
   const guestInformed = select(page, "Guest Informed?");
   if (guestInformed) block.push(`Guest informed: ${guestInformed}`);
   if (pids.length > 1) block.push("Linked to more than one home in Notion. Please check the home.");
-  if (missingLogin) block.push(`Notion assignee: ${missingLogin} (no Resolve login at import)`);
-  block.push(`Notion status: ${statusName}`);
+  if (notionAssignee && notionAssignee.trim().toLowerCase() !== "general") block.push(`Assigned in Notion to: ${notionAssignee.trim()}`);
+  block.push(`Notion status: ${statusName === NOTION_CLAIM_REVIEW_STATUS ? "Claim review" : statusName}`);
   if (page.url) block.push(`Notion page: ${page.url}`);
   const notes = text(page, "Notes");
   const description = [notes, block.join("\n")].filter(Boolean).join("\n\n");
@@ -246,8 +251,8 @@ export function mapNotionPage(
       priority: mapPriority(select(page, "Priority")),
       status,
       property_id: propertyId,
-      assigned_to: userId,
-      assignment_note: missingLogin ? `Notion assignee ${missingLogin} has no Resolve login yet` : null,
+      assigned_to: null,
+      assignment_note: null,
       reported_at: createdIso,
       due_at: date(page, "Due Date"),
       resolved_at: status === "closed" ? completed ?? page.last_edited_time : null,

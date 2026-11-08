@@ -11,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useDemo } from "@/components/DemoProvider";
 import { readPreviewSeat } from "@/lib/demo-mode";
+import { withoutQuietNotion } from "@/lib/notion-ticket-display";
 import {
   attentionHeadline,
   supervisorAttention,
@@ -45,7 +46,7 @@ export function SupervisorAttentionBand({ isDirector }: { isDirector?: boolean |
         supabase
           .from("tickets")
           .select(
-            "id, ref, title, status, priority, category, reported_at, acknowledged_at, action_started_at, next_review_at, response_due_at, action_due_at, assigned_to, current_action_owner, handoff_status, escalated_at, escalation_level, reopen_count, guest_in_residence, guest_impact, closure_qa_result",
+            "id, ref, title, status, priority, category, reported_at, acknowledged_at, action_started_at, next_review_at, response_due_at, action_due_at, assigned_to, current_action_owner, handoff_status, escalated_at, escalation_level, reopen_count, guest_in_residence, guest_impact, closure_qa_result, external_source, external_status",
           )
           .eq("is_demo", demoMode)
           .is("archived_at", null)
@@ -65,7 +66,8 @@ export function SupervisorAttentionBand({ isDirector }: { isDirector?: boolean |
           .limit(200),
       ]);
       return {
-        tickets: (tickets.data ?? []) as AttentionTicket[],
+        // Imported Notion tickets are not escalations or unassigned work until reopened.
+        tickets: withoutQuietNotion(tickets.data ?? []) as AttentionTicket[],
         escalations: (escalations.data ?? []) as AttentionEscalation[],
         approvals: (approvals.data ?? []) as AttentionApproval[],
       };

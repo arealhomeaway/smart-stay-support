@@ -193,3 +193,10 @@
 - [x] 9 Ticket sections by need with Show all details
 - [x] 10 Guest impact confirmation separate from occupancy
 - [ ] Signed-in visual checks (no sign-in this session)
+
+## Nov 8 Home and Team Queue (build only)
+- [x] Home merges My Work: Needs you now, My work (Active/Waiting/Done recently, search, priority, List/Board, Team queue count), Routine work due today, Recent activity
+- [x] Team Queue: matching panel removed; quiet "Imported from Notion" group (Team A, Team B, Unassigned)
+- [x] Notion badges, import block, Reopen/Take; quiet imports out of counts, Oversight and rates
+- [ ] Apply docs/pending/home-merge/01_notion_reopen.sql (waits on Emily's approval)
+- [ ] Menu removal of My Work (separate prompt)

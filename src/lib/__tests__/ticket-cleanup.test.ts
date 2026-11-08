@@ -86,9 +86,11 @@ describe("approve/decline and reachability", () => {
   });
   it("every previous ticket section is still on the page", () => {
     const s = readFileSync("src/routes/_authenticated/tickets.$ticketId.tsx", "utf8");
-    for (const piece of ["<CurrentActionCard", "<GuidedTicketPanel", "<ActivityList", "addNote", "<AttachmentsPanel", "<PropertyHistoryList", "<ReservationContextPanel", "<OccupancyGuestPanel", "<TicketOwnerBox", "<SentToOwner", "<TicketOwnerUpdatePanel", "<ExpensesCard", "<TicketWorkOrderPanel", "<WaitingControl", "<MoreActions", "<TicketRecoveryPanel", "<TicketClaimPanel", "<ClaimRelatedPrompt", "Open in Notion", "<ClockText", "<PersonChip", "<OutlookSourceCard", "<VisitLogPanel", "<FinalReviewPanel", "Show all details"]) {
+    for (const piece of ["<CurrentActionCard", "<GuidedTicketPanel", "<ActivityList", "addNote", "<AttachmentsPanel", "<PropertyHistoryList", "<ReservationContextPanel", "<OccupancyGuestPanel", "<TicketOwnerBox", "<SentToOwner", "<TicketOwnerUpdatePanel", "<ExpensesCard", "<TicketWorkOrderPanel", "<WaitingControl", "<MoreActions", "<TicketRecoveryPanel", "<TicketClaimPanel", "<ClaimRelatedPrompt", "<NotionImportBlock", "<ClockText", "<PersonChip", "<OutlookSourceCard", "<VisitLogPanel", "<FinalReviewPanel", "Show all details"]) {
       expect(s.includes(piece)).toBe(true);
     }
+    // "Open in Notion" now lives inside the Imported from Notion block on the same page.
+    expect(readFileSync("src/components/tickets/NotionImportBlock.tsx", "utf8").includes("Open in Notion")).toBe(true);
     expect(s.includes('<TabsTrigger value="activity">')).toBe(false);
   });
   it("Do this now keeps the same Next action logic", () => {

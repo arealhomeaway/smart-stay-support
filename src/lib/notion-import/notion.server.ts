@@ -3,7 +3,7 @@
  * read-only data source query (a POST that reads) are ever sent. Calls are
  * spaced to respect Notion's rate limit and retried on 429.
  */
-import { NOTION_TICKET_DATA_SOURCE_ID, SCOPE_DAYS, type NotionPage } from "./mapping";
+import { NOTION_CLAIM_REVIEW_STATUS, NOTION_TICKET_DATA_SOURCE_ID, SCOPE_DAYS, type NotionPage } from "./mapping";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/notion/v1";
 const MIN_GAP_MS = 350;
@@ -58,7 +58,7 @@ export function scopeFilter(now = Date.now()) {
   return {
     or: [
       { property: "Issue Status", status: { equals: "In progress" } },
-      { property: "Issue Status", status: { equals: "Pending Claim Review with Josh" } },
+      { property: "Issue Status", status: { equals: NOTION_CLAIM_REVIEW_STATUS } },
       { timestamp: "last_edited_time", last_edited_time: { on_or_after: cutoff } },
       { timestamp: "created_time", created_time: { on_or_after: cutoff } },
       { property: "Created Date", date: { on_or_after: cutoff } },

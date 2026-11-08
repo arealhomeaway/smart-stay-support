@@ -14,6 +14,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { notionBadge } from "@/lib/notion-ticket-display";
 
 export type SearchTarget = { to: string; label: string; group: string; keywords?: string };
 
@@ -58,7 +59,7 @@ export function GlobalSearch({ targets }: { targets: SearchTarget[] }) {
       const [tickets, properties] = await Promise.all([
         supabase
           .from("tickets")
-          .select("id, ref, title, status, properties(name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id)")
+          .select("id, ref, title, status, reported_at, external_source, external_status, properties(name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id)")
           .is("archived_at", null)
           .or(ticketFilter)
           .order("reported_at", { ascending: false })
@@ -115,6 +116,11 @@ export function GlobalSearch({ targets }: { targets: SearchTarget[] }) {
                 >
                   <span className="numeric mr-2 text-xs text-muted-foreground">#{t.ref}</span>
                   <span className="truncate">{t.title}</span>
+                  {notionBadge(t) && (
+                    <span className="ml-2 shrink-0 rounded border border-border px-1.5 text-xs text-muted-foreground">
+                      {notionBadge(t)}
+                    </span>
+                  )}
                   <span className="ml-auto truncate pl-3 text-xs text-muted-foreground">
                     {formatPropertyLabel(t.properties).primary}
                   </span>

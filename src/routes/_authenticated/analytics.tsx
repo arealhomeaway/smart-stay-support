@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
 import { CATEGORIES, OPEN_STATUSES, PRIORITIES, priorityMeta } from "@/lib/tickets";
 import { ReportingBaselineNote } from "@/components/ReportingBaselineNote";
+import { withoutQuietNotion } from "@/lib/notion-ticket-display";
 
 export const Route = createFileRoute("/_authenticated/analytics")({
   head: () => ({
@@ -67,13 +68,14 @@ type Ticket = {
   occupancy_status: string | null;
   final_communication_sent: boolean | null;
   external_source: string | null;
+  external_status?: string | null;
   source_channel: string | null;
   property_id: string | null;
   properties?: { name: string; nickname: string | null } | null;
 };
 
 const SELECT =
-  "id, priority, status, category, reported_at, acknowledged_at, action_started_at, resolved_at, response_due_at, action_due_at, promised_update_due_at, reopen_count, avoidable_reopen, closure_qa_result, escalation_level, supervisor_caught, late_reason, waiting_on, guest_impact, occupancy_status, final_communication_sent, external_source, source_channel, property_id, properties(name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id)";
+  "id, priority, status, category, reported_at, acknowledged_at, action_started_at, resolved_at, response_due_at, action_due_at, promised_update_due_at, reopen_count, avoidable_reopen, closure_qa_result, escalation_level, supervisor_caught, late_reason, waiting_on, guest_impact, occupancy_status, final_communication_sent, external_source, external_status, source_channel, property_id, properties(name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id)";
 
 function minutesBetween(a: string, b: string) {
   return (new Date(b).getTime() - new Date(a).getTime()) / 60000;
@@ -328,7 +330,8 @@ function Analytics() {
         .limit(4000);
 
       if (error) throw error;
-      return (data ?? []) as unknown as Ticket[];
+      // Imported Notion tickets never count toward a rate until reopened in Resolve.
+      return withoutQuietNotion((data ?? []) as unknown as Ticket[]);
     },
   });
 

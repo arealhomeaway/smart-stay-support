@@ -287,6 +287,10 @@ type SlaTicket = {
   action_started_at?: string | null;
   response_due_at?: string | null;
   action_due_at?: string | null;
+  /** A Notion import reopened in Resolve restarts its clocks from last_reopened_at. */
+  external_source?: string | null;
+  external_status?: string | null;
+  last_reopened_at?: string | null;
 };
 
 export type ClockState = {
@@ -333,7 +337,11 @@ export function slaState(ticket: SlaTicket) {
 
   let escalation: { level: string; who: string; minutes: number } | null = null;
   if (!closed && ticket.priority === "p1" && !ticket.action_started_at) {
-    const received = new Date(ticket.received_at ?? ticket.reported_at ?? Date.now()).getTime();
+    const reopenedFromNotion =
+      ticket.external_source === "notion" && ticket.external_status === "reopened_in_resolve"
+        ? ticket.last_reopened_at
+        : null;
+    const received = new Date(reopenedFromNotion ?? ticket.received_at ?? ticket.reported_at ?? Date.now()).getTime();
     const elapsed = Math.floor((Date.now() - received) / 60_000);
     for (const step of P1_ESCALATION) {
       if (elapsed >= step.minutes) escalation = { ...step, minutes: elapsed };

@@ -11,6 +11,7 @@ import { formatPropertyLabel } from "@/lib/property-label";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import type { CommandCenter, Kpi, KpiSection, KpiStatus } from "./command-center";
+import { withoutQuietNotion } from "@/lib/notion-ticket-display";
 
 type Client = SupabaseClient<Database>;
 
@@ -107,7 +108,7 @@ export async function loadCommandCenter(
     supabase
       .from("tickets")
       .select(
-        "id, ref, priority, status, category, team:functional_role_code, reported_at, acknowledged_at, resolved_at, response_due_at, action_due_at, next_review_at, waiting_on, reopen_count, avoidable_reopen, closure_qa_result, closure_evidence, escalation_level, supervisor_caught, guest_impact, occupancy_status, final_communication_sent, property_id, vendor_user_id, vendor_status, accountable_owner, current_action_owner, external_source, external_id, properties(name, state, nickname, address_line1, unit, city, postal_code, ownerrez_property_id)",
+        "id, ref, priority, status, category, team:functional_role_code, reported_at, acknowledged_at, resolved_at, response_due_at, action_due_at, next_review_at, waiting_on, reopen_count, avoidable_reopen, closure_qa_result, closure_evidence, escalation_level, supervisor_caught, guest_impact, occupancy_status, final_communication_sent, property_id, vendor_user_id, vendor_status, accountable_owner, current_action_owner, external_source, external_status, external_id, properties(name, state, nickname, address_line1, unit, city, postal_code, ownerrez_property_id)",
       )
       // Executive KPIs exclude demo and archived records.
       .eq("is_demo", false)
@@ -194,7 +195,8 @@ export async function loadCommandCenter(
     return true;
   };
 
-  const allTickets = (ticketsRes.data ?? []).filter(matchesFilters);
+  // Imported Notion tickets never count toward a rate until reopened in Resolve.
+  const allTickets = withoutQuietNotion(ticketsRes.data ?? []).filter(matchesFilters);
   const current = allTickets.filter((t) => t.reported_at >= since);
   const prior = allTickets.filter((t) => t.reported_at < since);
 

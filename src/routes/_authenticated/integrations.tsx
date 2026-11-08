@@ -19,6 +19,7 @@ import { BreezewaySyncReviewPanel } from "@/components/BreezewaySyncReviewPanel"
 import { DocumentCompletionPanel } from "@/components/DocumentCompletionPanel";
 import { BreezewaySendingPanel } from "@/components/BreezewaySendingPanel";
 import { ReviewImportStatusPanel } from "@/components/feedback/ReviewImportStatusPanel";
+import { notionStatusLabel } from "@/lib/notion-ticket-display";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
   component: () => (
@@ -165,7 +166,7 @@ function IntegrationsPage() {
                   {(t.properties as { name: string } | null)?.name ?? "No home linked"}
                 </span>
                 <StatusBadge tone="closed">{t.priority?.toUpperCase()}</StatusBadge>
-                <span className="text-muted-foreground">{t.external_status ?? t.status}</span>
+                <span className="text-muted-foreground">{t.external_status ? notionStatusLabel(t.external_status) : t.status}</span>
                 <span className="ml-auto text-xs text-muted-foreground">
                   synced {timeAgo(t.external_synced_at)}
                 </span>
