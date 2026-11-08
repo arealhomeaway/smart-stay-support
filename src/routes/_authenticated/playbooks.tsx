@@ -171,7 +171,7 @@ function PlaybooksPage() {
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      {!libraryOnly && <div className="flex flex-wrap gap-2">
         {FILTERS.map((f) => (
           <Button
             key={f.value}
