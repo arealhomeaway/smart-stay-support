@@ -3,13 +3,13 @@
 -- No BEGIN/COMMIT: the migration tool runs this file in one transaction.
 --
 -- Today signed-in and signed-out sessions still hold the default insert,
--- update, delete and truncate rights on these tables. Rows were already safe
--- (no write policy, so row security refuses writes; the no-change and
--- no-truncate triggers refuse edits), but the rights should not be there.
--- Every writer is a function that runs with elevated rights
--- (log_ticket_state, log_queue_open, add_routine_correction and the record_*
--- functions), so they keep working. Reads stay exactly as they are.
+-- update and delete rights on these tables. Rows were already safe (no write
+-- policy, so row security refuses writes; the no-change triggers refuse
+-- edits), but the rights should not be there. Every writer is a function that
+-- runs with elevated rights (log_ticket_state, log_queue_open,
+-- add_routine_correction and the record_* functions), so they keep working.
+-- Reads stay exactly as they are.
 
-REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public.scorecard_records FROM authenticated, anon;
-REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public.ticket_state_log FROM authenticated, anon;
-REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public.routine_check_corrections FROM authenticated, anon;
+REVOKE INSERT, UPDATE, DELETE ON public.scorecard_records FROM authenticated, anon;
+REVOKE INSERT, UPDATE, DELETE ON public.ticket_state_log FROM authenticated, anon;
+REVOKE INSERT, UPDATE, DELETE ON public.routine_check_corrections FROM authenticated, anon;

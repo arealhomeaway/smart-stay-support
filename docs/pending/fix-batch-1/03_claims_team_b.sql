@@ -4,17 +4,14 @@
 -- tool, not as a migration. No BEGIN/COMMIT.
 --
 -- Decision: Team B (Property Operations) handles guest damage claims. Only the
--- Claims work type changes: its role becomes the Property Operations day
--- coordinator (po_day, the same role every other Team B work type uses), its
--- team becomes property_operations, and its backup note names the other
--- Property Operations role. Response times, priority, closure evidence,
--- playbook and every other work type stay exactly as they are. Existing
--- tickets keep the role they were saved with (there are none today).
+-- Claims work type's role link changes, to the Property Operations day
+-- coordinator role (po_day, the role the other Team B work types use).
+-- Its team label and backup note are left as they are (nothing reads them
+-- today). Response times, priority, closure evidence, playbook and every
+-- other work type stay exactly as they are. Existing tickets keep the role
+-- they were saved with (there are none on Claims today).
 
 UPDATE public.work_types
-SET functional_role_code = 'po_day',
-    team = 'property_operations',
-    backup_coverage = 'Other Property Operations role; escalate decisions beyond authority'
+SET functional_role_code = 'po_day'
 WHERE name = 'Claims'
-  AND functional_role_code = 'ge_day'
-  AND team = 'guest_experience';
+  AND functional_role_code = 'ge_day';
