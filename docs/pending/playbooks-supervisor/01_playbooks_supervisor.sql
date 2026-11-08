@@ -5,8 +5,10 @@
 -- Each function below is the live definition (live-capture/) with one line changed: the
 -- permission check reads public.can_save_playbooks (Admin, both Directors, and whoever holds
 -- or covers the Operations Supervisor role) instead of public.can_manage_playbooks, and its
--- message names the Operations Supervisor. Nothing else changes: version history, approval
--- history lines, locks, SOP receipts and grants stay as they are. Additive only.
+-- message names the Operations Supervisor. In change_playbook_state the check now covers
+-- every action (approve, archive, review note, send for review), so people who only view
+-- playbooks cannot change them. Nothing else changes: version history, approval history
+-- lines, locks, SOP receipts and grants stay as they are.
 
 CREATE OR REPLACE FUNCTION public.change_playbook_state(_id uuid, _expected_updated_at timestamp with time zone, _action text, _note text DEFAULT ''::text)
  RETURNS jsonb
@@ -18,7 +20,7 @@ DECLARE _actor uuid:=auth.uid(); _old public.playbooks; _sibling public.playbook
 BEGIN
   IF _actor IS NULL OR NOT public.is_internal_staff(_actor) THEN RAISE EXCEPTION 'Staff access required.'; END IF;
   IF _action NOT IN ('approve','archive','note','submit') THEN RAISE EXCEPTION 'Invalid playbook action.'; END IF;
-  IF _action IN ('approve','archive') AND NOT public.can_save_playbooks(_actor) THEN RAISE EXCEPTION 'Only Admins, Directors and the Operations Supervisor can approve or archive playbooks.'; END IF;
+  IF NOT public.can_save_playbooks(_actor) THEN RAISE EXCEPTION 'Only Admins, Directors and the Operations Supervisor can change playbooks.'; END IF;
   SELECT * INTO _old FROM public.playbooks WHERE id=_id;
   IF NOT FOUND OR _old.checklist IS NOT NULL THEN RAISE EXCEPTION 'Ordinary playbook not found.'; END IF;
   _key:=coalesce(_old.playbook_key,_old.id::text);
