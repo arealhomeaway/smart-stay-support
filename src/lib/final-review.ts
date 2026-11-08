@@ -12,6 +12,8 @@
  * evidence and communication requirements are already satisfied.
  */
 
+import { MAINTENANCE_POLICY, inOwnerTier, money } from "./maintenance-policy";
+
 export const FINAL_REVIEW_LABEL = "Review before closing";
 
 /** Stored outcomes that mean Final Review is satisfied. */
