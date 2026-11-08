@@ -21,6 +21,8 @@ import {
   validateNotBooked,
   SEARCH_DISTANCES,
   isMissingColumn,
+  homeDirectBookings,
+  type HomeBookingRow,
   type HomeCandidate,
 } from "./direct-bookings";
 
