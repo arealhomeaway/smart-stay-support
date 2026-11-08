@@ -785,7 +785,7 @@ function TeamQueuePage() {
         ) : view === "map" ? (
         !operationsAccess && !rolesLoading ? <EmptyState title="Operations access required" hint="This view is for Operations staff and leadership." />
         : map.isError ? <EmptyState title="The map could not be loaded" hint="Check the connection and try again."
-            action={<Button onClick={() => void map.refetch()}>Try again</Button>} />
+            action={<Button className="min-h-11" onClick={() => void map.refetch()}>Try again</Button>} />
         : map.isLoading ? <Skeleton className="h-[min(70vh,720px)] min-h-[420px] w-full" />
         : <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
@@ -823,8 +823,8 @@ function TeamQueuePage() {
                     {selectedPin.openJobs.filter((job) => job.ticketId && !["closed", "resolved"].includes(job.status)).length} active Tickets · {selectedPin.openJobs.filter((job) => job.workOrderId).length} canonical Work Orders
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    <Button asChild size="sm" variant="outline"><Link to="/property/$propertyId" params={{ propertyId: selectedPin.propertyId }} search={originSearch as never}>Open Property</Link></Button>
-                    <Button asChild size="sm" variant="outline"><a href={directionsUrl(selectedPin)} target="_blank" rel="noopener noreferrer">Directions</a></Button>
+                    <Button asChild variant="outline" className="min-h-11"><Link to="/property/$propertyId" params={{ propertyId: selectedPin.propertyId }} search={originSearch as never}>Open Property</Link></Button>
+                    <Button asChild variant="outline" className="min-h-11"><a href={directionsUrl(selectedPin)} target="_blank" rel="noopener noreferrer">Directions</a></Button>
                   </div>
                   {selectedPin.openJobs.length ? selectedPin.openJobs.map((job) => (
                     <div key={job.id} className="space-y-2 rounded-lg border border-border bg-card p-3">
@@ -840,8 +840,8 @@ function TeamQueuePage() {
                         {job.waitingOn && <span className="col-span-2">Waiting on: {job.waitingOn}</span>}
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {job.ticketId && <Button asChild size="sm"><Link to="/tickets/$ticketId" params={{ ticketId: job.ticketId }} search={originSearch}>Open Ticket</Link></Button>}
-                        {job.workOrderId && <Button asChild size="sm" variant="outline"><Link to="/work-orders" search={{ open: job.workOrderId, ...originSearch } as never}>Open Work Order</Link></Button>}
+                        {job.ticketId && <Button asChild className="min-h-11"><Link to="/tickets/$ticketId" params={{ ticketId: job.ticketId }} search={originSearch}>Open Ticket</Link></Button>}
+                        {job.workOrderId && <Button asChild variant="outline" className="min-h-11"><Link to="/work-orders" search={{ open: job.workOrderId, ...originSearch } as never}>Open Work Order</Link></Button>}
                       </div>
                     </div>
                   )) : <p className="text-muted-foreground">No work matches the current filters at this property.</p>}
@@ -875,8 +875,8 @@ function TeamQueuePage() {
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-card p-3">
             <h2 className="font-display text-lg font-semibold">{new Date(`${calendarMonth}-01T12:00:00`).toLocaleDateString("en-US", { month: "long", year: "numeric" })}</h2>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => setParam({ month: shiftOperationsMonth(calendarMonth, -1) })}>Previous month</Button>
-              <Button size="sm" variant="outline" onClick={() => setParam({ month: shiftOperationsMonth(calendarMonth, 1) })}>Next month</Button>
+              <Button variant="outline" className="min-h-11" onClick={() => setParam({ month: shiftOperationsMonth(calendarMonth, -1) })}>Previous month</Button>
+              <Button variant="outline" className="min-h-11" onClick={() => setParam({ month: shiftOperationsMonth(calendarMonth, 1) })}>Next month</Button>
             </div>
           </div>
           <div className="hidden grid-cols-7 overflow-hidden rounded-lg border border-border bg-card md:grid">
