@@ -9,7 +9,8 @@ import { currentOwnerId, isMine, type MatterOwnership } from "@/lib/matters";
 import { isQuietNotion, isRecentOpenImport, type NotionTicketLike } from "@/lib/notion-ticket-display";
 import { matchesPropertySearch, formatPropertyLabel, type PropertyLabelFields } from "@/lib/property-label";
 import { OPEN_STATUSES, STATUSES, isClosed, slaState } from "@/lib/tickets";
-import { teamOf } from "@/lib/coverage-model";
+import { TEAM_B, teamOf } from "@/lib/coverage-model";
+import { automatedSourceOf } from "@/lib/automated-sources";
 
 export type HomeTab = "active" | "waiting" | "done";
 
@@ -137,7 +138,10 @@ export function unclaimedCount(
     if (!OPEN_STATUSES.includes(t.status)) return false;
     if (currentOwnerId(t)) return false;
     if (!myTeam) return true;
-    const team = t.functional_role_code ? teamOf(t.functional_role_code) : null;
+    // A Breezeway ticket with no role belongs to Team B (register T15, automated-sources.ts).
+    const team = t.functional_role_code
+      ? teamOf(t.functional_role_code)
+      : automatedSourceOf(t) === "breezeway" ? TEAM_B : null;
     return team === null || team === myTeam;
   }).length;
 }
