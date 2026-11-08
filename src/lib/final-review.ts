@@ -70,8 +70,11 @@ export type FinalReviewFacts = {
   ownerSensitive?: boolean | null;
 };
 
-/** The ARHA owner-approval threshold. Above this a repair is "major". */
-export const MAJOR_REPAIR_THRESHOLD = 350;
+/**
+ * The ARHA owner-approval threshold, read from the Maintenance Authority
+ * Policy. From policy v3 a repair at or above it is "major".
+ */
+export const MAJOR_REPAIR_THRESHOLD = MAINTENANCE_POLICY.ownerApprovalThreshold;
 
 export type FinalReviewRequirement = {
   required: boolean;
@@ -96,8 +99,12 @@ export function finalReviewRequirement(facts: FinalReviewFacts): FinalReviewRequ
   if ((facts.reopen_count ?? 0) > 0) reasons.push("This ticket has been reopened before.");
   if (facts.hasClaim) reasons.push("A claim was opened from this ticket.");
   if (facts.hasRecovery) reasons.push("Guest refunds & credits was opened from this ticket.");
-  if ((facts.repairAmount ?? 0) > MAJOR_REPAIR_THRESHOLD)
-    reasons.push(`Major repair, above the $${MAJOR_REPAIR_THRESHOLD} owner limit.`);
+  if (inOwnerTier(facts.repairAmount ?? 0, MAINTENANCE_POLICY))
+    reasons.push(
+      MAINTENANCE_POLICY.ownerThresholdInclusive
+        ? `Major repair of ${money(MAINTENANCE_POLICY.ownerApprovalThreshold)} or more, which needs the owner.`
+        : `Major repair, above the $${MAINTENANCE_POLICY.ownerApprovalThreshold} owner limit.`,
+    );
   if (facts.ownerSensitive) reasons.push("The homeowner is directly involved.");
   if (facts.priority === "p2" && (facts.guest_in_residence || facts.guest_impact === "high"))
     reasons.push("P2 with a guest in the home.");
