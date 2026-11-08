@@ -3,7 +3,9 @@ import { readFileSync } from "node:fs";
 const read = (p: string) => readFileSync(p, "utf8");
 describe("Phase 1 Operations entry points", () => {
   it("top-bar Record work shows on My Work and Ticket pages", () => {
-    const s = read("src/components/AppShell.tsx");
+    // The rule moved into shell-nav's topBarWorkActions, which AppShell uses.
+    const s = read("src/lib/shell-nav.ts");
+    expect(read("src/components/AppShell.tsx")).toContain("topBarWorkActions(");
     expect(s).not.toContain('!pathname.startsWith("/tickets");');
     expect(s).toContain('pathname !== "/tickets/new"');
   });
