@@ -32,4 +32,15 @@ live copy exactly.
 
 ## Applied
 
-See the end of this file once applied.
+- Nov 8, 2026, approved by Emily (answers D1 and D2). Checksums in `sha256.txt` matched before
+  anything ran and both live functions matched `live-capture/` exactly.
+- 01 APPLIED byte-for-byte as migration 0292 (`drizzle/migrations/0292_playbook_history_role.sql`).
+- 02 APPLIED byte-for-byte as migration 0293 (`drizzle/migrations/0293_ticket_checklist_editors.sql`).
+- Read back: both functions are still security definer with search path public, private and the
+  same grants (authenticated, service_role).
+- Cancelled live check (nothing kept, checked afterwards): the Operations Supervisor approved a
+  practice playbook and the history line saved `ops_supervisor`; the Operations Supervisor
+  published a lockout checklist version and the Director of Onboarding a cleaning version; the
+  Finance lead was refused with "Only Admins, Directors and the Operations Supervisor can publish a
+  ticket checklist." Afterwards: 6 checklists all still version 1, 0 history lines, 0 publish audit
+  lines, no practice playbook. Same as before.
