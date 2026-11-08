@@ -63,12 +63,15 @@ export function VendorOrgSheet({
   onOpenChange,
   properties,
   canManage,
+  canLead,
   focusRequirementId,
 }: {
   orgId: string | null;
   onOpenChange: (open: boolean) => void;
   properties: PropertyOption[];
   canManage: boolean;
+  /** Operations leadership: status, screening results and documents. Others see them read only. */
+  canLead: boolean;
   focusRequirementId?: string | null;
 }) {
   useEffect(() => {
@@ -223,7 +226,7 @@ export function VendorOrgSheet({
                     <GateRow
                       line={line}
                       documents={data.documents.map((d) => ({ id: d.id, title: d.title, docType: d.docType }))}
-                      canManage={canManage}
+                      canManage={canLead}
                       saving={resultMutation.isPending}
                       onSave={(v) => resultMutation.mutate(v)}
                     />
@@ -231,7 +234,13 @@ export function VendorOrgSheet({
                   ))}
                 </div>
 
-                {canManage && (
+                {canManage && !canLead && (
+                  <p className="text-xs text-muted-foreground">
+                    Status, Gold Standard, compliance and screening results: {LEADERSHIP_ONLY_LABEL.toLowerCase()}
+                  </p>
+                )}
+
+                {canLead && (
                   <>
                     <Separator />
                     <div className="space-y-2">
@@ -389,10 +398,13 @@ export function VendorOrgSheet({
               </TabsContent>
 
               <TabsContent value="documents">
+                {canManage && !canLead && (
+                  <p className="pt-4 text-xs text-muted-foreground">Documents: {LEADERSHIP_ONLY_LABEL.toLowerCase()}</p>
+                )}
                 <VendorDocumentsPanel
                   orgId={org.id}
                   documents={data.documents}
-                  canManage={canManage}
+                  canManage={canLead}
                   onChanged={refresh}
                 />
               </TabsContent>
