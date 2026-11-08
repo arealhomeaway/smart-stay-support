@@ -115,9 +115,11 @@ export function mapPriority(v: string | null): "p1" | "p2" | "p3" {
   return "p3";
 }
 
-export const OPEN_NOTION_STATUSES = ["In progress", "Pending Claim Review with Josh"];
+/** The Notion claim status, matched exactly. Shown on screens only as "Claim review". */
+export const NOTION_CLAIM_REVIEW_STATUS = "Pending Claim Review with Josh";
+export const OPEN_NOTION_STATUSES = ["In progress", NOTION_CLAIM_REVIEW_STATUS];
 export function mapStatus(v: string | null): { status: "in_progress" | "closed"; waitingOnClaimReview: boolean } {
-  if (v === "Pending Claim Review with Josh") return { status: "in_progress", waitingOnClaimReview: true };
+  if (v === NOTION_CLAIM_REVIEW_STATUS) return { status: "in_progress", waitingOnClaimReview: true };
   if (v === "Done" || v === "Completed Same Day") return { status: "closed", waitingOnClaimReview: false };
   return { status: "in_progress", waitingOnClaimReview: false };
 }

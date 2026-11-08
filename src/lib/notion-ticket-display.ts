@@ -16,6 +16,7 @@
  * the last edit and never the date it was copied into Resolve.
  */
 import { OPEN_STATUSES, slaDueDates } from "@/lib/tickets";
+import { NOTION_CLAIM_REVIEW_STATUS } from "@/lib/notion-import/mapping";
 
 export const NOTION_RECENT_DAYS = 30;
 /** Written to tickets.external_status by the reopen action. */
@@ -117,14 +118,17 @@ export function claimStepsAvailable(hasClaim: boolean, _t?: NotionTicketLike): b
 
 // ---------- wording ----------
 
-const HIDDEN_STATUS = /pending\s+claim\s+review\s+with\s+josh/gi;
+// The Notion claim review status names a person. It never reaches a screen.
+const hiddenPattern = NOTION_CLAIM_REVIEW_STATUS.trim().split(/\s+/).map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("\\s+");
+const HIDDEN_STATUS = new RegExp(hiddenPattern, "gi");
+const HIDDEN_STATUS_ONE = new RegExp(hiddenPattern, "i");
 
 /** The Notion status shown on a screen. The claim review status is always "Claim review". */
 export function notionStatusLabel(status: string | null | undefined): string {
   const s = (status ?? "").trim();
   if (!s) return "";
   if (s === NOTION_LIVE_STATUS) return "Reopened in Resolve";
-  if (/pending\s+claim\s+review\s+with\s+josh/i.test(s)) return "Claim review";
+  if (HIDDEN_STATUS_ONE.test(s)) return "Claim review";
   return cleanNotionText(s);
 }
 
