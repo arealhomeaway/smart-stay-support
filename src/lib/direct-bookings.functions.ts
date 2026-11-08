@@ -12,6 +12,7 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
+import { formatPropertyLabel } from "@/lib/property-label";
 import {
   rankHomes,
   readSettings,
@@ -24,6 +25,7 @@ import {
   SEARCH_DISTANCES,
   isMissingColumn,
   homeDirectBookings,
+  homeStartIds,
   ccRecipients,
   isActiveOwnerHome,
   stayDates,
@@ -257,9 +259,19 @@ export const getDirectBooking = createServerFn({ method: "POST" })
     // The signed-in person's own name, used only to sign the email.
     const { data: me } = await db.from("profiles").select("full_name").eq("id", context.userId).maybeSingle();
     const { mailboxReadEnabled } = await import("./mailbox.server");
+    // The homes offered in the reply, named the shared way, for "Which home did they book?".
+    const offeredIds = lead.offered_property_ids ?? [];
+    const { data: offeredRows } = offeredIds.length
+      ? await db.from("properties").select("id, name, address_line1, unit, city, state, postal_code").in("id", offeredIds)
+      : { data: [] as { id: string }[] };
+    const offeredHomes = offeredIds.map((id) => {
+      const p = ((offeredRows ?? []) as { id: string }[]).find((r) => r.id === id) ?? null;
+      return { id, label: formatPropertyLabel(p as Parameters<typeof formatPropertyLabel>[0]).primary };
+    });
     return {
       ready: true as const,
       lead,
+      offeredHomes,
       fieldsReady: read.fieldsReady,
       me: context.userId,
       myName: me?.full_name ?? "",
