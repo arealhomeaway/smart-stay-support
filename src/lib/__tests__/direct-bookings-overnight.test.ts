@@ -1,5 +1,6 @@
-import {
+import { describe, expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
+import {
   DEFAULT_SETTINGS,
   OVERNIGHT_COPY,
   beforeOvernightClock,
