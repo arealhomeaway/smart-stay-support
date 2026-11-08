@@ -126,7 +126,7 @@ describe("access table: who opens which page and does its main action", () => {
       const caps = capabilitiesFor(p.roles, p.seats);
       expect({
         pages: PAGES.filter((path) => canOpenPath(path, p)),
-        actions: ACTIONS.filter((a) => caps.has(a)),
+        actions: ACTIONS.filter((a) => caps.has(a)) as string[],
         savePlaybooks: canSavePlaybooks(p.roles, p.seats),
         approvePlaybooks: canManagePlaybooks(p.roles, p.seats),
       }).toEqual(EXPECTED[name]!);

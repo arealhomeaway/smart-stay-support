@@ -58,15 +58,15 @@ describe("2. Add users", () => {
   it("the server lets Operations leadership create only Coordinator and Supervisor codes", async () => {
     const sup = fake({ "holds:ops_supervisor": true });
     expect(await inviteScope(sup, "u")).toBe("operations");
-    await expect(assertCanInvite(sup, "u", "tech")).resolves.toBe("operations");
-    await expect(assertCanInvite(sup, "u", "manager")).resolves.toBe("operations");
+    expect(await assertCanInvite(sup, "u", "tech")).toBe("operations");
+    expect(await assertCanInvite(sup, "u", "manager")).toBe("operations");
     for (const r of ["admin", "onboarding", "vendor", "owner"] as AppRole[])
       await expect(assertCanInvite(sup, "u", r)).rejects.toThrow("Property Coordinators and Supervisors");
-    await expect(assertCanInvite(fake({ is_director: true }), "u", "manager")).resolves.toBe("operations");
-    await expect(assertCanInvite(fake({ seat_holder_at: "u" }), "u", "tech")).resolves.toBe("operations");
+    expect(await assertCanInvite(fake({ is_director: true }), "u", "manager")).toBe("operations");
+    expect(await assertCanInvite(fake({ seat_holder_at: "u" }), "u", "tech")).toBe("operations");
   });
   it("Admin still invites every account type; others none", async () => {
-    await expect(assertCanInvite(fake({ has_role: true }), "u", "vendor")).resolves.toBe("all");
+    expect(await assertCanInvite(fake({ has_role: true }), "u", "vendor")).toBe("all");
     await expect(assertCanInvite(fake({ is_onboarding_director: true }), "u", "tech")).rejects.toThrow("Only an admin");
   });
 });
@@ -92,7 +92,7 @@ describe("4. Vendors", () => {
     expect(menuFor(UTIL)).toContain("/vendors");
     expect(menuFor(UTIL)).not.toContain("/work-orders");
     expect(menuFor(PM)).toContain("/work-orders");
-    expect(menuFor(DIR_ONB)).toEqual(expect.arrayContaining(["/vendors", "/work-orders", "/finance", "/team", "/playbooks"]));
+    for (const path of ["/vendors", "/work-orders", "/finance", "/team", "/playbooks"]) expect(menuFor(DIR_ONB)).toContain(path);
     expect(menuFor(PM)).not.toContain("/finance");
   });
 });
