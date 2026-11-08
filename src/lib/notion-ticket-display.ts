@@ -70,8 +70,8 @@ export function countsInOpenTotal(t: NotionTicketLike, now: number = Date.now())
   return s !== "historical" && s !== "older_open";
 }
 
-/** The open tickets total for a list of tickets, using the rule above. */
-export function openTicketTotal<T extends NotionTicketLike>(
+/** The tickets that make up an open tickets total, using the rule above. */
+export function openTicketsForTotal<T extends NotionTicketLike>(
   rows: T[],
   isOpen: (status: string) => boolean = (s) => OPEN_STATUSES.includes(s),
   now: number = Date.now(),
