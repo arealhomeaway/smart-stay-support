@@ -363,11 +363,11 @@ describe("fix batch 4 part 2: the morning alert says when the reply clock starts
     await d.exec(`INSERT INTO public.app_settings VALUES ('direct_booking_settings', '{"overnightClockStart":"09:30"}')`);
     const a = await overnightRequest(d, at("08", "23:00"));
     await release(d, at("09", "08:00"));
-    expect((await alertBody(d, a))[0]).toEndWith("Reply clock starts at 9:30 AM.");
+    expect((await alertBody(d, a))[0]!.endsWith("Reply clock starts at 9:30 AM.")).toBe(true);
     await d.exec(`UPDATE public.app_settings SET value = '{"overnightClockStart":"nine"}' WHERE key = 'direct_booking_settings'`);
     const b = await overnightRequest(d, at("09", "23:00"));
     await release(d, at("10", "08:00"));
-    expect((await alertBody(d, b))[0]).toEndWith("Reply clock starts at 9:00 AM.");
+    expect((await alertBody(d, b))[0]!.endsWith("Reply clock starts at 9:00 AM.")).toBe(true);
   });
 
   it("pressing Start overnight makes that person the owner and cancels the morning alert", async () => {
