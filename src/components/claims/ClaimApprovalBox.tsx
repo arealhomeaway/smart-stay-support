@@ -114,7 +114,7 @@ export function ClaimApprovalBox({
         </div>
       ) : null}
 
-      {canAsk && state !== "pending" && state !== "approved" ? (
+      {canAsk && state !== "pending" ? (
         <div className="space-y-2">
           <div>
             <Label htmlFor={`claim-amount-${claim.id}`}>{C.amount}</Label>
@@ -127,7 +127,7 @@ export function ClaimApprovalBox({
             />
           </div>
           {amount !== null ? <p className="text-xs text-muted-foreground">{C.who[needed]}</p> : null}
-          {amount !== null && needed !== "coordinator" ? (
+          {amount !== null && needed !== "coordinator" && (state !== "approved" || amount > (num(claim.approval_amount) ?? 0)) ? (
             <Button className="min-h-11" variant="outline" disabled={ask.isPending} onClick={() => ask.mutate()}>
               {ask.isPending ? C.asking : C.ask}
             </Button>

@@ -42,6 +42,7 @@ import {
 } from "@/lib/claims";
 import type { ClaimRow } from "@/lib/claim-types";
 import { FieldHint } from "@/components/FieldHint";
+import { ClaimApprovalBox, type ClaimApprovalFields } from "@/components/claims/ClaimApprovalBox";
 import { categoryLabel, normalizeCategory } from "@/lib/taxonomy";
 
 const TYPES: ClaimType[] = [
@@ -233,8 +234,8 @@ export function TicketClaimPanel({
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         {existing.map((claim) => (
+          <div key={claim.id} className="space-y-2">
           <Link
-            key={claim.id}
             to="/claims"
             className="block rounded-md border px-3 py-2 transition-colors hover:bg-muted/50"
           >
@@ -249,6 +250,15 @@ export function TicketClaimPanel({
               {deadlineLabel(claim.deadline_on)} · recovered {formatMoney(claim.recovered_amount)}
             </p>
           </Link>
+          <ClaimApprovalBox
+            claim={claim as unknown as ClaimApprovalFields}
+            canAsk={!readOnly}
+            onDone={() => {
+              qc.invalidateQueries({ queryKey: ["claims-for-ticket", ticket.id] });
+              qc.invalidateQueries({ queryKey: ["claims"] });
+            }}
+          />
+          </div>
         ))}
 
         {readOnly || existing.length > 0 ? null : !open ? (
