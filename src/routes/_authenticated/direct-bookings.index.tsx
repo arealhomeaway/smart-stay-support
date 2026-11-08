@@ -59,6 +59,7 @@ function DirectBookingsPage() {
   const { demoMode } = useDemo();
   const list = useServerFn(listDirectBookings);
   const start = useServerFn(startDirectBooking);
+  const create = useServerFn(createDirectBooking);
   const navigate = useNavigate();
   const now = useNow();
   const [newOpen, setNewOpen] = useState(false);
@@ -183,7 +184,7 @@ function DirectBookingsPage() {
         open={newOpen}
         onOpenChange={setNewOpen}
         onCreate={async (payload) => {
-          const created = await createDirectBooking({ data: payload });
+          const created = await create({ data: payload });
           await start({ data: { id: created.id } }).catch(() => null);
           navigate({ to: "/direct-bookings/$requestId", params: { requestId: created.id } });
         }}
