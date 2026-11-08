@@ -227,3 +227,8 @@
 - [x] Archive replaces delete; Admin restore and archived list on Admin tools; rating channels setting
 - [ ] Apply staged SQL: waits on Emily's approval
 - [ ] COO role needs a person assigned in Team & coverage before approvals can be given
+
+## Nov 8 Routing tweaks
+- [x] Overnight Direct Booking alerts add the person on call; quiet Notion imports never count towards load; Home shows unstarted requests to everyone eligible now
+- [x] Mark as booked asks which home when several were offered; home and move-in date optional
+- [ ] Week two: lunch times editing on Team & Coverage, and a lunch for a newly added shift (left for week one by decision)
