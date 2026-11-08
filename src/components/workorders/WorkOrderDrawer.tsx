@@ -755,7 +755,7 @@ export function WorkOrderDrawer({
                 </div>
               )}
 
-              {supervisorApproved(workOrder) && !workOrder.owner_fyi_at ? (
+              {supervisorApproved(workOrder) && verdict.ownerFyiRequired && !workOrder.owner_fyi_at ? (
                 <div className="space-y-2">
                   <Label className="text-xs">What the homeowner was told, and where</Label>
                   <Textarea
@@ -789,9 +789,7 @@ export function WorkOrderDrawer({
         <section className="space-y-3">
           <h3 className="font-display text-sm font-semibold">Owner approval</h3>
           <p className="text-xs text-muted-foreground">
-            Repairs over the owner approval limit need the owner's approval. Emergency work to stop
-            damage can go ahead; approval is for the permanent fix. Notified is not the same as
-            approved.
+            {ownerApprovalHelp(policyForVersion(workOrder.policy_version as string | null | undefined))}
           </p>
 
           {verdict.ownerApprovalRequired ? (
