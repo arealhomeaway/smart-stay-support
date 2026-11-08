@@ -129,12 +129,11 @@ export type Capability =
   // leadership and the Director of Onboarding. Library editing stays on
   // owner_program_admin.
   | "owner_insight_view"
-  // Vendors page, leadership views: the Database tab. Operations leadership only.
-  | "vendor_database"
-  // Vendors page: the Needs Review tab and the screening panel on a vendor.
-  // Everyone who opens Vendors except the Director of Onboarding, Project
-  // Manager and Utilities roles, who keep the list, profiles and their edits.
-  | "vendor_screening"
+  // Vendors: status (Approved or Gold), Gold Standard and compliance fields,
+  // screening decisions, documents, vendor logins, imports, columns and saved
+  // views. Operations leadership only; everyone else who opens Vendors sees
+  // them read only.
+  | "vendor_leadership"
   | "view_as";
 
 // Creating a ticket is internal-staff work. Vendors and homeowners never get it.
@@ -177,8 +176,7 @@ const SUPERVISOR_CAPS: Capability[] = [
   "homeowner_directory",
   "vendor_admin",
   "vendor_directory",
-  "vendor_database",
-  "vendor_screening",
+  "vendor_leadership",
   "audit_history",
   "user_management",
   // Supervisors carry vendor work end to end, so the Work Orders workspace is
@@ -212,7 +210,6 @@ export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
     "work_orders_internal",
     "cleaner_dispatch_check",
     "vendor_directory",
-    "vendor_screening",
     "direct_bookings_work",
   ],
 
@@ -284,8 +281,7 @@ export function capabilitiesFor(roles: AppRole[], seats: AccessSeats = {}): Set<
     set.add("playbooks_edit");
     set.add("str_participation_report");
     set.add("vendor_admin");
-    set.add("vendor_database");
-    set.add("vendor_screening");
+    set.add("vendor_leadership");
     set.add("finance_workspace");
     set.add("ops_user_invite");
   }
