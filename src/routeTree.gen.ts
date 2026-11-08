@@ -70,6 +70,9 @@ import { Route as AuthenticatedClaimsIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedClaimsClosedRouteImport } from './routes/_authenticated/claims.closed'
 import { Route as AuthenticatedClaimsManagerRouteImport } from './routes/_authenticated/claims.manager'
 import { Route as AuthenticatedClaimsMyClaimsRouteImport } from './routes/_authenticated/claims.my-claims'
+import { Route as AuthenticatedDirectBookingsIndexRouteImport } from './routes/_authenticated/direct-bookings.index'
+import { Route as AuthenticatedDirectBookingsRequestIdRouteImport } from './routes/_authenticated/direct-bookings.$requestId'
+import { Route as AuthenticatedDirectBookingsSettingsRouteImport } from './routes/_authenticated/direct-bookings.settings'
 import { Route as AuthenticatedIntegrationsNotionImportRouteImport } from './routes/_authenticated/integrations_.notion-import'
 import { Route as AuthenticatedLeadsIndexRouteImport } from './routes/_authenticated/leads.index'
 import { Route as AuthenticatedLeadsManagerRouteImport } from './routes/_authenticated/leads.manager'
@@ -449,6 +452,24 @@ const AuthenticatedClaimsMyClaimsRoute =
     path: '/my-claims',
     getParentRoute: () => AuthenticatedClaimsRoute,
   } as any)
+const AuthenticatedDirectBookingsIndexRoute =
+  AuthenticatedDirectBookingsIndexRouteImport.update({
+    id: '/direct-bookings/',
+    path: '/direct-bookings/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDirectBookingsRequestIdRoute =
+  AuthenticatedDirectBookingsRequestIdRouteImport.update({
+    id: '/direct-bookings/$requestId',
+    path: '/direct-bookings/$requestId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDirectBookingsSettingsRoute =
+  AuthenticatedDirectBookingsSettingsRouteImport.update({
+    id: '/direct-bookings/settings',
+    path: '/direct-bookings/settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedIntegrationsNotionImportRoute =
   AuthenticatedIntegrationsNotionImportRouteImport.update({
     id: '/integrations_/notion-import',
@@ -780,6 +801,8 @@ export interface FileRoutesByFullPath {
   '/claims/closed': typeof AuthenticatedClaimsClosedRoute
   '/claims/manager': typeof AuthenticatedClaimsManagerRoute
   '/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
+  '/direct-bookings/$requestId': typeof AuthenticatedDirectBookingsRequestIdRoute
+  '/direct-bookings/settings': typeof AuthenticatedDirectBookingsSettingsRoute
   '/integrations/notion-import': typeof AuthenticatedIntegrationsNotionImportRoute
   '/leads/manager': typeof AuthenticatedLeadsManagerRoute
   '/leads/my-leads': typeof AuthenticatedLeadsMyLeadsRoute
@@ -807,6 +830,7 @@ export interface FileRoutesByFullPath {
   '/work-orders/my-work-orders': typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
   '/claims/': typeof AuthenticatedClaimsIndexRoute
+  '/direct-bookings/': typeof AuthenticatedDirectBookingsIndexRoute
   '/leads/': typeof AuthenticatedLeadsIndexRoute
   '/onboarding/': typeof AuthenticatedOnboardingIndexRoute
   '/recovery/': typeof AuthenticatedRecoveryIndexRoute
@@ -882,6 +906,8 @@ export interface FileRoutesByTo {
   '/claims/closed': typeof AuthenticatedClaimsClosedRoute
   '/claims/manager': typeof AuthenticatedClaimsManagerRoute
   '/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
+  '/direct-bookings/$requestId': typeof AuthenticatedDirectBookingsRequestIdRoute
+  '/direct-bookings/settings': typeof AuthenticatedDirectBookingsSettingsRoute
   '/integrations/notion-import': typeof AuthenticatedIntegrationsNotionImportRoute
   '/leads/manager': typeof AuthenticatedLeadsManagerRoute
   '/leads/my-leads': typeof AuthenticatedLeadsMyLeadsRoute
@@ -909,6 +935,7 @@ export interface FileRoutesByTo {
   '/work-orders/my-work-orders': typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
   '/claims': typeof AuthenticatedClaimsIndexRoute
+  '/direct-bookings': typeof AuthenticatedDirectBookingsIndexRoute
   '/leads': typeof AuthenticatedLeadsIndexRoute
   '/onboarding': typeof AuthenticatedOnboardingIndexRoute
   '/recovery': typeof AuthenticatedRecoveryIndexRoute
@@ -992,6 +1019,8 @@ export interface FileRoutesById {
   '/_authenticated/claims/closed': typeof AuthenticatedClaimsClosedRoute
   '/_authenticated/claims/manager': typeof AuthenticatedClaimsManagerRoute
   '/_authenticated/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
+  '/_authenticated/direct-bookings/$requestId': typeof AuthenticatedDirectBookingsRequestIdRoute
+  '/_authenticated/direct-bookings/settings': typeof AuthenticatedDirectBookingsSettingsRoute
   '/_authenticated/integrations_/notion-import': typeof AuthenticatedIntegrationsNotionImportRoute
   '/_authenticated/leads/manager': typeof AuthenticatedLeadsManagerRoute
   '/_authenticated/leads/my-leads': typeof AuthenticatedLeadsMyLeadsRoute
@@ -1019,6 +1048,7 @@ export interface FileRoutesById {
   '/_authenticated/work-orders/my-work-orders': typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
   '/_authenticated/claims/': typeof AuthenticatedClaimsIndexRoute
+  '/_authenticated/direct-bookings/': typeof AuthenticatedDirectBookingsIndexRoute
   '/_authenticated/leads/': typeof AuthenticatedLeadsIndexRoute
   '/_authenticated/onboarding/': typeof AuthenticatedOnboardingIndexRoute
   '/_authenticated/recovery/': typeof AuthenticatedRecoveryIndexRoute
@@ -1102,6 +1132,8 @@ export interface FileRouteTypes {
     | '/claims/closed'
     | '/claims/manager'
     | '/claims/my-claims'
+    | '/direct-bookings/$requestId'
+    | '/direct-bookings/settings'
     | '/integrations/notion-import'
     | '/leads/manager'
     | '/leads/my-leads'
@@ -1129,6 +1161,7 @@ export interface FileRouteTypes {
     | '/work-orders/my-work-orders'
     | '/oauth/sharepoint/return'
     | '/claims/'
+    | '/direct-bookings/'
     | '/leads/'
     | '/onboarding/'
     | '/recovery/'
@@ -1204,6 +1237,8 @@ export interface FileRouteTypes {
     | '/claims/closed'
     | '/claims/manager'
     | '/claims/my-claims'
+    | '/direct-bookings/$requestId'
+    | '/direct-bookings/settings'
     | '/integrations/notion-import'
     | '/leads/manager'
     | '/leads/my-leads'
@@ -1231,6 +1266,7 @@ export interface FileRouteTypes {
     | '/work-orders/my-work-orders'
     | '/oauth/sharepoint/return'
     | '/claims'
+    | '/direct-bookings'
     | '/leads'
     | '/onboarding'
     | '/recovery'
@@ -1313,6 +1349,8 @@ export interface FileRouteTypes {
     | '/_authenticated/claims/closed'
     | '/_authenticated/claims/manager'
     | '/_authenticated/claims/my-claims'
+    | '/_authenticated/direct-bookings/$requestId'
+    | '/_authenticated/direct-bookings/settings'
     | '/_authenticated/integrations_/notion-import'
     | '/_authenticated/leads/manager'
     | '/_authenticated/leads/my-leads'
@@ -1340,6 +1378,7 @@ export interface FileRouteTypes {
     | '/_authenticated/work-orders/my-work-orders'
     | '/oauth/sharepoint/return'
     | '/_authenticated/claims/'
+    | '/_authenticated/direct-bookings/'
     | '/_authenticated/leads/'
     | '/_authenticated/onboarding/'
     | '/_authenticated/recovery/'
@@ -1812,6 +1851,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/claims/my-claims'
       preLoaderRoute: typeof AuthenticatedClaimsMyClaimsRouteImport
       parentRoute: typeof AuthenticatedClaimsRoute
+    }
+    '/_authenticated/direct-bookings/': {
+      id: '/_authenticated/direct-bookings/'
+      path: '/direct-bookings'
+      fullPath: '/direct-bookings/'
+      preLoaderRoute: typeof AuthenticatedDirectBookingsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/direct-bookings/$requestId': {
+      id: '/_authenticated/direct-bookings/$requestId'
+      path: '/direct-bookings/$requestId'
+      fullPath: '/direct-bookings/$requestId'
+      preLoaderRoute: typeof AuthenticatedDirectBookingsRequestIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/direct-bookings/settings': {
+      id: '/_authenticated/direct-bookings/settings'
+      path: '/direct-bookings/settings'
+      fullPath: '/direct-bookings/settings'
+      preLoaderRoute: typeof AuthenticatedDirectBookingsSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/integrations_/notion-import': {
       id: '/_authenticated/integrations_/notion-import'
@@ -2346,12 +2406,15 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
   AuthenticatedWelcomeVideoRoute: typeof AuthenticatedWelcomeVideoRoute
   AuthenticatedWorkOrdersRoute: typeof AuthenticatedWorkOrdersRouteWithChildren
+  AuthenticatedDirectBookingsRequestIdRoute: typeof AuthenticatedDirectBookingsRequestIdRoute
+  AuthenticatedDirectBookingsSettingsRoute: typeof AuthenticatedDirectBookingsSettingsRoute
   AuthenticatedIntegrationsNotionImportRoute: typeof AuthenticatedIntegrationsNotionImportRoute
   AuthenticatedPropertyPropertyIdRoute: typeof AuthenticatedPropertyPropertyIdRoute
   AuthenticatedTicketsTicketIdRoute: typeof AuthenticatedTicketsTicketIdRoute
   AuthenticatedTicketsNewRoute: typeof AuthenticatedTicketsNewRoute
   AuthenticatedVendorTicketIdRoute: typeof AuthenticatedVendorTicketIdRoute
   AuthenticatedVendorScorecardRoute: typeof AuthenticatedVendorScorecardRoute
+  AuthenticatedDirectBookingsIndexRoute: typeof AuthenticatedDirectBookingsIndexRoute
   AuthenticatedTicketsIndexRoute: typeof AuthenticatedTicketsIndexRoute
   AuthenticatedVendorIndexRoute: typeof AuthenticatedVendorIndexRoute
 }
@@ -2408,6 +2471,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
   AuthenticatedWelcomeVideoRoute: AuthenticatedWelcomeVideoRoute,
   AuthenticatedWorkOrdersRoute: AuthenticatedWorkOrdersRouteWithChildren,
+  AuthenticatedDirectBookingsRequestIdRoute:
+    AuthenticatedDirectBookingsRequestIdRoute,
+  AuthenticatedDirectBookingsSettingsRoute:
+    AuthenticatedDirectBookingsSettingsRoute,
   AuthenticatedIntegrationsNotionImportRoute:
     AuthenticatedIntegrationsNotionImportRoute,
   AuthenticatedPropertyPropertyIdRoute: AuthenticatedPropertyPropertyIdRoute,
@@ -2415,6 +2482,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTicketsNewRoute: AuthenticatedTicketsNewRoute,
   AuthenticatedVendorTicketIdRoute: AuthenticatedVendorTicketIdRoute,
   AuthenticatedVendorScorecardRoute: AuthenticatedVendorScorecardRoute,
+  AuthenticatedDirectBookingsIndexRoute: AuthenticatedDirectBookingsIndexRoute,
   AuthenticatedTicketsIndexRoute: AuthenticatedTicketsIndexRoute,
   AuthenticatedVendorIndexRoute: AuthenticatedVendorIndexRoute,
 }

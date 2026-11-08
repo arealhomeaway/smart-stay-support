@@ -147,7 +147,7 @@ const frontlineGroup: NavGroup = {
     },
     {
       to: "/inquiry-sources",
-      label: "Inquiry Sources",
+      label: "Referral sources",
       icon: MapPinned,
       tour: "inquiry-sources",
       capability: "work_orders_internal",
@@ -398,14 +398,17 @@ export function AppShell({ children }: { children: ReactNode }) {
               const booking = g.items.filter((i) => i.to === "/leads" || i.to === "/inquiry-sources");
               if (!booking.length) continue;
               const first = booking.find((i) => i.to === "/leads") ?? booking[0]!;
+              const directBookings = can("leads_work");
               const at = g.items.indexOf(booking[0]!);
               g.items = g.items.filter((i) => !booking.includes(i));
               g.items.splice(at, 0, {
-                to: first.to,
-                label: "Bookings & Leads",
+                // Direct Bookings replaces Bookings & Leads. Old Leads and the
+                // Finder stay reachable by link but are no longer in the menu.
+                to: directBookings ? "/direct-bookings" : first.to,
+                label: "Direct Bookings",
                 icon: first.icon,
                 tour: "bookings-leads",
-                alsoActive: ["/leads", "/inquiry-sources"],
+                alsoActive: ["/direct-bookings", "/leads", "/inquiry-sources", "/availability-finder"],
               });
             }
             // One sidebar item per grouped area; the group's other pages are

@@ -51,6 +51,7 @@ import {
   CREATED_TAG,
   CREATE_LEAD_TAG,
   CREATE_TICKET_TAG,
+  DIRECT_BOOKING_TAGS,
   OWNER_RESPONSE_TAG,
   type TriggerKind,
 } from "./mail-categories";
@@ -114,6 +115,9 @@ async function graph(path: string, init?: RequestInit) {
   }
   return res;
 }
+
+/** Graph access for other server-only mailbox features (always the one authorised mailbox). */
+export const mailboxGraph = graph;
 
 /**
  * Writes the message's categories back.
@@ -250,7 +254,7 @@ async function writeCheckpoint(db: Db, iso: string) {
  */
 async function fetchTriggerMail(limit: number, since: string) {
   const seen = new Map<string, GraphMessage>();
-  for (const tag of [CREATE_TICKET_TAG, CREATE_LEAD_TAG, OWNER_RESPONSE_TAG]) {
+  for (const tag of [CREATE_TICKET_TAG, ...DIRECT_BOOKING_TAGS, OWNER_RESPONSE_TAG]) {
     const filter = `receivedDateTime gt ${since} and categories/any(c:c eq '${tag.replace(/'/g, "''")}')`;
     const query = `?$filter=${encodeURIComponent(filter)}&$top=${limit}&$orderby=receivedDateTime asc&$select=${SELECT_FIELDS}`;
     const res = await graph(mailboxMessagesPath(query));

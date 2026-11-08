@@ -1,6 +1,8 @@
 import { formatPropertyLabel } from "@/lib/property-label";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { myDirectBookings } from "@/lib/direct-bookings.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useDemo } from "@/components/DemoProvider";
 import { useRole } from "@/hooks/useRole";
@@ -261,6 +263,8 @@ function Dashboard() {
         </p>
       )}
 
+      <DirectBookingsNeedingYou />
+
       {/* Compact, colourful, meaningful. Only what is worth acting on. */}
       <div className="grid gap-3 sm:grid-cols-3">
         <DecisionTile value={openWork.length} label="My open work" tone="progress" to="/tickets" />
@@ -497,6 +501,33 @@ function RoutineWorkDue() {
           );
         })
       )}
+    </SectionCard>
+  );
+}
+
+/** Direct Booking requests this person pressed Start on and has not replied to yet. */
+function DirectBookingsNeedingYou() {
+  const { demoMode } = useDemo();
+  const fetchMine = useServerFn(myDirectBookings);
+  const { data } = useQuery({
+    queryKey: ["my-direct-bookings", demoMode],
+    queryFn: () => fetchMine({ data: { demo: demoMode } }),
+    refetchInterval: 15_000,
+  });
+  if (!data || data.length === 0) return null;
+  return (
+    <SectionCard title="Needs you now" tone="attention" description="Direct booking requests you started. Reply within 3 minutes." bodyClassName="space-y-1.5">
+      {data.map((r) => (
+        <Link
+          key={r.id}
+          to="/direct-bookings/$requestId"
+          params={{ requestId: r.id }}
+          className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm hover:bg-secondary/50"
+        >
+          <span className="font-medium">{r.partner_name || r.company || r.subject || "Direct booking request"}</span>
+          <span className="text-muted-foreground">Open</span>
+        </Link>
+      ))}
     </SectionCard>
   );
 }

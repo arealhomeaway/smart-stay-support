@@ -10,6 +10,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { deriveLeadFromEmail, type OutlookSource } from "./outlook-email";
+import { isMissingColumn } from "./direct-bookings";
 
 type Db = SupabaseClient<Database>;
 type LeadSource = Database["public"]["Enums"]["lead_source"];
@@ -47,9 +48,7 @@ export async function createLeadFromEmail(
   const confident = derived.source && (KNOWN_SOURCES as string[]).includes(derived.source);
   const source = (confident ? derived.source : "email") as LeadSource;
 
-  const { data, error } = await db
-    .from("leads")
-    .insert({
+  const row = {
       contact_name: derived.contact_name,
       email: derived.email,
       phone: derived.phone,
@@ -75,11 +74,20 @@ export async function createLeadFromEmail(
       stage: "new",
       requirements: derived.requirements,
       notes: derived.notes,
-    })
+  };
+  // Every tagged partner email is now a Direct Booking request. Until the
+  // staged Direct Bookings columns are applied, the old lead row is written
+  // exactly as before so intake never stops.
+  let result = await db
+    .from("leads")
+    .insert({ ...row, kind: "direct_booking", subject: input.source.subject } as never)
     .select("id, contact_name, source")
     .single();
-
-  if (error) throw new Error(error.message);
+  if (result.error && isMissingColumn(result.error)) {
+    result = await db.from("leads").insert(row as never).select("id, contact_name, source").single();
+  }
+  const { data, error } = result;
+  if (error || !data) throw new Error(error?.message ?? "The request could not be saved.");
 
   await db.from("lead_activity").insert({
     lead_id: data.id,
