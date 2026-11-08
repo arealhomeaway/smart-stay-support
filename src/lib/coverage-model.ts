@@ -39,6 +39,26 @@ export const SEAT_LABELS: Record<string, string> = {
   ops_supervisor: "Operations Supervisor",
 };
 
+/**
+ * Plain role names for routing notes. Mirrors the database function
+ * `coordinator_role_label` (docs/pending/routing-by-time/03); a test keeps
+ * the two identical.
+ */
+export const COORDINATOR_ROLE_LABELS: Record<string, string> = {
+  ge_day: "Guest Experience day and weekend coordinator",
+  ge_evening: "Guest Experience evening coordinator",
+  ge_parttime: "Guest Experience part time coordinator",
+  po_day: "Property Operations weekday day coordinator",
+  po_evening: "Property Operations evening and weekend coordinator",
+};
+
+/** Words a routing note never uses. */
+export const ROUTING_NOTE_BANNED = [/\bseat/i, /triage/i, /weighted/i, /\b(ge|po)_[a-z]+/i, /ops_supervisor/i, /director_ops/i, /—/, /\bP[1-4]\b/];
+
+function plainRole(roleCode: string) {
+  return COORDINATOR_ROLE_LABELS[roleCode] ?? "coordinator";
+}
+
 /** The seats Breezeway-origin work belongs to by default. */
 export const TEAM_B_ROLE_CODES = ["po_day", "po_evening"] as const;
 
@@ -146,8 +166,7 @@ export function decideRoute(input: RoutingInputs): RoutingDecision {
     return {
       userId: input.onCallUserId,
       roleCode: null,
-      reason:
-        "Created from Breezeway inside the after-hours window; routed to the rostered on-call person. Priority is unchanged.",
+      reason: "Came from Breezeway overnight, so it went to the person on call tonight. Urgency is unchanged.",
       fallback: false,
       candidates: [],
     };
@@ -158,7 +177,7 @@ export function decideRoute(input: RoutingInputs): RoutingDecision {
     return {
       userId: winner.userId,
       roleCode: winner.roleCode,
-      reason: `Created from Breezeway; routed to the lightest eligible Property Operations queue (weighted load ${winner.weight}, P1=5/P2=3/P3=1).`,
+      reason: `Came from Breezeway, so it went to the ${plainRole(winner.roleCode)} on shift with the least open work.`,
       fallback: false,
       candidates: input.teamB,
     };
@@ -168,7 +187,7 @@ export function decideRoute(input: RoutingInputs): RoutingDecision {
     return {
       userId: input.triage.userId,
       roleCode: input.triage.roleCode,
-      reason: `Property Operations is off duty in an approved cross-team triage window; routed to ${SEAT_LABELS[input.triage.roleCode] ?? input.triage.roleCode}. This window is covered, not a gap.`,
+      reason: `No one on Property Operations was on shift, so it went to the ${plainRole(input.triage.roleCode)}, who covers Property Operations at this time.`,
       fallback: false,
       candidates: [],
     };
@@ -179,7 +198,7 @@ export function decideRoute(input: RoutingInputs): RoutingDecision {
       userId: input.supervisorOnDuty.userId,
       roleCode: input.supervisorOnDuty.roleCode,
       reason:
-        "No Property Operations seat and no cross-team triage role is eligible; held by the on-duty Operations Supervisor.",
+        "No Property Operations coordinator and no cover was on shift, so it went to the Operations Supervisor on shift.",
       fallback: true,
       candidates: [],
     };
@@ -189,7 +208,7 @@ export function decideRoute(input: RoutingInputs): RoutingDecision {
     userId: null,
     roleCode: null,
     reason:
-      "Nobody is scheduled and eligible right now, and the Operations Supervisor is off duty. Left unassigned so it surfaces immediately in Oversight.",
+      "No one was on shift and the Operations Supervisor is off, so no one has it yet. It shows in Oversight for someone to assign.",
     fallback: true,
     candidates: [],
   };
