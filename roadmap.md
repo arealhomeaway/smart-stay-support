@@ -250,3 +250,4 @@
 - [x] D2. Ticket checklists edit rule = playbook rule (DB + screen + tests)
 - [x] E2. v3 as database default for new Work Orders (staged + applied + test)
 - [x] F. Register edits H1, A15, K2
+- [x] Overnight Direct Booking requests: alert nobody, wait in Team Queue as Right now for Team A, morning alert, clock from morning (applied as 0295)

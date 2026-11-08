@@ -7149,6 +7149,7 @@ export type Database = {
           lost_reason: Database["public"]["Enums"]["lead_loss_reason"] | null
           market: string | null
           min_bathrooms: number | null
+          morning_alerted_at: string | null
           near_address: string | null
           next_follow_up_on: string | null
           not_booked_note: string | null
@@ -7158,6 +7159,7 @@ export type Database = {
           outcome: string | null
           outcome_at: string | null
           outcome_by: string | null
+          overnight_until: string | null
           owned_by: string | null
           partner_approved_at: string | null
           partner_approved_by: string | null
@@ -7224,6 +7226,7 @@ export type Database = {
           lost_reason?: Database["public"]["Enums"]["lead_loss_reason"] | null
           market?: string | null
           min_bathrooms?: number | null
+          morning_alerted_at?: string | null
           near_address?: string | null
           next_follow_up_on?: string | null
           not_booked_note?: string | null
@@ -7233,6 +7236,7 @@ export type Database = {
           outcome?: string | null
           outcome_at?: string | null
           outcome_by?: string | null
+          overnight_until?: string | null
           owned_by?: string | null
           partner_approved_at?: string | null
           partner_approved_by?: string | null
@@ -7299,6 +7303,7 @@ export type Database = {
           lost_reason?: Database["public"]["Enums"]["lead_loss_reason"] | null
           market?: string | null
           min_bathrooms?: number | null
+          morning_alerted_at?: string | null
           near_address?: string | null
           next_follow_up_on?: string | null
           not_booked_note?: string | null
@@ -7308,6 +7313,7 @@ export type Database = {
           outcome?: string | null
           outcome_at?: string | null
           outcome_by?: string | null
+          overnight_until?: string | null
           owned_by?: string | null
           partner_approved_at?: string | null
           partner_approved_by?: string | null
@@ -17063,6 +17069,10 @@ export type Database = {
         Returns: number
       }
       direct_booking_on_shift: { Args: { _at?: string }; Returns: string[] }
+      direct_booking_overnight_until: {
+        Args: { _at?: string }
+        Returns: string
+      }
       direct_booking_settings: { Args: never; Returns: Json }
       email_delivery_allowed: {
         Args: {
@@ -17819,6 +17829,10 @@ export type Database = {
       }
       relabel_owner_library_video: {
         Args: { _label: string; _library_id: string }
+        Returns: number
+      }
+      release_overnight_direct_bookings: {
+        Args: { _at?: string }
         Returns: number
       }
       release_owner_program_activities: {

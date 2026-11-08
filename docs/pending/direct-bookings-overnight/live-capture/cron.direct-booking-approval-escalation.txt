@@ -1,0 +1,4 @@
+job: direct-booking-approval-escalation
+schedule: 20 seconds
+active: true
+command: SELECT public.escalate_direct_booking_approvals()

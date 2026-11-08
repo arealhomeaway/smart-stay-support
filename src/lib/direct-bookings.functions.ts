@@ -69,6 +69,8 @@ const BASE_FIELDS =
   "id, kind, subject, partner_name, contact_name, company, email, phone, source, source_detail, market, search_region, desired_move_in, desired_check_out, bedrooms, min_bathrooms, guests, dogs, cats, requirements, inquiry_source_id, owned_by, started_at, reply_to, reply_cc, reply_subject, reply_body, offered_property_ids, reply_sent_at, reply_sent_by, reply_sent_via, last_follow_up_at, outcome, outcome_at, booked_property_id, booked_move_in, not_booked_reason, not_booked_note, is_demo, created_at";
 /** Added by docs/pending/direct-bookings-fix/01; read only when present. */
 const FIX_FIELDS = "asap, stay_length, preferred_bedrooms, near_address, distance_wanted, follow_up_due_at, partner_approved_at, partner_approved_note";
+/** Added by docs/pending/direct-bookings-overnight/01; read only when present. */
+const NIGHT_FIELDS = "overnight_until, morning_alerted_at";
 
 export type DirectBookingRow = {
   id: string;
@@ -117,6 +119,8 @@ export type DirectBookingRow = {
   follow_up_due_at?: string | null;
   partner_approved_at?: string | null;
   partner_approved_note?: string | null;
+  overnight_until?: string | null;
+  morning_alerted_at?: string | null;
 };
 
 /** Reads requests with the new fields, or without them while the staged change is not applied. */
@@ -124,6 +128,8 @@ async function selectLeads(
   db: Client,
   build: (cols: string) => PromiseLike<{ data: unknown; error: { code?: string; message: string } | null }>,
 ) {
+  const night = await build(`${BASE_FIELDS}, ${FIX_FIELDS}, ${NIGHT_FIELDS}`);
+  if (!(night.error && isMissingColumn(night.error))) return { ...night, fieldsReady: !night.error };
   const full = await build(`${BASE_FIELDS}, ${FIX_FIELDS}`);
   if (full.error && isMissingColumn(full.error)) return { ...(await build(BASE_FIELDS)), fieldsReady: false };
   return { ...full, fieldsReady: !full.error };

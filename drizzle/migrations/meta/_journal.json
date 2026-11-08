@@ -2066,6 +2066,13 @@
       "when": 1794168888051,
       "tag": "0294_work_order_default_v3",
       "breakpoints": true
+    },
+    {
+      "idx": 295,
+      "version": "7",
+      "when": 1794170251600,
+      "tag": "0295_direct_booking_overnight_queue",
+      "breakpoints": true
     }
   ]
 }
