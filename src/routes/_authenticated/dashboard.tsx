@@ -2,44 +2,57 @@ import { formatPropertyLabel } from "@/lib/property-label";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useMemo, useState } from "react";
 import { myDirectBookings } from "@/lib/direct-bookings.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useDemo } from "@/components/DemoProvider";
 import { useRole } from "@/hooks/useRole";
+import { useHomeTeams } from "@/hooks/useHomeTeam";
+import { useStaffDirectory, displayName } from "@/hooks/useTeam";
 import { Badge } from "@/components/ui/badge";
-import { EmptyState, LoadingPage, PageHero, PriorityRail, SectionCard } from "@/components/ui/page";
-import { StatusBadge } from "@/components/ui/status";
+import { Input } from "@/components/ui/input";
+import { EmptyState, LoadingPage, PageHero, PriorityRail, SectionCard, SegmentedControl } from "@/components/ui/page";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { ActivityList, type ActivityEvent } from "@/components/ui/activity";
 import heroImage from "@/assets/hero-arha-property.jpg";
+import { AlertTriangle, ArrowRight, ClipboardCheck, Handshake, Inbox, Users } from "lucide-react";
 import {
-  AlertTriangle,
-  ArrowRight,
-  ClipboardCheck,
-  ClipboardList,
-  PauseCircle,
-  PlayCircle,
-  ShieldAlert,
-  Users,
-} from "lucide-react";
-import { routineConfig, routineDueLabel, routineDueState } from "@/lib/routine-controls";
+  RETIRED_ROUTINE_KINDS,
+  kindsForTeam,
+  routineConfig,
+  routineDueLabel,
+  routineDueState,
+} from "@/lib/routine-controls";
 import { ticketNextAction } from "@/lib/ticket-next-action";
-import { OPEN_STATUSES, priorityMeta, priorityTone, relativeTime, slaState } from "@/lib/tickets";
-import { isMine } from "@/lib/matters";
+import { OPEN_STATUSES, relativeTime } from "@/lib/tickets";
+import { currentOwnerId } from "@/lib/matters";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 import { SupervisorAttentionBand } from "@/components/SupervisorAttentionBand";
-import { withoutImportHeld } from "@/lib/import-hold";
+import { HandoffsWaiting } from "@/components/operations/HandoffsWaiting";
+import { OwnerFollowUps } from "@/components/OwnerFollowUps";
+import {
+  HOME_COPY,
+  HOME_TABS,
+  boardColumns,
+  homeSearchMatch,
+  inHomeTab,
+  isResolveWork,
+  needsYouNow,
+  unclaimedCount,
+  urgencyLabel,
+  type HomeTab,
+  type HomeTicket,
+} from "@/lib/home-work";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "Home — Resolve Operations" },
+      { title: "Home | Resolve Operations" },
       {
         name: "description",
-        content:
-          "What needs you now, what you have started, what you are waiting on, and routine work due today.",
+        content: "What needs you now, your work, routine work due today and recent activity, in one place.",
       },
-      { property: "og:title", content: "Home — Resolve Operations" },
+      { property: "og:title", content: "Home | Resolve Operations" },
       { property: "og:description", content: "Your working day in Resolve, in one screen." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -55,389 +68,423 @@ function greeting() {
   return "Good evening";
 }
 
-/** Human time: 4:00 PM, never 16:00. */
-function clockTime(value: string | null | undefined) {
-  if (!value) return null;
-  return new Date(value).toLocaleString(undefined, {
-    weekday: "short",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
-type Row = {
-  id: string;
+type Row = HomeTicket & {
   ref: number | null;
   title: string;
-  priority: string;
-  status: string;
-  acknowledged_at: string | null;
-  action_started_at: string | null;
+  reported_at: string | null;
   next_review_at: string | null;
-  response_due_at: string | null;
-  action_due_at: string | null;
   waiting_on: string | null;
   waiting_reason: string | null;
   guest_in_residence: boolean | null;
   vendor_name: string | null;
   vendor_status: string | null;
-  reported_at: string | null;
-  current_action_owner: string | null;
-  assigned_to: string | null;
-  record_owner: string | null;
-  accountable_owner: string | null;
-  created_by: string | null;
-  pending_handoff_to: string | null;
-  properties: {
-    name: string | null;
-    nickname: string | null;
-    primary_photo_url?: string | null;
-  } | null;
+  properties: (HomeTicket["properties"] & { primary_photo_url?: string | null }) | null;
 };
+
+const PROPERTY_FIELDS = "name, nickname, primary_photo_url, address_line1, unit, city, state, postal_code, ownerrez_property_id";
 
 function Dashboard() {
   const { demoMode } = useDemo();
   const role = useRole();
+  const userId = role.userId ?? null;
+  const { homeTeamOf } = useHomeTeams();
+  const myTeam = homeTeamOf(userId);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["dashboard", demoMode],
+  // Work this person owns or has been handed, open and recently finished.
+  const mine = useQuery({
+    queryKey: ["home-my-work", demoMode, userId],
+    enabled: Boolean(userId),
     queryFn: async () => {
+      const id = userId!;
       const { data, error } = await supabase
         .from("tickets")
-        .select("*, properties(name, nickname, primary_photo_url, address_line1, unit, city, state, postal_code, ownerrez_property_id)")
+        .select(`*, properties(${PROPERTY_FIELDS}), work_types(name)`)
         .eq("is_demo", demoMode)
         .is("archived_at", null)
+        .or(
+          `assigned_to.eq.${id},current_action_owner.eq.${id},record_owner.eq.${id},accountable_owner.eq.${id},pending_handoff_to.eq.${id}`,
+        )
         .order("reported_at", { ascending: false })
-        .limit(300);
+        .limit(500);
       if (error) throw error;
       return (data ?? []) as unknown as Row[];
     },
   });
 
-  const rows = withoutImportHeld(data ?? []);
-  const open = rows.filter((t) => OPEN_STATUSES.includes(t.status));
-  const owned = role.userId ? open.filter((t) => isMine(t, role.userId)) : [];
-  // While an admin is previewing another seat, their own assignments are not
-  // that person's work. Rather than show an empty, misleading Home, show a
-  // sample of the queue this seat works and say plainly that it is a sample.
-  const sampleQueue = Boolean(role.previewRole) && owned.length === 0 && open.length > 0;
-  const mine = sampleQueue ? open.slice(0, 20) : owned;
-
-  const waiting = mine
-    .filter((t) => t.status === "waiting")
-    .sort((a, b) => (a.next_review_at ?? "").localeCompare(b.next_review_at ?? ""));
-
-  const dueBack = (t: Row) => Boolean(t.next_review_at && new Date(t.next_review_at) <= new Date());
-
-  // Actionable-now work (sorted first in My open work) that is actionable this minute: not started, past a
-  // clock, or a Waiting item whose follow-up time has arrived.
-  const needsMe = mine
-    .filter(
-      (t) =>
-        (t.status !== "waiting" &&
-          (!t.acknowledged_at || !t.action_started_at || slaState(t).breached)) ||
-        (t.status === "waiting" && dueBack(t)),
-    )
-    .sort((a, b) => {
-      const rank: Record<string, number> = { p1: 3, p2: 2, p3: 1 };
-      return (
-        (rank[b.priority] ?? 0) - (rank[a.priority] ?? 0) ||
-        (a.response_due_at ?? a.action_due_at ?? "").localeCompare(
-          b.response_due_at ?? b.action_due_at ?? "",
-        )
-      );
-    });
-
-  const needsMeIds = new Set(needsMe.map((t) => t.id));
-  const inProgress = mine.filter(
-    (t) => !needsMeIds.has(t.id) && t.status !== "waiting" && t.action_started_at,
-  );
-  // One plain list on Home: not-started or overdue work first, then work in progress.
-  const openWork = [...needsMe, ...inProgress];
-  const unclaimed = open.filter((t) => !t.current_action_owner && !t.assigned_to);
-
-  // Home is a workspace too: a ticket opened from here comes back to here.
-  const { originSearch } = useWorkspaceOrigin(
-    "Home",
-    [...needsMe, ...inProgress, ...waiting].map((t) => ({
-      id: t.id,
-      label: t.title,
-      sub: formatPropertyLabel(t.properties).primary,
-    })),
-  );
-
-  // A person's own name, so Home greets them the way a colleague would.
-  const { data: me } = useQuery({
-    queryKey: ["my-name", role.userId],
-    enabled: Boolean(role.userId),
-    staleTime: 30 * 60 * 1000,
+  // Unowned open work, only to count it for the Team Queue link.
+  const unowned = useQuery({
+    queryKey: ["home-unowned", demoMode],
+    staleTime: 30_000,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", role.userId!)
-        .maybeSingle();
+        .from("tickets")
+        .select(
+          "id, status, priority, functional_role_code, import_hold, external_source, external_status, reported_at, assigned_to, current_action_owner, record_owner, accountable_owner",
+        )
+        .eq("is_demo", demoMode)
+        .is("archived_at", null)
+        .in("status", OPEN_STATUSES)
+        .is("assigned_to", null)
+        .is("current_action_owner", null)
+        .is("record_owner", null)
+        .is("accountable_owner", null)
+        .limit(1000);
+      if (error) throw error;
+      return (data ?? []) as unknown as HomeTicket[];
+    },
+  });
+
+  const { data: me } = useQuery({
+    queryKey: ["my-name", userId],
+    enabled: Boolean(userId),
+    staleTime: 30 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("full_name").eq("id", userId!).maybeSingle();
       if (error) throw error;
       return data;
     },
   });
   const firstName = (me?.full_name ?? "").trim().split(/\s+/)[0] ?? "";
 
-  // Recent activity, derived from the same rows Home already loaded — no new
-  // source of truth, just the last few things that visibly moved.
-  const recent: (ActivityEvent & { at: string })[] = rows
-    .map((t) => {
-      const at = t.action_started_at ?? t.acknowledged_at ?? t.reported_at;
-      const kind: ActivityEvent["kind"] =
-        t.status === "waiting"
-          ? "waiting"
-          : t.status === "resolved" || t.status === "closed"
-            ? "completed"
-            : t.vendor_name
-              ? "repair"
-              : t.pending_handoff_to
-                ? "handoff"
-                : t.action_started_at
-                  ? "handoff"
-                  : "note";
-      return {
-        id: t.id,
-        kind,
-        when: relativeTime(at),
-        at: at ?? "",
-        label: (
-          <>
-            <span className="font-medium">{t.title}</span>
-            <span className="text-muted-foreground">
-              {" · "}
-              {formatPropertyLabel(t.properties).primary}
-            </span>
-          </>
-        ),
-        to: "/tickets/$ticketId",
-        params: { ticketId: t.id },
-        search: originSearch,
-      };
-    })
-    .sort((a, b) => b.at.localeCompare(a.at))
-    .slice(0, 6);
+  const rows = mine.data ?? [];
+  const unclaimed = unclaimedCount(unowned.data ?? [], myTeam);
+  const openForOrigin = rows.filter((t) => isResolveWork(t) && OPEN_STATUSES.includes(t.status));
+  const { originSearch } = useWorkspaceOrigin(
+    "Home",
+    openForOrigin.map((t) => ({ id: t.id, label: t.title, sub: formatPropertyLabel(t.properties).primary })),
+  );
 
-  if (isLoading || !data) return <LoadingPage tiles={0} />;
+  if (!userId || mine.isLoading) return <LoadingPage tiles={0} />;
 
   return (
     <div className="space-y-8">
       <PageHero
         image={heroImage}
-        eyebrow={new Date().toLocaleDateString(undefined, {
-          weekday: "long",
-          month: "long",
-          day: "numeric",
-        })}
+        eyebrow={new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
         title={`${greeting()}${firstName ? `, ${firstName}` : ""}.`}
-        description="Own the outcome. Protect the stay."
-        actions={
-          <>
-            <Link
-              to="/tickets"
-              className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-base font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
-            >
-              <ClipboardList className="size-4" /> My work
-            </Link>
-            <Link
-              to="/team-queue"
-              className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20"
-            >
-              <Users className="size-4" /> Team queue
-            </Link>
-          </>
-        }
+        description={HOME_COPY.heroLine}
       />
 
+      {/* Leaders see escalations, approval requests and unassigned work first. */}
       {role.can("oversight") && <SupervisorAttentionBand />}
 
-      {sampleQueue && (
+      {role.previewRole && rows.length === 0 && (
         <p className="rounded-lg border border-border bg-secondary/40 px-3 py-2 text-sm text-muted-foreground">
-          You are previewing the {role.identityLabel} view. Nothing is assigned to your own account
-          here, so this is a sample of the work this role handles — not one person&apos;s real
-          queue.
+          You are previewing the {role.identityLabel} view. Nothing is assigned to your own account, so these
+          sections are empty.
         </p>
       )}
 
-      {role.can("direct_bookings_work") && <DirectBookingsNeedingYou />}
+      <NeedsYouNow rows={rows} userId={userId} originSearch={originSearch} />
 
-      {/* Compact, colourful, meaningful. Only what is worth acting on. */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        <DecisionTile value={openWork.length} label="My open work" tone="progress" to="/tickets" />
-        <DecisionTile value={waiting.length} label="Waiting" tone="attention" to="/tickets" />
-        <DecisionTile
-          value={unclaimed.length}
-          label="Unclaimed in team queue"
-          tone="review"
-          to="/team-queue"
+      {mine.isError ? (
+        <EmptyState
+          title="Your work could not be loaded."
+          hint="Try again before relying on this list."
         />
-      </div>
-
-      <SectionCard
-        title="My open work"
-        description="Everything you own that is not parked, highest priority and soonest due first."
-        bodyClassName="space-y-1.5"
-      >
-        {openWork.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            You are clear. Everything you own is moving or has a follow-up time.
-          </p>
-        ) : (
-          openWork.map((t) => <WorkRow key={t.id} t={t} origin={originSearch} />)
-        )}
-      </SectionCard>
-
-      {waiting.length > 0 && (
-        <SectionCard
-          title="Waiting"
-          description="Parked on someone else. Soonest follow-up first."
-          bodyClassName="space-y-1.5"
-        >
-          {waiting.map((t) => (
-            <WorkRow key={t.id} t={t} origin={originSearch} />
-          ))}
-        </SectionCard>
+      ) : (
+        <MyWork rows={rows} userId={userId} unclaimed={unclaimed} originSearch={originSearch} />
       )}
 
-      <SectionCard title="Recent activity" description="The last few things that moved.">
-        <ActivityList events={recent} emptyLabel="Nothing has moved in your work yet today." />
-      </SectionCard>
+      <RoutineWorkDue team={myTeam} />
 
-      <RoutineWorkDue />
+      <RecentActivity rows={rows} originSearch={originSearch} />
     </div>
   );
 }
 
-/** One compact, colourful figure that leads somewhere useful. */
-function DecisionTile({
-  value,
-  label,
-  tone,
-  to,
-}: {
-  value: number;
-  label: string;
-  tone: "critical" | "progress" | "attention" | "review";
-  to: string;
-}) {
-  const plate = {
-    critical: "border-coral/25 bg-coral/8 text-coral",
-    progress: "border-sky/25 bg-sky/8 text-sky",
-    attention: "border-amber/30 bg-amber/10 text-amber",
-    review: "border-lavender/25 bg-lavender/8 text-lavender",
-  }[tone];
+/** Decisions and items addressed to this person. Never Team Queue items. */
+function NeedsYouNow({ rows, userId, originSearch }: { rows: Row[]; userId: string; originSearch: { from: string } }) {
+  const { demoMode } = useDemo();
+  const { can } = useRole();
+  const fetchBookings = useServerFn(myDirectBookings);
+  const bookings = useQuery({
+    queryKey: ["my-direct-bookings", demoMode],
+    enabled: can("direct_bookings_work"),
+    queryFn: () => fetchBookings({ data: { demo: demoMode } }),
+    refetchInterval: 15_000,
+  });
+  const approvals = useQuery({
+    queryKey: ["home-my-approvals", demoMode, userId],
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("approvals")
+        .select("id, title, entity_type, entity_id, created_at")
+        .eq("status", "pending")
+        .eq("approver_id", userId)
+        .eq("is_demo", demoMode)
+        .order("created_at", { ascending: true })
+        .limit(50);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const items = useMemo(() => needsYouNow(rows, userId), [rows, userId]);
+  const bookingRows = bookings.data ?? [];
+  const approvalRows = approvals.data ?? [];
+  const nothing = items.length === 0 && bookingRows.length === 0 && approvalRows.length === 0;
+
   return (
-    <Link
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      to={to as any}
-      className={`rounded-xl border px-4 py-3.5 transition-colors hover:brightness-[0.98] ${plate} ${
-        value === 0 ? "opacity-60" : ""
-      }`}
+    <SectionCard
+      title={HOME_COPY.needsYouTitle}
+      description={HOME_COPY.needsYouHint}
+      tone={nothing ? "default" : "attention"}
+      bodyClassName="space-y-1.5"
     >
-      <p className="numeric text-3xl font-semibold leading-none">{value}</p>
-      <p className="mt-1.5 text-sm font-medium text-foreground">{label}</p>
-    </Link>
+      <HandoffsWaiting />
+      <OwnerFollowUps />
+      {bookingRows.map((r) => (
+        <Link
+          key={r.id}
+          to="/direct-bookings/$requestId"
+          params={{ requestId: r.id }}
+          className="surface-row flex items-center gap-3 px-4 py-3"
+        >
+          <Inbox className="size-4 shrink-0 text-primary" aria-hidden="true" />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-medium">
+              {r.partner_name || r.company || r.subject || "Direct booking request"}
+            </span>
+            <span className="block text-sm text-muted-foreground">Direct booking you started. Reply within 3 minutes.</span>
+          </span>
+          <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
+        </Link>
+      ))}
+      {approvalRows.map((a) => {
+        const inner = (
+          <>
+            <ClipboardCheck className="size-4 shrink-0 text-primary" aria-hidden="true" />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate font-medium">{a.title}</span>
+              <span className="block text-sm text-muted-foreground">Waiting for your approval</span>
+            </span>
+          </>
+        );
+        return a.entity_type === "ticket" && a.entity_id ? (
+          <Link
+            key={a.id}
+            to="/tickets/$ticketId"
+            params={{ ticketId: a.entity_id }}
+            search={originSearch}
+            className="surface-row flex items-center gap-3 px-4 py-3"
+          >
+            {inner}
+            <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
+          </Link>
+        ) : (
+          <div key={a.id} className="surface-row flex items-center gap-3 px-4 py-3">
+            {inner}
+          </div>
+        );
+      })}
+      {items.map((i) => (
+        <Link
+          key={i.id}
+          to="/tickets/$ticketId"
+          params={{ ticketId: i.ticketId! }}
+          search={originSearch}
+          className="surface-row flex items-center gap-3 px-4 py-3"
+        >
+          {i.kind === "handoff" ? (
+            <Handshake className="size-4 shrink-0 text-primary" aria-hidden="true" />
+          ) : (
+            <AlertTriangle className="size-4 shrink-0 text-danger" aria-hidden="true" />
+          )}
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-medium">{i.title}</span>
+            <span className="block truncate text-sm text-muted-foreground">{i.detail}</span>
+          </span>
+          <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
+        </Link>
+      ))}
+      {nothing && <p className="text-sm text-muted-foreground">{HOME_COPY.needsYouEmpty}</p>}
+    </SectionCard>
   );
 }
 
-/** One compact line of work: what it is, where, what to do next, and by when. */
-function WorkRow({
-  t,
-  emphasis = false,
-  origin,
-}: {
-  t: Row;
-  emphasis?: boolean;
-  origin: { from: string };
-}) {
-  const sla = slaState(t);
-  const overdue = Boolean(sla.breached);
-  const next = ticketNextAction({
-    status: t.status,
-    acknowledged_at: t.acknowledged_at,
-    action_started_at: t.action_started_at,
-    waiting_on: t.waiting_on,
-    guest_in_residence: t.guest_in_residence,
-    vendor_name: t.vendor_name,
-    vendor_status: t.vendor_status,
-  });
-  const followUp = t.status === "waiting" ? clockTime(t.next_review_at) : null;
-  const waitingLate =
-    t.status === "waiting" && t.next_review_at && new Date(t.next_review_at) <= new Date();
+const PRIORITY_OPTIONS = [
+  { value: "all", label: "All" },
+  { value: "p1", label: "P1" },
+  { value: "p2", label: "P2" },
+  { value: "p3", label: "P3" },
+];
 
+/** My work: Active, Waiting and Done recently, with search, priority and List or Board. */
+function MyWork({
+  rows,
+  userId,
+  unclaimed,
+  originSearch,
+}: {
+  rows: Row[];
+  userId: string;
+  unclaimed: number;
+  originSearch: { from: string };
+}) {
+  const [tab, setTab] = useState<HomeTab>("active");
+  const [query, setQuery] = useState("");
+  const [priority, setPriority] = useState("all");
+  const [layout, setLayout] = useState<"list" | "board">("list");
+  const { data: staff } = useStaffDirectory();
+  const people = useMemo(() => new Map((staff ?? []).map((s) => [s.id, s])), [staff]);
+
+  const counts = useMemo(() => {
+    const c = {} as Record<HomeTab, number>;
+    for (const t of HOME_TABS) c[t.value] = rows.filter((r) => inHomeTab(r, t.value, userId)).length;
+    return c;
+  }, [rows, userId]);
+
+  const shown = rows
+    .filter((t) => inHomeTab(t, tab, userId))
+    .filter((t) => priority === "all" || t.priority === priority)
+    .filter((t) => homeSearchMatch(t, query, displayName(people.get(currentOwnerId(t) ?? ""))))
+    .sort((a, b) => {
+      if (tab === "done") return (b.resolved_at ?? "").localeCompare(a.resolved_at ?? "");
+      const rank: Record<string, number> = { p1: 0, p2: 1, p3: 2 };
+      return (
+        (rank[a.priority] ?? 3) - (rank[b.priority] ?? 3) ||
+        (a.response_due_at ?? a.action_due_at ?? "9999").localeCompare(b.response_due_at ?? b.action_due_at ?? "9999")
+      );
+    });
+  const emptyText = HOME_TABS.find((t) => t.value === tab)?.empty ?? "";
+
+  return (
+    <SectionCard
+      title={HOME_COPY.myWorkTitle}
+      description={HOME_COPY.myWorkHint}
+      bodyClassName="space-y-3"
+      actions={
+        <Link
+          to="/team-queue"
+          search={{ flags: "unassigned" } as never}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+        >
+          <Users className="size-4" aria-hidden="true" /> {HOME_COPY.teamQueueLink(unclaimed)}
+        </Link>
+      }
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <SegmentedControl
+          ariaLabel="My work"
+          value={tab}
+          onChange={(v) => setTab(v as HomeTab)}
+          options={HOME_TABS.map((t) => ({ value: t.value, label: t.label, count: counts[t.value] }))}
+        />
+        <SegmentedControl ariaLabel="Priority" value={priority} onChange={setPriority} options={PRIORITY_OPTIONS} />
+        <SegmentedControl
+          ariaLabel="Layout"
+          value={layout}
+          onChange={(v) => setLayout(v === "board" ? "board" : "list")}
+          options={[
+            { value: "list", label: "List" },
+            { value: "board", label: "Board" },
+          ]}
+        />
+        <Input
+          className="sm:ml-auto sm:w-80"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={HOME_COPY.searchPlaceholder}
+          aria-label="Search my work"
+        />
+      </div>
+
+      {shown.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          {query.trim() || priority !== "all" ? "Nothing matches. Try another word or priority." : emptyText}
+        </p>
+      ) : layout === "board" ? (
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {boardColumns(tab).map((col) => {
+            const colRows = shown.filter((t) => t.status === col.value);
+            return (
+              <section key={col.value} aria-label={col.label} className="rounded-xl border bg-muted/20 p-3">
+                <h3 className="mb-2 text-sm font-semibold">
+                  {col.label} · {colRows.length}
+                </h3>
+                <div className="space-y-2">
+                  {colRows.map((t) => (
+                    <WorkRow key={t.id} t={t} origin={originSearch} compact />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          {shown.map((t) => (
+            <WorkRow key={t.id} t={t} origin={originSearch} />
+          ))}
+        </div>
+      )}
+    </SectionCard>
+  );
+}
+
+/** One line of work: the home by full address, the problem, how urgent and the next step. */
+function WorkRow({ t, origin, compact = false }: { t: Row; origin: { from: string }; compact?: boolean }) {
+  const next = OPEN_STATUSES.includes(t.status)
+    ? ticketNextAction({
+        status: t.status,
+        acknowledged_at: t.acknowledged_at ?? null,
+        action_started_at: t.action_started_at ?? null,
+        waiting_on: t.waiting_on,
+        waiting_reason: t.waiting_reason,
+        next_review_at: t.next_review_at,
+        guest_in_residence: t.guest_in_residence,
+        vendor_name: t.vendor_name,
+        vendor_status: t.vendor_status,
+      })
+    : null;
+  const urgent = urgencyLabel(t);
+  const home = formatPropertyLabel(t.properties).full;
   return (
     <Link
       to="/tickets/$ticketId"
       params={{ ticketId: t.id }}
       search={origin}
-      className={`surface-row relative flex flex-wrap items-center gap-x-3 gap-y-1 py-3 pl-5 pr-3 ${
-        overdue ? "border-danger/30" : ""
-      }`}
+      className="surface-row relative flex flex-wrap items-center gap-x-3 gap-y-1 py-3 pl-5 pr-3"
     >
       <PriorityRail priority={t.priority} />
-      <PropertyPhoto
-        url={t.properties?.primary_photo_url ?? null}
-        name={formatPropertyLabel(t.properties).primary}
-        className="size-11"
-      />
-      <Badge variant="outline" className={priorityTone(t.priority)}>
-        {priorityMeta(t.priority).short}
-      </Badge>
-
+      {!compact && (
+        <PropertyPhoto url={t.properties?.primary_photo_url ?? null} name={home} className="size-11" />
+      )}
       <span className="min-w-0 flex-1 basis-full sm:basis-auto">
-        <span
-          className={`block truncate ${emphasis ? "text-base font-semibold" : "text-base font-medium"}`}
-        >
-          {t.title}
-        </span>
-        <span className="block truncate text-sm text-muted-foreground">
-          {formatPropertyLabel(t.properties).primary}
-          {next ? ` · ${next.label}` : ""}
+        <span className="block truncate text-sm text-muted-foreground">{home}</span>
+        <span className="block truncate text-base font-medium">{t.title}</span>
+        <span className="block truncate text-sm">
+          <span className="font-medium text-primary">{next ? next.label : "Done"}</span>
         </span>
       </span>
-
-      {t.status === "waiting" ? (
-        <StatusBadge tone={waitingLate ? "escalated" : "waiting"} icon={<PauseCircle />}>
-          {waitingLate ? "Follow up now" : `Follow up ${followUp ?? "—"}`}
-        </StatusBadge>
-      ) : overdue ? (
-        <StatusBadge tone="escalated" icon={<AlertTriangle />}>
-          Overdue
-        </StatusBadge>
-      ) : t.action_started_at ? (
-        <StatusBadge tone="progress" icon={<PlayCircle />}>
-          In progress
-        </StatusBadge>
-      ) : (
-        <span className="numeric text-sm text-muted-foreground">{relativeTime(t.reported_at)}</span>
-      )}
-
+      <Badge variant="outline" className={/Overdue|Escalated/.test(urgent) ? "border-danger/40 text-danger" : ""}>
+        {urgent}
+      </Badge>
       <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
     </Link>
   );
 }
 
-/**
- * Routine work due — the recurring controls, kept visually separate from
- * tickets so nobody confuses scheduled quality work with a reported problem.
- */
-function RoutineWorkDue() {
+/** Routine checks due today for this person's team. */
+function RoutineWorkDue({ team }: { team: string | null }) {
   const { can } = useRole();
   const { demoMode } = useDemo();
+  const kinds = kindsForTeam(team).filter((k) => !RETIRED_ROUTINE_KINDS.has(k));
   const { data } = useQuery({
-    queryKey: ["routine-due", demoMode],
+    queryKey: ["routine-due", demoMode, kinds.join(",")],
     enabled: can("routines"),
     staleTime: 60 * 1000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("routine_controls")
-        .select("id, kind, title, status, due_at, properties(name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id)")
+        .select(
+          "id, kind, title, status, due_at, properties(name, nickname, address_line1, unit, city, state, postal_code, ownerrez_property_id)",
+        )
         .eq("is_demo", demoMode)
         .in("status", ["due", "in_progress"])
+        .in("kind", kinds)
         .order("due_at", { ascending: true })
         .limit(50);
       if (error) throw error;
@@ -446,14 +493,13 @@ function RoutineWorkDue() {
   });
 
   if (!can("routines")) return null;
-
-  const rows = (data ?? []).filter((r) => routineDueState(r) !== "upcoming").slice(0, 6);
+  const rows = (data ?? []).filter((r) => routineDueState(r) !== "upcoming").slice(0, 8);
   const late = rows.filter((r) => routineDueState(r) === "overdue").length;
 
   return (
     <SectionCard
-      title="Routine work due"
-      description="Cleaning Reviews, Guest Reviews, Checkouts and Guest Touch Bases."
+      title={HOME_COPY.routineTitle}
+      description={HOME_COPY.routineHint}
       tone={late > 0 ? "attention" : "default"}
       bodyClassName="space-y-1.5"
       actions={
@@ -461,32 +507,23 @@ function RoutineWorkDue() {
           to="/routines"
           className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
         >
-          <ClipboardCheck className="size-4" /> Run a routine control
+          <ClipboardCheck className="size-4" aria-hidden="true" /> {HOME_COPY.routineButton}
         </Link>
       }
     >
       {rows.length === 0 ? (
-        <EmptyState
-          title="No routine checks due right now."
-          hint="Cleaning Reviews appear once a departure clean is finished."
-        />
+        <p className="text-sm text-muted-foreground">{HOME_COPY.routineEmpty}</p>
       ) : (
         rows.map((r) => {
           const overdue = routineDueState(r) === "overdue";
           return (
-            <Link
-              key={r.id}
-              to="/routines"
-              className="surface-row flex flex-wrap items-center gap-3 px-4 py-3"
-            >
+            <Link key={r.id} to="/routines" className="surface-row flex flex-wrap items-center gap-3 px-4 py-3">
               <ClipboardCheck className="size-4 shrink-0 text-muted-foreground" />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-base font-medium">{r.title}</span>
                 <span className="block truncate text-sm text-muted-foreground">
                   {routineConfig(r.kind).label}
-                  {formatPropertyLabel(r.properties).primary
-                    ? ` \u00b7 ${formatPropertyLabel(r.properties).primary}`
-                    : ""}
+                  {r.properties ? ` \u00b7 ${formatPropertyLabel(r.properties).full}` : ""}
                 </span>
               </span>
               <span
@@ -505,29 +542,47 @@ function RoutineWorkDue() {
   );
 }
 
-/** Direct Booking requests this person pressed Start on and has not replied to yet. */
-function DirectBookingsNeedingYou() {
-  const { demoMode } = useDemo();
-  const fetchMine = useServerFn(myDirectBookings);
-  const { data } = useQuery({
-    queryKey: ["my-direct-bookings", demoMode],
-    queryFn: () => fetchMine({ data: { demo: demoMode } }),
-    refetchInterval: 15_000,
-  });
-  if (!data || data.length === 0) return null;
+/** The last few things that moved in this person's work. */
+function RecentActivity({ rows, originSearch }: { rows: Row[]; originSearch: { from: string } }) {
+  const recent: (ActivityEvent & { at: string })[] = rows
+    .filter((t) => isResolveWork(t))
+    .map((t) => {
+      const at = t.resolved_at ?? t.action_started_at ?? t.acknowledged_at ?? t.reported_at ?? "";
+      const kind: ActivityEvent["kind"] =
+        t.status === "waiting"
+          ? "waiting"
+          : t.status === "resolved" || t.status === "closed"
+            ? "completed"
+            : t.vendor_name
+              ? "repair"
+              : t.pending_handoff_to
+                ? "handoff"
+                : "note";
+      return {
+        id: t.id,
+        kind,
+        when: relativeTime(at),
+        at,
+        label: (
+          <>
+            <span className="font-medium">{t.title}</span>
+            <span className="text-muted-foreground">
+              {" \u00b7 "}
+              {formatPropertyLabel(t.properties).full}
+            </span>
+          </>
+        ),
+        to: "/tickets/$ticketId",
+        params: { ticketId: t.id },
+        search: originSearch,
+      };
+    })
+    .sort((a, b) => b.at.localeCompare(a.at))
+    .slice(0, 6);
+
   return (
-    <SectionCard title="Needs you now" tone="attention" description="Direct booking requests you started. Reply within 3 minutes." bodyClassName="space-y-1.5">
-      {data.map((r) => (
-        <Link
-          key={r.id}
-          to="/direct-bookings/$requestId"
-          params={{ requestId: r.id }}
-          className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm hover:bg-secondary/50"
-        >
-          <span className="font-medium">{r.partner_name || r.company || r.subject || "Direct booking request"}</span>
-          <span className="text-muted-foreground">Open</span>
-        </Link>
-      ))}
+    <SectionCard title={HOME_COPY.activityTitle}>
+      <ActivityList events={recent} emptyLabel={HOME_COPY.activityEmpty} />
     </SectionCard>
   );
 }
