@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { CoverageConfig } from "@/lib/coverage";
 import { handoffAcceptPatch, settleHandoff } from "@/lib/handoff-accept";
 import type { PropertyLabelFields } from "@/lib/property-label";
 import { OPEN_STATUSES } from "@/lib/tickets";
@@ -81,7 +80,7 @@ export function TicketHandoffsQueue({
   canAct: boolean;
   myTeam: string | null;
   homeTeamOf: (userId: string | null) => string | null;
-  cfg: CoverageConfig | null;
+  cfg: QueueTiming;
   now: Date;
   originSearch: { from: string };
   onChanged: () => unknown;

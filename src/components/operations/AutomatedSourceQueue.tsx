@@ -6,11 +6,11 @@
  * and src/lib/team-queue-board.ts.
  */
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPropertyLabel, type PropertyLabelFields } from "@/lib/property-label";
 import { breezewayTaskUrl } from "@/lib/departure-review";
-import type { CoverageConfig } from "@/lib/coverage";
 import { takeTicketPatch, type AutomatedSource, type AutomatedTicket } from "@/lib/automated-sources";
 import {
   TEAM_QUEUE_COPY,
@@ -18,10 +18,13 @@ import {
   giveBackPatch,
   groupCountLine,
   isLate,
+  queueSince,
+  sentAlertsFor,
   sortPickRows,
   sourceGroups,
   waitLine,
   type QueueScope,
+  type QueueTiming,
 } from "@/lib/team-queue-board";
 import { QueueGroup, QueueRow, TakeButton, type DoneProps } from "./QueueRow";
 
@@ -31,7 +34,8 @@ export type SourceRow = AutomatedTicket & {
   priority?: string | null;
   property_id?: string | null;
   properties?: PropertyLabelFields | null;
-  work_types?: { name?: string | null; functional_role_code?: string | null } | null;
+  work_types?: { name?: string | null; functional_role_code?: string | null; action_start_minutes?: number | null } | null;
+  unowned_since?: string | null;
   guest_in_residence?: boolean | null;
   escalation_level?: string | null;
   next_action?: string | null;
@@ -68,13 +72,29 @@ export function AutomatedSourceQueue({
   canTake: boolean;
   scope: QueueScope;
   myTeam: string | null;
-  cfg: CoverageConfig | null;
+  cfg: QueueTiming;
   now: Date;
   originSearch: { from: string };
   onTaken: () => unknown;
 } & DoneProps) {
   const [busy, setBusy] = useState<string | null>(null);
   const live = sourceGroups(rows, scope, myTeam);
+  // The Team Queue alerts the minute check has sent (supervisor at 10, director at 15).
+  const rightNowIds = live.flatMap((g) => g.rows.map((r) => r.row)).filter((r) => r.priority === "p1").map((r) => r.id).sort();
+  const sent = useQuery({
+    queryKey: ["team-queue-timed-alerts", rightNowIds],
+    enabled: rightNowIds.length > 0,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const { data, error } = await (supabase as unknown as Db)
+        .from("ticket_timed_alerts")
+        .select("ticket_id, kind, episode_at")
+        .in("ticket_id", rightNowIds)
+        .in("kind", ["team_queue_supervisor", "team_queue_director"]);
+      if (error) throw error;
+      return (data ?? []) as { ticket_id: string; kind: string; episode_at: string }[];
+    },
+  });
 
   async function take(t: SourceRow, source: AutomatedSource, team: string | null) {
     if (!userId) return;
@@ -153,7 +173,7 @@ export function AutomatedSourceQueue({
         .map((d) => ({ row: d.snapshot as unknown as SourceRow, team: d.team }));
       const all = sortPickRows(
         [...liveRows, ...doneRows],
-        (w) => ({ priority: w.row.priority ?? null, team: w.team, since: w.row.reported_at ?? null }),
+        (w) => ({ priority: w.row.priority ?? null, team: w.team, since: queueSince(w.row) }),
         myTeam,
       );
       return { source, liveRows, all };
@@ -168,12 +188,13 @@ export function AutomatedSourceQueue({
         <QueueGroup
           key={g.source}
           title={TEAM_QUEUE_COPY.groups[g.source]}
-          countLine={groupCountLine(g.liveRows.map((r) => r.row.reported_at), now)}
+          countLine={groupCountLine(g.liveRows.map((r) => queueSince(r.row)), now)}
           testId={`queue-group-${g.source}`}
         >
           {g.all.map(({ row: t, team }) => {
             const entry = done[t.id];
-            const late = isLate(t.priority, t.reported_at, now, cfg);
+            const since = queueSince(t);
+            const late = isLate(t.priority, since, now, cfg, t.work_types?.action_start_minutes ?? null);
             return (
               <QueueRow
                 key={t.id}
@@ -184,8 +205,8 @@ export function AutomatedSourceQueue({
                 priority={t.priority}
                 guest={Boolean(t.guest_in_residence)}
                 home={rowHome(t)}
-                wait={{ text: waitLine(t.reported_at, now, late), late }}
-                alert={alertLine(t.priority, t.escalation_level)}
+                wait={{ text: waitLine(since, now, late), late }}
+                alert={entry ? null : alertLine(t.priority, sentAlertsFor(sent.data ?? [], since, t.id), cfg)}
                 breezewayUrl={rowBreezeway(t)}
                 nextStep={t.next_action ?? null}
                 done={

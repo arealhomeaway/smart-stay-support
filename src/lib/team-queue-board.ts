@@ -332,7 +332,7 @@ export function sourceGroups<T extends AutomatedTicket & { priority?: string | n
     source,
     rows: sortPickRows(
       waiting.filter((w) => w.source === source),
-      (w) => ({ priority: w.row.priority ?? null, team: w.team, since: w.row.reported_at ?? null }),
+      (w) => ({ priority: w.row.priority ?? null, team: w.team, since: queueSince(w.row) }),
       myTeam,
     ),
   })).filter((g) => g.rows.length > 0);
