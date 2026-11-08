@@ -129,14 +129,14 @@ describe("routing precedence", () => {
       teamB: [{ userId: "chris", roleCode: "po_evening", weight: 0 }],
     });
     expect(d.userId).toBe("oncall");
-    expect(d.reason).toContain("Priority is unchanged");
+    expect(d.reason).toContain("Urgency is unchanged");
   });
 
   it("uses the cross-team role when Team B is off duty", () => {
     const d = decideRoute({ ...base, triage: { userId: "mike", roleCode: "ge_evening" } });
     expect(d.userId).toBe("mike");
     expect(d.fallback).toBe(false);
-    expect(d.reason).toContain("covered, not a gap");
+    expect(d.reason).toContain("covers Property Operations at this time");
   });
 
   it("uses the Supervisor only when the Supervisor is on duty", () => {
