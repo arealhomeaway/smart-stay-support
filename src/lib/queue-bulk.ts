@@ -118,7 +118,7 @@ export function planBulkUpdate(request: BulkRequest): BulkPlan {
   }
 
   const priority = String(request.priority ?? "").toLowerCase();
-  if (!isBulkPriority(priority)) return { ok: false, error: "Choose P1, P2 or P3." };
+  if (!isBulkPriority(priority)) return { ok: false, error: "Choose Right now, Today or Routine." };
   const reason = String(request.reason ?? "").trim();
   if (reason.length < PRIORITY_REASON_MIN)
     return { ok: false, error: "Write why these tickets get a different priority." };

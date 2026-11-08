@@ -27,6 +27,7 @@ import {
   type BulkAction,
 } from "@/lib/queue-bulk";
 import { bulkUpdateTicketsFn } from "@/lib/queue-bulk.functions";
+import { URGENCY_NAMES } from "@/lib/tickets";
 
 const UNASSIGNED = "__unassigned__";
 
@@ -158,7 +159,7 @@ export function QueueBulkActions({
                 <SelectContent>
                   {BULK_PRIORITIES.map((p) => (
                     <SelectItem key={p} value={p}>
-                      {p.toUpperCase()}
+                      {URGENCY_NAMES[p]}
                     </SelectItem>
                   ))}
                 </SelectContent>
