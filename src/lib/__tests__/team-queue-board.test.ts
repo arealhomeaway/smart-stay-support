@@ -15,6 +15,10 @@ import {
   inScope,
   isLate,
   parseScope,
+  queueSince,
+  readQueueTiming,
+  sentAlertsFor,
+  DEFAULT_QUEUE_TIMING,
   sourceGroups,
   waitLine,
 } from "../team-queue-board";
@@ -24,7 +28,7 @@ import { notionGroupsFor } from "@/components/operations/NotionImportedGroup";
 const read = (p: string) => readFileSync(p, "utf8");
 const A = "guest_experience";
 const B = "property_operations";
-const CFG = { after_hours_start_minute: 22 * 60, after_hours_end_minute: 8 * 60, timezone: "America/Chicago" };
+const CFG = DEFAULT_QUEUE_TIMING;
 // Monday Nov 9, 2026: Central is UTC minus 6.
 const central = (hhmm: string, day = "2026-11-09") => {
   const [h, m] = hhmm.split(":").map(Number);
@@ -137,23 +141,48 @@ describe("Pick up work groups", () => {
   });
 });
 
-describe("late, as drawn", () => {
-  it("Right now is late at 3 minutes", () => {
+describe("late, as decided (Emily, Nov 7, 2026)", () => {
+  it("Right now is red at 3 minutes", () => {
     const since = central("10:00").toISOString();
     expect(isLate("p1", since, central("10:02"), CFG)).toBe(false);
     expect(isLate("p1", since, central("10:03"), CFG)).toBe(true);
   });
-  it("Today is late when the shift is ending: the last 30 minutes before the after-hours window, or a later day", () => {
-    const since = central("14:00").toISOString();
-    expect(isLate("p2", since, central("21:29"), CFG)).toBe(false);
-    expect(isLate("p2", since, central("21:30"), CFG)).toBe(true);
-    expect(isLate("p2", since, central("09:00", "2026-11-10"), CFG)).toBe(true);
-    expect(isLate("p2", since, central("21:45"), null)).toBe(false);
-  });
-  it("Routine is late past 24 hours", () => {
+  it("Today is red 2 hours before the day shift ends (5 PM) and again 2 hours before the night shift ends (10 PM)", () => {
     const since = central("10:00").toISOString();
-    expect(isLate("p3", since, central("10:00", "2026-11-10"), CFG)).toBe(false);
-    expect(isLate("p3", since, central("10:01", "2026-11-10"), CFG)).toBe(true);
+    expect(isLate("p2", since, central("14:59"), CFG)).toBe(false);
+    expect(isLate("p2", since, central("15:00"), CFG)).toBe(true);
+    expect(isLate("p2", since, central("16:59"), CFG)).toBe(true);
+    expect(isLate("p2", since, central("17:00"), CFG)).toBe(false);
+    expect(isLate("p2", since, central("19:59"), CFG)).toBe(false);
+    expect(isLate("p2", since, central("20:00"), CFG)).toBe(true);
+    expect(isLate("p2", since, central("23:00"), CFG)).toBe(true);
+    expect(isLate("p2", since, central("09:00", "2026-11-10"), CFG)).toBe(true);
+  });
+  it("a Today ticket that arrives overnight belongs to the next day", () => {
+    const since = central("23:00").toISOString();
+    expect(isLate("p2", since, central("23:30"), CFG)).toBe(false);
+    expect(isLate("p2", since, central("09:00", "2026-11-10"), CFG)).toBe(false);
+    expect(isLate("p2", since, central("15:00", "2026-11-10"), CFG)).toBe(true);
+  });
+  it("the two end times and the 2 hours come from the setting", () => {
+    const t = readQueueTiming({ today_day_shift_ends: "18:00", today_night_shift_ends: "21:00", today_red_minutes_before: 60 }, "America/Chicago");
+    const since = central("10:00").toISOString();
+    expect(isLate("p2", since, central("16:30"), t)).toBe(false);
+    expect(isLate("p2", since, central("17:00"), t)).toBe(true);
+    expect(isLate("p2", since, central("20:00"), t)).toBe(true);
+    expect(readQueueTiming({ today_day_shift_ends: "25:00", supervisor_minutes: "x" }, null)).toEqual(DEFAULT_QUEUE_TIMING);
+  });
+  it("Routine is red when it passes its standard: a work order review at 24 hours, else 24 hours", () => {
+    const since = central("10:00").toISOString();
+    expect(isLate("p3", since, central("10:00", "2026-11-10"), CFG, 1440)).toBe(false);
+    expect(isLate("p3", since, central("10:01", "2026-11-10"), CFG, 1440)).toBe(true);
+    expect(isLate("p3", since, central("17:59"), CFG, 480)).toBe(false);
+    expect(isLate("p3", since, central("18:01"), CFG, 480)).toBe(true);
+    expect(isLate("p3", since, central("10:01", "2026-11-10"), CFG, null)).toBe(true);
+  });
+  it("the wait counts from when it last started waiting for an owner", () => {
+    expect(queueSince({ unowned_since: "2026-11-09T12:00:00Z", reported_at: "2026-11-09T08:00:00Z" })).toBe("2026-11-09T12:00:00Z");
+    expect(queueSince({ unowned_since: null, reported_at: "2026-11-09T08:00:00Z" })).toBe("2026-11-09T08:00:00Z");
   });
   it("the waiting line says Late when it is late", () => {
     expect(waitLine("2026-11-09T10:00:00Z", new Date("2026-11-09T10:05:00Z"), true)).toBe("Waiting 5 minutes. Late.");
@@ -162,13 +191,25 @@ describe("late, as drawn", () => {
 });
 
 describe("the alert line for Right now", () => {
-  it("three states from what has happened; nothing for Today or Routine", () => {
-    expect(alertLine("p1", "none")).toBe("If nobody takes it, a supervisor is alerted at 10 minutes and the director at 15.");
+  it("three states from the alerts actually sent for this wait; nothing for Today or Routine", () => {
+    expect(alertLine("p1", { supervisor: false, director: false })).toBe("If nobody takes it, a supervisor is alerted at 10 minutes and the director at 15.");
     expect(alertLine("p1", null)).toBe("If nobody takes it, a supervisor is alerted at 10 minutes and the director at 15.");
-    expect(alertLine("p1", "supervisor")).toBe("A supervisor has been alerted. The director is alerted at 15 minutes.");
-    expect(alertLine("p1", "director")).toBe("A supervisor and the director have been alerted.");
-    expect(alertLine("p2", "supervisor")).toBeNull();
-    expect(alertLine("p3", "none")).toBeNull();
+    expect(alertLine("p1", { supervisor: true, director: false })).toBe("A supervisor has been alerted. The director is alerted at 15 minutes.");
+    expect(alertLine("p1", { supervisor: true, director: true })).toBe("A supervisor and the director have been alerted.");
+    expect(alertLine("p2", { supervisor: true, director: false })).toBeNull();
+    expect(alertLine("p3", null)).toBeNull();
+  });
+  it("only alerts for the ticket's current wait count; a manual escalation never does", () => {
+    const rows = [
+      { ticket_id: "t1", kind: "team_queue_supervisor", episode_at: "2026-11-09T10:00:00+00:00" },
+      { ticket_id: "t1", kind: "team_queue_director", episode_at: "2026-11-09T08:00:00+00:00" },
+      { ticket_id: "t2", kind: "team_queue_director", episode_at: "2026-11-09T10:00:00+00:00" },
+    ];
+    expect(sentAlertsFor(rows, "2026-11-09T10:00:00Z", "t1")).toEqual({ supervisor: true, director: false });
+    expect(sentAlertsFor(rows, "2026-11-09T11:00:00Z", "t1")).toEqual({ supervisor: false, director: false });
+    const src = read("src/components/operations/AutomatedSourceQueue.tsx");
+    expect(src).toContain('from("ticket_timed_alerts")');
+    expect(src).not.toContain("alertLine(t.priority, t.escalation_level)");
   });
   it("imported Notion rows have no clock, no red state and no alert line", () => {
     const g = read("src/components/operations/NotionImportedGroup.tsx");
