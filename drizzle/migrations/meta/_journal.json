@@ -2024,6 +2024,13 @@
       "when": 1794162594254,
       "tag": "0288_direct_booking_settings_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 289,
+      "version": "7",
+      "when": 1794164622833,
+      "tag": "0289_playbooks_supervisor",
+      "breakpoints": true
     }
   ]
 }
