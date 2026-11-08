@@ -275,6 +275,45 @@ export function handoffFromLine(fromTeam: string | null, toTeam: string | null):
   return from && to ? `From ${who}, ${from} to ${to}.` : `From ${who}.`;
 }
 
+export type HandoffQueueRow = {
+  id: string;
+  ticket_id: string;
+  from_user: string | null;
+  to_user: string | null;
+  to_role_code: string | null;
+  priority: string | null;
+  next_action: string | null;
+  created_at: string;
+  status: string;
+  ticket: (AutomatedTicket & { is_demo?: boolean | null; priority?: string | null }) | null;
+};
+
+/**
+ * Handoffs waiting for you: pending, offered to you by name or to a role you hold now
+ * (a handoff to a role goes to the person in that role, T6), never your own request, on an
+ * open ticket that is not archived. Oldest first.
+ */
+export function handoffsForMe<T extends HandoffQueueRow>(
+  rows: T[],
+  userId: string | null,
+  myRoleCodes: ReadonlySet<string>,
+  demoMode: boolean,
+  openStatuses: readonly string[],
+): T[] {
+  if (!userId) return [];
+  return rows
+    .filter((h) => {
+      if (h.status !== "pending" || !h.ticket) return false;
+      if (h.from_user === userId) return false;
+      const forMe = h.to_user === userId || (!h.to_user && !!h.to_role_code && myRoleCodes.has(h.to_role_code));
+      if (!forMe) return false;
+      if (h.ticket.archived_at) return false;
+      if (Boolean(h.ticket.is_demo) !== demoMode) return false;
+      return openStatuses.includes(h.ticket.status);
+    })
+    .sort((a, b) => a.created_at.localeCompare(b.created_at));
+}
+
 export function declineReasonOk(reason: string): boolean {
   const r = reason.trim();
   return r.length > 0 && r.length <= 500;
