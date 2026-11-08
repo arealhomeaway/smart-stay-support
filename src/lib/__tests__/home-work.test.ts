@@ -9,7 +9,6 @@ import {
   type HomeTicket,
 } from "@/lib/home-work";
 import { matchesMyWorkView } from "@/lib/my-work";
-import { NOTION_CLAIM_REVIEW_STATUS } from "@/lib/notion-import/mapping";
 
 const ME = "00000000-0000-4000-8000-0000000000aa";
 const NOW = Date.now();
@@ -119,7 +118,7 @@ describe("word check", () => {
         .map((m) => m[1] ?? m[2] ?? m[3] ?? "")
         .join("\n");
       for (const re of BANNED) expect({ f, hit: re.test(text) }).toEqual({ f, hit: false });
-      expect(text).not.toContain(NOTION_CLAIM_REVIEW_STATUS);
+      expect(text).not.toMatch(/pending claim review/i);
     }
   });
 });
