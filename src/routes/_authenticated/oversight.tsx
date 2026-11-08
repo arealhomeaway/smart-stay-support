@@ -1,4 +1,5 @@
 import { formatPropertyLabel } from "@/lib/property-label";
+import { QueueOpenLogger } from "@/components/scorecard/QueueOpenLogger";
 /**
  * Supervisor Operations Home — an exception board, not a stat dashboard.
  *
@@ -192,7 +193,12 @@ function Oversight() {
     );
   if (tickets.isLoading || !tickets.data) return <Skeleton className="h-96 w-full" />;
 
-  return <OversightBoard data={tickets.data} s={support.data} />;
+  return (
+    <>
+      <QueueOpenLogger source="oversight" />
+      <OversightBoard data={tickets.data} s={support.data} />
+    </>
+  );
 }
 
 function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSupport }) {

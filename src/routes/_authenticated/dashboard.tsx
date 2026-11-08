@@ -30,6 +30,7 @@ import { OPEN_STATUSES, relativeTime } from "@/lib/tickets";
 import { currentOwnerId } from "@/lib/matters";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 import { SupervisorAttentionBand } from "@/components/SupervisorAttentionBand";
+import { SupervisorRecords } from "@/components/scorecard/SupervisorRecords";
 import { HandoffsWaiting } from "@/components/operations/HandoffsWaiting";
 import { OwnerFollowUps } from "@/components/OwnerFollowUps";
 import { openRecordRoutine } from "@/components/routines/RecordRoutinePanel";
@@ -176,6 +177,8 @@ function Dashboard() {
 
       {/* Leaders see escalations, approval requests and unassigned work first. */}
       {role.can("oversight") && <SupervisorAttentionBand />}
+
+      {role.isStaff && <SupervisorRecords />}
 
       {role.previewRole && rows.length === 0 && (
         <p className="rounded-lg border border-border bg-secondary/40 px-3 py-2 text-sm text-muted-foreground">

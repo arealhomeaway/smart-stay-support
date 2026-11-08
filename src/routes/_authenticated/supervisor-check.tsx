@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
+import { QueueOpenLogger } from "@/components/scorecard/QueueOpenLogger";
+import { RatingChannelsCard } from "@/components/scorecard/RatingChannelsCard";
 import { SectionCard } from "@/components/ui/page";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDemo } from "@/components/DemoProvider";
@@ -84,6 +86,7 @@ function SupervisorCheck() {
 
   return (
     <div className="space-y-6">
+      <QueueOpenLogger source="supervisor_check" />
       <header>
         <h1 className="font-display text-2xl font-semibold">Supervisor check</h1>
         <p className="text-sm text-muted-foreground">
@@ -136,6 +139,7 @@ function SupervisorCheck() {
         <Link to="/imported-tickets" className="mt-2 inline-block text-sm underline">Open Imported tickets</Link>
       </SectionCard>
       <SectionCard title={`Needs a home (${g.needsHome.length})`}>{list(g.needsHome as Row[], "The Needs a home list is empty.")}</SectionCard>
+      <RatingChannelsCard />
     </div>
   );
 }

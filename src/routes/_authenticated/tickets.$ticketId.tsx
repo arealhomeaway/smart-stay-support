@@ -86,17 +86,6 @@ import { ticketNextAction } from "@/lib/ticket-next-action";
 import { ticketCurrentAction } from "@/lib/ticket-current-action";
 import { ensureTicketActionStarted } from "@/lib/ticket-action-start";
 import { classifyTicketText } from "@/lib/ticket-classify";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Chip } from "@/components/ui/page";
 import { PersonChip } from "@/components/PersonAvatar";
 import { stateChip } from "@/lib/semantic";
