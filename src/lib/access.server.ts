@@ -16,6 +16,39 @@ export async function assertAdmin(supabase: Client, userId: string) {
   if (!data) throw new Error("Only an admin can change team access.");
 }
 
+/** Account types Operations leadership may invite: Coordinator and Supervisor. */
+export const OPS_INVITE_ROLES: AppRole[] = ["tech", "manager"];
+
+/**
+ * Who may issue invite codes, read with the caller's own client:
+ * "all" for Admin, "operations" for the Operations Supervisor (held or
+ * covering) and the Director of Operations, otherwise "none".
+ */
+export async function inviteScope(supabase: Client, userId: string): Promise<"all" | "operations" | "none"> {
+  type Loose = { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }> };
+  const db = supabase as unknown as Loose;
+  const [admin, director, holds, cover] = await Promise.all([
+    db.rpc("has_role", { _user_id: userId, _role: "admin" }),
+    db.rpc("is_director", { _user_id: userId }),
+    db.rpc("holds_functional_role", { _user_id: userId, _code: "ops_supervisor" }),
+    db.rpc("seat_holder_at", { _role_code: "ops_supervisor" }),
+  ]);
+  if (admin.error) throw new Error("Could not verify your access level.");
+  if (admin.data === true) return "all";
+  if (director.data === true || holds.data === true || (!cover.error && cover.data === userId)) return "operations";
+  return "none";
+}
+
+/** Throws unless the caller may invite this account type. */
+export async function assertCanInvite(supabase: Client, userId: string, role: AppRole) {
+  const scope = await inviteScope(supabase, userId);
+  if (scope === "all") return scope;
+  if (scope === "operations" && OPS_INVITE_ROLES.includes(role)) return scope;
+  if (scope === "operations")
+    throw new Error("You can add Property Coordinators and Supervisors. Ask an Admin for other account types.");
+  throw new Error("Only an admin can change team access.");
+}
+
 export async function loadTeamAccess() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const [profiles, roles] = await Promise.all([
