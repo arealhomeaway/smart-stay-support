@@ -1,4 +1,5 @@
 import {
+import { readFileSync } from "node:fs";
   DEFAULT_SETTINGS,
   OVERNIGHT_COPY,
   beforeOvernightClock,
