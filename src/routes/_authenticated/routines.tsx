@@ -1,4 +1,4 @@
-import { formatPropertyLabel, matchesPropertySearch } from "@/lib/property-label";
+import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Routine work — the four recurring controls, in one place.
  *
@@ -6,17 +6,13 @@ import { formatPropertyLabel, matchesPropertySearch } from "@/lib/property-label
  * exception someone reported; it is the scheduled quality work the team
  * already does after every clean, every stay and every review.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ClipboardCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { RequireCapability } from "@/components/RequireCapability";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { FocusedAction } from "@/components/ui/workspace";
 import { EmptyState, LoadingPage, PageHeader, SectionCard } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
@@ -24,13 +20,14 @@ import { RoutineDrawer, type RoutineRow } from "@/components/routines/RoutineDra
 import { MaintenanceReviewQueue } from "@/components/routines/MaintenanceReviewQueue";
 import { useDemo } from "@/components/DemoProvider";
 import { useSeat } from "@/hooks/useSeat";
+import { useFeatureFlags } from "@/lib/feature-flags";
+import { SURVEY_CHECK_FLAG, isLiveCheck } from "@/lib/record-routine";
+import { openRecordRoutine } from "@/components/routines/RecordRoutinePanel";
 import {
   OUTCOME_LABELS,
   ROUTINE_CONFIG,
   ROUTINE_KINDS,
-  MANUAL_ROUTINE_KINDS,
-  cleaningReviewKey,
-  manualKey,
+  RETIRED_ROUTINE_KINDS,
   routineConfig,
   routineDueLabel,
   routineDueState,
@@ -45,7 +42,7 @@ export const Route = createFileRoute("/_authenticated/routines")({
       {
         name: "description",
         content:
-          "Cleaning, guest, survey and maintenance reviews, checkouts and guest touch bases: the recurring checks the team runs every day.",
+          "Guest touch bases, work order reviews and guest reviews: the daily checks that keep our guests happy and our homes in great shape.",
       },
       { property: "og:title", content: "Routine work — Resolve Operations" },
       {
@@ -63,70 +60,13 @@ export const Route = createFileRoute("/_authenticated/routines")({
   ),
 });
 
-/**
- * Cleaning Reviews are generated from completed departure cleans, never from
- * the clock. The event key makes generation idempotent: running this twice
- * cannot produce a second review for the same clean.
- */
-function useGenerateCleaningReviews() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async () => {
-      const since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-      const { data: cleans, error } = await supabase
-        .from("breezeway_work_orders")
-        .select("id, name, property_id, scheduled_date, status, department, properties(is_demo)")
-        .eq("department", "cleaning")
-        .in("status", ["finished", "completed", "complete"])
-        .gte("scheduled_date", since)
-        .limit(200);
-      if (error) throw error;
-
-      const rows = (cleans ?? [])
-        .filter((c) => c.property_id && c.properties?.is_demo === false)
-        .map((c) => ({
-          kind: "cleaning_review",
-          event_key: cleaningReviewKey(c.id),
-          property_id: c.property_id,
-          title: c.name ?? "Departure clean review",
-          status: "due",
-          due_at: c.scheduled_date
-            ? new Date(`${c.scheduled_date}T18:00:00`).toISOString()
-            : new Date().toISOString(),
-          team: "property_operations",
-          is_demo: false,
-        }));
-      if (rows.length === 0) return 0;
-
-      const { error: upsertError, count } = await supabase
-        .from("routine_controls")
-        .upsert(rows, { onConflict: "kind,event_key", ignoreDuplicates: true, count: "exact" });
-      if (upsertError) throw upsertError;
-      return count ?? 0;
-    },
-    onSuccess: (created) => {
-      if (created) qc.invalidateQueries({ queryKey: ["routine-controls"] });
-    },
-  });
-}
-
 function RoutinesPage() {
-  const qc = useQueryClient();
   const { demoMode } = useDemo();
   const seat = useSeat();
-  const generate = useGenerateCleaningReviews();
+  const flags = useFeatureFlags();
+  const surveyOn = flags.enabled(SURVEY_CHECK_FLAG);
   const [openRow, setOpenRow] = useState<RoutineRow | null>(null);
-  const [runOpen, setRunOpen] = useState(false);
   const [filter, setFilter] = useState<"mine" | "all">("all");
-
-  // One idempotent generation pass when the screen opens.
-  useEffect(() => {
-    // Demo and acceptance sessions must never materialize live Breezeway work.
-    // Retired: new departures get an automated Departure Review in the Team B
-    // queue instead, so this legacy generator no longer creates new work.
-    void generate;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [demoMode]);
 
   // Routine work follows the same demo lens as every other queue: demo rows
   // only inside the demo environment, live rows only outside it. Before this,
@@ -150,9 +90,19 @@ function RoutinesPage() {
     [seat.team],
   );
 
+  // Open work is recorded in the one Record routine work panel.
+  const openInPanel = (r: RoutineRow) =>
+    isLiveCheck(r.kind) ? openRecordRoutine({ kind: r.kind }) : setOpenRow(r);
+
   if (isLoading || !data) return <LoadingPage tiles={0} />;
 
-  const openRows = data.filter((r) => r.status === "due" || r.status === "in_progress");
+  // Retired checks (Checkout, Cleaning Review) never show as work; their history stays below.
+  const openRows = data.filter(
+    (r) =>
+      (r.status === "due" || r.status === "in_progress") &&
+      !RETIRED_ROUTINE_KINDS.has(r.kind) &&
+      (r.kind !== "survey_review" || surveyOn),
+  );
   const visible =
     filter === "mine" ? openRows.filter((r) => myTeamKinds.has(r.kind as RoutineKind)) : openRows;
   const overdue = visible.filter((r) => routineDueState(r) === "overdue");
@@ -169,7 +119,7 @@ function RoutinesPage() {
             ? `${overdue.length} routine ${overdue.length === 1 ? "check is" : "checks are"} late`
             : "Routine work is on track"
         }
-        description="Legacy / backup: Checkout, Cleaning Review and Guest Review checks are replaced by the automated Departure Review in the Team Queue. Past checks stay here for history. Guest Touch Bases, Survey Reviews and Maintenance Reviews are worked here."
+        description="Guest touch bases, work order reviews and guest reviews. Checkout and Cleaning Review are retired: the Departure Review in the Team Queue covers them. Past checks stay here for history."
         actions={
           <>
             <div className="flex rounded-lg border border-border p-0.5">
@@ -185,8 +135,8 @@ function RoutinesPage() {
                 </button>
               ))}
             </div>
-            <Button className="h-10" onClick={() => setRunOpen(true)}>
-              <Plus className="size-4" /> Run a routine control
+            <Button className="h-10" onClick={() => openRecordRoutine()}>
+              <ClipboardCheck className="size-4" aria-hidden="true" /> Record routine work
             </Button>
           </>
         }
@@ -197,19 +147,19 @@ function RoutinesPage() {
         description="Past the time these were meant to be done."
         rows={overdue}
         tone="critical"
-        onOpen={setOpenRow}
+        onOpen={openInPanel}
       />
       <Section
         title="Due today"
         description="Scheduled for today."
         rows={today}
-        onOpen={setOpenRow}
+        onOpen={openInPanel}
       />
       <Section
         title="Coming up"
         description="Scheduled, not yet due."
         rows={upcoming}
-        onOpen={setOpenRow}
+        onOpen={openInPanel}
       />
 
       <MaintenanceReviewQueue demoMode={demoMode} onOpen={setOpenRow} />
@@ -253,14 +203,6 @@ function RoutinesPage() {
         row={openRow}
         open={Boolean(openRow)}
         onOpenChange={(v) => !v && setOpenRow(null)}
-      />
-      <RunRoutineDialog
-        open={runOpen}
-        onOpenChange={setRunOpen}
-        onChoose={(draftRow) => {
-          setRunOpen(false);
-          setOpenRow(draftRow);
-        }}
       />
     </div>
   );
@@ -317,169 +259,5 @@ function Section({
         })
       )}
     </SectionCard>
-  );
-}
-
-function RunRoutineDialog({
-  open,
-  onOpenChange,
-  onChoose,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  onChoose: (row: RoutineRow) => void;
-}) {
-  const [kind, setKind] = useState<RoutineKind>("checkout");
-  const [propertyId, setPropertyId] = useState("");
-  const [query, setQuery] = useState("");
-  const [guest, setGuest] = useState("");
-  const { demoMode } = useDemo();
-
-  const { data: properties } = useQuery({
-    queryKey: ["routine-properties", demoMode],
-    staleTime: 10 * 60 * 1000,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("properties")
-        .select("id, name, nickname, is_demo, address_line1, unit, city, state, postal_code, ownerrez_property_id")
-        .eq("active", true)
-        .eq("is_demo", demoMode)
-        .order("name")
-        .limit(500);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-
-  const matches = (properties ?? [])
-    .filter((p) => matchesPropertySearch(p, query))
-    .slice(0, 8);
-
-  // Choosing a check opens it straight away. Nothing is saved until the
-  // person completes it, so choosing alone never adds it to Due today.
-  async function choose() {
-    const config = ROUTINE_CONFIG[kind];
-    const { data: auth } = await supabase.auth.getUser();
-    const day = new Date().toISOString().slice(0, 10);
-    const chosen = (properties ?? []).find((p) => p.id === propertyId);
-    const now = new Date().toISOString();
-    const title = chosen ? `${config.label} · ${formatPropertyLabel(chosen).primary}` : config.label;
-    const draft = {
-      kind,
-      event_key: manualKey(kind, propertyId || null, `${day}:${Date.now()}`),
-      property_id: propertyId || null,
-      title,
-      guest_name: guest.trim() || null,
-      due_at: now,
-      team: config.team,
-      assigned_to: auth.user?.id ?? null,
-      created_by: auth.user?.id ?? null,
-      // A routine on a demo property is always demo work, even if the lens is off.
-      is_demo: demoMode || Boolean((chosen as { is_demo?: boolean } | undefined)?.is_demo),
-    };
-    onChoose({
-      id: `draft-${Date.now()}`,
-      kind,
-      status: "due",
-      title,
-      outcome: null,
-      property_id: propertyId || null,
-      ticket_id: null,
-      follow_up_ticket_id: null,
-      guest_name: draft.guest_name,
-      reservation_confirmation: null,
-      stay_arrival: null,
-      stay_departure: null,
-      due_at: now,
-      findings: null,
-      notes: null,
-      evidence_urls: null,
-      completed_at: null,
-      assigned_to: draft.assigned_to,
-      properties: chosen ? (chosen as never) : null,
-      draft,
-    });
-    setPropertyId("");
-    setQuery("");
-    setGuest("");
-  }
-
-  return (
-    <FocusedAction
-      open={open}
-      onOpenChange={onOpenChange}
-      title="Run a routine control"
-      description="Pick the check you are about to do."
-      footer={
-        <>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={() => void choose()}>
-            Open it
-          </Button>
-        </>
-      }
-    >
-      <div className="space-y-4">
-        <div className="grid gap-2 sm:grid-cols-2">
-          {MANUAL_ROUTINE_KINDS.map((k) => (
-            <button
-              key={k}
-              onClick={() => setKind(k)}
-              className={`rounded-lg border px-3 py-2.5 text-left transition-colors ${
-                kind === k ? "border-primary bg-primary/5" : "border-border hover:bg-secondary"
-              }`}
-            >
-              <span className="block text-sm font-semibold">{ROUTINE_CONFIG[k].label}</span>
-              <span className="block text-xs text-muted-foreground">
-                {ROUTINE_CONFIG[k].teamLabel}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        <p className="text-sm text-muted-foreground">{ROUTINE_CONFIG[kind].purpose}</p>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="routine-property">Which home?</Label>
-          <Input
-            id="routine-property"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setPropertyId("");
-            }}
-            placeholder="Start typing a property name"
-          />
-          {query.trim() && !propertyId && (
-            <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-border p-1">
-              {matches.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => {
-                    setPropertyId(p.id);
-                    setQuery(formatPropertyLabel(p).primary);
-                  }}
-                  className="block w-full rounded px-2 py-1.5 text-left text-sm hover:bg-secondary"
-                >
-                  {formatPropertyLabel(p).primary}
-                </button>
-              ))}
-              {matches.length === 0 && (
-                <p className="px-2 py-1.5 text-sm text-muted-foreground">No match.</p>
-              )}
-            </div>
-          )}
-        </div>
-
-        {ROUTINE_CONFIG[kind].team === "guest_experience" && (
-          <div className="space-y-1.5">
-            <Label htmlFor="routine-guest">Guest name (optional)</Label>
-            <Input id="routine-guest" value={guest} onChange={(e) => setGuest(e.target.value)} />
-          </div>
-        )}
-      </div>
-    </FocusedAction>
   );
 }

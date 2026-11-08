@@ -1,5 +1,6 @@
 import { useStoredMaintenancePolicy } from "@/hooks/useStoredMaintenancePolicy";
 import { TicketDrawerHost } from "@/components/nav/TicketDrawer";
+import { RecordRoutineHost, openRecordRoutine } from "@/components/routines/RecordRoutinePanel";
 import { Link, useParams, useRouter, useSearch } from "@tanstack/react-router";
 import {
   BarChart3,
@@ -25,6 +26,7 @@ import {
   ReceiptText,
   Workflow,
   Timer,
+  ClipboardCheck,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -580,6 +582,16 @@ export function AppShell({ children }: { children: ReactNode }) {
 
               <div className="ml-auto flex flex-1 flex-wrap items-center justify-end gap-2">
                 <GlobalSearch targets={searchTargets} />
+                {pathname === "/dashboard" && !vendorMode && !ownerMode && can("routines") && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="min-h-11 md:min-h-9"
+                    onClick={() => openRecordRoutine()}
+                  >
+                    <ClipboardCheck className="size-4" aria-hidden="true" /> Record routine work
+                  </Button>
+                )}
                 {showLogTicket && (
                   <Button
                     asChild
@@ -649,7 +661,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                       departmentFor(pathname)?.key === "vendors"
                     } />
                   )}
-                  <TicketDrawerHost>{children}</TicketDrawerHost>
+                  <TicketDrawerHost>
+                    {children}
+                    {!ownerMode && !vendorMode && can("routines") && <RecordRoutineHost />}
+                  </TicketDrawerHost>
                 </>
               )}
             </ShellNavProvider>

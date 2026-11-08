@@ -200,3 +200,10 @@
 - [x] Notion badges, import block, Reopen/Take; quiet imports out of counts, Oversight and rates
 - [ ] Apply docs/pending/home-merge/01_notion_reopen.sql (waits on Emily's approval)
 - [ ] Menu removal of My Work (separate prompt)
+
+## Nov 8 Record routine work panel (build only)
+- [x] Panel with Which check?, own team first, empty states, start by hand
+- [x] Guest touch bases, Work order review, Guest reviews live; Survey reviews behind an off switch
+- [x] Checkout and Cleaning review retired from the panel and Routine Work lists (data kept)
+- [x] Save records who, when, home and answers; found issue opens a linked ticket (after SQL)
+- [ ] Apply docs/pending/record-routine/01, 02, 03 (waits on Emily's approval)

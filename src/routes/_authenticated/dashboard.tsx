@@ -30,6 +30,9 @@ import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 import { SupervisorAttentionBand } from "@/components/SupervisorAttentionBand";
 import { HandoffsWaiting } from "@/components/operations/HandoffsWaiting";
 import { OwnerFollowUps } from "@/components/OwnerFollowUps";
+import { openRecordRoutine } from "@/components/routines/RecordRoutinePanel";
+import { useFeatureFlags } from "@/lib/feature-flags";
+import { SURVEY_CHECK_FLAG } from "@/lib/record-routine";
 import {
   HOME_COPY,
   HOME_TABS,
@@ -471,7 +474,10 @@ function WorkRow({ t, origin, compact = false }: { t: Row; origin: { from: strin
 function RoutineWorkDue({ team }: { team: string | null }) {
   const { can } = useRole();
   const { demoMode } = useDemo();
-  const kinds = kindsForTeam(team).filter((k) => !RETIRED_ROUTINE_KINDS.has(k));
+  const flags = useFeatureFlags();
+  const kinds = kindsForTeam(team).filter(
+    (k) => !RETIRED_ROUTINE_KINDS.has(k) && (k !== "survey_review" || flags.enabled(SURVEY_CHECK_FLAG)),
+  );
   const { data } = useQuery({
     queryKey: ["routine-due", demoMode, kinds.join(",")],
     enabled: can("routines"),
@@ -503,12 +509,13 @@ function RoutineWorkDue({ team }: { team: string | null }) {
       tone={late > 0 ? "attention" : "default"}
       bodyClassName="space-y-1.5"
       actions={
-        <Link
-          to="/routines"
+        <button
+          type="button"
+          onClick={() => openRecordRoutine()}
           className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
         >
           <ClipboardCheck className="size-4" aria-hidden="true" /> {HOME_COPY.routineButton}
-        </Link>
+        </button>
       }
     >
       {rows.length === 0 ? (

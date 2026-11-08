@@ -38,6 +38,8 @@ export const FLAG_KEYS = [
   "checklist_other_complaint",
   "checklist_damage",
   "checklist_booking",
+  // Survey reviews in Record routine work (src/lib/record-routine.ts). Off until surveys go live.
+  "survey_review_check",
 ] as const;
 
 export type FlagKey = (typeof FLAG_KEYS)[number];
