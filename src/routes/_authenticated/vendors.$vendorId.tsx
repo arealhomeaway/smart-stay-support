@@ -16,7 +16,7 @@ import { VendorOrgSheet } from "@/components/VendorOrgSheet";
 import { VENDOR_STATUS_BLURBS, VENDOR_STATUS_LABELS, type VendorStatus } from "@/lib/vendors";
 import { DISPATCH_METHOD_LABELS, type DispatchMethod } from "@/lib/vendor-gold";
 import { usDate } from "@/lib/dates";
-import { vendorPageViews } from "@/lib/vendor-page-views";
+import { vendorPageAccess } from "@/lib/vendor-page-views";
 import { STATUS_TONE } from "@/components/vendors/VendorDirectory";
 import { coverageFor, useVendorWorkspace } from "@/components/vendors/useVendorWorkspace";
 
@@ -38,8 +38,9 @@ export const Route = createFileRoute("/_authenticated/vendors/$vendorId")({
 function VendorProfile() {
   const { vendorId } = Route.useParams();
   const { can, readOnly } = useRole();
-  const canManage = can("vendor_admin") && !readOnly;
-  const showScreening = vendorPageViews(can).screening;
+  const access = vendorPageAccess(can, readOnly);
+  const canManage = access.edit;
+  const canLead = access.lead;
   const ws = useVendorWorkspace();
   const { gate } = Route.useSearch();
   const [sheet, setSheet] = useState(Boolean(gate));
@@ -70,7 +71,7 @@ function VendorProfile() {
         actions={
           <div className="flex gap-2">
             <Button variant="outline" asChild><Link to="/vendors" search={{ tab: "directory" }}>Back to Directory</Link></Button>
-            <Button onClick={() => setSheet(true)}>{!showScreening ? "Coverage" : canManage ? "Screening & coverage" : "View screening"}</Button>
+            <Button onClick={() => setSheet(true)}>{canManage ? "Screening & coverage" : "View screening"}</Button>
           </div>
         }
       />
@@ -105,11 +106,9 @@ function VendorProfile() {
                 <span className="font-medium">{i.label}</span>
                 <ComplianceBadge state={i.state} />
                 <span className="text-muted-foreground">Expires {usDate(i.expiresOn)}</span>
-                {showScreening && (
-                  <Button size="sm" variant="outline" className="ml-auto" asChild>
-                    <Link to="/vendors/$vendorId" params={{ vendorId: v.id }} search={{ gate: i.requirementId }} onClick={() => setSheet(true)}>Open check</Link>
-                  </Button>
-                )}
+                <Button size="sm" variant="outline" className="ml-auto" asChild>
+                  <Link to="/vendors/$vendorId" params={{ vendorId: v.id }} search={{ gate: i.requirementId }} onClick={() => setSheet(true)}>Open check</Link>
+                </Button>
               </li>
             ))}
           </ul>
@@ -129,7 +128,7 @@ function VendorProfile() {
 
       <section className="space-y-2">
         <SectionBand title="Gold Standard" />
-        <ProgramOwnerField orgId={v.id} value={v.program_owner} canManage={canManage} />
+        <ProgramOwnerField orgId={v.id} value={v.program_owner} canManage={canLead} />
         <dl className="grid gap-2 text-sm sm:grid-cols-3">
           <Field k="Qualification score" v={String(v.qualification_score ?? 0)} />
           <Field k="Performance score" v={v.performance_score == null ? null : String(v.performance_score)} />
@@ -156,8 +155,8 @@ function VendorProfile() {
         onOpenChange={(o) => setSheet(o)}
         properties={properties.data ?? []}
         canManage={canManage}
-        showScreening={showScreening}
-        focusRequirementId={showScreening ? (gate ?? null) : null}
+        canLead={canLead}
+        focusRequirementId={gate ?? null}
       />
     </div>
   );

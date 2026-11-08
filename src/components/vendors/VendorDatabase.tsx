@@ -91,7 +91,16 @@ function display(v: unknown, col: Col): string {
   return String(v);
 }
 
-export function VendorDatabase({ canManage, isLead }: { canManage: boolean; isLead: boolean }) {
+export function VendorDatabase({
+  canManage,
+  canLead,
+  isLead,
+}: {
+  canManage: boolean;
+  /** Operations leadership: columns and saved views. */
+  canLead: boolean;
+  isLead: boolean;
+}) {
   const ws = useVendorWorkspace();
   const invalidate = useInvalidateVendors();
   const [view, setView] = useState<ViewConfig>(DEFAULT_VIEW);
@@ -267,7 +276,7 @@ export function VendorDatabase({ canManage, isLead }: { canManage: boolean; isLe
             ))}
           </SelectContent>
         </Select>
-        {canManage && (
+        {canLead && (
           <Button size="sm" variant="outline" onClick={saveView}>
             <Save className="size-4" /> Save view
           </Button>
@@ -342,7 +351,7 @@ export function VendorDatabase({ canManage, isLead }: { canManage: boolean; isLe
                     <button aria-label={`Hide ${c.label}`} onClick={() => setView({ ...view, hidden: [...view.hidden, c.key] })}>
                       <EyeOff className="size-3 text-muted-foreground" />
                     </button>
-                    {canManage && c.field && (
+                    {canLead && c.field && (
                       <>
                         <button aria-label={`Rename ${c.label}`} onClick={() => renameColumn(c.field!)}>
                           <Pencil className="size-3 text-muted-foreground" />
@@ -458,7 +467,12 @@ export function VendorDatabase({ canManage, isLead }: { canManage: boolean; isLe
         {rows.length === 0 && <p className="p-4 text-sm text-muted-foreground">No vendors to show.</p>}
       </div>
 
-      {canManage ? (
+      {canManage && !canLead && (
+        <p className="text-xs text-muted-foreground">
+          Double-click a cell to edit. Gold Standard, status, columns and saved views are changed by Operations leadership.
+        </p>
+      )}
+      {canLead ? (
         <div className="flex flex-wrap items-end gap-2 rounded-md border border-dashed border-border p-3">
           <div>
             <p className="text-xs text-muted-foreground">New column</p>
@@ -483,7 +497,7 @@ export function VendorDatabase({ canManage, isLead }: { canManage: boolean; isLe
             they can't be renamed or removed{isLead ? "" : ", and only Admin or the Director of Operations can change their values"}.
           </p>
         </div>
-      ) : (
+      ) : canManage ? null : (
         <p className="text-xs text-muted-foreground">Read-only. Managers and supervisors maintain this table.</p>
       )}
     </div>

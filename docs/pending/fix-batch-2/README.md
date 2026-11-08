@@ -58,12 +58,16 @@ template was not saved"), vendor saves by the Director of Onboarding, Project Ma
 Utilities (4, the existing Supervisor rule is used until `can_edit_vendors` exists), and Admin
 Direct Bookings settings saves (5).
 
-## Screen change made with the apply (Nov 8, 2026)
+## Screen change made with the apply (Nov 8, 2026), corrected the same day
 
-Emily's answer: the Director of Onboarding, Project Managers and Utilities do not see the
-Database tab, Needs Review or the screening panel on the Vendors page (hidden, not shown and
-refused). They keep the vendor list, profiles and the edits in part 4. Rule in
-`src/lib/vendor-page-views.ts`, test `src/lib/__tests__/vendor-page-views.test.ts`.
+Emily's corrected answer replaces the first one: onboarding uses all of ARHA's vendors. The
+Director of Onboarding, Project Managers and Utilities see every Vendors tab (Directory,
+Database, Gold Standard, Market Coverage, Needs Review) and the screening panel, and read every
+vendor record and field, like the Operations Supervisor. They edit what part 4 allows. Status,
+Gold Standard and compliance fields, screening results, documents, vendor logins, imports,
+columns and saved views stay with Operations leadership and are shown read only with a plain
+label. Design stays out of Vendors. Rule in `src/lib/vendor-page-views.ts`, test
+`src/lib/__tests__/vendor-page-views.test.ts`. No database change.
 
 ## Applied
 

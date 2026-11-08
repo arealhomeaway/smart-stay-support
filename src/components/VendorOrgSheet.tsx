@@ -63,15 +63,15 @@ export function VendorOrgSheet({
   onOpenChange,
   properties,
   canManage,
-  showScreening = true,
+  canLead,
   focusRequirementId,
 }: {
   orgId: string | null;
   onOpenChange: (open: boolean) => void;
   properties: PropertyOption[];
   canManage: boolean;
-  /** False for the Director of Onboarding, Project Manager and Utilities: the Screening tab is hidden. */
-  showScreening?: boolean;
+  /** Operations leadership: status, screening results and documents. Others see them read only. */
+  canLead: boolean;
   focusRequirementId?: string | null;
 }) {
   useEffect(() => {
@@ -182,9 +182,9 @@ export function VendorOrgSheet({
               </SheetDescription>
             </SheetHeader>
 
-            <Tabs defaultValue={showScreening ? "screening" : "coverage"} className="mt-4">
-              <TabsList className={showScreening ? "grid w-full grid-cols-3 sm:grid-cols-6" : "grid w-full grid-cols-3 sm:grid-cols-5"}>
-                {showScreening && <TabsTrigger value="screening">Screening</TabsTrigger>}
+            <Tabs defaultValue="screening" className="mt-4">
+              <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6">
+                <TabsTrigger value="screening">Screening</TabsTrigger>
                 <TabsTrigger value="coverage">Coverage</TabsTrigger>
                 <TabsTrigger value="territory">Territory</TabsTrigger>
                 <TabsTrigger value="documents">Documents</TabsTrigger>
@@ -192,7 +192,6 @@ export function VendorOrgSheet({
                 <TabsTrigger value="history">History</TabsTrigger>
               </TabsList>
 
-              {showScreening && (
               <TabsContent value="screening" className="space-y-4 pt-4">
                 <div className="rounded-lg border p-3 text-sm">
                   <p className="font-medium">
@@ -227,7 +226,7 @@ export function VendorOrgSheet({
                     <GateRow
                       line={line}
                       documents={data.documents.map((d) => ({ id: d.id, title: d.title, docType: d.docType }))}
-                      canManage={canManage}
+                      canManage={canLead}
                       saving={resultMutation.isPending}
                       onSave={(v) => resultMutation.mutate(v)}
                     />
@@ -235,7 +234,13 @@ export function VendorOrgSheet({
                   ))}
                 </div>
 
-                {canManage && (
+                {canManage && !canLead && (
+                  <p className="text-xs text-muted-foreground">
+                    Status, Gold Standard, compliance and screening results are changed by Operations leadership.
+                  </p>
+                )}
+
+                {canLead && (
                   <>
                     <Separator />
                     <div className="space-y-2">
@@ -276,7 +281,6 @@ export function VendorOrgSheet({
                   </>
                 )}
               </TabsContent>
-              )}
 
               <TabsContent value="coverage" className="space-y-4 pt-4">
                 {data.coverage.length === 0 ? (
@@ -394,10 +398,13 @@ export function VendorOrgSheet({
               </TabsContent>
 
               <TabsContent value="documents">
+                {canManage && !canLead && (
+                  <p className="pt-4 text-xs text-muted-foreground">Documents are filed by Operations leadership.</p>
+                )}
                 <VendorDocumentsPanel
                   orgId={org.id}
                   documents={data.documents}
-                  canManage={canManage}
+                  canManage={canLead}
                   onChanged={refresh}
                 />
               </TabsContent>

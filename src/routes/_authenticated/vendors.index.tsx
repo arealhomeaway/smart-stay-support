@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { createVendor } from "@/lib/vendors.functions";
 import { VENDOR_CLASSES, VENDOR_CLASS_LABELS, type VendorClass } from "@/lib/vendors";
-import { vendorPageViews } from "@/lib/vendor-page-views";
+import { vendorPageAccess } from "@/lib/vendor-page-views";
 import { useRole } from "@/hooks/useRole";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page";
@@ -59,10 +59,11 @@ function VendorsWorkspace() {
   const { tab = "directory" } = Route.useSearch();
   const navigate = useNavigate({ from: "/vendors/" });
   const { can, roles, readOnly } = useRole();
-  const canManage = can("vendor_admin") && !readOnly;
+  const access = vendorPageAccess(can, readOnly);
+  const canManage = access.edit;
+  const canLead = access.lead;
   const isLead = roles.includes("admin");
-  const views = vendorPageViews(can);
-  const current: Tab = (tab === "database" && !(canManage && views.database)) || (tab === "review" && !views.review) ? "directory" : tab;
+  const current: Tab = tab === "database" && !canManage ? "directory" : tab;
 
   return (
     <div className="space-y-6">
@@ -75,18 +76,18 @@ function VendorsWorkspace() {
       <Tabs value={current} onValueChange={(v) => void navigate({ search: { tab: v as Tab } })}>
         <TabsList className="flex-wrap">
           <TabsTrigger value="directory">Directory</TabsTrigger>
-          {canManage && views.database && <TabsTrigger value="database">Database</TabsTrigger>}
+          {canManage && <TabsTrigger value="database">Database</TabsTrigger>}
           <TabsTrigger value="gold">Gold Standard</TabsTrigger>
           <TabsTrigger value="coverage">Market Coverage</TabsTrigger>
-          {views.review && <TabsTrigger value="review">Needs Review</TabsTrigger>}
+          <TabsTrigger value="review">Needs Review</TabsTrigger>
         </TabsList>
         <TabsContent value="directory" className="space-y-6 pt-4"><VendorDirectory /><AccountArchiveList kind="vendor" /></TabsContent>
-        {canManage && views.database && (
-          <TabsContent value="database" className="pt-4"><VendorDatabase canManage={canManage} isLead={isLead} /></TabsContent>
+        {canManage && (
+          <TabsContent value="database" className="pt-4"><VendorDatabase canManage={canManage} canLead={canLead} isLead={isLead} /></TabsContent>
         )}
         <TabsContent value="gold" className="pt-4"><VendorGoldStandard /></TabsContent>
         <TabsContent value="coverage" className="pt-4"><VendorMarketCoverage /></TabsContent>
-        {views.review && <TabsContent value="review" className="pt-4"><VendorNeedsReview canManage={canManage} /></TabsContent>}
+        <TabsContent value="review" className="pt-4"><VendorNeedsReview canManage={canLead} /></TabsContent>
       </Tabs>
     </div>
   );
