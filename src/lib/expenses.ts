@@ -90,12 +90,14 @@ const filled = (v: string | null | undefined) => typeof v === "string" && v.trim
  */
 export type AuthorizationContext = Pick<
   WorkOrderLike,
-  "phase" | "emergency_reason" | "contractual_exception" | "approval_status" | "supervisor_approval_status"
+  "phase" | "emergency_reason" | "contractual_exception" | "approval_status" | "supervisor_approval_status" | "policy_version"
 > | null;
 
 export type AuthorizationNeed = {
   required: boolean;
   who: "owner" | "supervisor" | null;
+  /** Owner tier under policy v3: the Operations Supervisor approves as well. */
+  alsoSupervisor: boolean;
   reason: string;
   /** Approval already recorded on the linked Work Order. */
   satisfiedByWorkOrder: boolean;
@@ -111,12 +113,15 @@ export function authorizationNeed(
   wo: AuthorizationContext = null,
 ): AuthorizationNeed {
   if (f.expense_type !== "vendor_service" || f.amount == null)
-    return { required: false, who: null, reason: "Not required by the existing Maintenance Authority Policy.", satisfiedByWorkOrder: false };
+    return { required: false, who: null, alsoSupervisor: false, reason: "Not required by the existing Maintenance Authority Policy.", satisfiedByWorkOrder: false };
   const v = evaluateAuthority({ ...(wo ?? {}), quote_amount: f.amount, approved_amount: null });
   const who = v.ownerApprovalRequired ? "owner" : v.supervisorApprovalRequired ? "supervisor" : null;
+  const alsoSupervisor = who === "owner" && v.supervisorApprovalRequired;
   const satisfied =
-    !!wo && ((who === "owner" && wo.approval_status === "approved") || (who === "supervisor" && wo.supervisor_approval_status === "approved"));
-  return { required: who !== null, who, reason: v.reason, satisfiedByWorkOrder: satisfied };
+    !!wo &&
+    ((who === "owner" && wo.approval_status === "approved" && (!alsoSupervisor || wo.supervisor_approval_status === "approved")) ||
+      (who === "supervisor" && wo.supervisor_approval_status === "approved"));
+  return { required: who !== null, who, alsoSupervisor, reason: v.reason, satisfiedByWorkOrder: satisfied };
 }
 
 export function authorizationRequired(f: Pick<ExpenseFacts, "expense_type" | "amount">, wo: AuthorizationContext = null): boolean {
@@ -150,7 +155,9 @@ export function missingDocumentation(f: ExpenseFacts, wo: AuthorizationContext =
     const auth = authorizationNeed(f, wo);
     if (auth.required && !auth.satisfiedByWorkOrder)
       missing.push(
-        auth.who === "owner"
+        auth.who === "owner" && auth.alsoSupervisor
+          ? "Operations Supervisor and owner approval evidence (required by the Maintenance Authority Policy)"
+          : auth.who === "owner"
           ? "Owner authorization evidence (required by the Maintenance Authority Policy)"
           : "Supervisor approval evidence (required by the Maintenance Authority Policy)",
       );
