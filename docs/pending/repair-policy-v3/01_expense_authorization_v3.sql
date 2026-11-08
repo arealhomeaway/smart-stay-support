@@ -80,7 +80,7 @@ BEGIN
       WHEN who = 'owner' AND also_sup AND owner_ok
       THEN 'Approval by the Operations Supervisor or Director of Operations, covering this amount, is not recorded on the linked Work Order. A written note does not count.'
       WHEN who = 'owner' AND also_sup
-      THEN 'The Operations Supervisor and the owner must also_sup approve this amount on the linked Work Order before work starts. A written note does not count.'
+      THEN 'The Operations Supervisor and the owner must both approve this amount on the linked Work Order before work starts. A written note does not count.'
       WHEN who = 'owner'
       THEN 'Owner approval covering this amount is not recorded on the linked Work Order. A written note does not count.'
       ELSE 'Approval by the Operations Supervisor or Director of Operations, covering this amount, is not recorded on the linked Work Order. A written note does not count.' END);
