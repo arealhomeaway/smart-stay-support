@@ -712,14 +712,9 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     toast.success("Status updated.");
   }
 
-  /** Supervisor cleanup for duplicates, tests and junk — never a frontline action. */
-  async function deleteTicket() {
-    const { error } = await supabase.from("tickets").delete().eq("id", ticketId);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Ticket deleted.");
+  /** Archive replaces delete: the ticket leaves lists and counts, its history stays. */
+  async function afterArchive() {
+    await refresh();
     if (onClose) onClose();
     else void navigate({ to: "/tickets" });
   }
@@ -1210,15 +1205,31 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             branches={activeBranch}
             onChanged={refresh}
             onStatus={changeStatus}
-            onDelete={deleteTicket}
+            onArchived={afterArchive}
           />
         </div>
+
+        {ticket["archived_at"] ? (
+          <ArchivedTicketBanner
+            ticketId={String(ticket["id"])}
+            archivedAt={String(ticket["archived_at"])}
+            reason={(ticket["archive_reason"] as string | null) ?? null}
+            canRestore={canRestoreTicket(role)}
+            onDone={refresh}
+          />
+        ) : null}
 
         <NotionImportBlock
           ticket={ticket as unknown as Parameters<typeof NotionImportBlock>[0]["ticket"]}
           canWorkTickets={role.can("work_orders_internal") && !role.readOnly}
           onChanged={refresh}
         />
+
+        {isGuestIssueTicket({
+          category: ticket.category as string | null,
+          linked_feedback_id: (ticket["linked_feedback_id"] as string | null) ?? null,
+          work_type_category: ((ticket["work_types"] as { category?: string | null } | null)?.category) ?? null,
+        }) && <CorrectiveCommitments ticketId={String(ticket["id"])} closed={closed} />}
 
 
         <div className="space-y-5">
@@ -1913,7 +1924,7 @@ function MoreActions({
   branches,
   onChanged,
   onStatus,
-  onDelete,
+  onArchived,
 }: {
   ticket: Record<string, unknown> & { id: string; status: string; record_type?: string | null };
   closed: boolean;
@@ -1921,7 +1932,7 @@ function MoreActions({
   branches: { claim: boolean; recovery: boolean };
   onChanged: () => Promise<void> | void;
   onStatus: (status: string) => void;
-  onDelete: () => void;
+  onArchived: () => Promise<void> | void;
 }) {
   return (
     <Sheet>
