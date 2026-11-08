@@ -2094,6 +2094,41 @@
       "when": 1794174191677,
       "tag": "0298_full_backups",
       "breakpoints": true
+    },
+    {
+      "idx": 299,
+      "version": "7",
+      "when": 1794178631659,
+      "tag": "0299_alerts_01_team_queue_and_waiting_alerts",
+      "breakpoints": true
+    },
+    {
+      "idx": 300,
+      "version": "7",
+      "when": 1794178683354,
+      "tag": "0300_alerts_02_note_alerts",
+      "breakpoints": true
+    },
+    {
+      "idx": 301,
+      "version": "7",
+      "when": 1794178747201,
+      "tag": "0301_alerts_03_approval_links",
+      "breakpoints": true
+    },
+    {
+      "idx": 302,
+      "version": "7",
+      "when": 1794178798562,
+      "tag": "0302_alerts_04_claim_approval",
+      "breakpoints": true
+    },
+    {
+      "idx": 303,
+      "version": "7",
+      "when": 1794178904320,
+      "tag": "0303_alerts_05_notification_categories",
+      "breakpoints": true
     }
   ]
 }

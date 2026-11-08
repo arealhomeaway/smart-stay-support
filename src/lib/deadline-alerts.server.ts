@@ -48,7 +48,7 @@ export async function sweepDeadlineAlerts(supabase: Client, now = new Date()) {
     supabase
       .from("work_orders")
       .select(
-        "id, title, priority, assigned_to, closed_at, vendor_name, vendor_contacted_at, vendor_acknowledged_at, vendor_eta_at, vendor_arrived_at, is_demo",
+        "id, ticket_id, title, priority, assigned_to, closed_at, vendor_name, vendor_contacted_at, vendor_acknowledged_at, vendor_eta_at, vendor_arrived_at, is_demo",
       )
       .is("closed_at", null)
       .not("assigned_to", "is", null),

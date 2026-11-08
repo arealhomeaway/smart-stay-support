@@ -6,7 +6,7 @@
  * clocks, SLAs and alerts are not decided here.
  */
 import { TEAM_A, TEAM_B } from "@/lib/coverage-model";
-import { localParts, isConfigured, type CoverageConfig } from "@/lib/coverage";
+import { localParts, shiftDate } from "@/lib/coverage";
 import { URGENCY_NAMES } from "@/lib/tickets";
 import { automatedQueueGroups, automatedTeam, type AutomatedSource, type AutomatedTicket } from "@/lib/automated-sources";
 
@@ -45,8 +45,8 @@ export const TEAM_QUEUE_COPY = {
   waiting: (label: string) => `Waiting ${label}`,
   lateSuffix: "Late.",
   alert: {
-    before: "If nobody takes it, a supervisor is alerted at 10 minutes and the director at 15.",
-    supervisor: "A supervisor has been alerted. The director is alerted at 15 minutes.",
+    before: (sup: number, dir: number) => `If nobody takes it, a supervisor is alerted at ${sup} minutes and the director at ${dir}.`,
+    supervisor: (dir: number) => `A supervisor has been alerted. The director is alerted at ${dir} minutes.`,
     both: "A supervisor and the director have been alerted.",
   },
   openBreezeway: "Open in Breezeway",
@@ -151,30 +151,99 @@ export function minutesSince(iso: string | null | undefined, now: Date): number 
 }
 
 /**
- * Late, as drawn: Right now at 3 minutes; Today when the shift is ending; Routine past
- * 24 hours. "The shift is ending" is the last 30 minutes before the after-hours window in
- * the coverage settings (today 9:30 PM), or any later day. With no window saved, Today is
- * never shown late.
+ * Team Queue timing (Emily, Nov 7, 2026), saved in app_settings `team_queue_timing` and read by
+ * the minute alert check too, so a later edit needs no code change. Missing or bad values fall
+ * back to the decided defaults.
  */
-export const TODAY_LATE_BEFORE_WINDOW_MINUTES = 30;
+export type QueueTiming = {
+  timezone: string;
+  rightNowRedMinutes: number;
+  supervisorMinutes: number;
+  directorMinutes: number;
+  todayDayEndMinute: number;
+  todayNightEndMinute: number;
+  todayRedBeforeMinutes: number;
+  routineDefaultMinutes: number;
+};
 
+export const DEFAULT_QUEUE_TIMING: QueueTiming = {
+  timezone: "America/Chicago",
+  rightNowRedMinutes: 3,
+  supervisorMinutes: 10,
+  directorMinutes: 15,
+  todayDayEndMinute: 17 * 60,
+  todayNightEndMinute: 22 * 60,
+  todayRedBeforeMinutes: 120,
+  routineDefaultMinutes: 24 * 60,
+};
+
+function positive(value: unknown, fallback: number): number {
+  const n = typeof value === "number" ? value : typeof value === "string" && value.trim() !== "" ? Number(value) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
+function clockMinute(value: unknown, fallback: number): number {
+  if (typeof value !== "string") return fallback;
+  const m = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
+  if (!m) return fallback;
+  const h = Number(m[1]);
+  const min = Number(m[2]);
+  return h < 24 && min < 60 ? h * 60 + min : fallback;
+}
+
+/** The saved setting (and the coverage time zone) as complete timing. */
+export function readQueueTiming(value: unknown, timezone?: string | null): QueueTiming {
+  const v = (value && typeof value === "object" ? value : {}) as Record<string, unknown>;
+  const d = DEFAULT_QUEUE_TIMING;
+  return {
+    timezone: timezone || d.timezone,
+    rightNowRedMinutes: positive(v["right_now_red_minutes"], d.rightNowRedMinutes),
+    supervisorMinutes: positive(v["supervisor_minutes"], d.supervisorMinutes),
+    directorMinutes: positive(v["director_minutes"], d.directorMinutes),
+    todayDayEndMinute: clockMinute(v["today_day_shift_ends"], d.todayDayEndMinute),
+    todayNightEndMinute: clockMinute(v["today_night_shift_ends"], d.todayNightEndMinute),
+    todayRedBeforeMinutes: positive(v["today_red_minutes_before"], d.todayRedBeforeMinutes),
+    routineDefaultMinutes: positive(v["routine_default_hours"], d.routineDefaultMinutes / 60) * 60,
+  };
+}
+
+/** The day a moment belongs to: after the night shift ends it counts as the next day. */
+function workDay(at: Date, t: QueueTiming): string {
+  const p = localParts(at, t.timezone);
+  return p.minutes >= t.todayNightEndMinute ? shiftDate(p.date, 1) : p.date;
+}
+
+/** When a ticket started waiting for an owner: the saved wait start, else when it arrived. */
+export function queueSince(t: { unowned_since?: string | null; reported_at?: string | null }): string | null {
+  return t.unowned_since ?? t.reported_at ?? null;
+}
+
+/**
+ * Red on screen (Emily, Nov 7, 2026):
+ * - Right now: at 3 minutes waiting.
+ * - Today: in the 2 hours before the day shift ends (3 PM to 5 PM) and again in the 2 hours
+ *   before the night shift ends (8 PM to 10 PM); always once its day has passed.
+ * - Routine: once it passes its problem type's start standard (a work order review: 24 hours),
+ *   else 24 hours.
+ */
 export function isLate(
   priority: string | null | undefined,
   since: string | null | undefined,
   now: Date,
-  cfg: CoverageConfig | null | undefined,
+  timing: QueueTiming = DEFAULT_QUEUE_TIMING,
+  standardMinutes?: number | null,
 ): boolean {
   if (!since) return false;
   const mins = minutesSince(since, now);
-  if (priority === "p1") return mins >= 3;
+  if (priority === "p1") return mins >= timing.rightNowRedMinutes;
   if (priority === "p2") {
-    if (!isConfigured(cfg)) return false;
-    const a = localParts(new Date(since), cfg.timezone);
-    const b = localParts(now, cfg.timezone);
-    if (a.date < b.date) return true;
-    return b.minutes >= cfg.after_hours_start_minute - TODAY_LATE_BEFORE_WINDOW_MINUTES;
+    if (workDay(new Date(since), timing) < workDay(now, timing)) return true;
+    const m = localParts(now, timing.timezone).minutes;
+    const inWindow = (end: number) => m >= end - timing.todayRedBeforeMinutes && m < end;
+    return inWindow(timing.todayDayEndMinute) || inWindow(timing.todayNightEndMinute);
   }
-  return mins > 24 * 60;
+  const standard = standardMinutes && standardMinutes > 0 ? standardMinutes : timing.routineDefaultMinutes;
+  return mins > standard;
 }
 
 export function waitLine(since: string | null | undefined, now: Date, late: boolean): string {
@@ -182,13 +251,36 @@ export function waitLine(since: string | null | undefined, now: Date, late: bool
   return late ? `${base}. ${TEAM_QUEUE_COPY.lateSuffix}` : base;
 }
 
-/** The alert line under a Right now row, from what has already happened to the ticket. */
-export function alertLine(priority: string | null | undefined, escalationLevel: string | null | undefined): string | null {
+/** Which Team Queue alerts the minute check has already sent for this wait. */
+export type SentAlerts = { supervisor: boolean; director: boolean };
+
+/**
+ * The alert line under a Right now row, from the alerts the minute check has recorded for the
+ * ticket's current wait (ticket_timed_alerts), never from a manual escalation.
+ */
+export function alertLine(
+  priority: string | null | undefined,
+  sent: SentAlerts | null | undefined,
+  timing: QueueTiming = DEFAULT_QUEUE_TIMING,
+): string | null {
   if (priority !== "p1") return null;
-  const level = (escalationLevel ?? "none").toLowerCase();
-  if (level === "none" || level === "") return TEAM_QUEUE_COPY.alert.before;
-  if (level === "supervisor") return TEAM_QUEUE_COPY.alert.supervisor;
-  return TEAM_QUEUE_COPY.alert.both;
+  if (sent?.director) return TEAM_QUEUE_COPY.alert.both;
+  if (sent?.supervisor) return TEAM_QUEUE_COPY.alert.supervisor(timing.directorMinutes);
+  return TEAM_QUEUE_COPY.alert.before(timing.supervisorMinutes, timing.directorMinutes);
+}
+
+/** Groups the recorded alerts by ticket, keeping only those for the ticket's current wait. */
+export function sentAlertsFor(
+  rows: { ticket_id: string; kind: string; episode_at: string }[],
+  since: string | null | undefined,
+  ticketId: string,
+): SentAlerts {
+  const at = since ? Date.parse(since) : NaN;
+  const mine = rows.filter((r) => r.ticket_id === ticketId && Date.parse(r.episode_at) === at);
+  return {
+    supervisor: mine.some((r) => r.kind === "team_queue_supervisor"),
+    director: mine.some((r) => r.kind === "team_queue_director"),
+  };
 }
 
 /** Inside a group: urgency, then the viewer's own team first, then longest waiting. */
@@ -240,7 +332,7 @@ export function sourceGroups<T extends AutomatedTicket & { priority?: string | n
     source,
     rows: sortPickRows(
       waiting.filter((w) => w.source === source),
-      (w) => ({ priority: w.row.priority ?? null, team: w.team, since: w.row.reported_at ?? null }),
+      (w) => ({ priority: w.row.priority ?? null, team: w.team, since: queueSince(w.row) }),
       myTeam,
     ),
   })).filter((g) => g.rows.length > 0);

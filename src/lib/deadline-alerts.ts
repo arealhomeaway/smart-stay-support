@@ -58,6 +58,7 @@ export type TicketForAlerts = {
 
 export type WorkOrderForAlerts = {
   id: string;
+  ticket_id?: string | null;
   title?: string | null;
   assigned_to?: string | null;
   closed_at?: string | null;
@@ -190,7 +191,8 @@ export function vendorDispatchAlerts(
         body: `${vendor} was contacted ${lateBy(sinceContact)} ago and has not confirmed. Chase it or move to the backup vendor.`,
         entityType: "work_order",
         entityId: wo.id,
-        linkPath: `/work-orders?open=${wo.id}`,
+        // Opens the exact work order's ticket (Emily, Nov 7, 2026).
+        linkPath: wo.ticket_id ? `/tickets/${wo.ticket_id}` : `/work-orders?open=${wo.id}`,
         priority: "urgent",
         isDemo: Boolean(wo.is_demo),
       });

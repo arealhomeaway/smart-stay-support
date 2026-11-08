@@ -53,6 +53,8 @@ import { FinalReviewPanel } from "@/components/FinalReviewPanel";
 import { EscalationPanel } from "@/components/EscalationPanel";
 import { SpecialHandlingNotice } from "@/components/SpecialHandlingNotice";
 import { MatterOwnershipPanel } from "@/components/MatterOwnershipPanel";
+import { MentionTextarea, useMentionPeople } from "@/components/tickets/MentionTextarea";
+import { mentionsInText } from "@/lib/mentions";
 import { TicketPriorityPanel } from "@/components/TicketPriorityPanel";
 import { EmailComposer } from "@/components/EmailComposer";
 
@@ -169,6 +171,8 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   const navigate = useNavigate();
   const { demoMode, demoReady } = useDemo();
   const [note, setNote] = useState("");
+  const [notePicked, setNotePicked] = useState<string[]>([]);
+  const mentionPeople = useMentionPeople();
   const [resolution, setResolution] = useState("");
   const [outcome, setOutcome] = useState("resolved");
   const [evidence, setEvidence] = useState("");
@@ -604,7 +608,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
    * the action itself, so the audit trail still reads "Acknowledged" →
    * "Work started" → whatever the coordinator actually did.
    */
-  async function log(kind: string, body: string, eventType = kind) {
+  async function log(kind: string, body: string, eventType = kind, mentions?: string[]) {
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) return;
     await ensureTicketActionStarted(ticketId);
@@ -614,6 +618,8 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
       kind,
       event_type: eventType,
       body,
+      // Recorded mentions; the database alerts them, the owner and the people involved.
+      ...(mentions && mentions.length ? { mentions } : {}),
     });
   }
 
@@ -720,8 +726,9 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
 
   async function addNote() {
     if (!note.trim()) return;
-    await log("note", note.trim(), "note");
+    await log("note", note.trim(), "note", mentionsInText(note, notePicked, mentionPeople.data ?? []));
     setNote("");
+    setNotePicked([]);
     await refresh();
     toast.success("Note added.");
   }
@@ -1631,11 +1638,13 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                 <div className="space-y-4 pt-3">
 
             <div className="space-y-2">
-              <Textarea
+              <MentionTextarea
                 rows={3}
                 placeholder="Add an update: who you called, what the vendor found, what the guest said…"
                 value={note}
-                onChange={(e) => setNote(e.target.value)}
+                onChange={setNote}
+                picked={notePicked}
+                onPickedChange={setNotePicked}
               />
               <Button onClick={addNote} size="sm" variant="secondary">
                 Add note

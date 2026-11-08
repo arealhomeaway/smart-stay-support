@@ -53,7 +53,6 @@ import { NotionImportedGroup } from "@/components/operations/NotionImportedGroup
 import { OvernightDirectBookings, loadOvernightDirectBookings, overnightQueueKey } from "@/components/operations/OvernightDirectBookings";
 import { overnightQueueRows } from "@/lib/direct-bookings";
 import { withoutQuietNotion } from "@/lib/notion-ticket-display";
-import type { CoverageConfig } from "@/lib/coverage";
 import {
   QUEUE_SCOPES,
   TEAM_QUEUE_COPY,
@@ -67,6 +66,8 @@ import {
   urgencyChipClass,
   urgencyName,
   type QueueScope,
+  DEFAULT_QUEUE_TIMING,
+  readQueueTiming,
 } from "@/lib/team-queue-board";
 import {
   AGE_OPTIONS,
@@ -239,13 +240,16 @@ function TeamQueuePage() {
       return (data ?? []) as { id: string; name: string }[];
     },
   });
-  // The after-hours window in the coverage settings; Today work is late in the last 30 minutes before it.
+  // Team Queue timing (red times and alert minutes) from its setting, in the coverage time zone.
   const coverage = useQuery({
-    queryKey: ["team-queue-coverage-config"],
+    queryKey: ["team-queue-timing"],
     staleTime: 10 * 60_000,
     queryFn: async () => {
-      const { data } = await supabase.from("coverage_config").select("after_hours_start_minute, after_hours_end_minute, timezone").maybeSingle();
-      return (data ?? null) as CoverageConfig | null;
+      const [cfg, setting] = await Promise.all([
+        supabase.from("coverage_config").select("timezone").maybeSingle(),
+        supabase.from("app_settings").select("value").eq("key", "team_queue_timing").maybeSingle(),
+      ]);
+      return readQueueTiming(setting.data?.value ?? null, (cfg.data as { timezone?: string } | null)?.timezone ?? null);
     },
   });
   const handoffs = useQuery({
@@ -268,7 +272,7 @@ function TeamQueuePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tickets")
-        .select("*, properties(name, nickname, market, city, state, address_line1, unit, postal_code, ownerrez_property_id), work_types(name, functional_role_code), claims(id)")
+        .select("*, properties(name, nickname, market, city, state, address_line1, unit, postal_code, ownerrez_property_id), work_types(name, functional_role_code, action_start_minutes), claims(id)")
         .eq("is_demo", demoMode)
         .is("archived_at", null)
         .order("reported_at", { ascending: false });
@@ -573,7 +577,7 @@ function TeamQueuePage() {
           canAct={canTake}
           myTeam={myTeam}
           homeTeamOf={homeTeamOf}
-          cfg={coverage.data ?? null}
+          cfg={coverage.data ?? DEFAULT_QUEUE_TIMING}
           now={now}
           originSearch={originSearch}
           onChanged={refreshQueue}
@@ -587,7 +591,7 @@ function TeamQueuePage() {
           canTake={canTake}
           scope={scope}
           myTeam={myTeam}
-          cfg={coverage.data ?? null}
+          cfg={coverage.data ?? DEFAULT_QUEUE_TIMING}
           now={now}
           originSearch={originSearch}
           onTaken={refreshQueue}

@@ -1929,6 +1929,14 @@ export type Database = {
       claims: {
         Row: {
           actual_cost: number | null
+          approval_amount: number | null
+          approval_authority: string | null
+          approval_decided_at: string | null
+          approval_decided_by: string | null
+          approval_reason: string | null
+          approval_requested_at: string | null
+          approval_requested_by: string | null
+          approval_status: string | null
           approved_amount: number | null
           assigned_to: string | null
           booking_source: string | null
@@ -1992,6 +2000,14 @@ export type Database = {
         }
         Insert: {
           actual_cost?: number | null
+          approval_amount?: number | null
+          approval_authority?: string | null
+          approval_decided_at?: string | null
+          approval_decided_by?: string | null
+          approval_reason?: string | null
+          approval_requested_at?: string | null
+          approval_requested_by?: string | null
+          approval_status?: string | null
           approved_amount?: number | null
           assigned_to?: string | null
           booking_source?: string | null
@@ -2055,6 +2071,14 @@ export type Database = {
         }
         Update: {
           actual_cost?: number | null
+          approval_amount?: number | null
+          approval_authority?: string | null
+          approval_decided_at?: string | null
+          approval_decided_by?: string | null
+          approval_reason?: string | null
+          approval_requested_at?: string | null
+          approval_requested_by?: string | null
+          approval_status?: string | null
           approved_amount?: number | null
           assigned_to?: string | null
           booking_source?: string | null
@@ -13211,6 +13235,51 @@ export type Database = {
           },
         ]
       }
+      ticket_timed_alerts: {
+        Row: {
+          created_at: string
+          episode_at: string
+          id: string
+          kind: string
+          notification_id: string | null
+          recipient: string | null
+          ticket_id: string
+        }
+        Insert: {
+          created_at?: string
+          episode_at: string
+          id?: string
+          kind: string
+          notification_id?: string | null
+          recipient?: string | null
+          ticket_id: string
+        }
+        Update: {
+          created_at?: string
+          episode_at?: string
+          id?: string
+          kind?: string
+          notification_id?: string | null
+          recipient?: string | null
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_timed_alerts_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "ticket_timed_alerts_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_troubleshooting_answers: {
         Row: {
           answered_at: string
@@ -13489,6 +13558,7 @@ export type Database = {
           suggested_priority: string | null
           supervisor_caught: boolean
           title: string
+          unowned_since: string | null
           updated_at: string
           vendor_accepted_at: string | null
           vendor_brief: string | null
@@ -13625,6 +13695,7 @@ export type Database = {
           suggested_priority?: string | null
           supervisor_caught?: boolean
           title: string
+          unowned_since?: string | null
           updated_at?: string
           vendor_accepted_at?: string | null
           vendor_brief?: string | null
@@ -13761,6 +13832,7 @@ export type Database = {
           suggested_priority?: string | null
           supervisor_caught?: boolean
           title?: string
+          unowned_since?: string | null
           updated_at?: string
           vendor_accepted_at?: string | null
           vendor_brief?: string | null
@@ -13913,11 +13985,15 @@ export type Database = {
           email_enabled: boolean
           email_escalations: boolean
           email_handoffs: boolean
+          email_notes_mentions: boolean
+          email_team_queue: boolean
           email_work_orders: boolean
           inapp_approvals: boolean
           inapp_assignments: boolean
           inapp_escalations: boolean
           inapp_handoffs: boolean
+          inapp_notes_mentions: boolean
+          inapp_team_queue: boolean
           inapp_work_orders: boolean
           updated_at: string
           user_id: string
@@ -13929,11 +14005,15 @@ export type Database = {
           email_enabled?: boolean
           email_escalations?: boolean
           email_handoffs?: boolean
+          email_notes_mentions?: boolean
+          email_team_queue?: boolean
           email_work_orders?: boolean
           inapp_approvals?: boolean
           inapp_assignments?: boolean
           inapp_escalations?: boolean
           inapp_handoffs?: boolean
+          inapp_notes_mentions?: boolean
+          inapp_team_queue?: boolean
           inapp_work_orders?: boolean
           updated_at?: string
           user_id: string
@@ -13945,11 +14025,15 @@ export type Database = {
           email_enabled?: boolean
           email_escalations?: boolean
           email_handoffs?: boolean
+          email_notes_mentions?: boolean
+          email_team_queue?: boolean
           email_work_orders?: boolean
           inapp_approvals?: boolean
           inapp_assignments?: boolean
           inapp_escalations?: boolean
           inapp_handoffs?: boolean
+          inapp_notes_mentions?: boolean
+          inapp_team_queue?: boolean
           inapp_work_orders?: boolean
           updated_at?: string
           user_id?: string
@@ -17081,6 +17165,10 @@ export type Database = {
         Returns: string
       }
       create_owner_program: { Args: { _property_id: string }; Returns: Json }
+      decide_claim_approval: {
+        Args: { _claim_id: string; _decision: string; _reason: string }
+        Returns: undefined
+      }
       decide_claim_waiver: {
         Args: { _approve: boolean; _notes: string; _waiver_id: string }
         Returns: undefined
@@ -17977,6 +18065,10 @@ export type Database = {
         Args: { _note?: string; _sentences: Json }
         Returns: number
       }
+      request_claim_approval: {
+        Args: { _amount: number; _claim_id: string }
+        Returns: string
+      }
       request_claim_waiver: {
         Args: { _claim_id: string; _context?: string; _reason: string }
         Returns: string
@@ -18104,6 +18196,7 @@ export type Database = {
           work_type: string
         }[]
       }
+      run_ticket_timed_alerts: { Args: never; Returns: number }
       save_arha_opportunity: {
         Args: {
           _content: Json
