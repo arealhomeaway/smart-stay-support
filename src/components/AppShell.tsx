@@ -59,12 +59,12 @@ import { readOrigin } from "@/lib/nav-context";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
-  DemoButton,
   DemoSidebarItem,
   PortalSwitcher,
   ViewAsBanner,
 } from "@/components/PortalSwitcher";
 import { AccountSidebarItem } from "@/components/AccountSidebarItem";
+import { ViewAsMenuItem, ViewAsRoleBanner } from "@/components/ViewAsSwitcher";
 import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
 import { OwnerNotificationBell } from "@/components/owner/OwnerNotificationBell";
 import { ActAsBanner } from "@/components/ActAsBanner";
@@ -371,6 +371,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       </SidebarMenuItem>
                     );
                   })}
+                  {group.label === "Admin" ? <ViewAsMenuItem /> : null}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
@@ -438,7 +439,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <NotificationBell placement="header" />
                 )}
                 <ThemeToggle />
-                <DemoButton />
                 <PortalSwitcher />
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -458,6 +458,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
             <ActAsBanner />
             <ViewAsBanner />
+            <ViewAsRoleBanner />
           </header>
         </TooltipProvider>
 
