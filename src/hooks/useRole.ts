@@ -13,6 +13,7 @@ import { useViewAs } from "@/hooks/useViewAs";
 import { useDemoFlag, usePreviewSeat } from "@/hooks/useDemoFlag";
 import { canOperateDemo, previewIdentityLabel } from "@/lib/demo-mode";
 import { ROLE_LABELS } from "@/lib/permissions";
+import { loadTeamRoleSeats } from "@/lib/access-seats";
 
 export type { AppRole };
 
@@ -34,14 +35,18 @@ export function useMyRoles() {
           onboardingDirector: false,
           opsDirector: false,
           finance: false,
+          opsSupervisor: false,
+          projectManager: false,
+          utilities: false,
           demoFinanceTester: false,
         };
-      const [{ data, error }, director, ops, finance, demoAccess] = await Promise.all([
+      const [{ data, error }, director, ops, finance, demoAccess, teamSeats] = await Promise.all([
         supabase.from("user_roles").select("role").eq("user_id", auth.user.id),
         supabase.rpc("is_onboarding_director", { _user_id: auth.user.id }),
         supabase.rpc("is_director", { _user_id: auth.user.id }),
         supabase.rpc("is_accounting", { _user_id: auth.user.id }),
         supabase.rpc("my_demo_access"),
+        loadTeamRoleSeats(supabase, auth.user.id),
       ]);
       if (error) throw error;
       return {
@@ -54,6 +59,10 @@ export function useMyRoles() {
         opsDirector: ops.data === true,
         // Finance lead or Accounting seat.
         finance: finance.data === true,
+        // Operations Supervisor, Project Manager and Utilities team roles.
+        opsSupervisor: teamSeats.opsSupervisor === true,
+        projectManager: teamSeats.projectManager === true,
+        utilities: teamSeats.utilities === true,
         // Designated synthetic Finance test account allowed into the demo lens.
         demoFinanceTester: Boolean((demoAccess.data as { finance_tester?: boolean } | null)?.finance_tester),
       };
@@ -87,6 +96,9 @@ export function useRole() {
     onboardingDirector: !previewing && Boolean(query.data?.onboardingDirector),
     opsDirector: !previewing && Boolean(query.data?.opsDirector),
     finance: !previewing && Boolean(query.data?.finance),
+    opsSupervisor: !previewing && Boolean(query.data?.opsSupervisor),
+    projectManager: !previewing && Boolean(query.data?.projectManager),
+    utilities: !previewing && Boolean(query.data?.utilities),
   };
   const access = { roles, seats };
 
