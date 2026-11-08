@@ -42,6 +42,7 @@ import { OvernightHandoffPanel } from "@/components/OvernightHandoffPanel";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 import { useDemo } from "@/components/DemoProvider";
 import { InsuranceRiskCard } from "@/components/work-entry/InsuranceRiskCard";
+import { withoutQuietNotion } from "@/lib/notion-ticket-display";
 
 export const Route = createFileRoute("/_authenticated/oversight")({
   head: () => ({
@@ -108,7 +109,8 @@ function useOversightData() {
         .order("reported_at", { ascending: false })
         .limit(500);
       if (error) throw error;
-      return data;
+      // Imported Notion tickets are not Oversight work until reopened in Resolve.
+      return withoutQuietNotion(data ?? []);
     },
   });
 

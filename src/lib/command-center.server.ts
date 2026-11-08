@@ -11,6 +11,7 @@ import { formatPropertyLabel } from "@/lib/property-label";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import type { CommandCenter, Kpi, KpiSection, KpiStatus } from "./command-center";
+import { withoutQuietNotion } from "@/lib/notion-ticket-display";
 
 type Client = SupabaseClient<Database>;
 
@@ -194,7 +195,8 @@ export async function loadCommandCenter(
     return true;
   };
 
-  const allTickets = (ticketsRes.data ?? []).filter(matchesFilters);
+  // Imported Notion tickets never count toward a rate until reopened in Resolve.
+  const allTickets = withoutQuietNotion(ticketsRes.data ?? []).filter(matchesFilters);
   const current = allTickets.filter((t) => t.reported_at >= since);
   const prior = allTickets.filter((t) => t.reported_at < since);
 

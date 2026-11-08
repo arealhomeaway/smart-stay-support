@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
 import { CATEGORIES, OPEN_STATUSES, PRIORITIES, priorityMeta } from "@/lib/tickets";
 import { ReportingBaselineNote } from "@/components/ReportingBaselineNote";
+import { withoutQuietNotion } from "@/lib/notion-ticket-display";
 
 export const Route = createFileRoute("/_authenticated/analytics")({
   head: () => ({
@@ -328,7 +329,8 @@ function Analytics() {
         .limit(4000);
 
       if (error) throw error;
-      return (data ?? []) as unknown as Ticket[];
+      // Imported Notion tickets never count toward a rate until reopened in Resolve.
+      return withoutQuietNotion((data ?? []) as unknown as Ticket[]);
     },
   });
 
