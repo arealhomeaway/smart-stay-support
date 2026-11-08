@@ -16665,6 +16665,7 @@ export type Database = {
         Args: { _document_id: string }
         Returns: string
       }
+      can_save_playbooks: { Args: { _user_id: string }; Returns: boolean }
       can_view_owner_library_video: {
         Args: { _library_id: string }
         Returns: boolean
