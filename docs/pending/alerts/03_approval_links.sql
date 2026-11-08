@@ -1,4 +1,4 @@
--- Alerts and approvals, part 4: approval alerts open the exact ticket (Emily, Nov 7, 2026).
+-- Alerts and approvals, part 3: approval alerts open the exact ticket (Emily, Nov 7, 2026).
 -- Undo: 03_undo_approval_links.sql (the live captures). No BEGIN/COMMIT.
 --
 -- private.ticket_link_for(entity type, id) returns /tickets/<id> for a ticket, a work order's
