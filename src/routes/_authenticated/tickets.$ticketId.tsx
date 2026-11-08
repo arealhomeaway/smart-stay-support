@@ -104,6 +104,9 @@ import { Badge } from "@/components/ui/badge";
 import { IMPORT_HOLD_LABELS, isImportHeld, type ImportHold } from "@/lib/import-hold";
 import { activityAuthorLabel, claimStepsAvailable, cleanNotionText, notionBadge, parseNotionBlock, showsAssignee } from "@/lib/notion-ticket-display";
 import { NotionImportBlock } from "@/components/tickets/NotionImportBlock";
+import { ArchiveTicketButton, ArchivedTicketBanner } from "@/components/scorecard/TicketArchive";
+import { CorrectiveCommitments } from "@/components/scorecard/CorrectiveCommitments";
+import { canArchiveTicket, canRestoreTicket, isGuestIssueTicket } from "@/lib/scorecard-capture";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -222,7 +225,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
         supabase
           .from("tickets")
           .select(
-            "*, properties(id, name, nickname, address_line1, city, market, access_notes, notes, ownerrez_property_id, primary_photo_url, unit, state, postal_code), work_types(name, response_minutes, action_start_minutes, completion_target, required_closure_evidence, guest_communication_required)",
+            "*, properties(id, name, nickname, address_line1, city, market, access_notes, notes, ownerrez_property_id, primary_photo_url, unit, state, postal_code), work_types(name, category, response_minutes, action_start_minutes, completion_target, required_closure_evidence, guest_communication_required)",
           )
           .eq("id", ticketId)
           .eq("is_demo", demoMode)
@@ -2018,31 +2021,14 @@ function MoreActions({
               )}
             </div>
           )}
-          {role.isSupervisor && (
+          {canArchiveTicket({ isSupervisor: role.isSupervisor, supervisorRole: false }) && !ticket["archived_at"] && (
             <div className="space-y-2 border-t border-border pt-4">
-              <Label className="text-xs text-muted-foreground">Danger zone</Label>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline" className="w-full text-danger">
-                    Delete ticket
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      Delete ticket #{String(ticket["ref"] ?? "")}?
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action permanently removes this ticket from normal Resolve records. Use
-                      it for duplicates, accidental tickets, tests and junk records.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={onDelete}>Delete ticket</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <Label className="text-xs text-muted-foreground">Archive</Label>
+              <ArchiveTicketButton
+                ticketId={String(ticket["id"])}
+                ticketRef={String(ticket["ref"] ?? "")}
+                onDone={() => void onArchived()}
+              />
             </div>
           )}
         </div>
