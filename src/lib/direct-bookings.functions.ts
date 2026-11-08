@@ -764,18 +764,29 @@ export const myDirectBookings = createServerFn({ method: "POST" })
     const alertedIds = ((alerts ?? []) as { entity_id: string | null }[])
       .map((a) => a.entity_id)
       .filter((id): id is string => !!id);
-    let waiting: HomeBookingRow[] = [];
-    if (alertedIds.length > 0) {
-      const { data: open } = await context.supabase
+    // Also every unstarted request while this person is someone a new request would alert
+    // right now (the routing rule in the database). Before that step is applied the
+    // question is missing and only the people alerted see it, as before.
+    const eligible = await loose(context.supabase).rpc("direct_booking_eligible_now", {});
+    const eligibleNow = !eligible.error && eligible.data === true;
+    const unstarted = () =>
+      context.supabase
         .from("leads")
         .select(cols as never)
         .eq("is_demo", data.demo)
         .eq("kind" as never, "direct_booking" as never)
         .is("owned_by" as never, null)
-        .is("outcome" as never, null)
-        .in("id", alertedIds)
-        .limit(20);
+        .is("outcome" as never, null);
+    let waiting: HomeBookingRow[] = [];
+    if (eligibleNow) {
+      const { data: open } = await unstarted().order("created_at", { ascending: true }).limit(20);
       waiting = (open ?? []) as unknown as HomeBookingRow[];
     }
-    return homeDirectBookings([...((rows ?? []) as unknown as HomeBookingRow[]), ...waiting], alertedIds, context.userId);
+    const missing = alertedIds.filter((id) => !waiting.some((w) => w.id === id));
+    if (missing.length > 0) {
+      const { data: open } = await unstarted().in("id", missing).limit(20);
+      waiting = [...waiting, ...((open ?? []) as unknown as HomeBookingRow[])];
+    }
+    const visibleIds = homeStartIds(alertedIds, eligibleNow, waiting.map((w) => w.id));
+    return homeDirectBookings([...((rows ?? []) as unknown as HomeBookingRow[]), ...waiting], visibleIds, context.userId);
   });
