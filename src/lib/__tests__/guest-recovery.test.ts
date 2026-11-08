@@ -305,7 +305,7 @@ describe("next action", () => {
     expect(action).toContain("Airbnb");
   });
 
-  it("routes to James inside his limit", () => {
+  it("routes to the Operations Supervisor inside their limit", () => {
     const action = nextAction(
       {
         ...base,
