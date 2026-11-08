@@ -253,3 +253,8 @@
 - [x] Overnight Direct Booking requests: alert nobody, wait in Team Queue as Right now for Team A, morning alert, clock from morning (applied as 0295)
 - [x] Overnight Direct Booking reply clock starts at the saved setting, default 9:00 AM
 - [x] Fix batch 4: automated sources unowned with Take it, four weekday triage windows off, overnight alert and Home wording, overnight clock setting on the settings page, overnight count on Home (applied as 0296, 0297 and one data change)
+- [x] Back up everything (Admin tools): full JSON backup to the private backups bucket, record table, Verify; first run 2026-11-08_214435Z
+- [x] View as in the Admin menu; Demo button removed from the top bar
+- [ ] Clean slate (register N8): staged in docs/pending/clean-slate, waits for Emily's go and a fresh checked backup
+- [ ] Week one: nightly schedule for Back up everything
+- [ ] Report only so far: 6 homes on old plans to Standard v3; unused old templates

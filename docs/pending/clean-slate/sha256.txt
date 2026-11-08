@@ -1,0 +1,8 @@
+7df96e42eaa8b70fa88304b42d5a3030c07920fe50517ac6b5b2266a42c042ef  ./01_delete_all_tickets.sql
+e63cb07a434e71290d1d757585f89c6ee1d024889376e452eff8546fce00cd98  ./01b_optional_ticket_log_lines.sql
+8a4535b3edc66d39eafbb05aaeeff94f0401a43933359ebee3fbc47eabbcc9c7  ./02_delete_test_accounts.sql
+b83c19b75ee38572d2130bef0c3e436804c3da153fe1c07ea20b9d078e5b2aa4  ./02b_delete_test_logins.ts
+de69fc7fa49728991e9e31c8b23944d2ae86a879968d390f8e334ce5c739e8ff  ./README.md
+2c222da006fc69acc4a889906671b21758f5567fc4738bc07c36853aa1e3cfa1  ./live-capture/accounts-2026-11-08.txt
+01a7ff1a581d74235abc0b5bc067c2a41b9d92e59b5c68edd6cdd6f9433090cb  ./live-capture/old-plans-dry-run-2026-11-08.txt
+6f58eb4f3e9815ff2cdca187236bcb8e5a7f35b69cd94d7275b89121b2316e38  ./live-capture/ticket-dependents-2026-11-08.txt
