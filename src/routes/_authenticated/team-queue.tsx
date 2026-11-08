@@ -30,7 +30,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import type { WorkOrderRow } from "@/lib/work-order-types";
 import { standaloneOperationsOrders } from "@/lib/operations-population";
 import { AutomatedSourceQueue, type SourceRow } from "@/components/operations/AutomatedSourceQueue";
-import { HandoffsWaiting, handoffsKey, loadHandoffsForMe } from "@/components/operations/HandoffsWaiting";
+import { TicketHandoffsQueue, handoffsKey, loadHandoffsForMe } from "@/components/operations/TicketHandoffsQueue";
 import { QueueChip, type DoneEntry } from "@/components/operations/QueueRow";
 import { withoutImportHeld } from "@/lib/import-hold";
 import { operationsCalendarDays, operationsCalendarMonth, operationsView, parseOperationsSearch, shiftOperationsMonth, withOperationsView, type OperationsView } from "@/lib/operations-view-state";
@@ -567,7 +567,7 @@ function TeamQueuePage() {
 
         {can("direct_bookings_work") && <OvernightDirectBookings demoMode={demoMode} />}
 
-        <HandoffsWaiting
+        <TicketHandoffsQueue
           rows={handoffRows}
           userId={userId}
           canAct={canTake}
