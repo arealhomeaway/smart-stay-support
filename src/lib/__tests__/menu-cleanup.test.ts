@@ -8,6 +8,7 @@ import { can, type AppRole } from "../permissions";
 import { canOpenPath } from "../route-access";
 import {
   ANALYTICS_TARGETS,
+  DEPARTMENTS,
   onboardingOnlyMenu,
   operationsMenu,
   pageTabGroupFor,
@@ -94,9 +95,9 @@ describe("removed from the menu, pages kept", () => {
   });
 
   it("Program oversight and Homeowners stay in the Active Owner menu", () => {
-    const tabs = visiblePageTabs({ key: "ao", match: () => true, tabs: [] }, accessFor(["admin"]));
-    expect(tabs).toEqual([]);
-    // The Active Owner department menu is the registry DEPARTMENTS (kati-access tests).
+    const ao = DEPARTMENTS.find((d) => d.key === "active-owner")!.links;
+    expect(ao.find((l) => l.to === "/owner-oversight")?.label).toBe("Program oversight");
+    expect(ao.find((l) => l.to === "/homeowners")?.label).toBe("Homeowners");
   });
 
   it("Quarterly Reviews stays behind its own switch", () => {
