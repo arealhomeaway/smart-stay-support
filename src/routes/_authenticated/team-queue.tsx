@@ -49,7 +49,8 @@ import {
 import { currentOwnerId, queueSort } from "@/lib/matters";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 import { DepartureReviewQueue } from "@/components/departure/DepartureReviewQueue";
-import { DepartureMatchingPanel } from "@/components/departure/DepartureMatchingPanel";
+import { NotionImportedGroup } from "@/components/operations/NotionImportedGroup";
+import { withoutQuietNotion } from "@/lib/notion-ticket-display";
 import {
   AGE_OPTIONS,
   DEFAULT_TEAM_QUEUE_FILTERS,
@@ -97,18 +98,6 @@ function TeamQueuePage() {
   const lens = params["lens"] === "mine" ? "mine" : "team";
   const view = operationsView(params);
   const loadMap = useServerFn(jobMap);
-  const [darkMode, setDarkMode] = useState(false);
-  useEffect(() => {
-    const preferred = window.localStorage.getItem("preferred-theme") === "dark";
-    document.documentElement.classList.toggle("dark", preferred);
-    setDarkMode(preferred);
-  }, []);
-  const toggleDarkMode = () => {
-    const next = !darkMode;
-    document.documentElement.classList.toggle("dark", next);
-    window.localStorage.setItem("preferred-theme", next ? "dark" : "light");
-    setDarkMode(next);
-  };
   const map = useQuery({
     queryKey: ["job-map", view],
     queryFn: () => loadMap(),
@@ -225,7 +214,9 @@ function TeamQueuePage() {
         if (linked?.ticket_id) byDispatch.set(linked.ticket_id, row);
       }
     }
-    return withoutImportHeld(data ?? []).map((ticket) => ({
+    // Imported Notion tickets stay out of the queue and its counts until someone
+    // reopens or takes them; recent ones show only in the "Imported from Notion" group.
+    return withoutQuietNotion(withoutImportHeld(data ?? [])).map((ticket) => ({
       ...ticket,
       workOrder: byTicket.get(ticket.id) ?? null,
       dispatchState: byDispatch.get(ticket.id)?.status ?? null,
@@ -470,7 +461,6 @@ function TeamQueuePage() {
       )}
 
       <DepartureReviewQueue />
-      <DepartureMatchingPanel />
 
       <nav aria-label="Operations work views" className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-2">
         {(["list", "kanban", "map", "calendar"] as const).map((option) => (
@@ -494,9 +484,6 @@ function TeamQueuePage() {
             <option value="priority">Priority</option><option value="due">Due</option><option value="newest">Newest</option>
           </select>
         </label>
-        <Button size="sm" variant="outline" onClick={toggleDarkMode} aria-label={darkMode ? "Use light mode" : "Use dark mode"}>
-          {darkMode ? "Light mode" : "Dark mode"}
-        </Button>
       </nav>
 
       <div className="flex flex-wrap items-center gap-2">
