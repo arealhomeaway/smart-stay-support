@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_authenticated/direct-bookings/settings")
   head: () => ({
     meta: [
       { title: "Direct Bookings settings | ARHA Resolve" },
-      { name: "description", content: "Nightly rates and the approval period for Direct Bookings replies." },
+      { name: "description", content: "Nightly rates, the approval period and the overnight reply clock for Direct Bookings replies." },
       { property: "og:title", content: "Direct Bookings settings | ARHA Resolve" },
       { property: "og:description", content: "Nightly rates and the approval period for Direct Bookings." },
       { property: "og:type", content: "website" },
@@ -39,11 +39,13 @@ function SettingsPage() {
   const [end, setEnd] = useState("");
   const [after, setAfter] = useState(false);
   const [rates, setRates] = useState<Record<string, string>>({});
+  const [clockStart, setClockStart] = useState("09:00");
   useEffect(() => {
     if (!data) return;
     setStart(data.settings.approvalStart);
     setEnd(data.settings.approvalEnd);
     setAfter(data.settings.requireApprovalAfterEnd);
+    setClockStart(data.settings.overnightClockStart);
     setRates(Object.fromEntries(BEDROOMS.map((b) => [b, data.settings.nightlyRates[b]?.toString() ?? ""])));
   }, [data]);
   const canEdit = Boolean(data?.canEdit);
@@ -72,6 +74,12 @@ function SettingsPage() {
           ))}
         </div>
       </SectionCard>
+      <SectionCard title="Overnight requests" description="For requests that arrive between 10 PM and 8 AM.">
+        <div className="max-w-xs space-y-1">
+          <Label htmlFor="overnight-clock-start">Overnight reply clock starts at</Label>
+          <Input id="overnight-clock-start" className="h-11" type="time" value={clockStart} onChange={(e) => setClockStart(e.target.value)} disabled={!canEdit} />
+        </div>
+      </SectionCard>
       {canEdit ? (
         <div className="flex justify-end">
           <Button
@@ -79,7 +87,7 @@ function SettingsPage() {
             onClick={async () => {
               try {
                 const nightlyRates = Object.fromEntries(Object.entries(rates).filter(([, v]) => v !== "").map(([k, v]) => [k, Number(v)]));
-                await save({ data: { approvalStart: start, approvalEnd: end, requireApprovalAfterEnd: after, nightlyRates } });
+                await save({ data: { approvalStart: start, approvalEnd: end, requireApprovalAfterEnd: after, nightlyRates, overnightClockStart: clockStart } });
                 toast.success("Saved.");
                 refetch();
               } catch (e) {
