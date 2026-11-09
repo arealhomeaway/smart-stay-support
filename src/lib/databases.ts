@@ -400,7 +400,7 @@ export type DbRow = {
   /** Extra filter values that are not columns (Tickets: Historical, Claims to work). */
   tags?: Record<string, string>;
   /** Where the record is worked. */
-  link?: DbLink;
+  link?: DbLink | undefined;
   /** Claims and refunds only: what may change in the list. */
   edit?: ClaimEdit;
 };
