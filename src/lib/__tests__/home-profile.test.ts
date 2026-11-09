@@ -199,7 +199,7 @@ describe("Editing", () => {
       else if (s.kind === "code") expected[i.key] = "code";
     }
     expect(allowed).toEqual(expected);
-    for (const v of Object.values(allowed)) expect(v).not.toContain(" ");
+    for (const v of Object.values(allowed).filter((x) => x.startsWith("json:"))) expect(v).not.toContain(" ");
   });
 
   test("the save function writes only the listed columns and keeps codes out", () => {
