@@ -61,6 +61,8 @@ const RULES: Rule[] = [
   { prefix: "/ticket-checklists", capability: "playbooks_view" },
   // Team & Coverage: Schedule read only for every staff account (Operations and Onboarding).
   { prefix: "/team", capability: "team_schedule_view" },
+  // Databases hub: every staff account (register P3). Each list checks its own access.
+  { prefix: "/databases", capability: "databases" },
   { prefix: "/oversight", capability: "oversight" },
   { prefix: "/supervisor-check", capability: "oversight" },
   { prefix: "/analytics", capability: "analytics" },

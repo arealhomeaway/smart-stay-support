@@ -95,6 +95,7 @@ const ITEM_ICONS: Record<string, typeof Home> = {
   "work-orders": Wrench,
   oversight: ShieldAlert,
   claims: ReceiptText,
+  databases: Database,
   team: Users,
   playbooks: ListChecks,
   properties: Building2,
