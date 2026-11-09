@@ -1,4 +1,19 @@
-# Clean slate (register N8, M5). APPLIED: 01, 01c, 02. NOT RUN: 02b (stopped), 01b (never)
+# Clean slate (register N8, M5). APPLIED: 01, 01c, 02, 02c, 03. NOT RUN: 02b (replaced by blocking), 01b (never)
+
+## Follow-up on Nov 9, 2026 (Emily's answers to the real run report)
+
+Record: `live-capture/follow-up-2026-11-09.txt`.
+
+- 02b: not run, replaced by blocking, because kept records point at those sign-ins (Emily,
+  answer 1: sign-ins are blocked, never deleted). No sign-in was deleted.
+- 02c ran 01:42 UTC: blocked the 4 that were not blocked yet (QA Kati, QA Micah, Avery Lindqvist
+  (demo owner), QA Signup Test), each address checked first. Read back: all 18 blocked for about
+  100 years; none has a profile or a role.
+- 03 ran 01:43 UTC (backup `2026-11-09_005832Z` inside the 2 hour guard): closed the two demo
+  homeowner follow-ups assigned to the removed QA Kati account and deleted their 2 alerts. Staff
+  alerts back to 443; no alert, open follow-up or pending email is addressed to a removed account.
+  Undo: `03_undo_close_demo_followups.sql`.
+- The demo alert recipients setting is left as it is (Emily, answer 3).
 
 Emily's decision of Nov 7, 2026, with her answers of Nov 8. Emily's go for the real run: Nov 8,
 about 6:55 PM Central. Each SQL file refuses to run unless `full_backups` holds a backup that
@@ -19,10 +34,9 @@ Full record: `live-capture/real-run-2026-11-09.txt`.
   onboarding and the integration log kept their counts.
 - After: the 5-minute pass added 2 demo follow-up alerts to the removed QA Kati account (two demo
   homes still have an open follow-up assigned to it), so staff alerts read 445.
-- 02b NOT RUN: its read only pre-check failed. 12 of the 18 sign-ins are still named by kept
-  records the database will not release (audit log lines, demo onboarding Tasks, file records,
-  approvals, team invites). Only 6 could be removed. Waits for Emily's decision. All 18 sign-ins
-  remain, each with no profile and no role.
+- 02b NOT RUN: not run, replaced by blocking, because kept records point at those sign-ins
+  (audit log lines, demo onboarding Tasks, file records, approvals, team invites). All 18 sign-ins
+  remain, each with no profile and no role, all blocked by 02c on Nov 9.
 - Never ran 01b.
 
 The order the files were run in:
@@ -33,7 +47,9 @@ The order the files were run in:
 | 1b | `01b_optional_ticket_log_lines.sql` | DO NOT RUN (Emily, Nov 8): the audit and integration log lines stay. Kept here only as a record. | n/a |
 | 1c | `01c_delete_demo_claims_and_expenses.sql` | Deletes the 9 demo claims that have no ticket and all 16 test expenses, by explicit id list, each checked against its title or payee (Emily, Nov 8, answer 3; Nov 9, answer 4). Refuses unless 01 has run. | Restore from the backup folder |
 | 2 | `02_delete_test_accounts.sql` | Removes 18 listed test and demo accounts' roles, memberships, alerts, homeowner messages and profiles. Checks each id still has the expected address. Both James staff accounts stay (Emily, Nov 8). | Restore from the backup folder |
-| 2b | `02b_delete_test_logins.ts` | Removes the same 18 sign-ins through the sign-in service (a database step may not touch sign-ins). Run as an Admin step after 2. NOT RUN on Nov 9: 12 sign-ins are held by kept records (see Real run). | None (sign-ins cannot be restored; most are already blocked) |
+| 2b | `02b_delete_test_logins.ts` | NOT RUN, replaced by blocking (2c), because kept records point at those sign-ins (Emily, Nov 9). Kept here only as a record. | n/a |
+| 2c | `02c_block_test_logins.ts` | Blocks the 4 test sign-ins that were not blocked yet, address checked first, then reads all 18 back. Deletes nothing. Ran Nov 9. | Set the block to none on the same 4 ids |
+| 3 | `03_close_demo_followups.sql` | Closes the two demo follow-ups assigned to the removed QA Kati account and deletes their 2 alerts, by explicit id. Ran Nov 9. | `03_undo_close_demo_followups.sql` |
 
 Restore: the backup folder in the private `backups` storage bucket holds one file per table and a
 manifest with row counts and fingerprints. Secret columns (encrypted door codes, tokens) are not
