@@ -17,7 +17,7 @@ import { formatPropertyLabel } from "@/lib/property-label";
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 import { buildPropertyDetailGroups } from "@/lib/property-details";
 import { propertyAddress } from "@/lib/property-address";
 import { WORKING_STATUSES, isWorkingStatus } from "@/lib/ticket-lifecycle";
@@ -1034,9 +1034,9 @@ const PROFILE_COLUMNS = [
 ] as const;
 
 /** Only the PID columns the Home Profile reads; nothing that could carry a code. */
-export function pickProfileRaw(p: Record<string, unknown>): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const k of PROFILE_COLUMNS) out[k] = p[k] ?? null;
+export function pickProfileRaw(p: Record<string, unknown>): Record<string, Json> {
+  const out: Record<string, Json> = {};
+  for (const k of PROFILE_COLUMNS) out[k] = (p[k] ?? null) as Json;
   return out;
 }
 
