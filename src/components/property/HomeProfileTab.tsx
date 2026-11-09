@@ -16,7 +16,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { listCredentialsFn, revealCredentialFn, saveCredentialFn } from "@/lib/credentials.functions";
+import {
+  archiveCredentialFn,
+  listCredentialsFn,
+  revealCredentialFn,
+  saveCredentialFn,
+  verifyCredentialFn,
+} from "@/lib/credentials.functions";
+import { codeCheckedText, pendingCodesLine, showPendingCodes } from "@/lib/pending-codes";
 import { attachmentUrlFn, beginUploadFn, completeUploadFn } from "@/lib/attachments.functions";
 import { createAttachmentUploader } from "@/lib/attachment-upload-client";
 import { usDateTime } from "@/lib/dates";
@@ -82,7 +89,111 @@ export function useProfileContext(propertyId: string, profile: HomeProfileData |
     }),
     [profile, creds.data, photos.data],
   );
-  return { ctx, canManageCodes: creds.data?.canManage === true, credsError: creds.error, loading: creds.isLoading || photos.isLoading };
+  return {
+    ctx,
+    canManageCodes: creds.data?.canManage === true,
+    codeRows: creds.data?.rows ?? [],
+    pendingIntake: creds.data?.pendingIntake ?? 0,
+    credsError: creds.error,
+    loading: creds.isLoading || photos.isLoading,
+  };
+}
+
+type CodeRow = Awaited<ReturnType<typeof listCredentialsFn>>["rows"][number];
+
+/** Pending codes line: the import's waiting count, Mark current and Archive. Values never show here. */
+function PendingCodes({ propertyId, rows, waiting }: { propertyId: string; rows: CodeRow[]; waiting: number }) {
+  const qc = useQueryClient();
+  const verify = useServerFn(verifyCredentialFn);
+  const archive = useServerFn(archiveCredentialFn);
+  const [open, setOpen] = useState(false);
+  const [confirm, setConfirm] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const refresh = () => qc.invalidateQueries({ queryKey: ["property-credentials", propertyId] });
+  const run = async (id: string, fn: () => Promise<unknown>, done: string) => {
+    setBusy(id);
+    try {
+      await fn();
+      toast.success(done);
+      setConfirm(null);
+      await refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "That did not save. Try again.");
+    } finally {
+      setBusy(null);
+    }
+  };
+  return (
+    <div className="rounded-md border border-border p-3" aria-label="Pending codes">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm">
+          <span className="font-medium">Pending codes</span>
+          <span className="text-muted-foreground"> · {pendingCodesLine(waiting)}</span>
+        </p>
+        <Button size="sm" variant="outline" className="min-h-11" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+          {open ? "Close" : "Review codes"}
+        </Button>
+      </div>
+      {open ? (
+        rows.length === 0 ? (
+          <p className="pt-2 text-sm text-muted-foreground">Nothing here yet</p>
+        ) : (
+          <ul className="mt-2 divide-y divide-border/60">
+            {rows.map((r) => (
+              <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">{r.label}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {r.categoryLabel} · {codeCheckedText(r.lastVerifiedOn)}
+                  </p>
+                </div>
+                {confirm === r.id ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm">Archive {r.label}?</span>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="min-h-11"
+                      disabled={busy === r.id}
+                      onClick={() => void run(r.id, () => archive({ data: { credentialId: r.id } }), "Code archived")}
+                    >
+                      Archive
+                    </Button>
+                    <Button size="sm" variant="outline" className="min-h-11" disabled={busy === r.id} onClick={() => setConfirm(null)}>
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="min-h-11"
+                      disabled={busy === r.id}
+                      aria-label={`Mark ${r.label} current`}
+                      onClick={() => void run(r.id, () => verify({ data: { credentialId: r.id } }), "Marked current today")}
+                    >
+                      Mark current
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="min-h-11"
+                      disabled={busy === r.id}
+                      aria-label={`Archive ${r.label}`}
+                      onClick={() => setConfirm(r.id)}
+                    >
+                      Archive
+                    </Button>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )
+      ) : null}
+    </div>
+  );
 }
 
 /** Scroll to an item (opening its section first). */
@@ -94,12 +205,18 @@ export function HomeProfileTab({
   propertyId,
   profile,
   canEdit,
+  readOnly = false,
 }: {
   propertyId: string;
   profile: HomeProfileData | null;
   canEdit: boolean;
+  /** Viewing as someone else: the Pending codes line stays hidden. */
+  readOnly?: boolean;
 }) {
-  const { ctx, canManageCodes, credsError } = useProfileContext(propertyId, profile);
+  const { ctx, canManageCodes, codeRows, pendingIntake, credsError } = useProfileContext(propertyId, profile);
+  const pendingCodes = showPendingCodes({ canManageCodes, readOnly })
+    ? <PendingCodes propertyId={propertyId} rows={codeRows} waiting={pendingIntake} />
+    : null;
   const [query, setQuery] = useState("");
   const [showEmpty, setShowEmpty] = useState(false);
   const [open, setOpen] = useState<Record<string, boolean>>(() =>
@@ -208,6 +325,7 @@ export function HomeProfileTab({
           canEdit={canEdit}
           canManageCodes={canManageCodes}
           focusKey={focusKey}
+          extra={section.id === "entry" ? pendingCodes : null}
         />
       ))}
     </div>
@@ -224,6 +342,7 @@ function ProfileCard({
   canEdit,
   canManageCodes,
   focusKey,
+  extra = null,
 }: {
   propertyId: string;
   section: ProfileSection;
@@ -234,6 +353,8 @@ function ProfileCard({
   canEdit: boolean;
   canManageCodes: boolean;
   focusKey: string | null;
+  /** Shown at the top of the open card (the Pending codes line in Entry & Access Details). */
+  extra?: React.ReactNode;
 }) {
   const qc = useQueryClient();
   const reveal = useServerFn(revealCredentialFn);
@@ -341,6 +462,7 @@ function ProfileCard({
       {open ? (
         <div className="space-y-2 border-t border-border px-4 py-3">
           {editing ? <p className="rounded-md bg-muted p-3 text-sm">{EDITING_NOTE}</p> : null}
+          {!editing ? extra : null}
           {items.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nothing recorded yet.</p>
           ) : (

@@ -225,7 +225,7 @@ function PropertyPageBody({
         </TabsList>
 
         <TabsContent value="profile" className="mt-4">
-          <HomeProfileTab propertyId={propertyId} profile={hub.profile} canEdit={canEdit} />
+          <HomeProfileTab propertyId={propertyId} profile={hub.profile} canEdit={canEdit} readOnly={role.readOnly} />
         </TabsContent>
         <TabsContent value="inspections" className="mt-4">
           <SectionCard title="Inspections for this home">
