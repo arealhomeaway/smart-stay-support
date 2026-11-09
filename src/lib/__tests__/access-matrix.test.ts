@@ -30,6 +30,8 @@ const PAGES = [
   "/work-orders/manager", "/team", "/playbooks", "/ticket-checklists", "/oversight", "/supervisor-check",
   "/analytics", "/ops-analytics", "/finance", "/owner-library", "/owner-analytics", "/owner-programs",
   "/owner-report-wording", "/onboarding", "/properties", "/command-center", "/admin", "/owner", "/vendor",
+  // Databases hub (Nov 8, register P3): every staff account opens it.
+  "/databases",
 ];
 
 // Main actions, by the permission each screen and server check reads.
@@ -64,55 +66,55 @@ const PLAYBOOKS: Record<string, "edit" | "view" | "none"> = {
 
 const EXPECTED: Record<string, { pages: string[]; actions: string[]; savePlaybooks: boolean; approvePlaybooks: boolean }> = {
   PC: {
-    pages: ["/dashboard", "/tickets", "/direct-bookings", "/vendors", "/work-orders", "/work-orders/manager", "/team", "/playbooks", "/ticket-checklists", "/properties", "/admin"],
+    pages: ["/dashboard", "/tickets", "/direct-bookings", "/vendors", "/work-orders", "/work-orders/manager", "/team", "/playbooks", "/ticket-checklists", "/properties", "/admin", "/databases"],
     actions: ["work_orders_internal", "team_schedule_view", "direct_bookings_work"],
     savePlaybooks: false,
     approvePlaybooks: false,
   },
   Supervisor: {
-    pages: ["/dashboard", "/tickets", "/direct-bookings", "/direct-bookings/settings", "/vendors", "/work-orders", "/work-orders/manager", "/team", "/playbooks", "/ticket-checklists", "/oversight", "/supervisor-check", "/analytics", "/ops-analytics", "/owner-library", "/owner-analytics", "/owner-programs", "/owner-report-wording", "/onboarding", "/properties", "/admin", "/owner"],
+    pages: ["/dashboard", "/tickets", "/direct-bookings", "/direct-bookings/settings", "/vendors", "/work-orders", "/work-orders/manager", "/team", "/playbooks", "/ticket-checklists", "/oversight", "/supervisor-check", "/analytics", "/ops-analytics", "/owner-library", "/owner-analytics", "/owner-programs", "/owner-report-wording", "/onboarding", "/properties", "/admin", "/owner", "/databases"],
     actions: ["ops_user_invite", "vendor_admin", "work_orders_internal", "owner_program_admin", "owner_insight_view", "playbooks_edit", "user_management", "team_schedule_view", "oversight", "analytics", "direct_bookings_work", "leads_work"],
     savePlaybooks: true,
     approvePlaybooks: true,
   },
   DirOps: {
-    pages: ["/dashboard", "/tickets", "/direct-bookings", "/direct-bookings/settings", "/vendors", "/work-orders", "/work-orders/manager", "/team", "/playbooks", "/ticket-checklists", "/oversight", "/supervisor-check", "/analytics", "/ops-analytics", "/finance", "/owner-library", "/owner-analytics", "/owner-programs", "/owner-report-wording", "/onboarding", "/properties", "/admin", "/owner"],
+    pages: ["/dashboard", "/tickets", "/direct-bookings", "/direct-bookings/settings", "/vendors", "/work-orders", "/work-orders/manager", "/team", "/playbooks", "/ticket-checklists", "/oversight", "/supervisor-check", "/analytics", "/ops-analytics", "/finance", "/owner-library", "/owner-analytics", "/owner-programs", "/owner-report-wording", "/onboarding", "/properties", "/admin", "/owner", "/databases"],
     actions: ["ops_user_invite", "vendor_admin", "work_orders_internal", "finance_workspace", "owner_program_admin", "owner_insight_view", "playbooks_edit", "user_management", "team_schedule_view", "oversight", "analytics", "direct_bookings_work", "leads_work"],
     savePlaybooks: true,
     approvePlaybooks: true,
   },
   DirOnb: {
-    pages: ["/vendors", "/work-orders", "/team", "/playbooks", "/ticket-checklists", "/finance", "/owner-library", "/owner-analytics", "/owner-programs", "/onboarding", "/owner"],
+    pages: ["/vendors", "/work-orders", "/team", "/playbooks", "/ticket-checklists", "/finance", "/owner-library", "/owner-analytics", "/owner-programs", "/onboarding", "/owner", "/databases"],
     actions: ["vendor_admin", "work_orders_view", "finance_view", "owner_insight_view", "playbooks_edit", "team_schedule_view"],
     savePlaybooks: true,
     approvePlaybooks: true,
   },
   PM: {
-    pages: ["/vendors", "/work-orders", "/team", "/playbooks", "/ticket-checklists", "/onboarding"],
+    pages: ["/vendors", "/work-orders", "/team", "/playbooks", "/ticket-checklists", "/onboarding", "/databases"],
     actions: ["vendor_admin", "work_orders_view", "team_schedule_view"],
     savePlaybooks: false,
     approvePlaybooks: false,
   },
   Utilities: {
-    pages: ["/vendors", "/team", "/playbooks", "/ticket-checklists", "/onboarding"],
+    pages: ["/vendors", "/team", "/playbooks", "/ticket-checklists", "/onboarding", "/databases"],
     actions: ["vendor_admin", "team_schedule_view"],
     savePlaybooks: false,
     approvePlaybooks: false,
   },
   Design: {
-    pages: ["/team", "/playbooks", "/ticket-checklists", "/onboarding"],
+    pages: ["/team", "/playbooks", "/ticket-checklists", "/onboarding", "/databases"],
     actions: ["team_schedule_view"],
     savePlaybooks: false,
     approvePlaybooks: false,
   },
   Finance: {
-    pages: ["/dashboard", "/tickets", "/direct-bookings", "/direct-bookings/settings", "/vendors", "/work-orders", "/work-orders/manager", "/team", "/playbooks", "/ticket-checklists", "/oversight", "/supervisor-check", "/analytics", "/ops-analytics", "/finance", "/owner-library", "/owner-analytics", "/owner-programs", "/owner-report-wording", "/onboarding", "/properties", "/admin", "/owner"],
+    pages: ["/dashboard", "/tickets", "/direct-bookings", "/direct-bookings/settings", "/vendors", "/work-orders", "/work-orders/manager", "/team", "/playbooks", "/ticket-checklists", "/oversight", "/supervisor-check", "/analytics", "/ops-analytics", "/finance", "/owner-library", "/owner-analytics", "/owner-programs", "/owner-report-wording", "/onboarding", "/properties", "/admin", "/owner", "/databases"],
     actions: ["vendor_admin", "work_orders_internal", "finance_workspace", "owner_program_admin", "owner_insight_view", "playbooks_edit", "user_management", "team_schedule_view", "oversight", "analytics", "direct_bookings_work", "leads_work"],
     savePlaybooks: false,
     approvePlaybooks: false,
   },
   Admin: {
-    pages: ["/dashboard", "/tickets", "/direct-bookings", "/direct-bookings/settings", "/vendors", "/work-orders", "/work-orders/manager", "/team", "/playbooks", "/ticket-checklists", "/oversight", "/supervisor-check", "/analytics", "/ops-analytics", "/finance", "/owner-library", "/owner-analytics", "/owner-programs", "/owner-report-wording", "/onboarding", "/properties", "/command-center", "/admin", "/owner", "/vendor"],
+    pages: ["/dashboard", "/tickets", "/direct-bookings", "/direct-bookings/settings", "/vendors", "/work-orders", "/work-orders/manager", "/team", "/playbooks", "/ticket-checklists", "/oversight", "/supervisor-check", "/analytics", "/ops-analytics", "/finance", "/owner-library", "/owner-analytics", "/owner-programs", "/owner-report-wording", "/onboarding", "/properties", "/command-center", "/admin", "/owner", "/vendor", "/databases"],
     actions: ["vendor_admin", "work_orders_internal", "finance_workspace", "owner_program_admin", "owner_insight_view", "playbooks_edit", "user_management", "team_schedule_view", "oversight", "analytics", "direct_bookings_work", "leads_work"],
     savePlaybooks: true,
     approvePlaybooks: true,
