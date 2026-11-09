@@ -23,6 +23,7 @@ import { ReviewImportStatusPanel } from "@/components/feedback/ReviewImportStatu
 import { notionStatusLabel } from "@/lib/notion-ticket-display";
 import { ArchivedTicketsPanel } from "@/components/scorecard/ArchivedTicketsPanel";
 import { useRole } from "@/hooks/useRole";
+import { PropertyRefreshPanel } from "@/components/property/PropertyRefreshPanel";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
   component: () => (
@@ -96,6 +97,8 @@ function IntegrationsPage() {
           emails into the queue.
         </p>
       </SectionCard>
+
+      {isAdmin ? <PropertyRefreshPanel /> : null}
 
       <SharePointConnectionPanel />
       <FullBackupPanel />

@@ -12,9 +12,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-export function ActualClosingCorrection({ propertyId }: { propertyId: string }) {
+export function ActualClosingCorrection({
+  propertyId,
+  startOpen = false,
+  onDone,
+}: {
+  propertyId: string;
+  /** Opened from the property page More menu: show the form straight away. */
+  startOpen?: boolean;
+  onDone?: () => void;
+}) {
   const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const [open, setOpenState] = useState(startOpen);
+  const setOpen = (v: boolean) => {
+    setOpenState(v);
+    if (!v) onDone?.();
+  };
   const [date, setDate] = useState("");
   const [reason, setReason] = useState("");
 
@@ -76,7 +89,7 @@ export function ActualClosingCorrection({ propertyId }: { propertyId: string }) 
         </span>
         <span>
           <span className="text-muted-foreground">Planned closing: </span>
-          {f.planned ?? "—"}
+          {f.planned ?? "Not recorded"}
         </span>
         {f.canCorrect && !open ? (
           <Button size="sm" variant="outline" onClick={() => { setDate(f.actual ?? ""); setOpen(true); }}>
@@ -86,7 +99,7 @@ export function ActualClosingCorrection({ propertyId }: { propertyId: string }) 
       </div>
       {conflict ? (
         <p className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-destructive">
-          Closing dates disagree: {values.join(" vs ")}. Nothing has been chosen automatically — a
+          Closing dates disagree: {values.join(" vs ")}. Nothing has been chosen automatically. A
           Director or Manager should correct the actual closing.
         </p>
       ) : null}

@@ -1,73 +1,80 @@
 /**
- * Property Hub — the single place a person looks up one home.
+ * The property page: one home, organized like the Notion PID (register P1).
  *
- * Staff see the operational picture; a homeowner sees only their own home and
- * only what Resolve has shared with them. The server decides both — this file
- * renders what it is given and never widens it.
+ * Staff only. The server decides what each person may read; this file renders
+ * it. Codes stay encrypted behind a logged Show. Nothing here deletes data.
  */
-import { EmailComposer } from "@/components/EmailComposer";
-import { SendToOwner } from '@/components/operations/SendToOwner';
-import { HomeContextHeader } from "@/components/property/HomeContextHeader";
-import { OpenPhotosFolderButton } from "@/components/property/MarketingPhotosButtons";
-import { TwoStepHandoff } from "@/components/onboarding/TwoStepHandoff";
-import { readHomeContext } from "@/lib/home-context.functions";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  Activity,
-  AlertTriangle,
-  Building2,
-  CheckCircle2,
-  ClipboardList,
-  FileText,
-  Home,
-  ListChecks,
-  Users,
-} from "lucide-react";
+import { useMemo, useState } from "react";
+import { Activity, ChevronDown, ClipboardList } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { EmailComposer } from "@/components/EmailComposer";
+import { TwoStepHandoff } from "@/components/onboarding/TwoStepHandoff";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { StatusBadge, ticketTone } from "@/components/ui/status";
 import { usDate, usDateTime } from "@/lib/dates";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SectionCard } from "@/components/ui/page";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PropertyFeedbackTab } from "@/components/feedback/PropertyFeedbackTab";
 import { PropertyWorkHistory } from "@/components/work-entry/PropertyWorkHistory";
 import { PropertyDepartureReviews } from "@/components/departure/DepartureReviewQueue";
 import { ExpensesCard } from "@/components/finance/ExpensesCard";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getPropertyHubFn } from "@/lib/property-hub.functions";
+import { marketingPhotosFolder } from "@/lib/marketing-photos.functions";
 import { BreezewayWorkOrderPanel } from "@/components/BreezewayWorkOrderPanel";
-import { PropertyCredentialsPanel } from "@/components/PropertyCredentialsPanel";
 import { SpecialHandlingPanel } from "@/components/SpecialHandlingPanel";
 import { PropertyFactsCard } from "@/components/PropertyFactsCard";
-import { SectionBand } from "@/components/ui/page";
-import { PropertyDetailSections } from "@/components/PropertyDetailSections";
 import { PropertyDocumentLibrary } from "@/components/PropertyDocumentLibrary";
 import { OwnerLinkPanel } from "@/components/OwnerLinkPanel";
 import { HomeownerCard } from "@/components/property/HomeownerCard";
 import { ArrivalReadyCard } from "@/components/scorecard/ArrivalReadyCard";
-import { ActiveOwnerPanel } from "@/components/property/ActiveOwnerPanel";
 import { LifecycleSwitcher } from "@/components/property/LifecycleSwitcher";
-import { BackControl, useRecordOrigin, useWorkspaceOrigin } from "@/components/nav/NavContext";
-import { PropertyFilesTab } from "@/components/property/PropertyFilesTab";
+import { ActiveOwnerEnrollForm } from "@/components/property/ActiveOwnerEnrollForm";
+import { ActualClosingCorrection } from "@/components/property/ActualClosingCorrection";
 import { CompletedOnboardingRecords } from "@/components/property/CompletedOnboardingRecords";
+import { VendorCoveragePanel } from "@/components/onboarding/VendorCoveragePanel";
+import { OwnerRezListingCard } from "@/components/property/OwnerRezListingCard";
+import { LabelChip, PropertyLabelsSection, useHomeLabels } from "@/components/property/PropertyLabels";
+import { HomeProfileTab, goToProfileItem, useProfileContext } from "@/components/property/HomeProfileTab";
+import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 import { useRole } from "@/hooks/useRole";
+import { toast } from "sonner";
+import { COMPLIANCE_ITEMS, displayValue, missingForHandoff } from "@/lib/home-profile";
+import {
+  MORE_MENU_LABELS,
+  departmentFor,
+  handoffBanner,
+  headerLine,
+  isOnboardingHome,
+  moreMenuItems,
+  propertyTabsFor,
+  resolveTab,
+  splitActivity,
+  stageLabel,
+  type MoreMenuItem,
+  type PropertyTabId,
+} from "@/lib/property-page";
 
 export const Route = createFileRoute("/_authenticated/property/$propertyId")({
   head: () => ({
     meta: [
-      { title: "Property Hub — Resolve" },
-      {
-        name: "description",
-        content:
-          "One home in Resolve: onboarding progress, operations, contacts, documents and approvals.",
-      },
-      { property: "og:title", content: "Property Hub — Resolve" },
-      {
-        property: "og:description",
-        content: "Onboarding, operations, documents and approvals for one home.",
-      },
+      { title: "Property | Resolve" },
+      { name: "description", content: "One home in Resolve: its profile, codes behind Show, owner, work and history." },
+      { property: "og:title", content: "Property | Resolve" },
+      { property: "og:description", content: "One home in Resolve: its profile, owner, work and history." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -76,25 +83,31 @@ export const Route = createFileRoute("/_authenticated/property/$propertyId")({
     ...(typeof raw["from"] === "string" && raw["from"] ? { from: raw["from"] } : {}),
     ...(typeof raw["tab"] === "string" && raw["tab"] ? { tab: raw["tab"] } : {}),
   }),
-  component: PropertyHubPage,
+  component: PropertyPage,
 });
 
 type Hub = Awaited<ReturnType<typeof getPropertyHubFn>>;
 
-function PropertyHubPage() {
+function PropertyPage() {
   const { propertyId } = Route.useParams();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
-  const { can, readOnly } = useRole();
+  const role = useRole();
   const load = useServerFn(getPropertyHubFn);
-  const readContext = useServerFn(readHomeContext);
   const q = useQuery({
     queryKey: ["property-hub", propertyId],
     queryFn: () => load({ data: { propertyId } }),
   });
-  const homeContext = useQuery({ queryKey: ["home-context", propertyId], queryFn: () => readContext({ data: { propertyId } }) });
-  const hasProject = Boolean(homeContext.data?.project);
-  const tab = search.tab === "handoff" && homeContext.isSuccess && !hasProject ? "overview" : (search.tab ?? "overview");
+  const access = useQuery({
+    queryKey: ["home-profile-access"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("my_home_profile_access");
+      if (error) throw error;
+      return data as { edit: boolean; admin: boolean };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  const tab = resolveTab(search.tab);
   const setTab = (next: string) => void navigate({ search: (prev) => ({ ...prev, tab: next }), replace: true });
 
   if (q.isLoading) {
@@ -106,162 +119,163 @@ function PropertyHubPage() {
       </div>
     );
   }
-
   if (q.isError || !q.data) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="text-base">This home could not be opened</CardTitle>
           <CardDescription>
-            {q.error instanceof Error
-              ? q.error.message
-              : "Resolve could not load this property right now."}
+            {q.error instanceof Error ? q.error.message : "Resolve could not load this home right now."}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Link to="/properties" className="text-sm text-primary underline">
-            Back to properties
-          </Link>
-        </CardContent>
       </Card>
     );
   }
-
   const hub = q.data;
+  if (!hub.viewer.staff) {
+    return <Empty text="This page is for the ARHA team." />;
+  }
+  const canEdit = access.data?.edit === true && !role.readOnly;
+  const tabs = propertyTabsFor({ staff: hub.viewer.staff, properties: role.can("properties") });
+  const department = departmentFor({ onboardingOnly: role.onboardingOnly });
+
+  return (
+    <PropertyPageBody
+      hub={hub}
+      propertyId={propertyId}
+      tab={tab}
+      setTab={setTab}
+      tabs={tabs}
+      canEdit={canEdit}
+      isAdmin={access.data?.admin === true && !role.readOnly}
+      department={department}
+    />
+  );
+}
+
+function PropertyPageBody({
+  hub,
+  propertyId,
+  tab,
+  setTab,
+  tabs,
+  canEdit,
+  isAdmin,
+  department,
+}: {
+  hub: Hub;
+  propertyId: string;
+  tab: PropertyTabId;
+  setTab: (t: string) => void;
+  tabs: { id: PropertyTabId; label: string }[];
+  canEdit: boolean;
+  isAdmin: boolean;
+  department: "operations" | "onboarding";
+}) {
+  const role = useRole();
+  const { ctx } = useProfileContext(propertyId, hub.profile);
+  const missing = useMemo(() => missingForHandoff(ctx), [ctx]);
+  const onboarding = isOnboardingHome(hub.property.lifecycleStatus);
+  const banner = handoffBanner({ onboarding, department, missing: missing.length, carriedOver: hub.carryovers.length });
+
+  const showMissing = () => {
+    setTab("onboarding");
+    window.setTimeout(() => document.getElementById("missing-for-handoff")?.scrollIntoView({ behavior: "smooth" }), 80);
+  };
+  const showCarry = () => {
+    setTab("onboarding");
+    window.setTimeout(() => document.getElementById("carried-over")?.scrollIntoView({ behavior: "smooth" }), 80);
+  };
+  const fillIn = () => {
+    const first = missing[0];
+    setTab("profile");
+    if (first) window.setTimeout(() => goToProfileItem(first.item.key), 120);
+  };
 
   return (
     <div className="space-y-6">
-      {hub.viewer.staff && <HomeContextHeader propertyId={propertyId} current="operations" />}
-      <HubHeader hub={hub} />
+      <PropertyHeader hub={hub} propertyId={propertyId} />
 
-      {hub.viewer.staff && (
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <LifecycleSwitcher
-            propertyId={propertyId}
-            propertyName={hub.property.name}
-            lifecycleStatus={hub.property.lifecycleStatus ?? null}
-            canManage={hub.viewer.supervisor}
-          />
-          <EmailComposer context="property" recordId={propertyId} label="Email the homeowner" />
-          <SendToOwner propertyId={propertyId}/>
+      {banner ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning/5 p-4" role="status">
+          <div className="space-y-1">
+            <p className="font-medium">{banner.title}</p>
+            {banner.note ? <p className="text-sm text-muted-foreground">{banner.note}</p> : null}
+          </div>
+          <Button
+            className="min-h-11"
+            variant="outline"
+            onClick={banner.target === "carry" ? showCarry : department === "onboarding" ? fillIn : showMissing}
+          >
+            {banner.button}
+          </Button>
         </div>
-      )}
+      ) : null}
 
-      {hub.alerts.length > 0 && (
-        <div className="grid gap-2 sm:grid-cols-2">
-          {hub.alerts.map((a) => (
-            <div
-              key={a.id}
-              className={`flex items-start gap-2 rounded-lg border p-3 text-sm ${
-                a.tone === "danger"
-                  ? "border-danger/40 bg-danger/5"
-                  : a.tone === "warn"
-                    ? "border-warning/40 bg-warning/5"
-                    : "border-border bg-muted/30"
-              }`}
-            >
-              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-              <span>{a.text}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {hub.viewer.staff && <ArrivalReadyCard propertyId={propertyId} />}
-
-      {hub.viewer.staff && <HomeownerCard propertyId={propertyId} canManage={hub.viewer.staff} />}
-
-      {hub.viewer.staff && (
-        <div id="special-handling">
-          <SpecialHandlingPanel propertyId={propertyId} canEdit={hub.viewer.supervisor} />
-          <PropertyFactsCard propertyId={propertyId} />
-        </div>
-      )}
-
-      {hub.viewer.staff && (
-        <div id="credentials">
-          <PropertyCredentialsPanel propertyId={propertyId} />
-        </div>
-      )}
-
-      {hub.viewer.staff && (
-        <div id="active-owner">
-          <ActiveOwnerPanel
-            propertyId={propertyId}
-            propertyName={hub.property.name}
-            canManage={hub.viewer.supervisor}
-            canEnroll={can("active_owner_enroll")}
-            isDemo={hub.property.isDemo}
-            lifecycleStatus={hub.property.lifecycleStatus ?? null}
-          />
-        </div>
-      )}
+      <PropertyLabelsSection propertyId={propertyId} canEdit={canEdit} isAdmin={isAdmin} userId={role.userId} />
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="flex h-auto flex-wrap justify-start">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="details">Property details</TabsTrigger>
-          {hub.viewer.staff && <TabsTrigger value="contacts">Contacts</TabsTrigger>}
-          <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
-          {hub.viewer.staff && hasProject && <TabsTrigger value="handoff">Handoff</TabsTrigger>}
-          {hub.viewer.staff && <TabsTrigger value="operations">Operations</TabsTrigger>}
-          {hub.viewer.staff && <TabsTrigger value="surveys">Guest Surveys</TabsTrigger>}
-          {hub.viewer.staff && <TabsTrigger value="reviews">Reviews</TabsTrigger>}
-          <TabsTrigger value="documents">Documents &amp; media</TabsTrigger>
-          <TabsTrigger value="files">Files</TabsTrigger>
-          <TabsTrigger value="approvals">Approvals</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
+          {tabs.map((t) => (
+            <TabsTrigger key={t.id} value={t.id} className="min-h-11">
+              {t.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
-        <TabsContent value="overview" className="mt-4">
-          <OverviewTab hub={hub} />
+        <TabsContent value="profile" className="mt-4">
+          <HomeProfileTab propertyId={propertyId} profile={hub.profile} canEdit={canEdit} />
         </TabsContent>
-        {hub.viewer.staff && hasProject && (
-          <TabsContent value="handoff" className="mt-4">
-            {/* Same handoff component and server checks as the Onboarding page; nothing duplicated. */}
-            <TwoStepHandoff
-              propertyId={propertyId}
-              readOnly={readOnly}
-              onOpenTask={(task) =>
-                void navigate({ to: "/onboarding/$propertyId", params: { propertyId }, search: { task } as never })
-              }
-            />
-          </TabsContent>
-        )}
-        <TabsContent value="details" className="mt-4">
-          <DetailsTab hub={hub} />
+        <TabsContent value="inspections" className="mt-4">
+          <SectionCard title="Inspections for this home">
+            <NothingYet />
+          </SectionCard>
         </TabsContent>
-        {hub.viewer.staff && (
-          <TabsContent value="contacts" className="mt-4">
-            <ContactsTab hub={hub} propertyId={propertyId} />
-          </TabsContent>
-        )}
         <TabsContent value="onboarding" className="mt-4">
-          <OnboardingTab hub={hub} />
+          <OnboardingInformationTab
+            hub={hub}
+            propertyId={propertyId}
+            missing={missing.map((m) => ({ key: m.item.key, label: m.item.label, section: m.section.title }))}
+            onGoTo={(key) => {
+              setTab("profile");
+              window.setTimeout(() => goToProfileItem(key), 120);
+            }}
+            showOnboardingInformation={department === "onboarding" || role.isAdmin}
+          />
         </TabsContent>
-        {hub.viewer.staff && (
-          <TabsContent value="operations" className="mt-4">
-            <OperationsTab hub={hub} />
-          </TabsContent>
-        )}
-        {hub.viewer.staff && (
-          <TabsContent value="surveys" className="mt-4">
-            <PropertyFeedbackTab propertyId={propertyId} kind="internal_survey" isDemo={!!hub.property.isDemo} isSupervisor={!!hub.viewer.supervisor} />
-          </TabsContent>
-        )}
-        {hub.viewer.staff && (
-          <TabsContent value="reviews" className="mt-4">
-            <PropertyFeedbackTab propertyId={propertyId} kind="external_review" isDemo={!!hub.property.isDemo} isSupervisor={!!hub.viewer.supervisor} />
-          </TabsContent>
-        )}
+        <TabsContent value="house-items" className="mt-4 space-y-4">
+          <SectionCard title="Household and Appliances">
+            <NothingYet />
+          </SectionCard>
+          <SectionCard title="Furniture and TVs">
+            <NothingYet />
+          </SectionCard>
+        </TabsContent>
+        <TabsContent value="utilities" className="mt-4">
+          <SectionCard title="Utility Info">
+            <NothingYet />
+          </SectionCard>
+        </TabsContent>
+        <TabsContent value="vendors" className="mt-4 space-y-2">
+          <h2 className="text-base font-semibold">Vendors for this home</h2>
+          <VendorCoveragePanel propertyId={propertyId} />
+        </TabsContent>
+        <TabsContent value="owner" className="mt-4">
+          <OwnerTab hub={hub} propertyId={propertyId} canEdit={canEdit} />
+        </TabsContent>
+        <TabsContent value="operations" className="mt-4">
+          <OperationsTab hub={hub} canEdit={canEdit} />
+        </TabsContent>
+        <TabsContent value="reviews" className="mt-4 space-y-2">
+          <h2 className="text-base font-semibold">Reviews from OwnerRez</h2>
+          <PropertyFeedbackTab propertyId={propertyId} kind="external_review" isDemo={!!hub.property.isDemo} isSupervisor={!!hub.viewer.supervisor} />
+        </TabsContent>
+        <TabsContent value="surveys" className="mt-4 space-y-2">
+          <h2 className="text-base font-semibold">Guest surveys</h2>
+          <PropertyFeedbackTab propertyId={propertyId} kind="internal_survey" isDemo={!!hub.property.isDemo} isSupervisor={!!hub.viewer.supervisor} />
+        </TabsContent>
         <TabsContent value="documents" className="mt-4">
-          <DocumentsTab hub={hub} />
-        </TabsContent>
-        <TabsContent value="files" className="mt-4">
-          <PropertyFilesTab propertyId={propertyId} />
-        </TabsContent>
-        <TabsContent value="approvals" className="mt-4">
-          <ApprovalsTab hub={hub} />
+          <DocumentsTab hub={hub} propertyId={propertyId} />
         </TabsContent>
         <TabsContent value="activity" className="mt-4">
           <ActivityTab hub={hub} />
@@ -273,647 +287,508 @@ function PropertyHubPage() {
 
 /* ---------------------------------------------------------------- */
 
-function HubHeader({ hub }: { hub: Hub }) {
-  const { origin } = useRecordOrigin("property");
+function PropertyHeader({ hub, propertyId }: { hub: Hub; propertyId: string }) {
+  const role = useRole();
   const p = hub.property;
-  const facts = [
-    p.bedrooms == null ? null : `${p.bedrooms} bd`,
-    p.bathrooms == null ? null : `${p.bathrooms} ba`,
-    p.maxGuests == null ? null : `sleeps ${p.maxGuests}`,
-  ].filter(Boolean) as string[];
+  const labels = useHomeLabels(propertyId);
+  const onboarding = isOnboardingHome(p.lifecycleStatus);
+  const program = hub.overview.program;
+  const activeOwner = Boolean(program && program.status !== "complete");
+  const getFolder = useServerFn(marketingPhotosFolder);
+  const [dialog, setDialog] = useState<MoreMenuItem | null>(null);
+  const canCorrect = useQuery({
+    queryKey: ["can-correct-actual-closing"],
+    queryFn: async () => (await supabase.rpc("can_correct_actual_closing")).data === true,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const items = moreMenuItems({
+    staff: hub.viewer.staff,
+    readOnly: role.readOnly,
+    onboarding,
+    activeOwner,
+    canChangeOwner: hub.viewer.staff,
+    canMoveToOnboarding: hub.viewer.supervisor,
+    canEnrollActiveOwner: role.can("active_owner_enroll"),
+    canCorrectClosing: canCorrect.data === true,
+  });
+
+  const line = headerLine({
+    onboarding,
+    handedOffOn: hub.header?.handedOffOn ? usDate(hub.header.handedOffOn) : null,
+    projectManager: hub.header?.projectManager ?? null,
+    handoffOn: hub.header?.handoffOn ? usDate(hub.header.handoffOn) : null,
+    carriedOver: hub.carryovers.length,
+  });
+  const showToggle = role.can("onboarding_workspace") && Boolean(hub.header?.hasProject);
+
+  const choose = async (item: MoreMenuItem) => {
+    if (item === "photos_folder") {
+      try {
+        const r = await getFolder({ data: { propertyId } });
+        if (r.url) window.open(r.url, "_blank", "noopener");
+        else toast.message(r.note ?? "The photos folder could not be found.");
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "The photos folder could not be opened.");
+      }
+      return;
+    }
+    setDialog(item);
+  };
+
   return (
-    <div className="surface overflow-hidden shadow-raised">
-      <div className="grid gap-0 md:grid-cols-[320px_1fr]">
-        <div className="relative aspect-[4/3] bg-muted md:aspect-auto md:min-h-[220px]">
-          {p.photoUrl ? (
-            <img
-              src={p.photoUrl}
-              alt={`${p.name} — primary listing photo`}
-              className="absolute inset-0 size-full object-cover"
-              loading="lazy"
-            />
-          ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
-              <Building2 className="size-8" />
-              <span className="text-xs">No listing photo on file</span>
-            </div>
-          )}
+    <div className="surface space-y-3 p-5 shadow-raised">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold tracking-tight">{p.name}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{line}</p>
         </div>
-        <div className="flex flex-wrap items-start justify-between gap-4 p-6">
-          <div className="min-w-0">
-            <p className="eyebrow flex items-center gap-1.5">
-              <Building2 className="size-3.5" aria-hidden="true" />
-              Property hub
-            </p>
-            <div className="mt-1 flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-semibold tracking-tight">{p.name}</h1>
-              {p.isDemo && <Badge variant="outline">Demo</Badge>}
-            </div>
-            <p className="mt-1 text-muted-foreground">{p.address || "No address on file"}</p>
-            {facts.length > 0 && (
-              <p className="mt-1 text-sm text-muted-foreground">{facts.join(" · ")}</p>
-            )}
-            {hub.viewer.staff && (
-              <div className="mt-2">
-                <OpenPhotosFolderButton propertyId={p.id} />
-              </div>
-            )}
-            {hub.viewer.staff && hub.ownerRecord && (
-              <p className="mt-2 text-sm">
-                <span className="text-muted-foreground">Owner: </span>
-                <span className="font-medium">
-                  {hub.ownerRecord.name ?? "Unnamed owner record"}
-                </span>
-                {hub.ownerRecord.propertyCount > 1 && (
-                  <span className="text-muted-foreground">
-                    {" "}
-                    · {hub.ownerRecord.propertyCount} homes
-                  </span>
-                )}
-              </p>
-            )}
-            <div className="mt-3 flex flex-wrap gap-1.5 text-xs">
-              {p.market && <Badge variant="secondary">{p.market}</Badge>}
-              {p.neighborhood && <Badge variant="outline">{p.neighborhood}</Badge>}
-              {p.lifecycleStatus && p.lifecycleStatus !== "live" && (
-                <StatusBadge tone="waiting">{label(p.lifecycleStatus)}</StatusBadge>
-              )}
-              {p.minStayMonths ? (
-                <Badge variant="outline">{p.minStayMonths}-month minimum</Badge>
-              ) : null}
-              {p.onboardingStage && (
-                <Badge variant="outline">Stage: {label(p.onboardingStage)}</Badge>
-              )}
-              <Badge variant={p.active ? "secondary" : "outline"}>
-                {p.active ? "Active" : "Inactive"}
-              </Badge>
-            </div>
-            {hub.viewer.staff && p.operatingNotes && (
-              <div className="mt-4 max-w-2xl rounded-lg border border-warning/40 bg-warning/5 p-3">
-                <div className="eyebrow">Special handling</div>
-                <p className="mt-1 whitespace-pre-line text-sm leading-relaxed">
-                  {p.operatingNotes}
-                </p>
-              </div>
-            )}
-          </div>
-          {hub.viewer.staff && <BackControl origin={origin} className="shrink-0" />}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Stat({
-  label: l,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string | number;
-  tone?: "danger" | "ok" | undefined;
-}) {
-  return (
-    <div className="rounded-lg border border-border p-4">
-      <div className="text-xs uppercase tracking-wide text-muted-foreground">{l}</div>
-      <div
-        className={`mt-1 text-2xl font-semibold ${tone === "danger" ? "text-danger" : tone === "ok" ? "text-primary" : ""}`}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function OverviewTab({ hub }: { hub: Hub }) {
-  const o = hub.overview;
-  return (
-    <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {hub.viewer.staff && (
-          <Stat
-            label="Open tickets"
-            value={o.openTickets}
-            tone={o.openTickets ? "danger" : undefined}
-          />
-        )}
-        {hub.viewer.staff && (
-          <Stat label="P1 open" value={o.p1Tickets} tone={o.p1Tickets ? "danger" : undefined} />
-        )}
-        <Stat label="Onboarding complete" value={`${o.onboardingComplete}/${o.onboardingTotal}`} />
-        <Stat
-          label="Waiting on you"
-          value={o.ownerActions}
-          tone={o.ownerActions ? "danger" : "ok"}
-        />
-        {hub.viewer.staff && (
-          <Stat label="Blockers" value={o.blockers} tone={o.blockers ? "danger" : undefined} />
-        )}
-        {hub.viewer.staff && (
-          <Link to="/property/$propertyId" params={{ propertyId: hub.property.id }} search={{ tab: "handoff" }} aria-label="Handoff gates open, open the Handoff tab" className="block rounded-lg hover:ring-1 hover:ring-primary">
-            <Stat label="Handoff gates open" value={o.handoffGatesOpen} />
-          </Link>
-        )}
-        <Stat label="Documents you can see" value={o.documents} />
-        {hub.viewer.staff && o.unassignedTasks != null && (
-          <Stat
-            label="Unassigned tasks"
-            value={o.unassignedTasks}
-            tone={o.unassignedTasks ? "danger" : "ok"}
-          />
-        )}
-      </div>
-
-      {o.program && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Active Owner Participation</CardTitle>
-            <CardDescription>
-              {o.program.ownerName ?? "Homeowner"} · {label(o.program.status)}
-              {o.program.startedOn ? ` · ${o.program.startedOn} to ${o.program.endsOn ?? "—"}` : ""}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link to="/owner" className="text-sm text-primary underline">
-              Open participation
-            </Link>
-          </CardContent>
-        </Card>
-      )}
-
-      {!hub.viewer.staff && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">What happens next</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1 text-sm text-muted-foreground">
-            <p>
-              Your home is{" "}
-              {o.onboardingTotal
-                ? `${Math.round((o.onboardingComplete / Math.max(o.onboardingTotal, 1)) * 100)}% through onboarding`
-                : "being prepared"}
-              .
-            </p>
-            <p>
-              {o.ownerActions
-                ? `${o.ownerActions} item${o.ownerActions === 1 ? "" : "s"} need your approval — see the Approvals tab.`
-                : "Nothing is waiting on you right now. ARHA will let you know when something is."}
-            </p>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-function DetailsTab({ hub }: { hub: Hub }) {
-  const groups = hub.details.groups ?? [];
-  const legacy = hub.details.sections;
-  if (groups.length === 0 && legacy.length === 0) {
-    return <Empty text="No property details have been shared for this home yet." />;
-  }
-  return (
-    <div className="space-y-6">
-      {groups.length > 0 && (
-        <PropertyDetailSections
-          groups={groups}
-          onGoToCredentials={() =>
-            document.getElementById("credentials")?.scrollIntoView({ behavior: "smooth" })
-          }
-        />
-      )}
-
-      {legacy.length > 0 && (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {legacy.map((s) => (
-            <Card key={s.id}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">{s.title}</CardTitle>
-                {s.blurb && <CardDescription>{s.blurb}</CardDescription>}
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                {s.fields.length === 0 && (
-                  <p className="text-muted-foreground">Nothing recorded yet.</p>
-                )}
-                {s.fields.map((fld) => (
-                  <div
-                    key={fld.key}
-                    className="flex items-start justify-between gap-4 border-b border-border/50 pb-2 last:border-0"
-                  >
-                    <div>
-                      <div className="font-medium">{fld.label}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {fld.source}
-                        {fld.asOf ? ` · as of ${usDate(fld.asOf)}` : ""}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      {fld.pending ? (
-                        <Badge variant="outline">Awaiting field map</Badge>
-                      ) : (
-                        <span className={fld.value ? "" : "text-muted-foreground"}>
-                          {fld.value ?? "Not recorded"}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {showToggle ? (
+            <nav aria-label="Switch view" className="flex rounded-lg bg-muted p-1">
+              <Link
+                to="/property/$propertyId"
+                params={{ propertyId }}
+                aria-current="page"
+                className="inline-flex min-h-11 items-center rounded-md bg-background px-3 text-sm font-medium shadow-sm"
+              >
+                Operations view
+              </Link>
+              <Link
+                to="/onboarding/$propertyId"
+                params={{ propertyId }}
+                className="inline-flex min-h-11 items-center rounded-md px-3 text-sm text-muted-foreground hover:text-foreground"
+              >
+                Onboarding view
+              </Link>
+            </nav>
+          ) : null}
+          {items.length > 0 ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="min-h-11">
+                  More <ChevronDown className="size-4" aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {items.map((item) => (
+                  <DropdownMenuItem key={item} className="min-h-11" onSelect={() => void choose(item)}>
+                    {MORE_MENU_LABELS[item]}
+                  </DropdownMenuItem>
                 ))}
-              </CardContent>
-            </Card>
-          ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
         </div>
-      )}
-    </div>
-  );
-}
-
-function ContactsTab({ hub, propertyId }: { hub: Hub; propertyId: string }) {
-  const owner = hub.ownerRecord;
-  const canLink = hub.viewer.staff;
-  if (!owner && hub.contacts.length === 0) {
-    return (
-      <div className="space-y-4">
-        <Empty text="No structured contact records for this home yet. Contacts come from the owner record, not free text." />
-        {canLink && <OwnerLinkPanel propertyId={propertyId} hasOwner={false} />}
       </div>
-    );
-  }
-  return (
-    <div className="space-y-4">
-      {canLink && (
-        <div className="flex justify-end">
-          <OwnerLinkPanel propertyId={propertyId} hasOwner={Boolean(owner)} />
-        </div>
-      )}
-      {owner && (
-        <Card className="border-primary/40">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Users className="size-4 text-primary" />
-              {owner.name ?? "Unnamed owner record"}
-              <Badge variant="secondary">Owner of record</Badge>
-            </CardTitle>
-            <CardDescription>
-              {owner.source === "ownerrez" ? "OwnerRez owner record" : owner.source}
-              {owner.propertyCount > 1
-                ? ` · owns ${owner.propertyCount} homes with ARHA`
-                : " · single home"}
-              {` · as of ${usDate(owner.syncedAt)}`}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-1 text-sm sm:grid-cols-2">
-            <p>{owner.email ?? "No email on file"}</p>
-            <p>{owner.phone ?? "No phone on file"}</p>
-            <p className="text-muted-foreground">
-              {[owner.city, owner.state].filter(Boolean).join(", ") || "No mailing city on file"}
-            </p>
-          </CardContent>
-        </Card>
-      )}
-      <div className="grid gap-3 md:grid-cols-2">
-        {hub.contacts.map((c) => (
-          <Card key={c.id}>
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Users className="size-4 text-primary" />
-                {c.name ?? "Homeowner"}
-              </CardTitle>
-              <CardDescription>
-                {c.source ?? "Resolve"}
-                {c.matchStatus ? ` · ${label(c.matchStatus)}` : ""}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-1 text-sm">
-              <p>{c.email ?? "No email on file"}</p>
-              <p>{c.phone ?? "No phone on file"}</p>
-              {c.syncedAt && (
-                <p className="text-xs text-muted-foreground">as of {usDate(c.syncedAt)}</p>
-              )}
-            </CardContent>
-          </Card>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <StatusBadge tone={onboarding ? "waiting" : "resolved"}>{stageLabel(p.lifecycleStatus)}</StatusBadge>
+        {activeOwner ? <StatusBadge tone="context">Active Owner</StatusBadge> : null}
+        {hub.overview.openTickets > 0 ? (
+          <StatusBadge tone="escalated">
+            {hub.overview.openTickets} open ticket{hub.overview.openTickets === 1 ? "" : "s"}
+          </StatusBadge>
+        ) : null}
+        {(labels.data?.labels ?? []).map((l) => (
+          <LabelChip key={l.id} name={l.name} />
         ))}
       </div>
+
+      {/* The More menu opens the same windows the rest of Resolve uses. */}
+      {dialog === "change_owner" ? (
+        <OwnerLinkPanel
+          propertyId={propertyId}
+          hasOwner={Boolean(hub.ownerRecord)}
+          open
+          hideTrigger
+          onOpenChange={(v) => (!v ? setDialog(null) : undefined)}
+        />
+      ) : null}
+      {dialog === "move_to_onboarding" ? (
+        <LifecycleSwitcher
+          propertyId={propertyId}
+          propertyName={p.name}
+          lifecycleStatus={p.lifecycleStatus ?? null}
+          canManage={hub.viewer.supervisor}
+          open
+          dialogOnly
+          onOpenChange={(v) => (!v ? setDialog(null) : undefined)}
+        />
+      ) : null}
+      {dialog === "enroll_active_owner" ? (
+        <ActiveOwnerEnrollForm
+          propertyId={propertyId}
+          propertyName={p.name}
+          showTrigger={false}
+          open
+          onOpenChange={(v) => (!v ? setDialog(null) : undefined)}
+        />
+      ) : null}
+      <Dialog open={dialog === "correct_closing"} onOpenChange={(v) => (!v ? setDialog(null) : undefined)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Correct actual closing</DialogTitle>
+          </DialogHeader>
+          {dialog === "correct_closing" ? (
+            <ActualClosingCorrection propertyId={propertyId} startOpen onDone={() => setDialog(null)} />
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-function OnboardingTab({ hub }: { hub: Hub }) {
+function NothingYet() {
+  return <p className="text-sm text-muted-foreground">Nothing here yet</p>;
+}
+
+/* ---------------------------------------------------------------- */
+
+function OnboardingInformationTab({
+  hub,
+  propertyId,
+  missing,
+  onGoTo,
+  showOnboardingInformation,
+}: {
+  hub: Hub;
+  propertyId: string;
+  missing: { key: string; label: string; section: string }[];
+  onGoTo: (key: string) => void;
+  showOnboardingInformation: boolean;
+}) {
+  const role = useRole();
+  const navigate = Route.useNavigate();
   const o = hub.onboarding;
-  const { can } = useRole();
-  if (o.total === 0) return <Empty text="No onboarding project has been started for this home." />;
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <ListChecks className="size-4 text-primary" /> Project progress
-          </CardTitle>
-          <CardDescription>
-            {o.complete} of {o.total} steps complete{o.stage ? ` · stage ${label(o.stage)}` : ""}
-            {o.subtaskTotal ? ` · ${o.subtaskComplete} of ${o.subtaskTotal} subtasks complete` : ""}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Progress value={o.percent} />
-          {o.handoff && (
-            <p className="text-sm text-muted-foreground">
-              Handoff: {label(String(o.handoff.status))}
-              {o.handoff.gate_step ? ` · ${label(String(o.handoff.gate_step))}` : ""}
-              {hub.viewer.staff && (
-                <>
-                  {" · "}
-                  <Link to="/property/$propertyId" params={{ propertyId: hub.property.id }} search={{ tab: "handoff" }} className="text-primary underline">
-                    Open Handoff
-                  </Link>
-                </>
-              )}
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {hub.viewer.staff && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <AlertTriangle className="size-4 text-danger" /> Blockers
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            {o.blockers.length === 0 ? (
-              <p className="text-muted-foreground">Nothing is blocked.</p>
-            ) : (
-              o.blockers.map((b) => (
-                <div key={b.id}>
-                  <span className="font-medium">{b.title}</span>{" "}
-                  <span className="text-muted-foreground">— {b.blocker ?? "blocked"}</span>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">
-            {hub.viewer.staff ? "Current tasks" : "What ARHA is working on"}
-          </CardTitle>
-          <CardDescription>The active work, not the full plan.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          {o.current.length === 0 ? (
-            <p className="text-muted-foreground">Every task is complete.</p>
+      <div id="missing-for-handoff" className="scroll-mt-24">
+        <SectionCard title="Missing for handoff">
+          {missing.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Everything needed for handoff is filled in.</p>
           ) : (
-            o.current.map((t) => (
-              <div
-                key={t.id}
-                className="flex items-center justify-between gap-4 border-b border-border/50 pb-2 last:border-0"
-              >
-                <div>
-                  <div className="font-medium">{t.title}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {label(t.stage)}
-                    {t.dueOn ? ` · due ${usDate(t.dueOn)}` : ""}
+            <ul className="divide-y divide-border">
+              {missing.map((m) => (
+                <li key={m.key} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                  <div>
+                    <p className="text-sm font-medium">{m.label}</p>
+                    <p className="text-xs text-muted-foreground">{m.section}</p>
                   </div>
-                </div>
-                {hub.viewer.staff && !t.assigned && <Badge variant="outline">Unassigned</Badge>}
-              </div>
-            ))
+                  <Button size="sm" variant="outline" className="min-h-11" onClick={() => onGoTo(m.key)}>
+                    Go to it
+                  </Button>
+                </li>
+              ))}
+            </ul>
           )}
-        </CardContent>
-      </Card>
+        </SectionCard>
+      </div>
 
-      {hub.viewer.staff && <CompletedOnboardingRecords propertyId={hub.property.id} />}
+      <div id="carried-over" className="scroll-mt-24">
+        <SectionCard title="Carried over from onboarding">
+          {hub.carryovers.length === 0 ? (
+            <NothingYet />
+          ) : (
+            <ul className="divide-y divide-border">
+              {hub.carryovers.map((c) => (
+                <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+                  <div>
+                    <p className="font-medium">{c.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {[c.category, c.dueOn ? `due ${usDate(c.dueOn)}` : null, c.acceptedAt ? `carried over ${usDate(c.acceptedAt)}` : null]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  </div>
+                  {c.ticketId ? (
+                    <Button asChild size="sm" variant="outline" className="min-h-11">
+                      <Link to="/tickets/$ticketId" params={{ ticketId: c.ticketId }}>
+                        Open ticket
+                      </Link>
+                    </Button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </SectionCard>
+      </div>
 
-      {hub.viewer.staff && can("onboarding_workspace") && (
-        <Link
-          to="/onboarding/$propertyId"
-          params={{ propertyId: hub.property.id }}
-          className="inline-block text-sm text-primary underline"
-        >
-          Open the onboarding workspace
-        </Link>
-      )}
+      {hub.header?.hasProject ? (
+        <SectionCard title="Handoff review">
+          {/* Same handoff component and server checks as the Onboarding page; nothing duplicated. */}
+          <TwoStepHandoff
+            propertyId={propertyId}
+            readOnly={role.readOnly}
+            onOpenTask={(task) =>
+              void navigate({ to: "/onboarding/$propertyId", params: { propertyId }, search: { task } as never })
+            }
+          />
+        </SectionCard>
+      ) : null}
+
+      {showOnboardingInformation ? (
+        <SectionCard title="Onboarding Information">
+          {o.total === 0 ? (
+            <p className="text-sm text-muted-foreground">No onboarding project has been started for this home.</p>
+          ) : (
+            <div className="space-y-3 text-sm">
+              <p>
+                {o.complete} of {o.total} steps complete
+                {o.subtaskTotal ? ` · ${o.subtaskComplete} of ${o.subtaskTotal} subtasks complete` : ""}
+              </p>
+              <Progress value={o.percent} />
+              {o.current.length > 0 ? (
+                <ul className="divide-y divide-border">
+                  {o.current.map((t) => (
+                    <li key={t.id} className="flex items-center justify-between gap-3 py-2">
+                      <span>
+                        <span className="font-medium">{t.title}</span>
+                        {t.dueOn ? <span className="text-xs text-muted-foreground"> · due {usDate(t.dueOn)}</span> : null}
+                      </span>
+                      {!t.assigned ? <Badge variant="outline">Unassigned</Badge> : null}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-muted-foreground">Every task is complete.</p>
+              )}
+              {role.can("onboarding_workspace") ? (
+                <Link to="/onboarding/$propertyId" params={{ propertyId }} className="inline-flex min-h-11 items-center text-primary underline">
+                  Open the onboarding workspace
+                </Link>
+              ) : null}
+            </div>
+          )}
+        </SectionCard>
+      ) : null}
+
+      {/* Completed onboarding records are shared with Operations after handoff (read only). */}
+      <CompletedOnboardingRecords propertyId={propertyId} />
     </div>
   );
 }
 
-// The groups a coordinator needs while a job is running: what is broken, how
-// to get in, and where the shutoffs are. Same data as Property details — read
-// once, shown where the work happens.
-const OPERATIONAL_GROUPS = [
-  "utilities_shutoffs",
-  "hvac",
-  "waste",
-  "safety",
-  "sprinklers_grounds",
-  "pool_spa",
-  "equipment",
-  "other_systems",
-  "special_handling",
-];
+function OwnerTab({ hub, propertyId, canEdit }: { hub: Hub; propertyId: string; canEdit: boolean }) {
+  const owner = hub.ownerRecord;
+  return (
+    <div className="space-y-4">
+      <SectionCard title="Owner and Contacts">
+        {owner ? (
+          <div className="grid gap-1 text-sm sm:grid-cols-2">
+            <p className="font-medium sm:col-span-2">{owner.name ?? "Owner of record"}</p>
+            <p>{owner.email ?? "No email on file"}</p>
+            <p>{owner.phone ?? "No phone on file"}</p>
+            <p className="text-muted-foreground">{[owner.city, owner.state].filter(Boolean).join(", ") || "No mailing city on file"}</p>
+            {owner.propertyCount > 1 ? <p className="text-muted-foreground">Owns {owner.propertyCount} homes with ARHA</p> : null}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <NothingYet />
+            {canEdit ? <OwnerLinkPanel propertyId={propertyId} hasOwner={false} /> : null}
+          </div>
+        )}
+      </SectionCard>
+      <SectionCard title="Owner" actions={<EmailComposer context="property" recordId={propertyId} label="Email owner" />}>
+        <HomeownerCard propertyId={propertyId} canManage={hub.viewer.staff} />
+      </SectionCard>
+      <div id="special-handling">
+        <SectionCard title="Special handling">
+          {hub.property.operatingNotes ? (
+            <p className="mb-3 whitespace-pre-line text-sm">{hub.property.operatingNotes}</p>
+          ) : null}
+          <SpecialHandlingPanel propertyId={propertyId} canEdit={hub.viewer.supervisor} />
+        </SectionCard>
+      </div>
+      <SectionCard title="Amenities">
+        <PropertyFactsCard propertyId={propertyId} />
+      </SectionCard>
+    </div>
+  );
+}
 
-function OperationsTab({ hub }: { hub: Hub }) {
+function OperationsTab({ hub, canEdit }: { hub: Hub; canEdit: boolean }) {
   const ops = hub.operations;
-  // Opening a ticket from a home is still working that home: Back returns
-  // here, and the rail keeps the rest of this home's tickets in reach.
   const { originSearch } = useWorkspaceOrigin(
     hub.property.name,
     ops.tickets.map((t) => ({ id: t.id, label: t.title, sub: `ARHA-${t.ref}` })),
   );
-  const opsGroups = (hub.details.groups ?? []).filter((g) => OPERATIONAL_GROUPS.includes(g.id));
   return (
     <div className="space-y-4">
-      {opsGroups.length > 0 && (
-        <section className="space-y-3">
-          <SectionBand
-            title="Utilities & building systems"
-            hint="Providers, shutoffs, filters and equipment for this home."
-          />
-          <PropertyDetailSections
-            groups={opsGroups}
-            onGoToCredentials={() =>
-              document.getElementById("credentials")?.scrollIntoView({ behavior: "smooth" })
-            }
-          />
-        </section>
-      )}
-
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <ClipboardList className="size-4 text-primary" /> Tickets
-          </CardTitle>
-          <CardDescription>Open first, then the most recent closures.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          {ops.tickets.length === 0 ? (
-            <p className="text-muted-foreground">No tickets have been logged for this home.</p>
-          ) : (
-            ops.tickets.map((t) => (
+      <ArrivalReadyCard propertyId={hub.property.id} />
+      <OwnerRezListingCard propertyId={hub.property.id} listingId={hub.property.ownerRezListingId} canEdit={canEdit} />
+      <SectionCard title="Breezeway work orders">
+        <div className="space-y-3">
+          <BreezewayWorkOrderPanel propertyId={hub.property.id} />
+          {ops.workOrders.length > 0 ? (
+            <ul className="divide-y divide-border text-sm">
+              {ops.workOrders.map((w) => (
+                <li key={w.id} className="flex items-center justify-between gap-4 py-2">
+                  <span>{w.title}</span>
+                  <Badge variant="outline">{label(w.status)}</Badge>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      </SectionCard>
+      <SectionCard
+        title={
+          <span className="flex items-center gap-2">
+            <ClipboardList className="size-4 text-primary" aria-hidden="true" /> Tickets
+          </span>
+        }
+      >
+        {ops.tickets.length === 0 ? (
+          <NothingYet />
+        ) : (
+          <div className="space-y-1 text-sm">
+            {ops.tickets.map((t) => (
               <Link
                 key={t.id}
                 to="/tickets/$ticketId"
                 params={{ ticketId: t.id }}
                 search={{ from: originSearch.from }}
-                className="flex items-center justify-between gap-4 border-b border-border/50 pb-2 last:border-0 hover:text-primary"
+                className="flex min-h-11 items-center justify-between gap-4 border-b border-border/50 last:border-0 hover:text-primary"
               >
                 <span>
                   <span className="font-medium">ARHA-{t.ref}</span> {t.title}
                 </span>
                 <span className="flex items-center gap-2">
                   {t.notionBadge && <StatusBadge tone="context">{t.notionBadge}</StatusBadge>}
-                  <StatusBadge tone={t.priority === "p1" ? "escalated" : "context"}>
-                    {String(t.priority).toUpperCase()}
-                  </StatusBadge>
                   <StatusBadge tone={ticketTone(t.status)}>{label(t.status)}</StatusBadge>
                 </span>
               </Link>
-            ))
-          )}
-        </CardContent>
-      </Card>
-
+            ))}
+          </div>
+        )}
+      </SectionCard>
       <PropertyDepartureReviews propertyId={hub.property.id} />
-      <ExpensesCard propertyId={hub.property.id} />
       <PropertyWorkHistory propertyId={hub.property.id} />
-
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Work orders</CardTitle>
-          <CardDescription>Vendor execution dispatched from Resolve.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          {ops.workOrders.length === 0 ? (
-            <p className="text-muted-foreground">
-              No Work Orders have been dispatched for this home.
-            </p>
-          ) : (
-            ops.workOrders.map((w) => (
-              <div
-                key={w.id}
-                className="flex items-center justify-between gap-4 border-b border-border/50 pb-2 last:border-0"
-              >
-                <span>{w.title}</span>
-                <Badge variant="outline">{label(w.status)}</Badge>
-              </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
-
-      {hub.viewer.staff && <BreezewayWorkOrderPanel propertyId={hub.property.id} />}
+      <SectionCard title="Purchases from Ramp">
+        <ExpensesCard propertyId={hub.property.id} />
+      </SectionCard>
     </div>
   );
 }
 
-function DocumentsTab({ hub }: { hub: Hub }) {
-  return (
-    <PropertyDocumentLibrary
-      propertyId={hub.property.id}
-      documents={hub.documents}
-      links={hub.externalLinks ?? []}
-      staff={hub.viewer.staff}
-    />
-  );
-}
-
-function ApprovalsTab({ hub }: { hub: Hub }) {
-  const a = hub.approvals;
-  const nothing = a.ownerActions.length === 0 && a.decided.length === 0 && a.records.length === 0;
-  if (nothing) return <Empty text="Nothing is awaiting a decision for this home." />;
+function DocumentsTab({ hub, propertyId }: { hub: Hub; propertyId: string }) {
+  const getFolder = useServerFn(marketingPhotosFolder);
+  const links = hub.externalLinks ?? [];
+  const compliance = COMPLIANCE_ITEMS.map((i) => ({
+    item: i,
+    value: displayValue(i, { property: hub.profile?.raw ?? {}, credentials: [], photos: [], links: [], system: {} }),
+  })).filter((c) => c.value);
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <AlertTriangle className="size-4 text-danger" /> Awaiting homeowner approval
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          {a.ownerActions.length === 0 ? (
-            <p className="text-muted-foreground">Nothing is waiting on the homeowner.</p>
-          ) : (
-            a.ownerActions.map((x) => (
-              <div key={x.id} className="flex items-center justify-between gap-4">
-                <span>{x.title}</span>
-                <Link to="/owner" className="text-primary underline">
-                  Review
-                </Link>
+      <SectionCard title="Links">
+        {links.length === 0 ? (
+          <NothingYet />
+        ) : (
+          <ul className="divide-y divide-border text-sm">
+            {links.map((l) => (
+              <li key={l.id} className="py-1">
+                <a href={l.url} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center text-primary underline">
+                  {l.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </SectionCard>
+      <SectionCard title="Folders">
+        <div className="space-y-4">
+          <Button
+            variant="outline"
+            className="min-h-11"
+            onClick={async () => {
+              try {
+                const r = await getFolder({ data: { propertyId } });
+                if (r.url) window.open(r.url, "_blank", "noopener");
+                else toast.message(r.note ?? "The photos folder could not be found.");
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "The photos folder could not be opened.");
+              }
+            }}
+          >
+            Open the photos folder
+          </Button>
+          <PropertyDocumentLibrary propertyId={propertyId} documents={hub.documents} links={[]} staff={hub.viewer.staff} />
+        </div>
+      </SectionCard>
+      <SectionCard title="Compliance">
+        {compliance.length === 0 ? (
+          <NothingYet />
+        ) : (
+          <dl className="space-y-2 text-sm">
+            {compliance.map((c) => (
+              <div key={c.item.key}>
+                <dt className="font-medium">{c.item.label}</dt>
+                <dd className="whitespace-pre-line text-muted-foreground">{c.value}</dd>
               </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <CheckCircle2 className="size-4 text-primary" /> Decision history
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          {a.decided.length === 0 && a.records.length === 0 ? (
-            <p className="text-muted-foreground">No decisions recorded yet.</p>
-          ) : (
-            <>
-              {a.decided.map((x) => (
-                <div key={x.id} className="flex items-center justify-between gap-4">
-                  <span>{x.title}</span>
-                  <Badge variant="secondary">{label(x.status)}</Badge>
-                </div>
-              ))}
-              {a.records.map((r) => (
-                <div key={r.id} className="flex items-center justify-between gap-4">
-                  <span>{r.title}</span>
-                  <Badge variant="outline">{label(r.status)}</Badge>
-                </div>
-              ))}
-            </>
-          )}
-        </CardContent>
-      </Card>
+            ))}
+          </dl>
+        )}
+      </SectionCard>
     </div>
   );
 }
 
 function ActivityTab({ hub }: { hub: Hub }) {
-  if (hub.activity.length === 0) {
-    return <Empty text="No activity recorded for this home yet." />;
-  }
+  const [full, setFull] = useState(false);
+  const { recent, older } = splitActivity(hub.activity);
+  const rows = full ? [...recent, ...older] : recent;
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Activity className="size-4 text-primary" /> Recent activity
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2 text-sm">
-        {hub.activity.map((a) => (
-          <div key={a.id} className="border-b border-border/50 pb-2 last:border-0">
-            <div className="font-medium">{label(a.action)}</div>
-            <div className="text-xs text-muted-foreground">
-              {a.actor ?? "ARHA"} · {usDateTime(a.at)}
-              {a.reason ? ` · ${a.reason}` : ""}
+    <SectionCard
+      title={
+        <span className="flex items-center gap-2">
+          <Activity className="size-4 text-primary" aria-hidden="true" /> Activity
+        </span>
+      }
+      description="Newest first."
+    >
+      {rows.length === 0 ? (
+        <NothingYet />
+      ) : (
+        <div className="space-y-2 text-sm">
+          {rows.map((a) => (
+            <div key={a.id} className="border-b border-border/50 pb-2 last:border-0">
+              <div className="font-medium">
+                {label(a.action)}
+                {a.label ? <span className="font-normal text-muted-foreground"> · {a.label}</span> : null}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {a.actor ?? "ARHA"} · {usDateTime(a.at)}
+                {a.reason ? ` · ${a.reason}` : ""}
+              </div>
             </div>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
+          ))}
+        </div>
+      )}
+      <div className="mt-3 flex gap-2">
+        {full ? (
+          <Button variant="outline" className="min-h-11" onClick={() => setFull(false)}>
+            Show the last 30 days
+          </Button>
+        ) : older.length > 0 ? (
+          <Button variant="outline" className="min-h-11" onClick={() => setFull(true)}>
+            Show the full history ({older.length} more)
+          </Button>
+        ) : null}
+      </div>
+    </SectionCard>
   );
 }
 
 function Empty({ text }: { text: string }) {
   return (
     <div className="flex items-center gap-3 rounded-lg border border-dashed border-border p-10 text-muted-foreground">
-      <Home className="size-4" />
       <p>{text}</p>
     </div>
   );
 }
 
 function label(v: string | null | undefined) {
-  if (!v) return "—";
+  if (!v) return "";
   return v.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
 }

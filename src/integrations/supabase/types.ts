@@ -6722,7 +6722,7 @@ export type Database = {
       }
       help_ticket_events: {
         Row: {
-          author_id: string
+          author_id: string | null
           author_name: string | null
           body: string | null
           created_at: string
@@ -6735,7 +6735,7 @@ export type Database = {
           to_status: string | null
         }
         Insert: {
-          author_id?: string
+          author_id?: string | null
           author_name?: string | null
           body?: string | null
           created_at?: string
@@ -6748,7 +6748,7 @@ export type Database = {
           to_status?: string | null
         }
         Update: {
-          author_id?: string
+          author_id?: string | null
           author_name?: string | null
           body?: string | null
           created_at?: string
@@ -11788,6 +11788,149 @@ export type Database = {
           },
         ]
       }
+      property_label_assignments: {
+        Row: {
+          added_at: string
+          added_by: string | null
+          id: string
+          label_id: string
+          property_id: string
+          removed_at: string | null
+          removed_by: string | null
+        }
+        Insert: {
+          added_at?: string
+          added_by?: string | null
+          id?: string
+          label_id: string
+          property_id: string
+          removed_at?: string | null
+          removed_by?: string | null
+        }
+        Update: {
+          added_at?: string
+          added_by?: string | null
+          id?: string
+          label_id?: string
+          property_id?: string
+          removed_at?: string | null
+          removed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_label_assignments_label_id_fkey"
+            columns: ["label_id"]
+            isOneToOne: false
+            referencedRelation: "property_labels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_label_assignments_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "property_label_assignments_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_label_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_label: string | null
+          at: string
+          from_name: string | null
+          id: string
+          label_id: string
+          property_id: string | null
+          to_name: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_label?: string | null
+          at?: string
+          from_name?: string | null
+          id?: string
+          label_id: string
+          property_id?: string | null
+          to_name?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_label?: string | null
+          at?: string
+          from_name?: string | null
+          id?: string
+          label_id?: string
+          property_id?: string | null
+          to_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_label_events_label_id_fkey"
+            columns: ["label_id"]
+            isOneToOne: false
+            referencedRelation: "property_labels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_label_events_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "property_label_events_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_labels: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          renamed_at: string | null
+          renamed_by: string | null
+          retired_at: string | null
+          retired_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          renamed_at?: string | null
+          renamed_by?: string | null
+          retired_at?: string | null
+          retired_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          renamed_at?: string | null
+          renamed_by?: string | null
+          retired_at?: string | null
+          retired_by?: string | null
+        }
+        Relationships: []
+      }
       property_owner_contacts: {
         Row: {
           candidate_count: number
@@ -11910,6 +12053,115 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      property_profile_edits: {
+        Row: {
+          card: string
+          edited_at: string
+          edited_by: string | null
+          edited_by_label: string | null
+          id: string
+          item_key: string
+          label: string
+          new_value: Json | null
+          old_value: Json | null
+          property_id: string
+        }
+        Insert: {
+          card: string
+          edited_at?: string
+          edited_by?: string | null
+          edited_by_label?: string | null
+          id?: string
+          item_key: string
+          label: string
+          new_value?: Json | null
+          old_value?: Json | null
+          property_id: string
+        }
+        Update: {
+          card?: string
+          edited_at?: string
+          edited_by?: string | null
+          edited_by_label?: string | null
+          id?: string
+          item_key?: string
+          label?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          property_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_profile_edits_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "property_profile_edits_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_profile_photos: {
+        Row: {
+          added_at: string
+          added_by: string | null
+          document_id: string
+          id: string
+          item_key: string
+          property_id: string
+          removed_at: string | null
+          removed_by: string | null
+        }
+        Insert: {
+          added_at?: string
+          added_by?: string | null
+          document_id: string
+          id?: string
+          item_key: string
+          property_id: string
+          removed_at?: string | null
+          removed_by?: string | null
+        }
+        Update: {
+          added_at?: string
+          added_by?: string | null
+          document_id?: string
+          id?: string
+          item_key?: string
+          property_id?: string
+          removed_at?: string | null
+          removed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_profile_photos_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_profile_photos_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "property_profile_photos_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       property_vendor_coverage: {
         Row: {
@@ -16663,6 +16915,10 @@ export type Database = {
       }
       active_owner_may_act: { Args: { _is_demo: boolean }; Returns: boolean }
       add_business_days: { Args: { _d: string; _n: number }; Returns: string }
+      add_home_profile_photo: {
+        Args: { _document_id: string; _item_key: string; _property_id: string }
+        Returns: string
+      }
       add_manual_cleaner_clean: {
         Args: {
           _date: string
@@ -17438,6 +17694,7 @@ export type Database = {
         Returns: undefined
       }
       my_demo_access: { Args: never; Returns: Json }
+      my_home_profile_access: { Args: never; Returns: Json }
       my_onboarding_reviews: {
         Args: never
         Returns: {
@@ -17603,6 +17860,20 @@ export type Database = {
         Args: { _project_id: string; _role: string }
         Returns: string
       }
+      property_label_add: {
+        Args: { _label_id: string; _property_ids: string[] }
+        Returns: number
+      }
+      property_label_create: { Args: { _name: string }; Returns: string }
+      property_label_remove: {
+        Args: { _label_id: string; _property_id: string }
+        Returns: boolean
+      }
+      property_label_rename: {
+        Args: { _label_id: string; _name: string }
+        Returns: undefined
+      }
+      property_label_retire: { Args: { _label_id: string }; Returns: number }
       publish_onboarding_template: {
         Args: { _template_id: string }
         Returns: string
@@ -18085,6 +18356,10 @@ export type Database = {
         }
         Returns: Json
       }
+      remove_home_profile_photo: {
+        Args: { _photo_id: string }
+        Returns: boolean
+      }
       remove_owner_library_video: {
         Args: { _library_id: string }
         Returns: number
@@ -18288,6 +18563,10 @@ export type Database = {
       }
       save_direct_booking_settings: { Args: { _value: Json }; Returns: Json }
       save_handoff_requirement: { Args: { _value: Json }; Returns: string }
+      save_home_profile_card: {
+        Args: { _card: string; _changes: Json; _property_id: string }
+        Returns: Json
+      }
       save_owner_alert_preferences: {
         Args: {
           _email: boolean

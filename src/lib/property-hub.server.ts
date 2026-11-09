@@ -17,7 +17,7 @@ import { formatPropertyLabel } from "@/lib/property-label";
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 import { buildPropertyDetailGroups } from "@/lib/property-details";
 import { propertyAddress } from "@/lib/property-address";
 import { WORKING_STATUSES, isWorkingStatus } from "@/lib/ticket-lifecycle";
@@ -238,7 +238,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
         ? supabaseAdmin
             .from("property_external_links")
             .select(
-              "id, kind, label, url, context, staff_only, canonical, needs_replacement, source, note, as_of",
+              "id, kind, label, url, context, staff_only, canonical, needs_replacement, source, source_field, note, as_of",
             )
             .eq("property_id", propertyId)
         : Promise.resolve({ data: [], error: null }),
@@ -327,7 +327,8 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
         .eq("entity_type", scope.entityType)
         .in("entity_id", scope.entityIds)
         .order("created_at", { ascending: false })
-        .limit(25),
+        // The property page keeps the full history (last 30 days first).
+        .limit(500),
     ),
   );
   if (activityBatches.some((batch) => batch.error))
@@ -338,7 +339,49 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
     activityBatches.map(
       (b: { data: PropertyActivityRow[] | null }) => (b.data ?? []) as PropertyActivityRow[],
     ),
+    2000,
   );
+
+  // Property page: carry-over items, the onboarding project line, the last
+  // Home Profile edit and who added the home. Staff only.
+  const [carryRows, projectRow, lastEditRow, addedByRow] = staff
+    ? await Promise.all([
+        supabaseAdmin
+          .from("handoff_carryovers")
+          .select("id, title, category, owner_role, due_on, ticket_id, accepted_at, note")
+          .eq("property_id", propertyId)
+          .eq("is_demo", p.is_demo)
+          .order("accepted_at", { ascending: false })
+          .limit(200),
+        supabaseAdmin
+          .from("onboarding_projects")
+          .select("id, project_manager, target_handoff_on, status")
+          .eq("property_id", propertyId)
+          .order("created_at", { ascending: false })
+          .limit(1),
+        supabaseAdmin
+          .from("property_profile_edits")
+          .select("edited_at, edited_by_label")
+          .eq("property_id", propertyId)
+          .order("edited_at", { ascending: false })
+          .limit(1),
+        p.created_by
+          ? supabaseAdmin.from("profiles").select("full_name").eq("id", p.created_by).maybeSingle()
+          : Promise.resolve({ data: null, error: null }),
+      ])
+    : [
+        { data: [], error: null },
+        { data: [], error: null },
+        { data: [], error: null },
+        { data: null, error: null },
+      ];
+  const project = ((projectRow.data ?? []) as { id: string; project_manager: string | null; target_handoff_on: string | null; status: string }[])[0] ?? null;
+  let projectManagerName: string | null = null;
+  if (staff && project?.project_manager) {
+    const pm = await supabaseAdmin.from("profiles").select("full_name").eq("id", project.project_manager).maybeSingle();
+    projectManagerName = pm.data?.full_name ?? null;
+  }
+  const lastEdit = ((lastEditRow.data ?? []) as { edited_at: string; edited_by_label: string | null }[])[0] ?? null;
 
   const sections: HubSection[] = [
     {
@@ -712,6 +755,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
       onboardingStage: p.onboarding_stage,
       isDemo: p.is_demo,
       active: p.active,
+      ownerRezListingId: (p.ownerrez_property_id as string | null) ?? null,
       photoUrl: p.primary_photo_url,
       photoThumbUrl: p.primary_photo_thumb_url ?? p.primary_photo_url,
       photoSource: p.primary_photo_source,
@@ -903,7 +947,98 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
       reason: staff ? a.reason : null,
       at: a.created_at,
     })),
+    // Property page (staff only). Raw PID values for the Home Profile; codes
+    // are never part of this: they stay encrypted behind a logged Show.
+    profile: staff
+      ? {
+          raw: pickProfileRaw(p as unknown as Record<string, unknown>),
+          links: linkRows.map((l) => ({
+            id: l.id,
+            sourceField: (l as { source_field?: string | null }).source_field ?? null,
+            label: l.label ?? defaultLinkLabel(l.kind),
+            url: l.url,
+            kind: l.kind,
+          })),
+          system: {
+            address: [p.address_line1, p.unit, p.city, p.state, p.postal_code].filter(Boolean).join(", ") || null,
+            market: p.market,
+            gps: p.latitude != null && p.longitude != null ? `${p.latitude}, ${p.longitude}` : null,
+            status: p.lifecycle_status === "onboarding" ? "Onboarding" : p.lifecycle_status === "offboarded" ? "Offboarded" : "Operations",
+            handoff_date: fmtDate(p.handoff_accepted_at) ?? fmtDate(p.legacy_handoff_date),
+            last_edit: lastEdit?.edited_at ?? null,
+            last_edit_by: lastEdit?.edited_by_label ?? null,
+            added_by: (addedByRow.data as { full_name?: string | null } | null)?.full_name ?? null,
+            added_on: p.created_at,
+          },
+        }
+      : null,
+    carryovers: staff
+      ? ((carryRows.data ?? []) as {
+          id: string;
+          title: string;
+          category: string | null;
+          owner_role: string | null;
+          due_on: string | null;
+          ticket_id: string | null;
+          accepted_at: string | null;
+          note: string | null;
+        }[]).map((c) => ({
+          id: c.id,
+          title: c.title,
+          category: c.category,
+          ownerRole: c.owner_role,
+          dueOn: c.due_on,
+          ticketId: c.ticket_id,
+          acceptedAt: c.accepted_at,
+        }))
+      : [],
+    header: staff
+      ? {
+          handedOffOn: fmtDate(p.handoff_accepted_at) ?? fmtDate(p.legacy_handoff_date),
+          projectManager: projectManagerName,
+          handoffOn: project?.target_handoff_on ?? null,
+          hasProject: Boolean(project),
+        }
+      : null,
   };
+}
+
+const PROFILE_COLUMNS = [
+  "nickname",
+  "listing_alias",
+  "neighborhood",
+  "tier",
+  "furniture_package",
+  "bedrooms",
+  "bathrooms",
+  "max_guests",
+  "living_area_sqft",
+  "year_built",
+  "instant_book",
+  "facts",
+  "parking",
+  "access",
+  "utilities",
+  "hvac",
+  "systems",
+  "fireplace",
+  "storm_shelter",
+  "sprinklers",
+  "grounds",
+  "waste",
+  "pool_spa",
+  "hoa",
+  "amenities",
+  "security",
+  "warranty",
+  "compliance",
+] as const;
+
+/** Only the PID columns the Home Profile reads; nothing that could carry a code. */
+export function pickProfileRaw(p: Record<string, unknown>): Record<string, Json> {
+  const out: Record<string, Json> = {};
+  for (const k of PROFILE_COLUMNS) out[k] = (p[k] ?? null) as Json;
+  return out;
 }
 
 function f(

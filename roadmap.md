@@ -4,12 +4,13 @@
 - [x] Read only: every row pointing at each of the 18 listed (954 links; live-capture/references-before-2026-11-09.txt)
 - [x] Staged docs/pending/delete-test-logins/ (01 database step, 02 sign-in removal, practice block)
 - [x] Fresh backup 2026-11-09_023728Z (235 tables, 98,781 rows), Verify passed
-- [ ] Practice in a cancelled step, then real run, sign-in removal, read-only checks, register S6 line, README/checksums, suite/type/build
+- [x] Practice in a cancelled step, then real run (0308), sign-in removal 35 to 17, read-only checks, register S6 line, README/checksums, suite/type/build
 
 ## Nov 9 Properties list and property page (boards; register P1, P2, M2, A12) — TONIGHT, next after the sign-in step
-- [ ] Part 1 Properties list: title/tagline, Add a home (Onboarding + Admin), Admin bulk label panel, filters, cards with chips; remove Work Map tab/button, PORTFOLIO, Refresh, practice toggle, OwnerRez dropdown, Live label
-- [ ] Part 2 property page: header (one Back, title, line, chips, view toggle, More menu), banners, labels section (staged label table + rules, 30D FIRM import), 12 tabs per role, Home Profile (search, jump to, show empty, 10 sections, every PID label, logged code Show, edit with person/time)
-- [ ] Other tabs from real records (Nothing here yet when empty); tests; cancelled real DB check; staged SQL in docs/pending/property-page/; suite/type/build before and after; list judgement-placed labels
+- [x] Part 1 Properties list: title/tagline, Add a home (Onboarding + Admin), Admin bulk label panel, filters, cards with chips; remove Work Map tab/button, PORTFOLIO, Refresh, practice toggle, OwnerRez dropdown, Live label
+- [x] Part 2 property page: header (one Back, title, line, chips, view toggle, More menu), banners, labels section (staged label table + rules, 30D FIRM import), 12 tabs per role, Home Profile (search, jump to, show empty, 10 sections, every PID label, logged code Show, edit with person/time)
+- [x] Other tabs from real records (Nothing here yet when empty); tests; cancelled real DB check; staged SQL 0309-0311 in docs/pending/property-page/; suite/type/build; judgement-placed labels listed
+- [ ] Emily: answers on the open questions in the property page report (Add a home on the Onboarding page, House Items/Utilities/Inspections sources, judged labels)
 
 ## Nov 9 Record work as one flow (board; register T8-T11) — after the property page
 - [ ] Search every reader of the stored Ops/Maintenance label; report

@@ -38,15 +38,28 @@ export function LifecycleSwitcher({
   propertyName,
   lifecycleStatus,
   canManage,
+  open: openProp,
+  onOpenChange,
+  dialogOnly = false,
 }: {
   propertyId: string;
   propertyName: string;
   lifecycleStatus: string | null;
   canManage: boolean;
+  /** Opened from another control (the property page More menu). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Render only the move dialog, without the stage chip and button. */
+  dialogOnly?: boolean;
 }) {
   const qc = useQueryClient();
   const switchFn = useServerFn(switchPropertyLifecycleFn);
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = (v: boolean) => {
+    setOpenState(v);
+    onOpenChange?.(v);
+  };
   const [reason, setReason] = useState("");
 
   const current = lifecycleStatus ?? "active_operations";
@@ -75,11 +88,13 @@ export function LifecycleSwitcher({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-sm text-muted-foreground">Stage</span>
-      <StatusBadge tone={current === "onboarding" ? "waiting" : "resolved"}>
-        {LABEL[current] ?? current}
-      </StatusBadge>
-      {canManage ? (
+      {dialogOnly ? null : <span className="text-sm text-muted-foreground">Stage</span>}
+      {dialogOnly ? null : (
+        <StatusBadge tone={current === "onboarding" ? "waiting" : "resolved"}>
+          {LABEL[current] ?? current}
+        </StatusBadge>
+      )}
+      {canManage && !dialogOnly ? (
         <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
           <ArrowLeftRight className="size-4" aria-hidden="true" />
           Move to {LABEL[target]}
