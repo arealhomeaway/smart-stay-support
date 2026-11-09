@@ -30,6 +30,22 @@ import {
   type DatabaseCard,
   type DatabaseMode,
   type DbRow,
+  CLAIM_PERIOD_FILTER,
+  CLAIM_SORT_FILTER,
+  CLAIM_SORT_OPTIONS,
+  CLAIM_STATUS_FILTER,
+  CLAIM_STATUS_OPTIONS,
+  CLAIM_VIEW_DEFAULT,
+  MONTH_NAMES,
+  PERIOD_OPTIONS,
+  applyClaimView,
+  centralDay,
+  claimTotals,
+  claimTotalsLine,
+  type ClaimSortChoice,
+  type ClaimStatusChoice,
+  type ClaimView,
+  type PeriodKind,
 } from "@/lib/databases";
 import { databaseQueryKey, hasStore, loadDatabase, saveClaimOrRefund } from "@/lib/databases-data";
 
@@ -87,7 +103,13 @@ function DatabaseList({ card, mode, initialTerm }: { card: DatabaseCard; mode: E
     staleTime: 30_000,
   });
   const rows = data.data?.rows ?? [];
-  const shown = useMemo(() => applyList(rows, columns, term, chosen), [rows, columns, term, chosen]);
+  const isClaims = card.key === "claims";
+  const [view, setView] = useState<ClaimView>(CLAIM_VIEW_DEFAULT);
+  const shown = useMemo(() => {
+    const listed = applyList(rows, columns, term, chosen);
+    return isClaims ? applyClaimView(listed, view) : listed;
+  }, [rows, columns, term, chosen, isClaims, view]);
+  const totals = isClaims ? claimTotalsLine(claimTotals(shown)) : null;
 
   const filters: { name: string; options: readonly string[] }[] = [
     ...(card.filters ?? []).slice(0, 2).map((f) => ({ name: f, options: filterOptions(rows, columns, f) })),
@@ -169,11 +191,17 @@ function DatabaseList({ card, mode, initialTerm }: { card: DatabaseCard; mode: E
                       </select>
                     </label>
                   ))}
+                  {isClaims && <ClaimViewControls view={view} onChange={setView} />}
                 </div>
               )}
               <span className="text-[13px] text-muted-foreground" role="status">
                 {data.isPending && hasStore(card.key) ? "Loading…" : countLine(shown.length, rows.length)}
               </span>
+              {isClaims && !data.isPending && totals && (
+                <span data-claim-totals className="text-sm font-semibold">
+                  {totals}
+                </span>
+              )}
             </div>
 
             {data.error ? (
@@ -201,6 +229,124 @@ function DatabaseList({ card, mode, initialTerm }: { card: DatabaseCard; mode: E
         <span className="text-[13px] text-muted-foreground">{DATABASES_NO_DELETE}</span>
       </div>
     </div>
+  );
+}
+
+const SELECT_CLASS = "h-11 rounded-lg border border-input bg-background px-3 text-[15px] text-foreground";
+const LABEL_CLASS = "flex flex-col gap-1 text-[13px] text-muted-foreground";
+
+/** Claims and refunds: Period and Status beside Type, and the opened date sort. */
+function ClaimViewControls({ view, onChange }: { view: ClaimView; onChange: (v: ClaimView) => void }) {
+  const today = centralDay(new Date().toISOString())!;
+  const thisYear = Number(today.slice(0, 4));
+  const thisMonth = Number(today.slice(5, 7));
+  const years = Array.from({ length: thisYear - 2018 + 1 }, (_, i) => thisYear - i);
+  const p = view.period;
+  return (
+    <>
+      <label className={LABEL_CLASS}>
+        {CLAIM_PERIOD_FILTER}
+        <select
+          value={p.kind}
+          onChange={(e) => {
+            const kind = e.target.value as PeriodKind;
+            onChange({
+              ...view,
+              period: kind === "month_of" ? { kind, year: thisYear, month: thisMonth } : kind === "range" ? { kind, from: "", to: "" } : { kind },
+            });
+          }}
+          className={SELECT_CLASS}
+        >
+          {PERIOD_OPTIONS.map((o) => (
+            <option key={o.kind} value={o.kind}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className={LABEL_CLASS}>
+        {CLAIM_STATUS_FILTER}
+        <select
+          value={view.status}
+          onChange={(e) => onChange({ ...view, status: e.target.value as ClaimStatusChoice })}
+          className={SELECT_CLASS}
+        >
+          {CLAIM_STATUS_OPTIONS.map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
+        </select>
+      </label>
+      {p.kind === "month_of" && (
+        <>
+          <label className={LABEL_CLASS}>
+            Month
+            <select
+              value={p.month ?? thisMonth}
+              onChange={(e) => onChange({ ...view, period: { ...p, month: Number(e.target.value) } })}
+              className={SELECT_CLASS}
+            >
+              {MONTH_NAMES.map((m, i) => (
+                <option key={m} value={i + 1}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={LABEL_CLASS}>
+            Year
+            <select
+              value={p.year ?? thisYear}
+              onChange={(e) => onChange({ ...view, period: { ...p, year: Number(e.target.value) } })}
+              className={SELECT_CLASS}
+            >
+              {years.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          </label>
+        </>
+      )}
+      {p.kind === "range" && (
+        <>
+          <label className={LABEL_CLASS}>
+            From
+            <input
+              type="date"
+              value={p.from ?? ""}
+              onChange={(e) => onChange({ ...view, period: { ...p, from: e.target.value } })}
+              className={SELECT_CLASS}
+            />
+          </label>
+          <label className={LABEL_CLASS}>
+            To
+            <input
+              type="date"
+              value={p.to ?? ""}
+              onChange={(e) => onChange({ ...view, period: { ...p, to: e.target.value } })}
+              className={SELECT_CLASS}
+            />
+          </label>
+        </>
+      )}
+      <label className={LABEL_CLASS}>
+        {CLAIM_SORT_FILTER}
+        <select
+          value={view.sort}
+          onChange={(e) => onChange({ ...view, sort: e.target.value as ClaimSortChoice })}
+          className={SELECT_CLASS}
+        >
+          {CLAIM_SORT_OPTIONS.map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
+        </select>
+      </label>
+    </>
   );
 }
 
