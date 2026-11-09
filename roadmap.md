@@ -255,7 +255,11 @@
 - [x] Fix batch 4: automated sources unowned with Take it, four weekday triage windows off, overnight alert and Home wording, overnight clock setting on the settings page, overnight count on Home (applied as 0296, 0297 and one data change)
 - [x] Back up everything (Admin tools): full JSON backup to the private backups bucket, record table, Verify; first run 2026-11-08_214435Z
 - [x] View as in the Admin menu; Demo button removed from the top bar
-- [ ] Clean slate (register N8): staged in docs/pending/clean-slate, waits for Emily's go and a fresh checked backup
+- [x] Clean slate practice run (Nov 8): fresh backup verified, 01 + 01c + 02 run and cancelled, nothing kept
+- [ ] Clean slate real run (register N8): waits for Emily's go (needs a backup checked within 2 hours of the run)
+- [x] Team Queue Supervisor/Director alert emails sent the moment they are written (migration 0306); live on publish
+- [x] Both Demo controls removed; Today late windows and alert lines already match T7/T13
+- [ ] Breezeway Reported Issues as unowned Team B items: blocked, the synced Breezeway data has no report type, reporter or parent task to tell them apart
 - [ ] Week one: nightly schedule for Back up everything
 - [ ] Report only so far: 6 homes on old plans to Standard v3; unused old templates
 - [x] Team Queue matches the approved board (Pick up work groups, Take it, Accept/Decline, quiet Notion group, Everyone's work filters)
