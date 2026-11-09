@@ -17,7 +17,7 @@ import {
 } from "@/components/claims/ClaimList";
 import { useRole } from "@/hooks/useRole";
 import { useDemo } from "@/components/DemoProvider";
-import { financiallySettled } from "@/lib/claims";
+import { flagUnsettled } from "@/lib/claims";
 
 export const Route = createFileRoute("/_authenticated/claims/closed")({
   head: () => ({
@@ -50,7 +50,7 @@ function ClosedClaims() {
       ),
     [claims.data, demoMode],
   );
-  const unsettled = closed.filter((c) => !financiallySettled(c as never));
+  const unsettled = closed.filter((c) => flagUnsettled(c as never));
   const q = find.trim().toLowerCase();
   const rows = (onlyUnsettled ? unsettled : closed).filter((c) => {
     if (!q) return true;

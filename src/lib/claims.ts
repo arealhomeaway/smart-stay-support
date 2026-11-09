@@ -752,6 +752,16 @@ export function financiallySettled(c: MoneyLike): boolean {
   );
 }
 
+/**
+ * The Closed claims page "Financially unsettled" flag. A claim closed at import
+ * from Notion history is never counted as unsettled work (register N5); every
+ * other closed claim keeps the settlement rule above.
+ */
+export function flagUnsettled(c: MoneyLike & { incident_description?: string | null; closed_at?: string | null }): boolean {
+  if (isImportedHistoryClaim(c)) return false;
+  return !financiallySettled(c);
+}
+
 /** Maps the stored stage onto the seven guided steps without rewriting data. */
 export function guidedStep(c: MoneyLike): GuidedStep {
   switch (c.stage) {

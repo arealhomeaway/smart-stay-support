@@ -403,6 +403,18 @@ export type DbRow = {
   link?: DbLink | undefined;
   /** Claims and refunds only: what may change in the list. */
   edit?: ClaimEdit;
+  /** Claims and refunds only: open or closed, the original opened date and the money. */
+  claim?: ClaimFacts;
+};
+
+/** What the Status, Period, sort and totals line read from a claim or refund row. */
+export type ClaimFacts = {
+  kind: "claim" | "refund";
+  open: boolean;
+  /** The original opened date (an imported claim keeps its Notion created date). */
+  openedAt: string;
+  damages: number | null;
+  paidBack: number | null;
 };
 
 /** The values of a claim or refund that may change in the list. */
