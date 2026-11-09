@@ -301,3 +301,6 @@
 - [ ] Report only so far: 6 homes on old plans to Standard v3; unused old templates
 - [x] Team Queue matches the approved board (Pick up work groups, Take it, Accept/Decline, quiet Notion group, Everyone's work filters)
 - [ ] Team Queue: decisions open on All unclaimed meaning, Give it back for Notion takes, Departure Reviews block placement (waiting on Emily)
+
+## Nov 9 Notion dry run, time limited, read only (register N6) — LAST, after Databases
+- [ ] Connection check; field-only pass in pages of 100 (40 min Notion wait cap); counts; comments/files for 20 preview only; report
