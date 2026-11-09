@@ -132,7 +132,7 @@ describe("2. Property page photo header", () => {
     const header = page.slice(page.indexOf("function PropertyHeader"));
     expect(header).toContain("{p.photoUrl ? (");
     expect(header).toContain("<HomePhoto");
-    expect(header.indexOf("<HomePhoto")).toBeLessThan(header.indexOf("<h1"));
+    expect(header.indexOf("<h1")).toBeGreaterThan(header.indexOf("<HomePhoto"));
     // The stage chip and the other chips stay as built.
     expect(header).toContain("{stageLabel(p.lifecycleStatus)}</StatusBadge>");
   });
