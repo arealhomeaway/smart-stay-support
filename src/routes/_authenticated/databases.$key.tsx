@@ -102,7 +102,7 @@ function DatabaseList({ card, mode, initialTerm }: { card: DatabaseCard; mode: E
   const showWork = mode === "edit" && workTo && card.work && canOpen(workTo);
 
   return (
-    <div className="px-4 pb-16 pt-6 md:px-9 md:pt-7">
+    <div data-db="list" className="px-4 pb-16 pt-6 md:px-9 md:pt-7">
       <div className="flex max-w-[920px] flex-col gap-[18px]">
         <BackToDatabases />
         <div className="flex flex-wrap items-center justify-between gap-3">

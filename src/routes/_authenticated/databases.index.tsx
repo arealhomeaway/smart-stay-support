@@ -110,7 +110,7 @@ function DatabasesHub() {
   if (isLoading) return <p role="status" className="p-6">Loading…</p>;
 
   return (
-    <div className="px-4 pb-16 pt-6 md:px-9 md:pt-7">
+    <div data-db="hub" className="px-4 pb-16 pt-6 md:px-9 md:pt-7">
       <div className="flex max-w-[920px] flex-col gap-[18px]">
         <h1 className="m-0 text-3xl font-semibold">Databases</h1>
         <span className="text-[15px] text-muted-foreground">Everything we keep track of, in one place. Open one, or search them all.</span>
