@@ -95,6 +95,9 @@ beforeEach(async () => {
 });
 
 describe("one touch columns and the repeat setting", () => {
+  it("the applied migration is the staged file, byte for byte", () => {
+    expect(readFileSync("drizzle/migrations/0312_record_work_one_flow.sql", "utf8")).toBe(STEP);
+  });
   it("adds the problem type and one touch mark to home history, and the 3 / 90 setting", async () => {
     const cols = (await db.query("SELECT column_name, column_default FROM information_schema.columns WHERE table_name = 'property_activity_log' AND column_name IN ('problem_type_id','one_touch') ORDER BY 1")).rows;
     expect(cols.map((c) => c.column_name)).toEqual(["one_touch", "problem_type_id"]);
