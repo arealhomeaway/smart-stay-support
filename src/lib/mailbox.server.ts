@@ -707,7 +707,13 @@ export async function processMessage(
         conversationId: msg.conversationId ?? null,
         source,
       });
-      return { subject, from, outcome: "lead", recategorised: tagged };
+      return {
+        subject,
+        from,
+        outcome: "lead",
+        recategorised: tagged,
+        ...(isTest ? { reason: "test record" } : {}),
+      };
     }
 
     const result: IntakeResult = await createIntakeMatter(db, {
@@ -717,6 +723,7 @@ export async function processMessage(
       source: "email",
       externalId: msg.id,
       externalUrl: msg.webLink ?? null,
+      isDemo: isTest,
     });
     const tagged = await setCategories(msg.id, categoriesAfterCreate(msg.categories));
     await settleClaim(db, messageIds, {
@@ -734,6 +741,7 @@ export async function processMessage(
       ref: result.ref,
       priority: result.priority,
       recategorised: tagged,
+      ...(isTest ? { reason: "test record" } : {}),
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Intake failed";
