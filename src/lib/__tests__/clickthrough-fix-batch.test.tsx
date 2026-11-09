@@ -143,7 +143,7 @@ describe("3. Direct Bookings home cards show the photo", () => {
     const fn = read("lib/direct-bookings.functions.ts");
     expect(fn).toContain("photo: h.imageUrl ?? null,");
     const page = read("routes/_authenticated/direct-bookings.$requestId.tsx");
-    const cards = page.slice(page.indexOf('data-card="home"'), page.indexOf("function HomesMap"));
+    const cards = page.slice(page.indexOf('data-card="home"'), page.indexOf("function ReplySection"));
     expect(cards).toContain("<HomePhoto url={h.photo}");
     // Photo first, then number, address, facts, price, free from line and Pick, as built.
     const order = ["<HomePhoto", "{i + 1}", "{h.name}", "miles away", "a month", "{h.tag}", '"Pick"'].map((s) => cards.indexOf(s));
