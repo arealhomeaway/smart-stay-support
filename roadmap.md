@@ -256,6 +256,8 @@
 - [x] Back up everything (Admin tools): full JSON backup to the private backups bucket, record table, Verify; first run 2026-11-08_214435Z
 - [x] View as in the Admin menu; Demo button removed from the top bar
 - [x] Clean slate practice run (Nov 8): fresh backup verified, 01 + 01c + 02 run and cancelled, nothing kept
+- [x] Clean slate 01c now lists all 16 expenses; practice run 2 (Nov 9) with fresh verified backup, cancelled, nothing kept
+- [x] Handoff acceptance fix applied (migration 0307); cancelled tests with carry over, without carry over, and refusals passed
 - [ ] Clean slate real run (register N8): waits for Emily's go (needs a backup checked within 2 hours of the run)
 - [x] Team Queue Supervisor/Director alert emails sent the moment they are written (migration 0306); live on publish
 - [x] Both Demo controls removed; Today late windows and alert lines already match T7/T13
