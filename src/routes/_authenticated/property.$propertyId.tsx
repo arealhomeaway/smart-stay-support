@@ -1,4 +1,5 @@
 /**
+import { HomeRepeatFlags } from "@/components/work-entry/HomeRepeatFlags";
  * The property page: one home, organized like the Notion PID (register P1).
  *
  * Staff only. The server decides what each person may read; this file renders
@@ -615,6 +616,7 @@ function OperationsTab({ hub, canEdit }: { hub: Hub; canEdit: boolean }) {
   );
   return (
     <div className="space-y-4">
+      <HomeRepeatFlags propertyId={hub.property.id} />
       <ArrivalReadyCard propertyId={hub.property.id} />
       <OwnerRezListingCard propertyId={hub.property.id} listingId={hub.property.ownerRezListingId} canEdit={canEdit} />
       <SectionCard title="Breezeway work orders">
