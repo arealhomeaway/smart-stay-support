@@ -238,7 +238,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
         ? supabaseAdmin
             .from("property_external_links")
             .select(
-              "id, kind, label, url, context, staff_only, canonical, needs_replacement, source, note, as_of",
+              "id, kind, label, url, context, staff_only, canonical, needs_replacement, source, source_field, note, as_of",
             )
             .eq("property_id", propertyId)
         : Promise.resolve({ data: [], error: null }),
@@ -327,7 +327,8 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
         .eq("entity_type", scope.entityType)
         .in("entity_id", scope.entityIds)
         .order("created_at", { ascending: false })
-        .limit(25),
+        // The property page keeps the full history (last 30 days first).
+        .limit(500),
     ),
   );
   if (activityBatches.some((batch) => batch.error))
@@ -338,7 +339,49 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
     activityBatches.map(
       (b: { data: PropertyActivityRow[] | null }) => (b.data ?? []) as PropertyActivityRow[],
     ),
+    2000,
   );
+
+  // Property page: carry-over items, the onboarding project line, the last
+  // Home Profile edit and who added the home. Staff only.
+  const [carryRows, projectRow, lastEditRow, addedByRow] = staff
+    ? await Promise.all([
+        supabaseAdmin
+          .from("handoff_carryovers")
+          .select("id, title, category, owner_role, due_on, ticket_id, accepted_at, note")
+          .eq("property_id", propertyId)
+          .eq("is_demo", p.is_demo)
+          .order("accepted_at", { ascending: false })
+          .limit(200),
+        supabaseAdmin
+          .from("onboarding_projects")
+          .select("id, project_manager, target_handoff_on, status")
+          .eq("property_id", propertyId)
+          .order("created_at", { ascending: false })
+          .limit(1),
+        supabaseAdmin
+          .from("property_profile_edits")
+          .select("edited_at, edited_by_label")
+          .eq("property_id", propertyId)
+          .order("edited_at", { ascending: false })
+          .limit(1),
+        p.created_by
+          ? supabaseAdmin.from("profiles").select("full_name").eq("id", p.created_by).maybeSingle()
+          : Promise.resolve({ data: null, error: null }),
+      ])
+    : [
+        { data: [], error: null },
+        { data: [], error: null },
+        { data: [], error: null },
+        { data: null, error: null },
+      ];
+  const project = ((projectRow.data ?? []) as { id: string; project_manager: string | null; target_handoff_on: string | null; status: string }[])[0] ?? null;
+  let projectManagerName: string | null = null;
+  if (staff && project?.project_manager) {
+    const pm = await supabaseAdmin.from("profiles").select("full_name").eq("id", project.project_manager).maybeSingle();
+    projectManagerName = pm.data?.full_name ?? null;
+  }
+  const lastEdit = ((lastEditRow.data ?? []) as { edited_at: string; edited_by_label: string | null }[])[0] ?? null;
 
   const sections: HubSection[] = [
     {
