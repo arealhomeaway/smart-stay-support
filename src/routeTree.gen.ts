@@ -114,6 +114,7 @@ import { Route as ApiPublicHooksNightlyBackupRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksOwnerNotificationEmailRouteImport } from './routes/api/public/hooks/owner-notification-email'
 import { Route as ApiPublicHooksOwnerNotifyRouteImport } from './routes/api/public/hooks/owner-notify'
 import { Route as ApiPublicHooksQuarterlySchedulerRouteImport } from './routes/api/public/hooks/quarterly-scheduler'
+import { Route as ApiPublicHooksTeamQueueAlertEmailRouteImport } from './routes/api/public/hooks/team-queue-alert-email'
 import { Route as ApiPublicIntakeEmailRouteImport } from './routes/api/public/intake/email'
 import { Route as ApiPublicMarketingPhotosTokenRouteImport } from './routes/api/public/marketing-photos.$token'
 import { Route as ApiPublicSyncMailboxRouteImport } from './routes/api/public/sync/mailbox'
@@ -712,6 +713,12 @@ const ApiPublicHooksQuarterlySchedulerRoute =
     path: '/api/public/hooks/quarterly-scheduler',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksTeamQueueAlertEmailRoute =
+  ApiPublicHooksTeamQueueAlertEmailRouteImport.update({
+    id: '/api/public/hooks/team-queue-alert-email',
+    path: '/api/public/hooks/team-queue-alert-email',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicIntakeEmailRoute = ApiPublicIntakeEmailRouteImport.update({
   id: '/api/public/intake/email',
   path: '/api/public/intake/email',
@@ -846,6 +853,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/owner-notification-email': typeof ApiPublicHooksOwnerNotificationEmailRoute
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
+  '/api/public/hooks/team-queue-alert-email': typeof ApiPublicHooksTeamQueueAlertEmailRoute
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
   '/api/public/marketing-photos/$token': typeof ApiPublicMarketingPhotosTokenRoute
   '/api/public/sync/mailbox': typeof ApiPublicSyncMailboxRoute
@@ -951,6 +959,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/owner-notification-email': typeof ApiPublicHooksOwnerNotificationEmailRoute
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
+  '/api/public/hooks/team-queue-alert-email': typeof ApiPublicHooksTeamQueueAlertEmailRoute
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
   '/api/public/marketing-photos/$token': typeof ApiPublicMarketingPhotosTokenRoute
   '/api/public/sync/mailbox': typeof ApiPublicSyncMailboxRoute
@@ -1064,6 +1073,7 @@ export interface FileRoutesById {
   '/api/public/hooks/owner-notification-email': typeof ApiPublicHooksOwnerNotificationEmailRoute
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
+  '/api/public/hooks/team-queue-alert-email': typeof ApiPublicHooksTeamQueueAlertEmailRoute
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
   '/api/public/marketing-photos/$token': typeof ApiPublicMarketingPhotosTokenRoute
   '/api/public/sync/mailbox': typeof ApiPublicSyncMailboxRoute
@@ -1177,6 +1187,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/owner-notification-email'
     | '/api/public/hooks/owner-notify'
     | '/api/public/hooks/quarterly-scheduler'
+    | '/api/public/hooks/team-queue-alert-email'
     | '/api/public/intake/email'
     | '/api/public/marketing-photos/$token'
     | '/api/public/sync/mailbox'
@@ -1282,6 +1293,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/owner-notification-email'
     | '/api/public/hooks/owner-notify'
     | '/api/public/hooks/quarterly-scheduler'
+    | '/api/public/hooks/team-queue-alert-email'
     | '/api/public/intake/email'
     | '/api/public/marketing-photos/$token'
     | '/api/public/sync/mailbox'
@@ -1394,6 +1406,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/owner-notification-email'
     | '/api/public/hooks/owner-notify'
     | '/api/public/hooks/quarterly-scheduler'
+    | '/api/public/hooks/team-queue-alert-email'
     | '/api/public/intake/email'
     | '/api/public/marketing-photos/$token'
     | '/api/public/sync/mailbox'
@@ -1416,6 +1429,7 @@ export interface RootRouteChildren {
   ApiPublicHooksOwnerNotificationEmailRoute: typeof ApiPublicHooksOwnerNotificationEmailRoute
   ApiPublicHooksOwnerNotifyRoute: typeof ApiPublicHooksOwnerNotifyRoute
   ApiPublicHooksQuarterlySchedulerRoute: typeof ApiPublicHooksQuarterlySchedulerRoute
+  ApiPublicHooksTeamQueueAlertEmailRoute: typeof ApiPublicHooksTeamQueueAlertEmailRoute
   ApiPublicIntakeEmailRoute: typeof ApiPublicIntakeEmailRoute
   ApiPublicMarketingPhotosTokenRoute: typeof ApiPublicMarketingPhotosTokenRoute
   ApiPublicSyncMailboxRoute: typeof ApiPublicSyncMailboxRoute
@@ -2160,6 +2174,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksQuarterlySchedulerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/team-queue-alert-email': {
+      id: '/api/public/hooks/team-queue-alert-email'
+      path: '/api/public/hooks/team-queue-alert-email'
+      fullPath: '/api/public/hooks/team-queue-alert-email'
+      preLoaderRoute: typeof ApiPublicHooksTeamQueueAlertEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/intake/email': {
       id: '/api/public/intake/email'
       path: '/api/public/intake/email'
@@ -2507,6 +2528,8 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicHooksOwnerNotificationEmailRoute,
   ApiPublicHooksOwnerNotifyRoute: ApiPublicHooksOwnerNotifyRoute,
   ApiPublicHooksQuarterlySchedulerRoute: ApiPublicHooksQuarterlySchedulerRoute,
+  ApiPublicHooksTeamQueueAlertEmailRoute:
+    ApiPublicHooksTeamQueueAlertEmailRoute,
   ApiPublicIntakeEmailRoute: ApiPublicIntakeEmailRoute,
   ApiPublicMarketingPhotosTokenRoute: ApiPublicMarketingPhotosTokenRoute,
   ApiPublicSyncMailboxRoute: ApiPublicSyncMailboxRoute,

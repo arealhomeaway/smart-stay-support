@@ -2143,6 +2143,13 @@
       "when": 1794180551225,
       "tag": "0305_handoff_02_flag_snapshot_table",
       "breakpoints": true
+    },
+    {
+      "idx": 306,
+      "version": "7",
+      "when": 1794182265840,
+      "tag": "0306_alerts_email_team_queue_now",
+      "breakpoints": true
     }
   ]
 }

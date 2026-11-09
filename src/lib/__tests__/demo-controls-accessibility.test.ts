@@ -64,9 +64,24 @@ describe("Demo controls — accessibility", () => {
   });
 
   describe("navigation menu Demo item", () => {
-    it("is rendered in the app navigation, so it is reachable when collapsed", () => {
-      expect(shell).toContain("DemoSidebarItem");
-      expect(shell).toContain("<DemoSidebarItem />");
+    // Emily, Nov 8, 2026 (register N8): both remaining Demo entry controls are removed, the
+    // left menu item and the Demo entry in the Portals menu. The Leave demo banner stays so
+    // anyone still in demo mode can leave. This replaces the old "is rendered" assertion.
+    it("is no longer rendered in the app navigation", () => {
+      expect(shell).not.toContain("<DemoSidebarItem />");
+      expect(shell).not.toContain("DemoSidebarItem,");
+    });
+
+    it("the Portals menu no longer offers Demo", () => {
+      const portals = block("PortalSwitcher");
+      expect(portals).not.toContain("enterDemo");
+      expect(portals).not.toContain("Leave demo");
+      expect(portals).not.toContain("Try any portal you have access to");
+    });
+
+    it("the demo banner still lets anyone in demo mode leave", () => {
+      expect(shell).toContain("ViewAsBanner");
+      expect(banner()).toContain("exitDemo()");
     });
 
     it("has an accessible name and a tooltip for the collapsed icon-only state", () => {

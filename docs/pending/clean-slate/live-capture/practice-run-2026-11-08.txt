@@ -1,0 +1,41 @@
+Clean slate practice run, Nov 8, 2026, about 6:05 PM Central. Cancelled at the end; nothing kept.
+Backup before it: 2026-11-08_235938Z, 235 tables, 99,403 rows, Verify passed (6:02 PM Central).
+Ran in one step: 01, then 01c, then 02. Never ran 01b. Sign-ins (02b) not touched.
+Only the tables below changed. Every other table, including homes, owners, vendors, settings,
+schedule, routines, templates, onboarding, Breezeway mirror and the integration log, kept its count.
+
+table: before -> after 01 -> after 01c -> after 02
+approvals: 21 -> 20 -> 20 -> 20
+audit_log: 2748 -> 2748 -> 2748 -> 2764   (16 lines added: the role removals are recorded)
+claim_activity: 9 -> 9 -> 0 -> 0
+claim_waivers: 2 -> 2 -> 0 -> 0
+claims: 9 -> 9 -> 0 -> 0
+documents: 324 -> 323 -> 318 -> 318   (file records only; stored files stay)
+escalations: 1 -> 0 -> 0 -> 0
+expense_events: 117 -> 124 -> 63 -> 63   (7 unlink lines added by 01, then 61 lines of the 9 expenses)
+expense_links: 13 -> 6 -> 1 -> 1
+expense_recoveries: 5 -> 5 -> 0 -> 0
+expenses: 16 -> 16 -> 7 -> 7   (7 demo expenses kept, now unlinked)
+guest_recovery: 1 -> 0 -> 0 -> 0
+handoffs: 1 -> 0 -> 0 -> 0
+owner_notifications: 184 -> 184 -> 184 -> 156
+owner_review_properties: 166 -> 137 -> 137 -> 137
+owner_reviews: 216 -> 187 -> 187 -> 187   (29 automatic opportunities from tickets)
+profiles: 35 -> 35 -> 35 -> 17
+program_members: 8 -> 8 -> 8 -> 6
+staff_notifications: 584 -> 501 -> 481 -> 443
+statement_dispositions: 12 -> 12 -> 8 -> 8
+ticket_activity: 158 -> 0 -> 0 -> 0
+ticket_troubleshooting_answers: 3 -> 0 -> 0 -> 0
+tickets: 42 -> 0 -> 0 -> 0
+user_roles: 34 -> 34 -> 34 -> 18
+vendor_org_members: 1 -> 1 -> 1 -> 0
+work_items: 1921 -> 1879 -> 1876 -> 1876
+work_order_events: 23 -> 0 -> 0 -> 0
+work_order_vendor_candidates: 3 -> 0 -> 0 -> 0
+work_orders: 4 -> 0 -> 0 -> 0
+Delete blocks switched off at the end of the practice: none.
+
+After the cancel (live check): tickets 42, claims 9, expenses 16, profiles 35, user_roles 34,
+work_orders 4, expense_events 117, audit_log 2748, owner_reviews 216, documents 324; no delete
+block off. Nothing changed.
