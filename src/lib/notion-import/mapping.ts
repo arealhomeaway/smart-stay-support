@@ -462,6 +462,11 @@ export function mapComment(c: { id: string; created_time: string; created_by?: {
   };
 }
 
+/** The page notes as one comment. They carry no date of their own, so they take the ticket's Notion created date. */
+export function mapPageNotes(pageId: string, body: string, ticketCreatedAt: string | null | undefined) {
+  return { external_id: `body:${pageId}`, created_at: ticketCreatedAt ?? "", author: "Notion page notes", body };
+}
+
 export function safeFileName(name: string): string {
   return name.replace(/[^\w.\-]+/g, "_").slice(-120) || "file";
 }

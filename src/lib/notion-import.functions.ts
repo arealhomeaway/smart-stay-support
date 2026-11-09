@@ -18,6 +18,7 @@ import {
   IMPORT_GROUP_LABELS,
   mapComment,
   mapNotionPage,
+  mapPageNotes,
   relationIds,
   safeFileName,
   text,
@@ -201,7 +202,8 @@ async function withHomeCache<T>(ctx: Ctx, fn: () => Promise<T>): Promise<T> {
 
 // ---------- comments and files for one ticket ----------
 
-async function copyHistory(ctx: Ctx, ticketId: string, pageId: string, result: BatchResult, onlyKeys?: Set<string>) {
+/** notesAt: the ticket's Notion created date, used for the page notes, which carry no date of their own. */
+async function copyHistory(ctx: Ctx, ticketId: string, pageId: string, result: BatchResult, onlyKeys?: Set<string>, notesAt = "") {
   const srv = await import("./notion-import/notion.server");
   const db = await admin();
   const comments = await srv.listComments(pageId);
@@ -209,7 +211,7 @@ async function copyHistory(ctx: Ctx, ticketId: string, pageId: string, result: B
   if (!onlyKeys) {
     const rows = [];
     for (const c of comments) rows.push(mapComment(c, await srv.notionUserName(c.created_by?.id)));
-    if (body.text.trim()) rows.push({ external_id: `body:${pageId}`, created_at: "", author: "Notion page notes", body: body.text });
+    if (body.text.trim()) rows.push(mapPageNotes(pageId, body.text, notesAt));
     if (rows.length) {
       const inserted = await rpc(ctx)("import_notion_ticket_comments", { p_ticket_id: ticketId, p_comments: rows });
       if (inserted.error) throw new Error(NOT_READY.test(inserted.error.message) ? READY_MESSAGE : inserted.error.message);
@@ -316,7 +318,7 @@ async function runOneBatch(ctx: Ctx, state: RunnerState): Promise<{ result: Batc
         if (r?.action === "created" || r?.action === "updated") result.counts.done++;
         else result.counts.skipped++;
       }
-      if (ticketId) await copyHistory(ctx, ticketId, p.id, result);
+      if (ticketId) await copyHistory(ctx, ticketId, p.id, result, undefined, String(out.ticket.reported_at ?? ""));
     } catch (e) {
       const message = errText(e);
       if (message === READY_MESSAGE) throw e;
@@ -506,6 +508,49 @@ export const notionImportRetryFiles = createServerFn({ method: "POST" })
     };
     await saveState(ctx, next);
     return { copied: result.files, stillFailing: result.failedFiles.length, left: next.failedFiles.length };
+  });
+
+/**
+ * Copies comments and files again for listed failures whose ticket already
+ * exists in Resolve. Never creates or changes a ticket; comments and files
+ * already copied are skipped by their Notion IDs. Cleared failures leave the list.
+ */
+export const notionImportRetryHistory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context: ctx }) => {
+    await assertAdmin(ctx);
+    const state = await loadState(ctx);
+    const s = effectiveStatus(state, Date.now());
+    if (s === "running" || s === "stopping") throw new Error("Wait for the run to stop first.");
+    const pageIds = [...new Set(state.failures.map((f) => f.pageId))].slice(0, 3);
+    const { data: tickets, error } = pageIds.length
+      ? await ctx.supabase
+          .from("tickets")
+          .select("id, external_id, reported_at")
+          .eq("external_source", "notion")
+          .in("external_id", pageIds)
+      : { data: [] as { id: string; external_id: string | null; reported_at: string | null }[], error: null };
+    if (error) throw new Error(error.message);
+    const result = emptyBatch();
+    const cleared = new Set<string>();
+    const stillFailing: { pageId: string; error: string }[] = [];
+    for (const t of tickets ?? []) {
+      if (!t.external_id) continue;
+      try {
+        await copyHistory(ctx, t.id, t.external_id, result, undefined, String(t.reported_at ?? ""));
+        cleared.add(t.external_id);
+      } catch (e) {
+        stillFailing.push({ pageId: t.external_id, error: errText(e) });
+      }
+    }
+    const fresh = await loadState(ctx);
+    const next: RunnerState = {
+      ...fresh,
+      failures: fresh.failures.filter((f) => !cleared.has(f.pageId)),
+      failedFiles: [...fresh.failedFiles, ...result.failedFiles],
+    };
+    await saveState(ctx, next);
+    return { comments: result.comments, files: result.files, cleared: cleared.size, stillFailing, noTicket: pageIds.length - (tickets ?? []).length };
   });
 
 export type SampleRow = {

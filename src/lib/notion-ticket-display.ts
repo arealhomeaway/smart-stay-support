@@ -51,6 +51,34 @@ export function isQuietNotion(t: NotionTicketLike, now: number = Date.now()): bo
   return s === "recent_open" || s === "older_open" || s === "historical";
 }
 
+/** The one line an untouched open import shows instead of its clocks (ticket drawer and page). */
+export const QUIET_IMPORT_LINE = "Imported from Notion. No clock.";
+
+/** The plain line for an open import nobody has taken or reopened yet; null otherwise. */
+export function quietImportLine(t: NotionTicketLike, now: number = Date.now()): string | null {
+  const s = notionTicketState(t, now);
+  return s === "recent_open" || s === "older_open" ? QUIET_IMPORT_LINE : null;
+}
+
+/**
+ * The clocks a ticket shows. While an import is untouched it shows none: no
+ * minutes, no response clock, no escalation. Once taken or reopened it is live
+ * and its clocks start from that moment (reopen_notion_ticket writes fresh due
+ * times and last_reopened_at). Every other ticket is returned unchanged.
+ */
+export function visibleClocks<S extends { response: unknown; action: unknown; escalation: unknown; breached: boolean }>(
+  t: NotionTicketLike,
+  sla: S,
+  now: number = Date.now(),
+): S {
+  return isQuietNotion(t, now) ? { ...sla, response: null, action: null, escalation: null, breached: false } : sla;
+}
+
+/** An untouched import never shows the Acknowledge step; Take this ticket starts it instead. */
+export function hidesQuietAction(t: NotionTicketLike, actionId: string | null | undefined, now: number = Date.now()): boolean {
+  return actionId === "acknowledge" && isQuietNotion(t, now);
+}
+
 /** Rows that count as Resolve work: queues, My work, counts, Oversight, rates. */
 export function withoutQuietNotion<T>(rows: T[], now: number = Date.now()): T[] {
   return rows.filter((r) => !isQuietNotion(r as unknown as NotionTicketLike, now));

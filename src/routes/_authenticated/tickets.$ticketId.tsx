@@ -93,7 +93,7 @@ import { PersonChip } from "@/components/PersonAvatar";
 import { stateChip } from "@/lib/semantic";
 import { Badge } from "@/components/ui/badge";
 import { IMPORT_HOLD_LABELS, isImportHeld, type ImportHold } from "@/lib/import-hold";
-import { activityAuthorLabel, claimStepsAvailable, cleanNotionText, notionBadge, parseNotionBlock, showsAssignee } from "@/lib/notion-ticket-display";
+import { activityAuthorLabel, claimStepsAvailable, cleanNotionText, hidesQuietAction, notionBadge, parseNotionBlock, quietImportLine, showsAssignee, visibleClocks } from "@/lib/notion-ticket-display";
 import { NotionImportBlock } from "@/components/tickets/NotionImportBlock";
 import { ReopenTicketDialog } from "@/components/tickets/ReopenTicketDialog";
 import { REOPEN_COPY, reopenPathFor, type ReopenTicketLike } from "@/lib/ticket-reopen";
@@ -469,7 +469,9 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     nextArrival: occupancy.nextArrival ?? null,
   };
   const meta = priorityMeta(ticket.priority);
-  const sla = slaState(ticket);
+  // An untouched Notion import shows no clocks, minutes or escalation (register N4, T7).
+  const sla = visibleClocks(ticket, slaState(ticket));
+  const quietLine = quietImportLine(ticket);
   // The requirement, scoped to this scenario: a porch railing never has to
   // certify every smoke and CO device in the home.
   const requiredEvidence = scopedClosureEvidence(workType?.required_closure_evidence, {
@@ -957,7 +959,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
       Boolean(branches?.makeRightOpen) ||
       (Boolean((ticket as { guest_recovery_needed?: boolean | null }).guest_recovery_needed) && !activeBranch.recovery),
   });
-  const doNowDue = closed
+  const doNowDue = closed || quietLine
     ? null
     : dueInLabel(
         doThisNowDueAt({
@@ -1242,6 +1244,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
           <div className="space-y-4">
             <StepTracker tracker={tracker} />
             <DoThisNow due={doNowDue}>
+              {quietLine && <p className="text-sm text-muted-foreground">{quietLine}</p>}
               {sla.escalation && (
           <div className="flex items-start gap-3 rounded-lg border border-danger/40 bg-danger/10 p-4">
             <BellRing className="mt-0.5 size-5 shrink-0 text-danger" />
@@ -1359,7 +1362,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                     )
                   }
                 >
-                  {currentAction && !(stage === "verify" && currentAction.id === "guest_update") ? (
+                  {currentAction && !(stage === "verify" && currentAction.id === "guest_update") && !hidesQuietAction(ticket, currentAction.id) ? (
                 <div className="mt-2">
                   <CurrentActionCard
                     ticketId={ticketId}
@@ -1729,6 +1732,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                       Response
                     </p>
                     <div className="flex flex-wrap gap-x-3">
+                      {quietLine ? <span className="text-muted-foreground">{quietLine}</span> : null}
                       <ClockText state={sla.response} />
                       <ClockText state={sla.action} />
                     </div>
