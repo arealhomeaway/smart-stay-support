@@ -9,6 +9,7 @@ import {
   CircleHelp,
   ClipboardList,
   Gauge,
+  Database,
   HardHat,
   History,
   Home,
