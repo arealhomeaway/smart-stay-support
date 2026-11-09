@@ -17350,6 +17350,7 @@ export type Database = {
         Returns: undefined
       }
       cleaner_verify_cron_token: { Args: { _token: string }; Returns: boolean }
+      clear_email_intake_test_records: { Args: never; Returns: Json }
       close_owner_followup: { Args: { _task_id: string }; Returns: undefined }
       close_owner_opportunity: {
         Args: {
@@ -17611,6 +17612,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      email_intake_sweep_job: { Args: never; Returns: Json }
       enroll_active_owner: {
         Args: { _owner_user_id: string; _property_id: string }
         Returns: Json
@@ -18733,6 +18735,7 @@ export type Database = {
         Args: { _on: boolean; _reason: string; _user: string }
         Returns: undefined
       }
+      set_email_intake: { Args: { _enabled: boolean }; Returns: Json }
       set_guest_rating_channels: {
         Args: { _channels: string[] }
         Returns: Json
