@@ -1,0 +1,32 @@
+Clean slate follow-up, Nov 9, 2026 (UTC). Emily's answers to the real run report: 1 option 2,
+2 yes, 3 leave the demo alert setting.
+
+Before (read only, 01:41 UTC)
+  sign-ins of the 18: 18 exist, addresses as expected, 14 blocked, 4 not blocked
+    (d1dafc2e QA Kati, 8fac5aa5 QA Micah, f8a9d111 Avery Lindqvist (demo owner), eeaf39c4 QA Signup Test)
+  tickets 0, profiles 17, role rows 18, staff alerts 445
+  alerts addressed to a removed account 2 (6a8f02f0, a0044d1d; both demo, email skipped, made 01:05 UTC)
+  open follow-ups 6, of them 2 assigned to the removed QA Kati account (afb3bf33, aa1fda64; both demo)
+  latest backup 2026-11-09_005832Z finished 00:59:32 UTC, Verify passed
+
+02c_block_test_logins.ts (01:42 UTC), sha256 29819e79...a53207
+  d1dafc2e blocked, 8fac5aa5 blocked, f8a9d111 blocked, eeaf39c4 blocked
+  read back: blocked 18 of 18 (each until 2126); no sign-in deleted
+
+03_close_demo_followups.sql (01:43 UTC), sha256 c1625ae9...4203db, run byte for byte
+  afb3bf33 closed 01:43:18, aa1fda64 closed 01:43:18, note "Closed in the clean slate: the assigned
+  test account was removed"; alerts 6a8f02f0 and a0044d1d deleted
+
+After (read only)
+  staff alerts 443 (the real count predicted by the run)
+  alerts addressed to a removed account 0; open follow-ups assigned to a removed account 0
+  profiles of the 18: 0; role rows of the 18: 0; program memberships of the 18: 0
+  homeowner alerts for the 18: 0; staff alerts waiting to be emailed with no profile: 0
+  staff email reads the address from the profile, so none of the 18 can be emailed by Resolve;
+  the two demo homeowner programs that still name a test owner are demo, and demo homeowner
+  alerts never leave the app (block_demo_owner_notification_delivery)
+  the demo alert recipients setting is unchanged (answer 3)
+
+Known: both demo onboarding projects still name QA Kati as Project Manager. A new demo follow-up
+is made only if a demo item there falls behind after 01:43 UTC; it would be assigned to the
+removed account again. Not changed (not part of the answer).
