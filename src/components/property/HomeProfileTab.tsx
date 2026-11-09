@@ -6,7 +6,7 @@
  * never a code. Editing saves through one database function with the person
  * and the time; codes save through the existing credential path.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -354,7 +354,7 @@ function ProfileCard({
   canManageCodes: boolean;
   focusKey: string | null;
   /** Shown at the top of the open card (the Pending codes line in Entry & Access Details). */
-  extra?: React.ReactNode;
+  extra?: ReactNode;
 }) {
   const qc = useQueryClient();
   const reveal = useServerFn(revealCredentialFn);
