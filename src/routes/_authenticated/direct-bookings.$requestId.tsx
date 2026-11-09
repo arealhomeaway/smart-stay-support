@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { RequireCapability } from "@/components/RequireCapability";
 import { StatusBadge } from "@/components/ui/status";
@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { HomePhoto } from "@/components/property/HomePhoto";
+import { SearchMap } from "@/components/direct-bookings/SearchMap";
+import { MAP_COPY, noLocationLine, splitMappable } from "@/lib/search-map";
 import {
   checkDirectBookingApprovals,
   checkDirectBookingPartnerReply,
@@ -599,6 +601,29 @@ function PickHomes({ d, editable, picked, setPicked }: { d: Detail; editable: bo
   const homes = data && data.ok ? data.homes : [];
   const shown = homes.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
   const full = picked.length >= MAX_HOMES;
+  // Map and cards: a pin tap lights up its card, a card's number centers its pin.
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [focus, setFocus] = useState<{ id: string; nonce: number } | null>(null);
+  const cardRefs = useRef(new Map<string, HTMLDivElement>());
+  const mapWrap = useRef<HTMLDivElement>(null);
+  const pickedIds = picked.map((p) => p.id).join("|");
+  const numbered = useMemo(() => shown.map((h, i) => ({ h, number: i + 1 })), [shown]);
+  const pins = useMemo(
+    () =>
+      splitMappable(numbered.map(({ h, number }) => ({ id: h.id, number, lat: h.lat, lng: h.lng, address: h.name, distanceMiles: h.distanceMiles, picked: pickedIds.split("|").includes(h.id) }))).onMap,
+    [numbered, pickedIds],
+  );
+  const offMapLine = noLocationLine(numbered.filter(({ h }) => !Number.isFinite(h.lat) || !Number.isFinite(h.lng)).map(({ number }) => number));
+  const placeLabel = (data && data.ok && data.addressGiven ? d.lead.near_address : d.lead.search_region) || "Search place";
+  const showCard = (id: string) => {
+    setHighlightedId(id);
+    cardRefs.current.get(id)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  };
+  const showPin = (id: string) => {
+    setHighlightedId(id);
+    setFocus({ id, nonce: Date.now() });
+    mapWrap.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  };
   const toggle = (h: Home) => {
     if (picked.some((p) => p.id === h.id)) setPicked(picked.filter((p) => p.id !== h.id));
     else if (!full) setPicked([...picked, h]);
@@ -689,6 +714,11 @@ function PickHomes({ d, editable, picked, setPicked }: { d: Detail; editable: bo
                       {h.rent.ok ? `${money(h.rent.monthly)} a month · ${money(h.rent.nightly)} a night` : h.rent.reason}
                     </span>
                     <span className={cn("text-xs", h.shortStays ? "text-amber" : "text-sage")}>{h.tag}</span>
+                    {canMap ? (
+                      <Button type="button" variant="link" className="h-11 self-start px-0 text-primary" onClick={() => showPin(h.id)}>
+                        {MAP_COPY.showOnMap}
+                      </Button>
+                    ) : null}
                   </div>
                   <Button
                     variant={on ? "default" : "outline"}
@@ -707,49 +737,6 @@ function PickHomes({ d, editable, picked, setPicked }: { d: Detail; editable: bo
         </div>
       ) : null}
     </Section>
-  );
-}
-
-/**
- * The search map: a dashed ring for the search distance, a black dot for the
- * search location and numbered pins matching the numbered cards.
- */
-function HomesMap({ center, homes, picked, distance, onPick }: { center: { lat: number; lng: number }; homes: Home[]; picked: string[]; distance: number; onPick: (h: Home) => void }) {
-  const milesPerLng = 69 * Math.cos((center.lat * Math.PI) / 180);
-  const clamp = (n: number) => Math.min(95, Math.max(5, n));
-  // The ring is 80% of the square, so its radius (40%) is the search distance.
-  const pos = (h: Home) => ({
-    x: clamp(50 + (((h.lng - center.lng) * milesPerLng) / distance) * 40),
-    y: clamp(50 - (((h.lat - center.lat) * 69) / distance) * 40),
-  });
-  return (
-    <div aria-label="Map of available homes" className="relative h-[340px] overflow-hidden rounded-xl border border-border bg-secondary/60">
-      <div className="absolute inset-y-0 left-1/2 aspect-square h-full -translate-x-1/2">
-        <div className="absolute left-[10%] top-[10%] h-[80%] w-[80%] rounded-full border-2 border-dashed border-primary opacity-50" />
-        <div className="absolute left-1/2 top-1/2 -ml-[7px] -mt-[7px] size-3.5 rounded-full border-2 border-background bg-foreground" />
-        {homes.map((h, i) => {
-          if (!Number.isFinite(h.lat) || !Number.isFinite(h.lng)) return null;
-          const p = pos(h);
-          const on = picked.includes(h.id);
-          return (
-            <button
-              key={h.id}
-              type="button"
-              aria-label={`Home ${i + 1}: ${h.name}`}
-              onClick={() => onPick(h)}
-              style={{ left: `${p.x}%`, top: `${p.y}%` }}
-              className={cn(
-                "absolute -ml-[17px] -mt-[17px] size-[34px] rounded-full border-2 border-background text-[13px] font-bold shadow",
-                on ? "bg-primary text-primary-foreground" : "bg-card text-primary",
-              )}
-            >
-              {i + 1}
-            </button>
-          );
-        })}
-      </div>
-      <span className="absolute bottom-2 left-2.5 text-xs text-muted-foreground">{DB_COPY.mapLegend}</span>
-    </div>
   );
 }
 
