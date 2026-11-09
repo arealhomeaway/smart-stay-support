@@ -12,9 +12,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-export function ActualClosingCorrection({ propertyId }: { propertyId: string }) {
+export function ActualClosingCorrection({
+  propertyId,
+  startOpen = false,
+  onDone,
+}: {
+  propertyId: string;
+  /** Opened from the property page More menu: show the form straight away. */
+  startOpen?: boolean;
+  onDone?: () => void;
+}) {
   const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const [open, setOpenState] = useState(startOpen);
+  const setOpen = (v: boolean) => {
+    setOpenState(v);
+    if (!v) onDone?.();
+  };
   const [date, setDate] = useState("");
   const [reason, setReason] = useState("");
 

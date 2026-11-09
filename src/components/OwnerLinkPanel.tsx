@@ -25,11 +25,23 @@ import { linkPropertyOwnerFn, searchOwnerRecordsFn } from "@/lib/owner-link.func
 export function OwnerLinkPanel({
   propertyId,
   hasOwner,
+  open: openProp,
+  onOpenChange,
+  hideTrigger = false,
 }: {
   propertyId: string;
   hasOwner: boolean;
+  /** Opened from another control (the property page More menu). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = (v: boolean) => {
+    setOpenState(v);
+    onOpenChange?.(v);
+  };
   const [mode, setMode] = useState<"existing" | "new">("existing");
   const [q, setQ] = useState("");
   const [form, setForm] = useState({ name: "", email: "", phone: "", city: "", state: "" });
@@ -77,11 +89,13 @@ export function OwnerLinkPanel({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant={hasOwner ? "outline" : "default"} size="sm">
-          {hasOwner ? "Change owner of record" : "Link owner of record"}
-        </Button>
-      </DialogTrigger>
+      {hideTrigger ? null : (
+        <DialogTrigger asChild>
+          <Button variant={hasOwner ? "outline" : "default"} size="sm">
+            {hasOwner ? "Change owner of record" : "Link owner of record"}
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Owner of record</DialogTitle>

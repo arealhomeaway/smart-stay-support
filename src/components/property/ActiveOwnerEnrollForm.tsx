@@ -35,10 +35,14 @@ export const activeOwnerDetailsOk = (name: string, email: string) =>
   name.trim().length >= 2 && /\S+@\S+\.\S+/.test(email.trim());
 const STEP_NAMES = { account: "Homeowner login", enrollment: "Program and home linked", closing: "Closing date saved",
   activation: "Program active", onboarding: "Onboarding Opportunities released", operating: "Operating Opportunities released", welcome: "Welcome email" };
-export function ActiveOwnerEnrollForm({ propertyId, propertyName, finishing = false, showTrigger = true, onDone }: {
+export function ActiveOwnerEnrollForm({ propertyId, propertyName, finishing = false, showTrigger = true, onDone, open: openProp, onOpenChange }: {
   propertyId: string; propertyName: string; initialName?: string; initialEmail?: string; finishing?: boolean; showTrigger?: boolean; onDone?: () => void;
+  /** Opened from another control (the property page More menu). */
+  open?: boolean; onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = (v: boolean) => { setOpenState(v); onOpenChange?.(v); };
   const load = useServerFn(activeOwnerEnrollmentContext);
   const context = useQuery({ queryKey: ["active-owner-enrollment-context", propertyId], enabled: open,
     queryFn: () => load({ data: { propertyId } }) });
