@@ -1,3 +1,5 @@
+import { EmailTestChip } from "@/components/EmailTestChip";
+import { isEmailTestLead } from "@/lib/email-intake";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -206,6 +208,7 @@ function DirectBookingsPage() {
               <div className="flex min-w-0 flex-[1_1_520px] flex-col gap-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <strong className="text-[17px]">{partnerOf(r)}</strong>
+                  {isEmailTestLead(r) ? <EmailTestChip /> : null}
                   <StatusBadge tone={chip.tone} className="text-[13px] font-semibold">{chip.text}</StatusBadge>
                 </div>
                 <span className="text-[15px]">{summaryLine(r)}</span>

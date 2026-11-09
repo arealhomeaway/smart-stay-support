@@ -1,3 +1,5 @@
+import { EmailTestChip } from "@/components/EmailTestChip";
+import { isEmailTestTicket } from "@/lib/email-intake";
 import { formatPropertyLabel } from "@/lib/property-label";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -955,6 +957,7 @@ function TeamQueuePage() {
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="numeric text-[13px] text-muted-foreground">#{t.ref}</span>
                           <span className="font-bold text-[15px]">{t.title}</span>
+                          {isEmailTestTicket(t) ? <EmailTestChip /> : null}
                           <QueueChip className={urgencyChipClass(priority)}>{urgencyName(priority)}</QueueChip>
                         </div>
                         <p className="text-[13px] text-muted-foreground">
