@@ -49,6 +49,7 @@ import {
   resumeJob,
   retryDelayMs,
   startJob,
+  ticketForWrite,
   type BatchResult,
   type FailedFile,
   type RunnerState,
@@ -311,7 +312,7 @@ async function runOneBatch(ctx: Ctx, state: RunnerState): Promise<{ result: Batc
       if (plan === "keep_live" || plan === "unchanged") {
         result.counts.skipped++;
       } else {
-        const { data, error } = await rpc(ctx)("import_notion_ticket", { p: out.ticket });
+        const { data, error } = await rpc(ctx)("import_notion_ticket", { p: ticketForWrite(plan, job.group, out.ticket) });
         if (error) throw new Error(NOT_READY.test(error.message) ? READY_MESSAGE : error.message);
         const r = data as { action?: string; ticket_id?: string } | null;
         ticketId = r?.ticket_id ?? ticketId;
