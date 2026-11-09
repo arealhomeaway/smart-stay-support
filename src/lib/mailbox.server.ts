@@ -869,6 +869,12 @@ export async function syncTerminalStates(
   for (const event of events) {
     if (closed + reopened >= limit) break;
     if (!event.entity_id) continue;
+    // A record that no longer exists (removed by a clean up) is never re-tagged.
+    const live =
+      event.entity_type === "lead"
+        ? leadStage.has(event.entity_id)
+        : ticketStatus.has(event.entity_id);
+    if (!live) continue;
     // Both Converted and Lost are settled work: Outlook only answers "is this
     // still open?", and the reason lives in Resolve where anyone would look.
     const settled =
@@ -930,8 +936,37 @@ export async function syncTerminalStates(
   return { closed, reopened };
 }
 
-/** Whether a retag retry settled the message, and how. */
-export type RetryOutcome = "retagged" | "cleared" | "failed";
+/**
+ * Whether a retag retry settled the message, and how. `no_record` means the
+ * Ticket, request or filed homeowner reply no longer exists, so the message is
+ * left as it is and the retry marker is retired.
+ */
+export type RetryOutcome = "retagged" | "cleared" | "failed" | "no_record";
+
+/** Marker left on a row whose record was removed: never re-tagged. */
+export const RECORD_REMOVED = "record removed; not re-tagged";
+
+/** True when the Ticket or request a mailbox row points at still exists. */
+export async function recordIsLive(
+  db: Db,
+  entityType: string | null | undefined,
+  entityId: string | null | undefined,
+): Promise<boolean> {
+  if (!entityId) return false;
+  const table = entityType === "lead" ? "leads" : entityType === "approval" ? "approvals" : "tickets";
+  const { data } = await db.from(table).select("id").eq("id", entityId).maybeSingle();
+  return Boolean(data);
+}
+
+/** True when the homeowner reply for this message is on file. */
+async function ownerReplyOnFile(db: Db, msg: GraphMessage): Promise<boolean> {
+  const { data } = await db
+    .from("approval_email_responses")
+    .select("id")
+    .eq("internet_message_id", msg.internetMessageId || msg.id)
+    .maybeSingle();
+  return Boolean(data);
+}
 
 export type MailboxRecord = {
   id: string;
@@ -1015,7 +1050,10 @@ export function nextActionFor(
 ): "create" | "retag" | "skip" {
   if (!prior) return "create";
   if (isStaleClaim(prior, now)) return "create";
-  if (prior.error_message === CATEGORY_PENDING && prior.entity_id) return "retag";
+  // A homeowner reply is filed even when it is held for someone to place (no
+  // decision linked yet), so its pending tag is retried on its own rule.
+  if (prior.error_message === CATEGORY_PENDING && (prior.entity_id || prior.entity_type === "approval"))
+    return "retag";
   return "skip";
 }
 
@@ -1100,7 +1138,32 @@ export async function retryCategory(
   msg: GraphMessage,
   prior: MailboxRecord,
 ): Promise<RetryOutcome> {
-  if (!prior.entity_id) return "failed";
+  const ownerReply = prior.entity_type === "approval";
+  if (!prior.entity_id && !ownerReply) return "failed";
+  const ids = [msg.id, msg.internetMessageId ?? ""].filter(Boolean);
+
+  if (ownerReply) {
+    // The homeowner reply tag, not the ticket tag: Resolve: owner response received.
+    if (!requestsOwnerResponse(msg.categories)) {
+      await db.from("integration_events").update({ error_message: null }).eq("id", prior.id);
+      return "cleared";
+    }
+    if (!(await ownerReplyOnFile(db, msg))) {
+      await db.from("integration_events").update({ error_message: RECORD_REMOVED }).eq("id", prior.id);
+      return "no_record";
+    }
+    const done = await setCategories(msg.id, categoriesAfterOwnerResponse(msg.categories));
+    if (done) {
+      await db
+        .from("integration_events")
+        .update({ error_message: null, resolved_at: new Date().toISOString() })
+        .eq("system", SYSTEM)
+        .eq("operation", OPERATION)
+        .in("external_id", ids);
+    }
+    return done ? "retagged" : "failed";
+  }
+
   if (!requestsRecord(msg.categories)) {
     // The trigger category is already gone — either a person re-tagged it by
     // hand, or an earlier write landed after we recorded it as pending. Either
@@ -1108,6 +1171,11 @@ export async function retryCategory(
     // cleared and this counts as a resolved retry, not a failure.
     await db.from("integration_events").update({ error_message: null }).eq("id", prior.id);
     return "cleared";
+  }
+  // A tag swap only for a record that still exists.
+  if (!(await recordIsLive(db, prior.entity_type, prior.entity_id))) {
+    await db.from("integration_events").update({ error_message: RECORD_REMOVED }).eq("id", prior.id);
+    return "no_record";
   }
   const done = await setCategories(msg.id, categoriesAfterCreate(msg.categories));
   if (done) {
