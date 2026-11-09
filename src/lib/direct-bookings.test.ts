@@ -105,10 +105,13 @@ describe("outcomes", () => {
 });
 
 describe("Outlook tag", () => {
-  it("matches the new tag and both old spellings, any case", () => {
-    expect(DIRECT_BOOKING_TAGS).toContain("Resolve: direct booking");
-    for (const t of ["resolve: direct booking", "Resolve: lead management- create a ticket", "RESOLVE: LEAD MANAGEMENT - CREATE A TICKET"]) {
+  it("matches only Resolve: direct booking, any case; the old lead tag no longer opens a request", () => {
+    expect(DIRECT_BOOKING_TAGS).toEqual(["Resolve: direct booking"]);
+    for (const t of ["resolve: direct booking", "RESOLVE: DIRECT BOOKING"]) {
       expect(DIRECT_BOOKING_TAGS.some((tag) => hasTag([t], tag))).toBe(true);
+    }
+    for (const t of ["Resolve: lead management- create a ticket", "RESOLVE: LEAD MANAGEMENT - CREATE A TICKET"]) {
+      expect(DIRECT_BOOKING_TAGS.some((tag) => hasTag([t], tag))).toBe(false);
     }
   });
 });

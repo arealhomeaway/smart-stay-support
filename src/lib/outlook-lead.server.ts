@@ -1,7 +1,7 @@
 /**
  * Email → Lead (server-only).
  *
- * A coordinator marks a message "Resolve: lead management- create a ticket"
+ * An Outlook rule or a coordinator marks a message "Resolve: direct booking"
  * and it becomes a row in the existing Tenant Lead workflow — same stages,
  * same derived follow-up engine, same screens. There is no second lead
  * pipeline for Outlook; only the provenance differs.
