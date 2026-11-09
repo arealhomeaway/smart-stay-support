@@ -13,10 +13,11 @@
 - [ ] Emily: answers on the open questions in the property page report (Add a home on the Onboarding page, House Items/Utilities/Inspections sources, judged labels)
 
 ## Nov 9 Record work as one flow (board; register T8-T11) — after the property page
-- [ ] Search every reader of the stored Ops/Maintenance label; report
-- [ ] One form (no chooser), Resolve understood card, Change the problem, insurance warning + Escalate now
-- [ ] Create ticket via existing creation/routing with automatic label; One touch to home history with repeat counts/flag (settings 3 and 90), property page flag, weekly repeat list
-- [ ] After-save cards; wording; tests; staged DB in docs/pending/record-work/; cancelled real DB check; suite/type/build before and after
+- [x] Search every reader of the stored Ops/Maintenance label; report
+- [x] One form (no chooser), Resolve understood card, Change the problem, insurance warning + Escalate now
+- [x] Create ticket via existing creation/routing with automatic label; One touch to home history with repeat counts/flag (settings 3 and 90), property page flag, weekly repeat list
+- [x] After-save cards; wording; tests; staged DB in docs/pending/record-work/ (applied as 0312); cancelled real DB check; suite/type/build before and after
+- [ ] Emily: register T8 still names the older Create Maintenance Ticket button; Not sure maps to the Ops label; vacant-home fridge is Today by the real rule
 
 ## Nov 9 Databases hub (board; register M1, P3, C1, T13, A9, A10) — after Record work
 - [ ] Blocked: the board source was not included in the message (it reads [PASTE-BOARD]); list columns, card lines and former names come from the board
