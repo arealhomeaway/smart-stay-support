@@ -6,7 +6,12 @@
 - [x] Fresh backup 2026-11-09_023728Z (235 tables, 98,781 rows), Verify passed
 - [ ] Practice in a cancelled step, then real run, sign-in removal, read-only checks, register S6 line, README/checksums, suite/type/build
 
-## Nov 9 Record work as one flow (board; register T8-T11) — after the sign-in step
+## Nov 9 Properties list and property page (boards; register P1, P2, M2, A12) — TONIGHT, next after the sign-in step
+- [ ] Part 1 Properties list: title/tagline, Add a home (Onboarding + Admin), Admin bulk label panel, filters, cards with chips; remove Work Map tab/button, PORTFOLIO, Refresh, practice toggle, OwnerRez dropdown, Live label
+- [ ] Part 2 property page: header (one Back, title, line, chips, view toggle, More menu), banners, labels section (staged label table + rules, 30D FIRM import), 12 tabs per role, Home Profile (search, jump to, show empty, 10 sections, every PID label, logged code Show, edit with person/time)
+- [ ] Other tabs from real records (Nothing here yet when empty); tests; cancelled real DB check; staged SQL in docs/pending/property-page/; suite/type/build before and after; list judgement-placed labels
+
+## Nov 9 Record work as one flow (board; register T8-T11) — after the property page
 - [ ] Search every reader of the stored Ops/Maintenance label; report
 - [ ] One form (no chooser), Resolve understood card, Change the problem, insurance warning + Escalate now
 - [ ] Create ticket via existing creation/routing with automatic label; One touch to home history with repeat counts/flag (settings 3 and 90), property page flag, weekly repeat list
