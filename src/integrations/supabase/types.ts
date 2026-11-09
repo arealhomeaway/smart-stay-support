@@ -17169,6 +17169,10 @@ export type Database = {
         Returns: Json
       }
       can_correct_actual_closing: { Args: never; Returns: boolean }
+      can_edit_claims_in_databases: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       can_edit_handoff_standard: { Args: never; Returns: boolean }
       can_edit_owner_library: { Args: { _uid: string }; Returns: boolean }
       can_edit_vendors: { Args: { _user_id: string }; Returns: boolean }
@@ -17505,6 +17509,19 @@ export type Database = {
         Returns: string
       }
       create_owner_program: { Args: { _property_id: string }; Returns: Json }
+      databases_save_claim_or_refund: {
+        Args: {
+          _changes: Json
+          _expected_updated_at: string
+          _id: string
+          _kind: string
+        }
+        Returns: {
+          record_id: string
+          saved_at: string
+          saved_by: string
+        }[]
+      }
       decide_claim_approval: {
         Args: { _claim_id: string; _decision: string; _reason: string }
         Returns: undefined
