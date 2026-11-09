@@ -1,0 +1,109 @@
+Rows that still pointed at each of the 18 test sign-ins, read only, Nov 9, 2026 (before the step).
+Every uuid column of every table was scanned. No profile, role or program place exists for any of them.
+Text mentions (not links): audit_log before/after values 111/139 lines; app_settings demo_notification_recipients
+(QA Micah, QA James) and test_account_ids (Emma Renee). Stored files owned by them: 0.
+
+riley.alder@demo.arha.test (81a80bac-2655-4994-9651-a9afb81ec721): 4 links
+  audit_log.actor_id: 1
+  audit_log.entity_id: 3
+emily.test@example.com (ea98f339-1ccc-437a-88bb-06ac94be655a): 11 links
+  audit_log.actor_id: 7
+  audit_log.entity_id: 3
+  breezeway_work_order_comments.resolve_author_id: 1
+pr10-owner-a-20260917@example.invalid (77a301f0-161c-40a4-8266-0c0e05cefa45): 7 links
+  audit_log.actor_id: 1
+  audit_log.entity_id: 4
+  staff_notifications.actor_id: 2
+pr10-owner-b-20260917@example.invalid (f44ecf9a-a358-430c-9c64-0ffaa31740b4): 4 links
+  audit_log.entity_id: 4
+emily.r.jimenez4@gmail.com (e3c913e4-1562-4143-a6ff-1f17cd5deda6): 5 links
+  audit_log.entity_id: 4
+  team_invites.redeemed_by: 1
+qa.james@resolve-test.invalid (ec5405ff-4722-4a85-a22e-069e68bd3c7f): 226 links
+  app_settings.updated_by: 2
+  audit_log.actor_id: 121
+  audit_log.entity_id: 7
+  cleaning_reviews.reviewed_by: 3
+  departure_review_events.actor_id: 18
+  departure_reviews.claimed_by: 3
+  departure_reviews.clean_reviewed_by: 3
+  departure_reviews.completed_by: 3
+  documents.uploaded_by: 3
+  email_log.sent_by: 5
+  guest_feedback.followup_completed_by: 1
+  guest_feedback_events.actor_id: 9
+  help_ticket_events.author_id: 11
+  onboarding_project_events.actor: 3
+  onboarding_projects.started_by: 4
+  onboarding_task_stage_history.changed_by: 3
+  onboarding_tasks.assigned_to: 1
+  owner_completion_reviews.actor_id: 2
+  owner_request_messages.author_id: 5
+  property_activity_log.logged_by: 2
+  routine_controls.assigned_to: 4
+  routine_controls.completed_by: 4
+  routine_controls.created_by: 4
+  staff_notifications.actor_id: 1
+  staff_notifications.retracted_by: 1
+  statement_reconciliations.reviewed_by: 1
+  team_invites.redeemed_by: 1
+  work_items.assigned_to: 1
+qa.kati@resolve-test.invalid (d1dafc2e-ba9a-450a-94e3-ad9c11c10ef8): 466 links
+  approvals.requested_by: 5
+  audit_log.actor_id: 75
+  audit_log.entity_id: 2
+  documents.uploaded_by: 1
+  onboarding_notes.author_id: 2
+  onboarding_projects.project_manager: 4
+  onboarding_task_stage_history.assigned_to: 3
+  onboarding_tasks.assigned_to: 3
+  onboarding_tasks.completed_by: 4
+  onboarding_tasks.created_by: 359
+  owner_followup_tasks.assigned_to: 2
+  owner_request_messages.author_id: 2
+  team_invites.redeemed_by: 1
+  work_items.assigned_to: 3
+qa.micah@resolve-test.invalid (8fac5aa5-ba70-42f2-afa0-6d77382383b3): 32 links
+  audit_log.actor_id: 14
+  audit_log.entity_id: 12
+  onboarding_projects.director: 3
+  onboarding_projects.ops_accepted_by: 1
+  onboarding_projects.ready_for_ops_by: 1
+  team_invites.redeemed_by: 1
+qa.outsider@resolve-test.invalid (d13885de-6178-4f32-8560-997d182f245f): 5 links
+  audit_log.entity_id: 5
+qa.owner@resolve-test.invalid (f8a9d111-3416-47f7-abc1-48f5e8aac2ab): 21 links
+  approvals.approver_id: 5
+  audit_log.actor_id: 7
+  audit_log.entity_id: 2
+  owner_programs.owner_user_id: 1
+  owner_request_messages.author_id: 6
+qa.signup@resolve-test.invalid (eeaf39c4-3b22-4733-9ba5-b275476bc5a8): 11 links
+  audit_log.entity_id: 6
+  owner_programs.owner_user_id: 1
+  owner_request_messages.author_id: 3
+  team_invites.redeemed_by: 1
+qa.tech@resolve-test.invalid (d1b80a3e-3b42-46e5-aacb-43276ef272eb): 34 links
+  audit_log.actor_id: 31
+  audit_log.entity_id: 3
+qa.um.admin@resolve-test.invalid (0a6d5dc9-8159-4850-9b5e-421308d2e464): 48 links
+  audit_log.actor_id: 32
+  audit_log.entity_id: 4
+  onboarding_projects.director: 1
+  onboarding_projects.ready_for_ops_by: 1
+  owner_request_messages.author_id: 9
+  work_items.owner_attention_set_by: 1
+qa.um.manager@resolve-test.invalid (06fd8599-c7aa-40b2-8161-cafae4da99b7): 38 links
+  audit_log.actor_id: 4
+  audit_log.entity_id: 30
+  statement_reconciliations.reviewed_by: 4
+qa.um.pending@resolve-test.invalid (3a476833-49ff-4aa3-996d-18913422f8e4): 1 links
+  audit_log.entity_id: 1
+qa.um.target@resolve-test.invalid (c6579620-2ee4-41fe-ad10-07f451d7ae97): 30 links
+  audit_log.entity_id: 30
+qa.um.tech@resolve-test.invalid (5557f537-6847-4f33-af90-1e78b5c344fa): 5 links
+  audit_log.entity_id: 5
+qa.vendor@resolve-test.invalid (9f3b6143-b693-4067-9a3c-d645b5ecd716): 6 links
+  audit_log.entity_id: 6
+
+Total links: 954
