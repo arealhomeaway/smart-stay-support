@@ -11788,6 +11788,149 @@ export type Database = {
           },
         ]
       }
+      property_label_assignments: {
+        Row: {
+          added_at: string
+          added_by: string | null
+          id: string
+          label_id: string
+          property_id: string
+          removed_at: string | null
+          removed_by: string | null
+        }
+        Insert: {
+          added_at?: string
+          added_by?: string | null
+          id?: string
+          label_id: string
+          property_id: string
+          removed_at?: string | null
+          removed_by?: string | null
+        }
+        Update: {
+          added_at?: string
+          added_by?: string | null
+          id?: string
+          label_id?: string
+          property_id?: string
+          removed_at?: string | null
+          removed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_label_assignments_label_id_fkey"
+            columns: ["label_id"]
+            isOneToOne: false
+            referencedRelation: "property_labels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_label_assignments_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "property_label_assignments_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_label_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_label: string | null
+          at: string
+          from_name: string | null
+          id: string
+          label_id: string
+          property_id: string | null
+          to_name: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_label?: string | null
+          at?: string
+          from_name?: string | null
+          id?: string
+          label_id: string
+          property_id?: string | null
+          to_name?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_label?: string | null
+          at?: string
+          from_name?: string | null
+          id?: string
+          label_id?: string
+          property_id?: string | null
+          to_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_label_events_label_id_fkey"
+            columns: ["label_id"]
+            isOneToOne: false
+            referencedRelation: "property_labels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_label_events_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "property_label_events_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_labels: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          renamed_at: string | null
+          renamed_by: string | null
+          retired_at: string | null
+          retired_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          renamed_at?: string | null
+          renamed_by?: string | null
+          retired_at?: string | null
+          retired_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          renamed_at?: string | null
+          renamed_by?: string | null
+          retired_at?: string | null
+          retired_by?: string | null
+        }
+        Relationships: []
+      }
       property_owner_contacts: {
         Row: {
           candidate_count: number
@@ -17438,6 +17581,7 @@ export type Database = {
         Returns: undefined
       }
       my_demo_access: { Args: never; Returns: Json }
+      my_home_profile_access: { Args: never; Returns: Json }
       my_onboarding_reviews: {
         Args: never
         Returns: {
@@ -17603,6 +17747,20 @@ export type Database = {
         Args: { _project_id: string; _role: string }
         Returns: string
       }
+      property_label_add: {
+        Args: { _label_id: string; _property_ids: string[] }
+        Returns: number
+      }
+      property_label_create: { Args: { _name: string }; Returns: string }
+      property_label_remove: {
+        Args: { _label_id: string; _property_id: string }
+        Returns: boolean
+      }
+      property_label_rename: {
+        Args: { _label_id: string; _name: string }
+        Returns: undefined
+      }
+      property_label_retire: { Args: { _label_id: string }; Returns: number }
       publish_onboarding_template: {
         Args: { _template_id: string }
         Returns: string

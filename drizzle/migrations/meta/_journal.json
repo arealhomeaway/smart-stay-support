@@ -2164,6 +2164,13 @@
       "when": 1794193603578,
       "tag": "0308_delete_test_logins_detach",
       "breakpoints": true
+    },
+    {
+      "idx": 309,
+      "version": "7",
+      "when": 1794195119765,
+      "tag": "0309_property_labels",
+      "breakpoints": true
     }
   ]
 }
