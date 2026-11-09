@@ -71,6 +71,7 @@ import { Route as AuthenticatedClaimsClosedRouteImport } from './routes/_authent
 import { Route as AuthenticatedClaimsManagerRouteImport } from './routes/_authenticated/claims.manager'
 import { Route as AuthenticatedClaimsMyClaimsRouteImport } from './routes/_authenticated/claims.my-claims'
 import { Route as AuthenticatedDatabasesIndexRouteImport } from './routes/_authenticated/databases.index'
+import { Route as AuthenticatedDatabasesKeyRouteImport } from './routes/_authenticated/databases.$key'
 import { Route as AuthenticatedDirectBookingsIndexRouteImport } from './routes/_authenticated/direct-bookings.index'
 import { Route as AuthenticatedDirectBookingsRequestIdRouteImport } from './routes/_authenticated/direct-bookings.$requestId'
 import { Route as AuthenticatedDirectBookingsSettingsRouteImport } from './routes/_authenticated/direct-bookings.settings'
@@ -460,6 +461,12 @@ const AuthenticatedDatabasesIndexRoute =
     path: '/databases/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDatabasesKeyRoute =
+  AuthenticatedDatabasesKeyRouteImport.update({
+    id: '/databases/$key',
+    path: '/databases/$key',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDirectBookingsIndexRoute =
   AuthenticatedDirectBookingsIndexRouteImport.update({
     id: '/direct-bookings/',
@@ -815,6 +822,7 @@ export interface FileRoutesByFullPath {
   '/claims/closed': typeof AuthenticatedClaimsClosedRoute
   '/claims/manager': typeof AuthenticatedClaimsManagerRoute
   '/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
+  '/databases/$key': typeof AuthenticatedDatabasesKeyRoute
   '/direct-bookings/$requestId': typeof AuthenticatedDirectBookingsRequestIdRoute
   '/direct-bookings/settings': typeof AuthenticatedDirectBookingsSettingsRoute
   '/integrations/notion-import': typeof AuthenticatedIntegrationsNotionImportRoute
@@ -922,6 +930,7 @@ export interface FileRoutesByTo {
   '/claims/closed': typeof AuthenticatedClaimsClosedRoute
   '/claims/manager': typeof AuthenticatedClaimsManagerRoute
   '/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
+  '/databases/$key': typeof AuthenticatedDatabasesKeyRoute
   '/direct-bookings/$requestId': typeof AuthenticatedDirectBookingsRequestIdRoute
   '/direct-bookings/settings': typeof AuthenticatedDirectBookingsSettingsRoute
   '/integrations/notion-import': typeof AuthenticatedIntegrationsNotionImportRoute
@@ -1037,6 +1046,7 @@ export interface FileRoutesById {
   '/_authenticated/claims/closed': typeof AuthenticatedClaimsClosedRoute
   '/_authenticated/claims/manager': typeof AuthenticatedClaimsManagerRoute
   '/_authenticated/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
+  '/_authenticated/databases/$key': typeof AuthenticatedDatabasesKeyRoute
   '/_authenticated/direct-bookings/$requestId': typeof AuthenticatedDirectBookingsRequestIdRoute
   '/_authenticated/direct-bookings/settings': typeof AuthenticatedDirectBookingsSettingsRoute
   '/_authenticated/integrations_/notion-import': typeof AuthenticatedIntegrationsNotionImportRoute
@@ -1152,6 +1162,7 @@ export interface FileRouteTypes {
     | '/claims/closed'
     | '/claims/manager'
     | '/claims/my-claims'
+    | '/databases/$key'
     | '/direct-bookings/$requestId'
     | '/direct-bookings/settings'
     | '/integrations/notion-import'
@@ -1259,6 +1270,7 @@ export interface FileRouteTypes {
     | '/claims/closed'
     | '/claims/manager'
     | '/claims/my-claims'
+    | '/databases/$key'
     | '/direct-bookings/$requestId'
     | '/direct-bookings/settings'
     | '/integrations/notion-import'
@@ -1373,6 +1385,7 @@ export interface FileRouteTypes {
     | '/_authenticated/claims/closed'
     | '/_authenticated/claims/manager'
     | '/_authenticated/claims/my-claims'
+    | '/_authenticated/databases/$key'
     | '/_authenticated/direct-bookings/$requestId'
     | '/_authenticated/direct-bookings/settings'
     | '/_authenticated/integrations_/notion-import'
@@ -1884,6 +1897,13 @@ declare module '@tanstack/react-router' {
       path: '/databases'
       fullPath: '/databases/'
       preLoaderRoute: typeof AuthenticatedDatabasesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/databases/$key': {
+      id: '/_authenticated/databases/$key'
+      path: '/databases/$key'
+      fullPath: '/databases/$key'
+      preLoaderRoute: typeof AuthenticatedDatabasesKeyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/direct-bookings/': {
@@ -2447,6 +2467,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
   AuthenticatedWelcomeVideoRoute: typeof AuthenticatedWelcomeVideoRoute
   AuthenticatedWorkOrdersRoute: typeof AuthenticatedWorkOrdersRouteWithChildren
+  AuthenticatedDatabasesKeyRoute: typeof AuthenticatedDatabasesKeyRoute
   AuthenticatedDirectBookingsRequestIdRoute: typeof AuthenticatedDirectBookingsRequestIdRoute
   AuthenticatedDirectBookingsSettingsRoute: typeof AuthenticatedDirectBookingsSettingsRoute
   AuthenticatedIntegrationsNotionImportRoute: typeof AuthenticatedIntegrationsNotionImportRoute
@@ -2513,6 +2534,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
   AuthenticatedWelcomeVideoRoute: AuthenticatedWelcomeVideoRoute,
   AuthenticatedWorkOrdersRoute: AuthenticatedWorkOrdersRouteWithChildren,
+  AuthenticatedDatabasesKeyRoute: AuthenticatedDatabasesKeyRoute,
   AuthenticatedDirectBookingsRequestIdRoute:
     AuthenticatedDirectBookingsRequestIdRoute,
   AuthenticatedDirectBookingsSettingsRoute:
