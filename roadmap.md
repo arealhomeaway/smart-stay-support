@@ -18,6 +18,10 @@
 - [ ] Create ticket via existing creation/routing with automatic label; One touch to home history with repeat counts/flag (settings 3 and 90), property page flag, weekly repeat list
 - [ ] After-save cards; wording; tests; staged DB in docs/pending/record-work/; cancelled real DB check; suite/type/build before and after
 
+## Nov 9 Databases hub (board; register M1, P3, C1, T13, A9, A10) — after Record work
+- [ ] Blocked: the board source was not included in the message (it reads [PASTE-BOARD]); list columns, card lines and former names come from the board
+- [ ] Menu item after Vendors, hide Guest Claims & Refunds behind a menu switch; hub with search and four groups; lists; claims in-list editing; Tickets and Claims lists; tests; cancelled DB check
+
 ## Nov 9 clean slate real run (Emily's go, Nov 8 6:55 PM Central)
 - [x] Fresh backup 2026-11-09_005832Z (235 tables, 99,445 rows), Verify passed; 42 live tickets matched the Nov 8 list
 - [x] Ran 01, 01c, 02 for real; counts exactly as practice; all triggers and delete blocks on; 01b never run
