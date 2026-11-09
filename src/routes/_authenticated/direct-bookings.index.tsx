@@ -339,9 +339,9 @@ function Field({
 }) {
   return (
     <div className="space-y-1">
-      <Label>
+      <Label className="flex flex-col gap-1.5">
         {label}
-        <Input className="mt-1 h-11 font-normal" type={type} value={value} onChange={onChange} placeholder={placeholder} />
+        <Input className="h-11 font-normal" type={type} value={value} onChange={onChange} placeholder={placeholder} />
       </Label>
       {help ? <p className="text-xs text-muted-foreground">{help}</p> : null}
     </div>
