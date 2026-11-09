@@ -338,7 +338,16 @@ function PropertyHeader({ hub, propertyId }: { hub: Hub; propertyId: string }) {
   };
 
   return (
-    <div className="surface space-y-3 p-5 shadow-raised">
+    <div className="surface overflow-hidden shadow-raised">
+      {/* Register O1: a photo header. No photo on record shows no picture at all. */}
+      {p.photoUrl ? (
+        <HomePhoto
+          url={p.photoUrl}
+          alt={[p.name, p.address].filter(Boolean).join(", ")}
+          className="h-44 w-full md:h-64"
+        />
+      ) : null}
+      <div className="space-y-3 p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight">{p.name}</h1>
@@ -393,6 +402,7 @@ function PropertyHeader({ hub, propertyId }: { hub: Hub; propertyId: string }) {
         {(labels.data?.labels ?? []).map((l) => (
           <LabelChip key={l.id} name={l.name} />
         ))}
+      </div>
       </div>
 
       {/* The More menu opens the same windows the rest of Resolve uses. */}
