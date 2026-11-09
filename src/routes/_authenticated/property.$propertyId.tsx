@@ -559,11 +559,11 @@ function OnboardingInformationTab({
               ) : null}
             </div>
           )}
-          <div className="mt-4">
-            <CompletedOnboardingRecords propertyId={propertyId} />
-          </div>
         </SectionCard>
       ) : null}
+
+      {/* Completed onboarding records are shared with Operations after handoff (read only). */}
+      <CompletedOnboardingRecords propertyId={propertyId} />
     </div>
   );
 }
