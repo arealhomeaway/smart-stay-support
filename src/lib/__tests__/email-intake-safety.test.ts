@@ -208,7 +208,7 @@ describe("3: mail received before the start line is ignored on every path", () =
           ? await runSweep(fake.db, { ensureSubscription: async () => ({ ok: true, action: "healthy" }) })
           : await syncMailbox(fake.db, { dryRun: path === "preview" });
       const items = (result as { items: { outcome: string; reason?: string }[] }).items;
-      expect(items).toEqual([expect.objectContaining({ outcome: "skipped", reason: BEFORE_START_REASON })]);
+      expect(items.map((i) => [i.outcome, i.reason])).toEqual([["skipped", BEFORE_START_REASON]]);
       expect(fake.rows("tickets")).toHaveLength(0);
       expect(mailbox.graphCalls().filter((c) => c.method === "PATCH")).toHaveLength(0);
       expect(mailRows(fake).length).toBe(path === "preview" ? 0 : 2);
@@ -256,8 +256,8 @@ describe("5: test marking and our own address", () => {
     const partner = { emailAddress: { address: "partner@owlmarketplace.com" } };
     await processMessage(fake.db, msg({ id: "p1", subject: "[RESOLVE TEST] AC", from: partner }) as never);
     await processMessage(fake.db, msg({ id: "p2", subject: "[RESOLVE TEST] Housing", categories: [DIRECT_BOOKING_TAG], from: partner }) as never);
-    expect(fake.rows("tickets")[0]).not.toHaveProperty("is_demo");
-    expect(fake.rows("leads")[0]!["is_demo"]).toBeUndefined();
+    expect("is_demo" in fake.rows("tickets")[0]!).toBe(false);
+    expect("is_demo" in fake.rows("leads")[0]!).toBe(false);
     expect(isEmailTestLead(fake.rows("leads")[0] as never)).toBe(false);
   });
 
