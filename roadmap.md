@@ -1,5 +1,15 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 9 fix batch from Emily's click through (code only, no database change)
+- [ ] 1 Properties cards to the board (photo, chips over photo, lines in order, 3 across, neutral block)
+- [ ] 2 Property page photo header
+- [ ] 3 Direct Bookings home cards show the photo
+- [ ] 4 Where field label, placeholder, help line; place not found and busy messages
+- [ ] 5 One home reply sentence; referral source warning (reply step and approver)
+- [ ] 6 Vendors out of every left menu; onboarding group renamed Work Orders
+- [ ] 7 Home banner: a real home photo that changes daily, caption, stock fallback
+- [ ] 8 Tests and real browser check; 9 register M1 and D5
+
 ## Nov 9 delete the 18 fake test sign-ins (Emily, Nov 8; register S6)
 - [x] Read only: every row pointing at each of the 18 listed (954 links; live-capture/references-before-2026-11-09.txt)
 - [x] Staged docs/pending/delete-test-logins/ (01 database step, 02 sign-in removal, practice block)
