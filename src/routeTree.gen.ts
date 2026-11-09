@@ -70,6 +70,7 @@ import { Route as AuthenticatedClaimsIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedClaimsClosedRouteImport } from './routes/_authenticated/claims.closed'
 import { Route as AuthenticatedClaimsManagerRouteImport } from './routes/_authenticated/claims.manager'
 import { Route as AuthenticatedClaimsMyClaimsRouteImport } from './routes/_authenticated/claims.my-claims'
+import { Route as AuthenticatedDatabasesIndexRouteImport } from './routes/_authenticated/databases.index'
 import { Route as AuthenticatedDirectBookingsIndexRouteImport } from './routes/_authenticated/direct-bookings.index'
 import { Route as AuthenticatedDirectBookingsRequestIdRouteImport } from './routes/_authenticated/direct-bookings.$requestId'
 import { Route as AuthenticatedDirectBookingsSettingsRouteImport } from './routes/_authenticated/direct-bookings.settings'
@@ -452,6 +453,12 @@ const AuthenticatedClaimsMyClaimsRoute =
     id: '/my-claims',
     path: '/my-claims',
     getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
+const AuthenticatedDatabasesIndexRoute =
+  AuthenticatedDatabasesIndexRouteImport.update({
+    id: '/databases/',
+    path: '/databases/',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedDirectBookingsIndexRoute =
   AuthenticatedDirectBookingsIndexRouteImport.update({
@@ -837,6 +844,7 @@ export interface FileRoutesByFullPath {
   '/work-orders/my-work-orders': typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
   '/claims/': typeof AuthenticatedClaimsIndexRoute
+  '/databases/': typeof AuthenticatedDatabasesIndexRoute
   '/direct-bookings/': typeof AuthenticatedDirectBookingsIndexRoute
   '/leads/': typeof AuthenticatedLeadsIndexRoute
   '/onboarding/': typeof AuthenticatedOnboardingIndexRoute
@@ -943,6 +951,7 @@ export interface FileRoutesByTo {
   '/work-orders/my-work-orders': typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
   '/claims': typeof AuthenticatedClaimsIndexRoute
+  '/databases': typeof AuthenticatedDatabasesIndexRoute
   '/direct-bookings': typeof AuthenticatedDirectBookingsIndexRoute
   '/leads': typeof AuthenticatedLeadsIndexRoute
   '/onboarding': typeof AuthenticatedOnboardingIndexRoute
@@ -1057,6 +1066,7 @@ export interface FileRoutesById {
   '/_authenticated/work-orders/my-work-orders': typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
   '/_authenticated/claims/': typeof AuthenticatedClaimsIndexRoute
+  '/_authenticated/databases/': typeof AuthenticatedDatabasesIndexRoute
   '/_authenticated/direct-bookings/': typeof AuthenticatedDirectBookingsIndexRoute
   '/_authenticated/leads/': typeof AuthenticatedLeadsIndexRoute
   '/_authenticated/onboarding/': typeof AuthenticatedOnboardingIndexRoute
@@ -1171,6 +1181,7 @@ export interface FileRouteTypes {
     | '/work-orders/my-work-orders'
     | '/oauth/sharepoint/return'
     | '/claims/'
+    | '/databases/'
     | '/direct-bookings/'
     | '/leads/'
     | '/onboarding/'
@@ -1277,6 +1288,7 @@ export interface FileRouteTypes {
     | '/work-orders/my-work-orders'
     | '/oauth/sharepoint/return'
     | '/claims'
+    | '/databases'
     | '/direct-bookings'
     | '/leads'
     | '/onboarding'
@@ -1390,6 +1402,7 @@ export interface FileRouteTypes {
     | '/_authenticated/work-orders/my-work-orders'
     | '/oauth/sharepoint/return'
     | '/_authenticated/claims/'
+    | '/_authenticated/databases/'
     | '/_authenticated/direct-bookings/'
     | '/_authenticated/leads/'
     | '/_authenticated/onboarding/'
@@ -1865,6 +1878,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/claims/my-claims'
       preLoaderRoute: typeof AuthenticatedClaimsMyClaimsRouteImport
       parentRoute: typeof AuthenticatedClaimsRoute
+    }
+    '/_authenticated/databases/': {
+      id: '/_authenticated/databases/'
+      path: '/databases'
+      fullPath: '/databases/'
+      preLoaderRoute: typeof AuthenticatedDatabasesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/direct-bookings/': {
       id: '/_authenticated/direct-bookings/'
@@ -2435,6 +2455,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTicketsNewRoute: typeof AuthenticatedTicketsNewRoute
   AuthenticatedVendorTicketIdRoute: typeof AuthenticatedVendorTicketIdRoute
   AuthenticatedVendorScorecardRoute: typeof AuthenticatedVendorScorecardRoute
+  AuthenticatedDatabasesIndexRoute: typeof AuthenticatedDatabasesIndexRoute
   AuthenticatedDirectBookingsIndexRoute: typeof AuthenticatedDirectBookingsIndexRoute
   AuthenticatedTicketsIndexRoute: typeof AuthenticatedTicketsIndexRoute
   AuthenticatedVendorIndexRoute: typeof AuthenticatedVendorIndexRoute
@@ -2503,6 +2524,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTicketsNewRoute: AuthenticatedTicketsNewRoute,
   AuthenticatedVendorTicketIdRoute: AuthenticatedVendorTicketIdRoute,
   AuthenticatedVendorScorecardRoute: AuthenticatedVendorScorecardRoute,
+  AuthenticatedDatabasesIndexRoute: AuthenticatedDatabasesIndexRoute,
   AuthenticatedDirectBookingsIndexRoute: AuthenticatedDirectBookingsIndexRoute,
   AuthenticatedTicketsIndexRoute: AuthenticatedTicketsIndexRoute,
   AuthenticatedVendorIndexRoute: AuthenticatedVendorIndexRoute,

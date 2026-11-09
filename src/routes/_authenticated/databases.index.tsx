@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQueries } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useRole } from "@/hooks/useRole";
@@ -178,9 +178,6 @@ function DatabasesHub() {
         )}
 
         <span className="text-[13px] text-muted-foreground">{DATABASES_FOOTER}</span>
-        <Link to="/databases" className="sr-only">
-          Databases
-        </Link>
       </div>
     </div>
   );
