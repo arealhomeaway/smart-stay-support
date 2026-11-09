@@ -81,14 +81,15 @@ describe("import rule: claims on older open and closed tickets come in Closed", 
     expect(c.opened_at).toBe(out.ticket.reported_at);
     // No closed date in Notion for an open ticket: its last edit.
     expect(c.closed_at).toBe("2026-04-15T16:30:00Z");
-    expect(c.notes.split("\n")).toEqual(
-      expect.arrayContaining([
-        "Imported from Notion",
-        IMPORTED_CLOSED_NOTE_LINE,
-        "Opened in Notion: 2026-03-02",
-        "Closed date: 2026-04-15 (last change in Notion)",
-      ]),
-    );
+    const lines = c.notes.split("\n");
+    for (const l of [
+      "Imported from Notion",
+      IMPORTED_CLOSED_NOTE_LINE,
+      "Opened in Notion: 2026-03-02",
+      "Closed date: 2026-04-15 (last change in Notion)",
+    ]) {
+      expect(lines).toContain(l);
+    }
     // The ticket itself is unchanged by the rule: still an older open import, held out of the queue.
     expect(out.ticket.status).toBe("in_progress");
     expect(out.ticket.import_hold).toBe("backlog_review");
