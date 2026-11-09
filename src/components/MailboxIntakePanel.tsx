@@ -219,6 +219,12 @@ export function MailboxIntakePanel() {
             </Button>
           ) : null}
         </div>
+        {clearTests.data ? (
+          <p className="text-sm text-muted-foreground">
+            Cleared: {clearTests.data.tickets} test ticket{clearTests.data.tickets === 1 ? "" : "s"} archived,{" "}
+            {clearTests.data.requests} test request{clearTests.data.requests === 1 ? "" : "s"} set to Not booked.
+          </p>
+        ) : null}
 
         {preview && preview.ok ? (
           <div className="rounded-md border border-border">
