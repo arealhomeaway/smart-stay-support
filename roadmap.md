@@ -303,4 +303,5 @@
 - [ ] Team Queue: decisions open on All unclaimed meaning, Give it back for Notion takes, Departure Reviews block placement (waiting on Emily)
 
 ## Nov 9 Notion dry run, time limited, read only (register N6) — LAST, after Databases
-- [ ] Connection check; field-only pass in pages of 100 (40 min Notion wait cap); counts; comments/files for 20 preview only; report
+- [x] Connection yes; 2,916 read in 1 min 43 s, nothing written; 20 preview; report docs/pending/notion-ticket-import-dry-run-nov9.md
+- [ ] Emily: Director of Operations' tickets stay unassigned (627, 15 in the queue); 5 queue tickets need a home; 6 two-home tickets
