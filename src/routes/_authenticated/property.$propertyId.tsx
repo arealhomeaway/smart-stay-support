@@ -53,6 +53,7 @@ import { HomeProfileTab, goToProfileItem, useProfileContext } from "@/components
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 import { useRole } from "@/hooks/useRole";
 import { toast } from "sonner";
+import { HomePhoto } from "@/components/property/HomePhoto";
 import { COMPLIANCE_ITEMS, displayValue, missingForHandoff } from "@/lib/home-profile";
 import {
   MORE_MENU_LABELS,
