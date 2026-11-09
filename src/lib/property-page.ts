@@ -177,6 +177,8 @@ export type ListHome = {
   market: string | null;
   openTickets: number;
   searchText: string;
+  /** The shared address matcher (street number and name forms). */
+  matches?: (q: string) => boolean;
 };
 
 export function filterHomes<T extends ListHome>(homes: T[], f: ListFilter): T[] {
@@ -186,7 +188,7 @@ export function filterHomes<T extends ListHome>(homes: T[], f: ListFilter): T[] 
     if (f.status === "operations" && stageLabel(h.lifecycle) !== "Operations") return false;
     if (f.status === "onboarding" && stageLabel(h.lifecycle) !== "Onboarding") return false;
     if (f.open && h.openTickets === 0) return false;
-    if (q && !h.searchText.toLowerCase().includes(q)) return false;
+    if (q && !h.searchText.toLowerCase().includes(q) && !(h.matches?.(q) ?? false)) return false;
     return true;
   });
 }
