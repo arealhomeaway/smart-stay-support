@@ -308,6 +308,14 @@
 - [x] Emily answered (Nov 9): Director's tickets stay Unassigned; 5 no-home queue tickets stay Unassigned with Needs a home; Qym matches
 - [x] Two-home rule (address in title, else first linked) in the runner; row 18 rechecked read only; other 5 not identifiable without a full read
 
+## Nov 9 Notion import first real run: recent open (Emily's yes, ~5:50 AM Central; register N1-N7)
+- [x] Fresh full backup 2026-11-09_121747Z (240 tables, 99,187 rows), Verify passed
+- [x] Read-only before counts (all 0; documents 314)
+- [x] Run recent_open STOPPED at first anomaly: 43 of 87 imported; ticket #1478 failed on its page notes (no date), its 3 comments and 4 files not copied
+- [x] Verify of the 43 (read only): Team B 42, Unassigned 1, 26 assigned, 23 claims, 176/83 match Notion except #1478, rerun plan 43 unchanged / 44 create, no clocks/alerts/notifications
+- [ ] Emily: approve the page-notes date fix, then resume the same run (44 left) and re-copy #1478's comments and files
+- [ ] Preview check as Director View as: blocked, preview loads blank (DemoProvider loading error, waiting on Emily's answer)
+
 ## Nov 9 answers and small fixes (property page, Record work, Databases, Notion)
 - [x] Add a home: server check on both create actions; Onboarding page Add property only for Onboarding roles and Admin
 - [x] Pending codes line in Entry & Access Details (waiting count, Mark current, Archive), code managers only, values stay behind logged Show
