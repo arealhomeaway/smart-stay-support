@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, setSystemTime } from "bun:test";
+import { afterEach, describe, expect, it } from "bun:test";
 import { slaState } from "@/lib/tickets";
 import {
   QUIET_IMPORT_LINE,
@@ -17,7 +17,14 @@ import { urgencyLabel } from "@/lib/home-work";
 // normal clocks start from that moment, never from the Notion created date.
 
 const NOW = new Date("2026-11-09T17:00:00.000Z");
-afterEach(() => setSystemTime());
+const realNow = Date.now;
+function setSystemTime(d: Date) {
+  const t = d.getTime();
+  Date.now = () => t;
+}
+afterEach(() => {
+  Date.now = realNow;
+});
 
 const untouched = {
   external_source: "notion",
@@ -68,7 +75,7 @@ describe("an untouched import shows no clock", () => {
 
   it("Home's My work shows the urgency only, no Escalated and no clock", () => {
     setSystemTime(NOW);
-    expect(urgencyLabel(untouched)).toBe("P1");
+    expect(urgencyLabel({ id: "t1", ...untouched })).toBe("P1");
   });
 });
 
