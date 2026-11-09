@@ -72,10 +72,10 @@ CREATE FUNCTION cron.alter_job(job_id bigint, schedule text DEFAULT NULL, comman
 
 let db: PGlite;
 const one = async (sql: string, params: unknown[] = []) => (await db.query(sql, params)).rows[0];
-const as = (uid: string | null) => db.query(`DELETE FROM public.me; ${uid ? `INSERT INTO public.me VALUES ('${uid}');` : ""}`.trim().split(";").filter(Boolean).length ? "" : "").then(async () => {
+const as = async (uid: string | null) => {
   await db.exec("DELETE FROM public.me");
   if (uid) await db.exec(`INSERT INTO public.me VALUES ('${uid}')`);
-});
+};
 const line = async () =>
   (await one(`SELECT external_id FROM public.integration_events WHERE operation='processing_checkpoint'`)).external_id;
 const err = async (sql: string) => {
