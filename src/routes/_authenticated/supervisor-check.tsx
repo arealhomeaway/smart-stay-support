@@ -9,7 +9,7 @@ import { SectionCard } from "@/components/ui/page";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDemo } from "@/components/DemoProvider";
 import { usDateTime } from "@/lib/dates";
-import { groupSupervisorCheck, type CheckTicket } from "@/lib/supervisor-check";
+import { cameInAt, groupSupervisorCheck, type CheckTicket } from "@/lib/supervisor-check";
 
 export const Route = createFileRoute("/_authenticated/supervisor-check")({
   head: () => ({
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/supervisor-check")({
       {
         name: "description",
         content:
-          "Read-only daily check: the last 24 hours of tickets, Notion imports and review lists, overdue and unassigned work, and refunds waiting on approval.",
+          "Read-only daily check: the last 24 hours of tickets, overdue and unassigned work, and refunds waiting on approval.",
       },
       { property: "og:title", content: "Supervisor check — Resolve" },
       { property: "og:description", content: "One read-only page for the daily supervisor check." },
@@ -46,7 +46,7 @@ function SupervisorCheck() {
       const [t, r] = await Promise.all([
         supabase
           .from("tickets")
-          .select("id, ref, title, status, created_at, updated_at, resolved_at, assigned_to, next_action_due_at, external_source, import_hold")
+          .select("id, ref, title, status, created_at, updated_at, resolved_at, assigned_to, next_action_due_at, external_source, external_status, reported_at, import_hold")
           .eq("is_demo", demoMode)
           .is("archived_at", null)
           .order("updated_at", { ascending: false })
@@ -107,7 +107,7 @@ function SupervisorCheck() {
                 <Link to="/tickets/$ticketId" params={{ ticketId: t.id }} className="font-medium hover:underline">
                   {(t as Row).ref ? `#${(t as Row).ref} ` : ""}{t.title ?? "Ticket"}
                 </Link>
-                <span className="text-muted-foreground">{usDateTime(t.updated_at ?? t.created_at)}</span>
+                <span className="text-muted-foreground">{usDateTime(kind === "created" ? cameInAt(t) : (t.updated_at ?? t.created_at))}</span>
               </li>
             ))}
           </ul>
@@ -134,12 +134,6 @@ function SupervisorCheck() {
         )}
       </SectionCard>
 
-      <SectionCard title={`Imported from Notion (${g.imported.length})`}>{list(g.imported as Row[], "No imported tickets outside the review lists.")}</SectionCard>
-      <SectionCard title={`Backlog review (${g.backlogReview.length})`}>
-        {list(g.backlogReview as Row[], "The Backlog review list is empty.")}
-        <Link to="/imported-tickets" className="mt-2 inline-block text-sm underline">Open Imported tickets</Link>
-      </SectionCard>
-      <SectionCard title={`Needs a home (${g.needsHome.length})`}>{list(g.needsHome as Row[], "The Needs a home list is empty.")}</SectionCard>
       <WeeklyRepeatList />
       <RatingChannelsCard />
     </div>
