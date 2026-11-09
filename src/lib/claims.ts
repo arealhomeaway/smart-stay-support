@@ -113,6 +113,15 @@ export function claimClosedAt(
   return null;
 }
 
+/** Reopening a closed claim: back to the first working stage, one history line with the reason. */
+export const REOPEN_CLAIM_STAGE: ClaimStage = "potential";
+export function reopenClaimPatch(): { stage: ClaimStage; closed_at: null } {
+  return { stage: REOPEN_CLAIM_STAGE, closed_at: null };
+}
+export function reopenClaimHistoryLine(reason: string): string {
+  return `Claim reopened: ${reason.trim()}`;
+}
+
 export const CLAIM_PIPELINE: ClaimStage[] = [
   "potential",
   "gathering",

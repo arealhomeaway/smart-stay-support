@@ -37,9 +37,12 @@ import {
   findDuplicates,
   formatMoney,
   nextAction,
+  reopenClaimHistoryLine,
+  reopenClaimPatch,
   stageState,
   type ClaimType,
 } from "@/lib/claims";
+import { reopenReasonProblem } from "@/lib/notion-ticket-display";
 import type { ClaimRow } from "@/lib/claim-types";
 import { FieldHint } from "@/components/FieldHint";
 import { ClaimApprovalBox, type ClaimApprovalFields } from "@/components/claims/ClaimApprovalBox";
@@ -359,6 +362,68 @@ export function TicketClaimPanel({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * Reopen a closed claim (register N5): a reason, then back to the first working
+ * stage with one history line. Shown only to people with claims access.
+ */
+function ReopenClaim({ claim, onDone }: { claim: ClaimRow; onDone: () => void }) {
+  const userId = useCurrentUserId();
+  const [asking, setAsking] = useState(false);
+  const [reason, setReason] = useState("");
+  const problem = reopenReasonProblem(reason);
+  const reopen = useMutation({
+    mutationFn: async () => {
+      if (problem) throw new Error(problem);
+      const { error } = await supabase.from("claims").update(reopenClaimPatch()).eq("id", claim.id).eq("stage", "closed");
+      if (error) throw error;
+      const { error: logError } = await supabase.from("claim_activity").insert({
+        claim_id: claim.id,
+        author_id: userId,
+        event_type: "reopened",
+        body: reopenClaimHistoryLine(reason),
+        detail: { from: "closed", to: reopenClaimPatch().stage, reason: reason.trim() } as never,
+        is_demo: claim.is_demo,
+      });
+      if (logError) throw logError;
+    },
+    onSuccess: () => {
+      setAsking(false);
+      setReason("");
+      onDone();
+      toast.success("Claim reopened");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  if (!asking) {
+    return (
+      <Button variant="outline" className="min-h-11" onClick={() => setAsking(true)}>
+        Reopen claim
+      </Button>
+    );
+  }
+  return (
+    <div className="space-y-2 rounded-md border p-3">
+      <Label htmlFor={`reopen-claim-${claim.id}`} className="text-xs">
+        Why reopen this claim?
+      </Label>
+      <Input
+        id={`reopen-claim-${claim.id}`}
+        value={reason}
+        onChange={(e) => setReason(e.target.value)}
+        className="h-11"
+      />
+      <div className="flex flex-wrap gap-2">
+        <Button className="min-h-11" disabled={!!problem || reopen.isPending} onClick={() => reopen.mutate()}>
+          {reopen.isPending ? "Reopening…" : "Reopen claim"}
+        </Button>
+        <Button variant="ghost" className="min-h-11" disabled={reopen.isPending} onClick={() => setAsking(false)}>
+          Cancel
+        </Button>
+      </div>
+    </div>
   );
 }
 
