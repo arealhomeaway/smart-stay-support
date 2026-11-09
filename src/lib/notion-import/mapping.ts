@@ -102,6 +102,8 @@ export type MapOutcome = {
   homeOwnerRezId: string | null;
   formerProperty: string | null;
   multipleHomes: boolean;
+  /** True when two or more linked homes were in Resolve and the title named one. */
+  homeFromTitle: boolean;
   blankCreatedDate: boolean;
 };
 
@@ -263,9 +265,50 @@ export type MapContext = {
   /** OwnerRez ID -> Resolve property id. */
   propertyByOwnerRez: Map<string, string>;
   homeLabel?: string | null;
+  /** Resolve property id -> its street line, to pick between two linked homes. */
+  propertyStreets?: Map<string, string>;
   /** Start of the 30 day window, fixed per run. */
   cutoff?: number;
 };
+
+/** Street-type words a title may shorten or leave out. */
+const STREET_TYPES = new Set([
+  "st", "street", "dr", "drive", "ave", "av", "avenue", "ter", "terr", "terrace", "rd", "road", "ln", "lane",
+  "ct", "court", "way", "blvd", "boulevard", "pl", "place", "cir", "circle", "pkwy", "parkway", "trl", "trail",
+  "hwy", "highway", "loop", "cv", "cove", "pt", "point", "xing", "crossing", "sq", "square", "run", "path",
+]);
+const words = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+
+/**
+ * How a home's street line appears in a ticket title: the whole street (number
+ * and name, the street type may be left out), the house number alone as a
+ * separate word, or not at all.
+ */
+export function addressInTitle(title: string, street: string): "street" | "number" | null {
+  const t = ` ${words(title)} `;
+  const tokens = words(street).split(" ").filter(Boolean);
+  while (tokens.length > 1 && STREET_TYPES.has(tokens[tokens.length - 1]!)) tokens.pop();
+  if (tokens.length === 0 || t.trim() === "") return null;
+  if (tokens.length >= 2 && t.includes(` ${tokens.join(" ")} `)) return "street";
+  if (/^\d+$/.test(tokens[0]!) && t.includes(` ${tokens[0]} `)) return "number";
+  return null;
+}
+
+/**
+ * A ticket linked to more than one home in Resolve (Emily, Nov 9): the home
+ * whose address appears in the title; if none does, the first linked home.
+ * A whole street wins over a house number; a house number counts only when
+ * exactly one linked home has it.
+ */
+export function pickHomeByTitle(title: string, streets: string[]): { index: number; fromTitle: boolean } {
+  if (streets.length <= 1) return { index: 0, fromTitle: false };
+  const found = streets.map((s) => (s ? addressInTitle(title, s) : null));
+  const street = found.indexOf("street");
+  if (street >= 0) return { index: street, fromTitle: true };
+  const numbers = found.flatMap((f, i) => (f === "number" ? [i] : []));
+  if (numbers.length === 1) return { index: numbers[0]!, fromTitle: true };
+  return { index: 0, fromTitle: false };
+}
 
 export function mapNotionPage(page: NotionPage, ctx: MapContext): MapOutcome {
   const cutoff = ctx.cutoff ?? recentCutoff();
@@ -274,19 +317,28 @@ export function mapNotionPage(page: NotionPage, ctx: MapContext): MapOutcome {
   const group = importGroup(page, cutoff);
   const createdDate = notionCreatedDate(page);
 
-  // Rule 7: home by ID only.
+  // Rule 7: home by ID only. When more than one linked home is in Resolve, the
+  // one whose address appears in the title wins; otherwise the first linked home.
+  const rawTitle = text(page, "Issue Description");
   const pids = relationIds(page, "Property Address");
   let propertyId: string | null = null;
   let homeOwnerRezId: string | null = null;
+  const candidates: { propertyId: string; orz: string }[] = [];
   for (const pid of pids) {
     const orz = normalizeOwnerRezId(ctx.pidOwnerRez.get(pid));
     if (orz && !homeOwnerRezId) homeOwnerRezId = orz;
     if (orz && FORMER_PROPERTY_OWNERREZ[orz]) continue;
     if (orz && ctx.propertyByOwnerRez.has(orz)) {
-      propertyId = ctx.propertyByOwnerRez.get(orz)!;
-      homeOwnerRezId = orz;
-      break;
+      const id = ctx.propertyByOwnerRez.get(orz)!;
+      if (!candidates.some((c) => c.propertyId === id)) candidates.push({ propertyId: id, orz });
     }
+  }
+  let homeFromTitle = false;
+  if (candidates.length > 0) {
+    const pick = pickHomeByTitle(rawTitle, candidates.map((c) => ctx.propertyStreets?.get(c.propertyId) ?? ""));
+    propertyId = candidates[pick.index]!.propertyId;
+    homeOwnerRezId = candidates[pick.index]!.orz;
+    homeFromTitle = pick.fromTitle;
   }
   const formerProperty = !propertyId && homeOwnerRezId ? FORMER_PROPERTY_OWNERREZ[homeOwnerRezId] ?? null : null;
   const needsHome = !propertyId;
@@ -319,7 +371,6 @@ export function mapNotionPage(page: NotionPage, ctx: MapContext): MapOutcome {
   else if (needsHome) importHold = "needs_home";
   else if (group === "older_open") importHold = "backlog_review";
 
-  const rawTitle = text(page, "Issue Description");
   const title = rawTitle || `Imported Notion ticket${ctx.homeLabel ? `: ${ctx.homeLabel}` : ""}`;
 
   // Unmapped fields go in one "Imported from Notion" block.
@@ -396,6 +447,7 @@ export function mapNotionPage(page: NotionPage, ctx: MapContext): MapOutcome {
     homeOwnerRezId,
     formerProperty,
     multipleHomes: pids.length > 1,
+    homeFromTitle,
     blankCreatedDate: !createdDate,
   };
 }
