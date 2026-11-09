@@ -308,6 +308,13 @@
 - [x] Emily answered (Nov 9): Director's tickets stay Unassigned; 5 no-home queue tickets stay Unassigned with Needs a home; Qym matches
 - [x] Two-home rule (address in title, else first linked) in the runner; row 18 rechecked read only; other 5 not identifiable without a full read
 
+## Nov 9 Notion import first real run: recent open (Emily's yes, ~5:50 AM Central; register N1-N7)
+- [ ] Fresh full backup + Verify passed
+- [ ] Read-only before counts (tickets, history, comments, files, claims)
+- [ ] Run recent_open (87) in batches, 30 min wait limit, comments and files
+- [ ] Verify: counts, team groups, assignees, claims, comments/files vs Notion, duplicates dry check, no clocks/alerts/notifications, unclaimed and Needs you now unchanged, no other groups
+- [ ] Preview check as Director View as (one ticket per team group)
+
 ## Nov 9 answers and small fixes (property page, Record work, Databases, Notion)
 - [x] Add a home: server check on both create actions; Onboarding page Add property only for Onboarding roles and Admin
 - [x] Pending codes line in Entry & Access Details (waiting count, Mark current, Archive), code managers only, values stay behind logged Show
