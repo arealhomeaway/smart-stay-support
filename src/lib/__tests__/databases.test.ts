@@ -33,7 +33,7 @@ import {
  * Databases hub (board approved Nov 8; register P3, C1, M1, M2, A9 to A18).
  * The register's access lines win where they differ from the board.
  */
-const PROFILES: Record<string, { roles: AppRole[]; seats: AccessSeats }> = {
+const PROFILES = {
   PC: { roles: ["tech"], seats: {} },
   Supervisor: { roles: ["manager"], seats: { opsSupervisor: true } },
   DirOps: { roles: ["manager"], seats: { opsDirector: true } },
@@ -42,7 +42,7 @@ const PROFILES: Record<string, { roles: AppRole[]; seats: AccessSeats }> = {
   Utilities: { roles: ["onboarding"], seats: { utilities: true } },
   Design: { roles: ["onboarding"], seats: {} },
   Finance: { roles: ["manager"], seats: { finance: true } },
-  Admin: { roles: ["admin"], seats: {} },
+  Admin: { roles: ["admin"] as AppRole[], seats: {} as AccessSeats },
 };
 
 // E = You can edit, V = View only, O = Operations and Finance only, - = not shown.
