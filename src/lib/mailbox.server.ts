@@ -379,7 +379,14 @@ export type MailboxSyncResult = {
  */
 export async function syncMailbox(
   db: Db,
-  options: { limit?: number; dryRun?: boolean } = {},
+  options: {
+    limit?: number;
+    dryRun?: boolean;
+    /** Timed sweep: keep reading pages of `limit` until nothing is left in this run. */
+    paging?: boolean;
+    maxPages?: number;
+    budgetMs?: number;
+  } = {},
 ): Promise<MailboxSyncResult> {
   const limit = Math.min(Math.max(options.limit ?? 25, 1), 50);
   const dryRun = options.dryRun ?? false;
@@ -400,12 +407,16 @@ export async function syncMailbox(
     items: [],
   };
 
+  // The switch is real: while it is off nothing is read, tagged or created.
+  const gate = await readIntakeGate(db);
+  if (!gate.on) return { ...base, ok: false, error: INTAKE_OFF_MESSAGE };
+
   if (!mailboxReadEnabled()) {
     return { ...base, ok: false, error: "The Microsoft mailbox is not connected." };
   }
 
   // First run ever: stamp the checkpoint and stop. Nothing historical is imported.
-  const checkpoint = await readCheckpoint(db);
+  const checkpoint = gate.startLine;
   if (!checkpoint) {
     const now = new Date().toISOString();
     if (!dryRun) await writeCheckpoint(db, now);
@@ -418,22 +429,36 @@ export async function syncMailbox(
     };
   }
 
-  let messages: GraphMessage[] = [];
-  try {
-    messages = await fetchTriggerMail(limit, checkpoint);
-  } catch (err) {
-    return {
-      ...base,
-      ok: false,
-      error: err instanceof Error ? err.message : "Could not read the mailbox.",
-    };
-  }
-
-  base.scanned = messages.length;
-
-  for (const msg of messages) {
-    const outcome = await processMessage(db, msg, dryRun);
-    applyOutcome(base, outcome);
+  // One page of up to `limit`, oldest first. The timed sweep keeps paging
+  // until nothing new is left in this run (bounded so a run always ends).
+  const seenIds = new Set<string>();
+  const maxPages = options.paging ? Math.max(options.maxPages ?? 20, 1) : 1;
+  const budgetMs = options.budgetMs ?? 40_000;
+  const started = Date.now();
+  let cursor = checkpoint;
+  let inclusive = false;
+  for (let page = 0; page < maxPages; page++) {
+    let batch: Awaited<ReturnType<typeof fetchTriggerMail>>;
+    try {
+      batch = await fetchTriggerMail(limit, cursor, inclusive);
+    } catch (err) {
+      const error = err instanceof Error ? err.message : "Could not read the mailbox.";
+      if (page === 0) return { ...base, ok: false, error };
+      base.error = error;
+      break;
+    }
+    const fresh = batch.messages.filter((m) => !seenIds.has(m.id));
+    for (const m of fresh) seenIds.add(m.id);
+    base.scanned += fresh.length;
+    for (const msg of fresh) {
+      const outcome = await processMessage(db, msg, dryRun, gate);
+      applyOutcome(base, outcome);
+    }
+    const last = batch.messages[batch.messages.length - 1]?.receivedDateTime;
+    if (!batch.more || fresh.length === 0 || !last) break;
+    if (Date.now() - started > budgetMs) break;
+    cursor = last;
+    inclusive = true;
   }
 
   // The checkpoint is the activation line, not a read cursor: it stays where
