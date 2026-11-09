@@ -32,6 +32,11 @@
 - [x] 02b not run, replaced by blocking (Emily, Nov 9): 02c blocked the last 4; all 18 blocked, none deleted
 - [x] 03 closed the two demo follow-ups on the removed QA Kati account and deleted their 2 alerts; staff alerts 443
 
+## Nov 9 Notion import: older open, then closed history (Emily's go, 11:30 AM Central)
+- [x] Read-only checks before writing: counts, storage, claim amounts per group from Notion fields
+- [ ] Stopped before any write: imported claims on older open and closed tickets would add about $123,000 to Money we could still lose (N2, N4); waits for Emily's choice
+- [ ] Waits for Emily: newest closed first needs a one-line read-order change; Supervisor check lists imports as New in the last 24 hours
+
 ## Nov 9 Notion import, read only steps (register N6)
 - [x] Check the connection, full dry run and a chosen 20-ticket preview, run read only outside the app (the in-app buttons save run status, so not pressed)
 - [ ] Emily reviews the preview of 20, then the three runs wait for her go
