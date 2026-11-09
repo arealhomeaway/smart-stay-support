@@ -12,17 +12,20 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   escapeHtml,
+  labelRect,
   MAP_COPY,
   MILE_IN_METERS,
   PIN_GAP,
   pinAriaLabel,
   pinLabel,
+  placeLabels,
   ringLabelPoint,
   ringSpecs,
   spreadPoints,
   tilesFailed,
   type MapCenter,
   type MapPin,
+  type Rect,
 } from "@/lib/search-map";
 
 const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
@@ -51,6 +54,9 @@ export function SearchMap({ center, distance, distances, pins, highlightedId, fo
   const pinLayers = useRef<Map<string, PinLayers>>(new Map());
   const tapRef = useRef(onPinTap);
   tapRef.current = onPinTap;
+  const orderRef = useRef<{ highlightedId: string | null; picked: Set<string> }>({ highlightedId: null, picked: new Set() });
+  orderRef.current = { highlightedId, picked: new Set(pins.filter((p) => p.picked).map((p) => p.id)) };
+  const placeRef = useRef<() => void>(() => {});
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [touch, setTouch] = useState(false);
@@ -161,7 +167,7 @@ export function SearchMap({ center, distance, distances, pins, highlightedId, fo
       icon: L.divIcon({
         className: "",
         iconSize: [0, 0],
-        html: `<span data-search-point class="absolute -left-2.5 -top-2.5 size-5 rounded-sm border-[3px] border-background bg-foreground shadow"></span><span class="absolute left-4 -top-3 whitespace-nowrap rounded-md bg-foreground px-2 py-0.5 text-xs font-semibold text-background shadow">${escapeHtml(center.label)}</span>`,
+        html: `<span data-search-point class="absolute -left-2.5 -top-2.5 size-5 rounded-sm border-[3px] border-background bg-foreground shadow"></span><span data-search-label class="absolute left-4 -top-3 whitespace-nowrap rounded-md bg-foreground px-2 py-0.5 text-xs font-semibold text-background shadow">${escapeHtml(center.label)}</span>`,
       }),
     }).addTo(group);
 
@@ -193,7 +199,7 @@ export function SearchMap({ center, distance, distances, pins, highlightedId, fo
         icon: L.divIcon({
           className: "group/label",
           iconSize: [0, 0],
-          html: `<span data-pin-label="${p.number}" class="absolute left-6 -top-3 whitespace-nowrap rounded-md border border-border bg-card px-1.5 py-0.5 text-[11px] font-medium text-foreground shadow-sm group-[.is-picked]/label:border-primary">${escapeHtml(pinLabel(p))}</span>`,
+          html: `<span data-pin-label="${p.number}" class="invisible absolute left-0 top-0 whitespace-nowrap rounded-md border border-border bg-card px-1.5 py-0.5 text-[11px] font-medium text-foreground shadow-sm group-[.is-picked]/label:border-primary">${escapeHtml(pinLabel(p))}</span>`,
         }),
       }).addTo(group);
       label.on("click", () => tapRef.current(p.id));
@@ -223,12 +229,38 @@ export function SearchMap({ center, distance, distances, pins, highlightedId, fo
         const movedFar = Math.hypot(real.x - s.x, real.y - s.y) > 4;
         leader.setLatLngs(movedFar ? [[data.lat, data.lng], shown] : []);
       }
+      // Labels go where they cover nothing; the highlighted and picked homes first.
+      const frame = map.getContainer().getBoundingClientRect();
+      const blocked: Rect[] = [...map.getContainer().querySelectorAll("[data-search-point], [data-search-label], [data-ring-label]")].map((el) => {
+        const r = el.getBoundingClientRect();
+        return { x: r.left - frame.left, y: r.top - frame.top, w: r.width, h: r.height };
+      });
+      const { highlightedId: lit, picked } = orderRef.current;
+      const rank = (id: string) => (id === lit ? 0 : picked.has(id) ? 1 : 2);
+      const ordered = [...all].sort((a, b) => rank(a.data.id) - rank(b.data.id) || a.data.number - b.data.number);
+      const items = ordered.map(({ pin, label, data }) => {
+        const pt = map.latLngToContainerPoint(pin.getLatLng());
+        const span = label.getElement()?.firstElementChild as HTMLElement | null;
+        return { id: data.id, x: pt.x, y: pt.y, w: span?.offsetWidth ?? 0, h: span?.offsetHeight ?? 0, span };
+      });
+      const sides = placeLabels(items, blocked);
+      for (const item of items) {
+        if (!item.span) continue;
+        const side = sides.get(item.id) ?? null;
+        item.span.classList.toggle("invisible", side === null);
+        if (!side) continue;
+        const r = labelRect({ x: 0, y: 0 }, item, side);
+        item.span.style.left = `${r.x}px`;
+        item.span.style.top = `${r.y}px`;
+      }
     };
+    placeRef.current = place;
 
     place();
     map.on("zoomend", place);
     return () => {
       map.off("zoomend", place);
+      placeRef.current = () => {};
       group.remove();
       pinLayers.current = new Map();
     };
@@ -251,6 +283,7 @@ export function SearchMap({ center, distance, distances, pins, highlightedId, fo
       layers.pin.setZIndexOffset(p.id === highlightedId ? 500 : p.picked ? 200 : 0);
       layers.pin.getElement()?.setAttribute("aria-pressed", String(p.id === highlightedId));
     }
+    placeRef.current();
   }, [ready, pins, highlightedId, pinKey]);
 
   // Center the pin a card asked for.
