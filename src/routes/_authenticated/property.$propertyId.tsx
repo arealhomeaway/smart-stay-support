@@ -4,6 +4,7 @@
  * Staff only. The server decides what each person may read; this file renders
  * it. Codes stay encrypted behind a logged Show. Nothing here deletes data.
  */
+import { HomeRepeatFlags } from "@/components/work-entry/HomeRepeatFlags";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -615,6 +616,7 @@ function OperationsTab({ hub, canEdit }: { hub: Hub; canEdit: boolean }) {
   );
   return (
     <div className="space-y-4">
+      <HomeRepeatFlags propertyId={hub.property.id} />
       <ArrivalReadyCard propertyId={hub.property.id} />
       <OwnerRezListingCard propertyId={hub.property.id} listingId={hub.property.ownerRezListingId} canEdit={canEdit} />
       <SectionCard title="Breezeway work orders">

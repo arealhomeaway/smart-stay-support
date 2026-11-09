@@ -63,6 +63,7 @@
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-warning-ink: var(--warning-ink);
   --color-danger: var(--danger);
   --color-danger-foreground: var(--danger-foreground);
   --color-info: var(--info);
@@ -159,6 +160,7 @@
   --success-foreground: oklch(0.995 0.002 240);
   --warning: var(--amber);
   --warning-foreground: oklch(0.22 0.012 220);
+  --warning-ink: oklch(0.45 0.1 68); /* amber text on light surfaces */
   --danger: var(--coral);
   --danger-foreground: oklch(0.995 0.002 240);
   --info: var(--sky);
@@ -247,6 +249,7 @@
   --success-foreground: oklch(0.199 0.01 220);
   --warning: var(--amber);
   --warning-foreground: oklch(0.199 0.01 220);
+  --warning-ink: var(--amber);
   --danger: var(--coral);
   --danger-foreground: oklch(0.16 0.03 27);
   --info: var(--sky);

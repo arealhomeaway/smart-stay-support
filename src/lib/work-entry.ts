@@ -1,9 +1,9 @@
 /**
- * Work Entry Model — the three ways Operations records something.
- *
- *  - Log Property Activity: already handled, history only (property_activity_log).
- *  - Create Ops Ticket: actionable non-maintenance work (Ticket engine).
- *  - Create Maintenance Ticket: physical repair work (Ticket engine + maintenance fields).
+ * Work Entry Model. Record work is one form (register T8 to T11): Create
+ * ticket makes one ordinary ticket, and the stored label ("ops" or
+ * "maintenance") is set automatically from Repair needed at the home
+ * (src/lib/record-work.ts). One touch saves to the home's history only
+ * (property_activity_log), never a ticket.
  *
  * Pure: no I/O. The owner-relevance rule reads the one maintenance threshold
  * from MAINTENANCE_POLICY; nothing here restates a dollar amount.
@@ -11,24 +11,6 @@
 import { MAINTENANCE_POLICY } from "@/lib/maintenance-policy";
 
 export type EntryKind = "activity" | "ops" | "maintenance";
-
-export const ENTRY_KINDS: { value: EntryKind; title: string; hint: string }[] = [
-  {
-    value: "activity",
-    title: "Log Property Activity",
-    hint: "Already handled outside Resolve, nothing left to do. Saved to the property's history only.",
-  },
-  {
-    value: "ops",
-    title: "Create Ops Ticket",
-    hint: "Guest, reservation or coordination work that still needs someone to own and finish it.",
-  },
-  {
-    value: "maintenance",
-    title: "Create Maintenance Ticket",
-    hint: "Something physical at the home needs repair or maintenance.",
-  },
-];
 
 export const ACTIVITY_CATEGORIES = [
   { value: "guest", label: "Guest-related" },

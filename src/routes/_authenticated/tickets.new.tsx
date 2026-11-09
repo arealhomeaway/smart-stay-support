@@ -7,73 +7,42 @@ import {
   type IssueRelation,
   type Occupancy,
 } from "@/lib/guest-impact";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { captureTicketReservation, getPropertyStay } from "@/lib/ownerrez.functions";
-import { PropertyContactPanel } from "@/components/PropertyContactPanel";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ChevronDown, Clock, History, Users, Wrench } from "lucide-react";
+import { Camera, Mic, X } from "lucide-react";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { CHECKLIST_CATEGORIES, categoryUsesChecklist, isActiveGuest, parseChecklistRow, templatePriority } from "@/lib/ticket-checklists";
-
-import { PropertyActivityForm } from "@/components/work-entry/PropertyActivityForm";
-import {
-  ENTRY_KINDS,
-  INSURANCE_RISK,
-  insuranceOptionShown,
-  MAINTENANCE_CATEGORIES,
-  defaultMaintenanceWorkTypeName,
-  insuranceFlagged,
-  labelOf,
-  workTypeFitsKind,
-  guessMaintenanceCategory,
-  type EntryKind,
-} from "@/lib/work-entry";
 import { supabase } from "@/integrations/supabase/client";
-import { usTime } from "@/lib/dates";
 import { useRole } from "@/hooks/useRole";
 import { useDemo } from "@/components/DemoProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { slaDueDates } from "@/lib/tickets";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  GUEST_IMPACT,
-  OCCUPANCY_STATUS,
-  PRIORITIES,
-  SOURCE_CHANNELS,
-  labelFor,
-  mechanicalPriority,
-  priorityMeta,
-  priorityTone,
-  slaDueDates,
-} from "@/lib/tickets";
-import {
-  SITUATIONS,
-  SITUATION_GROUPS,
-  priorityReason,
-  resolveWorkType,
-  situationById,
-} from "@/lib/situations";
-import { applyRecordWorkSituation, canOverrideRecordWorkType, situationEntryKind, suggestedRecordWorkSituation } from "@/lib/record-work";
+  activityCategoryFor,
+  guestInHomeFrom,
+  NOT_SURE_PROBLEM,
+  ONE_TOUCH_OUTCOME,
+  REPAIR_WORDS,
+  repeatLine,
+  understandRecordWork,
+  urgencyWords,
+  whoWillDoIt,
+} from "@/lib/record-work";
+import type { EntryKind } from "@/lib/work-entry";
+import { useActivityUpload } from "@/components/work-entry/useActivityUpload";
 import { BackControl } from "@/components/nav/NavContext";
 import { resolveOrigin } from "@/lib/nav-context";
 
 /**
  * Context handed in by whichever surface launched this form. It only
- * pre-populates fields and records where the ticket came from — every
- * classification choice stays with the person logging the work.
+ * pre-populates the home and records where the work came from.
  */
 type NewTicketSearch = {
   property?: string;
@@ -82,7 +51,7 @@ type NewTicketSearch = {
   from?: string;
   /** Navigation-context token for the workspace this was launched from. */
   origin?: string;
-  /** Preselects one of the three entry paths. */
+  /** Older links still carry it; Record work sets the label from the text. */
   kind?: EntryKind;
   /** Guest feedback record this new work follows up on (kept separate from it). */
   feedback?: string;
@@ -115,16 +84,9 @@ export const Route = createFileRoute("/_authenticated/tickets/new")({
   head: () => ({
     meta: [
       { title: "Record work | Resolve Operations" },
-      {
-        name: "description",
-        content:
-          "Log Property Activity, Create Ops Ticket or Create Maintenance Ticket.",
-      },
+      { name: "description", content: "Say which home and what is wrong. Create a ticket or save it to the home's history." },
       { property: "og:title", content: "Record work | Resolve Operations" },
-      {
-        property: "og:description",
-        content: "Log a one-touch resolution or open a ticket with its response standard attached.",
-      },
+      { property: "og:description", content: "One form: Resolve reads the problem, sets the urgency and sends it to the right role." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -139,95 +101,89 @@ function NewMatterPage() {
     <NewTicketForm
       context={context}
       onCreated={(id) => router.navigate({ to: "/tickets/$ticketId", params: { ticketId: id } })}
-      onActivityLogged={(pid) =>
-        router.navigate({ to: "/property/$propertyId", params: { propertyId: pid } })
-      }
     />
   );
 }
 
-type Mode = EntryKind | null;
-
 export type { NewTicketSearch };
 
+type WorkTypeRow = {
+  id: string;
+  name: string;
+  category: string;
+  bucket: string | null;
+  default_priority: string;
+  functional_role_code: string | null;
+  playbook_id: string | null;
+  response_minutes: number | null;
+  action_start_minutes: number | null;
+  pending_approval?: boolean | null;
+};
+
+type RepeatInfo = { line: string; flagged: boolean } | null;
+
+type Saved = {
+  kind: "ticket" | "one_touch";
+  ticketId?: string;
+  problem: string;
+  home: string;
+  who?: string;
+  repeat: RepeatInfo;
+};
+
+type SpeechCtor = new () => {
+  lang: string;
+  interimResults: boolean;
+  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
 /**
- * The one Report an issue form. The full page and the shell side panel both
- * render it; only what happens after the record is created differs.
+ * Record work: one form. Which home, what is wrong, what Resolve understood,
+ * then Create ticket or One touch. The full page and the shell side panel
+ * both render it; Open ticket is the only thing that differs.
  */
 export function NewTicketForm({
   context,
   onCreated,
   inPanel = false,
-  onActivityLogged,
 }: {
   context: NewTicketSearch;
+  /** Open ticket (or an existing linked ticket). */
   onCreated: (ticketId: string) => void;
   /** Rendered in the shell side panel: the panel's Close is the way back. */
   inPanel?: boolean;
-  /** After a Property Activity entry is saved (no Ticket exists). */
-  onActivityLogged?: (propertyId: string) => void;
 }) {
-  const { can, readOnly, roles: userRoles, isSupervisor, isLoading: rolesLoading } = useRole();
-  const canOverrideWorkType = canOverrideRecordWorkType(userRoles);
+  const { can, readOnly, isLoading: rolesLoading } = useRole();
   // In the demo environment a new ticket is a demo ticket: it lands in the
   // demo queues, never in the real counts, and reaches no guest or vendor.
   const { demoMode } = useDemo();
-  const [mode, setModeRaw] = useState<Mode>(context.kind ?? null);
-  const isTicket = mode === "ops" || mode === "maintenance";
-  // Guided checklist category (display only; it picks the same situation and work type a person could pick today).
   const flags = useFeatureFlags();
-  const [checklistCategory, setChecklistCategory] = useState<string | null>(null);
-  const activeCategory =
-    mode === "maintenance"
-      ? (categoryUsesChecklist("maintenance", flags.enabled) ? "maintenance" : null)
-      : checklistCategory && categoryUsesChecklist(checklistCategory, flags.enabled) ? checklistCategory : null;
-  const liveChecklist = useQuery({
-    queryKey: ["live-ticket-checklist", activeCategory],
-    enabled: Boolean(activeCategory),
-    queryFn: async () => {
-      const { data, error } = await (supabase as unknown as { from: (t: string) => any })
-        .from("playbooks")
-        .select("id, title, version, checklist, checklist_category, sop_url")
-        .eq("checklist_category", activeCategory)
-        .eq("status", "approved")
-        .not("checklist", "is", null)
-        .maybeSingle();
-      if (error) throw error;
-      return data ? parseChecklistRow(data) : null;
-    },
-  });
-  const [saving, setSaving] = useState(false);
-  const [priorityTouched, setPriorityTouched] = useState(false);
-  // Guest impact must be a person's answer, never inferred from occupancy.
-  const [impactAnswered, setImpactAnswered] = useState(false);
-  // Everything Resolve can decide for itself stays folded away until asked for.
-  const [advanced, setAdvanced] = useState(false);
-  const [situationTouched, setSituationTouched] = useState(false);
+  const qc = useQueryClient();
+  const upload = useActivityUpload();
+
+  const [propertyId, setPropertyId] = useState(context.property ?? "");
   const [propertyQuery, setPropertyQuery] = useState("");
+  const [description, setDescription] = useState("");
+  const [chosenWorkTypeId, setChosenWorkTypeId] = useState<string | null>(null);
+  const [pickingProblem, setPickingProblem] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
+  const [saving, setSaving] = useState<null | "ticket" | "one_touch" | "escalate">(null);
+  const [saved, setSaved] = useState<Saved | null>(null);
+  const [createdTicketId, setCreatedTicketId] = useState<string | null>(null);
+  const [escalated, setEscalated] = useState(false);
+  const [listening, setListening] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const speechRef = useRef<InstanceType<SpeechCtor> | null>(null);
+  const [speechCtor, setSpeechCtor] = useState<SpeechCtor | null>(null);
 
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    property_id: context.property ?? "",
-    situation_id: "",
-    work_type_id: "",
-
-    guest_impact: "none",
-    occupancy_status: "vacant",
-    priority: "p3",
-    priority_override_reason: "",
-    functional_role_code: "",
-    cross_team: false,
-    source_channel: "guest_message",
-    guest_name: "",
-    guest_contact: "",
-    guest_in_residence: false,
-    playbook_id: "auto",
-    // maintenance only
-    maintenance_category: "",
-    insurance_risk: "",
-    estimated_cost: "",
-  });
+  useEffect(() => {
+    const w = window as unknown as { SpeechRecognition?: SpeechCtor; webkitSpeechRecognition?: SpeechCtor };
+    setSpeechCtor(() => w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null);
+  }, []);
 
   const { data: properties } = useQuery({
     queryKey: ["properties", demoMode, context.property ?? null],
@@ -243,17 +199,17 @@ export function NewTicketForm({
     },
   });
 
-  // OwnerRez tells us who is actually in the home right now.
+  // OwnerRez tells us who is actually in the home right now (T9: in the home = affected).
   const fetchStay = useServerFn(getPropertyStay);
-  const { data: stay, isFetching: stayLoading } = useQuery({
-    queryKey: ["ownerrez-stay", form.property_id],
-    queryFn: () => fetchStay({ data: { propertyId: form.property_id } }),
-    enabled: Boolean(form.property_id),
+  const { data: stay } = useQuery({
+    queryKey: ["ownerrez-stay", propertyId],
+    queryFn: () => fetchStay({ data: { propertyId } }),
+    enabled: Boolean(propertyId),
     retry: false,
   });
+  const stayData = stay?.ok && stay.propertyId === propertyId ? stay.data : null;
 
-  // A lead only carries context: name for the banner, and the property it is
-  // already linked to so the form can start there when nothing else says otherwise.
+  // A lead only carries context: the home it is already linked to.
   const { data: leadContext } = useQuery({
     queryKey: ["lead-ticket-context", context.lead],
     enabled: Boolean(context.lead),
@@ -267,38 +223,20 @@ export function NewTicketForm({
       return data;
     },
   });
-
   useEffect(() => {
     const linked = leadContext?.lead_properties?.[0]?.property_id;
-    if (!linked) return;
-    setForm((f) => (f.property_id ? f : { ...f, property_id: linked }));
+    if (linked) setPropertyId((p) => p || linked);
   }, [leadContext]);
 
   const { data: workTypes } = useQuery({
     queryKey: ["work-types"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("work_types")
-        .select("*")
-        .eq("active", true)
-        .order("sort_order");
+      const { data, error } = await supabase.from("work_types").select("*").eq("active", true).order("sort_order");
       if (error) throw error;
-      return data;
+      return data as unknown as WorkTypeRow[];
     },
   });
-
-  const { data: roles } = useQuery({
-    queryKey: ["functional-roles"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("functional_roles")
-        .select("*")
-        .eq("active", true)
-        .order("sort_order");
-      if (error) throw error;
-      return data;
-    },
-  });
+  const problemTypes = useMemo(() => (workTypes ?? []).filter((w) => !w.pending_approval), [workTypes]);
 
   const { data: playbooks } = useQuery({
     queryKey: ["playbooks"],
@@ -315,1100 +253,582 @@ export function NewTicketForm({
     },
   });
 
-  // Changing path drops a work type that belongs to the other path.
-  function setMode(next: Mode) {
-    setModeRaw(next);
-    setForm((f) => {
-      const wt = workTypes?.find((w) => w.id === f.work_type_id);
-      const keep = wt && (next === "ops" || next === "maintenance") && workTypeFitsKind(wt.category, next);
-      return keep ? f : { ...f, work_type_id: "", situation_id: "" };
-    });
-  }
-
-  const kindWorkTypes = useMemo(
+  const understood = useMemo(
     () =>
-      (workTypes ?? []).filter((w) =>
-        mode === "ops" || mode === "maintenance" ? workTypeFitsKind(w.category, mode) : true,
-      ),
-    [workTypes, mode],
+      understandRecordWork({
+        text: description,
+        catalog: problemTypes,
+        chosenWorkTypeId,
+        occupancy: stayData?.occupancy_status ?? null,
+      }),
+    [description, problemTypes, chosenWorkTypeId, stayData?.occupancy_status],
   );
+  const workType = understood.workType;
 
-  // Maintenance never stops on "pick a work type": with nothing recognised it
-  // falls back to the catalog's immediate/ongoing maintenance entry.
-  const effectiveWorkTypeId = useMemo(() => {
-    if (form.work_type_id) return form.work_type_id;
-    if (mode !== "maintenance") return "";
-    const affected = form.guest_in_residence || form.guest_impact === "active_guest_affected" || form.guest_impact === "safety_security";
-    const name = defaultMaintenanceWorkTypeName(affected);
-    return kindWorkTypes.find((w) => w.name === name)?.id ?? kindWorkTypes[0]?.id ?? "";
-  }, [form.work_type_id, form.guest_in_residence, form.guest_impact, mode, kindWorkTypes]);
-
-  const workType = useMemo(
-    () => workTypes?.find((w) => w.id === effectiveWorkTypeId) ?? null,
-    [workTypes, effectiveWorkTypeId],
-  );
-
-  /**
-   * Situation → work type. Presentation only: it fills the same work_type_id
-   * the select always filled, plus sensible starting answers for the two
-   * contextual questions. The rubric still decides priority.
-   */
-  function pickSituation(id: string) {
-    setSituationTouched(true);
-    if (mode === "ops" && situationEntryKind(id) === "maintenance") setModeRaw("maintenance");
-    setForm((f) => applyRecordWorkSituation(f, id, workTypes));
-  }
-
-  /**
-   * "Looks like…" — deterministic reading of what the coordinator typed.
-   * It only preselects the same situation they could have picked by hand,
-   * and it stops as soon as they choose one themselves.
-   */
-  const guess = useMemo(
-    () => suggestedRecordWorkSituation(form.description, situationTouched, mode),
-    [form.description, situationTouched, mode],
-  );
-
-  useEffect(() => {
-    if (!guess || situationTouched || !isTicket) return;
-    const resolved = resolveWorkType(guess.situation, workTypes);
-    if (!resolved || (mode === "maintenance" && !workTypeFitsKind(resolved.category, mode))) return;
-    setForm((f) => f.situation_id === guess.situation.id ? f : applyRecordWorkSituation(f, guess.situation.id, workTypes));
-  }, [guess, situationTouched, workTypes, isTicket, mode]);
-
-  // Maintenance category starts from the description, like the work type does,
-  // until the coordinator picks one themselves.
-  const [categoryTouched, setCategoryTouched] = useState(false);
-  useEffect(() => {
-    if (mode !== "maintenance" || categoryTouched) return;
-    const g = guessMaintenanceCategory(form.description);
-    if (g && g !== form.maintenance_category) setForm((f) => ({ ...f, maintenance_category: g }));
-  }, [mode, categoryTouched, form.description, form.maintenance_category]);
-
-  const role = useMemo(
-    () => roles?.find((r) => r.code === form.functional_role_code) ?? null,
-    [roles, form.functional_role_code],
-  );
-
-  // Mechanical priority model: work type suggests, guest impact and occupancy decide.
-  const situation = useMemo(() => situationById(form.situation_id), [form.situation_id]);
-
+  // Guided checklist (unchanged rule): the same category the old form picked from the situation.
   const checklistGuestActive = isActiveGuest({
-    inHome: Boolean(form.guest_in_residence) || form.occupancy_status === "occupied",
-    nextArrival: stay?.ok ? (stay.data as { next_arrival?: string | null }).next_arrival ?? (form.occupancy_status === "same_day_arrival" ? new Date().toISOString() : null) : null,
+    inHome: understood.occupancy === "occupied",
+    nextArrival: (stayData as { next_arrival?: string | null } | null)?.next_arrival ?? null,
   });
-  useEffect(() => {
-    const category = CHECKLIST_CATEGORIES.find((c) => c.flag && c.situation(checklistGuestActive) === form.situation_id);
-    setChecklistCategory(category?.id ?? null);
-  }, [form.situation_id, checklistGuestActive]);
-  const checklistStartPriority = activeCategory ? templatePriority(liveChecklist.data, checklistGuestActive) : null;
-  const mechanicalBase = useMemo(
-    () =>
-      mechanicalPriority(
-        workType?.default_priority,
-        form.guest_impact,
-        form.occupancy_status,
-        situation?.priorityCeiling ?? null,
-      ),
-    [workType, form.guest_impact, form.occupancy_status, situation],
-  );
-  // A checklist template may set the starting priority (for example lockout with an active guest = P1).
-  const mechanical = checklistStartPriority ?? mechanicalBase;
-
-  useEffect(() => {
-    if (!priorityTouched) setForm((f) => ({ ...f, priority: mechanical }));
-  }, [mechanical, priorityTouched]);
-
-  // Prefill occupancy and guest from the live reservation instead of guessing.
-  // Guards against an out-of-order response: react-query's queryKey already
-  // scopes the cache by property_id, but this also refuses to apply a
-  // payload that doesn't say it's for the property currently selected —
-  // belt-and-suspenders against a stale fetch resolving after a newer one.
-  useEffect(() => {
-    if (!stay?.ok || stay.propertyId !== form.property_id) return;
-    const s = stay.data;
-    setForm((f) => ({
-      ...f,
-      occupancy_status: s.occupancy_status,
-      guest_name: s.guest_name ?? f.guest_name,
-      // Occupancy says who is in the home, never whether they were affected.
-      // The person confirms impact below; this only resets a stale answer.
-      guest_in_residence: f.guest_in_residence,
-    }));
-    setImpactAnswered(false);
-  }, [stay, form.property_id]);
-
-  // The work type also carries its owning seat from the ownership matrix.
-  useEffect(() => {
-    if (workType?.functional_role_code) {
-      setForm((f) => ({ ...f, functional_role_code: workType.functional_role_code as string }));
-    }
-  }, [workType]);
-
-  const overridden = Boolean(workType && form.priority !== mechanical);
-  const meta = priorityMeta(form.priority);
-
-  const resolvedPlaybookId = useMemo(() => {
-    const id = form.playbook_id !== "auto" ? form.playbook_id : workType?.playbook_id;
-    return playbooks?.some((p) => p.id === id) ? id ?? null : null;
-  }, [form.playbook_id, workType, playbooks]);
-
-  // The first line of what happened is the summary — nobody types it twice.
-  const derivedTitle = (form.title.trim() || form.description.trim().split("\n")[0] || "").slice(
-    0,
-    140,
-  );
-
-  const guestInHomeNow = Boolean(
-    stay?.ok && stay.propertyId === form.property_id && stay.data.occupancy_status !== "vacant",
-  );
-  const guestImpactQuestion = (
-    <>
-      {stay?.ok && stay.propertyId === form.property_id && stay.data.occupancy_status !== "vacant" ? (
-                  <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
-                    <p className="text-sm">
-                      OwnerRez shows {stay.data.guest_name ?? "a guest"} in the home right now.
-                    </p>
-                    <Label>Was the guest actually affected by this issue?</Label>
-                    <div className="flex gap-2" role="radiogroup" aria-label="Was the guest actually affected">
-                      {[
-                        { v: true, label: "Yes, the guest is affected" },
-                        { v: false, label: "No, not affected" },
-                      ].map((o) => (
-                        <Button
-                          key={String(o.v)}
-                          type="button"
-                          role="radio"
-                          size="sm"
-                          aria-checked={impactAnswered && form.guest_in_residence === o.v}
-                          variant={impactAnswered && form.guest_in_residence === o.v ? "default" : "outline"}
-                          onClick={() => {
-                            setImpactAnswered(true);
-                            setForm({ ...form, guest_in_residence: o.v });
-                          }}
-                        >
-                          {o.label}
-                        </Button>
-                      ))}
-                    </div>
-                    {!impactAnswered && (
-                      <p className="text-xs text-muted-foreground">
-                        A guest being in the home is not the same as being affected. Please choose one.
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="guest-affected">A guest is currently affected</Label>
-                    <Switch
-                      id="guest-affected"
-                      checked={form.guest_in_residence}
-                      onCheckedChange={(v) => {
-                        setImpactAnswered(true);
-                        setForm({ ...form, guest_in_residence: v });
-                      }}
-                    />
-                  </div>
-                )}
-    </>
-  );
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!derivedTitle) {
-      toast.error("Tell us what happened first.");
-      return;
-    }
-    if (!isTicket) return;
-    if (mode === "ops" && situationEntryKind(form.situation_id) === "maintenance") {
-      setModeRaw("maintenance");
-      return;
-    }
-    if (!effectiveWorkTypeId) {
-      toast.error("Choose a situation. If none fits, ask a Supervisor to choose the work type.");
-      return;
-    }
-    if (guestInHomeNow && !impactAnswered && !form.guest_in_residence) {
-      toast.error("A guest is in the home. Please say whether they were actually affected.");
-      return;
-    }
-    if (mode === "maintenance" && !form.maintenance_category) {
-      toast.error("Pick the maintenance category.");
-      return;
-    }
-    if (mode === "maintenance" && insuranceOptionShown(form.maintenance_category, form.insurance_risk) && !form.insurance_risk) {
-      toast.error("Answer whether this could be an insurance-related event (Yes / No / Unsure).");
-      return;
-    }
-    if (overridden && !form.priority_override_reason.trim()) {
-      toast.error(`The rubric says ${mechanical.toUpperCase()}. Document why you changed it.`);
-      return;
-    }
-
-    setSaving(true);
-    try {
-      // Provenance only — where the person was standing when they logged it.
-      const sourceReference = context.lead
-        ? `resolve:lead:${context.lead}`
-        : context.project
-          ? `resolve:onboarding:${context.project}`
-          : context.from === "property_hub" && context.property
-            ? `resolve:property_hub:${context.property}`
-            : context.from
-              ? `resolve:${context.from}`
-              : null;
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id ?? null;
-      const now = new Date();
-      const { response_due_at, action_due_at } = slaDueDates(form.priority, now, workType);
-      const oneTouch = false;
-      const estimated = form.estimated_cost.trim() ? Number(form.estimated_cost) : null;
-
-      // A demo home only ever carries demo Tickets, whatever mode the viewer is in.
-      const { data: propRow } = form.property_id
-        ? await supabase.from("properties").select("is_demo").eq("id", form.property_id).maybeSingle()
-        : { data: null };
-      const impactAtEntry = (() => {
-        const postStay = isPostStayFeedback(workType?.name);
-        const occupancy: Occupancy =
-          stay?.ok && stay.propertyId === form.property_id
-            ? stay.data.occupancy_status === "vacant"
-              ? "vacant"
-              : "in_home"
-            : "unknown";
-        const relation: IssueRelation | null = postStay
-          ? "prior"
-          : occupancy === "in_home" && form.guest_in_residence
-            ? "current"
-            : null;
-        const impact = suggestActiveStayImpact({
-          occupancy,
-          relation,
-          postStay,
-          guestAffectedNow: form.guest_in_residence,
-          guestImpact: form.guest_impact,
-        });
-        return { postStay, relation, impact, comm: suggestGuestComm(impact) };
-      })();
-      const { data: ticket, error } = await supabase
-        .from("tickets")
-        .insert({
-          is_demo: demoMode || Boolean(propRow?.is_demo),
-          record_type: oneTouch
-            ? "completed_interaction"
-            : form.cross_team
-              ? "collaborative_matter"
-              : "active_task",
-          title: derivedTitle,
-          description: form.description || null,
-          property_id: form.property_id || null,
-          work_type_id: effectiveWorkTypeId,
-          entry_kind: mode,
-          ...(activeCategory && liveChecklist.data && !oneTouch
-            ? ({ checklist_playbook_id: liveChecklist.data.id, checklist_category: activeCategory } as {})
-            : {}),
-          linked_feedback_id: context.feedback ?? null,
-          departure_review_id: context.departureReview ?? null,
-          maintenance_category: mode === "maintenance" ? form.maintenance_category : null,
-          insurance_risk: mode === "maintenance" ? form.insurance_risk || null : null,
-          estimated_cost: mode === "maintenance" && estimated !== null && Number.isFinite(estimated) ? estimated : null,
-          functional_role_code: form.functional_role_code || null,
-          cross_team: oneTouch ? false : form.cross_team,
-          category: workType?.category ?? "other",
-          bucket: workType?.bucket ?? null,
-          guest_impact: form.guest_impact,
-          occupancy_status: form.occupancy_status,
-          suggested_priority: mechanical,
-          priority: form.priority,
-          priority_override_reason: overridden ? form.priority_override_reason.trim() : null,
-          source_channel: form.source_channel,
-          source_reference: sourceReference,
-          // Post-stay feedback belongs to a past stay — never stamp the current booking on it.
-          ownerrez_booking_id: stay?.ok && !impactAtEntry.postStay ? stay.data.booking_id : null,
-          active_stay_impact: impactAtEntry.impact,
-          guest_comm_required: impactAtEntry.comm,
-          issue_reservation_relation: impactAtEntry.relation,
-          guest_name: form.guest_name || null,
-          guest_contact: form.guest_contact || null,
-          guest_in_residence: form.guest_in_residence,
-          playbook_id: oneTouch ? null : resolvedPlaybookId,
-          reported_at: now.toISOString(),
-          response_due_at: oneTouch ? null : response_due_at,
-          action_due_at: oneTouch ? null : action_due_at,
-          acknowledged_at: now.toISOString(),
-          action_started_at: oneTouch ? now.toISOString() : null,
-          due_at: oneTouch ? null : action_due_at,
-          created_by: userId,
-          record_owner: userId,
-          accountable_owner: userId,
-          // current_action_owner / assigned_to are no longer set here — the
-          // tickets_auto_assign database trigger resolves the owning role
-          // (functional_role_code) to its current seat holder server-side,
-          // or leaves the ticket unassigned with a reason if none is
-          // eligible.
-          // Every ticket is created "open", one-touch included — the
-          // resolved/closed transition below runs through the same
-          // validateTicketTransition gate every other ticket uses, so
-          // evidence and Final Review rules apply here too instead of being
-          // bypassed by inserting straight into a terminal status.
-          status: "open",
-          outcome_type: null,
-          resolution_notes: null,
-          resolved_at: null,
-        })
-        .select("id")
-        .single();
-      if (error && error.code === "23505" && context.feedback) {
-        // Linked work already exists for this feedback — reopen it, never duplicate.
-        const { data: existing } = await supabase
-          .from("tickets")
-          .select("id")
-          .eq("linked_feedback_id", context.feedback)
-          .eq("entry_kind", mode)
-          .is("archived_at", null)
-          .maybeSingle();
-        if (existing) {
-          toast.info("Linked work already exists — opening it.");
-          onCreated(existing.id);
-          return;
-        }
-      }
+  const situationCategory = useMemo(() => {
+    const c = CHECKLIST_CATEGORIES.find((c) => c.flag && c.situation(checklistGuestActive) === understood.situation?.id);
+    return c?.id ?? null;
+  }, [checklistGuestActive, understood.situation?.id]);
+  const activeCategory =
+    understood.entryKind === "maintenance"
+      ? categoryUsesChecklist("maintenance", flags.enabled) ? "maintenance" : null
+      : situationCategory && categoryUsesChecklist(situationCategory, flags.enabled) ? situationCategory : null;
+  const liveChecklist = useQuery({
+    queryKey: ["live-ticket-checklist", activeCategory],
+    enabled: Boolean(activeCategory),
+    queryFn: async () => {
+      const { data, error } = await (supabase as unknown as { from: (t: string) => any })
+        .from("playbooks")
+        .select("id, title, version, checklist, checklist_category, sop_url")
+        .eq("checklist_category", activeCategory)
+        .eq("status", "approved")
+        .not("checklist", "is", null)
+        .maybeSingle();
       if (error) throw error;
+      return data ? parseChecklistRow(data) : null;
+    },
+  });
+  const checklistStart = activeCategory ? templatePriority(liveChecklist.data, checklistGuestActive) : null;
+  const priority = checklistStart ?? understood.priority;
 
-      // Freeze OwnerRez stay context onto the ticket. Best effort: OwnerRez
-      // stays authoritative and a failure here must not fail ticket creation.
-      void captureTicketReservation({ data: { ticketId: ticket.id } }).catch(() => {});
+  // Who will do it: the routing by time result for this problem type, as a role.
+  const { data: route } = useQuery({
+    queryKey: ["record-work-route", workType?.id ?? null],
+    enabled: Boolean(propertyId) && description.trim().length > 0,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const { data, error } = await (supabase as unknown as { rpc: (n: string, a: object) => Promise<{ data: any; error: any }> })
+        .rpc("record_work_route_preview", { _work_type_id: workType?.id ?? null });
+      if (error) throw error;
+      return (Array.isArray(data) ? data[0] : data) as { who_kind: string; role_name: string | null } | null;
+    },
+  });
+  const who = whoWillDoIt(route, Boolean(workType));
 
-      if (context.lead) {
-        const { error: linkError } = await supabase.from("lead_tickets").insert({
-          lead_id: context.lead,
-          ticket_id: ticket.id,
-          linked_by: userId,
-        });
-        if (linkError) toast.error("Ticket saved, but linking it to the lead failed.");
+  const home = (properties ?? []).find((p) => p.id === propertyId);
+  const homeLabel = home ? formatPropertyLabel(home).primary : "";
+  const ready = Boolean(propertyId) && description.trim().length > 0;
+  const showUnderstood = ready && description.trim().length >= 3;
+
+  async function readRepeat(): Promise<RepeatInfo> {
+    if (!workType || !propertyId) return null;
+    const { data } = await (supabase as unknown as { rpc: (n: string, a: object) => Promise<{ data: any }> }).rpc(
+      "home_problem_repeat",
+      { _property_id: propertyId, _work_type_id: workType.id },
+    );
+    const r = Array.isArray(data) ? data[0] : data;
+    if (!r) return null;
+    return { line: repeatLine(workType.name, r.times_in_window, r.window_days), flagged: Boolean(r.flagged) };
+  }
+
+  function resetForAnother() {
+    setDescription("");
+    setChosenWorkTypeId(null);
+    setPickingProblem(false);
+    setFiles([]);
+    setSaved(null);
+    setCreatedTicketId(null);
+    setEscalated(false);
+  }
+
+  /** One ordinary ticket through the existing creation and routing. Returns its id. */
+  async function createTicket(): Promise<string | null> {
+    if (createdTicketId) return createdTicketId;
+    const title = description.trim().split("\n")[0]!.slice(0, 140);
+    const sourceReference = context.lead
+      ? `resolve:lead:${context.lead}`
+      : context.project
+        ? `resolve:onboarding:${context.project}`
+        : context.from === "property_hub" && context.property
+          ? `resolve:property_hub:${context.property}`
+          : context.from
+            ? `resolve:${context.from}`
+            : null;
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData.user?.id ?? null;
+    const now = new Date();
+    const { response_due_at, action_due_at } = slaDueDates(priority, now, workType);
+    const entryKind = understood.entryKind;
+    const playbookId = workType?.playbook_id && playbooks?.some((p) => p.id === workType.playbook_id) ? workType.playbook_id : null;
+
+    // A demo home only ever carries demo Tickets, whatever mode the viewer is in.
+    const { data: propRow } = await supabase.from("properties").select("is_demo").eq("id", propertyId).maybeSingle();
+    const impactAtEntry = (() => {
+      const postStay = isPostStayFeedback(workType?.name);
+      const occupancy: Occupancy = stayData ? (stayData.occupancy_status === "vacant" ? "vacant" : "in_home") : "unknown";
+      const guestAffected = understood.guestImpact !== "none";
+      const relation: IssueRelation | null = postStay ? "prior" : occupancy === "in_home" && guestAffected ? "current" : null;
+      const impact = suggestActiveStayImpact({
+        occupancy,
+        relation,
+        postStay,
+        guestAffectedNow: guestAffected,
+        guestImpact: understood.guestImpact,
+      });
+      return { postStay, relation, impact, comm: suggestGuestComm(impact) };
+    })();
+    const guestInResidence = guestInHomeFrom(understood.occupancy);
+
+    const { data: ticket, error } = await supabase
+      .from("tickets")
+      .insert({
+        is_demo: demoMode || Boolean(propRow?.is_demo),
+        record_type: "active_task",
+        title,
+        description: description.trim(),
+        property_id: propertyId,
+        work_type_id: workType?.id ?? null,
+        // The stored Ops or Maintenance label, set from Repair needed at the home.
+        entry_kind: entryKind,
+        ...(activeCategory && liveChecklist.data
+          ? ({ checklist_playbook_id: liveChecklist.data.id, checklist_category: activeCategory } as {})
+          : {}),
+        linked_feedback_id: context.feedback ?? null,
+        departure_review_id: context.departureReview ?? null,
+        maintenance_category: entryKind === "maintenance" ? understood.maintenanceCategory : null,
+        insurance_risk: understood.insurance ? "unsure" : null,
+        estimated_cost: null,
+        functional_role_code: workType?.functional_role_code ?? null,
+        cross_team: false,
+        category: workType?.category ?? "other",
+        bucket: workType?.bucket ?? null,
+        guest_impact: understood.guestImpact,
+        occupancy_status: understood.occupancy,
+        suggested_priority: priority,
+        priority,
+        priority_override_reason: null,
+        source_channel: "guest_message",
+        source_reference: sourceReference,
+        // Post-stay feedback belongs to a past stay — never stamp the current booking on it.
+        ownerrez_booking_id: stayData && !impactAtEntry.postStay ? stayData.booking_id : null,
+        active_stay_impact: impactAtEntry.impact,
+        guest_comm_required: impactAtEntry.comm,
+        issue_reservation_relation: impactAtEntry.relation,
+        guest_name: stayData?.guest_name ?? null,
+        guest_contact: null,
+        guest_in_residence: guestInResidence,
+        playbook_id: playbookId,
+        reported_at: now.toISOString(),
+        response_due_at,
+        action_due_at,
+        acknowledged_at: now.toISOString(),
+        action_started_at: null,
+        due_at: action_due_at,
+        created_by: userId,
+        record_owner: userId,
+        accountable_owner: userId,
+        // current_action_owner / assigned_to are set by the tickets_auto_assign
+        // database trigger (routing by the time), never here.
+        status: "open",
+        outcome_type: null,
+        resolution_notes: null,
+        resolved_at: null,
+      })
+      .select("id, assigned_to")
+      .single();
+    if (error && error.code === "23505" && context.feedback) {
+      // Linked work already exists for this feedback — open it, never duplicate.
+      const { data: existing } = await supabase
+        .from("tickets")
+        .select("id")
+        .eq("linked_feedback_id", context.feedback)
+        .eq("entry_kind", entryKind)
+        .is("archived_at", null)
+        .maybeSingle();
+      if (existing) {
+        toast.info("Linked work already exists. Opening it.");
+        onCreated(existing.id);
+        return null;
       }
+    }
+    if (error) throw error;
 
-      if (context.from?.startsWith("routine:")) {
-        const routineId = context.from.slice("routine:".length);
-        const { error: routineLinkError } = await supabase
-          .from("routine_controls")
-          .update({ follow_up_ticket_id: ticket.id })
-          .eq("id", routineId);
-        if (routineLinkError) toast.error("Ticket saved, but linking it to the routine failed.");
+    // Freeze OwnerRez stay context onto the ticket. Best effort.
+    void captureTicketReservation({ data: { ticketId: ticket.id } }).catch(() => {});
+
+    if (context.lead) {
+      const { error: linkError } = await supabase
+        .from("lead_tickets")
+        .insert({ lead_id: context.lead, ticket_id: ticket.id, linked_by: userId });
+      if (linkError) toast.error("Ticket saved, but linking it to the lead failed.");
+    }
+    if (context.from?.startsWith("routine:")) {
+      const { error: routineLinkError } = await supabase
+        .from("routine_controls")
+        .update({ follow_up_ticket_id: ticket.id })
+        .eq("id", context.from.slice("routine:".length));
+      if (routineLinkError) toast.error("Ticket saved, but linking it to the routine failed.");
+    }
+    if (playbookId) {
+      const { data: steps, error: stepsError } = await supabase
+        .from("playbook_steps")
+        .select("position, instruction, detail, required, photo_required")
+        .eq("playbook_id", playbookId)
+        .order("position");
+      if (stepsError) throw stepsError;
+      if (steps?.length) {
+        const { error: insertError } = await supabase.from("ticket_steps").insert(steps.map((s) => ({ ...s, ticket_id: ticket.id })));
+        if (insertError) throw insertError;
       }
-
-      if (!oneTouch && resolvedPlaybookId) {
-        const { data: steps, error: stepsError } = await supabase
-          .from("playbook_steps")
-          .select("position, instruction, detail, required, photo_required")
-          .eq("playbook_id", resolvedPlaybookId)
-          .order("position");
-        if (stepsError) throw stepsError;
-        if (steps?.length) {
-          const { error: insertError } = await supabase
-            .from("ticket_steps")
-            .insert(steps.map((s) => ({ ...s, ticket_id: ticket.id })));
-          if (insertError) throw insertError;
-        }
+    }
+    if (userId) {
+      await supabase.from("ticket_activity").insert({
+        ticket_id: ticket.id,
+        author_id: userId,
+        kind: "created",
+        event_type: "created",
+        channel: "guest_message",
+        body: `Ticket created from Record work. Problem: ${understood.problem}. Repair needed at the home: ${REPAIR_WORDS[understood.repair]}. How urgent: ${urgencyWords(priority)}. ${understood.reason}`,
+      });
+    }
+    if (files.length) {
+      try {
+        await upload(ticket.id, files, undefined, { entityType: "ticket", note: "Photo from Record work" });
+      } catch {
+        toast.error("Ticket saved, but a photo did not upload. Add it on the ticket.");
       }
+    }
+    setCreatedTicketId(ticket.id);
+    const repeat = await readRepeat();
+    setSaved({
+      kind: "ticket",
+      ticketId: ticket.id,
+      problem: understood.problem,
+      home: homeLabel,
+      who: ticket.assigned_to ? who : "A supervisor will sort it",
+      repeat,
+    });
+    void qc.invalidateQueries({ queryKey: ["tickets"] });
+    return ticket.id;
+  }
 
-      if (userId) {
-        await supabase.from("ticket_activity").insert({
-          ticket_id: ticket.id,
-          author_id: userId,
-          kind: "created",
-          event_type: "created",
-          channel: form.source_channel,
-          body: `${mode === "maintenance" ? "Maintenance Ticket created" : "Ops Ticket opened"}${
-            mode === "maintenance" ? ` (${labelOf(MAINTENANCE_CATEGORIES, form.maintenance_category)}${estimated !== null ? ` · est. $${estimated}` : ""})` : ""
-          }. Ticket opened at ${meta.short} (${labelFor(GUEST_IMPACT, form.guest_impact)} · ${labelFor(
-                OCCUPANCY_STATUS,
-                form.occupancy_status,
-              )}). Acknowledge within ${workType?.response_minutes ?? meta.responseMinutes}m.`,
-        });
-      }
-
-      toast.success(mode === "maintenance" ? "Maintenance Ticket created." : "Ticket opened with its clocks running.");
-      onCreated(ticket.id);
+  async function onCreate() {
+    if (!ready || saving) return;
+    setSaving("ticket");
+    try {
+      await createTicket();
     } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : err && typeof err === "object" && "message" in err
-            ? String((err as { message: unknown }).message)
-            : "Could not save this record",
-      );
+      toast.error(err instanceof Error ? err.message : "Could not save this ticket.");
     } finally {
-      setSaving(false);
+      setSaving(null);
     }
   }
 
-  const propertyPicker = (
-            <div className="space-y-2">
-              <Label>Property</Label>
-              <Select
-                value={form.property_id}
-                onValueChange={(v) => setForm({ ...form, property_id: v })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a property" />
-                </SelectTrigger>
-                <SelectContent>
-                  <div className="p-2">
-                    <Input
-                      placeholder="Search properties"
-                      value={propertyQuery}
-                      onChange={(e) => setPropertyQuery(e.target.value)}
-                      onKeyDown={(e) => e.stopPropagation()}
-                    />
-                  </div>
-                  {(properties ?? [])
-                    .filter((p) => matchesPropertySearch(p, propertyQuery))
-                    .map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {formatPropertyLabel(p).primary}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-              {properties?.length === 0 && (
-                <p className="text-xs text-muted-foreground">
-                  <Link to="/properties" className="text-primary hover:underline">
-                    Add your first property
-                  </Link>
-                </p>
-              )}
-              {form.property_id && (
-                <p className="text-xs text-muted-foreground">
-                  {stayLoading
-                    ? "Checking OwnerRez for the current reservation…"
-                    : stay?.ok
-                      ? stay.data.occupancy_status === "vacant"
-                        ? `No one in the home${stay.data.next_arrival ? ` · next arrival ${stay.data.next_arrival.slice(0, 10)}` : ""}`
-                        : `${stay.data.guest_name ?? "Guest"} in the home · ${stay.data.arrival?.slice(0, 10)} \u2192 ${stay.data.departure?.slice(0, 10)}`
-                      : (stay?.error ?? "")}
-                </p>
-              )}
-            </div>
-  );
+  async function onEscalate() {
+    if (!ready || saving) return;
+    setSaving("escalate");
+    try {
+      const id = await createTicket();
+      if (!id) return;
+      const { error } = await (supabase as unknown as { rpc: (n: string, a: object) => Promise<{ error: any }> }).rpc(
+        "record_work_escalate",
+        { _ticket_id: id },
+      );
+      if (error) throw new Error(error.message);
+      setEscalated(true);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not escalate this ticket.");
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  async function onOneTouch() {
+    if (!ready || saving) return;
+    setSaving("one_touch");
+    try {
+      let attachmentIds: string[] = [];
+      if (files.length) attachmentIds = await upload(propertyId, files);
+      const { data: u } = await supabase.auth.getUser();
+      // A demo home's history stays demo even outside demo mode.
+      const { data: prop } = await supabase.from("properties").select("is_demo").eq("id", propertyId).maybeSingle();
+      const { error } = await (supabase as unknown as { from: (t: string) => any }).from("property_activity_log").insert({
+        property_id: propertyId,
+        occurred_at: new Date().toISOString(),
+        category: activityCategoryFor(workType?.category),
+        what_happened: description.trim(),
+        outcome: ONE_TOUCH_OUTCOME,
+        involved: null,
+        ...(u.user ? { logged_by: u.user.id } : {}),
+        is_demo: demoMode || Boolean(prop?.is_demo),
+        attachment_document_ids: attachmentIds,
+        problem_type_id: workType?.id ?? null,
+        one_touch: true,
+      });
+      if (error) throw new Error(error.message);
+      void qc.invalidateQueries({ queryKey: ["property-activity", propertyId] });
+      void qc.invalidateQueries({ queryKey: ["home-repeat-flags"] });
+      const repeat = await readRepeat();
+      setSaved({ kind: "one_touch", problem: understood.problem, home: homeLabel, repeat });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Nothing was saved. Try again.");
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  function toggleSpeak() {
+    if (!speechCtor) return;
+    if (listening) {
+      speechRef.current?.stop();
+      return;
+    }
+    const rec = new speechCtor();
+    rec.lang = "en-US";
+    rec.interimResults = false;
+    rec.onresult = (e) => {
+      const said = Array.from(e.results)
+        .map((r) => r[0]?.transcript ?? "")
+        .join(" ")
+        .trim();
+      if (said) setDescription((d) => (d.trim() ? `${d.trim()} ${said}` : said));
+    };
+    rec.onend = () => setListening(false);
+    rec.onerror = () => setListening(false);
+    speechRef.current = rec;
+    setListening(true);
+    rec.start();
+  }
 
   // The capability is enforced in the database too; this stops someone
   // reaching the form by typing the URL.
   if (!rolesLoading && (readOnly || !can("ticket_create"))) {
     return (
       <div className="mx-auto max-w-lg space-y-3 py-16 text-center">
-        <h1 className="text-2xl font-semibold">Logging work is not part of your access</h1>
-        <p className="text-muted-foreground">
-          Ask a supervisor if you need to open tickets in Resolve.
-        </p>
+        <h1 className="text-2xl font-semibold">Recording work is not part of your access</h1>
+        <p className="text-muted-foreground">Ask a supervisor if you need to open tickets in Resolve.</p>
       </div>
     );
   }
 
-  return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      {/* Logging work is a detour, never a destination — the way back is named. */}
-      {!inPanel && <BackControl origin={resolveOrigin(context.origin, "ticket")} />}
-      <div>
-        <h1 className="text-3xl font-semibold">Record work</h1>
-        <p className="mt-1 text-muted-foreground">
-          Choose what you are recording: something already handled, Ops work that needs an owner,
-          or a repair at the home.
-        </p>
-      </div>
+  const insuranceBox = understood.insurance && showUnderstood && !escalated && (
+    <div role="alert" className="space-y-3 rounded-xl border-2 border-destructive bg-destructive/10 p-4">
+      <p className="text-[15px] font-semibold text-destructive">
+        This could be an insurance claim. Escalate this ticket before taking action.
+      </p>
+      <Button
+        type="button"
+        variant="destructive"
+        className="min-h-11 px-5"
+        disabled={!ready || saving !== null}
+        onClick={() => void onEscalate()}
+      >
+        {saving === "escalate" ? "Escalating" : "Escalate now"}
+      </Button>
+    </div>
+  );
+  const escalatedBox = escalated && (
+    <div role="status" className="rounded-xl border-2 border-warning bg-warning/15 p-4 text-sm">
+      <strong>Escalated.</strong> A supervisor has been told. Wait for their answer before you act.
+    </div>
+  );
 
-      {(leadContext || context.property || context.project || context.from) && (
-        <div className="rounded-lg border bg-muted/40 px-4 py-3 text-sm">
-          <span className="font-medium">Started from </span>
-          {leadContext
-            ? `the lead ${leadContext.contact_name}`
-            : context.from === "onboarding"
-              ? "an onboarding workspace"
-              : context.from === "property_hub"
-                ? "a property hub"
-                : "another Resolve workspace"}
-          . We have filled in what we know — change anything that is not right.
-        </div>
-      )}
+  return (
+    <div className="mx-auto max-w-[600px] space-y-5">
+      {!inPanel && <BackControl origin={resolveOrigin(context.origin, "ticket")} />}
+      <h1 className="text-3xl font-semibold">Record work</h1>
 
       <Link
         to="/coach"
-        className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm transition hover:bg-primary/10"
+        className="flex min-h-11 items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm transition hover:bg-primary/10"
       >
         <span>
-          <span className="font-medium">Not sure how to handle it? </span>
-          Describe it to the Coach and it will set the priority, build the checklist and write the
+          Not sure how to handle it? Describe it to the Coach and it will set the priority, build the checklist and write the
           vendor brief.
         </span>
-        <span className="ml-3 whitespace-nowrap font-medium text-primary">Ask the Coach →</span>
+        <span className="whitespace-nowrap font-semibold text-primary">Ask the Coach →</span>
       </Link>
 
-      <div className="grid gap-3 sm:grid-cols-3" role="group" aria-label="What are you recording?">
-        {ENTRY_KINDS.map((k) => (
-          <ModeCard
-            key={k.value}
-            active={mode === k.value}
-            onClick={() => setMode(k.value)}
-            icon={k.value === "activity" ? <History className="size-4" /> : k.value === "ops" ? <Clock className="size-4" /> : <Wrench className="size-4" />}
-            title={k.title}
-            hint={k.hint}
-          />
-        ))}
-      </div>
-
-      {mode === null && (
-        <p className="text-sm text-muted-foreground">Choose one to continue.</p>
-      )}
-
-      {mode === "activity" && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Log Property Activity</CardTitle>
-            <CardDescription>Something already handled that belongs in the property's history.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <PropertyActivityForm
-              propertyId={form.property_id}
-              propertyPicker={propertyPicker}
-              isDemo={demoMode}
-              onLogged={(pid) => (onActivityLogged ? onActivityLogged(pid) : undefined)}
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {isTicket && (
-      <Card>
-        <CardHeader>
-          <CardTitle>{mode === "maintenance" ? "Create Maintenance Ticket" : "Create Ops Ticket"}</CardTitle>
-          <CardDescription>Write it the way it was reported to you.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={submit} className="space-y-5">
-            {/* One question. Resolve works out the classification. */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Summary</Label>
-              <Textarea
-                id="description"
-                rows={3}
-                required
-                placeholder="Fridge is not cooling, guest reported it"
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-              />
-              <p className="text-xs text-muted-foreground">
-                Plain words are fine. Resolve sets the work type, the priority and who owns it.
+      {saved ? (
+        <div className="space-y-4">
+          {insuranceBox}
+          {escalatedBox}
+          <div role="status" className="space-y-1 rounded-xl border border-primary/30 bg-primary/5 p-5 text-sm">
+            <p className="text-lg font-semibold">{saved.kind === "ticket" ? "Ticket created." : "Saved to home history."}</p>
+            <p>
+              {saved.problem === NOT_SURE_PROBLEM ? "Problem not clear yet" : saved.problem} at {saved.home}.
+            </p>
+            {saved.kind === "ticket" && <p>Sent to: {saved.who}.</p>}
+            {saved.repeat && (
+              <p className={saved.repeat.flagged ? "font-bold text-warning-ink" : undefined} data-repeat={saved.repeat.flagged ? "flagged" : "count"}>
+                {saved.repeat.line}
               </p>
-            </div>
-
-                <div className="space-y-2">
-                  <Label>How did it come in?</Label>
-                  <Select
-                    value={form.source_channel}
-                    onValueChange={(v) => setForm({ ...form, source_channel: v })}
-                  >
-                    <SelectTrigger aria-label="How did it come in?">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SOURCE_CHANNELS.map((c) => (
-                        <SelectItem key={c.value} value={c.value}>
-                          {c.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+            )}
+          </div>
+          {saved.kind === "ticket" && saved.ticketId && (
+            <Button type="button" className="min-h-[52px] w-full text-base font-semibold" onClick={() => onCreated(saved.ticketId!)}>
+              Open ticket
+            </Button>
+          )}
+          <Button type="button" variant="outline" className="min-h-[52px] w-full border-primary text-[15px] font-semibold text-primary" onClick={resetForAnother}>
+            Record another at this home
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-5">
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold">Which home?</Label>
+            <Select value={propertyId} onValueChange={setPropertyId}>
+              <SelectTrigger className="h-11 text-[15px]" aria-label="Which home?">
+                <SelectValue placeholder="Select a home" />
+              </SelectTrigger>
+              <SelectContent>
+                <div className="p-2">
+                  <Input
+                    className="h-11"
+                    placeholder="Find a home"
+                    value={propertyQuery}
+                    onChange={(e) => setPropertyQuery(e.target.value)}
+                    onKeyDown={(e) => e.stopPropagation()}
+                  />
                 </div>
+                {(properties ?? [])
+                  .filter((p) => matchesPropertySearch(p, propertyQuery))
+                  .map((p) => (
+                    <SelectItem key={p.id} value={p.id} className="min-h-11">
+                      {formatPropertyLabel(p).primary}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-            {mode === "ops" && (<> 
-                <div className="space-y-3">
-                  <div>
-                    <Label>What is happening?</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Resolve suggests one from your description; you can change it.
-                    </p>
-                  </div>
-                  {SITUATION_GROUPS.map((g) => (
-                    <div key={g.key} className="space-y-2">
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        {g.label}
-                      </p>
-                      <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label={g.label}>
-                        {SITUATIONS.filter((s) => s.group === g.key).map((s) => (
-                          <Button variant="outline"
-                            key={s.id}
-                            type="button"
-                            role="radio"
-                            aria-checked={form.situation_id === s.id}
-                            onClick={() => pickSituation(s.id)}
-                            className={`resolve-press h-auto min-h-24 whitespace-normal justify-start block rounded-lg border p-3 text-left transition ${
-                              form.situation_id === s.id
-                                ? "border-primary bg-primary/5 shadow-sm"
-                                : "border-border hover:border-primary/40 hover:bg-secondary"
-                            }`}
-                          >
-                            <span className="block text-sm font-medium">{s.label}</span>
-                            <span className="mt-0.5 block text-xs text-muted-foreground">
-                              {s.hint}
-                            </span>
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
+          <div className="space-y-2">
+            <Label htmlFor="rw-description" className="text-sm font-semibold">
+              Describe the problem or request.
+            </Label>
+            <Textarea
+              id="rw-description"
+              rows={3}
+              className="min-h-24 text-[15px]"
+              placeholder="The refrigerator is not cold."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="outline" className="min-h-11" onClick={() => fileRef.current?.click()}>
+                <Camera className="size-4" aria-hidden="true" /> Add photo
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-11"
+                disabled={!speechCtor}
+                aria-pressed={listening}
+                onClick={toggleSpeak}
+              >
+                <Mic className="size-4" aria-hidden="true" /> {listening ? "Stop" : "Speak"}
+              </Button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="sr-only"
+                aria-label="Add photo"
+                onChange={(e) => {
+                  const picked = Array.from(e.target.files ?? []);
+                  setFiles((f) => [...f, ...picked]);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+            {files.length > 0 && (
+              <ul className="space-y-1 text-sm">
+                {files.map((f, i) => (
+                  <li key={`${f.name}-${i}`} className="flex items-center justify-between gap-2">
+                    <span className="min-w-0 truncate">{f.name}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="min-h-11"
+                      aria-label={`Remove ${f.name}`}
+                      onClick={() => setFiles((all) => all.filter((_, j) => j !== i))}
+                    >
+                      <X className="size-4" aria-hidden="true" />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="text-sm text-muted-foreground">Short sentences are fine. Example: The refrigerator is not cold.</p>
+          </div>
+
+          {showUnderstood && (
+            <div className="space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4" data-testid="resolve-understood">
+              <strong className="text-sm">Resolve understood:</strong>
+              <dl className="grid grid-cols-1 gap-x-3 gap-y-2 text-sm sm:grid-cols-[220px_1fr]">
+                <dt className="text-muted-foreground">Problem</dt>
+                <dd className="font-semibold">{understood.problem}</dd>
+                <dt className="text-muted-foreground">Repair needed at the home</dt>
+                <dd className="font-semibold">{REPAIR_WORDS[understood.repair]}</dd>
+                <dt className="text-muted-foreground">How urgent</dt>
+                <dd className="font-semibold">{urgencyWords(priority)}</dd>
+                <dt className="text-muted-foreground">Who will do it</dt>
+                <dd className="font-semibold">{who}</dd>
+              </dl>
+              <p className="text-sm text-muted-foreground">{understood.reason}</p>
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-11 border-primary font-semibold text-primary"
+                aria-expanded={pickingProblem}
+                onClick={() => setPickingProblem((v) => !v)}
+              >
+                Change the problem
+              </Button>
+              {pickingProblem && (
+                <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Problem types">
+                  {problemTypes.map((w) => (
+                    <Button
+                      key={w.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={workType?.id === w.id}
+                      variant={workType?.id === w.id ? "default" : "outline"}
+                      className="h-auto min-h-11 justify-start whitespace-normal text-left"
+                      onClick={() => {
+                        setChosenWorkTypeId(w.id);
+                        setPickingProblem(false);
+                      }}
+                    >
+                      {w.name}
+                    </Button>
                   ))}
                 </div>
- </>)}
+              )}
+            </div>
+          )}
 
-            {propertyPicker}
+          {insuranceBox}
+          {escalatedBox}
 
-            {form.property_id && <PropertyContactPanel propertyId={form.property_id} showOwner={false} />}
-
-            {mode === "ops" && guestInHomeNow && guestImpactQuestion}
-
-            {mode === "maintenance" && (
-              <div className="space-y-4 rounded-lg border border-border p-3">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Maintenance category</Label>
-                    <Select
-                      value={form.maintenance_category}
-                      onValueChange={(v) => { setCategoryTouched(true); setForm({ ...form, maintenance_category: v }); }}
-                    >
-                      <SelectTrigger aria-label="Maintenance category">
-                        <SelectValue placeholder="Pick a category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {MAINTENANCE_CATEGORIES.map((c) => (
-                          <SelectItem key={c.value} value={c.value}>
-                            {c.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="est-cost">Estimated cost, if known ($)</Label>
-                    <Input
-                      id="est-cost"
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={form.estimated_cost}
-                      onChange={(e) => setForm({ ...form, estimated_cost: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Guest impact</Label>
-                  <Select
-                    value={form.guest_impact}
-                    onValueChange={(v) => setForm({ ...form, guest_impact: v })}
-                  >
-                    <SelectTrigger aria-label="Guest impact">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {GUEST_IMPACT.map((g) => (
-                        <SelectItem key={g.value} value={g.value}>
-                          {g.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {guestImpactQuestion}
-                {insuranceOptionShown(form.maintenance_category, form.insurance_risk) && (
-                <div className="space-y-2">
-                  <Label>Potential insurance-related event?</Label>
-                  <div className="flex gap-2" role="radiogroup" aria-label="Potential insurance-related event">
-                    {INSURANCE_RISK.map((r) => (
-                      <Button
-                        key={r.value}
-                        type="button"
-                        role="radio"
-                        aria-checked={form.insurance_risk === r.value}
-                        variant={form.insurance_risk === r.value ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setForm({ ...form, insurance_risk: r.value })}
-                      >
-                        {r.label}
-                      </Button>
-                    ))}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Flooding, major leak, roof, fire/smoke, structural damage.
-                    {insuranceFlagged(form.insurance_risk)
-                      ? " This will be flagged for supervisors and show owner contact. Nothing is sent to insurance."
-                      : ""}
-                  </p>
-                </div>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Add photos on the Ticket's Evidence tab once it opens.
-                </p>
-              </div>
-            )}
-
-
-            {workType && isTicket && (
-              <div className="resolve-rise rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Looks like
-                </p>
-                <div className="mt-1 flex flex-wrap items-center gap-2">
-                  <Badge variant="outline" className={priorityTone(form.priority)}>
-                    {meta.short}
-                  </Badge>
-                  <span className="font-medium">{situation?.label ?? workType.name}</span>
-                  {canOverrideWorkType && <span className="text-muted-foreground">· {workType.name}</span>}
-                </div>
-                <p className="mt-2 text-muted-foreground">
-                  {meta.short} because{" "}
-                  {priorityReason(
-                    form.guest_impact,
-                    form.occupancy_status,
-                    workType.default_priority,
-                  )}
-                  .{role ? ` Owned by ${role.name}.` : ""}
-                </p>
-              </div>
-            )}
-
-            <Button type="button" variant="ghost" size="sm" aria-expanded={advanced} onClick={() => setAdvanced((v) => !v)}>
-              <ChevronDown className="size-4" /> Advanced
+          <div className="flex flex-col gap-3">
+            <Button
+              type="button"
+              className="min-h-[52px] w-full text-base font-semibold"
+              disabled={!ready || saving !== null}
+              onClick={() => void onCreate()}
+            >
+              {saving === "ticket" ? "Saving" : "Create ticket"}
             </Button>
-
-            {advanced && (
-              <div className="space-y-5 rounded-lg border border-border p-3">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Ticket title, if different</Label>
-                  <Input
-                    id="title"
-                    placeholder={derivedTitle || "Leak under the kitchen sink"}
-                    value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  />
-                </div>
-
-
-                {canOverrideWorkType && (
-                <div className="space-y-2">
-                  <Label>Work type</Label>
-                  <Select
-                    value={form.work_type_id}
-                    onValueChange={(v) => {
-                      setSituationTouched(true);
-                      setForm({ ...form, work_type_id: v });
-                    }}
-                  >
-                    <SelectTrigger aria-label="Work type">
-                      <SelectValue placeholder="Pick the closest match" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(workTypes ?? []).map((w) => (
-                        <SelectItem key={w.id} value={w.id}>
-                          {w.name} · suggests {w.default_priority.toUpperCase()}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                )}
-              </div>
-            )}
-
-            {workType && isTicket && (
-              <div className="rounded-lg border border-border bg-secondary/40 p-3 text-sm">
-                <p className="font-medium">Operating standard</p>
-                {advanced && (
-                  <p className="mt-1 text-muted-foreground">{workType.operating_standard}</p>
-                )}
-                <p className="mt-1 text-muted-foreground">
-                  Acknowledge within {workType.response_minutes}m · start within{" "}
-                  {workType.action_start_minutes === 0
-                    ? "immediately"
-                    : `${workType.action_start_minutes}m`}
-                  {workType.completion_target
-                    ? ` · target ${workType.completion_target.toLowerCase()}`
-                    : ""}
-                </p>
-                {workType.required_closure_evidence && (
-                  <p className="mt-1 text-muted-foreground">
-                    <span className="font-medium text-foreground">To close:</span>{" "}
-                    {workType.required_closure_evidence}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {advanced && (
-              <>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Guest impact</Label>
-                    <Select
-                      value={form.guest_impact}
-                      onValueChange={(v) =>
-                        setForm({
-                          ...form,
-                          guest_impact: v,
-                          guest_in_residence:
-                            v === "active_guest_affected" || v === "safety_security"
-                              ? true
-                              : form.guest_in_residence,
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {GUEST_IMPACT.map((g) => (
-                          <SelectItem key={g.value} value={g.value}>
-                            {g.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Occupancy status</Label>
-                    <Select
-                      value={form.occupancy_status}
-                      onValueChange={(v) => setForm({ ...form, occupancy_status: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {OCCUPANCY_STATUS.map((o) => (
-                          <SelectItem key={o.value} value={o.value}>
-                            {o.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {form.property_id && (
-                      <p className="text-xs text-muted-foreground">
-                        {stayLoading
-                          ? "Checking OwnerRez for the current reservation…"
-                          : stay?.ok
-                            ? stay.data.occupancy_status === "vacant"
-                              ? `OwnerRez: vacant${stay.data.next_arrival ? ` · next arrival ${stay.data.next_arrival.slice(0, 10)}` : ""}`
-                              : `OwnerRez: ${stay.data.guest_name ?? "guest"} · ${stay.data.arrival?.slice(0, 10)} → ${stay.data.departure?.slice(0, 10)}`
-                            : (stay?.error ?? "")}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {isTicket && (
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label>Priority</Label>
-                      <Select
-                        value={form.priority}
-                        disabled={!isSupervisor}
-                        onValueChange={(v) => {
-                          setPriorityTouched(true);
-                          setForm({ ...form, priority: v });
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {PRIORITIES.map((p) => (
-                            <SelectItem key={p.value} value={p.value}>
-                              {p.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-muted-foreground">
-                        Rubric says <span className="font-medium">{mechanical.toUpperCase()}</span>{" "}
-                        · {meta.summary}
-                        {!isSupervisor && " Only a supervisor can change it."}
-                      </p>
-
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Playbook</Label>
-                      <Select
-                        value={form.playbook_id}
-                        onValueChange={(v) => setForm({ ...form, playbook_id: v })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="auto">Use the work type&apos;s playbook</SelectItem>
-                          <SelectItem value="none">No playbook</SelectItem>
-                          {(playbooks ?? []).map((p) => (
-                            <SelectItem key={p.id} value={p.id}>
-                              {p.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                )}
-
-                {isTicket && (
-                  <div className="space-y-2">
-                    <Label>Owning functional role</Label>
-                    <Select
-                      value={form.functional_role_code}
-                      onValueChange={(v) => setForm({ ...form, functional_role_code: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Which role owns this?" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(roles ?? []).map((r) => (
-                          <SelectItem key={r.code} value={r.code}>
-                            {r.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {role && (
-                      <p className="text-xs text-muted-foreground">
-                        {role.current_seat_holder
-                          ? `Currently held by ${role.current_seat_name ?? "no one yet"}`
-                          : role.current_seat_name
-                            ? `${role.current_seat_name}, invitation not accepted yet, so new work cannot reach this role`
-                            : "No one is assigned"}{" "}
-                        · {role.coverage_window}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {isTicket && overridden && (
-                  <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-3">
-                    <Label htmlFor="override">
-                      Why {form.priority.toUpperCase()} instead of {mechanical.toUpperCase()}?
-                    </Label>
-                    <Input
-                      id="override"
-                      placeholder="Guest is elderly and alone in the home"
-                      value={form.priority_override_reason}
-                      onChange={(e) =>
-                        setForm({ ...form, priority_override_reason: e.target.value })
-                      }
-                    />
-                  </div>
-                )}
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="guest_name">Guest name</Label>
-                    <Input
-                      id="guest_name"
-                      value={form.guest_name}
-                      onChange={(e) => setForm({ ...form, guest_name: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="guest_contact">Guest contact</Label>
-                    <Input
-                      id="guest_contact"
-                      placeholder="Phone, email or platform thread"
-                      value={form.guest_contact}
-                      onChange={(e) => setForm({ ...form, guest_contact: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between rounded-lg border border-border p-3">
-                  <div>
-                    <p className="text-sm font-medium">Guest currently in the home</p>
-                    <p className="text-xs text-muted-foreground">
-                      Drives required guest communication before closure.
-                    </p>
-                  </div>
-                  <Switch
-                    checked={form.guest_in_residence}
-                    onCheckedChange={(v) => setForm({ ...form, guest_in_residence: v })}
-                  />
-                </div>
-
-                {isTicket && (
-                  <div className="flex items-center justify-between rounded-lg border border-border p-3">
-                    <div>
-                      <p className="flex items-center gap-2 text-sm font-medium">
-                        <Users className="size-4" /> Cross-team
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        More than one role, department or vendor has to act on this.
-                      </p>
-                    </div>
-                    <Switch
-                      checked={form.cross_team}
-                      onCheckedChange={(v) => setForm({ ...form, cross_team: v })}
-                    />
-                  </div>
-                )}
-              </>
-            )}
-
-            {isTicket && (
-              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border p-3 text-sm">
-                <Badge variant="outline" className={priorityTone(form.priority)}>
-                  {meta.short}
-                </Badge>
-                <span className="text-muted-foreground">
-                  Acknowledge by{" "}
-                  {usTime(
-                    Date.now() + (workType?.response_minutes ?? meta.responseMinutes) * 60_000,
-                  )}
-                  {" · "}
-                  {labelFor(SOURCE_CHANNELS, form.source_channel)}
-                </span>
-              </div>
-            )}
-
-            <Button type="submit" className="w-full" disabled={saving}>
-              {saving ? "Saving…" : mode === "maintenance" ? "Create Maintenance Ticket" : situationEntryKind(form.situation_id) === "maintenance" ? "Continue to Create Maintenance Ticket" : "Open Ops Ticket"}
+            <Button
+              type="button"
+              variant="outline"
+              className="h-auto min-h-[52px] w-full whitespace-normal border-primary text-[15px] font-semibold text-primary"
+              disabled={!ready || saving !== null}
+              onClick={() => void onOneTouch()}
+            >
+              {saving === "one_touch" ? "Saving" : "One touch: nothing more to do. Save to home history."}
             </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </div>
+        </div>
       )}
     </div>
-  );
-}
-
-function ModeCard({
-  active,
-  onClick,
-  icon,
-  title,
-  hint,
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon: React.ReactNode;
-  title: string;
-  hint: string;
-}) {
-  return (
-    <Button
-      variant="outline"
-      type="button"
-      onClick={onClick}
-      className={`h-auto min-h-36 whitespace-normal block rounded-lg border p-4 text-left transition-colors ${
-        active ? "border-primary bg-primary/5" : "border-border hover:bg-secondary"
-      }`}
-    >
-      <div className="flex items-center gap-2 font-medium">
-        {icon}
-        {title}
-      </div>
-      <p className="mt-1 text-sm text-muted-foreground">{hint}</p>
-    </Button>
   );
 }

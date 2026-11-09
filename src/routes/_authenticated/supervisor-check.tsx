@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { RequireCapability } from "@/components/RequireCapability";
 import { QueueOpenLogger } from "@/components/scorecard/QueueOpenLogger";
 import { RatingChannelsCard } from "@/components/scorecard/RatingChannelsCard";
+import { WeeklyRepeatList } from "@/components/work-entry/HomeRepeatFlags";
 import { SectionCard } from "@/components/ui/page";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDemo } from "@/components/DemoProvider";
@@ -139,6 +140,7 @@ function SupervisorCheck() {
         <Link to="/imported-tickets" className="mt-2 inline-block text-sm underline">Open Imported tickets</Link>
       </SectionCard>
       <SectionCard title={`Needs a home (${g.needsHome.length})`}>{list(g.needsHome as Row[], "The Needs a home list is empty.")}</SectionCard>
+      <WeeklyRepeatList />
       <RatingChannelsCard />
     </div>
   );

@@ -165,15 +165,12 @@ export function GuestFeedbackFollowUpPanel({ feedbackId, readOnly }: { feedbackI
               ))}
               {!locked && fb.property_id && (
                 <div className="flex flex-wrap gap-2">
-                  {(["ops", "maintenance"] as const).map((kind) => {
-                    const existing = (fbq.data?.linked ?? []).find((t) => (t.entry_kind ?? "ops") === kind);
-                    if (existing) return null; // one linked Ticket per kind; open it from the list above
-                    return (
-                      <Button key={kind} size="sm" variant="outline" onClick={() => drawer?.openNewTicket({ property: fb.property_id!, kind, feedback: fb.id })}>
-                        {kind === "ops" ? "Create linked Ops Ticket" : "Create Maintenance Ticket"}
-                      </Button>
-                    );
-                  })}
+                  {/* One linked Ticket per label (Ops or Maintenance, set by Record work); open an existing one from the list above. */}
+                  {(["ops", "maintenance"] as const).some((kind) => !(fbq.data?.linked ?? []).some((t) => (t.entry_kind ?? "ops") === kind)) && (
+                    <Button size="sm" variant="outline" className="min-h-11" onClick={() => drawer?.openNewTicket({ property: fb.property_id!, feedback: fb.id })}>
+                      Create ticket
+                    </Button>
+                  )}
                 </div>
               )}
             </li>
