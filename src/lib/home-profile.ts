@@ -203,7 +203,7 @@ export const HOME_PROFILE_SECTIONS: ProfileSection[] = [
       { key: "yale_calibration", label: "Yale is Not Calibrated", src: js("access", "yale_needs_calibration", "boolean"), judged: true },
       { key: "builder_warranty", label: "Builder Warranty?", src: js("warranty", "builder_present", "boolean") },
       { key: "builder_warranty_expires", label: "Builder Warranty Expiration Date", src: js("warranty", "builder_expires_on", "date") },
-      { key: "builder_warranty_claim", label: "Builder Warranty Claim Info", src: js("warranty", "claim_process + external_links") },
+      { key: "builder_warranty_claim", label: "Builder Warranty Claim Info", src: js("warranty", "claim_process") },
       { key: "furniture_pick_list", label: "Furniture Pick List Link", src: link("Furniture Pick List Link", "legacy_onedrive") },
     ],
   },
@@ -267,7 +267,7 @@ export const HOME_PROFILE_SECTIONS: ProfileSection[] = [
     items: [
       { key: "neighborhood", label: "Neighborhood Name", src: col("neighborhood") },
       { key: "hoa_present", label: "HOA?", src: js("hoa", "present", "boolean") },
-      { key: "hoa_notes", label: "HOA Notes (General)", src: js("hoa", "notes + external_links") },
+      { key: "hoa_notes", label: "HOA Notes (General)", src: js("hoa", "notes") },
       { key: "covenants", label: "Covenants", src: link("Covenants", "hoa") },
       { key: "amenities", label: "Neighborhood Amenities?", src: js("amenities", "list", "list") },
       { key: "amenities_access", label: "Neighborhood Amenities Access Information", src: js("amenities", "access_notes") },
