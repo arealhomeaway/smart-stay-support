@@ -141,7 +141,8 @@ BEGIN
         UPDATE public.property_external_links SET url = v_url, updated_at = now(), as_of = now() WHERE id = v_link_id;
       ELSIF v_url IS NOT NULL THEN
         INSERT INTO public.property_external_links (property_id, kind, label, url, staff_only, canonical, needs_replacement, source, source_field, as_of)
-        VALUES (_property_id, coalesce(nullif(v_change->>'link_kind',''), 'reference'), v_change->>'label', v_url, true, false, false, 'resolve', v_change->>'label', now());
+        VALUES (_property_id, coalesce(nullif(v_change->>'link_kind',''), 'reference'), v_change->>'label', v_url, true, false, false, 'resolve', v_change->>'label', now())
+        ON CONFLICT (property_id, kind, url) DO NOTHING;
       END IF;
       v_value := to_jsonb(v_url);
 
