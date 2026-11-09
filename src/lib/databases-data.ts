@@ -670,6 +670,37 @@ export async function loadDatabase(key: DatabaseKey, ctx: LoadContext): Promise<
 
 export const databaseQueryKey = (key: DatabaseKey, demo: boolean) => ["databases", key, demo] as const;
 
+/**
+ * Properties and Vendors open their own pages, but the hub search still finds
+ * a home or a vendor by name: one row each, opening that page.
+ */
+export type PageHit = { key: "properties" | "vendors"; id: string; label: string; sub: string };
+
+export async function loadPageHits(ctx: LoadContext, keys: ("properties" | "vendors")[]): Promise<PageHit[]> {
+  const out: PageHit[] = [];
+  if (keys.includes("properties")) {
+    const { data, error } = await supabase
+      .from("properties")
+      .select("id, name, nickname, address_line1, unit, city, state, postal_code, market")
+      .is("archived_at", null)
+      .eq("is_demo", ctx.demo);
+    if (error) throw error;
+    for (const p of data ?? []) {
+      const label = formatPropertyLabel(p);
+      out.push({ key: "properties", id: p.id, label: label.primary, sub: [label.secondary, p.name, p.nickname, p.market].filter(Boolean).join(" · ") });
+    }
+  }
+  if (keys.includes("vendors")) {
+    const { data, error } = await supabase.from("vendor_orgs").select("id, display_name, status, markets").eq("is_demo", ctx.demo);
+    if (error) throw error;
+    for (const v of data ?? []) {
+      const markets = Array.isArray(v.markets) ? v.markets.join(", ") : "";
+      out.push({ key: "vendors", id: v.id, label: v.display_name ?? "Vendor", sub: [words(v.status), markets].filter(Boolean).join(" · ") });
+    }
+  }
+  return out;
+}
+
 /** Save a claim or refund changed in the list (docs/pending/databases/01_databases.sql). */
 export async function saveClaimOrRefund(edit: ClaimEdit, changes: Record<string, string | number | null>) {
   const { data, error } = await supabase.rpc("databases_save_claim_or_refund", {
