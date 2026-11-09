@@ -207,7 +207,8 @@ describe("6. the reply email in the approved format", () => {
       [
         "Hello Brandin,",
         "",
-        "Upon reviewing our inventory, we only have this home available as an option.",
+        // Register D5 (Emily, Nov 9): the one home sentence.
+        "This is the best option we have for you right now. If you would like the chance to view more homes, please let us know.",
         "",
         "Address: 1200 Oak St, Fort Worth, TX 76137",
         "Property Link: https://example.test/oak",

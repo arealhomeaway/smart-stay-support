@@ -91,10 +91,14 @@ describe("4. Vendors", () => {
     expect(menuFor(DESIGN)).not.toContain("/vendors");
     expect(menuFor(DESIGN)).toContain("/playbooks");
     expect(menuFor(DESIGN)).toContain("/team");
-    expect(menuFor(UTIL)).toContain("/vendors");
+    // Vendors left every left menu (Nov 9, register M1); onboarding roles open it from the Databases card.
+    for (const p of [DIR_ONB, PM, UTIL]) {
+      expect(menuFor(p)).not.toContain("/vendors");
+      expect(menuFor(p)).toContain("/databases");
+    }
     expect(menuFor(UTIL)).not.toContain("/work-orders");
     expect(menuFor(PM)).toContain("/work-orders");
-    for (const path of ["/vendors", "/work-orders", "/finance", "/team", "/playbooks"]) expect(menuFor(DIR_ONB)).toContain(path);
+    for (const path of ["/work-orders", "/finance", "/team", "/playbooks"]) expect(menuFor(DIR_ONB)).toContain(path);
     expect(menuFor(PM)).not.toContain("/finance");
   });
 });
