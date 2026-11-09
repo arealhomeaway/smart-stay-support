@@ -250,6 +250,17 @@ export function TicketClaimPanel({
               {deadlineLabel(claim.deadline_on)} · recovered {formatMoney(claim.recovered_amount)}
             </p>
           </Link>
+          {claim.stage === "closed" && !readOnly ? (
+            <ReopenClaim
+              claim={claim}
+              onDone={() => {
+                qc.invalidateQueries({ queryKey: ["claims-for-ticket", ticket.id] });
+                qc.invalidateQueries({ queryKey: ["claims"] });
+                qc.invalidateQueries({ queryKey: ["ticket-branches", ticket.id] });
+                qc.invalidateQueries({ queryKey: ["databases"] });
+              }}
+            />
+          ) : null}
           <ClaimApprovalBox
             claim={claim as unknown as ClaimApprovalFields}
             canAsk={!readOnly}
