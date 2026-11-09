@@ -1,6 +1,7 @@
--- Clean slate, part 1c: delete the 9 demo claims that have no ticket and the 9 test expenses
--- (Emily, Nov 8, 2026; register N8, answer 3). STAGED ONLY. Do not apply without Emily's go.
--- Run after 01 and before 02. Refuses to run unless a full backup that finished and passed
+-- Clean slate, part 1c: delete the 9 demo claims that have no ticket and all 16 test expenses
+-- (Emily, Nov 8, 2026, answer 3; Nov 9, answer 4: the 7 demo expenses that were linked to
+-- tickets and the blank archived expense made by a test account go too; register N8).
+-- STAGED ONLY. Do not apply without Emily's go. Run after 01 and before 02. Refuses to run unless a full backup that finished and passed
 -- Verify in the last 2 hours is recorded, and unless every id below still matches the title or
 -- payee written next to it (so a typo can never remove a real record). Explicit list only.
 --
@@ -9,8 +10,10 @@
 -- links, statement decisions and money-in entries, their file records (the stored files stay in
 -- storage), their work list rows and the alerts about the claims. A departure review and a
 -- cleaning review that pointed at one of these claims are kept, just no longer linked.
--- Keeps: every other claim and expense, including the 7 demo expenses that were linked to the
--- deleted tickets and Work Orders (01 unlinks those; they stay unless Emily says otherwise).
+-- Keeps: every other claim. After this step no expense is left (all 16 on Nov 9 are listed).
+-- Kept, only unlinked: the departure review and the cleaning review that pointed at a claim or
+-- ticket (Emily, Nov 9, answer 5), the home activity entries the expenses were linked to, and the
+-- audit log lines about the expenses.
 --
 -- Delete blocks switched off only inside this step and switched back on at its end:
 -- expense_events_append_only (expense history), guard_expense_recovery (money-in entries),
@@ -40,7 +43,14 @@ INSERT INTO cs_expenses (id, payee) VALUES
   ('9cb7ad7b-a6ad-42b7-b7e3-3e5027fe8d3d', 'QA SYNTH Plumbing Co'),
   ('8106ce05-6c40-4b2b-a22a-aa03c9f7482d', 'QA SYNTH Plumbing Co'),
   ('95c5899a-e9a5-4647-9a39-dad5fef596d0', 'QA SYNTH Plumbing Co'),
-  ('574e104e-6453-4d27-95ee-b704797df376', '');
+  ('574e104e-6453-4d27-95ee-b704797df376', ''),
+  ('d49b514e-d0fd-4961-a9e2-1f568943bc01', 'QA SYNTH Diagnostics Co'),
+  ('cae21a0c-b70c-425f-9532-ded639a823df', 'QA SYNTH Estimate Co'),
+  ('5b99cb63-ee79-47c9-9262-2a646d5aefc1', 'QA SYNTH Evidence Gate (Oct 5)'),
+  ('39aafabe-4986-40d5-bc29-6d515dc61278', 'QA SYNTH Plumbing Co'),
+  ('67e65cc5-358a-4a2c-844e-240eea57fd07', 'QA SYNTH SR Deferred'),
+  ('18a2ff17-c100-4b99-9988-b2ab49aff21c', 'QA SYNTH SR Diagnostics'),
+  ('610761ca-aa63-4330-ac34-174fa92ecaa8', 'QA SYNTH SR Repair Hold');
 
 DO $$
 BEGIN
@@ -57,7 +67,7 @@ BEGIN
   IF (SELECT count(*) FROM public.expenses e JOIN cs_expenses x ON x.id = e.id
        WHERE coalesce(e.payee, '') = x.payee
          AND (e.is_demo OR (x.payee = '' AND e.archived_at IS NOT NULL AND e.amount IS NULL
-                            AND e.created_by = 'ec5405ff-4722-4a85-a22e-069e68bd3c7f'))) <> 9 THEN
+                            AND e.created_by = 'ec5405ff-4722-4a85-a22e-069e68bd3c7f'))) <> 16 THEN
     RAISE EXCEPTION 'Clean slate refused: an expense in the list is missing or changed.';
   END IF;
   -- Nothing outside the lists may depend on them.
@@ -65,9 +75,14 @@ BEGIN
                AND l.expense_id NOT IN (SELECT id FROM cs_expenses))
      OR EXISTS (SELECT 1 FROM public.expense_recoveries r WHERE r.claim_id IN (SELECT id FROM cs_claims)
                AND r.expense_id IS NOT NULL AND r.expense_id NOT IN (SELECT id FROM cs_expenses))
-     OR EXISTS (SELECT 1 FROM public.expense_links l WHERE l.expense_id IN (SELECT id FROM cs_expenses)
-               AND l.link_type IN ('ticket', 'work_order')) THEN
+     OR EXISTS (SELECT 1 FROM public.expense_recoveries r WHERE r.expense_id IN (SELECT id FROM cs_expenses)
+               AND r.claim_id IS NOT NULL AND r.claim_id NOT IN (SELECT id FROM cs_claims)) THEN
     RAISE EXCEPTION 'Clean slate refused: another record depends on a claim or expense in the list.';
+  END IF;
+  -- 01 must run first: it removes the tickets and Work Orders and their expense links.
+  IF EXISTS (SELECT 1 FROM public.tickets) OR EXISTS (SELECT 1 FROM public.expense_links l
+               WHERE l.expense_id IN (SELECT id FROM cs_expenses) AND l.link_type IN ('ticket', 'work_order')) THEN
+    RAISE EXCEPTION 'Clean slate refused: run step 01 first.';
   END IF;
 END $$;
 
