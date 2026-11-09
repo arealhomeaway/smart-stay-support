@@ -4,8 +4,12 @@
 - [x] Fresh backup 2026-11-09_005832Z (235 tables, 99,445 rows), Verify passed; 42 live tickets matched the Nov 8 list
 - [x] Ran 01, 01c, 02 for real; counts exactly as practice; all triggers and delete blocks on; 01b never run
 - [x] Read-only role page checks (Admin plus four View as roles); full suite 3179 pass / 5 skip / 0 fail on rerun; type check clean
-- [ ] 02b sign-in removal: stopped, 12 of 18 sign-ins held by kept records; waits for Emily's decision
-- [ ] Two demo follow-ups still assigned to the removed QA Kati account re-create demo alerts; waits for Emily's decision
+- [x] 02b not run, replaced by blocking (Emily, Nov 9): 02c blocked the last 4; all 18 blocked, none deleted
+- [x] 03 closed the two demo follow-ups on the removed QA Kati account and deleted their 2 alerts; staff alerts 443
+
+## Nov 9 Notion import, read only steps (register N6)
+- [x] Check the connection, full dry run and a chosen 20-ticket preview, run read only outside the app (the in-app buttons save run status, so not pressed)
+- [ ] Emily reviews the preview of 20, then the three runs wait for her go
 
 ## Nov 5 reservation change tile (build/test only)
 - [x] Add Guest reservation-change tile, booking-only category mapping and text suggestions using existing Current or past guest request catalog routing
