@@ -120,13 +120,15 @@ type WorkTypeRow = {
   pending_approval?: boolean | null;
 };
 
+type RepeatInfo = { line: string; flagged: boolean } | null;
+
 type Saved = {
   kind: "ticket" | "one_touch";
   ticketId?: string;
   problem: string;
   home: string;
   who?: string;
-  repeat?: { line: string; flagged: boolean } | null;
+  repeat: RepeatInfo;
 };
 
 type SpeechCtor = new () => {
@@ -313,7 +315,7 @@ export function NewTicketForm({
   const ready = Boolean(propertyId) && description.trim().length > 0;
   const showUnderstood = ready && description.trim().length >= 3;
 
-  async function readRepeat(): Promise<Saved["repeat"]> {
+  async function readRepeat(): Promise<RepeatInfo> {
     if (!workType || !propertyId) return null;
     const { data } = await (supabase as unknown as { rpc: (n: string, a: object) => Promise<{ data: any }> }).rpc(
       "home_problem_repeat",
