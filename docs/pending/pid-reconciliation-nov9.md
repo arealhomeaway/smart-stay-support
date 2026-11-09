@@ -263,7 +263,7 @@ Most are Notion edits made after the Sept 1 import; the rest are OwnerRez values
 
 Resolve has no photo attached next to any item yet (0 rows). Five Notion files are already in Resolve storage as home documents, not next to their item: 2 front photos (1399 Foxtail Ln., 3915 W 104th St. S.) and 3 covenant PDFs (9211 Fitzgerald Dr.). Two other name matches were coincidences with Ticket photos and are not counted.
 
-Where the files really are: only 247 are Notion-hosted (their links expire about an hour after each read). 1,836 are links to the original Owner Intake Fillout uploads, which do not expire. 1 Covenants entry is a web page, not a file; 2 Fillout links are broken (one Indoor Water Shutoff photo, one Yale WiFi Chip photo). File types: 1,983 JPEG, 51 PNG, 6 WEBP, 4 HEIC, 66 PDF. Largest file 20.3 MB, typical 1.9 MB, 7 over 10 MB.
+Where the files really are (161 homes): only 247 are Notion-hosted (their links expire about an hour after each read). 1,836 are links to the original Owner Intake Fillout uploads, which do not expire. 1 Covenants entry is a web page, not a file; 2 Fillout links are broken (one Indoor Water Shutoff photo, one Yale WiFi Chip photo). Across all 2,114 Notion files: 1,983 JPEG, 51 PNG, 6 WEBP, 4 HEIC, 66 PDF, 1 text file, 1 web page, 2 broken. Largest file 20.3 MB, typical 1.9 MB, 7 over 10 MB.
 
 | Notion photo/file property | Goes next to (Home Profile item) | Section | Homes with files | Files in Notion | Notion-hosted (link expires ~1 h) | Fillout upload links (do not expire) | Other / broken | MB to copy | Already in Resolve storage | Attached to the right item | Missing |
 |---|---|---|---|---|---|---|---|---|---|---|---|
