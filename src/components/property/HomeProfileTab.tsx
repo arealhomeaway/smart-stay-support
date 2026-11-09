@@ -94,12 +94,10 @@ export function HomeProfileTab({
   propertyId,
   profile,
   canEdit,
-  userId,
 }: {
   propertyId: string;
   profile: HomeProfileData | null;
   canEdit: boolean;
-  userId: string | null;
 }) {
   const { ctx, canManageCodes, credsError } = useProfileContext(propertyId, profile);
   const [query, setQuery] = useState("");
@@ -210,7 +208,6 @@ export function HomeProfileTab({
           canEdit={canEdit}
           canManageCodes={canManageCodes}
           focusKey={focusKey}
-          userId={userId}
         />
       ))}
     </div>
@@ -227,7 +224,6 @@ function ProfileCard({
   canEdit,
   canManageCodes,
   focusKey,
-  userId,
 }: {
   propertyId: string;
   section: ProfileSection;
@@ -238,7 +234,6 @@ function ProfileCard({
   canEdit: boolean;
   canManageCodes: boolean;
   focusKey: string | null;
-  userId: string | null;
 }) {
   const qc = useQueryClient();
   const reveal = useServerFn(revealCredentialFn);
