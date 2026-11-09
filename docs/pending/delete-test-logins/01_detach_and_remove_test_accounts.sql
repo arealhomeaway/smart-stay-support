@@ -214,7 +214,7 @@ DECLARE
   a record;
   n int;
   rows_map jsonb;
-  links jsonb := '{}'::jsonb;
+  ids jsonb;
   deleted jsonb := '{}'::jsonb;
   accounts jsonb := '[]'::jsonb;
   t text;
@@ -224,9 +224,9 @@ BEGIN
     rows_map := '{}'::jsonb;
     FOR l IN SELECT * FROM dtl_links ORDER BY tbl, col LOOP
       EXECUTE format('SELECT coalesce(jsonb_agg(%I::text ORDER BY %I::text), ''[]'') FROM public.%I WHERE %I = $1', l.pk, l.pk, l.tbl, l.col)
-        INTO STRICT links USING a.id;
-      IF jsonb_array_length(links) > 0 THEN
-        rows_map := rows_map || jsonb_build_object(l.tbl || '.' || l.col, links);
+        INTO STRICT ids USING a.id;
+      IF jsonb_array_length(ids) > 0 THEN
+        rows_map := rows_map || jsonb_build_object(l.tbl || '.' || l.col, ids);
       END IF;
     END LOOP;
     accounts := accounts || jsonb_build_array(jsonb_build_object('id', a.id, 'email', a.email, 'name', a.label, 'detached', rows_map));
