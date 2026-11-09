@@ -36,6 +36,7 @@ import {
   DB_COPY,
   type HomeBookingRow,
   type HomeCandidate,
+  searchFailureMessage,
 } from "./direct-bookings";
 
 type Client = SupabaseClient<Database>;
