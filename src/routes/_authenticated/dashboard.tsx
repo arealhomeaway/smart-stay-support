@@ -204,7 +204,7 @@ function Dashboard() {
   return (
     <div className="space-y-8">
       <PageHero
-        image={bannerHome?.photo ?? heroImage}
+        image={bannerHome?.photo ?? (bannerHomes.isLoading ? undefined : heroImage)}
         imageCaption={bannerHome ? bannerCaption(bannerHome) : undefined}
         onImageError={bannerHome ? () => setBannerFailed(true) : undefined}
         eyebrow={new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
