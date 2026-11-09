@@ -26,6 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { slaDueDates } from "@/lib/tickets";
 import {
   activityCategoryFor,
+  guestInHomeFrom,
   NOT_SURE_PROBLEM,
   ONE_TOUCH_OUTCOME,
   REPAIR_WORDS,
@@ -369,7 +370,7 @@ export function NewTicketForm({
       });
       return { postStay, relation, impact, comm: suggestGuestComm(impact) };
     })();
-    const guestInResidence = understood.guestImpact === "active_guest_affected" || (understood.occupancy === "occupied");
+    const guestInResidence = guestInHomeFrom(understood.occupancy);
 
     const { data: ticket, error } = await supabase
       .from("tickets")
@@ -643,6 +644,7 @@ export function NewTicketForm({
 
       {saved ? (
         <div className="space-y-4">
+          {insuranceBox}
           {escalatedBox}
           <div role="status" className="space-y-1 rounded-xl border border-primary/30 bg-primary/5 p-5 text-sm">
             <p className="text-lg font-semibold">{saved.kind === "ticket" ? "Ticket created." : "Saved to home history."}</p>
@@ -651,7 +653,7 @@ export function NewTicketForm({
             </p>
             {saved.kind === "ticket" && <p>Sent to: {saved.who}.</p>}
             {saved.repeat && (
-              <p className={saved.repeat.flagged ? "font-semibold text-warning-foreground" : undefined} data-repeat={saved.repeat.flagged ? "flagged" : "count"}>
+              <p className={saved.repeat.flagged ? "font-bold text-warning-ink" : undefined} data-repeat={saved.repeat.flagged ? "flagged" : "count"}>
                 {saved.repeat.line}
               </p>
             )}

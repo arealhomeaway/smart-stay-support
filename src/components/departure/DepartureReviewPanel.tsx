@@ -306,8 +306,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
                 )}
                 {!done && (
                   <div className="flex flex-wrap gap-2">
-                    <Button size="sm" variant="outline" onClick={() => { void logEvent("follow_up", "Property follow-up started (Create Maintenance Ticket)"); drawer?.openNewTicket({ property: r.property_id, kind: "maintenance", departureReview: r.id }); }}>Create Maintenance Ticket</Button>
-                    <Button size="sm" variant="outline" onClick={() => { void logEvent("follow_up", "Property follow-up started (Ops Ticket)"); drawer?.openNewTicket({ property: r.property_id, kind: "ops", departureReview: r.id }); }}>Create linked Ops Ticket</Button>
+                    <Button size="sm" variant="outline" className="min-h-11" onClick={() => { void logEvent("follow_up", "Property follow-up started (Create ticket)"); drawer?.openNewTicket({ property: r.property_id, departureReview: r.id }); }}>Create ticket</Button>
                   </div>
                 )}
               </div>

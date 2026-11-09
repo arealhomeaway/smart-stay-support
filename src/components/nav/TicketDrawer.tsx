@@ -156,7 +156,7 @@ export function TicketDrawerHost({ children }: { children: ReactNode }) {
                   </Link>
                 </Button>
               )}
-              <Button variant="ghost" size="sm" onClick={requestClose} aria-label="Close Ticket">
+              <Button variant="ghost" size="sm" className={newCtx ? "min-h-11" : undefined} onClick={requestClose} aria-label={newCtx ? "Close" : "Close Ticket"}>
                 <X className="size-4" /> Close
               </Button>
             </div>
@@ -173,7 +173,6 @@ export function TicketDrawerHost({ children }: { children: ReactNode }) {
                   context={newCtx}
                   inPanel
                   onCreated={(id) => setTicketId(id)}
-                  onActivityLogged={() => setNewCtx(null)}
                 />
               </Suspense>
             )}
