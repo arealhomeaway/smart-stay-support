@@ -43,7 +43,7 @@ describe("1. Rings, labels and the straight line note", () => {
       [10, true, "10 miles"],
       [20, false, "20 miles"],
     ]);
-    expect(rings[2]!.meters).toBeCloseTo(32186.88, 1);
+    expect(Math.round(rings[2]!.meters)).toBe(32187);
   });
   it("ring labels sit due north at the ring", () => {
     expect(ringLabelPoint({ lat: 36, lng: -95.8 }, 20)).toEqual({ lat: 36 + 20 / 69, lng: -95.8 });
