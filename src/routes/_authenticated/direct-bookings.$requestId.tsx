@@ -497,10 +497,11 @@ function AskedFor({ d, editable, onSaved }: { d: Detail; editable: boolean; onSa
   useEffect(() => setF(initial), [initial]);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF((v) => ({ ...v, [k]: e.target.value }));
   const num = (v: string) => (v === "" ? null : Number(v));
-  const field = (label: string, k: keyof typeof f, type = "text") => (
+  const field = (label: string, k: keyof typeof f, type = "text", extra?: { placeholder?: string; help?: string }) => (
     <label className="flex flex-col gap-1 text-xs text-muted-foreground">
       {label}
-      <Input aria-label={label} className={cn(FIELD, "text-foreground")} type={type} value={f[k]} onChange={set(k)} disabled={!editable} />
+      <Input aria-label={label} className={cn(FIELD, "text-foreground")} type={type} value={f[k]} onChange={set(k)} disabled={!editable} placeholder={extra?.placeholder} />
+      {extra?.help ? <span>{extra.help}</span> : null}
     </label>
   );
   const select = (label: string, k: keyof typeof f, options: { value: string; label: string }[]) => (
@@ -519,7 +520,7 @@ function AskedFor({ d, editable, onSaved }: { d: Detail; editable: boolean; onSa
         {field("Contact name", "contact_name")}
         {field("Email", "email")}
         {field("Phone", "phone")}
-        {field("Where", "location")}
+        {field(DB_COPY.whereLabel, "location", "text", { placeholder: DB_COPY.wherePlaceholder, help: DB_COPY.whereHelp })}
         {select("As soon as possible", "asap", [{ value: "no", label: "No" }, { value: "yes", label: "Yes" }])}
         {field("Move in", "move_in", "date")}
         {field("Length of stay", "stay_length")}
@@ -643,7 +644,9 @@ function PickHomes({ d, editable, picked, setPicked }: { d: Detail; editable: bo
               const on = picked.some((p) => p.id === h.id);
               const off = !editable || !h.rent.ok || (!on && full);
               return (
-                <div key={h.id} className={cn("flex items-start gap-3 rounded-xl border-2 p-3", on ? "border-primary bg-primary/5" : "border-border bg-card")}>
+                <div key={h.id} data-card="home" className={cn("flex flex-col overflow-hidden rounded-xl border-2", on ? "border-primary bg-primary/5" : "border-border bg-card")}>
+                  <HomePhoto url={h.photo} alt={h.address || h.name} className="h-32 w-full shrink-0" />
+                  <div className="flex items-start gap-3 p-3">
                   <span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-[13px] font-bold text-primary-foreground">{i + 1}</span>
                   <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <strong className="text-[15px]">{h.name}</strong>
@@ -663,6 +666,7 @@ function PickHomes({ d, editable, picked, setPicked }: { d: Detail; editable: bo
                   >
                     {on ? "Picked" : "Pick"}
                   </Button>
+                  </div>
                 </div>
               );
             })}
