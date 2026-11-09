@@ -21,6 +21,7 @@ import {
   claimTiles,
   historicalTag,
   money,
+  type ClaimEdit,
   type DatabaseKey,
   type DbLink,
   type DbRow,
@@ -31,14 +32,6 @@ export type ListData = { rows: DbRow[]; tiles?: { label: string; value: string }
 export type LoadContext = {
   demo: boolean;
   canOpen: (path: string) => boolean;
-};
-
-/** The editable values of a claim or refund opened in the list. */
-export type ClaimEdit = {
-  kind: "claim" | "refund";
-  id: string;
-  updatedAt: string;
-  values: Record<string, string>;
 };
 
 const day = (iso: string | null | undefined) => {

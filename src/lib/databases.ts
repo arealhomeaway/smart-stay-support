@@ -379,7 +379,62 @@ export type DbRow = {
   tags?: Record<string, string>;
   /** Where the record is worked. */
   link?: DbLink;
+  /** Claims and refunds only: what may change in the list. */
+  edit?: ClaimEdit;
 };
+
+/** The values of a claim or refund that may change in the list. */
+export type ClaimEdit = {
+  kind: "claim" | "refund";
+  id: string;
+  updatedAt: string;
+  values: Record<string, string>;
+};
+
+/** The fields that change in the list, in order. The database save allows exactly these. */
+export const CLAIM_EDIT_FIELDS: Record<ClaimEdit["kind"], { key: string; label: string; type: "text" | "money" | "date" | "stage" }[]> = {
+  claim: [
+    { key: "title", label: "Item", type: "text" },
+    { key: "stage", label: "Status", type: "stage" },
+    { key: "estimated_amount", label: "Estimated cost", type: "money" },
+    { key: "submitted_amount", label: "Amount sent", type: "money" },
+    { key: "recovered_amount", label: "Amount paid back", type: "money" },
+    { key: "follow_up_on", label: "Follow up on", type: "date" },
+  ],
+  refund: [
+    { key: "title", label: "Item", type: "text" },
+    { key: "proposed_amount", label: "Amount", type: "money" },
+    { key: "follow_up_on", label: "Follow up on", type: "date" },
+  ],
+};
+
+/** Only what changed, in the shape the database save takes. Blank money or dates clear the value. */
+export function claimChanges(
+  edit: ClaimEdit,
+  draft: Record<string, string>,
+): { changes: Record<string, string | number | null>; error: string | null } {
+  const changes: Record<string, string | number | null> = {};
+  for (const f of CLAIM_EDIT_FIELDS[edit.kind]) {
+    const before = (edit.values[f.key] ?? "").trim();
+    const after = (draft[f.key] ?? "").trim();
+    if (before === after) continue;
+    if (f.type === "text") {
+      if (!after) return { changes: {}, error: `${f.label} cannot be empty.` };
+      changes[f.key] = after;
+    } else if (f.type === "money") {
+      if (!after) changes[f.key] = null;
+      else {
+        const n = Number(after.replace(/[$,\s]/g, ""));
+        if (!Number.isFinite(n)) return { changes: {}, error: "Amounts must be numbers." };
+        if (n < 0) return { changes: {}, error: "Amounts cannot be below zero." };
+        changes[f.key] = n;
+      }
+    } else {
+      changes[f.key] = after || null;
+    }
+  }
+  return { changes, error: null };
+}
 
 export const EMPTY = "";
 
