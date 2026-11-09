@@ -18,6 +18,7 @@ import {
   IMPORT_GROUP_LABELS,
   mapComment,
   mapNotionPage,
+  mapPageNotes,
   relationIds,
   safeFileName,
   text,
@@ -210,7 +211,7 @@ async function copyHistory(ctx: Ctx, ticketId: string, pageId: string, result: B
   if (!onlyKeys) {
     const rows = [];
     for (const c of comments) rows.push(mapComment(c, await srv.notionUserName(c.created_by?.id)));
-    if (body.text.trim()) rows.push({ external_id: `body:${pageId}`, created_at: notesAt, author: "Notion page notes", body: body.text });
+    if (body.text.trim()) rows.push(mapPageNotes(pageId, body.text, notesAt));
     if (rows.length) {
       const inserted = await rpc(ctx)("import_notion_ticket_comments", { p_ticket_id: ticketId, p_comments: rows });
       if (inserted.error) throw new Error(NOT_READY.test(inserted.error.message) ? READY_MESSAGE : inserted.error.message);
