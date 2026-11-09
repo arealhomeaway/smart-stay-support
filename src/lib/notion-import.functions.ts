@@ -155,10 +155,12 @@ async function lookups(ctx: Ctx, cutoffIso: string): Promise<Lookups> {
   for (const m of members.data ?? []) if (m.role_code === "director_ops" && m.user_id) directorIds.add(m.user_id);
   const propertyByOwnerRez = new Map<string, string>();
   const propertyLabels = new Map<string, string>();
+  const propertyStreets = new Map<string, string>();
   for (const p of props.data ?? []) {
     const id = String(p.ownerrez_property_id ?? "").replace(/^ORP/i, "").trim();
     if (id) propertyByOwnerRez.set(id, p.id);
     propertyLabels.set(p.id, formatPropertyLabel(p as PropertyLabelFields).full);
+    if (p.address_line1) propertyStreets.set(p.id, String(p.address_line1));
   }
   return {
     staff,
@@ -166,6 +168,7 @@ async function lookups(ctx: Ctx, cutoffIso: string): Promise<Lookups> {
     homeTeamOf: (id) => (id ? (teamByUser.get(id) ?? null) : null),
     pidOwnerRez: new Map(),
     propertyByOwnerRez,
+    propertyStreets,
     propertyLabels,
     staffNames: new Map(staff.map((s) => [s.id, s.full_name ?? "Staff member"])),
     cutoff: Date.parse(cutoffIso),

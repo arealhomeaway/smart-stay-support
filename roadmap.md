@@ -10,7 +10,8 @@
 - [x] Part 1 Properties list: title/tagline, Add a home (Onboarding + Admin), Admin bulk label panel, filters, cards with chips; remove Work Map tab/button, PORTFOLIO, Refresh, practice toggle, OwnerRez dropdown, Live label
 - [x] Part 2 property page: header (one Back, title, line, chips, view toggle, More menu), banners, labels section (staged label table + rules, 30D FIRM import), 12 tabs per role, Home Profile (search, jump to, show empty, 10 sections, every PID label, logged code Show, edit with person/time)
 - [x] Other tabs from real records (Nothing here yet when empty); tests; cancelled real DB check; staged SQL 0309-0311 in docs/pending/property-page/; suite/type/build; judgement-placed labels listed
-- [ ] Emily: answers on the open questions in the property page report (Add a home on the Onboarding page, House Items/Utilities/Inspections sources, judged labels)
+- [x] Emily answered (Nov 9): Onboarding page Add property closed to others; Inspections/House Items/Utilities stay Nothing here yet until their import
+- [ ] Emily: check the real Properties list and property page screens by eye (elements unsure listed in the Nov 9 reply)
 
 ## Nov 9 Record work as one flow (board; register T8-T11) — after the property page
 - [x] Search every reader of the stored Ops/Maintenance label; report
@@ -304,4 +305,11 @@
 
 ## Nov 9 Notion dry run, time limited, read only (register N6) — LAST, after Databases
 - [x] Connection yes; 2,916 read in 1 min 43 s, nothing written; 20 preview; report docs/pending/notion-ticket-import-dry-run-nov9.md
-- [ ] Emily: Director of Operations' tickets stay unassigned (627, 15 in the queue); 5 queue tickets need a home; 6 two-home tickets
+- [x] Emily answered (Nov 9): Director's tickets stay Unassigned; 5 no-home queue tickets stay Unassigned with Needs a home; Qym matches
+- [x] Two-home rule (address in title, else first linked) in the runner; row 18 rechecked read only; other 5 not identifiable without a full read
+
+## Nov 9 answers and small fixes (property page, Record work, Databases, Notion)
+- [x] Add a home: server check on both create actions; Onboarding page Add property only for Onboarding roles and Admin
+- [x] Pending codes line in Entry & Access Details (waiting count, Mark current, Archive), code managers only, values stay behind logged Show
+- [x] Register T8 copy reads Create ticket
+- [x] Tests; suite before/after, type check, build

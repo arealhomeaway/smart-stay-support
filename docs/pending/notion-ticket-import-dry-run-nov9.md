@@ -14,7 +14,7 @@ Team group (open, past 30 days only; the others are never in the Team Queue): Te
 Assignee: matched to an active staff member with a login 2,230; unmatched 31 (Nelson Mahilom 26, Avy Vergara 5); Director of Operations 627; General 9; blank 19. Only open tickets from the past 30 days get a person (65 do).
 Claims: 680 (closed 81, open 599).
 No matching home: 162 (146 with no home linked in Notion, 16 linked to 21036 Owens Rd). 133 closed, 24 open older, 5 open in the past 30 days. Every other linked home matched.
-Linked to two homes: 6 (matched on the first home that is in Resolve).
+Linked to two homes: 6. Rule now (Emily, Nov 9): the home whose address appears in the title; if none does, the first linked home. Recheck below.
 
 ## Step 3. Preview of 20 (comments and files read for these 20 only: 103 comments, 45 files)
 
@@ -37,7 +37,7 @@ Linked to two homes: 6 (matched on the first home that is in Resolve).
 | 15 | Urgent priority | 2332 - suspected leak | In progress | 2026-10-22 | Open, past 30 days | Romeo Canales | Romeo Canales | Team B | Urgent -> P1 | - | 2332 Los Angeles Ave | 8 / 2 | Team Queue, Imported from Notion, Team B. Quiet: no clocks or alerts. Counts in the home's open tickets. |
 | 16 | High priority | 1701 - leak in the skylight | In progress | 2026-10-22 | Open, past 30 days | Romeo Canales | Romeo Canales | Team B | High -> P2 | - | 1701 Park Lane Dr. | 6 / 2 | Team Queue, Imported from Notion, Team B. Quiet: no clocks or alerts. Counts in the home's open tickets. |
 | 17 | Low priority | 4308 - guest bathroom toilet seat broken | Done | 2026-03-29 | Closed | Romeo Canales | Not assigned (not recent) | - | Low -> P3 | - | 4308 NW 158th St. | 10 / 3 | Not in Team Queue or Home. Badge: Historical record from Notion. No assignee. |
-| 18 | Two homes linked | VRBO - Jeffrey Maichel at 2012 W Black Powder Way - Stained linens and | Claim review | 2025-11-11 | Open, older | Micah Sinor | Unassigned (Director of Operations) | - | Medium -> P3 | Claim review | 18000 Barracho Dr. | 8 / 13 | Not in Team Queue or Home. Badge: Older open ticket from Notion. |
+| 18 | Two homes linked | VRBO - Jeffrey Maichel at 2012 W Black Powder Way - Stained linens and | Claim review | 2025-11-11 | Open, older | Micah Sinor | Unassigned (Director of Operations) | - | Medium -> P3 | Claim review | 2012 W. Black Powder Way (was 18000 Barracho Dr.) | 8 / 13 | Not in Team Queue or Home. Badge: Older open ticket from Notion. |
 | 19 | Blank title | Imported Notion ticket | In progress | blank | Open, older | blank | Unassigned (blank) | - | blank -> P3 | - | Needs a home | 0 / 0 | Not in Team Queue or Home. Badge: Older open ticket from Notion. |
 | 20 | Recently edited | 3405 - Water Heater not Working | Done | 2026-03-02 | Closed | Mike Cacatian | Not assigned (not recent) | - | Medium -> P3 | - | 3405 NW 159th Ter | 1 / 0 | Not in Team Queue or Home. Badge: Historical record from Notion. No assignee. |
 
