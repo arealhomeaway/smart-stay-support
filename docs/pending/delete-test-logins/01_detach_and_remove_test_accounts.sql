@@ -233,8 +233,8 @@ BEGIN
   END LOOP;
 
   -- audit lines with no name keep the original name, followed by (former)
-  UPDATE public.audit_log g SET actor_label = a.label
-    FROM dtl_accounts a WHERE g.actor_id = a.id AND g.actor_label IS NULL;
+  UPDATE public.audit_log g SET actor_label = acc.label
+    FROM dtl_accounts acc WHERE g.actor_id = acc.id AND g.actor_label IS NULL;
   GET DIAGNOSTICS n = ROW_COUNT;
   IF n <> 249 THEN RAISE EXCEPTION 'Stopped: % audit lines without a name, expected 249.', n; END IF;
 
