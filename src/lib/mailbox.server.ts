@@ -533,7 +533,7 @@ export async function processMessage(
   if (action !== "create") {
     if (action === "retag" && !dryRun && prior) {
       const retry = await retryCategory(db, msg, prior);
-      const settledNow = retry !== "failed";
+      const settledNow = retry === "retagged" || retry === "cleared";
       return {
         subject,
         from,
@@ -541,13 +541,14 @@ export async function processMessage(
         // Reported as retried whenever the message ends up correctly tagged —
         // including the case where the Graph write had already succeeded.
         retried: settledNow,
-        reason: settledNow
-          ? retry === "retagged"
+        reason:
+          retry === "retagged"
             ? "already processed · category retag retried"
-            : retry === "no_record"
-              ? "already processed · record removed, not re-tagged"
-              : "already processed · category already correct"
-          : "already processed · retag still failing",
+            : retry === "cleared"
+              ? "already processed · category already correct"
+              : retry === "no_record"
+                ? "already processed · record removed, not re-tagged"
+                : "already processed · retag still failing",
       };
     }
     return { subject, from, outcome: "skipped", reason: "already processed" };
