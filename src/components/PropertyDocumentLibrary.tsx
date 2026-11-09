@@ -282,7 +282,7 @@ export function PropertyDocumentLibrary({
           entityType="property"
           entityId={propertyId}
           title="Add a property document"
-          description="File it on the right shelf so the next person finds it. Never upload codes, passwords or other secrets — those belong in Guest Access & Credentials."
+          description="File it on the right shelf so the next person finds it. Never upload codes, passwords or other secrets. Codes belong in the Home Profile, behind Show."
         />
       )}
     </div>
