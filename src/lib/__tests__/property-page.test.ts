@@ -101,8 +101,8 @@ describe("Property page (board Properties)", () => {
       "Documents and Media",
       "Activity",
     ];
-    expect(PROPERTY_TABS.map((t) => t.label)).toEqual(names);
-    expect(propertyTabsFor({ staff: true, properties: true }).map((t) => t.label)).toEqual(names);
+    expect(PROPERTY_TABS.map((t): string => t.label)).toEqual(names);
+    expect(propertyTabsFor({ staff: true, properties: true }).map((t): string => t.label)).toEqual(names);
     expect(propertyTabsFor({ staff: false, properties: false })).toEqual([]);
   });
 
