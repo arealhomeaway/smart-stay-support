@@ -57,6 +57,14 @@ import {
   OWNER_RESPONSE_TAG,
   type TriggerKind,
 } from "./mail-categories";
+import {
+  BEFORE_START_REASON,
+  INTAKE_OFF_MESSAGE,
+  OWN_ADDRESS_REASON,
+  isIntakeTest,
+  isOwnAddress,
+  receivedBeforeStart,
+} from "./email-intake";
 
 type Db = SupabaseClient<Database>;
 
@@ -218,6 +226,24 @@ export async function readCheckpoint(db: Db): Promise<string | null> {
   return (data?.external_id as string | undefined) ?? null;
 }
 
+/** The email intake switch and the start line, read together. */
+export type IntakeGate = { on: boolean; startLine: string | null };
+
+/**
+ * Whether email intake is switched on (feature_flags `email_intake`) and the
+ * activation line. Every path that can turn mail into work reads this first;
+ * an unknown or missing switch is off.
+ */
+export async function readIntakeGate(db: Db): Promise<IntakeGate> {
+  const { data } = await db
+    .from("feature_flags")
+    .select("enabled")
+    .eq("key", "email_intake")
+    .maybeSingle();
+  const on = (data as { enabled?: boolean } | null)?.enabled === true;
+  return { on, startLine: await readCheckpoint(db) };
+}
+
 async function writeCheckpoint(db: Db, iso: string) {
   const existing = await readCheckpoint(db);
   if (existing === null) {
@@ -254,17 +280,24 @@ async function writeCheckpoint(db: Db, iso: string) {
  * morning must still be found. Re-seeing an already-handled message is free —
  * the durable per-message mapping settles it.
  */
-async function fetchTriggerMail(limit: number, since: string) {
+async function fetchTriggerMail(limit: number, since: string, inclusive = false) {
   const seen = new Map<string, GraphMessage>();
+  let more = false;
   for (const tag of [CREATE_TICKET_TAG, ...DIRECT_BOOKING_TAGS, OWNER_RESPONSE_TAG]) {
-    const filter = `receivedDateTime gt ${since} and categories/any(c:c eq '${tag.replace(/'/g, "''")}')`;
+    const filter = `receivedDateTime ${inclusive ? "ge" : "gt"} ${since} and categories/any(c:c eq '${tag.replace(/'/g, "''")}')`;
     const query = `?$filter=${encodeURIComponent(filter)}&$top=${limit}&$orderby=receivedDateTime asc&$select=${SELECT_FIELDS}`;
     const res = await graph(mailboxMessagesPath(query));
-    for (const m of ((await res.json())?.value ?? []) as GraphMessage[]) {
+    const rows = ((await res.json())?.value ?? []) as GraphMessage[];
+    if (rows.length >= limit) more = true;
+    for (const m of rows) {
       if (m?.id && !seen.has(m.id)) seen.set(m.id, m);
     }
   }
-  return Array.from(seen.values()).slice(0, limit);
+  // Oldest first across every trigger category, so a page never skips older mail.
+  const sorted = Array.from(seen.values()).sort((a, b) =>
+    (a.receivedDateTime ?? "").localeCompare(b.receivedDateTime ?? ""),
+  );
+  return { messages: sorted.slice(0, limit), more: more || sorted.length > limit };
 }
 
 export type SkipReason =
