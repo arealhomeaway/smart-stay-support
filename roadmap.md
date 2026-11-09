@@ -338,3 +338,7 @@
 - [x] Pending codes line in Entry & Access Details (waiting count, Mark current, Archive), code managers only, values stay behind logged Show
 - [x] Register T8 copy reads Create ticket
 - [x] Tests; suite before/after, type check, build
+## Nov 9 Direct Bookings real map (code only, no publish)
+- [x] OpenStreetMap map in one provider file: search point, 5/10/20 rings with labels, numbered pins with labels, straight line note
+- [x] Overlapping pins spread apart; map and cards connected; picked pins differ; attribution; failure message; phone scroll safe
+- [x] Tests, browser check desktop and phone, register D7 line
