@@ -377,8 +377,14 @@ function ReopenClaim({ claim, onDone }: { claim: ClaimRow; onDone: () => void })
   const reopen = useMutation({
     mutationFn: async () => {
       if (problem) throw new Error(problem);
-      const { error } = await supabase.from("claims").update(reopenClaimPatch()).eq("id", claim.id).eq("stage", "closed");
+      const { data: changed, error } = await supabase
+        .from("claims")
+        .update(reopenClaimPatch())
+        .eq("id", claim.id)
+        .eq("stage", "closed")
+        .select("id");
       if (error) throw error;
+      if (!changed?.length) throw new Error("This claim is no longer closed. Refresh to see the latest.");
       const { error: logError } = await supabase.from("claim_activity").insert({
         claim_id: claim.id,
         author_id: userId,
