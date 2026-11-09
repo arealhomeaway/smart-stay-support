@@ -649,7 +649,7 @@ function PickHomes({ d, editable, picked, setPicked }: { d: Detail; editable: bo
               const on = picked.some((p) => p.id === h.id);
               const off = !editable || !h.rent.ok || (!on && full);
               return (
-                <div key={h.id} data-card="home" className={cn("flex flex-col overflow-hidden rounded-xl border-2", on ? "border-primary bg-primary/5" : "border-border bg-card")}>
+                <div key={h.id} data-card="home" className={cn("flex shrink-0 flex-col overflow-hidden rounded-xl border-2", on ? "border-primary bg-primary/5" : "border-border bg-card")}>
                   <HomePhoto url={h.photo} alt={h.address || h.name} className="h-32 w-full shrink-0" />
                   <div className="flex items-start gap-3 p-3">
                   <span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-[13px] font-bold text-primary-foreground">{i + 1}</span>
