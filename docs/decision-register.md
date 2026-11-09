@@ -138,3 +138,6 @@ O6 Phase 2: the full homeowner portal and the onboarding integrations.
 
 ## 12. Defaults and open items
 K2 Defaults chosen so work could continue: import name match ignores capitals and spaces; lunch cover same team first; Median becomes Typical; the homeowner contact list shows roles with the company shared phone and info email; the import button reads Preview 20 tickets; only an Admin deletes users; the Supervisor's shifts stay as data and are not listed; a handoff to a role goes to the person on shift in that role; a Direct Booking follow up is 48 hours after each follow up. Ticket checklists follow the playbook rule; onboarding cost requests keep their own rule for now. The overnight clock start time is a setting, default 9:00 AM (Emily, Nov 8).
+
+## 13. Email intake
+E1 Email intake (Emily, Nov 9): the switch is real; the start line is set when it is turned on and older mail is ignored; the sweep runs every minute; [RESOLVE TEST] mail from an ARHA address is a test record; mail from our own address never creates a Direct Booking request; intake is switched on only after the test plan passes and Emily says go.
