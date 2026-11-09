@@ -107,7 +107,7 @@ describe("the hub", () => {
 
   it("onboarding sees Claims and refunds as Operations and Finance only and cannot read its list by address", () => {
     for (const name of ["DirOnb", "PM", "Utilities", "Design"]) {
-      const p = PROFILES[name]!;
+      const p = PROFILES[name as keyof typeof PROFILES];
       expect(databaseMode("claims", p)).toBe("ops_finance");
       expect(canReadList("claims", p)).toBe(false);
       expect(canEditInList("claims", p)).toBe(false);
