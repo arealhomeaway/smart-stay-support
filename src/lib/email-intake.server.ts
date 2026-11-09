@@ -31,7 +31,7 @@ export async function authoriseSweep(
   deps: { appSecret: string | undefined; verifyToken: (token: string) => Promise<boolean> },
 ): Promise<boolean> {
   const provided = headers.get("x-cron-secret") ?? "";
-  if (provided.length < 16) return false;
+  if (!provided) return false;
   if (deps.appSecret && provided === deps.appSecret) return true;
   try {
     return await deps.verifyToken(provided);
