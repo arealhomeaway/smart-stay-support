@@ -9,7 +9,7 @@ import { SectionCard } from "@/components/ui/page";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDemo } from "@/components/DemoProvider";
 import { usDateTime } from "@/lib/dates";
-import { cameInAt, groupSupervisorCheck, type CheckTicket } from "@/lib/supervisor-check";
+import { groupSupervisorCheck, type CheckTicket } from "@/lib/supervisor-check";
 
 export const Route = createFileRoute("/_authenticated/supervisor-check")({
   head: () => ({
@@ -107,7 +107,7 @@ function SupervisorCheck() {
                 <Link to="/tickets/$ticketId" params={{ ticketId: t.id }} className="font-medium hover:underline">
                   {(t as Row).ref ? `#${(t as Row).ref} ` : ""}{t.title ?? "Ticket"}
                 </Link>
-                <span className="text-muted-foreground">{usDateTime(kind === "created" ? cameInAt(t) : (t.updated_at ?? t.created_at))}</span>
+                <span className="text-muted-foreground">{usDateTime(t.updated_at ?? t.created_at)}</span>
               </li>
             ))}
           </ul>

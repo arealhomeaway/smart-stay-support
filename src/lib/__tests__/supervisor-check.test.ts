@@ -16,20 +16,18 @@ describe("supervisor check", () => {
     expect(activityKind(t({ status: "closed", closed_at: h(1), created_at: h(2) }), since)).toBe("closed");
     expect(activityKind(t({ updated_at: h(30) }), since)).toBeNull();
   });
-  it("lists overdue, unassigned, imported and both review lists", () => {
+  it("lists overdue and unassigned; the three import-only lists are gone", () => {
     const g = groupSupervisorCheck([
       t({ next_action_due_at: h(1) }),
       t({ status: "closed", next_action_due_at: h(1) }),
       t({ assigned_to: null }),
-      t({ external_source: "notion" }),
-      t({ external_source: "notion", import_hold: "backlog_review", assigned_to: null }),
-      t({ external_source: "notion", import_hold: "needs_home" }),
+      t({ external_source: "notion", reported_at: h(48) }),
+      t({ external_source: "notion", import_hold: "backlog_review", assigned_to: null, reported_at: h(24 * 90) }),
+      t({ external_source: "notion", import_hold: "needs_home", reported_at: h(48) }),
     ], NOW);
     expect(g.overdue).toHaveLength(1);
     expect(g.unassigned).toHaveLength(1);
-    expect(g.imported).toHaveLength(1);
-    expect(g.backlogReview).toHaveLength(1);
-    expect(g.needsHome).toHaveLength(1);
+    expect(Object.keys(g).sort()).toEqual(["last24h", "overdue", "unassigned"]);
   });
   it("the part-time Guest Experience seat sits on Team A and shows on the grid", () => {
     expect(SEAT_TEAMS["ge_parttime"]).toBe(TEAM_A);
