@@ -13,7 +13,7 @@ export const PIN_GAP = 40;
 export const MAP_COPY = {
   region: "Map of the search place and homes",
   attribution: "© OpenStreetMap contributors",
-  failed: "The map could not load. The homes are listed below.",
+  failed: "The map could not load. The homes are still listed.",
   loading: "Loading the map…",
   straightLine: "Distances are straight line, not driving.",
   twoFingers: "Use two fingers to move the map.",

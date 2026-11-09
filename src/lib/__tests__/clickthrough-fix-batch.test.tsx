@@ -127,11 +127,11 @@ describe("1. Properties list card, as the board", () => {
 });
 
 describe("2. Property page photo header", () => {
-  it("the header shows the home's photo, and nothing when there is none", () => {
+  it("the header shows the home's photo, and the cards' neutral block when there is none (Emily, Nov 9)", () => {
     const page = read("routes/_authenticated/property.$propertyId.tsx");
     const header = page.slice(page.indexOf("function PropertyHeader"));
-    expect(header).toContain("{p.photoUrl ? (");
-    expect(header).toContain("<HomePhoto");
+    expect(header).not.toContain("{p.photoUrl ? (");
+    expect(header).toContain("<HomePhoto\n        url={p.photoUrl}");
     expect(header.indexOf("<h1")).toBeGreaterThan(header.indexOf("<HomePhoto"));
     // The stage chip and the other chips stay as built.
     expect(header).toContain("{stageLabel(p.lifecycleStatus)}</StatusBadge>");

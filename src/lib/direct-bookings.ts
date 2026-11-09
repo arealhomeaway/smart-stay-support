@@ -693,18 +693,21 @@ export const DB_COPY = {
   whereHelp: "We find the homes closest to this place. If you fill in Near this address, we use that instead.",
   placeNotFound: "We could not locate that place. Try a fuller address or ZIP code.",
   placeSearchBusy: "The place search is busy. Try again in a minute.",
+  placeSearchDown: "The place search is not working right now. Try again in a minute. If it keeps happening, send a help ticket.",
   calendarFailed: "We could not check calendars. Try again.",
   noReferralSource: "Choose the referral source so the fees are included before you send.",
 } as const;
 
 /**
- * The home search's failure line. A place that cannot be read and a busy place
- * search say so; the calendar message is kept for everything else.
+ * The home search's failure line. A place that cannot be read, a busy place
+ * search and any other place search failure (the Google Maps lookup or its
+ * connection) say so; the calendar message is kept for everything else.
  */
 export function searchFailureMessage(err: unknown): string {
   const message = err instanceof Error ? err.message : String(err ?? "");
   if (message === DB_COPY.placeNotFound) return DB_COPY.placeNotFound;
   if (/quota reached|OVER_QUERY_LIMIT|\[429\]/i.test(message)) return DB_COPY.placeSearchBusy;
+  if (/Google Maps/i.test(message)) return DB_COPY.placeSearchDown;
   return DB_COPY.calendarFailed;
 }
 

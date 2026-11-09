@@ -57,7 +57,8 @@ describe("1. Rings, labels and the straight line note", () => {
   });
   it("wording", () => {
     expect(MAP_COPY.straightLine).toBe("Distances are straight line, not driving.");
-    expect(MAP_COPY.failed).toBe("The map could not load. The homes are listed below.");
+    // Emily, Nov 9: the cards sit beside the map on a wide screen.
+    expect(MAP_COPY.failed).toBe("The map could not load. The homes are still listed.");
     expect(MAP_COPY.attribution).toBe("© OpenStreetMap contributors");
     for (const text of Object.values(MAP_COPY)) {
       expect(text).not.toContain("—");

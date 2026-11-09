@@ -1,5 +1,12 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 9 answers on the fix batch and the map (code only, no database change)
+- [x] 1 Other place search failures: own line, never the calendar message
+- [x] 2 Databases lit in the left menu on the Vendors page
+- [x] 3 Property page header: neutral block when the home has no photo
+- [x] 6 Map failure line: "The homes are still listed."
+- [x] 7 Routing check on a fixed clock (Mon Nov 9, 10:00 AM Central), no rule or assertion changed
+
 ## Nov 9 fix batch from Emily's click through (code only, no database change)
 - [x] 1 Properties cards to the board (photo, chips over photo, lines in order, 3 across, neutral block)
 - [x] 2 Property page photo header
