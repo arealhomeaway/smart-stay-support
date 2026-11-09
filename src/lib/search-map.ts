@@ -110,6 +110,52 @@ export function spreadPoints(points: { id: string; x: number; y: number }[], gap
   return new Map(pts.map((p) => [p.id, { x: p.x, y: p.y }]));
 }
 
+export type Rect = { x: number; y: number; w: number; h: number };
+export type LabelSide = "right" | "left" | "above" | "below";
+/** Distance from a pin's center to its label. */
+export const LABEL_OFFSET = 24;
+
+function rectsOverlap(a: Rect, b: Rect) {
+  return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+}
+
+export function labelRect(pin: { x: number; y: number }, size: { w: number; h: number }, side: LabelSide): Rect {
+  const { w, h } = size;
+  if (side === "right") return { x: pin.x + LABEL_OFFSET, y: pin.y - h / 2, w, h };
+  if (side === "left") return { x: pin.x - LABEL_OFFSET - w, y: pin.y - h / 2, w, h };
+  if (side === "above") return { x: pin.x - w / 2, y: pin.y - LABEL_OFFSET - h, w, h };
+  return { x: pin.x - w / 2, y: pin.y + LABEL_OFFSET, w, h };
+}
+
+/**
+ * Puts each pin's label beside its pin (right, then left, above, below) where
+ * it covers no pin, no other label and nothing in `blocked`. Labels are placed
+ * in the given order, so the highlighted and picked homes come first. A label
+ * with no free side waits until the map is zoomed in or its pin is tapped;
+ * the numbered pin always shows.
+ */
+export function placeLabels(
+  items: { id: string; x: number; y: number; w: number; h: number }[],
+  blocked: Rect[],
+  pinRadius = 20,
+): Map<string, LabelSide | null> {
+  const taken: Rect[] = [
+    ...blocked,
+    ...items.map((p) => ({ x: p.x - pinRadius, y: p.y - pinRadius, w: pinRadius * 2, h: pinRadius * 2 })),
+  ];
+  const out = new Map<string, LabelSide | null>();
+  for (const item of items) {
+    const sides: LabelSide[] = ["right", "left", "above", "below"];
+    const side = sides.find((s) => {
+      const r = labelRect(item, item, s);
+      return !taken.some((t) => rectsOverlap(r, t));
+    });
+    out.set(item.id, side ?? null);
+    if (side) taken.push(labelRect(item, item, side));
+  }
+  return out;
+}
+
 /** The map counts as failed when no map picture has loaded and pictures error or time out. */
 export function tilesFailed(state: { loaded: number; errors: number; timedOut: boolean }): boolean {
   return state.loaded === 0 && (state.errors >= 2 || state.timedOut);
