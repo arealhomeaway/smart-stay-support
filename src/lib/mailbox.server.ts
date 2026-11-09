@@ -501,14 +501,34 @@ export async function processMessage(
   db: Db,
   msg: GraphMessage,
   dryRun = false,
+  gate?: IntakeGate,
 ): Promise<MessageOutcome> {
   const subject = (msg.subject ?? "").trim() || "(no subject)";
   const from = msg.from?.emailAddress?.address ?? "unknown sender";
   const messageIds = [msg.id, msg.internetMessageId ?? ""].filter(Boolean);
 
+  // The switch is real: while it is off no message is touched or recorded.
+  const intake = gate ?? (await readIntakeGate(db));
+  if (!intake.on) return { subject, from, outcome: "skipped", reason: INTAKE_OFF_MESSAGE };
+
   // Same message seen twice — a re-run, a duplicate notification, or a Graph
   // id we already handled under its internet id. Never create a second record.
   const prior = await priorRecord(db, messageIds);
+
+  // The start line: mail received before email intake was turned on is never
+  // acted on, whoever tags it and whatever its tags. A tagged message is
+  // recorded once as skipped so it is never looked at again.
+  if (receivedBeforeStart(msg.receivedDateTime, intake.startLine)) {
+    const asked = requestsRecord(msg.categories) || requestsOwnerResponse(msg.categories);
+    if (asked && !dryRun && !prior) {
+      await recordEvent(db, msg, "skipped", BEFORE_START_REASON, {
+        entityType: null,
+        entityId: null,
+      });
+    }
+    return { subject, from, outcome: "skipped", reason: BEFORE_START_REASON };
+  }
+
   const action = nextActionFor(prior);
   if (action !== "create") {
     if (action === "retag" && !dryRun && prior) {
@@ -524,7 +544,9 @@ export async function processMessage(
         reason: settledNow
           ? retry === "retagged"
             ? "already processed · category retag retried"
-            : "already processed · category already correct"
+            : retry === "no_record"
+              ? "already processed · record removed, not re-tagged"
+              : "already processed · category already correct"
           : "already processed · retag still failing",
       };
     }
@@ -609,8 +631,20 @@ export async function processMessage(
     };
   }
 
+  // [RESOLVE TEST] from an ARHA address is a test record. Any other mail from
+  // our own address (our sends and copies) never opens a Direct Booking request.
+  const fromAddress = msg.from?.emailAddress?.address ?? null;
+  const isTest = isIntakeTest(msg.subject, fromAddress);
+  const ownMailNoRequest = trigger === "lead" && isOwnAddress(fromAddress) && !isTest;
+
   if (dryRun) {
-    return { subject, from, outcome: trigger === "lead" ? "lead" : "created" };
+    if (ownMailNoRequest) return { subject, from, outcome: "skipped", reason: OWN_ADDRESS_REASON };
+    return {
+      subject,
+      from,
+      outcome: trigger === "lead" ? "lead" : "created",
+      ...(isTest ? { reason: "test record" } : {}),
+    };
   }
 
   // Claim the message BEFORE creating anything. Two passes racing here are
@@ -624,7 +658,11 @@ export async function processMessage(
   const source = await sourceFor(msg, trigger);
 
   // A reply on a thread that already produced work: link it, never duplicate.
-  const threadMate = await conversationRecord(db, msg.conversationId ?? null, messageIds);
+  // Only a record that still exists counts; a removed one is never written to
+  // or used to re-tag the message.
+  const mate = await conversationRecord(db, msg.conversationId ?? null, messageIds);
+  const threadMate =
+    mate?.entity_id && (await recordIsLive(db, mate.entity_type, mate.entity_id)) ? mate : null;
   if (threadMate?.entity_id) {
     await linkToExisting(db, threadMate, subject, body, from);
     const tagged = await setCategories(msg.id, categoriesAfterCreate(msg.categories));
@@ -645,9 +683,21 @@ export async function processMessage(
     };
   }
 
+  if (ownMailNoRequest) {
+    await settleClaim(db, messageIds, {
+      status: "skipped",
+      entityType: null,
+      entityId: null,
+      error: OWN_ADDRESS_REASON,
+      conversationId: msg.conversationId ?? null,
+      source,
+    });
+    return { subject, from, outcome: "skipped", reason: OWN_ADDRESS_REASON };
+  }
+
   try {
     if (trigger === "lead") {
-      const lead = await createLeadFromEmail(db, { subject, body, source });
+      const lead = await createLeadFromEmail(db, { subject, body, source, isTest });
       const tagged = await setCategories(msg.id, categoriesAfterCreate(msg.categories));
       await settleClaim(db, messageIds, {
         status: "created",
