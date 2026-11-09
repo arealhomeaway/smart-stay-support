@@ -21,6 +21,12 @@ export type IntakePayload = {
   source?: string | null | undefined;
   externalId?: string | null | undefined;
   externalUrl?: string | null | undefined;
+  /**
+   * A [RESOLVE TEST] email from an ARHA address: the Ticket carries the
+   * existing demo marking. A demo Ticket may not link a live home (database
+   * rule), so the recognised home is named in the record instead.
+   */
+  isDemo?: boolean | undefined;
 };
 
 export type IntakeResult = {
@@ -68,21 +74,21 @@ function normalize(value: string) {
 }
 
 /** Finds the home whose name or nickname appears in the message text. */
-async function matchProperty(db: Db, hints: string) {
+async function matchHome(db: Db, hints: string) {
   const haystack = normalize(hints);
   const { data } = await db.from("properties").select("id, name, nickname").eq("active", true);
-  let best: { id: string; score: number } | null = null;
+  let best: { id: string; name: string; score: number } | null = null;
   for (const row of data ?? []) {
     for (const label of [row.name, row.nickname]) {
       if (!label) continue;
       const needle = normalize(label);
       if (needle.length < 4) continue;
       if (haystack.includes(needle) && (!best || needle.length > best.score)) {
-        best = { id: row.id, score: needle.length };
+        best = { id: row.id, name: row.name ?? label, score: needle.length };
       }
     }
   }
-  return best?.id ?? null;
+  return best;
 }
 
 export async function createIntakeMatter(db: Db, payload: IntakePayload): Promise<IntakeResult> {
@@ -140,7 +146,9 @@ export async function createIntakeMatter(db: Db, payload: IntakePayload): Promis
     }
   }
 
-  const propertyId = await matchProperty(db, `${payload.property ?? ""} ${combined}`);
+  const isDemo = payload.isDemo === true;
+  const home = await matchHome(db, `${payload.property ?? ""} ${combined}`);
+  const propertyId = isDemo ? null : (home?.id ?? null);
   const priority = guessPriority(combined);
   const now = new Date().toISOString();
 
@@ -167,6 +175,7 @@ export async function createIntakeMatter(db: Db, payload: IntakePayload): Promis
       external_url: payload.externalUrl ?? null,
       external_synced_at: now,
       reported_at: now,
+      ...(isDemo ? { is_demo: true } : {}),
     })
     .select("id, ref")
     .single();
@@ -187,9 +196,14 @@ export async function createIntakeMatter(db: Db, payload: IntakePayload): Promis
     kind: "created",
     event_type: "created",
     channel: source,
-    body: `Created from an inbound ${source} message${payload.from ? ` from ${payload.from}` : ""}.${
-      propertyId ? "" : " No home was recognised — link the property to complete the record."
-    }`,
+    body: isDemo
+      ? `Test: created from an inbound ${source} test message${payload.from ? ` from ${payload.from}` : ""}. ${
+          home ? `Home recognised: ${home.name}. A test record is not linked to a live home.` : "No home was recognised."
+        }`
+      : `Created from an inbound ${source} message${payload.from ? ` from ${payload.from}` : ""}.${
+          propertyId ? "" : " No home was recognised — link the property to complete the record."
+        }`,
+    ...(isDemo ? { is_demo: true } : {}),
   });
 
   return {
