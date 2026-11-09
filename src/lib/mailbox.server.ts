@@ -5,7 +5,10 @@
  * by applying one of two categories:
  *
  *   "Resolve: create ticket"                        → one Operations Ticket
- *   "Resolve: lead management- create a ticket"     → one Tenant Lead
+ *   "Resolve: direct booking"                       → one Direct Booking request
+ *
+ * The old lead management tag is retired (Nov 9): it is still recognised but
+ * never creates anything and is never written.
  *
  * Resolve then owns the administrative half: it creates exactly one record,
  * keeps the email as provenance, swaps the trigger category for
@@ -49,7 +52,6 @@ import {
   triggerKind,
   CLOSED_TAG,
   CREATED_TAG,
-  CREATE_LEAD_TAG,
   CREATE_TICKET_TAG,
   DIRECT_BOOKING_TAGS,
   OWNER_RESPONSE_TAG,
@@ -1066,4 +1068,4 @@ export async function outlookSourceFor(db: Db, entityType: "ticket" | "lead", en
   };
 }
 
-export { CREATE_TICKET_TAG, CREATE_LEAD_TAG, CREATED_TAG, CLOSED_TAG };
+export { CREATE_TICKET_TAG, CREATED_TAG, CLOSED_TAG };

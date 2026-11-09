@@ -11,14 +11,10 @@
 
 /** Applied by a person. Opens exactly one Ticket. */
 export const CREATE_TICKET_TAG = "Resolve: create ticket";
-/** Applied by a person. Opens exactly one Lead in the Tenant Lead workflow. */
-export const CREATE_LEAD_TAG = "Resolve: lead management- create a ticket";
-/** Applied by an Outlook rule or a person. Opens one Direct Booking request. */
+/** Applied by an Outlook rule or a person. The only tag that opens a Direct Booking request. */
 export const DIRECT_BOOKING_TAG = "Resolve: direct booking";
-/** The same old lead tag with a space before the dash; matched during the overlap. */
-export const CREATE_LEAD_TAG_SPACED = "Resolve: lead management - create a ticket";
-/** Every tag that opens a Direct Booking request. */
-export const DIRECT_BOOKING_TAGS = [DIRECT_BOOKING_TAG, CREATE_LEAD_TAG, CREATE_LEAD_TAG_SPACED];
+/** Every tag that opens a Direct Booking request: only Resolve: direct booking. */
+export const DIRECT_BOOKING_TAGS = [DIRECT_BOOKING_TAG];
 /** Applied by Resolve, only once the Ticket or Lead exists and is saved. */
 export const CREATED_TAG = "Resolve: ticket created";
 /** Applied by Resolve when the linked record reaches a terminal state. */
@@ -40,12 +36,20 @@ export const LEGACY_CREATE_TAG = "Resolve: create task";
 export const LEGACY_CREATED_TAG = "Resolve: task created";
 export const LEGACY_COMPLETED_TAG = "Resolve task: task completed";
 
+/**
+ * The retired lead management tag, in both spellings (with and without a space
+ * before the dash). Retired Nov 9: Resolve: direct booking is the only tag that
+ * opens a Direct Booking request. Never written again and never creates
+ * anything, but still recognised so an old tagged message is never reprocessed
+ * into a duplicate.
+ */
+export const LEGACY_LEAD_TAG = "Resolve: lead management- create a ticket";
+export const LEGACY_LEAD_TAG_SPACED = "Resolve: lead management - create a ticket";
+
 /** Every category Resolve is allowed to add or remove. */
 export const RESOLVE_TAGS = [
   CREATE_TICKET_TAG,
-  CREATE_LEAD_TAG,
   DIRECT_BOOKING_TAG,
-  CREATE_LEAD_TAG_SPACED,
   CREATED_TAG,
   CLOSED_TAG,
   OWNER_RESPONSE_TAG,
@@ -53,6 +57,8 @@ export const RESOLVE_TAGS = [
   LEGACY_CREATE_TAG,
   LEGACY_CREATED_TAG,
   LEGACY_COMPLETED_TAG,
+  LEGACY_LEAD_TAG,
+  LEGACY_LEAD_TAG_SPACED,
 ];
 
 export type TriggerKind = "ticket" | "lead";

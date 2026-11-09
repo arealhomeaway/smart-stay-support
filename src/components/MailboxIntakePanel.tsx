@@ -85,9 +85,7 @@ export function MailboxIntakePanel() {
               Nothing is created automatically. A message becomes work only when someone in the
               shared inbox applies{" "}
               <span className="font-medium text-foreground">Resolve: create ticket</span> or{" "}
-              <span className="font-medium text-foreground">
-                Resolve: lead management- create a ticket
-              </span>
+              <span className="font-medium text-foreground">Resolve: direct booking</span>
               . Resolve then swaps that category for{" "}
               <span className="font-medium text-foreground">Resolve: ticket created</span>, and
               moves it to{" "}
