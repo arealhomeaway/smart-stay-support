@@ -10,6 +10,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   formatMiles,
+  labelRect,
+  placeLabels,
   MAP_COPY,
   noLocationLine,
   PIN_GAP,
@@ -105,6 +107,41 @@ describe("2. Pins that overlap are spread so none hides another", () => {
   it("the same input always gives the same layout", () => {
     const pts = Array.from({ length: 4 }, (_, i) => ({ id: `h${i}`, x: 50 + i, y: 50 }));
     expect([...spreadPoints(pts)]).toEqual([...spreadPoints(pts)]);
+  });
+});
+
+describe("2. Labels never cover a pin or each other", () => {
+  const overlap = (a: { x: number; y: number; w: number; h: number }, b: typeof a) =>
+    a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+  it("crowded labels take free sides; none overlaps another label, a pin or the search label", () => {
+    const pins = [
+      { id: "1", x: 100, y: 100, w: 120, h: 18 },
+      { id: "2", x: 100, y: 140, w: 120, h: 18 },
+      { id: "3", x: 140, y: 120, w: 120, h: 18 },
+      { id: "4", x: 60, y: 120, w: 120, h: 18 },
+    ];
+    const search = { x: 120, y: 60, w: 90, h: 20 };
+    const sides = placeLabels(pins, [search]);
+    const shown = pins.flatMap((p) => {
+      const side = sides.get(p.id);
+      return side ? [labelRect(p, p, side)] : [];
+    });
+    expect(sides.get("1")).not.toBeUndefined();
+    for (let i = 0; i < shown.length; i++) {
+      expect(overlap(shown[i]!, search)).toBe(false);
+      for (const p of pins) expect(overlap(shown[i]!, { x: p.x - 20, y: p.y - 20, w: 40, h: 40 })).toBe(false);
+      for (let j = i + 1; j < shown.length; j++) expect(overlap(shown[i]!, shown[j]!)).toBe(false);
+    }
+  });
+  it("a lone pin keeps its label on the right", () => {
+    expect(placeLabels([{ id: "a", x: 100, y: 100, w: 80, h: 18 }], []).get("a")).toBe("right");
+  });
+  it("the first in order wins the free side", () => {
+    const a = { id: "a", x: 100, y: 100, w: 200, h: 18 };
+    const b = { id: "b", x: 100, y: 100, w: 200, h: 18 };
+    const sides = placeLabels([a, b], []);
+    expect(sides.get("a")).toBe("right");
+    expect(sides.get("b")).not.toBe("right");
   });
 });
 
