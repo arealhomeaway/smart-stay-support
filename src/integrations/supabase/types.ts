@@ -11255,7 +11255,9 @@ export type Database = {
           is_demo: boolean
           logged_by: string
           occurred_at: string
+          one_touch: boolean
           outcome: string
+          problem_type_id: string | null
           property_id: string
           what_happened: string
         }
@@ -11268,7 +11270,9 @@ export type Database = {
           is_demo?: boolean
           logged_by?: string
           occurred_at?: string
+          one_touch?: boolean
           outcome: string
+          problem_type_id?: string | null
           property_id: string
           what_happened: string
         }
@@ -11281,11 +11285,20 @@ export type Database = {
           is_demo?: boolean
           logged_by?: string
           occurred_at?: string
+          one_touch?: boolean
           outcome?: string
+          problem_type_id?: string | null
           property_id?: string
           what_happened?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "property_activity_log_problem_type_id_fkey"
+            columns: ["problem_type_id"]
+            isOneToOne: false
+            referencedRelation: "work_types"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "property_activity_log_property_id_fkey"
             columns: ["property_id"]
@@ -17621,6 +17634,27 @@ export type Database = {
           task_ids: string[]
         }[]
       }
+      home_problem_repeat: {
+        Args: { _property_id: string; _work_type_id: string }
+        Returns: {
+          flagged: boolean
+          times_in_window: number
+          times_needed: number
+          window_days: number
+        }[]
+      }
+      home_repeat_flags: {
+        Args: { _property_id?: string; _since?: string }
+        Returns: {
+          is_demo: boolean
+          last_at: string
+          problem_type: string
+          property_id: string
+          times: number
+          window_days: number
+          work_type_id: string
+        }[]
+      }
       import_notion_ticket: { Args: { p: Json }; Returns: Json }
       import_notion_ticket_comments: {
         Args: { p_comments: Json; p_ticket_id: string }
@@ -18317,6 +18351,14 @@ export type Database = {
           _owner_id: string
         }
         Returns: string
+      }
+      record_work_escalate: { Args: { _ticket_id: string }; Returns: string }
+      record_work_route_preview: {
+        Args: { _work_type_id: string }
+        Returns: {
+          role_name: string
+          who_kind: string
+        }[]
       }
       recovery_required_authority: {
         Args: {
