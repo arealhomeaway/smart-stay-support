@@ -321,6 +321,17 @@ export function planTicketWrite(existing: ExistingImport, mapped: { external_syn
   return same ? "unchanged" : "update";
 }
 
+/**
+ * The ticket sent to the import step. In the older open and closed history runs
+ * a ticket that is already in Resolve keeps its claim exactly as it is (a ticket
+ * from the first run can age past 30 days, and its open claim must never take
+ * the closed history notes); only a new ticket brings its Closed claim.
+ */
+export function ticketForWrite<T extends { claim: unknown }>(plan: WritePlan, group: ImportGroup, ticket: T): T {
+  if (plan === "update" && group !== "recent_open") return { ...ticket, claim: null };
+  return ticket;
+}
+
 // ---------- Notion rate limit ----------
 
 /**

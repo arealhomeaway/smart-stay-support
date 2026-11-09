@@ -9,7 +9,7 @@ import { formatPropertyLabel } from "@/lib/property-label";
 import { formerName } from "@/lib/user-removal";
 import { ticketStatusLabel } from "@/lib/ticket-lifecycle";
 import { notionBadge, showsAssignee } from "@/lib/notion-ticket-display";
-import { claimStageLabel, isOpenClaim, amountAtRisk, CLAIM_TYPE_LABELS, type ClaimStage, type ClaimType } from "@/lib/claims";
+import { claimClosedAt, claimOpenedAt, claimStageLabel, isOpenClaim, amountAtRisk, CLAIM_TYPE_LABELS, type ClaimStage, type ClaimType } from "@/lib/claims";
 import { RECOVERY_STAGE_LABELS, RECOVERY_ACTION_LABELS, type RecoveryAction, type RecoveryStage } from "@/lib/guest-recovery";
 import { STATUS_LABELS as PLAYBOOK_STATUS_LABELS, type PlaybookStatus } from "@/lib/playbooks";
 import { requestStatus } from "@/lib/direct-bookings";
@@ -270,6 +270,9 @@ type ClaimRow = {
   follow_up_on: string | null;
   incident_description: string | null;
   updated_at: string;
+  created_at: string;
+  closed_at: string | null;
+  ticket: { reported_at: string | null; resolved_at: string | null; external_synced_at: string | null } | null;
 };
 type RefundRow = {
   id: string;
@@ -283,24 +286,27 @@ type RefundRow = {
   delivered_amount: number | null;
   follow_up_on: string | null;
   updated_at: string;
+  created_at: string;
 };
 
 async function loadClaimsAndRefunds(demo: boolean) {
   const [claims, refunds] = await Promise.all([
     supabase
       .from("claims")
-      .select("id, ticket_id, property_id, title, claim_type, stage, estimated_amount, actual_cost, submitted_amount, recovered_amount, follow_up_on, incident_description, updated_at")
+      .select(
+        "id, ticket_id, property_id, title, claim_type, stage, estimated_amount, actual_cost, submitted_amount, recovered_amount, follow_up_on, incident_description, updated_at, created_at, closed_at, ticket:tickets!claims_ticket_id_fkey(reported_at, resolved_at, external_synced_at)",
+      )
       .eq("is_demo", demo)
       .order("created_at", { ascending: false }),
     supabase
       .from("guest_recovery")
-      .select("id, ticket_id, property_id, title, stage, recovery_action, proposed_amount, approved_amount, delivered_amount, follow_up_on, updated_at")
+      .select("id, ticket_id, property_id, title, stage, recovery_action, proposed_amount, approved_amount, delivered_amount, follow_up_on, updated_at, created_at")
       .eq("is_demo", demo)
       .order("created_at", { ascending: false }),
   ]);
   if (claims.error) throw claims.error;
   if (refunds.error) throw refunds.error;
-  return { claims: (claims.data ?? []) as ClaimRow[], refunds: (refunds.data ?? []) as RefundRow[] };
+  return { claims: (claims.data ?? []) as unknown as ClaimRow[], refunds: (refunds.data ?? []) as RefundRow[] };
 }
 
 async function claimsList(ctx: LoadContext): Promise<ListData> {
@@ -308,16 +314,21 @@ async function claimsList(ctx: LoadContext): Promise<ListData> {
   const rows: DbRow[] = [];
   for (const c of claims) {
     const stage = c.stage as ClaimStage;
+    const damages = amountAtRisk({ ...c, claim_type: c.claim_type as ClaimType, stage });
+    const openedAt = claimOpenedAt(c, c.ticket);
     rows.push({
       id: `claim:${c.id}`,
-      cells: [c.title, homeName(homes, c.property_id), "Claim", money(amountAtRisk({ ...c, claim_type: c.claim_type as ClaimType, stage })), claimStageLabel({ stage, incident_description: c.incident_description })],
+      cells: [c.title, homeName(homes, c.property_id), "Claim", money(damages), claimStageLabel({ stage, incident_description: c.incident_description })],
       fields: [
         { label: "Claim type", value: CLAIM_TYPE_LABELS[c.claim_type as ClaimType] ?? words(c.claim_type) },
         { label: "Estimated cost", value: money(num(c.estimated_amount)) },
         { label: "Amount sent", value: money(num(c.submitted_amount)) },
         { label: "Amount paid back", value: money(num(c.recovered_amount)) },
         { label: "Follow up on", value: day(c.follow_up_on) },
+        { label: "Opened", value: day(openedAt) },
+        { label: "Closed", value: day(claimClosedAt({ ...c, stage }, c.ticket)) },
       ],
+      claim: { kind: "claim", open: isOpenClaim(stage), openedAt, damages, paidBack: num(c.recovered_amount) },
       link: ticketLink(ctx, c.ticket_id),
       edit: {
         kind: "claim",
@@ -345,7 +356,9 @@ async function claimsList(ctx: LoadContext): Promise<ListData> {
         { label: "Amount approved", value: money(num(r.approved_amount)) },
         { label: "Amount given", value: money(num(r.delivered_amount)) },
         { label: "Follow up on", value: day(r.follow_up_on) },
+        { label: "Opened", value: day(r.created_at) },
       ],
+      claim: { kind: "refund", open: r.stage !== "closed", openedAt: r.created_at, damages: amount, paidBack: num(r.delivered_amount) },
       link: ticketLink(ctx, r.ticket_id),
       edit: {
         kind: "refund",

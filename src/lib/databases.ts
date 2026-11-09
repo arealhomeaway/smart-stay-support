@@ -403,6 +403,18 @@ export type DbRow = {
   link?: DbLink | undefined;
   /** Claims and refunds only: what may change in the list. */
   edit?: ClaimEdit;
+  /** Claims and refunds only: open or closed, the original opened date and the money. */
+  claim?: ClaimFacts;
+};
+
+/** What the Status, Period, sort and totals line read from a claim or refund row. */
+export type ClaimFacts = {
+  kind: "claim" | "refund";
+  open: boolean;
+  /** The original opened date (an imported claim keeps its Notion created date). */
+  openedAt: string;
+  damages: number | null;
+  paidBack: number | null;
 };
 
 /** The values of a claim or refund that may change in the list. */
@@ -577,6 +589,145 @@ export function claimTiles(claims: TileClaim[]): { atRisk: number; payback: numb
 }
 
 export const CLAIM_TILE_LABELS = { atRisk: "Money we could still lose", payback: "Waiting to be paid back" } as const;
+
+/* Claims and refunds: Status, Period, sort and the totals line (register N5, Emily Nov 9). */
+
+export const CLAIM_STATUS_FILTER = "Status";
+export const CLAIM_STATUS_OPTIONS = ["Open", "Closed", ALL] as const;
+export type ClaimStatusChoice = (typeof CLAIM_STATUS_OPTIONS)[number];
+/** Closed claims show only when Closed or All is chosen; never as open work. */
+export const CLAIM_STATUS_DEFAULT: ClaimStatusChoice = "Open";
+
+export const CLAIM_PERIOD_FILTER = "Period";
+export type PeriodKind = "all" | "week" | "month" | "year" | "month_of" | "range";
+export type Period = { kind: PeriodKind; year?: number; month?: number; from?: string; to?: string };
+export const PERIOD_OPTIONS: { kind: PeriodKind; label: string }[] = [
+  { kind: "all", label: "All time" },
+  { kind: "week", label: "This week" },
+  { kind: "month", label: "This month" },
+  { kind: "year", label: "This year" },
+  { kind: "month_of", label: "Choose a month" },
+  { kind: "range", label: "Choose dates" },
+];
+export const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+] as const;
+
+export const CLAIM_SORT_FILTER = "Sort";
+export const CLAIM_SORT_OPTIONS = ["Newest opened first", "Oldest opened first"] as const;
+export type ClaimSortChoice = (typeof CLAIM_SORT_OPTIONS)[number];
+
+const CENTRAL_DAY = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit" });
+
+/** The calendar day in Central time, as YYYY-MM-DD. A plain date stays that date. */
+export function centralDay(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+  const t = Date.parse(iso);
+  return Number.isFinite(t) ? CENTRAL_DAY.format(new Date(t)) : null;
+}
+
+const pad = (n: number) => String(n).padStart(2, "0");
+const dayKey = (y: number, m: number, d: number) => `${y}-${pad(m)}-${pad(d)}`;
+
+/** First and last day (YYYY-MM-DD, inclusive) of a period; null is All time. Weeks run Monday to Sunday. */
+export function periodRange(p: Period, now: number = Date.now()): { from: string | null; to: string | null } | null {
+  const today = centralDay(new Date(now).toISOString())!;
+  const [y, m, d] = today.split("-").map(Number) as [number, number, number];
+  switch (p.kind) {
+    case "week": {
+      const base = new Date(Date.UTC(y, m - 1, d));
+      const back = (base.getUTCDay() + 6) % 7; // Monday = 0
+      const start = new Date(base.getTime() - back * 86_400_000);
+      const end = new Date(start.getTime() + 6 * 86_400_000);
+      const k = (x: Date) => dayKey(x.getUTCFullYear(), x.getUTCMonth() + 1, x.getUTCDate());
+      return { from: k(start), to: k(end) };
+    }
+    case "month":
+      return { from: dayKey(y, m, 1), to: dayKey(y, m, 31) };
+    case "year":
+      return { from: dayKey(y, 1, 1), to: dayKey(y, 12, 31) };
+    case "month_of": {
+      const yy = p.year ?? y;
+      const mm = p.month ?? m;
+      return { from: dayKey(yy, mm, 1), to: dayKey(yy, mm, 31) };
+    }
+    case "range": {
+      let from = p.from && /^\d{4}-\d{2}-\d{2}$/.test(p.from) ? p.from : null;
+      let to = p.to && /^\d{4}-\d{2}-\d{2}$/.test(p.to) ? p.to : null;
+      if (from && to && from > to) [from, to] = [to, from];
+      return from || to ? { from, to } : null;
+    }
+    default:
+      return null;
+  }
+}
+
+export function inPeriod(openedAt: string | null | undefined, p: Period, now: number = Date.now()): boolean {
+  const range = periodRange(p, now);
+  if (!range) return true;
+  const day = centralDay(openedAt);
+  if (!day) return false;
+  return (!range.from || day >= range.from) && (!range.to || day <= range.to);
+}
+
+export type ClaimView = { status: ClaimStatusChoice; period: Period; sort: ClaimSortChoice };
+export const CLAIM_VIEW_DEFAULT: ClaimView = { status: CLAIM_STATUS_DEFAULT, period: { kind: "all" }, sort: "Newest opened first" };
+
+/** Status and Period over the claim and refund rows, then sorted by the original opened date. */
+export function applyClaimView(rows: DbRow[], view: ClaimView, now: number = Date.now()): DbRow[] {
+  const out = rows.filter((r) => {
+    const c = r.claim;
+    if (!c) return true;
+    if (view.status === "Open" && !c.open) return false;
+    if (view.status === "Closed" && c.open) return false;
+    return inPeriod(c.openedAt, view.period, now);
+  });
+  const dir = view.sort === "Oldest opened first" ? 1 : -1;
+  return out
+    .map((r, i) => ({ r, i, t: Date.parse(r.claim?.openedAt ?? "") }))
+    .sort((a, b) => {
+      const ta = Number.isFinite(a.t) ? a.t : null;
+      const tb = Number.isFinite(b.t) ? b.t : null;
+      if (ta === null && tb === null) return a.i - b.i;
+      if (ta === null) return 1;
+      if (tb === null) return -1;
+      return ta === tb ? a.i - b.i : (ta - tb) * dir;
+    })
+    .map((x) => x.r);
+}
+
+export type ClaimTotals = { count: number; damages: number; paidBack: number; openCount: number; stillOpen: number };
+
+/** Claims only (refunds are not claims). Still open is money not yet paid back on open claims. */
+export function claimTotals(rows: DbRow[]): ClaimTotals {
+  const t: ClaimTotals = { count: 0, damages: 0, paidBack: 0, openCount: 0, stillOpen: 0 };
+  for (const r of rows) {
+    const c = r.claim;
+    if (!c || c.kind !== "claim") continue;
+    t.count++;
+    t.damages += c.damages ?? 0;
+    t.paidBack += c.paidBack ?? 0;
+    if (c.open) {
+      t.openCount++;
+      t.stillOpen += Math.max(0, (c.damages ?? 0) - (c.paidBack ?? 0));
+    }
+  }
+  return t;
+}
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
+const claimsWord = (n: number) => `${n} ${n === 1 ? "claim" : "claims"}`;
+
+export function claimTotalsLine(t: ClaimTotals): string {
+  return [
+    claimsWord(t.count),
+    `Total damages ${money(round2(t.damages))}`,
+    `Paid back ${money(round2(t.paidBack))}`,
+    `Still open: ${claimsWord(t.openCount)}, ${money(round2(t.stillOpen))}`,
+  ].join(" · ");
+}
 
 /** Claim, Refund or Credit, from the stored remedy. */
 export function claimOrRefundType(kind: "claim" | "refund", action?: string | null): "Claim" | "Refund" | "Credit" {
