@@ -2178,6 +2178,13 @@
       "when": 1794195192009,
       "tag": "0310_home_profile_edits",
       "breakpoints": true
+    },
+    {
+      "idx": 311,
+      "version": "7",
+      "when": 1794196522991,
+      "tag": "0311_strict_profile_items",
+      "breakpoints": true
     }
   ]
 }
