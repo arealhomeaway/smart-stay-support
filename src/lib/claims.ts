@@ -75,6 +75,44 @@ export function claimStageLabel(claim: { stage: ClaimStage; incident_description
   return CLAIM_STAGE_LABELS[claim.stage];
 }
 
+/* -------------------------------------------------------------------------
+ * Claims imported from Notion (register N5)
+ *
+ * Every imported claim's notes start with "Imported from Notion". A claim on an
+ * older open or closed Notion ticket comes in Closed and its notes also carry
+ * "Closed at import from Notion history". The Notion dates live on the linked
+ * ticket (reported_at is the Notion created date), so an imported claim's
+ * opened date is read from there; nothing on the claim is rewritten.
+ * ---------------------------------------------------------------------- */
+
+type ClaimNotes = { incident_description?: string | null };
+
+export function isImportedClaim(c: ClaimNotes): boolean {
+  return /^Imported from Notion$/m.test(c.incident_description ?? "");
+}
+
+/** Closed at import and not closed again in Resolve since (closing in Resolve stamps closed_at). */
+export function isImportedHistoryClaim(c: ClaimNotes & { stage: ClaimStage; closed_at?: string | null }): boolean {
+  return c.stage === "closed" && !c.closed_at && /^Closed at import from Notion history$/m.test(c.incident_description ?? "");
+}
+
+type ClaimTicketDates = { reported_at?: string | null; resolved_at?: string | null; external_synced_at?: string | null } | null | undefined;
+
+/** The claim's original opened date: the Notion created date for an imported claim, else when it was made in Resolve. */
+export function claimOpenedAt(c: ClaimNotes & { created_at: string }, ticket?: ClaimTicketDates): string {
+  return isImportedClaim(c) && ticket?.reported_at ? ticket.reported_at : c.created_at;
+}
+
+/** When the claim closed: closed_at when closed in Resolve; for a history import the ticket's closed date, else its last Notion edit. */
+export function claimClosedAt(
+  c: ClaimNotes & { stage: ClaimStage; closed_at?: string | null },
+  ticket?: ClaimTicketDates,
+): string | null {
+  if (c.closed_at) return c.closed_at;
+  if (isImportedHistoryClaim(c)) return ticket?.resolved_at ?? ticket?.external_synced_at ?? null;
+  return null;
+}
+
 export const CLAIM_PIPELINE: ClaimStage[] = [
   "potential",
   "gathering",
