@@ -191,7 +191,7 @@ function DatabaseList({ card, mode, initialTerm }: { card: DatabaseCard; mode: E
                       </select>
                     </label>
                   ))}
-                  {isClaims && <ClaimViewControls view={view} onChange={setView} />}
+                  {isClaims && <ClaimViewControls view={view} onChange={setView} rows={rows} />}
                 </div>
               )}
               <span className="text-[13px] text-muted-foreground" role="status">
@@ -236,11 +236,14 @@ const SELECT_CLASS = "h-11 rounded-lg border border-input bg-background px-3 tex
 const LABEL_CLASS = "flex flex-col gap-1 text-[13px] text-muted-foreground";
 
 /** Claims and refunds: Period and Status beside Type, and the opened date sort. */
-function ClaimViewControls({ view, onChange }: { view: ClaimView; onChange: (v: ClaimView) => void }) {
+function ClaimViewControls({ view, onChange, rows }: { view: ClaimView; onChange: (v: ClaimView) => void; rows: DbRow[] }) {
   const today = centralDay(new Date().toISOString())!;
   const thisYear = Number(today.slice(0, 4));
   const thisMonth = Number(today.slice(5, 7));
-  const years = Array.from({ length: thisYear - 2018 + 1 }, (_, i) => thisYear - i);
+  // Every year a claim or refund was opened in, newest first, and always this year.
+  const years = [
+    ...new Set([thisYear, ...rows.map((r) => Number(centralDay(r.claim?.openedAt)?.slice(0, 4))).filter((y) => Number.isFinite(y) && y > 0)]),
+  ].sort((a, b) => b - a);
   const p = view.period;
   return (
     <>
