@@ -33,6 +33,7 @@ import {
  * Databases hub (board approved Nov 8; register P3, C1, M1, M2, A9 to A18).
  * The register's access lines win where they differ from the board.
  */
+type Profile = { roles: AppRole[]; seats: AccessSeats };
 const PROFILES = {
   PC: { roles: ["tech"], seats: {} },
   Supervisor: { roles: ["manager"], seats: { opsSupervisor: true } },
@@ -42,8 +43,8 @@ const PROFILES = {
   Utilities: { roles: ["onboarding"], seats: { utilities: true } },
   Design: { roles: ["onboarding"], seats: {} },
   Finance: { roles: ["manager"], seats: { finance: true } },
-  Admin: { roles: ["admin"] as AppRole[], seats: {} as AccessSeats },
-};
+  Admin: { roles: ["admin"], seats: {} },
+} satisfies Record<string, Profile>;
 
 // E = You can edit, V = View only, O = Operations and Finance only, - = not shown.
 const KEYS: DatabaseKey[] = [
@@ -63,7 +64,7 @@ const MATRIX: Record<string, string> = {
   Design:     "E E E - E V  E E V V V  V V V O O O O  V V",
   Finance:    "V V V V V V  V V V V V  V V V V E V V  V -",
   Admin:      "E E E E E V  E E E E V  E E E E E E E  E E",
-};
+} satisfies Record<string, Profile>;
 const LETTER = { edit: "E", view: "V", ops_finance: "O", hidden: "-" } as const;
 
 describe("the hub", () => {
