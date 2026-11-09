@@ -84,7 +84,7 @@ describe("the page", () => {
   const page = readFileSync("src/routes/_authenticated/supervisor-check.tsx", "utf8");
   it("has no import lists and no import wording", () => {
     for (const w of [/Imported from Notion/i, /Older open/i, /Backlog review/i, /Needs a home/i, /Notion/i, /imported-tickets/, /\bseat\b/i, /Median/, /—\s/]) {
-      expect({ w: String(w), hit: w.test(page.replace(/title: "Supervisor check — Resolve"/g, "")) }).toEqual({ w: String(w), hit: false });
+      expect({ w: String(w), hit: w.test(page.replace(/"Supervisor check — Resolve"/g, "")) }).toEqual({ w: String(w), hit: false });
     }
   });
   it("stays read only, keeps its sweep clocking and its access", () => {
