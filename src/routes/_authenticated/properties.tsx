@@ -1,55 +1,54 @@
 import { formatPropertyLabel, matchesPropertySearch } from "@/lib/property-label";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Search } from "lucide-react";
 import { EmptyState, LoadingRows, PageHeader } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { OPEN_STATUSES } from "@/lib/tickets";
-import { countsInOpenTotal, openTicketsForTotal } from "@/lib/notion-ticket-display";
-import { listOwnerRezListings } from "@/lib/ownerrez.functions";
-import { syncPropertyEnrichment } from "@/lib/property-enrichment.functions";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { openTicketsForTotal } from "@/lib/notion-ticket-display";
 import { AddPropertyDialog } from "@/components/property/AddPropertyDialog";
 import { RequireCapability } from "@/components/RequireCapability";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
-import { applyTestDataFilter, countTestRecords } from "@/lib/test-data";
+import { applyTestDataFilter } from "@/lib/test-data";
+import { useRole } from "@/hooks/useRole";
+import { LabelChip, useLabelList } from "@/components/property/PropertyLabels";
+import {
+  canAddHome,
+  departmentFor,
+  filterHomes,
+  homeCountLine,
+  isOnboardingHome,
+  stageLabel,
+  type ListFilter,
+} from "@/lib/property-page";
 
 export const Route = createFileRoute("/_authenticated/properties")({
   head: () => ({
     meta: [
-      { title: "Properties — Resolve Operations" },
-      {
-        name: "description",
-        content: "Every managed home with access notes and its live issue count.",
-      },
-      { property: "og:title", content: "Properties — Resolve Operations" },
-      {
-        property: "og:description",
-        content: "Managed homes with access notes and live issue counts.",
-      },
+      { title: "Properties | Resolve" },
+      { name: "description", content: "Every home ARHA looks after, with its stage, labels and open tickets." },
+      { property: "og:title", content: "Properties | Resolve" },
+      { property: "og:description", content: "Every home ARHA looks after, with its stage, labels and open tickets." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
-  // Search and filters live in the URL so the list a coordinator built is
-  // still there when they come back from a home.
+  // Search and filters live in the URL so the list a person built is still
+  // there when they come back from a home.
   validateSearch: (raw: Record<string, unknown>): PropertySearch => {
     const out: PropertySearch = {};
     if (typeof raw["q"] === "string" && raw["q"]) out.q = raw["q"];
     if (typeof raw["market"] === "string" && raw["market"]) out.market = raw["market"];
-    if (typeof raw["status"] === "string" && raw["status"]) out.status = raw["status"];
-    if (raw["test"] === true || raw["test"] === "true") out.test = true;
+    if (raw["status"] === "operations" || raw["status"] === "onboarding") out.status = raw["status"];
+    if (raw["open"] === true || raw["open"] === "true") out.open = true;
     return out;
   },
   component: () => (
@@ -59,64 +58,19 @@ export const Route = createFileRoute("/_authenticated/properties")({
   ),
 });
 
-type PropertySearch = {
-  q?: string | undefined;
-  market?: string | undefined;
-  status?: string | undefined;
-  test?: boolean | undefined;
-};
+type PropertySearch = ListFilter;
 
 function PropertiesPage() {
   const qc = useQueryClient();
-  const [enriching, setEnriching] = useState(false);
-
-  const fetchListings = useServerFn(listOwnerRezListings);
-  const { data: ownerRez } = useQuery({
-    queryKey: ["ownerrez-listings"],
-    queryFn: () => fetchListings(),
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  });
-
-  const runEnrichment = useServerFn(syncPropertyEnrichment);
-
-  async function refreshInfo() {
-    setEnriching(true);
-    try {
-      const res = await runEnrichment();
-      if (!res.ok) {
-        toast.error(res.message);
-        return;
-      }
-      toast.success(res.message);
-      await qc.invalidateQueries({ queryKey: ["properties-with-counts"] });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Refresh failed");
-    } finally {
-      setEnriching(false);
-    }
-  }
-
-  async function linkListing(propertyId: string, listingId: string) {
-    const { error } = await supabase
-      .from("properties")
-      .update({
-        ownerrez_property_id: listingId === "none" ? null : listingId,
-        ownerrez_synced_at: new Date().toISOString(),
-      })
-      .eq("id", propertyId);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success(listingId === "none" ? "Unlinked from OwnerRez." : "Linked to OwnerRez.");
-    await qc.invalidateQueries({ queryKey: ["properties-with-counts"] });
-  }
+  const role = useRole();
+  const navigate = Route.useNavigate();
+  const params = Route.useSearch();
+  const labelList = useLabelList();
 
   const { data, isLoading } = useQuery({
     queryKey: ["properties-with-counts"],
     queryFn: async () => {
-      const [properties, tickets, owners] = await Promise.all([
+      const [properties, tickets, owners, labels, carry, programs] = await Promise.all([
         supabase.from("properties").select("*").order("name"),
         supabase
           .from("tickets")
@@ -124,111 +78,242 @@ function PropertiesPage() {
           .eq("is_demo", false)
           .is("archived_at", null),
         supabase.from("property_owners").select("id, name"),
+        supabase
+          .from("property_label_assignments")
+          .select("property_id, property_labels(id, name)")
+          .is("removed_at", null),
+        supabase.from("handoff_carryovers").select("property_id"),
+        supabase
+          .from("owner_program_properties")
+          .select("property_id, owner_programs(status)")
+          .is("archived_at", null),
       ]);
       if (properties.error) throw properties.error;
       const ownerName = new Map((owners.data ?? []).map((o) => [o.id, o.name]));
-      return { properties: properties.data ?? [], tickets: tickets.data ?? [], ownerName };
+      const labelsByHome = new Map<string, { id: string; name: string }[]>();
+      for (const row of labels.data ?? []) {
+        const l = row.property_labels as unknown as { id: string; name: string } | null;
+        if (!l) continue;
+        labelsByHome.set(row.property_id, [...(labelsByHome.get(row.property_id) ?? []), l]);
+      }
+      const carriedByHome = new Map<string, number>();
+      for (const row of carry.data ?? [])
+        carriedByHome.set(row.property_id, (carriedByHome.get(row.property_id) ?? 0) + 1);
+      const activeOwner = new Set<string>();
+      for (const row of programs.data ?? []) {
+        const status = (row.owner_programs as unknown as { status: string } | null)?.status;
+        if (status && status !== "complete") activeOwner.add(row.property_id);
+      }
+      return {
+        properties: properties.data ?? [],
+        tickets: tickets.data ?? [],
+        ownerName,
+        labelsByHome,
+        carriedByHome,
+        activeOwner,
+      };
     },
   });
 
-  // Page-local finding. Staff should never have to reach for the global
-  // command bar just to open a home they already know the name of.
-  const navigate = Route.useNavigate();
-  const params = Route.useSearch();
-  const find = params.q ?? "";
-  const marketFilter = params.market ?? "all";
-  const statusFilter = params.status ?? "all";
-  const setParam = (patch: PropertySearch) =>
+  const setParam = (patch: Partial<PropertySearch>) =>
     void navigate({
       search: (prev: PropertySearch) => {
         const next: PropertySearch = { ...prev, ...patch };
         if (!next.q) delete next.q;
-        if (!next.market || next.market === "all") delete next.market;
-        if (!next.status || next.status === "all") delete next.status;
-        if (!next.test) delete next.test;
+        if (!next.market) delete next.market;
+        if (!next.status) delete next.status;
+        if (!next.open) delete next.open;
         return next;
       },
       replace: true,
     });
-  const setFind = (v: string) => setParam({ q: v || undefined });
-  const setMarketFilter = (v: string) => setParam({ market: v });
-  const setStatusFilter = (v: string) => setParam({ status: v });
 
-  const markets = Array.from(
-    new Set((data?.properties ?? []).map((p) => p.market).filter((m): m is string => Boolean(m))),
-  ).sort();
+  const homes = useMemo(() => {
+    if (!data) return [];
+    return applyTestDataFilter(data.properties, false, (p) => p).map((p) => {
+      const all = data.tickets.filter((t) => t.property_id === p.id);
+      const owner = p.owner_record_id ? (data.ownerName.get(p.owner_record_id) ?? "") : "";
+      const label = formatPropertyLabel(p);
+      const labels = data.labelsByHome.get(p.id) ?? [];
+      return {
+        p,
+        id: p.id,
+        lifecycle: p.lifecycle_status,
+        market: p.market,
+        openTickets: openTicketsForTotal(all).length,
+        carried: data.carriedByHome.get(p.id) ?? 0,
+        activeOwner: data.activeOwner.has(p.id),
+        labels,
+        title: label.primary,
+        place: [p.city, p.state].filter(Boolean).join(", ") || p.market || "",
+        line: [
+          p.bedrooms == null ? null : `${p.bedrooms} bd`,
+          p.bathrooms == null ? null : `${p.bathrooms} ba`,
+          p.max_guests == null ? null : `sleeps ${p.max_guests}`,
+          p.neighborhood,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+        // Searchable identity only, never notes or anything that could carry a code.
+        searchText: [
+          label.primary,
+          label.secondary,
+          p.name,
+          p.nickname,
+          p.listing_alias,
+          p.address_line1,
+          p.city,
+          p.market,
+          p.neighborhood,
+          owner,
+          p.ownerrez_property_id,
+          ...labels.map((l) => l.name),
+        ]
+          .filter(Boolean)
+          .join(" "),
+        matches: (q: string) => matchesPropertySearch(p, q),
+      };
+    });
+  }, [data]);
 
-  const q = find.trim().toLowerCase();
-  const showTest = params.test === true;
-  const allProps = data?.properties ?? [];
-  const testCount = countTestRecords(allProps, (p) => p);
-  const visible = applyTestDataFilter(allProps, showTest, (p) => p).filter((p) => {
-    if (marketFilter !== "all" && p.market !== marketFilter) return false;
-    if (statusFilter === "open") {
-      const has = (data?.tickets ?? []).some(
-        (t) => t.property_id === p.id && OPEN_STATUSES.includes(t.status) && countsInOpenTotal(t),
-      );
-      if (!has) return false;
-    } else if (statusFilter !== "all" && p.lifecycle_status !== statusFilter) {
-      return false;
-    }
-    if (!q) return true;
-    const owner = p.owner_record_id ? (data?.ownerName.get(p.owner_record_id) ?? "") : "";
-    // Searchable identity only — never notes, and never anything that could
-    // carry a credential.
-    return matchesPropertySearch(p, q) || [
-      p.market,
-      p.neighborhood,
-      owner,
-    ]
-      .filter(Boolean)
-      .some((v) => String(v).toLowerCase().includes(q));
-  });
+  const markets = useMemo(
+    () => Array.from(new Set(homes.map((h) => h.market).filter((m): m is string => Boolean(m)))).sort(),
+    [homes],
+  );
 
+  const visible = filterHomes(homes, params);
+  const filtered = Boolean(params.q || params.market || params.status || params.open);
+
+  const department = departmentFor({ onboardingOnly: role.onboardingOnly });
   const { originSearch } = useWorkspaceOrigin(
     "Properties",
-    visible.map((p) => ({ id: p.id, label: formatPropertyLabel(p).primary, sub: p.market ?? undefined })),
+    visible.map((h) => ({ id: h.id, label: h.title, sub: h.market ?? undefined })),
   );
+
+  // Admin: add a label to many homes.
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkLabel, setBulkLabel] = useState("");
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkDone, setBulkDone] = useState<string | null>(null);
+
+  async function applyBulk() {
+    setBulkBusy(true);
+    try {
+      const { data: n, error } = await supabase.rpc("property_label_add", {
+        _label_id: bulkLabel,
+        _property_ids: [...picked],
+      });
+      if (error) throw error;
+      const name = (labelList.data ?? []).find((l) => l.id === bulkLabel)?.name ?? "The label";
+      setBulkDone(`${name} added to ${n} home${n === 1 ? "" : "s"}.`);
+      setBulkOpen(false);
+      setPicked(new Set());
+      setBulkLabel("");
+      await qc.invalidateQueries({ queryKey: ["properties-with-counts"] });
+      await qc.invalidateQueries({ queryKey: ["property-labels"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "The label could not be added.");
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
+  const total = homes.length;
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Portfolio"
         title="Properties"
-        description="Every ticket, project and owner action links back to one of these homes."
+        description={isLoading ? "Loading homes…" : `${homeCountLine(total)} we look after.`}
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" onClick={refreshInfo} disabled={enriching}>
-              {enriching ? "Refreshing…" : "Refresh property info & photos"}
-            </Button>
-            {testCount > 0 && (
+            {role.isAdmin && !role.readOnly ? (
               <Button
-                variant={showTest ? "secondary" : "ghost"}
-                onClick={() => setParam({ test: showTest ? undefined : true })}
+                variant="outline"
+                className="min-h-11"
+                onClick={() => {
+                  setBulkOpen((v) => !v);
+                  setBulkDone(null);
+                }}
               >
-                {showTest ? "Hide" : "Show"} practice homes ({testCount})
+                Add a label to many homes
               </Button>
-            )}
-            <AddPropertyDialog />
+            ) : null}
+            {canAddHome({ roles: role.roles, onboardingDirector: role.isOnboardingDirector, readOnly: role.readOnly }) ? (
+              <AddPropertyDialog trigger={<Button className="min-h-11">Add a home</Button>} />
+            ) : null}
           </div>
         }
       />
 
-      {/* Page-local finder. Address, name, market, neighbourhood, owner or
-          OwnerRez ID — no global search round trip. */}
+      {bulkOpen ? (
+        <div className="surface space-y-3 p-4" aria-label="Add a label to many homes">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="bulk-label">Label to add</Label>
+              <Select value={bulkLabel} onValueChange={setBulkLabel}>
+                <SelectTrigger id="bulk-label" className="min-h-11 w-56">
+                  <SelectValue placeholder="Choose a label" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(labelList.data ?? []).map((l) => (
+                    <SelectItem key={l.id} value={l.id}>
+                      {l.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              variant="outline"
+              className="min-h-11"
+              onClick={() => setPicked(new Set(visible.map((h) => h.id)))}
+            >
+              Select all shown
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground">{homeCountLine(picked.size)} picked</p>
+          <div className="flex gap-2">
+            <Button
+              className="min-h-11"
+              disabled={!bulkLabel || picked.size === 0 || bulkBusy}
+              onClick={() => void applyBulk()}
+            >
+              {bulkBusy ? "Applying…" : "Apply"}
+            </Button>
+            <Button
+              variant="outline"
+              className="min-h-11"
+              onClick={() => {
+                setBulkOpen(false);
+                setPicked(new Set());
+              }}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : null}
+      {bulkDone ? (
+        <p role="status" className="text-sm">
+          {bulkDone}
+        </p>
+      ) : null}
+
       <div className="surface flex flex-wrap items-center gap-3 p-3">
-        <div className="relative min-w-[16rem] flex-1">
+        <div className="relative min-w-[14rem] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            value={find}
-            onChange={(e) => setFind(e.target.value)}
-            placeholder="Find a property — address, name, market, neighbourhood, owner or OwnerRez ID"
-            aria-label="Find a property"
-            className="pl-9"
+            value={params.q ?? ""}
+            onChange={(e) => setParam({ q: e.target.value || undefined })}
+            placeholder="Find a home"
+            aria-label="Find a home"
+            className="min-h-11 pl-9"
           />
         </div>
-        <Select value={marketFilter} onValueChange={setMarketFilter}>
-          <SelectTrigger className="w-44" aria-label="Filter by market">
+        <Select value={params.market ?? "all"} onValueChange={(v) => setParam({ market: v === "all" ? undefined : v })}>
+          <SelectTrigger className="min-h-11 w-44" aria-label="Market">
             <SelectValue placeholder="All markets" />
           </SelectTrigger>
           <SelectContent>
@@ -240,131 +325,103 @@ function PropertiesPage() {
             ))}
           </SelectContent>
         </Select>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48" aria-label="Filter by status">
-            <SelectValue placeholder="All statuses" />
+        <Select
+          value={params.status ?? "all"}
+          onValueChange={(v) => setParam({ status: v === "operations" || v === "onboarding" ? v : undefined })}
+        >
+          <SelectTrigger className="min-h-11 w-40" aria-label="Status">
+            <SelectValue placeholder="All" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="open">Has open tickets</SelectItem>
-            <SelectItem value="live">Live</SelectItem>
-            <SelectItem value="in_preparation">In preparation</SelectItem>
-            <SelectItem value="offboarded">Offboarded</SelectItem>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="operations">Operations</SelectItem>
+            <SelectItem value="onboarding">Onboarding</SelectItem>
           </SelectContent>
         </Select>
+        <label className="flex min-h-11 items-center gap-2 text-sm">
+          <Switch checked={params.open === true} onCheckedChange={(v) => setParam({ open: v || undefined })} />
+          Only homes with open tickets
+        </label>
         <span className="numeric shrink-0 text-sm text-muted-foreground">
-          {isLoading ? "…" : `${visible.length} of ${data?.properties.length ?? 0}`}
+          {isLoading ? "…" : homeCountLine(visible.length)}
         </span>
+        {filtered ? (
+          <Button
+            variant="ghost"
+            className="min-h-11"
+            onClick={() => setParam({ q: undefined, market: undefined, status: undefined, open: undefined })}
+          >
+            Clear
+          </Button>
+        ) : null}
       </div>
 
       {isLoading || !data ? (
         <LoadingRows rows={4} />
-      ) : data.properties.length === 0 ? (
-        <EmptyState
-          title="No properties yet."
-          hint="Add your first home to start logging tickets against it."
-        />
       ) : visible.length === 0 ? (
-        <EmptyState
-          title="No property matches that search."
-          hint="Try part of the street address, the nickname, the market or the owner's name."
-        />
+        <EmptyState title="No homes match" />
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {visible.map((p) => {
-            const all = data.tickets.filter((t) => t.property_id === p.id);
-            // Notion imports that are closed or older than 30 days never count as open.
-            const openCount = openTicketsForTotal(all).length;
-            const owner = p.owner_record_id ? data.ownerName.get(p.owner_record_id) : null;
+          {visible.map((h) => {
+            const toOnboarding = department === "onboarding" && isOnboardingHome(h.lifecycle);
             return (
-              // A photo-led grid card: the image bleeds to the card edge and the
-              // status badges overlay it, which doesn't fit SectionCard's
-              // padded title/body shape — kept as a `surface` panel instead.
-              <div
-                key={p.id}
-                className="surface overflow-hidden shadow-card transition-shadow hover:shadow-raised"
-              >
-                <div className="relative">
-                  {p.primary_photo_url ? (
-                    <img
-                      src={p.primary_photo_url}
-                      alt={`${formatPropertyLabel(p).primary} — listing photo`}
-                      className="h-40 w-full object-cover"
-                      loading="lazy"
+              <div key={h.id} className="surface flex flex-col gap-2 p-5 shadow-card">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {bulkOpen ? (
+                    <Checkbox
+                      className="size-6"
+                      aria-label={`Pick ${h.title}`}
+                      checked={picked.has(h.id)}
+                      onCheckedChange={(v) =>
+                        setPicked((prev) => {
+                          const next = new Set(prev);
+                          if (v === true) next.add(h.id);
+                          else next.delete(h.id);
+                          return next;
+                        })
+                      }
                     />
-                  ) : (
-                    <div className="flex h-40 w-full items-center justify-center bg-sunken text-xs text-muted-foreground">
-                      No listing photo on file
-                    </div>
-                  )}
-                  <div className="absolute left-2 top-2 flex flex-wrap gap-1.5">
-                    {p.lifecycle_status && p.lifecycle_status !== "live" && (
-                      <StatusBadge tone="waiting" className="backdrop-blur">
-                        {p.lifecycle_status.replace(/_/g, " ")}
-                      </StatusBadge>
-                    )}
-                    {openCount > 0 && (
-                      <StatusBadge tone="escalated" className="backdrop-blur">
-                        {openCount} open
-                      </StatusBadge>
-                    )}
-                  </div>
+                  ) : null}
+                  <StatusBadge tone={isOnboardingHome(h.lifecycle) ? "waiting" : "resolved"}>
+                    {stageLabel(h.lifecycle)}
+                  </StatusBadge>
+                  {h.activeOwner ? <StatusBadge tone="context">Active Owner</StatusBadge> : null}
+                  {h.carried > 0 ? <StatusBadge tone="waiting">{h.carried} carried over</StatusBadge> : null}
+                  {h.openTickets > 0 ? (
+                    <StatusBadge tone="escalated">
+                      {h.openTickets} open ticket{h.openTickets === 1 ? "" : "s"}
+                    </StatusBadge>
+                  ) : null}
                 </div>
-                <div className="flex flex-col space-y-1.5 p-6 pb-2">
-                  <p className="text-base font-semibold leading-none tracking-tight">
+                <p className="text-base font-semibold leading-snug">
+                  {toOnboarding ? (
+                    <Link
+                      to="/onboarding/$propertyId"
+                      params={{ propertyId: h.id }}
+                      className="inline-flex min-h-11 items-center hover:text-primary hover:underline"
+                    >
+                      {h.title}
+                    </Link>
+                  ) : (
                     <Link
                       to="/property/$propertyId"
-                      params={{ propertyId: p.id }}
+                      params={{ propertyId: h.id }}
                       search={originSearch}
-                      className="hover:text-primary hover:underline"
+                      className="inline-flex min-h-11 items-center hover:text-primary hover:underline"
                     >
-                      {formatPropertyLabel(p).primary}
+                      {h.title}
                     </Link>
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {[p.address_line1, p.unit, p.city, p.state].filter(Boolean).join(", ") ||
-                      "No address on file"}
-                  </p>
-                </div>
-                <div className="space-y-2 p-6 pt-0 text-sm">
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground">
-                    {p.market && <span>{p.market}</span>}
-                    {p.neighborhood && <span>· {p.neighborhood}</span>}
-                    {owner && <span>· {owner}</span>}
+                  )}
+                </p>
+                {h.place ? <p className="text-sm text-muted-foreground">{h.place}</p> : null}
+                {h.line ? <p className="text-sm text-muted-foreground">{h.line}</p> : null}
+                {h.labels.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {h.labels.map((l) => (
+                      <LabelChip key={l.id} name={l.name} />
+                    ))}
                   </div>
-                  <p className="numeric text-muted-foreground">
-                    {openCount} open · {all.length} total tickets
-                  </p>
-
-                  <div className="space-y-1 border-t border-border pt-3">
-                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-                      OwnerRez listing
-                    </Label>
-                    {ownerRez?.ok ? (
-                      <Select
-                        value={p.ownerrez_property_id ?? "none"}
-                        onValueChange={(v) => linkListing(p.id, v)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Not linked" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Not linked</SelectItem>
-                          {ownerRez.data.map((l) => (
-                            <SelectItem key={l.id} value={l.id}>
-                              {l.name}
-                              {l.location ? ` — ${l.location}` : ""}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">
-                        {ownerRez?.error ?? "Checking OwnerRez…"}
-                      </p>
-                    )}
-                  </div>
-                </div>
+                ) : null}
               </div>
             );
           })}
