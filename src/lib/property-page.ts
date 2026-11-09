@@ -195,10 +195,14 @@ export function homeCountLine(n: number): string {
   return `${n} home${n === 1 ? "" : "s"}`;
 }
 
-/** Add a home: only Onboarding roles and Admin. */
-export function canAddHome(access: { isAdmin: boolean; onboardingStaff: boolean; previewing?: boolean }): boolean {
-  if (access.previewing) return false;
-  return access.isAdmin || access.onboardingStaff;
+/**
+ * Add a home: only Onboarding roles and Admin. Supervisors and the Director of
+ * Operations open onboarding pages too, so the onboarding account type or the
+ * Director of Onboarding role is what counts here, never that access.
+ */
+export function canAddHome(access: { roles: string[]; onboardingDirector: boolean; readOnly?: boolean }): boolean {
+  if (access.readOnly) return false;
+  return access.roles.includes("admin") || access.roles.includes("onboarding") || access.onboardingDirector;
 }
 
 /** The first import reads (30D FIRM) in a home's Notion title as the label 30-day firm. */
@@ -206,5 +210,4 @@ export function firmLabelFromTitle(title: string | null | undefined): "30-day fi
   return title && /\(30D FIRM\)/i.test(title) ? "30-day firm" : null;
 }
 
-/** Remove "(30D FIRM)" and similar from a display name now that it is a label. */
 export const LABEL_CREATE_NOTE = "Only an admin can create or rename labels. You can pick from the list.";
