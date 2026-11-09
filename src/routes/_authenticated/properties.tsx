@@ -11,7 +11,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { EmptyState, LoadingRows, PageHeader } from "@/components/ui/page";
-import { StatusBadge } from "@/components/ui/status";
+import { PropertyListCard } from "@/components/property/PropertyListCard";
+import { homePhotoUrl } from "@/components/property/HomePhoto";
+import { homeFactsLine } from "@/lib/property-card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { openTicketsForTotal } from "@/lib/notion-ticket-display";
 import { AddPropertyDialog } from "@/components/property/AddPropertyDialog";
@@ -19,7 +21,7 @@ import { RequireCapability } from "@/components/RequireCapability";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 import { applyTestDataFilter } from "@/lib/test-data";
 import { useRole } from "@/hooks/useRole";
-import { LabelChip, useLabelList } from "@/components/property/PropertyLabels";
+import { useLabelList } from "@/components/property/PropertyLabels";
 import {
   canAddHome,
   departmentFor,
