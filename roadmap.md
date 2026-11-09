@@ -313,8 +313,10 @@
 - [x] Read-only before counts (all 0; documents 314)
 - [x] Run recent_open STOPPED at first anomaly: 43 of 87 imported; ticket #1478 failed on its page notes (no date), its 3 comments and 4 files not copied
 - [x] Verify of the 43 (read only): Team B 42, Unassigned 1, 26 assigned, 23 claims, 176/83 match Notion except #1478, rerun plan 43 unchanged / 44 create, no clocks/alerts/notifications
-- [ ] Emily: approve the page-notes date fix, then resume the same run (44 left) and re-copy #1478's comments and files
-- [ ] Preview check as Director View as: blocked, preview loads blank (DemoProvider loading error, waiting on Emily's answer)
+- [x] Page-notes date fix (Emily's yes, Nov 9 ~9:10 AM); backup 2026-11-09_165531Z verified; Crashed reset to Stopped; resumed: 90 recent open in Resolve (4 created in Notion today); #1478 comments and files copied
+- [x] Preview blank: not reproducible on Nov 9 (preview and production build both load, signed out and Admin, desktop and phone); no code change
+- [x] Quiet rule on the ticket drawer and page: "Imported from Notion. No clock.", no minutes, clock, escalation or Acknowledge until taken
+- [ ] Older open (604) and closed history (2,225) runs: wait for Emily's go
 
 ## Nov 9 answers and small fixes (property page, Record work, Databases, Notion)
 - [x] Add a home: server check on both create actions; Onboarding page Add property only for Onboarding roles and Admin

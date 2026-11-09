@@ -87,7 +87,7 @@ D8 Stages: New request, Quote sent, Approved, Booked, Not booked. Mark as booked
 D9 Not booked needs a reason from the list (Stayed with family, Chose another home, No reply from the partner, Price was too high, No home was available, Other) plus a short note, enforced in the database.
 
 ## 7. Notion import, clean slate and cutover
-N1 Import every Notion ticket (2,892) with fields, linked claims, comments and files, once, no two way sync. Age means the Notion created date; a blank date counts as older.
+N1 Import every Notion ticket (2,916) with fields, linked claims, comments and files, once, no two way sync. Age means the Notion created date; a blank date counts as older.
 N2 Closed, any age: Historical record from Notion, no assignee, never in a queue or any count. Open and created in the past 30 days: the quiet group Imported from Notion in Team Queue. Open and older than 30 days: kept, not in the queue, labelled Older open ticket from Notion.
 N3 Assignment (recent open only): the Notion assignee when the name matches (capitals and spaces ignored) one active staff member who has a login; the Director of Operations' tickets, General and blank stay Unassigned; an open claim ticket goes to Team B; no home means Unassigned with Needs a home.
 N4 Imports are quiet: no clocks, alerts or counts (not the unclaimed count, Needs you now, Oversight, Analytics or scorecards) until someone takes or reopens one. Recent open imports do count in the open ticket totals on Home, home pages and the map.
