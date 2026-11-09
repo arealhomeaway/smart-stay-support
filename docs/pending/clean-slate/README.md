@@ -1,19 +1,45 @@
 # Clean slate (register N8, M5). STAGED ONLY, NOT APPLIED
 
-Emily's decision of Nov 7, 2026. Nothing in this folder has been run. Each SQL file refuses to run
-unless `full_backups` holds a backup that finished and passed Verify in the last 2 hours
-(Admin tools > Back up everything, then Verify). Apply only with Emily's go, in this order.
+Emily's decision of Nov 7, 2026, with her answers of Nov 8. Nothing in this folder has been run
+for real. A practice run on Nov 8 ran 01, 01c and 02 inside one step that was cancelled at the
+end (see "Practice run" below). Each SQL file refuses to run unless `full_backups` holds a backup
+that finished and passed Verify in the last 2 hours (Admin tools > Back up everything, then
+Verify). The real run waits for Emily's go. Apply in this order.
 
 | Order | File | What it does | Undo |
 |---|---|---|---|
-| 1 | `01_delete_all_tickets.sql` | Deletes every ticket and what depends on it (see the file header). Also refuses if any non-demo ticket was created after Nov 8, 4:00 PM Central (my default, so Monday's work is never deleted by surprise). | Restore from the backup folder |
-| 1b | `01b_optional_ticket_log_lines.sql` | Optional, needs its own yes: removes the audit log lines (853) and integration log lines (397) about tickets that no longer exist. | Restore from the backup folder |
-| 2 | `02_delete_test_accounts.sql` | Removes 18 listed test and demo accounts' roles, memberships, alerts, homeowner messages and profiles. Checks each id still has the expected address. | Restore from the backup folder |
+| 1 | `01_delete_all_tickets.sql` | Deletes every ticket and what depends on it (see the file header). Also refuses if any non-demo ticket was created after Nov 8, 4:00 PM Central (my default, kept by Emily on Nov 8, so Monday's work is never deleted by surprise). | Restore from the backup folder |
+| 1b | `01b_optional_ticket_log_lines.sql` | DO NOT RUN (Emily, Nov 8): the audit and integration log lines stay. Kept here only as a record. | n/a |
+| 1c | `01c_delete_demo_claims_and_expenses.sql` | Deletes the 9 demo claims that have no ticket and the 9 test expenses, by explicit id list, each checked against its title or payee (Emily, Nov 8, answer 3). | Restore from the backup folder |
+| 2 | `02_delete_test_accounts.sql` | Removes 18 listed test and demo accounts' roles, memberships, alerts, homeowner messages and profiles. Checks each id still has the expected address. Both James staff accounts stay (Emily, Nov 8). | Restore from the backup folder |
 | 2b | `02b_delete_test_logins.ts` | Removes the same 18 sign-ins through the sign-in service (a database step may not touch sign-ins). Run as an Admin step after 2. | None (sign-ins cannot be restored; most are already blocked) |
 
 Restore: the backup folder in the private `backups` storage bucket holds one file per table and a
 manifest with row counts and fingerprints. Secret columns (encrypted door codes, tokens) are not
 in the backup, so restoring deleted rows never needs them; none of the rows deleted here hold any.
+
+## Practice run, Nov 8, 2026 (cancelled, nothing kept)
+
+Fresh backup `2026-11-08_235938Z`: 235 tables, 99,403 rows; Verify passed at 6:02 PM Central
+(every file matches; four tables had grown since, by live activity: Breezeway webhook events +2,
+Work Order comments +1, email runs +1, email log +1). Then 01, 01c and 02 ran in one step that
+was cancelled at the end. Record: `live-capture/practice-run-2026-11-08.txt`. Afterwards every
+count was back to its value before, and every delete block was on.
+
+## 1c: the 9 demo claims and 9 test expenses
+
+Claims (all demo, none has a ticket): b7fbde89 Departure damage, Pet damage; 2a822c00 and
+262af36e QA SYNTH denied claim; c03ec414 waiver approve; f8bbc559 waiver deny; d41dafb4 partial
+recovery; e1aa27c0 waiver approved; e8f4cf2c waiver denied; 23823dfb Finance receipts.
+
+Expenses with no ticket or Work Order: be487bc2 QA SYNTH typo (archived); 8e4e99eb Plumbing
+(incomplete); d94593ed Gutter Clean; 9249f929 Repair B; b8cc35c0 Repair A; 9cb7ad7b, 8106ce05,
+95c5899a Plumbing Co; and 574e104e, a blank archived expense made by the QA James test account
+that is not marked demo. Kept: the 7 demo expenses that were linked to the deleted tickets and
+Work Orders (d49b514e, 67e65cc5, 610761ca, 18a2ff17, cae21a0c, 39aafabe, 5b99cb63).
+
+Delete blocks switched off inside 1c only, and on again at its end: `expense_events_append_only`,
+`guard_expense_recovery`, `guard_statement_dispositions`.
 
 ## 01: what goes, counted read only on Nov 8 (`live-capture/ticket-dependents-2026-11-08.txt`)
 
@@ -60,16 +86,16 @@ Staged for removal (18):
 | 9f3b6143-b693-4067-9a3c-d645b5ecd716 | QA Vendor | resolve-test.invalid | vendor | never | qa, blocked |
 
 Kept as real (17): the six homeowner logins (Dana Syska, Lindsey Lee, Rachel Ramsey, Ryan Lee,
-Victor Puodziunas, Matthew Linder) and the eleven staff logins on the company address. Two staff
-logins are worth a look but were not guessed: James Miller Jr (Supervisor, signed in once on
-Sep 3, listed in the demo staff setting) and James Almario (Supervisor, signed in once on Aug 31).
+Victor Puodziunas, Matthew Linder) and the eleven staff logins on the company address, including
+both James staff accounts (Emily, Nov 8: real staff).
 
 What stays after 02: records the test accounts made (359 demo onboarding Tasks by QA Kati, 293
 audit lines, 95 expense history lines, and others) keep their rows and show no name. Two demo
 homeowner programs (QA Signup Test, Avery Lindqvist) stay, with no owner login. The demo alert
 recipients setting points at QA Micah and QA James; demo alerts will reach nobody.
 
-## Not staged (report only)
+## Not staged
 
-- Moving the 6 homes on old plans to Standard version 3, and deleting old templates:
-  `live-capture/old-plans-dry-run-2026-11-08.txt` and the chat reply.
+- Moving the 6 homes on old plans to the Standard plan, and deleting old templates: DEFERRED
+  (Emily, Nov 8), not part of Monday. The dry run report stays as the record:
+  `live-capture/old-plans-dry-run-2026-11-08.txt`.
