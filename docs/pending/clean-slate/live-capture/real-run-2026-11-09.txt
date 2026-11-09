@@ -1,0 +1,70 @@
+Clean slate REAL RUN, Nov 9, 2026 UTC (Nov 8, about 6:58 to 7:03 PM Central). Emily's go: Nov 8, about 6:55 PM Central.
+Steps 01, 01c and 02 ran for real and were kept. Step 02b (sign-ins) did NOT run: its pre-check failed (below).
+01b never ran.
+
+1. Backup before it: 2026-11-09_005832Z, 235 tables, 99,445 rows. Finished 00:59:32 UTC, Verify passed
+   01:00:31 UTC (0 broken files; 1 table grown since by live activity: email runs 5,523 saved, 5,524 live).
+2. Read only before: the 42 live tickets were exactly the 42 in the Nov 8 backup 2026-11-08_214435Z
+   (id for id). No real ticket after 4:00 PM Central Nov 8. 24 ticket triggers and every delete block on.
+3. Ran, one step each, byte for byte from this folder (checksums matched sha256.txt first):
+   01_delete_all_tickets.sql, then 01c_delete_demo_claims_and_expenses.sql, then
+   02_delete_test_accounts.sql (02 finished 01:02:53 UTC). Each step's own guards passed and its
+   own end checks passed. Every table changed exactly as in practice run 2.
+
+table: before -> after 01 -> after 01c -> after 02
+approvals: 21 -> 20 -> 20 -> 20
+audit_log: 2748 -> 2748 -> 2748 -> 2764   (16 role removal lines)
+claim_activity: 9 -> 9 -> 0 -> 0
+claim_waivers: 2 -> 2 -> 0 -> 0
+claims: 9 -> 9 -> 0 -> 0
+documents: 324 -> 323 -> 314 -> 314   (file records only; stored files not touched)
+escalations: 1 -> 0 -> 0 -> 0
+expense_events: 117 -> 124 -> 0 -> 0
+expense_links: 13 -> 6 -> 0 -> 0
+expense_recoveries: 5 -> 5 -> 0 -> 0
+expenses: 16 -> 16 -> 0 -> 0
+guest_recovery: 1 -> 0 -> 0 -> 0
+handoffs: 1 -> 0 -> 0 -> 0
+owner_notifications: 184 -> 184 -> 184 -> 156
+owner_review_properties: 166 -> 137 -> 137 -> 137
+owner_reviews: 216 -> 187 -> 187 -> 187
+profiles: 35 -> 35 -> 35 -> 17
+program_members: 8 -> 8 -> 8 -> 6
+staff_notifications: 584 -> 501 -> 481 -> 443
+statement_dispositions: 12 -> 12 -> 0 -> 0
+ticket_activity: 158 -> 0 -> 0 -> 0
+ticket_troubleshooting_answers: 3 -> 0 -> 0 -> 0
+tickets: 42 -> 0 -> 0 -> 0
+user_roles: 34 -> 34 -> 34 -> 18
+vendor_org_members: 1 -> 1 -> 1 -> 0
+work_items: 1921 -> 1879 -> 1875 -> 1875
+work_order_events: 23 -> 0 -> 0 -> 0
+work_order_vendor_candidates: 3 -> 0 -> 0 -> 0
+work_orders: 4 -> 0 -> 0 -> 0
+Every other table kept its count (homes 167, owners 128, vendors 77, settings 12, schedule shifts 29,
+routines 32, templates 9 with 617 template steps, onboarding projects 11 and Tasks 1,751, guest
+reviews 465, integration log 13,280). Homeowner conversation lines 122 unchanged.
+
+4. Read only after:
+   - Remaining 17 profiles: 6 homeowners (owner role) and 11 staff (1 Admin and Coordinator, 1 Admin,
+     3 manager, 3 onboarding, 3 Coordinator). 18 role rows. No test id left in profiles.
+   - Reviews kept, only unlinked: guest reviews 465 (with a ticket 0), departure reviews 3 (with a
+     claim 0), cleaning reviews 3 (with a claim 0, with tickets 0), routine checks with a ticket 0.
+   - All 279 triggers in the same on state as before, including the 24 ticket triggers and the delete
+     blocks tickets_never_delete, tickets_never_truncate, ticket_state_log_no_change,
+     scorecard_records_no_change, routine_controls_lock_completed, profiles_never_delete,
+     expense_events_append_only, guard_expense_recovery, guard_statement_dispositions.
+   - Stored files: no step touches file storage (335 files in attachments now).
+   - At 01:05 UTC the regular 5-minute pass added 2 demo homeowner follow-up alerts addressed to the
+     removed QA Kati account (two demo homes still have an open follow-up assigned to it). Email
+     skipped (demo). Staff alerts are therefore 445, not 443.
+
+02b NOT RUN. Read only pre-check: 12 of the 18 sign-ins are still named by kept records that the
+database will not let go (audit log 293 lines, 359 demo onboarding Tasks by QA Kati and 4 assigned or
+completed by test accounts, 4 file records, 5 approvals requested and 5 approved, 5 team invites).
+Removing those sign-ins would fail, or would need those kept lines changed, which Emily ruled out.
+2 demo homeowner programs and 1 Breezeway comment would also lose their pointer. Only these 6 have
+nothing pointing at them: f44ecf9a (pr10-owner-b), d13885de (QA Test Outsider), 3a476833
+(qa.um.pending), c6579620 (Quinnie Targetson), 5557f537 (qa.um.tech), 9f3b6143 (QA Vendor).
+All 18 sign-ins still exist; none has a profile or a role, so none can open the app. Four were never
+blocked: QA Kati, QA Micah, Avery Lindqvist (demo owner), QA Signup Test.
