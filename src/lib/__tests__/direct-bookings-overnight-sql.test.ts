@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, it } from "bun:test";
+import { beforeAll, beforeEach, describe, expect, it, setSystemTime } from "bun:test";
 import { PGlite } from "@electric-sql/pglite";
 import { readFileSync } from "node:fs";
 
@@ -307,20 +307,28 @@ describe("fix batch 4 part 1: automated sources stay unowned (register T15)", ()
   });
 
   it("a Record work ticket still routes exactly as before, even when the guest used email or OwnerRez", async () => {
-    const before = await fresh();
-    const wtB = await withTicketTrigger(before);
-    const after = await fresh();
-    const wtA = await withTicketTrigger(after);
-    await after.exec(FB4_01);
-    for (const [key, channel] of [["guest", "email"], ["guest", "ownerrez"], ["maint", "internal"], ["review", "guest_message"]] as const) {
-      const b = await newTicket(before, { work_type_id: wtB[key], source_channel: channel });
-      const a = await newTicket(after, { work_type_id: wtA[key], source_channel: channel });
-      expect(a).toEqual(b);
-      expect(a.assigned_to).toBe(await routeNow(after, wtA[key]));
-      expect(a.assignment_note).not.toBe(WAITING.assignment_note);
+    // A fixed clock (Emily, Nov 9): Monday Nov 9, 2026, 10:00 AM Central, so the result never
+    // depends on when the suite runs. The test database reads this clock for now().
+    setSystemTime(new Date("2026-11-09T16:00:00Z"));
+    try {
+      const before = await fresh();
+      const wtB = await withTicketTrigger(before);
+      const after = await fresh();
+      const wtA = await withTicketTrigger(after);
+      await after.exec(FB4_01);
+      expect((await after.query<{ t: string }>("SELECT (now() AT TIME ZONE 'America/Chicago')::text t")).rows[0]!.t).toBe("2026-11-09 10:00:00");
+      for (const [key, channel] of [["guest", "email"], ["guest", "ownerrez"], ["maint", "internal"], ["review", "guest_message"]] as const) {
+        const b = await newTicket(before, { work_type_id: wtB[key], source_channel: channel });
+        const a = await newTicket(after, { work_type_id: wtA[key], source_channel: channel });
+        expect(a).toEqual(b);
+        expect(a.assigned_to).toBe(await routeNow(after, wtA[key]));
+        expect(a.assignment_note).not.toBe(WAITING.assignment_note);
+      }
+      // No work type and no source: the Operations Supervisor, as before.
+      expect((await newTicket(after, { source_channel: "phone" })).assigned_to).toBe((await newTicket(before, { source_channel: "phone" })).assigned_to);
+    } finally {
+      setSystemTime();
     }
-    // No work type and no source: the Operations Supervisor, as before.
-    expect((await newTicket(after, { source_channel: "phone" })).assigned_to).toBe((await newTicket(before, { source_channel: "phone" })).assigned_to);
   });
 
   it("a closed ticket and a Notion import are untouched", async () => {
