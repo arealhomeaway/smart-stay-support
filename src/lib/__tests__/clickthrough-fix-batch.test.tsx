@@ -19,9 +19,9 @@ import {
   replyValues,
   searchFailureMessage,
 } from "@/lib/direct-bookings";
-import { capabilitiesFor, type AccessSeats, type AppRole } from "@/lib/permissions";
+import { capabilitiesFor, type AccessSeats, type AppRole, type Capability } from "@/lib/permissions";
 import { canOpenPath } from "@/lib/route-access";
-import { onboardingOnlyMenu, operationsMenu, type MenuGroup } from "@/lib/shell-nav";
+import { onboardingOnlyMenu, operationsMenu, type MenuGroup, type NavAccess } from "@/lib/shell-nav";
 import { ALL_DATABASES, databaseMode } from "@/lib/databases";
 import { bannerCaption, centralDayNumber, dailyHomePhoto, type BannerHome } from "@/lib/daily-home-photo";
 
@@ -230,12 +230,12 @@ describe("6. Vendors is in no left menu, the page still opens", () => {
     Admin: { roles: ["admin"], seats: {} },
   };
   const menus = (p: { roles: AppRole[]; seats: AccessSeats }): MenuGroup[] => {
-    const access = {
-      can: (c: Parameters<typeof capabilitiesFor>[0] extends never ? never : string) => capabilitiesFor(p.roles, p.seats).has(c as never),
+    const access: NavAccess = {
+      can: (c: Capability) => capabilitiesFor(p.roles, p.seats).has(c),
       canOpen: (path: string) => canOpenPath(path, p),
       flagEnabled: () => true,
     };
-    return [...operationsMenu(access as never), ...onboardingOnlyMenu(access as never)];
+    return [...operationsMenu(access), ...onboardingOnlyMenu(access)];
   };
 
   for (const [name, p] of Object.entries(PROFILES)) {
