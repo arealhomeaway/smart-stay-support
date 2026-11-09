@@ -387,12 +387,6 @@ function ProfileCard({
             </div>
           ) : null}
           {savedNow ? <p className="text-xs text-muted-foreground">Saved just now by you</p> : null}
-          {!savedNow && section.id === "maintenance" && ctx.system.last_edit ? (
-            <p className="sr-only">
-              Last edit {usDateTime(ctx.system.last_edit)}
-              {userId ? "" : ""}
-            </p>
-          ) : null}
         </div>
       ) : null}
     </section>
