@@ -1,5 +1,12 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 9 clean slate real run (Emily's go, Nov 8 6:55 PM Central)
+- [x] Fresh backup 2026-11-09_005832Z (235 tables, 99,445 rows), Verify passed; 42 live tickets matched the Nov 8 list
+- [x] Ran 01, 01c, 02 for real; counts exactly as practice; all triggers and delete blocks on; 01b never run
+- [x] Read-only role page checks (Admin plus four View as roles); full suite 3179 pass / 5 skip / 0 fail on rerun; type check clean
+- [ ] 02b sign-in removal: stopped, 12 of 18 sign-ins held by kept records; waits for Emily's decision
+- [ ] Two demo follow-ups still assigned to the removed QA Kati account re-create demo alerts; waits for Emily's decision
+
 ## Nov 5 reservation change tile (build/test only)
 - [x] Add Guest reservation-change tile, booking-only category mapping and text suggestions using existing Current or past guest request catalog routing
 - [x] Stage cleaning repeat-complaint 60-day template version and audited TEST 1 archive with compensating undo/checksums; nothing applied

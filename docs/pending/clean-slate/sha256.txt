@@ -3,9 +3,10 @@ e63cb07a434e71290d1d757585f89c6ee1d024889376e452eff8546fce00cd98  ./01b_optional
 e53d8acb99962a07f054fb033d0dacefc29a31282eddc0fb5abd6a009efdf324  ./01c_delete_demo_claims_and_expenses.sql
 8a4535b3edc66d39eafbb05aaeeff94f0401a43933359ebee3fbc47eabbcc9c7  ./02_delete_test_accounts.sql
 b83c19b75ee38572d2130bef0c3e436804c3da153fe1c07ea20b9d078e5b2aa4  ./02b_delete_test_logins.ts
-bb743ae614b14b73a6d1dbec63d669f17d540ff6e2148e3858ac863e6c981210  ./README.md
+a703542850a909020b6f71f8414b40b836c89e8df55a1607aa4d44729e215342  ./README.md
 2c222da006fc69acc4a889906671b21758f5567fc4738bc07c36853aa1e3cfa1  ./live-capture/accounts-2026-11-08.txt
 01a7ff1a581d74235abc0b5bc067c2a41b9d92e59b5c68edd6cdd6f9433090cb  ./live-capture/old-plans-dry-run-2026-11-08.txt
 758c22c361bf31cc932eb4162ded8fd10ec973263689c2e0a53c4d673fd10dde  ./live-capture/practice-run-2026-11-08.txt
 f0f7472f21c0407dde9fb256236af9fefee3893616a65ce019bf62f527c2f714  ./live-capture/practice-run-2026-11-09.txt
+c0915adca7dc1df63f2fe5b629aa4fa8927a6e1edbb0582c228052e2f1b9baff  ./live-capture/real-run-2026-11-09.txt
 6f58eb4f3e9815ff2cdca187236bcb8e5a7f35b69cd94d7275b89121b2316e38  ./live-capture/ticket-dependents-2026-11-08.txt

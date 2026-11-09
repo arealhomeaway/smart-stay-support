@@ -1,10 +1,31 @@
-# Clean slate (register N8, M5). STAGED ONLY, NOT APPLIED
+# Clean slate (register N8, M5). APPLIED: 01, 01c, 02. NOT RUN: 02b (stopped), 01b (never)
 
-Emily's decision of Nov 7, 2026, with her answers of Nov 8. Nothing in this folder has been run
-for real. Practice runs on Nov 8 and Nov 9 ran 01, 01c and 02 inside one step that was cancelled at the
-end (see "Practice run" below). Each SQL file refuses to run unless `full_backups` holds a backup
-that finished and passed Verify in the last 2 hours (Admin tools > Back up everything, then
-Verify). The real run waits for Emily's go. Apply in this order.
+Emily's decision of Nov 7, 2026, with her answers of Nov 8. Emily's go for the real run: Nov 8,
+about 6:55 PM Central. Each SQL file refuses to run unless `full_backups` holds a backup that
+finished and passed Verify in the last 2 hours (Admin tools > Back up everything, then Verify).
+
+## Real run (Nov 9 UTC, Nov 8 about 6:58 to 7:03 PM Central)
+
+Full record: `live-capture/real-run-2026-11-09.txt`.
+
+- Backup first: `2026-11-09_005832Z`, 235 tables, 99,445 rows, Verify passed 01:00 UTC.
+- Before: the 42 live tickets matched the Nov 8 list id for id; no real ticket after the 4:00 PM cut.
+- Ran for real, one step each, byte for byte: 01, then 01c, then 02 (02 finished 01:02:53 UTC).
+  Every count moved exactly as in practice run 2.
+- Before and after: tickets 42 to 0, claims 9 to 0, expenses 16 to 0, Work Orders 4 to 0,
+  profiles 35 to 17, role rows 34 to 18, staff alerts 584 to 443, homeowner alerts 184 to 156,
+  file records 324 to 314, audit log 2,748 to 2,764 (16 role removal lines). Every trigger and
+  delete block on, as before. Homes, owners, vendors, settings, schedule, routines, templates,
+  onboarding and the integration log kept their counts.
+- After: the 5-minute pass added 2 demo follow-up alerts to the removed QA Kati account (two demo
+  homes still have an open follow-up assigned to it), so staff alerts read 445.
+- 02b NOT RUN: its read only pre-check failed. 12 of the 18 sign-ins are still named by kept
+  records the database will not release (audit log lines, demo onboarding Tasks, file records,
+  approvals, team invites). Only 6 could be removed. Waits for Emily's decision. All 18 sign-ins
+  remain, each with no profile and no role.
+- Never ran 01b.
+
+The order the files were run in:
 
 | Order | File | What it does | Undo |
 |---|---|---|---|
@@ -12,7 +33,7 @@ Verify). The real run waits for Emily's go. Apply in this order.
 | 1b | `01b_optional_ticket_log_lines.sql` | DO NOT RUN (Emily, Nov 8): the audit and integration log lines stay. Kept here only as a record. | n/a |
 | 1c | `01c_delete_demo_claims_and_expenses.sql` | Deletes the 9 demo claims that have no ticket and all 16 test expenses, by explicit id list, each checked against its title or payee (Emily, Nov 8, answer 3; Nov 9, answer 4). Refuses unless 01 has run. | Restore from the backup folder |
 | 2 | `02_delete_test_accounts.sql` | Removes 18 listed test and demo accounts' roles, memberships, alerts, homeowner messages and profiles. Checks each id still has the expected address. Both James staff accounts stay (Emily, Nov 8). | Restore from the backup folder |
-| 2b | `02b_delete_test_logins.ts` | Removes the same 18 sign-ins through the sign-in service (a database step may not touch sign-ins). Run as an Admin step after 2. | None (sign-ins cannot be restored; most are already blocked) |
+| 2b | `02b_delete_test_logins.ts` | Removes the same 18 sign-ins through the sign-in service (a database step may not touch sign-ins). Run as an Admin step after 2. NOT RUN on Nov 9: 12 sign-ins are held by kept records (see Real run). | None (sign-ins cannot be restored; most are already blocked) |
 
 Restore: the backup folder in the private `backups` storage bucket holds one file per table and a
 manifest with row counts and fingerprints. Secret columns (encrypted door codes, tokens) are not
