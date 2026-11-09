@@ -1253,4 +1253,95 @@ export async function outlookSourceFor(db: Db, entityType: "ticket" | "lead", en
   };
 }
 
+/** One row, overwritten on every timed sweep, so the panel can say when it last ran. */
+export const SWEEP_RUN_KEY = "sweep_run";
+
+export async function recordSweepRun(
+  db: Db,
+  result: Pick<MailboxSyncResult, "ok" | "scanned" | "created" | "leadsCreated" | "skipped" | "failed" | "error">,
+  subscription: { ok: boolean; action: string; error?: string | undefined } | null,
+) {
+  const now = new Date().toISOString();
+  const payload = {
+    scanned: result.scanned,
+    created: result.created,
+    leadsCreated: result.leadsCreated,
+    skipped: result.skipped,
+    failed: result.failed,
+    subscription: subscription ? { ok: subscription.ok, action: subscription.action } : null,
+  } as unknown as Database["public"]["Tables"]["integration_events"]["Row"]["request_payload"];
+  const status = result.ok ? "ok" : "error";
+  const error = result.ok ? (subscription && !subscription.ok ? subscription.error ?? null : null) : result.error ?? null;
+  const { data } = await db
+    .from("integration_events")
+    .select("id")
+    .eq("system", SYSTEM)
+    .eq("operation", SWEEP_RUN_KEY)
+    .limit(1);
+  const row = (data ?? [])[0] as { id: string } | undefined;
+  if (row) {
+    await db
+      .from("integration_events")
+      .update({ status, resolved_at: now, request_payload: payload, error_message: error })
+      .eq("id", row.id);
+    return;
+  }
+  await db.from("integration_events").insert({
+    system: SYSTEM,
+    direction: "inbound",
+    operation: SWEEP_RUN_KEY,
+    external_id: "last",
+    status,
+    resolved_at: now,
+    request_payload: payload,
+    error_message: error,
+  });
+}
+
+/** Everything the inbox panel needs to tell the truth about intake. */
+export async function readIntakeStatus(db: Db) {
+  const gate = await readIntakeGate(db);
+  const [sweep, last, skipped] = await Promise.all([
+    db
+      .from("integration_events")
+      .select("resolved_at, status, error_message")
+      .eq("system", SYSTEM)
+      .eq("operation", SWEEP_RUN_KEY)
+      .limit(1),
+    db
+      .from("integration_events")
+      .select("created_at, resolved_at, status")
+      .eq("system", SYSTEM)
+      .eq("operation", OPERATION)
+      .neq("status", "processing")
+      .not("external_id", "like", "<%")
+      .order("created_at", { ascending: false })
+      .limit(1),
+    gate.startLine
+      ? db
+          .from("integration_events")
+          .select("id", { count: "exact", head: true })
+          .eq("system", SYSTEM)
+          .eq("operation", OPERATION)
+          .eq("status", "skipped")
+          .not("external_id", "like", "<%")
+          .gte("created_at", gate.startLine)
+      : Promise.resolve({ count: 0 }),
+  ]);
+  const sweepRow = ((sweep as { data?: unknown[] }).data ?? [])[0] as
+    | { resolved_at: string | null; status: string; error_message: string | null }
+    | undefined;
+  const lastRow = ((last as { data?: unknown[] }).data ?? [])[0] as
+    | { created_at: string; resolved_at: string | null }
+    | undefined;
+  return {
+    switchOn: gate.on,
+    startLine: gate.startLine,
+    lastSweepAt: sweepRow?.resolved_at ?? null,
+    lastSweepError: sweepRow?.status === "error" ? sweepRow.error_message : null,
+    lastMessageAt: lastRow ? (lastRow.resolved_at ?? lastRow.created_at) : null,
+    skippedSinceStart: (skipped as { count?: number | null }).count ?? 0,
+  };
+}
+
 export { CREATE_TICKET_TAG, CREATED_TAG, CLOSED_TAG };
