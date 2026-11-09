@@ -755,6 +755,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
       onboardingStage: p.onboarding_stage,
       isDemo: p.is_demo,
       active: p.active,
+      ownerRezListingId: (p.ownerrez_property_id as string | null) ?? null,
       photoUrl: p.primary_photo_url,
       photoThumbUrl: p.primary_photo_thumb_url ?? p.primary_photo_url,
       photoSource: p.primary_photo_source,

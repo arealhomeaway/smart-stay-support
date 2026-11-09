@@ -46,6 +46,7 @@ import { ActiveOwnerEnrollForm } from "@/components/property/ActiveOwnerEnrollFo
 import { ActualClosingCorrection } from "@/components/property/ActualClosingCorrection";
 import { CompletedOnboardingRecords } from "@/components/property/CompletedOnboardingRecords";
 import { VendorCoveragePanel } from "@/components/onboarding/VendorCoveragePanel";
+import { OwnerRezListingCard } from "@/components/property/OwnerRezListingCard";
 import { LabelChip, PropertyLabelsSection, useHomeLabels } from "@/components/property/PropertyLabels";
 import { HomeProfileTab, goToProfileItem, useProfileContext } from "@/components/property/HomeProfileTab";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
@@ -263,7 +264,7 @@ function PropertyPageBody({
           <OwnerTab hub={hub} propertyId={propertyId} canEdit={canEdit} />
         </TabsContent>
         <TabsContent value="operations" className="mt-4">
-          <OperationsTab hub={hub} />
+          <OperationsTab hub={hub} canEdit={canEdit} />
         </TabsContent>
         <TabsContent value="reviews" className="mt-4 space-y-2">
           <h2 className="text-base font-semibold">Reviews from OwnerRez</h2>
@@ -606,7 +607,7 @@ function OwnerTab({ hub, propertyId, canEdit }: { hub: Hub; propertyId: string; 
   );
 }
 
-function OperationsTab({ hub }: { hub: Hub }) {
+function OperationsTab({ hub, canEdit }: { hub: Hub; canEdit: boolean }) {
   const ops = hub.operations;
   const { originSearch } = useWorkspaceOrigin(
     hub.property.name,
@@ -615,6 +616,7 @@ function OperationsTab({ hub }: { hub: Hub }) {
   return (
     <div className="space-y-4">
       <ArrivalReadyCard propertyId={hub.property.id} />
+      <OwnerRezListingCard propertyId={hub.property.id} listingId={hub.property.ownerRezListingId} canEdit={canEdit} />
       <SectionCard title="Breezeway work orders">
         <div className="space-y-3">
           <BreezewayWorkOrderPanel propertyId={hub.property.id} />
