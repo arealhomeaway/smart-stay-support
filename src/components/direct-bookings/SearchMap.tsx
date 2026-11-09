@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import {
   escapeHtml,
   MAP_COPY,
+  MILE_IN_METERS,
   PIN_GAP,
   pinAriaLabel,
   pinLabel,
@@ -121,8 +122,12 @@ export function SearchMap({ center, distance, distances, pins, highlightedId, fo
     const map = mapRef.current;
     const L = libRef.current;
     if (!ready || !map || !L) return;
-    const group = L.layerGroup().addTo(map);
     const at: Leaflet.LatLngTuple = [center.lat, center.lng];
+    // The view is set first, so every marker is on the map straight away.
+    let bounds = L.latLng(at).toBounds(distance * 2 * MILE_IN_METERS);
+    for (const p of pins) bounds = bounds.extend([p.lat, p.lng]);
+    map.fitBounds(bounds, { padding: [28, 28], animate: false });
+    const group = L.layerGroup().addTo(map);
 
     for (const ring of ringSpecs(distance, distances)) {
       L.circle(at, {
@@ -174,10 +179,14 @@ export function SearchMap({ center, distance, distances, pins, highlightedId, fo
         }),
       }).addTo(group);
       pin.on("click", () => tapRef.current(p.id));
-      const el = pin.getElement();
-      el?.setAttribute("role", "button");
-      el?.setAttribute("aria-label", pinAriaLabel(p));
-      el?.setAttribute("data-home-pin", String(p.number));
+      const describe = () => {
+        const el = pin.getElement();
+        el?.setAttribute("role", "button");
+        el?.setAttribute("aria-label", pinAriaLabel(p));
+        el?.setAttribute("data-home-pin", String(p.number));
+      };
+      pin.on("add", describe);
+      describe();
       const label = L.marker([p.lat, p.lng], {
         pane: "dbLabels",
         keyboard: false,
@@ -216,9 +225,6 @@ export function SearchMap({ center, distance, distances, pins, highlightedId, fo
       }
     };
 
-    let bounds = L.latLng(at).toBounds(distance * 2 * 1609.344);
-    for (const p of pins) bounds = bounds.extend([p.lat, p.lng]);
-    map.fitBounds(bounds, { padding: [28, 28], animate: false });
     place();
     map.on("zoomend", place);
     return () => {
