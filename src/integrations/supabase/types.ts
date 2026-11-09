@@ -12054,6 +12054,115 @@ export type Database = {
         }
         Relationships: []
       }
+      property_profile_edits: {
+        Row: {
+          card: string
+          edited_at: string
+          edited_by: string | null
+          edited_by_label: string | null
+          id: string
+          item_key: string
+          label: string
+          new_value: Json | null
+          old_value: Json | null
+          property_id: string
+        }
+        Insert: {
+          card: string
+          edited_at?: string
+          edited_by?: string | null
+          edited_by_label?: string | null
+          id?: string
+          item_key: string
+          label: string
+          new_value?: Json | null
+          old_value?: Json | null
+          property_id: string
+        }
+        Update: {
+          card?: string
+          edited_at?: string
+          edited_by?: string | null
+          edited_by_label?: string | null
+          id?: string
+          item_key?: string
+          label?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          property_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_profile_edits_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "property_profile_edits_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_profile_photos: {
+        Row: {
+          added_at: string
+          added_by: string | null
+          document_id: string
+          id: string
+          item_key: string
+          property_id: string
+          removed_at: string | null
+          removed_by: string | null
+        }
+        Insert: {
+          added_at?: string
+          added_by?: string | null
+          document_id: string
+          id?: string
+          item_key: string
+          property_id: string
+          removed_at?: string | null
+          removed_by?: string | null
+        }
+        Update: {
+          added_at?: string
+          added_by?: string | null
+          document_id?: string
+          id?: string
+          item_key?: string
+          property_id?: string
+          removed_at?: string | null
+          removed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_profile_photos_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_profile_photos_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "property_profile_photos_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       property_vendor_coverage: {
         Row: {
           access_requirements: string | null
@@ -16806,6 +16915,10 @@ export type Database = {
       }
       active_owner_may_act: { Args: { _is_demo: boolean }; Returns: boolean }
       add_business_days: { Args: { _d: string; _n: number }; Returns: string }
+      add_home_profile_photo: {
+        Args: { _document_id: string; _item_key: string; _property_id: string }
+        Returns: string
+      }
       add_manual_cleaner_clean: {
         Args: {
           _date: string
@@ -18243,6 +18356,10 @@ export type Database = {
         }
         Returns: Json
       }
+      remove_home_profile_photo: {
+        Args: { _photo_id: string }
+        Returns: boolean
+      }
       remove_owner_library_video: {
         Args: { _library_id: string }
         Returns: number
@@ -18446,6 +18563,10 @@ export type Database = {
       }
       save_direct_booking_settings: { Args: { _value: Json }; Returns: Json }
       save_handoff_requirement: { Args: { _value: Json }; Returns: string }
+      save_home_profile_card: {
+        Args: { _card: string; _changes: Json; _property_id: string }
+        Returns: Json
+      }
       save_owner_alert_preferences: {
         Args: {
           _email: boolean
