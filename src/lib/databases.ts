@@ -350,6 +350,28 @@ export function canEditInList(key: DatabaseKey, viewer: DbViewer): boolean {
   return key === "claims" && databaseMode(key, viewer) === "edit";
 }
 
+/** The link on an opened record, for people who work there. Tickets open for everyone who can open them. */
+export function rowLinkLabel(card: DatabaseCard, mode: DatabaseMode): string | null {
+  if (card.key === "tickets") return "Open the ticket";
+  if (mode !== "edit") return null;
+  const own: Partial<Record<DatabaseKey, string>> = {
+    owners: "Open the home",
+    "house-items": "Open the home",
+    utilities: "Open the home",
+    "referral-sources": "Open Referral sources",
+    playbooks: "Open the playbook library",
+    team: "Open Team and Coverage",
+    "direct-bookings": "Open the request",
+  };
+  return own[card.key] ?? card.work ?? null;
+}
+
+/** Work buttons that sit at the top of the list (one page holds all the work). */
+export const PAGE_WORK: Partial<Record<DatabaseKey, "/team-queue" | "/direct-bookings">> = {
+  tickets: "/team-queue",
+  "direct-bookings": "/direct-bookings",
+};
+
 export function opsFinanceOnlyLine(card: DatabaseCard): string {
   return `${card.name} are handled by Operations and Finance.`;
 }
