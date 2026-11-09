@@ -2157,6 +2157,13 @@
       "when": 1794184100489,
       "tag": "0307_fix_handoff_acceptance",
       "breakpoints": true
+    },
+    {
+      "idx": 308,
+      "version": "7",
+      "when": 1794193603578,
+      "tag": "0308_delete_test_logins_detach",
+      "breakpoints": true
     }
   ]
 }

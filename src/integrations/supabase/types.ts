@@ -6722,7 +6722,7 @@ export type Database = {
       }
       help_ticket_events: {
         Row: {
-          author_id: string
+          author_id: string | null
           author_name: string | null
           body: string | null
           created_at: string
@@ -6735,7 +6735,7 @@ export type Database = {
           to_status: string | null
         }
         Insert: {
-          author_id?: string
+          author_id?: string | null
           author_name?: string | null
           body?: string | null
           created_at?: string
@@ -6748,7 +6748,7 @@ export type Database = {
           to_status?: string | null
         }
         Update: {
-          author_id?: string
+          author_id?: string | null
           author_name?: string | null
           body?: string | null
           created_at?: string
