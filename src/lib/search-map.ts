@@ -82,8 +82,10 @@ export function spreadPoints(points: { id: string; x: number; y: number }[], gap
     let moved = false;
     for (let i = 0; i < n; i++) {
       for (let j = i + 1; j < n; j++) {
-        let dx = pts[j].x - pts[i].x;
-        let dy = pts[j].y - pts[i].y;
+        const a = pts[i]!;
+        const b = pts[j]!;
+        let dx = b.x - a.x;
+        let dy = b.y - a.y;
         let d = Math.hypot(dx, dy);
         if (d >= gap - 0.01) continue;
         if (d < 0.01) {
@@ -96,10 +98,10 @@ export function spreadPoints(points: { id: string; x: number; y: number }[], gap
           dy /= d;
         }
         const push = (gap - Math.min(d, gap)) / 2 + 0.05;
-        pts[i].x -= dx * push;
-        pts[i].y -= dy * push;
-        pts[j].x += dx * push;
-        pts[j].y += dy * push;
+        a.x -= dx * push;
+        a.y -= dy * push;
+        b.x += dx * push;
+        b.y += dy * push;
         moved = true;
       }
     }

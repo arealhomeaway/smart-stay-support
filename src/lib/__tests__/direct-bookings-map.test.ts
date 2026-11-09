@@ -7,6 +7,7 @@
 import { describe, expect, it } from "bun:test";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   formatMiles,
   MAP_COPY,
@@ -22,7 +23,8 @@ import {
 } from "@/lib/search-map";
 import { SEARCH_DISTANCES } from "@/lib/direct-bookings";
 
-const read = (p: string) => readFileSync(join(import.meta.dir, "..", "..", p), "utf8");
+const SRC = fileURLToPath(new URL("../../", import.meta.url));
+const read = (p: string) => readFileSync(join(SRC, p), "utf8");
 const MAP_FILE = "components/direct-bookings/SearchMap.tsx";
 const PAGE = "routes/_authenticated/direct-bookings.$requestId.tsx";
 
@@ -41,7 +43,7 @@ describe("1. Rings, labels and the straight line note", () => {
       [10, true, "10 miles"],
       [20, false, "20 miles"],
     ]);
-    expect(rings[2].meters).toBeCloseTo(32186.88, 1);
+    expect(rings[2]!.meters).toBeCloseTo(32186.88, 1);
   });
   it("ring labels sit due north at the ring", () => {
     expect(ringLabelPoint({ lat: 36, lng: -95.8 }, 20)).toEqual({ lat: 36 + 20 / 69, lng: -95.8 });
@@ -75,12 +77,16 @@ describe("2. Pins that overlap are spread so none hides another", () => {
     const pts = [...m.values()];
     let min = Infinity;
     for (let i = 0; i < pts.length; i++)
-      for (let j = i + 1; j < pts.length; j++) min = Math.min(min, Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y));
+      for (let j = i + 1; j < pts.length; j++) {
+        const a = pts[i]!;
+        const b = pts[j]!;
+        min = Math.min(min, Math.hypot(a.x - b.x, a.y - b.y));
+      }
     return min;
   };
   it("six homes on the very same spot all end up apart", () => {
     const pts = Array.from({ length: 6 }, (_, i) => ({ id: `h${i}`, x: 100, y: 100 }));
-    expect(minPair(spreadPoints(pts))).toBeGreaterThanOrEqual(PIN_GAP - 0.5);
+    expect(minPair(spreadPoints(pts))).toBeGreaterThan(PIN_GAP - 0.5);
   });
   it("a tight cluster next to a lone pin ends up apart", () => {
     const pts = [
@@ -89,7 +95,7 @@ describe("2. Pins that overlap are spread so none hides another", () => {
       { id: "c", x: 9, y: -2 },
       { id: "d", x: 30, y: 0 },
     ];
-    expect(minPair(spreadPoints(pts))).toBeGreaterThanOrEqual(PIN_GAP - 0.5);
+    expect(minPair(spreadPoints(pts))).toBeGreaterThan(PIN_GAP - 0.5);
   });
   it("pins already far apart do not move", () => {
     const out = spreadPoints([{ id: "a", x: 0, y: 0 }, { id: "b", x: 200, y: 0 }]);
@@ -120,14 +126,14 @@ describe("5. One provider file", () => {
     expect(src).toContain("https://tile.openstreetmap.org/{z}/{x}/{y}.png");
     expect(src).toContain("OpenStreetMap</a> contributors");
     expect(src).not.toMatch(/unpkg|cdnjs|jsdelivr|<script/);
-    expect(src).not.toMatch(/google|apiKey|api_key/i);
+    expect(src).not.toMatch(/googleapis|maps\.google|apiKey|api_key|key=/i);
   });
   it("keeps the pictures light: no wide preloading", () => {
     expect(src).toContain("keepBuffer: 1");
     expect(src).toContain("updateWhenIdle: true");
   });
   it("no other file in the app imports Leaflet", () => {
-    const root = join(import.meta.dir, "..", "..");
+    const root = SRC.replace(/\/$/, "");
     const users = filesUnder(root)
       .filter((f) => !f.includes("__tests__"))
       .filter((f) => /from "leaflet"|import\("leaflet"\)/.test(readFileSync(f, "utf8")))
