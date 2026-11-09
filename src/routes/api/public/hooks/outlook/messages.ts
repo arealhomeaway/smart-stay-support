@@ -47,18 +47,18 @@ export const Route = createFileRoute("/api/public/hooks/outlook/messages")({
         }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { fetchMessage, processMessage } = await import("@/lib/mailbox.server");
+        const { handleNotifications } = await import("@/lib/email-intake.server");
 
-        for (const notification of notifications.slice(0, 20)) {
-          const id = notification.resourceData?.id;
-          if (!id) continue;
-          try {
-            const message = await fetchMessage(id);
-            if (!message) continue;
-            await processMessage(supabaseAdmin, message);
-          } catch (err) {
-            console.error("Outlook notification failed:", err instanceof Error ? err.message : err);
-          }
+        // While the email intake switch is off nothing is fetched or created.
+        const outcome = await handleNotifications(
+          supabaseAdmin,
+          notifications.map((n) => n.resourceData?.id ?? "").filter(Boolean),
+        );
+        if (outcome.refused) {
+          return new Response(outcome.message ?? "Email intake is off.", {
+            status: 202,
+            headers: { "Content-Type": "text/plain" },
+          });
         }
 
         // Graph expects a fast 202 regardless; anything missed here is caught
