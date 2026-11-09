@@ -64,7 +64,7 @@ const MATRIX: Record<string, string> = {
   Design:     "E E E - E V  E E V V V  V V V O O O O  V V",
   Finance:    "V V V V V V  V V V V V  V V V V E V V  V -",
   Admin:      "E E E E E V  E E E E V  E E E E E E E  E E",
-} satisfies Record<string, Profile>;
+};
 const LETTER = { edit: "E", view: "V", ops_finance: "O", hidden: "-" } as const;
 
 describe("the hub", () => {
