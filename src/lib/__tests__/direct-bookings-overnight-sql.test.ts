@@ -1,4 +1,5 @@
-import { beforeAll, beforeEach, describe, expect, it, setSystemTime } from "bun:test";
+import * as bunTest from "bun:test";
+import { beforeAll, beforeEach, describe, expect, it } from "bun:test";
 import { PGlite } from "@electric-sql/pglite";
 import { readFileSync } from "node:fs";
 
@@ -13,6 +14,8 @@ const BASE = "docs/pending/routing-by-time";
 const TWEAKS = "docs/pending/routing-tweaks";
 const DIR = "docs/pending/direct-bookings-overnight";
 const read = (p: string) => readFileSync(p, "utf8");
+// Bun's clock control; the installed type list does not name it yet.
+const { setSystemTime } = bunTest as unknown as { setSystemTime: (at?: Date) => void };
 const liveRouting = (n: string) => read(`${BASE}/live-capture/public.${n}.sql`).trimEnd() + ";\n";
 const liveHere = (n: string) => read(`${DIR}/live-capture/public.${n}.sql`);
 const U = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
