@@ -31,6 +31,7 @@ import { DirectorHub, type Lens } from "@/components/onboarding/DirectorHub";
 import { useOwnerCompletions, needsAttention } from "@/components/onboarding/OwnerCompletionsReview";
 import { useDemo } from "@/components/DemoProvider";
 import { AddPropertyDialog } from "@/components/property/AddPropertyDialog";
+import { canAddHome } from "@/lib/property-page";
 import { OnboardingActivityFeed } from "@/components/onboarding/OnboardingActivityFeed";
 
 import { useRole } from "@/hooks/useRole";
@@ -90,7 +91,8 @@ type HubSearch = {
 function Hub() {
   const load = useServerFn(getOnboardingWorkspace);
   const qc = useQueryClient();
-  const { can, readOnly, userId, isAdmin } = useRole();
+  const { can, readOnly, userId, isAdmin, roles, isOnboardingDirector } = useRole();
+  const mayAddHome = canAddHome({ roles, onboardingDirector: isOnboardingDirector, readOnly });
   const { enabled } = useFeatureFlags();
   const { token: originToken } = useWorkspaceOrigin("Onboarding hub");
   const navigate = Route.useNavigate();
@@ -257,18 +259,20 @@ function Hub() {
                 >
                   <ClipboardList className="size-4" /> My work
                 </Link>
-                <AddPropertyDialog
-                  disabled={readOnly}
-                  trigger={
-                    <button
-                      type="button"
-                      disabled={readOnly}
-                      className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20 disabled:opacity-50"
-                    >
-                      <Plus className="size-4" /> Add property
-                    </button>
-                  }
-                />
+                {mayAddHome ? (
+                  <AddPropertyDialog
+                    disabled={readOnly}
+                    trigger={
+                      <button
+                        type="button"
+                        disabled={readOnly}
+                        className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20 disabled:opacity-50"
+                      >
+                        <Plus className="size-4" /> Add property
+                      </button>
+                    }
+                  />
+                ) : null}
                 <Link
                   to="/onboarding/team"
                   className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20"

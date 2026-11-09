@@ -61,9 +61,10 @@ export const importOwnerRezPropertyFn = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
-    const { assertPropertyStaff, importOwnerRezProperty } =
+    const { assertPropertyStaff, assertCanAddHome, importOwnerRezProperty } =
       await import("./property-intake.server");
     await assertPropertyStaff(context.supabase, context.userId);
+    await assertCanAddHome(context.supabase, context.userId);
     return importOwnerRezProperty(context.supabase, context.userId, data);
   });
 
@@ -93,9 +94,10 @@ export const createPropertyManuallyFn = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
-    const { assertPropertyStaff, createPropertyManually } =
+    const { assertPropertyStaff, assertCanAddHome, createPropertyManually } =
       await import("./property-intake.server");
     await assertPropertyStaff(context.supabase, context.userId);
+    await assertCanAddHome(context.supabase, context.userId);
     return createPropertyManually(context.supabase, context.userId, data);
   });
 

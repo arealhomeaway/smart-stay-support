@@ -25,6 +25,27 @@ export async function assertPropertyStaff(supabase: Client, userId: string) {
   if (!data) throw new Error("Only the internal team can add properties.");
 }
 
+export const ADD_HOME_DENIED = "Only Onboarding roles and Admin can add a home.";
+
+/**
+ * Add a home (register A12): only Onboarding roles and Admin, the same rule the
+ * Properties list and the Onboarding page use (canAddHome). Checked on every
+ * call that creates or links a home, as the signed-in person.
+ */
+export async function assertCanAddHome(supabase: Client, userId: string) {
+  const [roles, director] = await Promise.all([
+    supabase.from("user_roles").select("role").eq("user_id", userId),
+    supabase.rpc("is_onboarding_director", { _user_id: userId }),
+  ]);
+  if (roles.error || director.error) throw new Error("Could not verify your access level.");
+  const { canAddHome } = await import("./property-page");
+  const allowed = canAddHome({
+    roles: (roles.data ?? []).map((r) => String(r.role)),
+    onboardingDirector: director.data === true,
+  });
+  if (!allowed) throw new Error(ADD_HOME_DENIED);
+}
+
 import type { IntakeMatch, IntakeResult, OwnerRezCandidate } from "./property-intake";
 
 export type { IntakeMatch, IntakeResult, OwnerRezCandidate };
