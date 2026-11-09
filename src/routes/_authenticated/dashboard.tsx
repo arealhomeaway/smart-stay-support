@@ -19,6 +19,9 @@ import { EmptyState, LoadingPage, PageHero, PriorityRail, SectionCard, Segmented
 import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { ActivityList, type ActivityEvent } from "@/components/ui/activity";
 import heroImage from "@/assets/hero-arha-property.jpg";
+import { homePhotoUrl } from "@/components/property/HomePhoto";
+import { applyTestDataFilter } from "@/lib/test-data";
+import { bannerCaption, dailyHomePhoto } from "@/lib/daily-home-photo";
 import { AlertTriangle, ArrowRight, ClipboardCheck, Handshake, Inbox, Users } from "lucide-react";
 import {
   RETIRED_ROUTINE_KINDS,
@@ -156,6 +159,27 @@ function Dashboard() {
   });
   const firstName = (me?.full_name ?? "").trim().split(/\s+/)[0] ?? "";
 
+  // Register T1: a real home's photo that changes daily, the same for everyone.
+  const bannerHomes = useQuery({
+    queryKey: ["home-banner-photos"],
+    staleTime: 60 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("properties")
+        .select("id, name, is_demo, address_line1, unit, city, state, postal_code, primary_photo_medium_url, primary_photo_url")
+        .not("primary_photo_url", "is", null);
+      if (error) throw error;
+      return applyTestDataFilter(data ?? [], false, (p) => p).map((p) => ({
+        id: p.id,
+        photo: homePhotoUrl(p) ?? "",
+        name: formatPropertyLabel(p).primary,
+        city: p.city,
+      }));
+    },
+  });
+  const [bannerFailed, setBannerFailed] = useState(false);
+  const bannerHome = bannerFailed ? null : dailyHomePhoto(bannerHomes.data ?? [], new Date());
+
   const rows = mine.data ?? [];
   // Overnight Direct Bookings wait in the Team Queue for Team A and count here too (register D2).
   const overnight = useQuery({
@@ -180,7 +204,9 @@ function Dashboard() {
   return (
     <div className="space-y-8">
       <PageHero
-        image={heroImage}
+        image={bannerHome?.photo ?? heroImage}
+        imageCaption={bannerHome ? bannerCaption(bannerHome) : undefined}
+        onImageError={bannerHome ? () => setBannerFailed(true) : undefined}
         eyebrow={new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
         title={`${greeting()}${firstName ? `, ${firstName}` : ""}.`}
         description={HOME_COPY.heroLine}
