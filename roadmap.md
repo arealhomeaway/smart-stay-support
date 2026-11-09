@@ -20,8 +20,9 @@
 - [ ] Emily: register T8 still names the older Create Maintenance Ticket button; Not sure maps to the Ops label; vacant-home fridge is Today by the real rule
 
 ## Nov 9 Databases hub (board; register M1, P3, C1, T13, A9, A10) — after Record work
-- [ ] Blocked: the board source was not included in the message (it reads [PASTE-BOARD]); list columns, card lines and former names come from the board
-- [ ] Menu item after Vendors, hide Guest Claims & Refunds behind a menu switch; hub with search and four groups; lists; claims in-list editing; Tickets and Claims lists; tests; cancelled DB check
+- [x] Board source received; built to it
+- [x] Menu item after Vendors, hide Guest Claims & Refunds behind a menu switch; hub with search and four groups; lists; claims in-list editing; Tickets and Claims lists; tests; staged step applied as 0313; cancelled DB check; suite/type/build
+- [ ] Emily: the Onboarding Board with five views (Gallery, Active Projects, By Status, Gantt, Work Load) does not exist; the card opens the Onboarding home until it is built
 
 ## Nov 9 clean slate real run (Emily's go, Nov 8 6:55 PM Central)
 - [x] Fresh backup 2026-11-09_005832Z (235 tables, 99,445 rows), Verify passed; 42 live tickets matched the Nov 8 list

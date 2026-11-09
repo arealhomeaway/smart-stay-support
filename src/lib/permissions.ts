@@ -134,6 +134,9 @@ export type Capability =
   // views. Operations leadership only; everyone else who opens Vendors sees
   // them read only.
   | "vendor_leadership"
+  // Databases hub (register P3): every internal staff account opens it; what each
+  // person can do in each list is decided in src/lib/databases.ts.
+  | "databases"
   | "view_as";
 
 // Creating a ticket is internal-staff work. Vendors and homeowners never get it.
@@ -151,6 +154,8 @@ const STAFF_BASE: Capability[] = [
   "properties",
   // Team & Coverage Schedule, read only. Editing is checked separately.
   "team_schedule_view",
+  // Databases hub: every staff account (register P3).
+  "databases",
 ];
 
 const SUPERVISOR_CAPS: Capability[] = [

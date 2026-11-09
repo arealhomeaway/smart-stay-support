@@ -29,7 +29,8 @@ const allPaths = (groups: MenuGroup[]) => groups.flatMap((g) => g.items.map((i) 
 describe("who sees what", () => {
   it("a Property Coordinator", () => {
     expect(shape(operationsMenu(accessFor(["tech"])))).toEqual([
-      ["My day", ["Home", "Team Queue", "Direct Bookings", "Vendors", "Guest Claims & Refunds"]],
+      // Databases (Nov 8, register M1, M2): right after Vendors; Guest Claims & Refunds hidden behind its switch.
+      ["My day", ["Home", "Team Queue", "Direct Bookings", "Vendors", "Databases"]],
       // Fix batch 2 (Nov 8): coordinators open the Team group read only.
       ["Team", ["Team & Coverage", "Playbooks"]],
       ["Homes and owners", ["Properties"]],
@@ -38,7 +39,7 @@ describe("who sees what", () => {
 
   it("a Supervisor", () => {
     expect(shape(operationsMenu(accessFor(["manager"])))).toEqual([
-      ["My day", ["Home", "Team Queue", "Direct Bookings", "Vendors", "Oversight", "Guest Claims & Refunds"]],
+      ["My day", ["Home", "Team Queue", "Direct Bookings", "Vendors", "Databases", "Oversight"]],
       ["Team", ["Team & Coverage", "Playbooks"]],
       ["Homes and owners", ["Properties", "Onboarding", "Active Owner"]],
       ["Insight", ["Analytics"]],
@@ -49,7 +50,7 @@ describe("who sees what", () => {
 
   it("an Admin", () => {
     expect(shape(operationsMenu(accessFor(["admin"])))).toEqual([
-      ["My day", ["Home", "Team Queue", "Direct Bookings", "Vendors", "Oversight", "Guest Claims & Refunds"]],
+      ["My day", ["Home", "Team Queue", "Direct Bookings", "Vendors", "Databases", "Oversight"]],
       ["Team", ["Team & Coverage", "Playbooks"]],
       ["Homes and owners", ["Properties", "Onboarding", "Active Owner"]],
       ["Insight", ["Analytics"]],
@@ -79,7 +80,8 @@ describe("who sees what", () => {
       items: [{ key: "owner-programs", label: "Active Owner", to: "/owner-programs" }],
     });
     // Fix batch 2 (Nov 8): the shared pages the Director of Onboarding may open follow Active Owner.
-    expect(director.map((g) => g.label)).toEqual(["Onboarding", "Active Owner", "Team"]);
+    // Databases (Nov 8, register P3): onboarding accounts get it in their menu too.
+    expect(director.map((g) => g.label)).toEqual(["Onboarding", "Active Owner", "Team", "Databases"]);
   });
 });
 

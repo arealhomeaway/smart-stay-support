@@ -32,10 +32,17 @@ describe("AppShell menu: My day and tab pages", () => {
     for (const tab of ["/map", "/routines", "/recovery", "/vendors"]) expect(tabs).toContain(tab);
   });
 
-  it("Guest Claims & Refunds stays visible and gated on claims_work", () => {
-    const claims = myDay(["tech"]).find((i) => i.to === "/claims");
+  // Register M2 (Nov 8): Guest Claims & Refunds stayed until Databases existed. Now it hides
+  // behind the claims_menu switch; the page still opens by link and keeps its claims_work rule.
+  it("Guest Claims & Refunds is hidden behind its switch, still gated on claims_work and reachable by link", () => {
+    expect(myDay(["tech"]).map((i) => i.to)).not.toContain("/claims");
+    const on = operationsMenu({ can: (c) => can(["tech"], c), canOpen: (p) => canOpenPath(p, { roles: ["tech"] }), flagEnabled: (k) => k === "claims_menu" })
+      .find((g) => g.label === "My day")!.items;
+    const claims = on.find((i) => i.to === "/claims");
     expect(claims?.label).toBe("Guest Claims & Refunds");
     expect(claims?.capability).toBe("claims_work");
+    expect(on[on.length - 1]?.to).toBe("/claims");
+    expect(canOpenPath("/claims", { roles: ["tech"] })).toBe(true);
     expect(myDay(["onboarding"]).map((i) => i.to)).not.toContain("/claims");
   });
 

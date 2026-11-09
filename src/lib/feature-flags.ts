@@ -43,6 +43,8 @@ export const FLAG_KEYS = [
   // Menu cleanup (lib/shell-nav.ts). Off: the pages stay reachable by direct link.
   "work_orders_page",
   "work_map",
+  // Guest Claims & Refunds in the menu. Off: Databases holds claims and refunds.
+  "claims_menu",
 ] as const;
 
 export type FlagKey = (typeof FLAG_KEYS)[number];

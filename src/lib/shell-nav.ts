@@ -318,9 +318,11 @@ const OPERATIONS_MENU: MenuGroup[] = [
       { key: "vendors", label: "Vendors", to: "/vendors", capability: "vendor_directory" },
       // Returns with the vendor portal. Work Orders stay reachable from the ticket.
       { key: "work-orders", label: "Work Orders", to: "/work-orders", capability: "work_orders_internal", flag: "work_orders_page" },
+      { key: "databases", label: "Databases", to: "/databases", capability: "databases" },
       { key: "oversight", label: "Oversight", to: "/oversight", capability: "oversight", alsoActive: ["/supervisor-check"] },
-      // Stays until the page that will hold claims history exists.
-      { key: "claims", label: "Guest Claims & Refunds", to: "/claims", capability: "claims_work", alsoActive: ["/recovery"] },
+      // Hidden behind the claims_menu switch now that Databases holds claims and refunds
+      // (register M2, C1). The pages stay reachable by link.
+      { key: "claims", label: "Guest Claims & Refunds", to: "/claims", capability: "claims_work", flag: "claims_menu", alsoActive: ["/recovery"] },
     ],
   },
   {
@@ -412,6 +414,10 @@ export function onboardingOnlyMenu(access: NavAccess): MenuGroup[] {
         { key: "vendors", label: "Vendors", to: "/vendors", capability: "vendor_directory" },
         { key: "work-orders", label: "Work Orders", to: "/work-orders", capability: "work_orders_view", flag: "work_orders_page" },
       ],
+    },
+    {
+      label: "Databases",
+      items: [{ key: "databases", label: "Databases", to: "/databases", capability: "databases" }],
     },
     {
       label: "Insight",

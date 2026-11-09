@@ -143,6 +143,7 @@ export function useRole() {
     /** Route authorization shared with the authenticated layout's guard. */
     canOpen: (pathname: string) => canOpenPath(pathname, access),
     access,
+    seats,
     isOnboardingDirector: seats.onboardingDirector === true,
     onboardingOnly: isOnboardingOnly(access),
     landing: homePathFor(access),
