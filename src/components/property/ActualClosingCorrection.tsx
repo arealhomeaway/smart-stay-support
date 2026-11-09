@@ -89,7 +89,7 @@ export function ActualClosingCorrection({
         </span>
         <span>
           <span className="text-muted-foreground">Planned closing: </span>
-          {f.planned ?? "—"}
+          {f.planned ?? "Not recorded"}
         </span>
         {f.canCorrect && !open ? (
           <Button size="sm" variant="outline" onClick={() => { setDate(f.actual ?? ""); setOpen(true); }}>
@@ -99,7 +99,7 @@ export function ActualClosingCorrection({
       </div>
       {conflict ? (
         <p className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-destructive">
-          Closing dates disagree: {values.join(" vs ")}. Nothing has been chosen automatically — a
+          Closing dates disagree: {values.join(" vs ")}. Nothing has been chosen automatically. A
           Director or Manager should correct the actual closing.
         </p>
       ) : null}
