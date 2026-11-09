@@ -319,7 +319,8 @@ const OPERATIONS_MENU: MenuGroup[] = [
       // from the Vendors card in Databases and by address.
       // Returns with the vendor portal. Work Orders stay reachable from the ticket.
       { key: "work-orders", label: "Work Orders", to: "/work-orders", capability: "work_orders_internal", flag: "work_orders_page" },
-      { key: "databases", label: "Databases", to: "/databases", capability: "databases" },
+      // The Vendors page opens from the Databases Vendors card, so Databases is lit there.
+      { key: "databases", label: "Databases", to: "/databases", capability: "databases", alsoActive: ["/vendors"] },
       { key: "oversight", label: "Oversight", to: "/oversight", capability: "oversight", alsoActive: ["/supervisor-check"] },
       // Hidden behind the claims_menu switch now that Databases holds claims and refunds
       // (register M2, C1). The pages stay reachable by link.
@@ -418,7 +419,7 @@ export function onboardingOnlyMenu(access: NavAccess): MenuGroup[] {
     },
     {
       label: "Databases",
-      items: [{ key: "databases", label: "Databases", to: "/databases", capability: "databases" }],
+      items: [{ key: "databases", label: "Databases", to: "/databases", capability: "databases", alsoActive: ["/vendors"] }],
     },
     {
       label: "Insight",

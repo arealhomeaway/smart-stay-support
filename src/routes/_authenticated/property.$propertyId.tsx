@@ -340,14 +340,12 @@ function PropertyHeader({ hub, propertyId }: { hub: Hub; propertyId: string }) {
 
   return (
     <div className="surface overflow-hidden shadow-raised">
-      {/* Register O1: a photo header. No photo on record shows no picture at all. */}
-      {p.photoUrl ? (
-        <HomePhoto
-          url={p.photoUrl}
-          alt={[p.name, p.address].filter(Boolean).join(", ")}
-          className="h-44 w-full md:h-64"
-        />
-      ) : null}
+      {/* Register O1: a photo header. No photo on record shows the same neutral block as the cards. */}
+      <HomePhoto
+        url={p.photoUrl}
+        alt={[p.name, p.address].filter(Boolean).join(", ")}
+        className="h-44 w-full md:h-64"
+      />
       <div className="space-y-3 p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
