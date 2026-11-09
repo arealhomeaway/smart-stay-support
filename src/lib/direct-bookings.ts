@@ -658,7 +658,6 @@ export const DB_COPY = {
   searchWithin: "Search within",
   differentHomes: "Show me different homes",
   noHomes: "No homes are free inside this distance. Try a wider distance.",
-  mapLegend: "The black dot is the search location",
   replyTitle: "3. The reply",
   replyHint: (partner: string) => `This goes back to ${partner} in the same email thread. It fills in by itself from our reply template. Change the words if you want.`,
   sendForOk: "Send to a supervisor for OK",
