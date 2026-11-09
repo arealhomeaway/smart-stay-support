@@ -4,7 +4,7 @@ const db = createClient(process.env["SUPABASE_URL"]!, process.env["SUPABASE_SERV
 const ADMIN = "98bd6696-4018-4965-b645-0471c5ae3925";
 const r: any = await runFullBackup(db as any, ADMIN);
 console.log("backup", JSON.stringify(r).slice(0, 400));
-const { data } = await db.from("full_backups").select("id, folder, status, finished_at, table_count, row_count").order("created_at", { ascending: false }).limit(1).single();
+const { data } = await db.from("full_backups").select("id, folder, status, finished_at, table_count, total_rows").order("created_at", { ascending: false }).limit(1).single();
 console.log("record", JSON.stringify(data));
 const v: any = await verifyFullBackup(db as any, ADMIN, (data as any).id);
 console.log("verify", JSON.stringify(v).slice(0, 1500));
