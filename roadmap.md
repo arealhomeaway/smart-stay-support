@@ -1,5 +1,17 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 9 delete the 18 fake test sign-ins (Emily, Nov 8; register S6)
+- [x] Read only: every row pointing at each of the 18 listed (954 links; live-capture/references-before-2026-11-09.txt)
+- [x] Staged docs/pending/delete-test-logins/ (01 database step, 02 sign-in removal, practice block)
+- [x] Fresh backup 2026-11-09_023728Z (235 tables, 98,781 rows), Verify passed
+- [ ] Practice in a cancelled step, then real run, sign-in removal, read-only checks, register S6 line, README/checksums, suite/type/build
+
+## Nov 9 Record work as one flow (board; register T8-T11) — after the sign-in step
+- [ ] Search every reader of the stored Ops/Maintenance label; report
+- [ ] One form (no chooser), Resolve understood card, Change the problem, insurance warning + Escalate now
+- [ ] Create ticket via existing creation/routing with automatic label; One touch to home history with repeat counts/flag (settings 3 and 90), property page flag, weekly repeat list
+- [ ] After-save cards; wording; tests; staged DB in docs/pending/record-work/; cancelled real DB check; suite/type/build before and after
+
 ## Nov 9 clean slate real run (Emily's go, Nov 8 6:55 PM Central)
 - [x] Fresh backup 2026-11-09_005832Z (235 tables, 99,445 rows), Verify passed; 42 live tickets matched the Nov 8 list
 - [x] Ran 01, 01c, 02 for real; counts exactly as practice; all triggers and delete blocks on; 01b never run
