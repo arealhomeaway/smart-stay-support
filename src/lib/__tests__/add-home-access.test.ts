@@ -29,9 +29,12 @@ describe("Add a home on the server", () => {
     await expect(assertCanAddHome(client(["accounting"]), "u1")).rejects.toThrow(ADD_HOME_DENIED);
   });
   it("allows Onboarding accounts, the Director of Onboarding and Admin", async () => {
-    await expect(assertCanAddHome(client(["onboarding"]), "u1")).resolves.toBeUndefined();
-    await expect(assertCanAddHome(client(["manager"], true), "u1")).resolves.toBeUndefined();
-    await expect(assertCanAddHome(client(["admin"]), "u1")).resolves.toBeUndefined();
+    const allowed = async (roles: string[], director = false) =>
+      assertCanAddHome(client(roles, director), "u1").then(() => true, () => false);
+    expect(await allowed(["onboarding"])).toBe(true);
+    expect(await allowed(["manager"], true)).toBe(true);
+    expect(await allowed(["admin"])).toBe(true);
+    expect(await allowed(["tech"])).toBe(false);
   });
   it("refuses when access cannot be read", async () => {
     const broken = {
@@ -53,7 +56,7 @@ describe("Add a home on the server", () => {
   it("the Onboarding page shows Add property only by the same rule", () => {
     const src = readFileSync("src/routes/_authenticated/onboarding.index.tsx", "utf8");
     expect(src).toContain("const mayAddHome = canAddHome(");
-    expect(src.indexOf("{mayAddHome ? (")).toBeGreaterThan(-1);
-    expect(src.indexOf("{mayAddHome ? (")).toBeLessThan(src.indexOf("<AddPropertyDialog"));
+    const gate = src.indexOf("{mayAddHome ? (");
+    expect(gate > -1 && gate < src.indexOf("<AddPropertyDialog")).toBe(true);
   });
 });
