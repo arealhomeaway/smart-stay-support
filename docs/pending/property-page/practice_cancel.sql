@@ -491,13 +491,13 @@ DECLARE
   v_home2 uuid;
   v_n int;
   v_j jsonb;
+  v_t text;
 BEGIN
   SELECT count(*) INTO v_n FROM public.property_label_assignments;
   r := r || 'firm_homes=' || v_n || '; ';
   PERFORM set_config('request.jwt.claims', '{"sub":"f8c6e258-6679-4517-a8bc-4817ec1cb5de","role":"authenticated"}', true);
   r := r || 'admin_access=' || public.my_home_profile_access()::text || '; ';
   v_label := public.property_label_create('Practice label');
-  SELECT count(*) INTO v_n FROM unnest(ARRAY[1]);
   v_n := public.property_label_add(v_label, (SELECT array_agg(id) FROM (SELECT id FROM public.properties WHERE is_demo = false ORDER BY name LIMIT 3) s));
   r := r || 'admin_add_many=' || v_n || '; ';
   PERFORM public.property_label_rename(v_label, 'Practice label two');
@@ -509,8 +509,8 @@ BEGIN
       {"key":"bedrooms","label":"Bedrooms","target":"column","column":"bedrooms","value":"4"},
       {"key":"gate_code","label":"Gate Code","target":"code","value":null}]'::jsonb);
   r := r || 'save=' || v_j::text || '; ';
-  SELECT jsonb_build_object('lock', access->>'lock_brand', 'smoke', systems->'smoke'->>'brand', 'nick', nickname, 'bed', bedrooms)::text INTO STRICT r FROM public.properties WHERE id = v_home;
-  r := 'readback=' || r || '; ';
+  SELECT jsonb_build_object('lock', access->>'lock_brand', 'smoke', systems->'smoke'->>'brand', 'nick', nickname, 'bed', bedrooms)::text INTO STRICT v_t FROM public.properties WHERE id = v_home;
+  r := r || 'readback=' || v_t || '; ';
   SELECT count(*) INTO v_n FROM public.property_profile_edits WHERE property_id = v_home;
   r := r || 'edit_lines=' || v_n || '; ';
   SELECT count(*) INTO v_n FROM public.property_profile_edits WHERE label = 'Gate Code' AND new_value IS NULL AND old_value IS NULL;
@@ -537,6 +537,7 @@ BEGIN
   PERFORM set_config('request.jwt.claims', '{"sub":"68ad7bb6-458f-4c0c-921f-3299251ac3fa","role":"authenticated"}', true);
   BEGIN PERFORM public.property_label_add(v_label, ARRAY[v_home2]); r := r || 'owner_add=ALLOWED; ';
   EXCEPTION WHEN others THEN r := r || 'owner_add_refused=' || SQLERRM || '; '; END;
-  SELECT string_agg(action || ':' || n, ',') INTO STRICT v_j FROM (SELECT action, count(*) n FROM public.property_label_events GROUP BY 1 ORDER BY 1) s;
+  SELECT string_agg(action || ':' || n, ',') INTO STRICT v_t FROM (SELECT action, count(*) n FROM public.property_label_events GROUP BY 1 ORDER BY 1) s;
+  r := r || 'label_events=' || v_t || '; ';
   RAISE EXCEPTION 'PRACTICE_CANCELLED %', r;
 END $practice$;
