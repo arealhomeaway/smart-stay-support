@@ -69,7 +69,10 @@ END $$;
 `;
 
 let db: PGlite;
-const as = (id: string) => db.query("DELETE FROM public.me; INSERT INTO public.me VALUES ($1)", [id]).then(() => undefined);
+const as = async (id: string) => {
+  await db.exec("DELETE FROM public.me");
+  await db.query("INSERT INTO public.me VALUES ($1)", [id]);
+};
 const one = async (sql: string, args: unknown[] = []) => (await db.query(sql, args)).rows[0];
 const repeat = () => one("SELECT * FROM public.home_problem_repeat($1, $2)", [HOME, WT]);
 const ticket = (title: string, cols = "", vals = "") =>
