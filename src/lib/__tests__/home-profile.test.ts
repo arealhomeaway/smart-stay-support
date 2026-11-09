@@ -185,6 +185,23 @@ describe("Editing", () => {
     expect(buildChanges(m, { last_edit: "x", added_by: "y" }, home)).toEqual([]);
   });
 
+  test("the database save accepts exactly the items on the page, no more and no less", () => {
+    const sql = readFileSync("docs/pending/property-page/03_strict_profile_items.sql", "utf8");
+    const m = sql.match(/v_allowed constant jsonb := '(\{.*?\})'::jsonb/s);
+    expect(m).not.toBeNull();
+    const allowed = JSON.parse(m![1]!) as Record<string, string>;
+    const expected: Record<string, string> = {};
+    for (const i of ALL_PROFILE_ITEMS) {
+      const s = i.src;
+      if (s.kind === "column") expected[i.key] = `column:${s.column}`;
+      else if (s.kind === "json") expected[i.key] = `json:${s.column}:${s.path.join(".")}`;
+      else if (s.kind === "link" && s.editable) expected[i.key] = `link:${s.sourceField}`;
+      else if (s.kind === "code") expected[i.key] = "code";
+    }
+    expect(allowed).toEqual(expected);
+    for (const v of Object.values(allowed)) expect(v).not.toContain(" ");
+  });
+
   test("the save function writes only the listed columns and keeps codes out", () => {
     const sql = readFileSync("docs/pending/property-page/02_home_profile_edits.sql", "utf8");
     expect(sql).toContain("That item cannot be edited here.");
