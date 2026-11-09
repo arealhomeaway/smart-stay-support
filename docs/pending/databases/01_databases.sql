@@ -83,7 +83,12 @@ BEGIN
     IF NOT (_key = ANY (_allowed)) THEN
       RAISE EXCEPTION 'This cannot be changed here. Open the ticket.' USING ERRCODE = '22023';
     END IF;
-    _names := _names || (_labels ->> _key);
+  END LOOP;
+  -- History names the fields in the order the list shows them.
+  FOREACH _key IN ARRAY _allowed LOOP
+    IF _changes ? _key THEN
+      _names := _names || (_labels ->> _key);
+    END IF;
   END LOOP;
 
   IF _changes ? 'title' THEN
