@@ -1,10 +1,10 @@
 /**
-import { HomeRepeatFlags } from "@/components/work-entry/HomeRepeatFlags";
  * The property page: one home, organized like the Notion PID (register P1).
  *
  * Staff only. The server decides what each person may read; this file renders
  * it. Codes stay encrypted behind a logged Show. Nothing here deletes data.
  */
+import { HomeRepeatFlags } from "@/components/work-entry/HomeRepeatFlags";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
