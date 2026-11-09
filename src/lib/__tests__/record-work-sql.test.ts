@@ -72,9 +72,9 @@ let db: PGlite;
 const as = (id: string) => db.query("DELETE FROM public.me; INSERT INTO public.me VALUES ($1)", [id]).then(() => undefined);
 const one = async (sql: string, args: unknown[] = []) => (await db.query(sql, args)).rows[0];
 const repeat = () => one("SELECT * FROM public.home_problem_repeat($1, $2)", [HOME, WT]);
-const ticket = (title: string, extra = "") =>
-  one(`INSERT INTO public.tickets(title, property_id, work_type_id, created_by${extra ? ", " + extra.split("=")[0] : ""})
-       VALUES ($1, '${HOME}', '${WT}', '${PC}'${extra ? ", " + extra.split("=")[1] : ""}) RETURNING id`, [title]);
+const ticket = (title: string, cols = "", vals = "") =>
+  one(`INSERT INTO public.tickets(title, property_id, work_type_id, created_by${cols ? ", " + cols : ""})
+       VALUES ($1, '${HOME}', '${WT}', '${PC}'${vals ? ", " + vals : ""}) RETURNING id`, [title]);
 const oneTouch = (daysAgo = 0, wt = WT) =>
   db.query("INSERT INTO public.property_activity_log(property_id, occurred_at, problem_type_id, one_touch, logged_by) VALUES ($1, now() - make_interval(days => $2), $3, true, $4)", [HOME, daysAgo, wt, PC]);
 
@@ -112,9 +112,10 @@ describe("repeat flag: same problem type 3 times in 90 days at the same home", (
   it("older than 90 days, another problem type, archived tickets and quiet Notion imports never count", async () => {
     await oneTouch(91);
     await oneTouch(0, WT2);
-    await ticket("Archived", "archived_at=now()");
-    await ticket("Notion quiet", "external_source='notion'");
-    await ticket("Notion reopened", "external_source,external_status='notion','reopened_in_resolve'".replace("external_source,external_status='notion','reopened_in_resolve'", "external_source, external_status='notion', 'reopened_in_resolve'"));
+    await ticket("Archived", "archived_at", "now()");
+    await ticket("Notion quiet", "external_source", "'notion'");
+    await ticket("Notion reopened", "external_source, external_status", "'notion', 'reopened_in_resolve'");
+    // Only the reopened Notion import counts.
     expect((await repeat()).times_in_window).toBe(1);
   });
   it("the 3 and the 90 are settings", async () => {
