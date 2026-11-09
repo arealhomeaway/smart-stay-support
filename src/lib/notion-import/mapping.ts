@@ -419,11 +419,25 @@ export function mapNotionPage(page: NotionPage, ctx: MapContext): MapOutcome {
   const notes = text(page, "Notes");
   const description = [notes, block.join("\n")].filter(Boolean).join("\n\n");
 
+  const completed = date(page, "Date Completed");
+  const reportedAt = createdDate ?? page.created_time;
+  const resolvedAt = status === "closed" ? completed ?? page.last_edited_time : null;
+
   let claim: MappedTicket["claim"] = null;
   if (claimWanted) {
     const filed = select(page, "Claim Filed?");
+    const stage = importClaimStage(group, filed);
+    // Closed date: the ticket's closed date when Notion has one, else its last edit.
+    const closedAt = stage === "closed" ? resolvedAt ?? page.last_edited_time : null;
     const lines = [
-      "Imported from Notion",
+      IMPORTED_CLAIM_NOTE_LINE,
+      ...(stage === "closed"
+        ? [
+            IMPORTED_CLOSED_NOTE_LINE,
+            `Opened in Notion: ${dayOnly(reportedAt)}`,
+            `Closed date: ${dayOnly(closedAt)}${status === "closed" && completed ? " (completed in Notion)" : " (last change in Notion)"}`,
+          ]
+        : []),
       ...(isClaimReviewStatus(statusName) ? [CLAIM_REVIEW_NOTE_LINE] : []),
       `Will this be a claim in Notion: ${select(page, "Will this be a claim?") ?? "blank"}`,
       `Claim filed in Notion: ${filed ?? "blank"}`,
@@ -433,15 +447,15 @@ export function mapNotionPage(page: NotionPage, ctx: MapContext): MapOutcome {
       `Reimbursed amount: ${money(num(page, "Reimbursed Amount"))}`,
     ];
     claim = {
-      // Submitted stages need proof of submission in Resolve, so a filed claim lands in Gathering.
-      stage: filed === "Yes" ? "gathering" : "potential",
+      stage,
       estimated_amount: num(page, "Total Damages"),
       recovered_amount: num(page, "Reimbursed Amount"),
       notes: lines.join("\n"),
+      opened_at: reportedAt,
+      closed_at: closedAt,
     };
   }
 
-  const completed = date(page, "Date Completed");
   return {
     ticket: {
       external_id: page.id,
@@ -456,9 +470,9 @@ export function mapNotionPage(page: NotionPage, ctx: MapContext): MapOutcome {
       assigned_to: assignedTo,
       assignment_note: assignedTo ? "Matched the Notion assignee at import" : null,
       // A blank created date keeps the Notion page time; the hold above keeps it out of recent.
-      reported_at: createdDate ?? page.created_time,
+      reported_at: reportedAt,
       due_at: date(page, "Due Date"),
-      resolved_at: status === "closed" ? completed ?? page.last_edited_time : null,
+      resolved_at: resolvedAt,
       breezeway_task_url: text(page, "Breezeway Link") || null,
       waiting_on: waitingOnClaimReview ? "other" : null,
       waiting_reason: waitingOnClaimReview ? "claim review" : null,
