@@ -643,16 +643,43 @@ function PickHomes({ d, editable, picked, setPicked }: { d: Detail; editable: bo
       ) : null}
       {data && data.ok ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <HomesMap center={data.center} homes={shown} picked={picked.map((p) => p.id)} distance={distance} onPick={(h) => editable && h.rent.ok && toggle(h)} />
+          <div ref={mapWrap} className="scroll-mt-4">
+            <SearchMap
+              center={{ lat: data.center.lat, lng: data.center.lng, label: placeLabel }}
+              distance={distance}
+              distances={SEARCH_DISTANCES}
+              pins={pins}
+              highlightedId={highlightedId}
+              focus={focus}
+              onPinTap={showCard}
+            />
+            {offMapLine ? <span className="text-xs text-muted-foreground">{offMapLine}</span> : null}
+          </div>
           <div className="flex max-h-[560px] flex-col gap-2.5 overflow-y-auto">
             {shown.map((h, i) => {
               const on = picked.some((p) => p.id === h.id);
               const off = !editable || !h.rent.ok || (!on && full);
+              const lit = highlightedId === h.id;
+              const canMap = Number.isFinite(h.lat) && Number.isFinite(h.lng);
               return (
-                <div key={h.id} data-card="home" className={cn("flex shrink-0 flex-col overflow-hidden rounded-xl border-2", on ? "border-primary bg-primary/5" : "border-border bg-card")}>
+                <div
+                  key={h.id}
+                  ref={(el) => { if (el) cardRefs.current.set(h.id, el); else cardRefs.current.delete(h.id); }}
+                  data-card="home"
+                  data-highlighted={lit ? "true" : undefined}
+                  className={cn("flex shrink-0 flex-col overflow-hidden rounded-xl border-2 scroll-mt-2", on ? "border-primary bg-primary/5" : "border-border bg-card", lit && "ring-4 ring-amber")}
+                >
                   <HomePhoto url={h.photo} alt={h.address || h.name} className="h-32 w-full shrink-0" />
                   <div className="flex items-start gap-3 p-3">
-                  <span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-[13px] font-bold text-primary-foreground">{i + 1}</span>
+                  <button
+                    type="button"
+                    aria-label={`Show home ${i + 1} on the map`}
+                    disabled={!canMap}
+                    onClick={() => showPin(h.id)}
+                    className="-m-2 flex size-11 shrink-0 items-center justify-center rounded-full disabled:cursor-default"
+                  >
+                    <span className="flex size-7 items-center justify-center rounded-full bg-primary text-[13px] font-bold text-primary-foreground">{i + 1}</span>
+                  </button>
                   <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <strong className="text-[15px]">{h.name}</strong>
                     <span className="text-[13px] text-muted-foreground">
