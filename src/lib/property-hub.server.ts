@@ -946,7 +946,98 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
       reason: staff ? a.reason : null,
       at: a.created_at,
     })),
+    // Property page (staff only). Raw PID values for the Home Profile; codes
+    // are never part of this: they stay encrypted behind a logged Show.
+    profile: staff
+      ? {
+          raw: pickProfileRaw(p as unknown as Record<string, unknown>),
+          links: linkRows.map((l) => ({
+            id: l.id,
+            sourceField: (l as { source_field?: string | null }).source_field ?? null,
+            label: l.label ?? defaultLinkLabel(l.kind),
+            url: l.url,
+            kind: l.kind,
+          })),
+          system: {
+            address: [p.address_line1, p.unit, p.city, p.state, p.postal_code].filter(Boolean).join(", ") || null,
+            market: p.market,
+            gps: p.latitude != null && p.longitude != null ? `${p.latitude}, ${p.longitude}` : null,
+            status: p.lifecycle_status === "onboarding" ? "Onboarding" : p.lifecycle_status === "offboarded" ? "Offboarded" : "Operations",
+            handoff_date: fmtDate(p.handoff_accepted_at) ?? fmtDate(p.legacy_handoff_date),
+            last_edit: lastEdit?.edited_at ?? null,
+            last_edit_by: lastEdit?.edited_by_label ?? null,
+            added_by: (addedByRow.data as { full_name?: string | null } | null)?.full_name ?? null,
+            added_on: p.created_at,
+          },
+        }
+      : null,
+    carryovers: staff
+      ? ((carryRows.data ?? []) as {
+          id: string;
+          title: string;
+          category: string | null;
+          owner_role: string | null;
+          due_on: string | null;
+          ticket_id: string | null;
+          accepted_at: string | null;
+          note: string | null;
+        }[]).map((c) => ({
+          id: c.id,
+          title: c.title,
+          category: c.category,
+          ownerRole: c.owner_role,
+          dueOn: c.due_on,
+          ticketId: c.ticket_id,
+          acceptedAt: c.accepted_at,
+        }))
+      : [],
+    header: staff
+      ? {
+          handedOffOn: fmtDate(p.handoff_accepted_at) ?? fmtDate(p.legacy_handoff_date),
+          projectManager: projectManagerName,
+          handoffOn: project?.target_handoff_on ?? null,
+          hasProject: Boolean(project),
+        }
+      : null,
   };
+}
+
+const PROFILE_COLUMNS = [
+  "nickname",
+  "listing_alias",
+  "neighborhood",
+  "tier",
+  "furniture_package",
+  "bedrooms",
+  "bathrooms",
+  "max_guests",
+  "living_area_sqft",
+  "year_built",
+  "instant_book",
+  "facts",
+  "parking",
+  "access",
+  "utilities",
+  "hvac",
+  "systems",
+  "fireplace",
+  "storm_shelter",
+  "sprinklers",
+  "grounds",
+  "waste",
+  "pool_spa",
+  "hoa",
+  "amenities",
+  "security",
+  "warranty",
+  "compliance",
+] as const;
+
+/** Only the PID columns the Home Profile reads; nothing that could carry a code. */
+export function pickProfileRaw(p: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const k of PROFILE_COLUMNS) out[k] = p[k] ?? null;
+  return out;
 }
 
 function f(
