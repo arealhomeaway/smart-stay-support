@@ -126,7 +126,7 @@ describe("2. Labels never cover a pin or each other", () => {
       const side = sides.get(p.id);
       return side ? [labelRect(p, p, side)] : [];
     });
-    expect(sides.get("1")).not.toBeUndefined();
+    expect(sides.has("1")).toBe(true);
     for (let i = 0; i < shown.length; i++) {
       expect(overlap(shown[i]!, search)).toBe(false);
       for (const p of pins) expect(overlap(shown[i]!, { x: p.x - 20, y: p.y - 20, w: 40, h: 40 })).toBe(false);
