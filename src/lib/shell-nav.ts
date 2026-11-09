@@ -315,7 +315,8 @@ const OPERATIONS_MENU: MenuGroup[] = [
       { key: "team-queue", label: "Team Queue", to: "/team-queue" },
       // Placeholder: where Direct Bookings opens is decided per person below.
       { key: "bookings-leads", label: "Direct Bookings", to: "/direct-bookings", alsoActive: DIRECT_BOOKINGS_MENU_PATHS },
-      { key: "vendors", label: "Vendors", to: "/vendors", capability: "vendor_directory" },
+      // Vendors is not in the left menu (register M1, Nov 9): the page opens
+      // from the Vendors card in Databases and by address.
       // Returns with the vendor portal. Work Orders stay reachable from the ticket.
       { key: "work-orders", label: "Work Orders", to: "/work-orders", capability: "work_orders_internal", flag: "work_orders_page" },
       { key: "databases", label: "Databases", to: "/databases", capability: "databases" },
@@ -409,9 +410,9 @@ export function onboardingOnlyMenu(access: NavAccess): MenuGroup[] {
       ],
     },
     {
-      label: "Vendors",
+      // Vendors left the menu (register M1, Nov 9); it opens from Databases.
+      label: "Work Orders",
       items: [
-        { key: "vendors", label: "Vendors", to: "/vendors", capability: "vendor_directory" },
         { key: "work-orders", label: "Work Orders", to: "/work-orders", capability: "work_orders_view", flag: "work_orders_page" },
       ],
     },

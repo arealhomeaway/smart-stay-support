@@ -280,7 +280,13 @@ function NewRequestDialog({
           <Field label="Contact name" value={f.contact_name} onChange={set("contact_name")} />
           <Field label="Email" value={f.email} onChange={set("email")} />
           <Field label="Phone" value={f.phone} onChange={set("phone")} />
-          <Field label="Where" value={f.location} onChange={set("location")} />
+          <Field
+            label={DB_COPY.whereLabel}
+            value={f.location}
+            onChange={set("location")}
+            placeholder={DB_COPY.wherePlaceholder}
+            help={DB_COPY.whereHelp}
+          />
           <Field label="Bedrooms" value={f.bedrooms} onChange={set("bedrooms")} type="number" />
           <Field label="Move in" value={f.move_in} onChange={set("move_in")} type="date" />
           <Field label="Move out" value={f.move_out} onChange={set("move_out")} type="date" />
@@ -316,11 +322,28 @@ function NewRequestDialog({
   );
 }
 
-function Field({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (e: { target: { value: string } }) => void; type?: string }) {
+function Field({
+  label,
+  value,
+  onChange,
+  type = "text",
+  placeholder,
+  help,
+}: {
+  label: string;
+  value: string;
+  onChange: (e: { target: { value: string } }) => void;
+  type?: string;
+  placeholder?: string;
+  help?: string;
+}) {
   return (
     <div className="space-y-1">
-      <Label>{label}</Label>
-      <Input className="h-11" type={type} value={value} onChange={onChange} />
+      <Label className="flex flex-col gap-1.5">
+        {label}
+        <Input className="h-11 font-normal" type={type} value={value} onChange={onChange} placeholder={placeholder} />
+      </Label>
+      {help ? <p className="text-xs text-muted-foreground">{help}</p> : null}
     </div>
   );
 }

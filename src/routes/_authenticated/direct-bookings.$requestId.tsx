@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { HomePhoto } from "@/components/property/HomePhoto";
 import {
   checkDirectBookingApprovals,
   checkDirectBookingPartnerReply,
@@ -37,6 +38,7 @@ import {
   MAX_HOMES,
   money,
   NOT_BOOKED_REASONS,
+  referralSourceWarning,
   replyClock,
   clockStart,
   replyValues,
@@ -443,6 +445,9 @@ function ApprovalBanner({ d, refetch }: { d: Detail; refetch: () => void }) {
       {d.canApprove ? (
         <>
           <span className="text-sm">{DB_COPY.approvalSupervisor}</span>
+          {referralSourceWarning(d.lead.inquiry_source_id) ? (
+            <strong role="status" className="text-sm">{referralSourceWarning(d.lead.inquiry_source_id)}</strong>
+          ) : null}
           <div className="flex flex-wrap gap-2">
             <Button className={cn(BIG, "bg-sage text-primary-foreground hover:bg-sage/90")} disabled={busy} onClick={() => run("approved")}>{DB_COPY.approve}</Button>
             <Button variant="outline" className={cn(BIG, "border-primary text-primary")} disabled={busy} onClick={() => setBackOpen(true)}>{DB_COPY.sendBack}</Button>
@@ -497,10 +502,11 @@ function AskedFor({ d, editable, onSaved }: { d: Detail; editable: boolean; onSa
   useEffect(() => setF(initial), [initial]);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF((v) => ({ ...v, [k]: e.target.value }));
   const num = (v: string) => (v === "" ? null : Number(v));
-  const field = (label: string, k: keyof typeof f, type = "text") => (
+  const field = (label: string, k: keyof typeof f, type = "text", extra?: { placeholder?: string; help?: string }) => (
     <label className="flex flex-col gap-1 text-xs text-muted-foreground">
       {label}
-      <Input aria-label={label} className={cn(FIELD, "text-foreground")} type={type} value={f[k]} onChange={set(k)} disabled={!editable} />
+      <Input aria-label={label} className={cn(FIELD, "text-foreground")} type={type} value={f[k]} onChange={set(k)} disabled={!editable} placeholder={extra?.placeholder} />
+      {extra?.help ? <span>{extra.help}</span> : null}
     </label>
   );
   const select = (label: string, k: keyof typeof f, options: { value: string; label: string }[]) => (
@@ -519,7 +525,7 @@ function AskedFor({ d, editable, onSaved }: { d: Detail; editable: boolean; onSa
         {field("Contact name", "contact_name")}
         {field("Email", "email")}
         {field("Phone", "phone")}
-        {field("Where", "location")}
+        {field(DB_COPY.whereLabel, "location", "text", { placeholder: DB_COPY.wherePlaceholder, help: DB_COPY.whereHelp })}
         {select("As soon as possible", "asap", [{ value: "no", label: "No" }, { value: "yes", label: "Yes" }])}
         {field("Move in", "move_in", "date")}
         {field("Length of stay", "stay_length")}
@@ -638,12 +644,14 @@ function PickHomes({ d, editable, picked, setPicked }: { d: Detail; editable: bo
       {data && data.ok ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <HomesMap center={data.center} homes={shown} picked={picked.map((p) => p.id)} distance={distance} onPick={(h) => editable && h.rent.ok && toggle(h)} />
-          <div className="flex max-h-[340px] flex-col gap-2.5 overflow-y-auto">
+          <div className="flex max-h-[560px] flex-col gap-2.5 overflow-y-auto">
             {shown.map((h, i) => {
               const on = picked.some((p) => p.id === h.id);
               const off = !editable || !h.rent.ok || (!on && full);
               return (
-                <div key={h.id} className={cn("flex items-start gap-3 rounded-xl border-2 p-3", on ? "border-primary bg-primary/5" : "border-border bg-card")}>
+                <div key={h.id} data-card="home" className={cn("flex shrink-0 flex-col overflow-hidden rounded-xl border-2", on ? "border-primary bg-primary/5" : "border-border bg-card")}>
+                  <HomePhoto url={h.photo} alt={h.address || h.name} className="h-32 w-full shrink-0" />
+                  <div className="flex items-start gap-3 p-3">
                   <span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-[13px] font-bold text-primary-foreground">{i + 1}</span>
                   <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <strong className="text-[15px]">{h.name}</strong>
@@ -663,6 +671,7 @@ function PickHomes({ d, editable, picked, setPicked }: { d: Detail; editable: bo
                   >
                     {on ? "Picked" : "Pick"}
                   </Button>
+                  </div>
                 </div>
               );
             })}
@@ -784,6 +793,7 @@ function ReplySection({ d, editable, picked, partner, onDone }: { d: Detail; edi
 
   const showManual = !lead.reply_sent_at && (notSent || !d.mailboxConnected) && lead.owned_by === d.me && !d.pending;
   if (lead.reply_sent_at) return null;
+  const sourceWarning = referralSourceWarning(lead.inquiry_source_id);
   const help = picked.length === 0 ? DB_COPY.pickFirst : !to ? "Add their email in step 1 first." : d.approvalRequiredNow ? DB_COPY.sendForOkHelp : "";
   return (
     <Section title={DB_COPY.replyTitle} hint={DB_COPY.replyHint(partner)}>
@@ -792,6 +802,9 @@ function ReplySection({ d, editable, picked, partner, onDone }: { d: Detail; edi
         <span>Subject: <strong className="text-foreground">{subject}</strong></span>
         <span>Cc: <strong className="text-foreground">{CC_ROLE_LINE}</strong></span>
       </div>
+      {sourceWarning ? (
+        <p role="status" className="rounded-lg border border-amber/40 bg-amber/10 px-3 py-2 text-sm">{sourceWarning}</p>
+      ) : null}
       <Textarea
         aria-label="Reply"
         className="min-h-[360px] text-sm leading-relaxed"

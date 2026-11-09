@@ -11,7 +11,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { EmptyState, LoadingRows, PageHeader } from "@/components/ui/page";
-import { StatusBadge } from "@/components/ui/status";
+import { PropertyListCard } from "@/components/property/PropertyListCard";
+import { homePhotoUrl } from "@/components/property/HomePhoto";
+import { homeFactsLine } from "@/lib/property-card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { openTicketsForTotal } from "@/lib/notion-ticket-display";
 import { AddPropertyDialog } from "@/components/property/AddPropertyDialog";
@@ -19,7 +21,7 @@ import { RequireCapability } from "@/components/RequireCapability";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 import { applyTestDataFilter } from "@/lib/test-data";
 import { useRole } from "@/hooks/useRole";
-import { LabelChip, useLabelList } from "@/components/property/PropertyLabels";
+import { useLabelList } from "@/components/property/PropertyLabels";
 import {
   canAddHome,
   departmentFor,
@@ -144,16 +146,11 @@ function PropertiesPage() {
         carried: data.carriedByHome.get(p.id) ?? 0,
         activeOwner: data.activeOwner.has(p.id),
         labels,
+        totalTickets: all.length,
+        photo: homePhotoUrl(p),
         title: label.primary,
         place: [p.city, p.state].filter(Boolean).join(", ") || p.market || "",
-        line: [
-          p.bedrooms == null ? null : `${p.bedrooms} bd`,
-          p.bathrooms == null ? null : `${p.bathrooms} ba`,
-          p.max_guests == null ? null : `sleeps ${p.max_guests}`,
-          p.neighborhood,
-        ]
-          .filter(Boolean)
-          .join(" · "),
+        line: homeFactsLine(p),
         // Searchable identity only, never notes or anything that could carry a code.
         searchText: [
           label.primary,
@@ -365,36 +362,40 @@ function PropertiesPage() {
           {visible.map((h) => {
             const toOnboarding = department === "onboarding" && isOnboardingHome(h.lifecycle);
             return (
-              <div key={h.id} className="surface flex flex-col gap-2 p-5 shadow-card">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {bulkOpen ? (
-                    <Checkbox
-                      className="size-6"
-                      aria-label={`Pick ${h.title}`}
-                      checked={picked.has(h.id)}
-                      onCheckedChange={(v) =>
-                        setPicked((prev) => {
-                          const next = new Set(prev);
-                          if (v === true) next.add(h.id);
-                          else next.delete(h.id);
-                          return next;
-                        })
-                      }
-                    />
-                  ) : null}
-                  <StatusBadge tone={isOnboardingHome(h.lifecycle) ? "waiting" : "resolved"}>
-                    {stageLabel(h.lifecycle)}
-                  </StatusBadge>
-                  {h.activeOwner ? <StatusBadge tone="context">Active Owner</StatusBadge> : null}
-                  {h.carried > 0 ? <StatusBadge tone="waiting">{h.carried} carried over</StatusBadge> : null}
-                  {h.openTickets > 0 ? (
-                    <StatusBadge tone="escalated">
-                      {h.openTickets} open ticket{h.openTickets === 1 ? "" : "s"}
-                    </StatusBadge>
-                  ) : null}
-                </div>
-                <p className="text-base font-semibold leading-snug">
-                  {toOnboarding ? (
+              <PropertyListCard
+                key={h.id}
+                address={h.title}
+                photoUrl={h.photo}
+                stage={stageLabel(h.lifecycle)}
+                onboarding={isOnboardingHome(h.lifecycle)}
+                place={h.place}
+                facts={h.line}
+                activeOwner={h.activeOwner}
+                labels={h.labels}
+                carried={h.carried}
+                openTickets={h.openTickets}
+                totalTickets={h.totalTickets}
+                picker={
+                  bulkOpen ? (
+                    <span className="inline-flex rounded-md bg-card p-1 shadow-sm">
+                      <Checkbox
+                        className="size-6"
+                        aria-label={`Pick ${h.title}`}
+                        checked={picked.has(h.id)}
+                        onCheckedChange={(v) =>
+                          setPicked((prev) => {
+                            const next = new Set(prev);
+                            if (v === true) next.add(h.id);
+                            else next.delete(h.id);
+                            return next;
+                          })
+                        }
+                      />
+                    </span>
+                  ) : null
+                }
+                title={
+                  toOnboarding ? (
                     <Link
                       to="/onboarding/$propertyId"
                       params={{ propertyId: h.id }}
@@ -411,18 +412,9 @@ function PropertiesPage() {
                     >
                       {h.title}
                     </Link>
-                  )}
-                </p>
-                {h.place ? <p className="text-sm text-muted-foreground">{h.place}</p> : null}
-                {h.line ? <p className="text-sm text-muted-foreground">{h.line}</p> : null}
-                {h.labels.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5">
-                    {h.labels.map((l) => (
-                      <LabelChip key={l.id} name={l.name} />
-                    ))}
-                  </div>
-                ) : null}
-              </div>
+                  )
+                }
+              />
             );
           })}
         </div>

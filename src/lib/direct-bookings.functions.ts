@@ -36,6 +36,7 @@ import {
   DB_COPY,
   type HomeBookingRow,
   type HomeCandidate,
+  searchFailureMessage,
 } from "./direct-bookings";
 
 type Client = SupabaseClient<Database>;
@@ -483,6 +484,7 @@ export const searchDirectBookingHomes = createServerFn({ method: "POST" })
             link: h.bookingUrl,
             lat: h.lat,
             lng: h.lng,
+            photo: h.imageUrl ?? null,
             bedrooms: h.bedrooms,
             bathrooms: h.bathrooms,
             distanceMiles: Math.round(h.distanceMiles * 10) / 10,
@@ -495,7 +497,7 @@ export const searchDirectBookingHomes = createServerFn({ method: "POST" })
       };
     } catch (err) {
       console.error("Direct booking search failed:", err);
-      return { ok: false as const, message: "We could not check calendars. Try again." };
+      return { ok: false as const, message: searchFailureMessage(err) };
     }
   });
 

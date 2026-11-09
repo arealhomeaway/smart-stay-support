@@ -171,11 +171,17 @@ export function PageHero({
   actions,
   aside,
   className,
+  imageCaption,
+  onImageError,
 }: {
   /** Optional right-hand panel; stacks below the text on smaller screens. */
   aside?: ReactNode | undefined;
   /** A real ARHA property photograph. */
   image?: string | undefined;
+  /** Optional small caption naming the home in the photograph. */
+  imageCaption?: string | undefined;
+  /** Called when the photograph does not load, so the page can fall back. */
+  onImageError?: (() => void) | undefined;
   eyebrow?: string | undefined;
   title: ReactNode;
   description?: ReactNode | undefined;
@@ -191,9 +197,14 @@ export function PageHero({
     >
       {image ? (
         <div className="absolute inset-0">
-          <img src={image} alt="" aria-hidden="true" className="size-full object-cover" />
+          <img src={image} alt="" aria-hidden="true" className="size-full object-cover" onError={onImageError} />
           <div className="absolute inset-0 bg-gradient-to-r from-plate/85 via-plate/60 to-plate/10" />
         </div>
+      ) : null}
+      {image && imageCaption ? (
+        <p data-part="photo-caption" className="absolute bottom-2 right-3 z-10 max-w-[70%] truncate text-xs text-white/80">
+          {imageCaption}
+        </p>
       ) : null}
       <div
         className={cn(

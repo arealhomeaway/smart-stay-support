@@ -598,7 +598,7 @@ export function homeLines(homes: QuoteHome[], addressGiven = false) {
 
 export function replyIntro(count: number) {
   return count === 1
-    ? "Upon reviewing our inventory, we only have this home available as an option."
+    ? "This is the best option we have for you right now. If you would like the chance to view more homes, please let us know."
     : "Here are the homes we can offer:";
 }
 
@@ -689,7 +689,30 @@ export const DB_COPY = {
   suggestion: "The partner's reply sounds like an approval.",
   suggestionYes: "Yes, move it to Approved",
   activeOwnerRefused: "A home you picked is in the Active Owner program and cannot be offered. Remove it and pick another home.",
+  whereLabel: "City, ZIP or street address",
+  wherePlaceholder: "For example: Broken Arrow, 74012, or 815 E Fulton St",
+  whereHelp: "We find the homes closest to this place. If you fill in Near this address, we use that instead.",
+  placeNotFound: "We could not locate that place. Try a fuller address or ZIP code.",
+  placeSearchBusy: "The place search is busy. Try again in a minute.",
+  calendarFailed: "We could not check calendars. Try again.",
+  noReferralSource: "Choose the referral source so the fees are included before you send.",
 } as const;
+
+/**
+ * The home search's failure line. A place that cannot be read and a busy place
+ * search say so; the calendar message is kept for everything else.
+ */
+export function searchFailureMessage(err: unknown): string {
+  const message = err instanceof Error ? err.message : String(err ?? "");
+  if (message === DB_COPY.placeNotFound) return DB_COPY.placeNotFound;
+  if (/quota reached|OVER_QUERY_LIMIT|\[429\]/i.test(message)) return DB_COPY.placeSearchBusy;
+  return DB_COPY.calendarFailed;
+}
+
+/** Shown on the reply step and to the approver while no referral source is chosen. Never blocks sending. */
+export function referralSourceWarning(inquirySourceId: string | null | undefined): string | null {
+  return inquirySourceId ? null : DB_COPY.noReferralSource;
+}
 
 /** Words never shown on any Direct Bookings screen. */
 export const BANNED_SCREEN_WORDS = [/\bseat\b/i, /\bhit\b/i, /\bmedian\b/i];

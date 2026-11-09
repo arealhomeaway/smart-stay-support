@@ -29,8 +29,9 @@ const allPaths = (groups: MenuGroup[]) => groups.flatMap((g) => g.items.map((i) 
 describe("who sees what", () => {
   it("a Property Coordinator", () => {
     expect(shape(operationsMenu(accessFor(["tech"])))).toEqual([
-      // Databases (Nov 8, register M1, M2): right after Vendors; Guest Claims & Refunds hidden behind its switch.
-      ["My day", ["Home", "Team Queue", "Direct Bookings", "Vendors", "Databases"]],
+      // Databases (Nov 8, register M1, M2); Guest Claims & Refunds hidden behind its switch.
+      // Vendors left the menu (Nov 9, register M1): it opens from the Databases card.
+      ["My day", ["Home", "Team Queue", "Direct Bookings", "Databases"]],
       // Fix batch 2 (Nov 8): coordinators open the Team group read only.
       ["Team", ["Team & Coverage", "Playbooks"]],
       ["Homes and owners", ["Properties"]],
@@ -39,7 +40,7 @@ describe("who sees what", () => {
 
   it("a Supervisor", () => {
     expect(shape(operationsMenu(accessFor(["manager"])))).toEqual([
-      ["My day", ["Home", "Team Queue", "Direct Bookings", "Vendors", "Databases", "Oversight"]],
+      ["My day", ["Home", "Team Queue", "Direct Bookings", "Databases", "Oversight"]],
       ["Team", ["Team & Coverage", "Playbooks"]],
       ["Homes and owners", ["Properties", "Onboarding", "Active Owner"]],
       ["Insight", ["Analytics"]],
@@ -50,7 +51,7 @@ describe("who sees what", () => {
 
   it("an Admin", () => {
     expect(shape(operationsMenu(accessFor(["admin"])))).toEqual([
-      ["My day", ["Home", "Team Queue", "Direct Bookings", "Vendors", "Databases", "Oversight"]],
+      ["My day", ["Home", "Team Queue", "Direct Bookings", "Databases", "Oversight"]],
       ["Team", ["Team & Coverage", "Playbooks"]],
       ["Homes and owners", ["Properties", "Onboarding", "Active Owner"]],
       ["Insight", ["Analytics"]],
@@ -117,13 +118,19 @@ describe("removed from the menu, pages kept", () => {
 });
 
 describe("Vendors and Work Orders", () => {
-  it("Vendors is in My day for anyone who can open /vendors, with Work Orders hidden", () => {
+  it("Vendors is in no left menu (Nov 9, register M1), Work Orders hidden, and the page still opens by address", () => {
     for (const roles of [["tech"], ["manager"], ["admin"]] as AppRole[][]) {
+      const menu = operationsMenu(accessFor(roles, ["work_orders_page", "quarterly_reviews", "claims_menu"]));
+      expect(allPaths(menu)).not.toContain("/vendors");
+      expect(menu.flatMap((g) => [g.label, ...g.items.map((i) => i.label)])).not.toContain("Vendors");
       const myDay = operationsMenu(accessFor(roles)).find((g) => g.label === "My day")!;
-      expect(myDay.items.find((i) => i.label === "Vendors")?.to).toBe("/vendors");
       expect(myDay.items.map((i) => i.to)).not.toContain("/work-orders");
+      expect(canOpenPath("/vendors", { roles })).toBe(true);
     }
     expect(allPaths(operationsMenu(accessFor(["onboarding"])))).not.toContain("/vendors");
+    const onb = onboardingOnlyMenu(accessFor(["onboarding"], ["work_orders_page"]));
+    expect(allPaths(onb)).not.toContain("/vendors");
+    expect(onb.map((g) => g.label)).not.toContain("Vendors");
   });
 
   it("the Work Orders tab is gone from the Vendors tab bar while the switch is off", () => {
@@ -135,10 +142,10 @@ describe("Vendors and Work Orders", () => {
     ]);
   });
 
-  it("turning work_orders_page on brings Work Orders back to the menu after Vendors", () => {
+  it("turning work_orders_page on brings Work Orders back to the menu after Direct Bookings", () => {
     const myDay = operationsMenu(accessFor(["tech"], ["work_orders_page"])).find((g) => g.label === "My day")!;
     const labels = myDay.items.map((i) => i.label);
-    expect(labels.indexOf("Work Orders")).toBe(labels.indexOf("Vendors") + 1);
+    expect(labels.indexOf("Work Orders")).toBe(labels.indexOf("Direct Bookings") + 1);
   });
 
   it("the Work Map tab on Properties waits behind work_map", () => {
