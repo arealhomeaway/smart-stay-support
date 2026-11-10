@@ -157,7 +157,7 @@ export function RecoveryRowCard({
             <Chip className={stateChip(stageState(recovery.stage))}>
               {RECOVERY_STAGE_LABELS[recovery.stage]}
             </Chip>
-            <Chip>{recovery.priority.toUpperCase()}</Chip>
+            <Chip>{priorityMeta(recovery.priority).short}</Chip>
             {recovery.recovery_action ? (
               <Chip>{RECOVERY_ACTION_LABELS[recovery.recovery_action]}</Chip>
             ) : null}

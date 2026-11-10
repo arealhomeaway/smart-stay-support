@@ -219,7 +219,7 @@ export function categoryForTrade(raw: string | null | undefined): CategoryCode |
  */
 export const FIELD_GUIDANCE: Record<string, string> = {
   "ticket.category": "What kind of work this is. Pick the home's problem, not who will fix it.",
-  "ticket.priority": "P1 urgent and unsafe, P2 same day, P3 planned. Supervisors set this.",
+  "ticket.priority": "Right now: urgent or unsafe. Today: same day. Routine: planned. Supervisors set this.",
   "workOrder.trade": "The skill the vendor needs. The category is set from this for you.",
   "workOrder.category": "Set from the trade. Shown so tickets and Work Orders read the same.",
   "workOrder.phase": "Permanent fixes the problem. Mitigation only stops it getting worse.",

@@ -180,7 +180,7 @@ function IntegrationsPage() {
                 <span className="text-muted-foreground">
                   {(t.properties as { name: string } | null)?.name ?? "No home linked"}
                 </span>
-                <StatusBadge tone="closed">{t.priority?.toUpperCase()}</StatusBadge>
+                <StatusBadge tone="closed">{t.priority ? priorityMeta(t.priority).short : ""}</StatusBadge>
                 <span className="text-muted-foreground">{t.external_status ? notionStatusLabel(t.external_status) : t.status}</span>
                 <span className="ml-auto text-xs text-muted-foreground">
                   synced {timeAgo(t.external_synced_at)}

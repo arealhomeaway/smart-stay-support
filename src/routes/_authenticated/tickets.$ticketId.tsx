@@ -1074,7 +1074,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             meta.summary,
             ...(sla.escalation
               ? [
-                  `P1 escalated to ${sla.escalation.who} · ${sla.escalation.minutes} minutes with no action started.`,
+                  `Right now ticket escalated to ${sla.escalation.who} · ${sla.escalation.minutes} minutes with no action started.`,
                 ]
               : []),
             ...(requiredOpen.length > 0
@@ -1330,7 +1330,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
           <div className="flex items-start gap-3 rounded-lg border border-danger/40 bg-danger/10 p-4">
             <BellRing className="mt-0.5 size-5 shrink-0 text-danger" />
             <div>
-              <p className="font-medium text-danger">P1 escalated: {sla.escalation.who}</p>
+              <p className="font-medium text-danger">Right now ticket escalated: {sla.escalation.who}</p>
               <p className="text-sm text-muted-foreground">
                 {sla.escalation.minutes} minutes since this came in with no action started.
               </p>

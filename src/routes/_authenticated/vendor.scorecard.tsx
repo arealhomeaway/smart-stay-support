@@ -152,7 +152,7 @@ function Scorecard() {
           <p>Thoroughness moves your score the most, then communication and timeliness.</p>
           <p>
             +10 for complete photo evidence, +8 for finishing inside the window, +6 for taking
-            urgent P1 work.
+            urgent Right now work.
           </p>
           <p>−20 if we have to send you back for the same issue.</p>
         </div>

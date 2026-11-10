@@ -295,9 +295,9 @@ function DryRunCard({ d }: { d: NonNullable<NotionImportView["dryRun"]> }) {
       </dl>
       <h3 className="mb-2 mt-4 text-sm font-semibold">Priority</h3>
       <dl className="grid grid-cols-3 gap-3">
-        {tile("P1 (Urgent)", d.priority.p1)}
-        {tile("P2 (High)", d.priority.p2)}
-        {tile("P3 (Medium, Low or blank)", d.priority.p3)}
+        {tile("Right now (Notion Urgent)", d.priority.p1)}
+        {tile("Today (Notion High)", d.priority.p2)}
+        {tile("Routine (Notion Medium, Low or blank)", d.priority.p3)}
       </dl>
       <h3 className="mb-2 mt-4 text-sm font-semibold">Open, past 30 days: Team Queue groups</h3>
       <dl className="grid grid-cols-3 gap-3">

@@ -178,7 +178,7 @@ export function RecoveryDrawer({
             <Chip className={stateChip(stageState(recovery.stage))}>
               {RECOVERY_STAGE_LABELS[recovery.stage]}
             </Chip>
-            <Chip>{recovery.priority.toUpperCase()}</Chip>
+            <Chip>{priorityMeta(recovery.priority).short}</Chip>
             <Chip>{APPROVAL_STATUS_LABELS[recovery.approval_status]}</Chip>
             <span className="text-xs text-muted-foreground">
               {propertyName} · {recovery.guest_name ?? "Guest unrecorded"} · owned by{" "}

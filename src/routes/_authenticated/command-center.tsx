@@ -159,9 +159,9 @@ function CommandCenter() {
               onChange={(v) => setPriority(v as "p1" | "p2" | "p3" | null)}
               placeholder="All priorities"
               options={[
-                { value: "p1", label: "P1" },
-                { value: "p2", label: "P2" },
-                { value: "p3", label: "P3" },
+                { value: "p1", label: "Right now" },
+                { value: "p2", label: "Today" },
+                { value: "p3", label: "Routine" },
               ]}
             />
           </Filter>

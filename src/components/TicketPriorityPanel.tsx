@@ -77,7 +77,7 @@ export function TicketPriorityPanel({
           <p className="text-xs text-muted-foreground">
             {calculated
               ? differs
-                ? `Calculated as ${calculated.toUpperCase()} and changed by a supervisor.`
+                ? `Calculated as ${priorityMeta(calculated).short} and changed by a supervisor.`
                 : "Matches the calculated priority."
               : "Set when this ticket was opened."}
           </p>

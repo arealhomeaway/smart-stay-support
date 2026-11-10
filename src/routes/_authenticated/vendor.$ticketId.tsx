@@ -209,7 +209,7 @@ function VendorJob() {
                 ticket.priority === "p1" ? "border-danger/40 bg-danger/10 text-danger" : undefined
               }
             >
-              {(ticket.priority ?? "").toUpperCase()}
+              {ticket.priority ? priorityMeta(ticket.priority).short : ""}
             </Chip>
             <Chip>{(ticket.category ?? "").replace(/_/g, " ")}</Chip>
             <StatusBadge tone={state.tone}>{state.label}</StatusBadge>

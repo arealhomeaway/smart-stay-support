@@ -50,8 +50,8 @@ export const PRIORITIES = [
   {
     value: "p1",
     name: URGENCY_NAMES.p1,
-    label: `${URGENCY_NAMES.p1} (P1)`,
-    short: "P1",
+    label: URGENCY_NAMES.p1,
+    short: URGENCY_NAMES.p1,
     responseMinutes: 3,
     actionMinutes: 5,
     summary:
@@ -60,8 +60,8 @@ export const PRIORITIES = [
   {
     value: "p2",
     name: URGENCY_NAMES.p2,
-    label: `${URGENCY_NAMES.p2} (P2)`,
-    short: "P2",
+    label: URGENCY_NAMES.p2,
+    short: URGENCY_NAMES.p2,
     responseMinutes: 30,
     actionMinutes: 60,
     summary:
@@ -70,8 +70,8 @@ export const PRIORITIES = [
   {
     value: "p3",
     name: URGENCY_NAMES.p3,
-    label: `${URGENCY_NAMES.p3} (P3)`,
-    short: "P3",
+    label: URGENCY_NAMES.p3,
+    short: URGENCY_NAMES.p3,
     responseMinutes: 120,
     actionMinutes: 480,
     summary:

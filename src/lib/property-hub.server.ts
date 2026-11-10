@@ -690,7 +690,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
       alerts.push({
         id: "p1",
         tone: "danger",
-        text: `${p1} open P1 ticket${p1 === 1 ? "" : "s"} on this home.`,
+        text: `${p1} open Right now ticket${p1 === 1 ? "" : "s"} on this home.`,
       });
     if (blocked.length > 0)
       alerts.push({

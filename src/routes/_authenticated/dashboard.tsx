@@ -424,9 +424,9 @@ function NeedsYouNow({ rows, userId, originSearch }: { rows: Row[]; userId: stri
 
 const PRIORITY_OPTIONS = [
   { value: "all", label: "All" },
-  { value: "p1", label: "P1" },
-  { value: "p2", label: "P2" },
-  { value: "p3", label: "P3" },
+  { value: "p1", label: "Right now" },
+  { value: "p2", label: "Today" },
+  { value: "p3", label: "Routine" },
 ];
 
 /** My work: Active, Waiting and Done recently, with search, priority and List or Board. */

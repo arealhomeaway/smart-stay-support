@@ -604,7 +604,7 @@ export const notionImportSample = createServerFn({ method: "POST" })
             notionAssignee: out.notionAssignee ? cleanNotionText(out.notionAssignee) : "Blank",
             assignee: t.assigned_to ? (base.staffNames.get(t.assigned_to) ?? "Staff member") : "Unassigned",
             team: out.teamGroup ? TEAM_LABEL[out.teamGroup] : "Not in the queue",
-            priority: t.priority.toUpperCase(),
+            priority: priorityMeta(t.priority).short,
             claim: !t.claim ? "No claim" : t.waiting_reason === "claim review" ? "Claim review" : CLAIM_STAGE_LABELS[t.claim.stage],
             home: t.property_id ? (base.propertyLabels.get(t.property_id) ?? "Home") : "Needs a home",
             comments: firstLines,

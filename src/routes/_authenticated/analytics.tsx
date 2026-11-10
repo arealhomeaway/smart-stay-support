@@ -525,7 +525,7 @@ function Analytics() {
     .map((b) => ({
       label: b.label,
       count: b.count,
-      sub: `${b.count} tickets${b.p1 ? ` · ${b.p1} P1` : ""}${b.reopens ? ` · ${b.reopens} reopened` : ""}`,
+      sub: `${b.count} tickets${b.p1 ? ` · ${b.p1} Right now` : ""}${b.reopens ? ` · ${b.reopens} reopened` : ""}`,
     }));
 
   const primaryKpis = kpis.slice(0, 4);
@@ -682,7 +682,7 @@ function Analytics() {
                       <p className="text-xs text-muted-foreground">{r.category}</p>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
-                      {r.p1 > 0 && <Badge variant="destructive">{r.p1} P1</Badge>}
+                      {r.p1 > 0 && <Badge variant="destructive">{r.p1} Right now</Badge>}
                       {r.reopens > 0 && <Badge variant="outline">{r.reopens} reopened</Badge>}
                       <span className="numeric text-lg font-semibold">{r.count}×</span>
                     </div>
@@ -807,7 +807,7 @@ function Analytics() {
       <div>
         <SectionBand
           title="Homes costing us the most"
-          hint="Ranked by weight, not raw count. A P1 and a reopen count for more than a routine request"
+          hint="Ranked by weight, not raw count. A Right now ticket and a reopen count for more than a routine request"
         />
         <div className="surface p-4">
           <Bars rows={byProperty} empty="Nothing logged in this window yet." />

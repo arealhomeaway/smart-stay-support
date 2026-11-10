@@ -506,7 +506,7 @@ export const SEED_TEMPLATES: ChecklistTemplate[] = [
       {
         key: "double",
         label: "9",
-        question: "Double booking (P1). Which stay keeps the home?",
+        question: "Double booking (Right now). Which stay keeps the home?",
         help: "Relocation needs the Director regardless of cost.",
         options: [
           { value: "decided", label: "Decided" },

@@ -314,7 +314,7 @@ export function HandoffPanel({
           >
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline" className={priorityTone(h.priority)}>
-                {h.priority.toUpperCase()}
+                {priorityMeta(h.priority).short}
               </Badge>
               <span className="text-sm font-medium">
                 Pending acceptance · {roleName(h.to_role_code)}
@@ -347,7 +347,7 @@ export function HandoffPanel({
             </div>
             {h.priority === "p1" && (
               <p className="flex items-center gap-2 text-xs font-medium text-danger">
-                <ShieldAlert className="size-3.5" /> Unaccepted P1 reassignment. The Operations
+                <ShieldAlert className="size-3.5" /> Unaccepted Right now reassignment. The Operations
                 Supervisor is notified.
               </p>
             )}

@@ -119,8 +119,8 @@ export type SupervisorTrigger =
   | "reopened_issue";
 
 export const SUPERVISOR_TRIGGER_REASONS: Record<SupervisorTrigger, string> = {
-  p1_unaccepted: `Supervisor escalation required: a P1 has not been accepted within ${RECOVERY_POLICY.p1UnacceptedMinutes} minutes.`,
-  p2_no_plan: `Supervisor escalation required: a P2 has no credible action plan after ${RECOVERY_POLICY.p2NoPlanMinutes} minutes.`,
+  p1_unaccepted: `Supervisor escalation required: a Right now ticket has not been accepted within ${RECOVERY_POLICY.p1UnacceptedMinutes} minutes.`,
+  p2_no_plan: `Supervisor escalation required: a Today ticket has no credible action plan after ${RECOVERY_POLICY.p2NoPlanMinutes} minutes.`,
   guest_asked_supervisor: "Supervisor escalation required: the guest has asked for a supervisor.",
   resolution_attempt_failed:
     "Supervisor escalation required because the guest remains dissatisfied after one reasonable resolution attempt.",

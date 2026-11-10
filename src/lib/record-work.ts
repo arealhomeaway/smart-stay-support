@@ -139,10 +139,10 @@ export function understandRecordWork<W extends ProblemType>(input: {
   };
 }
 
-/** Right now (P1), Today (P2), Routine (P3). */
+/** Right now, Today, Routine (the codes p1, p2, p3 stay internal). */
 export function urgencyWords(priority: string): string {
   const key = (["p1", "p2", "p3"].includes(priority) ? priority : "p3") as keyof typeof URGENCY_NAMES;
-  return `${URGENCY_NAMES[key]} (${key.toUpperCase()})`;
+  return URGENCY_NAMES[key];
 }
 
 export type RoutePreview = { who_kind: string | null; role_name?: string | null } | null | undefined;

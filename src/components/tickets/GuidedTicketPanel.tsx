@@ -446,7 +446,7 @@ export function GuidedTicketPanel({
                   chooseVendor(
                     { selected_vendor_org_id: v.id },
                     v.emergency_only
-                      ? `Emergency Only vendor chosen on a P1 Ticket: ${v.display_name}.`
+                      ? `Emergency Only vendor chosen on a Right now Ticket: ${v.display_name}.`
                       : `Vendor chosen from the Directory: ${v.display_name}.`,
                     { id: v.id, name: v.display_name },
                   );

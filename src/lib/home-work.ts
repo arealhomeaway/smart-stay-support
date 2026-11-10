@@ -114,7 +114,7 @@ export function boardColumnOf(t: HomeTicket, tab: HomeTab, now: number = Date.no
 
 /** How urgent, in plain words: priority plus the live clock. Quiet imports have no clock. */
 export function urgencyLabel(t: HomeTicket, now: number = Date.now()): string {
-  const p = (t.priority ?? "p3").toUpperCase();
+  const p = priorityMeta(t.priority ?? "p3").short;
   if (isClosed(t.status) || isQuietNotion(t, now)) return p;
   const sla = slaState(t);
   if (sla.escalation) return `${p} · Escalated`;

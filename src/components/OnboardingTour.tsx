@@ -35,7 +35,7 @@ const steps: TourStep[] = [
     target: '[data-tour="tickets"]',
     route: "/tickets",
     title: "Tickets",
-    body: "The working queue. Priority (P1 to P3) and the response clock decide what you touch next. The property decides which pod owns it.",
+    body: "The working queue. Urgency (Right now, Today, Routine) and the response clock decide what you touch next. The property decides which pod owns it.",
   },
   {
     target: '[data-tour="playbooks"]',

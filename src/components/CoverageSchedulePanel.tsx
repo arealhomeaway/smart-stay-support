@@ -835,7 +835,7 @@ function OnCallCard({
         <CardDescription>
           One named person per date, held in Central time. Inside the after-hours window the
           rostered person is the active escalation owner and takes precedence over normal routing;
-          priority is still judged on impact, so overnight is never automatically P1.
+          priority is still judged on impact, so overnight is never automatically Right now.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">

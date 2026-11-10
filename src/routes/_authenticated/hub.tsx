@@ -69,7 +69,7 @@ function Hub() {
     if (id !== "operations" || !attention) return undefined;
     if (attention.open === 0) return "Nothing open right now.";
     return `${attention.open} open ${attention.open === 1 ? "ticket" : "tickets"}${
-      attention.urgent ? ` · ${attention.urgent} at P1` : ""
+      attention.urgent ? ` · ${attention.urgent} Right now` : ""
     }`;
   }
 

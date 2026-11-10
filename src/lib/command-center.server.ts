@@ -254,7 +254,7 @@ export async function loadCommandCenter(
             .filter((t) => t.acknowledged_at)
             .map((t) => minutes(t.reported_at, t.acknowledged_at!)),
         ),
-        target: "P1 ≤ 3 min",
+        target: "Right now: 3 min or less",
         status: grade(median(ackMinutes), { good: 15, warn: 45, higherIsBetter: false }),
         denominator: `${ackMinutes.length} acknowledged tickets`,
         drill: { to: "/analytics", label: "SLA detail" },

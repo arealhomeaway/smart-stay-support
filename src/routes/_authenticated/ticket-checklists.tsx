@@ -163,7 +163,7 @@ function TicketChecklistsPage() {
                 </div>
               </div>
             )}
-            {draft.priority && <p className="text-sm text-muted-foreground">Starting priority: {draft.priority.activeGuest.toUpperCase()} with a guest in the home or arriving within 48 hours, otherwise {draft.priority.otherwise.toUpperCase()}.</p>}
+            {draft.priority && <p className="text-sm text-muted-foreground">Starting urgency: {priorityMeta(draft.priority.activeGuest).short} with a guest in the home or arriving within 48 hours, otherwise {priorityMeta(draft.priority.otherwise).short}.</p>}
 
             {draft.steps.map((s, i) => (
               <StepEditor

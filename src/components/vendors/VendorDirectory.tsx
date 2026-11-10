@@ -248,7 +248,7 @@ export function VendorDirectory({
       {emergencyHidden > 0 && canRevealEmergency(ticketPriority, canOverrideEmergency) && (
         <div className="flex flex-wrap items-center gap-2 rounded-md border border-border p-2 text-sm">
           <span className="text-muted-foreground">
-            {emergencyHidden} Emergency Only vendor{emergencyHidden === 1 ? "" : "s"} hidden for a {String(ticketPriority).toUpperCase()} Ticket.
+            {emergencyHidden} Emergency Only vendor{emergencyHidden === 1 ? "" : "s"} hidden for a {priorityMeta(String(ticketPriority)).short} Ticket.
             {ticketPriority === "p2" ? " Use only when no routine vendor is available, after hours, or with Supervisor approval." : " A Supervisor override is required."}
           </span>
           <Button size="sm" variant="outline" onClick={() => setShowEmergency(true)}>Show Emergency Only vendors</Button>

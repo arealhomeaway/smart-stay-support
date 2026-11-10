@@ -331,7 +331,7 @@ function FilterPopover({
 }) {
   const activeCount = (priority !== "all" ? 1 : 0) + (search.trim() ? 1 : 0);
   const summary = [
-    priority !== "all" ? priority.toUpperCase() : null,
+    priority !== "all" ? priorityMeta(priority).short : null,
     search.trim() ? `"${search.trim()}"` : null,
   ]
     .filter(Boolean)

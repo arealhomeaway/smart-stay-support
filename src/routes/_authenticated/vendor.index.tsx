@@ -135,7 +135,7 @@ function VendorQueue() {
                           : undefined
                       }
                     >
-                      {(job.priority ?? "").toUpperCase()}
+                      {job.priority ? priorityMeta(job.priority).short : ""}
                     </Chip>
                     <span className="numeric text-xs text-muted-foreground">#{job.ref}</span>
                     <span className="font-medium">{job.title}</span>

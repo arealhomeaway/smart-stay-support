@@ -499,7 +499,7 @@ export function WorkOrderDrawer({
             {STAGE_LABELS[derivedStage(workOrder)]}
           </StatusBadge>
           <Chip>{PHASE_LABELS[workOrder.phase]}</Chip>
-          <Chip>{workOrder.priority.toUpperCase()}</Chip>
+          <Chip>{priorityMeta(workOrder.priority).short}</Chip>
           <Chip>{approvalChipLabel(workOrder, verdict)}</Chip>
           <span className="text-xs text-muted-foreground">
             owned by {owner ? displayName(people.find((p) => p.id === owner)) : "nobody yet"}
