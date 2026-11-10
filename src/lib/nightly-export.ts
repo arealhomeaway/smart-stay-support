@@ -181,6 +181,9 @@ export function buildExportManifest(m: Omit<ExportManifest, "table_count" | "tot
 /* Verify                                                                     */
 /* ------------------------------------------------------------------------- */
 
+/** How a SharePoint listing is keyed: "tables/<file>" inside the tables folder, "<file>" at the top. */
+export const remoteKey = (folder: string, name: string) => (folder ? `${folder}/${name}` : name);
+
 export type VerifyState = "ok" | "grew" | "fewer" | "gone" | "broken";
 export type ExportVerifyLine = { table: string; saved: number; live: number | null; state: VerifyState; reason?: string };
 export type ExportVerify = {
@@ -226,14 +229,14 @@ export function verifyExport(input: {
   const missing = input.tablesAtStart.filter((t) => !saved.has(t)).sort();
   for (const t of missing) reasons.push(`Table ${t} is missing from the export.`);
 
-  const sizeOk = (f: ExportFile, folder: string) => input.remoteSizes[`${folder}/${f.name}`] === f.bytes;
+  const sizeOk = (f: ExportFile, folder: string) => input.remoteSizes[remoteKey(folder, f.name)] === f.bytes;
   let added = 0;
   const lines: ExportVerifyLine[] = m.tables.map((t) => {
     const bad = t.files.find((f) => !sizeOk(f, TABLES_FOLDER));
     const live = input.live[t.table] ?? null;
     if (bad) {
       const reason =
-        input.remoteSizes[`${TABLES_FOLDER}/${bad.name}`] === undefined
+        input.remoteSizes[remoteKey(TABLES_FOLDER, bad.name)] === undefined
           ? `File ${bad.name} is missing in SharePoint.`
           : `File ${bad.name} in SharePoint is not the size that was written.`;
       reasons.push(reason);
