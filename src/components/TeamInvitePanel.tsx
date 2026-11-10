@@ -30,7 +30,7 @@ type InviteRole = "admin" | "manager" | "onboarding" | "tech" | "vendor" | "owne
 const ROLE_LABEL: Record<InviteRole, string> = {
   admin: "Admin: everything, including roles and settings",
   manager: "Supervisor: oversight, analytics and handoff review",
-  onboarding: "Onboarding staff: pre-handoff work and readiness",
+  onboarding: "Onboarding staff: work and readiness before handoff",
   tech: "Staff: their own assigned work",
   vendor: "Vendor: only their dispatched Work Orders",
   owner: "Homeowner: their own enrolled home",
