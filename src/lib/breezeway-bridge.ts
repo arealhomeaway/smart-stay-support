@@ -41,10 +41,15 @@ export function taskStatusName(raw: BridgeRawTask): string | null {
   return raw.type_task_status?.name ?? raw.type_task_status?.code ?? null;
 }
 
+/** Finished in Breezeway: the finished stage (Finished, Approved, Closed all sit in it). */
+export function isFinishedState(stage: string | null | undefined, status: string | null | undefined): boolean {
+  const st = (stage ?? "").toLowerCase();
+  const name = (status ?? "").toLowerCase();
+  return st === "finished" || ["finished", "approved", "closed"].includes(name);
+}
+
 function stageIsFinished(raw: BridgeRawTask): boolean {
-  const stage = (raw.type_task_status?.stage ?? "").toLowerCase();
-  const name = (taskStatusName(raw) ?? "").toLowerCase();
-  return stage === "finished" || ["finished", "approved", "closed"].includes(name);
+  return isFinishedState(raw.type_task_status?.stage, taskStatusName(raw));
 }
 
 /** Every tag name on a task: `tags` (strings) and `task_tags` ({ id, name }). */
@@ -87,20 +92,46 @@ export function bridgeMirrorFields(
   const finished_at = stageIsFinished(raw)
     ? (finishedFromApi ?? priorFinishedAt ?? nowIso)
     : (finishedFromApi ?? priorFinishedAt ?? null);
-  return {
-    tags: taskTagNames(raw),
-    created_by_id: raw.created_by?.id != null ? String(raw.created_by.id) : null,
-    created_by_name: raw.created_by?.name ?? null,
-    requested_by: typeof raw.requested_by === "string" ? raw.requested_by : null,
-    reported_issue: typeof raw.reported_issue === "boolean" ? raw.reported_issue : null,
-    report_url: typeof raw.report_url === "string" && raw.report_url.trim() ? raw.report_url.trim() : null,
-    finished_at,
-  };
+  // A field Breezeway did not send keeps what the mirror already has (older rows stay empty).
+  const has = (k: keyof BridgeRawTask) => Object.prototype.hasOwnProperty.call(raw, k);
+  const out: {
+    tags?: string[];
+    created_by_id?: string | null;
+    created_by_name?: string | null;
+    requested_by?: string | null;
+    reported_issue?: boolean | null;
+    report_url?: string | null;
+    finished_at: string | null;
+  } = { finished_at };
+  if (has("tags") || has("task_tags")) out.tags = taskTagNames(raw);
+  if (has("created_by")) {
+    out.created_by_id = raw.created_by?.id != null ? String(raw.created_by.id) : null;
+    out.created_by_name = raw.created_by?.name ?? null;
+  }
+  if (has("requested_by")) out.requested_by = typeof raw.requested_by === "string" ? raw.requested_by : null;
+  if (has("reported_issue")) out.reported_issue = typeof raw.reported_issue === "boolean" ? raw.reported_issue : null;
+  if (has("report_url")) {
+    out.report_url = typeof raw.report_url === "string" && raw.report_url.trim() ? raw.report_url.trim() : null;
+  }
+  return out;
 }
 
 /** A finished maintenance work order (lawn care is a maintenance department task). */
-export function isFinishedMaintenance(row: { department: string | null; status: string | null }): boolean {
-  return (row.department ?? "").toLowerCase() === "maintenance" && (row.status ?? "").toLowerCase() === "finished";
+export function isFinishedMaintenance(row: {
+  department: string | null;
+  status: string | null;
+  stage?: string | null;
+}): boolean {
+  return (row.department ?? "").toLowerCase() === "maintenance" && isFinishedState(row.stage, row.status);
+}
+
+/** The same check for a raw Breezeway task. */
+export function rawIsFinishedMaintenance(raw: BridgeRawTask): boolean {
+  return isFinishedMaintenance({
+    department: raw.type_department ?? null,
+    status: taskStatusName(raw),
+    stage: raw.type_task_status?.stage ?? null,
+  });
 }
 
 export const BRIDGE_REASONS = {
@@ -111,6 +142,20 @@ export const BRIDGE_REASONS = {
   hasTicket: "already has a ticket",
   reviewExists: "a review already exists",
 } as const;
+
+/**
+ * The time a task is checked against the start line: the event time (created for a reported
+ * issue, finished for maintenance), but never later than Breezeway's own last update. A task
+ * Breezeway last touched before the start line is older work even when Resolve first sees it
+ * now, so a late first look never makes a ticket or review for old work.
+ */
+export function bridgeEventTime(eventAt: string | null, breezewayUpdatedAt: string | null): string | null {
+  if (!eventAt) return null;
+  const e = Date.parse(eventAt);
+  const u = breezewayUpdatedAt ? Date.parse(breezewayUpdatedAt) : NaN;
+  if (!Number.isFinite(e)) return null;
+  return new Date(Number.isFinite(u) && u < e ? u : e).toISOString();
+}
 
 /** Same order as `private.breezeway_bridge_skip_reason`. Null means create. */
 export function bridgeSkipReason(input: {
@@ -170,11 +215,7 @@ export function sweepBridgeCandidate(raw: BridgeRawTask, startLine: string | nul
   const created = Date.parse(breezewayUtc(raw.created_at ?? null) ?? "");
   if (raw.reported_issue === true && Number.isFinite(created) && created >= line) return true;
   const finished = Date.parse(breezewayUtc(raw.finished_at ?? null) ?? "");
-  return (
-    isFinishedMaintenance({ department: raw.type_department ?? null, status: taskStatusName(raw) }) &&
-    Number.isFinite(finished) &&
-    finished >= line
-  );
+  return rawIsFinishedMaintenance(raw) && Number.isFinite(finished) && finished >= line;
 }
 
 /** One Breezeway work order as the ticket's Repair card shows it (mirror only). */

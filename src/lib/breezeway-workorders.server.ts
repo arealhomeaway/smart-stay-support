@@ -25,8 +25,9 @@ import {
 } from "./breezeway-workorders";
 import { BREEZEWAY_OUTBOUND_FLAG } from "./breezeway-outbound";
 import {
+  breezewayUtc,
   bridgeMirrorFields,
-  isFinishedMaintenance,
+  rawIsFinishedMaintenance,
   sweepBridgeCandidate,
   taskStatusName,
   type BridgeRawTask,
@@ -169,16 +170,11 @@ function mirrorRow(raw: RawTask, propertyId: string | null, priorFinishedAt: str
       status: a?.type_task_user_status ?? null,
     })),
     photo_count: Array.isArray(raw.photos) ? raw.photos.length : 0,
-    breezeway_created_at: normalizeDate(raw.created_at),
-    breezeway_updated_at: normalizeDate(raw.updated_at ?? raw.modified_at),
+    breezeway_created_at: breezewayUtc(raw.created_at),
+    breezeway_updated_at: breezewayUtc(raw.updated_at ?? raw.modified_at),
     last_synced_at: now,
-    tags: extra.tags,
-    created_by_id: extra.created_by_id,
-    created_by_name: extra.created_by_name,
-    requested_by: extra.requested_by,
-    reported_issue: extra.reported_issue,
-    report_url: extra.report_url,
-    ...(extra.finished_at ? { finished_at: extra.finished_at } : {}),
+    ...extra,
+    ...(extra.finished_at ? {} : { finished_at: undefined }),
   };
 }
 
@@ -259,7 +255,7 @@ export async function syncPropertyWorkOrders(
     isCurrentWorkOrder(t.type_task_status?.stage ?? null, t.type_task_status?.code ?? null),
   );
   for (const t of bridgeExtra) if (!tasks.some((x) => x.id === t.id)) tasks.push(t);
-  if (bridgeExtra.some((t) => isFinishedMaintenance({ department: t.type_department ?? null, status: taskStatusName(t) }))) {
+  if (bridgeExtra.some(rawIsFinishedMaintenance)) {
     await refreshHomeTags(gate.homeId as unknown as number);
   }
 
@@ -971,7 +967,7 @@ export async function refreshWorkOrder(
   if (
     property &&
     raw.home_id != null &&
-    isFinishedMaintenance({ department: raw.type_department ?? null, status: taskStatusName(raw) }) &&
+    rawIsFinishedMaintenance(raw) &&
     (await readBridgeGate()).on
   ) {
     await refreshHomeTags(raw.home_id);
