@@ -285,7 +285,14 @@ describe("the database step (docs/pending/home-my-shift)", () => {
 
 describe("wording", () => {
   it("no seat, no long dash, no names, roles only", () => {
-    const words = Object.values(MY_SHIFT_COPY).map((v) => (typeof v === "function" ? (v as (x: never) => string)(2 as never) : v));
+    const call = (f: (x: never) => string) => {
+      try {
+        return f(780 as never);
+      } catch {
+        return f("2026-11-16" as never);
+      }
+    };
+    const words = Object.values(MY_SHIFT_COPY).map((v) => (typeof v === "function" ? call(v as (x: never) => string) : v));
     for (const w of [...words, ...RECEIVER_ROLES.map((r) => r.label)]) {
       expect(w).not.toMatch(/\bseat\b/i);
       expect(w).not.toContain("—");
