@@ -62,15 +62,36 @@ export const readHandoffsOverview = createServerFn({ method: "GET" })
       }),
     );
 
+    // Build 9 F4: the Standard plan's handoff steps, matched to each home's own Tasks by step.
+    const { HANDOFF_PLAN_STAGES, handoffTaskLines } = await import("./handoffs-overview");
+    const { usDate } = await import("./dates");
+    const plan = await sb.from("onboarding_templates").select("id").eq("name", "ARHA Onboarding - Standard").maybeSingle();
+    const steps = plan.data
+      ? await sb
+          .from("onboarding_template_tasks")
+          .select("id, title, stage, sort_order")
+          .eq("template_id", plan.data.id)
+          .eq("is_active", true)
+          .in("stage", [...HANDOFF_PLAN_STAGES])
+      : { data: [], error: null };
+    const planSteps = steps.error ? [] : (steps.data ?? []);
+
     const rows = list.map((p, i) => {
       const h = homeById.get(p.property_id);
-      return handoffOverviewRow({
+      const row = handoffOverviewRow({
         project: p,
         home: formatPropertyLabel(h ?? null),
         lifecycleStatus: h?.lifecycle_status ?? null,
         readyBy: p.ready_for_ops_by ? (roleOf.get(p.ready_for_ops_by) ?? null) : null,
         standard: standards[i] ?? null,
       });
+      return {
+        ...row,
+        handoffTasks:
+          p.handoff_state === "accepted"
+            ? { tracked: true, open: [], notTracked: [] }
+            : handoffTaskLines(planSteps, standards[i]?.tasks ?? [], usDate),
+      };
     });
     const byId = new Map(list.map((p) => [p.id, p]));
     return { rows: sortHandoffs(handoffsShown(rows, (id) => byId.get(id))) };
