@@ -144,7 +144,7 @@ export function ticketCurrentAction(t: CurrentActionInput): CurrentAction | null
       id: "waiting_followup",
       title: `Follow up with ${who}`,
       because: t.waiting_reason
-        ? `${t.waiting_reason}. The response timer is paused until then.`
+        ? `${t.waiting_reason.replace(/[.!?\s]+$/, "")}. The response timer is paused until then.`
         : "This is parked with someone else. The response timer is paused until then.",
       then: "Either it comes back to you now, or it's parked again with a new follow-up time.",
       completeLabel: "Continue",

@@ -82,7 +82,7 @@ export function ticketNextAction(t: TicketNextActionInput): TicketNextAction | n
     return {
       label: dueNow ? `Follow up with ${who}` : `Waiting on ${who}`,
       because: t.waiting_reason
-        ? `${t.waiting_reason}. The response timer is paused until then.`
+        ? `${t.waiting_reason.replace(/[.!?\s]+$/, "")}. The response timer is paused until then.`
         : "This is parked with someone else. The response timer is paused until then.",
       then: dueNow
         ? "Then pick the work back up, or park it again with a new follow-up time."
