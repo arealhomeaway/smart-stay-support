@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, it as test } from "bun:test";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { dueText, lateSpan, nextStepHistoryLine, nextStepProblem, nextStepView } from "../ticket-next-step";
