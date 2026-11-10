@@ -62,8 +62,8 @@ REVOKE ALL ON FUNCTION public.move_notion_to_queue(uuid[]) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.move_notion_to_queue(uuid[]) TO authenticated, service_role;
 
 CREATE TEMP TABLE practice_ids AS
-SELECT (SELECT m.user_id FROM public.functional_role_members m JOIN public.functional_roles r ON r.id = m.role_id WHERE r.code = 'ops_supervisor' ORDER BY m.user_id LIMIT 1) AS sup,
-       (SELECT m.user_id FROM public.functional_role_members m JOIN public.functional_roles r ON r.id = m.role_id WHERE r.code = 'director_ops' ORDER BY m.user_id LIMIT 1) AS ops_dir,
+SELECT (SELECT m.user_id FROM public.functional_role_members m WHERE m.role_code = 'ops_supervisor' ORDER BY m.user_id LIMIT 1) AS sup,
+       (SELECT m.user_id FROM public.functional_role_members m WHERE m.role_code = 'director_ops' ORDER BY m.user_id LIMIT 1) AS ops_dir,
        public.seat_holder('onboarding_director') AS onb_dir,
        public.seat_holder('po_day') AS coord,
        ARRAY(SELECT id FROM public.tickets WHERE external_source = 'notion' AND coalesce(external_status,'') <> 'reopened_in_resolve'
