@@ -117,7 +117,17 @@ export const coverageModel = createServerFn({ method: "POST" })
       overrides: overrides.data ?? [],
       triage: triage.data ?? [],
       roster: roster.data ?? [],
-      people: people.data ?? [],
+      // Register S4: a coordinator (read only) gets only the people the schedule names.
+      people:
+        canEdit.data === true
+          ? (people.data ?? [])
+          : scheduleOnlyPeople((people.data ?? []) as { id: string; full_name: string | null; oncall_eligible: boolean | null }[], {
+              roles: (roles.data ?? []) as { current_seat_holder?: string | null }[],
+              overrides: (overrides.data ?? []) as { user_id?: string | null }[],
+              roster: (roster.data ?? []) as { user_id?: string | null }[],
+              pattern: setting("oncall_weekday_pattern"),
+              self: context.userId,
+            }),
       config: cfg.data ?? null,
       canEdit: canEdit.data === true,
     };

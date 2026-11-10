@@ -548,3 +548,23 @@ function removeWithPairedCover(offs: SOverride[], overrides: SOverride[]): strin
   }
   return [...ids];
 }
+
+/**
+ * Register S4 (Build 9 C4): a coordinator opens Team and Coverage read only and never gets the
+ * full user list. Only the people the schedule itself names come back: role holders, cover and
+ * time off rows, the on call roster and weekly pattern, and the person themselves; name only.
+ */
+export function scheduleOnlyPeople<P extends { id: string; full_name?: string | null; oncall_eligible?: boolean | null }>(
+  people: P[],
+  refs: { roles: { current_seat_holder?: string | null }[]; overrides: { user_id?: string | null }[]; roster: { user_id?: string | null }[]; pattern: unknown; self: string },
+) {
+  const ids = new Set<string>([refs.self]);
+  for (const r of refs.roles) if (r.current_seat_holder) ids.add(r.current_seat_holder);
+  for (const o of refs.overrides) if (o.user_id) ids.add(o.user_id);
+  for (const r of refs.roster) if (r.user_id) ids.add(r.user_id);
+  for (const m of JSON.stringify(refs.pattern ?? null).match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi) ?? []) ids.add(m.toLowerCase());
+  return people
+    .filter((p) => ids.has(p.id))
+    .map((p) => ({ id: p.id, full_name: p.full_name ?? null, email: null, oncall_eligible: p.oncall_eligible ?? null }));
+}
+
