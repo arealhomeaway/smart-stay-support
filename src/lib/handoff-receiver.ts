@@ -19,5 +19,7 @@ export function resolveHandoffReceiver(input: {
 }): HandoffReceiver {
   if (input.chosenUser) return { ok: true, toUser: input.chosenUser };
   if (input.onShift && input.holder && input.holder !== input.me) return { ok: true, toUser: input.holder };
+  if (input.onShift && input.holder && input.holder === input.me)
+    return { ok: false, message: `You are on shift as ${input.roleName}. Choose a person or another role.` };
   return { ok: false, message: nobodyOnShiftMessage(input.roleName) };
 }
