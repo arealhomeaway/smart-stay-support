@@ -1255,19 +1255,6 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
               </div>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-2">
-          <CloseReopenButtons
-            state={closeReopen}
-            onClose={() => {
-              setCloseRequested(true);
-              setCloseOpen(true);
-              setTimeout(() => document.querySelector("[data-current-work]")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-            }}
-            onReopen={() => {
-              if (reopenPath === "resolved") void reopen();
-              else if (reopenPath === "closed") setReopenOpen(true);
-            }}
-          />
           <MoreActions
             ticket={ticket}
             closed={closed}
@@ -1277,8 +1264,19 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             onStatus={changeStatus}
             onArchived={afterArchive}
           />
-          </div>
         </div>
+        <CloseReopenButtons
+          state={closeReopen}
+          onClose={() => {
+            setCloseRequested(true);
+            setCloseOpen(true);
+            setTimeout(() => document.querySelector("[data-current-work]")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+          }}
+          onReopen={() => {
+            if (reopenPath === "resolved") void reopen();
+            else if (reopenPath === "closed") setReopenOpen(true);
+          }}
+        />
         {reopenPath === "closed" && (
           <ReopenTicketDialog
             ticketId={String(ticket.id)}
