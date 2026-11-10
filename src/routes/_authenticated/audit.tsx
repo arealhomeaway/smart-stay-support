@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/audit")({
     ],
   }),
   component: () => (
-    <RequireCapability capability="audit_history" title="Audit history is for leadership">
+    <RequireCapability capability="admin_pages" title="Audit history is for the Admin">
       <AuditPage />
     </RequireCapability>
   ),
