@@ -64,6 +64,7 @@ import { Route as AuthenticatedStrParticipationReportRouteImport } from './route
 import { Route as AuthenticatedSupervisorCheckRouteImport } from './routes/_authenticated/supervisor-check'
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
 import { Route as AuthenticatedTeamQueueRouteImport } from './routes/_authenticated/team-queue'
+import { Route as AuthenticatedTeamRecordsRouteImport } from './routes/_authenticated/team-records'
 import { Route as AuthenticatedTicketChecklistsRouteImport } from './routes/_authenticated/ticket-checklists'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
 import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome'
@@ -428,6 +429,12 @@ const AuthenticatedTeamQueueRoute = AuthenticatedTeamQueueRouteImport.update({
   path: '/team-queue',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTeamRecordsRoute =
+  AuthenticatedTeamRecordsRouteImport.update({
+    id: '/team-records',
+    path: '/team-records',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedTicketChecklistsRoute =
   AuthenticatedTicketChecklistsRouteImport.update({
     id: '/ticket-checklists',
@@ -851,6 +858,7 @@ export interface FileRoutesByFullPath {
   '/supervisor-check': typeof AuthenticatedSupervisorCheckRoute
   '/team': typeof AuthenticatedTeamRoute
   '/team-queue': typeof AuthenticatedTeamQueueRoute
+  '/team-records': typeof AuthenticatedTeamRecordsRoute
   '/ticket-checklists': typeof AuthenticatedTicketChecklistsRoute
   '/vendors': typeof AuthenticatedVendorsRouteWithChildren
   '/welcome': typeof AuthenticatedWelcomeRoute
@@ -966,6 +974,7 @@ export interface FileRoutesByTo {
   '/supervisor-check': typeof AuthenticatedSupervisorCheckRoute
   '/team': typeof AuthenticatedTeamRoute
   '/team-queue': typeof AuthenticatedTeamQueueRoute
+  '/team-records': typeof AuthenticatedTeamRecordsRoute
   '/ticket-checklists': typeof AuthenticatedTicketChecklistsRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
   '/welcome-video': typeof AuthenticatedWelcomeVideoRoute
@@ -1085,6 +1094,7 @@ export interface FileRoutesById {
   '/_authenticated/supervisor-check': typeof AuthenticatedSupervisorCheckRoute
   '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/_authenticated/team-queue': typeof AuthenticatedTeamQueueRoute
+  '/_authenticated/team-records': typeof AuthenticatedTeamRecordsRoute
   '/_authenticated/ticket-checklists': typeof AuthenticatedTicketChecklistsRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRouteWithChildren
   '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute
@@ -1206,6 +1216,7 @@ export interface FileRouteTypes {
     | '/supervisor-check'
     | '/team'
     | '/team-queue'
+    | '/team-records'
     | '/ticket-checklists'
     | '/vendors'
     | '/welcome'
@@ -1321,6 +1332,7 @@ export interface FileRouteTypes {
     | '/supervisor-check'
     | '/team'
     | '/team-queue'
+    | '/team-records'
     | '/ticket-checklists'
     | '/welcome'
     | '/welcome-video'
@@ -1439,6 +1451,7 @@ export interface FileRouteTypes {
     | '/_authenticated/supervisor-check'
     | '/_authenticated/team'
     | '/_authenticated/team-queue'
+    | '/_authenticated/team-records'
     | '/_authenticated/ticket-checklists'
     | '/_authenticated/vendors'
     | '/_authenticated/welcome'
@@ -1912,6 +1925,13 @@ declare module '@tanstack/react-router' {
       path: '/team-queue'
       fullPath: '/team-queue'
       preLoaderRoute: typeof AuthenticatedTeamQueueRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/team-records': {
+      id: '/_authenticated/team-records'
+      path: '/team-records'
+      fullPath: '/team-records'
+      preLoaderRoute: typeof AuthenticatedTeamRecordsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ticket-checklists': {
@@ -2566,6 +2586,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSupervisorCheckRoute: typeof AuthenticatedSupervisorCheckRoute
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
   AuthenticatedTeamQueueRoute: typeof AuthenticatedTeamQueueRoute
+  AuthenticatedTeamRecordsRoute: typeof AuthenticatedTeamRecordsRoute
   AuthenticatedTicketChecklistsRoute: typeof AuthenticatedTicketChecklistsRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRouteWithChildren
   AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
@@ -2638,6 +2659,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSupervisorCheckRoute: AuthenticatedSupervisorCheckRoute,
   AuthenticatedTeamRoute: AuthenticatedTeamRoute,
   AuthenticatedTeamQueueRoute: AuthenticatedTeamQueueRoute,
+  AuthenticatedTeamRecordsRoute: AuthenticatedTeamRecordsRoute,
   AuthenticatedTicketChecklistsRoute: AuthenticatedTicketChecklistsRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRouteWithChildren,
   AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
