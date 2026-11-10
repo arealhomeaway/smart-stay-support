@@ -119,6 +119,38 @@ function DirectBookingsPage() {
     : null;
   const earlier = (data?.past ?? []).filter((p) => (view === "booked" ? p.stage === "converted" : view === "not_booked" ? p.stage === "lost" : false));
 
+  // One request card, the same for the board and for the separate test list.
+  const card = (r: (typeof board)[number]) => {
+          const chip = statusChip(r.status, r, now, data?.settings.replyTargetMinutes, data?.settings.overnightClockStart);
+          const startable = r.status === "new";
+          return (
+            <div
+              key={r.id}
+              className={cn(
+                "flex flex-wrap items-center justify-between gap-4 rounded-2xl border bg-card p-4",
+                chip.late ? "border-destructive/60" : "border-border",
+              )}
+            >
+              <div className="flex min-w-0 flex-[1_1_520px] flex-col gap-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <strong className="text-[17px]">{partnerOf(r)}</strong>
+                  {isEmailTestLead(r) ? <EmailTestChip /> : null}
+                  <StatusBadge tone={chip.tone} className="text-[13px] font-semibold">{chip.text}</StatusBadge>
+                </div>
+                <span className="text-[15px]">{summaryLine(r)}</span>
+                <span className="text-[13px] text-muted-foreground">{detailLine(r, r.status)}</span>
+              </div>
+              {startable ? (
+                <Button className="min-h-12 px-6 text-[15px] font-semibold" onClick={() => onStart(r.id)}>{DB_COPY.startQuote}</Button>
+              ) : (
+                <Button className="min-h-12 px-6 text-[15px] font-semibold" asChild>
+                  <Link to="/direct-bookings/$requestId" params={{ requestId: r.id }}>{DB_COPY.open}</Link>
+                </Button>
+              )}
+            </div>
+          );
+  };
+
   async function onStart(id: string) {
     try {
       const result = await start({ data: { id } });
@@ -194,36 +226,7 @@ function DirectBookingsPage() {
       </div>
 
       <div className="space-y-3">
-        {shown.map((r) => {
-          const chip = statusChip(r.status, r, now, data?.settings.replyTargetMinutes, data?.settings.overnightClockStart);
-          const startable = r.status === "new";
-          return (
-            <div
-              key={r.id}
-              className={cn(
-                "flex flex-wrap items-center justify-between gap-4 rounded-2xl border bg-card p-4",
-                chip.late ? "border-destructive/60" : "border-border",
-              )}
-            >
-              <div className="flex min-w-0 flex-[1_1_520px] flex-col gap-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <strong className="text-[17px]">{partnerOf(r)}</strong>
-                  {isEmailTestLead(r) ? <EmailTestChip /> : null}
-                  <StatusBadge tone={chip.tone} className="text-[13px] font-semibold">{chip.text}</StatusBadge>
-                </div>
-                <span className="text-[15px]">{summaryLine(r)}</span>
-                <span className="text-[13px] text-muted-foreground">{detailLine(r, r.status)}</span>
-              </div>
-              {startable ? (
-                <Button className="min-h-12 px-6 text-[15px] font-semibold" onClick={() => onStart(r.id)}>{DB_COPY.startQuote}</Button>
-              ) : (
-                <Button className="min-h-12 px-6 text-[15px] font-semibold" asChild>
-                  <Link to="/direct-bookings/$requestId" params={{ requestId: r.id }}>{DB_COPY.open}</Link>
-                </Button>
-              )}
-            </div>
-          );
-        })}
+        {shown.map(card)}
         {shown.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border p-7 text-center text-[15px] text-muted-foreground">{DB_COPY.empty}</div>
         ) : null}
