@@ -113,10 +113,12 @@ export const reviewHandoffFn = createServerFn({ method: "POST" })
 export const getAuditLog = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: allowed, error } = await context.supabase.rpc("is_supervisor", {
+    // Admin pages are Admin only (register A20, M6).
+    const { data: allowed, error } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
+      _role: "admin",
     });
-    if (error || !allowed) throw new Error("Audit history is limited to supervisors.");
+    if (error || !allowed) throw new Error("Audit history is for the Admin.");
     const { loadAuditLog } = await import("./audit.server");
     return { entries: await loadAuditLog() };
   });
