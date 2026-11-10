@@ -40,6 +40,7 @@ import { HandoffsWaiting } from "@/components/operations/HandoffsWaiting";
 import { OwnerFollowUps } from "@/components/OwnerFollowUps";
 import { LunchPrompt, MyShiftCard, TimeOffRequestsWaiting, useTimeOffWaiting } from "@/components/home/MyShift";
 import { NeedsYouNowPanel, type NeedsPanelItem } from "@/components/home/NeedsYouNowPanel";
+import { BonusVerifyWaiting } from "@/components/home/BonusVerifyWaiting";
 import { MyScorecardButton } from "@/components/home/MyScorecardButton";
 import { RECENT_ACTIVITY_COPY, RECENT_ACTIVITY_LIMIT, SEE_ALL_LABEL, recentActivityHeading, seeAllVisible } from "@/lib/home-needs";
 import { openRecordRoutine } from "@/components/routines/RecordRoutinePanel";
@@ -308,6 +309,8 @@ function NeedsYouNow({ rows, userId, originSearch }: { rows: Row[]; userId: stri
       <HandoffsWaiting />
       <OwnerFollowUps />
       <TimeOffRequestsWaiting userId={userId} demoMode={demoMode} />
+      {/* Build 13 (register BN6): a closed bonus period this person verifies. */}
+      {!demoMode && <BonusVerifyWaiting />}
       {bookingRows.map((r) => (
         <button
           type="button"

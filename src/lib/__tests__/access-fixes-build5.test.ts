@@ -190,8 +190,8 @@ describe("4. Admin menu and pages", () => {
   it("the Admin keeps every Admin page", () => {
     for (const path of ["/integrations", "/integrations/notion-import", "/audit", "/imported-tickets", "/oversight-access-log", "/help-tickets"])
       expect(canOpenPath(path, ADMIN)).toBe(true);
-    // Build 6 (N10): the Admin also gets the read only Export check under Admin tools.
-    expect(adminTabs(ADMIN)).toEqual(["Integrations", "Audit History", "Help Tickets", "Notion import", "Export check"]);
+    // Build 6 (N10): the Admin also gets the read only Export check under Admin tools. Build 13: Bonus settings.
+    expect(adminTabs(ADMIN)).toEqual(["Integrations", "Audit History", "Help Tickets", "Notion import", "Export check", "Bonus settings"]);
   });
   it("Audit history data is Admin only on the server too", () => {
     const fn = read("src/lib/onboarding.functions.ts");
