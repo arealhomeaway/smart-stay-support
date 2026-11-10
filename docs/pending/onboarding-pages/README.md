@@ -21,8 +21,9 @@ Nothing is backfilled. No existing row is changed.
 ## Undo
 Run `undo/01_onboarding_project_fields.sql`. It restores the previous
 `run_handoff_reminders`, drops the two new functions and the lock trigger, and drops the
-new columns (which removes any values saved in them). Design category documents keep
-their files; their category text stays as saved.
+new columns last (which removes any values saved in them), and restores the old document
+category list. Files filed under a Design folder must be moved to another folder first, or
+the old category list refuses them. Run only with approval.
 
 ## Practice
 `practice_01_onboarding_project_fields.sql` ran inside one transaction that raised at the
