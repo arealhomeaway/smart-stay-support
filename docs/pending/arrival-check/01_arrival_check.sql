@@ -454,3 +454,486 @@ BEGIN
   RETURN _id;
 END $$;
 REVOKE ALL ON FUNCTION private.arrival_check_fact(uuid, text, uuid, timestamptz) FROM PUBLIC, anon, authenticated;
+
+-- 11. Complete a check. The person who completes it gets the credit; an unowned check is taken.
+CREATE OR REPLACE FUNCTION private.arrival_check_complete(
+  _me uuid, _check uuid, _lock_connected boolean, _lock_note text, _work_orders_reviewed boolean,
+  _outcome text, _issue text, _backup_plan text, _at timestamptz)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, private
+AS $$
+DECLARE
+  c public.arrival_checks;
+  t record;
+  _result text;
+  _first uuid;
+  _issue_ticket uuid;
+  _note text := nullif(btrim(coalesce(_lock_note, '')), '');
+  _issue_txt text := nullif(btrim(coalesce(_issue, '')), '');
+  _plan text := nullif(btrim(coalesce(_backup_plan, '')), '');
+  _summary text;
+BEGIN
+  IF _me IS NULL OR NOT (private.has_role(_me, 'admin') OR private.has_role(_me, 'manager')
+                         OR private.has_role(_me, 'tech')) THEN
+    RAISE EXCEPTION 'Only the operations team can complete an arrival check.';
+  END IF;
+  SELECT * INTO c FROM public.arrival_checks WHERE id = _check FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'This arrival check was not found.'; END IF;
+  IF c.status <> 'open' OR c.cleared_at IS NOT NULL THEN
+    RAISE EXCEPTION 'This arrival check is already done.';
+  END IF;
+  IF _lock_connected IS NULL THEN RAISE EXCEPTION 'Say whether the lock shows connected.'; END IF;
+  IF NOT _lock_connected AND _note IS NULL THEN RAISE EXCEPTION 'Add a short note about the lock.'; END IF;
+  IF _work_orders_reviewed IS NOT TRUE THEN RAISE EXCEPTION 'Review the open Breezeway work orders first.'; END IF;
+  IF _outcome NOT IN ('ready', 'issue') THEN RAISE EXCEPTION 'Choose ready or issue found.'; END IF;
+  IF _outcome = 'issue' AND (_issue_txt IS NULL OR _plan IS NULL) THEN
+    RAISE EXCEPTION 'Say what the issue is and the safe backup plan.';
+  END IF;
+  SELECT id, assigned_to, status, is_demo, property_id INTO t FROM public.tickets WHERE id = c.ticket_id FOR UPDATE;
+  IF t.assigned_to IS NOT NULL AND t.assigned_to <> _me
+     AND NOT (private.has_role(_me, 'admin') OR private.has_role(_me, 'manager')) THEN
+    RAISE EXCEPTION 'Someone else has this arrival check.';
+  END IF;
+  IF t.assigned_to IS NULL THEN
+    UPDATE public.tickets SET assigned_to = _me, acknowledged_at = coalesce(acknowledged_at, _at) WHERE id = c.ticket_id;
+    INSERT INTO public.ticket_activity (ticket_id, author_id, kind, event_type, body, internal, is_demo)
+    VALUES (c.ticket_id, _me, 'note', 'claimed', 'Took the arrival check.', true, coalesce(t.is_demo, false));
+  END IF;
+
+  _result := CASE WHEN c.result = 'missed' THEN 'missed'
+                  WHEN _at <= c.deadline_at THEN 'on_time'
+                  WHEN _at < c.check_in_at THEN 'late'
+                  ELSE 'missed' END;
+
+  IF _outcome = 'issue' THEN
+    INSERT INTO public.tickets
+      (record_type, title, description, property_id, priority, suggested_priority, status, source_channel,
+       initiator_type, external_source, external_id, reported_at, department_code, functional_role_code,
+       is_demo, guest_in_residence, response_due_at, action_due_at)
+    VALUES ('active_task', 'Arrival issue: ' || c.home_label,
+            'Found on the arrival check. Issue: ' || _issue_txt || ' Backup plan: ' || _plan,
+            t.property_id, 'p2', 'p2', 'open', 'ownerrez', 'external', 'ownerrez', 'arrival-issue:' || c.ownerrez_booking_id,
+            _at, 'operations', 'po_day', coalesce(t.is_demo, false), false,
+            _at + interval '30 minutes', _at + interval '60 minutes')
+    RETURNING id INTO _issue_ticket;
+    INSERT INTO public.ticket_activity (ticket_id, author_id, kind, event_type, body, internal, is_demo)
+    VALUES (_issue_ticket, _me, 'note', 'arrival_issue', 'From the arrival check. Backup plan: ' || _plan, true,
+            coalesce(t.is_demo, false));
+  END IF;
+
+  PERFORM set_config('resolve.arrival_check_writing', 'on', true);
+  UPDATE public.arrival_checks
+     SET status = 'complete', lock_connected = _lock_connected, lock_note = _note,
+         work_orders_reviewed = true, outcome = _outcome, issue_text = _issue_txt, backup_plan = _plan,
+         issue_ticket_id = _issue_ticket, completed_by = _me, completed_at = _at,
+         result = _result, result_at = coalesce(result_at, _at)
+   WHERE id = _check
+   RETURNING * INTO c;
+  PERFORM set_config('resolve.arrival_check_writing', '', true);
+
+  _summary := 'Arrival check done. Lock ' || CASE WHEN _lock_connected THEN 'connected' ELSE 'not connected: ' || _note END
+              || '. Breezeway work orders reviewed. '
+              || CASE WHEN _outcome = 'ready' THEN 'Home ready.'
+                      ELSE 'Issue: ' || _issue_txt || ' Backup plan: ' || _plan END;
+  UPDATE public.tickets
+     SET status = 'closed', resolved_at = _at, resolution_notes = _summary, closure_evidence = _summary,
+         outcome_type = CASE WHEN _outcome = 'ready' THEN 'no_issue_found' ELSE 'resolved' END,
+         closure_qa_result = 'not_required', action_started_at = coalesce(action_started_at, _at),
+         acknowledged_at = coalesce(acknowledged_at, _at)
+   WHERE id = c.ticket_id;
+  INSERT INTO public.ticket_activity (ticket_id, author_id, kind, event_type, body, internal, is_demo)
+  VALUES (c.ticket_id, _me, 'note', 'arrival_check_done', _summary, true, coalesce(t.is_demo, false));
+
+  IF c.result_at < _at AND _result = 'missed' THEN
+    SELECT id INTO _first FROM public.scorecard_records
+     WHERE kind = 'arrival_check' AND details ->> 'check_id' = c.id::text AND refers_to IS NULL
+     ORDER BY recorded_at LIMIT 1;
+    PERFORM private.arrival_check_fact(c.id, 'completed_after_check_in', _first, _at);
+  ELSE
+    PERFORM private.arrival_check_fact(c.id, 'result', NULL, _at);
+  END IF;
+  RETURN jsonb_build_object('check_id', c.id, 'result', _result, 'issue_ticket_id', _issue_ticket);
+END $$;
+REVOKE ALL ON FUNCTION private.arrival_check_complete(uuid, uuid, boolean, text, boolean, text, text, text, timestamptz)
+  FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.complete_arrival_check(
+  _check_id uuid, _lock_connected boolean, _lock_note text, _work_orders_reviewed boolean,
+  _outcome text, _issue text, _backup_plan text)
+RETURNS jsonb
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public, private
+AS $$
+  SELECT private.arrival_check_complete(auth.uid(), _check_id, _lock_connected, _lock_note,
+                                        _work_orders_reviewed, _outcome, _issue, _backup_plan, now());
+$$;
+REVOKE ALL ON FUNCTION public.complete_arrival_check(uuid, boolean, text, boolean, text, text, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.complete_arrival_check(uuid, boolean, text, boolean, text, text, text) TO authenticated, service_role;
+
+-- 12. A cancelled reservation closes its open check, out of every count.
+CREATE OR REPLACE FUNCTION private.arrival_check_cancel(_check uuid, _at timestamptz)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, private
+AS $$
+DECLARE c public.arrival_checks;
+BEGIN
+  PERFORM set_config('resolve.arrival_check_writing', 'on', true);
+  UPDATE public.arrival_checks SET status = 'cancelled', cancelled_at = _at
+   WHERE id = _check AND status = 'open' RETURNING * INTO c;
+  PERFORM set_config('resolve.arrival_check_writing', '', true);
+  IF c.id IS NULL THEN RETURN; END IF;
+  UPDATE public.tickets
+     SET status = 'closed', resolved_at = _at, outcome_type = 'cancelled_by_requestor',
+         resolution_notes = 'The reservation was cancelled.', closure_qa_result = 'not_required'
+   WHERE id = c.ticket_id AND status NOT IN ('closed', 'resolved');
+  INSERT INTO public.ticket_activity (ticket_id, author_id, kind, event_type, body, internal, is_demo)
+  VALUES (c.ticket_id, NULL, 'note', 'arrival_check_cancelled', 'The reservation was cancelled. This check is closed.',
+          true, c.is_test);
+END $$;
+REVOKE ALL ON FUNCTION private.arrival_check_cancel(uuid, timestamptz) FROM PUBLIC, anon, authenticated;
+
+-- 13. One alert per check to whoever holds the Operations Supervisor role, 30 minutes before the deadline.
+CREATE OR REPLACE FUNCTION private.arrival_check_alert(_check uuid, _at timestamptz)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, private
+AS $$
+DECLARE
+  c public.arrival_checks;
+  _to uuid := public.seat_holder_at('ops_supervisor', _at);
+BEGIN
+  PERFORM set_config('resolve.arrival_check_writing', 'on', true);
+  UPDATE public.arrival_checks SET alert_sent_at = _at, alert_recipient = _to
+   WHERE id = _check AND alert_sent_at IS NULL RETURNING * INTO c;
+  PERFORM set_config('resolve.arrival_check_writing', '', true);
+  IF c.id IS NULL OR _to IS NULL THEN RETURN false; END IF;
+  PERFORM public.notify_staff(
+    _to, 'arrival_check_due',
+    'Arrival check due at ' || private.arrival_fmt_time(c.deadline_at, c.time_zone) || ' at ' || c.home_label || ', not done yet',
+    'The guest arrives at ' || private.arrival_fmt_time(c.check_in_at, c.time_zone) || '.',
+    'ticket', c.ticket_id, '/tickets/' || c.ticket_id::text, 'urgent', NULL, true, c.is_test);
+  RETURN true;
+END $$;
+REVOKE ALL ON FUNCTION private.arrival_check_alert(uuid, timestamptz) FROM PUBLIC, anon, authenticated;
+
+-- 14. Not done by check in: missed. The ticket stays open so the work can still be finished.
+CREATE OR REPLACE FUNCTION private.arrival_check_mark_missed(_check uuid, _at timestamptz)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, private
+AS $$
+DECLARE c public.arrival_checks;
+BEGIN
+  PERFORM set_config('resolve.arrival_check_writing', 'on', true);
+  UPDATE public.arrival_checks SET result = 'missed', result_at = _at
+   WHERE id = _check AND status = 'open' AND result IS NULL RETURNING * INTO c;
+  PERFORM set_config('resolve.arrival_check_writing', '', true);
+  IF c.id IS NULL THEN RETURN; END IF;
+  PERFORM private.arrival_check_fact(c.id, 'result', NULL, _at);
+END $$;
+REVOKE ALL ON FUNCTION private.arrival_check_mark_missed(uuid, timestamptz) FROM PUBLIC, anon, authenticated;
+
+-- 15. The every minute pass. Creation only while the switch is on; test checks keep their
+--     alerts and results while it is off.
+CREATE OR REPLACE FUNCTION private.arrival_checks_run(_at timestamptz)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, private
+AS $$
+DECLARE
+  _on boolean := coalesce((SELECT enabled FROM public.feature_flags WHERE key = 'arrival_checks'), false);
+  _line timestamptz := private.arrival_checks_start_line();
+  _today date := (_at AT TIME ZONE 'America/Chicago')::date;
+  r record;
+  c record;
+  _ci timestamptz;
+  _late boolean;
+  _reason text;
+  _created integer := 0;
+  _skipped integer := 0;
+  _failed integer := 0;
+  _cancelled integer := 0;
+  _alerts integer := 0;
+  _missed integer := 0;
+  _out jsonb;
+BEGIN
+  IF _on AND _line IS NOT NULL THEN
+    FOR r IN
+      SELECT ar.ownerrez_booking_id, ar.arrival_on, ar.check_in_time, ar.booked_at, p.check_in_time AS home_time, p.time_zone
+        FROM public.arrival_reservations ar
+        LEFT JOIN public.properties p ON p.id = ar.property_id
+       WHERE ar.decision IS NULL AND NOT ar.is_test AND ar.arrival_on BETWEEN _today - 1 AND _today + 1
+       ORDER BY ar.arrival_on, ar.ownerrez_booking_id
+    LOOP
+      BEGIN
+        _ci := private.arrival_check_in_at(r.arrival_on, r.check_in_time, r.home_time, r.time_zone);
+        _late := r.booked_at IS NOT NULL AND r.booked_at > _ci - interval '2 hours';
+        IF NOT _late AND _at < ((r.arrival_on + time '06:00') AT TIME ZONE 'America/Chicago') THEN
+          CONTINUE;
+        END IF;
+        _reason := private.arrival_check_skip_reason(r.ownerrez_booking_id, _ci, _line);
+        IF _reason IS NULL AND _at >= _ci THEN
+          _reason := 'check in passed before it was seen';
+        END IF;
+        IF _reason IS NOT NULL THEN
+          UPDATE public.arrival_reservations SET decision = 'skipped', decision_reason = _reason, decided_at = _at
+           WHERE ownerrez_booking_id = r.ownerrez_booking_id;
+          _skipped := _skipped + 1;
+        ELSE
+          PERFORM private.arrival_check_create(r.ownerrez_booking_id, _ci, _late, _at);
+          _created := _created + 1;
+        END IF;
+      EXCEPTION WHEN OTHERS THEN
+        UPDATE public.arrival_reservations
+           SET decision = 'failed', decision_reason = left(SQLERRM, 300), decided_at = _at
+         WHERE ownerrez_booking_id = r.ownerrez_booking_id;
+        _failed := _failed + 1;
+      END;
+    END LOOP;
+  END IF;
+
+  FOR c IN
+    SELECT ac.id FROM public.arrival_checks ac
+      JOIN public.arrival_reservations ar ON ar.ownerrez_booking_id = ac.ownerrez_booking_id
+     WHERE ac.status = 'open' AND ac.cleared_at IS NULL AND private.arrival_is_cancelled(ar.status)
+  LOOP
+    PERFORM private.arrival_check_cancel(c.id, _at);
+    _cancelled := _cancelled + 1;
+  END LOOP;
+
+  FOR c IN
+    SELECT id FROM public.arrival_checks
+     WHERE status = 'open' AND alert_sent_at IS NULL AND cleared_at IS NULL
+       AND _at >= deadline_at - interval '30 minutes' AND _at < check_in_at
+  LOOP
+    IF private.arrival_check_alert(c.id, _at) THEN _alerts := _alerts + 1; END IF;
+  END LOOP;
+
+  FOR c IN
+    SELECT id FROM public.arrival_checks
+     WHERE status = 'open' AND result IS NULL AND cleared_at IS NULL AND _at >= check_in_at
+  LOOP
+    PERFORM private.arrival_check_mark_missed(c.id, _at);
+    _missed := _missed + 1;
+  END LOOP;
+
+  _out := jsonb_build_object('at', _at, 'on', _on, 'created', _created, 'skipped', _skipped, 'failed', _failed,
+                             'cancelled', _cancelled, 'alerts', _alerts, 'missed', _missed);
+  UPDATE public.arrival_check_state SET last_run_at = _at, last_run = _out WHERE id;
+  RETURN _out;
+END $$;
+REVOKE ALL ON FUNCTION private.arrival_checks_run(timestamptz) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.run_arrival_checks()
+RETURNS jsonb
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public, private
+AS $$ SELECT private.arrival_checks_run(now()); $$;
+REVOKE ALL ON FUNCTION public.run_arrival_checks() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.run_arrival_checks() TO service_role;
+
+-- 16. Everything the ticket page needs for one check (operations team only). Lock brand and the
+--     open Breezeway work orders come from existing records; never a code.
+CREATE OR REPLACE FUNCTION public.arrival_check_for_ticket(_ticket_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public, private
+AS $$
+DECLARE
+  _me uuid := auth.uid();
+  c public.arrival_checks;
+  p record;
+BEGIN
+  IF _me IS NULL OR NOT (private.has_role(_me, 'admin') OR private.has_role(_me, 'manager')
+                         OR private.has_role(_me, 'tech')) THEN
+    RETURN NULL;
+  END IF;
+  SELECT * INTO c FROM public.arrival_checks WHERE ticket_id = _ticket_id;
+  IF NOT FOUND THEN RETURN NULL; END IF;
+  IF c.is_test AND NOT public.can_view_export_check(_me) THEN RETURN NULL; END IF;
+  SELECT id, access, breezeway_property_id INTO p FROM public.properties WHERE id = c.property_id;
+  RETURN jsonb_build_object(
+    'id', c.id, 'ticket_id', c.ticket_id, 'home', c.home_label, 'arrival_on', c.arrival_on,
+    'check_in_at', c.check_in_at, 'deadline_at', c.deadline_at, 'time_zone', c.time_zone,
+    'guest_first_name', c.guest_first_name, 'guests', c.guests, 'pets', c.pets, 'owner_stay', c.owner_stay,
+    'late_booking', c.late_booking, 'is_test', c.is_test, 'status', c.status, 'result', c.result,
+    'outcome', c.outcome, 'lock_connected', c.lock_connected, 'lock_note', c.lock_note,
+    'issue_text', c.issue_text, 'backup_plan', c.backup_plan, 'issue_ticket_id', c.issue_ticket_id,
+    'completed_at', c.completed_at,
+    'completed_by_name', (SELECT coalesce(full_name, email) FROM public.profiles WHERE id = c.completed_by),
+    'lock_brand', nullif(btrim(coalesce(p.access ->> 'lock_brand', '')), ''),
+    'lock_live', CASE WHEN p.access ? 'yale_integration_live' THEN (p.access ->> 'yale_integration_live') ELSE NULL END,
+    'work_orders', coalesce((SELECT jsonb_agg(jsonb_build_object(
+        'id', w.breezeway_task_id, 'name', w.name, 'department', w.department, 'status', w.status,
+        'link', coalesce(w.report_url, 'https://app.breezeway.io/task/' || w.breezeway_task_id::text))
+        ORDER BY w.breezeway_created_at DESC NULLS LAST)
+      FROM public.breezeway_work_orders w
+     WHERE w.property_id = c.property_id AND c.property_id IS NOT NULL
+       AND lower(coalesce(w.status, '')) IN ('created', 'in progress', 'approved')
+       AND coalesce(w.stage, '') NOT IN ('finished', 'deleted')), '[]'::jsonb));
+END $$;
+REVOKE ALL ON FUNCTION public.arrival_check_for_ticket(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.arrival_check_for_ticket(uuid) TO authenticated, service_role;
+
+-- 17. The true state for Integrations (Admin only).
+CREATE OR REPLACE FUNCTION public.arrival_checks_status()
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public, private
+AS $$
+DECLARE
+  _me uuid := auth.uid();
+  _today date := (now() AT TIME ZONE 'America/Chicago')::date;
+  _out jsonb;
+BEGIN
+  IF _me IS NULL OR NOT private.has_role(_me, 'admin') THEN
+    RAISE EXCEPTION 'Only an Admin can read the arrival check status.';
+  END IF;
+  SELECT jsonb_build_object(
+    'enabled', coalesce((SELECT enabled FROM public.feature_flags WHERE key = 'arrival_checks'), false),
+    'start_line', private.arrival_checks_start_line(),
+    'last_switch', (SELECT jsonb_build_object('status', e.status, 'at', e.resolved_at, 'by', coalesce(pr.full_name, pr.email))
+                      FROM public.integration_events e LEFT JOIN public.profiles pr ON pr.id = e.resolved_by
+                     WHERE e.system = 'arrival_checks' AND e.operation = 'switch'
+                     ORDER BY e.created_at DESC LIMIT 1),
+    'last_run_at', (SELECT last_run_at FROM public.arrival_check_state WHERE id),
+    'last_run', (SELECT last_run FROM public.arrival_check_state WHERE id),
+    'last_ingest_at', (SELECT last_ingest_at FROM public.arrival_check_state WHERE id),
+    'created_today', (SELECT count(*) FROM public.arrival_checks
+                       WHERE NOT is_test AND (created_at AT TIME ZONE 'America/Chicago')::date = _today),
+    'skipped_today', coalesce((SELECT jsonb_object_agg(decision_reason, n) FROM (
+                       SELECT decision_reason, count(*) n FROM public.arrival_reservations
+                        WHERE decision = 'skipped' AND (decided_at AT TIME ZONE 'America/Chicago')::date = _today
+                        GROUP BY decision_reason) s), '{}'::jsonb),
+    'failed', (SELECT count(*) FROM public.arrival_reservations WHERE decision = 'failed'),
+    'recent_failures', coalesce((SELECT jsonb_agg(f) FROM (
+                       SELECT ownerrez_booking_id, decision_reason, decided_at FROM public.arrival_reservations
+                        WHERE decision = 'failed' ORDER BY decided_at DESC LIMIT 10) f), '[]'::jsonb),
+    'booking_types_seen', coalesce((SELECT jsonb_object_agg(k, n) FROM (
+                       SELECT coalesce(booking_type, 'not given') || CASE WHEN is_block THEN ' (block)' ELSE '' END k,
+                              count(*) n
+                         FROM public.arrival_reservations WHERE NOT is_test GROUP BY 1) t), '{}'::jsonb),
+    'owner_stays_seen', (SELECT count(*) FROM public.arrival_reservations WHERE owner_stay AND NOT is_test),
+    'tests_open', (SELECT count(*) FROM public.arrival_checks WHERE is_test AND cleared_at IS NULL)
+  ) INTO _out;
+  RETURN _out;
+END $$;
+REVOKE ALL ON FUNCTION public.arrival_checks_status() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.arrival_checks_status() TO authenticated, service_role;
+
+-- 18. Test checks on the 9211 Fitzgerald Dr. home. Work while the switch is off, never counted,
+--     seen only by the people who run the test plan.
+CREATE OR REPLACE FUNCTION public.make_test_arrival_check(_minutes_to_check_in integer DEFAULT 180)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, private
+AS $$
+DECLARE
+  _me uuid := auth.uid();
+  _home uuid;
+  _id text := 'test-' || replace(gen_random_uuid()::text, '-', '');
+  _ci timestamptz;
+  _tz text;
+  _check uuid;
+BEGIN
+  IF _me IS NULL OR NOT private.has_role(_me, 'admin') THEN
+    RAISE EXCEPTION 'Only an Admin can make a test arrival check.';
+  END IF;
+  IF _minutes_to_check_in IS NULL OR _minutes_to_check_in < 1 OR _minutes_to_check_in > 1440 THEN
+    RAISE EXCEPTION 'Choose a check in between 1 minute and 24 hours from now.';
+  END IF;
+  SELECT id, coalesce(nullif(btrim(time_zone), ''), 'America/Chicago') INTO _home, _tz
+    FROM public.properties
+   WHERE NOT is_demo AND archived_at IS NULL AND address_line1 ILIKE '9211 Fitzgerald%'
+   ORDER BY created_at LIMIT 1;
+  IF _home IS NULL THEN RAISE EXCEPTION 'The test home was not found.'; END IF;
+  _ci := date_trunc('minute', now()) + make_interval(mins => _minutes_to_check_in);
+  INSERT INTO public.arrival_reservations
+    (ownerrez_booking_id, property_id, arrival_on, departure_on, check_in_time, status, booking_type,
+     guest_first_name, adults, pets, booked_at, is_test)
+  VALUES (_id, _home, (_ci AT TIME ZONE _tz)::date, (_ci AT TIME ZONE _tz)::date + 2,
+          to_char(_ci AT TIME ZONE _tz, 'HH24:MI'), 'active', 'test', 'Test guest', 2, 0,
+          CASE WHEN _minutes_to_check_in < 120 THEN now() ELSE now() - interval '7 days' END, true);
+  _check := private.arrival_check_create(_id, _ci, _minutes_to_check_in < 120, now());
+  RETURN jsonb_build_object('check_id', _check,
+                            'ticket_id', (SELECT ticket_id FROM public.arrival_checks WHERE id = _check));
+END $$;
+REVOKE ALL ON FUNCTION public.make_test_arrival_check(integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.make_test_arrival_check(integer) TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.clear_test_arrival_checks()
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, private
+AS $$
+DECLARE
+  _me uuid := auth.uid();
+  c record;
+  _n integer := 0;
+BEGIN
+  IF _me IS NULL OR NOT private.has_role(_me, 'admin') THEN
+    RAISE EXCEPTION 'Only an Admin can clear test arrival checks.';
+  END IF;
+  FOR c IN SELECT id, ticket_id, issue_ticket_id FROM public.arrival_checks WHERE is_test AND cleared_at IS NULL FOR UPDATE LOOP
+    UPDATE public.tickets SET archived_at = now(), archived_by = _me, archive_reason = 'Arrival check test'
+     WHERE id IN (c.ticket_id, c.issue_ticket_id) AND is_demo AND archived_at IS NULL;
+    INSERT INTO public.ticket_activity (ticket_id, author_id, kind, event_type, body, internal, is_demo)
+    SELECT x, _me, 'status', 'archived', 'Archived. Reason: Arrival check test', true, true
+      FROM unnest(ARRAY[c.ticket_id, c.issue_ticket_id]) x WHERE x IS NOT NULL;
+    PERFORM set_config('resolve.arrival_check_writing', 'on', true);
+    UPDATE public.arrival_checks SET cleared_at = now() WHERE id = c.id;
+    PERFORM set_config('resolve.arrival_check_writing', '', true);
+    _n := _n + 1;
+  END LOOP;
+  RETURN jsonb_build_object('cleared', _n);
+END $$;
+REVOKE ALL ON FUNCTION public.clear_test_arrival_checks() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.clear_test_arrival_checks() TO authenticated, service_role;
+
+-- 19. The check ticket is internal verification work: it never becomes a homeowner notice or an
+--     Active Owner Opportunity. Existing notice and Opportunity steps are unchanged; these two
+--     triggers drop only rows for arrival check tickets (an issue found stays ordinary property work).
+CREATE OR REPLACE FUNCTION private.skip_arrival_check_owner_rows()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NEW.ticket_id IS NOT NULL AND EXISTS (
+       SELECT 1 FROM public.tickets t
+        WHERE t.id = NEW.ticket_id AND t.external_source = 'ownerrez' AND t.external_id LIKE 'arrival:%') THEN
+    RETURN NULL;
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER owner_notifications_skip_arrival_check
+  BEFORE INSERT ON public.owner_notifications
+  FOR EACH ROW EXECUTE FUNCTION private.skip_arrival_check_owner_rows();
+CREATE TRIGGER owner_reviews_skip_arrival_check
+  BEFORE INSERT ON public.owner_reviews
+  FOR EACH ROW EXECUTE FUNCTION private.skip_arrival_check_owner_rows();
+
+-- 20. The every minute pass. It does nothing but test upkeep while the switch is off.
+DO $do$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
+    PERFORM cron.unschedule(jobid) FROM cron.job WHERE jobname = 'arrival-checks';
+    PERFORM cron.schedule('arrival-checks', '* * * * *', 'SELECT public.run_arrival_checks()');
+  END IF;
+END $do$;
