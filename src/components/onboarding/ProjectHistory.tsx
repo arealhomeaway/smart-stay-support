@@ -59,7 +59,16 @@ const KIND_LABEL: Record<string, string> = {
   handoff_review: "Handoff review",
   handoff_accepted: "Operations accepted",
   live_confirmed: "Live confirmed",
+  project_detail_changed: "Status change",
+  committed_handoff_corrected: "Date corrected",
+  comment: "Comment",
+  upload: "Upload",
 };
+
+/** A note or comment on the home (Activity tab). */
+export type HistoryNote = { id: string; body: string; created_at: string; author_id?: string | null; task_id?: string | null };
+/** A file added to the home (Activity tab). */
+export type HistoryUpload = { id: string; title: string; created_at: string; uploaded_by_name?: string | null; category_label?: string | null };
 
 export function ProjectHistory({
   propertyId,
@@ -67,12 +76,21 @@ export function ProjectHistory({
   approvals,
   reviews,
   people,
+  notes = [],
+  uploads = [],
+  title = "History",
+  description = "Every lifecycle event on this project, newest first. History is a record. It cannot be edited.",
 }: {
   propertyId: string;
   tasks: WorkflowTask[];
   approvals: HistoryApproval[];
   reviews: HistoryReview[];
   people: Person[];
+  /** Comments and uploads join the same newest-first list when given. */
+  notes?: HistoryNote[] | undefined;
+  uploads?: HistoryUpload[] | undefined;
+  title?: string | undefined;
+  description?: string | undefined;
 }) {
   const load = useServerFn(getPropertyProject);
   const { data } = useQuery({
@@ -154,20 +172,31 @@ export function ProjectHistory({
       });
     }
 
+    for (const n of notes) {
+      out.push({ at: n.created_at, kind: "comment", summary: n.body, detail: null, actor: nameOf(n.author_id ?? null) });
+    }
+
+    for (const u of uploads) {
+      out.push({
+        at: u.created_at,
+        kind: "upload",
+        summary: `Added "${u.title}"`,
+        detail: u.category_label ?? null,
+        actor: u.uploaded_by_name ?? null,
+      });
+    }
+
     return out.sort((a, b) => b.at.localeCompare(a.at));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, tasks, approvals, reviews, people]);
+  }, [data, tasks, approvals, reviews, people, notes, uploads]);
 
   return (
     <section className="surface overflow-hidden">
       <div className="border-b border-border bg-muted/40 px-3 py-2">
         <p className="text-sm font-semibold">
-          History <span className="numeric text-muted-foreground">({entries.length})</span>
+          {title} <span className="numeric text-muted-foreground">({entries.length})</span>
         </p>
-        <p className="text-xs text-muted-foreground">
-          Every lifecycle event on this project, newest first. History is a record. It cannot be
-          edited.
-        </p>
+        <p className="text-xs text-muted-foreground">{description}</p>
       </div>
       {entries.length === 0 && (
         <p className="px-3 py-4 text-sm text-muted-foreground">
