@@ -59,21 +59,29 @@ export function lateSpan(ms: number): string {
   return `${days} ${days === 1 ? "day" : "days"}`;
 }
 
-function sameDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+const CENTRAL = "America/Chicago";
+
+/** The Central calendar day of an instant, "2026-11-10". */
+function centralDay(d: Date): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: CENTRAL, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
 }
 
-/** "3 PM", "3:30 PM", "tomorrow 3 PM", "Thu 11/12, 3 PM". Viewer's own clock, like the rest of the ticket. */
+/**
+ * "3 PM Central time", "tomorrow 3:30 PM Central time", "Thu 11/12, 3 PM Central time".
+ * Always Central time (Emily, Nov 10), whatever the viewer's own clock is.
+ */
 export function dueText(due: Date, now: Date): string {
-  const time = new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    ...(due.getMinutes() === 0 ? {} : { minute: "2-digit" }),
-  }).format(due);
-  if (sameDay(due, now)) return time;
-  const tomorrow = new Date(now);
-  tomorrow.setDate(now.getDate() + 1);
-  if (sameDay(due, tomorrow)) return `tomorrow ${time}`;
-  const day = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "numeric", day: "numeric" }).format(due);
+  const minutes = Number(new Intl.DateTimeFormat("en-US", { timeZone: CENTRAL, minute: "2-digit" }).format(due));
+  const time =
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: CENTRAL,
+      hour: "numeric",
+      ...(minutes === 0 ? {} : { minute: "2-digit" }),
+    }).format(due) + " Central time";
+  const dueDay = centralDay(due);
+  if (dueDay === centralDay(now)) return time;
+  if (dueDay === centralDay(new Date(now.getTime() + 86_400_000))) return `tomorrow ${time}`;
+  const day = new Intl.DateTimeFormat("en-US", { timeZone: CENTRAL, weekday: "short", month: "numeric", day: "numeric" }).format(due);
   return `${day.replace(",", "")}, ${time}`;
 }
 
