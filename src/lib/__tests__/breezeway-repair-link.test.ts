@@ -3,7 +3,7 @@
  * Breezeway work order to the ticket. In-memory fake database and a stubbed Breezeway read; no
  * Breezeway call is made and nothing is created anywhere.
  */
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 import { readFileSync } from "node:fs";
 
 type Row = Record<string, unknown>;
@@ -42,17 +42,23 @@ function query(table: string) {
 const fakeDb = { from: (t: string) => query(t), rpc: async () => ({ data: true, error: null }) };
 
 mock.module("@/integrations/supabase/client.server", () => ({ supabaseAdmin: fakeDb }));
+// Only refreshWorkOrder is stood in for, and only inside this file; every other export is real.
+let standIn = true;
+const realWorkOrders = await import("@/lib/breezeway-workorders.server");
 mock.module("@/lib/breezeway-workorders.server", () => ({
+  ...realWorkOrders,
   refreshWorkOrder: async (taskId: number) => {
+    if (!standIn) return realWorkOrders.refreshWorkOrder(taskId);
     breezewayReads.push(taskId);
     if (taskId !== 333) return null;
     const row = { id: "wo-3", breezeway_task_id: 333, property_id: "home-1", name: "From Breezeway", linked_ticket_id: null, assignees: [] };
     tables.breezeway_work_orders.push(row);
     return { id: "wo-3" };
   },
-  readBridgeGate: async () => ({ on: false, startLine: null }),
-  syncVerifiedPortfolio: async () => ({}),
 }));
+afterAll(() => {
+  standIn = false;
+});
 
 const { linkTicketBreezewayOrder } = await import("@/lib/breezeway-bridge.server");
 
