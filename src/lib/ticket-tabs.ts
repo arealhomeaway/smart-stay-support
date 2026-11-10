@@ -268,13 +268,13 @@ export const MOVE_TO_QUEUE_COPY = {
   notReady: "Move to queue is not ready yet.",
 } as const;
 
-/** An older open Notion import the Operations Supervisor or a Director may move into the Team Queue. */
+/** An older open Notion import the Operations Supervisor or the Director of Operations may move into the Team Queue. */
 export function movableToQueue(t: TicketFacts, now: number = Date.now()): boolean {
   return notionTicketState(t, now) === "older_open" && t.import_hold !== "needs_home";
 }
 
-/** Who sees Move to queue: the Operations Supervisor, the Director of Operations and the Director of Onboarding. */
-export function canMoveToQueue(seats: { opsSupervisor?: boolean; opsDirector?: boolean; onboardingDirector?: boolean }, readOnly: boolean): boolean {
-  return !readOnly && Boolean(seats.opsSupervisor || seats.opsDirector || seats.onboardingDirector);
+/** Who sees Move to queue: the Operations Supervisor and the Director of Operations (Emily, Nov 10). */
+export function canMoveToQueue(seats: { opsSupervisor?: boolean; opsDirector?: boolean }, readOnly: boolean): boolean {
+  return !readOnly && Boolean(seats.opsSupervisor || seats.opsDirector);
 }
 
