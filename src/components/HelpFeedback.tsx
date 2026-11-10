@@ -30,6 +30,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { submitHelpTicket } from "@/lib/help-feedback.functions";
+import { helpSideFor } from "@/lib/help-position";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -60,23 +61,6 @@ function pageContext(pathname: string, search: Record<string, unknown>) {
     if (!workItemId && typeof v === "string" && v.length < 100) workItemId = v;
   }
   return { propertyId, workItemId };
-}
-
-/**
- * Where Help and feedback sits. A drawer or window that is open would cover the usual
- * bottom right corner, so the button moves to the side the drawer leaves free and stays
- * above it (register H6). Null when nothing is open.
- */
-export function helpSideFor(
-  open: { left: number; right: number }[],
-  viewportWidth: number,
-): "left" | "right" | null {
-  if (!open.length) return null;
-  const coversRight = open.some((r) => r.right > viewportWidth - 72);
-  const coversLeft = open.some((r) => r.left < 72);
-  if (coversRight && !coversLeft) return "left";
-  if (coversLeft && !coversRight) return "right";
-  return "left";
 }
 
 function useHelpSide(): "left" | "right" | null {
