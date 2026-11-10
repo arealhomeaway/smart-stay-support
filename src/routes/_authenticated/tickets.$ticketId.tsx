@@ -1,4 +1,5 @@
 import { EmailTestChip } from "@/components/EmailTestChip";
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { isEmailTestTicket, seesEmailTestRecords, ticketShownInLens } from "@/lib/email-intake";
 import { formatPropertyLabel } from "@/lib/property-label";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -175,6 +176,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   const inDrawer = Boolean(onClose);
   const qc = useQueryClient();
   const role = useRole();
+  const flags = useFeatureFlags();
   const navigate = useNavigate();
   const { demoMode, demoReady } = useDemo();
   const seesTests = seesEmailTestRecords(role.roles, role.seats);
@@ -1642,8 +1644,9 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                 <div className="mt-2 space-y-3">
                   <h2 className="text-xl font-semibold">Does this need a field repair?</h2>
                   <p className="text-sm text-muted-foreground">
-                    Opening a Work Order is how Resolve tracks the repair. Cost, approval and
-                    vendor. Sending it to a field team is a later, optional step.
+                    {flags.enabled("internal_work_orders")
+                      ? "Opening a Work Order is how Resolve tracks the repair. Cost, approval and vendor. Sending it to a field team is a later, optional step."
+                      : "Repairs are tracked in Breezeway. Link the Breezeway work order so this ticket shows its status."}
                   </p>
                   {role.can("work_orders_internal") ? (
                     <>
