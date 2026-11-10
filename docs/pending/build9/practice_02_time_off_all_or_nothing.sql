@@ -88,8 +88,8 @@ SELECT public.seat_holder('ops_supervisor') AS sup, public.seat_holder('po_day')
        gen_random_uuid() AS good_req, gen_random_uuid() AS bad_req;
 GRANT SELECT ON practice_ids TO authenticated;
 INSERT INTO public.time_off_requests (id, user_id, starts_on, ends_on, note)
-SELECT good_req, coord, '2026-11-20', '2026-11-21', 'Practice' FROM practice_ids
-UNION ALL SELECT bad_req, coord, '2026-11-23', '2026-11-23', 'Practice' FROM practice_ids;
+SELECT good_req, coord, '2026-11-20'::date, '2026-11-21'::date, 'Practice' FROM practice_ids
+UNION ALL SELECT bad_req, coord, '2026-11-23'::date, '2026-11-23'::date, 'Practice' FROM practice_ids;
 
 SET LOCAL ROLE authenticated;
 -- A coordinator cannot approve.
