@@ -1339,7 +1339,7 @@ export async function readIntakeStatus(db: Db) {
     startLine: gate.startLine,
     lastSweepAt: sweepRow?.resolved_at ?? null,
     lastSweepError: sweepRow?.status === "error" ? sweepRow.error_message : null,
-    lastMessageAt: lastRow ? (lastRow.resolved_at ?? lastRow.created_at) : null,
+    lastMessageAt: lastRow?.created_at ?? null,
     skippedSinceStart: (skipped as { count?: number | null }).count ?? 0,
   };
 }

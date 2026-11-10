@@ -162,7 +162,11 @@ export function MailboxIntakePanel() {
           </Badge>
           {subscription?.expiresAt ? (
             <span className="text-xs text-muted-foreground">
-              {notifications.live ? "renews before" : "ran out or runs out"}{" "}
+              {notifications.live
+                ? "renews before"
+                : new Date(subscription.expiresAt).getTime() <= Date.now()
+                  ? "ran out"
+                  : "ends"}{" "}
               {usDateTime(subscription.expiresAt)}
             </span>
           ) : null}
