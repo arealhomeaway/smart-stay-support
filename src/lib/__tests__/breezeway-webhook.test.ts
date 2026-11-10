@@ -169,7 +169,7 @@ describe("different company or unmapped property", () => {
     expect(result.outcome).toBe("ignored_other_company");
   });
 
-  it("never retains task detail for out-of-scope deliveries", async () => {
+  it("never retains task detail for out-of-scope deliveries; a skipped home is named by its id only (register C6)", async () => {
     await processBreezewayWebhook(
       { webhook_type: "task", task_id: 1, home_id: 1_000_001 },
       { isFixture: true },
@@ -178,11 +178,15 @@ describe("different company or unmapped property", () => {
       { webhook_type: "task", task_id: 2, company_id: 9999 },
       { isFixture: true },
     );
-    for (const row of store.rows()) {
+    const rows = store.rows();
+    expect(rows.length).toBe(2);
+    for (const row of rows) {
       expect(row["task_id"]).toBeNull();
-      expect(row["home_id"]).toBeNull();
       expect(row["company_id"]).toBeNull();
+      expect(row["task_updated_at"]).toBeNull();
     }
+    expect(rows.find((r) => r["outcome"] === "ignored_other_property")?.["home_id"]).toBe(1_000_001);
+    expect(rows.find((r) => r["outcome"] === "ignored_other_company")?.["home_id"]).toBeNull();
   });
 });
 
