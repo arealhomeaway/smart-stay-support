@@ -171,8 +171,8 @@ describe("I answered in the partner's portal", () => {
     const after = Date.now();
     const row = await lead(db, id);
     const sent = new Date(row.reply_sent_at as string).getTime();
-    expect(sent).toBeGreaterThan(before - 1000);
-    expect(sent).toBeLessThan(after + 1000);
+    // Within the moment of the press (one second either side for the clock).
+    expect(sent > before - 1000 && sent < after + 1000).toBe(true);
     expect(new Date(at.at).getTime()).toBe(sent);
     expect(row.portal_answered_at).toEqual(row.reply_sent_at);
     expect(row.reply_method).toBe("portal");
