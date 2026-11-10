@@ -11,14 +11,15 @@ import { ONE_TOUCH_DID, oneTouchOutcome } from "../record-work";
 const read = (p: string) => readFileSync(p, "utf8");
 const PAGE = read("src/routes/_authenticated/tickets.$ticketId.tsx");
 
-// A fixed local clock: Tue Nov 10 2026, 10:00 in the viewer's own time.
-const NOW = new Date(2026, 10, 10, 10, 0, 0);
-const at = (h: number, m = 0, dayOffset = 0) => new Date(2026, 10, 10 + dayOffset, h, m, 0).toISOString();
+// A fixed clock: Tue Nov 10 2026, 10:00 AM Central time (UTC-6 in November).
+// Times always read in Central time (Emily, Nov 10), whatever the viewer's clock is.
+const NOW = new Date(Date.UTC(2026, 10, 10, 16, 0, 0));
+const at = (h: number, m = 0, dayOffset = 0) => new Date(Date.UTC(2026, 10, 10 + dayOffset, h + 6, m, 0)).toISOString();
 
 describe("Do this now: one next step with a due time (T5, T13)", () => {
   test("the current action becomes the next step with its due time", () => {
     const v = nextStepView({ derivedLabel: "Check the approval", derivedDueAt: at(15) }, NOW);
-    expect(v?.line).toBe("Next step: check the approval, due 3 PM");
+    expect(v?.line).toBe("Next step: check the approval, due 3 PM Central time");
     expect(v?.late).toBe(false);
     expect(v?.custom).toBe(false);
   });
@@ -32,7 +33,7 @@ describe("Do this now: one next step with a due time (T5, T13)", () => {
       { customStep: "Call the owner about the quote", customDueAt: at(9, 30, 1), derivedLabel: "Start work", derivedDueAt: at(9) },
       NOW,
     );
-    expect(v?.line).toBe("Next step: Call the owner about the quote, due tomorrow 9:30 AM");
+    expect(v?.line).toBe("Next step: Call the owner about the quote, due tomorrow 9:30 AM Central time");
     expect(v?.custom).toBe(true);
   });
   test("a written step with no due time shows no due time", () => {
@@ -46,7 +47,9 @@ describe("Do this now: one next step with a due time (T5, T13)", () => {
     expect(lateSpan(60 * 60000)).toBe("1 hour");
     expect(lateSpan(5 * 3600000)).toBe("5 hours");
     expect(lateSpan(3 * 86400000)).toBe("3 days");
-    expect(dueText(new Date(2026, 10, 12, 15, 0), NOW)).toBe("Thu 11/12, 3 PM");
+    expect(dueText(new Date(at(15, 0, 2)), NOW)).toBe("Thu 11/12, 3 PM Central time");
+    // 11:30 PM Central is already the next day in UTC; it is still "today" in Central time.
+    expect(dueText(new Date(at(23, 30)), NOW)).toBe("11:30 PM Central time");
   });
   test("a change needs a real step and a real due time", () => {
     expect(nextStepProblem("ok", "")).not.toBeNull();
