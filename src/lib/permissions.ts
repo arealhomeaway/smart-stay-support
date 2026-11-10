@@ -137,7 +137,19 @@ export type Capability =
   // Databases hub (register P3): every internal staff account opens it; what each
   // person can do in each list is decided in src/lib/databases.ts.
   | "databases"
-  | "view_as";
+  | "view_as"
+  // Team Queue (register A6): Coordinator, Supervisor, Director of Operations, Admin.
+  | "team_queue"
+  // Handoffs, read only (register A1, A16; Emily, Nov 9): the Operations Supervisor
+  // sees Onboarding only through this page. Operations leadership and Admin.
+  | "handoffs_view"
+  // Admin pages other than Help tickets (register A20, M6): Audit History, the
+  // oversight access log and the old Imported tickets list. Admin only.
+  | "admin_pages"
+  // Help tickets (register A20): every staff member sees their own reports.
+  | "help_tickets_own"
+  // Add people to the Onboarding department (register A14): the Director of Onboarding.
+  | "onboarding_user_invite";
 
 // Creating a ticket is internal-staff work. Vendors and homeowners never get it.
 const STAFF_BASE: Capability[] = [
@@ -156,6 +168,8 @@ const STAFF_BASE: Capability[] = [
   "team_schedule_view",
   // Databases hub: every staff account (register P3).
   "databases",
+  // My reports: every staff member sees their own help tickets (register A20).
+  "help_tickets_own",
 ];
 
 const SUPERVISOR_CAPS: Capability[] = [
@@ -172,8 +186,10 @@ const SUPERVISOR_CAPS: Capability[] = [
   "records_archive",
   "handoff_review",
   "claims_oversight",
-  "onboarding_workspace",
-  "onboarding_templates",
+  // Onboarding is not part of the Operations Supervisor's work (register A1, A16;
+  // Emily, Nov 9): they see it only through the read only Handoffs page.
+  "handoffs_view",
+  "team_queue",
   "owner_programs",
   "owner_program_admin",
   "owner_card_library",
@@ -195,6 +211,9 @@ const SUPERVISOR_CAPS: Capability[] = [
 export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
   admin: [
     ...SUPERVISOR_CAPS,
+    "onboarding_workspace",
+    "onboarding_templates",
+    "admin_pages",
     "command_center",
     "role_management",
     "settings",
@@ -206,7 +225,8 @@ export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
     "active_owner_enroll",
   ],
   manager: SUPERVISOR_CAPS,
-  onboarding: [...STAFF_BASE, "onboarding_workspace", "handoff_request"],
+  // Record routine work is Operations only (register A5), so Onboarding never gets routines.
+  onboarding: [...STAFF_BASE.filter((c) => c !== "routines"), "onboarding_workspace", "handoff_request"],
   // Operations coordinators can see current guest/tenant contact details, the
   // shared Team Queue, and the Work Orders attached to what they are running.
   tech: [
@@ -216,6 +236,7 @@ export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
     "cleaner_dispatch_check",
     "vendor_directory",
     "direct_bookings_work",
+    "team_queue",
   ],
 
   vendor: [],
@@ -276,11 +297,63 @@ export const ONBOARDING_DIRECTOR_CAPS: Capability[] = [
   "team_schedule_view",
   "finance_view",
   "owner_insight_view",
+  "onboarding_user_invite",
+];
+
+/**
+ * Finance on a Supervisor type account (register A2: real Finance account types come
+ * later). Finance has no Operations Supervisor role (held or covered), no Director role
+ * and no Admin or Coordinator account, so Finance's own limits apply (register A4 to
+ * A13, A18). A person who also holds the Operations Supervisor or a Director role keeps
+ * that role's wider access. Mirrors whoIs in src/lib/databases.ts.
+ */
+export function isFinanceOnly(roles: readonly AppRole[], seats: AccessSeats = {}): boolean {
+  return (
+    Boolean(seats.finance) &&
+    roles.includes("manager") &&
+    !roles.includes("admin") &&
+    !roles.includes("tech") &&
+    !seats.opsSupervisor &&
+    !seats.opsDirector &&
+    !seats.onboardingDirector
+  );
+}
+
+/** What a Supervisor type account loses when Finance is its only work role. */
+const FINANCE_HIDDEN: Capability[] = [
+  "ticket_create", // A5 Record work: Operations only
+  "routines", // A5 Record routine work: Operations only
+  "team_queue", // A6
+  "oversight", // A7 Oversight and Supervisor check
+  "team_schedule_view", // A13 Schedule hidden
+  "work_orders_internal", // A8 view only (work_orders_view below)
+  "vendor_admin", // A9 view only
+  "vendor_leadership", // A9 view only
+  "owner_programs", // A4, A17 no Active Owner staff pages
+  "owner_oversight",
+  "owner_program_admin",
+  "owner_card_library",
+  "homeowner_directory",
+  "owner_insight_view",
+  "handoffs_view", // not a Finance page
+];
+
+/** Finance's page access (register A4 to A13, A16 view, A18 edit). */
+export const FINANCE_CAPS: Capability[] = [
+  ...SUPERVISOR_CAPS.filter((c) => !FINANCE_HIDDEN.includes(c)),
+  "work_orders_view",
+  "finance_workspace",
+  // A16: Finance views the Onboarding board (read only, see financeViewOnlyPath).
+  "onboarding_workspace",
 ];
 
 export function capabilitiesFor(roles: AppRole[], seats: AccessSeats = {}): Set<Capability> {
   const set = new Set<Capability>();
-  for (const role of roles) for (const cap of ROLE_CAPABILITIES[role] ?? []) set.add(cap);
+  const financeOnly = isFinanceOnly(roles, seats);
+  for (const role of roles) {
+    const caps = role === "manager" && financeOnly ? FINANCE_CAPS : (ROLE_CAPABILITIES[role] ?? []);
+    for (const cap of caps) set.add(cap);
+  }
   if (seats.onboardingDirector) for (const cap of ONBOARDING_DIRECTOR_CAPS) set.add(cap);
   if (seats.opsDirector) {
     set.add("playbooks_edit");
@@ -289,6 +362,9 @@ export function capabilitiesFor(roles: AppRole[], seats: AccessSeats = {}): Set<
     set.add("vendor_leadership");
     set.add("finance_workspace");
     set.add("ops_user_invite");
+    // The Director of Operations keeps seeing and accepting handoffs in Onboarding as before.
+    set.add("onboarding_workspace");
+    set.add("onboarding_templates");
   }
   if (seats.finance) set.add("finance_workspace");
   if (seats.opsSupervisor) set.add("ops_user_invite");
