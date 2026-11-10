@@ -363,7 +363,8 @@ export function TimeOffRequestsWaiting({ userId, demoMode }: { userId: string; d
         <TimeOffDialog
           open
           onClose={() => setApproving(null)}
-          onSaved={() => void decide(approving, "approved", "")}
+          onSaved={() => void qc.invalidateQueries({ queryKey: ["time-off-pending"] })}
+          approveRequestId={approving.id}
           people={m.shiftPeople}
           roles={m.roles}
           roster={m.roster}

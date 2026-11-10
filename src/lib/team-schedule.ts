@@ -492,6 +492,17 @@ export function needsOwnerAlert(n: number) {
   return `${n} ${n === 1 ? "ticket needs" : "tickets need"} an owner`;
 }
 
+/**
+ * The rows approve_time_off saves in one transaction (Build 9 C2): the same time off and
+ * cover rows planTimeOff plans, so approving a request is all or nothing.
+ */
+export function timeOffApprovalRows(actions: CoverageAction[]) {
+  return actions.map((a) => {
+    if (a.type !== "override") throw new Error("Time off saves only time off and cover rows.");
+    return { role_code: a.roleCode, kind: a.kind, user_id: a.userId, starts_at: a.startsAt, ends_at: a.endsAt, note: a.note };
+  });
+}
+
 export type CoverageWriters = {
   saveOverride: (a: { roleCode: string; kind: "cover" | "off"; userId: string | null; startsAt: string; endsAt: string; note: string }) => Promise<unknown>;
   saveShift: (a: { id: string | null; roleCode: string; weekday: number; startMinute: number; endMinute: number }) => Promise<unknown>;
