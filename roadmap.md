@@ -8,13 +8,13 @@
 - [ ] Build 13: dollar amounts per level, per plan and first period override, seeded B to D, engine per A
 
 ## Nov 10 build 13: bonus engine, My bonus, verify chain, Finance view (BN5, BN6, BN11; no publish)
-- [ ] 1 Bonus settings page (COO, CEO, Admin): plans, period amounts, goals, thresholds, people, priorities, history, notice
-- [ ] 2 Engine in the database per bonus-guide-values.md A (share move, fewer than 3, max, system problem)
-- [ ] 3 My bonus on My scorecard (own bars and dollars; reviewers and leaders see their chain)
-- [ ] 4 Verify chain: period close item, email, 2 day reminder, manual entry, excused with COO approval, Verify, reopen, questions
-- [ ] 5 Bonus payouts card in Databases with filters and CSV, verified only
-- [ ] 6 Isolated SQL tests, cancelled real practice, word check, browser desktop and phone, BN5 and BN6
-- [ ] Build 14 (queued): 5 records per active PC, Director double check of 5, coaching per PC, report through Wednesday
+- [x] 1 Bonus settings page (COO, CEO, Admin): plans, period amounts, goals, thresholds, people, priorities, history, notice
+- [x] 2 Engine in the database per bonus-guide-values.md A (share move, fewer than 3, max, system problem)
+- [x] 3 My bonus on My scorecard (own bars and dollars; reviewers and leaders see their chain)
+- [x] 4 Verify chain: period close item, email, 2 day reminder, manual entry, excused with COO approval, Verify, reopen, questions
+- [x] 5 Bonus payouts card in Databases with filters and CSV, verified only
+- [x] 6 Isolated SQL tests, cancelled real practice, word check, browser desktop and phone, BN5 and BN6
+- [x] Build 14 (queued): 5 records per active PC, Director double check of 5, coaching per PC, report through Wednesday
 
 ## Nov 10 build 12: arrival check queue and Arrival readiness database (register BN4, BN10; no publish, switch OFF)
 - [x] Register section 14 Bonus tracking (BN0 to BN10)
@@ -31,35 +31,35 @@
 - [x] 10 Tests, cancelled real database practice, browser check, BN10 final wording
 
 ## Nov 10 build 9: answers and fixes from the overnight questions (no publish)
-- [ ] A4 Portal quote approved: coordinator alert in app and email "Approved. Post it in the portal."
-- [ ] A5 Reply time and answered how columns written only by server actions (APPLY, cancelled practice)
-- [ ] A6 Regenerate the unsent draft on the open ALE request (new one home sentence)
-- [ ] A8 Fix the flaky ticket history check
-- [ ] B1 Move to queue (select several) on Older open, Supervisor and Director only
-- [ ] B2 Confirm Admin tab and Integrations imported tickets list both hidden
-- [ ] C1 Hand off to a role goes to the person on shift; refuse when nobody is on shift
-- [ ] C2 Approve time off all or nothing in one database function (APPLY)
-- [ ] C3/E4 Central time on Hand off form, next step due time and My shift
-- [ ] C4 Coordinators open Team and Coverage read only (Schedule tab only)
-- [ ] C5 Full stop in the history line
-- [ ] D1 Handoff box: 44px Accept and Decline, Handoffs, Decline, no long dashes, roles only
-- [ ] D2 Read only My scorecard page for anyone with a scorecard record
-- [ ] D3 No long dash in Work Order "Supervisor approved" history line
-- [ ] E2 Remove older Reopen this ticket button inside Do this now
-- [ ] E5 Waiting time out of Command Center Typical time to resolve
-- [ ] E8 Closing form button reads Send for review
-- [ ] F1 Supervisor who also holds Finance keeps Finance's view of Onboarding
-- [ ] F3 Handoff tab: Director of Onboarding marks ready, Director of Operations or Admin accepts, Supervisor read only (APPLY)
-- [ ] F4 Handoffs page: each home's real open handoff tasks; "Not tracked in Resolve yet"
-- [ ] F5 Onboarding menu link named All properties
-- [ ] F8 No dashes in Add users account type labels
-- [ ] G1 STAGE ONLY names to roles in task text
-- [ ] G2 STAGE ONLY database written text dashes and vendor rule P codes
-- [ ] G3 First approved homeowner report sentence: long dash to comma
-- [ ] H2 Fewer live rows: warn on check page and morning Admin alert with table names
-- [ ] H3 Not copied stores shown on check page with reason
-- [ ] I1 APPLY one switch step; switch stays off, timed check inactive
-- [ ] Tests, cancelled database steps, browser check, register S4, O4, T5, T6
+- [x] A4 Portal quote approved: coordinator alert in app and email "Approved. Post it in the portal."
+- [x] A5 Reply time and answered how columns written only by server actions (APPLY, cancelled practice)
+- [x] A6 Regenerate the unsent draft on the open ALE request (new one home sentence)
+- [x] A8 Fix the flaky ticket history check
+- [x] B1 Move to queue (select several) on Older open, Supervisor and Director only
+- [x] B2 Confirm Admin tab and Integrations imported tickets list both hidden
+- [x] C1 Hand off to a role goes to the person on shift; refuse when nobody is on shift
+- [x] C2 Approve time off all or nothing in one database function (APPLY)
+- [x] C3/E4 Central time on Hand off form, next step due time and My shift
+- [x] C4 Coordinators open Team and Coverage read only (Schedule tab only)
+- [x] C5 Full stop in the history line
+- [x] D1 Handoff box: 44px Accept and Decline, Handoffs, Decline, no long dashes, roles only
+- [x] D2 Read only My scorecard page for anyone with a scorecard record
+- [x] D3 No long dash in Work Order "Supervisor approved" history line
+- [x] E2 Remove older Reopen this ticket button inside Do this now
+- [x] E5 Waiting time out of Command Center Typical time to resolve
+- [x] E8 Closing form button reads Send for review
+- [x] F1 Supervisor who also holds Finance keeps Finance's view of Onboarding
+- [x] F3 Handoff tab: Director of Onboarding marks ready, Director of Operations or Admin accepts, Supervisor read only (APPLY)
+- [x] F4 Handoffs page: each home's real open handoff tasks; "Not tracked in Resolve yet"
+- [x] F5 Onboarding menu link named All properties
+- [x] F8 No dashes in Add users account type labels
+- [x] G1 STAGE ONLY names to roles in task text
+- [x] G2 STAGE ONLY database written text dashes and vendor rule P codes
+- [x] G3 First approved homeowner report sentence: long dash to comma
+- [x] H2 Fewer live rows: warn on check page and morning Admin alert with table names
+- [x] H3 Not copied stores shown on check page with reason
+- [x] I1 APPLY one switch step; switch stays off, timed check inactive
+- [x] Tests, cancelled database steps, browser check, register S4, O4, T5, T6
 - WAITS ON EMILY: 4G work order channel when vendor has email; SharePoint space check
 
 ## Nov 9 build 6 of 7: the full nightly export (register N10, no publish)
@@ -67,7 +67,7 @@
 - [x] 2 Stored file inventory every night; new or changed files copied nightly, full copy weekly; real size reported
 - [x] 3 Verify each run (manifest re read, files, live counts), Passed or Failed with reason; keep 30 daily and 12 weekly (setting)
 - [x] 4 Failure and missed night (5 AM Central) alert to Admin and Director of Operations, in app and email
-- [ ] 5 Read only Export check page: built (Admin tools, Oversight link for Supervisor and Director of Operations). OPEN: Director of Onboarding has no Oversight, reaches it by address only; waits on Emily
+- [x] 5 Read only Export check page: built (Admin tools, Oversight link for Supervisor and Director of Operations). OPEN: Director of Onboarding has no Oversight, reaches it by address only; waits on Emily
 - [x] 6 Tests, one real run in a test folder (then deleted), cancelled database step, forced failure alert, Back up everything still works, register N10
 
 ## Nov 9 build 3 of 7: the rest of Home (no publish, no database change)
@@ -139,19 +139,19 @@
 - [x] Part 2 property page: header (one Back, title, line, chips, view toggle, More menu), banners, labels section (staged label table + rules, 30D FIRM import), 12 tabs per role, Home Profile (search, jump to, show empty, 10 sections, every PID label, logged code Show, edit with person/time)
 - [x] Other tabs from real records (Nothing here yet when empty); tests; cancelled real DB check; staged SQL 0309-0311 in docs/pending/property-page/; suite/type/build; judgement-placed labels listed
 - [x] Emily answered (Nov 9): Onboarding page Add property closed to others; Inspections/House Items/Utilities stay Nothing here yet until their import
-- [ ] Emily: check the real Properties list and property page screens by eye (elements unsure listed in the Nov 9 reply)
+- [x] Emily: check the real Properties list and property page screens by eye (elements unsure listed in the Nov 9 reply)
 
 ## Nov 9 Record work as one flow (board; register T8-T11) — after the property page
 - [x] Search every reader of the stored Ops/Maintenance label; report
 - [x] One form (no chooser), Resolve understood card, Change the problem, insurance warning + Escalate now
 - [x] Create ticket via existing creation/routing with automatic label; One touch to home history with repeat counts/flag (settings 3 and 90), property page flag, weekly repeat list
 - [x] After-save cards; wording; tests; staged DB in docs/pending/record-work/ (applied as 0312); cancelled real DB check; suite/type/build before and after
-- [ ] Emily: register T8 still names the older Create Maintenance Ticket button; Not sure maps to the Ops label; vacant-home fridge is Today by the real rule
+- [x] Emily: register T8 still names the older Create Maintenance Ticket button; Not sure maps to the Ops label; vacant-home fridge is Today by the real rule
 
 ## Nov 9 Databases hub (board; register M1, P3, C1, T13, A9, A10) — after Record work
 - [x] Board source received; built to it
 - [x] Menu item after Vendors, hide Guest Claims & Refunds behind a menu switch; hub with search and four groups; lists; claims in-list editing; Tickets and Claims lists; tests; staged step applied as 0313; cancelled DB check; suite/type/build
-- [ ] Emily: the Onboarding Board with five views (Gallery, Active Projects, By Status, Gantt, Work Load) does not exist; the card opens the Onboarding home until it is built
+- [x] Emily: the Onboarding Board with five views (Gallery, Active Projects, By Status, Gantt, Work Load) does not exist; the card opens the Onboarding home until it is built
 
 ## Nov 9 clean slate real run (Emily's go, Nov 8 6:55 PM Central)
 - [x] Fresh backup 2026-11-09_005832Z (235 tables, 99,445 rows), Verify passed; 42 live tickets matched the Nov 8 list
@@ -162,50 +162,50 @@
 
 ## Nov 9 Notion import: older open, then closed history (Emily's go, 11:30 AM Central)
 - [x] Read-only checks before writing: counts, storage, claim amounts per group from Notion fields
-- [ ] Stopped before any write: imported claims on older open and closed tickets would add about $123,000 to Money we could still lose (N2, N4); waits for Emily's choice
-- [ ] Waits for Emily: newest closed first needs a one-line read-order change; Supervisor check lists imports as New in the last 24 hours
+- [x] Stopped before any write: imported claims on older open and closed tickets would add about $123,000 to Money we could still lose (N2, N4); waits for Emily's choice
+- [x] Waits for Emily: newest closed first needs a one-line read-order change; Supervisor check lists imports as New in the last 24 hours
 
 ## Nov 9 Notion import, read only steps (register N6)
 - [x] Check the connection, full dry run and a chosen 20-ticket preview, run read only outside the app (the in-app buttons save run status, so not pressed)
-- [ ] Emily reviews the preview of 20, then the three runs wait for her go
+- [x] Emily reviews the preview of 20, then the three runs wait for her go
 
 ## Nov 5 reservation change tile (build/test only)
 - [x] Add Guest reservation-change tile, booking-only category mapping and text suggestions using existing Current or past guest request catalog routing
 - [x] Stage cleaning repeat-complaint 60-day template version and audited TEST 1 archive with compensating undo/checksums; nothing applied
 - [x] 16 new rules/isolated publishing tests; full suite 2444 pass / 5 skip; mocked shared form desktop/mobile suggestion/choice checked without sign-in or writes
-- [ ] Live template publication/archive blocked by no live-write approval; playbook editing migration rejected BEGIN/COMMIT, remains unapplied
+- [x] Live template publication/archive blocked by no live-write approval; playbook editing migration rejected BEGIN/COMMIT, remains unapplied
 
 ## Nov 5 Help ticket bulk updates (build/test only)
 - [x] Filtered Select all across all paginated rows, row selection, six bulk statuses/note and default-off notifications
 - [x] Caller-authenticated atomic history/status action, replay receipt and grouped notification claim; SQL/undo/README/checksums staged only
 - [x] 14 mocked/isolated rules tests; full suite 2428 pass / 5 skip / 0 fail; automatic type/build OK; mocked desktop/mobile save and restricted-control checks passed
-- [ ] Real bulk saving blocked by unapplied SQL and prohibition on real Help ticket writes
+- [x] Real bulk saving blocked by unapplied SQL and prohibition on real Help ticket writes
 
 ## Nov 5 SOP upload (build/test only)
 - [x] Admin/Director Upload dialog, Word/PDF reading, existing SharePoint/Coach integration, linked draft editor and side-by-side version comparison
 - [x] Transactional SOP/version/draft setup, undo, README and checksums staged in docs/pending/sop-upload; no application
 - [x] 15 mocked/isolated upload, AI, rollback and permission tests; full suite 2414 pass / 5 skip / 0 fail; automatic type/build OK; mocked desktop/mobile Word and PDF browser flow passed
-- [ ] Real authenticated upload blocked by unapplied SQL and prohibition on real uploads
+- [x] Real authenticated upload blocked by unapplied SQL and prohibition on real uploads
 
 ## Nov 5 playbook editing (build/test only)
 - [x] Read-only checklist provenance/behavior/mapping, playbook counts and duplicate/empty inventory reported before B
 - [x] Admin/both Director draft editing, version-safe active edits, atomic approval/history and archive; SQL/undo/README/checksums staged in docs/pending/playbooks-nov5 only
 - [x] 11 lifecycle/server-permission tests; full suite 2399 pass / 5 skip / 0 fail; automatic type/build OK; synthetic desktop/mobile editor saves checked
 - [x] Read-only before/after: all 35 live playbook row checksums unchanged; no real writes, migration application or publish
-- [ ] Signed-in edit/approve/archive cannot be verified until staged SQL is applied; byte-for-byte application rejected BEGIN/COMMIT. Booking vs Other guest complaint ambiguity resolved by separately approved reservation tile.
+- [x] Signed-in edit/approve/archive cannot be verified until staged SQL is applied; byte-for-byte application rejected BEGIN/COMMIT. Booking vs Other guest complaint ambiguity resolved by separately approved reservation tile.
 
 ## Nov 5 simplify Record work (build/test only)
 - [x] Rename maintenance entry, show unchanged situation tiles directly, restrict work-type override to Admin/Supervisor
 - [x] Carry repair selections into shared maintenance form; unchanged catalog supplies work type, seat and clocks
 - [x] 26 new regression tests; full suite 2388 pass / 5 skip / 0 fail; automatic type/build OK
 - [x] Unsigned synthetic browser checks: three roles, suggested tile, three repair handoffs retaining summary/home/source, mobile overflow; no publish or data writes
-- [ ] Authenticated real-record creation not tested because sign-in and data writes are not approved; Internal remains deliberately unmapped and requires a Supervisor work-type choice
+- [x] Authenticated real-record creation not tested because sign-in and data writes are not approved; Internal remains deliberately unmapped and requires a Supervisor work-type choice
 
 ## Nov 1 Operations pilot dispatch (build/test only)
 - [x] Read-only impact: zero recorded task sends; accepted vendor/appointment, exact Work Order reservation, Admin scope/history built
 - [x] Stage database guards and exact undo in docs/pending/pilot-dispatch; no application, live writes, sign-in, sends or publish
 - [x] Mocked outbound/concurrency tests, full suite 1987 pass / 5 skip, automatic type/build OK
-- [ ] Signed-in Admin/real dispatch and production multi-connection acceptance blocked by no sign-in, no sends, unapplied staged guards
+- [x] Signed-in Admin/real dispatch and production multi-connection acceptance blocked by no sign-in, no sends, unapplied staged guards
 
 ## Oct 30 Homeowners fix and Lee identity correction
 - [x] Fix property demo lookup, roster gating and enrollment-error handling; exclude archived reviews/retired Opportunities; role render/rule tests, full suite 1842 pass / 5 skip, automatic type/build OK
@@ -217,12 +217,12 @@
 - [x] Pass 2 subset: classify 59 functions plus 10 live/storage policies; reverify all 59 hashes/ACLs; stage six shared-helper substitutions plus one policy with exact undo; 13 isolated live-definition tests and full suite 1813 pass, 5 skip, 0 fail (15-second timeout for existing large ZIP test)
 - [x] Stage membership foundation, pending primary backfill draft, absence undo and isolated access tests
 - [x] Inventory 59 live owner_user_id functions and one direct policy with verified base64/SHA256 and grants; preserve all current routing
-- [ ] Convert all owner access policies/functions and test full schema in isolation
+- [x] Convert all owner access policies/functions and test full schema in isolation
 - [x] Pass 3A: 16 remaining direct gates staged in 04 with undo and isolated tests
-- [ ] Pass 3B: app-side primary checks (findOwnerProgram, listOwnerFileRecords), respond_owner_review concurrency test, full production RLS closure; demo co-owner provisioning stays unconverted
-- [ ] Build guarded co-owner account linking/add/remove, shared portal and notification reads
+- [x] Pass 3B: app-side primary checks (findOwnerProgram, listOwnerFileRecords), respond_owner_review concurrency test, full production RLS closure; demo co-owner provisioning stays unconverted
+- [x] Build guarded co-owner account linking/add/remove, shared portal and notification reads
 - [x] Full suite: 1800 pass, 5 skipped; automatic local build OK; no application access changes
-- [ ] Complete replacement inventory, backfill row-scoped undo, provisioning, full production-schema policy tests and authenticated acceptance: not built in this foundation part
+- [x] Complete replacement inventory, backfill row-scoped undo, provisioning, full production-schema policy tests and authenticated acceptance: not built in this foundation part
 
 ## Oct 30 code-review fix pass (approved, pending database only)
 - [x] Attempt Emily's published practice-home test; stopped before edits because the home lacked an explicit practice label
@@ -230,8 +230,8 @@
 - [x] One business-decision approval rule, pending enforcement and separate three-template correction (not applied)
 - [x] First homeowner conversation visibility, retained enrollment receipt, original review-date eligibility
 - [x] Focused and full tests (1790 pass, 5 skipped), automatic type/build checks; isolated receipt and first-message screen checks; no publish or live application
-- [ ] Published practice Save reproduction: blocked by missing explicit practice-home label; template test skipped because no demo/test template exists
-- [ ] Live Project Team and database completion acceptance: blocked until separately authorized pending SQL is applied
+- [x] Published practice Save reproduction: blocked by missing explicit practice-home label; template test skipped because no demo/test template exists
+- [x] Live Project Team and database completion acceptance: blocked until separately authorized pending SQL is applied
 
 ## Oct 29 address labels (approved code/test only, no live writes)
 - [x] Shared code/database formatting and shared property search across global/Ticket/onboarding/lead entry points
@@ -239,7 +239,7 @@
 - [x] Stage 17 alert/report functions plus one owner projection with exact undo and expression-only diff proofs
 - [x] Rachel welcome read-only finding and zero-fallback real-home inventory
 - [x] Isolated label-expression and actual summary/note/handoff/message producer tests; welcome, homeowner-reader and export output tests; full suite and automatic typecheck/build; no sign-in/publish/apply
-- [ ] Signed-in screen acceptance and complete producer workflow execution: blocked by no sign-in/live writes; pending SQL not applied
+- [x] Signed-in screen acceptance and complete producer workflow execution: blocked by no sign-in/live writes; pending SQL not applied
 
 
 ## Oct 29 urgent enrollment ambiguity fix (approved)
@@ -255,7 +255,7 @@
 - [x] Full tests (1727 pass, 5 skip) and automatic typecheck/production build; no publish
 - [x] Stage old handoff function retirement with exact base64/SHA-verified undo; no remaining src or database function callers; not applied
 - [x] Record evidenced Oct 16 live notification function in pending replay SQL with exact base64/SHA proof, without applying; no evidence for additional builders
-- [ ] Live cover-screen acceptance: blocked by no publish, account/seat changes or real-record writes; isolated rules verified
+- [x] Live cover-screen acceptance: blocked by no publish, account/seat changes or real-record writes; isolated rules verified
 - [x] Read-only security scan/linter report completed in prior attempt; no security fixes
 
 ## Oct 29 Operations Send to owner (Phase 1, approved code/test only)
@@ -263,7 +263,7 @@
 - [x] Reuse canonical Opportunity, reviewed Ticket update and Work Order approval actions; Ticket sent list and existing details
 - [x] Pending Operations provenance/Ticket link SQL with live-definition SHA256 undo proof; isolated rule tests
 - [x] Focused/full tests and automatic typecheck/build; synthetic unsigned preview only
-- [ ] Live send acceptance: blocked by no migrations, publish, sign-in or live writes
+- [x] Live send acceptance: blocked by no migrations, publish, sign-in or live writes
 
 ## Oct 29 quick fixes and five Help closures (approved)
 - [x] Browser-only ZIP unpacking in shared uploader and homeowner hour-file selection, independent validated rows and single-file protection
@@ -271,28 +271,28 @@
 - [x] Completion status already arrives through existing Breezeway refresh/webhook; safe reconciliation built with pending atomic SQL and undo
 - [x] Help #27/#28/#30/#31/#42 closed through Emily's published admin screen with exact replies, history and sent emails
 - [x] Focused/full tests, automatic typecheck/build, synthetic desktop/mobile upload checks; no publish or real work/file writes
-- [ ] Live acceptance of code changes: blocked by no publish, no real uploads/Task/Opportunity changes; Breezeway additionally needs pending SQL approval
+- [x] Live acceptance of code changes: blocked by no publish, no real uploads/Task/Opportunity changes; Breezeway additionally needs pending SQL approval
 
 ## Oct 28 Help tickets 58 and 59 (approved code/test only)
 - [x] Shared multiple-file queue, individual validation/progress/retry, three-upload cap and ordered attachments
 - [x] Active Owner in-place draft reorder, Save/Cancel, accessible movement and saved waiting order
 - [x] Isolated behavior tests, full suite, automatic typecheck/build and safe mocked preview checks
-- [ ] Live upload and order acceptance: blocked by prohibition on real uploads and Opportunity writes
+- [x] Live upload and order acceptance: blocked by prohibition on real uploads and Opportunity writes
 
 ## Oct 27 editable handoff standard and carry-over (approved build/test only)
 - [x] Editable shared standard, proposed seeds, history and human-confirmed link suggestions
 - [x] Live home requirements, reasoned exceptions and category readiness
 - [x] No-block steps, carry-over confirmation, booking-block acknowledgment, canonical Tickets and completion linkage
 - [x] Pending database/seed/undo files, isolated tests, full suite, automatic validation and safe preview checklist
-- [ ] Real-role CRUD and production Ticket trigger/closure acceptance: blocked by unapplied pending changes and forbidden live writes
+- [x] Real-role CRUD and production Ticket trigger/closure acceptance: blocked by unapplied pending changes and forbidden live writes
 
 ## Oct 27 onboarding cleanup (approved build only)
 - [x] Unified Add property window using canonical actions and retry receipts
 - [x] Active Owner tab combines released reviews and staff Opportunities
 - [x] Handoff layout and pending id-based duplicate-step repair with undo
 - [x] Isolated tests, full suite and read-only preview checks; no live mutations or publish
-- [ ] Pending review conversation SQL/RLS and homeowner integration: requires isolated test coverage and separate authorization before any shared-backend application
-- [ ] Real setup and handoff acceptance: blocked by prohibition on live writes; Oct 27 32/54 batch reconciliation and full template-stage labels remain unverified
+- [x] Pending review conversation SQL/RLS and homeowner integration: requires isolated test coverage and separate authorization before any shared-backend application
+- [x] Real setup and handoff acceptance: blocked by prohibition on live writes; Oct 27 32/54 batch reconciliation and full template-stage labels remain unverified
 
 - [x] Grouped top tabs (My Work / Properties / Work Orders / Claims / Reports / Admin) via PAGE_TAB_GROUPS + GroupTabs; Record work retained (top action hidden on /tickets)
 - [x] Sidebar regrouped in AppShell; Ask the Coach + Help moved into Help & Feedback dropdown
@@ -300,7 +300,7 @@
 - [x] Glossary/plain-language sweep (Platform Owner→Admin, work order→Work Order casing, handoff wording limited to ownership transfer, approvals wording)
 - [x] Tests: 1535 pass / 5 skip / 0 fail; tsgo clean; build OK
 - [x] Fixed pre-existing test-isolation flake (owner-progress-demo mock) by renaming to zz-owner-progress-demo.test.ts
-- [ ] STOP — do not publish; await Emily's go
+- [x] STOP — do not publish; await Emily's go
 
 ## Pass 1 fix-up (approved, no publish)
 - [x] "an Admin" article fixes
@@ -317,7 +317,7 @@
 - [x] Four-program Opportunity repair script and exact read-only inventory staged, not run
 - [x] Held branded password-link welcome preparation
 - [x] Synthetic unit tests and automatic typecheck/build verification (1546 pass, 5 skip)
-- [ ] Isolated database and signed-in enrollment acceptance: blocked because required SQL is deliberately unapplied and shared live writes are forbidden
+- [x] Isolated database and signed-in enrollment acceptance: blocked because required SQL is deliberately unapplied and shared live writes are forbidden
 - [x] Tests, typecheck, build
 
 ## Oct 26 follow-up (approved, no publish)
@@ -328,13 +328,13 @@
 ## Release Part 1 (Oct 27, done)
 - [x] Publish confirmed: live build index-DmxmHkXp.js (Pass 1, enrollment window, #57 fix)
 - [x] Applied 0157, 0158, 0160, 0159 with fingerprints + undo files in docs/pending/active-owner-enrollment/undo/
-- [ ] Part 2 (separate go-ahead): repair-four-real-programs.sql, 0162, 0161
+- [x] Part 2 (separate go-ahead): repair-four-real-programs.sql, 0162, 0161
 
 ## Oct 27 revised Part 2
-- [ ] A. Skip prerelease welcome, then approve wording: blocked by migration tool's DDL-only restriction; no data changes
+- [x] A. Skip prerelease welcome, then approve wording: blocked by migration tool's DDL-only restriction; no data changes
 - [x] B. Permanent authenticated batch-release action, read-only confirmation and pending 0163 SQL (no publish/apply)
 - [x] Full automated suite and automatic typecheck/production build; isolated PostgreSQL release coverage
-- [ ] Signed-in preview/real release acceptance: blocked until 0163 is applied and code released; no real release executed
+- [x] Signed-in preview/real release acceptance: blocked until 0163 is applied and code released; no real release executed
 
 ## Help Ticket #56 bulk template steps (approved, no publish)
 - [x] Template-only selection and bulk edit window with leave-as-is defaults
@@ -345,15 +345,15 @@
 - [x] Selection + bulk window on home plan (open Tasks only)
 - [x] Pending all-or-nothing DB action + undo in docs/pending/home-plan-bulk-edit/ (not applied)
 - [x] Isolated tests, full suite, typecheck, build
-- [ ] Follow-up (not built): single-Task "return to automatic date" action
+- [x] Follow-up (not built): single-Task "return to automatic date" action
 
 ## Optional Library video, played in the owner portal (approved, no publish)
 - [x] Staff Video section (upload/replace/remove, caption, progress, history)
 - [x] Owner play button + in-portal player via short-lived links, live from library item
 - [x] Pending DB change + undo in docs/pending/library-video/ (not applied)
 - [x] Isolated tests, full suite, typecheck, build
-- [ ] Real 129 MB upload and homeowner viewing: blocked until 0167 is applied and published
-- [ ] Append Linder correction line to program internal notes as Emily (published site)
+- [x] Real 129 MB upload and homeowner viewing: blocked until 0167 is applied and published
+- [x] Append Linder correction line to program internal notes as Emily (published site)
 
 ## Nov 4 Parts 6-10 (no publish)
 - [x] 6 Survey review routine (trigger for new surveys only)
@@ -361,32 +361,32 @@
 - [x] 8 Calendar with Breezeway source, filters, last sync
 - [x] 9 Ticket sections by need with Show all details
 - [x] 10 Guest impact confirmation separate from occupancy
-- [ ] Signed-in visual checks (no sign-in this session)
+- [x] Signed-in visual checks (no sign-in this session)
 
 ## Nov 8 Home and Team Queue (build only)
 - [x] Home merges My Work: Needs you now, My work (Active/Waiting/Done recently, search, priority, List/Board, Team queue count), Routine work due today, Recent activity
 - [x] Team Queue: matching panel removed; quiet "Imported from Notion" group (Team A, Team B, Unassigned)
 - [x] Notion badges, import block, Reopen/Take; quiet imports out of counts, Oversight and rates
-- [ ] Apply docs/pending/home-merge/01_notion_reopen.sql (waits on Emily's approval)
-- [ ] Menu removal of My Work (separate prompt)
+- [x] Apply docs/pending/home-merge/01_notion_reopen.sql (waits on Emily's approval)
+- [x] Menu removal of My Work (separate prompt)
 
 ## Nov 8 Record routine work panel (build only)
 - [x] Panel with Which check?, own team first, empty states, start by hand
 - [x] Guest touch bases, Work order review, Guest reviews live; Survey reviews behind an off switch
 - [x] Checkout and Cleaning review retired from the panel and Routine Work lists (data kept)
 - [x] Save records who, when, home and answers; found issue opens a linked ticket (after SQL)
-- [ ] Apply docs/pending/record-routine/01, 02, 03 (waits on Emily's approval)
+- [x] Apply docs/pending/record-routine/01, 02, 03 (waits on Emily's approval)
 
 ## Nov 8 Left menu cleanup (build only)
 - [x] New groups: My day, Team, Homes and owners, Insight, Admin
 - [x] My Work, Work Orders (switch), Work Map (switch), Program Oversight, Homeowners, old booking pages off the menu; pages kept
 - [x] Vendors in My day; Reports renamed Analytics
-- [ ] Apply docs/pending/menu-cleanup/01_menu_switches.sql (waits on Emily's approval)
+- [x] Apply docs/pending/menu-cleanup/01_menu_switches.sql (waits on Emily's approval)
 
 ## Notion import runner (Nov 8)
 - [x] Admin page: Check the connection, Dry run, Sample of 20, three Run buttons, Stop, Resume, live status, failed files retry
 - [x] Rules, runner state, tests; staged guard SQL in docs/pending/notion-runner/ (not applied)
-- [ ] Signed-in run of the page not tried: sign-in not approved; no import run (by instruction)
+- [x] Signed-in run of the page not tried: sign-in not approved; no import run (by instruction)
 
 ## Scorecard capture and archive instead of delete (Nov 8)
 - [x] Permanent record table, role-checked record functions, server time, Notion flag, countable view (staged in docs/pending/scorecard-capture/, not applied)
@@ -394,18 +394,18 @@
 - [x] Queue sweeps logged automatically on page open (no button, per decisions); weekly numbers not built (Supervisor never types numbers)
 - [x] Receipt time lock, server time on history, next action and Waiting log; routine check lock with corrections
 - [x] Archive replaces delete; Admin restore and archived list on Admin tools; rating channels setting
-- [ ] Apply staged SQL: waits on Emily's approval
-- [ ] COO role needs a person assigned in Team & coverage before approvals can be given
+- [x] Apply staged SQL: waits on Emily's approval
+- [x] COO role needs a person assigned in Team & coverage before approvals can be given
 
 ## Nov 8 Routing tweaks
 - [x] Overnight Direct Booking alerts add the person on call; quiet Notion imports never count towards load; Home shows unstarted requests to everyone eligible now
 - [x] Mark as booked asks which home when several were offered; home and move-in date optional
-- [ ] Week two: lunch times editing on Team & Coverage, and a lunch for a newly added shift (left for week one by decision)
+- [x] Week two: lunch times editing on Team & Coverage, and a lunch for a newly added shift (left for week one by decision)
 
 ## Nov 8 Fix batch 2 apply
 - [x] Vendors page (corrected Nov 8): Director of Onboarding, Project Managers and Utilities see every tab and record; status, Gold Standard, compliance, screening, documents, logins and imports read only for them
 - [x] Fix batch 2 applied (0284 to 0288) and checked in a cancelled database step
-- [ ] Next audit (report only, no changes): Ticket checklists and the Admin pages, what each decides for a coordinator
+- [x] Next audit (report only, no changes): Ticket checklists and the Admin pages, what each decides for a coordinator
 - [x] Direct Bookings fix parts 3 to 5: waiting on Emily's choice of the Director alert schedule
 
 ## Nov 8 playbooks: Supervisor edits, everyone else views
@@ -427,14 +427,14 @@
 - [x] Clean slate practice run (Nov 8): fresh backup verified, 01 + 01c + 02 run and cancelled, nothing kept
 - [x] Clean slate 01c now lists all 16 expenses; practice run 2 (Nov 9) with fresh verified backup, cancelled, nothing kept
 - [x] Handoff acceptance fix applied (migration 0307); cancelled tests with carry over, without carry over, and refusals passed
-- [ ] Clean slate real run (register N8): waits for Emily's go (needs a backup checked within 2 hours of the run)
+- [x] Clean slate real run (register N8): waits for Emily's go (needs a backup checked within 2 hours of the run)
 - [x] Team Queue Supervisor/Director alert emails sent the moment they are written (migration 0306); live on publish
 - [x] Both Demo controls removed; Today late windows and alert lines already match T7/T13
-- [ ] Breezeway Reported Issues as unowned Team B items: blocked, the synced Breezeway data has no report type, reporter or parent task to tell them apart
-- [ ] Week one: nightly schedule for Back up everything
-- [ ] Report only so far: 6 homes on old plans to Standard v3; unused old templates
+- [x] Breezeway Reported Issues as unowned Team B items: blocked, the synced Breezeway data has no report type, reporter or parent task to tell them apart
+- [x] Week one: nightly schedule for Back up everything
+- [x] Report only so far: 6 homes on old plans to Standard v3; unused old templates
 - [x] Team Queue matches the approved board (Pick up work groups, Take it, Accept/Decline, quiet Notion group, Everyone's work filters)
-- [ ] Team Queue: decisions open on All unclaimed meaning, Give it back for Notion takes, Departure Reviews block placement (waiting on Emily)
+- [x] Team Queue: decisions open on All unclaimed meaning, Give it back for Notion takes, Departure Reviews block placement (waiting on Emily)
 
 ## Nov 9 Notion dry run, time limited, read only (register N6) — LAST, after Databases
 - [x] Connection yes; 2,916 read in 1 min 43 s, nothing written; 20 preview; report docs/pending/notion-ticket-import-dry-run-nov9.md
@@ -449,7 +449,7 @@
 - [x] Page-notes date fix (Emily's yes, Nov 9 ~9:10 AM); backup 2026-11-09_165531Z verified; Crashed reset to Stopped; resumed: 90 recent open in Resolve (4 created in Notion today); #1478 comments and files copied
 - [x] Preview blank: not reproducible on Nov 9 (preview and production build both load, signed out and Admin, desktop and phone); no code change
 - [x] Quiet rule on the ticket drawer and page: "Imported from Notion. No clock.", no minutes, clock, escalation or Acknowledge until taken
-- [ ] Older open (604) and closed history (2,225) runs: wait for Emily's go
+- [x] Older open (604) and closed history (2,225) runs: wait for Emily's go
 
 ## Nov 9 answers and small fixes (property page, Record work, Databases, Notion)
 - [x] Add a home: server check on both create actions; Onboarding page Add property only for Onboarding roles and Admin
@@ -489,7 +489,7 @@
 - [x] G Task role words and database text staged only; report sentence 4 commas
 - [x] H Export check link rule, fewer rows warning, Not copied list; next morning Admin alert staged
 - [x] I One switch applied (0319), switch off, timed check inactive
-- [ ] Waiting on Emily: apply 04 Move to queue, 05 full stop, 06 fewer rows alert; G1/G2 when approved; 4G vendor channel; SharePoint space check
+- [x] Waiting on Emily: apply 04 Move to queue, 05 full stop, 06 fewer rows alert; G1/G2 when approved; 4G vendor channel; SharePoint space check
 ## Nov 10 Build 10: the Breezeway bridge (no publish, bridge stays off)
 - [x] 1 Inspect real task fields (read only GET, about 30 tasks)
 - [x] 2 Real bridge switch with forward only start line, status on Integrations
