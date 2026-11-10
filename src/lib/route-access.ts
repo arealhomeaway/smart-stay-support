@@ -211,3 +211,13 @@ export function isOnboardingOnly(ctx: AccessContext): boolean {
   const portals = portalIds(ctx);
   return portals.size === 1 && portals.has("onboarding");
 }
+
+/**
+ * The Export check link on Oversight (Build 9 H1): the Operations Supervisor, the Director of
+ * Operations and Admin. The Director of Onboarding keeps the page by address, with no link.
+ */
+export function showExportCheckLink(ctx: AccessContext): boolean {
+  if (!canOpenPath("/export-check", ctx)) return false;
+  const s = ctx.seats ?? {};
+  return ctx.roles.includes("admin") || Boolean(s.opsSupervisor) || Boolean(s.opsDirector);
+}

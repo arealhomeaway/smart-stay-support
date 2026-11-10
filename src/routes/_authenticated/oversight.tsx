@@ -203,7 +203,7 @@ function Oversight() {
 }
 
 function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSupport }) {
-  const { canOpen } = useRole();
+  const { canOpen, access } = useRole();
   const open = data.filter((t) => OPEN_STATUSES.includes(t.status));
 
   const unackedP1 = open.filter((t) => t.priority === "p1" && !t.acknowledged_at);
@@ -480,7 +480,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
             : `${totalExceptions} thing${totalExceptions === 1 ? "" : "s"} need${totalExceptions === 1 ? "s" : ""} intervention.`}
         </p>
         <ReportingBaselineNote className="mt-3 max-w-2xl" />
-        {canOpen("/export-check") ? (
+        {showExportCheckLink(access) ? (
           <Button asChild variant="outline" className="mt-3 min-h-11">
             <Link to="/export-check">Nightly export check</Link>
           </Button>
