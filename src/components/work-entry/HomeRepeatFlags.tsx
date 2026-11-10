@@ -73,6 +73,8 @@ function RepeatEntries({ propertyId, flag }: { propertyId: string; flag: Flag })
           .eq("property_id", propertyId)
           .eq("work_type_id", flag.work_type_id)
           .is("archived_at", null)
+          // Same rule as the repeat count: a Notion import counts once reopened in Resolve.
+          .or("external_source.is.null,external_source.neq.notion,external_status.eq.reopened_in_resolve")
           .gte("reported_at", since)
           .order("reported_at", { ascending: false }),
       ]);
