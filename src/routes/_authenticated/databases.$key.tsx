@@ -5,6 +5,7 @@ import { useRole } from "@/hooks/useRole";
 import { useDemo } from "@/components/DemoProvider";
 import { BackToDatabases, DbLinkButton, ModeChip } from "@/components/databases/DatabaseParts";
 import { TicketTabs } from "@/components/databases/TicketTabs";
+import { ArrivalReadiness } from "@/components/databases/ArrivalReadiness";
 import { canMoveToQueue } from "@/lib/ticket-tabs";
 import { CLAIM_PIPELINE, CLAIM_STAGE_LABELS } from "@/lib/claims";
 import {
@@ -166,7 +167,9 @@ function DatabaseList({ card, mode, initialTerm }: { card: DatabaseCard; mode: E
               </div>
             )}
 
-            {isTickets ? (
+            {card.key === "arrival-readiness" ? (
+              <ArrivalReadiness demoMode={demoMode} />
+            ) : isTickets ? (
               data.error ? (
                 <p role="alert" className="text-destructive">
                   This list could not be loaded. Try again in a moment.
