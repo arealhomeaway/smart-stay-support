@@ -391,7 +391,7 @@ function Gantt({ homes, today, homeLink }: { homes: BoardHome[]; today: string; 
           <span
             aria-label="Today"
             className="pointer-events-none absolute bottom-0 top-0 z-10 w-px bg-state-blocked"
-            style={{ left: `calc(12rem + (100% - 12rem) * ${scale.today / 100})` }}
+            style={{ left: `calc(12rem + (100% + -12rem) * ${scale.today / 100})` }}
           />
           {homes.map((h) => {
             const start = h.closingOn ? scale.at(h.closingOn) : null;
