@@ -74,6 +74,9 @@ const FROZEN: Record<string, Record<string, number>> = {
   // The first approved homeowner report sentences, kept as the record of the original wording.
   // Reports print the saved wording, which already removes this dash; changing it needs approval.
   "src/lib/report-v2.ts": { longDash: 1 },
+  // A saved reason prefix on skipped onboarding work. Screens read it back and show "Not needed:",
+  // so the saved form stays the same for old and new rows.
+  "src/lib/onboarding.server.ts": { longDash: 1 },
   // Instructions sent to the AI models (Coach and evidence review). They are never shown on
   // a screen; the model is told to answer in Right now, Today and Routine.
   "src/lib/coach.server.ts": { longDash: 7, shortDash: 1, hyphenDash: 10, symbol: 1, urgencyCode: 2 },
