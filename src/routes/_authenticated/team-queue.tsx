@@ -279,7 +279,7 @@ function TeamQueuePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tickets")
-        .select("*, properties(name, nickname, market, city, state, address_line1, unit, postal_code, ownerrez_property_id), work_types(name, functional_role_code, action_start_minutes), claims(id)")
+        .select("*, properties(name, nickname, market, city, state, address_line1, unit, postal_code, ownerrez_property_id, time_zone), work_types(name, functional_role_code, action_start_minutes), claims(id)")
         .eq("is_demo", demoMode)
         .is("archived_at", null)
         .order("reported_at", { ascending: false });

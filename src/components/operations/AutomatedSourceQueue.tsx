@@ -27,6 +27,7 @@ import {
   type QueueTiming,
 } from "@/lib/team-queue-board";
 import { QueueGroup, QueueRow, TakeButton, type DoneProps } from "./QueueRow";
+import { arrivalDueLine, isArrivalCheckTicket } from "@/lib/arrival-check";
 
 export type SourceRow = AutomatedTicket & {
   ref?: number | null;
@@ -43,6 +44,8 @@ export type SourceRow = AutomatedTicket & {
   breezeway_task_id?: string | null;
   assignment_source?: string | null;
   assignment_note?: string | null;
+  external_id?: string | null;
+  due_at?: string | null;
 };
 
 type Db = { from: (t: string) => any };
@@ -194,7 +197,11 @@ export function AutomatedSourceQueue({
           {g.all.map(({ row: t, team }) => {
             const entry = done[t.id];
             const since = queueSince(t);
-            const late = isLate(t.priority, since, now, cfg, t.work_types?.action_start_minutes ?? null);
+            // Build 12 (register BN10): an arrival check shows its due time, red inside the last 30 minutes.
+            const arrival = isArrivalCheckTicket(t)
+              ? arrivalDueLine(t.due_at, (t.properties as { time_zone?: string | null } | null)?.time_zone ?? null, now)
+              : null;
+            const late = arrival ? arrival.urgent : isLate(t.priority, since, now, cfg, t.work_types?.action_start_minutes ?? null);
             return (
               <QueueRow
                 key={t.id}
@@ -205,7 +212,7 @@ export function AutomatedSourceQueue({
                 priority={t.priority}
                 guest={Boolean(t.guest_in_residence)}
                 home={rowHome(t)}
-                wait={{ text: waitLine(since, now, late), late }}
+                wait={arrival ? { text: arrival.text, late: arrival.urgent } : { text: waitLine(since, now, late), late }}
                 alert={alertLine(t.priority, sentAlertsFor(sent.data ?? [], since, t.id), cfg)}
                 breezewayUrl={rowBreezeway(t)}
                 nextStep={t.next_action ?? null}
