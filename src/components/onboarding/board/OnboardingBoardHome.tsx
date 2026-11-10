@@ -4,7 +4,7 @@
  * views, and upcoming handoffs. Every view lists the same homes.
  */
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, ClipboardList, Plus } from "lucide-react";
+import { ClipboardList } from "lucide-react";
 import type { ReactNode } from "react";
 import { PageHero, SectionCard } from "@/components/ui/page";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
@@ -13,7 +13,6 @@ import { cn } from "@/lib/utils";
 import {
   byStatus,
   daysBetween,
-  dueLabel,
   ganttScale,
   handoffLabel,
   NOT_SET,
@@ -371,13 +370,16 @@ function Gantt({ homes, today, homeLink }: { homes: BoardHome[]; today: string; 
   const scale = ganttScale(homes.map((h) => ({ start: h.closingOn, end: h.estimateOn })), today);
   return (
     <div className="overflow-x-auto" aria-label="Gantt">
-      <div className="min-w-[760px]">
+      <div className="min-w-[760px] pt-5">
         <div className="relative ml-48 h-6 border-b border-border text-xs text-muted-foreground">
           {scale.months.map((m) => (
-            <span key={m.label} className="absolute top-0 -translate-x-0" style={{ left: `${m.left}%` }}>
+            <span key={m.label} className="absolute top-0" style={{ left: `${m.left}%` }}>
               {m.label}
             </span>
           ))}
+          <span className="absolute -top-0 z-10 -translate-x-1/2 rounded bg-state-blocked/12 px-1 font-medium text-state-blocked" style={{ left: `${scale.today}%`, top: "-1.25rem" }}>
+            Today
+          </span>
         </div>
         <ul className="relative">
           <span
@@ -408,7 +410,6 @@ function Gantt({ homes, today, homeLink }: { homes: BoardHome[]; today: string; 
             );
           })}
         </ul>
-        <p className="mt-2 text-xs text-muted-foreground">Each bar runs from closing to the estimated handoff. The red line is today.</p>
       </div>
     </div>
   );
@@ -434,4 +435,3 @@ function WorkLoad({ homes }: { homes: BoardHome[] }) {
   );
 }
 
-export { ArrowRight, Plus, dueLabel };
