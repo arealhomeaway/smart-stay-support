@@ -89,7 +89,7 @@ export function TimeOffDialog({
       const actions = planTimeOff({ roles, userId, startsAt, endsAt, note, coverUserId: coverId || null });
       if (approveRequestId) {
         // One database step: every row and the approval, or nothing (Build 9 C2).
-        const rpc = supabase.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ error: { message: string } | null }>;
+        const rpc = supabase.rpc.bind(supabase) as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ error: { message: string } | null }>;
         const { error } = await rpc("approve_time_off", { _id: approveRequestId, _overrides: timeOffApprovalRows(actions), _note: "" });
         if (error) throw new Error(error.message);
         toast.success("Time off approved.");
