@@ -18,6 +18,18 @@ import { join, relative } from "node:path";
  *   It is not in the app source, so nothing here needs an exception for it.
  * - The generated database types (src/integrations) and generated route tree.
  * - FROZEN below: text that needs its own approval to change. Its count may only go down.
+ *
+ * Punctuation and urgency rules (Build 7, register H3 and H4), read from the same text:
+ * - longDash: a long dash (\u2014) anywhere. shortDash: an en dash (\u2013) anywhere.
+ * - hyphenDash: a hyphen with a space on both sides between words ("a - b"). A hyphen
+ *   alone ("-") still marks an empty value where space is tight; joined words like
+ *   "follow-up" or "2-3" are ordinary words.
+ * - symbol: emoji, arrows, check marks and stars used as words. The middle dot and the
+ *   ellipsis are allowed separators.
+ * - urgencyCode: P1, P2, P3 or P4. Screens say Right now, Today and Routine; the codes
+ *   stay only as lower case values (p1, p2, p3) in code and the database.
+ * - Text that code compares or searches with (=== "\u2014", .replace("\u2014", ...),
+ *   .includes, .split, .startsWith) is logic, not screen text, and is skipped.
  */
 const ROOT = join(process.cwd(), "src");
 
@@ -31,6 +43,14 @@ const WORDS: Record<string, RegExp> = {
   proposal:
     /\bproposals?\b|\bsigned off\b|\bproposed (standard|standards|wording|requirements?|removal|rules?|policy)\b|\bProposed\.(\s|$)|\bproposed (by|from)\b/i,
 };
+const PUNCTUATION: Record<string, RegExp> = {
+  longDash: /\u2014/,
+  shortDash: /\u2013/,
+  hyphenDash: /\S\s+-\s+\S|^\s*-\s+\S|\S\s+-\s*$/,
+  symbol: /[\p{Extended_Pictographic}\u2190-\u21FF\u2713\u2714\u2716\u2605\u2606]/u,
+  urgencyCode: /\bP[1-4]\b/,
+};
+Object.assign(WORDS, PUNCTUATION);
 const NAMES = ["Emily", "Micah", "Kati", "James", "Josh", "Avy", "Nelson", "Qym", "Mike", "Romeo", "Roms"];
 for (const n of NAMES) WORDS[n] = new RegExp(`\\b${n}\\b`);
 
@@ -41,10 +61,33 @@ for (const n of NAMES) WORDS[n] = new RegExp(`\\b${n}\\b`);
 const FROZEN: Record<string, Record<string, number>> = {
   // Protected onboarding template Task text (Full Furnishing plan). Changing it needs its own
   // approval; the matching database template rows are not touched either.
-  "src/lib/onboarding-template.ts": { James: 2, Josh: 3, Kati: 4, Micah: 3, sample: 3 },
+  // Its punctuation is frozen with it (Build 7): the plan's own approval covers rewording.
+  "src/lib/onboarding-template.ts": {
+    James: 2, Josh: 3, Kati: 4, Micah: 3, longDash: 10, shortDash: 5, hyphenDash: 36, symbol: 7,
+  },
   // Recovery policy version stamp. It is saved on every refund and credit record, so
   // renaming it would split their history.
-  "src/lib/recovery-policy.ts": { threshold: 1 },
+  "src/lib/recovery-policy.ts": { threshold: 1, longDash: 1 },
+  // The previous repair policy version stamp, saved on older Work Orders and matched by
+  // policyForVersion; renaming it would lose which policy they were decided under.
+  "src/lib/maintenance-policy.ts": { longDash: 1 },
+  // The first approved homeowner report sentences, kept as the record of the original wording.
+  // Reports print the saved wording, which already removes this dash; changing it needs approval.
+  "src/lib/report-v2.ts": { longDash: 1 },
+  // A saved reason prefix on skipped onboarding work. Screens read it back and show "Not needed:",
+  // so the saved form stays the same for old and new rows.
+  "src/lib/onboarding.server.ts": { longDash: 1 },
+  // Instructions sent to the AI models (Coach and evidence review). They are never shown on
+  // a screen; the model is told to answer in Right now, Today and Routine.
+  "src/lib/coach.server.ts": { longDash: 7, shortDash: 1, hyphenDash: 10, symbol: 1, urgencyCode: 2 },
+  "src/lib/coach-field-notes.ts": { longDash: 1, shortDash: 1, hyphenDash: 1 },
+  "src/lib/evidence.server.ts": { longDash: 1 },
+  // The Outlook category name. It must match the category that already exists in the
+  // shared mailbox, so it cannot be reworded here.
+  "src/lib/mail-categories.ts": { hyphenDash: 1 },
+  // The OpenStreetMap credit line. The map's licence requires the copyright sign.
+  "src/lib/search-map.ts": { symbol: 1 },
+  "src/components/direct-bookings/SearchMap.tsx": { symbol: 1 },
 };
 
 function files(dir: string, out: string[] = []) {
@@ -62,6 +105,25 @@ function files(dir: string, out: string[] = []) {
 
 const isIdentifier = (s: string) =>
   /^[a-z0-9_.:\-/]+$/.test(s) || /^[a-z]+[A-Z][A-Za-z0-9]*$/.test(s);
+
+const MATCH_CALLS = new Set(["replace", "replaceAll", "includes", "split", "startsWith", "endsWith", "indexOf"]);
+/** Text code compares or searches with, not text a person sees. */
+function isMatcher(node: ts.Node): boolean {
+  const p = node.parent;
+  if (ts.isBinaryExpression(p)) {
+    const k = p.operatorToken.kind;
+    return (
+      k === ts.SyntaxKind.EqualsEqualsEqualsToken ||
+      k === ts.SyntaxKind.ExclamationEqualsEqualsToken ||
+      k === ts.SyntaxKind.EqualsEqualsToken ||
+      k === ts.SyntaxKind.ExclamationEqualsToken
+    );
+  }
+  if (ts.isCallExpression(p) && p.arguments[0] === node && ts.isPropertyAccessExpression(p.expression)) {
+    return MATCH_CALLS.has(p.expression.name.text);
+  }
+  return false;
+}
 
 type Hit = { file: string; line: number; word: string; text: string };
 
@@ -85,7 +147,7 @@ function scan(): Hit[] {
           ts.isExportDeclaration(p) ||
           ts.isLiteralTypeNode(p) ||
           (ts.isCallExpression(p) && p.expression.kind === ts.SyntaxKind.ImportKeyword);
-        if (!skip) text = node.text;
+        if (!skip && !isMatcher(node)) text = node.text;
       } else if (ts.isTemplateHead(node) || ts.isTemplateMiddle(node) || ts.isTemplateTail(node)) {
         text = node.text;
       } else if (ts.isJsxText(node)) {
@@ -136,10 +198,16 @@ describe("screen words and names", () => {
       "Proposed. Waiting.",
       "a proposal only",
       "have not signed off",
+      "Waiting \u2014 owner",
+      "9\u201310 AM",
+      "Owner - reply",
+      "Done \u2705",
+      "Open \u2192",
+      "Unresolved P1",
       ...NAMES.map((n) => `Ask ${n} first`),
     ];
     for (const s of samples) expect(Object.values(WORDS).some((re) => re.test(s))).toBe(true);
-    for (const ok of ["Proposed amount", "Typical close", "Team and shift", "seatHolder", "median_ack"]) {
+    for (const ok of ["Proposed amount", "Typical close", "Team and shift", "seatHolder", "median_ack", "Right now", "follow-up", "2-3 homes", "-", "Home \u00b7 Team", "Loading\u2026", "p1"]) {
       expect(isIdentifier(ok) || !Object.values(WORDS).some((re) => re.test(ok))).toBe(true);
     }
   });

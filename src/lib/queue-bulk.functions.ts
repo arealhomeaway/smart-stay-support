@@ -95,7 +95,7 @@ export const bulkUpdateTicketsFn = createServerFn({ method: "POST" })
           : plan.action === "priority"
             ? `Priority changed from ${String(row.priority ?? "").toUpperCase()} to ${String(
                 plan.patch["priority"],
-              ).toUpperCase()} in a queue update — ${plan.reason}`
+              ).toUpperCase()} in a queue update: ${plan.reason}`
             : plan.patch["assigned_to"]
               ? "Reassigned in a queue update."
               : "Returned to the unassigned queue.";

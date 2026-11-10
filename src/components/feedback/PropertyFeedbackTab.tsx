@@ -124,13 +124,13 @@ export function PropertyFeedbackTab({
                     <p className="mb-1 font-medium">Reservation Context</p>
                     <dl className="grid grid-cols-[8rem_1fr] gap-x-2 gap-y-1">
                       <dt className="text-muted-foreground">Guest</dt>
-                      <dd>{open.reservation_guest_name ? `Reservation guest: ${open.reservation_guest_name}` : "—"}</dd>
+                      <dd>{open.reservation_guest_name ? `Reservation guest: ${open.reservation_guest_name}` : "Not set"}</dd>
                       <dt className="text-muted-foreground">Stay dates</dt>
                       <dd>{stayText(open)}</dd>
                       <dt className="text-muted-foreground">Reservation</dt>
-                      <dd>{open.reservation_confirmation ?? open.ownerrez_booking_id ?? "—"}</dd>
+                      <dd>{open.reservation_confirmation ?? open.ownerrez_booking_id ?? "Not set"}</dd>
                       <dt className="text-muted-foreground">Booking source</dt>
-                      <dd>{open.booking_platform ?? "—"}</dd>
+                      <dd>{open.booking_platform ?? "Not set"}</dd>
                     </dl>
                     {open.reservation_match === "matched" && /^\d+$/.test(open.ownerrez_booking_id ?? "") && (
                       <a href={ownerRezBookingUrl(open.ownerrez_booking_id) ?? undefined} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-primary">
@@ -162,7 +162,7 @@ export function PropertyFeedbackTab({
                   Open the follow-up Ticket
                 </button>
               ) : (
-                <p className="text-sm text-muted-foreground">{open.rating === 5 ? "No follow-up work — 5-star feedback is kept for history only." : "No follow-up Ticket — this review is kept for history only."}</p>
+                <p className="text-sm text-muted-foreground">{open.rating === 5 ? "No follow-up work: 5-star feedback is kept for history only." : "No follow-up Ticket: this review is kept for history only."}</p>
               )}
             </>
           )}
@@ -204,10 +204,10 @@ type PreviewResult = Awaited<ReturnType<typeof previewOwnerRezReviews>>;
 
 const PREVIEW_LABELS: Record<PreviewResult["rows"][number]["outcome"], string> = {
   historical: "Historical import only",
-  no_follow_up: "New review — no follow-up",
-  follow_up: "New review — follow-up Ticket will be created",
-  duplicate: "Already imported — skipped",
-  unmatched_property: "No matching home — skipped",
+  no_follow_up: "New review: no follow-up",
+  follow_up: "New review: follow-up Ticket will be created",
+  duplicate: "Already imported: skipped",
+  unmatched_property: "No matching home: skipped",
 };
 
 function ReviewToolsCard({ propertyId, isDemo, isSupervisor }: { propertyId: string; isDemo: boolean; isSupervisor: boolean }) {
@@ -228,7 +228,7 @@ function ReviewToolsCard({ propertyId, isDemo, isSupervisor }: { propertyId: str
       <CardContent className="space-y-3 pt-4 text-sm">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-medium">Review follow-up automation starts:</span>
-          <span>{start ?? "Not set — every imported review is history only"}</span>
+          <span>{start ?? "Not set: every imported review is history only"}</span>
           {startQ.data?.canEdit && (
             <>
               <Input type="date" aria-label="Review follow-up automation start date" className="h-8 w-40" value={draft || start || ""} onChange={(e) => setDraft(e.target.value)} />
@@ -261,11 +261,11 @@ function ReviewToolsCard({ propertyId, isDemo, isSupervisor }: { propertyId: str
                 setBusy(true);
                 const id = crypto.randomUUID().slice(0, 8);
                 const r = await addTest({ data: { propertyId, reviewId: id, stars, body: stars === 5 ? "Test review: lovely stay, spotless home." : "Test review: the kitchen was not clean on arrival.", withBooking: stars !== 5 } });
-                toast.success(`${r.imported} imported, ${r.ticketsCreated} follow-up created${r.historical ? " (historical — before the follow-up start date)" : ""}`);
+                toast.success(`${r.imported} imported, ${r.ticketsCreated} follow-up created${r.historical ? " (historical: before the follow-up start date)" : ""}`);
                 await refresh();
                 setBusy(false);
               }}>
-                Add {stars}★ test review
+                Add {stars} star test review
               </Button>
             ))}
           </>
@@ -273,7 +273,7 @@ function ReviewToolsCard({ propertyId, isDemo, isSupervisor }: { propertyId: str
         </div>
         {result && (
           <div className="space-y-2 rounded-md border p-3" data-testid="review-import-preview">
-            <p className="font-medium">Preview only — nothing saved, no Tickets created. {result.available} reviews from the last 60 days.</p>
+            <p className="font-medium">Preview only: nothing saved, no Tickets created. {result.available} reviews from the last 60 days.</p>
             <ul className="space-y-0.5">
               {(["historical", "no_follow_up", "follow_up", "duplicate", "unmatched_property"] as const).map((o) => (
                 <li key={o}>{PREVIEW_LABELS[o]}: <strong>{result.rows.filter((r) => r.outcome === o).length}</strong></li>
@@ -285,10 +285,10 @@ function ReviewToolsCard({ propertyId, isDemo, isSupervisor }: { propertyId: str
                 <tbody>
                   {result.rows.map((r) => (
                     <tr key={r.source_review_id} className="border-t">
-                      <td className="py-1">{r.date ? r.date.slice(0, 10) : "—"}</td>
-                      <td>{r.property_name ?? "—"}</td>
-                      <td>{r.rating ?? "—"}</td>
-                      <td>{r.platform ?? "—"}</td>
+                      <td className="py-1">{r.date ? r.date.slice(0, 10) : "Not set"}</td>
+                      <td>{r.property_name ?? "Not set"}</td>
+                      <td>{r.rating ?? "Not set"}</td>
+                      <td>{r.platform ?? "Not set"}</td>
                       <td>{PREVIEW_LABELS[r.outcome]}</td>
                     </tr>
                   ))}

@@ -21,7 +21,7 @@ export function VendorScoreboardPanel() {
           <Award className="size-4" /> Vendor scorecards
         </CardTitle>
         <CardDescription>
-          Internal view. Vendors only ever see their own points and an anonymous percentile — no
+          Internal view. Vendors only ever see their own points and an anonymous percentile. No
           names, no leaderboard.
         </CardDescription>
       </CardHeader>
@@ -45,7 +45,7 @@ export function VendorScoreboardPanel() {
               </Badge>
               <span className="text-muted-foreground">
                 {v.ratedJobs} scored ·{" "}
-                {v.averageOverall !== null ? `${v.averageOverall.toFixed(1)}/5` : "—"} avg
+                {v.averageOverall !== null ? `${v.averageOverall.toFixed(1)}/5` : "-"} avg
                 {v.reopenCount > 0
                   ? ` · ${v.reopenCount} callback${v.reopenCount === 1 ? "" : "s"}`
                   : ""}

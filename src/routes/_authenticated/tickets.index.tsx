@@ -41,13 +41,13 @@ import { useRole } from "@/hooks/useRole";
 export const Route = createFileRoute("/_authenticated/tickets/")({
   head: () => ({
     meta: [
-      { title: "My Work — Resolve" },
+      { title: "My Work: Resolve" },
       {
         name: "description",
         content:
           "One searchable queue for every guest, owner and maintenance ticket across the A Real Home Away portfolio, with live response clocks.",
       },
-      { property: "og:title", content: "My Work — Resolve" },
+      { property: "og:title", content: "My Work: Resolve" },
       {
         property: "og:description",
         content: "My work, team queue, unassigned and escalated tickets in one place.",
@@ -247,7 +247,7 @@ function TicketsPage() {
           title={tab === "active" ? "You are clear." : "No tickets match this view."}
           hint={
             tab === "active"
-              ? "Nothing is assigned to you right now — check the team queue for unassigned work."
+              ? "Nothing is assigned to you right now. Check the team queue for unassigned work."
               : "Try a different queue, priority or search term."
           }
         />
@@ -331,7 +331,7 @@ function FilterPopover({
 }) {
   const activeCount = (priority !== "all" ? 1 : 0) + (search.trim() ? 1 : 0);
   const summary = [
-    priority !== "all" ? priority.toUpperCase() : null,
+    priority !== "all" ? priorityMeta(priority).short : null,
     search.trim() ? `"${search.trim()}"` : null,
   ]
     .filter(Boolean)

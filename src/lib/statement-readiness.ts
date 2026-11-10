@@ -18,7 +18,7 @@ export const DISPOSITION_LABEL: Record<Disposition, string> = {
 export type PeriodReadiness = "not_reconciled" | "needs_rereview" | "expense_review_ready";
 export const PERIOD_READINESS_LABEL: Record<PeriodReadiness, string> = {
   not_reconciled: "Not yet reconciled",
-  needs_rereview: "Needs re-review — changed after sign-off",
+  needs_rereview: "Needs re-review: changed after sign-off",
   expense_review_ready: "Expense review ready",
 };
 
@@ -45,7 +45,7 @@ export type StatementItem = ExpenseFacts & {
 /** Specific, plain blockers for one expense in the period view (empty = none). */
 export function itemBlockers(e: StatementItem, wo: AuthorizationContext = null): string[] {
   const out: string[] = [];
-  if (e.is_estimate) out.push("Estimate only — the actual invoice has not been recorded.");
+  if (e.is_estimate) out.push("Estimate only: the actual invoice has not been recorded.");
   if (e.duplicate_flag === "suspected") out.push("Possible duplicate of another expense.");
   const missing = missingDocumentation(e, wo);
   if (missing.length) out.push(`Documentation missing: ${missing.join(", ")}.`);

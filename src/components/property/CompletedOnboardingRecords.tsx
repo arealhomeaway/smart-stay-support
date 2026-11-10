@@ -52,7 +52,7 @@ export function CompletedOnboardingRecords({ propertyId }: { propertyId: string 
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Completed onboarding records</CardTitle>
           <CardDescription>
-            Finished Tasks, assessments and files from onboarding. Read-only — changes stay with
+            Finished Tasks, assessments and files from onboarding. Read-only: changes stay with
             the onboarding team.
           </CardDescription>
         </CardHeader>
@@ -102,7 +102,7 @@ export function CompletedOnboardingRecords({ propertyId }: { propertyId: string 
               <ul className="space-y-1 text-xs text-muted-foreground">
                 {records.history.map((h, i) => (
                   <li key={i}>
-                    {usDateTime(h.at)} — {h.summary}
+                    {usDateTime(h.at)} · {h.summary}
                     {h.actor ? ` · ${h.actor}` : ""}
                   </li>
                 ))}
@@ -138,19 +138,19 @@ function TaskDetail({
       <dl className="grid grid-cols-2 gap-3">
         <div>
           <dt className="eyebrow">Completed</dt>
-          <dd>{task.completedAt ? usDateTime(task.completedAt) : "—"}</dd>
+          <dd>{task.completedAt ? usDateTime(task.completedAt) : "Not set"}</dd>
         </div>
         <div>
           <dt className="eyebrow">Completed by</dt>
-          <dd>{task.completedBy ?? "—"}</dd>
+          <dd>{task.completedBy ?? "Not set"}</dd>
         </div>
         <div>
           <dt className="eyebrow">Assigned to</dt>
-          <dd>{task.assignedTo ?? "—"}</dd>
+          <dd>{task.assignedTo ?? "Not set"}</dd>
         </div>
         <div>
           <dt className="eyebrow">Stage</dt>
-          <dd className="capitalize">{label(task.stage) || "—"}</dd>
+          <dd className="capitalize">{label(task.stage) || "Not set"}</dd>
         </div>
       </dl>
       {task.detail && (

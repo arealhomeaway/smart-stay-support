@@ -35,13 +35,13 @@ import { usDate } from "@/lib/dates";
 export const Route = createFileRoute("/_authenticated/cleaner-hours")({
   head: () => ({
     meta: [
-      { title: "STR cleaner time — Resolve" },
+      { title: "STR cleaner time: Resolve" },
       {
         name: "description",
         content:
           "Internal monitoring of Attributed Cleaner Time at homes enrolled in the STR cleaner-hours safeguard, with a review queue and traceable Breezeway sources.",
       },
-      { property: "og:title", content: "STR cleaner time — Resolve" },
+      { property: "og:title", content: "STR cleaner time: Resolve" },
       { property: "og:description", content: "Attributed Cleaner Time by home and by cleaner, traceable to Breezeway." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -117,7 +117,7 @@ function CleanerHoursPage() {
         description={
           <>
             {ATTRIBUTED_TIME_LABEL} at homes enrolled in the STR cleaner-hours safeguard, measured against the safeguard limits.
-            Each cleaner on a Breezeway clean is attributed the full elapsed Task time — a conservative exposure figure, not hours worked.
+            Each cleaner on a Breezeway clean is attributed the full elapsed Task time. A conservative exposure figure, not hours worked.
             This is an operational safeguard only; Resolve makes no tax or participation determinations.
           </>
         }
@@ -135,7 +135,7 @@ function CleanerHoursPage() {
         <StatTile label="Homes tracked" value={props.filter((p) => p.active).length} hint={props.length ? undefined : "No STR home enrolled yet"} />
         <StatTile label={`${ATTRIBUTED_TIME_LABEL} ${year}`} value={hours(totalHours)} />
         <StatTile label="Cleaners in Warning or above" value={flagged.length} tone={flagged.length ? "attention" : "neutral"} />
-        <StatTile label="Open Attention Queue items" value={openItems.data ?? "—"} tone={(openItems.data ?? 0) > 0 ? "attention" : "neutral"} />
+        <StatTile label="Open Attention Queue items" value={openItems.data ?? "Not set"} tone={(openItems.data ?? 0) > 0 ? "attention" : "neutral"} />
       </div>
 
       <SegmentedControl<Tab>
@@ -206,18 +206,18 @@ function FirstLiveRecordCheck() {
             <tbody>
               {q.data.map((r) => (
                 <tr key={r.property_id} className="border-t border-border align-top">
-                  <td className="py-2 pr-3 font-medium">{r.property_name}<div className="text-xs text-muted-foreground">Home {r.breezeway_home_id ?? "—"} · {r.mapping_state ?? "—"}</div></td>
+                  <td className="py-2 pr-3 font-medium">{r.property_name}<div className="text-xs text-muted-foreground">Home {r.breezeway_home_id ?? "Not set"} · {r.mapping_state ?? "Not set"}</div></td>
                   <td className="pr-3">{usDate(r.tracking_from)}</td>
                   {!r.first_ledger_id ? (
                     <td colSpan={7} className="text-muted-foreground">Waiting for the first real cleaning record.</td>
                   ) : (
                     <>
-                      <td className="pr-3">{r.breezeway_task_id}<div className="text-xs text-muted-foreground">{r.completion_date ? usDate(r.completion_date) : "—"}{r.before_tracking_start ? " · BEFORE START" : ""}</div></td>
-                      <td className="pr-3">{r.worker_name ?? "Unlinked"}<div className="text-xs text-muted-foreground">Person {r.breezeway_person_id ?? "—"} · {r.worker_classification ?? "unclassified"}</div></td>
-                      <td className="pr-3">Elapsed {r.raw_elapsed_minutes ?? "—"} min<div className="text-xs text-muted-foreground">Attributed {r.attributed_minutes ?? "—"} min · {r.attribution_method ?? "—"}{r.review_state ? ` · ${r.review_state}` : ""}</div></td>
+                      <td className="pr-3">{r.breezeway_task_id}<div className="text-xs text-muted-foreground">{r.completion_date ? usDate(r.completion_date) : "Not set"}{r.before_tracking_start ? " · BEFORE START" : ""}</div></td>
+                      <td className="pr-3">{r.worker_name ?? "Unlinked"}<div className="text-xs text-muted-foreground">Person {r.breezeway_person_id ?? "Not set"} · {r.worker_classification ?? "unclassified"}</div></td>
+                      <td className="pr-3">Elapsed {r.raw_elapsed_minutes ?? "-"} min<div className="text-xs text-muted-foreground">Attributed {r.attributed_minutes ?? "-"} min · {r.attribution_method ?? "-"}{r.review_state ? ` · ${r.review_state}` : ""}</div></td>
                       <td className="pr-3">{r.calendar_year}</td>
-                      <td className="pr-3">{r.safeguard?.owner_hours ?? "—"}</td>
-                      <td className="pr-3">{r.safeguard?.state ? <StateBadge state={r.safeguard.state} /> : "—"}</td>
+                      <td className="pr-3">{r.safeguard?.owner_hours ?? "-"}</td>
+                      <td className="pr-3">{r.safeguard?.state ? <StateBadge state={r.safeguard.state} /> : "Not set"}</td>
                       <td>{r.open_review_items ? <Badge variant="outline">{r.open_review_items} open</Badge> : "None"}</td>
                     </>
                   )}
@@ -260,7 +260,7 @@ function CellTable({ rows, showProperty }: { rows: Cell[]; showProperty?: boolea
               <td>{hours(c.current_hours)}</td>
               <td><ExposureBar hoursValue={c.current_hours} /></td>
               <td>{hours(c.owner_hours)}</td>
-              <td>{c.owner_zero ? "—" : hours(c.buffer_hours)}{c.inversion ? <span className="ml-1 text-xs text-danger">inversion</span> : null}</td>
+              <td>{c.owner_zero ? "-" : hours(c.buffer_hours)}{c.inversion ? <span className="ml-1 text-xs text-danger">inversion</span> : null}</td>
               <td><StateBadge state={c.state} /></td>
               <td className="text-right"><Button size="sm" variant="ghost" onClick={() => setDetail(c)}>Sources</Button></td>
             </tr>
@@ -286,10 +286,10 @@ function OverridesLog({ overrides }: { overrides: OverrideRow[] }) {
                 <span className="font-medium">{o.worker_name}</span> · {o.property_name} · clean {o.task_ref}{o.scheduled_date ? ` (${usDate(o.scheduled_date)})` : ""}
               </div>
               <div className="text-muted-foreground">
-                {OVERRIDE_CATEGORY_LABEL[o.reason_category] ?? o.reason_category}: “{o.justification}” — {o.approved_by_name}, {new Date(o.created_at).toLocaleString()}
+                {OVERRIDE_CATEGORY_LABEL[o.reason_category] ?? o.reason_category}: “{o.justification}”: {o.approved_by_name}, {new Date(o.created_at).toLocaleString()}
               </div>
               <div className="text-xs text-muted-foreground">
-                At approval: {STATE_LABEL[o.state_at_approval]} · {hours(o.current_hours)} + {hours(o.projected_clean_hours)} = {hours(o.projected_total_hours)} · owner {hours(o.owner_hours)} · buffer {o.buffer_hours == null ? "—" : hours(o.buffer_hours)}
+                At approval: {STATE_LABEL[o.state_at_approval]} · {hours(o.current_hours)} + {hours(o.projected_clean_hours)} = {hours(o.projected_total_hours)} · owner {hours(o.owner_hours)} · buffer {o.buffer_hours == null ? "Not set" : hours(o.buffer_hours)}
               </div>
             </li>
           ))}
@@ -312,7 +312,7 @@ function EnrolledProperties({ props, onChanged }: { props: PortfolioProperty[]; 
             title={<span className="flex items-center gap-2">{p.name} {p.cleaners.length ? <StateBadge state={state} /> : null}</span>}
             description={
               <span>
-                Active owner: {p.owner_name ?? "—"} · Owner hours {hours(p.owner_hours)} · {p.needs_review_entries ? `${p.needs_review_entries} entries need review (lower confidence)` : "Data confidence: reviewed"}
+                Active owner: {p.owner_name ?? "Not set"} · Owner hours {hours(p.owner_hours)} · {p.needs_review_entries ? `${p.needs_review_entries} entries need review (lower confidence)` : "Data confidence: reviewed"}
                 {" · "}Next clean: {p.next_clean ? `${usDate(p.next_clean.date)} (#${p.next_clean.task_id})` : "none scheduled"}
                 {!p.segment_start.endsWith("-01-01") ? ` · Ownership period from ${usDate(p.segment_start)}` : ""}
               </span>
@@ -444,17 +444,17 @@ function EntriesDialog({ propertyId, workerKey: wk, taskId, title, onClose, onCh
                   <tr key={e.id} className={`border-t border-border align-top ${e.superseded_at ? "opacity-60" : ""}`}>
                     <td className="py-1.5">{usDate(e.completion_date)}</td>
                     <td>{e.breezeway_task_id ?? "Manual"}{e.assignee_count ? <div className="text-xs text-muted-foreground">{e.assignee_count} on Task</div> : null}</td>
-                    <td>{e.breezeway_person_name ?? "—"}{e.breezeway_person_id ? <div className="text-xs text-muted-foreground">#{e.breezeway_person_id}</div> : null}</td>
-                    <td>{e.breezeway_task_id ? formatElapsed(e.raw_elapsed_seconds) : "—"}</td>
+                    <td>{e.breezeway_person_name ?? "Not set"}{e.breezeway_person_id ? <div className="text-xs text-muted-foreground">#{e.breezeway_person_id}</div> : null}</td>
+                    <td>{e.breezeway_task_id ? formatElapsed(e.raw_elapsed_seconds) : "-"}</td>
                     <td>
                       {formatMinutes(e.attributed_minutes)}
                       {e.original_minutes != null || e.attribution_method === "manual_correction" ? <div className="text-xs text-muted-foreground">was {formatMinutes(e.original_minutes)}</div> : null}
                     </td>
                     <td className="max-w-56">
                       {METHOD_LABEL[e.attribution_method] ?? e.attribution_method}
-                      {e.reason ? <div className="text-xs text-muted-foreground">“{e.reason}” — {e.author_name}</div> : null}
+                      {e.reason ? <div className="text-xs text-muted-foreground">“{e.reason}”: {e.author_name}</div> : null}
                       {e.superseded_at ? <div className="text-xs text-muted-foreground">Superseded {usDate(e.superseded_at)}: {e.superseded_reason}</div> : null}
-                      <div className="text-xs text-muted-foreground">Source revision {e.source_revision ? new Date(e.source_revision).toLocaleString() : "—"} · synced {new Date(e.synced_at).toLocaleString()}</div>
+                      <div className="text-xs text-muted-foreground">Source revision {e.source_revision ? new Date(e.source_revision).toLocaleString() : "Not set"} · synced {new Date(e.synced_at).toLocaleString()}</div>
                     </td>
                     <td>{REVIEW_STATE_LABEL[e.review_state] ?? e.review_state}</td>
                     <td>{!e.superseded_at && e.attribution_method !== "company_account_not_counted" ? <Button size="sm" variant="outline" onClick={() => setCorrecting(e)}>Correct</Button> : null}</td>
@@ -483,7 +483,7 @@ function WorkerSelect({ value, onChange, type }: { value: string; onChange: (v: 
     <select className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm" value={value} onChange={(e) => onChange(e.target.value)}>
       <option value="">Choose a worker…</option>
       {(workers.data ?? []).filter((w) => !type || w.account_type === type).map((w) => (
-        <option key={w.id} value={w.id}>{w.display_name}{w.account_type === "company" ? " (company)" : ""}{w.active ? "" : " — inactive"}</option>
+        <option key={w.id} value={w.id}>{w.display_name}{w.account_type === "company" ? " (company)" : ""}{w.active ? "" : "· inactive"}</option>
       ))}
     </select>
   );
@@ -511,7 +511,7 @@ function CorrectDialog({ entry, onClose, onDone }: { entry: Entry; onClose: () =
         </p>
         <label className="text-sm font-medium">Corrected minutes</label>
         <Input type="number" min={0} max={1440} value={minutes} onChange={(e) => setMinutes(e.target.value)} />
-        <label className="text-sm font-medium">Actual individual cleaner (optional — use when a company account was recorded)</label>
+        <label className="text-sm font-medium">Actual individual cleaner (optional. Use when a company account was recorded)</label>
         <WorkerSelect value={worker} onChange={setWorker} type="individual" />
         <label className="text-sm font-medium">Reason and evidence (required)</label>
         <Textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. Vendor timesheet shows Maria on site 2 h 10 m" />
@@ -614,7 +614,7 @@ function ReviewQueue({ propName, onChanged }: { propName: Map<string, string>; o
                   {typeof i.detail?.["reason"] === "string" ? ` · “${i.detail["reason"]}”` : ""}
                   {` · raised ${usDate(i.created_at)}`}
                 </div>
-                {i.resolution_note ? <div className="text-xs text-muted-foreground">{i.status}: {i.resolution_note} {i.resolved_by_name ? `— ${i.resolved_by_name}` : "(automatic)"}</div> : null}
+                {i.resolution_note ? <div className="text-xs text-muted-foreground">{i.status}: {i.resolution_note} {i.resolved_by_name ? ` · ${i.resolved_by_name}` : "(automatic)"}</div> : null}
               </div>
               {i.status === "open" ? (
                 <div className="flex gap-2">
@@ -685,10 +685,10 @@ function AccountsView({ onChanged }: { onChanged: () => void }) {
           <tbody>
             {(accounts.data ?? []).map((a) => (
               <tr key={a.breezeway_person_id} className="border-t border-border">
-                <td className="py-1.5">{a.last_seen_name ?? "—"}</td>
+                <td className="py-1.5">{a.last_seen_name ?? "Not set"}</td>
                 <td>#{a.breezeway_person_id}</td>
                 <td>{a.classification === "unclassified" || a.classification === "unknown" ? <Badge variant="outline">{CLASSIFICATION_LABEL[a.classification]}</Badge> : CLASSIFICATION_LABEL[a.classification]}</td>
-                <td>{a.worker_id ? workerName.get(a.worker_id) ?? "—" : "—"}</td>
+                <td>{a.worker_id ? workerName.get(a.worker_id) ?? "Not set" : "Not set"}</td>
                 <td>{usDate(a.last_seen_at)}</td>
                 <td className="text-right"><Button size="sm" variant="outline" onClick={() => setEditing(a)}>Classify</Button></td>
               </tr>
@@ -803,7 +803,7 @@ function TrackedHomes({ propName, properties, onChanged }: {
         {!(runs.data ?? []).length ? <p className="text-sm text-muted-foreground">No nightly check has run yet.</p> : (
           <ul className="text-sm">
             {(runs.data as { id: string; window_to: string; status: string; cursor: number; home_queue: unknown[]; tasks_seen: number; errors: unknown[] }[]).map((r) => (
-              <li key={r.id}>{usDate(r.window_to)} — {r.status} · {r.cursor}/{r.home_queue.length} homes · {r.tasks_seen} cleans checked{r.errors.length ? ` · ${r.errors.length} errors` : ""}</li>
+              <li key={r.id}>{usDate(r.window_to)} · {r.status} · {r.cursor}/{r.home_queue.length} homes · {r.tasks_seen} cleans checked{r.errors.length ? ` · ${r.errors.length} errors` : ""}</li>
             ))}
           </ul>
         )}

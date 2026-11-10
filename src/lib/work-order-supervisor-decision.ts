@@ -41,7 +41,7 @@ export async function recordWorkOrderSupervisorDecision(
     work_order_id: workOrder.id,
     author_id: userId,
     event_type: `supervisor_${outcome}`,
-    body: `Supervisor ${outcome} — ${note}`,
+    body: `Supervisor ${outcome} · ${note}`,
     is_demo: workOrder.is_demo,
   } as never);
 }

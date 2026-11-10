@@ -119,23 +119,23 @@ export type SupervisorTrigger =
   | "reopened_issue";
 
 export const SUPERVISOR_TRIGGER_REASONS: Record<SupervisorTrigger, string> = {
-  p1_unaccepted: `Supervisor escalation required — a P1 has not been accepted within ${RECOVERY_POLICY.p1UnacceptedMinutes} minutes.`,
-  p2_no_plan: `Supervisor escalation required — a P2 has no credible action plan after ${RECOVERY_POLICY.p2NoPlanMinutes} minutes.`,
-  guest_asked_supervisor: "Supervisor escalation required — the guest has asked for a supervisor.",
+  p1_unaccepted: `Supervisor escalation required: a Right now ticket has not been accepted within ${RECOVERY_POLICY.p1UnacceptedMinutes} minutes.`,
+  p2_no_plan: `Supervisor escalation required: a Today ticket has no credible action plan after ${RECOVERY_POLICY.p2NoPlanMinutes} minutes.`,
+  guest_asked_supervisor: "Supervisor escalation required: the guest has asked for a supervisor.",
   resolution_attempt_failed:
     "Supervisor escalation required because the guest remains dissatisfied after one reasonable resolution attempt.",
   monetary_beyond_pc: `Supervisor escalation required: the guest is asking for more than the $${RECOVERY_POLICY.pcApprovalCeiling} coordinator limit.`,
-  vendor_missed_commitments: `Supervisor escalation required — the vendor has missed ${RECOVERY_POLICY.vendorMissedCommitments} commitments.`,
+  vendor_missed_commitments: `Supervisor escalation required: the vendor has missed ${RECOVERY_POLICY.vendorMissedCommitments} commitments.`,
   unresolved_two_hours:
-    "Supervisor escalation required — an active-stay issue has been materially unresolved for over 2 hours.",
-  no_sop: "Supervisor escalation required — no clear SOP applies to this situation.",
+    "Supervisor escalation required: an active-stay issue has been materially unresolved for over 2 hours.",
+  no_sop: "Supervisor escalation required: no clear SOP applies to this situation.",
   conflicting_information:
-    "Supervisor escalation required — guest, vendor and team information conflict.",
+    "Supervisor escalation required: guest, vendor and team information conflict.",
   hostile_conversation:
-    "Supervisor escalation required — the guest conversation has become significantly hostile.",
+    "Supervisor escalation required: the guest conversation has become significantly hostile.",
   missing_closure_evidence:
-    "Supervisor escalation required — required closure evidence is missing.",
-  reopened_issue: "Supervisor escalation required — a previously resolved issue has reopened.",
+    "Supervisor escalation required: required closure evidence is missing.",
+  reopened_issue: "Supervisor escalation required: a previously resolved issue has reopened.",
 };
 
 /* ------------------------------------------------------------------ */

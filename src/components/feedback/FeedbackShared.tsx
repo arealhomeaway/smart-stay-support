@@ -51,7 +51,7 @@ export function followUpLabel(s: string) {
 export function stayText(f: Pick<FeedbackRow, "stay_start" | "stay_end" | "reservation_match">) {
   if (f.reservation_match === "unmatched") return "Reservation not matched";
   if (!f.stay_end) return "Stay unknown";
-  return f.stay_start ? `${formatDate(f.stay_start)} – ${formatDate(f.stay_end)}` : `Checked out ${formatDate(f.stay_end)}`;
+  return f.stay_start ? `${formatDate(f.stay_start)} to ${formatDate(f.stay_end)}` : `Checked out ${formatDate(f.stay_end)}`;
 }
 
 /** Property feedback used for repeat-issue counts. */
@@ -119,7 +119,7 @@ export function SurveyAnswersView({ feedbackId }: { feedbackId: string }) {
       {a.issue_description && <Quote label="What happened">{a.issue_description}</Quote>}
       {a.improve_before_checkout && <Quote label="What we could have done before checkout">{a.improve_before_checkout}</Quote>}
       {a.comments && <Quote label="Other comments">{a.comments}</Quote>}
-      {row("OK to contact them", a.follow_up_ok ? "Yes" : <Badge variant="outline">No — do not contact</Badge>)}
+      {row("OK to contact them", a.follow_up_ok ? "Yes" : <Badge variant="outline">No: do not contact</Badge>)}
     </div>
   );
 }

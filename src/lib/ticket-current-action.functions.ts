@@ -93,7 +93,7 @@ export const completeCurrentActionFn = createServerFn({ method: "POST" })
     if (!action || action.id !== data.actionId || !isCompletable(action.id))
       return {
         ok: false,
-        message: "This ticket has already moved on — refresh to see the current step.",
+        message: "This ticket has already moved on. Refresh to see the current step.",
       };
 
     const problem = validateAction(action, data.values);
@@ -133,8 +133,8 @@ export const completeCurrentActionFn = createServerFn({ method: "POST" })
       kind = "status";
       eventType = "acknowledged";
       body = v["note"]?.trim()
-        ? `Acknowledged — ${v["note"].trim()}`
-        : "Acknowledged — we have this ticket.";
+        ? `Acknowledged: ${v["note"].trim()}`
+        : "Acknowledged: we have this ticket.";
     } else if (action.id === "start_work") {
       const { error: writeError } = await supabase
         .from("tickets")
@@ -148,7 +148,7 @@ export const completeCurrentActionFn = createServerFn({ method: "POST" })
       }
       kind = "status";
       eventType = "action_started";
-      body = `Work started — ${v["first_step"]?.trim() ?? ""}`;
+      body = `Work started: ${v["first_step"]?.trim() ?? ""}`;
     } else if (action.id === "waiting_followup") {
       const update = v["update"]?.trim() ?? "";
       if (v["outcome"] === "resume") {
@@ -160,7 +160,7 @@ export const completeCurrentActionFn = createServerFn({ method: "POST" })
         if (!result.ok) return { ok: false, message: result.message };
         kind = "waiting";
         eventType = "waiting_cleared";
-        body = `No longer waiting — ${update}`;
+        body = `No longer waiting: ${update}`;
       } else {
         const review = new Date(v["next_review_at"] ?? "").toISOString();
         const result = await status("waiting", {
@@ -171,7 +171,7 @@ export const completeCurrentActionFn = createServerFn({ method: "POST" })
         if (!result.ok) return { ok: false, message: result.message };
         kind = "waiting";
         eventType = "waiting_set";
-        body = `Still waiting on ${waitingWho(ticket.waiting_on)} — ${update}`;
+        body = `Still waiting on ${waitingWho(ticket.waiting_on)} · ${update}`;
       }
     } else if (action.id === "vendor_checkin") {
       const done = v["vendor_state"] === "completed";
@@ -184,11 +184,11 @@ export const completeCurrentActionFn = createServerFn({ method: "POST" })
       }
       kind = "vendor";
       eventType = "vendor_update";
-      body = `${ticket.vendor_name ?? "Vendor"} check-in${done ? " — reported complete" : ""}: ${v["update"]?.trim() ?? ""}`;
+      body = `${ticket.vendor_name ?? "Vendor"} check-in${done ? "· reported complete" : ""}: ${v["update"]?.trim() ?? ""}`;
     } else if (action.id === "guest_update") {
       kind = "communication";
       eventType = "guest_update";
-      body = `Guest updated — ${v["update"]?.trim() ?? ""}`;
+      body = `Guest updated: ${v["update"]?.trim() ?? ""}`;
       // Same fields the guided Ticket reads, so the update counts everywhere.
       const { error: stampError } = await supabase
         .from("tickets")

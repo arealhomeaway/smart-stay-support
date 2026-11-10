@@ -201,7 +201,7 @@ export async function createIntakeMatter(db: Db, payload: IntakePayload): Promis
           home ? `Home recognised: ${home.name}. A test record is not linked to a live home.` : "No home was recognised."
         }`
       : `Created from an inbound ${source} message${payload.from ? ` from ${payload.from}` : ""}.${
-          propertyId ? "" : " No home was recognised — link the property to complete the record."
+          propertyId ? "" : " No home was recognised. Link the property to complete the record."
         }`,
     ...(isDemo ? { is_demo: true } : {}),
   });

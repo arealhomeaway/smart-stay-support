@@ -5,7 +5,7 @@ describe("handoffSelfAcceptCheck — a handoff's requester cannot also accept it
   it("refuses when the current user is who the handoff was requested from", () => {
     const result = handoffSelfAcceptCheck("user-1", "user-1");
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.message).toContain("someone else");
+    if (!result.ok) expect(result.message).toContain("Someone else");
   });
 
   it("allows a different user to accept", () => {

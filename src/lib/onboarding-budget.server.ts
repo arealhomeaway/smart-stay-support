@@ -225,7 +225,7 @@ function describeLine(line: BudgetLine): string {
     line.category,
     line.status,
     `est ${line.estimated_amount ?? 0}`,
-    `committed ${line.committed_amount ?? "—"}`,
-    `actual ${line.actual_amount ?? "—"}`,
+    `committed ${line.committed_amount ?? "-"}`,
+    `actual ${line.actual_amount ?? "-"}`,
   ].join(" · ");
 }

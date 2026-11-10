@@ -64,7 +64,7 @@ function Scorecard() {
 
       <PageHeader
         title="My scorecard"
-        description="Private to you. We never show your scores to other vendors, and you never see theirs — the ranking below is anonymous."
+        description="Private to you. We never show your scores to other vendors, and you never see theirs. The ranking below is anonymous."
       />
 
       <SectionCard
@@ -86,7 +86,7 @@ function Scorecard() {
             <StatTile label="Work orders scored" value={s.ratedJobs} />
             <StatTile
               label="Average score"
-              value={s.averageOverall !== null ? `${s.averageOverall.toFixed(1)}/5` : "—"}
+              value={s.averageOverall !== null ? `${s.averageOverall.toFixed(1)}/5` : "-"}
             />
             <StatTile
               label="Streak"
@@ -110,7 +110,7 @@ function Scorecard() {
               <Progress value={goldProgress} />
               <p className="text-xs text-muted-foreground">
                 {s.jobsToGold} more job{s.jobsToGold === 1 ? "" : "s"} scored above the ARHA vendor
-                average and you're Gold Standard — first call on urgent work.
+                average and you're Gold Standard. First call on urgent work.
               </p>
             </div>
           )}
@@ -120,7 +120,7 @@ function Scorecard() {
       <div className="grid gap-3 sm:grid-cols-3">
         <StatTile
           label="Photo evidence"
-          value={s.photoRate !== null ? `${s.photoRate}%` : "—"}
+          value={s.photoRate !== null ? `${s.photoRate}%` : "-"}
           hint={
             <span className="flex items-center gap-1.5">
               <Camera className="size-3.5" /> Complete photo sets
@@ -129,7 +129,7 @@ function Scorecard() {
         />
         <StatTile
           label="On time"
-          value={s.onTimeRate !== null ? `${s.onTimeRate}%` : "—"}
+          value={s.onTimeRate !== null ? `${s.onTimeRate}%` : "-"}
           hint={
             <span className="flex items-center gap-1.5">
               <Clock className="size-3.5" /> Finished inside the window
@@ -145,14 +145,14 @@ function Scorecard() {
 
       <SectionCard
         title="How points work"
-        description="Thoroughness is worth the most — finish the job, don't just stop the leak."
+        description="Thoroughness is worth the most. Finish the job, don't just stop the leak."
       >
         <div className="space-y-1 text-sm text-muted-foreground">
           <p>Every completed Work Order starts at 10 points.</p>
           <p>Thoroughness moves your score the most, then communication and timeliness.</p>
           <p>
             +10 for complete photo evidence, +8 for finishing inside the window, +6 for taking
-            urgent P1 work.
+            urgent Right now work.
           </p>
           <p>−20 if we have to send you back for the same issue.</p>
         </div>

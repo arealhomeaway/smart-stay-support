@@ -177,7 +177,7 @@ export function VendorOrgSheet({
             <SheetHeader>
               <SheetTitle>{org.display_name}</SheetTitle>
               <SheetDescription>
-                {VENDOR_STATUS_LABELS[org.status as VendorStatus]} —{" "}
+                {VENDOR_STATUS_LABELS[org.status as VendorStatus]} · {" "}
                 {VENDOR_STATUS_BLURBS[org.status as VendorStatus]}
               </SheetDescription>
             </SheetHeader>
@@ -463,7 +463,7 @@ export function VendorOrgSheet({
                     <div key={e.id} className="rounded-lg border p-3 text-sm">
                       <p className="font-medium">
                         {e.from_status
-                          ? `${e.from_status} → ${e.to_status}`
+                          ? `${e.from_status} to ${e.to_status}`
                           : `Created as ${e.to_status}`}
                       </p>
                       <p className="text-muted-foreground">{e.reason}</p>

@@ -21,7 +21,7 @@ export type ParticipationPrompt = {
 };
 
 export const PARTICIPATION_PROMPT_NOTE =
-  "These are optional opportunities to take part in running your home — nobody is waiting on them. Log only the time you actually spend. ARHA does not provide tax advice and does not promise any outcome from your participation.";
+  "These are optional opportunities to take part in running your home. Nobody is waiting on them. Log only the time you actually spend. ARHA does not provide tax advice and does not promise any outcome from your participation.";
 
 const RELEVANCE_DECISION = "A decision you make about your own home.";
 const RELEVANCE_GUEST = "Shapes what your guests see and experience.";
@@ -63,7 +63,7 @@ const ONBOARDING_PROMPTS: ParticipationPrompt[] = [
     id: "amenity-ideas",
     title: "Think through seasonal amenity ideas",
     description:
-      "Consider what would make your home stand out season by season — patio setup, games, holiday touches, cold-weather comforts.",
+      "Consider what would make your home stand out season by season. Patio setup, games, holiday touches, cold-weather comforts.",
     relevance: RELEVANCE_GUEST,
   },
   {

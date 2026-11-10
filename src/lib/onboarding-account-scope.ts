@@ -24,12 +24,12 @@ export type ScopeInput = {
 export function accountScope(p: ScopeInput): { inScope: boolean; reason: string | null } {
   const outsideRoles = p.roles.filter((r) => !(DIRECTOR_CREATABLE_ROLES as readonly string[]).includes(r));
   if (outsideRoles.length)
-    return { inScope: false, reason: `Also holds ${outsideRoles.join(", ")} access — an administrator manages this account.` };
+    return { inScope: false, reason: `Also holds ${outsideRoles.join(", ")} access: an administrator manages this account.` };
   if (p.seatCodes.length)
     return { inScope: false, reason: "Holds a leadership role. An Admin manages this account." };
   const outsidePools = p.poolCodes.filter((c) => !ONBOARDING_POOL_CODES.has(c));
   if (outsidePools.length)
-    return { inScope: false, reason: "Belongs to a team outside Onboarding — an administrator manages this account." };
+    return { inScope: false, reason: "Belongs to a team outside Onboarding. An administrator manages this account." };
   if (p.roles.length === 0) return { inScope: false, reason: "Has no Onboarding or homeowner access." };
   return { inScope: true, reason: null };
 }

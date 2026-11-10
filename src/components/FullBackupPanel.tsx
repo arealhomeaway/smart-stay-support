@@ -77,11 +77,11 @@ export function FullBackupPanel() {
       actions={
         <span className="flex flex-wrap items-center gap-2">
           {last ? (
-            <Button size="sm" variant="outline" className="min-h-11 md:min-h-9" disabled={verify.isPending || run.isPending} onClick={() => verify.mutate(last.id)}>
+            <Button size="sm" variant="outline" className="min-h-11" disabled={verify.isPending || run.isPending} onClick={() => verify.mutate(last.id)}>
               {verify.isPending ? "Checking..." : "Verify"}
             </Button>
           ) : null}
-          <Button size="sm" className="min-h-11 md:min-h-9" disabled={!q.data?.ready || run.isPending} onClick={() => run.mutate()}>
+          <Button size="sm" className="min-h-11" disabled={!q.data?.ready || run.isPending} onClick={() => run.mutate()}>
             {run.isPending ? "Backing up..." : "Back up everything"}
           </Button>
         </span>
@@ -109,7 +109,7 @@ export function FullBackupPanel() {
             </span>
           </div>
           <VerifyResult b={last} />
-          <Button variant="ghost" size="sm" className="min-h-11 md:min-h-9 px-0" onClick={() => setShowCounts((s) => !s)}>
+          <Button variant="ghost" size="sm" className="min-h-11 px-0" onClick={() => setShowCounts((s) => !s)}>
             {showCounts ? "Hide row counts" : "Show row counts"}
           </Button>
           {showCounts && last.counts ? (

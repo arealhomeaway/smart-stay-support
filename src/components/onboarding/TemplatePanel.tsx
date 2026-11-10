@@ -139,7 +139,7 @@ export function TemplatePanel({
               {preview.anchors.actual_access ? (
                 <Badge variant="outline">Access {preview.anchors.actual_access}</Badge>
               ) : (
-                <Badge variant="outline">No access date recorded — dates left blank</Badge>
+                <Badge variant="outline">No access date recorded. Dates left blank</Badge>
               )}
             </div>
             <ScrollArea className="h-64">
@@ -153,7 +153,7 @@ export function TemplatePanel({
                         <span className="text-muted-foreground"> (+{t.subtasks} subtasks)</span>
                       ) : null}
                     </span>
-                    <span className="shrink-0 text-xs text-muted-foreground">{t.dueOn ?? "—"}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{t.dueOn ?? "Not set"}</span>
                   </li>
                 ))}
               </ul>

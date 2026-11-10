@@ -354,7 +354,7 @@ export async function setVendorStatus(
   await assertSupervisor(db, userId);
   const reason = input.reason.trim();
   if (reason.length < 5)
-    throw new Error("Write a short reason for the status change — it goes on the record.");
+    throw new Error("Write a short reason for the status change. It goes on the record.");
 
   const { data: org, error: orgError } = await db
     .from("vendor_orgs")
@@ -391,7 +391,7 @@ export async function setVendorStatus(
     const readiness = gatekeeperReadiness(lines);
     if (!readiness.clear) {
       throw new Error(
-        `Not approvable yet — still open: ${readiness.blockersFailing.map((l) => l.label).join(", ")}.`,
+        `Not approvable yet: still open: ${readiness.blockersFailing.map((l) => l.label).join(", ")}.`,
       );
     }
   }
@@ -725,7 +725,7 @@ export async function recordVendorDocument(
   if (!spec) throw new Error("Unknown document type.");
   if (spec.retention === "verify_only" && input.externalUrl) {
     throw new Error(
-      "Identity documents are verified and discarded — Resolve does not keep a copy.",
+      "Identity documents are verified and discarded. Resolve does not keep a copy.",
     );
   }
 
@@ -785,7 +785,7 @@ export async function recordIdentityCheck(
     .maybeSingle();
   if (!req) throw new Error("The identity requirement is missing from the screening list.");
 
-  const note = `${input.subject} — ${input.method}. Document viewed and not retained.`;
+  const note = `${input.subject} · ${input.method}. Document viewed and not retained.`;
   const { error } = await db.from("vendor_gatekeeper_results").upsert(
     {
       org_id: input.orgId,
@@ -804,7 +804,7 @@ export async function recordIdentityCheck(
   await db.from("vendor_documents").insert({
     org_id: input.orgId,
     doc_type: "identity",
-    title: `Identity verified — ${input.subject}`,
+    title: `Identity verified: ${input.subject}`,
     restricted: true,
     verification_status: "verified",
     verified_by: userId,

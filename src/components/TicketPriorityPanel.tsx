@@ -73,11 +73,11 @@ export function TicketPriorityPanel({
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-medium">Priority — {priorityMeta(priority).short}</p>
+          <p className="text-sm font-medium">Priority: {priorityMeta(priority).short}</p>
           <p className="text-xs text-muted-foreground">
             {calculated
               ? differs
-                ? `Calculated as ${calculated.toUpperCase()} and changed by a supervisor.`
+                ? `Calculated as ${priorityMeta(calculated).short} and changed by a supervisor.`
                 : "Matches the calculated priority."
               : "Set when this ticket was opened."}
           </p>

@@ -8,7 +8,7 @@ import { isImportHeld } from "@/lib/import-hold";
 import { currentOwnerId, isMine, type MatterOwnership } from "@/lib/matters";
 import { isQuietNotion, isRecentOpenImport, type NotionTicketLike } from "@/lib/notion-ticket-display";
 import { matchesPropertySearch, formatPropertyLabel, type PropertyLabelFields } from "@/lib/property-label";
-import { OPEN_STATUSES, STATUSES, isClosed, slaState } from "@/lib/tickets";
+import { OPEN_STATUSES, STATUSES, isClosed, slaState, priorityMeta } from "@/lib/tickets";
 import { TEAM_B, teamOf } from "@/lib/coverage-model";
 import { automatedSourceOf } from "@/lib/automated-sources";
 
@@ -114,7 +114,7 @@ export function boardColumnOf(t: HomeTicket, tab: HomeTab, now: number = Date.no
 
 /** How urgent, in plain words: priority plus the live clock. Quiet imports have no clock. */
 export function urgencyLabel(t: HomeTicket, now: number = Date.now()): string {
-  const p = (t.priority ?? "p3").toUpperCase();
+  const p = priorityMeta(t.priority ?? "p3").short;
   if (isClosed(t.status) || isQuietNotion(t, now)) return p;
   const sla = slaState(t);
   if (sla.escalation) return `${p} · Escalated`;

@@ -113,7 +113,7 @@ export const syncPrimaryOwners = createServerFn({ method: "POST" })
         ]);
       } catch (err) {
         const message = err instanceof Error ? err.message : "OwnerRez could not be reached.";
-        return { ok: false, message: `Owner directory not refreshed — ${message}` };
+        return { ok: false, message: `Owner directory not refreshed: ${message}` };
       }
 
       const { rows, counts } = resolvePrimaryOwners(properties ?? [], listings, owners);

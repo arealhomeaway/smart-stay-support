@@ -8,6 +8,7 @@ import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { Chip, EmptyState, LoadingRows, PageHeader, SectionBand } from "@/components/ui/page";
 import { usDateTime } from "@/lib/dates";
+import { priorityMeta } from "@/lib/tickets";
 
 export const Route = createFileRoute("/_authenticated/vendor/")({
   component: VendorQueue,
@@ -46,7 +47,7 @@ function nextAction(job: { vendor_status: string | null; due_at: string | null }
     return "Finish the required steps and mark it complete.";
   }
   if (job.due_at && new Date(job.due_at).getTime() < Date.now()) {
-    return "Past due — accept the job and head over.";
+    return "Past due: accept the job and head over.";
   }
   return "Accept the job to let the team know you're on it.";
 }
@@ -135,7 +136,7 @@ function VendorQueue() {
                           : undefined
                       }
                     >
-                      {(job.priority ?? "").toUpperCase()}
+                      {job.priority ? priorityMeta(job.priority).short : ""}
                     </Chip>
                     <span className="numeric text-xs text-muted-foreground">#{job.ref}</span>
                     <span className="font-medium">{job.title}</span>

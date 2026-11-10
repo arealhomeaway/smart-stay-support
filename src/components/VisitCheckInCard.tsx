@@ -40,13 +40,13 @@ export function VisitCheckInCard({ ticketId, homeName }: { ticketId: string; hom
   const checkIn = useMutation({
     mutationFn: async () => {
       const fix = await readPosition();
-      if (!fix) toast.warning("Couldn't read your location — checking you in without it.");
+      if (!fix) toast.warning("Couldn't read your location. Checking you in without it.");
       return begin({ data: { ticketId, fix } });
     },
     onSuccess: (res) => {
       toast.success(
         res.verified
-          ? "Checked in at the home — thank you."
+          ? "Checked in at the home. Thank you."
           : "Checked in. Location wasn't confirmed.",
       );
       refresh();
@@ -105,7 +105,7 @@ export function VisitCheckInCard({ ticketId, homeName }: { ticketId: string; hom
           </>
         ) : (
           <Button disabled={checkIn.isPending} onClick={() => checkIn.mutate()}>
-            <LogIn className="size-4" /> I'm on site — check in
+            <LogIn className="size-4" /> I'm on site. Check in
           </Button>
         )}
 

@@ -97,7 +97,7 @@ export function SectionCard({
               </p>
             ) : null}
           </div>
-          {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
+          {actions ? <div className="flex max-w-full shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
         </header>
       ) : null}
       <div className={cn("px-5 py-4", bodyClassName)}>{children}</div>
@@ -532,7 +532,7 @@ export function SegmentedControl<T extends string>({
             aria-selected={active}
             onClick={() => onChange(o.value)}
             className={cn(
-              "rounded-md px-3 py-1.5 text-sm transition-colors",
+              "min-h-11 rounded-md px-3 py-1.5 text-sm transition-colors",
               active
                 ? "bg-card font-semibold text-foreground shadow-card"
                 : "text-muted-foreground hover:text-foreground",

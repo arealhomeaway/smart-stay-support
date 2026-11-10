@@ -68,7 +68,7 @@ export const RULE_TYPE_HINTS: Record<SpecialHandlingRuleType, string> = {
   owner_self_maintenance: "The owner does this work. Resolve should not dispatch anyone.",
   owner_notification: "The owner must be told before the work happens.",
   spend_threshold: "This home has its own approval ceiling, different from the standard one.",
-  scheduling: "Timing constraints — quiet hours, days, notice periods.",
+  scheduling: "Timing constraints: quiet hours, days, notice periods.",
   access: "How people get in, and what they must not do while inside.",
   trade_rule: "A rule that only applies to one trade at this home.",
   restriction: "Something that must never happen at this property.",
@@ -150,9 +150,9 @@ export function rulesForMoment(
 export function summarise(rules: SpecialHandlingRow[]): string[] {
   return rules.map((r) => {
     const head = ruleTypeLabel(r.rule_type);
-    const who = r.vendor_name ? ` — ${r.vendor_name}` : "";
+    const who = r.vendor_name ? ` · ${r.vendor_name}` : "";
     const amount =
-      r.threshold_amount != null ? ` — $${Number(r.threshold_amount).toLocaleString()}` : "";
+      r.threshold_amount != null ? `· $${Number(r.threshold_amount).toLocaleString()}` : "";
     return `${head}${who}${amount}: ${r.instruction}`;
   });
 }

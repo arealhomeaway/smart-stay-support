@@ -286,7 +286,7 @@ function TicketDetail({ t }: { t: any }) {
           ? "Saved."
           : res.emailed
             ? "Saved and emailed to the submitter."
-            : "Saved. The email could not be delivered — see the activity thread.",
+            : "Saved. The email could not be delivered. See the activity thread.",
       );
       setMessage("");
       void qc.invalidateQueries({ queryKey: ["help-tickets"] });
@@ -305,7 +305,7 @@ function TicketDetail({ t }: { t: any }) {
   const facts: [string, React.ReactNode][] = [
     ["Type", t.kind === "issue" ? "Issue" : "Suggestion"],
     ["Submitted by", t.submitter_name],
-    ["Submitter email", recipient?.email ?? t.submitter_email ?? "—"],
+    ["Submitter email", recipient?.email ?? t.submitter_email ?? "Not set"],
     ["Role", t.user_role],
     ["Portal", t.portal],
     ...(t.property_label ? ([["Property", t.property_label]] as [string, React.ReactNode][]) : []),
@@ -361,7 +361,7 @@ function TicketDetail({ t }: { t: any }) {
                   {["resolved", "closed"].includes(e.from_status ?? "") && OPEN.includes(e.to_status ?? "")
                     ? "reopened the ticket"
                     : "changed status"}
-                  : {label(e.from_status ?? "")} → {label(e.to_status ?? "")}
+                  : {label(e.from_status ?? "")} to {label(e.to_status ?? "")}
                 </p>
               ) : (
                 <>
@@ -390,7 +390,7 @@ function TicketDetail({ t }: { t: any }) {
                 <option key={s} value={s}>{label(s)}</option>
               ))}
             </select>
-            {reopening && <span className="text-xs text-muted-foreground">Reopening — add an optional reason below.</span>}
+            {reopening && <span className="text-xs text-muted-foreground">Reopening: add an optional reason below.</span>}
           </label>
           <div className="flex gap-2" role="radiogroup" aria-label="Message type">
             <Button size="sm" variant={mode === "reply" ? "default" : "outline"} onClick={() => setMode("reply")}>
@@ -409,13 +409,13 @@ function TicketDetail({ t }: { t: any }) {
                 ? status === "resolved" && statusChanged
                   ? "Optional resolution message for the submitter…"
                   : "Write a reply to the submitter…"
-                : "Internal note — only leadership sees this."
+                : "Internal note: only leadership sees this."
             }
             aria-label="Message"
           />
           <p className="text-xs text-muted-foreground">
             {emails
-              ? `One email will go to ${recipient?.email ?? "the submitter"}${mode === "note" && message.trim() ? " (status only — the note stays internal)" : ""}.`
+              ? `One email will go to ${recipient?.email ?? "the submitter"}${mode === "note" && message.trim() ? " (status only: the note stays internal)" : ""}.`
               : mode === "note"
                 ? "Internal notes are never emailed."
                 : "Nothing will be emailed until you write a reply or change status."}

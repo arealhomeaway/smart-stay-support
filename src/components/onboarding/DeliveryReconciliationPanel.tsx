@@ -101,7 +101,7 @@ export function DeliveryReconciliationPanel({
                       >
                         {delivered
                           ? "Record verified delivery"
-                          : "Verified not delivered — allow retry"}
+                          : "Verified not delivered: allow retry"}
                       </Button>
                     ))}
                 </div>

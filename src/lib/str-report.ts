@@ -100,7 +100,7 @@ export function ownerBreakdown(r: Pick<StrReport, "totals">): [string, string][]
 export const REPORT_DISCLAIMER =
   "This report summarizes operational participation and work activity recorded in Resolve and connected systems. Attributed time may be based on operational estimates where individual clock-in/clock-out data is unavailable. This report is provided for recordkeeping and operational support only and does not constitute tax, legal, or accounting advice or a determination of tax eligibility.";
 
-export const DRAFT_LABEL = "DRAFT — PROGRAM STILL ACTIVE";
+export const DRAFT_LABEL = "DRAFT: PROGRAM STILL ACTIVE";
 export const OWNER_WAITING_COPY =
   "Your final STR Participation & Work Activity Report will be available after your program period is complete.";
 
@@ -159,7 +159,7 @@ export function strReportCsv(r: StrReport) {
   const version = r.draft ? DRAFT_LABEL : `Version ${r.version ?? 1}`;
   const programPeriod = `${r.program.startedOn ?? "n/a"} to ${r.program.endsOn ?? "n/a"}`;
   const meta = [
-    `# A Real Home Away — STR Property Participation & Work Activity Report`,
+    `# A Real Home Away. STR Property Participation & Work Activity Report`,
     `# Property,${esc(r.property.name)}`,
     `# Owner,${esc(r.owner.name)}`,
     `# Program period,${programPeriod}`,
@@ -208,7 +208,7 @@ export function strReportCsv(r: StrReport) {
       x.minutes ?? "",
       hrs(x.minutes) ?? "",
       x.status === "provisional"
-        ? "Under review — not in finalized totals"
+        ? "Under review: not in finalized totals"
         : r.draft
           ? "Draft"
           : "Finalized",

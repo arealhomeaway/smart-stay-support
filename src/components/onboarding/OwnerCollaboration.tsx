@@ -55,7 +55,7 @@ function when(ts: string | null | undefined) {
 
 /** Where the homeowner is with it — separate from the internal Task's status. */
 export function ownerState(o: CollabOpp) {
-  if (o.status === "draft") return "Draft — not visible to the homeowner";
+  if (o.status === "draft") return "Draft: not visible to the homeowner";
   if (o.status === "complete") return `Completed ${when(o.completed_at) ?? ""}`.trim();
   if (o.responded_at) return `Owner responded ${when(o.responded_at)}`;
   if (o.viewed_at) return `Viewed ${when(o.viewed_at)} · awaiting response`;
@@ -119,7 +119,7 @@ export function OpportunityDetail({ o, files, readOnly = false }: { o: CollabOpp
   return (
     <div className="space-y-2 text-sm">
       <dl className="grid gap-x-4 gap-y-1 text-xs text-muted-foreground sm:grid-cols-4">
-        <div><dt>Sent</dt><dd className="text-foreground">{when(o.sent_at) ?? (o.status === "draft" ? "Not sent" : "—")}</dd></div>
+        <div><dt>Sent</dt><dd className="text-foreground">{when(o.sent_at) ?? (o.status === "draft" ? "Not sent" : "Not set")}</dd></div>
         <div><dt>Viewed</dt><dd className="text-foreground">{when(o.viewed_at) ?? "Not yet"}</dd></div>
         <div><dt>Responded</dt><dd className="text-foreground">{when(o.responded_at) ?? "Not yet"}</dd></div>
         <div><dt>Completed</dt><dd className="text-foreground">{when(o.completed_at) ?? "Not yet"}</dd></div>
@@ -171,7 +171,7 @@ export function OpportunityDetail({ o, files, readOnly = false }: { o: CollabOpp
       {o.owner_response.filter((r) => r.task_approval).slice(-1).map((r, i) => (
         <p key={i} className="text-xs font-medium">
           {r.task_approval === "approved"
-            ? "Owner approval on this Task: approved — the Task can proceed."
+            ? "Owner approval on this Task: approved. The Task can proceed."
             : "Owner approval on this Task: still waiting for the homeowner's authorization."}
         </p>
       ))}
@@ -397,7 +397,7 @@ export function OpportunityEditor({
               void qc.invalidateQueries({ queryKey: ["owner-collaboration", propertyId] });
             }}/> : null}
             <div className="grid gap-2 rounded-md border border-dashed border-border p-2">
-              <p className="text-xs text-muted-foreground">Or add a link — for large videos kept in your approved file-sharing location. Resolve links to it; it never copies it.</p>
+              <p className="text-xs text-muted-foreground">Or add a link, for large videos kept in your approved file-sharing location. Resolve links to it; it never copies it.</p>
               <div className="flex flex-wrap gap-2">
                 <Input className="min-w-40 flex-1" aria-label="Link display name" placeholder="Display name, e.g. Pre-Work Walkthrough" value={link.label} onChange={(e) => setLink((l) => ({ ...l, label: e.target.value }))} />
                 <Select value={link.type} onValueChange={(v) => setLink((l) => ({ ...l, type: v as typeof l.type }))}>
@@ -471,7 +471,7 @@ export function TaskOwnerCollaboration({ propertyId, taskId, taskTitle, defaultR
         <p className="eyebrow">Owner collaboration</p>
         <Button size="sm" variant="outline" onClick={() => setEditing("new")}><Plus className="size-3.5" /> Create Opportunity</Button>
       </div>
-      <p className="text-xs text-muted-foreground">What you ask the homeowner to review, provide or decide. This Task&apos;s status stays yours — the homeowner&apos;s response never blocks it.</p>
+      <p className="text-xs text-muted-foreground">What you ask the homeowner to review, provide or decide. This Task&apos;s status stays yours. The homeowner&apos;s response never blocks it.</p>
       {mine.length === 0 ? (
         <p className="text-sm text-muted-foreground">No Opportunity for the homeowner on this Task.</p>
       ) : (

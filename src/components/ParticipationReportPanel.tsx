@@ -61,7 +61,7 @@ export function ParticipationReportPanel({ children }: { children?: ReactNode } 
       }
       description={
         final
-          ? "Your program year has closed. Download your complete record whenever you need it — no request to ARHA required."
+          ? "Your program year has closed. Download your complete record whenever you need it. No request to ARHA required."
           : "A live snapshot of your participation so far. Your end-of-period report becomes available automatically once your program closes on December 31."
       }
       actions={

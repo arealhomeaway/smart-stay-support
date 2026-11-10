@@ -134,7 +134,7 @@ export function JobMap({ pins, onSelect, selectedPropertyId, viewport, onViewpor
       const marker = new g.maps.Marker({
         map: mapRef.current,
         position: { lat, lng },
-        title: clustered ? `${group.length} properties, ${count} active issues` : `${pin.name} — ${count} active`,
+        title: clustered ? `${group.length} properties, ${count} active issues` : `${pin.name} · ${count} active`,
         label: { text: clustered ? `${group.length} · ${count}` : String(count), color: "#ffffff", fontSize: "12px", fontWeight: "700" },
         icon: {
           path: g.maps.SymbolPath.CIRCLE,

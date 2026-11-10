@@ -20,9 +20,9 @@ export function isTestEmail(address: string) {
 }
 
 export function localEmailBlock(input: EmailSafetyContext): string | null {
-  if (input.isDemo) return "Demo record — external delivery blocked.";
+  if (input.isDemo) return "Demo record: external delivery blocked.";
   if ([input.to, ...(input.toAdditional ?? []), ...(input.cc ?? []), ...(input.bcc ?? [])].some(isTestEmail))
-    return "Demo/test address — external delivery blocked.";
+    return "Demo/test address: external delivery blocked.";
   return null;
 }
 
@@ -38,9 +38,9 @@ export async function verifyEmailSafety(input: EmailSafetyContext, db?: Supabase
       _ticket_id: input.ticketId ?? null,
       _actor_id: input.sentBy ?? null,
     } as never);
-    if (error || data !== true) return "Email safety verification refused or unavailable — external delivery blocked.";
+    if (error || data !== true) return "Email safety verification refused or unavailable. External delivery blocked.";
     return null;
   } catch {
-    return "Email safety verification unavailable — external delivery blocked.";
+    return "Email safety verification unavailable. External delivery blocked.";
   }
 }

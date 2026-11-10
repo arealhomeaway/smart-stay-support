@@ -1,0 +1,249 @@
+-- STAGED, NOT APPLIED. Build 7 item 4 (register H1): role wording in the Standard plan's task text.
+-- Apply only in an evening window with Emily's okay. No BEGIN/COMMIT: the migration tool runs the file in one transaction.
+-- What it does: rewrites the title/detail of 9 working steps of ARHA Onboarding - Standard so they name roles, not people,
+-- then publishes version 5 with the same snapshot publish_onboarding_template writes (published_by left empty, as for version 4).
+-- Versions 1 to 4 and every home already started stay exactly as they are. Only homes started on Standard after this see the new words.
+DO $do$ BEGIN
+  IF (SELECT max(version) FROM public.onboarding_template_versions WHERE template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae') IS DISTINCT FROM 4 THEN
+    RAISE EXCEPTION 'Standard plan is no longer on version 4; nothing applied'; END IF;
+  IF (SELECT md5(snapshot::text) FROM public.onboarding_template_versions WHERE template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae' AND version = 4) IS DISTINCT FROM 'a55aa81853f631e222a3badc771017b6' THEN
+    RAISE EXCEPTION 'Version 4 snapshot changed since it was read; nothing applied'; END IF;
+  IF (SELECT coalesce(jsonb_agg(to_jsonb(t) - 'created_at' - 'updated_at' ORDER BY t.sort_order),'[]'::jsonb) FROM public.onboarding_template_tasks t WHERE t.template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae' AND t.is_active)
+     IS DISTINCT FROM (SELECT snapshot->'steps' FROM public.onboarding_template_versions WHERE template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae' AND version = 4) THEN
+    RAISE EXCEPTION 'Standard working steps changed since version 4; nothing applied'; END IF;
+END $do$;
+
+-- Step: Send the introduction email and schedule the Owner readiness call
+UPDATE public.onboarding_template_tasks SET title = $w$Send the introduction email and schedule the Owner readiness call$w$,
+  detail = $w$About this step:
+DFY lets us know a home is under contract. This is the owner's first message from us. It congratulates them and sets up the Owner readiness call with our COO, where every owner (Active Owner or standard) learns how onboarding works and how they will be involved. We no longer send a welcome guide PDF; the call replaces it.
+
+Instructions:
+1. Reply to DFY's introduction email using the draft below. Thank the person who introduced you, and adjust it so it sounds like you and fits this owner.
+2. Ask for a few days and times over the next week, including their time zone.
+3. When they reply, ask the COO to host the call at one of their times, then send the invite (next step).
+
+Subject: Welcome to A Real Home Away! Let's Get Your Readiness Call Scheduled
+Hi {owner first names},
+It's so nice to meet you, and congratulations on going under contract on {property address}! We're excited to partner with you on this home.
+I'm {your first name}, {your title} at A Real Home Away, and I'll be guiding you through the process of getting your home set up, furnished, and guest ready. Thank you, {DFY contact}, for the introduction!
+The first step is an Owner readiness call with our COO. On this call, our COO will walk you through how we work together, what to expect from onboarding, and how you'll be involved along the way. With your closing date set for {closing date}, we want to get started as soon as possible so you're set up for success from day one.
+Could you share a few days and times that work for you over the next week? Please include your time zone, and we'll get something on the calendar.
+Looking forward to working with you!
+Warmly,
+{your name}
+{your title}
+A Real Home Away
+
+Done when:
+The email is sent and the owner has been asked for availability.
+
+If it stalls:
+No reply in 2 business days: send a short follow-up asking for times, and let DFY know if you still can't reach them.$w$
+WHERE id = '08e85522-4f53-4236-833d-05da550b2f8f' AND template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae'
+  AND md5(title) = 'e60bec2c4dc9b93c528948b7c1b055e5' AND md5(coalesce(detail,'')) = 'edf7f39fe486dcaf5926203559a6d77c';
+
+-- Step: Send the Owner readiness call invite
+UPDATE public.onboarding_template_tasks SET title = $w$Send the Owner readiness call invite$w$,
+  detail = $w$About this step:
+Once the owner shares their availability, the invite goes out from Outlook so everyone has the details in one place.
+
+Instructions:
+1. Confirm the time with the COO, who hosts the call.
+2. Create a Teams meeting titled: Owner readiness call | {property name}
+3. Required: every owner on the property and the COO. Optional: the DFY team.
+4. Paste the description below and send.
+5. Set the due date on Hold the Owner readiness call to the meeting date.
+
+Hi everyone,
+We're looking forward to meeting with you! This call is designed to get you ready for everything ahead. We'll walk through our onboarding process from closing to launch, share how and when you'll be involved along the way, and give you a look at how our operations team will care for your home and keep you informed once it's live.
+It's also a chance for us to get to know you and your goals for this home, so please bring any questions you have. Nothing is too small to ask.
+See you soon,
+The A Real Home Away Onboarding Team
+
+Done when:
+The invite is sent and the call date is set on the next call step.$w$
+WHERE id = '8e7ce79a-2a0d-4f26-a9fa-ef1398f6ffc0' AND template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae'
+  AND md5(title) = 'eaf0a6b1f365d181503404b272bcfb7e' AND md5(coalesce(detail,'')) = '38db21f52bfb0298865439253a0b3195';
+
+-- Step: Save the HOA documents and send them to Kade for CC&R review
+UPDATE public.onboarding_template_tasks SET title = $w$Save the HOA documents and send them for CC&R review$w$,
+  detail = $w$About this step:
+HOA rules can restrict short-term rentals, fences, signage, and amenity use. The Compliance lead reviews the CC&Rs so we know early whether anything affects how this home can be rented or set up. That review feeds the STR review in Pre-Close.
+
+Instructions:
+1. Ask the realtor for the current HOA covenants (CC&Rs) if we don't have them.
+2. Upload them to this step and save them to OneDrive / HOA Covenants.
+3. Add them to the property's row on the Notion CC&R review page: https://app.notion.com/p/arealhomeaway/1d84658d5f4f80c39ef0d99f6403220f
+4. Email kade@arealhomeaway.com with the Notion link and ask for a review.
+5. No HOA: record No HOA on the project and in Notion, let the Compliance lead know, and mark this complete.
+
+Done when:
+The CC&Rs are saved and the Compliance lead has been asked to review them, or No HOA is recorded.
+
+If it stalls:
+The Compliance lead hasn't finished 3 business days after you sent them: follow up directly.$w$
+WHERE id = '7460f7e9-39ad-40ba-9319-d6ac31d22e35' AND template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae'
+  AND md5(title) = '2f0c9a98fea04c5311c3009f243c8cc1' AND md5(coalesce(detail,'')) = '7451b1d52a5484eee0b0fd50883a4839';
+
+-- Step: Hold the Owner readiness call
+UPDATE public.onboarding_template_tasks SET title = $w$Hold the Owner readiness call$w$,
+  detail = $w$About this step:
+The COO leads this call. It prepares every owner for onboarding and introduces how operations works after launch. It starts by getting to know the owner, then follows the presentation. Set the due date to the call date. Presentation: https://arealhomeaway.sharepoint.com/:p:/s/CrossTeamAlignment/IQDpdRv0soxTTKN23J58cclWAfW1AhrASO_WRSa7VTeIq88
+
+Instructions:
+1. Before the call: check whether this is an Active Owner or standard owner. Active Owners take part through opportunities in the owner portal. Standard owners review and approve key items by email.
+2. Fill in this home's dates and team in the presentation.
+3. Active Owner: make sure they are enrolled as an Active Owner so the call hours count, and release the opportunity after the call.
+
+Agenda:
+1. Introductions from everyone at ARHA on the call.
+2. Get to know the owner: where they're from, how familiar they are with short or mid-term rentals, whether this is their first rental property, and what they hope this home does for them.
+3. The presentation, from closing to launch.
+4. Their involvement: what we need from them and when, for their owner type.
+5. Life after launch: how operations cares for the home and keeps them informed.
+6. Questions, then a recap of next steps.
+
+After the call, add your notes to this step, including anything the owner asked for more information on.
+
+Done when:
+The call is complete and notes are saved on this step.$w$
+WHERE id = 'ec1afa4b-bf49-4d4b-91cf-2f5546fcfa49' AND template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae'
+  AND md5(title) = '3be2c98726aa11aaae97c61833697de3' AND md5(coalesce(detail,'')) = 'e2c2ba55d585e3674705131cadc92d28';
+
+-- Step: Review STR requirements and send permit costs to the PM
+UPDATE public.onboarding_template_tasks SET title = $w$Review STR requirements and send permit costs to the PM$w$,
+  detail = $w$About this step:
+Before we price the Make Ready Estimate, we need to know what the city and HOA require for a short-term rental. This depends on the Compliance lead's CC&R review from Intake.
+
+Instructions:
+1. Open the CC&R review page in Notion and confirm the CC&R review is complete and notes are added.
+2. Check the STR research on the Notion Active Projects page: permit required (yes or no) and cost.
+3. Check whether an STR application, registration, or approval process limits the home to 30-day minimum stays until approved. If so, tell the Director of Onboarding the same day so the owner can be told right away.
+4. Post the result to the PM on this task using the template below.
+
+Permit required:
+STR permit research is complete and a permit is required. The cost is ${amount}. Please add the permit cost plus a $100 processing cost to the Make Ready Estimate. The $100 needs to be its own line item.
+
+No permit required:
+STR permit research is complete. No STR permit is required for this home, so nothing needs to be added to the Make Ready Estimate.
+
+Either way, add any 30-day minimum to the handoff notes for Operations. If one applies, change the OwnerRez tag from Short-Term Safe to Mid-Term Flexible Strict.
+Active Owner with an HOA: once the CC&R review is done, attach the HOA documents to the opportunity on this step so it releases. No HOA: skip the opportunity.
+
+Done when:
+The PM has the permit result and cost, and any 30-day minimum is recorded.
+
+Where it goes:
+Notion Active Projects page (STR research view) and this task.
+
+If it stalls:
+The CC&R review is not done 3 business days after the HOA documents were sent: follow up with the Compliance lead. If the HOA does not allow short-term rentals, tell the Director of Onboarding the same day.$w$
+WHERE id = '5d5be939-b373-4693-bf33-926f8f7658c4' AND template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae'
+  AND md5(title) = 'eb6157ac216bf143910f607d40430648' AND md5(coalesce(detail,'')) = '6f38855e07f9e3292d6af74b6655be09';
+
+-- Step: Confirm PriceLabs and sales tax setup
+UPDATE public.onboarding_template_tasks SET title = $w$Confirm PriceLabs and sales tax setup$w$,
+  detail = $w$About this step:
+Pricing and sales tax have to be in place before the listing goes live.
+
+Instructions:
+1. Email james@arealhomeaway.com and kade@arealhomeaway.com using the template below.
+2. Mark this complete when both confirm.
+
+Hi team,
+{property address} will be handed off to Operations in the next few days, and I want to make sure we're all set before then. Can someone connect and sync PriceLabs and the Notion Base Price for this property? Could the Compliance lead set up sales tax on all the applicable platforms?
+Just send me a quick confirmation once everything is done. Thank you!
+Kindly,
+{your name}
+
+Done when:
+PriceLabs, base price, and sales tax are confirmed.$w$
+WHERE id = 'bce1eecb-465f-4e3b-91b0-0a041dd0744e' AND template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae'
+  AND md5(title) = '4e85d25b102c66b18e9efb7c21c7c395' AND md5(coalesce(detail,'')) = '072151d806b69e6f3007b8fa06fdde14';
+
+-- Step: Hold the launch preparation meeting
+UPDATE public.onboarding_template_tasks SET title = $w$Hold the launch preparation meeting$w$,
+  detail = $w$About this step:
+A short meeting with the Active Owner before launch to walk through the listing, the pricing approach for the first months, and what happens once guests book. Our COO hosts it. Add it even if it is scheduled by calendar so the hours count.
+
+Instructions:
+1. Ask the COO to schedule and host the meeting before handoff, and share the listing link and anything the owner has asked about.
+2. Release the opportunity on this step when it is scheduled.
+3. Add notes from the meeting to this step.
+
+Done when:
+The meeting is held and notes are saved.$w$
+WHERE id = '02dff9fa-3046-42e2-beb2-f9de1f9871d6' AND template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae'
+  AND md5(title) = '801f1fdece61972b2f3884b90f93f4dc' AND md5(coalesce(detail,'')) = 'e6032418b5033d646e20893c37d0b995';
+
+-- Step: Send the Managing Your Home email
+UPDATE public.onboarding_template_tasks SET title = $w$Send the Managing Your Home email$w$,
+  detail = $w$About this step:
+The owner's welcome to life after launch: how distributions, statements, repairs, and utilities work, and who to contact.
+
+Instructions:
+1. Adjust the utilities section to the owner's option on Exhibit D.
+2. Send the email below. CC the PM.
+
+Subject: A Real Home Away: Managing Your Property at {property address}
+Hi {owner first name},
+It has been a pleasure preparing your A Real Home Away home, and I'm so happy to share that {property address} is now live and ready for guests. Our primary goals moving forward are to keep your home consistently booked and carefully maintained.
+Introducing your home: we take a strategic approach to marketing and pricing newly listed homes. If a long-term booking isn't immediately available, we may offer pricing discounts during the first few months to attract short-term guests and build positive reviews, which help your home gain visibility.
+Owner portal: you'll receive an email within the next few days with a link to your OwnerRez owner portal, where you can view booking activity. We're happy to schedule a walkthrough with our Finance lead.
+Monthly distributions and statements: distributions are processed by the 5th business day of each month for the prior month's earnings, and can take up to 4 business days to arrive. Recurring charges like air filter maintenance and seasonal lawn care may appear on your statements alongside the management fee.
+Repairs: for repairs over $350, our team will contact you for approval unless it's an emergency. Repairs below that are completed promptly and appear on your monthly statement.
+Utilities: {describe how utilities are paid for their option, and list each provider}.
+Our team: for anything at all, reach out to me directly at {your email} or {your phone}. Owner portal, statements, and reporting: our Finance lead. Booking and pricing: our Director of Operations. Marketing: our COO. Distributions and billing: our Finance team. Property compliance: our Compliance lead.
+On behalf of the A Real Home Away team, thank you for letting us serve you!
+Best wishes,
+{your name}
+
+Done when:
+The owner has the Managing Your Home email.$w$
+WHERE id = '999d1fd7-4ccf-4f4a-a30b-d5dd775e3830' AND template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae'
+  AND md5(title) = '23178ec0313fb4ce12c151d855c6b111' AND md5(coalesce(detail,'')) = '45ba9c919efcf5a2c675fc36b5015bf6';
+
+-- Step: Request the owner portal link
+UPDATE public.onboarding_template_tasks SET title = $w$Request the owner portal link$w$,
+  detail = $w$About this step:
+Operations sends the OwnerRez owner portal link after handoff.
+
+Instructions:
+1. Ask the Compliance lead to send the owner portal link and to confirm when it is sent.
+2. Mark this complete when they confirm.
+
+Done when:
+The Compliance lead confirms the portal link was sent.$w$
+WHERE id = '7eaec0bc-7b00-45a2-9725-0799a5c9da54' AND template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae'
+  AND md5(title) = 'c40bbf073de91f9604485b941fbed05d' AND md5(coalesce(detail,'')) = 'f9b1f6ce57323feedf942e7200df2ab2';
+
+DO $do$ BEGIN
+  IF (SELECT count(*) FROM public.onboarding_template_tasks WHERE id IN ('08e85522-4f53-4236-833d-05da550b2f8f','8e7ce79a-2a0d-4f26-a9fa-ef1398f6ffc0','7460f7e9-39ad-40ba-9319-d6ac31d22e35','ec1afa4b-bf49-4d4b-91cf-2f5546fcfa49','5d5be939-b373-4693-bf33-926f8f7658c4','bce1eecb-465f-4e3b-91b0-0a041dd0744e','02dff9fa-3046-42e2-beb2-f9de1f9871d6','999d1fd7-4ccf-4f4a-a30b-d5dd775e3830','7eaec0bc-7b00-45a2-9725-0799a5c9da54')
+        AND md5(title || '|' || coalesce(detail,'')) IN ('0c6f5f481439c54fe29ded312f1f0eea','c9823d52a13b8eff0c4ecaa2eb481599','7e8556f917acabe07795a40cec02329b','e7a4523fea70b949858fe16968a25128','d56a397fc64c6f9c410db99beed3a18f','d00325cc1de8a003e45ade02c41d29e5','fced7a4ef37d8f15d01fbfaa8170ec6c','de3a7e6070ae07dbd60a3b781052c212','e86f8f94559dfc83e00d5f25e7f7512d')) <> 9 THEN
+    RAISE EXCEPTION 'Not every step was rewritten as reviewed; nothing applied'; END IF;
+END $do$;
+INSERT INTO public.onboarding_template_versions(template_id, version, snapshot, published_by)
+SELECT '84f3a777-44a8-430a-af7e-8f18dc9a7dae', 5, jsonb_build_object(
+  'stages', coalesce((SELECT jsonb_agg(jsonb_build_object('name',s.name,'sort_order',s.sort_order) ORDER BY s.sort_order)
+              FROM public.onboarding_template_stages s WHERE s.template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae' AND s.active),'[]'::jsonb),
+  'steps', coalesce((SELECT jsonb_agg(to_jsonb(t) - 'created_at' - 'updated_at' ORDER BY t.sort_order)
+              FROM public.onboarding_template_tasks t WHERE t.template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae' AND t.is_active
+                AND (NOT EXISTS (SELECT 1 FROM public.onboarding_template_stages s WHERE s.template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae')
+                     OR EXISTS (SELECT 1 FROM public.onboarding_template_stages s WHERE s.template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae' AND s.name = t.stage AND s.active))),'[]'::jsonb)),
+  NULL;
+-- Version 5 must equal version 4 except the title/detail of these 9 steps
+DO $do$ BEGIN
+  IF (SELECT count(*) FROM (
+        SELECT s - 'title' - 'detail' x FROM public.onboarding_template_versions v, jsonb_array_elements(v.snapshot->'steps') s WHERE v.template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae' AND v.version = 4
+        EXCEPT ALL
+        SELECT s - 'title' - 'detail' FROM public.onboarding_template_versions v, jsonb_array_elements(v.snapshot->'steps') s WHERE v.template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae' AND v.version = 5) d) <> 0
+     OR (SELECT jsonb_array_length(snapshot->'steps') FROM public.onboarding_template_versions WHERE template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae' AND version = 5) <> 144
+     OR (SELECT snapshot->'stages' FROM public.onboarding_template_versions WHERE template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae' AND version = 5)
+        IS DISTINCT FROM (SELECT snapshot->'stages' FROM public.onboarding_template_versions WHERE template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae' AND version = 4)
+     OR (SELECT count(*) FROM public.onboarding_template_versions v4, public.onboarding_template_versions v5,
+           jsonb_array_elements(v4.snapshot->'steps') a, jsonb_array_elements(v5.snapshot->'steps') b
+         WHERE v4.template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae' AND v4.version = 4 AND v5.template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae' AND v5.version = 5
+           AND a->>'id' = b->>'id' AND a IS DISTINCT FROM b) <> 9 THEN
+    RAISE EXCEPTION 'Version 5 differs from version 4 beyond the 9 wording edits; nothing applied'; END IF;
+END $do$;

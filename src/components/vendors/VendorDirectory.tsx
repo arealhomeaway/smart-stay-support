@@ -27,6 +27,7 @@ import {
   type Preference,
 } from "@/lib/vendor-gold";
 import { useVendorWorkspace, type VendorRecord } from "./useVendorWorkspace";
+import { priorityMeta } from "@/lib/tickets";
 
 export const STATUS_TONE: Record<string, StatusTone> = {
   candidate: "context",
@@ -248,7 +249,7 @@ export function VendorDirectory({
       {emergencyHidden > 0 && canRevealEmergency(ticketPriority, canOverrideEmergency) && (
         <div className="flex flex-wrap items-center gap-2 rounded-md border border-border p-2 text-sm">
           <span className="text-muted-foreground">
-            {emergencyHidden} Emergency Only vendor{emergencyHidden === 1 ? "" : "s"} hidden for a {String(ticketPriority).toUpperCase()} Ticket.
+            {emergencyHidden} Emergency Only vendor{emergencyHidden === 1 ? "" : "s"} hidden for a {priorityMeta(String(ticketPriority)).short} Ticket.
             {ticketPriority === "p2" ? " Use only when no routine vendor is available, after hours, or with Supervisor approval." : " A Supervisor override is required."}
           </span>
           <Button size="sm" variant="outline" onClick={() => setShowEmergency(true)}>Show Emergency Only vendors</Button>
@@ -300,7 +301,7 @@ export function VendorDirectory({
                     <Chip>Dispatch: {DISPATCH_METHOD_LABELS[v.dispatch_method as DispatchMethod]}</Chip>
                     <ComplianceBadge state={ws.data!.compliance.get(v.id)?.state} />
                     {!v.is_active && <Chip>Inactive</Chip>}
-                    {qualificationHold(v, ws.data!.gateStatus) && <Chip>On hold — a qualification check expired</Chip>}
+                    {qualificationHold(v, ws.data!.gateStatus) && <Chip>On hold: a qualification check expired</Chip>}
                   </div>
                   )}
                 </div>

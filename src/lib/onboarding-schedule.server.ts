@@ -154,11 +154,11 @@ export async function previewScheduleRecalc(
       continue;
     }
     if (t.status === "complete") {
-      skipped.push({ taskId: t.id, title: t.title, reason: "Already completed — preserved" });
+      skipped.push({ taskId: t.id, title: t.title, reason: "Already completed: preserved" });
       continue;
     }
     if (t.due_on_overridden) {
-      skipped.push({ taskId: t.id, title: t.title, reason: "Date was set manually — preserved" });
+      skipped.push({ taskId: t.id, title: t.title, reason: "Date was set manually. Preserved" });
       continue;
     }
     const anchorDate = anchors[anchor];
@@ -173,9 +173,9 @@ export async function previewScheduleRecalc(
     const proposed = shift(anchorDate, t.schedule_offset_days);
     const conflict =
       t.due_on && proposed < new Date().toISOString().slice(0, 10)
-        ? "Proposed date is in the past — confirm before applying"
+        ? "Proposed date is in the past. Confirm before applying"
         : t.status === "blocked"
-          ? "Task is blocked — confirm the new date is still workable"
+          ? "Task is blocked: confirm the new date is still workable"
           : null;
     rows.push({
       taskId: t.id,
@@ -303,7 +303,7 @@ export async function repaceProjectFromAccess(
     .single();
   if (property.error) throw property.error;
   if (!property.data.actual_access_on) {
-    throw new Error("Record the access (possession) date first — the plan paces itself from it.");
+    throw new Error("Record the access (possession) date first. The plan paces itself from it.");
   }
 
   const tasks = await supabase

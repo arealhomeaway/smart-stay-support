@@ -22,16 +22,16 @@ describe("Active Owner and Onboarding calendar-date labels", () => {
     for (const value of [null, undefined, "", "invalid", "2026-02-30", NaN, new Date(NaN)]) {
       expect(usDate(value, "Not set")).toBe("Not set");
     }
-    expect(usDate(null)).toBe("—");
+    expect(usDate(null)).toBe("Not set");
   });
 
   it("uses the supplied fallback for missing or invalid calendar dates", () => {
     for (const value of [null, undefined, "", "2026-02-29", "2026-02-30", "2026-13-01"]) {
       expect(usCalendarDate(value, "Not set")).toBe("Not set");
     }
-    expect(usCalendarDate(null)).toBe("—");
-    expect(usCalendarDate("2026-9-17")).toBe("—");
-    expect(usCalendarDate("2026-09-17T00:30:00Z")).toBe("—");
+    expect(usCalendarDate(null)).toBe("Not set");
+    expect(usCalendarDate("2026-9-17")).toBe("Not set");
+    expect(usCalendarDate("2026-09-17T00:30:00Z")).toBe("Not set");
   });
 
   for (const [zone, timestampDate, timestampTime] of [

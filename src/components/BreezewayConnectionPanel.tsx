@@ -45,8 +45,8 @@ function TaskRows({ tasks }: { tasks: BreezewayTaskSummary[] }) {
           {tasks.map((t) => (
             <tr key={t.id} className="border-t border-border align-top">
               <td className="py-1 pr-3 font-mono">{t.id}</td>
-              <td className="py-1 pr-3 text-foreground">{t.name ?? "—"}</td>
-              <td className="py-1 pr-3">{t.status ?? t.stage ?? "—"}</td>
+              <td className="py-1 pr-3 text-foreground">{t.name ?? "Not set"}</td>
+              <td className="py-1 pr-3">{t.status ?? t.stage ?? "Not set"}</td>
               <td className="py-1 pr-3">
                 {t.scheduledDate ?? "unscheduled"}
                 {t.scheduledTime ? ` ${t.scheduledTime}` : ""}
@@ -55,7 +55,7 @@ function TaskRows({ tasks }: { tasks: BreezewayTaskSummary[] }) {
                 {t.assignments.length === 0
                   ? "Unassigned"
                   : t.assignments
-                      .map((a) => `${a.name ?? "Unnamed"} (${a.status ?? "—"})`)
+                      .map((a) => `${a.name ?? "Unnamed"} (${a.status ?? "Not set"})`)
                       .join(", ")}
               </td>
             </tr>
@@ -96,7 +96,7 @@ function MappingList({
             className="rounded border border-border px-2 py-1"
           >
             <span className="text-foreground">{r.breezewayName ?? r.resolveName ?? "Unnamed"}</span>
-            {r.resolveName && r.breezewayName ? ` → ${r.resolveName}` : ""} — {r.note}
+            {r.resolveName && r.breezewayName ? ` to ${r.resolveName}` : ""} · {r.note}
           </li>
         ))}
         {rows.length > limit ? <li>…and {rows.length - limit} more.</li> : null}
@@ -184,7 +184,7 @@ export function BreezewayConnectionPanel() {
         </CardTitle>
         <CardDescription>
           Read-only connection check. Breezeway credentials grant full read and write access to the
-          Breezeway account — Resolve restricts itself to reads. No webhook is registered and
+          Breezeway account. Resolve restricts itself to reads. No webhook is registered and
           nothing is imported.
         </CardDescription>
       </CardHeader>
@@ -207,7 +207,7 @@ export function BreezewayConnectionPanel() {
           </div>
           <div className="flex justify-between gap-2">
             <dt className="text-muted-foreground">Connected company</dt>
-            <dd>{s?.connectedCompany ?? "—"}</dd>
+            <dd>{s?.connectedCompany ?? "Not set"}</dd>
           </div>
           <div className="flex justify-between gap-2">
             <dt className="text-muted-foreground">Last successful check</dt>
@@ -259,7 +259,7 @@ export function BreezewayConnectionPanel() {
             <Separator />
             <div className="space-y-3">
               <p className="text-sm">
-                <strong>Pilot preview — {preview.resolveName ?? PILOT.label}</strong>
+                <strong>Pilot preview: {preview.resolveName ?? PILOT.label}</strong>
               </p>
               <dl className="grid gap-x-6 gap-y-1 text-xs sm:grid-cols-2">
                 <div className="flex justify-between gap-2">
@@ -271,8 +271,8 @@ export function BreezewayConnectionPanel() {
                 <div className="flex justify-between gap-2">
                   <dt className="text-muted-foreground">Breezeway</dt>
                   <dd className="text-right">
-                    {preview.breezewayName ?? "—"} · {preview.breezewayId} (
-                    {preview.breezewayStatus ?? "—"})
+                    {preview.breezewayName ?? "Not set"} · {preview.breezewayId} (
+                    {preview.breezewayStatus ?? "Not set"})
                   </dd>
                 </div>
                 <div className="flex justify-between gap-2">

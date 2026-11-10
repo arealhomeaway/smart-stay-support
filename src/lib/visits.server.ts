@@ -75,7 +75,7 @@ export async function checkIn(supabase: Client, userId: string, ticketId: string
     .eq("vendor_user_id", userId)
     .is("checked_out_at", null)
     .maybeSingle();
-  if (open) throw new Error("You're already checked in on this job — check out when you leave.");
+  if (open) throw new Error("You're already checked in on this job. Check out when you leave.");
 
   const { data: visit, error } = await supabaseAdmin
     .from("ticket_visits")
@@ -109,7 +109,7 @@ export async function checkIn(supabase: Client, userId: string, ticketId: string
     verified
       ? `Vendor checked in on site at ${home ? formatPropertyLabel(home).primary : "the home"} (${distance} m from the pin).`
       : distance != null
-        ? `Vendor checked in — phone location was ${distance} m from the home, so arrival is unconfirmed.`
+        ? `Vendor checked in: phone location was ${distance} m from the home, so arrival is unconfirmed.`
         : "Vendor checked in without sharing location, so arrival is unconfirmed.",
   );
 

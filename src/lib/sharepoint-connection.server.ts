@@ -86,7 +86,7 @@ async function loadStoredConnection(
     return { exists: true, key };
   } catch {
     throw new Error(
-      "A SharePoint connection is already stored for this administrator, but its saved key could not be read on the server. Nothing was changed and no replacement connection was created — revoke the stored connection before authorizing again.",
+      "A SharePoint connection is already stored for this administrator, but its saved key could not be read on the server. Nothing was changed and no replacement connection was created. Revoke the stored connection before authorizing again.",
     );
   }
 }

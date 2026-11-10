@@ -37,7 +37,7 @@ const BUCKET_HELP: Record<ClaimBucket, string> = {
   needs_attention: "Deadline today or passed, a decision to record, or someone is waiting on us.",
   deadline_approaching: "Submission window closes within a week.",
   evidence_missing: "Cannot be submitted until the evidence is in.",
-  ready_to_submit: "Evidence and cost are in — send it.",
+  ready_to_submit: "Evidence and cost are in. Send it.",
   waiting_external: "With the platform, insurer or guest. Nothing to do until the follow-up date.",
   recently_recovered: "Money in during the last 30 days.",
 };

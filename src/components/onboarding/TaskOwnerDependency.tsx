@@ -50,7 +50,7 @@ export function TaskOwnerDependency({ task, canManage }: { task: WorkflowTask; c
       <p className="eyebrow">Needs from the homeowner</p>
       <p className="text-sm">
         <span className="font-medium">{meta.label}</span>
-        <span className="text-muted-foreground"> — {meta.blurb}</span>
+        <span className="text-muted-foreground"> · {meta.blurb}</span>
       </p>
       {editable && (
         <div className="space-y-2">

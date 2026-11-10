@@ -138,47 +138,47 @@ export const MASTER_STAGES: {
   label: string;
   steps: [number, number];
 }[] = [
-  { value: "intake_identity", number: 1, label: "Stage 1 — Intake & Identity", steps: [1, 2] },
+  { value: "intake_identity", number: 1, label: "Stage 1: Intake & Identity", steps: [1, 2] },
   {
     value: "documents_assessment",
     number: 2,
-    label: "Stage 2 — Documents & Assessment",
+    label: "Stage 2: Documents & Assessment",
     steps: [3, 5],
   },
   {
     value: "scope_utilities_compliance",
     number: 3,
-    label: "Stage 3 — Scope, Utilities & Compliance",
+    label: "Stage 3: Scope, Utilities & Compliance",
     steps: [6, 8],
   },
   {
     value: "design_approvals_procurement",
     number: 4,
-    label: "Stage 4 — Design, Approvals & Procurement",
+    label: "Stage 4: Design, Approvals & Procurement",
     steps: [9, 11],
   },
   {
     value: "fieldwork_setup_review",
     number: 5,
-    label: "Stage 5 — Fieldwork, Setup & Mid-Project Review",
+    label: "Stage 5: Fieldwork, Setup & Mid-Project Review",
     steps: [12, 16],
   },
   {
     value: "listing_final_clean",
     number: 6,
-    label: "Stage 6 — Listing Setup & Final Clean",
+    label: "Stage 6: Listing Setup & Final Clean",
     steps: [17, 18],
   },
   {
     value: "handoff_acceptance",
     number: 7,
-    label: "Stage 7 — Handoff Readiness & Operational Acceptance",
+    label: "Stage 7: Handoff Readiness & Operational Acceptance",
     steps: [19, 23],
   },
   {
     value: "closeout_stabilization",
     number: 8,
-    label: "Stage 8 — Financial Closeout & Launch Stabilization",
+    label: "Stage 8: Financial Closeout & Launch Stabilization",
     steps: [24, 26],
   },
 ];
@@ -385,7 +385,7 @@ export const MASTER_STEPS: MasterStep[] = [
     title: "Assemble the PM readiness package",
     stage: "handoff_acceptance",
     roles: ["assigned_pm"],
-    who: "Assigned PM — submits to the Director of Onboarding; the PM cannot approve their own handoff",
+    who: "Assigned PM: submits to the Director of Onboarding; the PM cannot approve their own handoff",
     blocksHandoff: true,
     evidenceRequired: true,
     gate: "pm_readiness_package",
@@ -467,7 +467,7 @@ export const MASTER_SEQUENCE_RULES = [
   "Completed is not the same as approved.",
   "Approved is not the same as accepted.",
   "Accepted is not the same as Live.",
-  "The PM cannot approve their own handoff. Step 19 submits to the Director of Onboarding, step 20 is the Director of Onboarding's review, step 21 is the Director of Operations' review, steps 22–23 are Operations acceptance and Live activation.",
+  "The PM cannot approve their own handoff. Step 19 submits to the Director of Onboarding, step 20 is the Director of Onboarding's review, step 21 is the Director of Operations' review, steps 22 to 23 are Operations acceptance and Live activation.",
   "Exceptions and carryover work automatically convert into Operations tickets on handoff.",
 ] as const;
 

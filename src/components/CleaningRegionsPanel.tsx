@@ -46,7 +46,7 @@ export function CleaningRegionsPanel() {
           <MapPin className="size-5" /> Regional cleaning managers
         </CardTitle>
         <CardDescription>
-          Every inspection is opened for the manager who covers that market — automatically, as each
+          Every inspection is opened for the manager who covers that market, automatically, as each
           date arrives.
         </CardDescription>
       </CardHeader>

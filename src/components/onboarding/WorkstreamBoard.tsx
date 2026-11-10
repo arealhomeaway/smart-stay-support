@@ -99,7 +99,7 @@ function TrackCard({
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{group.blurb}</p>
       </div>
 
-      <Meter percent={group.percent} label={`${group.label} — ${group.percent}% complete`} />
+      <Meter percent={group.percent} label={`${group.label} · ${group.percent}% complete`} />
 
       {group.total === 0 ? (
         <p className="text-xs text-muted-foreground">Nothing in this track yet.</p>
@@ -148,7 +148,7 @@ export function WorkstreamBoard({
         description={
           ready.length > 0
             ? "Every step that is unblocked today, across all four tracks. Work these in any order."
-            : "Nothing is unblocked right now — each open step is waiting on a date, an approval or another step."
+            : "Nothing is unblocked right now, each open step is waiting on a date, an approval or another step."
         }
         actions={
           <span className="text-xs tabular-nums text-muted-foreground">

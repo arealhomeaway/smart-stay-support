@@ -50,7 +50,7 @@ export function PropertyDetailSections({
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Find in this property — wifi, trash day, gate, water shutoff, air filter, HOA, warranty…"
+          placeholder="Find in this property. Wifi, trash day, gate, water shutoff, air filter, HOA, warranty…"
           aria-label="Find in this property"
           className="pl-9"
         />

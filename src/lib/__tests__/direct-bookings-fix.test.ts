@@ -220,10 +220,10 @@ describe("6. the reply email in the approved format", () => {
         "Monthly Rent: $5,390",
         "",
         "One Time Fees:",
-        "Cleaning fee - $350",
-        "Application fee - $89 (one adult required)",
-        "Pet fee - $250/dog ($750 total)",
-        "Refundable deposit - $1,000",
+        "Cleaning fee: $350",
+        "Application fee: $89 (one adult required)",
+        "Pet fee: $250/dog ($750 total)",
+        "Refundable deposit: $1,000",
         "",
         "Please let us know if you have any questions.",
         "",
@@ -248,8 +248,8 @@ describe("6. the reply email in the approved format", () => {
     expect(body).toContain("Availability: As soon as possible");
   });
   it("fees: fixed order, no $0 lines, pet total only for more than one dog", () => {
-    expect(feeLines({ ...fees, dogs: 1 })).toEqual(["Cleaning fee - $350", "Application fee - $89 (one adult required)", "Pet fee - $250/dog", "Refundable deposit - $1,000"]);
-    expect(feeLines({ cleaningFee: 350, applicationFee: 0, petFeePerDog: 250, dogs: 0, deposit: 0 })).toEqual(["Cleaning fee - $350"]);
+    expect(feeLines({ ...fees, dogs: 1 })).toEqual(["Cleaning fee: $350", "Application fee: $89 (one adult required)", "Pet fee: $250/dog", "Refundable deposit: $1,000"]);
+    expect(feeLines({ cleaningFee: 350, applicationFee: 0, petFeePerDog: 250, dogs: 0, deposit: 0 })).toEqual(["Cleaning fee: $350"]);
     const none = fillTemplate(DEFAULT_REPLY_TEMPLATE, values({ fees: { cleaningFee: 0, applicationFee: 0, petFeePerDog: 0, dogs: 0, deposit: null } }));
     expect(none).not.toContain("One Time Fees");
     expect(none).not.toMatch(/\n\n\n/);

@@ -39,7 +39,7 @@ export const FINANCE_REVIEW_LABEL: Record<FinanceReview, string> = {
   in_review: "In Finance review",
   needs_clarification: "Needs clarification",
   reviewed: "Finance reviewed",
-  reopened: "Reopened — needs re-review",
+  reopened: "Reopened: needs re-review",
 };
 
 export const RESERVATION_LINK_LABEL: Record<ReservationLink, string> = {
@@ -60,7 +60,7 @@ export const LINK_LABEL: Record<LinkType, string> = {
   property_activity: "Property Activity",
 };
 
-export const QB_REFERENCE_NOTE = "Entered by hand — not synchronized with or verified in QuickBooks.";
+export const QB_REFERENCE_NOTE = "Entered by hand: not synchronized with or verified in QuickBooks.";
 
 export type ExpenseFacts = {
   expense_type: ExpenseType;
@@ -229,7 +229,7 @@ export function financeQueue(e: {
 }
 
 export const money = (n: number | null | undefined) =>
-  n == null ? "—" : n.toLocaleString("en-US", { style: "currency", currency: "USD" });
+  n == null ? "Not set" : n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 
 /* ---------------- Purchase authorization (no thresholds invented) ----------------
  * Purchases record authorization separately from owner notification and cost
@@ -253,7 +253,7 @@ export function ownerAllocationBlocked(e: {
   expense_type: string; purchase_auth_status: string | null; leadership_decision: string | null;
 }): string | null {
   return purchaseNeedsLeadership(e)
-    ? "Purchase authorization is missing or uncertain — route to leadership for a decision before allocating to the owner."
+    ? "Purchase authorization is missing or uncertain. Route to leadership for a decision before allocating to the owner."
     : null;
 }
 

@@ -22,13 +22,13 @@ import { usDate } from "@/lib/dates";
 export const Route = createFileRoute("/_authenticated/owner-analytics")({
   head: () => ({
     meta: [
-      { title: "Owner Participation — Resolve" },
+      { title: "Owner Participation: Resolve" },
       {
         name: "description",
         content:
           "Staff and executive view of Active Owner programs: reported hours against the 105-hour operating target, pace, review backlog and CSV export.",
       },
-      { property: "og:title", content: "Owner Participation — Resolve" },
+      { property: "og:title", content: "Owner Participation: Resolve" },
       {
         property: "og:description",
         content: "Participation pace and review backlog across every live owner program.",
@@ -251,7 +251,7 @@ function OwnerAnalyticsPage() {
                             {r.percentOfOperatingTarget}%
                           </td>
                           <td className="numeric px-5 py-2.5 text-right">
-                            {r.hoursPerWeekNeeded ?? "—"}
+                            {r.hoursPerWeekNeeded ?? "-"}
                           </td>
                         </tr>
                       ))}

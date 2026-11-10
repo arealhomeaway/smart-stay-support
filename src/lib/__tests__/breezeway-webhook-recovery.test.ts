@@ -117,7 +117,7 @@ describe("recovery of a transient lookup failure", () => {
     expect(row?.["retry_count"]).toBeLessThanOrEqual(MAX_RETRY_ATTEMPTS);
     expect(row?.["retryable"]).toBe(false);
     expect(lastSummary?.attempted).toBe(0); // no longer eligible, so the last pass touched nothing
-    expect(String(row?.["reason"])).toContain("exceeded retry limit");
+    expect(String(row?.["reason"])).toContain("Exceeded retry limit");
   });
 
   it("reclassifies a retry that turns out permanent (e.g. now 404) as not retryable immediately", async () => {

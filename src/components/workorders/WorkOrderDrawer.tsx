@@ -74,6 +74,7 @@ import {
   type WorkOrderRow,
   type WorkOrderUpdate,
 } from "@/lib/work-order-types";
+import { priorityMeta } from "@/lib/tickets";
 
 const OVERRIDE_REASONS = Object.keys(WARRANTY_OVERRIDE_LABELS) as WarrantyOverrideReason[];
 
@@ -499,7 +500,7 @@ export function WorkOrderDrawer({
             {STAGE_LABELS[derivedStage(workOrder)]}
           </StatusBadge>
           <Chip>{PHASE_LABELS[workOrder.phase]}</Chip>
-          <Chip>{workOrder.priority.toUpperCase()}</Chip>
+          <Chip>{priorityMeta(workOrder.priority).short}</Chip>
           <Chip>{approvalChipLabel(workOrder, verdict)}</Chip>
           <span className="text-xs text-muted-foreground">
             owned by {owner ? displayName(people.find((p) => p.id === owner)) : "nobody yet"}
@@ -513,7 +514,7 @@ export function WorkOrderDrawer({
         {workOrder.closed_at ? (
           <Celebrate title="Work order completed">
             Closed {usDate(workOrder.closed_at)}
-            {workOrder.closure_note ? ` — ${workOrder.closure_note}` : ""}
+            {workOrder.closure_note ? ` · ${workOrder.closure_note}` : ""}
           </Celebrate>
         ) : (
           <ProgressSteps steps={steps} currentIndex={currentIndex} />
@@ -528,7 +529,7 @@ export function WorkOrderDrawer({
             Next checkpoint: {CHECKPOINT_LABELS[nextCheckpoint(workOrder)]}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Stays yours until it's resolved or handed off — asking for advice doesn't change that.
+            Stays yours until it's resolved or handed off. Asking for advice doesn't change that.
           </p>
         </div>
 
@@ -750,7 +751,7 @@ export function WorkOrderDrawer({
                     disabled={readOnly}
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
-                    placeholder="Emailed the homeowner on 12 Aug — $275 disposal replacement going ahead."
+                    placeholder="Emailed the homeowner on 12 Aug. $275 disposal replacement going ahead."
                   />
                   <Button
                     size="sm"
@@ -884,7 +885,7 @@ export function WorkOrderDrawer({
               <h3 className="font-display text-sm font-semibold">Warranty</h3>
               <p className="rounded-md border border-amber/25 bg-amber/10 px-2 py-1 text-xs">
                 Warranty may apply
-                {workOrder.warranty_contact ? ` — ${workOrder.warranty_contact}` : ""}.
+                {workOrder.warranty_contact ? ` · ${workOrder.warranty_contact}` : ""}.
               </p>
               <div className="grid gap-2 sm:grid-cols-2">
                 <div className="space-y-1">
@@ -961,7 +962,7 @@ export function WorkOrderDrawer({
                         warranty_override_by: userId,
                       },
                       event: "warranty_override",
-                      body: `Alternate vendor chosen — ${
+                      body: `Alternate vendor chosen: ${
                         WARRANTY_OVERRIDE_LABELS[
                           fields["warranty_override_reason"] as WarrantyOverrideReason
                         ]
@@ -1265,7 +1266,7 @@ export function WorkOrderDrawer({
               >
                 Originating ticket
               </Link>
-              {" — start a guest refund or credit or a claim from there so the stay context comes with it."}
+              {"· start a guest refund or credit or a claim from there so the stay context comes with it."}
             </p>
           ) : null}
           <p className="text-muted-foreground">
@@ -1442,7 +1443,7 @@ function Stamp({
         })
       }
     >
-      {done ? `${label} ✓` : label}
+      {done ? `${label}: done` : label}
     </Button>
   );
 }

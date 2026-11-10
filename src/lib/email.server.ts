@@ -106,7 +106,7 @@ export function emailText(heading: string, body: string, action?: { label: strin
     body,
     action ? `\n${action.label}: ${action.url}` : "",
     "",
-    "— A Real Home Away",
+    "· A Real Home Away",
   ]
     .filter((line) => line !== null)
     .join("\n");
@@ -279,7 +279,7 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
   // address never changes.
   if (isEmailAddress(input.replyTo) && input.replyTo.trim().toLowerCase() !== SHARED_MAILBOX) {
     console.warn(
-      `Ignoring requested reply-to ${input.replyTo.trim()} — replies are pinned to ${SHARED_MAILBOX}.`,
+      `Ignoring requested reply-to ${input.replyTo.trim()}. Replies are pinned to ${SHARED_MAILBOX}.`,
     );
   }
   const replyTo = SHARED_MAILBOX;

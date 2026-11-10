@@ -35,7 +35,7 @@ export function DocumentCompletionPanel() {
   const retireMutation = useMutation({
     mutationFn: (documentId: string) => retire({ data: { documentId, note: "" } }),
     onSuccess: () => {
-      toast.success("Retired — still readable, out of the way.");
+      toast.success("Retired: still readable, out of the way.");
       void queryClient.invalidateQueries({ queryKey: ["document-completion-board"] });
     },
     onError: (e: Error) => toast.error(e.message),

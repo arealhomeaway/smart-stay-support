@@ -41,7 +41,7 @@ function reasons(t: Row) {
     out.push(`Unresolved ${priorityMeta(t.priority).short}`);
   if (t.vendor_dispatched_at && !t.vendor_completed_at) out.push("Vendor action pending");
   if (t.next_review_at) out.push("Promised follow-up");
-  if (t.handoff_status === "pending") out.push("Handed into Operations — not accepted");
+  if (t.handoff_status === "pending") out.push("Handed into Operations: not accepted");
   if (t.guest_in_residence) out.push("Guest in residence");
   if (t.status === "waiting") out.push("Waiting on someone");
   return out;

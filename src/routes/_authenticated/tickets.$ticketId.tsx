@@ -106,6 +106,7 @@ import { REOPEN_COPY, reopenPathFor, type ReopenTicketLike } from "@/lib/ticket-
 import { ArchiveTicketButton, ArchivedTicketBanner } from "@/components/scorecard/TicketArchive";
 import { CorrectiveCommitments } from "@/components/scorecard/CorrectiveCommitments";
 import { canArchiveTicket, canRestoreTicket, isGuestIssueTicket } from "@/lib/scorecard-capture";
+import { TICKET_UNAVAILABLE, ticketAvailability } from "@/lib/ticket-availability";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -139,13 +140,13 @@ import {
 export const Route = createFileRoute("/_authenticated/tickets/$ticketId")({
   head: () => ({
     meta: [
-      { title: "Ticket detail — Resolve Operations" },
+      { title: "Ticket detail: Resolve Operations" },
       {
         name: "description",
         content:
           "Acknowledge, work the playbook, and close with the evidence the work type requires.",
       },
-      { property: "og:title", content: "Ticket detail — Resolve Operations" },
+      { property: "og:title", content: "Ticket detail: Resolve Operations" },
       {
         property: "og:description",
         content: "Acknowledge, work the playbook, and close it properly.",
@@ -158,7 +159,7 @@ export const Route = createFileRoute("/_authenticated/tickets/$ticketId")({
     typeof raw["from"] === "string" && raw["from"] ? { from: raw["from"] } : {},
   component: TicketDetailPage,
   errorComponent: () => <p className="text-muted-foreground">This ticket could not be loaded.</p>,
-  notFoundComponent: () => <p className="text-muted-foreground">Ticket not found.</p>,
+  notFoundComponent: () => <p className="text-muted-foreground">{TICKET_UNAVAILABLE}</p>,
 });
 
 function TicketDetailPage() {
@@ -223,7 +224,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     }
   };
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     // Keyed and filtered by demoMode exactly like every list/queue view, so
     // toggling demo mode off a currently-open ticket re-fetches and comes
     // back not-found rather than continuing to render a demo record under
@@ -266,6 +267,23 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
         })),
       };
     },
+  });
+  // A link to a ticket that is not there under this lens: is it under the other lens
+  // (demo versus real), or removed? Removed shows a plain message, never an error.
+  const notHere = !isLoading && (isError || Boolean(data && !data.ticket));
+  const { data: otherLens, isLoading: otherLensLoading } = useQuery({
+    queryKey: ["ticket-other-lens", ticketId, demoMode],
+    enabled: notHere && !isError,
+    queryFn: async () => {
+      const r = await supabase.from("tickets").select("id, is_demo").eq("id", ticketId).maybeSingle();
+      return Boolean(r.data && Boolean(r.data.is_demo) !== demoMode);
+    },
+  });
+  const availability = ticketAvailability({
+    found: Boolean(data?.ticket) && !isError,
+    foundInOtherLens: otherLens === true,
+    archived: Boolean((data?.ticket as { archived_at?: string | null } | null | undefined)?.archived_at),
+    canRestore: canRestoreTicket(role),
   });
 
   // One incident, several lanes. Resolve knows which lanes are actually live,
@@ -426,18 +444,36 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   const demoMismatch = ticketDemoMismatch(loadedTicketIsDemo, demoMode);
   useEffect(() => {
     if (!demoReady || isLoading || !data) return;
+    // A removed ticket shows its plain message instead (no toast, no redirect).
+    if (!data.ticket && (otherLensLoading || otherLens !== true)) return;
     // Fires when the filtered query already came back empty (a mismatched
     // ticket reached fresh), or when a ticket already in memory no longer
     // matches demoMode (toggled while this exact ticket stayed open).
     if (data.ticket && !demoMismatch) return;
     toast.error(
       demoMode
-        ? "That ticket isn't a demo record — it isn't available here."
+        ? "That ticket isn't a demo record. It isn't available here."
         : "That ticket isn't available outside demo mode.",
     );
     if (onClose) onClose();
     else navigate({ to: "/tickets", replace: true });
-  }, [onClose, demoReady, isLoading, data, demoMode, demoMismatch, navigate]);
+  }, [onClose, demoReady, isLoading, data, demoMode, demoMismatch, navigate, otherLens, otherLensLoading]);
+
+  if (availability === "unavailable" && !(notHere && !isError && otherLensLoading))
+    return (
+      <div className="mx-auto max-w-md space-y-4 rounded-lg border border-border p-8 text-center" data-testid="ticket-unavailable">
+        <p className="font-display text-lg font-semibold">{TICKET_UNAVAILABLE}</p>
+        {onClose ? (
+          <Button type="button" variant="outline" className="min-h-11" onClick={onClose}>
+            Close
+          </Button>
+        ) : (
+          <Button asChild variant="outline" className="min-h-11">
+            <Link to="/tickets">Back to tickets</Link>
+          </Button>
+        )}
+      </div>
+    );
 
   if (isLoading || !data || !data.ticket || demoMismatch)
     return <Skeleton className="h-96 w-full" />;
@@ -490,7 +526,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   const requiredEvidence = scopedClosureEvidence(workType?.required_closure_evidence, {
     category: ticket.category,
     workTypeName: workType?.name ?? null,
-    text: [ticket.title, ticket.description].filter(Boolean).join(" — "),
+    text: [ticket.title, ticket.description].filter(Boolean).join(" · "),
   });
   const attachmentRows = (attachments?.files ?? []) as {
     upload_status?: string | null;
@@ -551,7 +587,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             done: evidenceSatisfied,
             state: evidenceSatisfied ? ("complete" as const) : ("needs_you" as const),
             hint: evidenceNeedsFile
-              ? `Upload the photo or file this work needs${qualifyingFiles > 0 ? "" : " — nothing is attached yet"}.`
+              ? `Upload the photo or file this work needs${qualifyingFiles > 0 ? "" : "· nothing is attached yet"}.`
               : "Add the confirmation this work needs.",
             action: "Add evidence",
           },
@@ -672,7 +708,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     }
     const review = new Date(waitReview);
     if (Number.isNaN(review.getTime()) || review.getTime() <= Date.now()) {
-      toast.error("The review time has to be in the future — that is when this comes back to you.");
+      toast.error("The review time has to be in the future. That is when this comes back to you.");
       return;
     }
     const ok = await applyStatus("waiting", {
@@ -683,7 +719,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     if (!ok) return;
     await log(
       "waiting",
-      `Waiting on ${labelFor(WAITING_ON, waitOn)}: ${waitReason.trim()} — review ${usDateTime(waitReview)}`,
+      `Waiting on ${labelFor(WAITING_ON, waitOn)}: ${waitReason.trim()} · review ${usDateTime(waitReview)}`,
       "waiting_set",
     );
     await refresh();
@@ -697,7 +733,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
       next_review_at: null,
     });
     if (!ok) return;
-    await log("waiting", "No longer waiting — back in progress.", "waiting_cleared");
+    await log("waiting", "No longer waiting: back in progress.", "waiting_cleared");
     setWaitReason("");
     setWaitReview("");
     await refresh();
@@ -759,13 +795,13 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
       return;
     }
     if (!summary) {
-      toast.error("Add a resolution summary — what was wrong and what was done.");
+      toast.error("Add a resolution summary. What was wrong and what was done.");
       return;
     }
     if (requiredEvidence && !evidenceSatisfied && !waived) {
       toast.error(
         evidenceNeedsFile
-          ? "Attach the photo or file this work requires — a description is not enough."
+          ? "Attach the photo or file this work requires. A description is not enough."
           : "Add the closure evidence this work requires.",
       );
       return;
@@ -797,8 +833,8 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     await log(
       "resolved",
       heldForReview
-        ? `Resolved as ${labelFor(OUTCOME_TYPES, outcome)} — closure review is next. ${summary}`
-        : `Resolved and closed as ${labelFor(OUTCOME_TYPES, outcome)} — no review required. ${summary}`,
+        ? `Resolved as ${labelFor(OUTCOME_TYPES, outcome)}. Closure review is next. ${summary}`
+        : `Resolved and closed as ${labelFor(OUTCOME_TYPES, outcome)}. No review required. ${summary}`,
       "resolved",
     );
 
@@ -807,8 +843,8 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     await refresh();
     toast.success(
       heldForReview
-        ? "Resolved — it moves to closure review before it is closed."
-        : "Closed — no review is required for this ticket.",
+        ? "Resolved: it moves to closure review before it is closed."
+        : "Closed: no review is required for this ticket.",
     );
   }
 
@@ -819,7 +855,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
       last_reopened_at: new Date().toISOString(),
     });
     if (!ok) return;
-    await log("reopened", "Reopened — the issue was not fully resolved.", "reopened");
+    await log("reopened", "Reopened: the issue was not fully resolved.", "reopened");
     await refresh();
     toast.success("Reopened.");
   }
@@ -836,7 +872,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     }
     await log("guest", "Guest confirmed the issue is resolved.", "guest_confirmed");
     await refresh();
-    toast.success("Recorded — the guest confirmed it.");
+    toast.success("Recorded: the guest confirmed it.");
   }
 
   /**
@@ -859,11 +895,11 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     }
     await log(
       "repair",
-      "Guest says the repair did not fix the issue — reopened for a new Work Order.",
+      "Guest says the repair did not fix the issue. Reopened for a new Work Order.",
       "repair_reported_incomplete",
     );
     await refresh();
-    toast.success("Reopened — open a new Work Order when ready.");
+    toast.success("Reopened: open a new Work Order when ready.");
   }
 
   /* ---------------- where this ticket is in the work ---------------- */
@@ -935,7 +971,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     repairAmount: branches?.repairAmount ?? 0,
     ownerSensitive: Boolean((ticket as Record<string, unknown>)["owner_notified"] || (ticket as Record<string, unknown>)["owner_approval_required"]),
   }).required;
-  const resolveActionLabel = willNeedFinalReview ? "Resolve — send for review" : "Close ticket";
+  const resolveActionLabel = willNeedFinalReview ? "Resolve: send for review" : "Close ticket";
 
   // The one Current Action: what to do now, what has to be written down, and
   // what happens the moment it is completed. Derived, never stored.
@@ -1019,24 +1055,24 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   // One plain-language sentence: what is happening and what comes next. No stat wall.
   const nextStepLine = closed
     ? ticket.status === "resolved"
-      ? "Resolved — waiting on closure review."
+      ? "Resolved: waiting on closure review."
       : "Closed and filed."
     : stage === "waiting"
       ? `Waiting on ${labelFor(WAITING_ON, ticket.waiting_on).toLowerCase()}.`
       : stage === "repair_active"
-        ? "Field team has it — watch for completion, then verify."
+        ? "Field team has it. Watch for completion, then verify."
         : stage === "verify"
-          ? "Repair reported complete — confirm with the guest."
+          ? "Repair reported complete: confirm with the guest."
           : stage === "steps"
             ? (nextAction?.label ?? "Work the remaining steps.")
             : stage === "repair"
               ? (ticket as { repair_reported_incomplete_at?: string | null })
                   .repair_reported_incomplete_at
-                ? "Guest says it's not fixed — open a new Work Order."
+                ? "Guest says it's not fixed. Open a new Work Order."
                 : "Decide whether this needs a field repair."
               : stage === "closure"
                 ? closureReady
-                  ? "Everything required is satisfied — ready to close."
+                  ? "Everything required is satisfied. Ready to close."
                   : `${remaining} thing${remaining === 1 ? "" : "s"} left before this can close.`
                 : "In progress.";
 
@@ -1059,7 +1095,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             objectType: "ticket",
             workTypeName: workType?.name ?? null,
             category: ticket.category ?? null,
-            text: [ticket.title, ticket.description].filter(Boolean).join(" — "),
+            text: [ticket.title, ticket.description].filter(Boolean).join(" · "),
             situationId:
               classifyTicketText([ticket.title, ticket.description].filter(Boolean).join(". "))
                 ?.situation.id ?? null,
@@ -1074,7 +1110,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             meta.summary,
             ...(sla.escalation
               ? [
-                  `P1 escalated to ${sla.escalation.who} — ${sla.escalation.minutes} minutes with no action started.`,
+                  `Right now ticket escalated to ${sla.escalation.who} · ${sla.escalation.minutes} minutes with no action started.`,
                 ]
               : []),
             ...(requiredOpen.length > 0
@@ -1083,7 +1119,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
           ]}
           escalations={
             sla.escalation
-              ? [`Already escalated — ${sla.escalation.who} owns the next check-in.`]
+              ? [`Already escalated: ${sla.escalation.who} owns the next check-in.`]
               : []
           }
           requiredEvidence={
@@ -1188,7 +1224,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
               <AttachmentsPanel entityType="ticket" entityId={ticketId} title="Add photos" />
               {evidenceNeedsFile && qualifyingFiles === 0 && (
                 <p className="text-sm text-danger">
-                  A photo or file is required here — a written description on its own will not close
+                  A photo or file is required here. A written description on its own will not close
                   this ticket.
                 </p>
               )}
@@ -1330,7 +1366,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
           <div className="flex items-start gap-3 rounded-lg border border-danger/40 bg-danger/10 p-4">
             <BellRing className="mt-0.5 size-5 shrink-0 text-danger" />
             <div>
-              <p className="font-medium text-danger">P1 escalated — {sla.escalation.who}</p>
+              <p className="font-medium text-danger">Right now ticket escalated: {sla.escalation.who}</p>
               <p className="text-sm text-muted-foreground">
                 {sla.escalation.minutes} minutes since this came in with no action started.
               </p>
@@ -1595,7 +1631,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                 <div className="mt-2 space-y-3">
                   <h2 className="text-xl font-semibold">Does this need a field repair?</h2>
                   <p className="text-sm text-muted-foreground">
-                    Opening a Work Order is how Resolve tracks the repair — cost, approval and
+                    Opening a Work Order is how Resolve tracks the repair. Cost, approval and
                     vendor. Sending it to a field team is a later, optional step.
                   </p>
                   {role.can("work_orders_internal") ? (
@@ -1611,7 +1647,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                     <p className="text-sm text-muted-foreground">Ask a coordinator with Work Order access to open it.</p>
                   )}
                   <Button variant="ghost" size="sm" onClick={() => setCloseOpen(true)}>
-                    No repair needed — finish this ticket
+                    No repair needed: finish this ticket
                   </Button>
                 </div>
               )}
@@ -1737,8 +1773,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                   label: (
                     <>
                       {humanizeHistoryText(cleanNotionText(a.body))}{" "}
-                      <span className="text-muted-foreground">
-                        — {activityAuthorLabel(a as { external_author_name?: string | null; author?: { full_name?: string | null; email?: string | null } | null })}
+                      <span className="text-muted-foreground"> · {activityAuthorLabel(a as { external_author_name?: string | null; author?: { full_name?: string | null; email?: string | null } | null })}
                       </span>
                     </>
                   ),
@@ -1834,7 +1869,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                 )}
                 {insuranceFlagged(ticket.insurance_risk) && (
                   <Chip className={stateChip(ticket.insurance_risk === "yes" ? "blocked" : "waiting")}>
-                    {insuranceRiskLabel(ticket.insurance_risk)} — supervisor visibility
+                    {insuranceRiskLabel(ticket.insurance_risk)} · supervisor visibility
                   </Chip>
                 )}
                 <Field
@@ -1884,7 +1919,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                 value={
                   [ticket.properties?.address_line1, ticket.properties?.city]
                     .filter(Boolean)
-                    .join(", ") || "—"
+                    .join(", ") || "None"
                 }
               />
               <Field label="Acknowledged" value={relativeTime(ticket.acknowledged_at)} />
@@ -1892,7 +1927,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
               <div className="flex items-baseline justify-between gap-4">
                 <span className="text-muted-foreground">Vendor</span>
                 <span className="flex items-center gap-2 text-right font-medium">
-                  {ticket.vendor_name ?? "—"}
+                  {ticket.vendor_name ?? "Not set"}
                   {ticket.vendor_name && ticket.vendor_status && (
                     <StatusBadge tone={vendorStatusTone(ticket.vendor_status)}>
                       {labelFor(
@@ -1993,7 +2028,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
               {...(evidenceRequirementActive
                 ? {
                     description:
-                      "An upload is required for the current step — add it in Current Work so Resolve credits the requirement.",
+                      "An upload is required for the current step. Add it in Current Work so Resolve credits the requirement.",
                   }
                 : {})}
             />
@@ -2055,7 +2090,7 @@ function MoreActions({
           <div className="rounded-lg border border-border/60 p-4">
             <h3 className="font-medium">Email someone about this</h3>
             <p className="mb-3 mt-1 text-sm text-muted-foreground">
-              Guest, homeowner or vendor — from the shared inbox, with the details filled in.
+              Guest, homeowner or vendor, from the shared inbox, with the details filled in.
             </p>
             <EmailComposer context="ticket" recordId={String(ticket["id"])} />
           </div>

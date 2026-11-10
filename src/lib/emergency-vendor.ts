@@ -2,7 +2,7 @@
 export type EmergencyBasis = "p1" | "no_routine_vendor" | "after_hours" | "supervisor_approval" | "supervisor_override";
 
 export const EMERGENCY_BASIS_LABELS: Record<EmergencyBasis, string> = {
-  p1: "P1 Ticket",
+  p1: "Right now Ticket",
   no_routine_vendor: "No routine vendor available",
   after_hours: "After-hours coverage needed",
   supervisor_approval: "Supervisor approval",

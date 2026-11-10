@@ -59,7 +59,7 @@ async function sendEmail(
   if (context?.item && !rendered.subject.includes(context.item)) parts.push(context.item);
   if (context?.propertyName && !parts.join(" ").includes(context.propertyName))
     parts.push(context.propertyName);
-  const fullSubject = parts.join(" — ");
+  const fullSubject = parts.join(" · ");
   const bodyText = context?.propertyName
     ? `Property: ${context.propertyName}\n\n${rendered.body}`
     : rendered.body;
@@ -125,7 +125,7 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50, onlyId?: st
         .update({
           email_status: "skipped",
           sms_status: "skipped",
-          delivery_error: "Demo notification — external delivery blocked.",
+          delivery_error: "Demo notification: external delivery blocked.",
         })
         .eq("id", row.id);
       continue;

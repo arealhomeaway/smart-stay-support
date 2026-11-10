@@ -22,7 +22,7 @@ export function ownerTicketRequest(
   const explicitWhy = `${ACTION_TYPE_META[intent.owner_request_type].label}: ${intent.owner_request_why}`;
   // Canonical pending approval always stays primary, while the separate staff request remains visible.
   if (authority.category === "approve_only" || intent.owner_request_type === "information_only")
-    return { ...authority, why: `${authority.why} Reviewed owner request — ${explicitWhy}` };
+    return { ...authority, why: `${authority.why} Reviewed owner request: ${explicitWhy}` };
   return {
     ...authority,
     category: intent.owner_request_type,
@@ -73,14 +73,14 @@ function ownerTicketAuthority(
   )
     return {
       category: "information_only",
-      label: "Review — Authority not yet confirmed",
+      label: "Review: Authority not yet confirmed",
       ownerActionRequired: null,
       policyVersions,
       why: "You can review the recorded work. The repair amount or authority covering it is not fully confirmed, so this view does not confirm permission to proceed.",
     };
   return {
     category: "information_only",
-    label: "Review — No approval required",
+    label: "Review: No approval required",
     ownerActionRequired: false,
     policyVersions,
     why:

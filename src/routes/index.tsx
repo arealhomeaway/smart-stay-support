@@ -7,9 +7,9 @@ import { publicPortals } from "@/lib/portals";
 import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/hero-arha-property.jpg";
 
-const TITLE = "Resolve — ARHA's Central Operating Hub";
+const TITLE = "Resolve: ARHA's Central Operating Hub";
 const DESCRIPTION =
-  "Keep Calm. Check Resolve. Tickets, properties, approvals and answers for the A Real Home Away team — finally in one place.";
+  "Keep Calm. Check Resolve. Tickets, properties, approvals and answers for the A Real Home Away team. Finally in one place.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -34,7 +34,7 @@ const pillars = [
   {
     icon: Repeat,
     title: "Departments hand off, not drop off",
-    body: "Work moves between onboarding, operations, vendors and homeowners through recorded handoffs — the original owner stays responsible until the receiving side accepts.",
+    body: "Work moves between onboarding, operations, vendors and homeowners through recorded handoffs. The original owner stays responsible until the receiving side accepts.",
   },
   {
     icon: ShieldCheck,
@@ -191,7 +191,7 @@ function Overview() {
           <p className="mt-6 rounded-xl border border-dashed border-border bg-muted/40 p-5 text-sm text-muted-foreground">
             <strong className="text-foreground">One operating history per property.</strong>{" "}
             Onboarding decisions, every ticket and visit, vendor evidence, homeowner approvals and
-            quarterly reviews accumulate on the same home — so anyone picking it up tomorrow can see
+            quarterly reviews accumulate on the same home, so anyone picking it up tomorrow can see
             what happened, who owns it, and what was promised.
           </p>
         </section>

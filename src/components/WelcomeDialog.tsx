@@ -97,7 +97,7 @@ export function WelcomeDialog({
           onClick={onDismiss}
           className="mt-4 text-xs text-muted-foreground underline-offset-4 hover:underline"
         >
-          Skip for now — I'll find it under Help
+          Skip for now: I'll find it under Help
         </button>
       </div>
     </div>

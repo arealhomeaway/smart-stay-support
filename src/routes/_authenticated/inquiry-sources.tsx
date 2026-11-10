@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_authenticated/inquiry-sources")({
 });
 
 function amount(value: number | null) {
-  return value === null ? <span className="text-muted-foreground">—</span> : formatMoney(value);
+  return value === null ? <span className="text-muted-foreground">-</span> : formatMoney(value);
 }
 
 function InquirySourcesPage() {
@@ -65,9 +65,9 @@ function InquirySourcesPage() {
             <td className="p-3 font-medium">{source.name}{!source.active && <span className="ml-2 text-xs text-muted-foreground">(not in use)</span>}
               {source.pricingFlags && <p className="mt-1 max-w-sm text-xs text-amber-700">{source.pricingFlags}</p>}
             </td>
-            <td className="p-3">{source.sourceType ?? "—"}</td>
-            <td className="p-3">{source.discountPercent === null ? "—" : `${source.discountPercent}%`}</td>
-            <td className="p-3">{source.referralPercent === null && source.referralFee === null ? "—" : [
+            <td className="p-3">{source.sourceType ?? "Not set"}</td>
+            <td className="p-3">{source.discountPercent === null ? "-" : `${source.discountPercent}%`}</td>
+            <td className="p-3">{source.referralPercent === null && source.referralFee === null ? "-" : [
               source.referralPercent === null ? null : `${source.referralPercent}%/month`,
               source.referralFee === null ? null : `${formatMoney(source.referralFee)}/month`,
             ].filter(Boolean).join(" · ")}
@@ -77,7 +77,7 @@ function InquirySourcesPage() {
             <td className="p-3">{amount(source.applicationFee)}</td>
             <td className="p-3">{amount(source.securityDeposit)}</td>
             <td className="p-3">{formatMoney(source.petFeePerPet)}/pet</td>
-            <td className="p-3">{source.utilitiesIncluded === null ? "—" : source.utilitiesIncluded ? "Yes" : "No"}</td>
+            <td className="p-3">{source.utilitiesIncluded === null ? "Not set" : source.utilitiesIncluded ? "Yes" : "No"}</td>
             <td className="p-3"><Button size="sm" variant="outline" onClick={() => setEditing(source)}>Edit</Button></td>
           </tr>)}
           {!shown.length && !sources.isPending && <tr><td className="p-6 text-muted-foreground" colSpan={10}>No sources match that search.</td></tr>}

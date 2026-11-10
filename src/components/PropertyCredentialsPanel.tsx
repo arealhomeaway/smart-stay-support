@@ -79,7 +79,7 @@ function freshnessTone(f: Row["freshness"]) {
 
 function freshnessText(r: Row) {
   if (!r.lastVerifiedOn) return "Never verified";
-  const prefix = r.freshness === "overdue" ? "Verified over a year ago —" : "Verified";
+  const prefix = r.freshness === "overdue" ? "Verified over a year ago:" : "Verified";
   return `${prefix} ${r.lastVerifiedOn}`;
 }
 

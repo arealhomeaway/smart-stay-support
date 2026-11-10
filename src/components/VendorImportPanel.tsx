@@ -71,10 +71,10 @@ export function VendorImportPanel() {
         <CardHeader>
           <CardTitle>Import a legacy vendor list</CardTitle>
           <CardDescription>
-            One vendor per line: name, role, email, phone, departments, groups — tab or comma
+            One vendor per line: name, role, email, phone, departments, groups. Tab or comma
             separated. A CSV export from the old system pastes straight in. The Breezeway people
             directory export and the legacy Vendor Database export are each recognised on their own
-            and read by column name — Breezeway brings across departments, groups and export notes;
+            and read by column name. Breezeway brings across departments, groups and export notes;
             the legacy directory brings across specialty, market, pricing, contact and compliance notes. Nothing
             imports as approved.
           </CardDescription>
@@ -100,7 +100,7 @@ export function VendorImportPanel() {
                 if (!file) return;
                 setText(await file.text());
                 setLabel(file.name.replace(/\.csv$/i, "").slice(0, 120));
-                toast.success("File loaded — review the row count, then stage it.");
+                toast.success("File loaded: review the row count, then stage it.");
               }}
             />
           </div>
@@ -168,7 +168,7 @@ export function VendorImportPanel() {
                         .join(" · ")}
                     </p>
                     {r.profile.claims.length > 0 && (
-                      <p>Recorded, still unverified — {r.profile.claims.join("; ")}.</p>
+                      <p>Recorded, still unverified: {r.profile.claims.join("; ")}.</p>
                     )}
                     {r.profile.comments && <p>{r.profile.comments}</p>}
                   </div>

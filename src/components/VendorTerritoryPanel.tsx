@@ -86,7 +86,7 @@ export function VendorTerritoryPanel({
       }),
     onSuccess: (res) => {
       toast.success(
-        `${res.added} ZIP${res.added === 1 ? "" : "s"} added — ${res.homes} home${res.homes === 1 ? "" : "s"} covered.` +
+        `${res.added} ZIP${res.added === 1 ? "" : "s"} added: ${res.homes} home${res.homes === 1 ? "" : "s"} covered.` +
           (res.rejected.length > 0 ? ` Skipped: ${res.rejected.slice(0, 5).join(", ")}.` : ""),
       );
       setZipText("");
@@ -146,7 +146,7 @@ export function VendorTerritoryPanel({
                 <div className="text-sm">
                   <p className="font-medium">
                     {cat}
-                    {territoryLabel ? ` — ${territoryLabel}` : ""}
+                    {territoryLabel ? ` · ${territoryLabel}` : ""}
                   </p>
                   <p className="text-muted-foreground">
                     {rows.length} ZIP{rows.length === 1 ? "" : "s"} · {homes} ARHA home
@@ -204,13 +204,13 @@ export function VendorTerritoryPanel({
               </SelectContent>
             </Select>
             <Input
-              placeholder="Territory name (optional) — e.g. OKC metro north"
+              placeholder="Territory name (optional): e.g. OKC metro north"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
               maxLength={80}
             />
             <Textarea
-              placeholder="Paste ZIP codes — 73003, 73012 73013… commas, spaces or one per line all work."
+              placeholder="Paste ZIP codes: 73003, 73012 73013… commas, spaces or one per line all work."
               value={zipText}
               onChange={(e) => setZipText(e.target.value)}
               rows={4}

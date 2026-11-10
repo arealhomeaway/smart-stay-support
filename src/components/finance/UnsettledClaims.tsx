@@ -37,7 +37,7 @@ export function UnsettledClaims({ demoMode, viewOnly = false }: { demoMode: bool
                 <span>
                   <span className="font-medium">{c.title}</span>
                   <span className="text-muted-foreground"> · {names.data?.get(c.property_id ?? "") ?? "Home"}</span>
-                  {c.stage === "closed" ? <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs">Closed — not settled</span> : null}
+                  {c.stage === "closed" ? <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs">Closed: not settled</span> : null}
                 </span>
                 <span className="text-xs text-muted-foreground">
                   Requested {formatMoney(c.submitted_amount)} · Approved {formatMoney(c.approved_amount)} · Received {formatMoney(c.recovered_amount ?? 0)}

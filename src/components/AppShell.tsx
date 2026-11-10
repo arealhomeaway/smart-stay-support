@@ -47,6 +47,7 @@ import {
   SidebarProvider,
   SidebarRail,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { OnboardingTour } from "@/components/OnboardingTour";
@@ -313,6 +314,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <SidebarProvider>
+      <CloseMenuOnPageChange />
       <Sidebar collapsible="icon">
         <SidebarHeader>
           <Link to={home} className="flex items-center gap-3 px-2 py-1.5">
@@ -352,7 +354,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                           asChild
                           isActive={active}
                           tooltip={item.label}
-                          className="h-10 rounded-lg font-medium data-[active=true]:bg-sidebar-primary data-[active=true]:font-semibold data-[active=true]:text-sidebar-primary-foreground data-[active=true]:shadow-sm data-[active=true]:[&>svg]:text-sidebar-primary-foreground"
+                          className="h-11 rounded-lg font-medium data-[active=true]:bg-sidebar-primary data-[active=true]:font-semibold data-[active=true]:text-sidebar-primary-foreground data-[active=true]:shadow-sm data-[active=true]:[&>svg]:text-sidebar-primary-foreground"
                         >
                           <Link
                             to={item.to}
@@ -395,7 +397,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <TooltipProvider delayDuration={200}>
           <header className="sticky top-0 z-30 border-b bg-card/90 backdrop-blur supports-[backdrop-filter]:bg-card/75">
             <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 md:px-6">
-              <SidebarTrigger className="min-h-11 min-w-11 md:min-h-9 md:min-w-9" />
+              <SidebarTrigger className="min-h-11 min-w-11" />
               <span className="hidden text-sm font-medium sm:inline">{workspace}</span>
 
               <div className="ml-auto flex flex-1 flex-wrap items-center justify-end gap-2">
@@ -408,7 +410,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                         data-tour="log"
                         size="sm"
                         variant={quietLogTicket ? "outline" : "default"}
-                        className="min-h-11 md:min-h-9"
+                        className="min-h-11"
                       >
                         <Link to="/tickets/new" search={ticketContext}>
                           <Plus className="size-4" aria-hidden="true" /> Record work
@@ -420,7 +422,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                         type="button"
                         size="sm"
                         variant={quietLogTicket ? "outline" : "default"}
-                        className="min-h-11 md:min-h-9"
+                        className="min-h-11"
                         aria-label="Record routine work"
                         onClick={() => openRecordRoutine()}
                       >
@@ -450,12 +452,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                       variant="ghost"
                       onClick={signOut}
                       aria-label={`Sign out (${identityLabel})`}
-                      className="min-h-11 min-w-11 md:min-h-9 md:min-w-9"
+                      className="min-h-11 min-w-11"
                     >
                       <LogOut className="size-4" aria-hidden="true" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Sign out — {identityLabel}</TooltipContent>
+                  <TooltipContent>Sign out: {identityLabel}</TooltipContent>
                 </Tooltip>
               </div>
             </div>
@@ -538,7 +540,7 @@ function IconAction({ to, label, children }: { to: string; label: string; childr
           asChild
           size="icon"
           variant="ghost"
-          className="min-h-11 min-w-11 md:min-h-9 md:min-w-9"
+          className="min-h-11 min-w-11"
         >
           <Link to={to} aria-label={label}>
             {children}
@@ -548,4 +550,17 @@ function IconAction({ to, label, children }: { to: string; label: string; childr
       <TooltipContent>{label}</TooltipContent>
     </Tooltip>
   );
+}
+
+/** On a phone the left menu closes once a page is chosen, so it never stays over the page (register H6). */
+function CloseMenuOnPageChange() {
+  const { isMobile, openMobile, setOpenMobile } = useSidebar();
+  const href = useRouterState({ select: (s) => s.location.href });
+  const [lastHref, setLastHref] = useState(href);
+  useEffect(() => {
+    if (href === lastHref) return;
+    setLastHref(href);
+    if (isMobile && openMobile) setOpenMobile(false);
+  }, [href, lastHref, isMobile, openMobile, setOpenMobile]);
+  return null;
 }

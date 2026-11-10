@@ -35,7 +35,7 @@ import { ProgramHomeowners } from "./ProgramHomeowners";
 import { HomeAutomation } from "@/components/ao/HomeAutomation";
 
 const STATUS_LABEL: Record<string, string> = {
-  draft: "Draft — not started",
+  draft: "Draft: not started",
   waiting_for_closing: "Waiting for closing",
   ready_for_onboarding: "Ready for onboarding",
   active: "Active",

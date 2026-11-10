@@ -36,7 +36,7 @@ export function InsuranceRiskCard() {
     <div id="group-insurance" data-testid="insurance-risk-card">
       <SectionCard
         title={`Insurance risk (${data.length})`}
-        description="Open Maintenance flagged for a possible insured loss. Visibility only — nothing is sent to insurers or owners."
+        description="Open Maintenance flagged for a possible insured loss. Visibility only: nothing is sent to insurers or owners."
       >
         {data.length === 0 ? (
           <p className="text-sm text-muted-foreground">No open Maintenance is flagged.</p>

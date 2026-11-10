@@ -173,7 +173,7 @@ export function gateState(line: GatekeeperLine, today = new Date()): GateState {
 
 export const GATE_STATE_LABELS: Record<GateState, string> = {
   passed: "Passed",
-  expired: "Expired — not passing",
+  expired: "Expired: not passing",
   missing_expiry: "Needs expiration date",
   failed: "Does not meet",
   not_verified: "Not verified",
@@ -210,7 +210,7 @@ export function reputationGate(rating: number | null, reviews: number | null) {
   if (rating < 4.0) {
     return {
       band: "below_bar" as const,
-      headline: `${rating.toFixed(1)} stars — below the 4.0 bar`,
+      headline: `${rating.toFixed(1)} stars: below the 4.0 bar`,
       requirement: "Needs a documented executive exception before any trial.",
     };
   }
@@ -250,7 +250,7 @@ export function maskedCodeFor(displayName: string, sequence: number) {
 
 /** Nothing about a worker leaves the vendor's own company except this. */
 export function maskedLabel(orgName: string, code: string) {
-  return `${orgName} — ${code}`;
+  return `${orgName} · ${code}`;
 }
 
 export type VendorOrgRow = {

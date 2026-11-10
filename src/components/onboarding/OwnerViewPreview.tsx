@@ -54,11 +54,11 @@ export function OwnerViewPreview({ propertyId }: { propertyId: string }) {
               <List items={q.data.visible} empty="Nothing is shared with the owner yet." />
             </div>
             <div className="space-y-2">
-              <p className="eyebrow">Draft — proposed for sharing</p>
+              <p className="eyebrow">Draft: proposed for sharing</p>
               <List items={q.data.draft} empty="No drafts waiting." />
             </div>
             <div className="space-y-2">
-              <p className="eyebrow">Internal only — never shown</p>
+              <p className="eyebrow">Internal only: never shown</p>
               <ul className="list-disc pl-4 text-sm text-muted-foreground">
                 {q.data.internalOnly.map((c) => (
                   <li key={c}>{c}</li>

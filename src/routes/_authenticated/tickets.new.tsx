@@ -651,7 +651,7 @@ export function NewTicketForm({
           Not sure how to handle it? Describe it to the Coach and it will set the priority, build the checklist and write the
           vendor brief.
         </span>
-        <span className="whitespace-nowrap font-semibold text-primary">Ask the Coach →</span>
+        <span className="whitespace-nowrap font-semibold text-primary">Ask the Coach</span>
       </Link>
 
       {saved ? (

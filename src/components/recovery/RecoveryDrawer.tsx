@@ -55,6 +55,7 @@ import {
 } from "@/lib/guest-recovery";
 import type { RecoveryActivityRow, RecoveryRow, RecoveryUpdate } from "@/lib/recovery-types";
 import { usDateTime } from "@/lib/dates";
+import { priorityMeta } from "@/lib/tickets";
 
 export function RecoveryDrawer({
   recovery,
@@ -178,7 +179,7 @@ export function RecoveryDrawer({
             <Chip className={stateChip(stageState(recovery.stage))}>
               {RECOVERY_STAGE_LABELS[recovery.stage]}
             </Chip>
-            <Chip>{recovery.priority.toUpperCase()}</Chip>
+            <Chip>{priorityMeta(recovery.priority).short}</Chip>
             <Chip>{APPROVAL_STATUS_LABELS[recovery.approval_status]}</Chip>
             <span className="text-xs text-muted-foreground">
               {propertyName} · {recovery.guest_name ?? "Guest unrecorded"} · owned by{" "}
@@ -207,7 +208,7 @@ export function RecoveryDrawer({
                 ))}
               </ul>
               <p className="mt-1 text-muted-foreground">
-                Escalation is guidance and approval — you remain the owner until a handoff is
+                Escalation is guidance and approval. You remain the owner until a handoff is
                 accepted.
               </p>
             </div>
@@ -341,7 +342,6 @@ export function RecoveryDrawer({
             <div className="rounded-md border bg-muted/40 p-3 text-xs">
               <p className="text-sm font-medium">{verdict.label}</p>
               <p className="text-muted-foreground">{verdict.reason}</p>
-              <p className="mt-1 text-muted-foreground">{POLICY_VERSION}</p>
             </div>
 
             <div className="space-y-1">
@@ -411,7 +411,7 @@ export function RecoveryDrawer({
                         requested_by: userId,
                       },
                       event: "approval_requested",
-                      body: `Approval requested — ${verdict.label}`,
+                      body: `Approval requested: ${verdict.label}`,
                       detail: { reason: verdict.reason },
                     })
                   }
@@ -627,7 +627,7 @@ export function RecoveryDrawer({
             </p>
             {handoffPending(recovery) ? (
               <p className="text-warning">
-                Handoff requested and not yet accepted — you are still responsible for this
+                Handoff requested and not yet accepted. You are still responsible for this
                 recovery.
               </p>
             ) : null}

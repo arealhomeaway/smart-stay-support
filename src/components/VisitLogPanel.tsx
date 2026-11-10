@@ -50,7 +50,7 @@ export function VisitLogPanel({ ticketId }: { ticketId: string }) {
                 <span className="text-muted-foreground">
                   {usDateTime(v.checked_in_at)}
                   {v.checked_out_at
-                    ? ` → ${usTime(v.checked_out_at)} · ${formatOnSite(v.minutes_on_site)} on site`
+                    ? ` to ${usTime(v.checked_out_at)} · ${formatOnSite(v.minutes_on_site)} on site`
                     : " · still on site"}
                 </span>
               </div>

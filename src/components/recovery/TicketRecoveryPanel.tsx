@@ -210,7 +210,7 @@ export function TicketRecoveryPanel({ ticket, openSignal = 0 }: { ticket: Ticket
         author_id: userId,
         event_type: "created",
         body: chosen
-          ? `Refund or credit opened from ticket — proposed remedy: ${RECOVERY_ACTION_LABELS[chosen]}`
+          ? `Refund or credit opened from ticket. Proposed remedy: ${RECOVERY_ACTION_LABELS[chosen]}`
           : "Refund or credit opened from ticket",
         detail: {
           authority: verdict.level,
@@ -470,7 +470,7 @@ export function TicketRecoveryPanel({ ticket, openSignal = 0 }: { ticket: Ticket
               <p className="text-sm font-medium">{verdict.label}</p>
               <p className="text-xs text-muted-foreground">{verdict.reason}</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                {policyBoundaryLabel(withinPolicy)} · {POLICY_VERSION}
+                {policyBoundaryLabel(withinPolicy)}
               </p>
             </div>
 

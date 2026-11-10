@@ -91,7 +91,7 @@ export function GlobalSearch({ targets }: { targets: SearchTarget[] }) {
         variant="outline"
         size="sm"
         onClick={() => setOpen(true)}
-        className="w-full justify-start gap-2 text-muted-foreground sm:w-64"
+        className="min-h-11 w-full justify-start gap-2 text-muted-foreground sm:w-64"
       >
         <Search className="size-4" aria-hidden="true" />
         <span className="truncate">Search Resolve</span>

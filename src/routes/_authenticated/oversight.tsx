@@ -49,16 +49,16 @@ import { withoutQuietNotion } from "@/lib/notion-ticket-display";
 export const Route = createFileRoute("/_authenticated/oversight")({
   head: () => ({
     meta: [
-      { title: "Operations oversight — Resolve" },
+      { title: "Operations oversight: Resolve" },
       {
         name: "description",
         content:
           "The supervisor exception board: unacknowledged work, overdue actions, waiting past review, unassigned work, handoffs, approvals and workload by role.",
       },
-      { property: "og:title", content: "Operations oversight — Resolve" },
+      { property: "og:title", content: "Operations oversight: Resolve" },
       {
         property: "og:description",
-        content: "Exceptions first — what needs a supervisor right now.",
+        content: "Exceptions first: what needs a supervisor right now.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -274,7 +274,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
 
   const escalationSections: ExceptionSection[] = [
     {
-      title: "P1 not acknowledged",
+      title: "Right now not acknowledged",
       description: "Escalation ladder is running. Someone must respond now.",
       rows: unackedP1,
       nextAction: "Acknowledge now",
@@ -291,7 +291,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
 
   const blockers: ExceptionSection[] = [
     {
-      title: "Past SLA — acknowledged but not started",
+      title: "Past SLA: acknowledged but not started",
       description: "Someone replied but no work has begun inside the target.",
       rows: notStarted,
       nextAction: "Start work",
@@ -299,7 +299,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
     },
     {
       title: "Handoffs waiting to be accepted",
-      description: "Ownership has not transferred — the original owner is still accountable.",
+      description: "Ownership has not transferred. The original owner is still accountable.",
       rows: pendingHandoffs,
       nextAction: "Accept the handoff",
       timingField: "reported_at",
@@ -315,7 +315,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
       timingField: "next_review_at",
     },
     {
-      title: "P1 / P2 aging",
+      title: "Right now and Today aging",
       description: "Still open well past where this priority should have landed.",
       rows: agingP12,
       nextAction: "Push this forward",
@@ -441,7 +441,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
   const trend = (pick: (t: (typeof open)[number]) => string) =>
     Object.entries(
       open.reduce<Record<string, number>>((acc, t) => {
-        const key = pick(t) || "—";
+        const key = pick(t) || "Not set";
         acc[key] = (acc[key] ?? 0) + 1;
         return acc;
       }, {}),
@@ -574,7 +574,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
           {(s?.escalations ?? []).length > 0 && (
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">
-                A request for a call, not a handoff — the raiser still owns the work until you take
+                A request for a call, not a handoff. The raiser still owns the work until you take
                 it.
               </p>
               {(s?.escalations ?? []).map((e) => (
@@ -772,7 +772,7 @@ function TrendList({ title, rows }: { title: string; rows: [string, number][] })
     <div>
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{title}</p>
       <ul className="mt-1 space-y-0.5">
-        {rows.length === 0 && <li className="text-muted-foreground">—</li>}
+        {rows.length === 0 && <li className="text-muted-foreground">-</li>}
         {rows.map(([k, v]) => (
           <li key={k} className="flex justify-between gap-2">
             <span className="truncate">{k}</span>
@@ -907,7 +907,7 @@ function GroupSection({
         className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-2 text-sm text-muted-foreground"
       >
         <span className="size-1.5 rounded-full bg-success" />
-        {title} — all clear
+        {title} · all clear
       </div>
     );
   }

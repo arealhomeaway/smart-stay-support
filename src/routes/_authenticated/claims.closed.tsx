@@ -22,9 +22,9 @@ import { flagUnsettled } from "@/lib/claims";
 export const Route = createFileRoute("/_authenticated/claims/closed")({
   head: () => ({
     meta: [
-      { title: "Closed claims — Resolve" },
+      { title: "Closed claims: Resolve" },
       { name: "description", content: "Search closed damage claims and see whether each is financially settled." },
-      { property: "og:title", content: "Closed claims — Resolve" },
+      { property: "og:title", content: "Closed claims: Resolve" },
       { property: "og:description", content: "Closed claims with full history and settlement status." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -65,7 +65,7 @@ function ClosedClaims() {
       <PageHeader
         eyebrow="Claims"
         title="Closed claims"
-        description="Every closed claim and its full history. Closed does not mean settled — unsettled claims stay in Finance's outstanding work."
+        description="Every closed claim and its full history. Closed does not mean settled. Unsettled claims stay in Finance's outstanding work."
       />
       <div className="flex flex-wrap items-center gap-2">
         <Input

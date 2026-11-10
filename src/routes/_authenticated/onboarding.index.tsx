@@ -50,13 +50,13 @@ import {
 export const Route = createFileRoute("/_authenticated/onboarding/")({
   head: () => ({
     meta: [
-      { title: "Onboarding Home — Resolve" },
+      { title: "Onboarding Home: Resolve" },
       {
         name: "description",
         content:
           "What needs attention today across every home in onboarding: derived risk, first-class blockers, review gates, upcoming handoffs and workload by project manager.",
       },
-      { property: "og:title", content: "Onboarding Home — Resolve" },
+      { property: "og:title", content: "Onboarding Home: Resolve" },
       {
         property: "og:description",
         content:

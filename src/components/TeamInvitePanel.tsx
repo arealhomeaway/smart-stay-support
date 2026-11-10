@@ -28,12 +28,12 @@ import { usDate } from "@/lib/dates";
 type InviteRole = "admin" | "manager" | "onboarding" | "tech" | "vendor" | "owner";
 
 const ROLE_LABEL: Record<InviteRole, string> = {
-  admin: "Admin — everything, including roles and settings",
-  manager: "Supervisor — oversight, analytics and handoff review",
-  onboarding: "Onboarding staff — pre-handoff work and readiness",
-  tech: "Staff — their own assigned work",
-  vendor: "Vendor — only their dispatched Work Orders",
-  owner: "Homeowner — their own enrolled home",
+  admin: "Admin: everything, including roles and settings",
+  manager: "Supervisor: oversight, analytics and handoff review",
+  onboarding: "Onboarding staff: pre-handoff work and readiness",
+  tech: "Staff: their own assigned work",
+  vendor: "Vendor: only their dispatched Work Orders",
+  owner: "Homeowner: their own enrolled home",
 };
 
 type InviteLike = { redeemed_at?: string | null; revoked_at?: string | null; expires_at: string; created_at?: string | null };
@@ -90,11 +90,11 @@ Your access is set the moment the code is redeemed. Codes are single-use and exp
     onSuccess: (res) => {
       void navigator.clipboard?.writeText(inviteMessage(res.code));
       if (res.emailed?.status === "sent") {
-        toast.success(`Code ${res.code} emailed to them — a copy is on your clipboard too.`);
+        toast.success(`Code ${res.code} emailed to them. A copy is on your clipboard too.`);
       } else if (res.emailed?.status === "failed") {
         toast.warning(`Code ${res.code} created, but the email didn't send: ${res.emailed.error}`);
       } else {
-        toast.success(`Code ${res.code} created — invite message copied, paste it to them.`);
+        toast.success(`Code ${res.code} created: invite message copied, paste it to them.`);
       }
       setEmail("");
       setName("");
@@ -208,7 +208,7 @@ Your access is set the moment the code is redeemed. Codes are single-use and exp
                     type="button"
                     onClick={() => {
                       void navigator.clipboard?.writeText(inviteMessage(i.code));
-                      toast.success("Invite message copied — paste it to them.");
+                      toast.success("Invite message copied: paste it to them.");
                     }}
                     className="flex items-center gap-2 font-mono font-medium hover:underline"
                   >

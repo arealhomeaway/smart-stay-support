@@ -94,7 +94,7 @@ export function BackControl({ origin, className }: { origin: OriginSnapshot; cla
       type="button"
       onClick={back}
       className={cn(
-        "inline-flex min-h-11 items-center gap-1.5 rounded-md pr-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground md:min-h-9",
+        "inline-flex min-h-11 items-center gap-1.5 rounded-md pr-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
         className,
       )}
     >
@@ -191,7 +191,7 @@ function QueueStep({
 }) {
   if (!item) {
     return (
-      <Button size="sm" variant="ghost" disabled aria-label={`${label} — none`}>
+      <Button size="sm" variant="ghost" disabled aria-label={`${label} · none`}>
         {icon}
         <span className="hidden sm:inline">{label}</span>
       </Button>

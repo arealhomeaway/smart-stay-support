@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ROLE_BLURBS, ROLE_LABELS, ASSIGNABLE_ROLES, primaryRole } from "@/lib/permissions";
 
 const ROLE_LABEL: Record<string, string> = Object.fromEntries(
-  ASSIGNABLE_ROLES.map((r) => [r, `${ROLE_LABELS[r]} — ${ROLE_BLURBS[r]}`]),
+  ASSIGNABLE_ROLES.map((r) => [r, `${ROLE_LABELS[r]} · ${ROLE_BLURBS[r]}`]),
 );
 
 /** Admin-only: promote or demote teammates. Every change is enforced server side. */

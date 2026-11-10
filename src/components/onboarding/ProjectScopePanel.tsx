@@ -170,22 +170,22 @@ export function ProjectScopePanel({
               label="Utility manager"
               value={personName(people, project.utility_manager) || "Not set"}
             />
-            <Fact label="Branch" value={project.branch ?? "—"} />
-            <Fact label="Closing" value={project.planned_closing_on ?? "—"} />
-            <Fact label="Possession" value={project.possession_on ?? "—"} />
-            <Fact label="Target handoff" value={project.target_handoff_on ?? "—"} />
+            <Fact label="Branch" value={project.branch ?? "Not set"} />
+            <Fact label="Closing" value={project.planned_closing_on ?? "Not set"} />
+            <Fact label="Possession" value={project.possession_on ?? "Not set"} />
+            <Fact label="Target handoff" value={project.target_handoff_on ?? "Not set"} />
           </dl>
           {events.length > 0 && (
             <ul className="space-y-1 border-t border-border pt-3">
               {events.slice(0, 4).map((e) => (
                 <li key={e.id} className="text-xs text-muted-foreground">
-                  <span className="numeric">{e.created_at.slice(0, 10)}</span> — {e.summary}
+                  <span className="numeric">{e.created_at.slice(0, 10)}</span> · {e.summary}
                   {e.detail ? ` ${e.detail}` : ""}
                   {/* History has to be readable without opening the record:
                       say what the scope was and what it became. */}
                   {(e.prior_value || e.new_value) && (
                     <span className="block text-foreground/70">
-                      {e.prior_value ?? "—"} → {e.new_value ?? "—"}
+                      {e.prior_value ?? "Not set"} to {e.new_value ?? "Not set"}
                     </span>
                   )}
                 </li>
@@ -442,7 +442,7 @@ function ScopeDialog({
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>
-            {editing ? "Edit project scope" : `Start onboarding — ${propertyName}`}
+            {editing ? "Edit project scope" : `Start onboarding: ${propertyName}`}
           </DialogTitle>
           <DialogDescription>
             Scope decides what Resolve asks for. Anything switched off is never shown as missing
@@ -549,7 +549,7 @@ function ScopeDialog({
             ) : null}
             <p className="text-muted-foreground text-xs">
               {editing
-                ? "Choosing a plan adds any of its steps this home is missing. \u201cNew and existing\u201d also refreshes the steps already here — wording, tags, rules and dates — leaving finished work and dates you set by hand alone."
+                ? "Choosing a plan adds any of its steps this home is missing. \u201cNew and existing\u201d also refreshes the steps already here. Wording, tags, rules and dates. Leaving finished work and dates you set by hand alone."
                 : "The plan this home's steps are created from."}
             </p>
           </div>

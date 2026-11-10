@@ -12,12 +12,12 @@ export const Route = createFileRoute("/reset-password")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Choose a new password — Resolve" },
+      { title: "Choose a new password: Resolve" },
       {
         name: "description",
         content: "Set a new password for your A Real Home Away Resolve account.",
       },
-      { property: "og:title", content: "Choose a new password — Resolve" },
+      { property: "og:title", content: "Choose a new password: Resolve" },
       {
         property: "og:description",
         content: "Complete your Resolve password reset and get back to work.",

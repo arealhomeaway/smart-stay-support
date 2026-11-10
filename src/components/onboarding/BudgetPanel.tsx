@@ -224,7 +224,7 @@ export function BudgetPanel({ propertyId, canEdit }: { propertyId: string; canEd
               label={totals.over ? "Over by" : "Remaining"}
               value={
                 totals.remaining == null
-                  ? "—"
+                  ? "Not set"
                   : money(Math.abs(totals.remaining))
               }
               tone={totals.over ? "warn" : "plain"}
@@ -448,7 +448,7 @@ export function BudgetPanel({ propertyId, canEdit }: { propertyId: string; canEd
                 <p className="text-xs text-muted-foreground">{usDateTime(h.changed_at)}</p>
                 <p>{h.reason}</p>
                 <p className="text-xs text-muted-foreground">
-                  {h.field}: {h.old_value ?? "—"} → {h.new_value ?? "—"}
+                  {h.field}: {h.old_value ?? "Not set"} to {h.new_value ?? "Not set"}
                 </p>
               </div>
             ))

@@ -21,8 +21,8 @@ export type FormKey =
 export type FormSource = "breezeway" | "smartsheet" | "resolve_task";
 
 export const FORM_SOURCE_LABELS: Record<FormSource, string> = {
-  breezeway: "External — Breezeway inspection",
-  smartsheet: "External — Smartsheet form",
+  breezeway: "External: Breezeway inspection",
+  smartsheet: "External: Smartsheet form",
   resolve_task: "Recorded on the Resolve Task",
 };
 

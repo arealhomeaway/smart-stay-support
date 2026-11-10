@@ -156,7 +156,7 @@ export function OwnerTaskDialog({
     onSuccess: (_r, decision) => {
       toast.success(
         decision === "approved"
-          ? "Approved — thank you. Your project manager has been notified."
+          ? "Approved: thank you. Your project manager has been notified."
           : "Sent back to your project manager with your note.",
       );
       setNote("");
@@ -297,7 +297,7 @@ export function OwnerTaskDialog({
             {canLogTime ? (
               <>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Enter the minutes you actually spent — we never fill that in for you.
+                  Enter the minutes you actually spent. We never fill that in for you.
                 </p>
                 <Button className="mt-2" size="sm" variant="outline" onClick={onLogTime}>
                   <Clock className="mr-1 size-4" aria-hidden="true" /> Log my time

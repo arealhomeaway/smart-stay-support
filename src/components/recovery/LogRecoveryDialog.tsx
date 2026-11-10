@@ -213,7 +213,7 @@ export function LogRecoveryDialog() {
         author_id: userId,
         event_type: "created",
         body: chosen
-          ? `Refund or credit logged from the refunds & credits queue — proposed remedy: ${RECOVERY_ACTION_LABELS[chosen]}`
+          ? `Refund or credit logged from the refunds & credits queue. Proposed remedy: ${RECOVERY_ACTION_LABELS[chosen]}`
           : "Refund or credit logged from the refunds & credits queue",
         detail: {
           authority: verdict.level,
@@ -256,7 +256,7 @@ export function LogRecoveryDialog() {
         <DialogHeader>
           <DialogTitle>Log a guest refund or credit</DialogTitle>
           <DialogDescription>
-            Start from the ticket where the situation is being handled — the home, guest and stay
+            Start from the ticket where the situation is being handled. The home, guest and stay
             come across from it.
           </DialogDescription>
         </DialogHeader>
@@ -289,7 +289,7 @@ export function LogRecoveryDialog() {
                     className={`w-full rounded px-2 py-1.5 text-left text-xs ${row.id === ticketId ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
                   >
                     {row.title}
-                    {row.guest_name ? ` — ${row.guest_name}` : ""}
+                    {row.guest_name ? ` · ${row.guest_name}` : ""}
                   </button>
                 ))}
               </div>
@@ -407,7 +407,7 @@ export function LogRecoveryDialog() {
             <p className="text-sm font-medium">{verdict.label}</p>
             <p className="text-xs text-muted-foreground">{verdict.reason}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {policyBoundaryLabel(withinPolicy)} · {POLICY_VERSION}
+              {policyBoundaryLabel(withinPolicy)}
             </p>
           </div>
 

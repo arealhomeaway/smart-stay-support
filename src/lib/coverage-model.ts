@@ -31,11 +31,11 @@ export const SEAT_TEAMS: Record<string, string> = {
 };
 
 export const SEAT_LABELS: Record<string, string> = {
-  ge_day: "Guest Experience & Reservations Coordinator — Day/Weekend",
-  ge_evening: "Guest Experience & Reservations Coordinator — Evening",
-  ge_parttime: "Guest Experience & Reservations Coordinator — Part-time",
-  po_day: "Property Operations Coordinator — Weekday Day",
-  po_evening: "Property Operations Coordinator — Evening/Weekend",
+  ge_day: "Guest Experience & Reservations Coordinator: Day/Weekend",
+  ge_evening: "Guest Experience & Reservations Coordinator: Evening",
+  ge_parttime: "Guest Experience & Reservations Coordinator: Part-time",
+  po_day: "Property Operations Coordinator: Weekday Day",
+  po_evening: "Property Operations Coordinator: Evening/Weekend",
   ops_supervisor: "Operations Supervisor",
 };
 

@@ -470,8 +470,8 @@ async function refreshRequirementStatus(requirementId: string) {
       internal: false,
       body:
         status === "accepted_exception"
-          ? `Evidence exception accepted — ${previous.data.label}.`
-          : `Evidence requirement satisfied — ${previous.data.label}.`,
+          ? `Evidence exception accepted: ${previous.data.label}.`
+          : `Evidence requirement satisfied: ${previous.data.label}.`,
     });
   }
 
@@ -728,7 +728,7 @@ export async function acceptWithException(actor: Actor, itemId: string, reason: 
   } | null;
   if (!item) return { ok: false as const, message: "That photo is no longer on file." };
   if (item.status === "verified") {
-    return { ok: false as const, message: "That photo already passed — no exception is needed." };
+    return { ok: false as const, message: "That photo already passed. No exception is needed." };
   }
 
   const at = new Date().toISOString();

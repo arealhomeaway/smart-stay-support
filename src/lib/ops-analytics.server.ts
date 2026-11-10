@@ -13,6 +13,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { withoutQuietNotion } from "@/lib/notion-ticket-display";
 import { minutesExcludingWaiting, waitingSpans, type WaitingLogRow } from "@/lib/waiting-time";
+import { priorityMeta } from "@/lib/tickets";
 
 type Client = SupabaseClient<Database>;
 
@@ -344,7 +345,7 @@ export async function loadOpsAnalytics(
       unassigned: open.filter((t) => !(t.current_action_owner ?? t.assigned_to)).length,
       byPriority: tally(
         rows.map((t) => t.priority),
-        (k) => k.toUpperCase(),
+        (k) => priorityMeta(k).short,
       ),
       byStatus: tally(rows.map((t) => t.status)),
       byCategory: tally(rows.map((t) => t.category)),
@@ -371,7 +372,7 @@ export async function loadOpsAnalytics(
       breachedOpen: overdue.length,
       breachedByPriority: tally(
         overdue.map((t) => t.priority),
-        (k) => k.toUpperCase(),
+        (k) => priorityMeta(k).short,
       ),
     },
     contributors,

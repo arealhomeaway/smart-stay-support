@@ -224,7 +224,7 @@ export async function recordOwnerEmailDecision(
   const note = input.note.trim();
   if (note.length < 3 || note.length > 2000)
     throw new Error(
-      "Record what the homeowner said and where its evidence is retained (3–2000 characters).",
+      "Record what the homeowner said and where its evidence is retained (3 to 2000 characters).",
     );
   if (!input.expectedUpdatedAt) throw new Error("Refresh the approval before recording its reply.");
   const { data, error } = await db.rpc("record_owner_email_decision", {

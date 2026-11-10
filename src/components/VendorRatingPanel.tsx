@@ -18,7 +18,7 @@ const SCALES = [
   {
     key: "thoroughness",
     label: "Thoroughness",
-    help: "Finished the whole job — no holes left open, no follow-up needed.",
+    help: "Finished the whole job. No holes left open, no follow-up needed.",
   },
   {
     key: "communication",
@@ -74,7 +74,7 @@ export function VendorRatingPanel({ ticketId, priority }: Props) {
         data: { ticketId, ...scores, photosComplete, onTime, reopened, note },
       }),
     onSuccess: () => {
-      toast.success("Scored — it's on the vendor's private scorecard.");
+      toast.success("Scored: it's on the vendor's private scorecard.");
       void qc.invalidateQueries({ queryKey: ["job-rating", ticketId] });
       void qc.invalidateQueries({ queryKey: ["vendor-scoreboard"] });
     },
@@ -89,7 +89,7 @@ export function VendorRatingPanel({ ticketId, priority }: Props) {
           {rating && <Badge variant="outline">Scored</Badge>}
         </CardTitle>
         <CardDescription>
-          Scores are private to the vendor — they see their own points and an anonymous ranking,
+          Scores are private to the vendor. They see their own points and an anonymous ranking,
           never anyone else's. Thoroughness carries the most weight.
         </CardDescription>
       </CardHeader>
@@ -139,7 +139,7 @@ export function VendorRatingPanel({ ticketId, priority }: Props) {
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={3}
-          placeholder="What they did well, or what to coach next time — e.g. sealed and painted without being asked."
+          placeholder="What they did well, or what to coach next time, e.g. sealed and painted without being asked."
         />
 
         <div className="flex flex-wrap items-center gap-3">

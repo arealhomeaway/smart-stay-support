@@ -51,7 +51,7 @@ export const RESOLUTION_OPTIONS: { value: ResolutionPath; label: string; help: s
   {
     value: "already_resolved",
     label: "Issue already resolved",
-    help: "Nothing more to do — record what fixed it and close.",
+    help: "Nothing more to do. Record what fixed it and close.",
   },
 ];
 
@@ -260,7 +260,7 @@ export function ticketGuidance(t: GuidanceInput): Guidance {
       ...base,
       stage: "ready_to_close",
       step: null,
-      title: remaining === 0 ? "Ready to Close" : `Ready to Close — ${remaining} item${remaining === 1 ? "" : "s"} remaining`,
+      title: remaining === 0 ? "Ready to Close" : `Ready to Close: ${remaining} item${remaining === 1 ? "" : "s"} remaining`,
       body: "Record what fixed it, then close.",
     };
   }
@@ -269,7 +269,7 @@ export function ticketGuidance(t: GuidanceInput): Guidance {
       ...base,
       stage: "ready_to_close",
       step: null,
-      title: `Ready to Close — ${remaining} item${remaining === 1 ? "" : "s"} remaining`,
+      title: `Ready to Close: ${remaining} item${remaining === 1 ? "" : "s"} remaining`,
       body: "Finish the items below, then close.",
     };
   }

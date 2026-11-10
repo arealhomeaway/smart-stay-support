@@ -22,6 +22,7 @@ import {
   labelFor,
   priorityTone,
   relativeTime,
+  priorityMeta,
 } from "@/lib/tickets";
 import { usDateTime } from "@/lib/dates";
 import { useCurrentUserId } from "@/hooks/useTeam";
@@ -164,7 +165,7 @@ export function HandoffPanel({
         `Reassignment requested to ${labelFor(
           (roles ?? []).map((r) => ({ value: r.code, label: r.name })),
           form.to_role_code,
-        )}. Not complete until accepted — you remain accountable.`,
+        )}. Not complete until accepted. You remain accountable.`,
         "handoff_requested",
       );
       toast.success("Reassignment requested. You stay accountable until it is accepted.");
@@ -234,7 +235,7 @@ export function HandoffPanel({
       await onChanged();
       return;
     }
-    await log("Reassignment accepted — ownership of the next action transferred.", "handoff_accepted");
+    await log("Reassignment accepted: ownership of the next action transferred.", "handoff_accepted");
     await refetch();
     await onChanged();
     toast.success("Reassignment accepted.");
@@ -278,7 +279,7 @@ export function HandoffPanel({
       return;
     }
     await log(
-      `Reassignment rejected: ${rejectReason.trim()} — returned to the original owner.`,
+      `Reassignment rejected: ${rejectReason.trim()}. Returned to the original owner.`,
       "handoff_rejected",
     );
     setRejecting(null);
@@ -289,7 +290,7 @@ export function HandoffPanel({
   }
 
   const roleName = (code: string | null) =>
-    (roles ?? []).find((r) => r.code === code)?.name ?? code ?? "—";
+    (roles ?? []).find((r) => r.code === code)?.name ?? code ?? "Not set";
   const personName = (id: string | null) => {
     const p = (people ?? []).find((x) => x.id === id);
     return p?.full_name ?? p?.email ?? null;
@@ -302,7 +303,7 @@ export function HandoffPanel({
           <ArrowRightLeft className="size-4" /> Reassignments
         </CardTitle>
         <CardDescription>
-          Tagging someone is not a reassignment. It is not complete until the receiver accepts it — until
+          Tagging someone is not a reassignment. It is not complete until the receiver accepts it, until
           then you remain accountable.
         </CardDescription>
       </CardHeader>
@@ -314,7 +315,7 @@ export function HandoffPanel({
           >
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline" className={priorityTone(h.priority)}>
-                {h.priority.toUpperCase()}
+                {priorityMeta(h.priority).short}
               </Badge>
               <span className="text-sm font-medium">
                 Pending acceptance · {roleName(h.to_role_code)}
@@ -347,7 +348,7 @@ export function HandoffPanel({
             </div>
             {h.priority === "p1" && (
               <p className="flex items-center gap-2 text-xs font-medium text-danger">
-                <ShieldAlert className="size-3.5" /> Unaccepted P1 reassignment — the Operations
+                <ShieldAlert className="size-3.5" /> Unaccepted Right now reassignment. The Operations
                 Supervisor is notified.
               </p>
             )}
@@ -371,7 +372,7 @@ export function HandoffPanel({
               <div className="flex flex-col gap-2">
                 {currentUserId && currentUserId === h.from_user && (
                   <p className="text-xs text-muted-foreground">
-                    You requested this — waiting for {roleName(h.to_role_code)} to accept it.
+                    You requested this: waiting for {roleName(h.to_role_code)} to accept it.
                   </p>
                 )}
                 <div className="flex gap-2">
@@ -461,7 +462,7 @@ export function HandoffPanel({
                   <SelectContent>
                     {HANDOFF_TYPES.map((t) => (
                       <SelectItem key={t.value} value={t.value}>
-                        {t.label} — {t.hint}
+                        {t.label} · {t.hint}
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -8,6 +8,7 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { priorityMeta } from "@/lib/tickets";
 
 const PRIORITIES = ["p1", "p2", "p3"] as const;
 export type TicketPriority = (typeof PRIORITIES)[number];
@@ -73,7 +74,7 @@ export const setTicketPriorityFn = createServerFn({ method: "POST" })
       kind: "status",
       event_type: "priority_changed",
       internal: false,
-      body: `Priority changed from ${previous.toUpperCase()} to ${data.priority.toUpperCase()} — ${data.reason}`,
+      body: `Urgency changed from ${priorityMeta(previous).short} to ${priorityMeta(data.priority).short} · ${data.reason}`,
     });
 
     return { ok: true as const, previous, priority: data.priority };

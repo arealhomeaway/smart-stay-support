@@ -43,7 +43,7 @@ export function ActAsBanner() {
         </span>
         <span className="block text-xs">
           Actions taken here are performed as this homeowner
-          {live ? " and affect their real program — this is not a sandbox." : "."}
+          {live ? " and affect their real program. This is not a sandbox." : "."}
         </span>
       </span>
       <Button

@@ -273,7 +273,7 @@ export function TaskRow({
             {t.due_on}
           </span>
         ) : (
-          <span className="text-muted-foreground">—</span>
+          <span className="text-muted-foreground">-</span>
         )}
         {due && <span className="block truncate text-[0.625rem] text-muted-foreground">{due}</span>}
       </span>

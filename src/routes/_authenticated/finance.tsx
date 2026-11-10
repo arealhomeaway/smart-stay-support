@@ -17,9 +17,9 @@ import { docReadiness, financeQueue, money, totalsByPeriod, type FinanceQueue } 
 export const Route = createFileRoute("/_authenticated/finance")({
   head: () => ({
     meta: [
-      { title: "Finance — Resolve" },
+      { title: "Finance: Resolve" },
       { name: "description", content: "Property expense review: unmatched invoices, clarifications, reservation links and Finance review." },
-      { property: "og:title", content: "Finance — Resolve" },
+      { property: "og:title", content: "Finance: Resolve" },
       { property: "og:description", content: "Internal property expense review for ARHA Finance." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -95,7 +95,7 @@ function FinancePage() {
           <div className="space-y-4">
             {totalsByPeriod(rows).map((p) => (
               <div key={p.period} className="space-y-2">
-                <p className="font-medium">{p.period} — {money(p.total)} <span className="text-xs text-muted-foreground">(proposed period; not reconciled)</span></p>
+                <p className="font-medium">{p.period} · {money(p.total)} <span className="text-xs text-muted-foreground">(proposed period; not reconciled)</span></p>
                 <ExpenseList rows={rows.filter((r) => (r.proposed_statement_period ? r.proposed_statement_period.slice(0, 7) : "Not assigned") === p.period)} onOpen={setOpen} />
               </div>
             ))}

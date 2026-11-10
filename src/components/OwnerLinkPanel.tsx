@@ -78,7 +78,7 @@ export function OwnerLinkPanel({
         res.created
           ? "New owner record created and linked to this home."
           : res.reused
-            ? "Matched an existing owner record — no duplicate was created."
+            ? "Matched an existing owner record. No duplicate was created."
             : "Owner of record linked.",
       );
       setOpen(false);

@@ -75,7 +75,7 @@ describe("an untouched import shows no clock", () => {
 
   it("Home's My work shows the urgency only, no Escalated and no clock", () => {
     setSystemTime(NOW);
-    expect(urgencyLabel({ id: "t1", ...untouched })).toBe("P1");
+    expect(urgencyLabel({ id: "t1", ...untouched })).toBe("Right now");
   });
 });
 

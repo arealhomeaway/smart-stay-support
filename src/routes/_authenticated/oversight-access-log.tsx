@@ -29,13 +29,13 @@ import { usDateTime } from "@/lib/dates";
 export const Route = createFileRoute("/_authenticated/oversight-access-log")({
   head: () => ({
     meta: [
-      { title: "Homeowner data access log — Resolve Operations" },
+      { title: "Homeowner data access log: Resolve Operations" },
       {
         name: "description",
         content:
           "A restricted record of who opened program-wide homeowner data, in what role, and when.",
       },
-      { property: "og:title", content: "Homeowner data access log — Resolve Operations" },
+      { property: "og:title", content: "Homeowner data access log: Resolve Operations" },
       {
         property: "og:description",
         content: "Who read homeowner-wide data, in what role, and when.",
@@ -180,7 +180,7 @@ function AccessLogPage() {
                   <TableCell>{row.actor}</TableCell>
                   <TableCell className="capitalize">{row.role.replace(/_/g, " ")}</TableCell>
                   <TableCell>{ACTION_LABEL[row.action] ?? row.action}</TableCell>
-                  <TableCell className="text-muted-foreground">{row.targetLabel ?? "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{row.targetLabel ?? "Not set"}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

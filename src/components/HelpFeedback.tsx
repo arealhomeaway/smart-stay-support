@@ -6,7 +6,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { CircleHelp, ListChecks, Paperclip, Sparkles, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { submitHelpTicket } from "@/lib/help-feedback.functions";
+import { helpSideFor } from "@/lib/help-position";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -62,7 +63,30 @@ function pageContext(pathname: string, search: Record<string, unknown>) {
   return { propertyId, workItemId };
 }
 
+function useHelpSide(): "left" | "right" | null {
+  const [side, setSide] = useState<"left" | "right" | null>(null);
+  useEffect(() => {
+    const check = () => {
+      const open = [...document.querySelectorAll('[role="dialog"][data-state="open"]')]
+        .filter((el) => !el.closest("[data-help-dialog]"))
+        .map((el) => el.getBoundingClientRect())
+        .filter((r) => r.width > 0 && r.height > 0);
+      setSide(helpSideFor(open, window.innerWidth));
+    };
+    check();
+    const mo = new MutationObserver(check);
+    mo.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ["data-state"] });
+    window.addEventListener("resize", check);
+    return () => {
+      mo.disconnect();
+      window.removeEventListener("resize", check);
+    };
+  }, []);
+  return side;
+}
+
 export function HelpFeedbackButton() {
+  const helpSide = useHelpSide();
   const loc = useRouterState({ select: (s) => s.location });
   const submit = useServerFn(submitHelpTicket);
   const { can } = useRole();
@@ -128,7 +152,11 @@ export function HelpFeedbackButton() {
                   size="icon"
                   variant="outline"
                   aria-label="Help & Feedback"
-                  className="fixed bottom-4 right-4 z-40 size-11 rounded-full shadow-md print:hidden"
+                  data-help-feedback=""
+                  data-help-side={helpSide ?? "right"}
+                  className={`pointer-events-auto fixed bottom-4 size-11 rounded-full shadow-md print:hidden ${
+                    helpSide === "left" ? "left-4 z-[60]" : helpSide === "right" ? "right-4 z-[60]" : "right-4 z-40"
+                  }`}
                 >
                   <CircleHelp className="size-5" aria-hidden="true" />
                 </Button>
@@ -136,7 +164,7 @@ export function HelpFeedbackButton() {
             </TooltipTrigger>
             <TooltipContent side="left">Help & Feedback</TooltipContent>
           </Tooltip>
-          <DropdownMenuContent side="top" align="end" className="mb-2 w-56">
+          <DropdownMenuContent side="top" align={helpSide === "left" ? "start" : "end"} className="z-[70] mb-2 w-56" data-help-feedback="">
             {can("coaching") && (
               <DropdownMenuItem asChild>
                 <Link to="/coach">
@@ -165,7 +193,7 @@ export function HelpFeedbackButton() {
         </DropdownMenu>
       </TooltipProvider>
       <Dialog open={open} onOpenChange={(o) => !busy && setOpen(o)}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="z-[70] sm:max-w-lg" data-help-dialog="">
           <DialogHeader>
             <DialogTitle>Help & Feedback</DialogTitle>
             <DialogDescription>

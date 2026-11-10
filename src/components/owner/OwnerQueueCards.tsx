@@ -37,7 +37,7 @@ export function OwnerQueueCards({
           )}
         >
           <span className="numeric block text-3xl font-semibold leading-none">
-            {data.loading ? "–" : data.counts[q.key]}
+            {data.loading ? "-" : data.counts[q.key]}
           </span>
           <span className="mt-2 block text-sm font-medium text-foreground">{q.label}</span>
         </button>

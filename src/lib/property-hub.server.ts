@@ -484,7 +484,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
           "Check-in / check-out",
           "check_times",
           p.check_in_time || p.check_out_time
-            ? `${p.check_in_time ?? "—"} / ${p.check_out_time ?? "—"}`
+            ? `${p.check_in_time ?? "-"} / ${p.check_out_time ?? "-"}`
             : null,
           "OwnerRez",
           p.ownerrez_synced_at,
@@ -690,7 +690,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
       alerts.push({
         id: "p1",
         tone: "danger",
-        text: `${p1} open P1 ticket${p1 === 1 ? "" : "s"} on this home.`,
+        text: `${p1} open Right now ticket${p1 === 1 ? "" : "s"} on this home.`,
       });
     if (blocked.length > 0)
       alerts.push({

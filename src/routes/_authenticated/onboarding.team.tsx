@@ -30,9 +30,9 @@ import { NoSecondLookPanel } from "@/components/onboarding/NoSecondLookPanel";
 export const Route = createFileRoute("/_authenticated/onboarding/team")({
   head: () => ({
     meta: [
-      { title: "Onboarding team — Resolve" },
+      { title: "Onboarding team: Resolve" },
       { name: "description", content: "The Onboarding Director, Project Managers and support roles, and each home's Primary Project Manager." },
-      { property: "og:title", content: "Onboarding team — Resolve" },
+      { property: "og:title", content: "Onboarding team: Resolve" },
       { property: "og:description", content: "Manage the Onboarding team's roles in one place." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -117,7 +117,7 @@ function OnboardingTeamPage() {
           people={data.people}
           value={data.director.holder}
           disabled={busy}
-          placeholder="Unfilled — choose the Director"
+          placeholder="Unfilled: choose the Director"
           onChange={(id) => director.mutate(id)}
         />
       </SectionCard>

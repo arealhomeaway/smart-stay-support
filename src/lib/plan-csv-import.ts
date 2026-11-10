@@ -144,7 +144,7 @@ export function parseTemplateCsv(text: string): ImportPreview {
     const toN = to ? Number(to) : NaN;
     if (to && !Number.isFinite(toN)) errors.push({ row, message: `Task order must be a number (found "${to}").` });
     const rule = parseDueRule(get(r, "Due rule"));
-    if (rule === "invalid") errors.push({ row, message: `Due rule must look like "3 business day(s) before planned closing" — anchors: project created, planned closing, actual access, target handoff (found "${get(r, "Due rule")}").` });
+    if (rule === "invalid") errors.push({ row, message: `Due rule must look like "3 business day(s) before planned closing". Anchors: project created, planned closing, actual access, target handoff (found "${get(r, "Due rule")}").` });
     const roleRaw = get(r, "Assigned role");
     const role = roleCode(roleRaw);
     // Older plans carry free-text roles; they are kept as a label but cannot be resolved from the project team.

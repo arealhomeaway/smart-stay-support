@@ -173,7 +173,7 @@ export function VendorDocumentsPanel({
             </Select>
             {spec && <p className="text-xs text-muted-foreground">{spec.blurb}</p>}
             <Input
-              placeholder="Title — e.g. Pelican Pools 2026 service agreement"
+              placeholder="Title: e.g. Pelican Pools 2026 service agreement"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={160}
@@ -209,7 +209,7 @@ export function VendorDocumentsPanel({
             <Label>Identity check</Label>
             <p className="text-xs text-muted-foreground">
               Look at a government photo ID, then record the check here. Resolve stores the record
-              and never the image — no licence scans, no ID numbers.
+              and never the image. No licence scans, no ID numbers.
             </p>
             <Input
               placeholder="Who did you verify? Use their name as it appears on the ID."
@@ -236,7 +236,7 @@ export function VendorDocumentsPanel({
               <Input type="date" value={idExpires} onChange={(e) => setIdExpires(e.target.value)} />
               {idExpires !== "" && idExpires < today && (
                 <p className="text-xs text-destructive">
-                  That ID is already expired — ask for current identification before recording the
+                  That ID is already expired. Ask for current identification before recording the
                   check.
                 </p>
               )}

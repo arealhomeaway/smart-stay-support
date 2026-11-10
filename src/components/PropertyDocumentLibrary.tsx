@@ -266,7 +266,7 @@ export function PropertyDocumentLibrary({
                   </span>
                   <span className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     {l.context && <span>{l.context}</span>}
-                    {l.legacy && <Badge variant="outline">Legacy — not canonical</Badge>}
+                    {l.legacy && <Badge variant="outline">Legacy: not canonical</Badge>}
                     {l.needsReplacement && <Badge variant="secondary">Temporary</Badge>}
                     {l.staffOnly && <Badge variant="outline">Staff only</Badge>}
                   </span>

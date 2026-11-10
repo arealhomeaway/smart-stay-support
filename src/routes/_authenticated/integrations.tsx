@@ -25,6 +25,7 @@ import { ArchivedTicketsPanel } from "@/components/scorecard/ArchivedTicketsPane
 import { useRole } from "@/hooks/useRole";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { PropertyRefreshPanel } from "@/components/property/PropertyRefreshPanel";
+import { priorityMeta } from "@/lib/tickets";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
   component: () => (
@@ -97,7 +98,7 @@ function IntegrationsPage() {
       >
         <p className="text-sm text-muted-foreground">
           OwnerRez does not publish maintenance tasks, so there is nothing to import from it
-          directly — use the message intake below to pull its notifications and guest or owner
+          directly. Use the message intake below to pull its notifications and guest or owner
           emails into the queue.
         </p>
       </SectionCard>
@@ -180,7 +181,7 @@ function IntegrationsPage() {
                 <span className="text-muted-foreground">
                   {(t.properties as { name: string } | null)?.name ?? "No home linked"}
                 </span>
-                <StatusBadge tone="closed">{t.priority?.toUpperCase()}</StatusBadge>
+                <StatusBadge tone="closed">{t.priority ? priorityMeta(t.priority).short : ""}</StatusBadge>
                 <span className="text-muted-foreground">{t.external_status ? notionStatusLabel(t.external_status) : t.status}</span>
                 <span className="ml-auto text-xs text-muted-foreground">
                   synced {timeAgo(t.external_synced_at)}

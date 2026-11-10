@@ -32,6 +32,7 @@ import {
   stageState,
 } from "@/lib/guest-recovery";
 import type { RecoveryRow } from "@/lib/recovery-types";
+import { priorityMeta } from "@/lib/tickets";
 
 export function useRecoveries() {
   return useQuery({
@@ -157,7 +158,7 @@ export function RecoveryRowCard({
             <Chip className={stateChip(stageState(recovery.stage))}>
               {RECOVERY_STAGE_LABELS[recovery.stage]}
             </Chip>
-            <Chip>{recovery.priority.toUpperCase()}</Chip>
+            <Chip>{priorityMeta(recovery.priority).short}</Chip>
             {recovery.recovery_action ? (
               <Chip>{RECOVERY_ACTION_LABELS[recovery.recovery_action]}</Chip>
             ) : null}

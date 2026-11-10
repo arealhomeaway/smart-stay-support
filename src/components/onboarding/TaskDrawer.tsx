@@ -346,7 +346,7 @@ export function TaskDrawer({
       readOnly={disabled}
       successMessage={
         nextTask && action.id === "complete_task"
-          ? `Step recorded — next: ${nextTask.title}`
+          ? `Step recorded. Next: ${nextTask.title}`
           : "Step recorded."
       }
       onHandoff={() =>
@@ -491,7 +491,7 @@ export function TaskDrawer({
           <section className="space-y-2 rounded-lg border border-primary/40 bg-primary/5 p-4">
             <p className="font-medium">Send to Active Owner</p>
             <p className="text-xs text-muted-foreground">
-              This step is tagged Active Owner — the homeowner does it. Sending puts it in their
+              This step is tagged Active Owner. The homeowner does it. Sending puts it in their
               portal as a task, with your instructions and any files you pick.
             </p>
             {sendToOwner}
@@ -529,7 +529,7 @@ export function TaskDrawer({
           <Field label="Assignee" value={assigneeLabel(task, people)} />
           <Field
             label="Due date"
-            value={task.due_on ?? "—"}
+            value={task.due_on ?? "Not set"}
             hint={dueExplanation(task) ?? undefined}
           />
           <Field label="Status" value={STATUS_LABEL[view.status]} />
@@ -597,8 +597,7 @@ export function TaskDrawer({
                 <span className="text-muted-foreground">Waits for </span>
                 {d.title}
                 <span className="text-muted-foreground">
-                  {" "}
-                  — {d.status === "complete" ? "complete" : "not complete"}
+                  {" "} · {d.status === "complete" ? "complete" : "not complete"}
                 </span>
               </p>
             ))}
@@ -615,7 +614,7 @@ export function TaskDrawer({
             <p className="eyebrow">Subtasks</p>
             {subtasks.map((s) => (
               <p key={s.id} className="text-sm">
-                {s.status === "complete" ? "✓" : "·"} {s.title}
+                {s.status === "complete" ? "Done: " : ""}{s.title}
               </p>
             ))}
           </section>
@@ -637,7 +636,7 @@ export function TaskDrawer({
             rows={3}
             value={evidence}
             onChange={(e) => setEvidence(e.target.value)}
-            placeholder="What proves this is done — photo location, document name, meter reading, confirmation number."
+            placeholder="What proves this is done. Photo location, document name, meter reading, confirmation number."
           />
           <Button
             size="sm"
@@ -684,7 +683,7 @@ export function TaskDrawer({
         <section className="space-y-2">
           <p className="eyebrow">What did you find?</p>
           <p className="text-xs text-muted-foreground">
-            Record the observation here, in Resolve — not in a separate form. It stays on this step
+            Record the observation here, in Resolve, not in a separate form. It stays on this step
             and on the home&apos;s history.
           </p>
           <Textarea
@@ -765,7 +764,7 @@ export function TaskDrawer({
                     )}
                   >
                     {lastApproval.status === "pending"
-                      ? "Request sent — waiting on the homeowner"
+                      ? "Request sent: waiting on the homeowner"
                       : lastApproval.status === "approved"
                         ? "Approved"
                         : "Changes requested"}
@@ -777,7 +776,7 @@ export function TaskDrawer({
                 <p className="text-xs text-muted-foreground">
                   Channel:{" "}
                   {task.owner_approval_status === "awaiting_owner"
-                    ? "Recorded on the canonical approval record — Active Owner portal or Resolve-generated email."
+                    ? "Recorded on the canonical approval record. Active Owner portal or Resolve-generated email."
                     : "Canonical approval record."}
                   {lastApproval.decided_at
                     ? ` Decided ${usDateTime(lastApproval.decided_at)}.`
@@ -804,7 +803,7 @@ export function TaskDrawer({
               <Input
                 value={approvalVersion}
                 onChange={(e) => setApprovalVersion(e.target.value)}
-                placeholder="Version being reviewed — e.g. Mood boards v2"
+                placeholder="Version being reviewed: e.g. Mood boards v2"
               />
               <Textarea
                 rows={2}
@@ -814,7 +813,7 @@ export function TaskDrawer({
               />
               <p className="text-xs text-muted-foreground">
                 An enrolled Active Owner sees this in their portal. A standard homeowner gets a
-                Resolve-generated email — they never need Resolve access to answer. Either way it is
+                Resolve-generated email. They never need Resolve access to answer. Either way it is
                 the same approval record. Sending alone does not complete the step.
               </p>
               <Button

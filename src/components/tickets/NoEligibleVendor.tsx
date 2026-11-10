@@ -78,8 +78,8 @@ export function NoEligibleVendor({
         <ul className="text-sm space-y-1">
           {open.map((r) => (
             <li key={r.id}>
-              Vendor request — {r.service_category} in {r.market}: <strong>{SOURCING_STATE_LABELS[r.state] ?? r.state}</strong>
-              {r.state === "ready" && " — a vendor is ready. Choose them above."}
+              Vendor request: {r.service_category} in {r.market}: <strong>{SOURCING_STATE_LABELS[r.state] ?? r.state}</strong>
+              {r.state === "ready" && "· a vendor is ready. Choose them above."}
             </li>
           ))}
         </ul>

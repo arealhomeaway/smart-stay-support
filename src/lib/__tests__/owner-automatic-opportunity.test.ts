@@ -25,7 +25,7 @@ it("renders current canonical request and WHY while preserving the opportunity a
   expect(view.id).toBe("review");
   expect(view.status).toBe("answered");
   expect(view.owner_response).toBe("My recorded response");
-  expect(view.recommendation).toContain("Review — No approval required");
+  expect(view.recommendation).toContain("Review: No approval required");
   const approval = automaticOpportunityView(review, {
     ...ticket,
     request: ownerTicketRequest([{ quote_amount: MAINTENANCE_POLICY.ownerApprovalThreshold + 1 }]),

@@ -34,7 +34,7 @@ export function PropertyPhoto({
     return (
       <img
         src={url}
-        alt={label ? `${label} — ARHA property photo` : "ARHA property photo"}
+        alt={label ? `${label} · ARHA property photo` : "ARHA property photo"}
         loading="lazy"
         className={cn("size-10 shrink-0 object-cover", rounded, className)}
       />

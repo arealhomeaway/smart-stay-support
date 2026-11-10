@@ -22,7 +22,7 @@ import { unknownPlaceholders, welcomeDateLabel, WELCOME_PLACEHOLDERS, type Owner
 import { usDate } from "@/lib/dates";
 
 const STATUS: Record<string, string> = {
-  queued: "Waiting to send", sending: "Sending", sent: "Sent", failed: "Not delivered", held_demo: "Demo — never sent",
+  queued: "Waiting to send", sending: "Sending", sent: "Sent", failed: "Not delivered", held_demo: "Demo: never sent",
 };
 
 export function WelcomeEmailEditor() {
@@ -100,7 +100,7 @@ export function WelcomeEmailEditor() {
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <Badge variant={template.review === "approved" ? "success" : "warning"}>
-            {template.review === "approved" ? `Approved · version ${template.version}` : `Draft — awaiting review · version ${template.version}`}
+            {template.review === "approved" ? `Approved · version ${template.version}` : `Draft: awaiting review · version ${template.version}`}
           </Badge>
           {template.review !== "approved" && (
             <span className="text-muted-foreground">Nothing sends until this wording is approved.</span>
@@ -119,7 +119,7 @@ export function WelcomeEmailEditor() {
         <div className="space-y-2">
           <Label>Welcome video (optional)</Label>
           <p className="text-sm text-muted-foreground">
-            {video ? (video.kind === "link" ? `Link: ${video.url}` : `Uploaded: ${video.name} (only signed-in homeowners can watch)`) : "No video — the email leaves the video line out."}
+            {video ? (video.kind === "link" ? `Link: ${video.url}` : `Uploaded: ${video.name} (only signed-in homeowners can watch)`) : "No video: the email leaves the video line out."}
           </p>
           {canEdit && (
             <div className="flex flex-wrap items-center gap-2">
@@ -157,7 +157,7 @@ export function WelcomeEmailEditor() {
                 {canManageDelivery && r.status === "failed" && !r.is_demo ? (
                   <Button variant="link" size="sm" className="h-auto px-2" disabled={retry.isPending} onClick={() => retry.mutate(r.id)}>Retry</Button>
                 ) : null}
-                {r.status === "sending" ? " · sending or result uncertain — do not resend" : ""}
+                {r.status === "sending" ? " · sending or result uncertain. Do not resend" : ""}
                 {canManageDelivery && r.status === "sending" && r.error_message?.startsWith("Delivery uncertain: ") && !r.is_demo ? (
                   <div className="space-y-2 rounded border p-2">
                     <Label htmlFor={`reconcile-${r.id}`}>Mailbox/provider evidence confirming delivery or non-delivery</Label>

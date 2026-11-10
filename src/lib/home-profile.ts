@@ -199,7 +199,7 @@ export const HOME_PROFILE_SECTIONS: ProfileSection[] = [
       { key: "wifi_split", label: "Confirmed Wifi has a split network", src: js("utilities", "wifi_split_confirmed", "boolean") },
       { key: "router_location", label: "Router Location", src: js("utilities", "router_location"), photo: true },
       { key: "yale_module", label: "Yale Smart Module", src: js("access", "yale_module"), photo: true },
-      { key: "yale_live", label: "Yale Integration - Live and Connected in Breezeway", src: js("access", "yale_integration_live", "boolean"), judged: true },
+      { key: "yale_live", label: "Yale Integration: Live and Connected in Breezeway", src: js("access", "yale_integration_live", "boolean"), judged: true },
       { key: "yale_calibration", label: "Yale is Not Calibrated", src: js("access", "yale_needs_calibration", "boolean"), judged: true },
       { key: "builder_warranty", label: "Builder Warranty?", src: js("warranty", "builder_present", "boolean") },
       { key: "builder_warranty_expires", label: "Builder Warranty Expiration Date", src: js("warranty", "builder_expires_on", "date") },

@@ -331,13 +331,13 @@ function blockerKind(v: TaskView): Blocker["kind"] {
   if (v.task.requires_owner_approval && v.task.owner_approval_status !== "approved") return "owner";
   if ((v.reason ?? "").startsWith("Waiting on ")) return "dependency";
   if (
-    v.reason === "Blocked — Waiting on Owner" ||
-    v.reason === "Blocked — Homeowner requested changes"
+    v.reason === "Blocked: Waiting on Owner" ||
+    v.reason === "Blocked: Homeowner requested changes"
   )
     return "owner";
   if (v.status === "not_ready") return "dependency";
-  if (v.reason === "Blocked — Missing Evidence") return "evidence";
-  if (v.reason === "Blocked — Internal Review") return "review";
+  if (v.reason === "Blocked: Missing Evidence") return "evidence";
+  if (v.reason === "Blocked: Internal Review") return "review";
   if (v.template?.breezewayTemplateId) return "field";
   return "other";
 }
@@ -426,7 +426,7 @@ export function deriveBlockers(input: ProjectInput): Blocker[] {
     const kind = blockerKind(v);
     out.push({
       taskId: v.task.id,
-      what: v.reason ? `${v.task.title} — ${v.reason.replace(/^Blocked — /, "")}` : v.task.title,
+      what: v.reason ? `${v.task.title} · ${v.reason.replace(/^Blocked: /, "")}` : v.task.title,
       owner: KIND_OWNER[kind],
       followUp: v.task.due_on,
       kind,

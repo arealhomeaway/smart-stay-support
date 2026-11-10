@@ -57,7 +57,7 @@ export function GateRow({
   const problems: string[] = [];
   if (exception && reason.trim().length < 10) problems.push("Write the reason (at least 10 characters).");
   if (passing && line.expiryRequired && !expiresOn) problems.push("Add the expiration date.");
-  if (passing && expiresOn && expiresOn < today) problems.push("That date has already passed — an expired record can't pass.");
+  if (passing && expiresOn && expiresOn < today) problems.push("That date has already passed. An expired record can't pass.");
   if (passing && line.evidenceRequired && !documentId && reference.trim().length < 3)
     problems.push("Attach a document or enter a reference.");
 

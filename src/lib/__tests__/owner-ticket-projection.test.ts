@@ -68,7 +68,7 @@ it("attaches authority only from Work Orders linked to both the Ticket and its P
     false,
     "program",
   );
-  expect(result[0]!.request.label).toBe("Review — No approval required");
+  expect(result[0]!.request.label).toBe("Review: No approval required");
   expect(result[0]!.request.why).toContain("$150");
   expect(result[0]!.request.why.includes("9,999")).toBe(false);
 });

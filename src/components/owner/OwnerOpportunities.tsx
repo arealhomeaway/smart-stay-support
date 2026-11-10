@@ -557,7 +557,7 @@ function ResourceLinks({ items }: { items: Live["resources"] }) {
           </button>
         ) : (
           <a key={r.id} href={r.url ?? "#"} target="_blank" rel="noreferrer" className="flex items-center gap-1 truncate text-primary underline-offset-2 hover:underline">
-            <Link2 className="size-3.5" /> {r.label}{r.note ? <span className="text-muted-foreground"> — {r.note}</span> : null}
+            <Link2 className="size-3.5" /> {r.label}{r.note ? <span className="text-muted-foreground"> · {r.note}</span> : null}
           </a>
         ),
       )}
@@ -638,7 +638,7 @@ function OpportunityDetail({
               <div><dt className="font-medium">Helpful link</dt><dd><a href={item.templateLink.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary hover:underline"><Link2 className="size-3.5" /> {item.templateLink.label}</a></dd></div>
             ) : null}
             {item.document ? <div><dt className="font-medium">Ways to document your participation</dt><dd className="whitespace-pre-wrap text-muted-foreground">{item.document}</dd></div> : null}
-            {item.suggestedMinutes ? <div><dt className="font-medium">Suggested time</dt><dd className="text-muted-foreground">{minutesLabel(item.suggestedMinutes)} — log the time you actually spend.</dd></div> : null}
+            {item.suggestedMinutes ? <div><dt className="font-medium">Suggested time</dt><dd className="text-muted-foreground">{minutesLabel(item.suggestedMinutes)}. Log the time you actually spend.</dd></div> : null}
           </dl>
 
           {linked.length ? (

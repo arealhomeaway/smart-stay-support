@@ -13,13 +13,13 @@ import { usDateTime } from "@/lib/dates";
 export const Route = createFileRoute("/_authenticated/audit")({
   head: () => ({
     meta: [
-      { title: "Audit history — Resolve" },
+      { title: "Audit history: Resolve" },
       {
         name: "description",
         content:
           "Append-only record of role changes, lifecycle moves, handoff decisions and material edits across A Real Home Away.",
       },
-      { property: "og:title", content: "Audit history — Resolve" },
+      { property: "og:title", content: "Audit history: Resolve" },
       { property: "og:description", content: "Who changed what, when, and why." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -80,7 +80,7 @@ function AuditPage() {
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {e.entity_type}
-                    {e.entity_label ? ` — ${e.entity_label}` : ""}
+                    {e.entity_label ? ` · ${e.entity_label}` : ""}
                   </p>
                   {e.reason && (
                     <p className="text-xs italic text-muted-foreground">Reason: {e.reason}</p>

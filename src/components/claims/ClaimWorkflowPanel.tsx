@@ -289,7 +289,7 @@ export function ClaimWorkflowPanel({
       ))}
       {(docs.data ?? []).length === 0 ? (
         <li className="text-xs text-muted-foreground">
-          No files yet — upload the screenshot or email on the ticket or home first.
+          No files yet: upload the screenshot or email on the ticket or home first.
         </li>
       ) : null}
     </ul>
@@ -332,7 +332,7 @@ export function ClaimWorkflowPanel({
       <div className="space-y-2 rounded-md border p-3">
         <h4 className="text-sm font-semibold">Payer and deadlines</h4>
         <p className="text-xs text-muted-foreground">
-          Guest {claim.guest_name ?? "—"} · the deposit payer is recorded separately, never assumed.
+          Guest {claim.guest_name ?? "Not set"} · the deposit payer is recorded separately, never assumed.
         </p>
         <div className="grid grid-cols-2 gap-2">
           {(
@@ -416,7 +416,7 @@ export function ClaimWorkflowPanel({
           ) : null}
         </div>
         <p className="text-[11px] text-muted-foreground">
-          Resolve never releases deposits, charges guests or issues refunds — record those as a pending Finance decision.
+          Resolve never releases deposits, charges guests or issues refunds. Record those as a pending Finance decision.
         </p>
       </div>
 
@@ -507,19 +507,19 @@ export function ClaimWorkflowPanel({
       <div className="space-y-2 rounded-md border p-3">
         <h4 className="text-sm font-semibold">Waiver</h4>
         <p className="text-[11px] text-muted-foreground">
-          Approval only stops the recovery effort. It never assigns the cost to the owner or ARHA — Finance records the treatment.
+          Approval only stops the recovery effort. It never assigns the cost to the owner or ARHA. Finance records the treatment.
         </p>
         {(waivers.data ?? []).map((w) => (
           <div key={w.id} className="rounded border px-2 py-1 text-xs">
             <p>
               <Chip className={w.status === "pending" ? stateChip("waiting") : w.status === "approved" ? stateChip("done") : stateChip("blocked")}>
-                {w.status === "approved" ? "Waiver approved — Finance treatment pending" : w.status}
+                {w.status === "approved" ? "Waiver approved: Finance treatment pending" : w.status}
               </Chip>{" "}
-              {w.reason} — {displayName(people.find((p) => p.id === w.requested_by))}
+              {w.reason} · {displayName(people.find((p) => p.id === w.requested_by))}
             </p>
             {w.context ? <p className="text-muted-foreground">{w.context}</p> : null}
             {w.routing_basis === "exception" && w.status === "pending" ? (
-              <p className="mt-1 font-medium text-destructive">Routing exception — {w.routing_note}</p>
+              <p className="mt-1 font-medium text-destructive">Routing exception: {w.routing_note}</p>
             ) : w.routed_to ? (
               <p className="text-muted-foreground">
                 Routed to {displayName(people.find((p) => p.id === w.routed_to))}
@@ -605,7 +605,7 @@ export function ClaimWorkflowPanel({
         <h4 className="text-sm font-semibold">Finance treatment of unrecovered amount</h4>
         {claim.finance_treated_at ? (
           <p className="text-xs">
-            {claim.finance_treatment} — {claim.finance_treatment_note} · {formatDate(claim.finance_treated_at)}
+            {claim.finance_treatment} · {claim.finance_treatment_note} · {formatDate(claim.finance_treated_at)}
             {claim.leadership_decision_required
               ? claim.leadership_decided_at
                 ? ` · Leadership: ${claim.leadership_decision}`
@@ -614,7 +614,7 @@ export function ClaimWorkflowPanel({
           </p>
         ) : (
           <p className="text-xs text-muted-foreground">
-            {treatmentPending ? "Pending — Finance has not recorded how the unrecovered amount is treated." : "Nothing unrecovered."}
+            {treatmentPending ? "Pending: Finance has not recorded how the unrecovered amount is treated." : "Nothing unrecovered."}
           </p>
         )}
         {isFinance && treatmentPending ? (

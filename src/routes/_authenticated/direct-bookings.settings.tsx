@@ -51,7 +51,7 @@ function SettingsPage() {
   const canEdit = Boolean(data?.canEdit);
   return (
     <div className="space-y-5">
-      <div><Button variant="outline" className="min-h-11 border-primary px-4 font-semibold text-primary" asChild><Link to="/direct-bookings">← Back to Direct Bookings</Link></Button></div>
+      <div><Button variant="outline" className="min-h-11 border-primary px-4 font-semibold text-primary" asChild><Link to="/direct-bookings">Back to Direct Bookings</Link></Button></div>
       <PageHeader title="Direct Bookings settings" description={canEdit ? "The Operations Supervisor, the Director of Operations and Admin can change these." : "Only the Operations Supervisor, the Director of Operations and Admin can change these."} />
       <SectionCard title="Approval period" description="During these dates every reply waits for the Operations Supervisor before it sends.">
         <div className="grid gap-3 sm:grid-cols-2">

@@ -91,7 +91,7 @@ export function SupervisorAttentionBand({ isDirector }: { isDirector?: boolean |
           <p className="eyebrow text-muted-foreground">Needs my decision</p>
           <h2 className="text-lg font-semibold tracking-tight">{attentionHeadline(buckets)}</h2>
         </div>
-        <Link to="/oversight" className="text-sm font-medium text-primary hover:underline">
+        <Link to="/oversight" className="inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline">
           Open Oversight
         </Link>
       </div>

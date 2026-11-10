@@ -86,7 +86,7 @@ export function classifyEvent(outcome: string | null | undefined): EventClass {
     EVENT_CLASSES[key] ?? {
       bucket: "failed",
       label: "Unrecognized outcome",
-      meaning: "Resolve does not know what happened to this update — review it by hand.",
+      meaning: "Resolve does not know what happened to this update. Review it by hand.",
       retryable: false,
     }
   );

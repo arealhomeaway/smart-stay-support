@@ -77,7 +77,7 @@ export function stageProgress(tasks: StageTask[], today: string): StageProgress[
     return {
       stage: stage.value,
       label: stage.label,
-      steps: `Steps ${stage.steps[0]}–${stage.steps[1]}`,
+      steps: `Steps ${stage.steps[0]} to ${stage.steps[1]}`,
       total: mine.length,
       complete,
       carryover,

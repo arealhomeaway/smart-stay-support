@@ -103,7 +103,7 @@ export function LibraryVideoSection({ libraryId, poster }: { libraryId: string; 
           {current && label !== null && label !== current.label ? <Button variant="outline" disabled={saveLabel.isPending} onClick={() => saveLabel.mutate()}>Save caption</Button> : null}
         </div>
       </div>
-      {pct !== null ? <div className="space-y-1"><Progress value={pct} aria-label="Upload progress" /><p className="text-xs text-muted-foreground">Uploading… {pct}% — keep this window open.</p></div> : null}
+      {pct !== null ? <div className="space-y-1"><Progress value={pct} aria-label="Upload progress" /><p className="text-xs text-muted-foreground">Uploading… {pct}%: keep this window open.</p></div> : null}
       <input
         ref={input}
         type="file"

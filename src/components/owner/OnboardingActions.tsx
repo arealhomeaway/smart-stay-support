@@ -156,7 +156,7 @@ function ActionCard({
       </div>
       {readOnly && (
         <p className="mt-2 text-xs text-muted-foreground">
-          Preview only — decisions can only be recorded by the homeowner.
+          Preview only: decisions can only be recorded by the homeowner.
         </p>
       )}
     </div>
@@ -213,7 +213,7 @@ export function OnboardingActions({
     onSuccess: (_r, v) => {
       toast.success(
         v.decision === "approved"
-          ? "Approved — thank you. Your project manager has been notified."
+          ? "Approved: thank you. Your project manager has been notified."
           : "Sent back to your project manager with your note.",
       );
       const p = v.action.participation;
@@ -262,7 +262,7 @@ export function OnboardingActions({
                 Log the time you spent on “{logPrompt.title}”?
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Add it to your participation record now. Enter the time you actually spent — we
+                Add it to your participation record now. Enter the time you actually spent. We
                 never fill that in for you.
               </p>
             </div>

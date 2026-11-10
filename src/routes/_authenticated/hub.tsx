@@ -15,12 +15,12 @@ import { openTicketsForTotal } from "@/lib/notion-ticket-display";
 export const Route = createFileRoute("/_authenticated/hub")({
   head: () => ({
     meta: [
-      { title: "Your portals — Resolve" },
+      { title: "Your portals: Resolve" },
       {
         name: "description",
         content: "Personalised Resolve home: the ARHA portals you are authorised to open.",
       },
-      { property: "og:title", content: "Your portals — Resolve" },
+      { property: "og:title", content: "Your portals: Resolve" },
       { property: "og:description", content: "The ARHA portals you are authorised to open." },
     ],
   }),
@@ -69,7 +69,7 @@ function Hub() {
     if (id !== "operations" || !attention) return undefined;
     if (attention.open === 0) return "Nothing open right now.";
     return `${attention.open} open ${attention.open === 1 ? "ticket" : "tickets"}${
-      attention.urgent ? ` · ${attention.urgent} at P1` : ""
+      attention.urgent ? ` · ${attention.urgent} Right now` : ""
     }`;
   }
 

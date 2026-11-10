@@ -136,7 +136,7 @@ export function StatementReadiness({ demoMode, onOpenExpense, viewOnly = false }
         </div>
       </div>
       <p className="text-xs text-muted-foreground">
-        Finance decides the statement period. This tracks expense review only — not reservation revenue, management fees, taxes, payouts or the full owner statement — and posts nothing to OwnerRez or QuickBooks.
+        Finance decides the statement period. This tracks expense review only, not reservation revenue, management fees, taxes, payouts or the full owner statement, and posts nothing to OwnerRez or QuickBooks.
       </p>
 
       {!propertyId ? null : data.isLoading ? <p className="text-sm">Loading…</p> : (
@@ -159,7 +159,7 @@ export function StatementReadiness({ demoMode, onOpenExpense, viewOnly = false }
             <div className="rounded-md border p-3 text-xs">
               <p className="font-medium">Deferred out of this period</p>
               {data.data!.deferredOut.map((d) => (
-                <p key={d.id}>Expense deferred to {monthLabel(d.defer_to_period!)} on {fmt(d.decided_at)} — counted only in the later period.</p>
+                <p key={d.id}>Expense deferred to {monthLabel(d.defer_to_period!)} on {fmt(d.decided_at)}. Counted only in the later period.</p>
               ))}
             </div>
           ) : null}
@@ -206,7 +206,7 @@ function ItemCard({ item, period, current, canDecide, onOpen, onDone }: {
       });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Disposition recorded — not posted to OwnerRez"); onDone(); },
+    onSuccess: () => { toast.success("Disposition recorded: not posted to OwnerRez"); onDone(); },
     onError: (e: Error) => toast.error(e.message),
   });
   const current_here = current && current.period === period;
@@ -224,15 +224,15 @@ function ItemCard({ item, period, current, canDecide, onOpen, onDone }: {
       </p>
       <p className="text-xs">
         Allocation: {RESPONSIBILITY_LABEL[(item.cost_responsibility ?? "pending") as Responsibility] ?? item.cost_responsibility}
-        {raw.finance_treatment_note ? ` — ${raw.finance_treatment_note}` : ""} · Owner notified {raw.owner_notified_at ? fmt(raw.owner_notified_at) : "not recorded"}
+        {raw.finance_treatment_note ? ` · ${raw.finance_treatment_note}` : ""} · Owner notified {raw.owner_notified_at ? fmt(raw.owner_notified_at) : "not recorded"}
         {raw.authorization_note || raw.approval_id ? " · Authorization evidence on file" : ""}
       </p>
       <p className="text-xs">
         Recoveries: received {money(item.received)} · expected {money(item.expected)} (expected is not received)
-        {raw.qb_reference_manual ? ` · QuickBooks ref ${raw.qb_reference_manual} (manual — ${QB_REFERENCE_NOTE})` : ""}
+        {raw.qb_reference_manual ? ` · QuickBooks ref ${raw.qb_reference_manual} (manual: ${QB_REFERENCE_NOTE})` : ""}
       </p>
       {item.openClaims.map((c) => (
-        <p key={c.id} className="text-xs">Open claim: <Link to="/claims" className="underline">{c.title ?? "Claim"}</Link> — may affect treatment; does not block a documented expense.</p>
+        <p key={c.id} className="text-xs">Open claim: <Link to="/claims" className="underline">{c.title ?? "Claim"}</Link>. May affect treatment; does not block a documented expense.</p>
       ))}
       {blockers.length ? (
         <ul className="list-disc pl-5 text-xs text-destructive">{blockers.map((b) => <li key={b}>{b}</li>)}</ul>
@@ -258,7 +258,7 @@ function ItemCard({ item, period, current, canDecide, onOpen, onDone }: {
           {disp === "exclude" ? <Input aria-label="Exclusion treatment" placeholder="Recorded financial treatment" value={excl} onChange={(e) => setExcl(e.target.value)} /> : null}
           {disp === "include" && needsTreatment ? <Input aria-label="Recovery treatment" placeholder="Finance treatment of the outstanding recovery / open claim" value={recTreat} onChange={(e) => setRecTreat(e.target.value)} /> : null}
           {disp === "include" && !docReady ? (
-            <p className="text-xs text-destructive sm:col-span-2" role="status">Include is unavailable: documentation is incomplete — missing {docMissing.join(", ")}. Hold it until Operations supplies the missing facts.</p>
+            <p className="text-xs text-destructive sm:col-span-2" role="status">Include is unavailable. Documentation is incomplete, missing {docMissing.join(", ")}. Hold it until Operations supplies the missing facts.</p>
           ) : null}
           <Button size="sm" className="sm:col-span-2" disabled={save.isPending || (disp === "include" && (!docReady || authQ.isLoading))} onClick={() => save.mutate()}>Record disposition</Button>
         </div>
@@ -298,7 +298,7 @@ function SignOff({ propertyId, period, canSign, signoffs, onDone }: {
       </ul>
       {canSign ? (
         <div className="space-y-1">
-          <Input aria-label="Source reference" placeholder="Source records reviewed (manual reference — not verified by Resolve)" value={src} onChange={(e) => setSrc(e.target.value)} />
+          <Input aria-label="Source reference" placeholder="Source records reviewed (manual reference, not verified by Resolve)" value={src} onChange={(e) => setSrc(e.target.value)} />
           <Textarea rows={2} aria-label="Exception resolution" placeholder="How each held, deferred or excluded item is resolved" value={exc} onChange={(e) => setExc(e.target.value)} />
           <Button size="sm" disabled={!src.trim() || confirm.isPending} onClick={() => confirm.mutate()}>Confirm expense review</Button>
         </div>

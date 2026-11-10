@@ -176,7 +176,7 @@ export async function openQuarterlyReview(db: Client, userId: string | null, pro
     .from("tickets")
     .insert({
       record_type: "active_task",
-      title: `Quarterly property review — ${formatPropertyLabel(property).primary}`,
+      title: `Quarterly property review: ${formatPropertyLabel(property).primary}`,
       description:
         "Full quarterly review completed on site by a cleaning supervisor. Work the checklist in order, photograph the required steps, and open a separate ticket for every deficiency found.",
       property_id: propertyId,

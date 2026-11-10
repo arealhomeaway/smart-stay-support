@@ -256,7 +256,7 @@ export async function applyStatusChange(
     event_type: "status_changed",
     internal: false,
     body: usedException
-      ? `Status changed to ${ticketStatusLabel(input.status)} under a named exception — ${LIFECYCLE_EXCEPTIONS[usedException]}: ${input.exceptionReason}`
+      ? `Status changed to ${ticketStatusLabel(input.status)} under a named exception: ${LIFECYCLE_EXCEPTIONS[usedException]}: ${input.exceptionReason}`
       : `Status changed to ${ticketStatusLabel(input.status)}.`,
   });
 
@@ -269,7 +269,7 @@ export async function applyStatusChange(
       action: "lifecycle_exception",
       before_value: { status: facts.status },
       after_value: { status: input.status, exception: usedException },
-      reason: `${LIFECYCLE_EXCEPTIONS[usedException]} — ${input.exceptionReason}`,
+      reason: `${LIFECYCLE_EXCEPTIONS[usedException]} · ${input.exceptionReason}`,
     });
   }
 
@@ -289,7 +289,7 @@ export async function applyStatusChange(
         kind: "status",
         event_type: "status_changed",
         internal: false,
-        body: "Closed automatically — no review is required for this ticket.",
+        body: "Closed automatically: no review is required for this ticket.",
       });
       return {
         ok: true as const,

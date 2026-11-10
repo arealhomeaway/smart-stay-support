@@ -500,7 +500,7 @@ function ComposerBody({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Email — {ctx.data?.heading ?? CONTEXT_LABELS[context]}</DialogTitle>
+        <DialogTitle>Email: {ctx.data?.heading ?? CONTEXT_LABELS[context]}</DialogTitle>
         <DialogDescription>
           Sent from the shared A Real Home Away inbox. Replies come back to the team.
         </DialogDescription>
@@ -538,7 +538,7 @@ function ComposerBody({
             >
               <p>
                 You have an unsent message saved from{" "}
-                {usDateTime(recovered.savedAt)} — {recovered.subject.trim() || "no subject yet"}.
+                {usDateTime(recovered.savedAt)} · {recovered.subject.trim() || "no subject yet"}.
               </p>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={restoreDraft}>
@@ -594,7 +594,7 @@ function ComposerBody({
                     ))}
                   </SelectGroup>
                 ) : null}
-                <SelectItem value={CUSTOM}>Someone else — type an address…</SelectItem>
+                <SelectItem value={CUSTOM}>Someone else: type an address…</SelectItem>
               </SelectContent>
             </Select>
             {recipientKey === CUSTOM ? (
@@ -622,7 +622,7 @@ function ComposerBody({
               <p id="composer-to-hint" className="text-sm text-muted-foreground">
                 {context === "onboarding_task"
                   ? NO_HOMEOWNER_EMAIL
-                  : "This record has no contact on file yet — type an address above."}
+                  : "This record has no contact on file yet. Type an address above."}
               </p>
             ) : null}
             {ccSuggestions.length > 0 ? (
@@ -675,7 +675,7 @@ function ComposerBody({
             </Select>
             {missing.length > 0 ? (
               <p id="composer-template-note" role="status" className="text-sm text-amber-700">
-                This record could not fill in: {missing.join(", ").replace(/_/g, " ")} — please
+                This record could not fill in: {missing.join(", ").replace(/_/g, " ")}. Please
                 complete those lines yourself.
               </p>
             ) : null}
@@ -741,7 +741,7 @@ function ComposerBody({
               value={body}
               rows={12}
               onChange={(e) => setBody(e.target.value)}
-              placeholder="Write the message. Edit anything the template filled in — every word is yours to change."
+              placeholder="Write the message. Edit anything the template filled in. Every word is yours to change."
               aria-invalid={Boolean(fieldProblems.body)}
               aria-describedby={bodyDescribedBy}
             />
@@ -807,7 +807,7 @@ function ComposerBody({
             />
             {files.length > 0 ? (
               <p className="text-sm text-muted-foreground">
-                {files.map((f) => f.name).join(", ")} —{" "}
+                {files.map((f) => f.name).join(", ")} · {" "}
                 {(attachmentBytes / 1_000_000).toFixed(1)} MB in total
               </p>
             ) : null}
@@ -869,7 +869,7 @@ function ComposerBody({
             className="rounded-lg border border-border bg-muted/30 p-3"
           >
             <p id="composer-preview-heading" className="eyebrow">
-              Preview — exactly as it will arrive
+              Preview: exactly as it will arrive
             </p>
             {problems.length > 0 ? (
               <p className="mt-2 text-sm text-muted-foreground">

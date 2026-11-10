@@ -38,7 +38,7 @@ describe("owner-facing approval copy", () => {
     const explanation =
       "The water heater is leaking. Please approve replacement at the quoted amount.";
     expect(ownerApprovalText(`  ${explanation}  `)).toEqual({
-      title: "Owner approval — property repair",
+      title: "Owner approval: property repair",
       detail: explanation,
     });
   });
@@ -186,7 +186,7 @@ describe("vendor commitments and checkpoints", () => {
   });
 
   it("a first miss is a coordinator follow-up, not an escalation", () => {
-    expect(commitmentStatus({ missed_commitments: 1 }, NOW).action).toContain("follow up");
+    expect(commitmentStatus({ missed_commitments: 1 }, NOW).action).toContain("Follow up");
   });
 
   it("a repeated pattern goes to a performance review", () => {

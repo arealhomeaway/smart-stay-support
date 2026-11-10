@@ -101,7 +101,7 @@ export function isRetirable(doc: DocInput): boolean {
 export function retireReason(doc: DocInput): string | null {
   if (doc.archivedAt) return null;
   if (isLegacyLink(doc)) return "Points at a tool Resolve replaces.";
-  if (isAbandonedUpload(doc)) return "An upload that never finished — no file behind it.";
+  if (isAbandonedUpload(doc)) return "An upload that never finished. No file behind it.";
   return null;
 }
 

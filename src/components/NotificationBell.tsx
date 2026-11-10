@@ -50,7 +50,7 @@ export function NotificationBell({
             )}
           </button>
         ) : (
-          <Button size="icon" variant="ghost" className="relative min-h-11 min-w-11 md:min-h-9 md:min-w-9" aria-label={label}>
+          <Button size="icon" variant="ghost" className="relative min-h-11 min-w-11" aria-label={label}>
             <Bell className="size-4" aria-hidden="true" />
             {unread > 0 && (
               <span className="absolute right-1 top-1 flex min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold leading-4 text-destructive-foreground">
@@ -70,7 +70,7 @@ export function NotificationBell({
             Notifications{unread > 0 ? <span className="ml-1 font-normal text-muted-foreground">({unread} unread)</span> : null}
           </p>
           {unread > 0 && (
-            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={markAll}>
+            <Button size="sm" variant="ghost" className="min-h-11 text-xs" onClick={markAll}>
               Mark all read
             </Button>
           )}

@@ -31,7 +31,7 @@ export function VendorNeedsReview({ canManage }: { canManage: boolean }) {
       if (!v.primary_contact_phone && !v.primary_contact_email) issues.push("Missing Contact Info");
       if (!hasCov && !v.markets.length) issues.push("Missing Market");
       if (!hasCov && !v.service_categories.length) issues.push("Missing Service Category");
-      if (v.migration_status === "imported_needs_review") issues.push("Imported — verify");
+      if (v.migration_status === "imported_needs_review") issues.push("Imported: verify");
       return { v, issues };
     })
     .filter((x) => x.issues.length);
@@ -76,7 +76,7 @@ export function VendorNeedsReview({ canManage }: { canManage: boolean }) {
                       {v.display_name}
                     </Link>
                     {v.transitional_outcome === "leadership_review" ? (
-                      <StatusBadge tone="escalated">Window ended — leadership review</StatusBadge>
+                      <StatusBadge tone="escalated">Window ended: leadership review</StatusBadge>
                     ) : (
                       <StatusBadge tone={days !== null && days <= 7 ? "escalated" : "waiting"}>{days} days remaining</StatusBadge>
                     )}
@@ -244,7 +244,7 @@ function NotionStaging() {
                 {r.transitional_eligible && <StatusBadge tone="waiting">Transitional Review on import</StatusBadge>}
                 {r.breezeway_match_state && r.breezeway_match_state !== "not_found" && (
                   <Chip>
-                    Breezeway: {r.breezeway_match_state === "email" ? `exact email (ID ${r.breezeway_match_person_id})` : r.breezeway_match_state === "unique_name" ? `name only — confirm (ID ${r.breezeway_match_person_id})` : "ambiguous — manual review"}
+                    Breezeway: {r.breezeway_match_state === "email" ? `exact email (ID ${r.breezeway_match_person_id})` : r.breezeway_match_state === "unique_name" ? `name only: confirm (ID ${r.breezeway_match_person_id})` : "ambiguous: manual review"}
                   </Chip>
                 )}
                 <span className="text-xs text-muted-foreground">

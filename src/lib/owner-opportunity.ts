@@ -120,7 +120,7 @@ export const OPPORTUNITY_STATE_META: Record<
   upcoming: {
     label: "Upcoming",
     tone: "border-border bg-muted text-muted-foreground",
-    blurb: "Not open yet — we will let you know when it is.",
+    blurb: "Not open yet: we will let you know when it is.",
   },
   completed: {
     label: "Completed",
@@ -173,7 +173,7 @@ export function sourceLabel(source: string) {
 export const OPPORTUNITY_REQUIRED_NOTICE =
   "Time is always logged against a specific participation opportunity, so your record shows what you took part in.";
 
-export const LEGACY_ENTRY_LABEL = "Legacy entry — original opportunity link unavailable";
+export const LEGACY_ENTRY_LABEL = "Legacy entry: original opportunity link unavailable";
 
 /**
  * Specificity guardrail: an Opportunity must give the owner enough specific
@@ -191,5 +191,5 @@ export function vagueOpportunityReason(title: string, instructions: string): str
     .map((s) => s.replace(/^[\s\-*\d.)]+/, "").trim())
     .filter((s) => s.length >= 3);
   if (items.length >= 2) return null;
-  return "This Opportunity is too general for the homeowner to act on. List the specific items needed, one per line (for example “Parking information — missing”, “HOA contact — missing”, or the exact documents requested).";
+  return "This Opportunity is too general for the homeowner to act on. List the specific items needed, one per line (for example “Parking information. Missing”, “HOA contact. Missing”, or the exact documents requested).";
 }

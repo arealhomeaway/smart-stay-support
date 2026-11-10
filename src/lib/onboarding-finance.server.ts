@@ -318,7 +318,7 @@ export async function sendFinancialForApproval(
   const tier = tierFor(request);
   if (tier === "proceed") {
     throw new Error(
-      "This request can proceed under its recorded authority — record the invoice when it arrives.",
+      "This request can proceed under its recorded authority. Record the invoice when it arrives.",
     );
   }
 
@@ -337,7 +337,7 @@ export async function sendFinancialForApproval(
       approvers.map((id) => ({
         userId: id,
         kind: "approval_needed",
-        title: `Approve ${money(request.estimate_amount)} — ${request.title}`,
+        title: `Approve ${money(request.estimate_amount)} · ${request.title}`,
         body: authorityGuidance(
           request.estimate_amount,
           request.authority_policy ? { policy: request.authority_policy } : {},
@@ -480,7 +480,7 @@ export async function routeOwnerDecision(
       sendEmail({
         singleAttempt: true,
         to,
-        subject: `Approval needed — ${input.subject} at ${home}${reference ? ` [${reference}]` : ""}`,
+        subject: `Approval needed: ${input.subject} at ${home}${reference ? ` [${reference}]` : ""}`,
         html,
         purpose: "onboarding_owner_approval",
       }),
@@ -573,7 +573,7 @@ export async function recordInvoice(
     const baseline = Number(request.approved_amount ?? request.estimate_amount ?? 0);
     if (baseline <= 0 || delta / baseline > 0.1) {
       throw new Error(
-        "The invoice is above what was approved — record why before it goes to accounting.",
+        "The invoice is above what was approved. Record why before it goes to accounting.",
       );
     }
   }
@@ -639,7 +639,7 @@ export async function sendToAccounting(
   const to = await accountingRecipient(supabase);
   if (!to) {
     throw new Error(
-      "No accounting recipient is configured yet — an administrator can set one in Integrations.",
+      "No accounting recipient is configured yet. An administrator can set one in Integrations.",
     );
   }
   const property = await supabase
@@ -662,7 +662,7 @@ export async function sendToAccounting(
     .filter((line) => line !== "")
     .join("\n");
   const html = emailShell(
-    `Onboarding cost — ${property.data?.name ?? "property"}`,
+    `Onboarding cost: ${property.data?.name ?? "property"}`,
     body,
     undefined,
     "staff",
@@ -678,7 +678,7 @@ export async function sendToAccounting(
       sendEmail({
         singleAttempt: true,
         to,
-        subject: `Onboarding cost — ${request.title}`,
+        subject: `Onboarding cost: ${request.title}`,
         html,
         purpose: "onboarding_accounting",
       }),
@@ -814,7 +814,7 @@ export async function saveUtilityAccount(
     action: input.id ? "utility_account_updated" : "utility_account_added",
     entityType: "utility_account",
     entityId: data?.id ?? input.propertyId,
-    entityLabel: `${input.utilityType} — ${input.provider}`,
+    entityLabel: `${input.utilityType} · ${input.provider}`,
     after: { status: input.status, responsible: input.responsible },
   });
   return { ok: true as const, id: data?.id ?? null };

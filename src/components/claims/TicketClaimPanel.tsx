@@ -204,7 +204,7 @@ export function TicketClaimPanel({
         claim_id: claimId,
         author_id: userId,
         event_type: "created",
-        body: `Claim opened from ticket — recovering from ${RECOVERY_SOURCE[type]}`,
+        body: `Claim opened from ticket. Recovering from ${RECOVERY_SOURCE[type]}`,
         is_demo: ticket.is_demo ?? false,
       });
       return claimId;
@@ -305,7 +305,7 @@ export function TicketClaimPanel({
                 .
               </p>
               <p className="text-[11px] text-muted-foreground">
-                Category: {categoryLabel(normalizeCategory(ticket.category) ?? "claims")} — carried
+                Category: {categoryLabel(normalizeCategory(ticket.category) ?? "claims")}. Carried
                 over from the ticket.
               </p>
             </div>
@@ -320,7 +320,7 @@ export function TicketClaimPanel({
                 onChange={(e) => setDeadline(e.target.value)}
               />
               <p className="text-[11px] text-muted-foreground">
-                Only if the platform states one — Resolve never invents a deadline.
+                Only if the platform states one. Resolve never invents a deadline.
               </p>
             </div>
 

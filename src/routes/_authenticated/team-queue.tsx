@@ -47,6 +47,7 @@ import {
   labelFor,
   relativeTime,
   slaState,
+  priorityMeta,
 } from "@/lib/tickets";
 import { currentOwnerId, queueSort } from "@/lib/matters";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
@@ -835,7 +836,7 @@ function TeamQueuePage() {
                   {selectedPin.openJobs.length ? selectedPin.openJobs.map((job) => (
                     <div key={job.id} className="space-y-2 rounded-lg border border-border bg-card p-3">
                       <div className="flex items-start justify-between gap-2"><strong>{job.ticketId ? `#${job.ref}` : "Work Order"} {job.title}</strong>
-                        <StatusBadge tone={ticketTone(job.status)}>{job.priority.toUpperCase()}</StatusBadge></div>
+                        <StatusBadge tone={ticketTone(job.status)}>{priorityMeta(job.priority).short}</StatusBadge></div>
                       <div className="grid grid-cols-2 gap-1 text-xs">
                         <span>Status: {job.status}</span><span>Owner: {job.assigneeId ? displayName(people.get(job.assigneeId)) : "Unassigned"}</span>
                         <span>Team: {job.team || "Unassigned"}</span><span>Vendor: {job.vendorName || "None"}</span>
@@ -868,10 +869,10 @@ function TeamQueuePage() {
               <h2 className="font-semibold capitalize">{column.replace("_", " ")} · {rows.length}</h2>
               {rows.map((ticket) => "kind" in ticket ? <Link key={ticket.id} to="/work-orders" search={{ open: ticket.id, ...originSearch } as never}
                 className="block rounded-md border border-border bg-background p-3 text-sm hover:bg-accent/40">
-                <strong>Work Order · {ticket.title}</strong><p className="text-xs text-muted-foreground">{formatPropertyLabel(ticket.properties).primary} · {effectiveOperationsPriority(ticket).toUpperCase()}</p>
+                <strong>Work Order · {ticket.title}</strong><p className="text-xs text-muted-foreground">{formatPropertyLabel(ticket.properties).primary} · {priorityMeta(effectiveOperationsPriority(ticket)).short}</p>
               </Link> : <Link key={ticket.id} to="/tickets/$ticketId" params={{ ticketId: ticket.id }} search={originSearch}
                 className="block rounded-md border border-border bg-background p-3 text-sm hover:bg-accent/40">
-                <strong>#{ticket.ref} {ticket.title}</strong><p className="text-xs text-muted-foreground">{formatPropertyLabel(ticket.properties).primary} · {effectiveOperationsPriority(ticket).toUpperCase()}</p>
+                <strong>#{ticket.ref} {ticket.title}</strong><p className="text-xs text-muted-foreground">{formatPropertyLabel(ticket.properties).primary} · {priorityMeta(effectiveOperationsPriority(ticket)).short}</p>
               </Link>)}
             </section>;
           })}
@@ -895,11 +896,11 @@ function TeamQueuePage() {
                 {viewItems.filter((item) => itemDate(item) === day).map((item) => "kind" in item
                   ? <Link key={item.id} to="/work-orders" search={{ open: item.id, ...originSearch } as never}
                       className="block rounded border border-border bg-background p-1 text-xs hover:bg-accent/40">
-                      <span className="font-semibold">WO · {effectiveOperationsPriority(item).toUpperCase()}</span> {item.title}
+                      <span className="font-semibold">WO · {priorityMeta(effectiveOperationsPriority(item)).short}</span> {item.title}
                     </Link>
                   : <Link key={item.id} to="/tickets/$ticketId" params={{ ticketId: item.id }} search={originSearch}
                       className="block rounded border border-border bg-background p-1 text-xs hover:bg-accent/40">
-                      <span className="font-semibold">#{item.ref} · {effectiveOperationsPriority(item).toUpperCase()}</span> {item.title}
+                      <span className="font-semibold">#{item.ref} · {priorityMeta(effectiveOperationsPriority(item)).short}</span> {item.title}
                     </Link>)}
               </div>
             </section>)}
@@ -919,10 +920,10 @@ function TeamQueuePage() {
                 {viewItems.filter((ticket) => itemDate(ticket) === date)
                   .map((ticket) => "kind" in ticket ? <Link key={ticket.id} to="/work-orders" search={{ open: ticket.id, ...originSearch } as never}
                     className="rounded-md border border-border bg-background p-3 text-sm hover:bg-accent/40">
-                    <strong>Work Order · {ticket.title}</strong><p className="text-xs text-muted-foreground">{formatPropertyLabel(ticket.properties).primary} · {effectiveOperationsPriority(ticket).toUpperCase()}</p>
+                    <strong>Work Order · {ticket.title}</strong><p className="text-xs text-muted-foreground">{formatPropertyLabel(ticket.properties).primary} · {priorityMeta(effectiveOperationsPriority(ticket)).short}</p>
                   </Link> : <Link key={ticket.id} to="/tickets/$ticketId" params={{ ticketId: ticket.id }} search={originSearch}
                     className="rounded-md border border-border bg-background p-3 text-sm hover:bg-accent/40">
-                    <strong>#{ticket.ref} {ticket.title}</strong><p className="text-xs text-muted-foreground">{formatPropertyLabel(ticket.properties).primary} · {effectiveOperationsPriority(ticket).toUpperCase()}</p>
+                    <strong>#{ticket.ref} {ticket.title}</strong><p className="text-xs text-muted-foreground">{formatPropertyLabel(ticket.properties).primary} · {priorityMeta(effectiveOperationsPriority(ticket)).short}</p>
                   </Link>)}
               </div>
             </section>

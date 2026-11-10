@@ -84,7 +84,7 @@ export function DepartureReviewQueue() {
           <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
             <div>
               <span className="font-medium">{formatPropertyLabel(r.properties).primary}</span>
-              <span className="text-muted-foreground"> · {r.guest_name ?? "Guest"} · departed {r.stay_departure ? usDate(r.stay_departure) : "—"}</span>
+              <span className="text-muted-foreground"> · {r.guest_name ?? "Guest"} · departed {r.stay_departure ? usDate(r.stay_departure) : "Not set"}</span>
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="outline">{r.claimed_by ? "In progress" : "Unclaimed"}</Badge>
@@ -117,7 +117,7 @@ export function PropertyDepartureReviews({ propertyId }: { propertyId: string })
       <ul className="divide-y divide-border text-sm">
         {q.data.map((r) => (
           <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-            <span>{r.guest_name ?? "Guest"} · {r.stay_arrival ? usDate(r.stay_arrival) : "—"}–{r.stay_departure ? usDate(r.stay_departure) : "—"}{r.reservation_code ? ` · ${r.reservation_code}` : ""}</span>
+            <span>{r.guest_name ?? "Guest"} · {r.stay_arrival ? usDate(r.stay_arrival) : "Not set"} to {r.stay_departure ? usDate(r.stay_departure) : "Not set"}{r.reservation_code ? ` · ${r.reservation_code}` : ""}</span>
             <span className="flex items-center gap-2">
               {r.claim_id && <Badge variant="outline">Claim linked</Badge>}
               <Badge variant={r.status === "completed" ? "secondary" : "default"}>{r.status === "completed" ? "Completed" : "Open"}</Badge>

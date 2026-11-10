@@ -329,7 +329,7 @@ function AvailabilityFinderPage() {
               <div className="min-w-0 flex-1">
                 <p className="font-semibold">{current.result.name}</p>
                 <p className="text-sm text-muted-foreground">{current.result.address} · {current.result.distanceMiles.toFixed(1)} miles</p>
-                <p className="text-sm">{current.result.bedrooms ?? "—"} beds · {current.result.bathrooms ?? "—"} baths · sleeps {current.result.maxGuests ?? "—"}</p>
+                <p className="text-sm">{current.result.bedrooms ?? "Not set"} beds · {current.result.bathrooms ?? "Not set"} baths · sleeps {current.result.maxGuests ?? "Not set"}</p>
                 <p className="text-sm text-muted-foreground">{petSummary(current.result.facts)}{confirmedAmenities(current.result.facts).length ? ` · ${confirmedAmenities(current.result.facts).map((key) => AMENITY_LABELS[key]).join(", ")}` : ""}</p>
               </div>
             </div>
@@ -392,7 +392,7 @@ function AvailabilityFinderPage() {
               {row.imageUrl && <img src={row.imageUrl} alt={row.name} className="h-24 w-28 rounded object-cover" />}
               <div className="min-w-0 flex-1"><button type="button" className="text-left font-semibold underline-offset-2 hover:underline" onClick={() => onSelect(row.id)}>{row.name}</button>
                 <p className="text-sm text-muted-foreground">{row.address} · {row.distanceMiles.toFixed(1)} miles</p>
-                <p className="text-sm">{row.bedrooms ?? "—"} beds · {row.bathrooms ?? "—"} baths · {row.maxGuests ?? "—"} guests</p>
+                <p className="text-sm">{row.bedrooms ?? "Not set"} beds · {row.bathrooms ?? "Not set"} baths · {row.maxGuests ?? "Not set"} guests</p>
                 <p className="text-sm text-muted-foreground">{petSummary(row.facts)}{confirmedAmenities(row.facts).length ? ` · ${confirmedAmenities(row.facts).map((key) => AMENITY_LABELS[key]).join(", ")}` : ""}</p>
                 {row.factsUnavailable && <p className="text-xs text-amber-700">{row.factsUnavailable}</p>}
                 {row.quote
@@ -405,13 +405,13 @@ function AvailabilityFinderPage() {
                     {row.sourceQuote.securityDeposit !== null && row.sourceQuote.securityDeposit > 0 &&
                       <li>Refundable security deposit: {formatMoney(row.sourceQuote.securityDeposit, row.sourceQuote.currency)}</li>}
                     {row.sourceQuote.referralCost !== null &&
-                      <li>Internal only — referral cost {formatMoney(row.sourceQuote.referralCost, row.sourceQuote.currency)} ({row.sourceQuote.referralBasis}); we keep {formatMoney(row.sourceQuote.netAfterReferral ?? 0, row.sourceQuote.currency)}</li>}
+                      <li>Internal only: referral cost {formatMoney(row.sourceQuote.referralCost, row.sourceQuote.currency)} ({row.sourceQuote.referralBasis}); we keep {formatMoney(row.sourceQuote.netAfterReferral ?? 0, row.sourceQuote.currency)}</li>}
                   </ul>
                   {row.sourceQuote.flags.map((flag) => <p key={flag} className="mt-1 text-xs text-amber-700">{flag}</p>)}
                 </div>}
               </div>
             </div>
-            <p className={`mt-3 font-semibold ${row.status === "conditional" ? "text-amber-700 dark:text-amber-400" : row.status === "available" ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"}`}>{row.status === "conditional" ? "Conditional — STR relocation required" : row.status === "available" ? "Available" : "Unavailable"}</p>
+            <p className={`mt-3 font-semibold ${row.status === "conditional" ? "text-amber-700 dark:text-amber-400" : row.status === "available" ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"}`}>{row.status === "conditional" ? "Conditional: STR relocation required" : row.status === "available" ? "Available" : "Unavailable"}</p>
             {row.status === "conditional" && row.strConflicts.length > 0 && <div className="mt-1 text-sm"><p>This home can still be offered. Second step if the guest chooses it: {row.strConflicts.length} short stay{row.strConflicts.length === 1 ? "" : "s"} must be re-booked at another home before this stay can start.</p><ul className="list-inside list-disc">{row.strConflicts.map((conflict, index) => <li key={`${conflict.arrival}-${index}`}>{conflict.arrival} to {conflict.departure}</li>)}</ul></div>}
             {row.status === "unavailable" && <p className="mt-1 text-sm">Non-movable reservation or block overlaps the requested stay.</p>}
             {row.bookingUrl ? <a href={row.bookingUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm text-primary underline">View public listing</a> : <p className="mt-2 text-sm text-amber-700">No verified public listing link. The PDF page for this home will carry no link.</p>}

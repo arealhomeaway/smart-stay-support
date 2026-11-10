@@ -60,7 +60,7 @@ export function clockLabel(minutes: number) {
 
 export function windowLabel(cfg: CoverageConfig | null | undefined) {
   if (!isConfigured(cfg)) return null;
-  return `${clockLabel(cfg.after_hours_start_minute)}–${clockLabel(cfg.after_hours_end_minute)} Central`;
+  return `${clockLabel(cfg.after_hours_start_minute)} to ${clockLabel(cfg.after_hours_end_minute)} Central`;
 }
 
 /**

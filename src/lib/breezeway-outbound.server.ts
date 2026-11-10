@@ -280,7 +280,7 @@ function resultForExisting(row: Row): CreateOutboundResult {
     return {
       ok: false,
       message:
-        "The earlier attempt is unresolved — Resolve cannot tell whether Breezeway created it. An admin must check Breezeway before it is sent again.",
+        "The earlier attempt is unresolved. Resolve cannot tell whether Breezeway created it. An admin must check Breezeway before it is sent again.",
       link,
     };
   }
@@ -595,7 +595,7 @@ export async function createOutboundTask(
       return {
         ok: false,
         message:
-          "The Breezeway task was created but Resolve could not record it. It is flagged for admin review — do not send it again.",
+          "The Breezeway task was created but Resolve could not record it. It is flagged for admin review. Do not send it again.",
         ...(stuck ? { link: toLink(stuck) } : {}),
       };
     }

@@ -140,7 +140,7 @@ export function MatterOwnershipPanel({
         .eq("id", ticket.id);
       if (error) throw error;
       await log("escalation", "Escalated for supervisor attention.", "escalated");
-      toast.success("Escalated — a supervisor will see this in the queue.");
+      toast.success("Escalated: a supervisor will see this in the queue.");
     });
 
   const addNote = () =>
@@ -347,7 +347,7 @@ export function MatterOwnershipPanel({
 
         {ticket.archived_at && (
           <p className="text-xs text-muted-foreground">
-            Archived {usDateTime(ticket.archived_at)} — {ticket.archive_reason}
+            Archived {usDateTime(ticket.archived_at)} · {ticket.archive_reason}
           </p>
         )}
       </CardContent>

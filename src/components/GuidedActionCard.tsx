@@ -27,7 +27,7 @@ export function GuidedActionCard({
   readOnly,
   onComplete,
   onHandoff,
-  successMessage = "Step recorded — here's what's next.",
+  successMessage = "Step recorded: here's what's next.",
 }: {
   action: GuidedAction;
   readOnly?: boolean;

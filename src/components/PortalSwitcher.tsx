@@ -46,7 +46,7 @@ export function PortalSwitcher() {
           <Button
             size="sm"
             variant={demoMode ? "default" : "outline"}
-            className="min-h-11 md:min-h-9"
+            className="min-h-11"
           >
             {demoMode ? <FlaskConical className="size-4" /> : <LayoutGrid className="size-4" />}
             <span className="hidden sm:inline">{demoMode ? "Demo" : "Portals"}</span>
@@ -180,7 +180,7 @@ export function ViewAsBanner() {
     <div className="border-b border-indigo-200 bg-indigo-50 text-indigo-950">
       <div className="mx-auto grid max-w-7xl gap-2 px-4 py-2 text-sm sm:flex sm:flex-wrap sm:items-center sm:justify-between sm:gap-3">
         <p className="min-w-0">
-          <strong className="mr-1">Demo</strong>— you are working in the demo environment. Real
+          <strong className="mr-1">Demo</strong>. You are working in the demo environment. Real
           homes, homeowners, guests and vendors are untouched, and nothing leaves Resolve.
         </p>
         <Button

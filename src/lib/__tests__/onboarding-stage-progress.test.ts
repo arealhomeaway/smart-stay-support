@@ -79,7 +79,7 @@ describe("stage progress", () => {
     expect(s.total).toBe(2);
     expect(s.complete).toBe(1);
     expect(s.percent).toBe(50);
-    expect(s.currentStage).toBe("Stage 5 — Fieldwork, Setup & Mid-Project Review");
+    expect(s.currentStage).toBe("Stage 5: Fieldwork, Setup & Mid-Project Review");
   });
 
   it("shows nothing started when there are no tasks", () => {

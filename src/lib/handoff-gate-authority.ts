@@ -111,7 +111,7 @@ export function gateReviewAuthority(input: GateAuthorityInput): GateAuthority {
     return {
       ok: false,
       reason:
-        "You submitted this handoff. The project manager cannot approve their own handoff — it goes to the Director of Onboarding first.",
+        "You submitted this handoff. The project manager cannot approve their own handoff. It goes to the Director of Onboarding first.",
     };
   if (input.viewerId === input.projectManagerId)
     return {

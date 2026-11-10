@@ -415,7 +415,7 @@ export function nextAction(claim: ClaimLike, ctx: NextActionContext = {}): strin
 
   switch (claim.stage) {
     case "closed":
-      return "Closed — no action";
+      return "Closed: no action";
     case "recovered":
       return "Confirm the recovery is booked, then close";
     case "decided": {
@@ -427,7 +427,7 @@ export function nextAction(claim: ClaimLike, ctx: NextActionContext = {}): strin
     }
     case "info_requested":
       return firstMissing
-        ? `Respond to the request — ${firstMissing.label ?? firstMissing.slot_key} still needed`
+        ? `Respond to the request: ${firstMissing.label ?? firstMissing.slot_key} still needed`
         : "Respond to the platform request";
     case "submitted":
     case "waiting_external": {
@@ -665,14 +665,14 @@ export function findDuplicates(
 
 export function formatMoney(value: number | string | null | undefined) {
   const n = num(value);
-  if (n === null) return "—";
+  if (n === null) return "Not set";
   return `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export function formatDate(iso: string | null | undefined) {
-  if (!iso) return "—";
+  if (!iso) return "Not set";
   const d = new Date(`${iso}`.length <= 10 ? `${iso}T12:00:00` : iso);
-  if (Number.isNaN(d.getTime())) return "—";
+  if (Number.isNaN(d.getTime())) return "-";
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 

@@ -138,7 +138,7 @@ export function VendorSourcingPanel({ workOrderId, readOnly, focusFindVendor = f
               {attempts.length > 0 && (
                 <ul className="space-y-0.5 text-xs text-muted-foreground">
                   {attempts.map((t) => (
-                    <li key={t.id}>{usDate(t.attempted_at)} · {CONTACT_CHANNEL_LABELS[t.channel as ContactChannel]} · {CONTACT_RESPONSE_LABELS[t.response as ContactResponse]}{t.note ? ` — ${t.note}` : ""}</li>
+                    <li key={t.id}>{usDate(t.attempted_at)} · {CONTACT_CHANNEL_LABELS[t.channel as ContactChannel]} · {CONTACT_RESPONSE_LABELS[t.response as ContactResponse]}{t.note ? ` · ${t.note}` : ""}</li>
                   ))}
                 </ul>
               )}
@@ -221,7 +221,7 @@ export function VendorSourcingPanel({ workOrderId, readOnly, focusFindVendor = f
             <Input disabled={readOnly} inputMode="decimal" value={scope.quote ?? (wo.quote_amount != null ? String(wo.quote_amount) : "")} onChange={(e) => setScope({ ...scope, quote: e.target.value })} /></div>
           <div className="space-y-1"><Label className="text-xs">Authorization</Label>
             <p className={`text-sm ${auth.stale ? "text-destructive" : ""}`} data-testid="auth-state">{auth.label}</p>
-            {wo.authorized_at && <p className="text-xs text-muted-foreground">Approved for: {wo.authorized_scope ?? "—"} · up to ${wo.authorized_amount ?? "—"}</p>}
+            {wo.authorized_at && <p className="text-xs text-muted-foreground">Approved for: {wo.authorized_scope ?? "Not set"} · up to ${wo.authorized_amount ?? "Not set"}</p>}
           </div>
         </div>
         {!readOnly && (
@@ -270,7 +270,7 @@ export function VendorSourcingPanel({ workOrderId, readOnly, focusFindVendor = f
               <Button size="sm" variant="outline" disabled={run.isPending || (recon.note ?? "").trim().length < 10 || !(recon.ref ?? "").trim()}
                 onClick={() => run.mutate(async () => { await reconcile({ data: { workOrderId, outcome: "found", taskRef: recon.ref!.trim(), note: recon.note!.trim() } }); setRecon({}); })}>Task found in Breezeway</Button>
               <Button size="sm" variant="ghost" disabled={run.isPending || (recon.note ?? "").trim().length < 10}
-                onClick={() => run.mutate(async () => { await reconcile({ data: { workOrderId, outcome: "not_created", note: recon.note!.trim() } }); setRecon({}); })}>No task exists — allow a new attempt</Button>
+                onClick={() => run.mutate(async () => { await reconcile({ data: { workOrderId, outcome: "not_created", note: recon.note!.trim() } }); setRecon({}); })}>No task exists: allow a new attempt</Button>
             </div>
           </div>
         )}
@@ -308,7 +308,7 @@ export function VendorSourcingPanel({ workOrderId, readOnly, focusFindVendor = f
                   }).select("id").single());
                   const links = [{ expense_id: exp.id, link_type: "work_order", target_id: wo.id }, ...(wo.ticket_id ? [{ expense_id: exp.id, link_type: "ticket", target_id: wo.ticket_id }] : [])];
                   await must(supabase.from("expense_links").insert(links));
-                  toast.success("Invoice expense started below — add the amount and upload the invoice.");
+                  toast.success("Invoice expense started below. Add the amount and upload the invoice.");
                 })}>Add invoice for this visit</Button>
             )}
             {!readOnly && (
@@ -350,7 +350,7 @@ export function VendorSourcingPanel({ workOrderId, readOnly, focusFindVendor = f
                   const wi = await must<{ id: string }>(supabase.from("work_items").insert({
                     department: "operations", source_department: "operations", kind: "task", source: "arha",
                     property_id: wo.property_id, source_table: "work_order_visits", source_id: row.id,
-                    title: `Follow up: ${VISIT_OUTCOME_LABELS[visit.outcome!]} — ${wo.title ?? "Work Order"}`,
+                    title: `Follow up: ${VISIT_OUTCOME_LABELS[visit.outcome!]} · ${wo.title ?? "Work Order"}`,
                     assigned_to: visit.assignee!, due_on: visit.due!, status: "open", is_demo: wo.is_demo,
                   }).select("id").single());
                   await must(supabase.from("work_order_visits").update({ follow_up_work_item_id: wi.id }).eq("id", row.id));

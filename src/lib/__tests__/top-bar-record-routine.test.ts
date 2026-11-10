@@ -97,7 +97,7 @@ describe("the top bar button opens the panel in place", () => {
     expect(bar.indexOf("Record work")).toBeGreaterThan(-1);
     expect(bar.indexOf("{showRecordRoutine && (")).toBeGreaterThan(bar.indexOf("Record work"));
     expect(routineButton).toContain('size="sm"');
-    expect(routineButton).toContain('className="min-h-11 md:min-h-9"');
+    expect(routineButton).toContain('className="min-h-11"');
   });
 
   it("is a button that opens the overlay, not a link or a page change", () => {

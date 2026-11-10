@@ -48,7 +48,7 @@ export function AssignmentExceptionQueue() {
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
         {(data?.length ?? 0) === 0 ? (
-          <p className="text-muted-foreground">Nothing waiting — every open ticket has an owner.</p>
+          <p className="text-muted-foreground">Nothing waiting: every open ticket has an owner.</p>
         ) : (
           data!.map((t) => (
             <Link

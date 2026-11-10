@@ -197,7 +197,7 @@ export function SchedulePanel({
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">{r.title}</p>
                   <p className="text-xs text-muted-foreground">
-                    {r.currentDue ?? "no date"} →{" "}
+                    {r.currentDue ?? "no date"} to{" "}
                     <span className="font-medium">{r.proposedDue}</span> ·{" "}
                     {r.anchor.replace("_", " ")}{" "}
                     {r.offsetDays >= 0 ? `+${r.offsetDays}` : r.offsetDays}d

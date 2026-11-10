@@ -51,7 +51,7 @@ export function DepartureMatchingPanel() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-display text-lg font-semibold">Departure clean matching</h2>
         <Button size="sm" variant="outline" disabled={run.isPending} onClick={() => run.mutate()}>
-          {run.isPending ? "Checking…" : "Preview matching — last 30 days (no changes)"}
+          {run.isPending ? "Checking…" : "Preview matching: last 30 days (no changes)"}
         </Button>
       </div>
 
@@ -60,12 +60,12 @@ export function DepartureMatchingPanel() {
           <h3 className="text-sm font-semibold">Needs reservation match · {needs.data!.length}</h3>
           {needs.data!.map((m) => (
             <div key={m.id} className="rounded-md border border-border p-3 text-sm">
-              <p className="font-medium">{formatPropertyLabel(m.properties).primary} · {m.breezeway_work_orders?.name} · {m.breezeway_work_orders?.scheduled_date ? usDate(m.breezeway_work_orders.scheduled_date) : "—"}</p>
+              <p className="font-medium">{formatPropertyLabel(m.properties).primary} · {m.breezeway_work_orders?.name} · {m.breezeway_work_orders?.scheduled_date ? usDate(m.breezeway_work_orders.scheduled_date) : "Not set"}</p>
               <p className="text-muted-foreground">{m.reason}</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {(m.candidates as Candidate[]).map((c) => (
                   <Button key={c.id} size="sm" variant="outline" disabled={pick.isPending} onClick={() => pick.mutate({ matchId: m.id, bookingId: c.id })}>
-                    Link {c.guest ?? "guest"} · {c.arrival ? usDate(c.arrival) : "?"}–{c.departure ? usDate(c.departure) : "?"}
+                    Link {c.guest ?? "guest"} · {c.arrival ? usDate(c.arrival) : "?"} to {c.departure ? usDate(c.departure) : "?"}
                   </Button>
                 ))}
               </div>
@@ -77,7 +77,7 @@ export function DepartureMatchingPanel() {
       {run.error && <p className="text-sm text-destructive">{(run.error as Error).message}</p>}
       {r && (
         <div className="space-y-3 text-sm">
-          <p className="text-muted-foreground">Dry run {usDate(r.window.from)}–{usDate(r.window.to)}. Nothing was saved and no Departure Reviews or Tickets were created.</p>
+          <p className="text-muted-foreground">Dry run {usDate(r.window.from)} to {usDate(r.window.to)}. Nothing was saved and no Departure Reviews or Tickets were created.</p>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-4">
             {[
               ["OwnerRez departures", r.totals.departures],
@@ -99,7 +99,7 @@ export function DepartureMatchingPanel() {
           <details>
             <summary className="cursor-pointer font-medium">Breezeway clean types found ({r.labels.length})</summary>
             <ul className="mt-1">
-              {r.labels.map((l) => <li key={l.name}>{l.departure ? <Badge>Departure</Badge> : <Badge variant="outline">Other</Badge>} {l.name} — {l.total} ({l.done} finished)</li>)}
+              {r.labels.map((l) => <li key={l.name}>{l.departure ? <Badge>Departure</Badge> : <Badge variant="outline">Other</Badge>} {l.name} · {l.total} ({l.done} finished)</li>)}
             </ul>
           </details>
           <div className="overflow-x-auto">
@@ -109,9 +109,9 @@ export function DepartureMatchingPanel() {
                 {(showAll ? r.results : r.results.filter((x) => x.state !== "matched").concat(r.results.filter((x) => x.state === "matched").slice(0, 15))).map((x) => (
                   <tr key={x.clean_id} className="border-t border-border align-top">
                     <td>{x.property}</td>
-                    <td>{x.clean_date ? usDate(x.clean_date) : "—"}</td>
-                    <td>{x.guest ?? "—"}{x.code ? ` · ${x.code}` : ""}</td>
-                    <td>{x.checkout_date ? usDate(x.checkout_date) : "—"}</td>
+                    <td>{x.clean_date ? usDate(x.clean_date) : "Not set"}</td>
+                    <td>{x.guest ?? "-"}{x.code ? ` · ${x.code}` : ""}</td>
+                    <td>{x.checkout_date ? usDate(x.checkout_date) : "Not set"}</td>
                     <td><Badge variant={x.state === "matched" ? "secondary" : "outline"}>{MATCH_STATE_LABEL[x.state as MatchState]}</Badge></td>
                     <td>{x.reason}</td>
                   </tr>

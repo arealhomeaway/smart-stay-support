@@ -141,6 +141,6 @@ export function budgetHeadline(totals: BudgetTotals): string {
 }
 
 export function money(value: number | null | undefined): string {
-  if (value == null || !Number.isFinite(Number(value))) return "—";
+  if (value == null || !Number.isFinite(Number(value))) return "-";
   return `$${Number(value).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
 }

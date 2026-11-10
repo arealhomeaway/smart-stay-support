@@ -48,7 +48,7 @@ export const INSURANCE_RISK = [
 export type InsuranceRisk = (typeof INSURANCE_RISK)[number]["value"];
 
 export function labelOf(list: readonly { value: string; label: string }[], v: string | null | undefined) {
-  return list.find((x) => x.value === v)?.label ?? v ?? "—";
+  return list.find((x) => x.value === v)?.label ?? v ?? "None";
 }
 
 /** Work-type catalog categories each Ticket path draws from. */
@@ -111,7 +111,7 @@ export function ownerSectionRelevant(
   if (costs.some((c) => (inclusive ? c >= threshold : c > threshold)))
     reasons.push(inclusive ? `Cost is $${threshold} or more` : `Cost is over $${threshold}`);
   if (ticket.insurance_risk === "yes") reasons.push("Potential insurance-related event");
-  if (ticket.insurance_risk === "unsure") reasons.push("Insurance-related status unsure — confirm");
+  if (ticket.insurance_risk === "unsure") reasons.push("Insurance-related status unsure: confirm");
   return { relevant: reasons.length > 0, reasons };
 }
 

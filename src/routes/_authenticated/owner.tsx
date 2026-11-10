@@ -76,12 +76,12 @@ export const Route = createFileRoute("/_authenticated/owner")({
   }),
   head: () => ({
     meta: [
-      { title: "Your home — Resolve" },
+      { title: "Your home: Resolve" },
       {
         name: "description",
-        content: "Your participation, your homes, and what needs your attention — in one place.",
+        content: "Your participation, your homes, and what needs your attention, in one place.",
       },
-      { property: "og:title", content: "Your home — Resolve Active Owner" },
+      { property: "og:title", content: "Your home: Resolve Active Owner" },
       { property: "og:description", content: "Your ARHA homes, participation and Opportunities in one place." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -373,7 +373,7 @@ function OwnerHubBody({
           id: `entry-${e.id}`,
           at: e.entry_date,
           property: propertyLabel(e.propertyIds),
-          label: [`Logged ${Math.round((e.minutes / 60) * 100) / 100} hours — ${e.activity}`, loggedByLabel(attribution, e.owner_user_id)].filter(Boolean).join(" · "),
+          label: [`Logged ${Math.round((e.minutes / 60) * 100) / 100} hours: ${e.activity}`, loggedByLabel(attribution, e.owner_user_id)].filter(Boolean).join(" · "),
           entryId: e.id,
           files: attachmentCount(e),
         })),
@@ -419,7 +419,7 @@ function OwnerHubBody({
     <LogTimeContext.Provider value={preview ? null : openLogTime}>
     <div className="space-y-6">
       {preview ? (
-        <StatusBadge tone="review">Preview only — staff view, read-only</StatusBadge>
+        <StatusBadge tone="review">Preview only: staff view, read-only</StatusBadge>
       ) : null}
 
       <PageHero
@@ -455,7 +455,7 @@ function OwnerHubBody({
                   {properties.filter((p) => p.inclusionStatus === "included").length > 1 ? (
                     <li>Your homes for the same year share one total; each activity counts once.</li>
                   ) : null}
-                  <li>Progress toward more than 100 hours — not a tax qualification result.</li>
+                  <li>Progress toward more than 100 hours, not a tax qualification result.</li>
                 </ul>
                 {preview ? null : <ReportDownloads />}
               </div>
@@ -738,7 +738,7 @@ type OwnerHome = {
 
 function titleCase(value: string) {
   const text = (value ?? "").replace(/_/g, " ").trim();
-  return text ? text.charAt(0).toUpperCase() + text.slice(1) : "—";
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : "Not set";
 }
 
 /**
@@ -803,7 +803,7 @@ function ReviewRow({
         },
       }),
     onSuccess: () => {
-      toast.success("Thanks — your response was recorded.");
+      toast.success("Thanks: your response was recorded.");
       setOpen(false);
       onDone();
     },

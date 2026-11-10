@@ -27,7 +27,7 @@ type Props = {
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  dispatched: "Sent — waiting on the vendor",
+  dispatched: "Sent: waiting on the vendor",
   accepted: "Vendor accepted",
   on_site: "Vendor is on site now",
   completed: "Vendor marked complete",
@@ -78,7 +78,7 @@ export function VendorDispatchPanel({
         </CardTitle>
         <CardDescription>
           Send this to a vendor and it lands in their portal with the address, access notes and the
-          required steps — no separate text thread to chase.
+          required steps. No separate text thread to chase.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -91,7 +91,7 @@ export function VendorDispatchPanel({
           <>
             <div className="space-y-2">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Best fit first — distance, scorecard and current load
+                Best fit first: distance, scorecard and current load
               </p>
               {!hasHomePin && (
                 <p className="text-xs text-muted-foreground">
@@ -144,7 +144,7 @@ export function VendorDispatchPanel({
               value={brief}
               onChange={(e) => setBrief(e.target.value)}
               rows={4}
-              placeholder="What you need done, what good looks like, and anything not to do — e.g. do not leave the wall open, seal and paint before you leave."
+              placeholder="What you need done, what good looks like, and anything not to do, e.g. do not leave the wall open, seal and paint before you leave."
             />
             <div className="flex flex-wrap gap-2">
               <Button

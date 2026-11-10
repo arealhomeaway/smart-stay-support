@@ -424,9 +424,9 @@ function NeedsYouNow({ rows, userId, originSearch }: { rows: Row[]; userId: stri
 
 const PRIORITY_OPTIONS = [
   { value: "all", label: "All" },
-  { value: "p1", label: "P1" },
-  { value: "p2", label: "P2" },
-  { value: "p3", label: "P3" },
+  { value: "p1", label: "Right now" },
+  { value: "p2", label: "Today" },
+  { value: "p3", label: "Routine" },
 ];
 
 /** My work: Active, Waiting and Done recently, with search, priority and List or Board. */
@@ -480,7 +480,7 @@ function MyWork({
           <Link
             to="/team-queue"
             search={{ flags: "unassigned" } as never}
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+            className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-primary hover:underline"
           >
             <Users className="size-4" aria-hidden="true" /> {HOME_COPY.teamQueueLink(unclaimed)}
           </Link>
@@ -636,7 +636,7 @@ function RoutineWorkDue({ team }: { team: string | null }) {
         <button
           type="button"
           onClick={() => openRecordRoutine()}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+          className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-primary hover:underline"
         >
           <ClipboardCheck className="size-4" aria-hidden="true" /> {HOME_COPY.routineButton}
         </button>

@@ -84,7 +84,7 @@ export function ExternalRecordsPanel({
           <CardTitle className="text-base">Source databases</CardTitle>
           <CardDescription>
             Synchronisation is read-only configuration and stays disabled until the connection and
-            exact database IDs are verified — Resolve never writes back to a source system.
+            exact database IDs are verified. Resolve never writes back to a source system.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">

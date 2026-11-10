@@ -84,16 +84,16 @@ import {
 export const Route = createFileRoute("/_authenticated/owner-programs")({
   head: () => ({
     meta: [
-      { title: "Active Owner — Resolve" },
+      { title: "Active Owner: Resolve" },
       {
         name: "description",
         content:
           "Run the Active Owner Participation Program: enroll homes, activate one combined clock, follow pace benchmarks and generate the owner's participation report.",
       },
-      { property: "og:title", content: "Active Owner — Resolve" },
+      { property: "og:title", content: "Active Owner: Resolve" },
       {
         property: "og:description",
-        content: "One owner, one program window (closing date → December 31), one combined participation record.",
+        content: "One owner, one program window (closing date to December 31), one combined participation record.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -256,7 +256,7 @@ function ProgramsBoard() {
 
 
       <p className="text-sm text-muted-foreground">
-        To enroll a home, open it and choose Active Owner — setup links the homeowner and queues
+        To enroll a home, open it and choose Active Owner. Setup links the homeowner and queues
         their welcome in one step.
       </p>
 
@@ -384,7 +384,7 @@ function ProgramCard({
     if (
       !demo &&
       !window.confirm(
-        `ACTING AS LIVE OWNER — ${row.ownerName || "this homeowner"}\n\nChanges made here affect the homeowner's real program. This is not a sandbox. Responses, uploads and hours are real and may notify staff or the homeowner.\n\nContinue?`,
+        `ACTING AS LIVE OWNER: ${row.ownerName || "this homeowner"}\n\nChanges made here affect the homeowner's real program. This is not a sandbox. Responses, uploads and hours are real and may notify staff or the homeowner.\n\nContinue?`,
       )
     )
       return;
@@ -476,7 +476,7 @@ function ProgramCard({
             }
           >
             {row.availableOpportunities === 0 && row.status === "active"
-              ? "No participation opportunities available — needs staff setup"
+              ? "No participation opportunities available. Needs staff setup"
               : `${row.availableOpportunities} available · ${row.upcomingOpportunities} upcoming`}
           </span>
           <span>
@@ -615,7 +615,7 @@ function ProgramDetail({
           <Home className="size-4" /> Properties in this program
         </h3>
         <p className="text-xs text-muted-foreground">
-          Every home shares the one program window (closing date → December 31) and the one combined hour goal. Properties are
+          Every home shares the one program window (closing date to December 31) and the one combined hour goal. Properties are
           measured by their tasks and decisions, never by their own hour target.
         </p>
         <div className="space-y-2">
@@ -920,7 +920,7 @@ function ProgramDetail({
         <h3 className="text-sm font-semibold">Participation log</h3>
         <p className="text-xs text-muted-foreground">
           Entries are the homeowner's own record. Corrections are added as a new amending entry with
-          a reason — the original is never overwritten.
+          a reason. The original is never overwritten.
         </p>
         {entries.length === 0 ? (
           <p className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
@@ -1107,7 +1107,7 @@ function ProgramDetail({
           <div className="space-y-1 text-xs text-muted-foreground">
             {history.slice(0, 15).map((h) => (
               <p key={h.id}>
-                {usDate(h.created_at)} — {h.summary}
+                {usDate(h.created_at)} · {h.summary}
                 {h.reason ? ` (${h.reason})` : ""}
               </p>
             ))}
@@ -1121,7 +1121,7 @@ function ProgramDetail({
 function ChecklistItem({ ok, label }: { ok: boolean; label: string }) {
   return (
     <li className="flex items-center gap-2">
-      <span className={ok ? "text-emerald-600" : "text-muted-foreground"}>{ok ? "✓" : "○"}</span>
+      <span className={ok ? "text-emerald-600" : "text-muted-foreground"}>{ok ? "Done" : "Not yet"}</span>
       <span className={ok ? "" : "text-muted-foreground"}>{label}</span>
     </li>
   );
@@ -1143,7 +1143,7 @@ function RoadmapCatalog({ templates, loading }: { templates: TaskTemplate[]; loa
           <ClipboardCheck className="size-4" /> The owner activity catalog
         </span>
       }
-      description="The standard activity set every program is seeded from. Planning hours are an internal staffing estimate — they are never shown to a homeowner, so reported participation stays genuinely self-reported."
+      description="The standard activity set every program is seeded from. Planning hours are an internal staffing estimate. They are never shown to a homeowner, so reported participation stays genuinely self-reported."
       bodyClassName="space-y-6"
     >
       {loading ? (
@@ -1167,7 +1167,7 @@ function RoadmapCatalog({ templates, loading }: { templates: TaskTemplate[]; loa
                     </div>
                     <p className="text-sm text-muted-foreground">{t.owner_action}</p>
                     <p className="text-xs text-muted-foreground">
-                      Internal plan {t.planning_hours_low}–{t.planning_hours_high} hrs · respond
+                      Internal plan {t.planning_hours_low} to {t.planning_hours_high} hrs · respond
                       within {t.respond_within_days} days
                       {t.recurring ? " · recurring" : ""}
                     </p>

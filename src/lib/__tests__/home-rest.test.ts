@@ -92,7 +92,7 @@ describe("Needs you now side panel (register T2)", () => {
     expect(calls.map((c) => `${c.op} ${c.table} ${c.id ?? ""}`.trim())).toEqual(["update approvals ap1", "update work_orders wo1", "insert work_order_events"]);
     expect(calls[0]!.body).toMatchObject({ status: "approved", decision_note: "Within the ladder" });
     expect(calls[1]!.body).toMatchObject({ supervisor_approval_status: "approved", supervisor_approval_note: "Within the ladder" });
-    expect(calls[2]!.body).toEqual({ work_order_id: "wo1", author_id: "sup", event_type: "supervisor_approved", body: "Supervisor approved — Within the ladder", is_demo: false });
+    expect(calls[2]!.body).toEqual({ work_order_id: "wo1", author_id: "sup", event_type: "supervisor_approved", body: "Supervisor approved · Within the ladder", is_demo: false });
   });
 });
 

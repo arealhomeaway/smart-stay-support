@@ -424,7 +424,7 @@ export async function syncMailbox(
       ...base,
       ok: true,
       error: dryRun
-        ? "No checkpoint set yet — the first live run will start from that moment."
+        ? "No checkpoint set yet. The first live run will start from that moment."
         : `Checkpoint set to ${now}. Only mail received after this point will be processed.`,
     };
   }
@@ -806,7 +806,7 @@ async function linkToExisting(
       lead_id: row.entity_id,
       channel: "email",
       outcome: "Reply received",
-      note: [`Reply on the same Outlook thread — ${subject}`, `From ${from}`, body.slice(0, 3000)]
+      note: [`Reply on the same Outlook thread: ${subject}`, `From ${from}`, body.slice(0, 3000)]
         .filter(Boolean)
         .join("\n\n"),
     });
@@ -817,7 +817,7 @@ async function linkToExisting(
     kind: "note",
     event_type: "note",
     channel: "email",
-    body: [`Reply on the same Outlook thread — ${subject}`, `From ${from}`, body]
+    body: [`Reply on the same Outlook thread: ${subject}`, `From ${from}`, body]
       .filter(Boolean)
       .join("\n\n"),
   });

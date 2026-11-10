@@ -42,7 +42,7 @@ export function BreezewaySyncReviewPanel() {
       toast.success(
         r.held > 0
           ? `${r.held} difference${r.held === 1 ? "" : "s"} put up for review.`
-          : "Nothing new — every difference is already on the board.",
+          : "Nothing new: every difference is already on the board.",
       );
       void refresh();
     },
@@ -101,7 +101,7 @@ export function BreezewaySyncReviewPanel() {
                       {e.label}
                     </Badge>
                     <span className="text-muted-foreground">
-                      {e.receivedAt ? usDateTime(e.receivedAt) : "—"}
+                      {e.receivedAt ? usDateTime(e.receivedAt) : "Not set"}
                     </span>
                     {e.taskId ? <span>Breezeway job {e.taskId}</span> : null}
                     {e.retryable ? <Badge variant="outline">Can be tried again</Badge> : null}
@@ -137,7 +137,7 @@ export function BreezewaySyncReviewPanel() {
                 <li key={`${d.taskId}-${d.field}`} className="rounded-md border p-3 text-xs">
                   <p>{d.summary}</p>
                   <p className="mt-1 text-muted-foreground">
-                    Resolve: {d.resolveValue ?? "—"} · Breezeway: {d.externalValue ?? "—"}
+                    Resolve: {d.resolveValue ?? "Not set"} · Breezeway: {d.externalValue ?? "Not set"}
                   </p>
                 </li>
               ))}
@@ -162,11 +162,11 @@ export function BreezewaySyncReviewPanel() {
                   <div className="grid gap-2 sm:grid-cols-2">
                     <div className="rounded border p-2">
                       <p className="text-muted-foreground">What Resolve holds</p>
-                      <p>{c.resolveValue ?? "—"}</p>
+                      <p>{c.resolveValue ?? "Not set"}</p>
                     </div>
                     <div className="rounded border p-2">
                       <p className="text-muted-foreground">What Breezeway holds</p>
-                      <p>{c.externalValue ?? "—"}</p>
+                      <p>{c.externalValue ?? "Not set"}</p>
                     </div>
                   </div>
                   <Input

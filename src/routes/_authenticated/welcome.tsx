@@ -37,7 +37,7 @@ const basics = [
   {
     icon: ListChecks,
     title: "Playbooks do the coaching",
-    body: "Each work type carries required steps — test every smoke and CO device, replace anything removed, photograph the wall — and the ticket cannot close until they are done.",
+    body: "Each work type carries required steps. Test every smoke and CO device, replace anything removed, photograph the wall, and the ticket cannot close until they are done.",
     to: "/playbooks" as const,
     cta: "See playbooks",
   },
@@ -85,7 +85,7 @@ function WelcomePage() {
         </video>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-5 py-4">
           <div>
-            <p className="font-medium">Resolve executive walkthrough — 1:05</p>
+            <p className="font-medium">Resolve executive walkthrough: 1:05</p>
             <p className="text-sm text-muted-foreground">
               Intake, inbound sync, triage, playbook enforcement, handoff acceptance and oversight.
             </p>
@@ -118,7 +118,7 @@ function WelcomePage() {
                 size="sm"
                 className="-ml-3 mt-1 px-3 hover:bg-transparent hover:underline"
               >
-                <Link to={b.to}>{b.cta} →</Link>
+                <Link to={b.to}>{b.cta}</Link>
               </Button>
             </div>
           </div>

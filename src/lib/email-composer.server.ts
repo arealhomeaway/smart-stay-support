@@ -49,7 +49,7 @@ async function propertyBits(supabase: Client, propertyId: string | null) {
   const recipients: ComposerRecipient[] = ((contacts ?? []) as { [k: string]: string | null }[])
     .filter((c) => valid(c["owner_email"]))
     .map((c) => ({
-      label: `Homeowner — ${c["owner_name"] ?? c["owner_email"]}`,
+      label: `Homeowner: ${c["owner_name"] ?? c["owner_email"]}`,
       name: c["owner_name"] ?? null,
       email: String(c["owner_email"]).trim(),
       audience: "owner" as const,
@@ -72,7 +72,7 @@ async function vendorRecipients(supabase: Client, orgId: string | null) {
   return ((data ?? []) as { [k: string]: string | null }[])
     .filter((c) => valid(c["email"]))
     .map((c) => ({
-      label: `Vendor — ${c["full_name"] ?? c["email"]}`,
+      label: `Vendor: ${c["full_name"] ?? c["email"]}`,
       name: c["full_name"] ?? null,
       email: String(c["email"]).trim(),
       audience: "vendor" as const,
@@ -213,7 +213,7 @@ export async function gatherComposerContext(
   const guest: ComposerRecipient[] = valid(ticket["guest_contact"])
     ? [
         {
-          label: `Guest — ${ticket["guest_name"] ?? ticket["guest_contact"]}`,
+          label: `Guest: ${ticket["guest_name"] ?? ticket["guest_contact"]}`,
           name: ticket["guest_name"] ?? null,
           email: String(ticket["guest_contact"]).trim(),
           audience: "guest" as const,
@@ -222,7 +222,7 @@ export async function gatherComposerContext(
     : [];
 
   return {
-    heading: ticket["ref"] ? `${ticket["ref"]} — ${ticket["title"] ?? ""}`.trim() : "Ticket",
+    heading: ticket["ref"] ? `${ticket["ref"]} · ${ticket["title"] ?? ""}`.trim() : "Ticket",
     recipients: dedupe([...guest, ...property.recipients]),
     mergeValues: {
       property: property.name,

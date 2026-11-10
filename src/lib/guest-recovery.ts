@@ -232,7 +232,7 @@ const VENDOR_DIAGNOSIS: RecoverySlot = {
   key: "vendor_diagnosis",
   label: "Vendor diagnosis or Work Order history",
   kind: "general",
-  instruction: "What the vendor found and when — attach the Work Order where one exists.",
+  instruction: "What the vendor found and when. Attach the Work Order where one exists.",
   required: true,
 };
 
@@ -446,7 +446,7 @@ export function evaluateAuthority(input: AuthorityInput): AuthorityVerdict {
 }
 
 /** The badge shown when a case leaves the normal Airbnb framework. */
-export const OUTSIDE_POLICY_BADGE = "Outside Standard Airbnb Policy — Director Review Required";
+export const OUTSIDE_POLICY_BADGE = "Outside Standard Airbnb Policy: Director Review Required";
 
 export function policyBoundaryLabel(within: boolean | null | undefined): string {
   if (within === true) return "Within normal Airbnb refund/discount policy";
@@ -602,10 +602,10 @@ export function nextAction(recovery: RecoveryLike, ctx: NextActionContext = {}):
   const reqs = ctx.requirements ?? [];
   const progress = evidenceProgress(reqs);
 
-  if (recovery.stage === "closed") return "Closed — nothing outstanding.";
+  if (recovery.stage === "closed") return "Closed: nothing outstanding.";
 
   if (communicationOverdue(recovery, now) && recovery.stage !== "completed") {
-    return "Guest update is due now — send the next update before anything else.";
+    return "Guest update is due now. Send the next update before anything else.";
   }
 
   if (recovery.outcome === "guest_disputed") {
@@ -613,7 +613,7 @@ export function nextAction(recovery: RecoveryLike, ctx: NextActionContext = {}):
   }
 
   if (recovery.approval_status === "returned") {
-    return "Returned for information — add what the approver asked for and resubmit.";
+    return "Returned for information: add what the approver asked for and resubmit.";
   }
 
   if (recovery.approval_status === "declined") {
@@ -636,7 +636,7 @@ export function nextAction(recovery: RecoveryLike, ctx: NextActionContext = {}):
   }
 
   if (recovery.stage === "approved") {
-    return "Approved — deliver the decision to the guest by phone, then confirm it in writing.";
+    return "Approved: deliver the decision to the guest by phone, then confirm it in writing.";
   }
 
   if (recovery.stage === "awaiting_approval") {
@@ -657,7 +657,7 @@ export function nextAction(recovery: RecoveryLike, ctx: NextActionContext = {}):
   }
 
   if (!recovery.recovery_action) {
-    return "Impact is confirmed. Decide the remedy — a temporary fix first where one exists.";
+    return "Impact is confirmed. Decide the remedy: a temporary fix first where one exists.";
   }
 
   if (
@@ -669,16 +669,16 @@ export function nextAction(recovery: RecoveryLike, ctx: NextActionContext = {}):
 
   const verdict = verdictFor(recovery, ctx);
   if (verdict.requiresPolicyAnswer) {
-    return "Confirm whether this fits normal Airbnb refund/discount policy — it decides who approves.";
+    return "Confirm whether this fits normal Airbnb refund/discount policy. It decides who approves.";
   }
   if (verdict.level === "director") return `Request Director approval. ${verdict.reason}`;
   if (verdict.level === "supervisor") return `Request the Operations Supervisor's approval. ${verdict.reason}`;
 
   const checkout = daysUntil(recovery.stay_departure, now);
   if (checkout !== null && checkout <= 1) {
-    return "Guest checks out within a day — deliver the decision before they leave.";
+    return "Guest checks out within a day. Deliver the decision before they leave.";
   }
-  return "Within your authority — deliver the decision to the guest, then record what was sent.";
+  return "Within your authority: deliver the decision to the guest, then record what was sent.";
 }
 
 export function daysUntil(iso: string | null | undefined, now = new Date()): number | null {
@@ -727,7 +727,7 @@ export function closureBlockers(recovery: RecoveryLike): string[] {
   if (recovery.approval_status === "pending")
     out.push("The required approval is still outstanding.");
   if (recovery.handoff_status === "requested") {
-    out.push("A handoff is still waiting to be accepted — you remain responsible until it is.");
+    out.push("A handoff is still waiting to be accepted. You remain responsible until it is.");
   }
   return out;
 }
@@ -784,7 +784,7 @@ export const BUCKET_LABELS: Record<RecoveryBucket, string> = {
   needs_attention: "Needs attention",
   waiting_evidence: "Waiting on evidence",
   approval_required: "Approval required",
-  approved_action_needed: "Approved — action needed",
+  approved_action_needed: "Approved: action needed",
   waiting_guest: "Waiting on guest",
   reassess: "Reassess",
   recently_resolved: "Recently resolved",

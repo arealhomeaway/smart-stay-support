@@ -40,7 +40,7 @@ export function createOnboardingQaProject(
   };
   const property = {
     id: `${prefix}-property`,
-    name: `QA — ${furnishing === "full_furnishing" ? "Full Furnishing" : "No Furnishings"}`,
+    name: `QA: ${furnishing === "full_furnishing" ? "Full Furnishing" : "No Furnishings"}`,
     is_demo: true,
     onboarding_owner: "qa-project-manager",
     onboarding_stage: "post_contract",
@@ -84,7 +84,7 @@ export function createOnboardingQaProject(
       blocker: null,
       blocks_handoff: source.blocksHandoff,
       evidence_required: Boolean(source.evidenceRequired),
-      evidence_note: completed ? "QA evidence checked — local fixture only" : null,
+      evidence_note: completed ? "QA evidence checked: local fixture only" : null,
       requires_owner_approval: ownerApproval,
       owner_approval_status: ownerApproval ? (completed ? "approved" : "pending") : "not_required",
       exception_reason: null,

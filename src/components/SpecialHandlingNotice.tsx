@@ -70,9 +70,9 @@ export function SpecialHandlingNotice({
         {rules.map((r) => (
           <li key={r.id} className="text-sm leading-relaxed">
             <span className="font-medium">{ruleTypeLabel(r.rule_type)}</span>
-            {r.vendor_name ? <span className="font-medium"> — {r.vendor_name}</span> : null}
+            {r.vendor_name ? <span className="font-medium"> · {r.vendor_name}</span> : null}
             {r.threshold_amount != null ? (
-              <span className="font-medium"> — ${Number(r.threshold_amount).toLocaleString()}</span>
+              <span className="font-medium">· ${Number(r.threshold_amount).toLocaleString()}</span>
             ) : null}
             <span className="text-muted-foreground"> · {r.instruction}</span>
           </li>

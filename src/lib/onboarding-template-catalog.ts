@@ -99,7 +99,7 @@ export function builtInSummary(): TemplateSummary {
     key: BUILT_IN_TEMPLATE_KEY,
     name: "ARHA Full Furnishing",
     description:
-      "The standard ARHA onboarding plan. Edit it here — homes started from it get your version.",
+      "The standard ARHA onboarding plan. Edit it here: homes started from it get your version.",
     isDefault: false,
     isArchived: false,
     builtIn: true,

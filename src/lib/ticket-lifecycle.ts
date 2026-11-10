@@ -194,7 +194,7 @@ export function validateTicketTransition(
       if (!facts.hasDispatchObject)
         return fail(
           "dispatch_no_work_order",
-          "Create the repair / Work Order first — dispatch records where the work went.",
+          "Create the repair / Work Order first. Dispatch records where the work went.",
           "dispatch_prerequisites",
         );
       if (!facts.hasDispatchDestination)
@@ -266,7 +266,7 @@ export function validateTicketTransition(
       if (facts.requiresClosureFile && !facts.hasQualifyingFile)
         return fail(
           "closure_no_file",
-          "This work type needs a photo or file attached — a description on its own is not evidence.",
+          "This work type needs a photo or file attached. A description on its own is not evidence.",
           "closure_requirements",
         );
       return { ok: true };
@@ -276,7 +276,7 @@ export function validateTicketTransition(
       if (from !== "resolved")
         return fail(
           "close_before_resolved",
-          "Resolve the ticket first — closing comes after the work is finished.",
+          "Resolve the ticket first. Closing comes after the work is finished.",
           null,
         );
       // Selective review: only elevated-risk work waits on a supervisor.

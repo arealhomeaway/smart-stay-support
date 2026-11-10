@@ -68,12 +68,12 @@ export function validateAction(
     if (field.type === "choice" && !(field.options ?? []).some((o) => o.value === raw))
       return `Choose one: ${field.label}.`;
     if ((field.type === "text" || field.type === "longtext") && raw.length < (field.minLength ?? 1))
-      return `${field.label} — a little more detail, please.`;
+      return `${field.label}. A little more detail, please.`;
     if (field.type === "datetime" || field.type === "date") {
       const when = new Date(raw);
       if (Number.isNaN(when.getTime())) return `${field.label} isn't a real date.`;
       if (field.type === "datetime" && when.getTime() <= Date.now())
-        return `${field.label} has to be in the future — that's when it comes back to you.`;
+        return `${field.label} has to be in the future. That's when it comes back to you.`;
     }
   }
   return null;

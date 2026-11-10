@@ -218,7 +218,7 @@ it("CSV: 530 total; in-period flags on entries and homeowner responses", async (
 
   const csv = reportCsv(report);
   expect(csv).toContain(`# Combined hours (each activity once),${HOURS}`);
-  expect(csv).toContain(`# Shared participation total — 2026 (each activity once),${HOURS}`);
+  expect(csv).toContain(`# Shared participation total: 2026 (each activity once),${HOURS}`);
 });
 
 it("PDF: same 530 total; prior-year response marked outside the period", async () => {

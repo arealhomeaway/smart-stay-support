@@ -101,7 +101,7 @@ function AccountApprovals({
     onSuccess: (_r, v) => {
       toast.success(
         v.decision === "approved"
-          ? "Decision recorded — thank you."
+          ? "Decision recorded: thank you."
           : "Sent back to the team with your note.",
       );
       setNotes((n) => ({ ...n, [v.approvalId]: "" }));
@@ -257,7 +257,7 @@ function AccountApprovals({
               </div>
               {readOnly && (
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Preview only — decisions can only be recorded by the homeowner.
+                  Preview only: decisions can only be recorded by the homeowner.
                 </p>
               )}
             </div>

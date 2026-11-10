@@ -45,7 +45,7 @@ describe("Resolve understood: the board's examples", () => {
     expect(u.problem).toBe("Immediate maintenance");
     expect(u.repair).toBe("yes");
     expect(u.entryKind).toBe("maintenance");
-    expect(urgencyWords(u.priority)).toBe("Today (P2)");
+    expect(urgencyWords(u.priority)).toBe("Today");
     expect(u.reason).toBe("Urgent level is set because a guest is in the home.");
     expect(u.insurance).toBe(false);
     expect(u.maintenanceCategory).toBe("appliance");
@@ -65,7 +65,7 @@ describe("Resolve understood: the board's examples", () => {
     expect(u.problem).toBe("Lock offline or low-battery alert");
     expect(u.repair).toBe("no");
     expect(u.entryKind).toBe("ops");
-    expect(urgencyWords(u.priority)).toBe("Right now (P1)");
+    expect(urgencyWords(u.priority)).toBe("Right now");
     expect(u.insurance).toBe(false);
   });
   test("locked out is Right now even with no reservation showing", () => {

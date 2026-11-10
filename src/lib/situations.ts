@@ -222,7 +222,7 @@ export const SITUATIONS: Situation[] = [
     id: "access",
     group: "home",
     label: "Lock, gate or access device problem",
-    hint: "Lockbox, smart lock, gate or garage — nobody is stranded.",
+    hint: "Lockbox, smart lock, gate or garage. Nobody is stranded.",
     workTypeNames: ["Lock offline or low-battery alert"],
     keywords: [
       "lock offline",

@@ -201,7 +201,7 @@ export async function oversightPdf(
     });
     y -= 12;
     const sub = `${r.properties.map((p) => p.name).join(" · ") || "No home linked yet"}${
-      r.openTasks > 0 ? `  —  ${r.openTasks} waiting on the owner` : ""
+      r.openTasks > 0 ? ` · ${r.openTasks} waiting on the owner` : ""
     }`;
     page.drawText(ascii(sub).slice(0, 96), { x: 38, y, size: 8.5, font: regular, color: muted });
     y -= 16;

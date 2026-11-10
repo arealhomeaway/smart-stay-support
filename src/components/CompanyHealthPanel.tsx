@@ -97,7 +97,7 @@ export function CompanyHealthPanel({ data }: { data: CommandCenter }) {
           <div className="flex flex-wrap items-end gap-6">
             <div>
               <p className="font-display text-5xl font-semibold tabular-nums">
-                {health.score ?? "—"}
+                {health.score ?? "-"}
                 <span className="ml-1 text-lg font-normal text-muted-foreground">/ 100</span>
               </p>
               <p className="mt-1 flex flex-wrap items-center gap-2 text-sm">
@@ -136,7 +136,7 @@ export function CompanyHealthPanel({ data }: { data: CommandCenter }) {
                   {health.criticalBreaches.length > 3
                     ? ` and ${health.criticalBreaches.length - 3} more`
                     : ""}
-                  . Averaging can keep the headline score high — these do not wait.
+                  . Averaging can keep the headline score high. These do not wait.
                 </p>
               </div>
             </div>
@@ -153,7 +153,7 @@ export function CompanyHealthPanel({ data }: { data: CommandCenter }) {
                 <div className="flex flex-1 flex-wrap items-center gap-x-4 gap-y-1 pr-3 text-left">
                   <span className="min-w-[12rem] font-medium">{dept.label}</span>
                   <span className="tabular-nums text-sm text-muted-foreground">
-                    {dept.score ?? "—"} / 100
+                    {dept.score ?? "-"} / 100
                   </span>
                   <Badge variant="outline" className={STATUS_TONE[dept.status]}>
                     {STATUS_WORD[dept.status]}
@@ -224,7 +224,7 @@ function DepartmentKpiTable({ dept }: { dept: DepartmentHealth }) {
                   ? "Declining"
                   : kpi.trend
                     ? "Flat"
-                    : "—"}
+                    : "Not set"}
             </TableCell>
             <TableCell>
               <Badge variant="outline" className={STATUS_TONE[kpi.status]}>
@@ -241,7 +241,7 @@ function DepartmentKpiTable({ dept }: { dept: DepartmentHealth }) {
                   <ArrowRight className="size-3" aria-hidden="true" />
                 </Link>
               ) : (
-                <span className="text-sm text-muted-foreground">—</span>
+                <span className="text-sm text-muted-foreground">-</span>
               )}
             </TableCell>
           </TableRow>
@@ -267,7 +267,7 @@ function ContributionTable({ departments }: { departments: DepartmentHealth[] })
           <Fragment key={dept.key}>
             <TableRow className="bg-muted/50">
               <TableCell className="font-medium">{dept.label}</TableCell>
-              <TableCell className="tabular-nums">{dept.score ?? "—"}</TableCell>
+              <TableCell className="tabular-nums">{dept.score ?? "-"}</TableCell>
               <TableCell className="text-muted-foreground">
                 Weight {Math.round(dept.weight * 100)}%
               </TableCell>
