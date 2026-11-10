@@ -336,6 +336,11 @@ const FINANCE_HIDDEN: Capability[] = [
   "homeowner_directory",
   "owner_insight_view",
   "handoffs_view", // not a Finance page
+  "claims_oversight", // A10 view only
+  "handoff_review", // A16 view only
+  "playbooks_edit", // A15 view only
+  "user_management", // A14 Finance does not add users
+  "audit_history", // A20 Admin pages: Admin only; Finance keeps its own help reports
 ];
 
 /** Finance's page access (register A4 to A13, A16 view, A18 edit). */
