@@ -23,6 +23,7 @@ import { ARRIVAL_COPY as C, arrivalResultLabel, arrivalTime, type ArrivalResult 
 type WorkOrder = { id: number; name: string | null; department: string | null; status: string | null; link: string };
 type CheckView = {
   id: string;
+  property_id: string | null;
   ticket_id: string;
   home: string;
   check_in_at: string;
@@ -123,6 +124,11 @@ export function ArrivalCheckPanel({ ticketId, readOnly }: { ticketId: string; re
           <dt className="text-muted-foreground">{c.guest_first_name ?? "Guest"}</dt>
           <dd>{C.guests(c.guests)} · {C.pets(c.pets)}</dd>
         </dl>
+        {c.property_id && (
+          <Link to="/property/$propertyId" params={{ propertyId: c.property_id }} className="inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline">
+            {C.homePage}
+          </Link>
+        )}
 
         {done ? (
           <div className="space-y-2 text-sm" data-arrival-done>

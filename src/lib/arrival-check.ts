@@ -18,31 +18,16 @@ export function isArrivalTestTicket(t: { is_demo?: boolean | null; external_sour
   return Boolean(t?.is_demo) && isArrivalCheckTicket(t) && (t?.external_id ?? "").startsWith(`${ARRIVAL_EXTERNAL_PREFIX}test-`);
 }
 
-const ZONE_WORD: Record<string, string> = {
-  "America/Chicago": "",
-  "America/New_York": " Eastern",
-  "America/Detroit": " Eastern",
-  "America/Indiana/Indianapolis": " Eastern",
-  "America/Denver": " Mountain",
-  "America/Phoenix": " Arizona",
-  "America/Los_Angeles": " Pacific",
-};
-
-/** A time in the home's own zone, with the zone named when it is not Central. */
-export function arrivalTime(iso: string | null | undefined, tz: string | null | undefined): string {
+/**
+ * Every arrival time is shown in Central time (spec item 2), worked out from the instant the
+ * database computed in the home's own zone. The zone argument is kept for callers but not used.
+ */
+export function arrivalTime(iso: string | null | undefined, _tz?: string | null): string {
   if (!iso) return "";
-  const zone = tz && tz.trim() ? tz.trim() : "America/Chicago";
-  let text: string;
-  try {
-    text = new Intl.DateTimeFormat("en-US", { timeZone: zone, hour: "numeric", minute: "2-digit" }).format(new Date(iso));
-  } catch {
-    text = new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", hour: "numeric", minute: "2-digit" }).format(new Date(iso));
-    return `${text}`;
-  }
-  return `${text}${ZONE_WORD[zone] ?? ""}`;
+  return new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", hour: "numeric", minute: "2-digit" }).format(new Date(iso));
 }
 
-/** Team Queue and Home: the due time, red inside the last 30 minutes before the deadline. */
+/** Team Queue and Home: the due time (Central), red inside the last 30 minutes before the deadline. */
 export function arrivalDueLine(deadlineIso: string | null | undefined, tz: string | null | undefined, now: Date | number = Date.now()) {
   if (!deadlineIso) return { text: "", urgent: false };
   const t = typeof now === "number" ? now : now.getTime();
@@ -83,12 +68,13 @@ export const ARRIVAL_COPY = {
   issue: "Issue found",
   issueText: "What is the issue",
   backupPlan: "The safe backup plan",
-  save: "Save the arrival check",
+  save: "Complete check",
   saving: "Saving",
   saved: "Arrival check saved.",
   done: (who: string, when: string) => `Done by ${who} at ${when}`,
   issueTicket: "Open the issue ticket",
   readOnly: "View only.",
+  homePage: "Open the home",
 } as const;
 
 /** What the hourly OwnerRez sync hands to the database: guest first name only, nothing else private. */
@@ -165,6 +151,7 @@ export function arrivalResultLabel(r: Pick<ArrivalRow, "status" | "result">): st
 }
 
 export type ArrivalFilter = {
+  term?: string | null;
   from?: string | null; // YYYY-MM-DD, arrival date
   to?: string | null;
   home?: string | null; // property id
@@ -176,6 +163,8 @@ export type ArrivalFilter = {
 export function filterArrivalRows(rows: ArrivalRow[], f: ArrivalFilter): ArrivalRow[] {
   return rows.filter((r) => {
     if (r.is_test && r.cleared_at) return false;
+    const term = (f.term ?? "").trim().toLowerCase();
+    if (term && !`${r.home_label} ${r.issue_text ?? ""} ${r.backup_plan ?? ""}`.toLowerCase().includes(term)) return false;
     if (f.from && r.arrival_on < f.from) return false;
     if (f.to && r.arrival_on > f.to) return false;
     if (f.home && r.property_id !== f.home) return false;
@@ -201,7 +190,7 @@ export function arrivalTotals(rows: ArrivalRow[]) {
   const missed = counted.filter((r) => r.result === "missed").length;
   const decided = onTime + late + missed;
   return {
-    checks: counted.length,
+    arrivals: counted.length,
     onTime,
     onTimeShare: decided ? Math.round((onTime / decided) * 1000) / 10 : null,
     late,

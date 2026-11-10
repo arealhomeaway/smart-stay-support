@@ -25,15 +25,15 @@ const row = (over: Partial<ArrivalRow>): ArrivalRow => ({
 });
 
 describe("arrival check times", () => {
-  it("shows the home's own time and names the zone when it is not Central", () => {
-    expect(arrivalTime("2026-11-20T19:00:00Z", "America/New_York")).toBe("2:00 PM Eastern");
+  it("shows every arrival time in Central time (spec item 2)", () => {
+    expect(arrivalTime("2026-11-20T19:00:00Z", "America/New_York")).toBe("1:00 PM");
     expect(arrivalTime("2026-11-20T22:00:00Z", "America/Chicago")).toBe("4:00 PM");
     expect(arrivalTime("2026-11-20T22:00:00Z", null)).toBe("4:00 PM");
   });
 
   it("the Team Queue due line turns red only inside the last 30 minutes before the deadline", () => {
     const deadline = "2026-11-20T19:00:00Z";
-    expect(arrivalDueLine(deadline, "America/New_York", Date.parse("2026-11-20T18:29:00Z"))).toEqual({ text: "Due 2:00 PM Eastern", urgent: false });
+    expect(arrivalDueLine(deadline, "America/New_York", Date.parse("2026-11-20T18:29:00Z"))).toEqual({ text: "Due 1:00 PM", urgent: false });
     expect(arrivalDueLine(deadline, "America/New_York", Date.parse("2026-11-20T18:30:00Z")).urgent).toBe(true);
     expect(arrivalDueLine(deadline, "America/New_York", Date.parse("2026-11-20T19:30:00Z")).urgent).toBe(true);
   });
@@ -74,7 +74,7 @@ describe("Arrival readiness list", () => {
   ];
 
   it("totals never count cancelled reservations, late bookings or tests", () => {
-    expect(arrivalTotals(filterArrivalRows(rows, {}))).toEqual({ checks: 4, onTime: 2, onTimeShare: 50, late: 1, missed: 1, issues: 1 });
+    expect(arrivalTotals(filterArrivalRows(rows, {}))).toEqual({ arrivals: 4, onTime: 2, onTimeShare: 50, late: 1, missed: 1, issues: 1 });
   });
 
   it("filters by result, home, person and dates; cleared tests never show", () => {
@@ -83,6 +83,7 @@ describe("Arrival readiness list", () => {
     expect(filterArrivalRows(rows, {}).some((r) => r.id === "8")).toBe(false);
     expect(filterArrivalRows(rows, { from: "2026-11-21" })).toEqual([]);
     expect(filterArrivalRows(rows, { home: "other" })).toEqual([]);
+    expect(filterArrivalRows(rows, { term: "blind" }).map((r) => r.id)).toEqual(["4"]);
   });
 
   it("Operations, Finance and Admin read it; onboarding roles never see it", () => {
@@ -118,7 +119,7 @@ describe("arrival check tickets", () => {
     const items = needsYouNow([t], "me", Date.parse("2026-11-20T15:00:00Z"));
     expect(items).toHaveLength(1);
     expect(items[0]!.kind).toBe("arrival");
-    expect(items[0]!.detail.startsWith("Due 2:00 PM Eastern")).toBe(true);
+    expect(items[0]!.detail.startsWith("Due 1:00 PM")).toBe(true);
     expect(needsYouNow([{ ...t, assigned_to: null } as HomeTicket], "me", Date.parse("2026-11-20T15:00:00Z"))).toHaveLength(0);
   });
 });

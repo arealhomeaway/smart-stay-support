@@ -166,4 +166,3 @@ BEGIN
   RETURN _id;
 END $$;
 REVOKE ALL ON FUNCTION private.arrival_check_fact(uuid, text, uuid, timestamptz) FROM PUBLIC, anon, authenticated;
-

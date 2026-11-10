@@ -10,7 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DbLinkButton } from "@/components/databases/DatabaseParts";
 import { useStaffDirectory, displayName } from "@/hooks/useTeam";
-import { periodRange, type PeriodKind } from "@/lib/databases";
+import { MONTH_NAMES, periodRange, type PeriodKind } from "@/lib/databases";
 import {
   arrivalResultLabel,
   arrivalTime,
@@ -28,6 +28,7 @@ const PERIODS: { kind: PeriodKind; label: string }[] = [
   { kind: "week", label: "This week" },
   { kind: "month", label: "This month" },
   { kind: "year", label: "This year" },
+  { kind: "month_of", label: "Choose a month" },
   { kind: "range", label: "Choose dates" },
 ];
 const RESULTS: { value: NonNullable<ArrivalFilter["result"]>; label: string }[] = [
@@ -70,9 +71,18 @@ export function ArrivalReadiness({ demoMode }: { demoMode: boolean }) {
   const [person, setPerson] = useState("");
   const [result, setResult] = useState("");
   const [team, setTeam] = useState("");
+  const [term, setTerm] = useState("");
+  const thisYear = new Date().getFullYear();
+  const [year, setYear] = useState(thisYear);
+  const [month, setMonth] = useState(new Date().getMonth() + 1);
 
   const rows = q.data ?? [];
-  const range = period === "range" ? { from: from || null, to: to || null } : periodRange({ kind: period });
+  const range =
+    period === "range"
+      ? { from: from || null, to: to || null }
+      : period === "month_of"
+        ? periodRange({ kind: "month_of", year, month })
+        : periodRange({ kind: period });
   const shown = useMemo(
     () =>
       filterArrivalRows(rows, {
@@ -82,8 +92,9 @@ export function ArrivalReadiness({ demoMode }: { demoMode: boolean }) {
         person: person || null,
         result: (result || null) as NonNullable<ArrivalFilter["result"]> | null,
         team: team || null,
+        term: term || null,
       }),
-    [rows, range?.from, range?.to, home, person, result, team],
+    [rows, range?.from, range?.to, home, person, result, team, term],
   );
   const totals = arrivalTotals(shown);
   const homes = [...new Map(rows.filter((r) => r.property_id).map((r) => [r.property_id!, r.home_label])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
@@ -95,12 +106,32 @@ export function ArrivalReadiness({ demoMode }: { demoMode: boolean }) {
   return (
     <div className="flex flex-col gap-4" data-arrival-readiness>
       <div className="grid grid-cols-1 gap-3 rounded-[14px] border border-border p-3.5 sm:grid-cols-2">
+        <label className={`${LABEL_CLASS} sm:col-span-2`}>
+          Search Arrival readiness
+          <input type="text" value={term} onChange={(e) => setTerm(e.target.value)} placeholder="Type to search" className={SELECT_CLASS} />
+        </label>
         <label className={LABEL_CLASS}>
           Period
           <select value={period} onChange={(e) => setPeriod(e.target.value as PeriodKind)} className={SELECT_CLASS}>
             {PERIODS.map((p) => <option key={p.kind} value={p.kind}>{p.label}</option>)}
           </select>
         </label>
+        {period === "month_of" && (
+          <div className="grid grid-cols-2 gap-3">
+            <label className={LABEL_CLASS}>
+              Month
+              <select value={month} onChange={(e) => setMonth(Number(e.target.value))} className={SELECT_CLASS}>
+                {MONTH_NAMES.map((n, i) => <option key={n} value={i + 1}>{n}</option>)}
+              </select>
+            </label>
+            <label className={LABEL_CLASS}>
+              Year
+              <select value={year} onChange={(e) => setYear(Number(e.target.value))} className={SELECT_CLASS}>
+                {[thisYear - 1, thisYear, thisYear + 1].map((y) => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </label>
+          </div>
+        )}
         {period === "range" && (
           <div className="grid grid-cols-2 gap-3">
             <label className={LABEL_CLASS}>
@@ -121,7 +152,7 @@ export function ArrivalReadiness({ demoMode }: { demoMode: boolean }) {
           </select>
         </label>
         <label className={LABEL_CLASS}>
-          Completed by
+          Coordinator
           <select value={person} onChange={(e) => setPerson(e.target.value)} className={SELECT_CLASS}>
             <option value="">All</option>
             {people.map((id) => <option key={id} value={id}>{nameOf(id)}</option>)}
@@ -144,9 +175,8 @@ export function ArrivalReadiness({ demoMode }: { demoMode: boolean }) {
       </div>
 
       <p className="text-sm font-medium" data-arrival-totals>
-        {totals.checks} {totals.checks === 1 ? "check" : "checks"} · {totals.onTime} on time
-        {totals.onTimeShare === null ? "" : ` (${totals.onTimeShare}%)`} · {totals.late} late · {totals.missed} missed ·{" "}
-        {totals.issues} {totals.issues === 1 ? "issue" : "issues"} flagged
+        {totals.arrivals} {totals.arrivals === 1 ? "arrival" : "arrivals"} · {totals.onTime} on time · {totals.late} late · {totals.missed} missed
+        {totals.onTimeShare === null ? "" : ` · ${totals.onTimeShare}% on time`} · {totals.issues} {totals.issues === 1 ? "issue" : "issues"} flagged
       </p>
 
       {q.isPending ? (
