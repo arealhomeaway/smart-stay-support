@@ -385,3 +385,72 @@ CREATE TRIGGER work_orders_internal_switch
 CREATE TRIGGER breezeway_outbound_internal_switch
   BEFORE INSERT ON public.breezeway_outbound_tasks
   FOR EACH ROW EXECUTE FUNCTION private.refuse_internal_work_orders();
+
+-- 8. The true state for the Integrations panel (Admin only).
+CREATE OR REPLACE FUNCTION public.breezeway_bridge_status()
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public, private
+AS $$
+DECLARE
+  _me uuid := auth.uid();
+  _line timestamptz := private.breezeway_bridge_start_line();
+  _out jsonb;
+BEGIN
+  IF _me IS NULL OR NOT private.has_role(_me, 'admin') THEN
+    RAISE EXCEPTION 'Only an Admin can read the Breezeway bridge status.';
+  END IF;
+  SELECT jsonb_build_object(
+    'enabled', coalesce((SELECT enabled FROM public.feature_flags WHERE key = 'breezeway_bridge'), false),
+    'start_line', _line,
+    'sweep_found', EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'breezeway-safety-sweep'),
+    'sweep_active', coalesce((SELECT active FROM cron.job WHERE jobname = 'breezeway-safety-sweep' LIMIT 1), false),
+    'last_switch', (SELECT jsonb_build_object('status', e.status, 'at', e.resolved_at,
+                                              'by', coalesce(pr.full_name, pr.email))
+                      FROM public.integration_events e
+                      LEFT JOIN public.profiles pr ON pr.id = e.resolved_by
+                     WHERE e.system = 'breezeway' AND e.operation = 'bridge_switch'
+                     ORDER BY e.created_at DESC LIMIT 1),
+    'last_processed_at', (SELECT max(received_at) FROM public.breezeway_webhook_events
+                           WHERE outcome = 'processed' AND NOT is_fixture),
+    'tickets_created', (SELECT count(*) FROM public.breezeway_bridge_records
+                         WHERE kind = 'reported_issue' AND outcome = 'created'),
+    'reviews_created', (SELECT count(*) FROM public.breezeway_bridge_records
+                         WHERE kind = 'maintenance_review' AND outcome = 'created'),
+    'skipped', (SELECT count(*) FROM public.breezeway_bridge_records WHERE outcome = 'skipped'),
+    'skipped_by_reason', coalesce((SELECT jsonb_object_agg(reason, n) FROM (
+                            SELECT reason, count(*) n FROM public.breezeway_bridge_records
+                             WHERE outcome = 'skipped' GROUP BY reason) r), '{}'::jsonb),
+    'bridge_failed', (SELECT count(*) FROM public.breezeway_bridge_records WHERE outcome = 'failed'),
+    'other_homes_since_start', CASE WHEN _line IS NULL THEN 0 ELSE
+                                 (SELECT count(*) FROM public.breezeway_webhook_events
+                                   WHERE outcome = 'ignored_other_property' AND NOT is_fixture
+                                     AND received_at >= _line) END,
+    'failed_lookups', (SELECT count(*) FROM public.breezeway_webhook_events
+                        WHERE outcome = 'verify_failed' AND retryable AND recovered_at IS NULL
+                          AND NOT is_fixture),
+    'mirror_failures', (SELECT count(*) FROM public.integration_events
+                         WHERE system = 'breezeway' AND operation = 'mirror_refresh' AND status = 'failed'),
+    'second_escalations', (SELECT count(*) FROM public.integration_events
+                            WHERE system = 'breezeway' AND operation = 'second_escalation'),
+    'recent', coalesce((SELECT jsonb_agg(x ORDER BY x.created_at DESC) FROM (
+                 SELECT r.created_at, r.kind, r.outcome, r.reason, r.breezeway_task_id,
+                        r.breezeway_home_id, r.ticket_id, r.routine_id,
+                        coalesce(p.address_line1, p.nickname, p.name) AS home
+                   FROM public.breezeway_bridge_records r
+                   LEFT JOIN public.properties p ON p.id = r.property_id
+                  ORDER BY r.created_at DESC LIMIT 25) x), '[]'::jsonb),
+    'recent_failures', coalesce((SELECT jsonb_agg(y ORDER BY y.created_at DESC) FROM (
+                 SELECT e.created_at, e.operation, e.status, e.external_id, e.error_message
+                   FROM public.integration_events e
+                  WHERE e.system = 'breezeway'
+                    AND e.operation IN ('mirror_refresh', 'bridge_create', 'second_escalation')
+                  ORDER BY e.created_at DESC LIMIT 10) y), '[]'::jsonb)
+  ) INTO _out;
+  RETURN _out;
+END $$;
+
+REVOKE ALL ON FUNCTION public.breezeway_bridge_status() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.breezeway_bridge_status() TO authenticated, service_role;
