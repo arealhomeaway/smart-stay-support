@@ -47,7 +47,7 @@ export function NightlyBackupPanel() {
         </StatusBadge>
         </span>
       }
-      description="Every night at 2 a.m. Central, tickets, ticket activity, work orders, claims, guest refunds and credits, expenses and onboarding Tasks are saved as spreadsheets in ARHA Resolve > Documents > Resolve Backups. Each night gets its own dated folder, kept for 60 days."
+      description="Every night from 2 a.m. Central, every table, the stored files that are new or changed (all of them on Sunday nights) and spreadsheets of tickets, ticket activity, work orders, claims, guest refunds and credits, expenses and onboarding Tasks are saved in ARHA Resolve > Documents > Resolve Backups, then checked. Each night gets its own dated folder; 30 nightly and 12 weekly folders are kept. Run backup now saves the spreadsheets only. The result of each night is on Export check."
     >
       {q.isError ? (
         <p className="text-sm text-muted-foreground">Could not load backup history.</p>
