@@ -521,6 +521,10 @@ function PropertyWorkspace() {
   const isAdminViewer = roles.includes("admin");
   const canSetStatus = projectRow?.project_manager === userId || isOnboardingDirector || isAdminViewer;
   const canCorrect = !readOnly && (isAdminViewer || roles.includes("manager"));
+  // The board fields (register A16): the Director of Onboarding, Admin and this home's
+  // Project Manager edit; everyone else who can open the page reads them.
+  const canEditBoard =
+    canEdit && (isAdminViewer || isOnboardingDirector || projectRow?.project_manager === userId);
   const planTasks = tasks.map((t) => ({ ...(t as unknown as BoardTask), roleLabel: taskRoleLabel(t) }));
   const refs = (details.external_refs ?? {}) as Record<string, string>;
   const tab = homeTabFor(search.tab);
@@ -644,7 +648,7 @@ function PropertyWorkspace() {
           <BudgetFigures
             projectId={projectRow?.id ?? null}
             invoiceStatus={details.invoice_status ?? null}
-            canEdit={canEdit}
+            canEdit={canEditBoard}
           />
           <BudgetPanel propertyId={current.id} canEdit={canEdit} />
           <FinancialPanel
@@ -658,7 +662,7 @@ function PropertyWorkspace() {
           <AgreementsTab
             projectId={projectRow?.id ?? null}
             pmaStatus={details.pma_status ?? null}
-            canEdit={canEdit}
+            canEdit={canEditBoard}
           />
         </TabsContent>
 
@@ -669,7 +673,7 @@ function PropertyWorkspace() {
               ? String((current as { ownerrez_property_id?: string | number | null }).ownerrez_property_id)
               : null}
             owner={<HomeownerCard propertyId={current.id} canManage={canEdit} />}
-            canEdit={canEdit}
+            canEdit={canEditBoard}
             pending={saveRefs.isPending}
             onSaveRef={(key, value) => {
               if (!projectRow) return;
@@ -682,7 +686,7 @@ function PropertyWorkspace() {
           <ProjectDetailsSection
             projectId={projectRow?.id ?? null}
             details={details}
-            canEdit={canEdit}
+            canEdit={canEditBoard}
             canSetStatus={canSetStatus}
             canCorrect={canCorrect}
           />
