@@ -8272,22 +8272,30 @@ export type Database = {
       onboarding_projects: {
         Row: {
           branch: string | null
+          committed_handoff_on: string | null
+          committed_handoff_set_at: string | null
+          committed_handoff_set_by: string | null
           completed_at: string | null
           created_at: string
           director: string | null
           external_refs: Json
           furnishing_scope: string
+          greater_area: string | null
           handoff_state: string
           id: string
+          invoice_status: string | null
           is_demo: boolean
           modules: string[]
           notes: string | null
           ops_accepted_at: string | null
           ops_accepted_by: string | null
+          owner_type: string | null
           planned_closing_on: string | null
+          pma_status: string | null
           pool_location: string
           possession_on: string | null
           project_manager: string | null
+          project_status: string | null
           property_id: string
           ready_for_ops_at: string | null
           ready_for_ops_by: string | null
@@ -8301,25 +8309,34 @@ export type Database = {
           template_version_id: string | null
           updated_at: string
           utility_manager: string | null
+          weekly_status: string | null
         }
         Insert: {
           branch?: string | null
+          committed_handoff_on?: string | null
+          committed_handoff_set_at?: string | null
+          committed_handoff_set_by?: string | null
           completed_at?: string | null
           created_at?: string
           director?: string | null
           external_refs?: Json
           furnishing_scope?: string
+          greater_area?: string | null
           handoff_state?: string
           id?: string
+          invoice_status?: string | null
           is_demo?: boolean
           modules?: string[]
           notes?: string | null
           ops_accepted_at?: string | null
           ops_accepted_by?: string | null
+          owner_type?: string | null
           planned_closing_on?: string | null
+          pma_status?: string | null
           pool_location?: string
           possession_on?: string | null
           project_manager?: string | null
+          project_status?: string | null
           property_id: string
           ready_for_ops_at?: string | null
           ready_for_ops_by?: string | null
@@ -8333,25 +8350,34 @@ export type Database = {
           template_version_id?: string | null
           updated_at?: string
           utility_manager?: string | null
+          weekly_status?: string | null
         }
         Update: {
           branch?: string | null
+          committed_handoff_on?: string | null
+          committed_handoff_set_at?: string | null
+          committed_handoff_set_by?: string | null
           completed_at?: string | null
           created_at?: string
           director?: string | null
           external_refs?: Json
           furnishing_scope?: string
+          greater_area?: string | null
           handoff_state?: string
           id?: string
+          invoice_status?: string | null
           is_demo?: boolean
           modules?: string[]
           notes?: string | null
           ops_accepted_at?: string | null
           ops_accepted_by?: string | null
+          owner_type?: string | null
           planned_closing_on?: string | null
+          pma_status?: string | null
           pool_location?: string
           possession_on?: string | null
           project_manager?: string | null
+          project_status?: string | null
           property_id?: string
           ready_for_ops_at?: string | null
           ready_for_ops_by?: string | null
@@ -8365,6 +8391,7 @@ export type Database = {
           template_version_id?: string | null
           updated_at?: string
           utility_manager?: string | null
+          weekly_status?: string | null
         }
         Relationships: [
           {
@@ -17760,6 +17787,10 @@ export type Database = {
         }
         Returns: string
       }
+      correct_committed_handoff_date: {
+        Args: { _date: string; _project_id: string; _reason: string }
+        Returns: Json
+      }
       correct_direct_booking_portal_answer: {
         Args: { _lead_id: string; _reason: string }
         Returns: undefined
@@ -18962,6 +18993,10 @@ export type Database = {
       save_handoff_requirement: { Args: { _value: Json }; Returns: string }
       save_home_profile_card: {
         Args: { _card: string; _changes: Json; _property_id: string }
+        Returns: Json
+      }
+      save_onboarding_project_details: {
+        Args: { _patch: Json; _project_id: string }
         Returns: Json
       }
       save_owner_alert_preferences: {
