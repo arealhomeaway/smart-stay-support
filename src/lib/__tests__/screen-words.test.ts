@@ -18,6 +18,18 @@ import { join, relative } from "node:path";
  *   It is not in the app source, so nothing here needs an exception for it.
  * - The generated database types (src/integrations) and generated route tree.
  * - FROZEN below: text that needs its own approval to change. Its count may only go down.
+ *
+ * Punctuation and urgency rules (Build 7, register H3 and H4), read from the same text:
+ * - longDash: a long dash (\u2014) anywhere. shortDash: an en dash (\u2013) anywhere.
+ * - hyphenDash: a hyphen with a space on both sides between words ("a - b"). A hyphen
+ *   alone ("-") still marks an empty value where space is tight; joined words like
+ *   "follow-up" or "2-3" are ordinary words.
+ * - symbol: emoji, arrows, check marks and stars used as words. The middle dot and the
+ *   ellipsis are allowed separators.
+ * - urgencyCode: P1, P2, P3 or P4. Screens say Right now, Today and Routine; the codes
+ *   stay only as lower case values (p1, p2, p3) in code and the database.
+ * - Text that code compares or searches with (=== "\u2014", .replace("\u2014", ...),
+ *   .includes, .split, .startsWith) is logic, not screen text, and is skipped.
  */
 const ROOT = join(process.cwd(), "src");
 
@@ -31,6 +43,14 @@ const WORDS: Record<string, RegExp> = {
   proposal:
     /\bproposals?\b|\bsigned off\b|\bproposed (standard|standards|wording|requirements?|removal|rules?|policy)\b|\bProposed\.(\s|$)|\bproposed (by|from)\b/i,
 };
+const PUNCTUATION: Record<string, RegExp> = {
+  longDash: /\u2014/,
+  shortDash: /\u2013/,
+  hyphenDash: /\S\s+-\s+\S|^\s*-\s+\S|\S\s+-\s*$/,
+  symbol: /[\p{Extended_Pictographic}\u2190-\u21FF\u2713\u2714\u2716\u2605\u2606]/u,
+  urgencyCode: /\bP[1-4]\b/,
+};
+Object.assign(WORDS, PUNCTUATION);
 const NAMES = ["Emily", "Micah", "Kati", "James", "Josh", "Avy", "Nelson", "Qym", "Mike", "Romeo", "Roms"];
 for (const n of NAMES) WORDS[n] = new RegExp(`\\b${n}\\b`);
 
@@ -41,10 +61,18 @@ for (const n of NAMES) WORDS[n] = new RegExp(`\\b${n}\\b`);
 const FROZEN: Record<string, Record<string, number>> = {
   // Protected onboarding template Task text (Full Furnishing plan). Changing it needs its own
   // approval; the matching database template rows are not touched either.
-  "src/lib/onboarding-template.ts": { James: 2, Josh: 3, Kati: 4, Micah: 3, sample: 3 },
+  "src/lib/onboarding-template.ts": { James: 2, Josh: 3, Kati: 4, Micah: 3, longDash: 0, shortDash: 0, hyphenDash: 0, symbol: 0 },
   // Recovery policy version stamp. It is saved on every refund and credit record, so
   // renaming it would split their history.
   "src/lib/recovery-policy.ts": { threshold: 1 },
+  // Instructions sent to the AI models (Coach and evidence review). They are never shown on
+  // a screen; the model is told to answer in Right now, Today and Routine.
+  "src/lib/coach.server.ts": {},
+  "src/lib/coach-field-notes.ts": {},
+  "src/lib/evidence.server.ts": {},
+  // The Outlook category name. It must match the category that already exists in the
+  // shared mailbox, so it cannot be reworded here.
+  "src/lib/mail-categories.ts": {},
 };
 
 function files(dir: string, out: string[] = []) {
@@ -62,6 +90,25 @@ function files(dir: string, out: string[] = []) {
 
 const isIdentifier = (s: string) =>
   /^[a-z0-9_.:\-/]+$/.test(s) || /^[a-z]+[A-Z][A-Za-z0-9]*$/.test(s);
+
+const MATCH_CALLS = new Set(["replace", "replaceAll", "includes", "split", "startsWith", "endsWith", "indexOf"]);
+/** Text code compares or searches with, not text a person sees. */
+function isMatcher(node: ts.Node): boolean {
+  const p = node.parent;
+  if (ts.isBinaryExpression(p)) {
+    const k = p.operatorToken.kind;
+    return (
+      k === ts.SyntaxKind.EqualsEqualsEqualsToken ||
+      k === ts.SyntaxKind.ExclamationEqualsEqualsToken ||
+      k === ts.SyntaxKind.EqualsEqualsToken ||
+      k === ts.SyntaxKind.ExclamationEqualsToken
+    );
+  }
+  if (ts.isCallExpression(p) && p.arguments[0] === node && ts.isPropertyAccessExpression(p.expression)) {
+    return MATCH_CALLS.has(p.expression.name.text);
+  }
+  return false;
+}
 
 type Hit = { file: string; line: number; word: string; text: string };
 
@@ -85,7 +132,7 @@ function scan(): Hit[] {
           ts.isExportDeclaration(p) ||
           ts.isLiteralTypeNode(p) ||
           (ts.isCallExpression(p) && p.expression.kind === ts.SyntaxKind.ImportKeyword);
-        if (!skip) text = node.text;
+        if (!skip && !isMatcher(node)) text = node.text;
       } else if (ts.isTemplateHead(node) || ts.isTemplateMiddle(node) || ts.isTemplateTail(node)) {
         text = node.text;
       } else if (ts.isJsxText(node)) {
