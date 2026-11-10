@@ -140,8 +140,8 @@ describe("the same filters on every tab", () => {
   });
 
   it("Period reads the Notion created date for imports and the created date for others", () => {
-    // This month (November 2026, Central): created in November.
-    expect(refs(applyTicketView(ROWS, view({ period: { kind: "month" } }), NOW)).sort()).toEqual(["1", "3", "4", "7", "8"]);
+    // This month (November 2026, Central): created in November. Ticket 4 was created in Notion on Oct 31, so it is left out.
+    expect(refs(applyTicketView(ROWS, view({ period: { kind: "month" } }), NOW)).sort()).toEqual(["1", "3", "7", "8"]);
     // A chosen month and year: March 2025 holds only the Notion claim, though it was copied in today.
     expect(refs(applyTicketView(ROWS, view({ period: { kind: "month_of", year: 2025, month: 3 } }), NOW))).toEqual(["6"]);
     // A custom range.
