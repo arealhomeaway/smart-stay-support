@@ -1,5 +1,16 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 9 email intake safety batch (switch stays OFF, sweep stays disabled, no real mail)
+- [x] 1 Switch is real on every path (push, sweep, Run intake now, Preview, Refresh notifications)
+- [x] 2 Turning on moves the start line (forward only), who and when recorded
+- [x] 3 Start line guard on push, sweep, Run intake now, Preview
+- [x] 4 Sweep every minute, private scheduler secret, renew under 12 h, 50 per page with paging (staged, job stays off)
+- [x] 5 [RESOLVE TEST] from ARHA = test record (demo marking, Test chip, Test alert prefix), Clear test records, own address never creates a request
+- [x] 6 Honest status panel; Sep 1 processing claim marked skipped
+- [x] 7 Owner response retag retry; no retag without a live record
+- [x] 8 Tests with fake messages; cancelled real database step
+- [x] 9 Register section
+
 ## Nov 9 answers on the fix batch and the map (code only, no database change)
 - [x] 1 Other place search failures: own line, never the calendar message
 - [x] 2 Databases lit in the left menu on the Vendors page

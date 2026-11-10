@@ -1,17 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Inbox, MailCheck, RefreshCw, Eye, Radio } from "lucide-react";
+import { Inbox, MailCheck, RefreshCw, Eye, Radio, Eraser } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  clearEmailIntakeTestRecords,
   getMailboxStatus,
   refreshMailboxSubscription,
   runMailboxSync,
 } from "@/lib/mailbox.functions";
 import { usDateTime } from "@/lib/dates";
+import { useRole } from "@/hooks/useRole";
+import { intakeStatusLines, notificationState } from "@/lib/email-intake";
 
 /**
  * Administrative view of Outlook intake.
@@ -25,6 +28,8 @@ export function MailboxIntakePanel() {
   const statusFn = useServerFn(getMailboxStatus);
   const syncFn = useServerFn(runMailboxSync);
   const subscribeFn = useServerFn(refreshMailboxSubscription);
+  const clearFn = useServerFn(clearEmailIntakeTestRecords);
+  const { isAdmin, readOnly } = useRole();
 
   const status = useQuery({ queryKey: ["mailbox-status"], queryFn: () => statusFn() });
 
@@ -67,11 +72,48 @@ export function MailboxIntakePanel() {
       toast.error(error instanceof Error ? error.message : "Subscription refresh failed."),
   });
 
+  const clearTests = useMutation({
+    mutationFn: () => clearFn(),
+    onSuccess: (r) => {
+      toast.success(
+        `Archived ${r.tickets} test ticket${r.tickets === 1 ? "" : "s"} and closed ${r.requests} test request${
+          r.requests === 1 ? "" : "s"
+        } as Not booked.`,
+      );
+      void queryClient.invalidateQueries({ queryKey: ["mailbox-status"] });
+      void queryClient.invalidateQueries({ queryKey: ["tickets"] });
+      void queryClient.invalidateQueries({ queryKey: ["leads"] });
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "The test records could not be cleared."),
+  });
+
   const connected = status.data?.connected ?? false;
   const subscription = status.data?.subscription ?? null;
+  const intake = status.data?.intake ?? null;
+  const switchOn = intake?.switchOn ?? false;
+  const notifications = notificationState({
+    subscription: subscription ? { status: subscription.status, expiresAt: subscription.expiresAt } : null,
+    switchOn,
+    sweepActive: intake?.sweepActive ?? false,
+  });
+  const statusLines = intake
+    ? intakeStatusLines({
+        switchOn,
+        startLine: intake.startLine,
+        sweepActive: intake.sweepActive,
+        lastSweepAt: intake.lastSweepAt,
+        lastMessageAt: intake.lastMessageAt,
+        skippedSinceStart: intake.skippedSinceStart,
+        format: (iso) => usDateTime(iso),
+      })
+    : [];
   const preview = sync.data ?? null;
   const events = status.data?.events ?? [];
-  const failures = events.filter((e) => e.status === "failed" || e.error_message);
+  // A skipped message keeps its reason in error_message; that is a decision, not a failure.
+  const failures = events.filter(
+    (e) => e.status === "failed" || (e.error_message && e.status !== "skipped"),
+  );
 
   return (
     <Card>
@@ -111,16 +153,21 @@ export function MailboxIntakePanel() {
         )}
 
         <div className="flex flex-wrap items-center gap-2">
-          <Badge
-            variant={subscription?.status === "active" ? "default" : "secondary"}
-            className="gap-1"
-          >
+          <Badge variant={switchOn ? "default" : "secondary"}>
+            {switchOn ? "Email intake on" : "Email intake off"}
+          </Badge>
+          <Badge variant={notifications.live ? "default" : "secondary"} className="gap-1">
             <Radio className="size-3.5" />
-            {subscription?.status === "active" ? "Live notifications" : "Notifications not set up"}
+            {notifications.label}
           </Badge>
           {subscription?.expiresAt ? (
             <span className="text-xs text-muted-foreground">
-              renews before {usDateTime(subscription.expiresAt)}
+              {notifications.live
+                ? "renews before"
+                : new Date(subscription.expiresAt).getTime() <= Date.now()
+                  ? "ran out"
+                  : "ends"}{" "}
+              {usDateTime(subscription.expiresAt)}
             </span>
           ) : null}
           {subscription?.error ? (
@@ -128,18 +175,28 @@ export function MailboxIntakePanel() {
           ) : null}
         </div>
 
+        {statusLines.length ? (
+          <ul className="space-y-1 rounded-md border border-border p-3 text-sm">
+            {statusLines.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        ) : null}
+
         <div className="flex flex-wrap gap-2">
           <Button
             size="sm"
             variant="outline"
-            disabled={!connected || sync.isPending}
+            className="min-h-11"
+            disabled={!connected || !switchOn || sync.isPending}
             onClick={() => sync.mutate(true)}
           >
             <Eye className="size-4" /> Preview
           </Button>
           <Button
             size="sm"
-            disabled={!connected || sync.isPending}
+            className="min-h-11"
+            disabled={!connected || !switchOn || sync.isPending}
             onClick={() => sync.mutate(false)}
           >
             <RefreshCw className={`size-4 ${sync.isPending ? "animate-spin" : ""}`} /> Run intake
@@ -148,12 +205,30 @@ export function MailboxIntakePanel() {
           <Button
             size="sm"
             variant="outline"
-            disabled={!connected || subscribe.isPending}
+            className="min-h-11"
+            disabled={!connected || !switchOn || subscribe.isPending}
             onClick={() => subscribe.mutate()}
           >
             <Radio className="size-4" /> Refresh notifications
           </Button>
+          {isAdmin && !readOnly ? (
+            <Button
+              size="sm"
+              variant="outline"
+              className="min-h-11"
+              disabled={clearTests.isPending}
+              onClick={() => clearTests.mutate()}
+            >
+              <Eraser className="size-4" /> Clear test records
+            </Button>
+          ) : null}
         </div>
+        {clearTests.data ? (
+          <p className="text-sm text-muted-foreground">
+            Cleared: {clearTests.data.tickets} test ticket{clearTests.data.tickets === 1 ? "" : "s"} archived,{" "}
+            {clearTests.data.requests} test request{clearTests.data.requests === 1 ? "" : "s"} set to Not booked.
+          </p>
+        ) : null}
 
         {preview && preview.ok ? (
           <div className="rounded-md border border-border">

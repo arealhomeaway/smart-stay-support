@@ -57,6 +57,14 @@ import {
   OWNER_RESPONSE_TAG,
   type TriggerKind,
 } from "./mail-categories";
+import {
+  BEFORE_START_REASON,
+  INTAKE_OFF_MESSAGE,
+  OWN_ADDRESS_REASON,
+  isIntakeTest,
+  isOwnAddress,
+  receivedBeforeStart,
+} from "./email-intake";
 
 type Db = SupabaseClient<Database>;
 
@@ -218,6 +226,24 @@ export async function readCheckpoint(db: Db): Promise<string | null> {
   return (data?.external_id as string | undefined) ?? null;
 }
 
+/** The email intake switch and the start line, read together. */
+export type IntakeGate = { on: boolean; startLine: string | null };
+
+/**
+ * Whether email intake is switched on (feature_flags `email_intake`) and the
+ * activation line. Every path that can turn mail into work reads this first;
+ * an unknown or missing switch is off.
+ */
+export async function readIntakeGate(db: Db): Promise<IntakeGate> {
+  const { data } = await db
+    .from("feature_flags")
+    .select("enabled")
+    .eq("key", "email_intake")
+    .maybeSingle();
+  const on = (data as { enabled?: boolean } | null)?.enabled === true;
+  return { on, startLine: await readCheckpoint(db) };
+}
+
 async function writeCheckpoint(db: Db, iso: string) {
   const existing = await readCheckpoint(db);
   if (existing === null) {
@@ -254,17 +280,24 @@ async function writeCheckpoint(db: Db, iso: string) {
  * morning must still be found. Re-seeing an already-handled message is free —
  * the durable per-message mapping settles it.
  */
-async function fetchTriggerMail(limit: number, since: string) {
+async function fetchTriggerMail(limit: number, since: string, inclusive = false) {
   const seen = new Map<string, GraphMessage>();
+  let more = false;
   for (const tag of [CREATE_TICKET_TAG, ...DIRECT_BOOKING_TAGS, OWNER_RESPONSE_TAG]) {
-    const filter = `receivedDateTime gt ${since} and categories/any(c:c eq '${tag.replace(/'/g, "''")}')`;
+    const filter = `receivedDateTime ${inclusive ? "ge" : "gt"} ${since} and categories/any(c:c eq '${tag.replace(/'/g, "''")}')`;
     const query = `?$filter=${encodeURIComponent(filter)}&$top=${limit}&$orderby=receivedDateTime asc&$select=${SELECT_FIELDS}`;
     const res = await graph(mailboxMessagesPath(query));
-    for (const m of ((await res.json())?.value ?? []) as GraphMessage[]) {
+    const rows = ((await res.json())?.value ?? []) as GraphMessage[];
+    if (rows.length >= limit) more = true;
+    for (const m of rows) {
       if (m?.id && !seen.has(m.id)) seen.set(m.id, m);
     }
   }
-  return Array.from(seen.values()).slice(0, limit);
+  // Oldest first across every trigger category, so a page never skips older mail.
+  const sorted = Array.from(seen.values()).sort((a, b) =>
+    (a.receivedDateTime ?? "").localeCompare(b.receivedDateTime ?? ""),
+  );
+  return { messages: sorted.slice(0, limit), more: more || sorted.length > limit };
 }
 
 export type SkipReason =
@@ -346,7 +379,14 @@ export type MailboxSyncResult = {
  */
 export async function syncMailbox(
   db: Db,
-  options: { limit?: number; dryRun?: boolean } = {},
+  options: {
+    limit?: number;
+    dryRun?: boolean;
+    /** Timed sweep: keep reading pages of `limit` until nothing is left in this run. */
+    paging?: boolean;
+    maxPages?: number;
+    budgetMs?: number;
+  } = {},
 ): Promise<MailboxSyncResult> {
   const limit = Math.min(Math.max(options.limit ?? 25, 1), 50);
   const dryRun = options.dryRun ?? false;
@@ -367,12 +407,16 @@ export async function syncMailbox(
     items: [],
   };
 
+  // The switch is real: while it is off nothing is read, tagged or created.
+  const gate = await readIntakeGate(db);
+  if (!gate.on) return { ...base, ok: false, error: INTAKE_OFF_MESSAGE };
+
   if (!mailboxReadEnabled()) {
     return { ...base, ok: false, error: "The Microsoft mailbox is not connected." };
   }
 
   // First run ever: stamp the checkpoint and stop. Nothing historical is imported.
-  const checkpoint = await readCheckpoint(db);
+  const checkpoint = gate.startLine;
   if (!checkpoint) {
     const now = new Date().toISOString();
     if (!dryRun) await writeCheckpoint(db, now);
@@ -385,22 +429,36 @@ export async function syncMailbox(
     };
   }
 
-  let messages: GraphMessage[] = [];
-  try {
-    messages = await fetchTriggerMail(limit, checkpoint);
-  } catch (err) {
-    return {
-      ...base,
-      ok: false,
-      error: err instanceof Error ? err.message : "Could not read the mailbox.",
-    };
-  }
-
-  base.scanned = messages.length;
-
-  for (const msg of messages) {
-    const outcome = await processMessage(db, msg, dryRun);
-    applyOutcome(base, outcome);
+  // One page of up to `limit`, oldest first. The timed sweep keeps paging
+  // until nothing new is left in this run (bounded so a run always ends).
+  const seenIds = new Set<string>();
+  const maxPages = options.paging ? Math.max(options.maxPages ?? 20, 1) : 1;
+  const budgetMs = options.budgetMs ?? 40_000;
+  const started = Date.now();
+  let cursor = checkpoint;
+  let inclusive = false;
+  for (let page = 0; page < maxPages; page++) {
+    let batch: Awaited<ReturnType<typeof fetchTriggerMail>>;
+    try {
+      batch = await fetchTriggerMail(limit, cursor, inclusive);
+    } catch (err) {
+      const error = err instanceof Error ? err.message : "Could not read the mailbox.";
+      if (page === 0) return { ...base, ok: false, error };
+      base.error = error;
+      break;
+    }
+    const fresh = batch.messages.filter((m) => !seenIds.has(m.id));
+    for (const m of fresh) seenIds.add(m.id);
+    base.scanned += fresh.length;
+    for (const msg of fresh) {
+      const outcome = await processMessage(db, msg, dryRun, gate);
+      applyOutcome(base, outcome);
+    }
+    const last = batch.messages[batch.messages.length - 1]?.receivedDateTime;
+    if (!batch.more || fresh.length === 0 || !last) break;
+    if (Date.now() - started > budgetMs) break;
+    cursor = last;
+    inclusive = true;
   }
 
   // The checkpoint is the activation line, not a read cursor: it stays where
@@ -443,19 +501,39 @@ export async function processMessage(
   db: Db,
   msg: GraphMessage,
   dryRun = false,
+  gate?: IntakeGate,
 ): Promise<MessageOutcome> {
   const subject = (msg.subject ?? "").trim() || "(no subject)";
   const from = msg.from?.emailAddress?.address ?? "unknown sender";
   const messageIds = [msg.id, msg.internetMessageId ?? ""].filter(Boolean);
 
+  // The switch is real: while it is off no message is touched or recorded.
+  const intake = gate ?? (await readIntakeGate(db));
+  if (!intake.on) return { subject, from, outcome: "skipped", reason: INTAKE_OFF_MESSAGE };
+
   // Same message seen twice — a re-run, a duplicate notification, or a Graph
   // id we already handled under its internet id. Never create a second record.
   const prior = await priorRecord(db, messageIds);
+
+  // The start line: mail received before email intake was turned on is never
+  // acted on, whoever tags it and whatever its tags. A tagged message is
+  // recorded once as skipped so it is never looked at again.
+  if (receivedBeforeStart(msg.receivedDateTime, intake.startLine)) {
+    const asked = requestsRecord(msg.categories) || requestsOwnerResponse(msg.categories);
+    if (asked && !dryRun && !prior) {
+      await recordEvent(db, msg, "skipped", BEFORE_START_REASON, {
+        entityType: null,
+        entityId: null,
+      });
+    }
+    return { subject, from, outcome: "skipped", reason: BEFORE_START_REASON };
+  }
+
   const action = nextActionFor(prior);
   if (action !== "create") {
     if (action === "retag" && !dryRun && prior) {
       const retry = await retryCategory(db, msg, prior);
-      const settledNow = retry !== "failed";
+      const settledNow = retry === "retagged" || retry === "cleared";
       return {
         subject,
         from,
@@ -463,11 +541,14 @@ export async function processMessage(
         // Reported as retried whenever the message ends up correctly tagged —
         // including the case where the Graph write had already succeeded.
         retried: settledNow,
-        reason: settledNow
-          ? retry === "retagged"
+        reason:
+          retry === "retagged"
             ? "already processed · category retag retried"
-            : "already processed · category already correct"
-          : "already processed · retag still failing",
+            : retry === "cleared"
+              ? "already processed · category already correct"
+              : retry === "no_record"
+                ? "already processed · record removed, not re-tagged"
+                : "already processed · retag still failing",
       };
     }
     return { subject, from, outcome: "skipped", reason: "already processed" };
@@ -551,8 +632,20 @@ export async function processMessage(
     };
   }
 
+  // [RESOLVE TEST] from an ARHA address is a test record. Any other mail from
+  // our own address (our sends and copies) never opens a Direct Booking request.
+  const fromAddress = msg.from?.emailAddress?.address ?? null;
+  const isTest = isIntakeTest(msg.subject, fromAddress);
+  const ownMailNoRequest = trigger === "lead" && isOwnAddress(fromAddress) && !isTest;
+
   if (dryRun) {
-    return { subject, from, outcome: trigger === "lead" ? "lead" : "created" };
+    if (ownMailNoRequest) return { subject, from, outcome: "skipped", reason: OWN_ADDRESS_REASON };
+    return {
+      subject,
+      from,
+      outcome: trigger === "lead" ? "lead" : "created",
+      ...(isTest ? { reason: "test record" } : {}),
+    };
   }
 
   // Claim the message BEFORE creating anything. Two passes racing here are
@@ -566,7 +659,11 @@ export async function processMessage(
   const source = await sourceFor(msg, trigger);
 
   // A reply on a thread that already produced work: link it, never duplicate.
-  const threadMate = await conversationRecord(db, msg.conversationId ?? null, messageIds);
+  // Only a record that still exists counts; a removed one is never written to
+  // or used to re-tag the message.
+  const mate = await conversationRecord(db, msg.conversationId ?? null, messageIds);
+  const threadMate =
+    mate?.entity_id && (await recordIsLive(db, mate.entity_type, mate.entity_id)) ? mate : null;
   if (threadMate?.entity_id) {
     await linkToExisting(db, threadMate, subject, body, from);
     const tagged = await setCategories(msg.id, categoriesAfterCreate(msg.categories));
@@ -587,9 +684,21 @@ export async function processMessage(
     };
   }
 
+  if (ownMailNoRequest) {
+    await settleClaim(db, messageIds, {
+      status: "skipped",
+      entityType: null,
+      entityId: null,
+      error: OWN_ADDRESS_REASON,
+      conversationId: msg.conversationId ?? null,
+      source,
+    });
+    return { subject, from, outcome: "skipped", reason: OWN_ADDRESS_REASON };
+  }
+
   try {
     if (trigger === "lead") {
-      const lead = await createLeadFromEmail(db, { subject, body, source });
+      const lead = await createLeadFromEmail(db, { subject, body, source, isTest });
       const tagged = await setCategories(msg.id, categoriesAfterCreate(msg.categories));
       await settleClaim(db, messageIds, {
         status: "created",
@@ -599,7 +708,13 @@ export async function processMessage(
         conversationId: msg.conversationId ?? null,
         source,
       });
-      return { subject, from, outcome: "lead", recategorised: tagged };
+      return {
+        subject,
+        from,
+        outcome: "lead",
+        recategorised: tagged,
+        ...(isTest ? { reason: "test record" } : {}),
+      };
     }
 
     const result: IntakeResult = await createIntakeMatter(db, {
@@ -609,6 +724,7 @@ export async function processMessage(
       source: "email",
       externalId: msg.id,
       externalUrl: msg.webLink ?? null,
+      isDemo: isTest,
     });
     const tagged = await setCategories(msg.id, categoriesAfterCreate(msg.categories));
     await settleClaim(db, messageIds, {
@@ -626,6 +742,7 @@ export async function processMessage(
       ref: result.ref,
       priority: result.priority,
       recategorised: tagged,
+      ...(isTest ? { reason: "test record" } : {}),
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Intake failed";
@@ -753,6 +870,12 @@ export async function syncTerminalStates(
   for (const event of events) {
     if (closed + reopened >= limit) break;
     if (!event.entity_id) continue;
+    // A record that no longer exists (removed by a clean up) is never re-tagged.
+    const live =
+      event.entity_type === "lead"
+        ? leadStage.has(event.entity_id)
+        : ticketStatus.has(event.entity_id);
+    if (!live) continue;
     // Both Converted and Lost are settled work: Outlook only answers "is this
     // still open?", and the reason lives in Resolve where anyone would look.
     const settled =
@@ -814,8 +937,37 @@ export async function syncTerminalStates(
   return { closed, reopened };
 }
 
-/** Whether a retag retry settled the message, and how. */
-export type RetryOutcome = "retagged" | "cleared" | "failed";
+/**
+ * Whether a retag retry settled the message, and how. `no_record` means the
+ * Ticket, request or filed homeowner reply no longer exists, so the message is
+ * left as it is and the retry marker is retired.
+ */
+export type RetryOutcome = "retagged" | "cleared" | "failed" | "no_record";
+
+/** Marker left on a row whose record was removed: never re-tagged. */
+export const RECORD_REMOVED = "record removed; not re-tagged";
+
+/** True when the Ticket or request a mailbox row points at still exists. */
+export async function recordIsLive(
+  db: Db,
+  entityType: string | null | undefined,
+  entityId: string | null | undefined,
+): Promise<boolean> {
+  if (!entityId) return false;
+  const table = entityType === "lead" ? "leads" : entityType === "approval" ? "approvals" : "tickets";
+  const { data } = await db.from(table).select("id").eq("id", entityId).maybeSingle();
+  return Boolean(data);
+}
+
+/** True when the homeowner reply for this message is on file. */
+async function ownerReplyOnFile(db: Db, msg: GraphMessage): Promise<boolean> {
+  const { data } = await db
+    .from("approval_email_responses")
+    .select("id")
+    .eq("internet_message_id", msg.internetMessageId || msg.id)
+    .maybeSingle();
+  return Boolean(data);
+}
 
 export type MailboxRecord = {
   id: string;
@@ -899,7 +1051,10 @@ export function nextActionFor(
 ): "create" | "retag" | "skip" {
   if (!prior) return "create";
   if (isStaleClaim(prior, now)) return "create";
-  if (prior.error_message === CATEGORY_PENDING && prior.entity_id) return "retag";
+  // A homeowner reply is filed even when it is held for someone to place (no
+  // decision linked yet), so its pending tag is retried on its own rule.
+  if (prior.error_message === CATEGORY_PENDING && (prior.entity_id || prior.entity_type === "approval"))
+    return "retag";
   return "skip";
 }
 
@@ -984,7 +1139,32 @@ export async function retryCategory(
   msg: GraphMessage,
   prior: MailboxRecord,
 ): Promise<RetryOutcome> {
-  if (!prior.entity_id) return "failed";
+  const ownerReply = prior.entity_type === "approval";
+  if (!prior.entity_id && !ownerReply) return "failed";
+  const ids = [msg.id, msg.internetMessageId ?? ""].filter(Boolean);
+
+  if (ownerReply) {
+    // The homeowner reply tag, not the ticket tag: Resolve: owner response received.
+    if (!requestsOwnerResponse(msg.categories)) {
+      await db.from("integration_events").update({ error_message: null }).eq("id", prior.id);
+      return "cleared";
+    }
+    if (!(await ownerReplyOnFile(db, msg))) {
+      await db.from("integration_events").update({ error_message: RECORD_REMOVED }).eq("id", prior.id);
+      return "no_record";
+    }
+    const done = await setCategories(msg.id, categoriesAfterOwnerResponse(msg.categories));
+    if (done) {
+      await db
+        .from("integration_events")
+        .update({ error_message: null, resolved_at: new Date().toISOString() })
+        .eq("system", SYSTEM)
+        .eq("operation", OPERATION)
+        .in("external_id", ids);
+    }
+    return done ? "retagged" : "failed";
+  }
+
   if (!requestsRecord(msg.categories)) {
     // The trigger category is already gone — either a person re-tagged it by
     // hand, or an earlier write landed after we recorded it as pending. Either
@@ -992,6 +1172,11 @@ export async function retryCategory(
     // cleared and this counts as a resolved retry, not a failure.
     await db.from("integration_events").update({ error_message: null }).eq("id", prior.id);
     return "cleared";
+  }
+  // A tag swap only for a record that still exists.
+  if (!(await recordIsLive(db, prior.entity_type, prior.entity_id))) {
+    await db.from("integration_events").update({ error_message: RECORD_REMOVED }).eq("id", prior.id);
+    return "no_record";
   }
   const done = await setCategories(msg.id, categoriesAfterCreate(msg.categories));
   if (done) {
@@ -1065,6 +1250,97 @@ export async function outlookSourceFor(db: Db, entityType: "ticket" | "lead", en
     ...(data.request_payload as unknown as OutlookSource),
     syncState: data.status as string,
     linkedAt: data.created_at as string,
+  };
+}
+
+/** One row, overwritten on every timed sweep, so the panel can say when it last ran. */
+export const SWEEP_RUN_KEY = "sweep_run";
+
+export async function recordSweepRun(
+  db: Db,
+  result: Pick<MailboxSyncResult, "ok" | "scanned" | "created" | "leadsCreated" | "skipped" | "failed" | "error">,
+  subscription: { ok: boolean; action: string; error?: string | undefined } | null,
+) {
+  const now = new Date().toISOString();
+  const payload = {
+    scanned: result.scanned,
+    created: result.created,
+    leadsCreated: result.leadsCreated,
+    skipped: result.skipped,
+    failed: result.failed,
+    subscription: subscription ? { ok: subscription.ok, action: subscription.action } : null,
+  } as unknown as Database["public"]["Tables"]["integration_events"]["Row"]["request_payload"];
+  const status = result.ok ? "ok" : "error";
+  const error = result.ok ? (subscription && !subscription.ok ? subscription.error ?? null : null) : result.error ?? null;
+  const { data } = await db
+    .from("integration_events")
+    .select("id")
+    .eq("system", SYSTEM)
+    .eq("operation", SWEEP_RUN_KEY)
+    .limit(1);
+  const row = (data ?? [])[0] as { id: string } | undefined;
+  if (row) {
+    await db
+      .from("integration_events")
+      .update({ status, resolved_at: now, request_payload: payload, error_message: error })
+      .eq("id", row.id);
+    return;
+  }
+  await db.from("integration_events").insert({
+    system: SYSTEM,
+    direction: "inbound",
+    operation: SWEEP_RUN_KEY,
+    external_id: "last",
+    status,
+    resolved_at: now,
+    request_payload: payload,
+    error_message: error,
+  });
+}
+
+/** Everything the inbox panel needs to tell the truth about intake. */
+export async function readIntakeStatus(db: Db) {
+  const gate = await readIntakeGate(db);
+  const [sweep, last, skipped] = await Promise.all([
+    db
+      .from("integration_events")
+      .select("resolved_at, status, error_message")
+      .eq("system", SYSTEM)
+      .eq("operation", SWEEP_RUN_KEY)
+      .limit(1),
+    db
+      .from("integration_events")
+      .select("created_at, resolved_at, status")
+      .eq("system", SYSTEM)
+      .eq("operation", OPERATION)
+      .neq("status", "processing")
+      .not("external_id", "like", "<%")
+      .order("created_at", { ascending: false })
+      .limit(1),
+    gate.startLine
+      ? db
+          .from("integration_events")
+          .select("id", { count: "exact", head: true })
+          .eq("system", SYSTEM)
+          .eq("operation", OPERATION)
+          .eq("status", "skipped")
+          .not("external_id", "like", "<%")
+          .gte("created_at", gate.startLine)
+      : Promise.resolve({ count: 0 }),
+  ]);
+  const sweepRow = ((sweep as { data?: unknown[] }).data ?? [])[0] as
+    | { resolved_at: string | null; status: string; error_message: string | null }
+    | undefined;
+  const lastRow = ((last as { data?: unknown[] }).data ?? [])[0] as
+    | { created_at: string; resolved_at: string | null }
+    | undefined;
+  return {
+    switchOn: gate.on,
+    startLine: gate.startLine,
+    lastSweepAt: sweepRow?.resolved_at ?? null,
+    lastSweepError: sweepRow?.status === "error" ? sweepRow.error_message : null,
+    lastMessageAt: lastRow?.created_at ?? null,
+    skippedSinceStart: (skipped as { count?: number | null }).count ?? 0,
   };
 }
 

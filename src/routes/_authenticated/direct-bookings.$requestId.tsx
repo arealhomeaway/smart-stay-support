@@ -1,3 +1,5 @@
+import { EmailTestChip } from "@/components/EmailTestChip";
+import { isEmailTestLead } from "@/lib/email-intake";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -170,6 +172,7 @@ function RequestView({ d, refetch }: { d: Detail; refetch: () => void }) {
       <div className={cn("flex flex-col gap-1.5 rounded-2xl border bg-card p-4", chip.late ? "border-destructive/60" : "border-border")}>
         <div className="flex flex-wrap items-center gap-2.5">
           <h1 className="text-[22px] font-semibold">{partner}</h1>
+          {isEmailTestLead(lead) ? <EmailTestChip /> : null}
           <StatusBadge tone={chip.tone} className="text-[13px] font-semibold">{chip.text}</StatusBadge>
         </div>
         <span className="text-sm text-muted-foreground">{lead.subject || "Request entered by hand"}</span>

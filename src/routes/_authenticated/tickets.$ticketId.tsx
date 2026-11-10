@@ -1,3 +1,5 @@
+import { EmailTestChip } from "@/components/EmailTestChip";
+import { isEmailTestTicket } from "@/lib/email-intake";
 import { formatPropertyLabel } from "@/lib/property-label";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -1201,6 +1203,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
               <h1 className="text-2xl font-semibold sm:text-3xl">{ticket.title}</h1>
               <TicketHeaderLine address={headerAddress} occupancy={occupancy} ticketRef={ticket.ref} />
               <div className="mt-2 flex flex-wrap items-center gap-2">
+                {isEmailTestTicket(ticket) ? <EmailTestChip /> : null}
                 <StatusBadge tone={priorityTone2(ticket.priority)}>{meta.short}</StatusBadge>
                 <OccupancyChip occupancy={occupancy} />
               </div>

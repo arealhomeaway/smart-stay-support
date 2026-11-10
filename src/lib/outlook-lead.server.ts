@@ -33,8 +33,11 @@ export type LeadIntakeResult = { leadId: string; contactName: string; source: Le
 
 export async function createLeadFromEmail(
   db: Db,
-  input: { subject: string; body: string; source: OutlookSource },
+  input: { subject: string; body: string; source: OutlookSource; isTest?: boolean },
 ): Promise<LeadIntakeResult> {
+  // A [RESOLVE TEST] email from an ARHA address: the existing demo marking,
+  // plus email_test so the request shows a Test chip and its alerts say Test.
+  const isTest = input.isTest === true;
   const derived = deriveLeadFromEmail({
     subject: input.subject,
     body: input.body,
@@ -70,10 +73,12 @@ export async function createLeadFromEmail(
         web_link: input.source.webLink,
         has_attachments: input.source.hasAttachments,
         attachments: input.source.attachments,
+        ...(isTest ? { email_test: true } : {}),
       },
       stage: "new",
       requirements: derived.requirements,
       notes: derived.notes,
+      ...(isTest ? { is_demo: true } : {}),
   };
   // Every tagged partner email is now a Direct Booking request. Until the
   // staged Direct Bookings columns are applied, the old lead row is written

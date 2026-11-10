@@ -103,6 +103,10 @@ export async function ensureSubscription(
   expiresAt?: string | undefined;
   error?: string | undefined;
 }> {
+  // The switch is real: no subscription is created or renewed while intake is off.
+  const { readIntakeGate } = await import("./mailbox.server");
+  const { INTAKE_OFF_MESSAGE } = await import("./email-intake");
+  if (!(await readIntakeGate(db)).on) return { ok: false, action: "refused", error: INTAKE_OFF_MESSAGE };
   if (!config())
     return { ok: false, action: "skipped", error: "The Microsoft mailbox is not connected." };
   if (!clientState())
