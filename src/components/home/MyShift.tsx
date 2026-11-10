@@ -285,10 +285,8 @@ export function LunchPrompt({ userId, isCoordinator, rows, demoMode }: { userId:
 }
 
 
-/** Needs you now, for the Operations Supervisor: time off requests waiting for a decision. */
-export function TimeOffRequestsWaiting({ userId, demoMode }: { userId: string; demoMode: boolean }) {
-  const qc = useQueryClient();
-  const { data: staff } = useStaffDirectory();
+/** Time off requests waiting for the Operations Supervisor (the person in that role now). */
+export function useTimeOffWaiting(userId: string | null, demoMode: boolean) {
   const supervisor = useQuery({
     queryKey: ["ops-supervisor-now"],
     staleTime: 5 * 60_000,
@@ -297,7 +295,7 @@ export function TimeOffRequestsWaiting({ userId, demoMode }: { userId: string; d
       return (data as string | null) ?? null;
     },
   });
-  const isSupervisor = supervisor.data === userId;
+  const isSupervisor = Boolean(userId) && supervisor.data === userId;
   const pending = useQuery({
     queryKey: ["time-off-pending", demoMode],
     enabled: isSupervisor,
@@ -313,13 +311,21 @@ export function TimeOffRequestsWaiting({ userId, demoMode }: { userId: string; d
       return (data ?? []) as TimeOffRequest[];
     },
   });
+  return { isSupervisor, rows: isSupervisor ? (pending.data ?? []) : [] };
+}
+
+/** Needs you now, for the Operations Supervisor: time off requests waiting for a decision. */
+export function TimeOffRequestsWaiting({ userId, demoMode }: { userId: string; demoMode: boolean }) {
+  const qc = useQueryClient();
+  const { data: staff } = useStaffDirectory();
+  const waiting = useTimeOffWaiting(userId, demoMode);
   const [approving, setApproving] = useState<TimeOffRequest | null>(null);
   const [declining, setDeclining] = useState<TimeOffRequest | null>(null);
   const [reason, setReason] = useState("");
   const loadModel = useServerFn(coverageModel);
   const model = useQuery({ queryKey: ["coverage-model-home"], enabled: Boolean(approving), queryFn: () => loadModel() });
 
-  if (!isSupervisor || !(pending.data ?? []).length) return null;
+  if (!waiting.rows.length) return null;
 
   const decide = async (r: TimeOffRequest, decision: "approved" | "declined", note: string) => {
     const { error } = await supabase.rpc("decide_time_off", { _id: r.id, _decision: decision, _note: note });
@@ -336,7 +342,7 @@ export function TimeOffRequestsWaiting({ userId, demoMode }: { userId: string; d
 
   return (
     <>
-      {(pending.data ?? []).map((r) => (
+      {waiting.rows.map((r) => (
         <div key={r.id} className="surface-row flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center" data-time-off-request={r.id}>
           <CalendarOff className="hidden size-4 shrink-0 text-primary sm:block" aria-hidden="true" />
           <span className="min-w-0 flex-1">
