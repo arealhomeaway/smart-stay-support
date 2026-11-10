@@ -188,7 +188,7 @@ export const ROUTINE_SECTION_HINT = "Guest touch bases, guest reviews and work o
 
 /** Home's words. Kept here so the word check can read every one of them. */
 export const HOME_COPY = {
-  heroLine: "Our homes. Take good care of them.",
+  heroLine: "Protect the stay. Own the outcome.",
   needsYouTitle: "Needs you now",
   needsYouHint: "Decisions and work handed to you by name.",
   needsYouEmpty: "Nothing is waiting on you right now.",
