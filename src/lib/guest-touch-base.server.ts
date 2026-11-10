@@ -13,6 +13,8 @@ import {
   touchBaseSyncDue,
   type TouchBaseBooking,
 } from "./guest-touch-base";
+import { arrivalIngestRow, type SyncBooking } from "./arrival-check";
+import type { Json } from "@/integrations/supabase/types";
 
 type Admin = SupabaseClient<Database>;
 export const TOUCH_BASE_SYSTEM = "ownerrez_bookings";
@@ -45,6 +47,29 @@ export async function fetchBookingsWindow(ownerRezIds: string[], from: string, t
     }
   }
   return out;
+}
+
+/**
+ * Build 12 (register BN10): the same bookings this sync already fetched are stored for the
+ * arrival check, guest first name only. No new OwnerRez call. A failure is recorded for
+ * Integrations and never stops the touch base sync.
+ */
+async function storeArrivalBookings(admin: Admin, bookings: Booking[]) {
+  try {
+    const rows = bookings.map((b) => arrivalIngestRow(b as unknown as SyncBooking));
+    for (let i = 0; i < rows.length; i += 200) {
+      const { error } = await admin.rpc("arrival_ingest_bookings", { _bookings: rows.slice(i, i + 200) as unknown as Json });
+      if (error) throw new Error(error.message);
+    }
+  } catch (e) {
+    await admin.from("integration_events").insert({
+      system: "arrival_checks",
+      direction: "inbound",
+      operation: "store_bookings",
+      status: "failed",
+      error_message: e instanceof Error ? e.message.slice(0, 300) : "The bookings could not be stored.",
+    });
+  }
 }
 
 async function mappedHomes(admin: Admin) {
@@ -84,6 +109,7 @@ export async function runGuestTouchBaseSync(admin: Admin, now = new Date()) {
     const fromCandidate = addDays(today, -30);
     const from = fromCandidate < TOUCH_BASE_START_DATE ? TOUCH_BASE_START_DATE : fromCandidate;
     const bookings = today < TOUCH_BASE_START_DATE ? [] : await fetchBookingsWindow([...homes.keys()], from, addDays(today, 1));
+    await storeArrivalBookings(admin, bookings);
 
     let created = 0;
     for (const b of bookings) {
