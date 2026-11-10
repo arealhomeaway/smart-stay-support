@@ -102,8 +102,8 @@ function GoalRow({ g, card, onChanged }: { g: BonusGoal; card: BonusCard; onChan
   const bar = barGeometry(g);
   const counted = g.status === "counted";
   const share = g.effective_share !== null && Number(g.effective_share) !== Number(g.share) ? `${Number(g.share)}%, now ${Math.round(Number(g.effective_share) * 10) / 10}%` : `${Number(g.share)}%`;
-  const canEnterHere = card.can_enter && (g.source === "reviewer" || g.status === "not_tracked" || (g.status === "nothing_to_measure" && g.source !== "automatic"));
-  const mayEnter = card.can_enter && (g.source === "reviewer" || g.status === "not_tracked" || g.status === "nothing_to_measure" || (g.status === "counted" && g.note !== null));
+  // The reviewer enters a measure only where Resolve cannot count it (the database checks this too).
+  const canEnter = card.can_enter && g.active && (g.source === "reviewer" || g.status === "not_tracked" || g.note !== null);
   return (
     <li className="rounded-[14px] border border-border p-4" data-bonus-goal={g.code}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -155,7 +155,7 @@ function GoalRow({ g, card, onChanged }: { g: BonusGoal; card: BonusCard; onChan
           ) : null}
         </p>
       )}
-      {(canEnterHere || mayEnter) && <EnterMeasure g={g} card={card} onChanged={onChanged} />}
+      {canEnter && <EnterMeasure g={g} card={card} onChanged={onChanged} />}
       {g.facts.length > 0 && <Facts g={g} card={card} onChanged={onChanged} />}
       {card.can_enter && g.source === "automatic" && g.status !== "not_tracked" && g.active && (
         <SystemProblem g={g} card={card} onChanged={onChanged} />
