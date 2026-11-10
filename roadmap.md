@@ -7,6 +7,13 @@
 - [x] Build 12: Homes ready for guests is one shared team score (fact keeps who; no individual score)
 - [x] Build 13: dollar amounts per level, per plan and first period override, seeded B to D, engine per A
 
+## Nov 10 build 14: Team records, Coaching, Weekly scorecard (BN7, BN8, BN9; no publish)
+- [x] 1 Team records: Monday 6 AM random draw per coordinator, checklist, Clean / Not clean with note and link, skip with reason, Director double check
+- [x] 2 Coaching log with monthly requirement setting (team or per coordinator), coordinator sees own
+- [x] 3 Weekly scorecard: pre filled facts, Submit, On time / Late / Not submitted, Reviewed / Returned, correction versions
+- [x] 4 Access by role; Finance totals only; onboarding none
+- [x] 5 Isolated SQL tests, cancelled real practice, word check, View as, browser desktop and phone, BN7 to BN9
+
 ## Nov 10 build 13: bonus engine, My bonus, verify chain, Finance view (BN5, BN6, BN11; no publish)
 - [x] 1 Bonus settings page (COO, CEO, Admin): plans, period amounts, goals, thresholds, people, priorities, history, notice
 - [x] 2 Engine in the database per bonus-guide-values.md A (share move, fewer than 3, max, system problem)
@@ -14,7 +21,7 @@
 - [x] 4 Verify chain: period close item, email, 2 day reminder, manual entry, excused with COO approval, Verify, reopen, questions
 - [x] 5 Bonus payouts card in Databases with filters and CSV, verified only
 - [x] 6 Isolated SQL tests, cancelled real practice, word check, browser desktop and phone, BN5 and BN6
-- [ ] Build 14 (queued): 5 records per active PC, Director double check of 5, coaching per PC, report through Wednesday
+- [x] Build 14 (queued): 5 records per active PC, Director double check of 5, coaching per PC, report through Wednesday
 
 ## Nov 10 build 12: arrival check queue and Arrival readiness database (register BN4, BN10; no publish, switch OFF)
 - [x] Register section 14 Bonus tracking (BN0 to BN10)

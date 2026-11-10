@@ -2297,6 +2297,13 @@
       "when": 1794343111626,
       "tag": "0327_bonus_engine",
       "breakpoints": true
+    },
+    {
+      "idx": 328,
+      "version": "7",
+      "when": 1794345236108,
+      "tag": "0328_manual_trackers",
+      "breakpoints": true
     }
   ]
 }

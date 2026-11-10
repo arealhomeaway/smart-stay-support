@@ -153,7 +153,15 @@ export type Capability =
   // The read only nightly Export check (register N10; Emily, Nov 9): Admin, the Operations
   // Supervisor, the Director of Operations and the Director of Onboarding. Mirrors the
   // database rule can_view_export_check.
-  | "export_check";
+  | "export_check"
+  // Build 14 (register BN7, BN8, BN9; A19): the Operations Supervisor's manual trackers. The
+  // database decides what each person sees on each page; these only decide who opens it.
+  // Team records: the Supervisor, the Director of Operations, the COO, Admin, Finance (totals) and
+  // coordinators (their own results). Coaching: the same leads and coordinators (their own). The
+  // Weekly scorecard: the leads and Finance (totals). Onboarding roles open none of them.
+  | "team_records"
+  | "coaching_log"
+  | "weekly_scorecard";
 
 // Creating a ticket is internal-staff work. Vendors and homeowners never get it.
 const STAFF_BASE: Capability[] = [
@@ -367,6 +375,20 @@ export function capabilitiesFor(roles: AppRole[], seats: AccessSeats = {}): Set<
   if (seats.onboardingDirector) for (const cap of ONBOARDING_DIRECTOR_CAPS) set.add(cap);
   // The Export check follows the person's role, never the Supervisor type account alone (N10).
   if (seats.onboardingDirector || seats.opsDirector || seats.opsSupervisor) set.add("export_check");
+  // Build 14: the manual trackers follow the person's role (see the Capability notes above).
+  if (seats.opsSupervisor || seats.opsDirector || roles.includes("admin")) {
+    set.add("team_records");
+    set.add("coaching_log");
+    set.add("weekly_scorecard");
+  }
+  if (seats.finance) {
+    set.add("team_records");
+    set.add("weekly_scorecard");
+  }
+  if (roles.includes("tech")) {
+    set.add("team_records");
+    set.add("coaching_log");
+  }
   if (seats.opsDirector) {
     set.add("playbooks_edit");
     set.add("str_participation_report");

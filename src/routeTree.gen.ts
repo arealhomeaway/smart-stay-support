@@ -24,6 +24,7 @@ import { Route as AuthenticatedBonusVerifyRouteImport } from './routes/_authenti
 import { Route as AuthenticatedClaimsRouteImport } from './routes/_authenticated/claims'
 import { Route as AuthenticatedCleanerHoursRouteImport } from './routes/_authenticated/cleaner-hours'
 import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
+import { Route as AuthenticatedCoachingRouteImport } from './routes/_authenticated/coaching'
 import { Route as AuthenticatedCommandCenterRouteImport } from './routes/_authenticated/command-center'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDemoRouteImport } from './routes/_authenticated/demo'
@@ -64,8 +65,10 @@ import { Route as AuthenticatedStrParticipationReportRouteImport } from './route
 import { Route as AuthenticatedSupervisorCheckRouteImport } from './routes/_authenticated/supervisor-check'
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
 import { Route as AuthenticatedTeamQueueRouteImport } from './routes/_authenticated/team-queue'
+import { Route as AuthenticatedTeamRecordsRouteImport } from './routes/_authenticated/team-records'
 import { Route as AuthenticatedTicketChecklistsRouteImport } from './routes/_authenticated/ticket-checklists'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
+import { Route as AuthenticatedWeeklyScorecardRouteImport } from './routes/_authenticated/weekly-scorecard'
 import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome'
 import { Route as AuthenticatedWelcomeVideoRouteImport } from './routes/_authenticated/welcome-video'
 import { Route as AuthenticatedWorkOrdersRouteImport } from './routes/_authenticated/work-orders'
@@ -205,6 +208,11 @@ const AuthenticatedCleanerHoursRoute =
 const AuthenticatedCoachRoute = AuthenticatedCoachRouteImport.update({
   id: '/coach',
   path: '/coach',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCoachingRoute = AuthenticatedCoachingRouteImport.update({
+  id: '/coaching',
+  path: '/coaching',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCommandCenterRoute =
@@ -428,6 +436,12 @@ const AuthenticatedTeamQueueRoute = AuthenticatedTeamQueueRouteImport.update({
   path: '/team-queue',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTeamRecordsRoute =
+  AuthenticatedTeamRecordsRouteImport.update({
+    id: '/team-records',
+    path: '/team-records',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedTicketChecklistsRoute =
   AuthenticatedTicketChecklistsRouteImport.update({
     id: '/ticket-checklists',
@@ -439,6 +453,12 @@ const AuthenticatedVendorsRoute = AuthenticatedVendorsRouteImport.update({
   path: '/vendors',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedWeeklyScorecardRoute =
+  AuthenticatedWeeklyScorecardRouteImport.update({
+    id: '/weekly-scorecard',
+    path: '/weekly-scorecard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedWelcomeRoute = AuthenticatedWelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
@@ -811,6 +831,7 @@ export interface FileRoutesByFullPath {
   '/claims': typeof AuthenticatedClaimsRouteWithChildren
   '/cleaner-hours': typeof AuthenticatedCleanerHoursRoute
   '/coach': typeof AuthenticatedCoachRoute
+  '/coaching': typeof AuthenticatedCoachingRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/demo': typeof AuthenticatedDemoRoute
@@ -851,8 +872,10 @@ export interface FileRoutesByFullPath {
   '/supervisor-check': typeof AuthenticatedSupervisorCheckRoute
   '/team': typeof AuthenticatedTeamRoute
   '/team-queue': typeof AuthenticatedTeamQueueRoute
+  '/team-records': typeof AuthenticatedTeamRecordsRoute
   '/ticket-checklists': typeof AuthenticatedTicketChecklistsRoute
   '/vendors': typeof AuthenticatedVendorsRouteWithChildren
+  '/weekly-scorecard': typeof AuthenticatedWeeklyScorecardRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
   '/welcome-video': typeof AuthenticatedWelcomeVideoRoute
   '/work-orders': typeof AuthenticatedWorkOrdersRouteWithChildren
@@ -929,6 +952,7 @@ export interface FileRoutesByTo {
   '/bonus-verify': typeof AuthenticatedBonusVerifyRoute
   '/cleaner-hours': typeof AuthenticatedCleanerHoursRoute
   '/coach': typeof AuthenticatedCoachRoute
+  '/coaching': typeof AuthenticatedCoachingRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/demo': typeof AuthenticatedDemoRoute
@@ -966,7 +990,9 @@ export interface FileRoutesByTo {
   '/supervisor-check': typeof AuthenticatedSupervisorCheckRoute
   '/team': typeof AuthenticatedTeamRoute
   '/team-queue': typeof AuthenticatedTeamQueueRoute
+  '/team-records': typeof AuthenticatedTeamRecordsRoute
   '/ticket-checklists': typeof AuthenticatedTicketChecklistsRoute
+  '/weekly-scorecard': typeof AuthenticatedWeeklyScorecardRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
   '/welcome-video': typeof AuthenticatedWelcomeVideoRoute
   '/guest-feedback/$token': typeof GuestFeedbackTokenRoute
@@ -1045,6 +1071,7 @@ export interface FileRoutesById {
   '/_authenticated/claims': typeof AuthenticatedClaimsRouteWithChildren
   '/_authenticated/cleaner-hours': typeof AuthenticatedCleanerHoursRoute
   '/_authenticated/coach': typeof AuthenticatedCoachRoute
+  '/_authenticated/coaching': typeof AuthenticatedCoachingRoute
   '/_authenticated/command-center': typeof AuthenticatedCommandCenterRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/demo': typeof AuthenticatedDemoRoute
@@ -1085,8 +1112,10 @@ export interface FileRoutesById {
   '/_authenticated/supervisor-check': typeof AuthenticatedSupervisorCheckRoute
   '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/_authenticated/team-queue': typeof AuthenticatedTeamQueueRoute
+  '/_authenticated/team-records': typeof AuthenticatedTeamRecordsRoute
   '/_authenticated/ticket-checklists': typeof AuthenticatedTicketChecklistsRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRouteWithChildren
+  '/_authenticated/weekly-scorecard': typeof AuthenticatedWeeklyScorecardRoute
   '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute
   '/_authenticated/welcome-video': typeof AuthenticatedWelcomeVideoRoute
   '/_authenticated/work-orders': typeof AuthenticatedWorkOrdersRouteWithChildren
@@ -1166,6 +1195,7 @@ export interface FileRouteTypes {
     | '/claims'
     | '/cleaner-hours'
     | '/coach'
+    | '/coaching'
     | '/command-center'
     | '/dashboard'
     | '/demo'
@@ -1206,8 +1236,10 @@ export interface FileRouteTypes {
     | '/supervisor-check'
     | '/team'
     | '/team-queue'
+    | '/team-records'
     | '/ticket-checklists'
     | '/vendors'
+    | '/weekly-scorecard'
     | '/welcome'
     | '/welcome-video'
     | '/work-orders'
@@ -1284,6 +1316,7 @@ export interface FileRouteTypes {
     | '/bonus-verify'
     | '/cleaner-hours'
     | '/coach'
+    | '/coaching'
     | '/command-center'
     | '/dashboard'
     | '/demo'
@@ -1321,7 +1354,9 @@ export interface FileRouteTypes {
     | '/supervisor-check'
     | '/team'
     | '/team-queue'
+    | '/team-records'
     | '/ticket-checklists'
+    | '/weekly-scorecard'
     | '/welcome'
     | '/welcome-video'
     | '/guest-feedback/$token'
@@ -1399,6 +1434,7 @@ export interface FileRouteTypes {
     | '/_authenticated/claims'
     | '/_authenticated/cleaner-hours'
     | '/_authenticated/coach'
+    | '/_authenticated/coaching'
     | '/_authenticated/command-center'
     | '/_authenticated/dashboard'
     | '/_authenticated/demo'
@@ -1439,8 +1475,10 @@ export interface FileRouteTypes {
     | '/_authenticated/supervisor-check'
     | '/_authenticated/team'
     | '/_authenticated/team-queue'
+    | '/_authenticated/team-records'
     | '/_authenticated/ticket-checklists'
     | '/_authenticated/vendors'
+    | '/_authenticated/weekly-scorecard'
     | '/_authenticated/welcome'
     | '/_authenticated/welcome-video'
     | '/_authenticated/work-orders'
@@ -1632,6 +1670,13 @@ declare module '@tanstack/react-router' {
       path: '/coach'
       fullPath: '/coach'
       preLoaderRoute: typeof AuthenticatedCoachRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/coaching': {
+      id: '/_authenticated/coaching'
+      path: '/coaching'
+      fullPath: '/coaching'
+      preLoaderRoute: typeof AuthenticatedCoachingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/command-center': {
@@ -1914,6 +1959,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTeamQueueRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/team-records': {
+      id: '/_authenticated/team-records'
+      path: '/team-records'
+      fullPath: '/team-records'
+      preLoaderRoute: typeof AuthenticatedTeamRecordsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ticket-checklists': {
       id: '/_authenticated/ticket-checklists'
       path: '/ticket-checklists'
@@ -1926,6 +1978,13 @@ declare module '@tanstack/react-router' {
       path: '/vendors'
       fullPath: '/vendors'
       preLoaderRoute: typeof AuthenticatedVendorsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/weekly-scorecard': {
+      id: '/_authenticated/weekly-scorecard'
+      path: '/weekly-scorecard'
+      fullPath: '/weekly-scorecard'
+      preLoaderRoute: typeof AuthenticatedWeeklyScorecardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/welcome': {
@@ -2526,6 +2585,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedClaimsRoute: typeof AuthenticatedClaimsRouteWithChildren
   AuthenticatedCleanerHoursRoute: typeof AuthenticatedCleanerHoursRoute
   AuthenticatedCoachRoute: typeof AuthenticatedCoachRoute
+  AuthenticatedCoachingRoute: typeof AuthenticatedCoachingRoute
   AuthenticatedCommandCenterRoute: typeof AuthenticatedCommandCenterRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDemoRoute: typeof AuthenticatedDemoRoute
@@ -2566,8 +2626,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSupervisorCheckRoute: typeof AuthenticatedSupervisorCheckRoute
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
   AuthenticatedTeamQueueRoute: typeof AuthenticatedTeamQueueRoute
+  AuthenticatedTeamRecordsRoute: typeof AuthenticatedTeamRecordsRoute
   AuthenticatedTicketChecklistsRoute: typeof AuthenticatedTicketChecklistsRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRouteWithChildren
+  AuthenticatedWeeklyScorecardRoute: typeof AuthenticatedWeeklyScorecardRoute
   AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
   AuthenticatedWelcomeVideoRoute: typeof AuthenticatedWelcomeVideoRoute
   AuthenticatedWorkOrdersRoute: typeof AuthenticatedWorkOrdersRouteWithChildren
@@ -2597,6 +2659,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedClaimsRoute: AuthenticatedClaimsRouteWithChildren,
   AuthenticatedCleanerHoursRoute: AuthenticatedCleanerHoursRoute,
   AuthenticatedCoachRoute: AuthenticatedCoachRoute,
+  AuthenticatedCoachingRoute: AuthenticatedCoachingRoute,
   AuthenticatedCommandCenterRoute: AuthenticatedCommandCenterRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDemoRoute: AuthenticatedDemoRoute,
@@ -2638,8 +2701,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSupervisorCheckRoute: AuthenticatedSupervisorCheckRoute,
   AuthenticatedTeamRoute: AuthenticatedTeamRoute,
   AuthenticatedTeamQueueRoute: AuthenticatedTeamQueueRoute,
+  AuthenticatedTeamRecordsRoute: AuthenticatedTeamRecordsRoute,
   AuthenticatedTicketChecklistsRoute: AuthenticatedTicketChecklistsRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRouteWithChildren,
+  AuthenticatedWeeklyScorecardRoute: AuthenticatedWeeklyScorecardRoute,
   AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
   AuthenticatedWelcomeVideoRoute: AuthenticatedWelcomeVideoRoute,
   AuthenticatedWorkOrdersRoute: AuthenticatedWorkOrdersRouteWithChildren,

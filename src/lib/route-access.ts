@@ -39,6 +39,11 @@ const RULES: Rule[] = [
   { prefix: "/bonus-verify", shared: true },
   // Build 13 (register BN5): bonus settings for the COO, the CEO and Admin (all hold Admin).
   { prefix: "/bonus-settings", capability: "admin_pages" },
+  // Build 14 (register BN7, BN8, BN9): the manual trackers. Each page's database function shows
+  // each person only their own part (a coordinator's own results, Finance's totals).
+  { prefix: "/team-records", capability: "team_records" },
+  { prefix: "/coaching", capability: "coaching_log" },
+  { prefix: "/weekly-scorecard", capability: "weekly_scorecard" },
   { prefix: "/notifications", shared: true },
   { prefix: "/hub", shared: true },
   { prefix: "/join", shared: true },

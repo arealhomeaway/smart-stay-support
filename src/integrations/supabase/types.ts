@@ -14327,6 +14327,92 @@ export type Database = {
         }
         Relationships: []
       }
+      team_record_check_picks: {
+        Row: {
+          picked_at: string
+          review_id: string
+          week_start: string
+        }
+        Insert: {
+          picked_at?: string
+          review_id: string
+          week_start: string
+        }
+        Update: {
+          picked_at?: string
+          review_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_record_check_picks_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: true
+            referencedRelation: "scorecard_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_record_check_picks_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: true
+            referencedRelation: "scorecard_records_countable"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_record_draws: {
+        Row: {
+          draw_no: number
+          drawn_at: string
+          drawn_by: string
+          id: string
+          label: string
+          link_path: string | null
+          owner_id: string
+          record_at: string
+          record_id: string
+          record_kind: string
+          replaces: string | null
+          week_start: string
+        }
+        Insert: {
+          draw_no: number
+          drawn_at?: string
+          drawn_by: string
+          id?: string
+          label: string
+          link_path?: string | null
+          owner_id: string
+          record_at: string
+          record_id: string
+          record_kind: string
+          replaces?: string | null
+          week_start: string
+        }
+        Update: {
+          draw_no?: number
+          drawn_at?: string
+          drawn_by?: string
+          id?: string
+          label?: string
+          link_path?: string | null
+          owner_id?: string
+          record_at?: string
+          record_id?: string
+          record_kind?: string
+          replaces?: string | null
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_record_draws_replaces_fkey"
+            columns: ["replaces"]
+            isOneToOne: false
+            referencedRelation: "team_record_draws"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_activity: {
         Row: {
           author_id: string | null
@@ -16864,6 +16950,27 @@ export type Database = {
           },
         ]
       }
+      weekly_scorecard_drafts: {
+        Row: {
+          due_on: string
+          manual: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          due_on: string
+          manual?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          due_on?: string
+          manual?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       work_item_resources: {
         Row: {
           created_at: string
@@ -18612,6 +18719,20 @@ export type Database = {
         }
         Returns: string
       }
+      coaching_log: { Args: { _month?: string }; Returns: Json }
+      coaching_save_session: {
+        Args: {
+          _agenda: string[]
+          _coordinator: string
+          _follow_ups: Json
+          _next_on?: string
+          _notes: string
+          _on: string
+          _type: string
+          _went_well: string
+        }
+        Returns: string
+      }
       commit_sop_upload: {
         Args: { _drafts: Json; _file: Json; _id: string }
         Returns: Json
@@ -19015,6 +19136,10 @@ export type Database = {
           _why?: string
         }
         Returns: undefined
+      }
+      manual_tracker_save_settings: {
+        Args: { _key: string; _value: Json }
+        Returns: Json
       }
       mark_direct_booking_outcome: {
         Args: {
@@ -20154,6 +20279,27 @@ export type Database = {
         }
         Returns: undefined
       }
+      team_records_double_check: {
+        Args: { _agree: boolean; _note?: string; _review: string }
+        Returns: string
+      }
+      team_records_mine: { Args: never; Returns: Json }
+      team_records_review: {
+        Args: {
+          _checklist: Json
+          _clean: boolean
+          _draw: string
+          _evidence_url?: string
+          _note: string
+        }
+        Returns: string
+      }
+      team_records_skip: {
+        Args: { _draw: string; _reason: string }
+        Returns: Json
+      }
+      team_records_week: { Args: { _week?: string }; Returns: Json }
+      team_records_weeks: { Args: never; Returns: Json }
       template_bulk_v2_ready: { Args: never; Returns: boolean }
       ticket_route_at: {
         Args: { _at?: string; _role_code: string; _work_type_id: string }
@@ -20164,6 +20310,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      trackers_waiting: { Args: never; Returns: Json }
       unlink_demo_owner_account: {
         Args: { _program_id: string; _reason: string }
         Returns: string
@@ -20182,6 +20329,20 @@ export type Database = {
         }[]
       }
       vendor_transitional_sweep: { Args: { _today?: string }; Returns: Json }
+      weekly_scorecard: { Args: { _due?: string }; Returns: Json }
+      weekly_scorecard_decide: {
+        Args: { _due: string; _note?: string; _reviewed: boolean }
+        Returns: undefined
+      }
+      weekly_scorecard_save_draft: {
+        Args: { _due: string; _manual: Json }
+        Returns: undefined
+      }
+      weekly_scorecard_submit: {
+        Args: { _due: string; _manual: Json; _reason?: string }
+        Returns: Json
+      }
+      weekly_scorecard_weeks: { Args: never; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "manager" | "tech" | "vendor" | "owner" | "onboarding"
