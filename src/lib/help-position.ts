@@ -11,6 +11,8 @@ export function helpSideFor(
   const coversRight = open.some((r) => r.right > viewportWidth - 72);
   const coversLeft = open.some((r) => r.left < 72);
   if (coversRight && !coversLeft) return "left";
+  if (!coversLeft && !coversRight) return "right";
   if (coversLeft && !coversRight) return "right";
+  // A full width sheet on a phone: bottom left, above the sheet.
   return "left";
 }
