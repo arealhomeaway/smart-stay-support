@@ -9,6 +9,8 @@ CREATE OR REPLACE FUNCTION private.bonus_is_leader(_u uuid) RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, private AS $$
   SELECT _u IS NOT NULL AND (private.has_role(_u, 'admin') OR private.sc_holds(_u, 'coo') OR private.sc_holds(_u, 'ceo'))
 $$;
+CREATE OR REPLACE FUNCTION public.bonus_is_leader(_u uuid) RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, private AS $$ SELECT private.bonus_is_leader(_u) $$;
 CREATE OR REPLACE FUNCTION private.bonus_pc_roles() RETURNS text[]
 LANGUAGE sql IMMUTABLE AS $$
   SELECT ARRAY['po_day', 'po_evening', 'ge_day', 'ge_evening', 'ge_parttime', 'property_coordinator']
@@ -203,18 +205,18 @@ ALTER TABLE public.bonus_questions ENABLE ROW LEVEL SECURITY;
 
 -- Only the COO, the CEO and Admin read the tables directly; everyone else reads through the
 -- checked functions below, which return only what that person may see.
-CREATE POLICY bonus_plans_leaders ON public.bonus_plans FOR SELECT TO authenticated USING (private.bonus_is_leader(auth.uid()));
-CREATE POLICY bonus_period_amounts_leaders ON public.bonus_period_amounts FOR SELECT TO authenticated USING (private.bonus_is_leader(auth.uid()));
-CREATE POLICY bonus_goals_leaders ON public.bonus_goals FOR SELECT TO authenticated USING (private.bonus_is_leader(auth.uid()));
-CREATE POLICY bonus_goal_thresholds_leaders ON public.bonus_goal_thresholds FOR SELECT TO authenticated USING (private.bonus_is_leader(auth.uid()));
-CREATE POLICY bonus_participants_leaders ON public.bonus_participants FOR SELECT TO authenticated USING (private.bonus_is_leader(auth.uid()));
-CREATE POLICY bonus_priorities_leaders ON public.bonus_priorities FOR SELECT TO authenticated USING (private.bonus_is_leader(auth.uid()));
-CREATE POLICY bonus_settings_history_leaders ON public.bonus_settings_history FOR SELECT TO authenticated USING (private.bonus_is_leader(auth.uid()));
-CREATE POLICY bonus_periods_leaders ON public.bonus_periods FOR SELECT TO authenticated USING (private.bonus_is_leader(auth.uid()));
-CREATE POLICY bonus_period_history_leaders ON public.bonus_period_history FOR SELECT TO authenticated USING (private.bonus_is_leader(auth.uid()));
-CREATE POLICY bonus_manual_measures_leaders ON public.bonus_manual_measures FOR SELECT TO authenticated USING (private.bonus_is_leader(auth.uid()));
-CREATE POLICY bonus_adjustments_leaders ON public.bonus_adjustments FOR SELECT TO authenticated USING (private.bonus_is_leader(auth.uid()));
-CREATE POLICY bonus_questions_leaders ON public.bonus_questions FOR SELECT TO authenticated USING (private.bonus_is_leader(auth.uid()));
+CREATE POLICY bonus_plans_leaders ON public.bonus_plans FOR SELECT TO authenticated USING (public.bonus_is_leader(auth.uid()));
+CREATE POLICY bonus_period_amounts_leaders ON public.bonus_period_amounts FOR SELECT TO authenticated USING (public.bonus_is_leader(auth.uid()));
+CREATE POLICY bonus_goals_leaders ON public.bonus_goals FOR SELECT TO authenticated USING (public.bonus_is_leader(auth.uid()));
+CREATE POLICY bonus_goal_thresholds_leaders ON public.bonus_goal_thresholds FOR SELECT TO authenticated USING (public.bonus_is_leader(auth.uid()));
+CREATE POLICY bonus_participants_leaders ON public.bonus_participants FOR SELECT TO authenticated USING (public.bonus_is_leader(auth.uid()));
+CREATE POLICY bonus_priorities_leaders ON public.bonus_priorities FOR SELECT TO authenticated USING (public.bonus_is_leader(auth.uid()));
+CREATE POLICY bonus_settings_history_leaders ON public.bonus_settings_history FOR SELECT TO authenticated USING (public.bonus_is_leader(auth.uid()));
+CREATE POLICY bonus_periods_leaders ON public.bonus_periods FOR SELECT TO authenticated USING (public.bonus_is_leader(auth.uid()));
+CREATE POLICY bonus_period_history_leaders ON public.bonus_period_history FOR SELECT TO authenticated USING (public.bonus_is_leader(auth.uid()));
+CREATE POLICY bonus_manual_measures_leaders ON public.bonus_manual_measures FOR SELECT TO authenticated USING (public.bonus_is_leader(auth.uid()));
+CREATE POLICY bonus_adjustments_leaders ON public.bonus_adjustments FOR SELECT TO authenticated USING (public.bonus_is_leader(auth.uid()));
+CREATE POLICY bonus_questions_leaders ON public.bonus_questions FOR SELECT TO authenticated USING (public.bonus_is_leader(auth.uid()));
 
 -- History never changes.
 CREATE OR REPLACE FUNCTION private.bonus_block_history_change() RETURNS trigger
@@ -726,11 +728,11 @@ BEGIN
     'verified_at', b.verified_at, 'verified_by_name', (SELECT full_name FROM public.profiles WHERE id = b.verified_by),
     'version', coalesce(b.version, 0), 'person_name', (SELECT full_name FROM public.profiles WHERE id = _user),
     'question_window_closes', _closes,
-    'can_raise_question', _me = _user AND b.status = 'verified' AND now() <= _closes,
-    'can_verify', _reviewer AND b.id IS NOT NULL AND b.status = 'ready',
-    'can_enter', _reviewer AND coalesce(b.status, 'ready') <> 'verified',
-    'can_reopen', (_reviewer OR private.bonus_is_leader(_me)) AND _me <> _user AND b.status = 'verified',
-    'can_decide', private.sc_holds(_me, 'coo') AND _me <> _user,
+    'can_raise_question', coalesce(_me = _user AND b.status = 'verified' AND now() <= _closes, false),
+    'can_verify', coalesce(_reviewer AND b.id IS NOT NULL AND b.status = 'ready', false),
+    'can_enter', coalesce(_reviewer AND coalesce(b.status, 'ready') <> 'verified', false),
+    'can_reopen', coalesce((_reviewer OR private.bonus_is_leader(_me)) AND _me <> _user AND b.status = 'verified', false),
+    'can_decide', coalesce(private.sc_holds(_me, 'coo') AND _me <> _user, false),
     'adjustments', coalesce((SELECT jsonb_agg(jsonb_build_object('id', a.id, 'goal_id', a.goal_id, 'kind', a.kind, 'fact_key', a.fact_key,
                                                                  'reason', a.reason, 'decision', a.decision, 'decision_note', a.decision_note,
                                                                  'requested_at', a.requested_at, 'decided_at', a.decided_at) ORDER BY a.requested_at)
@@ -1267,7 +1269,8 @@ REVOKE ALL ON FUNCTION private.bonus_is_leader(uuid), private.bonus_pc_roles(), 
   private.bonus_is_reviewer(uuid, uuid, text), private.bonus_assert_open(text, uuid, date),
   private.bonus_log(text, text, text, jsonb, jsonb, text), private.bonus_assert_leader(), private.bonus_sweep(timestamptz)
   FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION private.bonus_is_leader(uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.bonus_is_leader(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.bonus_is_leader(uuid) TO authenticated;
 REVOKE ALL ON FUNCTION public.bonus_my_plans(), public.bonus_people(), public.bonus_my_reviews(),
   public.bonus_scorecard(text, uuid, date), public.bonus_enter_measure(text, uuid, date, uuid, numeric, text, text),
   public.bonus_request_adjustment(text, uuid, date, uuid, text, text, text), public.bonus_decide_adjustment(uuid, boolean, text),
