@@ -182,7 +182,7 @@ function EnterMeasure({ g, card, onChanged }: { g: BonusGoal; card: BonusCard; o
       _evidence_url: evidence || (null as unknown as string),
     });
     setBusy(false);
-    if (error) return toast.error(plainError(error));
+    if (error) { toast.error(plainError(error)); return; }
     toast.success(VERIFY_COPY.entrySaved);
     setValue("");
     setNote("");
@@ -235,7 +235,7 @@ function Facts({ g, card, onChanged }: { g: BonusGoal; card: BonusCard; onChange
       _reason: reason,
     });
     setBusy(false);
-    if (error) return toast.error(plainError(error));
+    if (error) { toast.error(plainError(error)); return; }
     toast.success(VERIFY_COPY.sentToCoo);
     setExcusing(null);
     setReason("");
@@ -299,7 +299,7 @@ function SystemProblem({ g, card, onChanged }: { g: BonusGoal; card: BonusCard; 
       _reason: reason,
     });
     setBusy(false);
-    if (error) return toast.error(plainError(error));
+    if (error) { toast.error(plainError(error)); return; }
     toast.success(VERIFY_COPY.sentToCoo);
     setReason("");
     onChanged();
@@ -326,7 +326,7 @@ function Adjustments({ card, onChanged }: { card: BonusCard; onChanged: () => vo
     setBusy(true);
     const { error } = await supabase.rpc("bonus_decide_adjustment", { _id: id, _approve: approve, _note: null as unknown as string });
     setBusy(false);
-    if (error) return toast.error(plainError(error));
+    if (error) { toast.error(plainError(error)); return; }
     toast.success(approve ? VERIFY_COPY.approved : VERIFY_COPY.declined);
     onChanged();
   };
@@ -372,7 +372,7 @@ function Questions({ card, onChanged }: { card: BonusCard; onChanged: () => void
     setBusy(true);
     const { error } = await supabase.rpc("bonus_raise_question", { _plan: card.plan, _start: card.period_start, _question: text });
     setBusy(false);
-    if (error) return toast.error(plainError(error));
+    if (error) { toast.error(plainError(error)); return; }
     toast.success(BONUS_COPY.questionSent);
     setText("");
     onChanged();
@@ -381,7 +381,7 @@ function Questions({ card, onChanged }: { card: BonusCard; onChanged: () => void
     setBusy(true);
     const { error } = await supabase.rpc("bonus_answer_question", { _id: id, _answer: answers[id] ?? "" });
     setBusy(false);
-    if (error) return toast.error(plainError(error));
+    if (error) { toast.error(plainError(error)); return; }
     toast.success(VERIFY_COPY.answerSaved);
     onChanged();
   };
@@ -431,7 +431,7 @@ function VerifyBar({ card, onChanged }: { card: BonusCard; onChanged: () => void
     setBusy(true);
     const { error } = await supabase.rpc("bonus_verify", { _plan: card.plan, _user: card.user_id, _start: card.period_start });
     setBusy(false);
-    if (error) return toast.error(plainError(error));
+    if (error) { toast.error(plainError(error)); return; }
     toast.success(VERIFY_COPY.verified);
     onChanged();
   };
@@ -439,7 +439,7 @@ function VerifyBar({ card, onChanged }: { card: BonusCard; onChanged: () => void
     setBusy(true);
     const { error } = await supabase.rpc("bonus_reopen", { _plan: card.plan, _user: card.user_id, _start: card.period_start, _reason: reason });
     setBusy(false);
-    if (error) return toast.error(plainError(error));
+    if (error) { toast.error(plainError(error)); return; }
     toast.success(VERIFY_COPY.reopened);
     setReason("");
     onChanged();

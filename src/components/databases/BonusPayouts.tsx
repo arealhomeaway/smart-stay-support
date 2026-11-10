@@ -80,7 +80,7 @@ export function BonusPayouts() {
           <select
             className={SELECT_CLASS}
             value={f.status ?? ""}
-            onChange={(e) => setF({ ...f, status: (e.target.value || null) as PayoutFilter["status"] })}
+            onChange={(e) => setF({ ...f, status: (e.target.value || null) as "ready" | "verified" | null })}
           >
             <option value="">{PAYOUTS_COPY.all}</option>
             <option value="ready">{PAYOUTS_COPY.waiting}</option>

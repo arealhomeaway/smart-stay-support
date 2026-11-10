@@ -68,13 +68,13 @@ const MATRIX: Record<string, string> = {
 const LETTER = { edit: "E", view: "V", ops_finance: "O", hidden: "-" } as const;
 
 describe("the hub", () => {
-  it("has twenty one cards in four groups, in board order", () => {
+  it("has twenty two cards in four groups, in board order", () => {
     expect(DATABASE_GROUPS.map((g) => g.label)).toEqual(["Homes & People", "Onboarding", "Operations & Finance", "Our Team"]);
     expect(ALL_DATABASES.map((c) => c.key)).toEqual(KEYS);
     expect(DATABASE_GROUPS.map((g) => g.cards.map((c) => c.name))).toEqual([
       ["Properties", "House items", "Owners", "Vendors", "Utilities", "Inventory"],
       ["Onboarding projects", "Assessments", "Handoffs", "Budgets and estimates", "Inspections"],
-      ["Tickets", "Departure reviews", "Arrival readiness", "Reviews and surveys", "Claims and refunds", "Vendor invoices", "Direct bookings", "Referral sources"],
+      ["Tickets", "Departure reviews", "Arrival readiness", "Reviews and surveys", "Claims and refunds", "Vendor invoices", "Direct bookings", "Referral sources", "Bonus payouts"],
       ["Playbooks", "Team and coverage"],
     ]);
   });

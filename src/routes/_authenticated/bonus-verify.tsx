@@ -14,13 +14,13 @@ import { useShellPageLabel } from "@/components/nav/ShellNav";
 import { BonusPeriodView } from "@/components/bonus/BonusPeriodView";
 import { BONUS_COPY, VERIFY_COPY, type BonusPerson } from "@/lib/bonus";
 
-type Search = { plan?: string; user?: string; start?: string };
+type Search = { plan?: string | undefined; user?: string | undefined; start?: string | undefined };
 
 export const Route = createFileRoute("/_authenticated/bonus-verify")({
   validateSearch: (s: Record<string, unknown>): Search => ({
-    plan: typeof s.plan === "string" ? s.plan : undefined,
-    user: typeof s.user === "string" ? s.user : undefined,
-    start: typeof s.start === "string" ? s.start : undefined,
+    plan: typeof s["plan"] === "string" ? s["plan"] : undefined,
+    user: typeof s["user"] === "string" ? s["user"] : undefined,
+    start: typeof s["start"] === "string" ? s["start"] : undefined,
   }),
   head: () => ({
     meta: [
