@@ -30,6 +30,7 @@ export type DatabaseKey =
   | "vendor-invoices"
   | "direct-bookings"
   | "referral-sources"
+  | "bonus-payouts"
   | "playbooks"
   | "team";
 
@@ -214,6 +215,15 @@ export const DATABASE_GROUPS: DatabaseGroup[] = [
         columns: ["Source", "Type", "Cleaning fee", "Deposit"],
         filters: ["Type"],
       },
+      {
+        // Build 13 (register BN6): verified bonus amounts for payroll. Read only.
+        key: "bonus-payouts",
+        name: "Bonus payouts",
+        former: "Was not tracked before",
+        about: "Each person's bonus for each period, once it is verified.",
+        columns: ["Person", "Plan", "Period", "Status", "Verified total", "Verified by"],
+        filters: ["Status", "Plan"],
+      },
     ],
   },
   {
@@ -323,6 +333,8 @@ const RULES: Record<DatabaseKey, Rule> = {
   "vendor-invoices": { edit: ["admin", "finance"], view: ["coordinator", "supervisor", "dirOps", "dirOnb"], ops_finance: ["pm", "utilities", "design"] },
   "direct-bookings": { edit: OPS, view: ["finance"], ops_finance: ONB },
   "referral-sources": { edit: OPS, view: ["finance"], ops_finance: ONB },
+  // Build 13 (register BN6): the Finance lead and Admin (the COO and the CEO hold Admin); the database checks it too.
+  "bonus-payouts": { view: ["admin", "finance"] },
   playbooks: { edit: ["admin", "supervisor", "dirOps", "dirOnb"], view: ["coordinator", "pm", "utilities", "design", "finance"] },
   team: { edit: ["admin", "supervisor", "dirOps"], view: ["coordinator", ...ONB] },
 };

@@ -6,6 +6,7 @@ import { useDemo } from "@/components/DemoProvider";
 import { BackToDatabases, DbLinkButton, ModeChip } from "@/components/databases/DatabaseParts";
 import { TicketTabs } from "@/components/databases/TicketTabs";
 import { ArrivalReadiness } from "@/components/databases/ArrivalReadiness";
+import { BonusPayouts } from "@/components/databases/BonusPayouts";
 import { canMoveToQueue } from "@/lib/ticket-tabs";
 import { CLAIM_PIPELINE, CLAIM_STAGE_LABELS } from "@/lib/claims";
 import {
@@ -169,6 +170,8 @@ function DatabaseList({ card, mode, initialTerm }: { card: DatabaseCard; mode: E
 
             {card.key === "arrival-readiness" ? (
               <ArrivalReadiness demoMode={demoMode} />
+            ) : card.key === "bonus-payouts" ? (
+              <BonusPayouts />
             ) : isTickets ? (
               data.error ? (
                 <p role="alert" className="text-destructive">

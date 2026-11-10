@@ -35,6 +35,10 @@ const RULES: Rule[] = [
   { prefix: "/account", shared: true },
   // Register A19 (Build 9 D2): a person's own scorecard records, read only. RLS shows only their own.
   { prefix: "/my-scorecard", shared: true },
+  // Build 13 (register BN6): the reviewer's page; the database shows only the people this person verifies.
+  { prefix: "/bonus-verify", shared: true },
+  // Build 13 (register BN5): bonus settings for the COO, the CEO and Admin (all hold Admin).
+  { prefix: "/bonus-settings", capability: "admin_pages" },
   { prefix: "/notifications", shared: true },
   { prefix: "/hub", shared: true },
   { prefix: "/join", shared: true },

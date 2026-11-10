@@ -200,7 +200,7 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
   {
     key: "admin",
     match: (p) =>
-      ["/integrations", "/audit", "/help-tickets", "/oversight-access-log", "/imported-tickets", "/export-check"].some(
+      ["/integrations", "/audit", "/help-tickets", "/oversight-access-log", "/imported-tickets", "/export-check", "/bonus-settings"].some(
         (r) => p === r || p.startsWith(r + "/"),
       ),
     tabs: [
@@ -213,6 +213,8 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
       { label: "Notion import", to: "/integrations/notion-import", capability: "integrations" },
       // Admin tools for the Admin; the Supervisor and the Directors reach it from Oversight (N10).
       { label: "Export check", to: "/export-check", capability: "integrations" },
+      // Build 13 (register BN5): the COO, the CEO and Admin.
+      { label: "Bonus settings", to: "/bonus-settings", capability: "admin_pages" },
     ],
   },
 ];

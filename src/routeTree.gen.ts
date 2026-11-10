@@ -19,6 +19,7 @@ import { Route as AuthenticatedActiveOwnerFollowupRouteImport } from './routes/_
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
 import { Route as AuthenticatedAvailabilityFinderRouteImport } from './routes/_authenticated/availability-finder'
+import { Route as AuthenticatedBonusSettingsRouteImport } from './routes/_authenticated/bonus-settings'
 import { Route as AuthenticatedBonusVerifyRouteImport } from './routes/_authenticated/bonus-verify'
 import { Route as AuthenticatedClaimsRouteImport } from './routes/_authenticated/claims'
 import { Route as AuthenticatedCleanerHoursRouteImport } from './routes/_authenticated/cleaner-hours'
@@ -176,6 +177,12 @@ const AuthenticatedAvailabilityFinderRoute =
   AuthenticatedAvailabilityFinderRouteImport.update({
     id: '/availability-finder',
     path: '/availability-finder',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBonusSettingsRoute =
+  AuthenticatedBonusSettingsRouteImport.update({
+    id: '/bonus-settings',
+    path: '/bonus-settings',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedBonusVerifyRoute =
@@ -799,6 +806,7 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/availability-finder': typeof AuthenticatedAvailabilityFinderRoute
+  '/bonus-settings': typeof AuthenticatedBonusSettingsRoute
   '/bonus-verify': typeof AuthenticatedBonusVerifyRoute
   '/claims': typeof AuthenticatedClaimsRouteWithChildren
   '/cleaner-hours': typeof AuthenticatedCleanerHoursRoute
@@ -917,6 +925,7 @@ export interface FileRoutesByTo {
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/availability-finder': typeof AuthenticatedAvailabilityFinderRoute
+  '/bonus-settings': typeof AuthenticatedBonusSettingsRoute
   '/bonus-verify': typeof AuthenticatedBonusVerifyRoute
   '/cleaner-hours': typeof AuthenticatedCleanerHoursRoute
   '/coach': typeof AuthenticatedCoachRoute
@@ -1031,6 +1040,7 @@ export interface FileRoutesById {
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
   '/_authenticated/availability-finder': typeof AuthenticatedAvailabilityFinderRoute
+  '/_authenticated/bonus-settings': typeof AuthenticatedBonusSettingsRoute
   '/_authenticated/bonus-verify': typeof AuthenticatedBonusVerifyRoute
   '/_authenticated/claims': typeof AuthenticatedClaimsRouteWithChildren
   '/_authenticated/cleaner-hours': typeof AuthenticatedCleanerHoursRoute
@@ -1151,6 +1161,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/audit'
     | '/availability-finder'
+    | '/bonus-settings'
     | '/bonus-verify'
     | '/claims'
     | '/cleaner-hours'
@@ -1269,6 +1280,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/audit'
     | '/availability-finder'
+    | '/bonus-settings'
     | '/bonus-verify'
     | '/cleaner-hours'
     | '/coach'
@@ -1382,6 +1394,7 @@ export interface FileRouteTypes {
     | '/_authenticated/analytics'
     | '/_authenticated/audit'
     | '/_authenticated/availability-finder'
+    | '/_authenticated/bonus-settings'
     | '/_authenticated/bonus-verify'
     | '/_authenticated/claims'
     | '/_authenticated/cleaner-hours'
@@ -1584,6 +1597,13 @@ declare module '@tanstack/react-router' {
       path: '/availability-finder'
       fullPath: '/availability-finder'
       preLoaderRoute: typeof AuthenticatedAvailabilityFinderRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/bonus-settings': {
+      id: '/_authenticated/bonus-settings'
+      path: '/bonus-settings'
+      fullPath: '/bonus-settings'
+      preLoaderRoute: typeof AuthenticatedBonusSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/bonus-verify': {
@@ -2501,6 +2521,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
   AuthenticatedAvailabilityFinderRoute: typeof AuthenticatedAvailabilityFinderRoute
+  AuthenticatedBonusSettingsRoute: typeof AuthenticatedBonusSettingsRoute
   AuthenticatedBonusVerifyRoute: typeof AuthenticatedBonusVerifyRoute
   AuthenticatedClaimsRoute: typeof AuthenticatedClaimsRouteWithChildren
   AuthenticatedCleanerHoursRoute: typeof AuthenticatedCleanerHoursRoute
@@ -2571,6 +2592,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedAuditRoute: AuthenticatedAuditRoute,
   AuthenticatedAvailabilityFinderRoute: AuthenticatedAvailabilityFinderRoute,
+  AuthenticatedBonusSettingsRoute: AuthenticatedBonusSettingsRoute,
   AuthenticatedBonusVerifyRoute: AuthenticatedBonusVerifyRoute,
   AuthenticatedClaimsRoute: AuthenticatedClaimsRouteWithChildren,
   AuthenticatedCleanerHoursRoute: AuthenticatedCleanerHoursRoute,
