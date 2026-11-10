@@ -265,6 +265,7 @@ export const MOVE_TO_QUEUE_COPY = {
   pick: (ref: string) => `Pick ticket ${ref}`,
   moved: (n: number) => (n === 1 ? "1 ticket moved to the Team Queue." : `${n} tickets moved to the Team Queue.`),
   needsHome: "Choose the home first.",
+  notReady: "Move to queue is not ready yet.",
 } as const;
 
 /** An older open Notion import the Operations Supervisor or a Director may move into the Team Queue. */

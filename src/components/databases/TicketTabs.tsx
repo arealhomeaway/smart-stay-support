@@ -408,7 +408,7 @@ function MoveToQueueBar({ rows, now, demoMode }: { rows: DbRow[]; now: number; d
     try {
       const rpc = supabase.rpc.bind(supabase) as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: number | null; error: { message: string } | null }>;
       const { data, error } = await rpc("move_notion_to_queue", { _ticket_ids: chosen.map((r) => r.id) });
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(/could not find the function/i.test(error.message) ? MOVE_TO_QUEUE_COPY.notReady : error.message);
       toast.success(MOVE_TO_QUEUE_COPY.moved(Number(data ?? chosen.length)));
       setPicked(new Set());
       await qc.invalidateQueries({ queryKey: databaseQueryKey("tickets", demoMode) });
