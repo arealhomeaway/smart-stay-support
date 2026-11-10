@@ -73,7 +73,7 @@ describe("(a) the ticket page", () => {
 
 describe("(a) the Team Queue", () => {
   it("shows test tickets with the Test chip in their own list, only for the test plan roles", () => {
-    expect(queue).toContain("const seesTests = !demoMode && seesEmailTestRecords(roles, seats);");
+    expect(queue).toContain("const seesTests = !demoMode && seesEmailTestRecords(roles, access.seats);");
     expect(queue).toContain("enabled: seesTests,");
     expect(queue).toContain("const emailTests = seesTests ? (testTickets.data ?? []) : [];");
     const list = queue.slice(queue.indexOf("<EmailTestRecords>"), queue.indexOf("</EmailTestRecords>"));

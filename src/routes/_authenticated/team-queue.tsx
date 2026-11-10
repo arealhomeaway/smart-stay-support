@@ -115,10 +115,10 @@ function TeamQueuePage() {
   const userId = useCurrentUserId();
   const { data: staff } = useStaffDirectory();
   const { homeTeamOf } = useHomeTeams();
-  const { can, isLoading: rolesLoading, readOnly, roles, seats } = useRole();
+  const { can, isLoading: rolesLoading, readOnly, roles, access } = useRole();
   // Register E1 (a): email test tickets show for the people who run the test plan, in their
   // own list, never in a count. Coordinators never see them.
-  const seesTests = !demoMode && seesEmailTestRecords(roles, seats);
+  const seesTests = !demoMode && seesEmailTestRecords(roles, access.seats);
   const { enabled: flagEnabled } = useFeatureFlags();
   const operationsAccess = can("work_orders_internal");
   const canTake = operationsAccess && !readOnly;
