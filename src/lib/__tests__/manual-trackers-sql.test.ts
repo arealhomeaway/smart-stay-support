@@ -320,10 +320,11 @@ describe("manual trackers (01)", () => {
     // A Thursday two weeks ago is the first due date, so this week has opened and passed 3 PM.
     const due = (await one(`SELECT (current_date - ((extract(isodow FROM current_date)::int - 4 + 7) % 7) - 14)::date::text AS d`)).d;
     await db.query(`UPDATE public.app_settings SET value = jsonb_build_object('first_due', $1::text) WHERE key = 'weekly_scorecard_settings'`, [due]);
-    await db.query(`INSERT INTO public.tickets (title, assigned_to, priority, created_at, acknowledged_at, action_started_at, response_due_at, acknowledged_at)
+    // An urgent ticket on Monday of that week: replied in 2 minutes, real action after 9 minutes.
+    await db.query(`INSERT INTO public.tickets (title, assigned_to, priority, created_at, acknowledged_at, action_started_at, response_due_at)
                     VALUES ('Leak', $1, 'p1', ($2::date - 3)::timestamp + interval '15 hours',
                             ($2::date - 3)::timestamp + interval '15 hours 2 minutes', ($2::date - 3)::timestamp + interval '15 hours 9 minutes',
-                            ($2::date - 3)::timestamp + interval '15 hours 3 minutes', NULL)`.replace(", acknowledged_at)", ")").replace(", NULL)", ")"), [PC1, due]);
+                            ($2::date - 3)::timestamp + interval '15 hours 3 minutes')`, [PC1, due]);
     await as(SUP);
     const card = (await one(`SELECT public.weekly_scorecard($1::date) AS c`, [due])).c;
     expect(card.opened).toBe(true);
