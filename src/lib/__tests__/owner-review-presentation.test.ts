@@ -10,7 +10,7 @@ it("keeps review-only participation available without presenting it as an owner 
   };
   expect(ownerReviewPresentation(review).attention).toBe(false);
   expect(ownerReviewPresentation({ ...review, responded_at: "2026-09-15" }).label).toBe(
-    "Reviewed — No approval required",
+    "Reviewed: No approval required",
   );
 });
 it("does not let an acknowledgement hide a required owner decision", () => {
@@ -27,7 +27,7 @@ it("does not let an acknowledgement hide a required owner decision", () => {
 });
 it("keeps unconfirmed authority distinct and preserves manual task attention", () => {
   expect(ownerReviewPresentation({ auto_ticket: true, status: "awaiting_owner" }).label).toBe(
-    "Review — Authority unconfirmed",
+    "Review: Authority unconfirmed",
   );
   expect(ownerReviewPresentation({ status: "returned" }).attention).toBe(true);
   expect(ownerReviewPresentation({ status: "answered" }).attention).toBe(false);

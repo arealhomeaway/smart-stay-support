@@ -6,7 +6,7 @@ import { MAINTENANCE_POLICY } from "../maintenance-policy";
 it("explains review-only repairs using the canonical authority evaluator", () => {
   const work = { quote_amount: 150, approval_status: "not_required" };
   const request = ownerTicketRequest([work]);
-  expect(request.label).toBe("Review — No approval required");
+  expect(request.label).toBe("Review: No approval required");
   expect(request.ownerActionRequired).toBe(false);
   expect(request.why).toContain(evaluateAuthority(work).reason);
   expect(request.why).toContain("actually spend");

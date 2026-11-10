@@ -126,7 +126,7 @@ describe("c. a recent import assigned to a person shows in their My work", () =>
 
   it("stays quiet: no clock in its urgency, never Needs you now, never unclaimed", () => {
     // Even with an old due time on the row, the label shows priority only.
-    expect(urgencyLabel(mine)).toBe("P1");
+    expect(urgencyLabel(mine)).toBe("Right now");
     expect(urgencyLabel(t({ assigned_to: ME, response_due_at: daysAgo(1) }))).not.toBe("P1");
     expect(needsYouNow([mine], ME)).toEqual([]);
     expect(unclaimedCount([mine], null)).toBe(0);

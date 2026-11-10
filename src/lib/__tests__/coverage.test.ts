@@ -15,7 +15,7 @@ const CFG = {
 
 describe("coverageNow", () => {
   it("labels the approved window", () => {
-    expect(windowLabel(CFG)).toBe("10 p.m.–8 a.m. Central");
+    expect(windowLabel(CFG)).toBe("10 p.m. to 8 a.m. Central");
   });
 
   it("is daytime at noon Central", () => {
