@@ -220,7 +220,11 @@ describe("Request time off (register S4)", () => {
     const src = readFileSync("src/components/home/MyShift.tsx", "utf8");
     expect(src).toContain('supabase.rpc("seat_holder_at", { _role_code: "ops_supervisor" })');
     expect(src).toContain("<TimeOffDialog");
-    expect(src).toContain('decide(approving, "approved", "")');
+    // Build 9 C2: approving is all or nothing, in one database step (approve_time_off).
+    expect(src).toContain("approveRequestId={approving.id}");
+    expect(src).not.toContain('decide(approving, "approved", "")');
+    const dialog = readFileSync("src/components/team/TimeOffDialog.tsx", "utf8");
+    expect(dialog).toContain('"approve_time_off"');
   });
 });
 
