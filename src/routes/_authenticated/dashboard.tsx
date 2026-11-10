@@ -22,7 +22,7 @@ import heroImage from "@/assets/hero-arha-property.jpg";
 import { homePhotoUrl } from "@/components/property/HomePhoto";
 import { applyTestDataFilter } from "@/lib/test-data";
 import { bannerCaption, dailyHomePhoto } from "@/lib/daily-home-photo";
-import { AlertTriangle, ArrowRight, ClipboardCheck, Handshake, Inbox, Users } from "lucide-react";
+import { AlertTriangle, ArrowRight, ChevronDown, ClipboardCheck, Handshake, Inbox, Users } from "lucide-react";
 import {
   RETIRED_ROUTINE_KINDS,
   kindsForTeam,
@@ -39,6 +39,9 @@ import { SupervisorRecords } from "@/components/scorecard/SupervisorRecords";
 import { HandoffsWaiting } from "@/components/operations/HandoffsWaiting";
 import { OwnerFollowUps } from "@/components/OwnerFollowUps";
 import { LunchPrompt, MyShiftCard, TimeOffRequestsWaiting, useTimeOffWaiting } from "@/components/home/MyShift";
+import { NeedsYouNowPanel, type NeedsPanelItem } from "@/components/home/NeedsYouNowPanel";
+import { MyScorecardButton } from "@/components/home/MyScorecardButton";
+import { RECENT_ACTIVITY_COPY, RECENT_ACTIVITY_LIMIT, SEE_ALL_LABEL, recentActivityHeading, seeAllVisible } from "@/lib/home-needs";
 import { openRecordRoutine } from "@/components/routines/RecordRoutinePanel";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { SURVEY_CHECK_FLAG } from "@/lib/record-routine";
@@ -218,6 +221,9 @@ function Dashboard() {
         description={HOME_COPY.heroLine}
       />
 
+      {/* Register T1: My scorecard, only for a person who has a scorecard. */}
+      <MyScorecardButton userId={userId} />
+
       {/* Leaders see escalations, approval requests and unassigned work first. */}
       {role.can("oversight") && <SupervisorAttentionBand />}
 
@@ -287,6 +293,10 @@ function NeedsYouNow({ rows, userId, originSearch }: { rows: Row[]; userId: stri
   const approvalRows = approvals.data ?? [];
   const timeOff = useTimeOffWaiting(userId, demoMode);
   const nothing = items.length === 0 && bookingRows.length === 0 && approvalRows.length === 0 && timeOff.rows.length === 0;
+  // Register T2: a row opens a side panel with what it is, why it waits and its action.
+  const [panel, setPanel] = useState<NeedsPanelItem | null>(null);
+  const { roles, seats } = useRole();
+  const seeAll = seeAllVisible(roles, seats);
 
   return (
     <SectionCard
@@ -299,11 +309,20 @@ function NeedsYouNow({ rows, userId, originSearch }: { rows: Row[]; userId: stri
       <OwnerFollowUps />
       <TimeOffRequestsWaiting userId={userId} demoMode={demoMode} />
       {bookingRows.map((r) => (
-        <Link
+        <button
+          type="button"
           key={r.id}
-          to="/direct-bookings/$requestId"
-          params={{ requestId: r.id }}
-          className="surface-row flex items-center gap-3 px-4 py-3"
+          data-needs-row="booking"
+          onClick={() =>
+            setPanel({
+              kind: "booking",
+              id: `booking:${r.id}`,
+              title: r.partner_name || r.company || r.subject || "Direct booking request",
+              detail: homeBookingLine(r),
+              bookingId: r.id,
+            })
+          }
+          className="surface-row flex min-h-11 w-full items-center gap-3 px-4 py-3 text-left"
         >
           <Inbox className="size-4 shrink-0 text-primary" aria-hidden="true" />
           <span className="min-w-0 flex-1">
@@ -315,7 +334,7 @@ function NeedsYouNow({ rows, userId, originSearch }: { rows: Row[]; userId: stri
             </span>
           </span>
           <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
-        </Link>
+        </button>
       ))}
       {approvalRows.map((a) => {
         const inner = (
@@ -327,30 +346,53 @@ function NeedsYouNow({ rows, userId, originSearch }: { rows: Row[]; userId: stri
             </span>
           </>
         );
-        return a.entity_type === "ticket" && a.entity_id ? (
-          <Link
+        return (
+          <button
+            type="button"
             key={a.id}
-            to="/tickets/$ticketId"
-            params={{ ticketId: a.entity_id }}
-            search={originSearch}
-            className="surface-row flex items-center gap-3 px-4 py-3"
+            data-needs-row="approval"
+            onClick={() =>
+              setPanel({
+                kind: "approval",
+                id: `approval:${a.id}`,
+                title: a.title,
+                detail: "Waiting for your approval",
+                approvalId: a.id,
+                ticketId: a.entity_type === "ticket" ? a.entity_id : null,
+              })
+            }
+            className="surface-row flex min-h-11 w-full items-center gap-3 px-4 py-3 text-left"
           >
             {inner}
             <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
-          </Link>
-        ) : (
-          <div key={a.id} className="surface-row flex items-center gap-3 px-4 py-3">
-            {inner}
-          </div>
+          </button>
         );
       })}
       {items.map((i) => (
-        <Link
+        <button
+          type="button"
           key={i.id}
-          to="/tickets/$ticketId"
-          params={{ ticketId: i.ticketId! }}
-          search={originSearch}
-          className="surface-row flex items-center gap-3 px-4 py-3"
+          data-needs-row={i.kind}
+          onClick={() => {
+            const t = rows.find((r) => r.id === i.ticketId);
+            setPanel({
+              kind: i.kind === "handoff" ? "handoff" : "escalation",
+              id: i.id,
+              title: i.title,
+              detail: i.detail,
+              ticketId: i.ticketId ?? null,
+              ticket: t
+                ? {
+                    id: t.id,
+                    priority: t.priority,
+                    status: t.status,
+                    next_action: (t as { next_action?: string | null }).next_action ?? null,
+                    functional_role_code: t.functional_role_code ?? null,
+                  }
+                : null,
+            });
+          }}
+          className="surface-row flex min-h-11 w-full items-center gap-3 px-4 py-3 text-left"
         >
           {i.kind === "handoff" ? (
             <Handshake className="size-4 shrink-0 text-primary" aria-hidden="true" />
@@ -362,9 +404,20 @@ function NeedsYouNow({ rows, userId, originSearch }: { rows: Row[]; userId: stri
             <span className="block truncate text-sm text-muted-foreground">{i.detail}</span>
           </span>
           <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
-        </Link>
+        </button>
       ))}
       {nothing && <p className="text-sm text-muted-foreground">{HOME_COPY.needsYouEmpty}</p>}
+      {/* Register T2: Supervisors and above get a See all link to Oversight. */}
+      {seeAll && (
+        <Link
+          to="/oversight"
+          className="inline-flex min-h-11 items-center gap-1.5 px-1 text-sm font-medium text-primary hover:underline"
+          data-see-all
+        >
+          {SEE_ALL_LABEL} <ArrowRight className="size-4" aria-hidden="true" />
+        </Link>
+      )}
+      <NeedsYouNowPanel item={panel} onClose={() => setPanel(null)} originSearch={originSearch} />
     </SectionCard>
   );
 }
@@ -652,11 +705,30 @@ function RecentActivity({ rows, originSearch }: { rows: Row[]; originSearch: { f
       };
     })
     .sort((a, b) => b.at.localeCompare(a.at))
-    .slice(0, 6);
+    .slice(0, RECENT_ACTIVITY_LIMIT);
 
+  // Register T1: collapsed by default, with a plain heading and a count.
+  const [open, setOpen] = useState(false);
   return (
-    <SectionCard title={HOME_COPY.activityTitle}>
-      <ActivityList events={recent} emptyLabel={HOME_COPY.activityEmpty} />
+    <SectionCard
+      title={recentActivityHeading(recent.length)}
+      actions={
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls="home-recent-activity"
+          onClick={() => setOpen((o) => !o)}
+          className="inline-flex min-h-11 items-center gap-1.5 px-2 text-sm font-medium text-primary hover:underline"
+          data-recent-toggle
+        >
+          {open ? RECENT_ACTIVITY_COPY.hide : RECENT_ACTIVITY_COPY.show}
+          <ChevronDown className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
+        </button>
+      }
+    >
+      <div id="home-recent-activity" hidden={!open} data-recent-body>
+        <ActivityList events={recent} emptyLabel={HOME_COPY.activityEmpty} />
+      </div>
     </SectionCard>
   );
 }
