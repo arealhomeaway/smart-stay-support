@@ -71,7 +71,8 @@ CREATE TABLE public.tickets(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), recor
   work_type_id uuid, is_demo boolean NOT NULL DEFAULT false, due_at timestamptz, next_action text, next_action_due_at timestamptz,
   guest_in_residence boolean DEFAULT true, reservation_guest_name text, reservation_arrival date, reservation_departure date,
   reservation_guest_count int, reservation_snapshot_at timestamptz, response_due_at timestamptz, action_due_at timestamptz,
-  assigned_to uuid, acknowledged_at timestamptz, resolved_at timestamptz, resolution_notes text, closure_evidence text,
+  assigned_to uuid, current_action_owner uuid, record_owner uuid, accountable_owner uuid, assignment_source text,
+  assignment_note text, acknowledged_at timestamptz, resolved_at timestamptz, resolution_notes text, closure_evidence text,
   outcome_type text, closure_qa_result text DEFAULT 'not_reviewed', action_started_at timestamptz, archived_at timestamptz,
   archived_by uuid, archive_reason text);
 CREATE UNIQUE INDEX tickets_external_unique ON public.tickets (external_source, external_id)
@@ -136,6 +137,7 @@ describe("arrival check SQL (isolated)", () => {
     db = new PGlite();
     await db.exec(STUBS);
     await db.exec(readFileSync(`${DIR}/01_arrival_check.sql`, "utf8"));
+    await db.exec(readFileSync(`${DIR}/02_arrival_check_fixes.sql`, "utf8"));
   });
 
   it("creates the switch off, the work type out of the problem list and the new fact kind", async () => {
@@ -275,8 +277,13 @@ describe("arrival check SQL (isolated)", () => {
     const c = await one(`SELECT id FROM public.arrival_checks`);
     const r = (await complete(COORD, c.id, "2026-11-20T19:30:00Z", false, "Lock offline", "issue", "Lock offline", "Lockbox key ready")).r;
     expect(r.result).toBe("late");
-    const t = await one(`SELECT title, description, property_id, status FROM public.tickets WHERE id=$1`, [r.issue_ticket_id]);
+    const t = await one(`SELECT title, description, property_id, status, priority, assigned_to, current_action_owner, assignment_note FROM public.tickets WHERE id=$1`, [r.issue_ticket_id]);
     expect(t.title).toBe("Arrival issue: 1 Maple St");
+    // Found 90 minutes before check in: Right now, owned by the person who found it.
+    expect(t.priority).toBe("p1");
+    expect(t.assigned_to).toBe(COORD);
+    expect(t.current_action_owner).toBe(COORD);
+    expect(t.assignment_note).toBeNull();
     expect(t.description).toContain("Lockbox key ready");
     expect(t.property_id).toBe(HOME);
     expect(t.status).toBe("open");
@@ -292,7 +299,8 @@ describe("arrival check SQL (isolated)", () => {
     const n = await all(`SELECT user_id, title, body FROM public.staff_notifications`);
     expect(n.length).toBe(1);
     expect(n[0].user_id).toBe(SUP);
-    expect(n[0].title).toBe("Arrival check due at 2:00 PM at 1 Maple St, not done yet");
+    // Shown in Central time: 2:00 PM Eastern is 1:00 PM Central.
+    expect(n[0].title).toBe("Arrival check due at 1:00 PM at 1 Maple St, not done yet");
     expect((await run("2026-11-20T21:00:00Z")).missed).toBe(1);
     const c = await one(`SELECT id, result, ticket_id FROM public.arrival_checks`);
     expect(c.result).toBe("missed");
@@ -346,6 +354,8 @@ describe("arrival check SQL (isolated)", () => {
     await db.exec(`INSERT INTO public.owner_notifications(ticket_id, title) VALUES ('${c.ticket_id}', 'x')`);
     await db.exec(`INSERT INTO public.owner_reviews(ticket_id, title) VALUES ('${c.ticket_id}', 'x')`);
     const r = (await complete(COORD, c.id, "2026-11-20T15:00:00Z", true, null, "issue", "Broken blind", "Fixed by vendor at 1 PM")).r;
+    expect((await one(`SELECT priority FROM public.tickets WHERE id=$1`, [r.issue_ticket_id])).priority).toBe("p2"); // 6 hours out: Today
+    expect((await one(`SELECT current_action_owner FROM public.tickets WHERE id=$1`, [c.ticket_id])).current_action_owner).toBe(COORD);
     await db.exec(`INSERT INTO public.owner_notifications(ticket_id, title) VALUES ('${r.issue_ticket_id}', 'y')`);
     expect((await all(`SELECT title FROM public.owner_notifications`)).map((x) => x.title)).toEqual(["y"]);
     expect((await one(`SELECT count(*)::int n FROM public.owner_reviews`)).n).toBe(0);
@@ -378,6 +388,11 @@ describe("arrival check SQL (isolated)", () => {
     expect(d.work_orders.map((w) => w.id)).toEqual([501]);
     await as(null);
     expect((await one(`SELECT public.arrival_check_for_ticket($1) AS d`, [c.ticket_id])).d).toBeNull();
+  });
+
+  it("the 02 undo puts back the 01 functions exactly", async () => {
+    await db.exec(readFileSync(`${DIR}/undo/02_arrival_check_fixes.sql`, "utf8"));
+    expect((await one(`SELECT private.arrival_fmt_time('2026-11-20T19:00:00Z', 'America/New_York') AS t`)).t).toBe("2:00 PM");
   });
 
   it("the undo removes the steps and keeps the records", async () => {
