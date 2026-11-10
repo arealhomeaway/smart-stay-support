@@ -55,3 +55,17 @@ fact exists. Nothing was published.
 
 `undo/01_arrival_check.sql` stops the minute check, removes the steps and triggers and turns the
 switch off. Tables, kept records and facts stay, so history still reads back.
+
+## 02 fixes (applied Nov 10 as drizzle/migrations/0326_arrival_check_fixes.sql, byte identical)
+
+Found on the spec re-read and Emily's Nov 10 correction E (docs/specs/bonus-guide-values.md):
+1. Ticket text and the Supervisor alert show times in Central time (spec item 2).
+2. Completing an unowned check takes it the same way Take it does (owner, record owner, accountable owner).
+3. An issue found opens a ticket owned by the person who found it: Right now when the guest arrives within
+   2 hours, otherwise Today.
+4. Homes ready for guests is one shared team score: every fact carries counts_for team_homes_ready and
+   individual_score false; who completed it is still recorded. A check nobody took also counts against the
+   Operations Supervisor's team on time follow through.
+Undo: run undo/02_arrival_check_fixes.sql (puts back the 01 functions), then undo/01_arrival_check.sql if a full undo is wanted.
+Practice (cancelled on purpose, Nov 10): Central 1:00 PM deadline text and alert, issue ticket Today and owned by
+the finder, team score fields, owner rows 0. Follow up read: 0 practice rows, switch off, no start line.
