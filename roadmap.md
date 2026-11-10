@@ -5,7 +5,15 @@
 - [x] Register BN11 line in section 14
 - [x] Report conflicts between A to G and existing code
 - [x] Build 12: Homes ready for guests is one shared team score (fact keeps who; no individual score)
-- [ ] Build 13 (queued): dollar amounts per level, per plan and first period override, seeded B to D, engine per A
+- [ ] Build 13: dollar amounts per level, per plan and first period override, seeded B to D, engine per A
+
+## Nov 10 build 13: bonus engine, My bonus, verify chain, Finance view (BN5, BN6, BN11; no publish)
+- [ ] 1 Bonus settings page (COO, CEO, Admin): plans, period amounts, goals, thresholds, people, priorities, history, notice
+- [ ] 2 Engine in the database per bonus-guide-values.md A (share move, fewer than 3, max, system problem)
+- [ ] 3 My bonus on My scorecard (own bars and dollars; reviewers and leaders see their chain)
+- [ ] 4 Verify chain: period close item, email, 2 day reminder, manual entry, excused with COO approval, Verify, reopen, questions
+- [ ] 5 Bonus payouts card in Databases with filters and CSV, verified only
+- [ ] 6 Isolated SQL tests, cancelled real practice, word check, browser desktop and phone, BN5 and BN6
 - [ ] Build 14 (queued): 5 records per active PC, Director double check of 5, coaching per PC, report through Wednesday
 
 ## Nov 10 build 12: arrival check queue and Arrival readiness database (register BN4, BN10; no publish, switch OFF)
