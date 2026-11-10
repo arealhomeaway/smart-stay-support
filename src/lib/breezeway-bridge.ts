@@ -177,6 +177,21 @@ export function sweepBridgeCandidate(raw: BridgeRawTask, startLine: string | nul
   );
 }
 
+/** One Breezeway work order as the ticket's Repair card shows it (mirror only). */
+export type TicketBreezewayOrder = {
+  id: string;
+  breezewayTaskId: number;
+  name: string | null;
+  department: string | null;
+  status: string | null;
+  scheduledDate: string | null;
+  finishedAt: string | null;
+  assignees: string[];
+  link: string;
+  linkedTicketId: string | null;
+  updatedAt: string | null;
+};
+
 /** Words on the Integrations bridge panel and the Repair card. */
 export const BRIDGE_COPY = {
   off: "The Breezeway bridge is off.",

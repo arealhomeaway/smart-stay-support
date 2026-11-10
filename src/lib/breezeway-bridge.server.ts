@@ -7,7 +7,8 @@
  * Breezeway) and links a Breezeway work order to a ticket. Nothing here creates, changes or
  * deletes anything in Breezeway.
  */
-import { BRIDGE_COPY } from "./breezeway-bridge";
+import { BRIDGE_COPY, type TicketBreezewayOrder } from "./breezeway-bridge";
+export type { TicketBreezewayOrder } from "./breezeway-bridge";
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -58,20 +59,6 @@ export async function runBreezewaySafetySweep(limit = 10) {
     return { ok: false as const, error: message };
   }
 }
-
-export type TicketBreezewayOrder = {
-  id: string;
-  breezewayTaskId: number;
-  name: string | null;
-  department: string | null;
-  status: string | null;
-  scheduledDate: string | null;
-  finishedAt: string | null;
-  assignees: string[];
-  link: string;
-  linkedTicketId: string | null;
-  updatedAt: string | null;
-};
 
 const ORDER_SELECT =
   "id, breezeway_task_id, property_id, name, department, status, scheduled_date, finished_at, assignees, report_url, linked_ticket_id, breezeway_updated_at";

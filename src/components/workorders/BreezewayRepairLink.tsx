@@ -20,9 +20,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { linkTicketBreezewayOrderFn, ticketBreezewayOrdersFn } from "@/lib/breezeway-bridge.functions";
 import { workOrderComments, workOrderPhotos } from "@/lib/breezeway-workorders.functions";
-import { BRIDGE_COPY } from "@/lib/breezeway-bridge";
+import { BRIDGE_COPY, type TicketBreezewayOrder } from "@/lib/breezeway-bridge";
 import { usDate, usDateTime } from "@/lib/dates";
-import type { TicketBreezewayOrder } from "@/lib/breezeway-bridge.server";
 
 function LinkedOrder({ order }: { order: TicketBreezewayOrder }) {
   const commentsFn = useServerFn(workOrderComments);
