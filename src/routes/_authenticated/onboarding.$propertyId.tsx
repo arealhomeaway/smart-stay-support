@@ -161,13 +161,8 @@ export const Route = createFileRoute("/_authenticated/onboarding/$propertyId")({
   validateSearch: (raw: Parameters<typeof validateWorkspaceSearch>[0]) => {
     const parsed = validateWorkspaceSearch(raw);
     const rawTab = typeof raw.tab === "string" ? raw.tab : undefined;
-    const tab = rawTab
-      ? HOME_TABS.some((t) => t.value === rawTab)
-        ? rawTab
-        : rawTab
-      : typeof raw.opp === "string" && typeof raw.task !== "string"
-        ? "info"
-        : "plan";
+    const tab =
+      rawTab ?? (typeof raw.opp === "string" && typeof raw.task !== "string" ? "info" : "plan");
     return { ...parsed, tab };
   },
   // Only a real property id may open a workspace; anything else never

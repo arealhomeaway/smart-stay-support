@@ -346,7 +346,7 @@ export function ChoiceField({
     <div className="space-y-1">
       <Label className="text-xs text-muted-foreground">{label}</Label>
       {canEdit ? (
-        <Select value={value ?? "__none"} onValueChange={(v) => onSave(v === "__none" ? null : v)} disabled={pending}>
+        <Select value={value ?? "__none"} onValueChange={(v) => onSave(v === "__none" ? null : v)} disabled={Boolean(pending)}>
           <SelectTrigger className="h-11" aria-label={label}>
             <SelectValue />
           </SelectTrigger>
