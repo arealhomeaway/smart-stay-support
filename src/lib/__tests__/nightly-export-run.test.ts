@@ -253,6 +253,17 @@ describe("nightly export run (stand-ins only)", () => {
     expect("skipped" in again && again.skipped).toContain("already done");
   });
 
+  it("lists and copies every stored file when there are more than 1,000", async () => {
+    const { db, data, files } = setup();
+    for (let i = 0; i < 1203; i++) files.push({ bucket: "resolve-attachments", name: `property/p/${i}.jpg`, size: 1, etag: "e", body: "x" });
+    const sp = fakeSharePoint();
+    await runUntilDone(db, sp.io, { kind: "test", forceWeekly: true, folderName: "TEST export many files" });
+    const run = data["backup_runs"]![0]!;
+    expect(run["files_inventoried"]).toBe(1206);
+    expect(run["files_copied"]).toBe(1205);
+    expect(run["verify_status"]).toBe("passed");
+  });
+
   it("copies only new or changed stored files on the next night", async () => {
     const { db, data, files } = setup();
     const sp = fakeSharePoint();
