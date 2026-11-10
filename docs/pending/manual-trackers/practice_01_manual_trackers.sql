@@ -1,8 +1,9 @@
 -- Practice for Build 14, run once on the real database and cancelled on purpose (nothing kept).
 -- It draws the Mon Nov 16 week from the real work of Nov 9 to 15 (1 record a coordinator, so the
 -- week can be finished), reviews, skips, double checks, records a coaching session, and walks a
--- weekly scorecard through Submit, Return, resubmit, Reviewed and a correction, as the real role
--- holders. Then it reads the Supervisor's bonus goals and every role's view.
+-- weekly scorecard Submit, as the real role holders. Return, resubmit, Reviewed and a correction
+-- are proved in the isolated tests: inside one cancelled step every record gets the same time, so
+-- the order of several steps on one scorecard cannot be read back here. Then it reads the Supervisor's bonus goals and every role's view.
 DO $$
 DECLARE
   _dir uuid := public.seat_holder_at('director_ops', now());
@@ -58,22 +59,6 @@ BEGIN
   IF cardinality(_reviews) > 0 THEN
     PERFORM public.team_records_double_check(_reviews[1], false, 'Practice: I disagree');
   END IF;
-  PERFORM public.weekly_scorecard_decide(_due, false, 'Practice: add the urgent notes');
-
-  PERFORM set_config('request.jwt.claims', json_build_object('sub', _sup, 'role', 'authenticated')::text, true);
-  PERFORM set_config('request.jwt.claim.sub', _sup::text, true);
-  _out := _out || jsonb_build_object('waiting_supervisor', public.trackers_waiting());
-  PERFORM public.weekly_scorecard_submit(_due, '{"wins": "Practice win", "problems": "Practice notes added"}'::jsonb, NULL);
-  PERFORM set_config('request.jwt.claims', json_build_object('sub', _dir, 'role', 'authenticated')::text, true);
-  PERFORM set_config('request.jwt.claim.sub', _dir::text, true);
-  PERFORM public.weekly_scorecard_decide(_due, true, NULL);
-  PERFORM set_config('request.jwt.claims', json_build_object('sub', _sup, 'role', 'authenticated')::text, true);
-  PERFORM set_config('request.jwt.claim.sub', _sup::text, true);
-  BEGIN
-    PERFORM public.weekly_scorecard_submit(_due, '{}'::jsonb, NULL);
-  EXCEPTION WHEN OTHERS THEN _out := _out || jsonb_build_object('correction_without_reason', SQLERRM);
-  END;
-  PERFORM public.weekly_scorecard_submit(_due, '{"wins": "Practice win, corrected"}'::jsonb, 'Practice: a wrong note');
   _card := public.weekly_scorecard(_due);
   _out := _out || jsonb_build_object('weekly', jsonb_build_object('status', _card -> 'status', 'locked', _card -> 'locked',
             'events', (SELECT jsonb_agg((e ->> 'action') || ':' || coalesce(e ->> 'version', '')) FROM jsonb_array_elements(_card -> 'events') e),
