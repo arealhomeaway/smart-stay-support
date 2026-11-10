@@ -439,7 +439,7 @@ async function tickets(ctx: LoadContext): Promise<ListData> {
         tags: { [HISTORICAL_FILTER]: historicalTag(t), ...(toWork.has(t.id) ? { [CLAIMS_TO_WORK_FILTER]: CLAIMS_TO_WORK_FILTER } : {}) },
         link: ticketLink(ctx, t.id),
         // The Notion number: the page id, with and without its dashes.
-        extra: notionId ? `${notionId} ${notionId.replace(/-/g, "")}` : undefined,
+        ...(notionId ? { extra: `${notionId} ${notionId.replace(/-/g, "")}` } : {}),
         ticket: {
           status: t.status,
           external_source: t.external_source ?? null,

@@ -4,6 +4,7 @@ import { Fragment, useMemo, useState } from "react";
 import { useRole } from "@/hooks/useRole";
 import { useDemo } from "@/components/DemoProvider";
 import { BackToDatabases, DbLinkButton, ModeChip } from "@/components/databases/DatabaseParts";
+import { TicketTabs } from "@/components/databases/TicketTabs";
 import { CLAIM_PIPELINE, CLAIM_STAGE_LABELS } from "@/lib/claims";
 import {
   ALL,
@@ -87,7 +88,7 @@ function DatabaseListPage() {
 }
 
 function DatabaseList({ card, mode, initialTerm }: { card: DatabaseCard; mode: Exclude<DatabaseMode, "hidden">; initialTerm: string }) {
-  const { roles, seats, canOpen, readOnly } = useRole();
+  const { roles, seats, canOpen, readOnly, can } = useRole();
   const { demoMode, demoReady } = useDemo();
   const [term, setTerm] = useState(initialTerm);
   const [chosen, setChosen] = useState<Record<string, string>>({});
@@ -104,6 +105,8 @@ function DatabaseList({ card, mode, initialTerm }: { card: DatabaseCard; mode: E
   });
   const rows = data.data?.rows ?? [];
   const isClaims = card.key === "claims";
+  // Tickets: tabs across the top with the same filters on each (Emily, Nov 9; register P3).
+  const isTickets = card.key === "tickets";
   const [view, setView] = useState<ClaimView>(CLAIM_VIEW_DEFAULT);
   const shown = useMemo(() => {
     const listed = applyList(rows, columns, term, chosen);
@@ -162,6 +165,16 @@ function DatabaseList({ card, mode, initialTerm }: { card: DatabaseCard; mode: E
               </div>
             )}
 
+            {isTickets ? (
+              data.error ? (
+                <p role="alert" className="text-destructive">
+                  This list could not be loaded. Try again in a moment.
+                </p>
+              ) : (
+                <TicketTabs rows={rows} loading={data.isPending} canFixHome={can("audit_history") && !readOnly} demoMode={demoMode} />
+              )
+            ) : (
+            <>
             <div className="flex flex-col gap-3 rounded-[14px] border border-border p-3.5">
               <label className="flex flex-col gap-1 text-[13px] text-muted-foreground">
                 Search {card.name}
@@ -222,6 +235,8 @@ function DatabaseList({ card, mode, initialTerm }: { card: DatabaseCard; mode: E
                 onToggle={(id) => setOpen((o) => (o === id ? null : id))}
                 editable={editable}
               />
+            )}
+            </>
             )}
           </>
         )}
