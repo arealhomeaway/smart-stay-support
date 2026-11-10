@@ -11,6 +11,8 @@
  * docs/pending/email-intake-safety/.
  */
 
+import { isArrivalTestTicket } from "./arrival-check";
+
 export const INTAKE_OFF_MESSAGE = "Email intake is off.";
 export const BEFORE_START_REASON = "received before email intake started";
 export const OWN_ADDRESS_REASON = "sent from our own address";
@@ -93,13 +95,14 @@ export function seesEmailTestsFor(access: {
  * email test ticket in the real lens for someone who runs the test plan.
  */
 export function ticketShownInLens(
-  t: { is_demo?: boolean | null; external_source?: string | null } | null | undefined,
+  t: { is_demo?: boolean | null; external_source?: string | null; external_id?: string | null } | null | undefined,
   demoMode: boolean,
   seesTests: boolean,
 ): boolean {
   if (!t) return false;
   if (Boolean(t.is_demo) === demoMode) return true;
-  return !demoMode && seesTests && isEmailTestTicket(t);
+  // Build 12: a test arrival check opens the same way for the people who run the test plan.
+  return !demoMode && seesTests && (isEmailTestTicket(t) || isArrivalTestTicket(t));
 }
 
 /** Words for the separate, never counted list of test records. */
