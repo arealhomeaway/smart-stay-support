@@ -154,3 +154,4 @@ BN7 Team records check: the Supervisor reviews 5 random PC records a week and re
 BN8 Coaching log: one session a month: date, agenda, notes, follow ups; replaces the Notion Coaching and Accountability database.
 BN9 Weekly scorecard and report: one database; the Supervisor presses Submit and it reaches the Director in Resolve by Thursday 3 PM; the first is due Thu Nov 19.
 BN10 Arrival check queue: the spec in docs/specs/arrival-check.md.
+BN11 Bonus values and scoring rules come from the Notion Operations Bonus Guides as of Nov 10 and are saved in docs/specs/bonus-guide-values.md; this replaces any number in BN2 to BN4 that differs (Emily, Nov 10).
