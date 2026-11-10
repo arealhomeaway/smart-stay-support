@@ -258,7 +258,7 @@ describe("7. Staged database change", () => {
   it("applied byte for byte and matches its checksums", () => {
     expect(read("drizzle/migrations/0317_access_fixes.sql")).toBe(read(`${dir}01_access_fixes.sql`));
     const sums = read(`${dir}sha256.txt`).trim().split("\n").map((l) => l.split(/\s+/));
-    expect(sums.length).toBeGreaterThanOrEqual(4);
+    expect(sums.length).toBeGreaterThan(3);
     for (const [hash, file] of sums) expect(createHash("sha256").update(readFileSync(`${dir}${file}`)).digest("hex")).toBe(hash!);
   });
   it("Admin only help ticket management, own reports for everyone; Onboarding invites for the Director of Onboarding", () => {

@@ -212,7 +212,7 @@ describe("access table: who opens which page and does its main action", () => {
 
   // A4, A8 to A12, A16: the pages Finance opens only to look. Finance pages (A18) and Direct Bookings (A11) stay editable.
   it("Finance looks without changing on Home, Work orders, Vendors, Claims and refunds, Properties and Onboarding", () => {
-    const fin = PROFILES.Finance!;
+    const fin = PROFILES["Finance"]!;
     for (const path of ["/dashboard", "/work-orders", "/vendors", "/vendors/abc", "/claims", "/recovery", "/properties", "/property/home", "/onboarding"]) {
       expect(viewOnlyPath(path, fin)).toBe(true);
     }
