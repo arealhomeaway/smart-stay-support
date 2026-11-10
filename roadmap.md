@@ -1,5 +1,14 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 9 build 2 of 7: Home My shift, End my shift and the handoff alert (no publish)
+- [x] 1 My shift card: today's hours and lunch, on call tonight, Request time off, End my shift, No shift today
+- [x] 2 End my shift walk: each open ticket, default next on shift, done so far, next step, due, or Nothing to hand off; one handoff each, one history line each, one shift record
+- [x] 3 Right now handoff unaccepted 15 minutes: receiver and Operations Supervisor once, in app and email; role with nobody on shift goes to the Supervisor
+- [x] 4 Lunch prompt on Home: hand off Right now or time sensitive work first, never blocks
+- [x] 5 Request time off from Nov 16 (setting), to the Operations Supervisor in Needs you now, approve with cover or decline, status on My shift
+- [x] 6 Tests and a cancelled real database step
+- [x] 7 Register T4 words
+
 ## Nov 9 build 1 of 7: Databases Tickets tabs and the old imported tickets lists (no publish)
 - [x] 1 Tabs with counts: All, Recent, Older open, Closed history, Needs a home, Claims history
 - [x] 2 Same filters on every tab: search (home, title, ref, Notion number), Period, Problem type, Status, Owner, totals, newest first, Open
