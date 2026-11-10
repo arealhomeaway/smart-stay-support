@@ -115,7 +115,7 @@ describe("staged Standard plan wording (Build 7, item 4)", () => {
   });
   it("names roles, not people, in the new text", () => {
     const sql = readFileSync(`${dir}/01_standard_plan_role_wording.sql`, "utf8");
-    const newText = [...sql.matchAll(/SET title = \$w\$([\s\S]*?)\$w\$,\n  detail = \$w\$([\s\S]*?)\$w\$/g)].map((m) => m[1] + m[2]).join("\n");
+    const newText = [...sql.matchAll(/SET title = \$w\$([\s\S]*?)\$w\$,\n  detail = \$w\$([\s\S]*?)\$w\$/g)].map((m) => `${m[1] ?? ""}${m[2] ?? ""}`).join("\n");
     expect(newText.length).toBeGreaterThan(1000);
     expect(newText.replace(/kade@arealhomeaway\.com/g, "")).not.toMatch(/\b(Emily|Jimenez|Steve|Mike|Kade|James|Micah|Sinor|KD|Keim|Burleson)\b/);
     expect((sql.match(/^UPDATE public\.onboarding_template_tasks/gm) ?? []).length).toBe(9);
