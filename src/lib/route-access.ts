@@ -33,6 +33,8 @@ type Rule = {
 // Longest/most specific prefixes first; matching is by whole path segment.
 const RULES: Rule[] = [
   { prefix: "/account", shared: true },
+  // Register A19 (Build 9 D2): a person's own scorecard records, read only. RLS shows only their own.
+  { prefix: "/my-scorecard", shared: true },
   { prefix: "/notifications", shared: true },
   { prefix: "/hub", shared: true },
   { prefix: "/join", shared: true },
