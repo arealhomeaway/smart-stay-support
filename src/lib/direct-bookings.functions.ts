@@ -38,6 +38,7 @@ import {
   type HomeCandidate,
   searchFailureMessage,
 } from "./direct-bookings";
+import { isEmailTestLead } from "./email-intake";
 import { NO_REPLY_WARNING, isNoReplyAddress, portalLinkFrom, portalNote, usableReplyAddress } from "./portal-requests";
 
 type Client = SupabaseClient<Database>;
@@ -55,6 +56,12 @@ const STEP_NOT_READY = "This step is still being set up. Ask the Operations Supe
 async function assertStaff(db: Client, userId: string) {
   const { data } = await db.rpc("is_internal_staff", { _user_id: userId });
   if (data !== true) throw new Error("Direct Bookings are for ARHA staff only.");
+}
+
+/** Register E1 (a): runs the email intake test plan (read on the server, never from the screen). */
+async function canSeeEmailTests(db: Client, userId: string) {
+  const { canSeeEmailTests: check } = await import("./email-test-viewer.server");
+  return check(db as unknown as SupabaseClient, userId);
 }
 
 async function holds(db: Client, userId: string, code: string) {
