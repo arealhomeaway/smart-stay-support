@@ -1,7 +1,10 @@
--- Practice run of 01_breezeway_bridge.sql on a real verified home with real Admin and non Admin
--- accounts. Run as: the full text of 01_breezeway_bridge.sql, then this file, in one step.
--- Cancelled at the end: nothing is kept (tickets, reviews, records, switch, start line, sweep).
--- Fake Breezeway task numbers 990000001 to 990000009 are used; nothing is sent to Breezeway.
+-- Practice run of 01_breezeway_bridge.sql on a real verified home. Cancelled at the end: nothing is
+-- kept (tickets, reviews, records, switch, start line).
+-- Run as: the text of 01_breezeway_bridge.sql WITHOUT set_breezeway_bridge and breezeway_bridge_status
+-- (the practice tool may not read the scheduler tables those two use; both are checked in the isolated
+-- copy, src/lib/__tests__/breezeway-bridge-sql.test.ts), then this file, in one step.
+-- The switch is put on here the way set_breezeway_bridge does it (same guard bypass, same start line row).
+-- Fake Breezeway task numbers 990000001 to 990000010 are used; nothing is sent to Breezeway.
 CREATE TEMP TABLE practice_result(k text, v text);
 CREATE TEMP TABLE practice_ids AS
 SELECT 'cc77a4df-0fa2-466d-bd6d-8c4217e84b03'::uuid AS prop,
@@ -40,24 +43,22 @@ $$;
 INSERT INTO practice_result SELECT 'internal_work_orders_flag',
   (SELECT enabled::text FROM public.feature_flags WHERE key = 'internal_work_orders');
 INSERT INTO practice_result SELECT 'bridge_before', (SELECT enabled::text FROM public.feature_flags WHERE key = 'breezeway_bridge');
-INSERT INTO practice_result SELECT 'sweep_before', (SELECT active::text FROM cron.job WHERE jobname = 'breezeway-safety-sweep');
 
 -- The switch cannot be flipped directly, and the start line cannot be moved directly.
 INSERT INTO practice_result SELECT 'direct_flag_update',
   pg_temp.try($q$UPDATE public.feature_flags SET enabled = true WHERE key = 'breezeway_bridge'$q$);
 INSERT INTO practice_result SELECT 'direct_start_line',
   pg_temp.try($q$INSERT INTO public.app_settings (key, value) VALUES ('breezeway_bridge_start_line', '{"at":"2020-01-01T00:00:00Z"}')$q$);
+INSERT INTO practice_result SELECT 'bridge_still_off_after_direct_tries', (SELECT enabled::text FROM public.feature_flags WHERE key = 'breezeway_bridge');
 
--- Only an Admin turns it on.
-SELECT pg_temp.as_user(other_id) FROM practice_ids;
-INSERT INTO practice_result SELECT 'turn_on_by_non_admin', pg_temp.try('SELECT public.set_breezeway_bridge(true)');
-INSERT INTO practice_result SELECT 'status_by_non_admin', pg_temp.try('SELECT public.breezeway_bridge_status()');
-SELECT pg_temp.as_user(admin_id) FROM practice_ids;
-INSERT INTO practice_result SELECT 'turn_on_by_admin', public.set_breezeway_bridge(true)::text;
-INSERT INTO practice_result SELECT 'sweep_after_on', (SELECT active::text FROM cron.job WHERE jobname = 'breezeway-safety-sweep');
-INSERT INTO practice_result SELECT 'start_line_1', private.breezeway_bridge_start_line()::text;
-INSERT INTO practice_result SELECT 'switch_history_rows',
-  (SELECT count(*)::text FROM public.integration_events WHERE operation = 'bridge_switch' AND resolved_by = (SELECT admin_id FROM practice_ids));
+-- Bridge on, start line now (the same writes set_breezeway_bridge makes).
+SELECT set_config('resolve.breezeway_bridge_switch', 'on', true);
+INSERT INTO public.app_settings (key, value, updated_at)
+VALUES ('breezeway_bridge_start_line', jsonb_build_object('at', date_trunc('second', clock_timestamp()) + interval '1 second'), now())
+ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now();
+UPDATE public.feature_flags SET enabled = true WHERE key = 'breezeway_bridge';
+SELECT set_config('resolve.breezeway_bridge_switch', '', true);
+INSERT INTO practice_result SELECT 'start_line', private.breezeway_bridge_start_line()::text;
 
 -- A. Reported issue after the start line on a verified home: one ticket.
 SELECT pg_temp.mirror(990000001, prop, home, 'maintenance', 'Created', 'new', true,
@@ -132,26 +133,15 @@ SELECT pg_temp.mirror(990000007, prop, home, 'maintenance', 'Finished', 'finishe
 INSERT INTO practice_result SELECT 'old_finish_reason',
   (SELECT string_agg(reason, ',') FROM public.breezeway_bridge_records WHERE breezeway_task_id = 990000007);
 
--- Status for the Integrations panel.
-INSERT INTO practice_result SELECT 'status',
-  (SELECT jsonb_build_object('enabled', s->'enabled', 'sweep_active', s->'sweep_active', 'tickets', s->'tickets_created',
-          'reviews', s->'reviews_created', 'skipped', s->'skipped', 'by_reason', s->'skipped_by_reason')::text
-     FROM (SELECT public.breezeway_bridge_status() s) x);
-
--- I. Turn off: creation stops, the sweep stops, nothing is recorded.
-INSERT INTO practice_result SELECT 'turn_off_by_admin', public.set_breezeway_bridge(false)::text;
-INSERT INTO practice_result SELECT 'sweep_after_off', (SELECT active::text FROM cron.job WHERE jobname = 'breezeway-safety-sweep');
+-- I. Turn off: creation stops and nothing is recorded.
+SELECT set_config('resolve.breezeway_bridge_switch', 'on', true);
+UPDATE public.feature_flags SET enabled = false WHERE key = 'breezeway_bridge';
+SELECT set_config('resolve.breezeway_bridge_switch', '', true);
 SELECT pg_temp.mirror(990000008, prop, home, 'maintenance', 'Created', 'new', true,
        clock_timestamp() + interval '1 minute', clock_timestamp() + interval '1 minute', NULL, '{}') FROM practice_ids;
 INSERT INTO practice_result SELECT 'off_issue_tickets_and_records',
   (SELECT count(*)::text FROM public.tickets WHERE external_id = '990000008' AND external_source = 'breezeway')
   || '/' || (SELECT count(*)::text FROM public.breezeway_bridge_records WHERE breezeway_task_id = 990000008);
-
--- The start line only moves forward when turned on again.
-SELECT pg_sleep(1.2);
-INSERT INTO practice_result SELECT 'turn_on_again', public.set_breezeway_bridge(true)::text;
-INSERT INTO practice_result SELECT 'start_line_2', private.breezeway_bridge_start_line()::text;
-SELECT public.set_breezeway_bridge(false);
 
 -- No internal work orders while the switch is off: a real work order and an outbound task are refused.
 INSERT INTO practice_result SELECT 'work_order_insert',
