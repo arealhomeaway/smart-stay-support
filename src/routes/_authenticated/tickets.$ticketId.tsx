@@ -188,7 +188,12 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   const [closeOpen, setCloseOpen] = useState(false);
   // Close ticket in the header: show the closure checks whatever stage the work is at.
   const [closeRequested, setCloseRequested] = useState(false);
-  const [guidedLeads, setGuidedLeads] = useState(false);
+  const [guidedLeads, setGuidedLeadsFlag] = useState(false);
+  const [guidedLeadTitle, setGuidedLeadTitle] = useState<string | null>(null);
+  const setGuidedLeads = useCallback((leads: boolean, title?: string | null) => {
+    setGuidedLeadsFlag(leads);
+    setGuidedLeadTitle(leads ? (title ?? null) : null);
+  }, []);
   // Guided checklist: refund form opener and the repair/vendor tools toggle.
   const [refundSignal, setRefundSignal] = useState(0);
   const [checklistTools, setChecklistTools] = useState(false);
@@ -974,7 +979,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
       : nextStepView({
           customStep: (ticket as { next_action?: string | null }).next_action ?? null,
           customDueAt: (ticket as { next_action_due_at?: string | null }).next_action_due_at ?? null,
-          derivedLabel: currentAction?.title ?? null,
+          derivedLabel: (guidedLeads && guidedLeadTitle) || (currentAction?.title ?? null),
           derivedDueAt: doThisNowDueAt({
             commState: guestComm.commState,
             commDueAt: guestComm.commDueAt,
