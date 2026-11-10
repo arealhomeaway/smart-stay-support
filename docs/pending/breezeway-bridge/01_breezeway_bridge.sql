@@ -117,8 +117,9 @@ AS $$
 $$;
 
 -- The one way to turn the bridge on or off (Admin only). On: the start line moves to that moment
--- (forward only) and the safety sweep starts in the same step. Off: creation stops and the sweep
--- stops. Who and when are recorded either way.
+-- (forward only). Off: creation stops. Who and when are recorded either way. The safety sweep
+-- (every 10 minutes) reads this switch on each run and does nothing while it is off; database
+-- steps may no longer start or stop timed jobs, so the switch does not touch the scheduler.
 CREATE OR REPLACE FUNCTION public.set_breezeway_bridge(_enabled boolean)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -131,8 +132,6 @@ DECLARE
   _before timestamptz;
   _after timestamptz;
   _line timestamptz := date_trunc('second', clock_timestamp()) + interval '1 second';
-  _job_id bigint;
-  _job_was boolean;
 BEGIN
   IF _me IS NULL OR NOT private.has_role(_me, 'admin') THEN
     RAISE EXCEPTION 'Only an Admin can turn the Breezeway bridge on or off.';
@@ -144,21 +143,12 @@ BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'The Breezeway bridge switch was not found.';
   END IF;
-  SELECT j.jobid, j.active INTO _job_id, _job_was
-    FROM cron.job j WHERE j.jobname = 'breezeway-safety-sweep' LIMIT 1;
-  IF _enabled AND _job_id IS NULL THEN
-    RAISE EXCEPTION 'The safety sweep was not found, so the Breezeway bridge stays off.';
-  END IF;
   PERFORM 1 FROM public.app_settings WHERE key = 'breezeway_bridge_start_line' FOR UPDATE;
   _before := private.breezeway_bridge_start_line();
   _after := _before;
 
   IF _was = _enabled THEN
-    IF _job_id IS NOT NULL AND _job_was IS DISTINCT FROM _enabled THEN
-      PERFORM cron.alter_job(job_id := _job_id, active := _enabled);
-    END IF;
-    RETURN jsonb_build_object('enabled', _was, 'changed', false, 'start_line', _before,
-                              'sweep', CASE WHEN _job_id IS NULL THEN false ELSE _enabled END);
+    RETURN jsonb_build_object('enabled', _was, 'changed', false, 'start_line', _before);
   END IF;
 
   PERFORM set_config('resolve.breezeway_bridge_switch', 'on', true);
@@ -172,18 +162,13 @@ BEGIN
      SET enabled = _enabled, updated_by = _me, updated_at = now()
    WHERE key = 'breezeway_bridge';
   PERFORM set_config('resolve.breezeway_bridge_switch', '', true);
-  IF _job_id IS NOT NULL THEN
-    PERFORM cron.alter_job(job_id := _job_id, active := _enabled);
-  END IF;
   INSERT INTO public.integration_events
     (system, direction, operation, status, resolved_by, resolved_at, previous_value, request_payload)
   VALUES ('breezeway', 'inbound', 'bridge_switch',
           CASE WHEN _enabled THEN 'on' ELSE 'off' END, _me, now(),
-          jsonb_build_object('enabled', _was, 'start_line', _before, 'sweep', coalesce(_job_was, false)),
-          jsonb_build_object('enabled', _enabled, 'start_line', _after,
-                             'sweep', CASE WHEN _job_id IS NULL THEN false ELSE _enabled END));
-  RETURN jsonb_build_object('enabled', _enabled, 'changed', true, 'start_line', _after,
-                            'sweep', CASE WHEN _job_id IS NULL THEN false ELSE _enabled END);
+          jsonb_build_object('enabled', _was, 'start_line', _before),
+          jsonb_build_object('enabled', _enabled, 'start_line', _after));
+  RETURN jsonb_build_object('enabled', _enabled, 'changed', true, 'start_line', _after);
 END $$;
 
 REVOKE ALL ON FUNCTION public.set_breezeway_bridge(boolean) FROM PUBLIC, anon;
@@ -433,8 +418,7 @@ BEGIN
   SELECT jsonb_build_object(
     'enabled', coalesce((SELECT enabled FROM public.feature_flags WHERE key = 'breezeway_bridge'), false),
     'start_line', _line,
-    'sweep_found', EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'breezeway-safety-sweep'),
-    'sweep_active', coalesce((SELECT active FROM cron.job WHERE jobname = 'breezeway-safety-sweep' LIMIT 1), false),
+    'sweep_last', (SELECT value FROM public.app_settings WHERE key = 'breezeway_safety_sweep_last'),
     'last_switch', (SELECT jsonb_build_object('status', e.status, 'at', e.resolved_at,
                                               'by', coalesce(pr.full_name, pr.email))
                       FROM public.integration_events e
