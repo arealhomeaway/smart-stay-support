@@ -282,7 +282,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   const availability = ticketAvailability({
     found: Boolean(data?.ticket) && !isError,
     foundInOtherLens: otherLens === true,
-    archived: Boolean(data?.ticket?.archived_at),
+    archived: Boolean((data?.ticket as { archived_at?: string | null } | null | undefined)?.archived_at),
     canRestore: canRestoreTicket(role),
   });
 
