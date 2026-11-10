@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import {
   HOME_COPY,
   HOME_TABS,
@@ -103,8 +103,28 @@ describe("word check", () => {
       .concat(HOME_TABS.flatMap((x) => [x.label, x.empty]))
       .join("\n");
     for (const re of BANNED) expect(copy).not.toMatch(re);
-    expect(HOME_COPY.heroLine).toBe("Our homes. Take good care of them.");
+    expect(HOME_COPY.heroLine).toBe("Protect the stay. Own the outcome.");
     expect(HOME_COPY.teamQueueLink(4)).toBe("Team queue (4 unclaimed)");
+  });
+
+  it("the Home banner shows the operations tagline and the old line appears nowhere (Emily, Nov 9, T1)", () => {
+    const dashboard = readFileSync("src/routes/_authenticated/dashboard.tsx", "utf8");
+    expect(dashboard).toContain("description={HOME_COPY.heroLine}");
+    expect(HOME_COPY.heroLine).toBe("Protect the stay. Own the outcome.");
+    const old = ["Our homes.", "Take good care of them."].join(" ");
+    const oldLoose = /take\s+good\s+care\s+of\s+them/i;
+    const walk = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+        const p = `${dir}/${e.name}`;
+        if (e.isDirectory()) return walk(p);
+        return /\.(tsx?|md|sql|html|json)$/.test(e.name) ? [p] : [];
+      });
+    const files = [...walk("src"), ...walk("docs")].filter((f) => !f.endsWith("home-work.test.ts"));
+    const hits = files.filter((f) => {
+      const text = readFileSync(f, "utf8");
+      return text.includes(old) || oldLoose.test(text);
+    });
+    expect(hits).toEqual([]);
   });
 
   it("no new screen quotes a banned word or the Notion claim status in visible text", () => {

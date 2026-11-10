@@ -47,7 +47,7 @@ M5 Clean slate removes the Demo button and adds an Admin only View as switcher t
 M6 Coordinators see My day, Team (Team and Coverage read only, Playbooks) and Properties; Supervisors add Oversight, Onboarding and Active Owner view, Analytics; Directors add their department and Logic and Automations (view); the COO sees everything except the frontline work lists; the CEO matches Admin.
 
 ## 4. Home, Team Queue, Record work, tickets and routing
-T1 Home: banner with a real home photo that changes daily and a small caption (home name and city), greeting and date; My scorecard button only for people with a scorecard; Needs you now; My work; Routine work due today; My shift; Recent activity collapsed.
+T1 Home: banner with a real home photo that changes daily and a small caption (home name and city), greeting and date; My scorecard button only for people with a scorecard; Needs you now; My work; Routine work due today; My shift; Recent activity collapsed. The operations banner tagline is Protect the stay. Own the outcome. (Emily, Nov 9).
 T2 Needs you now: only what needs this person (handoffs waiting, overdue or Right now work, approvals waiting, Direct Bookings alerted to or started). Each row says what and why; a click opens a side panel; Supervisors and above get a See all link to Oversight. Never Team Queue items.
 T3 My work: tabs Active, Waiting, Done recently (7 days), search and filter, List or Board; a Team queue link with the unclaimed count. No separate My Work page.
 T4 My shift: today's hours, who is on call tonight, Request time off, End my shift. Time off requests start Nov 16.
