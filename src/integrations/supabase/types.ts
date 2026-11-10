@@ -1363,6 +1363,66 @@ export type Database = {
         }
         Relationships: []
       }
+      breezeway_bridge_records: {
+        Row: {
+          breezeway_home_id: string | null
+          breezeway_task_id: number
+          created_at: string
+          id: string
+          kind: string
+          outcome: string
+          property_id: string | null
+          reason: string
+          routine_id: string | null
+          ticket_id: string | null
+          work_order_id: string | null
+        }
+        Insert: {
+          breezeway_home_id?: string | null
+          breezeway_task_id: number
+          created_at?: string
+          id?: string
+          kind: string
+          outcome: string
+          property_id?: string | null
+          reason?: string
+          routine_id?: string | null
+          ticket_id?: string | null
+          work_order_id?: string | null
+        }
+        Update: {
+          breezeway_home_id?: string | null
+          breezeway_task_id?: number
+          created_at?: string
+          id?: string
+          kind?: string
+          outcome?: string
+          property_id?: string | null
+          reason?: string
+          routine_id?: string | null
+          ticket_id?: string | null
+          work_order_id?: string | null
+        }
+        Relationships: []
+      }
+      breezeway_home_tags: {
+        Row: {
+          fetched_at: string
+          home_id: string
+          tags: string[]
+        }
+        Insert: {
+          fetched_at?: string
+          home_id: string
+          tags?: string[]
+        }
+        Update: {
+          fetched_at?: string
+          home_id?: string
+          tags?: string[]
+        }
+        Relationships: []
+      }
       breezeway_outbound_tasks: {
         Row: {
           assignee: string | null
@@ -1830,8 +1890,11 @@ export type Database = {
           breezeway_home_id: string
           breezeway_task_id: number
           breezeway_updated_at: string | null
+          bridge_keep: boolean
           comment_count: number
           created_at: string
+          created_by_id: string | null
+          created_by_name: string | null
           department: string | null
           description: string | null
           finished_at: string | null
@@ -1843,11 +1906,15 @@ export type Database = {
           photo_count: number
           priority: string | null
           property_id: string | null
+          report_url: string | null
+          reported_issue: boolean | null
+          requested_by: string | null
           reservation_snapshot: Json | null
           scheduled_date: string | null
           scheduled_time: string | null
           stage: string | null
           status: string | null
+          tags: string[] | null
           updated_at: string
         }
         Insert: {
@@ -1856,8 +1923,11 @@ export type Database = {
           breezeway_home_id: string
           breezeway_task_id: number
           breezeway_updated_at?: string | null
+          bridge_keep?: boolean
           comment_count?: number
           created_at?: string
+          created_by_id?: string | null
+          created_by_name?: string | null
           department?: string | null
           description?: string | null
           finished_at?: string | null
@@ -1869,11 +1939,15 @@ export type Database = {
           photo_count?: number
           priority?: string | null
           property_id?: string | null
+          report_url?: string | null
+          reported_issue?: boolean | null
+          requested_by?: string | null
           reservation_snapshot?: Json | null
           scheduled_date?: string | null
           scheduled_time?: string | null
           stage?: string | null
           status?: string | null
+          tags?: string[] | null
           updated_at?: string
         }
         Update: {
@@ -1882,8 +1956,11 @@ export type Database = {
           breezeway_home_id?: string
           breezeway_task_id?: number
           breezeway_updated_at?: string | null
+          bridge_keep?: boolean
           comment_count?: number
           created_at?: string
+          created_by_id?: string | null
+          created_by_name?: string | null
           department?: string | null
           description?: string | null
           finished_at?: string | null
@@ -1895,11 +1972,15 @@ export type Database = {
           photo_count?: number
           priority?: string | null
           property_id?: string | null
+          report_url?: string | null
+          reported_issue?: boolean | null
+          requested_by?: string | null
           reservation_snapshot?: Json | null
           scheduled_date?: string | null
           scheduled_time?: string | null
           stage?: string | null
           status?: string | null
+          tags?: string[] | null
           updated_at?: string
         }
         Relationships: [
@@ -17343,6 +17424,7 @@ export type Database = {
         Returns: Json
       }
       begin_email_job_run: { Args: never; Returns: string }
+      breezeway_bridge_status: { Args: never; Returns: Json }
       bulk_update_onboarding_home_tasks: {
         Args: {
           _blocks_handoff?: boolean
@@ -18972,6 +19054,7 @@ export type Database = {
         Args: { _actor_id: string; _document_id: string; _visibility: string }
         Returns: string
       }
+      set_breezeway_bridge: { Args: { _enabled: boolean }; Returns: Json }
       set_cleaner_hours_participation: {
         Args: {
           _active: boolean

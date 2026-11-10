@@ -5,7 +5,7 @@
  * successful retry cannot double-process, and nothing here becomes an
  * unbounded loop.
  */
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 import { createFakeBreezewayEventsStore } from "./fakeSupabase";
 import { BreezewayError } from "@/lib/breezeway.server";
 
@@ -14,12 +14,33 @@ mock.module("@/integrations/supabase/client.server", () => ({
   supabaseAdmin: store.supabaseAdmin,
 }));
 
+// Live work is kept only for verified Resolve homes (no pilot fallback, Build 10). Here the pilot
+// home stands in for one verified home through the real lookup's export; outside this file the
+// real lookup answers.
+let verifiedHomeStandIn = false;
+const realMapping = await import("@/lib/breezeway-mapping.server");
+mock.module("@/lib/breezeway-mapping.server", () => ({
+  ...realMapping,
+  propertyForHomeId: async (homeId: number) =>
+    verifiedHomeStandIn
+      ? homeId === 1473933
+        ? { id: "verified-home", name: "Verified home" }
+        : null
+      : realMapping.propertyForHomeId(homeId),
+}));
+afterAll(() => {
+  verifiedHomeStandIn = false;
+});
+
 const { processBreezewayWebhook, PILOT_COMPANY_ID, PILOT_HOME_ID } =
   await import("@/lib/breezeway-webhook.server");
 const { recoverFailedTaskVerifications, RECOVERY_BATCH_SIZE, MAX_RETRY_ATTEMPTS } =
   await import("@/lib/breezeway-webhook-recovery.server");
 
-beforeEach(() => store.reset());
+beforeEach(() => {
+  store.reset();
+  verifiedHomeStandIn = true;
+});
 
 const TASK_A = 700001;
 const t1 = "2026-08-27T18:00:00.000Z";

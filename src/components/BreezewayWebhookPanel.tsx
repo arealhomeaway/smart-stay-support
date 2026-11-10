@@ -22,7 +22,7 @@ type Registration = Awaited<ReturnType<typeof breezewayRegisterWebhook>>;
 type Recovery = Awaited<ReturnType<typeof breezewayWebhookRecoverFailures>>;
 
 const OUTCOME_LABELS: Record<string, string> = {
-  processed: "Processed (beta property)",
+  processed: "Processed (verified home)",
   ignored_other_property: "Ignored: other property",
   ignored_other_company: "Ignored: other company",
   duplicate: "Ignored: duplicate update",
@@ -50,8 +50,9 @@ function Verdict({ ok, children }: { ok: boolean; children: React.ReactNode }) {
 }
 
 /**
- * Admin controls for the single Breezeway Work Order webhook used by the Fitzgerald
- * pilot. The receiver's secret path is never shown here — only the host.
+ * Admin controls for the single company-wide Breezeway task webhook. It keeps the work order
+ * copy current for verified Resolve homes and feeds the Breezeway bridge. The receiver's secret
+ * path is never shown here, only the host.
  */
 export function BreezewayWebhookPanel() {
   const [reach, setReach] = useState<Reach | null>(null);
@@ -118,12 +119,12 @@ export function BreezewayWebhookPanel() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Antenna className="h-4 w-4" /> Breezeway Work Order webhook (pilot)
+              <Antenna className="h-4 w-4" /> Breezeway task updates
             </CardTitle>
             <CardDescription>
-              One subscription, company-wide delivery. Only tasks for the approved beta properties
-              are verified and retained; everything else is counted and discarded. Preview only: no
-              tickets, assignments, messages, stage changes or Breezeway writes.
+              One subscription for the whole company. Updates for verified Resolve homes keep the
+              work order copy current and feed the Breezeway bridge; other homes are counted. Nothing
+              is written to Breezeway.
             </CardDescription>
           </div>
           <Badge variant={status?.registered ? "default" : "secondary"}>
@@ -177,7 +178,7 @@ export function BreezewayWebhookPanel() {
             <p className="text-muted-foreground">
               Retried up to {recovery.attempted} transient lookup failure
               {recovery.attempted === 1 ? "" : "s"} (oldest first, respecting the shared rate
-              limit). Preview only: a recovered event still goes through the same scope and
+              limit). A recovered event goes through the same scope and
               duplicate checks as a live delivery.
             </p>
             <ul className="space-y-0.5">

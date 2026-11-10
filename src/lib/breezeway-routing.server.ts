@@ -275,6 +275,40 @@ export async function createTicketFromWorkOrder(
     } as never)
     .select("id, ref")
     .single();
+  if (error?.code === "23505") {
+    // A second escalation of the same Breezeway task (or the bridge got there first):
+    // open the existing ticket instead of failing, and keep a record on Integrations.
+    const { data: found } = await db
+      .from("tickets")
+      .select("id, ref, current_action_owner")
+      .eq("external_source", "breezeway")
+      .eq("external_id", String(wo.breezewayTaskId))
+      .maybeSingle();
+    const t = found as { id: string; ref: number | null; current_action_owner: string | null } | null;
+    if (t) {
+      if (!wo.linkedTicketId) await linkWorkOrderToTicket(wo.id, t.id);
+      try {
+        const { recordBreezewayIntegrationEvent } = await import("./breezeway-bridge.server");
+        await recordBreezewayIntegrationEvent({
+          operation: "second_escalation",
+          status: "opened_existing",
+          externalId: String(wo.breezewayTaskId),
+          message: "A second escalation opened the existing ticket.",
+          entityId: t.id,
+          actorId,
+        });
+      } catch {
+        /* bookkeeping only */
+      }
+      return {
+        ok: true,
+        ticketId: t.id,
+        ref: t.ref,
+        assignedTo: t.current_action_owner,
+        note: "This Breezeway task already has a ticket. Opening it.",
+      };
+    }
+  }
   if (error || !inserted) return { ok: false, message: "Could not create the Ticket." };
   const ticket = inserted as unknown as { id: string; ref: number | null };
 

@@ -1,0 +1,8 @@
+{
+ "01_breezeway_bridge.sql": "53bad51bcb860212c25d0f4437393fe259df36eaa29a50e642b9586df6f3ccf4",
+ "02_webhook_note.sql": "f7cba300d2831af167fc82e0667cc37643e46233ea23be0367185519fc12a215",
+ "practice_01_breezeway_bridge.sql": "f0c2964399276d70efeeb0154a616be146f58abb691ced92431592fdc16bee62",
+ "README.md": "36261440f1b5acd9ca53eb8ecc8512eafb37db194b37e550e23d8eff777b0394",
+ "undo/01_breezeway_bridge.sql": "3da61bbe055f66e49e2131a2a2f5832dc68b268e200cbdc79db313925c4e7ebc",
+ "undo/02_webhook_note.sql": "bef03f72aa61cbbb66908d4e998e1fd3ff26ebbde372cb39ded1108e44517636"
+}

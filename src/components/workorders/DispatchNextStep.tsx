@@ -12,11 +12,13 @@ import { pushWorkOrderToBreezeway } from "@/lib/vendor-sourcing.functions";
 import { prepareVendorWorkOrderEmail } from "@/lib/vendor-email.functions";
 import { dispatchNextStep } from "@/lib/dispatch-next-step";
 import { VendorEmailButton } from "@/components/workorders/VendorEmailButton";
+import { useFeatureFlags } from "@/lib/feature-flags";
 
 export function DispatchNextStep({ workOrderId, readOnly, onOpenWorkOrder }: { workOrderId: string; readOnly: boolean; onOpenWorkOrder: () => void }) {
   const qc = useQueryClient();
   const userId = useCurrentUserId();
   const push = useServerFn(pushWorkOrderToBreezeway);
+  const flags = useFeatureFlags();
   const prepare = useServerFn(prepareVendorWorkOrderEmail);
   const [when, setWhen] = useState("");
   const key = ["dispatch-next-step", workOrderId];
@@ -94,7 +96,8 @@ export function DispatchNextStep({ workOrderId, readOnly, onOpenWorkOrder }: { w
             })}>{step.button}</Button>
         </div>
       ) : step.kind === "send_breezeway" ? (
-        <Button size="sm" disabled={run.isPending}
+        // Hidden while Resolve work orders are off (register C4): nothing is sent to Breezeway.
+        !flags.enabled("internal_work_orders") ? null : <Button size="sm" disabled={run.isPending}
           onClick={() => run.mutate(async () => { const r = await push({ data: { workOrderId } }); toast.message(r.message); })}>{step.button}</Button>
       ) : step.kind === "send_email" ? (
         <VendorEmailButton workOrderId={workOrderId} />

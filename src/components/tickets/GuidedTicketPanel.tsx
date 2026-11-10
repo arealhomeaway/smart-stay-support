@@ -6,6 +6,7 @@
  * (guest update, resolution path, troubleshooting answers, chosen vendor).
  * Statuses, SLA clocks, closure gates and the Work Order engine are untouched.
  */
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -125,6 +126,9 @@ export function GuidedTicketPanel({
   onVendorChosenForWorkOrder?: ((vendor: { id: string; name: string }) => Promise<void>) | undefined;
 }) {
   const qc = useQueryClient();
+  // While Resolve work orders are off, the work order is made in Breezeway and linked (register C4).
+  const flags = useFeatureFlags();
+  const breezewayOnly = !flags.enabled("internal_work_orders");
   const [note, setNote] = useState("");
   const [nextHours, setNextHours] = useState(2);
   const [responded, setResponded] = useState<boolean | null>(null);
@@ -308,10 +312,21 @@ export function GuidedTicketPanel({
 
           {needsWorkOrder && vendor.data && (
             <div className="mt-1 space-y-3">
-              <h3 className="text-lg font-semibold">Open the Work Order for {vendor.data.name}</h3>
-              <p className="text-sm text-muted-foreground">
-                The vendor is recorded on the Work Order. Nothing is sent to them automatically. Contact them as you do today.
-              </p>
+              {breezewayOnly ? (
+                <>
+                  <h3 className="text-lg font-semibold">Link the Breezeway work order for {vendor.data.name}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Make the work order in Breezeway for this vendor, then link it here.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-lg font-semibold">Open the Work Order for {vendor.data.name}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    The vendor is recorded on the Work Order. Nothing is sent to them automatically. Contact them as you do today.
+                  </p>
+                </>
+              )}
               {workOrderPanel(vendor.data)}
               <Button variant="ghost" size="sm" onClick={() => setChangingVendor(true)}>Choose a different vendor</Button>
             </div>

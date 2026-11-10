@@ -24,6 +24,14 @@ import {
   type BreezewayWorkOrderPhoto,
 } from "./breezeway-workorders";
 import { BREEZEWAY_OUTBOUND_FLAG } from "./breezeway-outbound";
+import {
+  breezewayUtc,
+  bridgeMirrorFields,
+  rawIsFinishedMaintenance,
+  sweepBridgeCandidate,
+  taskStatusName,
+  type BridgeRawTask,
+} from "./breezeway-bridge";
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -92,23 +100,98 @@ function toWorkOrder(row: Row, propertyName: string | null = null): BreezewayWor
 /* Raw task shape                                                      */
 /* ------------------------------------------------------------------ */
 
-type RawTask = {
-  id: number;
-  name?: string | null;
+type RawTask = BridgeRawTask & {
   description?: string | null;
-  home_id?: number | null;
-  type_department?: string | null;
-  type_priority?: string | null;
-  type_task_status?: { code?: string | null; name?: string | null; stage?: string | null } | null;
   scheduled_date?: string | null;
   scheduled_time?: string | null;
   assignments?:
     { id?: number; name?: string | null; type_task_user_status?: string | null }[] | null;
   photos?: unknown[] | null;
-  created_at?: string | null;
   updated_at?: string | null;
   modified_at?: string | null;
 };
+
+/** The bridge switch and start line, read on the server (service connection). */
+export async function readBridgeGate(): Promise<{ on: boolean; startLine: string | null }> {
+  const db = await admin();
+  const [flag, line] = await Promise.all([
+    db.from("feature_flags").select("enabled").eq("key", "breezeway_bridge").maybeSingle(),
+    db.from("app_settings").select("value").eq("key", "breezeway_bridge_start_line").maybeSingle(),
+  ]);
+  const at = (line.data?.value as { at?: string | null } | null)?.at ?? null;
+  return { on: Boolean(flag.data?.enabled), startLine: at || null };
+}
+
+/** Breezeway home tags (read only), cached a day, so the New House skip can use the tag. */
+async function refreshHomeTags(homeId: number | string) {
+  const db = await admin();
+  const { data } = await db
+    .from("breezeway_home_tags" as never)
+    .select("fetched_at")
+    .eq("home_id", String(homeId))
+    .maybeSingle();
+  const fetched = (data as { fetched_at?: string } | null)?.fetched_at;
+  if (fetched && Date.now() - Date.parse(fetched) < 86_400_000) return;
+  try {
+    const res = await breezewayRequest<unknown>(`/property/${homeId}/tags`);
+    const list = Array.isArray(res)
+      ? res
+      : ((res as { results?: unknown[] } | null)?.results ?? []);
+    const tags = (list as unknown[])
+      .map((t) => (typeof t === "string" ? t : (t as { name?: unknown })?.name))
+      .filter((t): t is string => typeof t === "string" && t.trim().length > 0);
+    await db
+      .from("breezeway_home_tags" as never)
+      .upsert({ home_id: String(homeId), tags, fetched_at: new Date().toISOString() } as never, {
+        onConflict: "home_id",
+      });
+  } catch {
+    // No tag read: the home's name still decides New House.
+  }
+}
+
+/** Mirror columns for one task, shared by the sweep and the single-task refresh. */
+function mirrorRow(raw: RawTask, propertyId: string | null, priorFinishedAt: string | null, now: string) {
+  const extra = bridgeMirrorFields(raw, priorFinishedAt, now);
+  return {
+    breezeway_task_id: raw.id,
+    property_id: propertyId,
+    breezeway_home_id: String(raw.home_id ?? ""),
+    name: raw.name ?? null,
+    description: raw.description ?? null,
+    department: raw.type_department ?? null,
+    priority: raw.type_priority ?? null,
+    status: taskStatusName(raw),
+    stage: raw.type_task_status?.stage ?? raw.type_task_status?.code ?? null,
+    scheduled_date: raw.scheduled_date ?? null,
+    scheduled_time: raw.scheduled_time ?? null,
+    assignees: (raw.assignments ?? []).map((a) => ({
+      name: a?.name ?? null,
+      status: a?.type_task_user_status ?? null,
+    })),
+    photo_count: Array.isArray(raw.photos) ? raw.photos.length : 0,
+    breezeway_created_at: breezewayUtc(raw.created_at),
+    breezeway_updated_at: breezewayUtc(raw.updated_at ?? raw.modified_at),
+    last_synced_at: now,
+    ...extra,
+    ...(extra.finished_at ? {} : { finished_at: undefined }),
+  };
+}
+
+async function priorFinishTimes(taskIds: number[]) {
+  const map = new Map<number, string>();
+  if (!taskIds.length) return map;
+  const db = await admin();
+  const { data } = await db
+    .from("breezeway_work_orders")
+    .select("breezeway_task_id, finished_at")
+    .in("breezeway_task_id", taskIds)
+    .not("finished_at", "is", null);
+  for (const r of (data ?? []) as { breezeway_task_id: number; finished_at: string }[]) {
+    map.set(r.breezeway_task_id, r.finished_at);
+  }
+  return map;
+}
 
 function normalizeDate(value: string | null | undefined) {
   if (!value) return null;
@@ -161,47 +244,43 @@ export async function syncPropertyWorkOrders(
     };
   }
 
-  // Current work only — no historical dump.
+  // Current work only — no historical dump. While the bridge is on, the sweep also keeps
+  // reported issues and finished maintenance from after the start line, so nothing the
+  // webhook missed is lost (register C6, T15).
+  const bridge = await readBridgeGate();
+  const bridgeExtra = bridge.on
+    ? tasks.filter((t) => sweepBridgeCandidate(t, bridge.startLine))
+    : [];
   tasks = tasks.filter((t) =>
     isCurrentWorkOrder(t.type_task_status?.stage ?? null, t.type_task_status?.code ?? null),
   );
+  for (const t of bridgeExtra) if (!tasks.some((x) => x.id === t.id)) tasks.push(t);
+  if (bridgeExtra.some(rawIsFinishedMaintenance)) {
+    await refreshHomeTags(gate.homeId);
+  }
 
   const db = await admin();
   const now = new Date().toISOString();
+  const prior = await priorFinishTimes(tasks.map((t) => t.id));
   for (const t of tasks) {
     await db.from("breezeway_work_orders").upsert(
       {
-        breezeway_task_id: t.id,
-        property_id: propertyId,
+        ...mirrorRow(t, propertyId, prior.get(t.id) ?? null, now),
         breezeway_home_id: String(gate.homeId),
-        name: t.name ?? null,
-        description: t.description ?? null,
-        department: t.type_department ?? null,
-        priority: t.type_priority ?? null,
-        status: t.type_task_status?.name ?? t.type_task_status?.code ?? null,
-        stage: t.type_task_status?.stage ?? t.type_task_status?.code ?? null,
-        scheduled_date: t.scheduled_date ?? null,
-        scheduled_time: t.scheduled_time ?? null,
-        assignees: (t.assignments ?? []).map((a) => ({
-          name: a?.name ?? null,
-          status: a?.type_task_user_status ?? null,
-        })),
-        photo_count: Array.isArray(t.photos) ? t.photos.length : 0,
-        breezeway_created_at: normalizeDate(t.created_at),
-        breezeway_updated_at: normalizeDate(t.updated_at ?? t.modified_at),
-        last_synced_at: now,
       } as never,
       { onConflict: "breezeway_task_id" },
     );
   }
 
-  // Anything mirrored earlier that is no longer current drops out of the view.
+  // Anything mirrored earlier that is no longer current drops out of the view, except rows the
+  // bridge made a ticket or a review from.
   const keep = tasks.map((t) => t.id);
   const stale = await db
     .from("breezeway_work_orders")
     .delete()
     .eq("property_id", propertyId)
     .is("linked_ticket_id", null)
+    .eq("bridge_keep" as never, false as never)
     .not("breezeway_task_id", "in", `(${keep.length ? keep.join(",") : "0"})`)
     .select("id");
 
@@ -883,30 +962,21 @@ export async function refreshWorkOrder(
     } catch { console.error("Breezeway completion not saved; linked Task remains unchanged."); }
   }
   const db = await admin();
+  // New House skip reads the home tag; fetch it (read only, cached a day) before the mirror
+  // write so the bridge sees it. Only for finished maintenance while the bridge is on.
+  if (
+    property &&
+    raw.home_id != null &&
+    rawIsFinishedMaintenance(raw) &&
+    (await readBridgeGate()).on
+  ) {
+    await refreshHomeTags(raw.home_id);
+  }
+  const prior = await priorFinishTimes([raw.id]);
   const { data } = await db
     .from("breezeway_work_orders")
     .upsert(
-      {
-        breezeway_task_id: raw.id,
-        property_id: property?.id ?? null,
-        breezeway_home_id: String(raw.home_id ?? ""),
-        name: raw.name ?? null,
-        description: raw.description ?? null,
-        department: raw.type_department ?? null,
-        priority: raw.type_priority ?? null,
-        status: raw.type_task_status?.name ?? raw.type_task_status?.code ?? null,
-        stage: raw.type_task_status?.stage ?? raw.type_task_status?.code ?? null,
-        scheduled_date: raw.scheduled_date ?? null,
-        scheduled_time: raw.scheduled_time ?? null,
-        assignees: (raw.assignments ?? []).map((a) => ({
-          name: a?.name ?? null,
-          status: a?.type_task_user_status ?? null,
-        })),
-        photo_count: Array.isArray(raw.photos) ? raw.photos.length : 0,
-        breezeway_created_at: normalizeDate(raw.created_at),
-        breezeway_updated_at: normalizeDate(raw.updated_at ?? raw.modified_at),
-        last_synced_at: new Date().toISOString(),
-      } as never,
+      mirrorRow(raw, property?.id ?? null, prior.get(raw.id) ?? null, new Date().toISOString()) as never,
       { onConflict: "breezeway_task_id" },
     )
     .select(SELECT)

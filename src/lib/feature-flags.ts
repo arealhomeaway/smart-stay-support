@@ -47,6 +47,9 @@ export const FLAG_KEYS = [
   "claims_menu",
   // The old Admin imported tickets lists (Imported tickets tab and the Integrations list). Off: Databases, Tickets holds them.
   "imported_tickets_page",
+  // Resolve work orders and Breezeway sends from Resolve (register C4). Off: work orders are
+  // made in Breezeway and linked on the ticket.
+  "internal_work_orders",
 ] as const;
 
 export type FlagKey = (typeof FLAG_KEYS)[number];

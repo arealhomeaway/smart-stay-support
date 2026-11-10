@@ -3,6 +3,7 @@
  * Acceptance, authorization, dispatch and completion stay separate facts.
  * Rules live in `src/lib/vendor-sourcing.ts`; the authority ladder is reused unchanged.
  */
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -41,6 +42,7 @@ export function VendorSourcingPanel({ workOrderId, readOnly, focusFindVendor = f
   const qc = useQueryClient();
   const push = useServerFn(pushWorkOrderToBreezeway);
   const reconcile = useServerFn(reconcileWorkOrderHandoff);
+  const flags = useFeatureFlags();
   const findRef = useRef<HTMLDivElement>(null);
   const [focusRequested] = useState(() => focusFindVendor || consumeFindVendorFocus(workOrderId));
   const staff = useStaffDirectory();
@@ -88,6 +90,8 @@ export function VendorSourcingPanel({ workOrderId, readOnly, focusFindVendor = f
     if (focusRequested && loaded) { findRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); findRef.current?.focus({ preventScroll: true }); }
   }, [focusRequested, loaded]);
 
+  // Push to Breezeway is hidden while Resolve work orders are off (register C4).
+  const internalWorkOrdersOn = flags.enabled("internal_work_orders");
   if (q.isLoading || !q.data) return <p className="text-sm text-muted-foreground">Loading vendor sourcing…</p>;
   const { cands, visits, vendors } = q.data;
   const wo = q.data.wo as typeof q.data.wo & DispatchWorkOrder;
@@ -274,7 +278,7 @@ export function VendorSourcingPanel({ workOrderId, readOnly, focusFindVendor = f
             </div>
           </div>
         )}
-        {!readOnly && wo.breezeway_handoff_status !== "uncertain" && (
+        {!readOnly && internalWorkOrdersOn && wo.breezeway_handoff_status !== "uncertain" && (
           <Button size="sm" variant="outline" disabled={run.isPending || !elig.allowed}
             onClick={() => run.mutate(async () => { const r = await push({ data: { workOrderId } }); toast.message(r.message); })}>
             {wo.breezeway_handoff_status === "failed" ? "Retry Breezeway handoff" : "Push to Breezeway"}

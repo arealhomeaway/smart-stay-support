@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { setEmailIntake } from "@/lib/mailbox.functions";
+import { setBreezewayBridge } from "@/lib/breezeway-bridge.functions";
 import { ONE_SWITCH_NOTE, OUT_OF_STEP_LINE } from "@/lib/email-intake";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { useRole } from "@/hooks/useRole";
@@ -22,6 +23,7 @@ export function FeatureFlagsPanel() {
   const [busy, setBusy] = useState<string | null>(null);
   const qc = useQueryClient();
   const setIntake = useServerFn(setEmailIntake);
+  const setBridge = useServerFn(setBreezewayBridge);
 
   if (isLoading) return <Skeleton className="h-48 w-full" />;
 
@@ -45,6 +47,11 @@ export function FeatureFlagsPanel() {
               {f.key === "email_intake" ? (
                 <p className="text-xs font-medium text-foreground">{ONE_SWITCH_NOTE}</p>
               ) : null}
+              {f.key === "breezeway_bridge" ? (
+                <p className="text-xs font-medium text-foreground">
+                  Turning it on sets the start line to now. Older Breezeway work is skipped.
+                </p>
+              ) : null}
             </div>
             <Switch
               checked={f.enabled}
@@ -61,6 +68,15 @@ export function FeatureFlagsPanel() {
                     // Say plainly if the timed check did not follow the switch.
                     if (r?.timed_check !== v) toast.error(OUT_OF_STEP_LINE);
                     else toast.success(v ? "Email intake is on. The timed check started." : "Email intake is off. The timed check stopped.");
+                    return;
+                  }
+                  if (f.key === "breezeway_bridge") {
+                    // The one path (register T15): on moves the start line forward; off stops
+                    // creation. The safety sweep reads the switch on every run.
+                    const r = await setBridge({ data: { enabled: v } });
+                    await qc.invalidateQueries({ queryKey: ["feature-flags"] });
+                    await qc.invalidateQueries({ queryKey: ["breezeway-bridge-status"] });
+                    toast.success(r.enabled ? "The Breezeway bridge is on." : "The Breezeway bridge is off.");
                     return;
                   }
                   await setEnabled(f.key, v);

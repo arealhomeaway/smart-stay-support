@@ -197,6 +197,20 @@ describe("stale request keys after a terminal outcome", () => {
   });
 });
 
+describe("Resolve work orders switched off (register C4, Nov 10)", () => {
+  it("refuses with the plain line and never calls Breezeway, even with the outbound switch on", async () => {
+    store.setInternalWorkOrders(false);
+    const result = await createOutboundTask(input("key-internal-off-0001"), "actor");
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toBe("Nothing is sent to Breezeway from Resolve for now. Make the task in Breezeway.");
+    }
+    expect(calls.length).toBe(0);
+    expect(store.outbound().length).toBe(0);
+    expect(store.workOrders().length).toBe(0);
+  });
+});
+
 describe("feature flag and pilot lock", () => {
   it("refuses when the flag is off and never calls Breezeway", async () => {
     store.setFlag(false);
