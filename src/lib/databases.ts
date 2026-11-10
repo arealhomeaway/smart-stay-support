@@ -405,6 +405,8 @@ export type DbRow = {
   edit?: ClaimEdit;
   /** Claims and refunds only: open or closed, the original opened date and the money. */
   claim?: ClaimFacts;
+  /** Tickets only: what the tabs read (src/lib/ticket-tabs.ts). */
+  ticket?: TicketFacts;
 };
 
 /** What the Status, Period, sort and totals line read from a claim or refund row. */
