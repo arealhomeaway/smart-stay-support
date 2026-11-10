@@ -72,7 +72,8 @@ describe("Do this now: one next step with a due time (T5, T13)", () => {
   });
   test("the ticket page shows the step inside Do this now", () => {
     expect(PAGE).toContain("<NextStepCard ticketId={ticketId} view={nextStep}");
-    expect(PAGE).toContain("derivedLabel: currentAction?.title ?? null");
+    expect(PAGE).toContain("derivedLabel: (guidedLeads && guidedLeadTitle) || (currentAction?.title ?? null)");
+    expect(PAGE).toContain('derivedDueAt: ticket.status === "waiting" ? (ticket.next_review_at ?? null)');
   });
 });
 
