@@ -1,5 +1,13 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 9 build 6 of 7: the full nightly export (register N10, no publish)
+- [ ] 1 Every public table, one file each (large ones in parts), manifest with rows and sha256, dated SharePoint folder, no secrets
+- [ ] 2 Stored file inventory every night; new or changed files copied nightly, full copy weekly; real size reported
+- [ ] 3 Verify each run (manifest re read, files, live counts), Passed or Failed with reason; keep 30 daily and 12 weekly (setting)
+- [ ] 4 Failure and missed night (5 AM Central) alert to Admin and Director of Operations, in app and email
+- [ ] 5 Read only Export check page: Admin tools for Admin, from Oversight for the Supervisor and Directors
+- [ ] 6 Tests, one real run in a test folder (then deleted), cancelled database step, forced failure alert, Back up everything still works, register N10
+
 ## Nov 9 build 3 of 7: the rest of Home (no publish, no database change)
 - [x] 1 Needs you now rows open a side panel with what, why and the action
 - [x] 2 See all to Oversight for Supervisor, Directors, COO, Admin; not coordinators
