@@ -38,6 +38,7 @@ import { SupervisorAttentionBand } from "@/components/SupervisorAttentionBand";
 import { SupervisorRecords } from "@/components/scorecard/SupervisorRecords";
 import { HandoffsWaiting } from "@/components/operations/HandoffsWaiting";
 import { OwnerFollowUps } from "@/components/OwnerFollowUps";
+import { LunchPrompt, MyShiftCard, TimeOffRequestsWaiting, useTimeOffWaiting } from "@/components/home/MyShift";
 import { openRecordRoutine } from "@/components/routines/RecordRoutinePanel";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { SURVEY_CHECK_FLAG } from "@/lib/record-routine";
@@ -181,6 +182,11 @@ function Dashboard() {
   const bannerHome = bannerFailed ? null : dailyHomePhoto(bannerHomes.data ?? [], new Date());
 
   const rows = mine.data ?? [];
+  // The same rows, with the home label, for End my shift and the lunch handoff.
+  const walkRows = useMemo(
+    () => rows.map((t) => ({ ...t, homeLabel: formatPropertyLabel(t.properties).full })),
+    [rows],
+  );
   // Overnight Direct Bookings wait in the Team Queue for Team A and count here too (register D2).
   const overnight = useQuery({
     queryKey: overnightQueueKey(demoMode),
@@ -224,6 +230,9 @@ function Dashboard() {
         </p>
       )}
 
+      {/* Register S1: before lunch, ask about Right now and time sensitive work. */}
+      <LunchPrompt userId={userId} isCoordinator={role.roles.includes("tech")} rows={walkRows} demoMode={demoMode} />
+
       <NeedsYouNow rows={rows} userId={userId} originSearch={originSearch} />
 
       {mine.isError ? (
@@ -236,6 +245,9 @@ function Dashboard() {
       )}
 
       <RoutineWorkDue team={myTeam} />
+
+      {/* Register T1, T4: My shift sits after Routine work due today. */}
+      <MyShiftCard userId={userId} isCoordinator={role.roles.includes("tech")} rows={walkRows} demoMode={demoMode} />
 
       <RecentActivity rows={rows} originSearch={originSearch} />
     </div>
@@ -273,7 +285,8 @@ function NeedsYouNow({ rows, userId, originSearch }: { rows: Row[]; userId: stri
   const items = useMemo(() => needsYouNow(rows, userId), [rows, userId]);
   const bookingRows = bookings.data ?? [];
   const approvalRows = approvals.data ?? [];
-  const nothing = items.length === 0 && bookingRows.length === 0 && approvalRows.length === 0;
+  const timeOff = useTimeOffWaiting(userId, demoMode);
+  const nothing = items.length === 0 && bookingRows.length === 0 && approvalRows.length === 0 && timeOff.rows.length === 0;
 
   return (
     <SectionCard
@@ -284,6 +297,7 @@ function NeedsYouNow({ rows, userId, originSearch }: { rows: Row[]; userId: stri
     >
       <HandoffsWaiting />
       <OwnerFollowUps />
+      <TimeOffRequestsWaiting userId={userId} demoMode={demoMode} />
       {bookingRows.map((r) => (
         <Link
           key={r.id}
