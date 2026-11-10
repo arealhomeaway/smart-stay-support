@@ -127,7 +127,7 @@ export function lunchLabel(start: number, end: number): string {
   return `${short(start)} to ${short(end)}`;
 }
 
-/** "Today: 1 PM to 10 PM, lunch 4 to 5", or "No shift today". */
+/** "Today: 1 PM to 10 PM, lunch 4 to 5, Central time", or "No shift today" (Central time, Emily, Nov 10). */
 export function shiftLine(s: Pick<MyShiftToday, "blocks" | "off">): string {
   if (s.blocks.length === 0) return s.off ? MY_SHIFT_COPY.offToday : MY_SHIFT_COPY.noShift;
   return (
@@ -138,7 +138,8 @@ export function shiftLine(s: Pick<MyShiftToday, "blocks" | "off">): string {
         const lunch = b.lunchStart !== null && b.lunchEnd !== null ? `, lunch ${lunchLabel(b.lunchStart, b.lunchEnd)}` : "";
         return `${hours}${lunch}${b.covering ? " (covering)" : ""}`;
       })
-      .join("; ")
+      .join("; ") +
+    ", Central time"
   );
 }
 
