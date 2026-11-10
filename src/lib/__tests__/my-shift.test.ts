@@ -54,8 +54,8 @@ const today = (userId: string, now: Date, overrides: ShiftOverride[] = [], isCoo
 
 describe("My shift card (register T4)", () => {
   it("a person with a shift today sees today's hours and lunch from the schedule", () => {
-    expect(shiftLine(today(B, at("10:00")))).toBe("Today: 1 PM to 10 PM, lunch 4 to 5");
-    expect(shiftLine(today(A, at("10:00")))).toBe("Today: 8 AM to 5 PM, lunch 1 to 2");
+    expect(shiftLine(today(B, at("10:00")))).toBe("Today: 1 PM to 10 PM, lunch 4 to 5, Central time");
+    expect(shiftLine(today(A, at("10:00")))).toBe("Today: 8 AM to 5 PM, lunch 1 to 2, Central time");
   });
 
   it("a person with no shift today sees No shift today", () => {
@@ -78,7 +78,7 @@ describe("My shift card (register T4)", () => {
     // C is off Tuesday but covers the weekday day role.
     const tue = (h: string) => at(h, "2026-11-10");
     const coverTue = { ...cover, starts_at: tue("00:00").toISOString(), ends_at: tue("23:59").toISOString() };
-    expect(shiftLine(today(C, tue("10:00"), [coverTue]))).toBe("Today: 8 AM to 5 PM, lunch 1 to 2 (covering)");
+    expect(shiftLine(today(C, tue("10:00"), [coverTue]))).toBe("Today: 8 AM to 5 PM, lunch 1 to 2 (covering), Central time");
   });
 
   it("people who do not work shifts get no card", () => {
