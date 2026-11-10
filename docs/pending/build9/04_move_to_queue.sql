@@ -1,5 +1,5 @@
 -- Build 9 B1 (STAGE ONLY, not marked APPLY): Move to queue on the Databases Older open tab.
--- The Operations Supervisor and the Directors pick one or several older open tickets imported
+-- The Operations Supervisor and the Director of Operations pick one or several older open tickets imported
 -- from Notion and move them into the Team Queue's "Imported from Notion" group, where anyone who
 -- works tickets can Take it (the existing reopen_notion_ticket). Moving stays quiet: no owner,
 -- no clock, no alert, no count beyond open ticket totals (the same as a recent import, N4/T7).
@@ -27,10 +27,8 @@ DECLARE
 BEGIN
   IF v_me IS NULL OR NOT (
        public.holds_functional_role(v_me, 'ops_supervisor')
-    OR public.holds_functional_role(v_me, 'director_ops')
-    OR public.holds_functional_role(v_me, 'onboarding_director')
-    OR public.holds_functional_role(v_me, 'director_onboarding')) THEN
-    RAISE EXCEPTION 'Only the Operations Supervisor or a Director can move tickets to the queue.';
+    OR public.holds_functional_role(v_me, 'director_ops')) THEN
+    RAISE EXCEPTION 'Only the Operations Supervisor or the Director of Operations can move tickets to the queue.';
   END IF;
   IF _ticket_ids IS NULL OR cardinality(_ticket_ids) = 0 THEN RAISE EXCEPTION 'Pick at least one ticket.'; END IF;
   IF cardinality(_ticket_ids) > 200 THEN RAISE EXCEPTION 'Pick 200 tickets or fewer at once.'; END IF;
