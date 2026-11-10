@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -9,15 +10,13 @@ import { Label } from "@/components/ui/label";
 import { SectionCard } from "@/components/ui/page";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useStaffDirectory, displayName } from "@/hooks/useTeam";
-import { getMyScorecardRoles, recordCoaching, recordFinancePacket } from "@/lib/scorecard-capture.functions";
+import { getMyScorecardRoles, recordFinancePacket } from "@/lib/scorecard-capture.functions";
 import { CAPTURE_COPY, financePacketVisible, financeWeekEnding } from "@/lib/scorecard-capture";
 
 /** The Supervisor's records on Home. Shows only for the Operations Supervisor or Director role. */
 export function SupervisorRecords() {
   const rolesFn = useServerFn(getMyScorecardRoles);
   const roles = useQuery({ queryKey: ["scorecard-roles"], queryFn: () => rolesFn(), staleTime: 5 * 60 * 1000 });
-  const [coaching, setCoaching] = useState(false);
   const [finance, setFinance] = useState(false);
   const showFinance = financePacketVisible(new Date());
 
@@ -28,9 +27,10 @@ export function SupervisorRecords() {
   return (
     <SectionCard title="Your records" description="Short notes that show the care behind the week.">
       <div className="flex flex-wrap gap-2">
+        {/* Build 14 (register BN8): coaching sessions are recorded on the Coaching page, one log. */}
         {r.supervisor && (
-          <Button variant="outline" className="min-h-11" onClick={() => setCoaching(true)}>
-            {CAPTURE_COPY.coachingButton}
+          <Button asChild variant="outline" className="min-h-11">
+            <Link to="/coaching">{CAPTURE_COPY.coachingButton}</Link>
           </Button>
         )}
         {showFinance && r.leads && (
@@ -39,81 +39,8 @@ export function SupervisorRecords() {
           </Button>
         )}
       </div>
-      <CoachingDialog open={coaching} onOpenChange={setCoaching} />
       <FinanceDialog open={finance} onOpenChange={setFinance} />
     </SectionCard>
-  );
-}
-
-function CoachingDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
-  const staff = useStaffDirectory();
-  const saveFn = useServerFn(recordCoaching);
-  const [who, setWho] = useState("");
-  const [strength, setStrength] = useState("");
-  const [improvement, setImprovement] = useState("");
-  const [followUp, setFollowUp] = useState("");
-  const coordinators = useMemo(
-    () => (staff.data ?? []).filter((m) => m.roles.includes("tech")),
-    [staff.data],
-  );
-  const save = useMutation({
-    mutationFn: () =>
-      saveFn({ data: { coordinatorId: who, strength, improvement, followUp: followUp.trim() || undefined } }),
-    onSuccess: () => {
-      toast.success(CAPTURE_COPY.coachingThanks);
-      setWho("");
-      setStrength("");
-      setImprovement("");
-      setFollowUp("");
-      onOpenChange(false);
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-  const ready = who && strength.trim().length >= 3 && improvement.trim().length >= 3;
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{CAPTURE_COPY.coachingButton}</DialogTitle>
-          <DialogDescription>Today's date is saved with it.</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label>Coordinator</Label>
-            <Select value={who} onValueChange={setWho}>
-              <SelectTrigger className="min-h-11">
-                <SelectValue placeholder="Choose a coordinator" />
-              </SelectTrigger>
-              <SelectContent>
-                {coordinators.map((m) => (
-                  <SelectItem key={m.id} value={m.id}>
-                    {displayName(m)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="coach-strength">What went well</Label>
-            <Textarea id="coach-strength" value={strength} onChange={(e) => setStrength(e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="coach-improve">What to grow next</Label>
-            <Textarea id="coach-improve" value={improvement} onChange={(e) => setImprovement(e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="coach-follow">Follow-up</Label>
-            <Input id="coach-follow" className="min-h-11" value={followUp} onChange={(e) => setFollowUp(e.target.value)} />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button className="min-h-11" disabled={!ready || save.isPending} onClick={() => save.mutate()}>
-            Save
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
 
