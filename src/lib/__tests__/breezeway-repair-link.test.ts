@@ -124,8 +124,8 @@ describe("C4 internal work orders hidden while the switch is off", () => {
     expect(src("src/components/workorders/VendorSourcingPanel.tsx")).toContain("internalWorkOrdersOn && wo.breezeway_handoff_status");
     expect(src("src/components/workorders/DispatchNextStep.tsx")).toContain('!flags.enabled("internal_work_orders") ? null');
   });
-  it("the switch defaults to off when the setting is missing", async () => {
-    const { FEATURE_FLAG_KEYS } = (await import("@/lib/feature-flags")) as { FEATURE_FLAG_KEYS?: readonly string[] };
-    if (FEATURE_FLAG_KEYS) expect(FEATURE_FLAG_KEYS).toContain("internal_work_orders");
+  it("the internal work orders switch is a known switch", async () => {
+    const { FLAG_KEYS } = await import("@/lib/feature-flags");
+    expect(FLAG_KEYS as readonly string[]).toContain("internal_work_orders");
   });
 });
