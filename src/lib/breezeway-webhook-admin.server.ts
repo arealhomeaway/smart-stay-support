@@ -367,7 +367,7 @@ export async function registerTaskWebhook(): Promise<RegistrationResult> {
     receiver_host: receiverHost(),
     last_verified_at: new Date().toISOString(),
     active: true,
-    note: "Fitzgerald pilot. Company-wide delivery; only company 3641 / home 1473933 retained.",
+    note: "Company-wide task updates. Verified Resolve homes only. Keeps the work order mirror current and feeds the bridge.",
   });
 
   return {
