@@ -91,7 +91,7 @@ function fakeDb(tables: Record<string, Row[]>, files: { bucket: string; name: st
     private run() {
       const rows = (data[this.t] ??= []);
       if (this.op === "insert") {
-        const r = { id: `run-${++seq}`, started_at: new Date().toISOString(), lease_until: null, folder_item_id: null, pruned_at: null, ...(this.payload as Row) };
+        const r: Row = { id: `run-${++seq}`, started_at: new Date().toISOString(), lease_until: null, folder_item_id: null, pruned_at: null, ...(this.payload as Row) };
         if (this.t === "backup_runs" && rows.some((x) => x["kind"] === r["kind"] && x["folder_name"] === r["folder_name"] && x["phase"]))
           return { data: null, error: { message: "duplicate" } };
         rows.push(r);
