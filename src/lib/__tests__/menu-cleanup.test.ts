@@ -65,7 +65,8 @@ describe("who sees what", () => {
     expect(menu[0]?.label).toBe("Onboarding");
     expect(menu[0]?.items.map((i) => i.label)).toEqual([
       "Onboarding Home",
-      "Properties",
+      // Build 9 F5 (Emily, Nov 10): the onboarding menu link reads All properties.
+      "All properties",
       "My Tasks",
       "Owner Completions",
       "Team",

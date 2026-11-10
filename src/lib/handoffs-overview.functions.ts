@@ -65,7 +65,7 @@ export const readHandoffsOverview = createServerFn({ method: "GET" })
     // Build 9 F4: the Standard plan's handoff steps, matched to each home's own Tasks by step.
     const { HANDOFF_PLAN_STAGES, handoffTaskLines } = await import("./handoffs-overview");
     const { usDate } = await import("./dates");
-    const plan = await sb.from("onboarding_templates").select("id").eq("name", "ARHA Onboarding - Standard").maybeSingle();
+    const plan = await sb.from("onboarding_templates").select("id").eq("key", "arha_onboarding_standard").maybeSingle();
     const steps = plan.data
       ? await sb
           .from("onboarding_template_tasks")

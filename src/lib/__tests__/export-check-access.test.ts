@@ -37,7 +37,8 @@ describe("Export check access", () => {
 
   it("Oversight links to it for the people who can open it, and the page has nothing to press", () => {
     const oversight = readFileSync("src/routes/_authenticated/oversight.tsx", "utf8");
-    expect(oversight).toContain('canOpen("/export-check")');
+    // Build 9 H1 (Emily, Nov 10): the link follows showExportCheckLink, which first requires canOpenPath("/export-check").
+    expect(oversight).toContain("showExportCheckLink(access)");
     const page = readFileSync("src/routes/_authenticated/export-check.tsx", "utf8");
     expect(page).not.toMatch(/<Button|onClick|useMutation/);
   });
