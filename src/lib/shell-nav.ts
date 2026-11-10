@@ -477,11 +477,18 @@ const SUBPAGE_LABELS: Record<string, string> = {
   "/str-participation-report": "Participation report",
 };
 
+// A home's onboarding page tabs (register O1). Plan is the page itself, so it adds no crumb
+// and Back from it returns to Onboarding. Older tab links read as the tab that holds them now.
 const ONBOARDING_TABS: Record<string, string> = {
-  work: "Tasks",
-  property: "Property Details",
+  design: "Design",
+  budget: "Budget & Invoices",
+  agreements: "Agreements",
+  info: "General Info",
+  files: "Files",
+  activity: "Activity",
   handoff: "Handoff",
-  files: "Files & History",
+  property: "General Info",
+  history: "Activity",
 };
 
 const RESERVED_ONBOARDING = new Set(["properties", "my-work", "team", "templates", "handoff-standard", "utilities", "transitions"]);

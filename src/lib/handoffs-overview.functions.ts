@@ -22,7 +22,7 @@ export const readHandoffsOverview = createServerFn({ method: "GET" })
 
     const projects = await sb
       .from("onboarding_projects")
-      .select("id, property_id, handoff_state, status, target_handoff_on, ready_for_ops_at, ready_for_ops_by, is_demo")
+      .select("id, property_id, handoff_state, status, target_handoff_on, committed_handoff_on, ready_for_ops_at, ready_for_ops_by, is_demo")
       .neq("status", "cancelled")
       .order("created_at", { ascending: false });
     if (projects.error) throw new Error(projects.error.message);

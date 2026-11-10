@@ -63,6 +63,16 @@ type Props = {
   readOnly?: boolean;
   onUploaded?: (ids: string[]) => void;
   onUploadBusyChange?: (busy: boolean) => void;
+  /** Limit the folder picker to these choices (the home's Design tab). */
+  categories?: readonly { value: string; label: string }[] | undefined;
+  /** The folder picked first. */
+  defaultCategory?: string | undefined;
+  /** The drop prompt. */
+  dropLabel?: string | undefined;
+  /** Only list files in these folders. */
+  onlyCategories?: readonly string[] | undefined;
+  /** List files under a heading per folder. */
+  groupByCategory?: boolean | undefined;
 };
 
 function iconFor(kind: string) {
@@ -80,9 +90,15 @@ export function AttachmentsPanel({
   readOnly = false,
   onUploaded,
   onUploadBusyChange,
+  categories,
+  defaultCategory,
+  dropLabel,
+  onlyCategories,
+  groupByCategory = false,
 }: Props) {
   const propertyLevel = entityType === "property";
-  const [category, setCategory] = useState<string>("reference");
+  const pickable = categories ?? DOCUMENT_CATEGORIES;
+  const [category, setCategory] = useState<string>(defaultCategory ?? "reference");
   const qc = useQueryClient();
   const list = useServerFn(listAttachmentsFn);
   const begin = useServerFn(beginUploadFn);
@@ -135,6 +151,109 @@ export function AttachmentsPanel({
 
   const data = files.data;
   const canDrop = Boolean(data?.canUpload) && !readOnly;
+  type FileRow = NonNullable<typeof data>["files"][number];
+  const shownFiles: FileRow[] = (data?.files ?? []).filter(
+    (f) => !onlyCategories || onlyCategories.includes(String((f as { category?: string | null }).category ?? "")),
+  );
+  const groupedFiles = (() => {
+    const map = new Map<string, FileRow[]>();
+    for (const f of shownFiles) {
+      const label = documentCategoryLabel((f as { category?: string | null }).category) ?? "Other files";
+      map.set(label, [...(map.get(label) ?? []), f]);
+    }
+    return [...map.entries()].map(([label, files]) => ({ label, files }));
+  })();
+  const renderFile = (f: FileRow) => (
+    <li key={f.id} className="flex flex-wrap items-center gap-3 px-3 py-2 text-sm">
+      <span className="text-muted-foreground">{iconFor(f.kind)}</span>
+      <span className="min-w-0 flex-1 truncate font-medium">
+        {f.original_filename ?? f.title}
+      </span>
+      {documentCategoryLabel((f as { category?: string | null }).category) ? (
+        <Badge variant="outline">
+          {documentCategoryLabel((f as { category?: string | null }).category)}
+        </Badge>
+      ) : null}
+      {f.upload_status === "pending" ? (
+        <Badge variant="secondary">
+          {f.requested_from === "owner" ? "Requested from owner" : "Upload unfinished"}
+        </Badge>
+      ) : !f.original_filename ? (
+        <Badge variant="secondary">Request completed</Badge>
+      ) : (
+        <span className="text-muted-foreground">
+          {formatBytes(f.size_bytes ?? 0)} · {f.uploaded_by_name ?? "Not set"} ·{" "}
+          {usDate(f.uploaded_at)}
+        </span>
+      )}
+      {ownerCategoryLabel((f as { owner_category?: string | null }).owner_category) ? (
+        <Badge variant="outline">
+          Owner upload · {ownerCategoryLabel((f as { owner_category?: string | null }).owner_category)}
+        </Badge>
+      ) : null}
+      {(f as { work_items?: { title: string } | null }).work_items?.title ? (
+        <Badge variant="outline">
+          Opportunity: {(f as { work_items?: { title: string } | null }).work_items!.title}
+        </Badge>
+      ) : null}
+      {f.note && f.upload_status === "stored" ? (
+        <span className="w-full text-xs text-muted-foreground">Note: {f.note}</span>
+      ) : null}
+      {f.visibility === "owner_shared" && f.owner_recipient_id ? (
+        <Badge variant="outline">Shared with the homeowner</Badge>
+      ) : null}
+      {f.can_share && entityType !== "expense" ? (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <label className="flex items-center gap-2">
+            <Switch
+              checked={f.visibility === "owner_shared" && !!f.owner_recipient_id}
+              onCheckedChange={(shared) =>
+                toggleShare.mutate({ documentId: f.id, shared })
+              }
+            />
+            Owner
+          </label>
+          {f.visibility === "owner_shared" ? (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={toggleShare.isPending}
+              onClick={() => toggleShare.mutate({ documentId: f.id, shared: true })}
+            >
+              {f.owner_recipient_id
+                ? "Re-share to current owner"
+                : "Review and share to current owner"}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+      {f.upload_status === "stored" && f.original_filename ? (
+        <>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => open.mutate({ documentId: f.id, download: false })}
+            aria-label={`View ${f.title}`}
+          >
+            <Eye className="size-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => open.mutate({ documentId: f.id, download: true })}
+            aria-label={`Download ${f.title}`}
+          >
+            <Download className="size-4" />
+          </Button>
+        </>
+      ) : null}
+      {f.can_delete ? (
+        <Button size="icon" variant="ghost" onClick={() => del.mutate(f.id)} aria-label={`Remove ${f.title}`}>
+          <Trash2 className="size-4 text-destructive" />
+        </Button>
+      ) : null}
+    </li>
+  );
 
   return (
     <Card>
@@ -152,11 +271,11 @@ export function AttachmentsPanel({
           </div>
           {data?.canUpload && propertyLevel ? (
             <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="h-9 w-56" aria-label="Document type">
-                <SelectValue placeholder="Document type" />
+              <SelectTrigger className="h-11 w-56" aria-label={categories ? "Folder" : "Document type"}>
+                <SelectValue placeholder={categories ? "Folder" : "Document type"} />
               </SelectTrigger>
               <SelectContent>
-                {DOCUMENT_CATEGORIES.map((c) => (
+                {pickable.map((c) => (
                   <SelectItem key={c.value} value={c.value}>
                     {c.label}
                   </SelectItem>
@@ -167,7 +286,7 @@ export function AttachmentsPanel({
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        {canDrop ? <MultiFileUpload key={`${entityType}-${entityId}`} upload={upload} multiple={!fulfilsRequestId} onBusyChange={onUploadBusyChange} onResults={ids => {
+        {canDrop ? <MultiFileUpload key={`${entityType}-${entityId}`} upload={upload} multiple={!fulfilsRequestId} label={dropLabel} onBusyChange={onUploadBusyChange} onResults={ids => {
           onUploaded?.(ids);
           for (const queryKey of attachmentUploadInvalidationKeys(entityType, entityId)) void qc.invalidateQueries({ queryKey });
         }}/> : null}
@@ -180,7 +299,7 @@ export function AttachmentsPanel({
               ? files.error.message
               : "These files could not be loaded."}
           </p>
-        ) : data && data.files.length === 0 ? (
+        ) : data && shownFiles.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             No files yet.{" "}
             {data.recordClosed
@@ -190,99 +309,20 @@ export function AttachmentsPanel({
                 : ""}
           </p>
         ) : (
-          <ul className="divide-y divide-border rounded-md border border-border">
-            {(data?.files ?? []).map((f) => (
-              <li key={f.id} className="flex flex-wrap items-center gap-3 px-3 py-2 text-sm">
-                <span className="text-muted-foreground">{iconFor(f.kind)}</span>
-                <span className="min-w-0 flex-1 truncate font-medium">
-                  {f.original_filename ?? f.title}
-                </span>
-                {documentCategoryLabel((f as { category?: string | null }).category) ? (
-                  <Badge variant="outline">
-                    {documentCategoryLabel((f as { category?: string | null }).category)}
-                  </Badge>
-                ) : null}
-                {f.upload_status === "pending" ? (
-                  <Badge variant="secondary">
-                    {f.requested_from === "owner" ? "Requested from owner" : "Upload unfinished"}
-                  </Badge>
-                ) : !f.original_filename ? (
-                  <Badge variant="secondary">Request completed</Badge>
-                ) : (
-                  <span className="text-muted-foreground">
-                    {formatBytes(f.size_bytes ?? 0)} · {f.uploaded_by_name ?? "Not set"} ·{" "}
-                    {usDate(f.uploaded_at)}
-                  </span>
-                )}
-                {ownerCategoryLabel((f as { owner_category?: string | null }).owner_category) ? (
-                  <Badge variant="outline">
-                    Owner upload · {ownerCategoryLabel((f as { owner_category?: string | null }).owner_category)}
-                  </Badge>
-                ) : null}
-                {(f as { work_items?: { title: string } | null }).work_items?.title ? (
-                  <Badge variant="outline">
-                    Opportunity: {(f as { work_items?: { title: string } | null }).work_items!.title}
-                  </Badge>
-                ) : null}
-                {f.note && f.upload_status === "stored" ? (
-                  <span className="w-full text-xs text-muted-foreground">Note: {f.note}</span>
-                ) : null}
-                {f.visibility === "owner_shared" && f.owner_recipient_id ? (
-                  <Badge variant="outline">Shared with the homeowner</Badge>
-                ) : null}
-                {f.can_share && entityType !== "expense" ? (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <label className="flex items-center gap-2">
-                      <Switch
-                        checked={f.visibility === "owner_shared" && !!f.owner_recipient_id}
-                        onCheckedChange={(shared) =>
-                          toggleShare.mutate({ documentId: f.id, shared })
-                        }
-                      />
-                      Owner
-                    </label>
-                    {f.visibility === "owner_shared" ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={toggleShare.isPending}
-                        onClick={() => toggleShare.mutate({ documentId: f.id, shared: true })}
-                      >
-                        {f.owner_recipient_id
-                          ? "Re-share to current owner"
-                          : "Review and share to current owner"}
-                      </Button>
-                    ) : null}
-                  </div>
-                ) : null}
-                {f.upload_status === "stored" && f.original_filename ? (
-                  <>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => open.mutate({ documentId: f.id, download: false })}
-                      aria-label={`View ${f.title}`}
-                    >
-                      <Eye className="size-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => open.mutate({ documentId: f.id, download: true })}
-                      aria-label={`Download ${f.title}`}
-                    >
-                      <Download className="size-4" />
-                    </Button>
-                  </>
-                ) : null}
-                {f.can_delete ? (
-                  <Button size="icon" variant="ghost" onClick={() => del.mutate(f.id)} aria-label={`Remove ${f.title}`}>
-                    <Trash2 className="size-4 text-destructive" />
-                  </Button>
-                ) : null}
-              </li>
-            ))}
-          </ul>
+          groupByCategory ? (
+            <div className="space-y-4">
+              {groupedFiles.map((g) => (
+                <section key={g.label} aria-label={g.label} className="space-y-1.5">
+                  <h3 className="text-sm font-semibold">
+                    {g.label} <span className="numeric font-normal text-muted-foreground">({g.files.length})</span>
+                  </h3>
+                  <ul className="divide-y divide-border rounded-md border border-border">{g.files.map(renderFile)}</ul>
+                </section>
+              ))}
+            </div>
+          ) : (
+            <ul className="divide-y divide-border rounded-md border border-border">{shownFiles.map(renderFile)}</ul>
+          )
         )}
       </CardContent>
     </Card>

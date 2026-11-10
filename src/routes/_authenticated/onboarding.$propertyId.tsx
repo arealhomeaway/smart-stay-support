@@ -44,7 +44,6 @@ import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { HomeownerCard } from "@/components/property/HomeownerCard";
 import { HomeAutomation } from "@/components/ao/HomeAutomation";
 
-import { OperationsContextPanel } from "@/components/onboarding/OperationsContextPanel";
 import { ProjectScopePanel } from "@/components/onboarding/ProjectScopePanel";
 import { ProjectTeamPanel } from "@/components/onboarding/ProjectTeamPanel";
 import { PropertyOpportunitiesPanel } from "@/components/onboarding/PropertyOpportunitiesPanel";
@@ -72,7 +71,33 @@ import { PropertyWorkQueue } from "@/components/onboarding/PropertyWorkQueue";
 import { PhotoStrip } from "@/components/onboarding/PhotoStrip";
 import { ProjectHistory } from "@/components/onboarding/ProjectHistory";
 import { buildReleaseContext, deriveLifecycle, handoffReadiness } from "@/lib/onboarding-state";
-import { targetHandoff, type OpenHandoff, type ProjectProperty } from "@/lib/onboarding-lifecycle";
+import {
+  summarizeProject,
+  targetHandoff,
+  type OpenHandoff,
+  type ProjectProperty,
+} from "@/lib/onboarding-lifecycle";
+import {
+  HOME_TABS,
+  centralToday,
+  handoffDate,
+  healthFor,
+  homeTabFor,
+  stepperFor,
+  type BoardTask,
+  type ProjectDetails,
+} from "@/lib/onboarding-board";
+import {
+  AgreementsTab,
+  BudgetFigures,
+  DesignTab,
+  GeneralInfoFields,
+  HomeBoardHeader,
+  PlanStages,
+  ProjectDetailsSection,
+} from "@/components/onboarding/board/HomeBoard";
+import { listAttachmentsFn } from "@/lib/attachments.functions";
+import { documentCategoryLabel } from "@/lib/attachments";
 import { TaskDrawer, type SaveTaskInput } from "@/components/onboarding/TaskDrawer";
 import { useRole } from "@/hooks/useRole";
 import { useFeatureFlags } from "@/lib/feature-flags";
@@ -93,6 +118,7 @@ import {
   assigneeLabel,
   buildSections,
   rollupProperty,
+  taskRoleLabel,
   viewTask,
   type WorkflowTask,
 } from "@/lib/onboarding-workflow";
@@ -109,6 +135,7 @@ import {
   setPropertyLifecycleFn,
   submitOwnerApprovalFn,
   recordOwnerTaskDecisionFn,
+  updateOnboardingProjectFn,
 } from "@/lib/onboarding.functions";
 
 const PROPERTY_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -130,7 +157,14 @@ function InvalidPropertyRoute() {
 }
 
 export const Route = createFileRoute("/_authenticated/onboarding/$propertyId")({
-  validateSearch: validateWorkspaceSearch,
+  // The board's seven tabs; older tab links open the tab that now holds their content.
+  validateSearch: (raw: Parameters<typeof validateWorkspaceSearch>[0]) => {
+    const parsed = validateWorkspaceSearch(raw);
+    const rawTab = typeof raw.tab === "string" ? raw.tab : undefined;
+    const tab =
+      rawTab ?? (typeof raw.opp === "string" && typeof raw.task !== "string" ? "info" : "plan");
+    return { ...parsed, tab };
+  },
   // Only a real property id may open a workspace; anything else never
   // reaches the server.
   beforeLoad: ({ params }) => {
@@ -139,16 +173,16 @@ export const Route = createFileRoute("/_authenticated/onboarding/$propertyId")({
   notFoundComponent: InvalidPropertyRoute,
   head: () => ({
     meta: [
-      { title: "Property onboarding workflow: Resolve" },
+      { title: "Home onboarding: Resolve" },
       {
         name: "description",
         content:
-          "One home's onboarding workflow: sectioned tasks with assignee, due date and status, plus the automation behind every release, date and evidence gate.",
+          "One home's onboarding: stage, health, team, key dates, the plan, design files, budget and invoices, agreements, general info, files and activity.",
       },
-      { property: "og:title", content: "Property onboarding workflow: Resolve" },
+      { property: "og:title", content: "Home onboarding: Resolve" },
       {
         property: "og:description",
-        content: "Sectioned onboarding tasks, task detail and the handoff gate for a single home.",
+        content: "A home's six onboarding stages, its plan and everything on file.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -228,6 +262,14 @@ function PropertyWorkspace() {
   );
   const voidTask = mut(useServerFn(archiveOnboardingTaskFn), "Step voided.");
   const confirmRequirement = mut(useServerFn(confirmApprovalRequirementFn), "Requirement updated.");
+  const saveRefs = mut(useServerFn(updateOnboardingProjectFn), "Saved.");
+  // The home's files, shared with the Design and Files tabs (same cache key).
+  const listFiles = useServerFn(listAttachmentsFn);
+  const homeFiles = useQuery({
+    queryKey: ["attachments", "property", propertyId],
+    queryFn: () => listFiles({ data: { entityType: "property", entityId: propertyId } }),
+    enabled: Boolean(userId) && PROPERTY_ID_RE.test(propertyId),
+  });
 
   const current = data?.properties.find((p) => p.id === propertyId) ?? null;
   const allTasks = useMemo(
@@ -446,164 +488,91 @@ function PropertyWorkspace() {
     </li>
   );
 
+  // The board header and stepper (register O1): six stages, health with its reason.
+  const boardTasks = tasks as unknown as BoardTask[];
+  const stepper = stepperFor(boardTasks);
+  const today = centralToday();
+  const details = (projectRow ?? {}) as ProjectDetails & {
+    id?: string;
+    role_assignments?: Record<string, string> | null;
+    staging_provider?: string | null;
+    external_refs?: Record<string, string> | null;
+  };
+  const summary = summarizeProject(project, pm?.full_name ?? pm?.email ?? null);
+  const handoffOn = handoffDate(details.committed_handoff_on, target);
+  const health = healthFor({ risk: summary.risk, handoffOn, accepted: life.accepted, today });
+  const personName = (id: string | null | undefined) => {
+    if (!id) return null;
+    const x = data.people.find((q) => q.id === id);
+    return x?.full_name || x?.email || null;
+  };
+  const team = [
+    { role: "Project Manager", name: personName(pmId) },
+    { role: "Designer", name: personName(details.role_assignments?.["design_staging"]) },
+    { role: "Utilities", name: personName(projectRow?.utility_manager) },
+    { role: "Staging Team", name: details.staging_provider ?? null },
+  ];
+  const place = [
+    [current.city, current.state].filter(Boolean).join(", "),
+    (current as { market?: string | null }).market ?? null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const isAdminViewer = roles.includes("admin");
+  const canSetStatus = projectRow?.project_manager === userId || isOnboardingDirector || isAdminViewer;
+  const canCorrect = !readOnly && (isAdminViewer || roles.includes("manager"));
+  // The board fields (register A16): the Director of Onboarding, Admin and this home's
+  // Project Manager edit; everyone else who can open the page reads them.
+  const canEditBoard =
+    canEdit && (isAdminViewer || isOnboardingDirector || projectRow?.project_manager === userId);
+  const planTasks = tasks.map((t) => ({ ...(t as unknown as BoardTask), roleLabel: taskRoleLabel(t) }));
+  const refs = (details.external_refs ?? {}) as Record<string, string>;
+  const tab = homeTabFor(search.tab);
+
   return (
     <div className="space-y-5">
       <HomeContextHeader propertyId={current.id} current="onboarding" />
 
-
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="h-24 w-36 shrink-0 overflow-hidden rounded-lg bg-sunken">
-          <PropertyPhoto
-            url={current.primary_photo_url ?? null}
-            name={formatPropertyLabel(current).primary}
-            rounded="rounded-none"
-            className="size-full object-cover"
-          />
-        </div>
-        <div className="min-w-0 flex-1">
-          <PageHeader
-            eyebrow="Onboarding"
-            title={formatPropertyLabel(current).primary}
-            description={
-              [current.address_line1, current.city, current.state].filter(Boolean).join(", ") ||
-              undefined
-            }
-          />
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <Chip className={stateChip(life.accepted ? "done" : "info")}>{life.label}</Chip>
-        <Chip className={stateChip("info")}>{stageLabel(current.onboarding_stage)}</Chip>
-        {activeOwner && <Chip className={stateChip("waiting")}>Active Owner</Chip>}
-        <span className="ml-auto"><FollowHomeButton propertyId={current.id} /></span>
-      </div>
-
-      <p className="text-sm text-muted-foreground">
-        Onboarding Project · {tasks.filter((t) => t.status !== "complete").length} open Tasks ·
-        Project manager {pm?.full_name ?? pm?.email ?? "Unassigned"}
-      </p>
+      <HomeBoardHeader
+        back={null}
+        follow={<FollowHomeButton propertyId={current.id} />}
+        photo={current.primary_photo_url ?? null}
+        address={formatPropertyLabel(current).primary}
+        place={place}
+        stage={stepper.currentStage}
+        activeOwner={Boolean(activeOwner)}
+        health={health}
+        ownerType={details.owner_type ?? null}
+        status={details.project_status ?? null}
+        team={team}
+        closingOn={actualClosing ?? current.planned_closing_on ?? null}
+        committedOn={details.committed_handoff_on ?? null}
+        estimateOn={target}
+        weeklyStatus={details.weekly_status ?? null}
+        stepper={stepper}
+      />
 
       <Tabs
-        value={search.tab}
-        onValueChange={(tab) => void navigate({ search: { ...search, tab }, replace: true })}
+        value={tab}
+        onValueChange={(next) => void navigate({ search: { ...search, tab: next } as never, replace: true })}
         className="space-y-5"
       >
-        <TabsList className="flex h-auto flex-wrap justify-start">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="work">Tasks</TabsTrigger>
-          {activeOwner ? <TabsTrigger value="active-owner">Active Owner</TabsTrigger> : null}
-          <TabsTrigger value="property">Property Details</TabsTrigger>
-          <TabsTrigger value="files">Files &amp; History</TabsTrigger>
-          <TabsTrigger value="handoff">Handoff</TabsTrigger>
+        <TabsList className="flex h-auto w-full justify-start overflow-x-auto">
+          {HOME_TABS.map((t) => (
+            <TabsTrigger key={t.value} value={t.value} className="min-h-11 shrink-0">
+              {t.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-5">
-          <section className="surface grid gap-4 p-4 sm:grid-cols-3">
-            <div className="flex items-center gap-3">
-              <ProgressRing value={roll.progress} />
-              <div>
-                <p className="text-xs text-muted-foreground">Progress</p>
-                <p className="numeric text-sm font-medium">
-                  {roll.done} of {roll.total} Tasks done
-                </p>
-              </div>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Project health</p>
-              <p className="text-sm font-medium">{onTrack}</p>
-              <CarryoverSummary propertyId={current.id}/>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Waiting on something</p>
-              <p className="numeric text-sm font-medium">
-                {blocked.length === 0 ? "Nothing blocked" : `${blocked.length} Tasks`}
-              </p>
-            </div>
-          </section>
-
-          <section className="surface space-y-3 p-4" aria-label="Project dates">
-            <h2 className="font-semibold">Project dates</h2>
-            <dl className="grid gap-3 text-sm sm:grid-cols-4">
-              <div>
-                <dt className="text-xs text-muted-foreground">Actual closing</dt>
-                <dd className="numeric font-medium">
-                  {actualClosing ? usDate(actualClosing) : current.planned_closing_on ? `Planned ${usDate(current.planned_closing_on)}` : "Not set"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted-foreground">Access / possession</dt>
-                <dd className="numeric font-medium">
-                  {current.actual_access_on ? usDate(current.actual_access_on) : "Not set"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted-foreground">Target handoff</dt>
-                <dd className="numeric font-medium">
-                  {target ? usDate(target) : "Calculated once access is set"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted-foreground">Actual handoff</dt>
-                <dd className="numeric font-medium">
-                  {current.handoff_accepted_at ? usDate(current.handoff_accepted_at.slice(0, 10)) : "Not yet"}
-                </dd>
-              </div>
-            </dl>
-            <SchedulePanel
-              propertyId={current.id}
-              plannedClosingOn={current.planned_closing_on ?? null}
-              actualClosingOn={actualClosing}
-              actualAccessOn={current.actual_access_on ?? null}
-              canEdit={canEdit}
-              onChange={() => void refresh()}
-            />
-          </section>
-
-          <ProjectTeamPanel propertyId={current.id} />
-
-          <section className="surface space-y-3 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="font-semibold">{attention.length > 0 ? "Needs attention" : "My Tasks here"}</h2>
-              {attention.length > 5 && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setQueueFilter("attention");
-                    void navigate({ search: { ...search, tab: "work" }, replace: true });
-                  }}
-                >
-                  See all {attention.length}
-                </Button>
-              )}
-            </div>
-            {focus.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nothing needs attention right now.</p>
-            ) : (
-              <ul className="space-y-2">{focus.slice(0, 5).map(taskRow)}</ul>
-            )}
-          </section>
-
-          {activeOwner ? (
-            <p className="text-sm">Active Owner activities and replies <Button variant="link" onClick={() => void navigate({ search: { ...search, tab: "active-owner" }, replace: true })}>Open Active Owner</Button></p>
-          ) : null}
-        </TabsContent>
-
-        {activeOwner ? <TabsContent value="active-owner" className="space-y-5"><HomeAutomation propertyId={current.id} /><PropertyOpportunitiesPanel propertyId={current.id} openId={linkedOpp} /></TabsContent> : null}
-
-        <TabsContent value="work" className="space-y-5">
-          <div className="flex justify-end"><PlanCsvButton propertyId={current.id} /></div>
-          <div className="flex flex-wrap items-center justify-end gap-3">
-            <NewTaskDialog
-              propertyId={current.id}
-              people={data.people}
-              tasks={tasks}
-              // Only directors add work to a plan; project managers work the plan.
-              disabled={!canEdit || !can("handoff_review")}
-              onSave={(values) => saveTask.mutate({ data: values } as never)}
-            />
-          </div>
+        <TabsContent value="plan" className="space-y-5">
+          <PlanStages
+            tasks={planTasks}
+            stepper={stepper}
+            userId={userId}
+            today={today}
+            onOpen={setOpenTaskId}
+          />
           <PropertyOwnerCompletions propertyId={current.id} isDemo={Boolean((current as { is_demo?: boolean }).is_demo)} />
           {life.locked && (
             <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
@@ -621,27 +590,123 @@ function PropertyWorkspace() {
               </p>
             </section>
           )}
-          <PropertyWorkQueue
-            tasks={tasks}
-            people={data.people}
-            viewerId={userId}
-            filter={queueFilter}
-            onFilterChange={setQueueFilter}
-            onSelect={(task) => setOpenTaskId(task.id)}
-            release={release}
-            voided={data.retiredTasks ?? []}
-            bulk={
-              canEdit && !life.locked
-                ? { propertyId: current.id, homeName: formatPropertyLabel(current).primary, onSaved: () => void refresh() }
-                : undefined
-            }
+          <details className="surface overflow-hidden" open={search.tab === "work"}>
+            <summary className="flex min-h-11 cursor-pointer items-center px-4 py-2 font-semibold">
+              Every task
+            </summary>
+            <div className="space-y-4 border-t border-border p-4">
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                <PlanCsvButton propertyId={current.id} />
+                <NewTaskDialog
+                  propertyId={current.id}
+                  people={data.people}
+                  tasks={tasks}
+                  // Only directors add work to a plan; project managers work the plan.
+                  disabled={!canEdit || !can("handoff_review")}
+                  onSave={(values) => saveTask.mutate({ data: values } as never)}
+                />
+              </div>
+              <PropertyWorkQueue
+                tasks={tasks}
+                people={data.people}
+                viewerId={userId}
+                filter={queueFilter}
+                onFilterChange={setQueueFilter}
+                onSelect={(task) => setOpenTaskId(task.id)}
+                release={release}
+                voided={data.retiredTasks ?? []}
+                bulk={
+                  canEdit && !life.locked
+                    ? { propertyId: current.id, homeName: formatPropertyLabel(current).primary, onSaved: () => void refresh() }
+                    : undefined
+                }
+              />
+            </div>
+          </details>
+          <details className="surface overflow-hidden" open={search.tab === "handoff"} id="handoff">
+            <summary className="flex min-h-11 cursor-pointer items-center px-4 py-2 font-semibold">
+              Handoff
+            </summary>
+            <div className="space-y-4 border-t border-border p-4">
+              <CarryoverSummary propertyId={current.id} />
+              <TwoStepHandoff
+                propertyId={current.id}
+                readOnly={readOnly}
+                onOpenTask={(id) => setOpenTaskId(id)}
+              />
+            </div>
+          </details>
+        </TabsContent>
+
+        <TabsContent value="design" className="space-y-4">
+          <DesignTab propertyId={current.id} />
+        </TabsContent>
+
+        <TabsContent value="budget" className="space-y-4">
+          <BudgetFigures
+            projectId={projectRow?.id ?? null}
+            invoiceStatus={details.invoice_status ?? null}
+            canEdit={canEditBoard}
+          />
+          <BudgetPanel propertyId={current.id} canEdit={canEdit} />
+          <FinancialPanel
+            propertyId={current.id}
+            canEdit={canEdit}
+            isAdmin={roles.includes("admin")}
           />
         </TabsContent>
 
-        <TabsContent value="property" className="space-y-4">
-          <PropertyFactsPanel propertyId={current.id} canEdit={canEdit} />
-          <HomeownerCard propertyId={current.id} canManage={canEdit} />
+        <TabsContent value="agreements" className="space-y-4">
+          <AgreementsTab
+            projectId={projectRow?.id ?? null}
+            pmaStatus={details.pma_status ?? null}
+            canEdit={canEditBoard}
+          />
+        </TabsContent>
 
+        <TabsContent value="info" className="space-y-4">
+          <GeneralInfoFields
+            refs={refs}
+            ownerRezId={(current as { ownerrez_property_id?: string | number | null }).ownerrez_property_id != null
+              ? String((current as { ownerrez_property_id?: string | number | null }).ownerrez_property_id)
+              : null}
+            owner={<HomeownerCard propertyId={current.id} canManage={canEdit} />}
+            canEdit={canEditBoard}
+            pending={saveRefs.isPending}
+            onSaveRef={(key, value) => {
+              if (!projectRow) return;
+              const next = { ...refs };
+              if (value) next[key] = value;
+              else delete next[key];
+              saveRefs.mutate({ data: { projectId: projectRow.id, externalRefs: next } } as never);
+            }}
+          />
+          <ProjectDetailsSection
+            projectId={projectRow?.id ?? null}
+            details={details}
+            canEdit={canEditBoard}
+            canSetStatus={canSetStatus}
+            canCorrect={canCorrect}
+          />
+          <section className="surface space-y-3 p-4" aria-label="Project dates">
+            <h2 className="font-semibold">Dates</h2>
+            <SchedulePanel
+              propertyId={current.id}
+              plannedClosingOn={current.planned_closing_on ?? null}
+              actualClosingOn={actualClosing}
+              actualAccessOn={current.actual_access_on ?? null}
+              canEdit={canEdit}
+              onChange={() => void refresh()}
+            />
+          </section>
+          <ProjectTeamPanel propertyId={current.id} />
+          {activeOwner ? (
+            <section className="space-y-4" aria-label="Active Owner">
+              <HomeAutomation propertyId={current.id} />
+              <PropertyOpportunitiesPanel propertyId={current.id} openId={linkedOpp} />
+            </section>
+          ) : null}
+          <PropertyFactsPanel propertyId={current.id} canEdit={canEdit} />
           <ProjectScopePanel
             propertyId={current.id}
             propertyName={formatPropertyLabel(current).primary}
@@ -669,7 +734,7 @@ function PropertyWorkspace() {
                   !["onboarding", "paused"].includes(current.lifecycle_status ?? "")
                 }
               >
-                <SelectTrigger className="w-56">
+                <SelectTrigger className="h-11 w-56">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -687,21 +752,8 @@ function PropertyWorkspace() {
             </div>
             <p className="text-xs text-muted-foreground">Scope · {scopeSummary(scope)}</p>
           </section>
-          <OperationsContextPanel
-            property={current as never}
-            tasks={tasks as never}
-            records={data.externalRecords as never}
-            documents={data.documents as never}
-            documentsEnabled={docsEnabled}
-          />
           <VendorCoveragePanel propertyId={current.id} />
           <OnboardingWorkOrdersPanel propertyId={current.id} />
-          <BudgetPanel propertyId={current.id} canEdit={canEdit} />
-          <FinancialPanel
-            propertyId={current.id}
-            canEdit={canEdit}
-            isAdmin={roles.includes("admin")}
-          />
           <AssessmentsFormsPanel
             tasks={tasks as never}
             people={data.people}
@@ -715,36 +767,29 @@ function PropertyWorkspace() {
           />
         </TabsContent>
 
-        <TabsContent value="handoff" className="space-y-5">
-          <TwoStepHandoff
-            propertyId={current.id}
-            readOnly={readOnly}
-            onOpenTask={(id) => setOpenTaskId(id)}
-          />
-        </TabsContent>
-
         <TabsContent value="files" className="space-y-4">
-          <PhotoStrip
-            entityType="property"
-            entityId={current.id}
-            title="Visual evidence"
-            limit={16}
-          />
+          {refs["property_folder"] && /^https?:\/\//i.test(refs["property_folder"]) ? (
+            <a
+              href={refs["property_folder"]}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline-offset-4 hover:underline"
+            >
+              Open the home folder in SharePoint
+            </a>
+          ) : null}
           <AttachmentsPanel
             entityType="property"
             entityId={current.id}
-            title="Shared documents & media"
+            title="Files"
+            description="Grouped by type."
+            groupByCategory
           />
-          <ProjectHistory
-            propertyId={current.id}
-            tasks={tasks}
-            approvals={approvals as never}
-            reviews={
-              data.reviews.filter((r) =>
-                data.handoffs.some((h) => h.id === r.handoff_id && h.property_id === current.id),
-              ) as never
-            }
-            people={data.people}
+          <PhotoStrip
+            entityType="property"
+            entityId={current.id}
+            title="Photos"
+            limit={16}
           />
           {(data.retiredTasks ?? []).length > 0 && (
             <details className="surface p-4">
@@ -763,6 +808,41 @@ function PropertyWorkspace() {
               </ul>
             </details>
           )}
+        </TabsContent>
+
+        <TabsContent value="activity" className="space-y-4">
+          <ProjectHistory
+            propertyId={current.id}
+            tasks={tasks}
+            approvals={approvals as never}
+            reviews={
+              data.reviews.filter((r) =>
+                data.handoffs.some((h) => h.id === r.handoff_id && h.property_id === current.id),
+              ) as never
+            }
+            people={data.people}
+            notes={notes as never}
+            uploads={((homeFiles.data?.files ?? []) as {
+              id: string;
+              title: string;
+              original_filename?: string | null;
+              created_at?: string;
+              uploaded_at?: string;
+              uploaded_by_name?: string | null;
+              category?: string | null;
+              upload_status?: string;
+            }[])
+              .filter((f) => f.upload_status === "stored")
+              .map((f) => ({
+                id: f.id,
+                title: f.original_filename ?? f.title,
+                created_at: f.uploaded_at ?? f.created_at ?? "",
+                uploaded_by_name: f.uploaded_by_name ?? null,
+                category_label: documentCategoryLabel(f.category ?? null),
+              }))}
+            title="Activity"
+            description="Every task completed, comment, upload and status change for this home, newest first."
+          />
           <OnboardingNotes
             notes={notes as never}
             people={data.people}

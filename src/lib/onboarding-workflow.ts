@@ -404,6 +404,15 @@ const ROLE_NAMES: Record<string, string> = {
   director_onboarding: "Onboarding Director",
 };
 
+/** The role a Task belongs to, as staff read it (Plan tab). */
+export function taskRoleLabel(task: Pick<WorkflowTask, "assigned_seat">): string | null {
+  return task.assigned_seat
+    ? (ROLE_NAMES[task.assigned_seat] ??
+        SEAT_LABELS[task.assigned_seat as SeatCode] ??
+        task.assigned_seat.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase()))
+    : null;
+}
+
 export function assigneeLabel(
   task: Pick<WorkflowTask, "assigned_to" | "assigned_seat">,
   people: { id: string; full_name: string | null; email: string | null }[],

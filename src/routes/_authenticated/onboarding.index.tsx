@@ -6,33 +6,42 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import {
-  ArrowRight,
-  ClipboardList,
-  Database,
-  ChevronDown,
-  Plus,
-  Users,
-  Workflow,
-} from "lucide-react";
+import { Database, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { LoadingPage, PageHero, SectionCard } from "@/components/ui/page";
-import { PropertyPhoto } from "@/components/PropertyPhoto";
-import { usDate } from "@/lib/dates";
-import { awaitingMyReview, needsMyAttention } from "@/lib/onboarding-hub";
-import { lifecycleStageMeta, withinDays, type ProjectSummary } from "@/lib/onboarding-lifecycle";
-import { cn } from "@/lib/utils";
+import { LoadingPage, SectionCard } from "@/components/ui/page";
+import { needsMyAttention } from "@/lib/onboarding-hub";
 import heroImage from "@/assets/hero-arha-property.jpg";
+import { bannerCaption, dailyHomePhoto } from "@/lib/daily-home-photo";
+import {
+  centralHour,
+  centralToday,
+  dueLabel,
+  firstNameOf,
+  greetingFor,
+  handoffDate,
+  healthFor,
+  sixStageFor,
+  stepperFor,
+  todayForMe,
+  type BoardTask,
+} from "@/lib/onboarding-board";
+import { canQuickComplete } from "@/lib/onboarding-work-views";
+import { taskViewsFor } from "@/lib/onboarding-task-views";
+import { taskPayload } from "@/components/onboarding/TaskDrawer";
+import {
+  OnboardingBoardHome,
+  BOARD_VIEWS,
+  type BoardHome,
+  type BoardView,
+  type NeedRow,
+  type TodayHome,
+} from "@/components/onboarding/board/OnboardingBoardHome";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
 import { ExternalRecordsPanel } from "@/components/onboarding/ExternalRecordsPanel";
 import { DirectorHub, type Lens } from "@/components/onboarding/DirectorHub";
-import { useOwnerCompletions, needsAttention } from "@/components/onboarding/OwnerCompletionsReview";
-import { useDemo } from "@/components/DemoProvider";
 import { AddPropertyDialog } from "@/components/property/AddPropertyDialog";
 import { canAddHome } from "@/lib/property-page";
-import { OnboardingActivityFeed } from "@/components/onboarding/OnboardingActivityFeed";
 
 import { useRole } from "@/hooks/useRole";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
@@ -44,7 +53,7 @@ import { applyTestDataFilter } from "@/lib/test-data";
 import {
   getOnboardingWorkspace,
   resolveExternalRecordFn,
-  reviewHandoffFn,
+  saveOnboardingTaskFn,
 } from "@/lib/onboarding.functions";
 
 export const Route = createFileRoute("/_authenticated/onboarding/")({
@@ -54,13 +63,13 @@ export const Route = createFileRoute("/_authenticated/onboarding/")({
       {
         name: "description",
         content:
-          "What needs attention today across every home in onboarding: derived risk, first-class blockers, review gates, upcoming handoffs and workload by project manager.",
+          "Today's onboarding work, what needs you now, every home in onboarding by stage, status and handoff, and the handoffs coming up.",
       },
       { property: "og:title", content: "Onboarding Home: Resolve" },
       {
         property: "og:description",
         content:
-          "Exception-first view of the whole onboarding pipeline, without opening every property.",
+          "Every home in onboarding in one place: gallery, active projects, status, Gantt and work load.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -75,6 +84,8 @@ export const Route = createFileRoute("/_authenticated/onboarding/")({
     if (typeof raw["find"] === "string" && raw["find"]) out.find = raw["find"];
     if (typeof raw["owner"] === "string" && raw["owner"]) out.owner = raw["owner"];
     if (raw["showTest"] === true || raw["showTest"] === "true") out.showTest = true;
+    if (typeof raw["view"] === "string" && BOARD_VIEWS.some((v) => v.value === raw["view"]))
+      out.view = raw["view"] as BoardView;
     return out;
   },
   component: Hub,
@@ -86,6 +97,8 @@ type HubSearch = {
   find?: string | undefined;
   owner?: string | undefined;
   showTest?: boolean | undefined;
+  /** The Homes in onboarding view; Gallery when absent. */
+  view?: BoardView | undefined;
 };
 
 function Hub() {
@@ -101,6 +114,8 @@ function Hub() {
   const find = params.find ?? "";
   const owner = params.owner ?? null;
   const showTest = params.showTest === true;
+  const view: BoardView = params.view ?? "gallery";
+  const [bannerFailed, setBannerFailed] = useState(false);
   const setParam = (patch: HubSearch) =>
     void navigate({
       search: (prev: HubSearch) => {
@@ -109,6 +124,7 @@ function Hub() {
         if (!next.find) delete next.find;
         if (!next.owner) delete next.owner;
         if (!next.showTest) delete next.showTest;
+        if (!next.view || next.view === "gallery") delete next.view;
         return next;
       },
       replace: true,
@@ -129,19 +145,20 @@ function Hub() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("full_name")
+        .select("first_name, full_name")
         .eq("id", userId!)
         .maybeSingle();
       if (error) throw error;
       return data;
     },
   });
-  const firstName = (me?.full_name ?? "").trim().split(/\s+/)[0] ?? "";
+  const firstName = firstNameOf(me);
 
-  const reviewHandoff = useMutation({
-    mutationFn: useServerFn(reviewHandoffFn),
+  // Ticking a Task on Today, for me is the same save My Tasks makes.
+  const saveTask = useMutation({
+    mutationFn: useServerFn(saveOnboardingTaskFn) as never,
     onSuccess: () => {
-      toast.success("Decision recorded.");
+      toast.success("Task done.");
       void refresh();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -155,7 +172,7 @@ function Hub() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const projects = useMemo(() => {
+  const projectRows = useMemo(() => {
     if (!data) return [];
     return data.properties
       .filter((p) => data.pipeline.includes(p.id))
@@ -174,7 +191,7 @@ function Hub() {
           null;
         const pm = data.people.find((x) => x.id === project?.project_manager);
         const scoped = splitByScope(tasks, projectScope(project));
-        return summarizeProject(
+        return { summary: summarizeProject(
           {
             property: p as unknown as ProjectProperty,
             tasks: scoped.inScope,
@@ -186,129 +203,228 @@ function Hub() {
               data.independentReadiness.find((row) => row.propertyId === p.id) ?? null,
           },
           pm?.full_name ?? pm?.email ?? null,
-        );
+        ), project, inScope: scoped.inScope };
       });
   }, [data]);
+  const projects = useMemo(() => projectRows.map((r) => r.summary), [projectRows]);
+
+  const today = centralToday();
+  const allTasks = (data?.tasks ?? []) as unknown as (WorkflowTask & BoardTask)[];
 
   if (isLoading || !data) return <LoadingPage />;
-  // Staff who only hold assigned Tasks get a scoped Dashboard / Properties view
-  // (their own homes only) instead of a redirect — redirecting trapped them on
-  // My Work whenever they used the Onboarding menu (Help Ticket #17).
-  if (data.workspaceMode === "assigned")
+
+  const label = (id: string) => {
+    const p = data.properties.find((x) => x.id === id);
+    return p ? formatPropertyLabel(p).primary : "A home";
+  };
+
+  // Today, for me: the person's own Tasks due today and overdue, grouped by home.
+  const mineViews = taskViewsFor(
+    data as never,
+    allTasks,
+    allTasks.filter((t) => userId && t.assigned_to === userId),
+  );
+  const viewById = new Map(mineViews.map((v) => [v.task.id, v]));
+  const todayList = todayForMe(
+    mineViews.map((v) => v.task as unknown as BoardTask),
+    userId,
+    today,
+  );
+  const stageOf = (propertyId: string) => {
+    const row = projectRows.find((r) => r.summary.property.id === propertyId);
+    if (row) return stepperFor(row.inScope as unknown as BoardTask[]).currentStage;
+    const ctx = data.assignedWorkContexts.find((c) => c.propertyId === propertyId);
+    const own = (ctx?.tasks ?? []) as unknown as BoardTask[];
+    return own.length ? stepperFor(own).currentStage : sixStageFor(own[0]?.stage) ?? "";
+  };
+  const todayHomes: TodayHome[] = todayList.groups.map((g) => ({
+    propertyId: g.propertyId,
+    address: label(g.propertyId),
+    stage: stageOf(g.propertyId),
+    rows: g.tasks.map((t) => {
+      const v = viewById.get(t.id);
+      return {
+        id: t.id,
+        title: t.title,
+        label: dueLabel(t, today),
+        canTick: Boolean(v && canQuickComplete(v) && !readOnly),
+      };
+    }),
+  }));
+  const tick = (taskId: string) => {
+    const v = viewById.get(taskId);
+    if (!v) return;
+    saveTask.mutate({ data: taskPayload(v.task, { status: "complete", blocker: "" }) } as never);
+  };
+
+  const greetingLine = `${greetingFor(centralHour())}${firstName ? `, ${firstName}` : ""}.`;
+  const dateLine = new Date().toLocaleDateString("en-US", {
+    timeZone: "America/Chicago",
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+  const addHome = (
+    <>
+      {mayAddHome ? (
+    <AddPropertyDialog
+      disabled={readOnly}
+      trigger={
+        <button
+          type="button"
+          disabled={readOnly}
+          className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-base font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
+        >
+          <Plus className="size-4" /> Add a home
+        </button>
+      }
+    />
+      ) : null}
+    </>
+  );
+
+  // The homes on the board: every active onboarding home this person may see.
+  const scopedRows = applyTestDataFilter(projectRows, showTest, (r) => r.summary.property);
+  const activeRows = scopedRows.filter((r) => r.summary.stage !== "live");
+  const viewer = { userId, reviewCapabilities: data.reviewCapabilities };
+  const isDirector = Boolean(
+    data.reviewCapabilities.can_review_stages || data.reviewCapabilities.kati_review,
+  );
+  const homes: BoardHome[] = activeRows
+    .map((r) => {
+      const p = r.summary.property as ProjectProperty & {
+        city?: string | null;
+        primary_photo_url?: string | null;
+        actual_closing_on?: string | null;
+      };
+      const pr = (r.project ?? {}) as {
+        owner_type?: string | null;
+        greater_area?: string | null;
+        pma_status?: string | null;
+        invoice_status?: string | null;
+        project_status?: string | null;
+        committed_handoff_on?: string | null;
+      };
+      const handoffOn = handoffDate(pr.committed_handoff_on, r.summary.target);
+      return {
+        propertyId: p.id,
+        address: formatPropertyLabel(p).primary,
+        city: p.city ?? "",
+        photo: p.primary_photo_url ?? null,
+        stepper: stepperFor(r.inScope as unknown as BoardTask[]),
+        ownerType: pr.owner_type ?? null,
+        greaterArea: pr.greater_area ?? null,
+        pmaStatus: pr.pma_status ?? null,
+        invoiceStatus: pr.invoice_status ?? null,
+        status: pr.project_status ?? null,
+        projectManager: r.summary.owner,
+        closingOn: p.actual_closing_on ?? p.planned_closing_on ?? null,
+        estimateOn: r.summary.target,
+        committedOn: pr.committed_handoff_on ?? null,
+        handoffOn,
+        health: healthFor({
+          risk: r.summary.risk,
+          handoffOn,
+          accepted: r.summary.accepted,
+          today,
+        }),
+      };
+    })
+    .sort((a, b) => (a.handoffOn ?? "9").localeCompare(b.handoffOn ?? "9"));
+
+  // Needs you now: reviews waiting on this person, their late Tasks, and for
+  // the Director the homes already at risk or with corrections open.
+  const attention = needsMyAttention(
+    activeRows.map((r) => r.summary),
+    data.tasks as never,
+    viewer,
+    isDirector,
+    today,
+  );
+  const needs: NeedRow[] = [
+    ...attention.mine.map((r) => ({
+      key: `m-${r.project.property.id}`,
+      title: formatPropertyLabel(r.project.property).primary,
+      why: [
+        r.review ? "A review is waiting on you" : null,
+        r.overdueTasks ? `${r.overdueTasks} of your tasks overdue` : null,
+      ]
+        .filter(Boolean)
+        .join(", "),
+      propertyId: r.project.property.id,
+    })),
+    ...attention.oversight.map((r) => ({
+      key: `o-${r.project.property.id}`,
+      title: formatPropertyLabel(r.project.property).primary,
+      // A plain why line: the first two reasons, never a negative day count.
+      why: r.reasons.filter((x) => !/^handoff in -/.test(x)).slice(0, 2).join(", ") || "At risk",
+      propertyId: r.project.property.id,
+    })),
+  ];
+
+  // The banner: a home in onboarding with a photo, the same one for everyone today.
+  const bannerHome = bannerFailed
+    ? null
+    : dailyHomePhoto(
+        homes.map((h) => ({ id: h.propertyId, photo: h.photo ?? "", name: h.address, city: null })),
+        new Date(),
+      );
+
+  const assignedHomes = applyTestDataFilter(data.properties, false, (p) => p)
+    .map((p) => ({
+      id: p.id,
+      name: formatPropertyLabel(p).primary,
+      open: data.tasks.filter(
+        (t) => t.property_id === p.id && t.status !== "complete" && t.assigned_to === userId,
+      ).length,
+    }))
+    .filter((h) => h.open > 0);
+  // All properties, for someone who only works assigned Tasks: their own homes only.
+  if (lens === "all" && data.workspaceMode === "assigned")
+    return <AssignedOverview lens="all" firstName={firstName} homes={assignedHomes} />;
+
+  if (lens !== "all")
     return (
-      <AssignedOverview
-        lens={lens === "all" ? "all" : "dashboard"}
-        firstName={firstName}
-        // Same scope as My Work: the viewer's own open Tasks, test homes hidden,
-        // so every count here opens to the same Tasks in My Work.
-        homes={applyTestDataFilter(data.properties, false, (p) => p)
-          .map((p) => ({
-            id: p.id,
-            name: formatPropertyLabel(p).primary,
-            open: data.tasks.filter(
-              (t) => t.property_id === p.id && t.status !== "complete" && t.assigned_to === userId,
-            ).length,
-          }))
-          .filter((h) => h.open > 0)}
+      <OnboardingBoardHome
+        today={today}
+        dateLine={dateLine}
+        greeting={greetingLine}
+        banner={bannerHome ? { photo: bannerHome.photo, caption: bannerCaption(bannerHome) } : null}
+        fallbackImage={heroImage}
+        onBannerError={() => setBannerFailed(true)}
+        addHome={addHome}
+        countLine={todayList.countLine}
+        todayHomes={todayHomes}
+        onTick={tick}
+        ticking={saveTask.isPending}
+        needs={needs}
+        homes={homes}
+        view={view}
+        onViewChange={(v) => setParam({ view: v })}
+        originToken={originToken}
+        homesOverride={
+          data.workspaceMode === "assigned" ? (
+            <AssignedHomes homes={assignedHomes} />
+          ) : undefined
+        }
       />
     );
 
-  const pendingReviews = data.handoffs.filter(
-    (h) =>
-      (h.status === "requested" || h.status === "accepted_pending_live") &&
-      applyTestDataFilter(data.properties, showTest, (p) => p).some((p) => p.id === h.property_id),
-  );
-
-  // The hub's own figures follow the same test/QA opt-in the rows do.
-  const scoped = applyTestDataFilter(projects, showTest, (p) => p.property);
-  const viewer = { userId, reviewCapabilities: data.reviewCapabilities };
-  const activeProjects = scoped.filter((p) => p.stage !== "live");
-  const atRisk = activeProjects.filter(
-    (p) => p.risk.level === "at_risk" || p.risk.level === "blocked",
-  );
-  const inReview = activeProjects.filter((p) => p.inReview || p.stageReviewCount > 0);
-  const soon = activeProjects.filter((p) => withinDays(p.target, 14));
-
   return (
     <div className="space-y-8">
-      {lens === "all" ? (
-        <header className="space-y-1">
-          <p className="eyebrow">Onboarding</p>
-          <h1 className="text-2xl font-semibold">Properties</h1>
-          <p className="text-sm text-muted-foreground">
-            Every onboarding home. Open one to see its Tasks, team and handoff.
-          </p>
-        </header>
-      ) : (
-        <>
-          <PageHero
-            image={heroImage}
-            eyebrow={new Date().toLocaleDateString(undefined, {
-              weekday: "long",
-              month: "long",
-              day: "numeric",
-            })}
-            title={`${greeting()}${firstName ? `, ${firstName}` : ""}.`}
-            description="From keys to kickoff."
-            actions={
-              <>
-                <Link
-                  to="/onboarding/my-work"
-                  search={{ who: "me" } as never}
-                  className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-base font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
-                >
-                  <ClipboardList className="size-4" /> My work
-                </Link>
-                {mayAddHome ? (
-                  <AddPropertyDialog
-                    disabled={readOnly}
-                    trigger={
-                      <button
-                        type="button"
-                        disabled={readOnly}
-                        className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20 disabled:opacity-50"
-                      >
-                        <Plus className="size-4" /> Add property
-                      </button>
-                    }
-                  />
-                ) : null}
-                <Link
-                  to="/onboarding/team"
-                  className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20"
-                >
-                  <Users className="size-4" /> Manage Team
-                </Link>
-                <Link
-                  to="/onboarding/templates"
-                  className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20"
-                >
-                  <Workflow className="size-4" /> Manage Workflow
-                </Link>
-              </>
-            }
-          />
-
-          <OwnerCompletionsLink />
-
-          <p className="text-sm text-muted-foreground">
-            <span className="numeric font-semibold text-foreground">{activeProjects.length}</span>{" "}
-            active
-            {" · "}
-            <span className="numeric font-semibold text-foreground">{atRisk.length}</span> need
-            attention
-            {" · "}
-            <span className="numeric font-semibold text-foreground">{soon.length}</span> handoffs
-            coming up
-          </p>
-        </>
-      )}
+      <header className="space-y-1">
+        <p className="eyebrow">Onboarding</p>
+        <h1 className="text-2xl font-semibold">Properties</h1>
+        <p className="text-sm text-muted-foreground">
+          Every onboarding home. Open one to see its Tasks, team and handoff.
+        </p>
+      </header>
 
       <div className="space-y-4">
         {/* Source records are an administrator reconciliation tool, not daily
             Onboarding work — only an Admin sees them, and only on the
             full Properties list. */}
-        {lens === "all" && isAdmin ? (
+        {isAdmin ? (
           <div className="flex justify-end">
             <Sheet>
               <SheetTrigger asChild>
@@ -334,14 +450,7 @@ function Hub() {
             </Sheet>
           </div>
         ) : null}
-        {lens !== "all" ? (
-          <DashboardSections
-            projects={activeProjects}
-            originToken={originToken}
-            find={find}
-            onFindChange={(v) => setParam({ find: v || undefined })}
-          />
-        ) : (
+        {(
           <DirectorHub
             projects={projects}
             viewer={{ userId, reviewCapabilities: data.reviewCapabilities }}
@@ -357,336 +466,34 @@ function Hub() {
           />
         )}
       </div>
-      {lens !== "all" ? (
-        <>
-          <NeedsMyAttention
-            projects={activeProjects}
-            tasks={data.tasks as never}
-            viewer={viewer}
-            isDirector={Boolean(data.reviewCapabilities.can_review_stages || data.reviewCapabilities.kati_review)}
-            originToken={originToken}
-          />
-          <OnboardingActivityFeed />
-
-        </>
-      ) : null}
     </div>
   );
 }
 
-/** #25: two separate views below the property list, from existing records only. */
-function NeedsMyAttention({
-  projects,
-  tasks,
-  viewer,
-  isDirector,
-  originToken,
-}: {
-  projects: ProjectSummary[];
-  tasks: Parameters<typeof needsMyAttention>[1];
-  viewer: Parameters<typeof needsMyAttention>[2];
-  isDirector: boolean;
-  originToken?: string | undefined;
-}) {
-  const [view, setView] = useState<"mine" | "oversight">("mine");
-  const { mine, oversight } = needsMyAttention(projects, tasks, viewer, isDirector);
-  const tab = (key: "mine" | "oversight", label: string, n: number) => (
-    <button
-      type="button"
-      onClick={() => setView(key)}
-      aria-pressed={view === key}
-      className={cn(
-        "rounded-md border px-2.5 py-1 text-xs font-medium",
-        view === key ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground",
-      )}
-    >
-      {label} ({n})
-    </button>
-  );
-  const rowLink = (p: ProjectSummary, line: string) => (
-    <Link
-      key={p.property.id}
-      to="/onboarding/$propertyId"
-      params={{ propertyId: p.property.id }}
-      search={(originToken ? { from: originToken } : undefined) as never}
-      className="block rounded-md border px-3 py-2 text-sm transition hover:bg-muted/40"
-    >
-      <span className="font-medium">{formatPropertyLabel(p.property).primary}</span>
-      <span className="block text-xs text-muted-foreground">{line}</span>
-    </Link>
-  );
+/** The homes where someone who only works assigned Tasks has work. */
+function AssignedHomes({ homes }: { homes: { id: string; name: string; open: number }[] }) {
+  if (homes.length === 0)
+    return <p className="text-sm text-muted-foreground">You have no onboarding tasks right now.</p>;
   return (
-    <SectionCard
-      tone={mine.length > 0 ? "critical" : "default"}
-      title="Needs my attention"
-      description={
-        view === "mine"
-          ? "Handoff and stage reviews waiting on you, and your Tasks past their due date."
-          : "Homes already flagged blocked or at risk, or with handoff corrections or deficiency Tasks open."
-      }
-      bodyClassName="space-y-1.5"
-    >
-      <div className="flex flex-wrap gap-2 pb-1">
-        {tab("mine", "My action items", mine.length)}
-        {isDirector ? tab("oversight", "Director oversight", oversight.length) : null}
-      </div>
-      {view === "mine" ? (
-        mine.length === 0 ? (
-          <p className="text-sm text-muted-foreground">You are clear. Nothing needs your decision or action right now.</p>
-        ) : (
-          mine.map((r) =>
-            rowLink(
-              r.project,
-              [r.review ? "Review waiting on you" : null, r.overdueTasks ? `${r.overdueTasks} of your Tasks past due` : null]
-                .filter(Boolean)
-                .join(" · "),
-            ),
-          )
-        )
-      ) : oversight.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No team work needs oversight right now.</p>
-      ) : (
-        oversight.map((r) => rowLink(r.project, r.reasons.join(" · ")))
-      )}
-    </SectionCard>
-  );
-}
-
-/** Count + link to the owner completions queue; kept small so the hub's main sections stay first. */
-function OwnerCompletionsLink() {
-  const { demoMode } = useDemo();
-  const q = useOwnerCompletions(demoMode);
-  const n = (q.data ?? []).filter(needsAttention).length;
-  return (
-    <Link to="/onboarding/owner-completions" className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
-      Owner completions to review ({n})
-    </Link>
-  );
-}
-
-type PropFilter = "attention" | "handoff" | "all";
-
-/** Director dashboard: one property list plus upcoming handoffs. */
-function DashboardSections({
-  projects,
-  originToken,
-  find,
-  onFindChange,
-}: {
-  projects: ProjectSummary[];
-  originToken?: string | undefined;
-  find: string;
-  onFindChange: (v: string) => void;
-}) {
-  const [filter, setFilter] = useState<PropFilter>("all");
-  const [window, setWindow] = useState<7 | 14 | 30>(14);
-  const needs = (p: ProjectSummary) => p.risk.reasons.length > 0 && p.risk.level !== "on_track";
-  const q = find.trim().toLowerCase();
-  const rows = projects
-    .filter(
-      (p) =>
-        !q ||
-        matchesPropertySearch(p.property, q),
-    )
-    .filter((p) =>
-      filter === "attention" ? needs(p) : filter === "handoff" ? withinDays(p.target, 30) : true,
-    )
-    .sort(
-      (a, b) =>
-        Number(needs(b)) - Number(needs(a)) || (a.target ?? "9").localeCompare(b.target ?? "9"),
-    );
-  const upcoming = projects
-    .filter((p) => p.target && withinDays(p.target, window))
-    .sort((a, b) => (a.target ?? "").localeCompare(b.target ?? ""));
-  const chip = (on: boolean) =>
-    cn(
-      "rounded-full border px-3 py-1 text-sm transition-colors",
-      on ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted",
-    );
-  return (
-    <div className="space-y-6">
-      <SectionCard title="Onboarding properties" bodyClassName="space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
-          {(
-            [
-              ["attention", "Needs attention"],
-              ["handoff", "Upcoming handoff"],
-              ["all", "All properties"],
-            ] as const
-          ).map(([k, l]) => (
-            <button
-              key={k}
-              type="button"
-              className={chip(filter === k)}
-              onClick={() => setFilter(k)}
-            >
-              {l}
-            </button>
-          ))}
-          <input
-            value={find}
-            onChange={(e) => onFindChange(e.target.value)}
-            placeholder="Search properties"
-            aria-label="Search properties"
-            className="ml-auto h-9 w-56 rounded-md border border-input bg-background px-3 text-sm"
-          />
-        </div>
-        {rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No properties match.</p>
-        ) : (
-          <ul className="space-y-1.5">
-            {rows.map((p) => (
-              <PropertyRow
-                key={p.property.id}
-                project={p}
-                originToken={originToken}
-                attention={needs(p)}
-              />
-            ))}
-          </ul>
-        )}
-      </SectionCard>
-
-      <SectionCard title="Upcoming handoffs" bodyClassName="space-y-3">
-        <div className="flex gap-2">
-          {([7, 14, 30] as const).map((d) => (
-            <button
-              key={d}
-              type="button"
-              className={chip(window === d)}
-              onClick={() => setWindow(d)}
-            >
-              Next {d} days
-            </button>
-          ))}
-        </div>
-        {upcoming.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No handoffs in the next {window} days.</p>
-        ) : (
-          <ul className="divide-y divide-border">
-            {upcoming.map((p) => (
-              <li key={p.property.id} className="flex items-center justify-between py-2 text-sm">
-                <Link
-                  to="/onboarding/$propertyId"
-                  params={{ propertyId: p.property.id }}
-                  search={(originToken ? { from: originToken } : undefined) as never}
-                  className="font-medium hover:underline"
-                >
-                  {formatPropertyLabel(p.property).primary}
-                </Link>
-                <span className="numeric text-muted-foreground">{usDate(p.target!)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </SectionCard>
-    </div>
-  );
-}
-
-function PropertyRow({
-  project: p,
-  originToken,
-  attention,
-}: {
-  project: ProjectSummary;
-  originToken?: string | undefined;
-  attention: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <li className="surface-row py-3 pl-4 pr-3">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <PropertyPhoto
-          url={(p.property as { primary_photo_url?: string | null }).primary_photo_url ?? null}
-          name={formatPropertyLabel(p.property).primary}
-          className="size-11"
-        />
-        <Link
-          to="/onboarding/$propertyId"
-          params={{ propertyId: p.property.id }}
-          search={(originToken ? { from: originToken } : undefined) as never}
-          className="min-w-0 flex-1 basis-full sm:basis-auto"
-        >
-          <span className="block truncate text-base font-semibold hover:underline">
-            {formatPropertyLabel(p.property).primary}
-          </span>
-          <span className="block truncate text-sm text-muted-foreground">
-            {p.phaseLabel} · {p.next.headline}
-          </span>
-        </Link>
-        <span className="text-sm text-muted-foreground">{p.owner ?? "No PM"}</span>
-        <span className="numeric text-sm text-muted-foreground">
-          {p.target ? `Handoff ${usDate(p.target)}` : "No target date"}
-        </span>
-        {attention ? (
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            aria-expanded={open}
-            className="inline-flex items-center gap-1 rounded-full bg-amber/15 px-2.5 py-1 text-xs font-medium text-amber"
+    <ul className="divide-y divide-border" aria-label="Where you have work">
+      {homes.map((h) => (
+        <li key={h.id} className="flex min-h-11 items-center justify-between gap-3 py-2">
+          <span className="font-medium">{h.name}</span>
+          <Link
+            to="/onboarding/my-work"
+            search={{ who: "me", home: h.id } as never}
+            className="text-sm text-primary underline-offset-4 hover:underline"
           >
-            Needs attention: {p.risk.reasons.length}
-            <ChevronDown className={cn("size-3 transition-transform", open && "rotate-180")} />
-          </button>
-        ) : (
-          <span className="rounded-full bg-sage/15 px-2.5 py-1 text-xs font-medium text-sage">
-            On track
-          </span>
-        )}
-        <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
-      </div>
-      {open && (
-        <ul className="mt-2 list-disc space-y-0.5 pl-16 text-sm text-muted-foreground">
-          {p.risk.reasons.map((r) => (
-            <li key={r}>{r}</li>
-          ))}
-        </ul>
-      )}
-    </li>
+            {h.open} open task{h.open === 1 ? "" : "s"}
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }
 
 function greeting() {
-  const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  return "Good evening";
-}
-
-/** One home waiting on this person's decision. */
-function DecisionRow({
-  project: p,
-  originToken,
-}: {
-  project: ProjectSummary;
-  originToken?: string | undefined;
-}) {
-  const stage = lifecycleStageMeta(p.stage);
-  return (
-    <Link
-      to="/onboarding/$propertyId"
-      params={{ propertyId: p.property.id }}
-      search={(originToken ? { from: originToken } : undefined) as never}
-      className="surface-row relative flex flex-wrap items-center gap-x-3 gap-y-1 py-3 pl-4 pr-3"
-    >
-      <PropertyPhoto
-        url={(p.property as { primary_photo_url?: string | null }).primary_photo_url ?? null}
-        name={formatPropertyLabel(p.property).primary}
-        className="size-11"
-      />
-      <span className="min-w-0 flex-1 basis-full sm:basis-auto">
-        <span className="block truncate text-base font-semibold">{formatPropertyLabel(p.property).primary}</span>
-        <span className="block truncate text-sm text-muted-foreground">
-          {stage.label} · {p.next.headline}
-        </span>
-      </span>
-      <span className="numeric text-sm text-muted-foreground">
-        {p.target ? `Handoff ${usDate(p.target)}` : "No target date"}
-      </span>
-      <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
-    </Link>
-  );
+  return greetingFor(centralHour());
 }
 
 /** Dashboard / Properties for Onboarding staff who only work assigned Tasks. */
