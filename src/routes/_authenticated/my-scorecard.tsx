@@ -4,6 +4,7 @@
  * record. No Analytics access is needed; the database shows each person only their own rows
  * (scorecard_records_read). Rules and wording live in src/lib/home-needs.ts.
  * Build 13 (register BN5): My bonus sits on top for a person with a bonus plan.
+ * Build 14: links to Team records, Coaching and the Weekly scorecard for those who may open them.
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -14,6 +15,31 @@ import { useShellPageLabel } from "@/components/nav/ShellNav";
 import { usDate } from "@/lib/dates";
 import { MY_SCORECARD_COPY, myScorecardGroups, type MyScorecardRow } from "@/lib/home-needs";
 import { BonusVerifyLink, MyBonus } from "@/components/bonus/MyBonus";
+import { Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
+import { useRole } from "@/hooks/useRole";
+
+/** Build 14 (register BN7, BN8, BN9): the tracker pages this person may open. */
+const TRACKER_LINKS = [
+  { to: "/team-records", label: "Team records" },
+  { to: "/coaching", label: "Coaching" },
+  { to: "/weekly-scorecard", label: "Weekly scorecard" },
+] as const;
+
+function TrackerLinks() {
+  const role = useRole();
+  const links = TRACKER_LINKS.filter((l) => role.canOpen(l.to));
+  if (links.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-2" data-tracker-links>
+      {links.map((l) => (
+        <Button key={l.to} asChild variant="outline" className="min-h-11">
+          <Link to={l.to}>{l.label}</Link>
+        </Button>
+      ))}
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/my-scorecard")({
   component: MyScorecardPage,
@@ -53,6 +79,7 @@ function MyScorecardPage() {
       <PageHeader title={MY_SCORECARD_COPY.title} description={MY_SCORECARD_COPY.description} />
       {/* Build 13 (register BN5): the person's own bonus bars and dollars, when they have a plan. */}
       <BonusVerifyLink />
+      <TrackerLinks />
       {userId && <MyBonus userId={userId} />}
       {q.isPending ? (
         <p className="text-sm text-muted-foreground">Loading...</p>
