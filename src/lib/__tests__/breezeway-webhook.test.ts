@@ -6,7 +6,7 @@
  * injected per case so no test depends on network access, the token cache,
  * or the live rate limiter.
  */
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 import { createFakeBreezewayEventsStore } from "./fakeSupabase";
 import { BreezewayError } from "@/lib/breezeway.server";
 
@@ -14,6 +14,24 @@ const store = createFakeBreezewayEventsStore();
 mock.module("@/integrations/supabase/client.server", () => ({
   supabaseAdmin: store.supabaseAdmin,
 }));
+
+// Live deliveries are kept only for verified Resolve homes (no pilot fallback, Build 10). In this
+// file the pilot home stands in for one verified home through the real lookup's export; every
+// other export stays the real one, and outside this file the real lookup answers.
+let verifiedHomeStandIn = false;
+const realMapping = await import("@/lib/breezeway-mapping.server");
+mock.module("@/lib/breezeway-mapping.server", () => ({
+  ...realMapping,
+  propertyForHomeId: async (homeId: number) =>
+    verifiedHomeStandIn
+      ? homeId === 1473933
+        ? { id: "verified-home", name: "Verified home" }
+        : null
+      : realMapping.propertyForHomeId(homeId),
+}));
+afterAll(() => {
+  verifiedHomeStandIn = false;
+});
 
 const {
   PILOT_COMPANY_ID,
@@ -25,7 +43,10 @@ const {
   classifyLookupFailure,
 } = await import("@/lib/breezeway-webhook.server");
 
-beforeEach(() => store.reset());
+beforeEach(() => {
+  store.reset();
+  verifiedHomeStandIn = true;
+});
 
 const PILOT_TASK_ID = 555001;
 const t1 = "2026-08-27T18:00:00.000Z";
@@ -395,6 +416,18 @@ describe("fixture/live isolation", () => {
     expect(liveDelivery.outcome).toBe("processed");
     expect(fixtureRun.outcome).toBe("processed");
     expect(store.rows().filter((r) => r["outcome"] === "processed").length).toBe(2);
+  });
+
+  it("a live delivery for a home that is not a verified Resolve home is not kept, even an old pilot home", async () => {
+    const otherPilotHome = 1295301;
+    const live = await processBreezewayWebhook(
+      { webhook_type: "task", task_id: PILOT_TASK_ID + 50, updated_at: t1 },
+      {
+        isFixture: false,
+        verifyTask: async () => ({ id: PILOT_TASK_ID + 50, homeId: otherPilotHome, companyId: PILOT_COMPANY_ID, updatedAt: t1 }),
+      },
+    );
+    expect(live.outcome).toBe("ignored_other_property");
   });
 });
 
