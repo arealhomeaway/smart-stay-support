@@ -239,7 +239,7 @@ Live settings: approval Nov 9 to Nov 23, copies to the Supervisor and Director r
 
 ---
 
-## Changed since Nov 9 (32 lines)
+## Changed since Nov 9 (26 status changes, plus 6 lines with progress)
 - Became DONE (21): H4, A1, A4, A5, A6, A7, A9, A10, A13, A14, T4, T5, T7, T11, T12, T13, N4, S1, S4, O1, O4.
 - NOT BUILT to PARTLY (1): H5.
 - Became DIFFERENT (3): D2 (was DONE), B3 (was PARTLY), O3 (was PARTLY).
