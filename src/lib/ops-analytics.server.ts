@@ -13,6 +13,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { withoutQuietNotion } from "@/lib/notion-ticket-display";
 import { minutesExcludingWaiting, waitingSpans, type WaitingLogRow } from "@/lib/waiting-time";
+import { priorityMeta } from "@/lib/tickets";
 
 type Client = SupabaseClient<Database>;
 

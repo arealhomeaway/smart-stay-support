@@ -8,6 +8,7 @@ import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { Chip, EmptyState, LoadingRows, PageHeader, SectionBand } from "@/components/ui/page";
 import { usDateTime } from "@/lib/dates";
+import { priorityMeta } from "@/lib/tickets";
 
 export const Route = createFileRoute("/_authenticated/vendor/")({
   component: VendorQueue,

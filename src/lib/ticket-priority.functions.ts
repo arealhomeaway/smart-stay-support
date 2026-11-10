@@ -8,6 +8,7 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { priorityMeta } from "@/lib/tickets";
 
 const PRIORITIES = ["p1", "p2", "p3"] as const;
 export type TicketPriority = (typeof PRIORITIES)[number];

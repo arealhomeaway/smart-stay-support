@@ -59,6 +59,7 @@ import { cleanNotionText } from "./notion-ticket-display";
 import { formatPropertyLabel, type PropertyLabelFields } from "./property-label";
 import { CLAIM_STAGE_LABELS } from "./claims";
 import { teamOf } from "./coverage-model";
+import { priorityMeta } from "@/lib/tickets";
 
 type Ctx = { supabase: SupabaseClient<Database>; userId: string };
 type LooseRpc = (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;

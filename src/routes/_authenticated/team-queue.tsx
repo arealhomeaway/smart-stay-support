@@ -47,6 +47,7 @@ import {
   labelFor,
   relativeTime,
   slaState,
+  priorityMeta,
 } from "@/lib/tickets";
 import { currentOwnerId, queueSort } from "@/lib/matters";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";

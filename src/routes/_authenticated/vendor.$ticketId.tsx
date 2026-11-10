@@ -13,6 +13,7 @@ import { Chip, EmptyState, LoadingRows, SectionBand, SectionCard } from "@/compo
 import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { usDateTime } from "@/lib/dates";
+import { priorityMeta } from "@/lib/tickets";
 
 export const Route = createFileRoute("/_authenticated/vendor/$ticketId")({
   component: VendorJob,

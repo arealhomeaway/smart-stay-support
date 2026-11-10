@@ -74,6 +74,7 @@ import {
   type WorkOrderRow,
   type WorkOrderUpdate,
 } from "@/lib/work-order-types";
+import { priorityMeta } from "@/lib/tickets";
 
 const OVERRIDE_REASONS = Object.keys(WARRANTY_OVERRIDE_LABELS) as WarrantyOverrideReason[];
 

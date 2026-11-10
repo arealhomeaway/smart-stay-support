@@ -25,6 +25,7 @@ import {
   type ChecklistTemplate,
 } from "@/lib/ticket-checklists";
 import { SEED_TEMPLATES } from "@/lib/ticket-checklist-seed";
+import { priorityMeta } from "@/lib/tickets";
 
 export const Route = createFileRoute("/_authenticated/ticket-checklists")({
   head: () => ({

@@ -25,6 +25,7 @@ import { ArchivedTicketsPanel } from "@/components/scorecard/ArchivedTicketsPane
 import { useRole } from "@/hooks/useRole";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { PropertyRefreshPanel } from "@/components/property/PropertyRefreshPanel";
+import { priorityMeta } from "@/lib/tickets";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
   component: () => (

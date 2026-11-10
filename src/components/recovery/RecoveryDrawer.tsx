@@ -55,6 +55,7 @@ import {
 } from "@/lib/guest-recovery";
 import type { RecoveryActivityRow, RecoveryRow, RecoveryUpdate } from "@/lib/recovery-types";
 import { usDateTime } from "@/lib/dates";
+import { priorityMeta } from "@/lib/tickets";
 
 export function RecoveryDrawer({
   recovery,

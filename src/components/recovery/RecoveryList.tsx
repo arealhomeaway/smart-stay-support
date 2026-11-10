@@ -32,6 +32,7 @@ import {
   stageState,
 } from "@/lib/guest-recovery";
 import type { RecoveryRow } from "@/lib/recovery-types";
+import { priorityMeta } from "@/lib/tickets";
 
 export function useRecoveries() {
   return useQuery({

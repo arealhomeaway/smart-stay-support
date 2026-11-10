@@ -27,6 +27,7 @@ import {
   type Preference,
 } from "@/lib/vendor-gold";
 import { useVendorWorkspace, type VendorRecord } from "./useVendorWorkspace";
+import { priorityMeta } from "@/lib/tickets";
 
 export const STATUS_TONE: Record<string, StatusTone> = {
   candidate: "context",
