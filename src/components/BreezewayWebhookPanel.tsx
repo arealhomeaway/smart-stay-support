@@ -178,7 +178,7 @@ export function BreezewayWebhookPanel() {
             <p className="text-muted-foreground">
               Retried up to {recovery.attempted} transient lookup failure
               {recovery.attempted === 1 ? "" : "s"} (oldest first, respecting the shared rate
-              limit). Preview only: a recovered event still goes through the same scope and
+              limit). A recovered event goes through the same scope and
               duplicate checks as a live delivery.
             </p>
             <ul className="space-y-0.5">
