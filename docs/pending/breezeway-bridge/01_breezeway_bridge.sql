@@ -59,16 +59,9 @@ ALTER TABLE public.breezeway_bridge_records ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admins read bridge records" ON public.breezeway_bridge_records
   FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'::app_role));
 
--- 4. Switches and the start line.
-INSERT INTO public.feature_flags (key, label, description, enabled)
-VALUES ('internal_work_orders', 'Resolve work orders',
-        'When on, the team can open a Resolve work order and send it to Breezeway. Off: work orders are made in Breezeway and linked on the ticket.',
-        false)
-ON CONFLICT (key) DO NOTHING;
-
-INSERT INTO public.app_settings (key, value)
-VALUES ('breezeway_bridge_start_line', jsonb_build_object('at', NULL))
-ON CONFLICT (key) DO NOTHING;
+-- 4. Switches and the start line. The start line lives in app_settings key
+-- breezeway_bridge_start_line ({"at": ..., "by": ...}); no row means no start line yet.
+-- The internal_work_orders switch row (off) is added by 02_switch_rows.sql.
 
 CREATE OR REPLACE FUNCTION private.guard_breezeway_bridge_switch()
 RETURNS trigger
@@ -77,25 +70,31 @@ SET search_path = public
 AS $$
 BEGIN
   IF coalesce(current_setting('resolve.breezeway_bridge_switch', true), '') = 'on' THEN
+    RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
+  END IF;
+  IF TG_TABLE_NAME = 'feature_flags' THEN
+    IF NEW.key = 'breezeway_bridge'
+       AND ((TG_OP = 'INSERT' AND NEW.enabled)
+            OR (TG_OP = 'UPDATE' AND NEW.enabled IS DISTINCT FROM OLD.enabled)) THEN
+      RAISE EXCEPTION 'The Breezeway bridge can only be turned on or off with its own switch, so the start line moves with it.';
+    END IF;
     RETURN NEW;
   END IF;
-  IF TG_TABLE_NAME = 'feature_flags' AND NEW.key = 'breezeway_bridge'
-     AND ((TG_OP = 'INSERT' AND NEW.enabled)
-          OR (TG_OP = 'UPDATE' AND NEW.enabled IS DISTINCT FROM OLD.enabled)) THEN
-    RAISE EXCEPTION 'The Breezeway bridge can only be turned on or off with its own switch, so the start line moves with it.';
-  END IF;
-  IF TG_TABLE_NAME = 'app_settings' AND NEW.key = 'breezeway_bridge_start_line'
-     AND TG_OP = 'UPDATE' AND NEW.value IS DISTINCT FROM OLD.value THEN
+  -- app_settings: the start line only moves inside set_breezeway_bridge.
+  IF (TG_OP = 'DELETE' AND OLD.key = 'breezeway_bridge_start_line')
+     OR (TG_OP = 'INSERT' AND NEW.key = 'breezeway_bridge_start_line' AND nullif(NEW.value ->> 'at', '') IS NOT NULL)
+     OR (TG_OP = 'UPDATE' AND (NEW.key = 'breezeway_bridge_start_line' OR OLD.key = 'breezeway_bridge_start_line')
+         AND (NEW.value IS DISTINCT FROM OLD.value OR NEW.key IS DISTINCT FROM OLD.key)) THEN
     RAISE EXCEPTION 'The Breezeway bridge start line only moves when the bridge is turned on.';
   END IF;
-  RETURN NEW;
+  RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
 END $$;
 
 CREATE TRIGGER feature_flags_breezeway_bridge_guard
   BEFORE INSERT OR UPDATE ON public.feature_flags
   FOR EACH ROW EXECUTE FUNCTION private.guard_breezeway_bridge_switch();
 CREATE TRIGGER app_settings_breezeway_bridge_guard
-  BEFORE UPDATE ON public.app_settings
+  BEFORE INSERT OR UPDATE OR DELETE ON public.app_settings
   FOR EACH ROW EXECUTE FUNCTION private.guard_breezeway_bridge_switch();
 
 CREATE OR REPLACE FUNCTION private.breezeway_bridge_start_line()
@@ -386,8 +385,3 @@ CREATE TRIGGER work_orders_internal_switch
 CREATE TRIGGER breezeway_outbound_internal_switch
   BEFORE INSERT ON public.breezeway_outbound_tasks
   FOR EACH ROW EXECUTE FUNCTION private.refuse_internal_work_orders();
-
--- 8. The webhook note says what the webhook is for now.
-UPDATE public.breezeway_webhook_subscriptions
-   SET note = 'Company-wide task updates. Verified Resolve homes only. Keeps the work order mirror current and feeds the bridge.'
- WHERE note LIKE 'Fitzgerald pilot%';
