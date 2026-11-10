@@ -3,7 +3,7 @@
  * Operations Supervisor, time off requests in Needs you now (S4). Rules live in
  * src/lib/my-shift.ts; handoffs are written only by end_my_shift.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -16,7 +16,8 @@ import { useStaffDirectory, displayName } from "@/hooks/useTeam";
 import { ShiftHandoffDialog, type WalkTicket } from "@/components/home/ShiftHandoffDialog";
 import { TimeOffDialog } from "@/components/team/TimeOffDialog";
 import { coverageModel } from "@/lib/coverage-admin.functions";
-import { centralDate, centralToday, addDays, effectivePattern } from "@/lib/team-schedule";
+import { addDays, centralInstant, centralToday } from "@/lib/team-schedule";
+import { buildModel } from "@/components/team/ScheduleTab";
 import {
   MY_SHIFT_COPY,
   TIME_OFF_START_KEY,
@@ -232,14 +233,14 @@ const lunchKey = (userId: string, date: string) => `resolve:lunch-asked:${userId
 /** Register S1: before the lunch hour, ask about Right now and time sensitive work. Never blocks. */
 export function LunchPrompt({ userId, isCoordinator, rows, demoMode }: { userId: string; isCoordinator: boolean; rows: WalkTicket[]; demoMode: boolean }) {
   const q = useMyShift(userId, isCoordinator);
-  const [dismissed, setDismissed] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return window.localStorage.getItem(lunchKey(userId, centralToday()));
-  });
+  const [dismissed, setDismissed] = useState<string | null>("loading");
+  useEffect(() => {
+    setDismissed(window.localStorage.getItem(lunchKey(userId, centralToday())));
+  }, [userId]);
   const [walking, setWalking] = useState(false);
   const shift: MyShiftToday | undefined = q.data?.shift;
   const lunch = shift ? lunchPrompt(shift) : null;
-  const lunchEndMs = shift && lunch ? Date.parse(centralDateInstant(shift.date, lunch.lunchEnd)) : 0;
+  const lunchEndMs = shift && lunch ? Date.parse(centralInstant(shift.date, lunch.lunchEnd)) : 0;
   const urgent = useMemo(() => (lunch ? urgentBeforeLunch(rows, userId, lunchEndMs) : []), [rows, userId, lunchEndMs, lunch]);
   if (!shift || !lunch || dismissed) return null;
   const close = () => {
@@ -283,11 +284,6 @@ export function LunchPrompt({ userId, isCoordinator, rows, demoMode }: { userId:
   );
 }
 
-function centralDateInstant(date: string, minute: number) {
-  // Imported lazily from the schedule rules to keep one Central time rule.
-  return centralInstantFn(date, minute);
-}
-import { centralInstant as centralInstantFn } from "@/lib/team-schedule";
 
 /** Needs you now, for the Operations Supervisor: time off requests waiting for a decision. */
 export function TimeOffRequestsWaiting({ userId, demoMode }: { userId: string; demoMode: boolean }) {
@@ -336,7 +332,7 @@ export function TimeOffRequestsWaiting({ userId, demoMode }: { userId: string; d
     return true;
   };
   const who = (id: string) => displayName((staff ?? []).find((p) => p.id === id));
-  const m = model.data;
+  const m = model.data ? buildModel(model.data as never) : null;
 
   return (
     <>
@@ -362,11 +358,11 @@ export function TimeOffRequestsWaiting({ userId, demoMode }: { userId: string; d
           open
           onClose={() => setApproving(null)}
           onSaved={() => void decide(approving, "approved", "")}
-          people={m.staff.length ? m.staff : m.people}
+          people={m.shiftPeople}
           roles={m.roles}
           roster={m.roster}
           overrides={m.overrides}
-          pattern={effectivePattern(m.patternSetting, m.roster)}
+          pattern={m.pattern}
           defaultUserId={approving.user_id}
           defaultStartDate={approving.starts_on}
           defaultEndDate={approving.ends_on}
@@ -401,6 +397,3 @@ export function TimeOffRequestsWaiting({ userId, demoMode }: { userId: string; d
     </>
   );
 }
-
-// Keeps the Central date helper reachable for callers that format request dates.
-export { centralDate };
