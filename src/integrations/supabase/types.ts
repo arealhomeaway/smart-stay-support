@@ -12742,6 +12742,42 @@ export type Database = {
           },
         ]
       }
+      shift_end_records: {
+        Row: {
+          created_at: string
+          ended_at: string
+          handoff_ids: string[]
+          id: string
+          is_demo: boolean
+          kind: string
+          nothing_to_hand_off: boolean
+          ticket_ids: string[]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string
+          handoff_ids?: string[]
+          id?: string
+          is_demo?: boolean
+          kind?: string
+          nothing_to_hand_off?: boolean
+          ticket_ids?: string[]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string
+          handoff_ids?: string[]
+          id?: string
+          is_demo?: boolean
+          kind?: string
+          nothing_to_hand_off?: boolean
+          ticket_ids?: string[]
+          user_id?: string
+        }
+        Relationships: []
+      }
       sop_playbooks: {
         Row: {
           checklist_categories: string[]
@@ -14268,6 +14304,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      time_off_requests: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          ends_on: string
+          id: string
+          is_demo: boolean
+          note: string | null
+          starts_on: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          ends_on: string
+          id?: string
+          is_demo?: boolean
+          note?: string | null
+          starts_on: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          ends_on?: string
+          id?: string
+          is_demo?: boolean
+          note?: string | null
+          starts_on?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       troubleshooting_guide_steps: {
         Row: {
@@ -17603,6 +17681,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      decide_time_off: {
+        Args: { _decision: string; _id: string; _note: string }
+        Returns: undefined
+      }
       direct_booking_active_owner_homes: {
         Args: { _ids: string[] }
         Returns: string[]
@@ -17641,6 +17723,16 @@ export type Database = {
         Returns: boolean
       }
       email_intake_sweep_job: { Args: never; Returns: Json }
+      end_my_shift: {
+        Args: {
+          _at: string
+          _demo: boolean
+          _items: Json
+          _kind: string
+          _nothing: boolean
+        }
+        Returns: Json
+      }
       enroll_active_owner: {
         Args: { _owner_user_id: string; _property_id: string }
         Returns: Json
@@ -18547,6 +18639,10 @@ export type Database = {
         Args: { _body: string; _id: string; _kind: string }
         Returns: string
       }
+      request_time_off: {
+        Args: { _demo: boolean; _ends: string; _note: string; _starts: string }
+        Returns: string
+      }
       reserve_sop_upload: {
         Args: { _effective_on: string; _name: string; _owner: string }
         Returns: Json
@@ -18810,6 +18906,15 @@ export type Database = {
       set_staff_no_second_look: {
         Args: { _on: boolean; _user_id: string }
         Returns: undefined
+      }
+      shift_handoff_defaults: {
+        Args: { _at?: string }
+        Returns: {
+          note: string
+          role_code: string
+          team: string
+          user_id: string
+        }[]
       }
       sop_upload_context: { Args: { _name: string }; Returns: Json }
       sop_upload_receipt: { Args: { _id: string }; Returns: Json }
