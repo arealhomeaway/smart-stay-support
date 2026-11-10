@@ -980,7 +980,8 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
           customStep: (ticket as { next_action?: string | null }).next_action ?? null,
           customDueAt: (ticket as { next_action_due_at?: string | null }).next_action_due_at ?? null,
           derivedLabel: (guidedLeads && guidedLeadTitle) || (currentAction?.title ?? null),
-          derivedDueAt: doThisNowDueAt({
+          // A parked ticket's next step is due when it comes back to you.
+          derivedDueAt: ticket.status === "waiting" ? (ticket.next_review_at ?? null) : doThisNowDueAt({
             commState: guestComm.commState,
             commDueAt: guestComm.commDueAt,
             acknowledged_at: ticket.acknowledged_at,
