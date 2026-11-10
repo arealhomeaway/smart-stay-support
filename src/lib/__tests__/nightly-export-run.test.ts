@@ -121,32 +121,36 @@ function fakeDb(tables: Record<string, Row[]>, files: { bucket: string; name: st
     }
   }
   const sourceTables = () => Object.keys(tables);
-  const pageOf = <T,>(p: Promise<{ data: T[] | null; error: unknown }>) =>
-    Object.assign(p, {
-      // Like the data service: a range read returns that slice of the rows.
-      range: (a: number, b: number) => p.then((r) => ({ ...r, data: r.data ? r.data.slice(a, b + 1) : r.data })),
-    });
+  const rpcResult = async (fn: string, args: Row = {}): Promise<{ data: any; error: any }> => {
+    rpcCalls.push({ fn, args });
+    if (fn === "backup_list_tables")
+      return { data: sourceTables().map((t) => ({ table_name: t, row_count: data[t]!.length, withheld_columns: [] })), error: null };
+    if (fn === "backup_read_table") {
+      const rows = data[args["_table"] as string] ?? [];
+      return { data: rows.slice(args["_offset"] as number, (args["_offset"] as number) + (args["_limit"] as number)), error: null };
+    }
+    if (fn === "backup_list_files")
+      return {
+        data: files.map((f) => ({ bucket: f.bucket, name: f.name, size: f.size, etag: f.etag, mimetype: "text/plain", updated_at: null, owner_type: "folder", owner_id: null, owner_label: "x" })),
+        error: null,
+      };
+    if (fn === "nightly_export_alert") return { data: 2, error: null };
+    return { data: null, error: { message: `unknown ${fn}` } };
+  };
+  // Like the data service: a read returns at most 1,000 rows, and a range read returns that slice.
+  const LIMIT = 1000;
+  const rpc = (fn: string, args: Row = {}) => {
+    const p = rpcResult(fn, args);
+    const cap = (r: { data: any; error: any }, a = 0, b = LIMIT - 1) =>
+      Array.isArray(r.data) ? { ...r, data: r.data.slice(a, Math.min(b + 1, a + LIMIT)) } : r;
+    return {
+      then: (res: (v: { data: any; error: any }) => void, rej?: (e: unknown) => void) => p.then((r) => res(cap(r)), rej),
+      range: (a: number, b: number) => p.then((r) => cap(r, a, b)),
+    };
+  };
   const db = {
     from: (t: string) => new Q(t),
-    rpc: (fn: string, args: Row = {}) => pageOf(rpcResult(fn, args) as Promise<{ data: any[] | null; error: unknown }>),
-  };
-  const rpcResult = async (fn: string, args: Row = {}) => {
-    {
-      rpcCalls.push({ fn, args });
-      if (fn === "backup_list_tables")
-        return { data: sourceTables().map((t) => ({ table_name: t, row_count: data[t]!.length, withheld_columns: [] })), error: null };
-      if (fn === "backup_read_table") {
-        const rows = data[args["_table"] as string] ?? [];
-        return { data: rows.slice(args["_offset"] as number, (args["_offset"] as number) + (args["_limit"] as number)), error: null };
-      }
-      if (fn === "backup_list_files")
-        return {
-          data: files.map((f) => ({ bucket: f.bucket, name: f.name, size: f.size, etag: f.etag, mimetype: "text/plain", updated_at: null, owner_type: "folder", owner_id: null, owner_label: "x" })),
-          error: null,
-        };
-      if (fn === "nightly_export_alert") return { data: 2, error: null };
-      return { data: null, error: { message: `unknown ${fn}` } };
-    },
+    rpc,
     storage: {
       from: (bucket: string) => ({
         download: async (name: string) => {
