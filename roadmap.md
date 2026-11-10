@@ -1,5 +1,13 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 10 bonus guide corrections (docs only; replaces conflicting parts of Builds 12 to 14)
+- [ ] Save docs/specs/bonus-guide-values.md (A to G, exact numbers)
+- [ ] Register BN11 line in section 14
+- [ ] Report conflicts between A to G and existing code
+- [ ] Build 12: Homes ready for guests is one shared team score (fact keeps who; no individual score)
+- [ ] Build 13 (queued): dollar amounts per level, per plan and first period override, seeded B to D, engine per A
+- [ ] Build 14 (queued): 5 records per active PC, Director double check of 5, coaching per PC, report through Wednesday
+
 ## Nov 10 build 12: arrival check queue and Arrival readiness database (register BN4, BN10; no publish, switch OFF)
 - [ ] Register section 14 Bonus tracking (BN0 to BN10)
 - [ ] Spec saved as docs/specs/arrival-check.md
