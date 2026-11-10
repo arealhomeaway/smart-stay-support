@@ -37,6 +37,7 @@ import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authent
 import { Route as AuthenticatedJoinRouteImport } from './routes/_authenticated/join'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedMapRouteImport } from './routes/_authenticated/map'
+import { Route as AuthenticatedMyScorecardRouteImport } from './routes/_authenticated/my-scorecard'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedOpsAnalyticsRouteImport } from './routes/_authenticated/ops-analytics'
@@ -273,6 +274,12 @@ const AuthenticatedMapRoute = AuthenticatedMapRouteImport.update({
   path: '/map',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMyScorecardRoute =
+  AuthenticatedMyScorecardRouteImport.update({
+    id: '/my-scorecard',
+    path: '/my-scorecard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedNotificationsRoute =
   AuthenticatedNotificationsRouteImport.update({
     id: '/notifications',
@@ -803,6 +810,7 @@ export interface FileRoutesByFullPath {
   '/join': typeof AuthenticatedJoinRoute
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/map': typeof AuthenticatedMapRoute
+  '/my-scorecard': typeof AuthenticatedMyScorecardRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
   '/ops-analytics': typeof AuthenticatedOpsAnalyticsRoute
@@ -917,6 +925,7 @@ export interface FileRoutesByTo {
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/join': typeof AuthenticatedJoinRoute
   '/map': typeof AuthenticatedMapRoute
+  '/my-scorecard': typeof AuthenticatedMyScorecardRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/ops-analytics': typeof AuthenticatedOpsAnalyticsRoute
   '/oversight': typeof AuthenticatedOversightRoute
@@ -1031,6 +1040,7 @@ export interface FileRoutesById {
   '/_authenticated/join': typeof AuthenticatedJoinRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/_authenticated/map': typeof AuthenticatedMapRoute
+  '/_authenticated/my-scorecard': typeof AuthenticatedMyScorecardRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
   '/_authenticated/ops-analytics': typeof AuthenticatedOpsAnalyticsRoute
@@ -1149,6 +1159,7 @@ export interface FileRouteTypes {
     | '/join'
     | '/leads'
     | '/map'
+    | '/my-scorecard'
     | '/notifications'
     | '/onboarding'
     | '/ops-analytics'
@@ -1263,6 +1274,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/join'
     | '/map'
+    | '/my-scorecard'
     | '/notifications'
     | '/ops-analytics'
     | '/oversight'
@@ -1376,6 +1388,7 @@ export interface FileRouteTypes {
     | '/_authenticated/join'
     | '/_authenticated/leads'
     | '/_authenticated/map'
+    | '/_authenticated/my-scorecard'
     | '/_authenticated/notifications'
     | '/_authenticated/onboarding'
     | '/_authenticated/ops-analytics'
@@ -1684,6 +1697,13 @@ declare module '@tanstack/react-router' {
       path: '/map'
       fullPath: '/map'
       preLoaderRoute: typeof AuthenticatedMapRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/my-scorecard': {
+      id: '/_authenticated/my-scorecard'
+      path: '/my-scorecard'
+      fullPath: '/my-scorecard'
+      preLoaderRoute: typeof AuthenticatedMyScorecardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/notifications': {
@@ -2479,6 +2499,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedJoinRoute: typeof AuthenticatedJoinRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRouteWithChildren
   AuthenticatedMapRoute: typeof AuthenticatedMapRoute
+  AuthenticatedMyScorecardRoute: typeof AuthenticatedMyScorecardRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRouteWithChildren
   AuthenticatedOpsAnalyticsRoute: typeof AuthenticatedOpsAnalyticsRoute
@@ -2547,6 +2568,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedJoinRoute: AuthenticatedJoinRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRouteWithChildren,
   AuthenticatedMapRoute: AuthenticatedMapRoute,
+  AuthenticatedMyScorecardRoute: AuthenticatedMyScorecardRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRouteWithChildren,
   AuthenticatedOpsAnalyticsRoute: AuthenticatedOpsAnalyticsRoute,
