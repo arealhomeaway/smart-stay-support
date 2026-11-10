@@ -138,7 +138,7 @@ export function ProjectTeamPanel({ propertyId }: { propertyId: string }) {
           <h3 className="text-sm font-semibold">Project Providers</h3>
         </div>
         <p className="mb-3 text-xs text-muted-foreground">
-          External companies working on this home. For reference only — they aren't Resolve users and don't receive Tasks or notifications.
+          External companies working on this home. For reference only: they aren't Resolve users and don't receive Tasks or notifications.
         </p>
         <div className="space-y-2 rounded-md border border-dashed p-3 sm:max-w-md">
           <label htmlFor={`staging-${propertyId}`} className="flex items-center justify-between gap-2 text-sm font-medium">
@@ -149,7 +149,7 @@ export function ProjectTeamPanel({ propertyId }: { propertyId: string }) {
             value={providerValue}
             disabled={!canEdit}
             maxLength={200}
-            placeholder={canEdit ? "Type the provider or team, e.g. name — company" : "Not set"}
+            placeholder={canEdit ? "Type the provider or team, e.g. name: company" : "Not set"}
             onChange={(e) => setProvider(e.target.value)}
           />
           {providerChanged && (

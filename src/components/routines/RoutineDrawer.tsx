@@ -344,7 +344,7 @@ export function RoutineDrawer({
               )}
               {!allChecked && outcome === "looks_good" && (
                 <p className="basis-full text-xs text-muted-foreground">
-                  You have not ticked everything — that is fine, but say why in the note.
+                  You have not ticked everything. That is fine, but say why in the note.
                 </p>
               )}
             </div>

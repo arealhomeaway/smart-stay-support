@@ -11,7 +11,7 @@ export function handoffSelfAcceptCheck(
   requestedFrom: string | null | undefined,
 ): { ok: true } | { ok: false; message: string } {
   if (currentUserId && requestedFrom && currentUserId === requestedFrom) {
-    return { ok: false, message: "You requested this handoff — someone else has to accept it." };
+    return { ok: false, message: "You requested this handoff. Someone else has to accept it." };
   }
   return { ok: true };
 }

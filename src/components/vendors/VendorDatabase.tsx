@@ -210,7 +210,7 @@ export function VendorDatabase({
     if (!window.confirm(`Remove the "${f.label}" column? If any vendor has a value it is archived, not deleted.`)) return;
     const { data, error } = await supabase.rpc("remove_vendor_custom_field", { _field_id: f.id });
     if (error) { toast.error(errorText(error)); return; }
-    toast.success(data === "archived" ? "Column archived — its history is kept." : "Column removed");
+    toast.success(data === "archived" ? "Column archived: its history is kept." : "Column removed");
     invalidate();
   }
 
@@ -453,7 +453,7 @@ export function VendorDatabase({
                               ))}
                             </span>
                           ) : (
-                            display(val, c) || <span className="text-muted-foreground">—</span>
+                            display(val, c) || <span className="text-muted-foreground">-</span>
                           )}
                         </td>
                       );
@@ -493,8 +493,7 @@ export function VendorDatabase({
             <Plus className="size-4" /> Add column
           </Button>
           <p className="basis-full text-xs text-muted-foreground">
-            Double-click a cell to edit. Locked columns are system fields used by dispatch and integrations —
-            they can't be renamed or removed{isLead ? "" : ", and only Admin or the Director of Operations can change their values"}.
+            Double-click a cell to edit. Locked columns are system fields used by dispatch and integrations. They can't be renamed or removed{isLead ? "" : ", and only Admin or the Director of Operations can change their values"}.
           </p>
         </div>
       ) : canManage ? null : (

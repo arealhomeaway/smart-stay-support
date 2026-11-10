@@ -218,7 +218,7 @@ export function GuidedTicketPanel({
         // With an open Work Order the Ticket keeps its current vendor until the new one accepts
         // (the database then moves both). Emergency Only basis is still recorded on the Ticket.
         patch: hasOpenWorkOrder && !("emergency_vendor_reason" in patch) ? {} : patch,
-        history: hasOpenWorkOrder ? `${history} Added to the open Work Order as a candidate — it must accept before it replaces the current vendor.` : history },
+        history: hasOpenWorkOrder ? `${history} Added to the open Work Order as a candidate. It must accept before it replaces the current vendor.` : history },
       { onSuccess: () => { if (hasOpenWorkOrder) void onVendorChosenForWorkOrder!(v).catch((e) => toast.error(errorText(e))); } },
     );
 
@@ -226,7 +226,7 @@ export function GuidedTicketPanel({
     mutationFn: async ({ stepId, outcome, prompt }: { stepId: string; outcome: "fixed" | "not_fixed" | "skipped"; prompt: string }) => {
       const { error } = await supabase.from("ticket_troubleshooting_answers").insert({ ticket_id: ticket.id, step_id: stepId, outcome });
       if (error) throw error;
-      await log("note", `Troubleshooting — "${prompt}": ${outcome === "fixed" ? "fixed it" : outcome === "not_fixed" ? "not fixed" : "skipped"}.`);
+      await log("note", `Troubleshooting: "${prompt}": ${outcome === "fixed" ? "fixed it" : outcome === "not_fixed" ? "not fixed" : "skipped"}.`);
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["ticket-troubleshooting", ticket.id] });
@@ -248,7 +248,7 @@ export function GuidedTicketPanel({
   const sendSomeone = () =>
     save.mutate({
       patch: { resolution_path: "field", resolution_path_at: new Date().toISOString() },
-      history: "Still not fixed after troubleshooting — sending someone to the property.",
+      history: "Still not fixed after troubleshooting. Sending someone to the property.",
     });
 
   // Field path, vendor chosen, no Work Order yet: the one next step is to open it.
@@ -310,7 +310,7 @@ export function GuidedTicketPanel({
             <div className="mt-1 space-y-3">
               <h3 className="text-lg font-semibold">Open the Work Order for {vendor.data.name}</h3>
               <p className="text-sm text-muted-foreground">
-                The vendor is recorded on the Work Order. Nothing is sent to them automatically — contact them as you do today.
+                The vendor is recorded on the Work Order. Nothing is sent to them automatically. Contact them as you do today.
               </p>
               {workOrderPanel(vendor.data)}
               <Button variant="ghost" size="sm" onClick={() => setChangingVendor(true)}>Choose a different vendor</Button>
@@ -394,7 +394,7 @@ export function GuidedTicketPanel({
                   {nextStep.help && <p className="text-sm text-muted-foreground">{nextStep.help}</p>}
                   <div className="mt-2 flex flex-wrap gap-2">
                     <Button size="sm" disabled={answer.isPending} onClick={() => answer.mutate({ stepId: nextStep.id, outcome: "fixed", prompt: nextStep.prompt })}>That fixed it</Button>
-                    <Button size="sm" variant="outline" disabled={answer.isPending} onClick={() => answer.mutate({ stepId: nextStep.id, outcome: "not_fixed", prompt: nextStep.prompt })}>Not fixed — next step</Button>
+                    <Button size="sm" variant="outline" disabled={answer.isPending} onClick={() => answer.mutate({ stepId: nextStep.id, outcome: "not_fixed", prompt: nextStep.prompt })}>Not fixed: next step</Button>
                     <Button size="sm" variant="ghost" disabled={answer.isPending} onClick={() => answer.mutate({ stepId: nextStep.id, outcome: "skipped", prompt: nextStep.prompt })}>Skip</Button>
                   </div>
                 </div>
@@ -403,7 +403,7 @@ export function GuidedTicketPanel({
               )}
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" onClick={sendSomeone} disabled={save.isPending}>
-                  {ts?.guide ? "Still not fixed — send someone" : "Send someone"}
+                  {ts?.guide ? "Still not fixed: send someone" : "Send someone"}
                 </Button>
                 {!ts?.guide && (
                   <Button variant="outline" onClick={() => choosePath("escalate")} disabled={save.isPending}>Escalate</Button>

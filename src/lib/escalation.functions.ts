@@ -59,7 +59,7 @@ export const raiseEscalationFn = createServerFn({ method: "POST" })
       data.escalated_to_role === "director" &&
       !roles.some((r: string) => ["admin", "manager"].includes(r))
     )
-      throw new Error("Escalate to your Supervisor first — they take it to the Director.");
+      throw new Error("Escalate to your Supervisor first. They take it to the Director.");
 
     const { data: ticket, error: readError } = await context.supabase
       .from("tickets")
@@ -97,7 +97,7 @@ export const raiseEscalationFn = createServerFn({ method: "POST" })
       kind: "status",
       event_type: "escalated",
       internal: false,
-      body: `Escalated to the ${data.escalated_to_role === "director" ? "Director of Operations" : "Operations Supervisor"} — ${data.reason}. Ownership is unchanged.`,
+      body: `Escalated to the ${data.escalated_to_role === "director" ? "Director of Operations" : "Operations Supervisor"} · ${data.reason}. Ownership is unchanged.`,
     });
 
     return { ok: true as const, id: row.id };
@@ -151,7 +151,7 @@ export const resolveEscalationFn = createServerFn({ method: "POST" })
       if (dirError) throw new Error(dirError.message);
       if (!isDirector)
         throw new Error(
-          "This was escalated to the Director — only the Director can decide it now.",
+          "This was escalated to the Director. Only the Director can decide it now.",
         );
     }
 
@@ -190,7 +190,7 @@ export const resolveEscalationFn = createServerFn({ method: "POST" })
         kind: "status",
         event_type: "escalation_resolved",
         internal: false,
-        body: `Escalation answered — ${data.outcome_note} ${ownershipNote}`,
+        body: `Escalation answered: ${data.outcome_note} ${ownershipNote}`,
       });
     }
 

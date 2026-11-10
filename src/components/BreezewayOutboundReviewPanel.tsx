@@ -66,7 +66,7 @@ export function BreezewayOutboundReviewPanel() {
         </CardTitle>
         <CardDescription>
           Records where Resolve could not confirm whether Breezeway created the task. Nothing is
-          retried automatically — check Breezeway, then record what you found.
+          retried automatically. Check Breezeway, then record what you found.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
@@ -124,7 +124,7 @@ export function BreezewayOutboundReviewPanel() {
                 disabled={reconcile.isPending}
                 onClick={() => reconcile.mutate({ id: row.id, action: "abandon" })}
               >
-                No task exists — close it
+                No task exists: close it
               </Button>
             </div>
           </div>

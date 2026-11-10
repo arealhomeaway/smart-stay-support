@@ -134,7 +134,7 @@ export async function drainStaffNotifications(
         .from("staff_notifications")
         .update({
           email_status: "skipped",
-          email_error: "Demo notification — external delivery blocked.",
+          email_error: "Demo notification: external delivery blocked.",
         })
         .eq("id", row.id);
       continue;
@@ -175,7 +175,7 @@ export async function drainStaffNotifications(
     const url = row.link_path ? `${APP_URL}${row.link_path}` : APP_URL;
     const result = await sendEmail({
       to,
-      subject: row.priority === "urgent" ? `Action needed — ${row.title}` : row.title,
+      subject: row.priority === "urgent" ? `Action needed: ${row.title}` : row.title,
       html: emailShell(row.title, row.body, { label: actionLabel(row.kind), url }, "staff"),
       purpose: `staff_${row.kind}`,
       isDemo: row.is_demo,

@@ -48,13 +48,13 @@ import {
 export const Route = createFileRoute("/_authenticated/coach")({
   head: () => ({
     meta: [
-      { title: "Ask the Coach — Resolve Operations" },
+      { title: "Ask the Coach: Resolve Operations" },
       {
         name: "description",
         content:
           "Describe a live situation in plain language and get the ARHA-approved priority, checklist, vendor brief and guest message before anyone is dispatched.",
       },
-      { property: "og:title", content: "Ask the Coach — Resolve Operations" },
+      { property: "og:title", content: "Ask the Coach: Resolve Operations" },
       {
         property: "og:description",
         content: "Plain-language situation in, coached plan and dispatch brief out.",
@@ -242,7 +242,7 @@ function CoachPage() {
         </h1>
         <p className="mt-1 text-muted-foreground">
           Describe what is happening in plain language. The coach reads it against our SOP, sets the
-          priority, gives you the checklist, and writes the brief for whoever you dispatch — before
+          priority, gives you the checklist, and writes the brief for whoever you dispatch. Before
           anyone leaves a hole in a wall.
         </p>
       </div>

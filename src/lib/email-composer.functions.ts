@@ -177,7 +177,7 @@ export const sendComposedEmail = createServerFn({ method: "POST" })
         if (when.getTime() <= Date.now()) throw new Error("Pick a send time in the future.");
       }
       const bytes = (input.attachments ?? []).reduce((n, a) => n + a.contentBytes.length, 0);
-      if (bytes > 4_000_000) throw new Error("Attachments are too large — keep them under 3 MB.");
+      if (bytes > 4_000_000) throw new Error("Attachments are too large. Keep them under 3 MB.");
       return input;
     },
   )

@@ -21,7 +21,7 @@ const SUBJECT_LABEL: Record<EvidenceSubject, string> = {
 };
 
 function pct(n: number | null) {
-  return n === null ? "—" : `${Math.round(n * 100)}%`;
+  return n === null ? "-" : `${Math.round(n * 100)}%`;
 }
 
 export function EvidenceQualityCard({ windowDays = 30 }: { windowDays?: number }) {
@@ -55,7 +55,7 @@ export function EvidenceQualityCard({ windowDays = 30 }: { windowDays?: number }
                 <p className="text-xs text-muted-foreground">Right the first time</p>
               </div>
               <div>
-                <p className="text-xl font-semibold">{data.medianAttemptsToPass ?? "—"}</p>
+                <p className="text-xl font-semibold">{data.medianAttemptsToPass ?? "Not set"}</p>
                 <p className="text-xs text-muted-foreground">Typical photos per request</p>
               </div>
               <div>

@@ -23,9 +23,9 @@ import { coverageFor, useVendorWorkspace } from "@/components/vendors/useVendorW
 export const Route = createFileRoute("/_authenticated/vendors/$vendorId")({
   head: () => ({
     meta: [
-      { title: "Vendor profile — Resolve Operations" },
+      { title: "Vendor profile: Resolve Operations" },
       { name: "description", content: "One vendor's contacts, coverage, qualification gates and history." },
-      { property: "og:title", content: "Vendor profile — Resolve Operations" },
+      { property: "og:title", content: "Vendor profile: Resolve Operations" },
       { property: "og:description", content: "Contacts, coverage, gates and history for one vendor." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -77,7 +77,7 @@ function VendorProfile() {
       />
       <div className="flex flex-wrap gap-2">
         <StatusBadge tone={STATUS_TONE[v.status] ?? "context"}>{VENDOR_STATUS_LABELS[v.status as VendorStatus]}</StatusBadge>
-        {v.emergency_only && <StatusBadge tone="escalated">Emergency Only — not routine coverage</StatusBadge>}
+        {v.emergency_only && <StatusBadge tone="escalated">Emergency Only: not routine coverage</StatusBadge>}
         {inTransitionalReview(v) && (<><StatusBadge tone="waiting">Transitional Review</StatusBadge><span className="text-xs text-muted-foreground">Gold Standard verification incomplete · {transitionalDaysLeft(v)} days left</span></>)}
         <Chip>{DISPATCH_METHOD_LABELS[v.dispatch_method as DispatchMethod] ?? v.dispatch_method}</Chip>
         <ComplianceBadge state={ws.data!.compliance.get(v.id)?.state} />
@@ -166,7 +166,7 @@ function Field({ k, v }: { k: string; v: string | null | undefined }) {
   return (
     <div>
       <dt className="text-xs text-muted-foreground">{k}</dt>
-      <dd className="break-words">{v || "—"}</dd>
+      <dd className="break-words">{v || "Not set"}</dd>
     </div>
   );
 }

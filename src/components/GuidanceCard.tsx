@@ -183,7 +183,7 @@ export function GuidanceCard({
                     <li key={flag.title}>
                       <span className="font-medium">{flag.title}</span>
                       {flag.why ? (
-                        <span className="text-muted-foreground"> — {flag.why}</span>
+                        <span className="text-muted-foreground"> · {flag.why}</span>
                       ) : null}
                     </li>
                   ))}

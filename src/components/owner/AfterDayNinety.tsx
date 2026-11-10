@@ -60,7 +60,7 @@ export function AfterDayNinety({
         <p className="mt-3 text-xs text-muted-foreground">
           Invoicing, billing and ongoing owner questions go to{" "}
           <span className="font-medium text-foreground">{primaryContact.name}</span>,{" "}
-          {primaryContact.role} —{" "}
+          {primaryContact.role} · {" "}
           <a
             href={`mailto:${primaryContact.email}`}
             className="text-primary underline-offset-4 hover:underline"

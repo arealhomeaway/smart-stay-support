@@ -566,11 +566,11 @@ const paid = (n: number | null | undefined): n is number => typeof n === "number
 /** One Time Fees, fixed order, no $0 lines. */
 export function feeLines(fees: QuoteFees): string[] {
   const lines: string[] = [];
-  if (paid(fees.cleaningFee)) lines.push(`Cleaning fee - ${money(fees.cleaningFee)}`);
-  if (paid(fees.applicationFee)) lines.push(`Application fee - ${money(fees.applicationFee)} (one adult required)`);
+  if (paid(fees.cleaningFee)) lines.push(`Cleaning fee: ${money(fees.cleaningFee)}`);
+  if (paid(fees.applicationFee)) lines.push(`Application fee: ${money(fees.applicationFee)} (one adult required)`);
   if (fees.dogs > 0 && paid(fees.petFeePerDog))
-    lines.push(`Pet fee - ${money(fees.petFeePerDog)}/dog${fees.dogs > 1 ? ` (${money(fees.petFeePerDog * fees.dogs)} total)` : ""}`);
-  if (paid(fees.deposit)) lines.push(`Refundable deposit - ${money(fees.deposit)}`);
+    lines.push(`Pet fee: ${money(fees.petFeePerDog)}/dog${fees.dogs > 1 ? ` (${money(fees.petFeePerDog * fees.dogs)} total)` : ""}`);
+  if (paid(fees.deposit)) lines.push(`Refundable deposit: ${money(fees.deposit)}`);
   return lines;
 }
 

@@ -162,8 +162,8 @@ export function ticketCurrentAction(t: CurrentActionInput): CurrentAction | null
           type: "choice",
           required: true,
           options: [
-            { value: "resume", label: "It's unblocked — pick the work back up" },
-            { value: "still_waiting", label: "Still waiting — park it again" },
+            { value: "resume", label: "It's unblocked: pick the work back up" },
+            { value: "still_waiting", label: "Still waiting: park it again" },
           ],
         },
         {
@@ -197,7 +197,7 @@ export function ticketCurrentAction(t: CurrentActionInput): CurrentAction | null
           type: "longtext",
           required: true,
           minLength: 5,
-          help: "One line is enough — it becomes the first entry in the ticket's history.",
+          help: "One line is enough. It becomes the first entry in the ticket's history.",
         },
       ],
     };
@@ -211,7 +211,7 @@ export function ticketCurrentAction(t: CurrentActionInput): CurrentAction | null
       because: initial
         ? "This issue affects an active stay and the guest hasn't heard from us yet."
         : "The guest update you scheduled is due now.",
-      then: "Then Resolve shows the next real step — waiting, vendor, or the next update time.",
+      then: "Then Resolve shows the next real step. Waiting, vendor, or the next update time.",
       completeLabel: "Continue",
       fields: GUEST_UPDATE_FIELDS,
     };

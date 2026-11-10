@@ -31,7 +31,7 @@ function pct(n: number, d: number) {
 }
 
 function fmt(value: number | null, unit: Kpi["unit"]) {
-  if (value == null) return "—";
+  if (value == null) return "Not set";
   if (unit === "percent") return `${value.toFixed(1)}%`;
   if (unit === "minutes")
     return value >= 120 ? `${(value / 60).toFixed(1)} h` : `${Math.round(value)} min`;
@@ -300,7 +300,7 @@ export async function loadCommandCenter(
               : "red",
         denominator: `${liveHandoffs.length} handoffs in window`,
         drill: { to: "/oversight", label: "Oversight queue" },
-        note: "A handoff is not complete until it is accepted — the original owner stays responsible.",
+        note: "A handoff is not complete until it is accepted. The original owner stays responsible.",
       }),
       kpi({
         key: "waiting_no_review",

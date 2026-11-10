@@ -73,7 +73,7 @@ export const setTicketPriorityFn = createServerFn({ method: "POST" })
       kind: "status",
       event_type: "priority_changed",
       internal: false,
-      body: `Priority changed from ${previous.toUpperCase()} to ${data.priority.toUpperCase()} — ${data.reason}`,
+      body: `Priority changed from ${previous.toUpperCase()} to ${data.priority.toUpperCase()} · ${data.reason}`,
     });
 
     return { ok: true as const, previous, priority: data.priority };

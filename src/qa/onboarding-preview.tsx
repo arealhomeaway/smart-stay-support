@@ -46,7 +46,7 @@ function Preview() {
             setSelectedId(null);
           }}
         >
-          QA — Full Furnishing
+          QA: Full Furnishing
         </Button>
         <Button
           variant={scope === "no_furnishing" ? "default" : "outline"}
@@ -55,7 +55,7 @@ function Preview() {
             setSelectedId(null);
           }}
         >
-          QA — No Furnishings
+          QA: No Furnishings
         </Button>
       </div>
       <div className="space-y-2">

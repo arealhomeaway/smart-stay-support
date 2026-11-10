@@ -85,13 +85,13 @@ export function HandoffGatePanel({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Handoff gate — {propertyName}</CardTitle>
+        <CardTitle className="text-base">Handoff gate: {propertyName}</CardTitle>
         <CardDescription>
           {handoff.status === "returned"
             ? "Returned to onboarding with corrections."
             : `Currently at ${gateLabel(step)}.`}
           {handoff.carryover_accepted
-            ? " Carryover work was accepted — it belongs to Operations from handoff onward, assigned by the Director of Operations."
+            ? " Carryover work was accepted. It belongs to Operations from handoff onward, assigned by the Director of Operations."
             : ""}
         </CardDescription>
       </CardHeader>
@@ -171,7 +171,7 @@ export function HandoffGatePanel({
               <p key={h.id} className="text-xs text-muted-foreground">
                 {usDateTime(h.created_at)} · {gateLabel(h.step)} ·{" "}
                 {h.decision === "returned" ? "returned" : "approved"} by {nameOf(h.reviewer_id)}
-                {h.note ? ` — ${h.note}` : ""}
+                {h.note ? ` · ${h.note}` : ""}
                 {h.exception_reason ? ` · exception: ${h.exception_reason}` : ""}
               </p>
             ))}
@@ -217,7 +217,7 @@ function ApproveDialog({
             rows={2}
             value={exception}
             onChange={(e) => setException(e.target.value)}
-            placeholder="Authorised exception — only if a required readiness item is being waived"
+            placeholder="Authorised exception: only if a required readiness item is being waived"
           />
           <Button
             className="w-full"

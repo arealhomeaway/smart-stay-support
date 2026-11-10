@@ -131,9 +131,9 @@ export function OccupancyGuestPanel({
       : guest?.status === "not_linked"
         ? "This home isn't linked to an OwnerRez listing."
         : guest?.status === "ambiguous"
-          ? "More than one reservation matches right now — verify in OwnerRez."
+          ? "More than one reservation matches right now. Verify in OwnerRez."
           : guest?.status === "source_error"
-            ? "OwnerRez could not be read just now — verify there."
+            ? "OwnerRez could not be read just now. Verify there."
             : "Reservation data isn't available.";
 
   const eff = ticketGuestComm(ticket, workTypeName);
@@ -224,8 +224,7 @@ export function OccupancyGuestPanel({
                   <Row label="Current guest" value={guest.guest_name ?? "Name not on file"} />
                   {display.contactMissing ? (
                     <p className="text-muted-foreground">
-                      A current reservation exists, but its contact details are unavailable —
-                      check OwnerRez.
+                      A current reservation exists, but its contact details are unavailable. Check OwnerRez.
                     </p>
                   ) : (
                     <>
@@ -238,10 +237,10 @@ export function OccupancyGuestPanel({
                     value={
                       guest.arrival && guest.departure
                         ? `${usDate(guest.arrival)} → ${usDate(guest.departure)}`
-                        : "—"
+                        : "Not set"
                     }
                   />
-                  <Row label="Reservation" value={guest.reservation_id ?? "—"} />
+                  <Row label="Reservation" value={guest.reservation_id ?? "Not set"} />
                 </div>
               )}
             </>
@@ -262,20 +261,20 @@ export function OccupancyGuestPanel({
           </div>
           {hasIssueReservation && !editing ? (
             <div className="space-y-1.5">
-              <Row label="Issue guest" value={ticket.reservation_guest_name ?? "—"} />
+              <Row label="Issue guest" value={ticket.reservation_guest_name ?? "Not set"} />
               <Row
                 label="Stay"
                 value={
                   ticket.reservation_arrival && ticket.reservation_departure
                     ? `${usDate(ticket.reservation_arrival)} → ${usDate(ticket.reservation_departure)}`
-                    : "—"
+                    : "Not set"
                 }
               />
               <Row
                 label="Reservation"
-                value={ticket.reservation_confirmation ?? ticket.ownerrez_booking_id ?? "—"}
+                value={ticket.reservation_confirmation ?? ticket.ownerrez_booking_id ?? "Not set"}
               />
-              <Row label="Source" value={ticket.reservation_channel ?? "—"} />
+              <Row label="Source" value={ticket.reservation_channel ?? "Not set"} />
               {bookingUrl && (
                 <Button asChild variant="outline" size="sm">
                   <a href={bookingUrl} target="_blank" rel="noreferrer">
@@ -382,7 +381,7 @@ export function OccupancyGuestPanel({
             >
               <SelectTrigger aria-label="Active-stay impact" data-testid="active-stay-impact">
                 <SelectValue
-                  placeholder={`Not confirmed — suggested: ${ACTIVE_STAY_IMPACT.find((o) => o.value === suggestedImpact)?.label}`}
+                  placeholder={`Not confirmed: suggested: ${ACTIVE_STAY_IMPACT.find((o) => o.value === suggestedImpact)?.label}`}
                 />
               </SelectTrigger>
               <SelectContent>
@@ -409,7 +408,7 @@ export function OccupancyGuestPanel({
             >
               <SelectTrigger aria-label="Guest communication required" data-testid="guest-comm">
                 <SelectValue
-                  placeholder={`Not confirmed — ${GUEST_COMM.find((o) => o.value === eff.comm)?.label}`}
+                  placeholder={`Not confirmed: ${GUEST_COMM.find((o) => o.value === eff.comm)?.label}`}
                 />
               </SelectTrigger>
               <SelectContent>

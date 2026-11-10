@@ -161,7 +161,7 @@ function AccountPage() {
         <TabsContent value="profile" className="space-y-6">
           <SectionCard
             title="Profile photo"
-            description="Your photo appears wherever you are working — assigned tickets, activity updates and team lists."
+            description="Your photo appears wherever you are working. Assigned tickets, activity updates and team lists."
           >
             <div className="flex flex-wrap items-center gap-5">
               <PersonAvatar

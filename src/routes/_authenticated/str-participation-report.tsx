@@ -38,9 +38,9 @@ export const Route = createFileRoute("/_authenticated/str-participation-report")
   validateSearch: z.object({ property: z.string().uuid().optional() }),
   head: () => ({
     meta: [
-      { title: "STR Participation & Work Activity Report — Resolve" },
+      { title: "STR Participation & Work Activity Report: Resolve" },
       { name: "description", content: "Internal STR property participation and work activity report with versioned final owner reports." },
-      { property: "og:title", content: "STR Participation & Work Activity Report — Resolve" },
+      { property: "og:title", content: "STR Participation & Work Activity Report: Resolve" },
       { property: "og:description", content: "Owner participation and non-owner work activity for an STR property, with source detail." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -150,7 +150,7 @@ function PropertyReport({ propertyId }: { propertyId: string }) {
 
   return (
     <div className="space-y-6">
-      <SectionCard title="Filters" description="Defaults to the Active Owner program period with all supported activity. A broader range is for internal review only — owner reports always use the finalized program period.">
+      <SectionCard title="Filters" description="Defaults to the Active Owner program period with all supported activity. A broader range is for internal review only. Owner reports always use the finalized program period.">
         <div className="grid gap-4 md:grid-cols-2">
           <label className="space-y-1 text-sm">
             <span className="text-muted-foreground">Program</span>
@@ -182,7 +182,7 @@ function PropertyReport({ propertyId }: { propertyId: string }) {
         <EmptyState title="Could not build the report" hint={(preview.error as Error).message} />
       ) : r ? (
         <ReportView report={r} appendix={appendix} internal
-          banner={r.draft ? DRAFT_LABEL : outsideProgram ? "INTERNAL REVIEW RANGE — not an owner-facing final report" : "Internal preview of a completed program — owners see only released versions below"}
+          banner={r.draft ? DRAFT_LABEL : outsideProgram ? "INTERNAL REVIEW RANGE: not an owner-facing final report" : "Internal preview of a completed program. Owners see only released versions below"}
           actions={
             <div className="flex gap-2">
               <Button onClick={() => void exportFile("pdf")} disabled={busy !== null}>
@@ -246,7 +246,7 @@ export function ReportView({ report: r, appendix, internal, banner, actions }: {
           </table>
           {r.summary.length === 0 ? <p className="py-3 text-sm text-muted-foreground">No activity recorded in this period.</p> : null}
         </div>
-        {internal ? <p className={ok ? "text-xs text-muted-foreground" : "text-xs font-semibold text-destructive"}>{ok ? "Summary totals reconcile exactly to the appendix records." : "Summary does not reconcile to the appendix — do not release."}</p> : null}
+        {internal ? <p className={ok ? "text-xs text-muted-foreground" : "text-xs font-semibold text-destructive"}>{ok ? "Summary totals reconcile exactly to the appendix records." : "Summary does not reconcile to the appendix. Do not release."}</p> : null}
         {appendix ? (
           <div className="overflow-x-auto">
             <p className="eyebrow mb-2">Detailed activity appendix</p>
@@ -257,7 +257,7 @@ export function ReportView({ report: r, appendix, internal, banner, actions }: {
                   <tr key={i} className="border-t border-border">
                     <td className="py-1">{x.date}</td><td>{x.person}</td><td>{x.workType}</td><td>{x.description}</td><td>{x.source}</td>
                     <td>{x.reference}{x.correction ? " · corrected" : ""}</td><td>{timeLabel(x)}</td>
-                    <td>{x.minutes == null ? "—" : `${hrs(x.minutes)?.toFixed(2)} h`}</td>
+                    <td>{x.minutes == null ? "-" : `${hrs(x.minutes)?.toFixed(2)} h`}</td>
                     <td>{x.status === "provisional" ? <Badge variant="outline">Under review</Badge> : "Final"}</td>
                     {internal ? <td className="font-mono text-[10px] text-muted-foreground">{internalRef(x.internal)}</td> : null}
                   </tr>

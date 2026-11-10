@@ -133,10 +133,10 @@ function CompletionCard({ row: r }: { row: CompletionRow }) {
             <Link to="/onboarding/$propertyId" params={{ propertyId: r.property_id }} search={{ tab: "work" } as never} className="hover:underline">
               {r.property_name ?? "Home"}
             </Link>
-            {" · "}{r.owner_name} completed {r.completed_at ? usDate(r.completed_at) : "—"}
+            {" · "}{r.owner_name} completed {r.completed_at ? usDate(r.completed_at) : "Not set"}
           </p>
           <p className="text-xs text-muted-foreground">
-            Responsible: {r.assignment_exception ? <span className="text-destructive">No Primary PM — Onboarding Director to assign</span> : r.responsible_name ?? "—"}
+            Responsible: {r.assignment_exception ? <span className="text-destructive">No Primary PM: Onboarding Director to assign</span> : r.responsible_name ?? "Not set"}
             {" · "}Evidence: {r.evidence_count} item{r.evidence_count === 1 ? "" : "s"}
           </p>
         </div>
@@ -167,7 +167,7 @@ function CompletionCard({ row: r }: { row: CompletionRow }) {
       {open ? (
         <div className="mt-3 space-y-2 border-t border-border pt-3">
           <div>
-            <Label htmlFor={`note-${r.work_item_id}`}>Internal note (staff only — never shown to the owner)</Label>
+            <Label htmlFor={`note-${r.work_item_id}`}>Internal note (staff only, never shown to the owner)</Label>
             <Textarea id={`note-${r.work_item_id}`} rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
           </div>
           <div>
@@ -178,7 +178,7 @@ function CompletionCard({ row: r }: { row: CompletionRow }) {
             </select>
           </div>
           <div>
-            <Label htmlFor={`fb-${r.work_item_id}`}>Feedback to the owner (optional — the owner will see this)</Label>
+            <Label htmlFor={`fb-${r.work_item_id}`}>Feedback to the owner (optional. The owner will see this)</Label>
             <Textarea id={`fb-${r.work_item_id}`} rows={2} value={feedback} onChange={(e) => setFeedback(e.target.value)} />
           </div>
           <div className="flex flex-wrap gap-2">

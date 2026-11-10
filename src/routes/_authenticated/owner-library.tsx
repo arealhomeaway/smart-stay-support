@@ -27,9 +27,9 @@ import { LIBRARY_CATEGORIES, OPPORTUNITY_IMAGES, imageFor, type OpportunityImage
 export const Route = createFileRoute("/_authenticated/owner-library")({
   head: () => ({
     meta: [
-      { title: "Optional Opportunity Library — Resolve" },
+      { title: "Optional Opportunity Library: Resolve" },
       { name: "description", content: "Manage the optional, remote participation ideas homeowners can start from their portal." },
-      { property: "og:title", content: "Optional Opportunity Library — Resolve" },
+      { property: "og:title", content: "Optional Opportunity Library: Resolve" },
       { property: "og:description", content: "Manage optional remote participation ideas for homeowners." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -172,7 +172,7 @@ function Editor({ draft, onDone }: { draft: Draft; onDone: () => void }) {
           <Label htmlFor="t-tags">Tags (comma separated)</Label>
           <Input id="t-tags" value={d.tags.join(", ")} onChange={(e) => set("tags", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))} />
         </div>
-        <div className="flex items-center gap-2"><Switch id="t-active" checked={d.active} onCheckedChange={(v) => set("active", v)} /><Label htmlFor="t-active">Active — homeowners can see and start it</Label></div>
+        <div className="flex items-center gap-2"><Switch id="t-active" checked={d.active} onCheckedChange={(v) => set("active", v)} /><Label htmlFor="t-active">Active: homeowners can see and start it</Label></div>
       </div>
       <DialogFooter><Button disabled={m.isPending} onClick={() => m.mutate()}>{m.isPending ? "Saving…" : "Save template"}</Button></DialogFooter>
     </DialogContent>

@@ -211,7 +211,7 @@ export function finderSearchFromLead(lead: LeadRow) {
 /** List column: "Dec 1 → Dec 31" or a dash when the stay is not recorded. */
 export function stayDatesLabel(lead: LeadRow): string {
   const extra = lead as LeadRow & { desired_check_out?: string | null };
-  if (!lead.desired_move_in) return "—";
+  if (!lead.desired_move_in) return "Not set";
   const start = new Date(`${lead.desired_move_in}T00:00:00Z`);
   const from = start.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   if (!extra.desired_check_out) return `from ${from}`;
@@ -229,11 +229,11 @@ export function guestsPetsLabel(lead: LeadRow): string {
   if (dogs) parts.push(`${dogs} dog${dogs === 1 ? "" : "s"}`);
   if (cats) parts.push(`${cats} cat${cats === 1 ? "" : "s"}`);
   if (!dogs && !cats && lead.pets) parts.push("pets");
-  return parts.length ? parts.join(" · ") : "—";
+  return parts.length ? parts.join(" · ") : "None";
 }
 
 export function leadRegion(lead: LeadRow): string {
-  return (lead as LeadRow & { search_region?: string | null }).search_region ?? lead.market ?? "—";
+  return (lead as LeadRow & { search_region?: string | null }).search_region ?? lead.market ?? "Not set";
 }
 
 /** The follow-up date the coordinator set, if any. */

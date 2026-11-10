@@ -16,7 +16,7 @@ export const CONTACT_RESPONSES = ["no_answer", "left_message", "call_back", "int
 export type ContactResponse = (typeof CONTACT_RESPONSES)[number];
 export const CONTACT_RESPONSE_LABELS: Record<ContactResponse, string> = {
   no_answer: "No answer", left_message: "Left a message", call_back: "Will call back",
-  interested: "Interested — not yet accepted", declined: "Declined",
+  interested: "Interested: not yet accepted", declined: "Declined",
 };
 
 export const CANDIDATE_STATUS_LABELS: Record<string, string> = {
@@ -91,8 +91,8 @@ export function authorizationState(wo: DispatchWorkOrder): AuthorizationState {
   const vendorChanged = !!wo.authorized_vendor_org_id && wo.vendor_org_id !== wo.authorized_vendor_org_id;
   const label = stale
     ? vendorChanged
-      ? "Approval was for a different vendor — request approval for the replacement vendor"
-      : "Approval no longer covers this scope or amount — request again"
+      ? "Approval was for a different vendor. Request approval for the replacement vendor"
+      : "Approval no longer covers this scope or amount. Request again"
     : who === null ? "No approval required"
     : satisfied ? (who === "owner" ? (v.supervisorApprovalRequired ? "Operations Supervisor and owner approved" : "Owner approved") : "Supervisor approved")
     : who === "owner" ? (ownerOk ? "Waiting on supervisor approval" : "Waiting on owner approval") : "Waiting on supervisor approval";
@@ -124,13 +124,13 @@ export function breezewayPushEligibility(input: {
   const a = authorizationState(input.wo);
   if (!a.satisfied) reasons.push(a.label);
   if (input.handoffStatus === "sent" || input.handoffStatus === "simulated") reasons.push("Already handed off to Breezeway.");
-  if (input.handoffStatus === "uncertain") reasons.push("The last attempt is uncertain — reconcile it with Breezeway before another create.");
+  if (input.handoffStatus === "uncertain") reasons.push("The last attempt is uncertain. Reconcile it with Breezeway before another create.");
   return { allowed: reasons.length === 0, reasons };
 }
 
 export const HANDOFF_LABELS: Record<string, string> = {
-  not_sent: "Not sent", sent: "Sent to Breezeway", simulated: "Demo handoff (simulated — nothing sent)",
-  failed: "Handoff not created — safe to retry", uncertain: "Handoff uncertain — reconcile with Breezeway before retrying",
+  not_sent: "Not sent", sent: "Sent to Breezeway", simulated: "Demo handoff (simulated: nothing sent)",
+  failed: "Handoff not created: safe to retry", uncertain: "Handoff uncertain: reconcile with Breezeway before retrying",
 };
 
 export type HandoffStatus = "not_sent" | "sent" | "failed" | "uncertain" | "simulated";
@@ -188,10 +188,10 @@ export async function runHandoffAttempt(deps: {
 }): Promise<{ status: HandoffStatus; ref: string | null; message: string; created: boolean }> {
   if (!canAttemptHandoff(deps.status)) {
     return { status: deps.status as HandoffStatus, ref: null, created: false,
-      message: deps.status === "uncertain" ? "The last attempt is uncertain. Reconcile it with Breezeway before another create." : "Already handed off — no second task created." };
+      message: deps.status === "uncertain" ? "The last attempt is uncertain. Reconcile it with Breezeway before another create." : "Already handed off: no second task created." };
   }
   const requestKey = handoffRequestKey(deps.workOrderId, deps.priorKey, deps.status);
-  await deps.save({ breezeway_handoff_status: "uncertain", breezeway_request_key: requestKey, breezeway_handoff_error: "Handoff in progress — if this stays, check Breezeway before retrying." });
+  await deps.save({ breezeway_handoff_status: "uncertain", breezeway_request_key: requestKey, breezeway_handoff_error: "Handoff in progress: if this stays, check Breezeway before retrying." });
   let res: CreateResult | null = null;
   try { res = await deps.create(requestKey); } catch { res = null; }
   const status = handoffStatusFromResult(res);
@@ -200,7 +200,7 @@ export async function runHandoffAttempt(deps: {
   await deps.save({
     breezeway_handoff_status: status,
     ...(ref ? { breezeway_task_ref: ref } : {}),
-    breezeway_handoff_error: status === "sent" ? null : (res?.message ?? "Breezeway did not respond. The task may exist — reconcile before retrying."),
+    breezeway_handoff_error: status === "sent" ? null : (res?.message ?? "Breezeway did not respond. The task may exist. Reconcile before retrying."),
   });
-  return { status, ref, created: true, message: status === "sent" ? "Sent to Breezeway." : status === "failed" ? (res?.message ?? "Not created.") : "Uncertain — reconcile with Breezeway before another create." };
+  return { status, ref, created: true, message: status === "sent" ? "Sent to Breezeway." : status === "failed" ? (res?.message ?? "Not created.") : "Uncertain: reconcile with Breezeway before another create." };
 }

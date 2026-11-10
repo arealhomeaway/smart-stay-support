@@ -93,7 +93,7 @@ export function OnCallNowCard({ className }: { className?: string }) {
           <Phone className="mt-0.5 size-4 shrink-0" />
           Guests reach the on-call person on the ARHA Grasshopper number. Anything needing
           follow-up, escalation, vendor action, owner contact or a promised call-back gets a Resolve
-          Ticket — a question fully answered on the call does not. Overnight does not mean P1;
+          Ticket. A question fully answered on the call does not. Overnight does not mean P1;
           classify P1/P2/P3 on the actual impact.
         </p>
       </div>

@@ -139,13 +139,13 @@ export const Route = createFileRoute("/_authenticated/onboarding/$propertyId")({
   notFoundComponent: InvalidPropertyRoute,
   head: () => ({
     meta: [
-      { title: "Property onboarding workflow — Resolve" },
+      { title: "Property onboarding workflow: Resolve" },
       {
         name: "description",
         content:
           "One home's onboarding workflow: sectioned tasks with assignee, due date and status, plus the automation behind every release, date and evidence gate.",
       },
-      { property: "og:title", content: "Property onboarding workflow — Resolve" },
+      { property: "og:title", content: "Property onboarding workflow: Resolve" },
       {
         property: "og:description",
         content: "Sectioned onboarding tasks, task detail and the handoff gate for a single home.",
@@ -1135,7 +1135,7 @@ function RequestHandoffDialog({
           <p className="text-sm text-muted-foreground">
             {ready
               ? "All blocking checks pass. The Director of Onboarding reviews first, then the Director of Operations."
-              : `Required checks pass. The ${carryoverCount} remaining item(s) must be accepted as carryover work with an owner, a due date and a reason — carryover moves to Operations and no longer belongs to Onboarding.`}
+              : `Required checks pass. The ${carryoverCount} remaining item(s) must be accepted as carryover work with an owner, a due date and a reason. Carryover moves to Operations and no longer belongs to Onboarding.`}
           </p>
           <Textarea
             rows={4}

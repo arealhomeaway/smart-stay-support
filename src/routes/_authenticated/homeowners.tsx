@@ -27,13 +27,13 @@ import {
 export const Route = createFileRoute("/_authenticated/homeowners")({
   head: () => ({
     meta: [
-      { title: "Homeowners directory — Resolve Operations" },
+      { title: "Homeowners directory: Resolve Operations" },
       {
         name: "description",
         content:
           "Search every homeowner: contact details, the homes they own, whether they can sign in, and where they stand in the Active Owner program.",
       },
-      { property: "og:title", content: "Homeowners directory — Resolve Operations" },
+      { property: "og:title", content: "Homeowners directory: Resolve Operations" },
       {
         property: "og:description",
         content: "One searchable list of every homeowner and the homes they own.",

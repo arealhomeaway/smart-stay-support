@@ -122,7 +122,7 @@ export function StageProgressPanel({
                       onClick={() => onOpenTask?.(t.id)}
                     >
                       Held up: {t.title}
-                      {t.blocker?.trim() ? ` — ${t.blocker.trim()}` : ""}
+                      {t.blocker?.trim() ? ` · ${t.blocker.trim()}` : ""}
                     </button>
                   ))}
                   {stage.overdueTasks.map((t) => (

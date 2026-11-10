@@ -13,9 +13,9 @@ import { worstState, type Evaluation } from "@/lib/cleaner-hours";
 export const Route = createFileRoute("/_authenticated/str-dispatch-check")({
   head: () => ({
     meta: [
-      { title: "Cleaner hours check — Resolve" },
+      { title: "Cleaner hours check: Resolve" },
       { name: "description", content: "Check the STR cleaner-hours operational safeguard before assigning a cleaner to an enrolled STR home." },
-      { property: "og:title", content: "Cleaner hours check — Resolve" },
+      { property: "og:title", content: "Cleaner hours check: Resolve" },
       { property: "og:description", content: "Operational safeguard check before dispatching a cleaner to an STR home." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -78,7 +78,7 @@ function DispatchCheckPage() {
       <PageHeader
         eyebrow="Operations"
         title="Cleaner hours check"
-        description="Run this before assigning a cleaner to a clean at an enrolled STR home. It shows the cleaner's Attributed Cleaner Time against the safeguard limits. It is an operational safeguard only — not a tax determination."
+        description="Run this before assigning a cleaner to a clean at an enrolled STR home. It shows the cleaner's Attributed Cleaner Time against the safeguard limits. It is an operational safeguard only, not a tax determination."
       />
       {options.isLoading ? <LoadingRows /> : options.error ? (
         <EmptyState title="Could not load" hint={(options.error as Error).message} />
@@ -98,7 +98,7 @@ function DispatchCheckPage() {
             <div>
               <label className="text-sm font-medium">Breezeway clean</label>
               <select className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm" value={taskChoice} onChange={(e) => setTaskChoice(e.target.value)} disabled={!property}>
-                <option value="">{tasks.length ? "Choose an upcoming clean…" : "No upcoming cleans found — enter below"}</option>
+                <option value="">{tasks.length ? "Choose an upcoming clean…" : "No upcoming cleans found. Enter below"}</option>
                 {tasks.map((t) => <option key={t.task_id} value={t.task_id}>{t.scheduled_date ?? "Unscheduled"} · {t.name ?? "Clean"} (#{t.task_id})</option>)}
               </select>
             </div>
@@ -199,7 +199,7 @@ function Decision({ property, taskRef, date, breezewayTaskId, worker, individual
           </div>
         ))}
         {!taskRef ? <p className="text-sm text-muted-foreground">Choose or enter the clean to record a dispatch.</p> : needsOverride.length ? (
-          <p className="text-sm font-medium">Standard dispatch is locked{canOverride ? "." : " — a leadership review is required."}</p>
+          <p className="text-sm font-medium">Standard dispatch is locked{canOverride ? "." : "· a leadership review is required."}</p>
         ) : (
           <div className="space-y-3">
             {worst === "warning" ? (

@@ -127,7 +127,7 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
       activity: e.activity,
       detail: [e.output, e.comments, reviewedOwnerUpdateText(e.owner_update_snapshot)]
         .filter(Boolean)
-        .join(" — "),
+        .join("None"),
       reviewedUpdate: reviewedOwnerUpdateText(e.owner_update_snapshot),
       minutes: e.minutes,
       hours: hoursFromMinutes(e.minutes),
@@ -197,7 +197,7 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
     .map((r) => ({
       date: (r.responded_at ?? "").slice(0, 10),
       kind: "owner decision",
-      summary: `${r.title} — ${r.owner_decision ?? r.outcome ?? "responded"}`,
+      summary: `${r.title} · ${r.owner_decision ?? r.outcome ?? "responded"}`,
       document: r.attachment_path ? r.attachment_path.split("/").pop()! : "",
     }));
 
@@ -304,7 +304,7 @@ export function reportCsv(report: OwnerReport) {
       "",
       "Review",
       "Participation history",
-      [receipt.response, reviewedOwnerUpdateText(receipt.ownerUpdate)].filter(Boolean).join(" — "),
+      [receipt.response, reviewedOwnerUpdateText(receipt.ownerUpdate)].filter(Boolean).join("Not set"),
       "",
       "",
       receipt.propertyName,
@@ -336,7 +336,7 @@ export function reportCsv(report: OwnerReport) {
     `# Combined hours (each activity once),${report.totals.reportedHours}`,
     `# Property-specific line items (hours),${report.totals.propertySpecificHours}`,
     `# General line items (hours),${report.totals.generalHours}`,
-    ...report.yearTotals.map((y) => `# Shared participation total — ${y.year} (each activity once),${y.hours}`),
+    ...report.yearTotals.map((y) => `# Shared participation total: ${y.year} (each activity once),${y.hours}`),
     `# Progress toward more than 100 hours; not a tax qualification result`,
     `# Awaiting review hours,${report.totals.pendingHours}`,
     `# Returned hours (not counted),${report.totals.returnedHours}`,
@@ -426,8 +426,8 @@ export async function reportPdf(report: OwnerReport) {
   });
   page.drawText(
     report.kind === "final"
-      ? "Hours & Participation Report — Year-end"
-      : "Hours & Participation Report — Progress",
+      ? "Hours & Participation Report: Year-end"
+      : "Hours & Participation Report: Progress",
     { x: M, y: H - 66, size: 11, font, color: rgb(0.9, 0.96, 0.96) },
   );
   page.drawText("Every home. Every guest. Every time.", {
@@ -455,7 +455,7 @@ export async function reportPdf(report: OwnerReport) {
   if (report.properties.length === 0) para("No properties are attached to this program yet.");
   for (const prop of report.properties) {
     space(13);
-    text(`• ${prop.name}${prop.address ? ` — ${prop.address}` : ""}`, { size: 9.5 });
+    text(`• ${prop.name}${prop.address ? ` · ${prop.address}` : ""}`, { size: 9.5 });
   }
 
   heading("Totals");
@@ -535,7 +535,7 @@ export async function reportPdf(report: OwnerReport) {
     text(fit(e.activity, 168), { size: 8, x: cols[1] });
     text(fit(`${e.action} · ${e.source}`, 78), { size: 8, color: MUTED, x: cols[2] });
     text(String(e.hours), { size: 8, x: cols[3] });
-    text(e.shared ? `${e.properties.length} shared` : fit(e.properties[0] ?? "—", 78), {
+    text(e.shared ? `${e.properties.length} shared` : fit(e.properties[0] ?? "-", 78), {
       size: 8,
       x: cols[4],
     });
@@ -562,7 +562,7 @@ export async function reportPdf(report: OwnerReport) {
       text(fit(e.activity, 168), { size: 8, x: cols[1] });
       text(fit(`${e.action} · ${e.source}`, 78), { size: 8, color: MUTED, x: cols[2] });
       text(String(e.hours), { size: 8, x: cols[3] });
-      text("—", { size: 8, x: cols[4] });
+      text("Not set", { size: 8, x: cols[4] });
       text("Outside period", { size: 8, x: cols[5], color: MUTED });
       space(10);
       text(fit(`${e.card} · Logged by ${e.loggedBy}`, W - M * 2 - 56, 7), { size: 7, color: MUTED, x: cols[1] });

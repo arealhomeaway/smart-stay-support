@@ -152,7 +152,7 @@ export function ticketNextAction(t: TicketNextActionInput): TicketNextAction | n
   if (cs === "contact_prior_guest") {
     return {
       label: "Contact prior guest for feedback",
-      because: "This follows up a past stay — nobody currently in the home is involved.",
+      because: "This follows up a past stay. Nobody currently in the home is involved.",
       then: "Then close it out when the follow-up is done.",
     };
   }

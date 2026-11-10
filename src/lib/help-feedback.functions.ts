@@ -40,7 +40,7 @@ export const submitHelpTicket = createServerFn({ method: "POST" })
     ]);
     const prop = propRes.data as { name: string | null; address_line1: string | null } | null;
     const propertyLabel = prop ? formatPropertyLabel(prop).primary : null;
-    const roles = (roleRows ?? []).map((r) => r.role).join(", ") || "—";
+    const roles = (roleRows ?? []).map((r) => r.role).join(", ") || "None";
     const email = (profile as { email?: string } | null)?.email ?? (context.claims as { email?: string })?.email ?? null;
     const name = (profile as { full_name?: string } | null)?.full_name ?? email ?? "Unknown user";
 
@@ -83,7 +83,7 @@ export const submitHelpTicket = createServerFn({ method: "POST" })
         ["Submitted by", `${name}${email ? ` (${email})` : ""}`],
         ["Role", roles],
         ["Portal", data.portal],
-        ["Property", propertyLabel ?? "—"],
+        ["Property", propertyLabel ?? "Not set"],
         ["Page", data.pageTitle],
         ["Submitted", when],
         ["Type", kindLabel],
@@ -92,7 +92,7 @@ export const submitHelpTicket = createServerFn({ method: "POST" })
         lines.map(([k, v]) => `<strong>${k}:</strong> ${escapeHtml(v)}`).join("<br/>") +
         `<br/><br/><strong>Feedback:</strong><br/>${escapeHtml(data.description).replace(/\n/g, "<br/>")}` +
         (links.length ? `<br/><br/><strong>Attachments (links valid 7 days):</strong><br/>${links.join("<br/>")}` : "");
-      const subject = `Resolve Help Ticket #${row.ticket_number} — ${kindLabel} — ${data.pageTitle}`.slice(0, 280);
+      const subject = `Resolve Help Ticket #${row.ticket_number} · ${kindLabel} · ${data.pageTitle}`.slice(0, 280);
       const html = emailShell(subject, "__BODY__", { label: "Open the page in Resolve", url: escapeHtml(`${data.origin}${data.route}`) }).replace(
         escapeHtml("__BODY__"),
         body,

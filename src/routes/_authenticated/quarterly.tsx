@@ -20,13 +20,13 @@ import { CleaningRegionsPanel } from "@/components/CleaningRegionsPanel";
 export const Route = createFileRoute("/_authenticated/quarterly")({
   head: () => ({
     meta: [
-      { title: "Quarterly reviews — Resolve Operations" },
+      { title: "Quarterly reviews: Resolve Operations" },
       {
         name: "description",
         content:
           "Track the three-month property review cycle: which homes are due, which reviews are in progress, and the cleaning supervisor checklist behind each one.",
       },
-      { property: "og:title", content: "Quarterly reviews — Resolve Operations" },
+      { property: "og:title", content: "Quarterly reviews: Resolve Operations" },
       {
         property: "og:description",
         content: "Every managed home reviewed by a cleaning supervisor every three months.",

@@ -406,7 +406,7 @@ function PlaybookDetail({
               ? Object.entries(pb.matcher)
                   .map(([k, v]) => `${k}: ${(v as string[]).join(", ")}`)
                   .join(" · ")
-              : "No matching rule — this will never surface in context."
+              : "No matching rule: this will never surface in context."
           }
         />
       </div>
@@ -422,7 +422,7 @@ function PlaybookDetail({
                 {pb.risk_flags.map((f) => (
                   <li key={f.title}>
                     {f.title}
-                    {f.why ? ` — ${f.why}` : ""}
+                    {f.why ? ` · ${f.why}` : ""}
                   </li>
                 ))}
               </ul>
@@ -467,7 +467,7 @@ function PlaybookDetail({
         </div>
       ) : (
         <p className="text-sm text-muted-foreground">
-          No authored judgment yet — this carries steps only, so it will not show as guidance.
+          No authored judgment yet. This carries steps only, so it will not show as guidance.
         </p>
       )}
 

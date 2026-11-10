@@ -76,7 +76,7 @@ export function PropertyWorkHistory({ propertyId }: { propertyId: string }) {
           key: `a-${a.id}`,
           at: a.occurred_at,
           type: "activity",
-          title: `${labelOf(ACTIVITY_CATEGORIES, a.category)} — ${a.what_happened}`,
+          title: `${labelOf(ACTIVITY_CATEGORIES, a.category)} · ${a.what_happened}`,
           detail: `Outcome: ${a.outcome}${a.involved ? ` · Involved: ${a.involved}` : ""} · logged by ${who}`,
           files: (a.attachment_document_ids ?? []).flatMap((id) => {
             const d = docs?.find((x) => x.id === id);

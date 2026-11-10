@@ -484,7 +484,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
           "Check-in / check-out",
           "check_times",
           p.check_in_time || p.check_out_time
-            ? `${p.check_in_time ?? "—"} / ${p.check_out_time ?? "—"}`
+            ? `${p.check_in_time ?? "-"} / ${p.check_out_time ?? "-"}`
             : null,
           "OwnerRez",
           p.ownerrez_synced_at,

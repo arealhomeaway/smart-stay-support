@@ -20,7 +20,7 @@ import { useDemo } from "@/components/DemoProvider";
  */
 
 function dateRange(arrival: string | null, departure: string | null) {
-  if (!arrival || !departure) return "—";
+  if (!arrival || !departure) return "Not set";
   return `${usDate(arrival)} → ${usDate(departure)}`;
 }
 
@@ -79,7 +79,7 @@ export function PropertyContactPanel({
         </CardTitle>
         <CardDescription>
           Guest detail is live from OwnerRez; the designated primary owner comes from the imported
-          owner directory. Read-only — nothing here is saved or sent.
+          owner directory. Read-only: nothing here is saved or sent.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
@@ -153,13 +153,13 @@ export function PropertyContactPanel({
           )}
           {guest.status === "ambiguous" && (
             <p className="text-muted-foreground">
-              More than one reservation matches right now — verify the guest directly in OwnerRez
+              More than one reservation matches right now. Verify the guest directly in OwnerRez
               before contacting anyone.
             </p>
           )}
           {guest.status === "source_error" && (
             <p className="text-muted-foreground">
-              Guest contact unavailable — verify in OwnerRez. ({guest.message})
+              Guest contact unavailable: verify in OwnerRez. ({guest.message})
             </p>
           )}
           {guest.status === "occupied" && (
@@ -168,7 +168,7 @@ export function PropertyContactPanel({
               <Row label="Phone" value={guest.phone ?? "Not on file"} />
               <Row label="Email" value={guest.email ?? "Not on file"} />
               <Row label="Stay" value={dateRange(guest.arrival, guest.departure)} />
-              <Row label="Reservation" value={guest.reservation_id ?? "—"} />
+              <Row label="Reservation" value={guest.reservation_id ?? "Not set"} />
               {guest.stay_kind && (
                 <Badge variant="secondary">
                   {guest.stay_kind === "mid_term" ? "Mid-term tenant" : "Short-term guest"}

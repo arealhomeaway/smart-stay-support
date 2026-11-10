@@ -203,7 +203,7 @@ export function ClaimDrawer({
         id={`claim-${key as string}`}
         inputMode="decimal"
         disabled={!canEdit}
-        placeholder="—"
+        placeholder="Not set"
         value={amounts[key as string] ?? (claim[key] === null ? "" : String(claim[key]))}
         onChange={(e) => setAmounts((a) => ({ ...a, [key as string]: e.target.value }))}
         onBlur={(e) => {
@@ -281,7 +281,7 @@ export function ClaimDrawer({
             {claim.guest_name ?? "Guest unrecorded"}
             {claim.reservation_confirmation ? ` · ${claim.reservation_confirmation}` : ""}
             {claim.stay_arrival
-              ? ` · stay ${formatDate(claim.stay_arrival)}–${formatDate(claim.stay_departure)}`
+              ? ` · stay ${formatDate(claim.stay_arrival)} to ${formatDate(claim.stay_departure)}`
               : ""}
           </p>
           <div className="flex flex-wrap gap-3 pt-1 text-xs">
@@ -473,7 +473,7 @@ export function ClaimDrawer({
                   }
                 />
                 <p className="text-[11px] text-muted-foreground">
-                  From the platform notice — Resolve never guesses it.
+                  From the platform notice: Resolve never guesses it.
                 </p>
               </div>
               <div className="space-y-1">
@@ -542,7 +542,7 @@ export function ClaimDrawer({
                 </Select>
                 <Textarea
                   rows={2}
-                  placeholder="Why — in their words where possible"
+                  placeholder="Why: in their words where possible"
                   value={reason || (claim.disposition_reason ?? "")}
                   onChange={(e) => setReason(e.target.value)}
                   onBlur={() => {
@@ -577,7 +577,7 @@ export function ClaimDrawer({
             <div className="space-y-2">
               <Textarea
                 rows={2}
-                placeholder="Add a note — what you said, who you spoke to, what they promised"
+                placeholder="Add a note: what you said, who you spoke to, what they promised"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
               />

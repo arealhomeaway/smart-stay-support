@@ -86,7 +86,7 @@ export async function drainOwnerWelcomes(db: SupabaseClient, limit = 20, jobRunI
     const auditBody = setPasswordLink ? msg.body.replaceAll(setPasswordLink, "[Secure password link omitted]") : msg.body;
     if (TEST_ADDRESS.test(row.recipient)) {
       await db.from("owner_welcome_messages").update({
-        status: "failed", error_message: "Test address — never emailed.", subject: msg.subject, body: msg.body,
+        status: "failed", error_message: "Test address: never emailed.", subject: msg.subject, body: msg.body,
         template_version: tpl.version, video_url: videoLink,
       } as never).eq("id", row.id);
       continue;

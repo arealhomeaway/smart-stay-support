@@ -1326,7 +1326,7 @@ export async function archiveOnboardingTask(
     .update({
       archived_at: now,
       archived_by: userId,
-      exception_reason: `Voided — not needed: ${input.reason}`,
+      exception_reason: `Voided: not needed: ${input.reason}`,
       exception_by: userId,
       exception_at: now,
     })

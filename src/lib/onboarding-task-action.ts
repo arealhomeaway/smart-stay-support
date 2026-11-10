@@ -72,8 +72,8 @@ export function onboardingTaskAction(view: TaskView): TaskAction | null {
           type: "choice",
           required: true,
           options: [
-            { value: "cleared", label: "It's sorted — carry on with the step" },
-            { value: "still_blocked", label: "Still blocked — keep it flagged" },
+            { value: "cleared", label: "It's sorted: carry on with the step" },
+            { value: "still_blocked", label: "Still blocked: keep it flagged" },
           ],
         },
       ],
@@ -151,7 +151,7 @@ export function onboardingTaskAction(view: TaskView): TaskAction | null {
       id: "send_for_approval",
       title: "Send it to the homeowner",
       because: "This step needs a recorded homeowner decision before it can be completed.",
-      then: "Then record their answer — sending alone doesn't finish the step.",
+      then: "Then record their answer. Sending alone doesn't finish the step.",
       completeLabel: "Send & advance",
       fields: [
         {
@@ -206,7 +206,7 @@ export function onboardingTaskAction(view: TaskView): TaskAction | null {
   return {
     id: "complete_task",
     title: "Finish this step",
-    because: "Nothing is holding it — everything this step needs is on file.",
+    because: "Nothing is holding it. Everything this step needs is on file.",
     then: "Then Resolve opens the next step in this home's plan.",
     completeLabel: "Complete & advance",
     fields: [

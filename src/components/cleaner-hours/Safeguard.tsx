@@ -62,7 +62,7 @@ export function EvaluationSummary({ ev }: { ev: Evaluation }) {
     <div className={cn("space-y-3 rounded-md border p-3", banner)}>
       <div className="flex flex-wrap items-center gap-2">
         <StateBadge state={ev.state} />
-        {ev.inversion ? <span className="text-xs font-medium text-danger">Hours inversion — Attributed Cleaner Time is at or above owner hours</span> : null}
+        {ev.inversion ? <span className="text-xs font-medium text-danger">Hours inversion: Attributed Cleaner Time is at or above owner hours</span> : null}
       </div>
       <p className="text-sm">{STATE_GUIDANCE[ev.state]}</p>
       <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-5">
@@ -71,7 +71,7 @@ export function EvaluationSummary({ ev }: { ev: Evaluation }) {
           <dd className="text-xs text-muted-foreground">{ESTIMATE_SOURCE_LABEL[ev.estimate_source ?? ""] ?? ev.estimate_source}</dd></div>
         <div><dt className="text-xs text-muted-foreground">Projected total</dt><dd className="font-semibold">{hours(ev.projected_total_hours)}</dd></div>
         <div><dt className="text-xs text-muted-foreground">Owner hours {ev.year}</dt><dd className="font-medium">{hours(ev.owner_hours)}</dd></div>
-        <div><dt className="text-xs text-muted-foreground">Owner participation buffer</dt><dd className="font-medium">{ev.owner_zero ? "—" : hours(ev.buffer_hours)}</dd></div>
+        <div><dt className="text-xs text-muted-foreground">Owner participation buffer</dt><dd className="font-medium">{ev.owner_zero ? "-" : hours(ev.buffer_hours)}</dd></div>
       </dl>
       {ev.owner_zero ? <p className="text-xs text-muted-foreground">{OWNER_ZERO_COPY}</p> : null}
       {ev.segment_start && !ev.segment_start.endsWith("-01-01") ? (
@@ -106,7 +106,7 @@ export function OverrideDialog({
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{kind === "emergency" ? "Emergency override — one clean only" : "Leadership override — one clean only"}</DialogTitle>
+          <DialogTitle>{kind === "emergency" ? "Emergency override: one clean only" : "Leadership override: one clean only"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-2 text-sm">
           <p><strong>{workerName}</strong> · clean <strong>{taskRef}</strong>{scheduled ? ` on ${scheduled}` : ""}</p>

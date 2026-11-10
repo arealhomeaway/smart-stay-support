@@ -22,7 +22,7 @@ export const pushWorkOrderToBreezeway = createServerFn({ method: "POST" })
     if (error || !woRow) throw new Error("Work Order not found.");
     const wo = woRow as typeof woRow & import("./vendor-sourcing").DispatchWorkOrder;
     if (wo.breezeway_handoff_status === "sent" || wo.breezeway_handoff_status === "simulated") {
-      return { status: wo.breezeway_handoff_status, ref: wo.breezeway_task_ref, message: "Already handed off — no second task created." };
+      return { status: wo.breezeway_handoff_status, ref: wo.breezeway_task_ref, message: "Already handed off: no second task created." };
     }
     if (wo.breezeway_handoff_status === "uncertain") {
       return { status: "uncertain", ref: wo.breezeway_task_ref, message: "The last attempt is uncertain. Reconcile it with Breezeway before another create." };
@@ -99,7 +99,7 @@ export const reconcileWorkOrderHandoff = createServerFn({ method: "POST" })
         throw new Error("Resolve's record shows Breezeway created this task. Use “Task found” with its ID instead.");
       }
     }
-    const { error } = await sb.from("work_orders").update({ breezeway_handoff_status: "failed", breezeway_handoff_error: `Reconciled — no task in Breezeway: ${data.note}` }).eq("id", wo.id);
+    const { error } = await sb.from("work_orders").update({ breezeway_handoff_status: "failed", breezeway_handoff_error: `Reconciled: no task in Breezeway: ${data.note}` }).eq("id", wo.id);
     if (error) throw new Error(error.message);
     return { status: "failed" };
   });

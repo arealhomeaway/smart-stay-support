@@ -42,7 +42,7 @@ export function AvailabilityMap({ results, selectedId, onSelect }: Props) {
     markers.current = results.map((result) => {
       const selected = selectedId === result.id;
       const marker = new g.maps.Marker({
-        map: map.current, position: { lat: result.lat, lng: result.lng }, title: `${result.name} — ${result.status}`,
+        map: map.current, position: { lat: result.lat, lng: result.lng }, title: `${result.name} · ${result.status}`,
         icon: { path: g.maps.SymbolPath.CIRCLE, scale: selected ? 16 : 12,
           fillColor: colors[result.status], fillOpacity: 1, strokeColor: selected ? "#f4d35e" : "#ffffff", strokeWeight: selected ? 4 : 2 },
       });

@@ -293,7 +293,7 @@ function RequirementCard({
         data: { requirementId: requirement.id, documentId: started.documentId! },
       });
       if (res.status === "verified") toast.success("Evidence verified.");
-      else if (res.status === "rejected") toast.error("Photo not accepted — see what to change.");
+      else if (res.status === "rejected") toast.error("Photo not accepted: see what to change.");
       else toast.message(res.message ?? "Photo saved.");
       onChanged();
     } catch {

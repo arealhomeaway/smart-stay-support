@@ -115,8 +115,8 @@ export const PROPERTY_DETAIL_GROUPS: GroupSpec[] = [
     ],
     own: ["utilities"],
     picks: [
-      ["systems", "water_shutoff_indoor", "Water shutoff — indoor"],
-      ["systems", "water_shutoff_outdoor", "Water shutoff — outdoor"],
+      ["systems", "water_shutoff_indoor", "Water shutoff: indoor"],
+      ["systems", "water_shutoff_outdoor", "Water shutoff: outdoor"],
       ["systems", "breaker_panel_location", "Breaker panel location"],
     ],
   },
@@ -287,7 +287,7 @@ function fieldsFrom(
   if (typeof value === "object" && !Array.isArray(value)) {
     const obj = value as Record<string, unknown>;
     return Object.entries(obj).flatMap(([k, v]) =>
-      fieldsFrom(`${keyPath}.${k}`, `${label} — ${humanizeKey(k)}`, v, obj),
+      fieldsFrom(`${keyPath}.${k}`, `${label} · ${humanizeKey(k)}`, v, obj),
     );
   }
 

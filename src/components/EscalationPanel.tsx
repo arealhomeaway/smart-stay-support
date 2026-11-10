@@ -219,7 +219,7 @@ function RaiseSheet({
                 {targets.map((t) => (
                   <SelectItem key={t.value} value={t.value} disabled={!t.enabled}>
                     {t.label}
-                    {t.hint ? ` — ${t.hint}` : ""}
+                    {t.hint ? ` · ${t.hint}` : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -268,7 +268,7 @@ function RaiseSheet({
               <SelectContent>
                 {ESCALATION_URGENCIES.map((u) => (
                   <SelectItem key={u.value} value={u.value}>
-                    {u.label} — {u.hint}
+                    {u.label} · {u.hint}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -331,7 +331,7 @@ export function AnswerEscalation({
         <SelectContent>
           {ESCALATION_OUTCOMES.map((o) => (
             <SelectItem key={o.value} value={o.value}>
-              {o.label} — {o.hint}
+              {o.label} · {o.hint}
             </SelectItem>
           ))}
         </SelectContent>

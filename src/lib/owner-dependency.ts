@@ -68,7 +68,7 @@ export function dependencyWaitingLabel(dep: OwnerDependency, title?: string | nu
     return /document|upload|rules|record|file|agreement|policy|hoa/i.test(title ?? "")
       ? "Waiting on owner documentation"
       : "Waiting on owner information";
-  if (dep === "feedback") return "Owner feedback requested — work continues";
+  if (dep === "feedback") return "Owner feedback requested: work continues";
   if (dep === "acknowledge") return "Owner review / acknowledgment requested";
   return null;
 }

@@ -303,5 +303,5 @@ export function petSummary(facts: PropertyFacts): string {
   if (facts.catsAllowed === true) species.push("cats");
   if (facts.dogsAllowed === false) species.push("no dogs");
   if (facts.catsAllowed === false) species.push("no cats");
-  return `Pets welcome${limit}${species.length ? ` — ${species.join(", ")}` : ""}`;
+  return `Pets welcome${limit}${species.length ? ` · ${species.join(", ")}` : ""}`;
 }

@@ -18,9 +18,9 @@ import { SENDING_OFF_BANNER, scheduledNext30, sentRows, sourceLabel, waitingOnHo
 export const Route = createFileRoute("/_authenticated/active-owner-followup")({
   head: () => ({
     meta: [
-      { title: "Active Owner follow-up — Resolve" },
+      { title: "Active Owner follow-up: Resolve" },
       { name: "description", content: "Scheduled after-handoff owner tasks and homeowner items waiting for a reply, across all homes." },
-      { property: "og:title", content: "Active Owner follow-up — Resolve" },
+      { property: "og:title", content: "Active Owner follow-up: Resolve" },
       { property: "og:description", content: "Follow up on after-handoff owner tasks across all homes." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

@@ -450,7 +450,7 @@ export async function loadOwnerOnboardingPreview(
       updatedAt: (r.updated_at as string) ?? (r.created_at as string),
       publicationId: null,
       canRespond: false,
-      blockedReason: "Preview only — decisions are disabled in the staff walk-through.",
+      blockedReason: "Preview only: decisions are disabled in the staff walk-through.",
       decisionNote: (r.decision_note as string | null) ?? null,
       decidedAt: (r.decided_at as string | null) ?? null,
       createdAt: (r.created_at as string) ?? new Date().toISOString(),

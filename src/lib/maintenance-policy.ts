@@ -35,7 +35,7 @@ export type MaintenancePolicyRecord = {
  * without the Supervisor. Never used for new work.
  */
 export const MAINTENANCE_POLICY_V2: MaintenancePolicyRecord = {
-  version: "ARHA Maintenance Authority Policy for Resolve — v2",
+  version: "ARHA Maintenance Authority Policy for Resolve. V2",
   supervisorApprovalThreshold: 200,
   ownerApprovalThreshold: 350,
   ownerThresholdInclusive: false,
@@ -166,7 +166,7 @@ export const SECOND_QUOTE_LABELS: Record<SecondQuoteSignal, string> = {
 };
 
 export function money(amount: number | null | undefined) {
-  if (amount == null || Number.isNaN(Number(amount))) return "—";
+  if (amount == null || Number.isNaN(Number(amount))) return "-";
   return `$${Number(amount).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
 }
 
@@ -255,7 +255,7 @@ export function readAuthorityPolicy(value: unknown): AuthorityPolicy {
 }
 
 export const AUTHORITY_TIER_LABELS: Record<AuthorityTier, string> = {
-  proceed: "Proceed — no approval needed",
+  proceed: "Proceed: no approval needed",
   supervisor: "Supervisor approval",
   owner: "Homeowner approval",
   emergency: "Emergency exception",
@@ -325,7 +325,7 @@ export function authorityGuidance(
   const own = money(policy.ownerApprovalThreshold);
   switch (tier) {
     case "emergency":
-      return `Emergency: mitigate now and record the exception — reason, scope, amount, who decided and evidence. Anything beyond stopping the immediate problem still follows the normal ladder.`;
+      return `Emergency: mitigate now and record the exception. Reason, scope, amount, who decided and evidence. Anything beyond stopping the immediate problem still follows the normal ladder.`;
     case "proceed":
       return `Under ${sup}: proceed without supervisor or homeowner approval and record the cost.`;
     case "supervisor":
@@ -341,10 +341,10 @@ export function authorityLadder(policy: AuthorityPolicy = MAINTENANCE_POLICY): s
   const sup = money(policy.supervisorApprovalThreshold);
   const own = money(policy.ownerApprovalThreshold);
   return [
-    `Under ${sup} — proceed, record the cost.`,
-    `${sup} to ${own} — supervisor approves, homeowner is told afterwards.`,
-    `Above ${own} — homeowner approves before work starts.`,
-    `Emergency — mitigate now under a documented exception: reason, scope, amount, who decided, evidence.`,
+    `Under ${sup}. Proceed, record the cost.`,
+    `${sup} to ${own}. Supervisor approves, homeowner is told afterwards.`,
+    `Above ${own}. Homeowner approves before work starts.`,
+    `Emergency: mitigate now under a documented exception: reason, scope, amount, who decided, evidence.`,
   ];
 }
 

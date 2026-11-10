@@ -113,7 +113,7 @@ export function buildSourceQuote(
   } else {
     lines.push({ label: `Nightly rates (${quote.nights} nights)`, amount: quote.total });
     if (money(source.discountPercent) && source.discountPercent < 0)
-      flags.push(`Discount recorded as ${source.discountPercent}% — a negative discount has no stated basis, so it is not applied.`);
+      flags.push(`Discount recorded as ${source.discountPercent}%: a negative discount has no stated basis, so it is not applied.`);
   }
 
   if (money(source.cleaningFee) && source.cleaningFee > 0) lines.push({ label: "Cleaning fee", amount: source.cleaningFee });

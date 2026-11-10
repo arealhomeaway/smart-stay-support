@@ -178,7 +178,7 @@ export function evaluateAuthority(input: WorkOrderLike): AuthorityVerdict {
     return {
       level: "emergency",
       label: "Emergency mitigation may proceed",
-      reason: `Mitigation may proceed without prior approval to ${clause}. Record the exception — reason, scope, amount, who decided and evidence. The permanent repair is evaluated separately.`,
+      reason: `Mitigation may proceed without prior approval to ${clause}. Record the exception: reason, scope, amount, who decided and evidence. The permanent repair is evaluated separately.`,
       ownerApprovalRequired: false,
       supervisorApprovalRequired: false,
       ownerFyiRequired: true,
@@ -251,7 +251,7 @@ export function evaluateAuthority(input: WorkOrderLike): AuthorityVerdict {
   if (amount < supThreshold) {
     return {
       level: "self",
-      label: v3 ? "Proceed, no approval needed" : "Proceed — no approval needed",
+      label: v3 ? "Proceed, no approval needed" : "Proceed: no approval needed",
       reason: v3
         ? `${money(amount)} is under ${money(supThreshold)}, so it proceeds and the cost is recorded.`
         : `${money(amount)} is under ${money(supThreshold)}, so ARHA proceeds and records the cost.`,
@@ -432,7 +432,7 @@ export function secondQuoteAdvice(input: {
   return {
     recommended: true,
     signals,
-    reason: `Consider a second quote — ${signals.map((s) => SECOND_QUOTE_LABELS[s].toLowerCase()).join("; ")}.`,
+    reason: `Consider a second quote: ${signals.map((s) => SECOND_QUOTE_LABELS[s].toLowerCase()).join("; ")}.`,
   };
 }
 
@@ -471,11 +471,11 @@ export function commitmentStatus(wo: WorkOrderLike, now = new Date()): Commitmen
   } else if (misses >= MAINTENANCE_POLICY.missNotifySupervisor) {
     action = "Two commitments missed. Consider a backup vendor and notify the Operations Supervisor.";
   } else if (misses >= MAINTENANCE_POLICY.missFollowUp) {
-    action = "Vendor missed a commitment — follow up before it becomes a second miss.";
+    action = "Vendor missed a commitment. Follow up before it becomes a second miss.";
   } else if (acknowledgeOverdue) {
-    action = `No vendor acknowledgment within ${MAINTENANCE_POLICY.vendorAcknowledgeMinutes[priority]} minutes — move to the backup vendor.`;
+    action = `No vendor acknowledgment within ${MAINTENANCE_POLICY.vendorAcknowledgeMinutes[priority]} minutes: move to the backup vendor.`;
   } else if (etaMissed) {
-    action = "Vendor missed the ETA — get a new arrival time or dispatch a backup.";
+    action = "Vendor missed the ETA. Get a new arrival time or dispatch a backup.";
   }
 
   return { acknowledgeOverdue, etaMissed, misses, action };
@@ -573,13 +573,13 @@ export function waitingOn(wo: WorkOrderLike): WaitingOn {
 
 /** One sentence: the single thing this Work Order needs next. */
 export function nextAction(wo: WorkOrderLike, now = new Date()): string {
-  if (wo.closed_at) return "Closed — nothing outstanding.";
+  if (wo.closed_at) return "Closed: nothing outstanding.";
 
   const commitments = commitmentStatus(wo, now);
   if (commitments.action) return commitments.action;
 
   if (wo.warranty_may_apply && !wo.warranty_contacted_at && !warrantyBypassed(wo)) {
-    return "Warranty may apply — contact the warranty provider before committing to a paid repair.";
+    return "Warranty may apply: contact the warranty provider before committing to a paid repair.";
   }
   if (
     wo.warranty_may_apply &&
@@ -594,22 +594,22 @@ export function nextAction(wo: WorkOrderLike, now = new Date()): string {
   const status = (wo.approval_status ?? "not_required") as ApprovalStatus;
 
   if (verdict.mitigationOnly && wo.permanent_repair_needed && wo.vendor_completed_at) {
-    return "Mitigation is done — scope the permanent repair and evaluate approval on its own amount.";
+    return "Mitigation is done: scope the permanent repair and evaluate approval on its own amount.";
   }
   if (verdict.ownerApprovalRequired) {
     if (status === "pending")
       return "Waiting on the owner's decision. Owner notified is not owner approved.";
     if (status === "info_requested")
-      return "Owner asked for more information — send the detail they need.";
+      return "Owner asked for more information. Send the detail they need.";
     if (status === "declined")
-      return "Owner declined — record the alternative or close with the reason.";
+      return "Owner declined: record the alternative or close with the reason.";
     if (status !== "approved") return verdict.reason;
   }
   if (verdict.supervisorApprovalRequired && !supervisorApproved(wo)) {
     const sup = (wo.supervisor_approval_status ?? "not_required") as ApprovalStatus;
     if (sup === "pending") return "Waiting on the supervisor's decision on this amount.";
     if (sup === "declined")
-      return "Supervisor declined — record the alternative before going further.";
+      return "Supervisor declined: record the alternative before going further.";
     if (verdict.ownerApprovalRequired)
       return "Request the Operations Supervisor's approval for this amount. The owner approves too.";
     if (verdict.ownerNoticeSameDay)
@@ -618,14 +618,14 @@ export function nextAction(wo: WorkOrderLike, now = new Date()): string {
   }
   if (verdict.ownerFyiRequired && supervisorApproved(wo) && !wo.owner_fyi_at && !wo.closed_at) {
     if (verdict.ownerNoticeSameDay) return "Approved. Tell the owner today that this work is going ahead.";
-    return "Approved — send the homeowner the FYI that this work is going ahead.";
+    return "Approved: send the homeowner the FYI that this work is going ahead.";
   }
 
   const stage = derivedStage(wo);
   if (stage === "needs_diagnosis")
     return "Diagnose the issue or request a quote from an approved vendor.";
   if (stage === "quote_requested")
-    return "Chase the quote — nothing can be authorised without an amount.";
+    return "Chase the quote: nothing can be authorised without an amount.";
   if (stage === "quote_received") return verdict.reason;
   if (stage === "approved" || stage === "scheduled" || stage === "in_progress") {
     return CHECKPOINT_LABELS[nextCheckpoint(wo, now)];
@@ -666,10 +666,10 @@ export function closureBlockers(
     blockers.push("Spending approval for this amount is not documented.");
   }
   if (verdict.mitigationOnly && !wo.emergency_reason) {
-    blockers.push("Record the emergency exception — reason, scope, amount and evidence.");
+    blockers.push("Record the emergency exception. Reason, scope, amount and evidence.");
   }
   if (wo.permanent_repair_needed && wo.phase === "mitigation" && !wo.follow_up_ticket_id) {
-    blockers.push("Permanent repair is still outstanding — create the follow-up before closing.");
+    blockers.push("Permanent repair is still outstanding. Create the follow-up before closing.");
   }
   return blockers;
 }
@@ -803,7 +803,7 @@ export function supervisorApprovalRequest(
   const verdict = evaluateAuthority({ ...wo, phase: "permanent" });
   return {
     kind: SUPERVISOR_APPROVAL_KIND,
-    title: `Supervisor approval — ${wo.title ?? "maintenance repair"}`,
+    title: `Supervisor approval: ${wo.title ?? "maintenance repair"}`,
     amount: num(wo.quote_amount),
     detail: {
       work_order_id: wo.id ?? null,
@@ -831,9 +831,9 @@ export const OWNER_APPROVAL_OUTCOME_LABELS: Record<OwnerApprovalOutcome, string>
 export function ownerApprovalText(summary: string) {
   const detail = summary.trim();
   if (detail.length < 20 || detail.length > 4000) {
-    throw new Error("Explain the repair and proposed work for the owner in 20–4,000 characters.");
+    throw new Error("Explain the repair and proposed work for the owner in 20 to 4,000 characters.");
   }
-  return { title: "Owner approval — property repair", detail };
+  return { title: "Owner approval: property repair", detail };
 }
 
 /** Internal authority/evidence snapshot. Narrative fields are staff-only. */
@@ -851,7 +851,7 @@ export function ownerApprovalRequest(
   const mitigationDone = Boolean(wo.temporary_mitigation || wo.emergency_reason);
   return {
     kind: OWNER_APPROVAL_KIND,
-    title: `Owner approval — ${wo.title ?? "maintenance repair"}`,
+    title: `Owner approval: ${wo.title ?? "maintenance repair"}`,
     amount: num(wo.quote_amount),
     detail: {
       work_order_id: wo.id ?? null,
@@ -881,12 +881,12 @@ export function ownerApprovalRequest(
 export function declineConsequence(wo: WorkOrderLike): string | null {
   if (wo.approval_status !== "declined") return null;
   if (wo.occupied_now) {
-    return "Owner declined the permanent repair — a guest is in the home and the impact is unresolved. Decide the alternative: temporary mitigation, guest refund or credit, or leadership follow-up.";
+    return "Owner declined the permanent repair. A guest is in the home and the impact is unresolved. Decide the alternative: temporary mitigation, guest refund or credit, or leadership follow-up.";
   }
   if (wo.permanent_repair_needed) {
-    return "Owner declined the permanent repair — the home still has an open defect. Record the alternative solution or escalate to leadership.";
+    return "Owner declined the permanent repair. The home still has an open defect. Record the alternative solution or escalate to leadership.";
   }
-  return "Owner declined — record what happens instead before this Work Order is closed.";
+  return "Owner declined: record what happens instead before this Work Order is closed.";
 }
 
 /* ------------------------------------------------------------------ */
@@ -936,7 +936,7 @@ export function workOrderEvidenceSlots(
       label: "Invoice or receipt",
       kind: "general",
       required: true,
-      instruction: "The amount actually paid — this is the final cost of record.",
+      instruction: "The amount actually paid. This is the final cost of record.",
     },
   ];
 
@@ -955,7 +955,7 @@ export function workOrderEvidenceSlots(
       label: "Warranty correspondence",
       kind: "general",
       required: false,
-      instruction: "What the warranty provider said — coverage, appointment or refusal.",
+      instruction: "What the warranty provider said. Coverage, appointment or refusal.",
     });
   }
   return slots;

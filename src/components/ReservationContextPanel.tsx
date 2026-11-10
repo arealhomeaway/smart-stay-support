@@ -78,17 +78,17 @@ export function ReservationContextPanel({
         </CardTitle>
         <CardDescription>
           Captured from OwnerRez when this ticket was logged{capturedAt ? ` (${capturedAt})` : ""}.
-          OwnerRez stays the system of record — change the booking there.
+          OwnerRez stays the system of record. Change the booking there.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
-        <Row label="Guest" value={ticket.reservation_guest_name ?? "—"} />
-        <Row label="Stay" value={stay || "—"} />
-        <Row label="Channel" value={ticket.reservation_channel ?? "—"} />
-        <Row label="Confirmation" value={ticket.reservation_confirmation ?? "—"} />
+        <Row label="Guest" value={ticket.reservation_guest_name ?? "Not set"} />
+        <Row label="Stay" value={stay || "Not set"} />
+        <Row label="Channel" value={ticket.reservation_channel ?? "Not set"} />
+        <Row label="Confirmation" value={ticket.reservation_confirmation ?? "Not set"} />
         <Row
           label="Guests"
-          value={ticket.reservation_guest_count ? String(ticket.reservation_guest_count) : "—"}
+          value={ticket.reservation_guest_count ? String(ticket.reservation_guest_count) : "-"}
         />
         <div className="flex flex-wrap gap-2 pt-2">
           {bookingUrl ? (

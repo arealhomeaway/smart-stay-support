@@ -69,9 +69,9 @@ export const OUTBOUND_STATUS_LABEL: Record<BreezewayOutboundStatus, string> = {
   creating: "Creating…",
   created: "Created in Breezeway",
   synced: "Confirmed by Breezeway",
-  error: "Failed — not created",
-  needs_review: "Uncertain — needs review",
-  abandoned: "Reviewed — nothing was created",
+  error: "Failed: not created",
+  needs_review: "Uncertain: needs review",
+  abandoned: "Reviewed: nothing was created",
 };
 
 export type BreezewayOutboundLink = {

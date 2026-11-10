@@ -79,7 +79,7 @@ export function OwnerFilesPanel({ homes, selectedHomeId, readOnly = false }: { h
           </CardTitle>
           <CardDescription>
             Files ARHA has shared with you, and any document your coordinator has asked you to upload.
-            Each file can be up to {formatBytes(MAX_FILE_BYTES)} — longer videos need to be trimmed or
+            Each file can be up to {formatBytes(MAX_FILE_BYTES)}. Longer videos need to be trimmed or
             shared as a smaller copy.
           </CardDescription>
         </div>

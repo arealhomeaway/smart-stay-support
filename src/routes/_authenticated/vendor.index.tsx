@@ -46,7 +46,7 @@ function nextAction(job: { vendor_status: string | null; due_at: string | null }
     return "Finish the required steps and mark it complete.";
   }
   if (job.due_at && new Date(job.due_at).getTime() < Date.now()) {
-    return "Past due — accept the job and head over.";
+    return "Past due: accept the job and head over.";
   }
   return "Accept the job to let the team know you're on it.";
 }

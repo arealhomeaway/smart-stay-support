@@ -6,13 +6,13 @@ import { useRole } from "@/hooks/useRole";
 export const Route = createFileRoute("/_authenticated/leads")({
   head: () => ({
     meta: [
-      { title: "Tenant leads — Resolve" },
+      { title: "Tenant leads: Resolve" },
       {
         name: "description",
         content:
           "Direct booking opportunities from first enquiry to signed stay: follow-up timing, property matches, quotes and conversion, all in one queue.",
       },
-      { property: "og:title", content: "Tenant leads — Resolve" },
+      { property: "og:title", content: "Tenant leads: Resolve" },
       {
         property: "og:description",
         content:

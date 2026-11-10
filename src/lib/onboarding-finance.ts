@@ -156,7 +156,7 @@ export function financialNextAction(row: FinancialRequest): string {
       if (tier === "supervisor") return "Send to a supervisor for approval.";
       if (tier === "owner") return "Send to the homeowner for approval.";
       if (tier === "emergency") return "Record the emergency exception, then add the invoice.";
-      return "No approval needed — add the invoice when it arrives.";
+      return "No approval needed: add the invoice when it arrives.";
     case "awaiting_approval":
       return tier === "owner"
         ? "Waiting on the homeowner's decision."
@@ -164,7 +164,7 @@ export function financialNextAction(row: FinancialRequest): string {
     case "approved":
       return "Add the invoice when it arrives.";
     case "declined":
-      return "Declined — close it out or revise the estimate.";
+      return "Declined: close it out or revise the estimate.";
     case "invoiced":
       return varianceNeedsNote(row) && !row.variance_note
         ? "Explain the difference from the approved amount, then send to accounting."
@@ -327,6 +327,6 @@ export function isConflict(row: FactProposal) {
 
 export function factSummary(row: FactProposal) {
   return isConflict(row)
-    ? `Resolve has "${row.current_value}" — the field says "${row.proposed_value}".`
-    : `Nothing recorded yet — the field says "${row.proposed_value}".`;
+    ? `Resolve has "${row.current_value}": the field says "${row.proposed_value}".`
+    : `Nothing recorded yet: the field says "${row.proposed_value}".`;
 }

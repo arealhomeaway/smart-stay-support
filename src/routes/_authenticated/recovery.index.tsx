@@ -42,7 +42,7 @@ const BUCKET_HELP: Record<RecoveryBucket, string> = {
   needs_attention: "A guest update is due, checkout is close, or nobody has moved this on.",
   waiting_evidence: "The remedy cannot be decided until the impact is confirmed.",
   approval_required: "Waiting on the Operations Supervisor or the Director of Operations.",
-  approved_action_needed: "Approved — deliver it and record what was issued.",
+  approved_action_needed: "Approved: deliver it and record what was issued.",
   waiting_guest: "Offered to the guest. Follow up if there is no reply today.",
   reassess: "Declined, returned or the guest is still unhappy.",
   recently_resolved: "Closed or delivered in the last 30 days.",

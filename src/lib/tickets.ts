@@ -95,12 +95,12 @@ export const P1_ESCALATION = [
   {
     minutes: 3,
     level: "backup" as const,
-    who: "Backup role notified — acknowledgment standard missed",
+    who: "Backup role notified: acknowledgment standard missed",
   },
   {
     minutes: 5,
     level: "supervisor" as const,
-    who: "Operations Supervisor notified — action has not started",
+    who: "Operations Supervisor notified: action has not started",
   },
   { minutes: 15, level: "staffing" as const, who: "Staffing escalation and backup review" },
 ];
@@ -212,7 +212,7 @@ export const HANDOFF_TYPES = [
   {
     value: "ownership_transfer",
     label: "Ownership transfer",
-    hint: "They become the Current Assignee — only once they accept.",
+    hint: "They become the Current Assignee. Only once they accept.",
   },
   {
     value: "shift_coverage",
@@ -234,7 +234,7 @@ export const HANDOFF_TYPES = [
 export const GUEST_COMM_STATUS = [
   { value: "not_required", label: "No guest communication required" },
   { value: "guest_waiting", label: "Guest is waiting on an update" },
-  { value: "guest_updated", label: "Guest updated — next update owed" },
+  { value: "guest_updated", label: "Guest updated: next update owed" },
   { value: "guest_informed_closed", label: "Guest informed, nothing owed" },
 ] as const;
 
@@ -253,7 +253,7 @@ export function labelFor(
   list: readonly { value: string; label: string }[],
   value: string | null | undefined,
 ) {
-  return list.find((i) => i.value === value)?.label ?? value ?? "—";
+  return list.find((i) => i.value === value)?.label ?? value ?? "None";
 }
 
 export function priorityMeta(priority: string | null | undefined) {
@@ -403,7 +403,7 @@ export function priorityTone(priority: string) {
 }
 
 export function relativeTime(value: string | null | undefined) {
-  if (!value) return "—";
+  if (!value) return "Not set";
   const diff = Date.now() - new Date(value).getTime();
   const mins = Math.round(diff / 60000);
   if (Math.abs(mins) < 60) return mins <= 0 ? "just now" : `${mins}m ago`;
@@ -488,7 +488,7 @@ export function ticketActionStartPlan(
   const events: TicketActionStartEvent[] = [
     {
       kind: "acknowledged",
-      body: "Acknowledged — this ticket is being worked.",
+      body: "Acknowledged: this ticket is being worked.",
       eventType: "acknowledged",
     },
     { kind: "action_started", body: "Work started on this ticket.", eventType: "action_started" },

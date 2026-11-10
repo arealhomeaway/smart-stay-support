@@ -426,7 +426,7 @@ export function deriveBlockers(input: ProjectInput): Blocker[] {
     const kind = blockerKind(v);
     out.push({
       taskId: v.task.id,
-      what: v.reason ? `${v.task.title} — ${v.reason.replace(/^Blocked — /, "")}` : v.task.title,
+      what: v.reason ? `${v.task.title} · ${v.reason.replace(/^Blocked — /, "")}` : v.task.title,
       owner: KIND_OWNER[kind],
       followUp: v.task.due_on,
       kind,

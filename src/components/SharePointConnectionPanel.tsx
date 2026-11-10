@@ -143,7 +143,7 @@ export function SharePointConnectionPanel() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <PlugZap className="size-4" /> SharePoint — ARHA Resolve site
+          <PlugZap className="size-4" /> SharePoint: ARHA Resolve site
           <Badge variant={connected ? "default" : "secondary"}>
             {connected ? "Connected" : "Not connected"}
           </Badge>
@@ -227,7 +227,7 @@ export function SharePointConnectionPanel() {
                   <tr key={p.label} className="border-t border-border align-top">
                     <td className="p-2">{p.label}</td>
                     <td className="p-2 text-muted-foreground">{p.expectation}</td>
-                    <td className="p-2 font-mono">{p.status ?? "—"}</td>
+                    <td className="p-2 font-mono">{p.status ?? "Not set"}</td>
                     <td className="p-2">{p.verdict}</td>
                     <td className="p-2 break-all text-muted-foreground">{p.detail}</td>
                   </tr>
@@ -239,28 +239,28 @@ export function SharePointConnectionPanel() {
 
         {!inspection ? (
           <p className="text-xs text-muted-foreground">
-            Verify the request first — sign-in stays disabled until the generated request matches
+            Verify the request first. Sign-in stays disabled until the generated request matches
             the approved scope list exactly.
           </p>
         ) : (
           <dl className="grid gap-2 rounded-lg border border-border p-4 text-xs sm:grid-cols-[10rem_1fr]">
             <dt className="text-muted-foreground">Client ID</dt>
-            <dd className="font-mono break-all">{inspection.clientId ?? "—"}</dd>
+            <dd className="font-mono break-all">{inspection.clientId ?? "Not set"}</dd>
             <dt className="text-muted-foreground">Tenant</dt>
             <dd className="font-mono break-all">
-              {inspection.tenant ?? "—"}{" "}
+              {inspection.tenant ?? "Not set"}{" "}
               <span className="text-muted-foreground">({inspection.authority})</span>
             </dd>
             <dt className="text-muted-foreground">Redirect URI</dt>
-            <dd className="font-mono break-all">{inspection.redirectUri ?? "—"}</dd>
+            <dd className="font-mono break-all">{inspection.redirectUri ?? "Not set"}</dd>
             <dt className="text-muted-foreground">Decoded scopes</dt>
-            <dd className="font-mono break-all">{inspection.scopes.join(" ") || "—"}</dd>
+            <dd className="font-mono break-all">{inspection.scopes.join(" ") || "None"}</dd>
             <dt className="text-muted-foreground">Scope check</dt>
             <dd>
               {inspection.matchesPinnedScopes ? (
                 <Badge>Matches approved list</Badge>
               ) : (
-                <Badge variant="destructive">Does not match — do not sign in</Badge>
+                <Badge variant="destructive">Does not match: do not sign in</Badge>
               )}
             </dd>
           </dl>

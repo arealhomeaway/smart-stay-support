@@ -153,7 +153,7 @@ export async function retireDocument(input: {
     uploadStatus: row.upload_status,
   });
   if (!retirable) {
-    throw new Error("That document is in use — only leftovers from earlier tools can be retired.");
+    throw new Error("That document is in use. Only leftovers from earlier tools can be retired.");
   }
 
   const note = input.note.trim();

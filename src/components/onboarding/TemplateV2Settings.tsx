@@ -162,9 +162,9 @@ function StepDialog({ step, onClose, onSave, onRemove, saving, fileSources, stag
         </DialogHeader>
         <div className="space-y-2">
           <div className="space-y-1"><Label htmlFor="ttl">Internal Task title</Label><Input id="ttl" value={title} onChange={(e) => setTitle(e.target.value)} /></div>
-          <div className="space-y-1"><Label htmlFor="desc">Description <span className="font-normal text-muted-foreground">— what the step is and why it matters</span></Label><Textarea id="desc" rows={3} className="resize-y" value={description} onChange={(e) => setDescription(e.target.value)} /></div>
-          <div className="space-y-1"><Label htmlFor="det">Instructions <span className="font-normal text-muted-foreground">— how to do it</span></Label><Textarea id="det" rows={6} className="resize-y" value={detail} onChange={(e) => setDetail(e.target.value)} /></div>
-          <div className="space-y-1"><Label htmlFor="done">Done when <span className="font-normal text-muted-foreground">— what finished looks like (guidance, not an approval step)</span></Label><Textarea id="done" rows={2} className="resize-y" value={doneWhen} onChange={(e) => setDoneWhen(e.target.value)} /></div>
+          <div className="space-y-1"><Label htmlFor="desc">Description <span className="font-normal text-muted-foreground">· what the step is and why it matters</span></Label><Textarea id="desc" rows={3} className="resize-y" value={description} onChange={(e) => setDescription(e.target.value)} /></div>
+          <div className="space-y-1"><Label htmlFor="det">Instructions <span className="font-normal text-muted-foreground">· how to do it</span></Label><Textarea id="det" rows={6} className="resize-y" value={detail} onChange={(e) => setDetail(e.target.value)} /></div>
+          <div className="space-y-1"><Label htmlFor="done">Done when <span className="font-normal text-muted-foreground">· what finished looks like (guidance, not an approval step)</span></Label><Textarea id="done" rows={2} className="resize-y" value={doneWhen} onChange={(e) => setDoneWhen(e.target.value)} /></div>
           <p className="text-xs text-muted-foreground">All three are optional and internal only. Homeowners never see them; their wording is set separately below.</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -195,7 +195,7 @@ function StepDialog({ step, onClose, onSave, onRemove, saving, fileSources, stag
               </Select>
             </div>
             <p className="text-xs text-muted-foreground">
-              {describeRule(offsetNum === null ? null : anchor, offsetNum, unit)}. Use a negative number for "before". Business days are Monday–Friday; no holidays are skipped. Leave days empty for no rule. A missing anchor date leaves the Task undated.
+              {describeRule(offsetNum === null ? null : anchor, offsetNum, unit)}. Use a negative number for "before". Business days are Monday to Friday; no holidays are skipped. Leave days empty for no rule. A missing anchor date leaves the Task undated.
             </p>
           </div>
           <div className="space-y-1 sm:col-span-2 rounded-md border border-border p-3">
@@ -250,7 +250,7 @@ function StepDialog({ step, onClose, onSave, onRemove, saving, fileSources, stag
         {fileSources.ready ? (
           <div className="mt-2 space-y-2 rounded-md border border-border p-3">
             <Label>Show files from</Label>
-            <p className="text-xs text-muted-foreground">Files uploaded on these steps appear on this step for the same home. Nothing is copied. Internal only — homeowners and vendors never see them.</p>
+            <p className="text-xs text-muted-foreground">Files uploaded on these steps appear on this step for the same home. Nothing is copied. Internal only: homeowners and vendors never see them.</p>
             <div className="max-h-48 space-y-1 overflow-y-auto">
               {fileSources.options.filter((o) => o.id !== step.id).map((o) => (
                 <label key={o.id} className="flex items-center gap-2 text-sm">

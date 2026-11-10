@@ -58,8 +58,8 @@ export function TemplateCsvImport({ onCreated }: { onCreated: (id: string) => vo
                 <li><b>Conditions:</b> leave blank to include the Task on every home. To limit it, name the setting and its value, for example only fully furnished homes that have a pool: <span className="font-mono">furnishing_scope=full_furnishing; module=pool</span>. Separate several with a semicolon; every one must be true. Settings or values Resolve does not recognize are refused.</li>
                 <li><b>Yes/No:</b> Required, Blocks handoff, Evidence required, Owner approval, Owner Opportunity.</li>
                 <li><b>Owner dependency:</b> none, information, feedback, acknowledge or business_decision.</li>
-                <li><b>Owner Opportunity = Yes</b> needs an Owner-facing title (what/why/how optional). It is saved as template text only — nothing is sent.</li>
-                <li><b>Ignored:</b> Plan, Assigned person, Status, Due date — completion and home-specific assignments never carry over.</li>
+                <li><b>Owner Opportunity = Yes</b> needs an Owner-facing title (what/why/how optional). It is saved as template text only. Nothing is sent.</li>
+                <li><b>Ignored:</b> Plan, Assigned person, Status, Due date. Completion and home-specific assignments never carry over.</li>
               </ul>
             </details>
             <div className="space-y-1"><Label htmlFor="tci-name">New template name</Label><Input id="tci-name" value={name} onChange={(e) => setName(e.target.value)} /></div>

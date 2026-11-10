@@ -47,7 +47,7 @@ export const OPERATIONAL_CATEGORIES: CategoryDef[] = [
   {
     value: "safety",
     label: "Safety devices",
-    hint: "Smoke, carbon monoxide, alarms, security — anything that protects people.",
+    hint: "Smoke, carbon monoxide, alarms, security. Anything that protects people.",
     aliases: ["smoke", "co", "security", "alarm"],
   },
   {
@@ -59,7 +59,7 @@ export const OPERATIONAL_CATEGORIES: CategoryDef[] = [
   {
     value: "access",
     label: "Access and lockout",
-    hint: "Codes, keys, locks, gates, garages — getting into the home.",
+    hint: "Codes, keys, locks, gates, garages. Getting into the home.",
     aliases: ["lockout", "keys", "locks", "codes", "gate"],
   },
   {
@@ -101,7 +101,7 @@ export const OPERATIONAL_CATEGORIES: CategoryDef[] = [
   {
     value: "other",
     label: "Other",
-    hint: "Nothing above fits — say what it is in the description.",
+    hint: "Nothing above fits: say what it is in the description.",
     aliases: ["uncategorized", "misc", "general work"],
   },
 ];
@@ -221,7 +221,7 @@ export const FIELD_GUIDANCE: Record<string, string> = {
   "ticket.category": "What kind of work this is. Pick the home's problem, not who will fix it.",
   "ticket.priority": "P1 urgent and unsafe, P2 same day, P3 planned. Supervisors set this.",
   "workOrder.trade": "The skill the vendor needs. The category is set from this for you.",
-  "workOrder.category": "Set from the trade — shown so tickets and Work Orders read the same.",
+  "workOrder.category": "Set from the trade. Shown so tickets and Work Orders read the same.",
   "workOrder.phase": "Permanent fixes the problem. Mitigation only stops it getting worse.",
   "claim.type": "Who we are recovering the money from. Sets the evidence checklist.",
   "claim.category": "What kind of work caused the loss, using the same list as tickets.",

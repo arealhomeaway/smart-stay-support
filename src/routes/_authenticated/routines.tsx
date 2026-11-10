@@ -38,13 +38,13 @@ import {
 export const Route = createFileRoute("/_authenticated/routines")({
   head: () => ({
     meta: [
-      { title: "Routine work — Resolve Operations" },
+      { title: "Routine work: Resolve Operations" },
       {
         name: "description",
         content:
           "Guest touch bases, work order reviews and guest reviews: the daily checks that keep our guests happy and our homes in great shape.",
       },
-      { property: "og:title", content: "Routine work — Resolve Operations" },
+      { property: "og:title", content: "Routine work: Resolve Operations" },
       {
         property: "og:description",
         content: "Routine checks with what is due, what is late and what was found.",

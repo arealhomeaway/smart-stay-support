@@ -170,19 +170,19 @@ export function completionSummary(r: ReviewState, ctx: { linkedWork: number; has
       : outreach === "unable"
         ? "Unable to request"
         : outreach === "no"
-          ? `Not requested — ${r.outreach_reason ?? ""}`
+          ? `Not requested: ${r.outreach_reason ?? ""}`
           : r.outreach_status === "requested"
             ? "Requested"
             : r.outreach_status
               ? "Not requested"
-              : "—";
+              : "Not set";
   const host = hostReviewSupported(r.booking_source)
-    ? (HOST_REVIEW_OPTIONS.find((o) => o.id === r.host_review)?.label ?? "—")
+    ? (HOST_REVIEW_OPTIONS.find((o) => o.id === r.host_review)?.label ?? "Not set")
     : "N/A for this booking source";
   return {
     clean: r.clean_reviewed_at ? "Reviewed" : "Not reviewed",
     property: r.property_attention === "no" ? "None" : ctx.linkedWork > 0 ? `Linked work created (${ctx.linkedWork})` : "Issue noted",
-    damage: r.damage_screen === "no" ? "None" : ctx.hasClaim ? "Claim linked" : "Flagged — no claim",
+    damage: r.damage_screen === "no" ? "None" : ctx.hasClaim ? "Claim linked" : "Flagged: no claim",
     outreach: outreachText,
     host,
   };

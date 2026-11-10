@@ -136,12 +136,12 @@ export function ApprovalDetail({
 
           {a.detail ? <p className="whitespace-pre-wrap">{a.detail}</p> : null}
 
-          <PeekRow label="Home" value={q.data?.propertyName ?? "—"} />
+          <PeekRow label="Home" value={q.data?.propertyName ?? "Not set"} />
           <PeekRow
             label="Amount"
             value={money(a.amount as number | null, a.currency) ?? "Not a spending decision"}
           />
-          <PeekRow label="Requested by" value={q.data?.requestedBy ?? "—"} />
+          <PeekRow label="Requested by" value={q.data?.requestedBy ?? "Not set"} />
           <PeekRow label="Requested" value={relativeTime(a.created_at)} />
           <PeekRow
             label="Approver"
@@ -195,7 +195,7 @@ export function ApprovalDetail({
               className="inline-block font-medium text-primary hover:underline"
             >
               {q.data?.ticket
-                ? `Open ticket #${q.data.ticket.ref} — ${q.data.ticket.title}`
+                ? `Open ticket #${q.data.ticket.ref} · ${q.data.ticket.title}`
                 : "Open the ticket this came from"}
             </Link>
           ) : null}

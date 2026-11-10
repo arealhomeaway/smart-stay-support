@@ -169,17 +169,17 @@ export function viewTask(
     status = "complete";
   } else if ((task.blocker ?? "").trim()) {
     status = "blocked";
-    reason = `Blocked — ${task.blocker!.trim()}`;
+    reason = `Blocked: ${task.blocker!.trim()}`;
   } else if (awaitingOwner && task.owner_approval_status === "awaiting_owner") {
 
     status = "needs_review";
-    reason = "Blocked — Waiting on Owner";
+    reason = "Blocked: Waiting on Owner";
   } else if (awaitingOwner && task.owner_approval_status === "changes_requested") {
     status = "blocked";
-    reason = "Blocked — Homeowner requested changes";
+    reason = "Blocked: Homeowner requested changes";
   } else if (task.status === "blocked") {
     status = "blocked";
-    reason = evidenceMissing ? "Blocked — Missing Evidence" : "Blocked — Internal Review";
+    reason = evidenceMissing ? "Blocked: Missing Evidence" : "Blocked: Internal Review";
   } else if (awaitingOwner) {
     status = "needs_review";
     reason = "Homeowner approval required before completion";
@@ -214,7 +214,7 @@ export function viewTask(
       key: "evidence",
       label: "Evidence",
       explain: evidenceMissing
-        ? "Required evidence is not recorded yet — this task cannot be marked complete."
+        ? "Required evidence is not recorded yet. This task cannot be marked complete."
         : "Required evidence is recorded.",
     });
   }
@@ -346,7 +346,7 @@ export function whyThisTaskExists(view: TaskView, all: WorkflowTask[]): string[]
   if (view.waitingOn.length > 0) {
     lines.push(`Released when ${view.waitingOn.join(" and ")} completes.`);
   } else if ((task.depends_on ?? []).length > 0) {
-    lines.push("Release conditions are met — every prerequisite task is complete.");
+    lines.push("Release conditions are met. Every prerequisite task is complete.");
   }
 
   const downstream = all.filter((t) => (t.depends_on ?? []).includes(task.id)).map((t) => t.title);
@@ -364,7 +364,7 @@ export function whyThisTaskExists(view: TaskView, all: WorkflowTask[]): string[]
     lines.push(
       task.evidence_note
         ? "Evidence is required before completion, and has been recorded."
-        : "Evidence is required before completion — none recorded yet.",
+        : "Evidence is required before completion. None recorded yet.",
     );
   }
 
@@ -382,7 +382,7 @@ export function whyThisTaskExists(view: TaskView, all: WorkflowTask[]): string[]
 /** How the due date came to be, in one short line for the table/drawer. */
 export function dueExplanation(task: WorkflowTask): string | null {
   if (!task.due_on) return null;
-  if (task.due_on_overridden) return "Set manually — protected from recalculation.";
+  if (task.due_on_overridden) return "Set manually: protected from recalculation.";
   if (task.schedule_anchor) {
     return `Auto: ${anchorLabel(task.schedule_anchor)}${
       task.schedule_offset_days != null ? ` + ${task.schedule_offset_days} business days` : ""
@@ -418,7 +418,7 @@ export function assigneeLabel(
     const name = p?.full_name || p?.email || "Teammate";
     return role ? `${name} · ${role}` : name;
   }
-  if (role) return `Unassigned — ${role}`;
+  if (role) return `Unassigned: ${role}`;
   return "Unassigned";
 }
 

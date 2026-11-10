@@ -17,13 +17,13 @@ import { usDate } from "@/lib/dates";
 export const Route = createFileRoute("/_authenticated/ops-analytics")({
   head: () => ({
     meta: [
-      { title: "Operations performance — Resolve" },
+      { title: "Operations performance: Resolve" },
       {
         name: "description",
         content:
           "Ticket volume, SLA compliance, typical response and resolution times, and per-person contribution credit drawn from the immutable Resolve activity log.",
       },
-      { property: "og:title", content: "Operations performance — Resolve" },
+      { property: "og:title", content: "Operations performance: Resolve" },
       {
         property: "og:description",
         content: "SLA compliance, typical times and contributor credit for the operations team.",
@@ -42,7 +42,7 @@ export const Route = createFileRoute("/_authenticated/ops-analytics")({
 const RANGES = [7, 30, 90] as const;
 
 function fmtDuration(mins: number | null) {
-  if (mins === null) return "—";
+  if (mins === null) return "-";
   if (mins < 60) return `${Math.round(mins)}m`;
   if (mins < 1440) return `${(mins / 60).toFixed(1)}h`;
   return `${(mins / 1440).toFixed(1)}d`;
@@ -150,7 +150,7 @@ function OpsAnalyticsPage() {
             />
             <StatTile
               label="Response SLA met"
-              value={data?.sla.responseRate == null ? "—" : `${data.sla.responseRate}%`}
+              value={data?.sla.responseRate == null ? "-" : `${data.sla.responseRate}%`}
               tone={
                 data?.sla.responseRate == null
                   ? "neutral"
@@ -224,7 +224,7 @@ function OpsAnalyticsPage() {
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {group.buckets.length === 0 ? (
-                      <span className="text-muted-foreground">—</span>
+                      <span className="text-muted-foreground">-</span>
                     ) : (
                       group.buckets.map((b) => (
                         <Badge key={b.key} variant="outline">
@@ -241,7 +241,7 @@ function OpsAnalyticsPage() {
           <div>
             <SectionBand
               title="Contribution credit"
-              hint="Drawn from the immutable activity log — a record of contribution and current load, not a ranking"
+              hint="Drawn from the immutable activity log. A record of contribution and current load, not a ranking"
               actions={<Gauge className="size-4 text-muted-foreground" />}
             />
             {people.length === 0 ? (

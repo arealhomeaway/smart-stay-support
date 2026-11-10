@@ -76,7 +76,7 @@ function repairNextAction(link: {
     return "Do not send this again. An admin checks Breezeway and clears it from Integrations.";
   if (link.status === "error") return "The send failed. Compose the repair again.";
   if (!link.assigneeNames.length)
-    return "Nobody is assigned in Breezeway yet — chase an assignment.";
+    return "Nobody is assigned in Breezeway yet. Chase an assignment.";
   if (!link.scheduledDate)
     return "No date is committed yet. Get a window and park this as waiting.";
   return "Watch for completion, then verify the evidence before you close.";
@@ -203,7 +203,7 @@ export function BreezewayTaskPanel({
           {latest
             ? "With Breezeway for field scheduling. Resolve keeps the Work Order; Breezeway does the field work."
             : eligibility.eligible
-              ? "Optional — sends this ticket's Work Order to Breezeway for field-team scheduling."
+              ? "Optional: sends this ticket's Work Order to Breezeway for field-team scheduling."
               : `Dispatch to Breezeway is unavailable for this property. ${eligibility.reason ?? ""}`}
         </CardDescription>
       </CardHeader>
@@ -280,7 +280,7 @@ export function BreezewayTaskPanel({
         open={open}
         onOpenChange={setOpen}
         title="Dispatch to Breezeway"
-        subtitle="Optional — sends this ticket's Work Order externally for field scheduling. You keep the ticket either way."
+        subtitle="Optional: sends this ticket's Work Order externally for field scheduling. You keep the ticket either way."
       >
         <div className="space-y-5 text-sm">
           <SpecialHandlingNotice propertyId={propertyId} moment="maintenance" />
@@ -461,7 +461,7 @@ export function BreezewayTaskPanel({
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
         title="Dispatch to Breezeway now?"
-        description="This uses the Work Order already open on this ticket, or opens one if none exists yet, and sends it to Breezeway for field-team scheduling — it can't be recalled once sent."
+        description="This uses the Work Order already open on this ticket, or opens one if none exists yet, and sends it to Breezeway for field-team scheduling. It can't be recalled once sent."
         footer={
           <>
             <Button variant="outline" onClick={() => setConfirmOpen(false)}>
@@ -475,7 +475,7 @@ export function BreezewayTaskPanel({
       >
         <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-sm">
           <dt className="text-muted-foreground">Work</dt>
-          <dd className="font-medium">{title || "—"}</dd>
+          <dd className="font-medium">{title || "Not set"}</dd>
           <dt className="text-muted-foreground">Trade</dt>
           <dd>{department}</dd>
           <dt className="text-muted-foreground">Urgency</dt>
@@ -487,7 +487,7 @@ export function BreezewayTaskPanel({
                   .filter((p) => assigneeIds.includes(p.id))
                   .map((p) => p.name)
                   .join(", ")
-              : "Not assigned yet — sent unassigned"}
+              : "Not assigned yet: sent unassigned"}
           </dd>
           {scheduledDate ? (
             <>

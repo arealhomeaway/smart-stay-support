@@ -110,7 +110,7 @@ export function AssessmentFindingsPanel({
     onSuccess: (result) => {
       toast.success(
         result.duplicate
-          ? "That finding is already recorded — its correction task stays as it is."
+          ? "That finding is already recorded. Its correction task stays as it is."
           : "Finding recorded and a correction task was created.",
       );
       setOpen(false);

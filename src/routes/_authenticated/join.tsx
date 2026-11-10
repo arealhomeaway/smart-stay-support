@@ -11,16 +11,16 @@ import { Input } from "@/components/ui/input";
 export const Route = createFileRoute("/_authenticated/join")({
   head: () => ({
     meta: [
-      { title: "Redeem your invite code — Resolve Operations" },
+      { title: "Redeem your invite code: Resolve Operations" },
       {
         name: "description",
         content:
           "Enter the single-use invite code from your ARHA admin to unlock your coordinator, supervisor or vendor access in Resolve.",
       },
-      { property: "og:title", content: "Redeem your invite code — Resolve Operations" },
+      { property: "og:title", content: "Redeem your invite code: Resolve Operations" },
       {
         property: "og:description",
-        content: "One code sets your access in Resolve — no manual setup needed.",
+        content: "One code sets your access in Resolve. No manual setup needed.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

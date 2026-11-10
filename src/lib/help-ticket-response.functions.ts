@@ -86,10 +86,10 @@ export const updateHelpTicket = createServerFn({ method: "POST" })
       const kindLabel = t.kind === "issue" ? "Issue" : "Suggestion";
       const reopened = statusChanged && ["resolved", "closed"].includes(t.status) && !["resolved", "closed"].includes(data.status ?? t.status);
       const subject = publicReply
-        ? `Resolve Help Ticket #${t.ticket_number} — Reply from ARHA${statusChanged ? ` (${newStatus})` : ""}`
+        ? `Resolve Help Ticket #${t.ticket_number} · Reply from ARHA${statusChanged ? ` (${newStatus})` : ""}`
         : reopened
-          ? `Resolve Help Ticket #${t.ticket_number} — Reopened (${newStatus})`
-          : `Resolve Help Ticket #${t.ticket_number} — Status updated to ${newStatus}`;
+          ? `Resolve Help Ticket #${t.ticket_number} · Reopened (${newStatus})`
+          : `Resolve Help Ticket #${t.ticket_number} · Status updated to ${newStatus}`;
       const body = [
         `Ticket: #${t.ticket_number} (${kindLabel})`,
         t.property_label ? `Property: ${t.property_label}` : null,

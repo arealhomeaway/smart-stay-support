@@ -4,13 +4,13 @@ import { RequireCapability } from "@/components/RequireCapability";
 export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({
     meta: [
-      { title: "Onboarding workspace — Resolve" },
+      { title: "Onboarding workspace: Resolve" },
       {
         name: "description",
         content:
           "Track every home from intake to accepted handoff: sectioned workflow tasks, blockers, owner approvals and the readiness gate that starts active operations.",
       },
-      { property: "og:title", content: "Onboarding workspace — Resolve" },
+      { property: "og:title", content: "Onboarding workspace: Resolve" },
       {
         property: "og:description",
         content: "Pre-handoff work, readiness gates and supervisor review for new homes.",

@@ -105,7 +105,7 @@ export function ProjectHistory({
         summary: e.summary,
         detail:
           e.detail ??
-          (e.prior_value || e.new_value ? `${e.prior_value ?? "—"} → ${e.new_value ?? "—"}` : null),
+          (e.prior_value || e.new_value ? `${e.prior_value ?? "-"} → ${e.new_value ?? "-"}` : null),
         actor: nameOf(e.actor ?? null),
       });
     }
@@ -125,7 +125,7 @@ export function ProjectHistory({
       out.push({
         at: a.created_at,
         kind: "owner_approval_requested",
-        summary: `Owner approval requested — ${a.title}`,
+        summary: `Owner approval requested: ${a.title}`,
         detail: null,
         actor: null,
       });
@@ -133,7 +133,7 @@ export function ProjectHistory({
         out.push({
           at: a.decided_at,
           kind: "owner_decision",
-          summary: `Homeowner ${a.status === "approved" ? "approved" : "requested changes"} — ${a.title}`,
+          summary: `Homeowner ${a.status === "approved" ? "approved" : "requested changes"} · ${a.title}`,
           detail: a.decision_note,
           actor: "Homeowner",
         });
@@ -148,7 +148,7 @@ export function ProjectHistory({
             : r.decision === "live"
               ? "live_confirmed"
               : "handoff_review",
-        summary: `Handoff review — ${r.decision.replace(/_/g, " ")}`,
+        summary: `Handoff review: ${r.decision.replace(/_/g, " ")}`,
         detail: r.notes,
         actor: nameOf(r.reviewer_id ?? null),
       });
@@ -165,7 +165,7 @@ export function ProjectHistory({
           History <span className="numeric text-muted-foreground">({entries.length})</span>
         </p>
         <p className="text-xs text-muted-foreground">
-          Every lifecycle event on this project, newest first. History is a record — it cannot be
+          Every lifecycle event on this project, newest first. History is a record. It cannot be
           edited.
         </p>
       </div>

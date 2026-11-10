@@ -13,10 +13,10 @@ export function ownerReviewPresentation(review: {
       return {
         attention: false,
         label: review.responded_at
-          ? "Reviewed — No approval required"
-          : "Review — No approval required",
+          ? "Reviewed: No approval required"
+          : "Review: No approval required",
       };
-    return { attention: false, label: "Review — Authority unconfirmed" };
+    return { attention: false, label: "Review: Authority unconfirmed" };
   }
   return {
     attention: ["awaiting_owner", "returned"].includes(review.status),

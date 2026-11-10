@@ -129,7 +129,7 @@ export async function sendInviteEmail(input: {
 
   const result = await sendEmail({
     to: input.email,
-    subject: "Your invite to Resolve — A Real Home Away",
+    subject: "Your invite to Resolve: A Real Home Away",
     html: emailShell(
       "You're invited to Resolve",
       body,
@@ -264,7 +264,7 @@ export async function resendTeamInvite(supabase: Client, userId: string, inviteI
   if (data.redeemed_at) throw new Error("That code has already been redeemed.");
   if (data.revoked_at) throw new Error("That code was revoked.");
   if (!data.invitee_email)
-    throw new Error("That code has no email address on it — copy the message instead.");
+    throw new Error("That code has no email address on it. Copy the message instead.");
 
   return sendInviteEmail({
     email: data.invitee_email,

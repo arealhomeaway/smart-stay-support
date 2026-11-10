@@ -210,7 +210,7 @@ export function AttachmentsPanel({
                   <Badge variant="secondary">Request completed</Badge>
                 ) : (
                   <span className="text-muted-foreground">
-                    {formatBytes(f.size_bytes ?? 0)} · {f.uploaded_by_name ?? "—"} ·{" "}
+                    {formatBytes(f.size_bytes ?? 0)} · {f.uploaded_by_name ?? "Not set"} ·{" "}
                     {usDate(f.uploaded_at)}
                   </span>
                 )}

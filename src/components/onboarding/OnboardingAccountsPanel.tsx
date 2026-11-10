@@ -35,7 +35,7 @@ export function OnboardingAccountsPanel() {
       setIssued(form.email);
       toast.success(
         r.setupEmail === "sent" ? "Account created and a set-password email was sent." :
-        r.setupEmail === "failed" ? "Account created. The set-password email could not be sent — they can use Forgot password." :
+        r.setupEmail === "failed" ? "Account created. The set-password email could not be sent. They can use Forgot password." :
         "Account created. They set their password with Forgot password on the sign-in page.",
       );
       setForm({ name: "", email: "", role: form.role, sendSetupEmail: false });
@@ -48,7 +48,7 @@ export function OnboardingAccountsPanel() {
     onSuccess: (r, v) => {
       toast.success(
         v.active ? "Sign-in turned back on." :
-          `Sign-in turned off. ${r.openTasks} open Task(s) and ${r.projectAssignments} Project Team spot(s) still name them — reassign them on each home.`,
+          `Sign-in turned off. ${r.openTasks} open Task(s) and ${r.projectAssignments} Project Team spot(s) still name them. Reassign them on each home.`,
       );
       void qc.invalidateQueries({ queryKey: KEY });
     },

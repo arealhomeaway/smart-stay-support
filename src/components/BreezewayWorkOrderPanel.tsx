@@ -271,7 +271,7 @@ function PhotoStrip({ workOrderId, writable }: { workOrderId: string; writable: 
           </Button>
           <p className="text-xs text-muted-foreground">
             Uploads go straight onto the Breezeway task. JPEG, PNG, WebP or HEIC, up to 15 MB.
-            Breezeway has no photo delete — check the image before you send it.
+            Breezeway has no photo delete. Check the image before you send it.
           </p>
         </div>
       )}
@@ -444,7 +444,7 @@ export function BreezewayWorkOrderPanel({ propertyId }: { propertyId: string }) 
         <div>
           <CardTitle className="text-base">Breezeway Work Orders</CardTitle>
           <CardDescription>
-            Current Breezeway work at this home. Resolve stays the source of truth — closing here
+            Current Breezeway work at this home. Resolve stays the source of truth. Closing here
             closes the Breezeway Work Order only.
           </CardDescription>
         </div>

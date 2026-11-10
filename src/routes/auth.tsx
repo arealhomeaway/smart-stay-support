@@ -20,13 +20,13 @@ export const Route = createFileRoute("/auth")({
   },
   head: () => ({
     meta: [
-      { title: "Sign in — Resolve" },
+      { title: "Sign in: Resolve" },
       {
         name: "description",
         content:
           "One secure sign-in for every A Real Home Away portal: operations, vendors, onboarding, homeowners and oversight.",
       },
-      { property: "og:title", content: "Sign in — Resolve" },
+      { property: "og:title", content: "Sign in: Resolve" },
       {
         property: "og:description",
         content: "Secure access to the ARHA portals your role is authorised for.",

@@ -147,7 +147,7 @@ export function planEnrichment(
         property_id: p.id,
         property_name: p.name,
         field: "ownerrez_property_id",
-        detail: "Not linked to an OwnerRez listing — enrichment skipped (never matched on name).",
+        detail: "Not linked to an OwnerRez listing. Enrichment skipped (never matched on name).",
       });
       continue;
     }

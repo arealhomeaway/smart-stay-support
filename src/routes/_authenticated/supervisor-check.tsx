@@ -14,13 +14,13 @@ import { groupSupervisorCheck, type CheckTicket } from "@/lib/supervisor-check";
 export const Route = createFileRoute("/_authenticated/supervisor-check")({
   head: () => ({
     meta: [
-      { title: "Supervisor check — Resolve" },
+      { title: "Supervisor check: Resolve" },
       {
         name: "description",
         content:
           "Read-only daily check: the last 24 hours of tickets, overdue and unassigned work, and refunds waiting on approval.",
       },
-      { property: "og:title", content: "Supervisor check — Resolve" },
+      { property: "og:title", content: "Supervisor check: Resolve" },
       { property: "og:description", content: "One read-only page for the daily supervisor check." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

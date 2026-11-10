@@ -60,7 +60,7 @@ const BUCKET_HELP: Record<WorkOrderBucket, string> = {
     : "Above the ARHA owner limit, waiting on the owner's decision.",
   warranty_pending: "The warranty route is open. Do not pay for covered work.",
   waiting_vendor: "Scheduled with a vendor. Watch the acknowledgment and arrival checkpoints.",
-  evidence_missing: "Work is done but the record is not — photos, report or invoice.",
+  evidence_missing: "Work is done but the record is not. Photos, report or invoice.",
   permanent_pending: "Mitigated only. The home still needs the permanent repair.",
   closed: "Closed in the last 30 days.",
 };
@@ -144,7 +144,7 @@ function WorkOrdersHome() {
     <div className="space-y-5">
       <PageHeader
         title="Work Orders"
-        description="Today's queue — maintenance execution, ordered by what is still unresolved. Work Orders start on the ticket where the issue was reported."
+        description="Today's queue: maintenance execution, ordered by what is still unresolved. Work Orders start on the ticket where the issue was reported."
       />
 
       <SegmentedControl

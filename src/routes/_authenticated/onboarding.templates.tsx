@@ -40,13 +40,13 @@ import {
 export const Route = createFileRoute("/_authenticated/onboarding/templates")({
   head: () => ({
     meta: [
-      { title: "Onboarding templates — Resolve" },
+      { title: "Onboarding templates: Resolve" },
       {
         name: "description",
         content:
           "Create and edit the onboarding plans Resolve applies to a new home: steps, stages, owners, deadlines, homeowner approvals and evidence rules.",
       },
-      { property: "og:title", content: "Onboarding templates — Resolve" },
+      { property: "og:title", content: "Onboarding templates: Resolve" },
       {
         property: "og:description",
         content: "Author the onboarding plan every new home is set up from.",

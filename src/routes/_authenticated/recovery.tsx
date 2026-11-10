@@ -6,13 +6,13 @@ import { useRole } from "@/hooks/useRole";
 export const Route = createFileRoute("/_authenticated/recovery")({
   head: () => ({
     meta: [
-      { title: "Guest refunds & credits — Resolve" },
+      { title: "Guest refunds & credits: Resolve" },
       {
         name: "description",
         content:
           "What each guest is owed after a service failure: impact, evidence, the remedy, whose approval it needs under ARHA policy, and what was actually issued.",
       },
-      { property: "og:title", content: "Guest refunds & credits — Resolve" },
+      { property: "og:title", content: "Guest refunds & credits: Resolve" },
       {
         property: "og:description",
         content:

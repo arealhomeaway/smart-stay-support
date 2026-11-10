@@ -13,9 +13,9 @@ export const Route = createFileRoute("/guest-feedback/")({
     typeof s["r"] === "string" && s["r"].trim() ? { r: s["r"].trim().slice(0, 60) } : {},
   head: () => ({
     meta: [
-      { title: "How was your stay? — A Real Home Away" },
+      { title: "How was your stay? A Real Home Away" },
       { name: "description", content: "Tell A Real Home Away about your recent stay. It takes about two minutes." },
-      { property: "og:title", content: "How was your stay? — A Real Home Away" },
+      { property: "og:title", content: "How was your stay? A Real Home Away" },
       { property: "og:description", content: "A short private survey about your recent stay with A Real Home Away." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

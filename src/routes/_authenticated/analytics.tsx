@@ -15,13 +15,13 @@ import { withoutQuietNotion } from "@/lib/notion-ticket-display";
 export const Route = createFileRoute("/_authenticated/analytics")({
   head: () => ({
     meta: [
-      { title: "Analytics & KPIs — Resolve Operations" },
+      { title: "Analytics & KPIs: Resolve Operations" },
       {
         name: "description",
         content:
           "Operational health for ARHA: guest-impacting SLA compliance, first-time-fix rate, recurring problems by home, and what the team is stuck waiting on.",
       },
-      { property: "og:title", content: "Analytics & KPIs — Resolve Operations" },
+      { property: "og:title", content: "Analytics & KPIs: Resolve Operations" },
       {
         property: "og:description",
         content:
@@ -82,7 +82,7 @@ function minutesBetween(a: string, b: string) {
 }
 
 function fmtDuration(mins: number | null) {
-  if (mins === null || Number.isNaN(mins)) return "—";
+  if (mins === null || Number.isNaN(mins)) return "-";
   if (mins < 60) return `${Math.round(mins)}m`;
   if (mins < 60 * 24) return `${(mins / 60).toFixed(1)}h`;
   return `${(mins / 1440).toFixed(1)}d`;
@@ -101,7 +101,7 @@ function rate(part: number, total: number): number | null {
 }
 
 function fmtPct(v: number | null) {
-  return v === null ? "—" : `${v}%`;
+  return v === null ? "-" : `${v}%`;
 }
 
 function titleize(value: string) {
@@ -363,7 +363,7 @@ function Analytics() {
       goodDirection: "down",
     },
     {
-      label: "Response SLA — guest impacting",
+      label: "Response SLA: guest impacting",
       value: fmtPct(s.guestResponseSla),
       hint: `${s.guestResponseScope} on the clock · all tickets ${fmtPct(s.responseSla)}`,
       current: s.guestResponseSla,
@@ -381,7 +381,7 @@ function Analytics() {
     {
       label: "Avoidable reopens",
       value: fmtPct(s.avoidableReopenRate),
-      hint: `${s.avoidableReopens.length} we could have prevented — the real quality signal`,
+      hint: `${s.avoidableReopens.length} we could have prevented. The real quality signal`,
       current: s.avoidableReopenRate,
       previous: p.avoidableReopenRate,
       goodDirection: "down",
@@ -479,8 +479,8 @@ function Analytics() {
   const now = Date.now();
   const ageBuckets = [
     { label: "Under 24 hours", max: 1 },
-    { label: "1–3 days", max: 3 },
-    { label: "4–7 days", max: 7 },
+    { label: "1 to 3 days", max: 3 },
+    { label: "4 to 7 days", max: 7 },
     { label: "Over a week", max: Infinity },
   ].map((b, i, arr) => {
     const min = i === 0 ? 0 : (arr[i - 1] as { max: number }).max;
@@ -571,7 +571,7 @@ function Analytics() {
         <div className="grid gap-6 px-5 py-4 lg:grid-cols-[10rem_1fr]">
           <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-sunken py-4 text-center">
             <p className="numeric text-5xl font-semibold">
-              {health.score === null ? "—" : health.score}
+              {health.score === null ? "-" : health.score}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">out of 100</p>
           </div>
@@ -660,7 +660,7 @@ function Analytics() {
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="surface p-4">
             <h3 className="text-[0.9375rem] font-semibold">
-              Repeat failures — same home, same problem
+              Repeat failures: same home, same problem
             </h3>
             <p className="mt-1 text-xs text-muted-foreground">
               Two or more of the same category at one home in this window. This is where a permanent
@@ -669,7 +669,7 @@ function Analytics() {
             <div className="mt-3 space-y-1.5">
               {repeatFailures.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  No home repeated the same problem in this window — that's a good sign.
+                  No home repeated the same problem in this window. That's a good sign.
                 </p>
               ) : (
                 repeatFailures.map((r) => (
@@ -695,7 +695,7 @@ function Analytics() {
           <div className="surface p-4">
             <h3 className="text-[0.9375rem] font-semibold">What comes back after we close it</h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Reopens by category — the fastest read on where our closure standard isn't holding.
+              Reopens by category: the fastest read on where our closure standard isn't holding.
             </p>
             <div className="mt-3">
               <Bars rows={reopenByCategory} empty="Nothing reopened in this window." />
@@ -807,7 +807,7 @@ function Analytics() {
       <div>
         <SectionBand
           title="Homes costing us the most"
-          hint="Ranked by weight, not raw count — a P1 and a reopen count for more than a routine request"
+          hint="Ranked by weight, not raw count. A P1 and a reopen count for more than a routine request"
         />
         <div className="surface p-4">
           <Bars rows={byProperty} empty="Nothing logged in this window yet." />

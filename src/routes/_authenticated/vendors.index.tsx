@@ -40,13 +40,13 @@ export const Route = createFileRoute("/_authenticated/vendors/")({
   validateSearch: z.object({ tab: z.enum(TABS).optional() }),
   head: () => ({
     meta: [
-      { title: "Vendors — Resolve Operations" },
+      { title: "Vendors: Resolve Operations" },
       {
         name: "description",
         content:
           "ARHA's canonical vendor records: frontline directory, leadership database, Gold Standard gates and market coverage.",
       },
-      { property: "og:title", content: "Vendors — Resolve Operations" },
+      { property: "og:title", content: "Vendors: Resolve Operations" },
       { property: "og:description", content: "Find the right vendor fast, and keep every vendor record in one place." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

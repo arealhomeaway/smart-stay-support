@@ -97,7 +97,7 @@ function IntegrationsPage() {
       >
         <p className="text-sm text-muted-foreground">
           OwnerRez does not publish maintenance tasks, so there is nothing to import from it
-          directly — use the message intake below to pull its notifications and guest or owner
+          directly. Use the message intake below to pull its notifications and guest or owner
           emails into the queue.
         </p>
       </SectionCard>

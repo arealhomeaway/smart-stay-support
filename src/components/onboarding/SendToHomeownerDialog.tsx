@@ -69,10 +69,10 @@ export function SendToHomeownerDialog({
     onSuccess: (result) => {
       toast.success(
         result.channel === "email"
-          ? "Sent — the homeowner received a Resolve email."
+          ? "Sent: the homeowner received a Resolve email."
           : result.published
-            ? "Sent — your instructions are in the homeowner's portal and they can respond."
-            : "Sent — it is in the homeowner's portal, but your instructions still need publishing.",
+            ? "Sent: your instructions are in the homeowner's portal and they can respond."
+            : "Sent: it is in the homeowner's portal, but your instructions still need publishing.",
       );
       setOpen(false);
       setNote("");
@@ -115,8 +115,7 @@ export function SendToHomeownerDialog({
         <div className="space-y-4">
           {alreadyWaiting && (
             <p className="text-xs text-muted-foreground">
-              A request is already waiting with the homeowner. Sending again records a fresh request
-              — the earlier one stays in history.
+              A request is already waiting with the homeowner. Sending again records a fresh request. The earlier one stays in history.
             </p>
           )}
 
@@ -127,7 +126,7 @@ export function SendToHomeownerDialog({
               rows={4}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Write it the way you would say it — what you would like them to look at, and what you need back."
+              placeholder="Write it the way you would say it. What you would like them to look at, and what you need back."
             />
             <p className="text-xs text-muted-foreground">
               This is what the homeowner reads in their portal, so write at least a sentence or two.

@@ -16,9 +16,9 @@ export const Route = createFileRoute("/guest-feedback/$token")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Guest survey — A Real Home Away" },
+      { title: "Guest survey: A Real Home Away" },
       { name: "description", content: "A short private survey about your recent stay with A Real Home Away." },
-      { property: "og:title", content: "Guest survey — A Real Home Away" },
+      { property: "og:title", content: "Guest survey: A Real Home Away" },
       { property: "og:description", content: "Tell A Real Home Away how your stay went." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -139,7 +139,7 @@ function SurveyPage() {
         <CardDescription>
           {s.homeName}
           {s.place ? ` · ${s.place}` : ""}
-          {s.arrival ? ` · ${formatDate(s.arrival)} – ${formatDate(s.departure)}` : ` · checked out ${formatDate(s.departure)}`}
+          {s.arrival ? ` · ${formatDate(s.arrival)} to ${formatDate(s.departure)}` : ` · checked out ${formatDate(s.departure)}`}
           <br />
           Private feedback for our team. It takes about two minutes.
         </CardDescription>

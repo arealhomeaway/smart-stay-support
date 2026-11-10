@@ -96,12 +96,12 @@ function RecoveryManager() {
       {repeats.length > 0 ? (
         <SectionCard
           title="Properties with repeat refunds & credits"
-          description="More than one guest refund or credit on the same home — usually a property problem, not a guest problem."
+          description="More than one guest refund or credit on the same home, usually a property problem, not a guest problem."
         >
           <ul className="space-y-1 text-sm">
             {repeats.map((r) => (
               <li key={r.property_id}>
-                {propertyNames.data?.get(r.property_id) ?? "Property"} — {r.count} refunds & credits
+                {propertyNames.data?.get(r.property_id) ?? "Property"} · {r.count} refunds & credits
               </li>
             ))}
           </ul>

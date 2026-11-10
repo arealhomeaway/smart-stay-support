@@ -240,7 +240,7 @@ export function availabilityGreeting(checkIn: string, checkOut: string, location
 export function emailSummary(results: AvailabilityResult[], checkIn: string, checkOut: string, location: string) {
   const body = `${availabilityGreeting(checkIn, checkOut, location)}\n\n${results.map((r) => {
     const price = clientPriceLine(r);
-    return `${r.name} — ${r.address}${r.bookingUrl ? `\n${r.bookingUrl}` : ""}${price ? `\n${price}` : ""}\n${externalAvailabilityText(r)}`;
+    return `${r.name} · ${r.address}${r.bookingUrl ? `\n${r.bookingUrl}` : ""}${price ? `\n${price}` : ""}\n${externalAvailabilityText(r)}`;
   }).join("\n\n")}`;
   const note = results.some((r) => r.sourceQuote)
     ? "Estimates cover nightly rates and the fees listed for this booking source. Taxes are added at booking."

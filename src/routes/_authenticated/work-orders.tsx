@@ -6,13 +6,13 @@ import { useRole } from "@/hooks/useRole";
 export const Route = createFileRoute("/_authenticated/work-orders")({
   head: () => ({
     meta: [
-      { title: "Work Orders — Resolve" },
+      { title: "Work Orders: Resolve" },
       {
         name: "description",
         content:
           "Maintenance execution at ARHA: emergency mitigation, quotes, owner approval authority, warranty routing, vendor commitments and closure evidence.",
       },
-      { property: "og:title", content: "Work Orders — Resolve" },
+      { property: "og:title", content: "Work Orders: Resolve" },
       {
         property: "og:description",
         content:

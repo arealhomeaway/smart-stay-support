@@ -208,7 +208,7 @@ export function LeadDrawer({
     setSaving(true);
     try {
       await decideOffer({ data: { offerId, decision, ...(reason ? { reason } : {}) } });
-      toast.success(decision === "accepted" ? "Booked — this lead is now Booked on that home." : "Offer marked declined.");
+      toast.success(decision === "accepted" ? "Booked: this lead is now Booked on that home." : "Offer marked declined.");
       setDeclineId(null);
       setDeclineReason("");
       invalidate();
@@ -288,7 +288,7 @@ export function LeadDrawer({
           toast.success(
             proposed === lead.stage
               ? "Contact logged."
-              : `Contact logged — stage moved to ${STAGE_LABELS[proposed]}.`,
+              : `Contact logged: stage moved to ${STAGE_LABELS[proposed]}.`,
           );
         },
       },
@@ -313,7 +313,7 @@ export function LeadDrawer({
         },
         log: {
           channel: "stage_change",
-          outcome: `Closed as lost — ${LOSS_REASON_LABELS[reason]}`,
+          outcome: `Closed as lost: ${LOSS_REASON_LABELS[reason]}`,
           note: lossNote || undefined,
           from: lead.stage,
           to: "lost",
@@ -374,7 +374,7 @@ export function LeadDrawer({
                         ? "due today"
                         : "upcoming"
                   }`
-                : "No follow-up clock — this opportunity is closed."}
+                : "No follow-up clock: this opportunity is closed."}
               {" · Last contact "}
               {relativeDays(lead.last_contact_at)}
             </p>
@@ -423,14 +423,14 @@ export function LeadDrawer({
             ) : (
               <Facts
                 rows={[
-                  ["Organization / source", lead.company ?? "—"],
+                  ["Organization / source", lead.company ?? "Not set"],
                   ["Contact", lead.contact_name ?? "Not recorded yet"],
-                  ["Phone", lead.phone ?? "—"],
-                  ["Email", lead.email ?? "—"],
+                  ["Phone", lead.phone ?? "Not set"],
+                  ["Email", lead.email ?? "Not set"],
                   ["Region", leadRegion(lead)],
                   ["Stay", stayDatesLabel(lead)],
                   ["Guests and pets", guestsPetsLabel(lead)],
-                  ["Next follow-up", leadFollowUpDate(lead) ?? (derived.due ? formatDate(derived.due.toISOString()) : "—")],
+                  ["Next follow-up", leadFollowUpDate(lead) ?? (derived.due ? formatDate(derived.due.toISOString()) : "-")],
                   ["Assigned to", displayName(assignee)],
                 ]}
               />
@@ -481,7 +481,7 @@ export function LeadDrawer({
               title={`${SOURCE_LABELS[lead.source]} details`}
               rows={Object.entries(lead.source_detail as Record<string, string>).map(([k, v]) => [
                 k.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase()),
-                v || "—",
+                v || "Not set",
               ])}
             />
           )}
@@ -506,7 +506,7 @@ export function LeadDrawer({
                 ))}
               </div>
               <Input
-                placeholder="Outcome — e.g. first outreach sent, left voicemail"
+                placeholder="Outcome: e.g. first outreach sent, left voicemail"
                 value={outcome}
                 onChange={(e) => setOutcome(e.target.value)}
               />
@@ -594,7 +594,7 @@ export function LeadDrawer({
                         ) : (
                           <div className="flex gap-2">
                             <Button size="sm" className="resolve-press" disabled={saving} onClick={() => void decide(offer.id, "accepted")}>
-                              Accepted — book this home
+                              Accepted: book this home
                             </Button>
                             <Button size="sm" variant="outline" className="resolve-press" onClick={() => { setDeclineId(offer.id); setDeclineReason(""); }}>
                               Declined
@@ -648,7 +648,7 @@ export function LeadDrawer({
               {(activity.data ?? []).map((a) => (
                 <li key={a.id} className="text-sm">
                   <span className="font-medium">{CHANNEL_LABELS[a.channel as LeadChannel]}</span>
-                  {a.outcome ? ` — ${a.outcome}` : ""}
+                  {a.outcome ? ` · ${a.outcome}` : ""}
                   {a.to_stage ? ` → ${STAGE_LABELS[a.to_stage as LeadStage]}` : ""}
                   <span className="ml-2 text-xs text-muted-foreground">
                     {formatDate(a.occurred_at)}
@@ -705,7 +705,7 @@ export function LeadDrawer({
                   <div className="space-y-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2">
                     <p className="text-xs">
                       The final follow-up has lapsed. Close it as lost, or keep it open with a
-                      reason — Resolve will not close a legitimate opportunity for you.
+                      reason. Resolve will not close a legitimate opportunity for you.
                     </p>
                     <Input
                       placeholder="Reason to keep this open"
@@ -725,7 +725,7 @@ export function LeadDrawer({
                             },
                             log: { channel: "note", outcome: "Kept open", note: keepOpen },
                           },
-                          { onSuccess: () => toast.success("Kept open — follow-up clock reset.") },
+                          { onSuccess: () => toast.success("Kept open: follow-up clock reset.") },
                         )
                       }
                       disabled={!keepOpen.trim()}

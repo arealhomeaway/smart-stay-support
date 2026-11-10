@@ -43,10 +43,10 @@ export function matchBreezeway(
     if (hits.length > 1) multi = true;
     hits.forEach((h) => found.set(h.breezeway_person_id, h));
   }
-  if (multi || found.size > 1) return { state: "ambiguous", personId: null, note: "More than one Breezeway person has this name — confirm manually." };
+  if (multi || found.size > 1) return { state: "ambiguous", personId: null, note: "More than one Breezeway person has this name. Confirm manually." };
   if (found.size === 1) {
     const only = [...found.values()][0]!;
-    return { state: "unique_name", personId: only.breezeway_person_id, note: "Unique exact-name match — confirm before linking." };
+    return { state: "unique_name", personId: only.breezeway_person_id, note: "Unique exact-name match: confirm before linking." };
   }
   return { state: "not_found", personId: null, note: row.breezeway_hint ? "Notion says Breezeway, but no exact match was found." : "No Breezeway match." };
 }

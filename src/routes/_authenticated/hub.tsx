@@ -15,12 +15,12 @@ import { openTicketsForTotal } from "@/lib/notion-ticket-display";
 export const Route = createFileRoute("/_authenticated/hub")({
   head: () => ({
     meta: [
-      { title: "Your portals — Resolve" },
+      { title: "Your portals: Resolve" },
       {
         name: "description",
         content: "Personalised Resolve home: the ARHA portals you are authorised to open.",
       },
-      { property: "og:title", content: "Your portals — Resolve" },
+      { property: "og:title", content: "Your portals: Resolve" },
       { property: "og:description", content: "The ARHA portals you are authorised to open." },
     ],
   }),

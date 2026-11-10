@@ -191,7 +191,7 @@ export const KIND_CRITERIA: Record<EvidenceKind, string> = {
   filter_size:
     "The printed filter size (for example 20x25x1) is visible on the filter frame and fully readable.",
   completed_repair:
-    "The repair itself is in frame and visibly finished — no exposed wiring, open holes, loose parts or tools left in place.",
+    "The repair itself is in frame and visibly finished. No exposed wiring, open holes, loose parts or tools left in place.",
   before: "The problem or the original condition is clearly visible before any work was done.",
   after:
     "The same area as the before photo, showing the finished condition from a comparable angle.",

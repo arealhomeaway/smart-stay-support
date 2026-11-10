@@ -27,13 +27,13 @@ export const Route = createFileRoute("/awaiting-access")({
   },
   head: () => ({
     meta: [
-      { title: "Awaiting access — Resolve" },
+      { title: "Awaiting access: Resolve" },
       {
         name: "description",
         content:
           "Your Resolve account is signed in but not yet authorised. Redeem an invitation code or ask your ARHA administrator for access.",
       },
-      { property: "og:title", content: "Awaiting access — Resolve" },
+      { property: "og:title", content: "Awaiting access: Resolve" },
       {
         property: "og:description",
         content: "Signed in, not yet authorised. Redeem an invitation to continue.",

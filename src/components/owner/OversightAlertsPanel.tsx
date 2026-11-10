@@ -152,7 +152,7 @@ export function OversightAlertsPanel({ rows }: { rows: OversightRow[] }) {
               ) : (
                 <>
                   <p className="mr-auto text-xs text-muted-foreground">
-                    View only — leadership changes these settings.
+                    View only: leadership changes these settings.
                   </p>
                   <Button variant="ghost" onClick={() => setOpen(false)}>
                     Close
@@ -188,7 +188,7 @@ export function OversightAlertsPanel({ rows }: { rows: OversightRow[] }) {
               />
               <div className="min-w-0">
                 <p className="text-sm font-medium">
-                  {alert.ownerName} — {alert.title}
+                  {alert.ownerName} · {alert.title}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {alert.properties} · {alert.detail}

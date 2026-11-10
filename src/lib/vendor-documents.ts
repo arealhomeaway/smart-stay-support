@@ -47,7 +47,7 @@ export const VENDOR_DOC_TYPES: VendorDocType[] = [
   {
     code: "w9",
     label: "W-9",
-    blurb: "Carries a tax ID. Supervisors only — never staff, never other vendors.",
+    blurb: "Carries a tax ID. Supervisors only: never staff, never other vendors.",
     retention: "store",
     restrictedByDefault: true,
     requirementCode: "w9",

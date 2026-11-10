@@ -50,7 +50,7 @@ import {
 } from "@/lib/onboarding-finance.functions";
 
 const money = (n: number | null | undefined) =>
-  n == null ? "—" : `$${Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+  n == null ? "-" : `$${Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 
 export function FinancialPanel({
   propertyId,
@@ -188,7 +188,7 @@ export function FinancialPanel({
                       checked={form.emergency}
                       onCheckedChange={(v) => setForm({ ...form, emergency: Boolean(v) })}
                     />
-                    Emergency — mitigate now under a documented exception
+                    Emergency: mitigate now under a documented exception
                   </label>
                   {form.emergency ? (
                     <div className="space-y-1.5">
@@ -200,7 +200,7 @@ export function FinancialPanel({
                     </div>
                   ) : null}
                   <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
-                    {AUTHORITY_TIER_LABELS[tier]} — {money(amount)}
+                    {AUTHORITY_TIER_LABELS[tier]} · {money(amount)}
                   </p>
                   <Button
                     className="w-full"

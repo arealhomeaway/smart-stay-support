@@ -47,7 +47,7 @@ function writeActAs(record: ActAsRecord | null) {
 export async function beginActAs(input: { userId: string; origin: string; live?: boolean }) {
   const { data: current } = await supabase.auth.getSession();
   const staff = current.session;
-  if (!staff) throw new Error("Your session expired — sign in again.");
+  if (!staff) throw new Error("Your session expired: sign in again.");
 
   const grant = await startActAsFn({ data: { userId: input.userId } });
 

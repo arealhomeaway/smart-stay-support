@@ -61,7 +61,7 @@ export function ArhaContacts({ contacts, supports = null }: { contacts: Contacts
                 <p className="text-sm font-semibold">{s.name ?? s.seat}</p>
                 {s.name === s.seat ? null : (
                   <p className="text-xs text-muted-foreground">
-                    {s.name ? s.seat : "Assigned shortly — use an escalation contact meanwhile"}
+                    {s.name ? s.seat : "Assigned shortly: use an escalation contact meanwhile"}
                   </p>
                 )}
                 <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{s.note}</p>

@@ -359,7 +359,7 @@ export function proposeAction(row: ParsedRow, existing: Existing[]) {
     match: null,
     confidence: 0,
     reasons: [
-      "Personal or missing email — no defensible link to a company. Unmatched legacy representative.",
+      "Personal or missing email. No defensible link to a company. Unmatched legacy representative.",
     ],
   };
 }
@@ -498,7 +498,7 @@ export async function decideImportRow(
       profile?.coverageHours ? `Coverage hours: ${profile.coverageHours}` : null,
       profile?.serviceArea ? `Service area on record: ${profile.serviceArea}` : null,
       profile?.claims.length
-        ? `Recorded in the legacy directory (unverified) — ${profile.claims.join("; ")}.`
+        ? `Recorded in the legacy directory (unverified): ${profile.claims.join("; ")}.`
         : null,
     ]
       .filter(Boolean)

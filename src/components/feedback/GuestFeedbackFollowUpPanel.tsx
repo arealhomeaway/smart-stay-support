@@ -106,7 +106,7 @@ export function GuestFeedbackFollowUpPanel({ feedbackId, readOnly }: { feedbackI
 
         <ol className="space-y-4 border-t border-border pt-4">
           <li className="space-y-2">
-            <Label>1–2. Contact the prior guest, then record the outcome</Label>
+            <Label>1 to 2. Contact the prior guest, then record the outcome</Label>
             <div className="flex flex-wrap gap-2">
               {CONTACT_OUTCOMES.map((o) => (
                 <Button key={o.value} size="sm" type="button" disabled={locked} variant={outcome === o.value ? "default" : "outline"} onClick={() => setOutcome(o.value)}>

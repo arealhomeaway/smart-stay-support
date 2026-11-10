@@ -191,7 +191,7 @@ function QueueStep({
 }) {
   if (!item) {
     return (
-      <Button size="sm" variant="ghost" disabled aria-label={`${label} — none`}>
+      <Button size="sm" variant="ghost" disabled aria-label={`${label} · none`}>
         {icon}
         <span className="hidden sm:inline">{label}</span>
       </Button>

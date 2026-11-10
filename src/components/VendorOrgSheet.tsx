@@ -177,7 +177,7 @@ export function VendorOrgSheet({
             <SheetHeader>
               <SheetTitle>{org.display_name}</SheetTitle>
               <SheetDescription>
-                {VENDOR_STATUS_LABELS[org.status as VendorStatus]} —{" "}
+                {VENDOR_STATUS_LABELS[org.status as VendorStatus]} · {" "}
                 {VENDOR_STATUS_BLURBS[org.status as VendorStatus]}
               </SheetDescription>
             </SheetHeader>

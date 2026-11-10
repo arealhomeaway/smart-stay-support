@@ -12,12 +12,12 @@ import { portalsFor, rememberPortal } from "@/lib/portals";
 export const Route = createFileRoute("/_authenticated/demo")({
   head: () => ({
     meta: [
-      { title: "Demo — Resolve" },
+      { title: "Demo: Resolve" },
       {
         name: "description",
         content: "Try any Resolve portal you have access to, using demo records only.",
       },
-      { property: "og:title", content: "Demo — Resolve" },
+      { property: "og:title", content: "Demo: Resolve" },
       {
         property: "og:description",
         content: "Try any Resolve portal you have access to, using demo records only.",
@@ -56,7 +56,7 @@ function DemoHome() {
       </h1>
       <p className="mt-3 max-w-2xl text-muted-foreground">
         Open any portal below and work it exactly as you normally would. Everything you see and
-        change here is demo material — real homes, homeowners, guests and vendors are untouched, and
+        change here is demo material. Real homes, homeowners, guests and vendors are untouched, and
         nothing leaves Resolve.
       </p>
 

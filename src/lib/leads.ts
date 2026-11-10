@@ -226,16 +226,16 @@ export function nextAction(lead: LeadLike, ctx: NextActionContext = {}): string 
   const now = ctx.now ?? new Date();
   switch (lead.stage) {
     case "converted":
-      return "Booking confirmed — nothing further";
+      return "Booking confirmed: nothing further";
     case "lost":
-      return "Closed — no action";
+      return "Closed: no action";
     case "new":
       return "Send first response";
     case "first_contact":
     case "follow_up_1": {
       const bucket = followUpBucket(lead, now);
       if (bucket === "overdue")
-        return `Follow up now — ${followUpNumber(lead.stage)} sent, response overdue`;
+        return `Follow up now: ${followUpNumber(lead.stage)} sent, response overdue`;
       if (bucket === "today") return "Follow up today";
       if (!ctx.hasProperty) return "Find available properties";
       return "Waiting on prospect";
@@ -244,7 +244,7 @@ export function nextAction(lead: LeadLike, ctx: NextActionContext = {}): string 
       const bucket = followUpBucket(lead, now);
       if (bucket === "overdue")
         return lead.keep_open_reason
-          ? "Still open by decision — check back with the prospect"
+          ? "Still open by decision. Check back with the prospect"
           : "Decide: close as lost or keep open with a reason";
       return "Waiting on prospect after final follow-up";
     }
@@ -361,14 +361,14 @@ export function leadSort(a: LeadLike, b: LeadLike) {
 
 export function formatMoney(value: number | string | null | undefined) {
   const n = Number(value ?? 0);
-  if (!value || Number.isNaN(n) || n === 0) return "—";
+  if (!value || Number.isNaN(n) || n === 0) return "-";
   return `$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 }
 
 export function formatDate(iso: string | null | undefined) {
-  if (!iso) return "—";
+  if (!iso) return "Not set";
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
+  if (Number.isNaN(d.getTime())) return "-";
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 

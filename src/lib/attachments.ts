@@ -217,7 +217,7 @@ export function validateFile(input: {
     return { ok: false, message: "That file has no name Resolve can record." };
   if (/\.zip$/i.test(input.name) || ["application/zip", "application/x-zip-compressed"].includes(input.type))
     return { ok: false, message: ZIP_UPLOAD_MESSAGE };
-  if (input.size <= 0) return { ok: false, message: "That file is empty — nothing to upload." };
+  if (input.size <= 0) return { ok: false, message: "That file is empty. Nothing to upload." };
   if (input.size > MAX_FILE_BYTES) {
     return {
       ok: false,

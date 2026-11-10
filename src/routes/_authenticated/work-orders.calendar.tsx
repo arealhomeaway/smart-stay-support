@@ -212,7 +212,7 @@ function WorkOrderCalendar() {
     <div className="space-y-5">
       <PageHeader
         title="Work order calendar"
-        description="Everything committed to a date — planned schedules and confirmed vendor arrivals — with double bookings flagged where they happen."
+        description="Everything committed to a date. Planned schedules and confirmed vendor arrivals, with double bookings flagged where they happen."
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -493,7 +493,7 @@ function DayEntry({
     <button
       type="button"
       onClick={onOpen}
-      title={`${propertyName} — ${entry.workOrder.title}`}
+      title={`${propertyName} · ${entry.workOrder.title}`}
       className={[
         "resolve-press block w-full truncate rounded px-1.5 py-1 text-left text-[0.6875rem]",
         conflicted

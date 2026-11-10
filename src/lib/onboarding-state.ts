@@ -444,7 +444,7 @@ export function buildReleaseContext(input: StateInput): ReleaseContext {
   WORK_PHASES.forEach((stage, i) => {
     const label = ONBOARDING_STAGES[i]?.label ?? stage;
     if (life.locked) {
-      reasons.set(stage, "The onboarding plan is locked — this home is with Operations.");
+      reasons.set(stage, "The onboarding plan is locked. This home is with Operations.");
       return;
     }
     if (i > 0 && !accessReached) {
@@ -518,7 +518,7 @@ export function releaseState(
   if (ctx.locked)
     return {
       state: "future",
-      reason: "The onboarding plan is locked — this home is with Operations.",
+      reason: "The onboarding plan is locked. This home is with Operations.",
       canComplete: false,
     };
 
@@ -540,7 +540,7 @@ export function releaseState(
   if (homeownerApprovalRequired(task) && task.owner_approval_status === "awaiting_owner")
     return {
       state: "awaiting_review",
-      reason: "Sent to the homeowner — waiting on their recorded decision.",
+      reason: "Sent to the homeowner. Waiting on their recorded decision.",
       canComplete: false,
     };
 
@@ -552,7 +552,7 @@ export function releaseState(
     };
 
   if ((task.blocker ?? "").trim())
-    return { state: "waiting", reason: `Blocked — ${task.blocker!.trim()}`, canComplete: false };
+    return { state: "waiting", reason: `Blocked: ${task.blocker!.trim()}`, canComplete: false };
 
   const evidenceMissing = task.evidence_required && !(task.evidence_note ?? "").trim();
   // A completion note is asked for when finishing; it never makes a Task look
@@ -563,7 +563,7 @@ export function releaseState(
   if (reopened)
     return {
       state: "correction_required",
-      reason: "Reopened after completion — a correction is required.",
+      reason: "Reopened after completion: a correction is required.",
       canComplete: true,
     };
 

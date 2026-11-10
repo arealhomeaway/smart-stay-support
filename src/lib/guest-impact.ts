@@ -61,7 +61,7 @@ export function currentGuestDisplay(guest: {
     return {
       occupancy,
       headline: contactMissing
-        ? "Guest in home — current reservation found, but contact details are unavailable"
+        ? "Guest in home: current reservation found, but contact details are unavailable"
         : "Guest in home",
       contactMissing,
       showGuest: true,
@@ -155,7 +155,7 @@ export const COMM_STATE_LABEL: Record<CommState, string> = {
   initial_ack: "Initial guest acknowledgement needed",
   update_due: "Guest update due",
   waiting_guest: "Waiting for guest response",
-  informed: "Guest informed — no update due right now",
+  informed: "Guest informed: no update due right now",
   contact_prior_guest: "Contact prior guest",
   complete: "Guest communication complete",
 };

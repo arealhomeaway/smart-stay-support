@@ -190,7 +190,7 @@ export async function createFollowUpTicket(admin: Admin, fb: FeedbackRow): Promi
     .from("tickets")
     .insert({
       record_type: "active_task",
-      title: `Guest feedback follow-up — ${fb.rating}★ ${kind}`,
+      title: `Guest feedback follow-up: ${fb.rating}★ ${kind}`,
       description: fb.summary ? fb.summary.slice(0, 1000) : `${fb.rating}-star ${kind} needs a follow-up with the prior guest.`,
       property_id: fb.property_id,
       work_type_id: wt?.id ?? null,

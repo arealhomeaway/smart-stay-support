@@ -42,7 +42,7 @@ export function distanceMeters(a: { lat: number; lng: number }, b: { lat: number
 export function describeDistance(distance: number | null, verified: boolean) {
   if (distance == null) return "Location not captured";
   if (verified) return `At the home (${distance} m from the pin)`;
-  if (distance <= ON_SITE_RADIUS_M) return `${distance} m from the pin — weak GPS signal`;
+  if (distance <= ON_SITE_RADIUS_M) return `${distance} m from the pin. Weak GPS signal`;
   return `${formatDistance(distance)} from the home`;
 }
 
@@ -51,7 +51,7 @@ export function formatDistance(m: number) {
 }
 
 export function formatOnSite(minutes: number | null) {
-  if (minutes == null) return "—";
+  if (minutes == null) return "-";
   if (minutes < 60) return `${minutes} min`;
   const h = Math.floor(minutes / 60);
   const rem = minutes % 60;

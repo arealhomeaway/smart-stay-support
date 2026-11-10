@@ -94,12 +94,12 @@ function WorkOrderManager() {
       {repeats.length > 0 ? (
         <SectionCard
           title="Homes with repeat maintenance"
-          description="More than one Work Order on the same home in 90 days — usually a property problem, not a one-off."
+          description="More than one Work Order on the same home in 90 days, usually a property problem, not a one-off."
         >
           <ul className="space-y-1 text-sm">
             {repeats.map((r) => (
               <li key={r.property_id}>
-                {propertyNames.data?.get(r.property_id) ?? "Property"} — {r.count} Work Orders
+                {propertyNames.data?.get(r.property_id) ?? "Property"} · {r.count} Work Orders
               </li>
             ))}
           </ul>

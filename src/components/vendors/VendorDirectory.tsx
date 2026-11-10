@@ -300,7 +300,7 @@ export function VendorDirectory({
                     <Chip>Dispatch: {DISPATCH_METHOD_LABELS[v.dispatch_method as DispatchMethod]}</Chip>
                     <ComplianceBadge state={ws.data!.compliance.get(v.id)?.state} />
                     {!v.is_active && <Chip>Inactive</Chip>}
-                    {qualificationHold(v, ws.data!.gateStatus) && <Chip>On hold — a qualification check expired</Chip>}
+                    {qualificationHold(v, ws.data!.gateStatus) && <Chip>On hold: a qualification check expired</Chip>}
                   </div>
                   )}
                 </div>

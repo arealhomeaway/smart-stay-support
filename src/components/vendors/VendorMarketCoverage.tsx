@@ -70,7 +70,7 @@ export function VendorMarketCoverage({ focusMarket }: { focusMarket?: string }) 
           <p className="font-semibold">Vendor Coverage Gaps requested from Tickets</p>
           <ul className="mt-1 space-y-0.5">
             {sourcing.data!.map((r) => (
-              <li key={r.id}>{r.service_category} in {r.market} — {SOURCING_STATE_LABELS[r.state] ?? r.state}</li>
+              <li key={r.id}>{r.service_category} in {r.market} · {SOURCING_STATE_LABELS[r.state] ?? r.state}</li>
             ))}
           </ul>
         </div>
@@ -115,7 +115,7 @@ export function VendorMarketCoverage({ focusMarket }: { focusMarket?: string }) 
 }
 
 function names(list: { orgId: string; orgName: string }[]) {
-  if (!list.length) return <span className="text-muted-foreground">—</span>;
+  if (!list.length) return <span className="text-muted-foreground">-</span>;
   return list.map((r, i) => (
     <span key={r.orgId}>
       {i > 0 && ", "}

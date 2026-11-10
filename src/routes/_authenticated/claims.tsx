@@ -6,13 +6,13 @@ import { useRole } from "@/hooks/useRole";
 export const Route = createFileRoute("/_authenticated/claims")({
   head: () => ({
     meta: [
-      { title: "Damage claims and recovery — Resolve" },
+      { title: "Damage claims and recovery: Resolve" },
       {
         name: "description",
         content:
           "Track every recoverable incident from evidence and cost through submission, platform decision and reimbursement, with deadlines Resolve keeps in view.",
       },
-      { property: "og:title", content: "Damage claims and recovery — Resolve" },
+      { property: "og:title", content: "Damage claims and recovery: Resolve" },
       {
         property: "og:description",
         content:

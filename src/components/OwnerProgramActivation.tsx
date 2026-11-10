@@ -40,10 +40,10 @@ function ActivationFacts({ snapshot }: { snapshot: OwnerActivationDraft }) {
         <ul className="list-disc space-y-1 pl-5">
           {snapshot.properties.map((property) => (
             <li key={property.propertyId}>
-              {property.name} —{" "}
+              {property.name} · {" "}
               {property.closingConfirmed && property.closingDate
                 ? `closing confirmed ${usCalendarDate(property.closingDate)}`
-                : "closing not confirmed yet — counts once confirmed"}
+                : "closing not confirmed yet. Counts once confirmed"}
             </li>
           ))}
         </ul>
@@ -109,7 +109,7 @@ function OwnerProgramActivationForm({ context, initialStartDate, onRefresh }: Pr
           <DialogHeader>
             <DialogTitle>Enable owner participation</DialogTitle>
             <DialogDescription>
-              Every activity dated in the calendar year of a confirmed closing counts once — including
+              Every activity dated in the calendar year of a confirmed closing counts once, including
               General and pre-closing activities. The closing date is a fact, not a cutoff. Adding homes
               later never resets anything.
             </DialogDescription>

@@ -8,15 +8,15 @@
 export const ATTRIBUTED_TIME_LABEL = "Attributed Cleaner Time";
 
 export const METHOD_LABEL: Record<string, string> = {
-  single_individual_assignee: "Single cleaner — full elapsed Task time",
-  multi_assignee_full_elapsed: "Multiple cleaners — full elapsed Task time to each",
+  single_individual_assignee: "Single cleaner: full elapsed Task time",
+  multi_assignee_full_elapsed: "Multiple cleaners: full elapsed Task time to each",
   manual_correction: "Manually corrected",
   manual_entry: "Off-Breezeway clean (manual)",
-  company_only_needs_review: "Company account only — needs review",
-  invalid_duration_needs_review: "No usable elapsed time — needs review",
-  company_account_not_counted: "Company account alongside named cleaners — not counted",
-  provisional_duration: "Provisional standard duration — needs review",
-  provisional_cap: "Provisional cap (standard + 2 h) — needs review",
+  company_only_needs_review: "Company account only: needs review",
+  invalid_duration_needs_review: "No usable elapsed time. Needs review",
+  company_account_not_counted: "Company account alongside named cleaners, not counted",
+  provisional_duration: "Provisional standard duration: needs review",
+  provisional_cap: "Provisional cap (standard + 2 h). Needs review",
 };
 
 export const REVIEW_KIND_LABEL: Record<string, string> = {
@@ -30,8 +30,8 @@ export const REVIEW_KIND_LABEL: Record<string, string> = {
   manual_entry: "Off-Breezeway clean entered manually",
   source_changed_after_correction: "Breezeway changed after a correction",
   source_missing: "Task no longer returned by Breezeway",
-  company_identity_needed: "Company login — identify the individual cleaner(s)",
-  override_request: "Override requested — leadership review required",
+  company_identity_needed: "Company login: identify the individual cleaner(s)",
+  override_request: "Override requested: leadership review required",
   native_assignment_alert: "Assigned in Breezeway outside the safeguard",
   threshold_reached: "Safeguard state reached",
 };
@@ -41,7 +41,7 @@ export const CLASSIFICATION_LABEL: Record<string, string> = {
   individual: "Individual",
   company: "Company / Vendor",
   duplicate: "Duplicate of existing worker",
-  unknown: "Unknown — needs research",
+  unknown: "Unknown: needs research",
 };
 
 export const REVIEW_STATE_LABEL: Record<string, string> = {
@@ -180,10 +180,10 @@ export const MANAGER_OVERRIDE_CATEGORIES: { value: string; label: string }[] = [
 ];
 
 export const EMERGENCY_OVERRIDE_CATEGORIES: { value: string; label: string }[] = [
-  { value: "emergency_guest_arrival_imminent", label: "Emergency — guest arrival imminent" },
-  { value: "emergency_no_qualified_alternative", label: "Emergency — no qualified alternative reachable" },
-  { value: "emergency_health_safety", label: "Emergency — health or safety" },
-  { value: "emergency_property_damage", label: "Emergency — property damage response" },
+  { value: "emergency_guest_arrival_imminent", label: "Emergency: guest arrival imminent" },
+  { value: "emergency_no_qualified_alternative", label: "Emergency: no qualified alternative reachable" },
+  { value: "emergency_health_safety", label: "Emergency: health or safety" },
+  { value: "emergency_property_damage", label: "Emergency: property damage response" },
 ];
 
 export const OVERRIDE_CATEGORY_LABEL: Record<string, string> = Object.fromEntries(
@@ -222,9 +222,9 @@ export type Evaluation = {
 };
 
 export function hours(h: number | string | null | undefined): string {
-  if (h == null || h === "") return "—";
+  if (h == null || h === "") return "-";
   const n = Number(h);
-  return Number.isFinite(n) ? `${n.toFixed(1)} h` : "—";
+  return Number.isFinite(n) ? `${n.toFixed(1)} h` : "-";
 }
 
 /** Share of the 75-hour Restricted bar, clamped 0–100 for progress bars. */

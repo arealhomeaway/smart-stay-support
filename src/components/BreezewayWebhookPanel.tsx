@@ -23,17 +23,17 @@ type Recovery = Awaited<ReturnType<typeof breezewayWebhookRecoverFailures>>;
 
 const OUTCOME_LABELS: Record<string, string> = {
   processed: "Processed (beta property)",
-  ignored_other_property: "Ignored — other property",
-  ignored_other_company: "Ignored — other company",
-  duplicate: "Ignored — duplicate update",
-  stale: "Ignored — older update",
-  invalid: "Ignored — unusable payload",
+  ignored_other_property: "Ignored: other property",
+  ignored_other_company: "Ignored: other company",
+  duplicate: "Ignored: duplicate update",
+  stale: "Ignored: older update",
+  invalid: "Ignored: unusable payload",
   // Not a signature check: this is our own authenticated re-read of the task
   // against the Breezeway API failing or returning nothing.
-  verify_failed: "Dropped — Breezeway Work Order lookup failed",
+  verify_failed: "Dropped: Breezeway Work Order lookup failed",
   // The write to our own event log failed (not a Breezeway or auth problem).
   // Never reported as processed/duplicate/etc. when this happens.
-  persist_failed: "Not recorded — database write failed",
+  persist_failed: "Not recorded: database write failed",
 };
 
 function Verdict({ ok, children }: { ok: boolean; children: React.ReactNode }) {
@@ -122,7 +122,7 @@ export function BreezewayWebhookPanel() {
             </CardTitle>
             <CardDescription>
               One subscription, company-wide delivery. Only tasks for the approved beta properties
-              are verified and retained; everything else is counted and discarded. Preview only — no
+              are verified and retained; everything else is counted and discarded. Preview only: no
               tickets, assignments, messages, stage changes or Breezeway writes.
             </CardDescription>
           </div>
@@ -177,7 +177,7 @@ export function BreezewayWebhookPanel() {
             <p className="text-muted-foreground">
               Retried up to {recovery.attempted} transient lookup failure
               {recovery.attempted === 1 ? "" : "s"} (oldest first, respecting the shared rate
-              limit). Preview only — a recovered event still goes through the same scope and
+              limit). Preview only: a recovered event still goes through the same scope and
               duplicate checks as a live delivery.
             </p>
             <ul className="space-y-0.5">
@@ -213,7 +213,7 @@ export function BreezewayWebhookPanel() {
             </Verdict>
             <Verdict ok={reach.noLoginRequired}>No interactive sign-in required</Verdict>
             <Verdict ok={reach.rejectsWrongSecret}>
-              Wrong secret refused ({reach.wrongSecretStatus ?? "—"})
+              Wrong secret refused ({reach.wrongSecretStatus ?? "Not set"})
             </Verdict>
           </div>
         ) : null}

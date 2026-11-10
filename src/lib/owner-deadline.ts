@@ -9,7 +9,7 @@
 import { usCalendarDate } from "./dates";
 
 export const SILENCE_IS_NOT_APPROVAL =
-  "Deadlines are administered in Central Time. A response is needed — silence is not approval.";
+  "Deadlines are administered in Central Time. A response is needed. Silence is not approval.";
 
 /** Today's calendar date in Central Time, as YYYY-MM-DD. */
 export function centralToday(now: Date = new Date()): string {
@@ -23,7 +23,7 @@ export function centralToday(now: Date = new Date()): string {
 }
 
 /** "10/03/2026 (CT)" — never a bare date, so the timezone is never assumed. */
-export function centralDeadline(value: string | null | undefined, fallback = "—"): string {
+export function centralDeadline(value: string | null | undefined, fallback = "Not set"): string {
   const formatted = usCalendarDate(value, fallback);
   return formatted === fallback ? fallback : `${formatted} (CT)`;
 }

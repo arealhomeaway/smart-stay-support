@@ -162,7 +162,7 @@ export async function recoverFailedTaskVerifications(
         retryable: stillRetryable,
         reason: stillRetryable
           ? finalized.reason
-          : `${finalized.reason} — exceeded retry limit after ${nextRetryCount} attempts, needs manual review`,
+          : `${finalized.reason}. Exceeded retry limit after ${nextRetryCount} attempts, needs manual review`,
       })
       .eq("id", row.id);
 

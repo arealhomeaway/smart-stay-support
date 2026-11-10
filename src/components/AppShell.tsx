@@ -455,7 +455,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       <LogOut className="size-4" aria-hidden="true" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Sign out — {identityLabel}</TooltipContent>
+                  <TooltipContent>Sign out: {identityLabel}</TooltipContent>
                 </Tooltip>
               </div>
             </div>

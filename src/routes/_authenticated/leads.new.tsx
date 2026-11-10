@@ -100,7 +100,7 @@ export default function NewLead() {
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["leads"] });
-      toast.success("Lead captured — it is in your queue.");
+      toast.success("Lead captured: it is in your queue.");
       void router.navigate({ to: "/leads" });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -178,7 +178,7 @@ export default function NewLead() {
 
       <SectionCard
         title="What they need"
-        description="Optional — Resolve will prompt for anything missing when it matters."
+        description="Optional: Resolve will prompt for anything missing when it matters."
         actions={
           <Button
             variant="ghost"
@@ -239,7 +239,7 @@ export default function NewLead() {
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Save now and keep the caller moving — stay dates, budget and requirements can be added
+            Save now and keep the caller moving. Stay dates, budget and requirements can be added
             from the lead.
           </p>
         )}

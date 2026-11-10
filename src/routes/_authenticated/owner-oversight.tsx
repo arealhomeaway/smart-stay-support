@@ -45,13 +45,13 @@ import { useRole } from "@/hooks/useRole";
 export const Route = createFileRoute("/_authenticated/owner-oversight")({
   head: () => ({
     meta: [
-      { title: "Active Owner oversight — Resolve Operations" },
+      { title: "Active Owner oversight: Resolve Operations" },
       {
         name: "description",
         content:
           "One screen for supervisors: every enrolled homeowner, hours reported against pace, checkpoints coming due and what is waiting on the owner.",
       },
-      { property: "og:title", content: "Active Owner oversight — Resolve Operations" },
+      { property: "og:title", content: "Active Owner oversight: Resolve Operations" },
       {
         property: "og:description",
         content: "The whole Active Owner program at a glance, home by home.",
@@ -377,7 +377,7 @@ function OwnerOversightPage() {
                         Day {row.day} of {programLengthDays(row.startedOn)} · {row.daysLeft} left
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Enrolled {row.startedOn ? usDate(row.startedOn) : "—"}
+                        Enrolled {row.startedOn ? usDate(row.startedOn) : "Not set"}
                       </p>
                     </div>
                     <div>

@@ -53,7 +53,7 @@ export function resolveHandoff(input: {
 }
 
 export function handoffExplainer(activeOwner: boolean, source: HandoffDateSource): string {
-  if (source === "manual") return "Set by hand — it no longer follows the access date.";
+  if (source === "manual") return "Set by hand: it no longer follows the access date.";
   return activeOwner
     ? "Four weeks after access (Active Owner home). Type your own date to override."
     : "Three weeks after access (standard home). Type your own date to override.";

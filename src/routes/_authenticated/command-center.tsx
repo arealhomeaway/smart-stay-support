@@ -23,13 +23,13 @@ import { usDateTime } from "@/lib/dates";
 export const Route = createFileRoute("/_authenticated/command-center")({
   head: () => ({
     meta: [
-      { title: "Executive Command Center — Resolve" },
+      { title: "Executive Command Center: Resolve" },
       {
         name: "description",
         content:
           "Exception-first company health for A Real Home Away: operations, vendors, homeowners, onboarding and data quality, from real records only.",
       },
-      { property: "og:title", content: "Executive Command Center — Resolve" },
+      { property: "og:title", content: "Executive Command Center: Resolve" },
       {
         property: "og:description",
         content: "One screen for what is off-standard right now, with drill-down to the records.",
@@ -92,7 +92,7 @@ function CommandCenter() {
       <PageHeader
         eyebrow="Admin"
         title="Executive Command Center"
-        description="Exceptions first. Every figure is calculated from live Resolve records — nothing is estimated. Where a source doesn't exist yet, the metric says so and names what's missing."
+        description="Exceptions first. Every figure is calculated from live Resolve records. Nothing is estimated. Where a source doesn't exist yet, the metric says so and names what's missing."
       />
 
       <ReportingBaselineNote className="max-w-3xl" />

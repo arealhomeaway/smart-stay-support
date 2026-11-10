@@ -27,9 +27,9 @@ import { PLAN_CHANGE_NOTE, dayLabel, moveWithinDay, sortPlan, sourceLabel, type 
 export const Route = createFileRoute("/_authenticated/owner-handoff-plan")({
   head: () => ({
     meta: [
-      { title: "After handoff plan — Resolve" },
+      { title: "After handoff plan: Resolve" },
       { name: "description", content: "The owner tasks each home receives after Operations accepts the handoff." },
-      { property: "og:title", content: "After handoff plan — Resolve" },
+      { property: "og:title", content: "After handoff plan: Resolve" },
       { property: "og:description", content: "Plan which owner tasks are scheduled after a home is handed off." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

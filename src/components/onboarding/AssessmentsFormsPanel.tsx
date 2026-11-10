@@ -36,7 +36,7 @@ export function AssessmentsFormsPanel({
       <div>
         <h2 className="font-semibold">Assessments &amp; Forms</h2>
         <p className="text-xs text-muted-foreground">
-          Each form lives on its workflow Task. Opening one shows that Task — its files and history.
+          Each form lives on its workflow Task. Opening one shows that Task. Its files and history.
         </p>
       </div>
       <ul className="divide-y">
@@ -62,7 +62,7 @@ export function AssessmentsFormsPanel({
                   </p>
                 ) : f.source !== "resolve_task" ? (
                   <p className="text-xs text-muted-foreground">
-                    No link to the external form is stored in Resolve — files attached to the Task show inside it.
+                    No link to the external form is stored in Resolve. Files attached to the Task show inside it.
                   </p>
                 ) : null}
               </div>

@@ -306,7 +306,7 @@ export function PropertyFactsPanel({
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium">
                     {f.asset_id
-                      ? `${data.assets.find((asset) => asset.id === f.asset_id)?.name ?? "Equipment"} — `
+                      ? `${data.assets.find((asset) => asset.id === f.asset_id)?.name ?? "Equipment"} · `
                       : ""}
                     {f.field_label || FACT_FIELDS[f.field_key] || f.field_key}
                   </span>

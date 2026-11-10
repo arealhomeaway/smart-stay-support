@@ -93,7 +93,7 @@ export type FinalReviewRequirement = {
 export function finalReviewRequirement(facts: FinalReviewFacts): FinalReviewRequirement {
   const reasons: string[] = [];
 
-  if (facts.priority === "p1") reasons.push("P1 — highest priority work is always reviewed.");
+  if (facts.priority === "p1") reasons.push("P1: highest priority work is always reviewed.");
   if (facts.emergency) reasons.push("Emergency mitigation was carried out.");
   if (facts.policyExceptionUsed) reasons.push("A policy exception was used on this ticket.");
   if (facts.escalated || facts.escalation_level)
@@ -117,6 +117,6 @@ export function finalReviewRequirement(facts: FinalReviewFacts): FinalReviewRequ
 /** One short sentence explaining the outcome of the rule. */
 export function finalReviewExplanation(req: FinalReviewRequirement): string {
   if (!req.required)
-    return "Straightforward work — this closes on its own once its evidence and communication requirements are met.";
+    return "Straightforward work: this closes on its own once its evidence and communication requirements are met.";
   return req.reasons[0] ?? "This work needs a supervisor's review before closing.";
 }

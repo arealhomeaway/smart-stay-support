@@ -84,7 +84,7 @@ export async function startActAs(
     entityType: "user",
     entityId: targetUserId,
     entityLabel: name,
-    reason: "Staff test mode — acting as this homeowner.",
+    reason: "Staff test mode: acting as this homeowner.",
   });
 
   return { tokenHash, email, name, userId: targetUserId };

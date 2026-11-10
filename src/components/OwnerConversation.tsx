@@ -154,7 +154,7 @@ export function OwnerConversation({
             ) : null}
           </div>
           {viewer === "staff" ? (
-            <p className="text-xs text-muted-foreground">Replies are visible to the homeowner. Internal notes stay on the Task. Resolving closes this conversation only — complete the internal Task on its own.</p>
+            <p className="text-xs text-muted-foreground">Replies are visible to the homeowner. Internal notes stay on the Task. Resolving closes this conversation only. Complete the internal Task on its own.</p>
           ) : null}
         </div>
       ) : null}

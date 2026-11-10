@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_authenticated/leads/manager")({
 });
 
 function pct(v: number | null) {
-  return v === null ? "—" : `${Math.round(v * 100)}%`;
+  return v === null ? "-" : `${Math.round(v * 100)}%`;
 }
 
 function Manager() {
@@ -105,7 +105,7 @@ function Manager() {
               label="Avg days to conversion"
               value={
                 analytics.avgDaysToConversion === null
-                  ? "—"
+                  ? "Not set"
                   : analytics.avgDaysToConversion.toFixed(1)
               }
             />

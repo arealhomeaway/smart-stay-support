@@ -49,7 +49,7 @@ export function OwnerBadges({
             return (
               <li
                 key={def.code}
-                title={`${def.requirement}${got ? ` — earned ${usDate(got.awarded_at)}` : ""}`}
+                title={`${def.requirement}${got ? `· earned ${usDate(got.awarded_at)}` : ""}`}
                 className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs ${
                   got ? "bg-sage/15 text-sage" : "bg-muted text-muted-foreground"
                 }`}

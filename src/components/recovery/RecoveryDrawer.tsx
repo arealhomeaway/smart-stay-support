@@ -207,7 +207,7 @@ export function RecoveryDrawer({
                 ))}
               </ul>
               <p className="mt-1 text-muted-foreground">
-                Escalation is guidance and approval — you remain the owner until a handoff is
+                Escalation is guidance and approval. You remain the owner until a handoff is
                 accepted.
               </p>
             </div>
@@ -411,7 +411,7 @@ export function RecoveryDrawer({
                         requested_by: userId,
                       },
                       event: "approval_requested",
-                      body: `Approval requested — ${verdict.label}`,
+                      body: `Approval requested: ${verdict.label}`,
                       detail: { reason: verdict.reason },
                     })
                   }
@@ -627,7 +627,7 @@ export function RecoveryDrawer({
             </p>
             {handoffPending(recovery) ? (
               <p className="text-warning">
-                Handoff requested and not yet accepted — you are still responsible for this
+                Handoff requested and not yet accepted. You are still responsible for this
                 recovery.
               </p>
             ) : null}

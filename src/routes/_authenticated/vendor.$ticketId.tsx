@@ -81,7 +81,7 @@ function VendorJob() {
       await logActivity("Vendor accepted the Work Order and is on the way.");
     },
     onSuccess: () => {
-      toast.success("Thanks — the team can see you're on it.");
+      toast.success("Thanks: the team can see you're on it.");
       void refresh();
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not accept the Work Order"),
@@ -142,7 +142,7 @@ function VendorJob() {
     },
     onSuccess: () => {
       setNote("");
-      toast.success("Marked complete — a coordinator will review and close it out.");
+      toast.success("Marked complete: a coordinator will review and close it out.");
       void refresh();
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not mark it complete"),
@@ -274,7 +274,7 @@ function VendorJob() {
           )}
           {!ticket.vendor_brief && !ticket.description && (
             <p className="text-muted-foreground">
-              No extra detail was added — call your coordinator if unclear.
+              No extra detail was added. Call your coordinator if unclear.
             </p>
           )}
         </div>
@@ -319,7 +319,7 @@ function VendorJob() {
 
       <SectionCard
         title="Update the team"
-        description="Anything you find that we didn't ask about — tell us here rather than leaving it."
+        description="Anything you find that we didn't ask about. Tell us here rather than leaving it."
       >
         <div className="space-y-3">
           <Textarea

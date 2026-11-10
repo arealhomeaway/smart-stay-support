@@ -57,7 +57,7 @@ function Step({ n, title, done, children }: { n: number; title: string; done: bo
   return (
     <section className="space-y-3 rounded-lg border border-border bg-card p-4" aria-label={title}>
       <div className="flex items-center justify-between gap-2">
-        <h3 className="font-semibold">Step {n} — {title}</h3>
+        <h3 className="font-semibold">Step {n} · {title}</h3>
         {done ? <Badge variant="secondary">Done</Badge> : <Badge variant="outline">To do</Badge>}
       </div>
       {children}
@@ -66,7 +66,7 @@ function Step({ n, title, done, children }: { n: number; title: string; done: bo
 }
 
 const fmtTime = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleString("en-US", { timeZone: "America/Chicago", dateStyle: "medium", timeStyle: "short" }) : "—";
+  iso ? new Date(iso).toLocaleString("en-US", { timeZone: "America/Chicago", dateStyle: "medium", timeStyle: "short" }) : "Not set";
 
 export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
   const qc = useQueryClient();
@@ -169,7 +169,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
     const cats = r.damage_categories.map(damageLabel);
     const { data, error } = await supabase.from("claims").insert({
       claim_type: "guest_damage",
-      title: `Departure damage — ${cats.join(", ")}`,
+      title: `Departure damage: ${cats.join(", ")}`,
       incident_description: dmg.description || r.damage_description || null,
       incident_on: r.stay_departure,
       property_id: r.property_id,
@@ -255,12 +255,12 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
           {r.is_demo && <Badge variant="outline">Demo</Badge>}
         </div>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-1">
-          <dt className="text-muted-foreground">Reservation guest</dt><dd>{r.guest_name ?? "—"}</dd>
-          <dt className="text-muted-foreground">Stay</dt><dd>{r.stay_arrival ? usDate(r.stay_arrival) : "—"} – {r.stay_departure ? usDate(r.stay_departure) : "—"}</dd>
-          <dt className="text-muted-foreground">Reservation</dt><dd>{r.reservation_code ?? r.ownerrez_booking_id ?? "—"}{orUrl && <> · <a className="underline" href={orUrl} target="_blank" rel="noreferrer">Open in OwnerRez</a></>}</dd>
-          <dt className="text-muted-foreground">Booking source</dt><dd>{r.booking_source ? PLATFORM_LABEL[platform] : "—"}</dd>
+          <dt className="text-muted-foreground">Reservation guest</dt><dd>{r.guest_name ?? "Not set"}</dd>
+          <dt className="text-muted-foreground">Stay</dt><dd>{r.stay_arrival ? usDate(r.stay_arrival) : "Not set"} to {r.stay_departure ? usDate(r.stay_departure) : "Not set"}</dd>
+          <dt className="text-muted-foreground">Reservation</dt><dd>{r.reservation_code ?? r.ownerrez_booking_id ?? "Not set"}{orUrl && <> · <a className="underline" href={orUrl} target="_blank" rel="noreferrer">Open in OwnerRez</a></>}</dd>
+          <dt className="text-muted-foreground">Booking source</dt><dd>{r.booking_source ? PLATFORM_LABEL[platform] : "Not set"}</dd>
           <dt className="text-muted-foreground">Deposit</dt><dd>{r.deposit_amount != null ? `$${r.deposit_amount}` : "Not known"}{r.deposit_payer ? ` · ${r.deposit_payer}` : ""}</dd>
-          <dt className="text-muted-foreground">Claimed by</dt><dd>{r.claimed_by ? (r.claimed_by === userId ? "You" : "A Team B teammate") : "Unclaimed — anyone on Team B can take it"}</dd>
+          <dt className="text-muted-foreground">Claimed by</dt><dd>{r.claimed_by ? (r.claimed_by === userId ? "You" : "A Team B teammate") : "Unclaimed: anyone on Team B can take it"}</dd>
         </dl>
       </div>
 
@@ -366,7 +366,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
                       onBlur={() => save({ damage_notes: dmg.notes || null })} />
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground">Add photos/evidence in Notes &amp; files below — they travel with the Claim.</p>
+                <p className="text-xs text-muted-foreground">Add photos/evidence in Notes &amp; files below: they travel with the Claim.</p>
                 {q.data.claim ? (
                   <p className="text-sm">Linked Claim: <a className="underline" href="/claims">{q.data.claim.title}</a> <Badge variant="outline">{q.data.claim.stage}</Badge></p>
                 ) : !done && r.damage_categories.length > 0 ? (
@@ -378,7 +378,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
 
           <Step n={4} title="Review outreach" done={ok(3)}>
             {ctx.externalReview ? (
-              <p className="text-sm"><Badge>Guest already reviewed</Badge> An external review for this reservation has arrived — no review request needed.</p>
+              <p className="text-sm"><Badge>Guest already reviewed</Badge> An external review for this reservation has arrived. No review request needed.</p>
             ) : (
               <>
                 <p className="text-sm">Is this guest appropriate for review outreach?</p>
@@ -414,7 +414,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
                   onChange={(v) => save({ host_review: v }, v === "completed" ? ["host_review", "Host review completed"] : undefined)} />
               </>
             ) : (
-              <p className="text-sm text-muted-foreground">{r.booking_source ? `${PLATFORM_LABEL[platform]} bookings` : "This booking source"} don’t support host reviews — nothing to do.</p>
+              <p className="text-sm text-muted-foreground">{r.booking_source ? `${PLATFORM_LABEL[platform]} bookings` : "This booking source"} don’t support host reviews. Nothing to do.</p>
             )}
           </Step>
 

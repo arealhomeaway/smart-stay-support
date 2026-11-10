@@ -51,7 +51,7 @@ export function candidateAlerts(agg: ProgramAggregate): Candidate[] {
       alertKind: "progress_celebration",
       severity: 0,
       title: "You have reached at least 100 hours of reported participation",
-      body: `Congratulations — you have reported ${hours} hours across your program. Thank you for the time and care you have put in. Please keep recording any remaining activities as you complete them.`,
+      body: `Congratulations: you have reported ${hours} hours across your program. Thank you for the time and care you have put in. Please keep recording any remaining activities as you complete them.`,
     });
     return out;
   }
@@ -94,7 +94,7 @@ export function candidateAlerts(agg: ProgramAggregate): Candidate[] {
       severity: onPace ? 1 : 3,
       title: `${view?.expectedHours ?? 0}-hour check-in`,
       body: onPace
-        ? `You have ${hours} hours logged — right on pace for your program, which runs through ${s.endsOn ?? "December 31"}. Thank you for keeping your entries up to date.`
+        ? `You have ${hours} hours logged: right on pace for your program, which runs through ${s.endsOn ?? "December 31"}. Thank you for keeping your entries up to date.`
         : `You have ${hours} hours logged, a little behind the ${view?.expectedHours ?? 0}-hour point for this stage of your program (through ${s.endsOn ?? "December 31"}). If you have participated in anything you have not logged yet, this is a good moment to add it.`,
     });
   }
@@ -106,7 +106,7 @@ export function candidateAlerts(agg: ProgramAggregate): Candidate[] {
       alertKind: "progress_milestone",
       severity: 2,
       title: `${next.hours}-hour milestone is coming up`,
-      body: `Your next pace milestone is ${next.hours} hours. You have reported ${hours} so far — a good moment to log anything you have completed recently.`,
+      body: `Your next pace milestone is ${next.hours} hours. You have reported ${hours} so far: a good moment to log anything you have completed recently.`,
     });
   }
 

@@ -232,7 +232,7 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
   if (q.isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (!e) return <p className="text-sm text-muted-foreground">This expense could not be found.</p>;
   const data = q.data!;
-  const name = (id: string | null | undefined) => (id ? (data.people.get(id) ?? "Team member") : "—");
+  const name = (id: string | null | undefined) => (id ? (data.people.get(id) ?? "Team member") : "Not set");
   const reviewed = e.finance_review === "reviewed";
   const missing = missingDocumentation(v, data.wo, data.serverAuth);
   const sa = data.serverAuth;
@@ -283,7 +283,7 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
 
       {archived && (
         <div className="rounded-md border border-border bg-muted/40 p-3">
-          <p className="font-medium">Archived — read only</p>
+          <p className="font-medium">Archived: read only</p>
           <p className="text-muted-foreground">{e.archive_reason} · {name(e.archived_by)} · {new Date(e.archived_at!).toLocaleString("en-US", { timeZone: "America/Chicago" })}</p>
           <p className="text-xs text-muted-foreground">Excluded from Finance queues and totals. History is kept.</p>
         </div>
@@ -319,7 +319,7 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
         {v.expense_type === "vendor_service" && (
           <div className="grid gap-3 sm:grid-cols-2">
             <div><Label>Dispatch reason</Label><Textarea rows={2} value={txt("dispatch_reason")} onChange={(x) => set("dispatch_reason", x.target.value)} /></div>
-            <div><Label>Outcome of this visit</Label><Textarea rows={2} placeholder="e.g. Diagnosed — repair still pending" value={txt("visit_outcome")} onChange={(x) => set("visit_outcome", x.target.value)} /></div>
+            <div><Label>Outcome of this visit</Label><Textarea rows={2} placeholder="e.g. Diagnosed: repair still pending" value={txt("visit_outcome")} onChange={(x) => set("visit_outcome", x.target.value)} /></div>
           </div>
         )}
         {v.expense_type === "purchase" && (
@@ -364,7 +364,7 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
         </div>
         {reviewed && dirty && (
           <div>
-            <Label htmlFor="expense-change-reason">Reason for change (required — this expense was Finance reviewed)</Label>
+            <Label htmlFor="expense-change-reason">Reason for change (required. This expense was Finance reviewed)</Label>
             <Input id="expense-change-reason" value={reason} onChange={(x) => setReason(x.target.value)} />
             {(v.invoice_document_ids ?? []).join() !== (e.invoice_document_ids ?? []).join() && (
               <p className="mt-1 text-xs text-muted-foreground">Changing the designated invoice or receipt reopens Finance review and any affected statement sign-off.</p>
@@ -407,7 +407,7 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
             <Input type="datetime-local" value={(v.owner_notified_at ?? "").slice(0, 16)} onChange={(x) => set("owner_notified_at", x.target.value ? new Date(x.target.value).toISOString() : null)} />
             <Input placeholder="How the owner was told" value={txt("owner_notification_note")} onChange={(x) => set("owner_notification_note", x.target.value)} />
           </div>
-          <p className="text-xs text-muted-foreground">Recorded only — Resolve sends nothing from here.</p>
+          <p className="text-xs text-muted-foreground">Recorded only: Resolve sends nothing from here.</p>
         </div>
         <div className="rounded-md border border-border p-3 space-y-2">
           <p className="font-medium">Spending authorization</p>
@@ -545,7 +545,7 @@ function LinksSection({ expenseId, propertyId, links, isDemo, onChanged, canEdit
     <section className="space-y-2">
       <h3 className="font-semibold">Linked work</h3>
       {links.length === 0 ? (
-        <p className="text-muted-foreground">Unmatched — no linked Ticket, Work Order, Claim or Property Activity yet.</p>
+        <p className="text-muted-foreground">Unmatched: no linked Ticket, Work Order, Claim or Property Activity yet.</p>
       ) : (
         <ul className="space-y-1">
           {links.map((l) => (
@@ -603,7 +603,7 @@ function FinanceSection({ e, access, people, onDone, missingDocs }: { e: Full; a
         {e.reviewed_at && ` · ${people.get(e.reviewed_by ?? "") ?? "Finance"} on ${new Date(e.reviewed_at).toLocaleDateString("en-US", { timeZone: "America/Chicago" })}`}
       </p>
       {e.finance_treatment_note && <p className="text-muted-foreground">Treatment: {e.finance_treatment_note}</p>}
-      <p className="text-xs text-muted-foreground">QuickBooks reference: {e.qb_reference_manual || "none"} — {QB_REFERENCE_NOTE}</p>
+      <p className="text-xs text-muted-foreground">QuickBooks reference: {e.qb_reference_manual || "none"} · {QB_REFERENCE_NOTE}</p>
 
       {access.isAccounting && (
         <div className="flex flex-wrap items-end gap-2">
@@ -639,7 +639,7 @@ function FinanceSection({ e, access, people, onDone, missingDocs }: { e: Full; a
               ))}
               <Button size="sm" variant="ghost" onClick={() => setSplit([...split, { party: "arha", amount: 0 }])}>Add line</Button>
               <p className={splitOk ? "text-xs text-muted-foreground" : "text-xs text-destructive"}>
-                Allocated {money(split.reduce((s, l) => s + (l.amount || 0), 0))} of {money(e.amount)} {splitOk ? "— reconciles" : "— must equal the expense total"}
+                Allocated {money(split.reduce((s, l) => s + (l.amount || 0), 0))} of {money(e.amount)} {splitOk ? "· reconciles" : "· must equal the expense total"}
               </p>
             </div>
           )}
@@ -650,7 +650,7 @@ function FinanceSection({ e, access, people, onDone, missingDocs }: { e: Full; a
           {reviewBlockedBy(e) && <p className="text-xs text-destructive" data-testid="review-blocked">{reviewBlockedBy(e)}</p>}
           {missingDocs.length > 0 && <p className="text-xs text-destructive" data-testid="review-docs-missing">Finance review needs complete documentation first. Missing: {missingDocs.join(", ")}.</p>}
           {ownerAllocationBlocked(e) && <p className="text-xs text-destructive">{ownerAllocationBlocked(e)}</p>}
-          {reservationBlocks(e.reservation_link_state, e.ownerrez_booking_id) && <p className="text-xs text-destructive">A reservation is required but not yet established — resolve it before Finance review.</p>}
+          {reservationBlocks(e.reservation_link_state, e.ownerrez_booking_id) && <p className="text-xs text-destructive">A reservation is required but not yet established. Resolve it before Finance review.</p>}
         </div>
       )}
 
@@ -765,7 +765,7 @@ function LeadershipSection({ e, access, people, leaders, onDone, name }: { e: Fu
         <div className="rounded-md border border-border p-2 space-y-1">
           <p>Reason: {e.leadership_reason} · Decision-maker: {name(e.leadership_assignee)}</p>
           {e.leadership_decision ? (
-            <p><strong>Decision:</strong> {e.leadership_decision} — {name(e.leadership_decided_by)}, {e.leadership_decided_at ? new Date(e.leadership_decided_at).toLocaleString("en-US", { timeZone: "America/Chicago" }) : ""}</p>
+            <p><strong>Decision:</strong> {e.leadership_decision} · {name(e.leadership_decided_by)}, {e.leadership_decided_at ? new Date(e.leadership_decided_at).toLocaleString("en-US", { timeZone: "America/Chicago" }) : ""}</p>
           ) : canDecide ? (
             <div className="flex gap-2">
               <Input placeholder="Recorded decision" value={decision} onChange={(x) => setDecision(x.target.value)} />

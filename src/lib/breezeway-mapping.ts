@@ -20,7 +20,7 @@ export type BreezewayMappingState = (typeof BREEZEWAY_MAPPING_STATES)[number];
 export const MAPPING_STATE_LABEL: Record<BreezewayMappingState, string> = {
   verified: "Verified",
   unmapped: "Not mapped",
-  ambiguous: "Ambiguous — needs a decision",
+  ambiguous: "Ambiguous: needs a decision",
   inactive: "Inactive in Breezeway",
   excluded: "Excluded by an admin",
 };

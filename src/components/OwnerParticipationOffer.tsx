@@ -369,7 +369,7 @@ function OwnerParticipationOfferContent({ source, sourceId }: OwnerParticipation
                 <SelectContent>
                   {OWNER_ACTION_TYPES.map((t) => (
                     <SelectItem key={t} value={t}>
-                      {ACTION_TYPE_META[t].label} — {ACTION_TYPE_META[t].hint}
+                      {ACTION_TYPE_META[t].label} · {ACTION_TYPE_META[t].hint}
                     </SelectItem>
                   ))}
                 </SelectContent>

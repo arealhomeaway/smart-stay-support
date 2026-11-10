@@ -12,7 +12,7 @@ function toDate(value: string | number | Date | null | undefined): Date | null {
 }
 
 /** 09/03/2026 */
-export function usDate(value: string | number | Date | null | undefined, fallback = "—"): string {
+export function usDate(value: string | number | Date | null | undefined, fallback = "-"): string {
   if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value))
     return usCalendarDate(value, fallback);
   const d = toDate(value);
@@ -25,7 +25,7 @@ export function usDate(value: string | number | Date | null | undefined, fallbac
 }
 
 /** Stored YYYY-MM-DD calendar date; never convert its day to the viewer's timezone. */
-export function usCalendarDate(value: string | null | undefined, fallback = "—"): string {
+export function usCalendarDate(value: string | null | undefined, fallback = "Not set"): string {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return fallback;
   const d = toDate(value);
   if (!d || d.toISOString().slice(0, 10) !== value) return fallback;
@@ -34,7 +34,7 @@ export function usCalendarDate(value: string | null | undefined, fallback = "—
 }
 
 /** 10:00 PM */
-export function usTime(value: string | number | Date | null | undefined, fallback = "—"): string {
+export function usTime(value: string | number | Date | null | undefined, fallback = "-"): string {
   const d = toDate(value);
   if (!d) return fallback;
   return new Intl.DateTimeFormat("en-US", {
@@ -47,7 +47,7 @@ export function usTime(value: string | number | Date | null | undefined, fallbac
 /** 09/03/2026 · 10:00 PM */
 export function usDateTime(
   value: string | number | Date | null | undefined,
-  fallback = "—",
+  fallback = "Not set",
 ): string {
   const d = toDate(value);
   if (!d) return fallback;
@@ -57,7 +57,7 @@ export function usDateTime(
 /** 09/03 — compact form for timelines and dense rows. */
 export function usShortDate(
   value: string | number | Date | null | undefined,
-  fallback = "—",
+  fallback = "Not set",
 ): string {
   const d = toDate(value);
   if (!d) return fallback;

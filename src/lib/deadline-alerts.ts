@@ -99,7 +99,7 @@ function lateBy(minutes: number): string {
 }
 
 function ticketName(ticket: TicketForAlerts) {
-  return ticket.ref ? `${ticket.ref} — ${ticket.title ?? "Ticket"}` : (ticket.title ?? "Ticket");
+  return ticket.ref ? `${ticket.ref} · ${ticket.title ?? "Ticket"}` : (ticket.title ?? "Ticket");
 }
 
 /** Response and action-start clocks, warned once and breached once. */
@@ -136,7 +136,7 @@ export function ticketSlaAlerts(tickets: TicketForAlerts[], now = new Date()): D
         alerts.push({
           kind: clock.breached,
           userId: ticket.assigned_to,
-          title: `${clock.name} time has run out — ${ticketName(ticket)}`,
+          title: `${clock.name} time has run out: ${ticketName(ticket)}`,
           body: `${clock.name.toLowerCase()} was due ${lateBy(minutes)} ago and has not happened yet. Take the next step or hand it to someone who can.`,
           entityType: "ticket",
           entityId: ticket.id,
@@ -148,7 +148,7 @@ export function ticketSlaAlerts(tickets: TicketForAlerts[], now = new Date()): D
         alerts.push({
           kind: clock.warning,
           userId: ticket.assigned_to,
-          title: `${clock.name} due in ${minutes} minute${minutes === 1 ? "" : "s"} — ${ticketName(ticket)}`,
+          title: `${clock.name} due in ${minutes} minute${minutes === 1 ? "" : "s"} · ${ticketName(ticket)}`,
           body: `The clock on this one is nearly out. ${clock.name} is still outstanding.`,
           entityType: "ticket",
           entityId: ticket.id,
@@ -187,7 +187,7 @@ export function vendorDispatchAlerts(
       alerts.push({
         kind: "vendor_no_acknowledgment",
         userId: wo.assigned_to,
-        title: `No word back from ${vendor} — ${job}`,
+        title: `No word back from ${vendor} · ${job}`,
         body: `${vendor} was contacted ${lateBy(sinceContact)} ago and has not confirmed. Chase it or move to the backup vendor.`,
         entityType: "work_order",
         entityId: wo.id,
@@ -204,7 +204,7 @@ export function vendorDispatchAlerts(
       alerts.push({
         kind: "vendor_missed_eta",
         userId: wo.assigned_to,
-        title: `${vendor} missed the arrival time — ${job}`,
+        title: `${vendor} missed the arrival time: ${job}`,
         body: `The arrival time passed ${lateBy(untilEta)} ago with no arrival recorded. Get a new time or dispatch a backup.`,
         entityType: "work_order",
         entityId: wo.id,
@@ -233,13 +233,13 @@ export function claimDeadlineAlerts(claims: ClaimForAlerts[], now = new Date()):
     if (!claim.assigned_to || !claim.deadline_on) continue;
     const days = daysUntilDate(claim.deadline_on, now);
     if (days === null) continue;
-    const name = claim.ref ? `${claim.ref} — ${claim.title ?? "Claim"}` : (claim.title ?? "Claim");
+    const name = claim.ref ? `${claim.ref} · ${claim.title ?? "Claim"}` : (claim.title ?? "Claim");
 
     if (days < 0) {
       alerts.push({
         kind: "claim_deadline_passed",
         userId: claim.assigned_to,
-        title: `Claim filing deadline has passed — ${name}`,
+        title: `Claim filing deadline has passed: ${name}`,
         body: `The deadline was ${Math.abs(days)} day${Math.abs(days) === 1 ? "" : "s"} ago and this claim is still open. Escalate it today.`,
         entityType: "claim",
         entityId: claim.id,
@@ -253,8 +253,8 @@ export function claimDeadlineAlerts(claims: ClaimForAlerts[], now = new Date()):
         userId: claim.assigned_to,
         title:
           days === 0
-            ? `Claim deadline is today — ${name}`
-            : `Claim deadline in ${days} day${days === 1 ? "" : "s"} — ${name}`,
+            ? `Claim deadline is today: ${name}`
+            : `Claim deadline in ${days} day${days === 1 ? "" : "s"} · ${name}`,
         body: "Finish the evidence and file before the window closes.",
         entityType: "claim",
         entityId: claim.id,

@@ -258,8 +258,8 @@ function WeekCalendar({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className={`chip ${BLOCK_FILL["team_a"]}`}>Team A — Guest Experience</span>
-          <span className={`chip ${BLOCK_FILL["team_b"]}`}>Team B — Property Operations</span>
+          <span className={`chip ${BLOCK_FILL["team_a"]}`}>Team A: Guest Experience</span>
+          <span className={`chip ${BLOCK_FILL["team_b"]}`}>Team B: Property Operations</span>
           <span className={`chip ${BLOCK_FILL["leadership"]}`}>Supervisor</span>
           <span className="chip triage-block border-dashed border-triage/60 text-triage">
             ⁄⁄ Cross-team triage
@@ -328,7 +328,7 @@ function WeekCalendar({
                           key={s.id}
                           className={`rounded-md border px-1.5 py-1.5 text-center text-[0.6875rem] font-medium leading-tight ${BLOCK_FILL[kind]}`}
                         >
-                          {clock(s.start_minute)}–{clock(s.end_minute)}
+                          {clock(s.start_minute)} to {clock(s.end_minute)}
                         </div>
                       ))}
                       {cover.map((t) => (
@@ -337,7 +337,7 @@ function WeekCalendar({
                           title="Approved cross-team triage cover"
                           className="triage-block rounded-md border border-dashed border-triage/60 px-1.5 py-1.5 text-center text-[0.6875rem] font-medium leading-tight text-triage"
                         >
-                          Triage {clock(t.start_minute)}–{clock(t.end_minute)}
+                          Triage {clock(t.start_minute)} to {clock(t.end_minute)}
                         </div>
                       ))}
                     </div>
@@ -359,7 +359,7 @@ function WeekCalendar({
             <Moon className="size-3.5 shrink-0" />
             <span>
               <span className="font-semibold">
-                On-call, every night {clock(nightStart)}–{clock(nightEnd)} Central.
+                On-call, every night {clock(nightStart)} to {clock(nightEnd)} Central.
               </span>{" "}
               The overnight roster comes first, before every shift above.
             </span>
@@ -431,7 +431,7 @@ function SeatsCard({
                   )}
                   {unavailable && (
                     <p className="text-warning">
-                      Marked unavailable{role.unavailable_note ? ` — ${role.unavailable_note}` : ""}
+                      Marked unavailable{role.unavailable_note ? ` · ${role.unavailable_note}` : ""}
                       .
                     </p>
                   )}
@@ -439,7 +439,7 @@ function SeatsCard({
                 <div className="text-right">
                   {rows.length === 0 ? (
                     <span className="text-muted-foreground">
-                      No schedule — available by exception
+                      No schedule: available by exception
                     </span>
                   ) : (
                     rows.map((s) => (
@@ -447,7 +447,7 @@ function SeatsCard({
                         <span className="text-muted-foreground">
                           {DAYS[s.weekday]?.slice(0, 3)}
                         </span>{" "}
-                        {clock(s.start_minute)}–{clock(s.end_minute)}
+                        {clock(s.start_minute)} to {clock(s.end_minute)}
                         {canEdit && (
                           <Button
                             size="icon"
@@ -493,7 +493,7 @@ function SeatsCard({
                           onClick={async () => {
                             try {
                               await deleteOverride({ data: { id: o.id } });
-                              toast.success("Override removed — the normal schedule is back.");
+                              toast.success("Override removed: the normal schedule is back.");
                               onChanged();
                             } catch (e) {
                               toast.error((e as Error).message);
@@ -730,7 +730,7 @@ function SeatEditor({
                     endsAt: new Date(ovEnd).toISOString(),
                   },
                 }),
-              "Override saved — it beats the recurring schedule while it lasts.",
+              "Override saved: it beats the recurring schedule while it lasts.",
             )
           }
         >
@@ -771,7 +771,7 @@ function TriageCard({ windows, roles }: { windows: Triage[]; roles: Role[] }) {
           ordered.map((w) => (
             <p key={w.id}>
               <span className="text-muted-foreground">
-                {DAYS[w.weekday]} {clock(w.start_minute)}–{clock(w.end_minute)}
+                {DAYS[w.weekday]} {clock(w.start_minute)} to {clock(w.end_minute)}
               </span>{" "}
               → {label(w.role_code)}
             </p>

@@ -31,7 +31,7 @@ export async function runPropertyEnrichment(supabaseAdmin: Admin): Promise<Enric
     [listings, owners] = await Promise.all([listDetailedListings(), listOwnerRezOwners()]);
   } catch (err) {
     const message = err instanceof Error ? err.message : "OwnerRez could not be reached.";
-    return { ok: false, message: `Nothing was changed — ${message}` };
+    return { ok: false, message: `Nothing was changed: ${message}` };
   }
 
   const plan = planEnrichment(properties ?? [], listings, owners);

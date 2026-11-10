@@ -65,7 +65,7 @@ export function MilestonePacing({
       <p className="mt-2 text-[11px] text-muted-foreground">
         {audience === "owner"
           ? "Based on the hours you have entered so far. These checkpoints are a pacing guide only."
-          : "Based on hours the homeowner entered. Pacing guide only — no tax conclusion is implied."}
+          : "Based on hours the homeowner entered. Pacing guide only: no tax conclusion is implied."}
       </p>
     </div>
   );

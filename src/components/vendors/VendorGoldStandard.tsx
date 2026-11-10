@@ -45,7 +45,7 @@ export function VendorGoldStandard() {
                     {inTransitionalReview(v) && (<><StatusBadge tone="waiting">Transitional Review</StatusBadge><span className="text-xs text-muted-foreground">Gold Standard verification incomplete · {transitionalDaysLeft(v)} days left</span></>)}
                   </td>
                   <td className="p-2">
-                    <StatusBadge tone={g?.blockingClear ? "resolved" : "waiting"}>{g ? `${g.passed}/${g.total}` : "—"}</StatusBadge>
+                    <StatusBadge tone={g?.blockingClear ? "resolved" : "waiting"}>{g ? `${g.passed}/${g.total}` : "-"}</StatusBadge>
                     {g && g.expired > 0 && <span className="ml-1 text-xs text-destructive">{g.expired} expired</span>}
                     {qualificationHold(v, ws.data!.gateStatus) && <span className="ml-1 text-xs text-destructive">On hold</span>}
                   </td>
@@ -54,13 +54,13 @@ export function VendorGoldStandard() {
                     {v.qualification_score ?? 0}
                     {(v.qualification_score ?? 0) >= PILOT_THRESHOLD && <span className="ml-1 text-xs text-success">pilot-eligible</span>}
                   </td>
-                  <td className="p-2 numeric">{v.performance_score ?? "—"}</td>
+                  <td className="p-2 numeric">{v.performance_score ?? "-"}</td>
                   <td className="p-2 numeric">{v.jobs_90d}</td>
                   <td className="p-2">{v.critical_failure ? <StatusBadge tone="escalated">Yes</StatusBadge> : "No"}</td>
-                  <td className="p-2">{v.last_review_on ? usDate(v.last_review_on) : "—"}</td>
-                  <td className="p-2">{v.next_review_on ? usDate(v.next_review_on) : "—"}</td>
+                  <td className="p-2">{v.last_review_on ? usDate(v.last_review_on) : "Not set"}</td>
+                  <td className="p-2">{v.next_review_on ? usDate(v.next_review_on) : "Not set"}</td>
                   <td className="p-2">
-                    {v.open_corrective_action ? `${v.open_corrective_action}${v.corrective_action_due ? ` · due ${usDate(v.corrective_action_due)}` : ""}` : "—"}
+                    {v.open_corrective_action ? `${v.open_corrective_action}${v.corrective_action_due ? ` · due ${usDate(v.corrective_action_due)}` : ""}` : "-"}
                   </td>
                 </tr>
               );

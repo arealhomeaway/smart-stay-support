@@ -224,7 +224,7 @@ export function TicketWorkOrderPanel({
         work_order_id: (data as { id: string }).id,
         author_id: userId,
         event_type: "created",
-        body: `${PHASE_LABELS[phase]} opened from the ticket — ${draftVerdict.label}`,
+        body: `${PHASE_LABELS[phase]} opened from the ticket: ${draftVerdict.label}`,
         detail: {
           authority: draftVerdict.level,
           reason: draftVerdict.reason,
@@ -265,7 +265,7 @@ export function TicketWorkOrderPanel({
       // already hidden whenever an open one exists.
       if (e.message.includes("work_orders_one_open_per_ticket")) {
         toast.error(
-          "This ticket already has an open Work Order — close it before opening another.",
+          "This ticket already has an open Work Order. Close it before opening another.",
         );
         qc.invalidateQueries({ queryKey: ticketWorkOrdersQueryKey(ticket.id) });
         return;
@@ -321,7 +321,7 @@ export function TicketWorkOrderPanel({
 
               {wo.warranty_may_apply && !wo.warranty_override_reason ? (
                 <p className="rounded-md border border-amber/25 bg-amber/10 px-2 py-1 text-xs">
-                  Warranty may apply{wo.warranty_contact ? ` — ${wo.warranty_contact}` : ""}.
+                  Warranty may apply{wo.warranty_contact ? ` · ${wo.warranty_contact}` : ""}.
                   Confirm coverage first.
                 </p>
               ) : null}
@@ -443,7 +443,7 @@ export function TicketWorkOrderPanel({
               <p className="text-xs text-muted-foreground">{draftVerdict.reason}</p>
               {draftHint.mayApply ? (
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Warranty may apply — {draftHint.reason}
+                  Warranty may apply: {draftHint.reason}
                 </p>
               ) : null}
             </div>

@@ -50,7 +50,7 @@ export const resendEmail = createServerFn({ method: "POST" })
       subject: row.subject,
       html: emailShell(
         row.subject,
-        "Resending this message — the first attempt did not go through. Open Resolve for the full details.",
+        "Resending this message: the first attempt did not go through. Open Resolve for the full details.",
         undefined,
         row.purpose === "owner_alert" ? "owner" : "staff",
       ),

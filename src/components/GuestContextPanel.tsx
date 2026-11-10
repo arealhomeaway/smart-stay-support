@@ -18,7 +18,7 @@ import { useDemo } from "@/components/DemoProvider";
  */
 
 function dateRange(arrival: string | null, departure: string | null) {
-  if (!arrival || !departure) return "—";
+  if (!arrival || !departure) return "Not set";
   return `${usDate(arrival)} → ${usDate(departure)}`;
 }
 
@@ -60,19 +60,19 @@ export function GuestContextPanel({ ticketId }: { ticketId: string }) {
           <UserRound className="size-4" /> Current guest / tenant
         </CardTitle>
         <CardDescription>
-          Live from OwnerRez. Read-only — nothing here is saved or sent back.
+          Live from OwnerRez. Read-only: nothing here is saved or sent back.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
         {unavailable ? (
-          <p className="text-muted-foreground">Guest contact unavailable—verify in OwnerRez.</p>
+          <p className="text-muted-foreground">Guest contact unavailable: verify in OwnerRez.</p>
         ) : (
           <>
-            <Row label="Name" value={result.guest_name ?? "—"} />
-            <Row label="Phone" value={result.phone ?? "—"} />
+            <Row label="Name" value={result.guest_name ?? "Not set"} />
+            <Row label="Phone" value={result.phone ?? "Not set"} />
             <Row label="Stay" value={dateRange(result.arrival, result.departure)} />
-            <Row label="Reservation" value={result.reservation_id ?? "—"} />
-            <Row label="Channel" value={result.booking_channel ?? "—"} />
+            <Row label="Reservation" value={result.reservation_id ?? "Not set"} />
+            <Row label="Channel" value={result.booking_channel ?? "Not set"} />
             {result.stay_kind ? (
               <Badge variant="secondary">
                 {result.stay_kind === "mid_term" ? "Mid-term tenant" : "Short-term guest"}
