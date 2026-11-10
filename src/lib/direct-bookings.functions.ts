@@ -223,7 +223,7 @@ export const listDirectBookings = createServerFn({ method: "POST" })
       data.demo ? Promise.resolve(false) : canSeeEmailTests(db, context.userId),
     ]);
     if (current.error && notReady(current.error)) {
-      return { ready: false as const, requests: [], tests: [] as DirectBookingRow[], pending: [] as string[], pendingApprovals: [], past: past.data ?? [], isSupervisor, isDirector, settings };
+      return { ready: false as const, requests: [], tests: [] as DirectBookingRow[], testsPending: [] as string[], pending: [] as string[], pendingApprovals: [], past: past.data ?? [], isSupervisor, isDirector, settings };
     }
     if (current.error) throw new Error(current.error.message);
     const rows = (current.data ?? []) as unknown as DirectBookingRow[];
@@ -255,6 +255,7 @@ export const listDirectBookings = createServerFn({ method: "POST" })
       ready: true as const,
       requests: rows,
       tests,
+      testsPending: ((approvals.data ?? []) as { lead_id: string }[]).filter((a) => tests.some((t) => t.id === a.lead_id)).map((a) => a.lead_id),
       pending: pendingApprovals.map((a) => a.lead_id),
       pendingApprovals,
       past: pastRows,

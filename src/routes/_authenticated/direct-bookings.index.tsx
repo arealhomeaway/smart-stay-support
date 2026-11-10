@@ -113,7 +113,7 @@ function DirectBookingsPage() {
   const { roles, seats } = useRole();
   const testBoard = (seesEmailTestRecords(roles, seats) && !demoMode ? (data?.tests ?? []) : []).map((r) => ({
     ...r,
-    status: requestStatus({ ...r, pending_approval: false }),
+    status: requestStatus({ ...r, pending_approval: (data?.testsPending ?? []).includes(r.id) }),
   }));
   const pending = useMemo(() => new Set(data?.pending ?? []), [data?.pending]);
   const board = requests.map((r) => ({ ...r, status: requestStatus({ ...r, pending_approval: pending.has(r.id) }) }));
