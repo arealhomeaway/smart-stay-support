@@ -86,7 +86,7 @@ function WeeklyScorecardPage() {
   return (
     <div className="space-y-6" data-weekly-page>
       <PageHeader title={C.title} description={C.hint} />
-      <SectionCard title={C.week}>
+      <div className="max-w-sm">
         <Field label={C.week}>
           <select className={SELECT_CLASS} value={due ?? card?.due_on ?? ""} onChange={(e) => setDue(e.target.value)} data-weekly-week>
             {(weeks.data ?? []).map((w) => (
@@ -96,7 +96,7 @@ function WeeklyScorecardPage() {
             ))}
           </select>
         </Field>
-      </SectionCard>
+      </div>
       {q.isPending ? (
         <p className="text-sm text-muted-foreground">Loading...</p>
       ) : q.error || !card ? (
