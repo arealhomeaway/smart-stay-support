@@ -412,3 +412,8 @@
 - [x] My reports for every staff member from the help button and account page; Admin manages; thank you line fixed (A20)
 - [x] View as: every role with its role on top, read only, refuses pages the role cannot open (M5)
 - [x] Staged database step applied after cancelled practice; access table and tests; browser check; register A1, A16, M6
+## Nov 10 Build 8 of 8: Email intake follow ups (no publish, intake stays off)
+- [x] (a) Test records with their Test chip for Admin, Operations Supervisor and the Directors in separate uncounted lists; hidden from coordinators (E1)
+- [x] (c) Run intake now hidden
+- [x] (e) One switch: staged database step (not applied, waits for Emily's okay); switch row and status panel show both
+- [x] Tests, cancelled database practice, browser check desktop and phone, register E1
