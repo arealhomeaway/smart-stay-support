@@ -68,6 +68,7 @@ import { Route as AuthenticatedTeamQueueRouteImport } from './routes/_authentica
 import { Route as AuthenticatedTeamRecordsRouteImport } from './routes/_authenticated/team-records'
 import { Route as AuthenticatedTicketChecklistsRouteImport } from './routes/_authenticated/ticket-checklists'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
+import { Route as AuthenticatedWeeklyScorecardRouteImport } from './routes/_authenticated/weekly-scorecard'
 import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome'
 import { Route as AuthenticatedWelcomeVideoRouteImport } from './routes/_authenticated/welcome-video'
 import { Route as AuthenticatedWorkOrdersRouteImport } from './routes/_authenticated/work-orders'
@@ -452,6 +453,12 @@ const AuthenticatedVendorsRoute = AuthenticatedVendorsRouteImport.update({
   path: '/vendors',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedWeeklyScorecardRoute =
+  AuthenticatedWeeklyScorecardRouteImport.update({
+    id: '/weekly-scorecard',
+    path: '/weekly-scorecard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedWelcomeRoute = AuthenticatedWelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
@@ -868,6 +875,7 @@ export interface FileRoutesByFullPath {
   '/team-records': typeof AuthenticatedTeamRecordsRoute
   '/ticket-checklists': typeof AuthenticatedTicketChecklistsRoute
   '/vendors': typeof AuthenticatedVendorsRouteWithChildren
+  '/weekly-scorecard': typeof AuthenticatedWeeklyScorecardRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
   '/welcome-video': typeof AuthenticatedWelcomeVideoRoute
   '/work-orders': typeof AuthenticatedWorkOrdersRouteWithChildren
@@ -984,6 +992,7 @@ export interface FileRoutesByTo {
   '/team-queue': typeof AuthenticatedTeamQueueRoute
   '/team-records': typeof AuthenticatedTeamRecordsRoute
   '/ticket-checklists': typeof AuthenticatedTicketChecklistsRoute
+  '/weekly-scorecard': typeof AuthenticatedWeeklyScorecardRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
   '/welcome-video': typeof AuthenticatedWelcomeVideoRoute
   '/guest-feedback/$token': typeof GuestFeedbackTokenRoute
@@ -1106,6 +1115,7 @@ export interface FileRoutesById {
   '/_authenticated/team-records': typeof AuthenticatedTeamRecordsRoute
   '/_authenticated/ticket-checklists': typeof AuthenticatedTicketChecklistsRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRouteWithChildren
+  '/_authenticated/weekly-scorecard': typeof AuthenticatedWeeklyScorecardRoute
   '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute
   '/_authenticated/welcome-video': typeof AuthenticatedWelcomeVideoRoute
   '/_authenticated/work-orders': typeof AuthenticatedWorkOrdersRouteWithChildren
@@ -1229,6 +1239,7 @@ export interface FileRouteTypes {
     | '/team-records'
     | '/ticket-checklists'
     | '/vendors'
+    | '/weekly-scorecard'
     | '/welcome'
     | '/welcome-video'
     | '/work-orders'
@@ -1345,6 +1356,7 @@ export interface FileRouteTypes {
     | '/team-queue'
     | '/team-records'
     | '/ticket-checklists'
+    | '/weekly-scorecard'
     | '/welcome'
     | '/welcome-video'
     | '/guest-feedback/$token'
@@ -1466,6 +1478,7 @@ export interface FileRouteTypes {
     | '/_authenticated/team-records'
     | '/_authenticated/ticket-checklists'
     | '/_authenticated/vendors'
+    | '/_authenticated/weekly-scorecard'
     | '/_authenticated/welcome'
     | '/_authenticated/welcome-video'
     | '/_authenticated/work-orders'
@@ -1965,6 +1978,13 @@ declare module '@tanstack/react-router' {
       path: '/vendors'
       fullPath: '/vendors'
       preLoaderRoute: typeof AuthenticatedVendorsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/weekly-scorecard': {
+      id: '/_authenticated/weekly-scorecard'
+      path: '/weekly-scorecard'
+      fullPath: '/weekly-scorecard'
+      preLoaderRoute: typeof AuthenticatedWeeklyScorecardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/welcome': {
@@ -2609,6 +2629,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTeamRecordsRoute: typeof AuthenticatedTeamRecordsRoute
   AuthenticatedTicketChecklistsRoute: typeof AuthenticatedTicketChecklistsRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRouteWithChildren
+  AuthenticatedWeeklyScorecardRoute: typeof AuthenticatedWeeklyScorecardRoute
   AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
   AuthenticatedWelcomeVideoRoute: typeof AuthenticatedWelcomeVideoRoute
   AuthenticatedWorkOrdersRoute: typeof AuthenticatedWorkOrdersRouteWithChildren
@@ -2683,6 +2704,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTeamRecordsRoute: AuthenticatedTeamRecordsRoute,
   AuthenticatedTicketChecklistsRoute: AuthenticatedTicketChecklistsRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRouteWithChildren,
+  AuthenticatedWeeklyScorecardRoute: AuthenticatedWeeklyScorecardRoute,
   AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
   AuthenticatedWelcomeVideoRoute: AuthenticatedWelcomeVideoRoute,
   AuthenticatedWorkOrdersRoute: AuthenticatedWorkOrdersRouteWithChildren,
