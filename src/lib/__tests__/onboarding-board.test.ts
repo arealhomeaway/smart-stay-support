@@ -183,8 +183,7 @@ describe("views and folders", () => {
   it("Gantt runs month by month from the earliest closing to the latest handoff, today marked", () => {
     const g = ganttScale([{ start: "2026-09-22", end: "2026-11-20" }], "2026-11-10");
     expect(g.months.map((m) => m.label)).toEqual(["Sep 26", "Oct 26", "Nov 26"]);
-    expect(g.today).toBeGreaterThan(0);
-    expect(g.today).toBeLessThan(100);
+    expect(g.today > 0 && g.today < 100).toBe(true);
   });
 
   it("Work Load counts active homes per Project Manager", () => {
