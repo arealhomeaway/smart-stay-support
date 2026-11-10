@@ -96,8 +96,8 @@ RESET ROLE;
 SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT sup FROM practice_ids), 'role', 'authenticated')::text, true);
 INSERT INTO practice_result SELECT 'moved', public.move_notion_to_queue(two)::text FROM practice_ids;
 INSERT INTO practice_result SELECT 'moved_again_counts', public.move_notion_to_queue(two)::text FROM practice_ids;
-INSERT INTO practice_result SELECT 'holds_after', string_agg(coalesce(import_hold,'none') || '/' || coalesce(assigned_to::text,'no owner') || '/' || coalesce(acknowledged_at::text,'no clock'), ', ') FROM public.tickets WHERE id = ANY ((SELECT two FROM practice_ids));
-INSERT INTO practice_result SELECT 'history_lines', count(*)::text FROM public.ticket_activity WHERE event_type = 'moved_to_queue' AND ticket_id = ANY ((SELECT two FROM practice_ids));
+INSERT INTO practice_result SELECT 'holds_after', string_agg(coalesce(import_hold,'none') || '/' || coalesce(assigned_to::text,'no owner') || '/' || coalesce(acknowledged_at::text,'no clock'), ', ') FROM public.tickets WHERE id = ANY ((SELECT two FROM practice_ids)::uuid[]);
+INSERT INTO practice_result SELECT 'history_lines', count(*)::text FROM public.ticket_activity WHERE event_type = 'moved_to_queue' AND ticket_id = ANY ((SELECT two FROM practice_ids)::uuid[]);
 DO $practice$ BEGIN
   RAISE EXCEPTION 'PRACTICE CANCELLED %', (SELECT json_object_agg(k, v) FROM practice_result);
 END $practice$;
