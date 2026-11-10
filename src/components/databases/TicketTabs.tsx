@@ -213,7 +213,7 @@ function PeriodControls({ view, onChange, rows }: { view: TicketView; onChange: 
   );
 }
 
-type Col = { label: string; value: (r: DbRow) => string; strong?: boolean };
+type Col = { label: string; value: (r: DbRow) => string; strong?: boolean; nowrap?: boolean };
 
 function columnsFor(tab: TicketTabKey): Col[] {
   const ref: Col = { label: "Ref", value: (r) => (r.cells[0] ? `#${r.cells[0]}` : ""), strong: true };
@@ -224,10 +224,10 @@ function columnsFor(tab: TicketTabKey): Col[] {
       ref,
       title,
       home,
-      { label: "Claim amount", value: (r) => money(r.ticket?.claim?.amount) },
-      { label: "Paid back", value: (r) => money(r.ticket?.claim?.paidBack) },
+      { label: "Claim amount", value: (r) => money(r.ticket?.claim?.amount), nowrap: true },
+      { label: "Paid back", value: (r) => money(r.ticket?.claim?.paidBack), nowrap: true },
       { label: "Claim status", value: (r) => r.ticket?.claim?.status ?? "" },
-      { label: "Claim date", value: (r) => day(r.ticket?.claim?.openedAt) },
+      { label: "Claim date", value: (r) => day(r.ticket?.claim?.openedAt), nowrap: true },
     ];
   }
   const cols: Col[] = [
@@ -239,7 +239,7 @@ function columnsFor(tab: TicketTabKey): Col[] {
   ];
   // Closed history never shows an owner (N2).
   if (tab !== "closed_history") cols.push({ label: "Owner", value: (r) => r.cells[5] ?? "" });
-  cols.push({ label: "Created", value: (r) => (r.ticket ? day(originalCreatedAt(r.ticket)) : "") });
+  cols.push({ label: "Created", value: (r) => (r.ticket ? day(originalCreatedAt(r.ticket)) : ""), nowrap: true });
   return cols;
 }
 
@@ -272,7 +272,7 @@ function TicketTable({ rows, tab, now, canFixHome, demoMode }: { rows: DbRow[]; 
           {rows.map((r) => (
             <tr key={r.id} className="border-t border-border align-middle" data-ticket-row={r.id}>
               {cols.map((c, i) => (
-                <td key={c.label} className={c.strong ? "px-3 py-2 font-semibold" : "px-3 py-2"}>
+                <td key={c.label} className={cn("px-3 py-2", c.strong && "font-semibold", c.nowrap && "whitespace-nowrap")}>
                   {c.value(r)}
                   {i === 1 && label(r) ? <span className="mt-0.5 block text-xs text-muted-foreground">{label(r)}</span> : null}
                   {i === 2 && fixing ? <ChooseHome row={r} demoMode={demoMode} /> : null}
