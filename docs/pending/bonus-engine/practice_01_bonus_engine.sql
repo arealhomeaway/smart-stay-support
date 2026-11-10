@@ -104,14 +104,14 @@ BEGIN
   _out := _out || jsonb_build_object('history_rows_after_reopen', _hist,
             'settings_log_rows', (SELECT count(*) FROM public.bonus_settings_history));
 
-  -- The close sweep: the Director gets one item for the closed period, and a reminder 2 days later.
-  DELETE FROM public.bonus_periods WHERE id NOT IN (SELECT period_id FROM public.bonus_period_history)
-     AND plan_code = 'ops_supervisor' AND period_start = '2026-10-01';
-  _sweep := private.bonus_sweep(now());
-  _out := _out || jsonb_build_object('sweep_now', _sweep, 'sweep_again', private.bonus_sweep(now()),
-            'sweep_in_3_days', private.bonus_sweep(now() + interval '3 days'),
-            'reviewer_items', (SELECT count(*) FROM public.staff_notifications WHERE kind IN ('bonus_ready', 'bonus_ready_reminder')
-                                 AND created_at >= now() - interval '1 minute'));
+  -- The close sweep, as if it were Dec 2: the November period has closed, so the Director gets one
+  -- item; a second run adds nothing; 3 days later one reminder goes out.
+  _sweep := private.bonus_sweep(now() + interval '22 days');
+  _out := _out || jsonb_build_object('sweep_dec_2', _sweep, 'sweep_again', private.bonus_sweep(now() + interval '22 days'),
+            'sweep_dec_5', private.bonus_sweep(now() + interval '25 days'),
+            'reviewer_items', (SELECT jsonb_agg(jsonb_build_object('kind', n.kind, 'title', n.title, 'to_director', n.user_id = _dir))
+                                 FROM public.staff_notifications n WHERE n.kind IN ('bonus_ready', 'bonus_ready_reminder')
+                                  AND n.created_at >= now() - interval '1 minute'));
 
   RAISE EXCEPTION 'PRACTICE RESULT (cancelled on purpose): %', _out::text;
 END $$;
