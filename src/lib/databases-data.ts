@@ -13,6 +13,7 @@ import { claimClosedAt, claimOpenedAt, claimStageLabel, isOpenClaim, amountAtRis
 import { RECOVERY_STAGE_LABELS, RECOVERY_ACTION_LABELS, type RecoveryAction, type RecoveryStage } from "@/lib/guest-recovery";
 import { STATUS_LABELS as PLAYBOOK_STATUS_LABELS, type PlaybookStatus } from "@/lib/playbooks";
 import { requestStatus } from "@/lib/direct-bookings";
+import type { TicketClaim } from "@/lib/ticket-tabs";
 import {
   CLAIM_TILE_LABELS,
   CLAIMS_TO_WORK_FILTER,
@@ -391,7 +392,7 @@ async function tickets(ctx: LoadContext): Promise<ListData> {
     readAll((from, to) =>
       supabase
         .from("tickets")
-        .select("id, ref, title, property_id, work_type_id, status, assigned_to, external_source, external_status, reported_at, import_hold, created_at")
+        .select("id, ref, title, property_id, work_type_id, status, assigned_to, external_source, external_status, external_id, reported_at, import_hold, created_at")
         .eq("is_demo", ctx.demo)
         .is("archived_at", null)
         .order("created_at", { ascending: false })
@@ -403,10 +404,24 @@ async function tickets(ctx: LoadContext): Promise<ListData> {
   const toWork = new Set<string>();
   for (const c of claims) if (c.ticket_id && isOpenClaim(c.stage as ClaimStage)) toWork.add(c.ticket_id);
   for (const r of refunds) if (r.ticket_id && r.stage !== "closed") toWork.add(r.ticket_id);
+  // One claim per ticket (claims_one_per_ticket): the Claims history tab reads it.
+  const claimOf = new Map<string, TicketClaim>();
+  for (const c of claims) {
+    if (!c.ticket_id || claimOf.has(c.ticket_id)) continue;
+    const stage = c.stage as ClaimStage;
+    claimOf.set(c.ticket_id, {
+      amount: amountAtRisk({ ...c, claim_type: c.claim_type as ClaimType, stage }),
+      paidBack: num(c.recovered_amount),
+      status: claimStageLabel({ stage, incident_description: c.incident_description }),
+      open: isOpenClaim(stage),
+      openedAt: claimOpenedAt(c, c.ticket),
+    });
+  }
   return {
     rows: rows.map((t) => {
       const badge = notionBadge(t);
       const owner = showsAssignee(t) && t.assigned_to ? (people.get(t.assigned_to) ?? "") : "";
+      const notionId = t.external_source === "notion" && t.external_id ? t.external_id : "";
       return {
         id: t.id,
         cells: [
@@ -423,6 +438,19 @@ async function tickets(ctx: LoadContext): Promise<ListData> {
         ],
         tags: { [HISTORICAL_FILTER]: historicalTag(t), ...(toWork.has(t.id) ? { [CLAIMS_TO_WORK_FILTER]: CLAIMS_TO_WORK_FILTER } : {}) },
         link: ticketLink(ctx, t.id),
+        // The Notion number: the page id, with and without its dashes.
+        extra: notionId ? `${notionId} ${notionId.replace(/-/g, "")}` : undefined,
+        ticket: {
+          status: t.status,
+          external_source: t.external_source ?? null,
+          external_status: t.external_status ?? null,
+          external_id: t.external_id ?? null,
+          reported_at: t.reported_at ?? null,
+          created_at: t.created_at,
+          import_hold: t.import_hold ?? null,
+          property_id: t.property_id ?? null,
+          claim: claimOf.get(t.id) ?? null,
+        },
       };
     }),
   };

@@ -8,6 +8,7 @@
 import type { AccessSeats, AppRole } from "@/lib/permissions";
 import { amountAtRisk, unrecovered, type ClaimStage } from "@/lib/claims";
 import { notionTicketState, type NotionTicketLike } from "@/lib/notion-ticket-display";
+import type { TicketFacts } from "@/lib/ticket-tabs";
 
 export type DatabaseKey =
   | "properties"
