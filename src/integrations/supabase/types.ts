@@ -1073,6 +1073,219 @@ export type Database = {
           },
         ]
       }
+      arrival_check_state: {
+        Row: {
+          id: boolean
+          last_ingest: Json
+          last_ingest_at: string | null
+          last_run: Json
+          last_run_at: string | null
+        }
+        Insert: {
+          id?: boolean
+          last_ingest?: Json
+          last_ingest_at?: string | null
+          last_run?: Json
+          last_run_at?: string | null
+        }
+        Update: {
+          id?: boolean
+          last_ingest?: Json
+          last_ingest_at?: string | null
+          last_run?: Json
+          last_run_at?: string | null
+        }
+        Relationships: []
+      }
+      arrival_checks: {
+        Row: {
+          alert_recipient: string | null
+          alert_sent_at: string | null
+          arrival_on: string
+          backup_plan: string | null
+          cancelled_at: string | null
+          check_in_at: string
+          cleared_at: string | null
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          deadline_at: string
+          guest_first_name: string | null
+          guests: number | null
+          home_label: string
+          id: string
+          is_test: boolean
+          issue_text: string | null
+          issue_ticket_id: string | null
+          late_booking: boolean
+          lock_connected: boolean | null
+          lock_note: string | null
+          outcome: string | null
+          owner_stay: boolean
+          ownerrez_booking_id: string
+          pets: number | null
+          property_id: string | null
+          result: string | null
+          result_at: string | null
+          status: string
+          team: string
+          ticket_id: string | null
+          time_zone: string
+          work_orders_reviewed: boolean | null
+        }
+        Insert: {
+          alert_recipient?: string | null
+          alert_sent_at?: string | null
+          arrival_on: string
+          backup_plan?: string | null
+          cancelled_at?: string | null
+          check_in_at: string
+          cleared_at?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          deadline_at: string
+          guest_first_name?: string | null
+          guests?: number | null
+          home_label: string
+          id?: string
+          is_test?: boolean
+          issue_text?: string | null
+          issue_ticket_id?: string | null
+          late_booking?: boolean
+          lock_connected?: boolean | null
+          lock_note?: string | null
+          outcome?: string | null
+          owner_stay?: boolean
+          ownerrez_booking_id: string
+          pets?: number | null
+          property_id?: string | null
+          result?: string | null
+          result_at?: string | null
+          status?: string
+          team?: string
+          ticket_id?: string | null
+          time_zone: string
+          work_orders_reviewed?: boolean | null
+        }
+        Update: {
+          alert_recipient?: string | null
+          alert_sent_at?: string | null
+          arrival_on?: string
+          backup_plan?: string | null
+          cancelled_at?: string | null
+          check_in_at?: string
+          cleared_at?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          deadline_at?: string
+          guest_first_name?: string | null
+          guests?: number | null
+          home_label?: string
+          id?: string
+          is_test?: boolean
+          issue_text?: string | null
+          issue_ticket_id?: string | null
+          late_booking?: boolean
+          lock_connected?: boolean | null
+          lock_note?: string | null
+          outcome?: string | null
+          owner_stay?: boolean
+          ownerrez_booking_id?: string
+          pets?: number | null
+          property_id?: string | null
+          result?: string | null
+          result_at?: string | null
+          status?: string
+          team?: string
+          ticket_id?: string | null
+          time_zone?: string
+          work_orders_reviewed?: boolean | null
+        }
+        Relationships: []
+      }
+      arrival_reservations: {
+        Row: {
+          adults: number | null
+          arrival_on: string
+          booked_at: string | null
+          booking_type: string | null
+          check_in_time: string | null
+          children: number | null
+          decided_at: string | null
+          decision: string | null
+          decision_reason: string | null
+          departure_on: string | null
+          first_seen_at: string
+          guest_first_name: string | null
+          guest_id: string | null
+          infants: number | null
+          is_block: boolean
+          is_test: boolean
+          last_seen_at: string
+          owner_stay: boolean
+          ownerrez_booking_id: string
+          ownerrez_property_id: string | null
+          pets: number | null
+          property_id: string | null
+          status: string | null
+          title: string | null
+        }
+        Insert: {
+          adults?: number | null
+          arrival_on: string
+          booked_at?: string | null
+          booking_type?: string | null
+          check_in_time?: string | null
+          children?: number | null
+          decided_at?: string | null
+          decision?: string | null
+          decision_reason?: string | null
+          departure_on?: string | null
+          first_seen_at?: string
+          guest_first_name?: string | null
+          guest_id?: string | null
+          infants?: number | null
+          is_block?: boolean
+          is_test?: boolean
+          last_seen_at?: string
+          owner_stay?: boolean
+          ownerrez_booking_id: string
+          ownerrez_property_id?: string | null
+          pets?: number | null
+          property_id?: string | null
+          status?: string | null
+          title?: string | null
+        }
+        Update: {
+          adults?: number | null
+          arrival_on?: string
+          booked_at?: string | null
+          booking_type?: string | null
+          check_in_time?: string | null
+          children?: number | null
+          decided_at?: string | null
+          decision?: string | null
+          decision_reason?: string | null
+          departure_on?: string | null
+          first_seen_at?: string
+          guest_first_name?: string | null
+          guest_id?: string | null
+          infants?: number | null
+          is_block?: boolean
+          is_test?: boolean
+          last_seen_at?: string
+          owner_stay?: boolean
+          ownerrez_booking_id?: string
+          ownerrez_property_id?: string | null
+          pets?: number | null
+          property_id?: string | null
+          status?: string | null
+          title?: string | null
+        }
+        Relationships: []
+      }
       assessment_findings: {
         Row: {
           category: string
@@ -17418,6 +17631,9 @@ export type Database = {
         Args: { _reason: string; _ticket_id: string }
         Returns: Json
       }
+      arrival_check_for_ticket: { Args: { _ticket_id: string }; Returns: Json }
+      arrival_checks_status: { Args: never; Returns: Json }
+      arrival_ingest_bookings: { Args: { _bookings: Json }; Returns: Json }
       backup_list_files: {
         Args: never
         Returns: {
@@ -17688,6 +17904,7 @@ export type Database = {
       }
       cleaner_verify_cron_token: { Args: { _token: string }; Returns: boolean }
       clear_email_intake_test_records: { Args: never; Returns: Json }
+      clear_test_arrival_checks: { Args: never; Returns: Json }
       close_owner_followup: { Args: { _task_id: string }; Returns: undefined }
       close_owner_opportunity: {
         Args: {
@@ -17699,6 +17916,18 @@ export type Database = {
       }
       commit_sop_upload: {
         Args: { _drafts: Json; _file: Json; _id: string }
+        Returns: Json
+      }
+      complete_arrival_check: {
+        Args: {
+          _backup_plan: string
+          _check_id: string
+          _issue: string
+          _lock_connected: boolean
+          _lock_note: string
+          _outcome: string
+          _work_orders_reviewed: boolean
+        }
         Returns: Json
       }
       complete_attachment_upload: {
@@ -18073,6 +18302,10 @@ export type Database = {
         Returns: string
       }
       log_queue_open: { Args: { _source: string }; Returns: Json }
+      make_test_arrival_check: {
+        Args: { _minutes_to_check_in?: number }
+        Returns: Json
+      }
       manage_owner_review_conversation: {
         Args: {
           _action: string
@@ -18970,6 +19203,7 @@ export type Database = {
           work_type: string
         }[]
       }
+      run_arrival_checks: { Args: never; Returns: Json }
       run_handoff_reminders: { Args: { _now?: string }; Returns: number }
       run_ticket_timed_alerts: { Args: never; Returns: number }
       save_arha_opportunity: {
@@ -19085,6 +19319,7 @@ export type Database = {
         Args: { _archived: boolean; _user: string }
         Returns: undefined
       }
+      set_arrival_checks: { Args: { _enabled: boolean }; Returns: Json }
       set_attachment_visibility: {
         Args: { _actor_id: string; _document_id: string; _visibility: string }
         Returns: string
