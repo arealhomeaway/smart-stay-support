@@ -51,6 +51,13 @@ export type DocumentCategory =
   // Onboarding
   | "measurements"
   | "design"
+  // Design folders on a home's onboarding page (Build 11)
+  | "design_floor_plan"
+  | "design_mood_board"
+  | "design_pick_list"
+  | "design_install"
+  | "design_staging"
+  | "design_photo"
   | "onboarding_evidence"
   // Operations
   | "assessment"
@@ -134,6 +141,12 @@ export const DOCUMENT_CATEGORIES: {
   },
   { value: "measurements", label: "Measurements", group: "onboarding" },
   { value: "design", label: "Design / reference material", group: "onboarding" },
+  { value: "design_floor_plan", label: "Design: Floor plans", group: "onboarding" },
+  { value: "design_mood_board", label: "Design: Mood boards", group: "onboarding" },
+  { value: "design_pick_list", label: "Design: Pick lists", group: "onboarding" },
+  { value: "design_install", label: "Design: Install instructions", group: "onboarding" },
+  { value: "design_staging", label: "Design: Staging instructions", group: "onboarding" },
+  { value: "design_photo", label: "Design: Photos", group: "onboarding" },
   { value: "onboarding_evidence", label: "Onboarding evidence", group: "onboarding" },
   { value: "assessment", label: "Property assessment", group: "operations" },
   { value: "operations", label: "Operating reference", group: "operations" },
