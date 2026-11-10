@@ -35,6 +35,9 @@ export function TimeOffDialog({
   overrides,
   defaultUserId,
   pattern = null,
+  defaultStartDate,
+  defaultEndDate,
+  defaultNote,
 }: {
   open: boolean;
   onClose: () => void;
@@ -45,14 +48,18 @@ export function TimeOffDialog({
   overrides: SOverride[];
   defaultUserId?: string | null;
   pattern?: OncallPattern | null;
+  /** A time off request being approved (Home, Needs you now) opens with its dates and note. */
+  defaultStartDate?: string;
+  defaultEndDate?: string;
+  defaultNote?: string;
 }) {
   const today = centralToday();
   const [userId, setUserId] = useState(defaultUserId ?? NONE);
-  const [startDate, setStartDate] = useState(today);
+  const [startDate, setStartDate] = useState(defaultStartDate ?? today);
   const [startTime, setStartTime] = useState("00:00");
-  const [endDate, setEndDate] = useState(today);
+  const [endDate, setEndDate] = useState(defaultEndDate ?? today);
   const [endTime, setEndTime] = useState("23:59");
-  const [note, setNote] = useState("");
+  const [note, setNote] = useState(defaultNote ?? "");
   const [coverId, setCoverId] = useState(NONE);
   const [busy, setBusy] = useState(false);
   const save = useServerFn(saveOverride);
