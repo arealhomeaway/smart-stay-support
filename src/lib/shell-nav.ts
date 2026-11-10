@@ -200,7 +200,7 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
   {
     key: "admin",
     match: (p) =>
-      ["/integrations", "/audit", "/help-tickets", "/oversight-access-log", "/imported-tickets"].some(
+      ["/integrations", "/audit", "/help-tickets", "/oversight-access-log", "/imported-tickets", "/export-check"].some(
         (r) => p === r || p.startsWith(r + "/"),
       ),
     tabs: [
@@ -211,6 +211,8 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
       // The old review list: hidden behind its switch (register H9); Databases, Tickets holds these now.
       { label: "Imported tickets", to: "/imported-tickets", capability: "admin_pages", flag: "imported_tickets_page" },
       { label: "Notion import", to: "/integrations/notion-import", capability: "integrations" },
+      // Admin tools for the Admin; the Supervisor and the Directors reach it from Oversight (N10).
+      { label: "Export check", to: "/export-check", capability: "integrations" },
     ],
   },
 ];
