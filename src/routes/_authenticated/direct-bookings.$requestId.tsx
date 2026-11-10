@@ -231,9 +231,7 @@ function SentBanner({ d, onDone }: { d: Detail; onDone: () => void }) {
   const due = followUpDueAt(lead);
   const inPortal = lead.reply_method === "portal";
   const parts = [
-    inPortal
-      ? PORTAL_COPY.sentInPortal(clockLabel(took.seconds))
-      : `Sent in ${clockLabel(took.seconds)}${lead.reply_sent_via === "manual" ? " from Outlook" : ""}.`,
+    inPortal ? null : `Sent in ${clockLabel(took.seconds)}${lead.reply_sent_via === "manual" ? " from Outlook" : ""}.`,
     !inPortal && lead.portal_answered_at ? PORTAL_COPY.alsoPortal : null,
     lead.portal_answered_at && lead.portal_answer_note ? `${PORTAL_COPY.noteLabel}: ${lead.portal_answer_note}.` : null,
     lead.last_follow_up_at ? `Last follow-up ${new Date(lead.last_follow_up_at).toLocaleString()}.` : null,
@@ -242,7 +240,7 @@ function SentBanner({ d, onDone }: { d: Detail; onDone: () => void }) {
   return (
     <div className="flex flex-col gap-2.5 rounded-2xl border border-sage/40 bg-sage/10 p-[18px] text-[15px]">
       <span>
-        <strong>{inPortal ? PORTAL_COPY.answered : DB_COPY.replySent}</strong> {parts.join(" ")}
+        <strong>{inPortal ? PORTAL_COPY.sentInPortal(clockLabel(took.seconds)) : DB_COPY.replySent}</strong> {parts.join(" ")}
       </span>
       {lead.portal_answered_at && !lead.outcome && d.canCorrectPortal ? <PortalCorrection id={lead.id} onDone={onDone} /> : null}
     </div>
