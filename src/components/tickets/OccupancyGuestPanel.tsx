@@ -381,7 +381,7 @@ export function OccupancyGuestPanel({
             >
               <SelectTrigger aria-label="Active-stay impact" data-testid="active-stay-impact">
                 <SelectValue
-                  placeholder={`Not confirmed: suggested: ${ACTIVE_STAY_IMPACT.find((o) => o.value === suggestedImpact)?.label}`}
+                  placeholder={`Not confirmed. Suggested: ${ACTIVE_STAY_IMPACT.find((o) => o.value === suggestedImpact)?.label}`}
                 />
               </SelectTrigger>
               <SelectContent>

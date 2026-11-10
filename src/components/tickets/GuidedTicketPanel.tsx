@@ -226,7 +226,7 @@ export function GuidedTicketPanel({
     mutationFn: async ({ stepId, outcome, prompt }: { stepId: string; outcome: "fixed" | "not_fixed" | "skipped"; prompt: string }) => {
       const { error } = await supabase.from("ticket_troubleshooting_answers").insert({ ticket_id: ticket.id, step_id: stepId, outcome });
       if (error) throw error;
-      await log("note", `Troubleshooting: "${prompt}": ${outcome === "fixed" ? "fixed it" : outcome === "not_fixed" ? "not fixed" : "skipped"}.`);
+      await log("note", `Troubleshooting: "${prompt}". Result: ${outcome === "fixed" ? "fixed it" : outcome === "not_fixed" ? "not fixed" : "skipped"}.`);
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["ticket-troubleshooting", ticket.id] });
