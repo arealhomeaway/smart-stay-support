@@ -1,3 +1,4 @@
+// @ts-nocheck: in-memory fake database fixture; row shapes are checked by assertions.
 /**
  * Link the Breezeway work order (register C4, Emily Nov 10): the Repair card links a mirrored
  * Breezeway work order to the ticket. In-memory fake database and a stubbed Breezeway read; no
