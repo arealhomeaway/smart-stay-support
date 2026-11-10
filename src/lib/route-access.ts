@@ -184,9 +184,26 @@ export const FINANCE_VIEW_ONLY_PATHS = [
 
 /** True when this person may only look at this page (Finance on the pages above). */
 export function viewOnlyPath(pathname: string, ctx: AccessContext): boolean {
-  if (!isFinanceOnly(ctx.roles, ctx.seats)) return false;
   const path = pathname.split("?")[0]!.replace(/\/+$/, "") || "/";
+  if (!isFinanceOnly(ctx.roles, ctx.seats)) {
+    // A16 (Build 9 F1): Finance held with another role keeps Finance's view of Onboarding, read
+    // only, unless that other role already works Onboarding (Admin, Onboarding staff, a Director).
+    return financeOnboardingViewOnly(ctx) && (path === "/onboarding" || path.startsWith("/onboarding/"));
+  }
   return FINANCE_VIEW_ONLY_PATHS.some((p) => path === p || path.startsWith(p + "/"));
+}
+
+/** Finance plus another Supervisor type role that does not itself work Onboarding. */
+export function financeOnboardingViewOnly(ctx: AccessContext): boolean {
+  const s = ctx.seats ?? {};
+  return (
+    Boolean(s.finance) &&
+    ctx.roles.includes("manager") &&
+    !ctx.roles.includes("admin") &&
+    !ctx.roles.includes("onboarding") &&
+    !s.onboardingDirector &&
+    !s.opsDirector
+  );
 }
 
 /** Onboarding is the only portal this person works in. */
