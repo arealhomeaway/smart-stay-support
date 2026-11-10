@@ -12,6 +12,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import type { CommandCenter, Kpi, KpiSection, KpiStatus } from "./command-center";
 import { withoutQuietNotion } from "@/lib/notion-ticket-display";
+import { minutesExcludingWaiting, waitingSpans, type WaitingLogRow } from "@/lib/waiting-time";
 
 type Client = SupabaseClient<Database>;
 
@@ -210,9 +211,23 @@ export async function loadCommandCenter(
   const ackMinutes = current
     .filter((t) => t.acknowledged_at)
     .map((t) => minutes(t.reported_at, t.acknowledged_at!));
-  const resolveMinutes = current
-    .filter((t) => t.resolved_at)
-    .map((t) => minutes(t.reported_at, t.resolved_at!));
+  // Waiting never counts (register T13, Build 9 E5): time a ticket spent Waiting on someone
+  // else is taken out of the Typical time to resolve, the same rule Analytics uses.
+  const resolvedIds = [...current, ...prior].filter((t) => t.resolved_at).map((t) => t.id);
+  const waitingRows: WaitingLogRow[] = [];
+  for (let i = 0; i < resolvedIds.length; i += 200) {
+    const res = await supabase
+      .from("ticket_state_log")
+      .select("ticket_id, change, recorded_at")
+      .eq("field", "waiting")
+      .in("ticket_id", resolvedIds.slice(i, i + 200));
+    if (res.error) throw res.error;
+    waitingRows.push(...((res.data ?? []) as WaitingLogRow[]));
+  }
+  const waits = waitingSpans(waitingRows);
+  const resolveMinutesFor = (t: { id: string; reported_at: string; resolved_at: string | null }) =>
+    minutesExcludingWaiting(t.reported_at, t.resolved_at!, waits.get(t.id));
+  const resolveMinutes = current.filter((t) => t.resolved_at).map((t) => resolveMinutesFor(t));
 
   const openGuestImpacting = allTickets.filter(
     (t) => OPEN_STATUSES.includes(t.status) && (t.guest_impact ?? "none") !== "none",
@@ -265,7 +280,7 @@ export async function loadCommandCenter(
         unit: "minutes",
         value: median(resolveMinutes),
         previous: median(
-          prior.filter((t) => t.resolved_at).map((t) => minutes(t.reported_at, t.resolved_at!)),
+          prior.filter((t) => t.resolved_at).map((t) => resolveMinutesFor(t)),
         ),
         target: "Work-type standard",
         status: grade(median(resolveMinutes), { good: 1440, warn: 4320, higherIsBetter: false }),
