@@ -80,6 +80,14 @@ export function seesEmailTestRecords(
   );
 }
 
+/** The same rule, read from the role access object the screens already hold. */
+export function seesEmailTestsFor(access: {
+  roles: readonly string[];
+  seats: { opsSupervisor?: boolean; opsDirector?: boolean; onboardingDirector?: boolean };
+}): boolean {
+  return seesEmailTestRecords(access.roles, access.seats);
+}
+
 /**
  * Whether a ticket shows under the current lens: the ordinary demo or real match, plus an
  * email test ticket in the real lens for someone who runs the test plan.

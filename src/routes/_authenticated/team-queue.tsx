@@ -1,5 +1,5 @@
 import { EmailTestChip } from "@/components/EmailTestChip";
-import { EMAIL_TEST_COPY, isEmailTestTicket, seesEmailTestRecords } from "@/lib/email-intake";
+import { EMAIL_TEST_COPY, isEmailTestTicket, seesEmailTestsFor } from "@/lib/email-intake";
 import { EmailTestRecords } from "@/components/EmailTestRecords";
 import { formatPropertyLabel } from "@/lib/property-label";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -115,10 +115,10 @@ function TeamQueuePage() {
   const userId = useCurrentUserId();
   const { data: staff } = useStaffDirectory();
   const { homeTeamOf } = useHomeTeams();
-  const { can, isLoading: rolesLoading, readOnly, roles, access } = useRole();
+  const { can, isLoading: rolesLoading, readOnly, access } = useRole();
   // Register E1 (a): email test tickets show for the people who run the test plan, in their
   // own list, never in a count. Coordinators never see them.
-  const seesTests = !demoMode && seesEmailTestRecords(roles, access.seats);
+  const seesTests = !demoMode && seesEmailTestsFor(access);
   const { enabled: flagEnabled } = useFeatureFlags();
   const operationsAccess = can("work_orders_internal");
   const canTake = operationsAccess && !readOnly;
