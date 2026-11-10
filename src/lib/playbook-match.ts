@@ -1,3 +1,4 @@
+import { priorityMeta } from "@/lib/tickets";
 /**
  * Deterministic contextual Playbook resolver.
  *
@@ -211,7 +212,7 @@ function scoreOne(pb: AuthoredPlaybook, ctx: MatchContext): MatchedPlaybook | nu
   if (m.priorities?.length) {
     if (!ctx.priority || !m.priorities.includes(ctx.priority)) return null;
     score += 2;
-    reasons.push(`priority ${ctx.priority.toUpperCase()}`);
+    reasons.push(`urgency ${priorityMeta(ctx.priority).short}`);
   }
 
   for (const condition of m.requires ?? []) {

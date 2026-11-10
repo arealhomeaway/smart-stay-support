@@ -212,7 +212,7 @@ function CoachPage() {
           kind: "created",
           event_type: "created",
           channel: "internal",
-          body: `Opened from Coach at ${g.priority.toUpperCase()}. ${g.priority_reason}`,
+          body: `Opened from Coach at ${priorityMeta(g.priority).short}. ${g.priority_reason}`,
         },
         {
           ticket_id: ticket.id,
