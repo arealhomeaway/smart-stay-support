@@ -202,8 +202,20 @@ export function createFakeOutboundStore() {
     state,
     outbound: () => state.outbound,
     workOrders: () => state.workOrders,
+    // Sending from Resolve needs both switches (register C4): the outbound switch and Resolve
+    // work orders. setFlag keeps its meaning ("sending on or off"); setInternalWorkOrders turns
+    // only the Resolve work order switch.
     setFlag: (enabled: boolean) => {
-      state.flags = [{ key: "breezeway_outbound", enabled }];
+      state.flags = [
+        { key: "breezeway_outbound", enabled },
+        { key: "internal_work_orders", enabled },
+      ];
+    },
+    setInternalWorkOrders: (enabled: boolean) => {
+      state.flags = [
+        ...state.flags.filter((f) => f["key"] !== "internal_work_orders"),
+        { key: "internal_work_orders", enabled },
+      ];
     },
     seedPilotTicket: (id: string) => {
       state.tickets.push({
