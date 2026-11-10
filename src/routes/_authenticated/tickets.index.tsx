@@ -182,9 +182,11 @@ function TicketsPage() {
         description={activeTab?.hint}
         actions={
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" asChild>
-              <Link to="/team-queue">Team Queue</Link>
-            </Button>
+            {canOpen("/team-queue") ? (
+              <Button variant="outline" asChild>
+                <Link to="/team-queue">Team Queue</Link>
+              </Button>
+            ) : null}
           </div>
         }
       />
