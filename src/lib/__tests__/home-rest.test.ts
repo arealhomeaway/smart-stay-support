@@ -59,7 +59,7 @@ describe("Needs you now side panel (register T2)", () => {
     expect(panel).toContain("<HandoffPanel ticket={item.ticket} closed onChanged={refresh} />");
     const hp = readFileSync("src/components/HandoffPanel.tsx", "utf8");
     expect(hp).toContain("handoffSelfAcceptCheck");
-    expect(hp).toContain('toast.error("A rejected reassignment must include a reason.")');
+    expect(hp).toContain('toast.error("A declined handoff needs a reason.")');
   });
 
   it("Approve uses the same Work Order spending decision as the Work Order panel, with the same authority check", () => {
@@ -134,7 +134,8 @@ describe("My scorecard (register T1)", () => {
     expect(btn).toContain("canOpen(MY_SCORECARD_TO)");
     expect(btn).toContain('.or(`recorded_by.eq.${userId},about_user_id.eq.${userId}`)');
     expect(btn).toContain('.eq("is_demo", false)');
-    expect(MY_SCORECARD_TO).toBe("/analytics");
+    // Register A19 (Build 9 D2): the person's own read only page, not Analytics.
+    expect(MY_SCORECARD_TO).toBe("/my-scorecard");
     expect(MY_SCORECARD_LABEL).toBe("My scorecard");
   });
 

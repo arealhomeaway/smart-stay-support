@@ -378,7 +378,11 @@ export function capabilitiesFor(roles: AppRole[], seats: AccessSeats = {}): Set<
     set.add("onboarding_workspace");
     set.add("onboarding_templates");
   }
-  if (seats.finance) set.add("finance_workspace");
+  if (seats.finance) {
+    set.add("finance_workspace");
+    // A16 (Build 9 F1): a Supervisor who also holds Finance keeps Finance's view of Onboarding.
+    set.add("onboarding_workspace");
+  }
   if (seats.opsSupervisor) set.add("ops_user_invite");
   if (seats.projectManager) {
     for (const cap of VENDOR_EDITOR_CAPS) set.add(cap);

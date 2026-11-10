@@ -5,6 +5,7 @@ import { useRole } from "@/hooks/useRole";
 import { useDemo } from "@/components/DemoProvider";
 import { BackToDatabases, DbLinkButton, ModeChip } from "@/components/databases/DatabaseParts";
 import { TicketTabs } from "@/components/databases/TicketTabs";
+import { canMoveToQueue } from "@/lib/ticket-tabs";
 import { CLAIM_PIPELINE, CLAIM_STAGE_LABELS } from "@/lib/claims";
 import {
   ALL,
@@ -171,7 +172,7 @@ function DatabaseList({ card, mode, initialTerm }: { card: DatabaseCard; mode: E
                   This list could not be loaded. Try again in a moment.
                 </p>
               ) : (
-                <TicketTabs rows={rows} loading={data.isPending} canFixHome={can("audit_history") && !readOnly} demoMode={demoMode} />
+                <TicketTabs rows={rows} loading={data.isPending} canFixHome={can("audit_history") && !readOnly} demoMode={demoMode} canMoveToQueue={canMoveToQueue(seats, readOnly)} />
               )
             ) : (
             <>

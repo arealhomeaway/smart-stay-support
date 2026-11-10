@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/integrations/supabase/client";
 import { saveOverride } from "@/lib/coverage-admin.functions";
 import {
   applyCoverageActions,
@@ -14,6 +15,7 @@ import {
   nightStatus,
   personName,
   planTimeOff,
+  timeOffApprovalRows,
   addDays,
   type SOverride,
   type SPerson,
@@ -38,6 +40,7 @@ export function TimeOffDialog({
   defaultStartDate,
   defaultEndDate,
   defaultNote,
+  approveRequestId,
 }: {
   open: boolean;
   onClose: () => void;
@@ -52,6 +55,8 @@ export function TimeOffDialog({
   defaultStartDate?: string;
   defaultEndDate?: string;
   defaultNote?: string;
+  /** Approving this time off request: the rows and the approval save together or not at all. */
+  approveRequestId?: string;
 }) {
   const today = centralToday();
   const [userId, setUserId] = useState(defaultUserId ?? NONE);
@@ -82,13 +87,21 @@ export function TimeOffDialog({
     setBusy(true);
     try {
       const actions = planTimeOff({ roles, userId, startsAt, endsAt, note, coverUserId: coverId || null });
-      await applyCoverageActions(actions, {
-        saveOverride: (a) => save({ data: a }),
-        saveShift: async () => undefined,
-        deleteShift: async () => undefined,
-        setSeatHolder: async () => undefined,
-      });
-      toast.success("Time off saved.");
+      if (approveRequestId) {
+        // One database step: every row and the approval, or nothing (Build 9 C2).
+        const rpc = supabase.rpc.bind(supabase) as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ error: { message: string } | null }>;
+        const { error } = await rpc("approve_time_off", { _id: approveRequestId, _overrides: timeOffApprovalRows(actions), _note: "" });
+        if (error) throw new Error(error.message);
+        toast.success("Time off approved.");
+      } else {
+        await applyCoverageActions(actions, {
+          saveOverride: (a) => save({ data: a }),
+          saveShift: async () => undefined,
+          deleteShift: async () => undefined,
+          setSeatHolder: async () => undefined,
+        });
+        toast.success("Time off saved.");
+      }
       onSaved();
       onClose();
     } catch (e) {

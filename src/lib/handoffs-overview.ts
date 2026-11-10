@@ -28,6 +28,11 @@ export const HANDOFFS_COPY = {
   noCarryOvers: "No carry over items",
   openHome: "Open the home",
   empty: "No homes are in onboarding right now.",
+  // Build 9 F4: the home's own handoff Tasks (the Standard plan's handoff stages).
+  handoffTasks: (n: number) => (n === 1 ? "1 handoff task still open" : `${n} handoff tasks still open`),
+  noHandoffTasks: "No handoff tasks open",
+  notTracked: "Not tracked in Resolve yet.",
+  handoffTasksNotTracked: "Handoff tasks: Not tracked in Resolve yet.",
   failed: "Handoffs could not be loaded. Try again in a minute.",
 } as const;
 
@@ -71,7 +76,54 @@ export type HandoffOverviewRow = {
   openItems: { id: string; name: string; category: string }[];
   carryOvers: { id: string; ticketId: string; title: string; dueOn: string }[];
   demo: boolean;
+  /** The home's own open handoff Tasks, in plan order (Build 9 F4). */
+  handoffTasks?: HandoffTaskLines;
 };
+
+/** The Standard plan's handoff stages (plan version 4: 25 steps, 24 in use). */
+export const HANDOFF_PLAN_STAGES = ["Preparing for Handoff", "Handoff"] as const;
+
+export type HandoffPlanStep = { id: string; title: string; stage: string; sort_order: number };
+export type HandoffTaskLines = {
+  /** False when the home has none of the plan's handoff steps as its own Tasks. */
+  tracked: boolean;
+  open: { id: string; title: string; note: string }[];
+  /** Plan steps this home has no Task for. */
+  notTracked: { id: string; title: string }[];
+};
+
+/**
+ * The home's real open handoff Tasks from its own Tasks, matched to the plan's handoff
+ * steps by step, never by title. Done Tasks are left out; plan steps with no Task show as
+ * Not tracked in Resolve yet.
+ */
+export function handoffTaskLines(
+  steps: readonly HandoffPlanStep[],
+  tasks: readonly Pick<StandardTask, "id" | "title" | "status" | "template_task_id" | "due_on">[],
+  formatDue: (iso: string) => string = (d) => d,
+): HandoffTaskLines {
+  const stageRank = (s: string) => {
+    const i = (HANDOFF_PLAN_STAGES as readonly string[]).indexOf(s);
+    return i < 0 ? 99 : i;
+  };
+  const ordered = [...steps].sort((a, b) => stageRank(a.stage) - stageRank(b.stage) || a.sort_order - b.sort_order);
+  const open: HandoffTaskLines["open"] = [];
+  const notTracked: HandoffTaskLines["notTracked"] = [];
+  let linked = 0;
+  for (const step of ordered) {
+    const mine = tasks.filter((t) => t.template_task_id === step.id);
+    if (!mine.length) {
+      notTracked.push({ id: step.id, title: step.title });
+      continue;
+    }
+    linked += 1;
+    for (const t of mine) {
+      if (["complete", "done"].includes(t.status)) continue;
+      open.push({ id: t.id, title: t.title, note: t.due_on ? `Due ${formatDue(t.due_on)}` : step.stage });
+    }
+  }
+  return { tracked: linked > 0, open, notTracked: linked > 0 ? notTracked : [] };
+}
 
 /** One home's line on the page. */
 export function handoffOverviewRow(input: {

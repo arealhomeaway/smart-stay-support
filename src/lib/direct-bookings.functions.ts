@@ -625,6 +625,47 @@ export const submitDirectBookingReply = createServerFn({ method: "POST" })
     return sent.sent ? { state: "sent" as const } : { state: "not_sent" as const, reason: sent.reason, detail: sent.detail };
   });
 
+/**
+ * Tells the coordinator who asked for the OK: "Approved. Post it in the portal."
+ * One row per approval, in app and emailed by the normal team alert pass. The
+ * approval is already saved; a failed alert is logged and never undoes it.
+ */
+async function alertPortalApproved(leadId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { PORTAL_APPROVED_ALERT, portalApprovedAlertRow } = await import("./portal-requests");
+  const admin = supabaseAdmin as unknown as Client;
+  const [{ data: approval }, { data: lead }] = await Promise.all([
+    admin
+      .from("direct_booking_approvals" as never)
+      .select("requested_by, decided_at")
+      .eq("lead_id" as never, leadId as never)
+      .eq("decision" as never, "approved" as never)
+      .order("decided_at" as never, { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    admin.from("leads").select("partner_name, subject, is_demo" as never).eq("id", leadId).maybeSingle(),
+  ]);
+  const coordinatorId = (approval as { requested_by?: string } | null)?.requested_by;
+  if (!coordinatorId) return;
+  const l = (lead ?? {}) as { partner_name?: string | null; subject?: string | null; is_demo?: boolean | null };
+  // Once per approval: a repeat call for the same approval never sends a second alert.
+  const decidedAt = (approval as { decided_at?: string | null } | null)?.decided_at;
+  if (decidedAt) {
+    const { data: already } = await admin
+      .from("staff_notifications")
+      .select("id")
+      .eq("kind", PORTAL_APPROVED_ALERT.kind)
+      .eq("entity_id" as never, leadId as never)
+      .gte("created_at", decidedAt)
+      .limit(1);
+    if ((already ?? []).length) return;
+  }
+  const { error } = await admin.from("staff_notifications").insert(
+    portalApprovedAlertRow({ coordinatorId, leadId, partner: l.partner_name ?? null, subject: l.subject ?? null, isDemo: Boolean(l.is_demo) }) as never,
+  );
+  if (error) console.error("[direct bookings] portal approved alert not saved", error.message);
+}
+
 export const decideDirectBookingApproval = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
@@ -651,7 +692,10 @@ export const decideDirectBookingApproval = createServerFn({ method: "POST" })
     const reply = (result as { reply: Reply & { portal?: boolean } }).reply;
     // Approved for the partner's portal (or to a no reply sender): nothing is emailed;
     // the coordinator answers in the portal and records it.
-    if (reply.portal === true || isNoReplyAddress(reply.to)) return { state: "approved_for_portal" as const };
+    if (reply.portal === true || isNoReplyAddress(reply.to)) {
+      await alertPortalApproved(data.id);
+      return { state: "approved_for_portal" as const };
+    }
     const sent = await sendAndRecord(db, context.userId, data.id, { to: reply.to, subject: reply.subject, body: reply.body });
     return sent.sent ? { state: "sent" as const } : { state: "approved_not_sent" as const, reason: sent.reason, detail: sent.detail };
   });

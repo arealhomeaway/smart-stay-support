@@ -40,7 +40,7 @@ export const DEPARTMENTS: Department[] = [
     match: (p) => p === "/onboarding" || p.startsWith("/onboarding/"),
     links: [
       { label: "Onboarding Home", to: "/onboarding", exact: true },
-      { label: "Properties", to: "/onboarding", search: { lens: "all" }, exact: true },
+      { label: "All properties", to: "/onboarding", search: { lens: "all" }, exact: true },
       { label: "My Tasks", to: "/onboarding/my-work" },
       { label: "Owner Completions", to: "/onboarding/owner-completions" },
       { label: "Team", to: "/onboarding/team" },

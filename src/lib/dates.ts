@@ -63,3 +63,56 @@ export function usShortDate(
   if (!d) return fallback;
   return new Intl.DateTimeFormat("en-US", { month: "2-digit", day: "2-digit" }).format(d);
 }
+
+/* ---------- Central time (Emily, Nov 10: hand off form, next step due time, My shift) ---------- */
+
+const CENTRAL = "America/Chicago";
+export const CENTRAL_SUFFIX = "Central time";
+
+/** "11/12/2026 · 3:00 PM Central time", whatever the viewer's own clock is. */
+export function centralDateTime(value: string | number | Date | null | undefined, fallback = "Not set"): string {
+  const d = toDate(value);
+  if (!d) return fallback;
+  const day = new Intl.DateTimeFormat("en-US", { timeZone: CENTRAL, month: "2-digit", day: "2-digit", year: "numeric" }).format(d);
+  const time = new Intl.DateTimeFormat("en-US", { timeZone: CENTRAL, hour: "numeric", minute: "2-digit", hour12: true }).format(d);
+  return `${day} · ${time} ${CENTRAL_SUFFIX}`;
+}
+
+function centralParts(d: Date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: CENTRAL,
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).formatToParts(d);
+  const get = (t: string) => Number(parts.find((p) => p.type === t)!.value);
+  return { y: get("year"), m: get("month"), d: get("day"), h: get("hour") % 24, min: get("minute") };
+}
+
+/** A "YYYY-MM-DDTHH:MM" form value read as Central wall clock time, as an ISO instant. */
+export function centralInputToIso(local: string): string | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(local);
+  if (!m) return null;
+  const [y, mo, da, h, mi] = m.slice(1).map(Number) as [number, number, number, number, number];
+  const wall = Date.UTC(y, mo - 1, da, h, mi);
+  // Two passes settle the offset, including the days the clocks change.
+  let guess = wall;
+  for (let i = 0; i < 2; i++) {
+    const p = centralParts(new Date(guess));
+    const seen = Date.UTC(p.y, p.m - 1, p.d, p.h, p.min);
+    guess += wall - seen;
+  }
+  return new Date(guess).toISOString();
+}
+
+/** An ISO instant as a "YYYY-MM-DDTHH:MM" Central wall clock form value. */
+export function isoToCentralInput(iso: string | null | undefined): string {
+  const d = toDate(iso);
+  if (!d) return "";
+  const p = centralParts(d);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${p.y}-${pad(p.m)}-${pad(p.d)}T${pad(p.h)}:${pad(p.min)}`;
+}

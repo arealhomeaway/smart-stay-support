@@ -73,10 +73,7 @@ function HandoffCard({ r }: { r: HandoffOverviewRow }) {
             <dd>{r.readyAt && r.readyBy ? HANDOFFS_COPY.readyBy(r.readyBy, usDate(r.readyAt)) : HANDOFFS_COPY.notReady}</dd>
           </div>
         </dl>
-        <ItemList
-          label={r.openItems.length ? HANDOFFS_COPY.openItems(r.openItems.length) : HANDOFFS_COPY.noOpenItems}
-          items={r.openItems.map((i) => ({ key: i.id, text: i.name, note: i.category }))}
-        />
+        <HandoffTasks r={r} />
         <ItemList
           label={r.carryOvers.length ? HANDOFFS_COPY.carryOvers(r.carryOvers.length) : HANDOFFS_COPY.noCarryOvers}
           items={r.carryOvers.map((c) => ({ key: c.id, text: c.title, note: `Due ${usDate(c.dueOn)}` }))}
@@ -88,6 +85,20 @@ function HandoffCard({ r }: { r: HandoffOverviewRow }) {
         </Button>
       </SectionCard>
     </li>
+  );
+}
+
+/** The home's own open handoff Tasks (Build 9 F4); plan steps with no Task say so. */
+function HandoffTasks({ r }: { r: HandoffOverviewRow }) {
+  const t = r.handoffTasks;
+  if (!t) return null;
+  if (!t.tracked) return <p className="text-muted-foreground" data-testid="handoff-not-tracked">{HANDOFFS_COPY.handoffTasksNotTracked}</p>;
+  const items = [
+    ...t.open.map((i) => ({ key: i.id, text: i.title, note: i.note })),
+    ...t.notTracked.map((i) => ({ key: `step:${i.id}`, text: i.title, note: HANDOFFS_COPY.notTracked })),
+  ];
+  return (
+    <ItemList label={t.open.length ? HANDOFFS_COPY.handoffTasks(t.open.length) : HANDOFFS_COPY.noHandoffTasks} items={items} />
   );
 }
 

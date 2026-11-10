@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { usDateTime } from "@/lib/dates";
+import { centralDateTime, centralInputToIso, isoToCentralInput } from "@/lib/dates";
 import {
   NEXT_STEP_COPY,
   nextStepHistoryLine,
@@ -20,12 +20,9 @@ import {
   type NextStepView,
 } from "@/lib/ticket-next-step";
 
+/** The due time as a Central wall clock form value (Emily, Nov 10: Central time). */
 function toLocalInput(iso: string | null): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return isoToCentralInput(iso);
 }
 
 export function NextStepCard({
@@ -67,7 +64,7 @@ export function NextStepCard({
         author_id: userData.user.id,
         kind: "next_step",
         event_type: "next_step_changed",
-        body: nextStepHistoryLine(nextAction, dueIso, (iso) => usDateTime(iso)),
+        body: nextStepHistoryLine(nextAction, dueIso, (iso) => centralDateTime(iso)),
       });
       if (logError) throw new Error(logError.message);
       toast.success(nextAction ? NEXT_STEP_COPY.saved : NEXT_STEP_COPY.cleared);
@@ -86,7 +83,7 @@ export function NextStepCard({
       toast.error(problem);
       return;
     }
-    await write(step.trim(), due ? new Date(due).toISOString() : null);
+    await write(step.trim(), due ? centralInputToIso(due) : null);
   }
 
   return (

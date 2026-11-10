@@ -255,3 +255,36 @@ export const NEEDS_HOME_COPY = {
   saved: (ref: string) => `Ticket ${ref ? `#${ref} ` : ""}now has its home.`,
   who: "An Operations Supervisor or an Admin chooses the home.",
 } as const;
+
+/* ---------- Move to queue (Build 9 B1) ---------- */
+
+export const MOVE_TO_QUEUE_COPY = {
+  button: (n: number) => (n === 1 ? "Move 1 ticket to the queue" : `Move ${n} tickets to the queue`),
+  selectAll: "Select all shown",
+  clear: "Clear",
+  pick: (ref: string) => `Pick ticket ${ref}`,
+  moved: (n: number) => (n === 1 ? "1 ticket moved to the Team Queue." : `${n} tickets moved to the Team Queue.`),
+  needsHome: "Choose the home first.",
+  notReady: "Move to queue is not ready yet.",
+} as const;
+
+/** An older open Notion import the Operations Supervisor or the Director of Operations may move into the Team Queue. */
+export function movableToQueue(t: TicketFacts, now: number = Date.now()): boolean {
+  return notionTicketState(t, now) === "older_open" && t.import_hold !== "needs_home";
+}
+
+/**
+ * True once docs/pending/build9/04_move_to_queue.sql is applied. Until then the button stays hidden,
+ * so nobody presses a button that cannot work.
+ */
+export const MOVE_TO_QUEUE_LIVE = false;
+
+/** Who sees Move to queue: the Operations Supervisor and the Director of Operations (Emily, Nov 10). */
+export function canMoveToQueue(
+  seats: { opsSupervisor?: boolean; opsDirector?: boolean },
+  readOnly: boolean,
+  live: boolean = MOVE_TO_QUEUE_LIVE,
+): boolean {
+  return live && !readOnly && Boolean(seats.opsSupervisor || seats.opsDirector);
+}
+

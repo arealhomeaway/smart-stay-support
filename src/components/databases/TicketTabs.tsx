@@ -13,12 +13,14 @@ import { formatPropertyLabel } from "@/lib/property-label";
 import { ALL, CLAIMS_TO_WORK_OPTIONS, MONTH_NAMES, PERIOD_OPTIONS, centralDay, money, type DbRow, type PeriodKind } from "@/lib/databases";
 import { databaseQueryKey } from "@/lib/databases-data";
 import {
+  MOVE_TO_QUEUE_COPY,
   NEEDS_HOME_COPY,
   TICKET_FILTER_LABELS,
   TICKET_SORT_OPTIONS,
   TICKET_TABS,
   TICKET_VIEW_DEFAULT,
   applyTicketView,
+  movableToQueue,
   originalCreatedAt,
   ticketFilterOptions,
   ticketRecordLabel,
@@ -45,12 +47,15 @@ export function TicketTabs({
   loading,
   canFixHome,
   demoMode,
+  canMoveToQueue = false,
 }: {
   rows: DbRow[];
   loading: boolean;
   /** Operations Supervisor and Admin: the people who chose homes on the old review list. */
   canFixHome: boolean;
   demoMode: boolean;
+  /** Operations Supervisor and the Directors: Move to queue on Older open (Build 9 B1). */
+  canMoveToQueue?: boolean;
 }) {
   const [view, setView] = useState<TicketView>(TICKET_VIEW_DEFAULT);
   const now = Date.now();
@@ -119,7 +124,10 @@ export function TicketTabs({
       ) : shown.length === 0 ? (
         <p className="rounded-[14px] border border-border p-6 text-[15px]">Nothing matches.</p>
       ) : (
-        <TicketTable rows={shown} tab={view.tab} now={now} canFixHome={canFixHome} demoMode={demoMode} />
+        <>
+          {view.tab === "older_open" && canMoveToQueue ? <MoveToQueueBar rows={shown} now={now} demoMode={demoMode} /> : null}
+          <TicketTable rows={shown} tab={view.tab} now={now} canFixHome={canFixHome} demoMode={demoMode} />
+        </>
       )}
       {view.tab === "needs_home" && !canFixHome && onTab.length > 0 ? (
         <p className="text-[13px] text-muted-foreground">{NEEDS_HOME_COPY.who}</p>
@@ -375,3 +383,91 @@ function ChooseHome({ row, demoMode }: { row: DbRow; demoMode: boolean }) {
     </div>
   );
 }
+
+/**
+ * Move to queue (Build 9 B1): pick one or several older open imports and move them into the
+ * Team Queue's quiet Imported from Notion group, through the one database step
+ * move_notion_to_queue. Nothing is saved unless every picked ticket can move.
+ */
+function MoveToQueueBar({ rows, now, demoMode }: { rows: DbRow[]; now: number; demoMode: boolean }) {
+  const qc = useQueryClient();
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [saving, setSaving] = useState(false);
+  const movable = rows.filter((r) => r.ticket && movableToQueue(r.ticket, now));
+  const chosen = movable.filter((r) => picked.has(r.id));
+  const toggle = (id: string) =>
+    setPicked((p) => {
+      const next = new Set(p);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const move = async () => {
+    if (!chosen.length) return;
+    setSaving(true);
+    try {
+      const rpc = supabase.rpc.bind(supabase) as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: number | null; error: { message: string } | null }>;
+      const { data, error } = await rpc("move_notion_to_queue", { _ticket_ids: chosen.map((r) => r.id) });
+      if (error) throw new Error(/could not find the function/i.test(error.message) ? MOVE_TO_QUEUE_COPY.notReady : error.message);
+      toast.success(MOVE_TO_QUEUE_COPY.moved(Number(data ?? chosen.length)));
+      setPicked(new Set());
+      await qc.invalidateQueries({ queryKey: databaseQueryKey("tickets", demoMode) });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Nothing was moved. Try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+  if (!movable.length) return null;
+  return (
+    <div className="flex flex-col gap-2 rounded-[14px] border border-border p-3" data-move-to-queue>
+      <ul className="flex flex-col gap-1">
+        {movable.map((r) => {
+          const ref = r.cells[0] ? `#${r.cells[0]}` : "";
+          return (
+            <li key={r.id}>
+              <label className="flex min-h-11 items-center gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  className="size-5"
+                  checked={picked.has(r.id)}
+                  onChange={() => toggle(r.id)}
+                  aria-label={MOVE_TO_QUEUE_COPY.pick(ref)}
+                />
+                <span className="font-semibold">{ref}</span>
+                <span className="min-w-0 truncate">{r.cells[1] ?? ""}</span>
+              </label>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => setPicked(new Set(movable.map((r) => r.id)))}
+          className="inline-flex min-h-11 items-center rounded-lg border border-border px-4 text-sm font-semibold hover:bg-muted"
+        >
+          {MOVE_TO_QUEUE_COPY.selectAll}
+        </button>
+        {chosen.length ? (
+          <button
+            type="button"
+            onClick={() => setPicked(new Set())}
+            className="inline-flex min-h-11 items-center rounded-lg border border-border px-4 text-sm font-semibold hover:bg-muted"
+          >
+            {MOVE_TO_QUEUE_COPY.clear}
+          </button>
+        ) : null}
+        <button
+          type="button"
+          disabled={!chosen.length || saving}
+          onClick={move}
+          className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+        >
+          {MOVE_TO_QUEUE_COPY.button(chosen.length)}
+        </button>
+      </div>
+    </div>
+  );
+}
+

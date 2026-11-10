@@ -71,9 +71,6 @@ const FROZEN: Record<string, Record<string, number>> = {
   // The previous repair policy version stamp, saved on older Work Orders and matched by
   // policyForVersion; renaming it would lose which policy they were decided under.
   "src/lib/maintenance-policy.ts": { longDash: 1 },
-  // The first approved homeowner report sentences, kept as the record of the original wording.
-  // Reports print the saved wording, which already removes this dash; changing it needs approval.
-  "src/lib/report-v2.ts": { longDash: 1 },
   // A saved reason prefix on skipped onboarding work. Screens read it back and show "Not needed:",
   // so the saved form stays the same for old and new rows.
   "src/lib/onboarding.server.ts": { longDash: 1 },

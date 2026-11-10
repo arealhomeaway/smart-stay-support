@@ -166,12 +166,16 @@ describe("staged files", () => {
     }
     expect(Object.keys(sums).sort()).toEqual(["01-one-switch.sql", "README.md", "undo.sql"]);
   });
-  it("is staged only: not in the applied migrations until approved", () => {
+  // Build 9 I1 (Emily, Nov 10): apply the one switch step now; the switch stays off.
+  it("is applied once, exactly as staged", () => {
     const sql = read(`${dir}/01-one-switch.sql`);
-    for (const f of readdirSync("drizzle/migrations").filter((x) => x.endsWith(".sql"))) {
-      expect(read(`drizzle/migrations/${f}`)).not.toContain("The timed check follows the switch in the same step.");
-    }
     expect(sql).toContain("The timed check follows the switch in the same step.");
+    const norm = (t: string) => t.split("\n").map((l) => l.trimEnd()).filter(Boolean).join("\n");
+    const applied = readdirSync("drizzle/migrations")
+      .filter((x) => x.endsWith(".sql"))
+      .filter((f) => read(`drizzle/migrations/${f}`).includes("The timed check follows the switch in the same step."));
+    expect(applied).toEqual(["0319_email_intake_one_switch.sql"]);
+    expect(norm(read(`drizzle/migrations/${applied[0]}`))).toBe(norm(sql));
   });
   it("the switch row says so if the timed check did not follow", () => {
     expect(flags).toContain("if (r?.timed_check !== v) toast.error(OUT_OF_STEP_LINE);");

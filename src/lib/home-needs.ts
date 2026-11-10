@@ -54,8 +54,42 @@ export function myScorecardVisible(hasRecord: boolean, canOpenView: boolean): bo
   return hasRecord && canOpenView;
 }
 export const MY_SCORECARD_LABEL = "My scorecard";
-/** Until a staff My scorecard view exists, the button opens Analytics (register B6). */
-export const MY_SCORECARD_TO = "/analytics" as const;
+/** Register A19 (Build 9 D2): the button opens the person's own read only My scorecard page; no Analytics access needed. */
+export const MY_SCORECARD_TO = "/my-scorecard" as const;
+
+/** Plain names for each kind of scorecard record, in the order the page lists them. */
+export const MY_SCORECARD_KIND_LABELS: Record<string, string> = {
+  arrival_readiness: "Homes ready for arrival",
+  queue_sweep: "Queue checks",
+  coaching_cycle: "Coaching conversations",
+  weekly_submission: "Weekly scorecards sent",
+  corrective_commitment: "Commitments",
+  finance_packet: "Finance packets delivered",
+};
+
+export const MY_SCORECARD_COPY = {
+  title: "My scorecard",
+  description: "Your own scorecard records. Read only.",
+  empty: "No scorecard records yet.",
+  recordedAbout: "About you",
+  recordedBy: "Recorded by you",
+} as const;
+
+export type MyScorecardRow = { id: string; kind: string; recorded_at: string; recorded_by: string | null; about_user_id: string | null; note: string | null };
+
+/** Groups a person's own records by kind (known kinds first, in order), newest first inside each. */
+export function myScorecardGroups(rows: MyScorecardRow[], userId: string) {
+  const mine = rows.filter((r) => r.recorded_by === userId || r.about_user_id === userId);
+  const order = Object.keys(MY_SCORECARD_KIND_LABELS);
+  const kinds = [...new Set(mine.map((r) => r.kind))].sort((a, b) => {
+    const ia = order.indexOf(a), ib = order.indexOf(b);
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b);
+  });
+  return kinds.map((kind) => {
+    const list = mine.filter((r) => r.kind === kind).sort((a, b) => b.recorded_at.localeCompare(a.recorded_at));
+    return { kind, label: MY_SCORECARD_KIND_LABELS[kind] ?? "Other records", count: list.length, rows: list };
+  });
+}
 
 /** Register T1: Recent activity starts collapsed, with a plain heading and a count. */
 export const RECENT_ACTIVITY_LIMIT = 6;

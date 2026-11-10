@@ -15,6 +15,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { responsibilitySeatWriter } from "./responsibility-seats.server";
+import { scheduleOnlyPeople } from "./team-schedule";
 
 type Ctx = { supabase: SupabaseClient<Database>; userId: string };
 
@@ -103,7 +104,18 @@ export const coverageModel = createServerFn({ method: "POST" })
         };
       });
     }
-    const eligibleIds = ((people.data ?? []) as { id: string; oncall_eligible: boolean | null }[])
+    // Register S4: a coordinator (read only) gets only the people the schedule names, never the full list.
+    const shownPeople =
+      canEdit.data === true
+        ? (people.data ?? [])
+        : scheduleOnlyPeople((people.data ?? []) as { id: string; full_name: string | null; oncall_eligible: boolean | null }[], {
+            roles: (roles.data ?? []) as { current_seat_holder?: string | null }[],
+            overrides: (overrides.data ?? []) as { user_id?: string | null }[],
+            roster: (roster.data ?? []) as { user_id?: string | null }[],
+            pattern: setting("oncall_weekday_pattern"),
+            self: context.userId,
+          });
+    const eligibleIds = (shownPeople as { id: string; oncall_eligible: boolean | null }[])
       .filter((p) => p.oncall_eligible)
       .map((p) => p.id);
     return {
@@ -117,7 +129,7 @@ export const coverageModel = createServerFn({ method: "POST" })
       overrides: overrides.data ?? [],
       triage: triage.data ?? [],
       roster: roster.data ?? [],
-      people: people.data ?? [],
+      people: shownPeople,
       config: cfg.data ?? null,
       canEdit: canEdit.data === true,
     };

@@ -982,7 +982,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     repairAmount: branches?.repairAmount ?? 0,
     ownerSensitive: Boolean((ticket as Record<string, unknown>)["owner_notified"] || (ticket as Record<string, unknown>)["owner_approval_required"]),
   }).required;
-  const resolveActionLabel = willNeedFinalReview ? "Resolve: send for review" : "Close ticket";
+  const resolveActionLabel = willNeedFinalReview ? "Send for review" : "Close ticket";
 
   // The one Current Action: what to do now, what has to be written down, and
   // what happens the moment it is completed. Derived, never stored.
@@ -1709,16 +1709,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                       }}
                     />
                   )}
-                  {reopenPath === "resolved" && (
-                    <Button variant="outline" onClick={reopen}>
-                      {REOPEN_COPY.button}
-                    </Button>
-                  )}
-                  {reopenPath === "closed" && (
-                    <Button variant="outline" onClick={() => setReopenOpen(true)}>
-                      {REOPEN_COPY.button}
-                    </Button>
-                  )}
+                  {/* Reopen lives only in the header (register T12); the older button here is gone. */}
                 </div>
               )}
 
@@ -2160,9 +2151,9 @@ function MoreActions({
                 </SelectContent>
               </Select>
               {closed && (
-                // Reopening has one home: the explicit action in Current Work.
+                // Reopening has one home: Reopen ticket at the top of the ticket (Build 9 E2).
                 <p className="text-xs text-muted-foreground">
-                  This ticket is closed. Use “Reopen this ticket” to put it back into work.
+                  This ticket is closed. Use Reopen ticket at the top to put it back into work.
                 </p>
               )}
             </div>

@@ -17280,6 +17280,10 @@ export type Database = {
         Args: { _record_id: string }
         Returns: Json
       }
+      approve_time_off: {
+        Args: { _id: string; _note?: string; _overrides: Json }
+        Returns: number
+      }
       archive_attachment: {
         Args: { _actor_id: string; _document_id: string; _reason?: string }
         Returns: string

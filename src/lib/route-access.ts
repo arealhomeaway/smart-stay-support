@@ -33,6 +33,8 @@ type Rule = {
 // Longest/most specific prefixes first; matching is by whole path segment.
 const RULES: Rule[] = [
   { prefix: "/account", shared: true },
+  // Register A19 (Build 9 D2): a person's own scorecard records, read only. RLS shows only their own.
+  { prefix: "/my-scorecard", shared: true },
   { prefix: "/notifications", shared: true },
   { prefix: "/hub", shared: true },
   { prefix: "/join", shared: true },
@@ -182,13 +184,40 @@ export const FINANCE_VIEW_ONLY_PATHS = [
 
 /** True when this person may only look at this page (Finance on the pages above). */
 export function viewOnlyPath(pathname: string, ctx: AccessContext): boolean {
-  if (!isFinanceOnly(ctx.roles, ctx.seats)) return false;
   const path = pathname.split("?")[0]!.replace(/\/+$/, "") || "/";
+  if (!isFinanceOnly(ctx.roles, ctx.seats)) {
+    // A16 (Build 9 F1): Finance held with another role keeps Finance's view of Onboarding, read
+    // only, unless that other role already works Onboarding (Admin, Onboarding staff, a Director).
+    return financeOnboardingViewOnly(ctx) && (path === "/onboarding" || path.startsWith("/onboarding/"));
+  }
   return FINANCE_VIEW_ONLY_PATHS.some((p) => path === p || path.startsWith(p + "/"));
+}
+
+/** Finance plus another Supervisor type role that does not itself work Onboarding. */
+export function financeOnboardingViewOnly(ctx: AccessContext): boolean {
+  const s = ctx.seats ?? {};
+  return (
+    Boolean(s.finance) &&
+    ctx.roles.includes("manager") &&
+    !ctx.roles.includes("admin") &&
+    !ctx.roles.includes("onboarding") &&
+    !s.onboardingDirector &&
+    !s.opsDirector
+  );
 }
 
 /** Onboarding is the only portal this person works in. */
 export function isOnboardingOnly(ctx: AccessContext): boolean {
   const portals = portalIds(ctx);
   return portals.size === 1 && portals.has("onboarding");
+}
+
+/**
+ * The Export check link on Oversight (Build 9 H1): the Operations Supervisor, the Director of
+ * Operations and Admin. The Director of Onboarding keeps the page by address, with no link.
+ */
+export function showExportCheckLink(ctx: AccessContext): boolean {
+  if (!canOpenPath("/export-check", ctx)) return false;
+  const s = ctx.seats ?? {};
+  return ctx.roles.includes("admin") || Boolean(s.opsSupervisor) || Boolean(s.opsDirector);
 }
