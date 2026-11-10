@@ -1,7 +1,7 @@
 import { useStoredMaintenancePolicy } from "@/hooks/useStoredMaintenancePolicy";
 import { TicketDrawerHost } from "@/components/nav/TicketDrawer";
 import { RecordRoutineHost, openRecordRoutine } from "@/components/routines/RecordRoutinePanel";
-import { Link, useParams, useRouter, useSearch } from "@tanstack/react-router";
+import { Link, useParams, useRouter, useRouterState, useSearch } from "@tanstack/react-router";
 import {
   ArrowLeftRight,
   BarChart3,
@@ -187,6 +187,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   // seats do not. Seat, not permission role, decides this.
   const seat = useSeat();
   const pathname = router.state.location.pathname;
+  // The page being shown right now, for the View as page rule below.
+  const livePathname = useRouterState({ select: (s) => s.location.pathname });
   const vendorMode = !rolesLoading && isVendor;
   const ownerMode = !rolesLoading && isOwner;
 
@@ -487,7 +489,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   )}
                   <TicketDrawerHost>
                     {/* View as follows the same page rule as a real account, by address too. */}
-                    {previewing && !canOpen(pathname) ? (
+                    {previewing && !canOpen(livePathname) ? (
                       <div className="mx-auto max-w-md space-y-4 rounded-lg border border-border p-8 text-center" data-testid="view-as-refused">
                         <h1 className="font-display text-xl font-semibold">This page is not open for this role.</h1>
                         <Button asChild variant="outline" className="min-h-11">

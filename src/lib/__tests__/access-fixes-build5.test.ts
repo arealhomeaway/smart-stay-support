@@ -249,7 +249,7 @@ describe("6. View as: every role, keeping its role on top, still read only", () 
     const role = read("src/hooks/useRole.ts");
     expect(role).toContain("? seatsForPreview(previewSeat)");
     expect(role).toContain("readOnly: (previewing && !demoMode) || viewOnlyHere,");
-    expect(read("src/components/AppShell.tsx")).toContain("{previewing && !canOpen(pathname) ? (");
+    expect(read("src/components/AppShell.tsx")).toContain("{previewing && !canOpen(livePathname) ? (");
   });
 });
 
