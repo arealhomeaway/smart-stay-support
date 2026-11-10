@@ -31,10 +31,11 @@ const OLD_NAMES = [
 describe("urgency names: Right now, Today, Routine", () => {
   it("one shared place names each urgency, codes stay internal", () => {
     expect(URGENCY_NAMES).toEqual({ p1: "Right now", p2: "Today", p3: "Routine" });
-    expect(PRIORITIES.map((p) => [p.value, p.name, p.label])).toEqual([
-      ["p1", "Right now", "Right now (P1)"],
-      ["p2", "Today", "Today (P2)"],
-      ["p3", "Routine", "Routine (P3)"],
+    // Build 7 (register H4): the screen words carry no code, label and short alike.
+    expect(PRIORITIES.map((p) => [p.value, p.name, p.label, p.short])).toEqual([
+      ["p1", "Right now", "Right now", "Right now"],
+      ["p2", "Today", "Today", "Today"],
+      ["p3", "Routine", "Routine", "Routine"],
     ]);
     expect(priorityMeta("p2").name).toBe("Today");
   });
