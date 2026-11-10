@@ -40,6 +40,7 @@ import {
   oversightPropertiesCsv,
 } from "@/lib/oversight-export";
 import { toast } from "sonner";
+import { useRole } from "@/hooks/useRole";
 
 export const Route = createFileRoute("/_authenticated/owner-oversight")({
   head: () => ({
@@ -74,6 +75,7 @@ const TONE: Record<string, StatusTone> = {
 
 function OwnerOversightPage() {
   const load = useServerFn(ownerOversight);
+  const { canOpen } = useRole();
   const { demoMode } = useDemo();
   const [showDemo, setShowDemo] = useState(false);
   const viewingDemo = demoMode || showDemo;

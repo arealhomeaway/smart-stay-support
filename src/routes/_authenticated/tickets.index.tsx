@@ -36,6 +36,7 @@ import { currentOwnerId, queueSort } from "@/lib/matters";
 import { MY_WORK_VIEWS, matchesMyWorkView, type MyWorkView } from "@/lib/my-work";
 import { isBlocked } from "@/lib/team-queue";
 import { HandoffsWaiting } from "@/components/operations/HandoffsWaiting";
+import { useRole } from "@/hooks/useRole";
 
 export const Route = createFileRoute("/_authenticated/tickets/")({
   head: () => ({
@@ -77,6 +78,7 @@ type TicketQueueSearch = {
 
 function TicketsPage() {
   const navigate = Route.useNavigate();
+  const { canOpen } = useRole();
   const params = Route.useSearch();
   const search = params.q ?? "";
   const requestedTab =
