@@ -1,5 +1,12 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 9 build 3 of 7: the rest of Home (no publish, no database change)
+- [x] 1 Needs you now rows open a side panel with what, why and the action
+- [x] 2 See all to Oversight for Supervisor, Directors, COO, Admin; not coordinators
+- [x] 3 Recent activity collapsed with heading and count
+- [x] 4 My scorecard button only with a scorecard record, never a dead button
+- [x] 5 Tests, cancelled database check, browser check, register T1 and T2
+
 ## Nov 9 build 2 of 7: Home My shift, End my shift and the handoff alert (no publish)
 - [x] 1 My shift card: today's hours and lunch, on call tonight, Request time off, End my shift, No shift today
 - [x] 2 End my shift walk: each open ticket, default next on shift, done so far, next step, due, or Nothing to hand off; one handoff each, one history line each, one shift record

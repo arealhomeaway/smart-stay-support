@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/select";
 import { displayName, useCurrentUserId, type TeamMember } from "@/hooks/useTeam";
 import { useRole } from "@/hooks/useRole";
+import { recordWorkOrderSupervisorDecision } from "@/lib/work-order-supervisor-decision";
 import { stateChip } from "@/lib/semantic";
 import { evidenceProgress, type RequirementLike } from "@/lib/claims";
 import { WARRANTY_OVERRIDE_LABELS, ownerApprovalHelp, policyForVersion, type WarrantyOverrideReason } from "@/lib/maintenance-policy";
@@ -405,30 +406,16 @@ export function WorkOrderDrawer({
   const recordSupervisorDecision = useMutation({
     mutationFn: async (outcome: "approved" | "declined") => {
       if (!workOrder) return;
-      const decidedAt = new Date().toISOString();
-      if (workOrder.supervisor_approval_id) {
-        const { error } = await supabase
-          .from("approvals")
-          .update({ status: outcome, decision_note: note, decided_at: decidedAt })
-          .eq("id", workOrder.supervisor_approval_id as string);
-        if (error) throw error;
-      }
-      const { error } = await supabase
-        .from("work_orders")
-        .update({
-          supervisor_approval_status: outcome,
-          supervisor_approval_note: note,
-          supervisor_approval_decided_at: decidedAt,
-        } as never)
-        .eq("id", workOrder.id);
-      if (error) throw error;
-
-      await supabase.from("work_order_events").insert({
-        work_order_id: workOrder.id,
-        author_id: userId,
-        event_type: `supervisor_${outcome}`,
-        body: `Supervisor ${outcome} — ${note}`,
-        is_demo: workOrder.is_demo,
+      // The same writes Home's Needs you now panel uses (src/lib/work-order-supervisor-decision.ts).
+      await recordWorkOrderSupervisorDecision(supabase, {
+        workOrder: {
+          id: workOrder.id,
+          supervisor_approval_id: workOrder.supervisor_approval_id as string | null,
+          is_demo: workOrder.is_demo,
+        },
+        outcome,
+        note,
+        userId,
       });
     },
     onSuccess: () => {
