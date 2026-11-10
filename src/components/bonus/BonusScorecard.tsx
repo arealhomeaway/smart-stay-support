@@ -56,7 +56,7 @@ export function BonusScorecard({ card, onChanged }: { card: BonusCard; onChanged
         </p>
         <div className="mt-3 flex flex-wrap items-baseline gap-x-3">
           <span className="text-sm text-muted-foreground">{verified ? BONUS_COPY.verifiedTotal : BONUS_COPY.estimated}</span>
-          <span className="text-3xl font-bold" data-bonus-total>
+          <span className={card.total === null ? "text-base font-semibold" : "text-3xl font-bold"} data-bonus-total>
             {card.total === null ? (card.counting_from > card.data_as_of.slice(0, 10) ? BONUS_COPY.notCountedYet : BONUS_COPY.notSet) : dollars(card.total)}
           </span>
         </div>
