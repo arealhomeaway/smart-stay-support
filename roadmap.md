@@ -1,5 +1,37 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 10 build 9: answers and fixes from the overnight questions (no publish)
+- [ ] A4 Portal quote approved: coordinator alert in app and email "Approved. Post it in the portal."
+- [ ] A5 Reply time and answered how columns written only by server actions (APPLY, cancelled practice)
+- [ ] A6 Regenerate the unsent draft on the open ALE request (new one home sentence)
+- [ ] A8 Fix the flaky ticket history check
+- [ ] B1 Move to queue (select several) on Older open, Supervisor and Director only
+- [ ] B2 Confirm Admin tab and Integrations imported tickets list both hidden
+- [ ] C1 Hand off to a role goes to the person on shift; refuse when nobody is on shift
+- [ ] C2 Approve time off all or nothing in one database function (APPLY)
+- [ ] C3/E4 Central time on Hand off form, next step due time and My shift
+- [ ] C4 Coordinators open Team and Coverage read only (Schedule tab only)
+- [ ] C5 Full stop in the history line
+- [ ] D1 Handoff box: 44px Accept and Decline, Handoffs, Decline, no long dashes, roles only
+- [ ] D2 Read only My scorecard page for anyone with a scorecard record
+- [ ] D3 No long dash in Work Order "Supervisor approved" history line
+- [ ] E2 Remove older Reopen this ticket button inside Do this now
+- [ ] E5 Waiting time out of Command Center Typical time to resolve
+- [ ] E8 Closing form button reads Send for review
+- [ ] F1 Supervisor who also holds Finance keeps Finance's view of Onboarding
+- [ ] F3 Handoff tab: Director of Onboarding marks ready, Director of Operations or Admin accepts, Supervisor read only (APPLY)
+- [ ] F4 Handoffs page: each home's real open handoff tasks; "Not tracked in Resolve yet"
+- [ ] F5 Onboarding menu link named All properties
+- [ ] F8 No dashes in Add users account type labels
+- [ ] G1 STAGE ONLY names to roles in task text
+- [ ] G2 STAGE ONLY database written text dashes and vendor rule P codes
+- [ ] G3 First approved homeowner report sentence: long dash to comma
+- [ ] H2 Fewer live rows: warn on check page and morning Admin alert with table names
+- [ ] H3 Not copied stores shown on check page with reason
+- [ ] I1 APPLY one switch step; switch stays off, timed check inactive
+- [ ] Tests, cancelled database steps, browser check, register S4, O4, T5, T6
+- WAITS ON EMILY: 4G work order channel when vendor has email; SharePoint space check
+
 ## Nov 9 build 6 of 7: the full nightly export (register N10, no publish)
 - [x] 1 Every public table, one file each (large ones in parts), manifest with rows and sha256, dated SharePoint folder, no secrets
 - [x] 2 Stored file inventory every night; new or changed files copied nightly, full copy weekly; real size reported
