@@ -46,7 +46,7 @@ export function PortalSwitcher() {
           <Button
             size="sm"
             variant={demoMode ? "default" : "outline"}
-            className="min-h-11 md:min-h-9"
+            className="min-h-11"
           >
             {demoMode ? <FlaskConical className="size-4" /> : <LayoutGrid className="size-4" />}
             <span className="hidden sm:inline">{demoMode ? "Demo" : "Portals"}</span>
