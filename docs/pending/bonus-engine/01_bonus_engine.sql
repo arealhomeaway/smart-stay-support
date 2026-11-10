@@ -602,8 +602,9 @@ BEGIN
       IF _counted >= 3 THEN
         _amount := CASE _item ->> 'level' WHEN 'exceeds' THEN per.amount_exceeds WHEN 'strong' THEN per.amount_strong
                                           WHEN 'goal_met' THEN per.amount_goal_met ELSE 0 END;
-        _amount := round(_eff / 100 * _amount, 2);
-        _total := _total + coalesce(_amount, 0);
+        -- The total adds the exact amounts and is rounded once, so no cent is lost to rounding.
+        _total := _total + coalesce((_item ->> 'share')::numeric * _amount / _counted_share, 0);
+        _amount := round((_item ->> 'share')::numeric * _amount / _counted_share, 2);
       END IF;
     END IF;
     _out := _out || jsonb_build_array(_item || jsonb_build_object('effective_share', _eff, 'dollars', _amount));
@@ -615,7 +616,7 @@ BEGIN
     -- Fewer than 3 goals could be measured: the full Goal met amount for the period.
     _total := per.amount_goal_met;
   ELSE
-    _total := least(_total, per.amount_exceeds);
+    _total := round(least(_total, per.amount_exceeds), 2);
   END IF;
 
   RETURN jsonb_build_object(
