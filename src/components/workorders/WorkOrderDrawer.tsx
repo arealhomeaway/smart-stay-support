@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/select";
 import { displayName, useCurrentUserId, type TeamMember } from "@/hooks/useTeam";
 import { useRole } from "@/hooks/useRole";
+import { recordWorkOrderSupervisorDecision } from "@/lib/work-order-supervisor-decision";
 import { stateChip } from "@/lib/semantic";
 import { evidenceProgress, type RequirementLike } from "@/lib/claims";
 import { WARRANTY_OVERRIDE_LABELS, ownerApprovalHelp, policyForVersion, type WarrantyOverrideReason } from "@/lib/maintenance-policy";
