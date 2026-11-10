@@ -123,10 +123,10 @@ export function ticketCurrentAction(t: CurrentActionInput): CurrentAction | null
   if (!t.acknowledged_at) {
     return {
       id: "acknowledge",
-      title: "Acknowledge this ticket",
+      title: "Confirm you have it",
       because: "Nobody has confirmed we have it yet, and the response clock is running.",
       then: "Then you'll say what you're doing first.",
-      completeLabel: "Acknowledge & advance",
+      completeLabel: "Continue",
       fields: [
         {
           name: "note",
@@ -144,10 +144,10 @@ export function ticketCurrentAction(t: CurrentActionInput): CurrentAction | null
       id: "waiting_followup",
       title: `Follow up with ${who}`,
       because: t.waiting_reason
-        ? `${t.waiting_reason} — the clock is paused, not finished.`
-        : "This is parked with someone else — the clock is paused, not finished.",
+        ? `${t.waiting_reason}. The response timer is paused until then.`
+        : "This is parked with someone else. The response timer is paused until then.",
       then: "Either it comes back to you now, or it's parked again with a new follow-up time.",
-      completeLabel: "Record & advance",
+      completeLabel: "Continue",
       fields: [
         {
           name: "update",
@@ -181,7 +181,7 @@ export function ticketCurrentAction(t: CurrentActionInput): CurrentAction | null
   if (!t.action_started_at) {
     return {
       id: "start_work",
-      title: "Start the work",
+      title: "Start work",
       because: "It's acknowledged but nothing has actually moved yet.",
       then:
         comm === "initial_ack"
@@ -189,7 +189,7 @@ export function ticketCurrentAction(t: CurrentActionInput): CurrentAction | null
           : legacyGuest
             ? "Then you'll update the guest."
             : "Then work it through.",
-      completeLabel: "Start & advance",
+      completeLabel: "Continue",
       fields: [
         {
           name: "first_step",
@@ -212,7 +212,7 @@ export function ticketCurrentAction(t: CurrentActionInput): CurrentAction | null
         ? "This issue affects an active stay and the guest hasn't heard from us yet."
         : "The guest update you scheduled is due now.",
       then: "Then Resolve shows the next real step — waiting, vendor, or the next update time.",
-      completeLabel: "Record & advance",
+      completeLabel: "Continue",
       fields: GUEST_UPDATE_FIELDS,
     };
   }
@@ -235,7 +235,7 @@ export function ticketCurrentAction(t: CurrentActionInput): CurrentAction | null
       title: `Check in with ${t.vendor_name}`,
       because: "A vendor is engaged and hasn't reported the work complete.",
       then: "Then confirm the fix and update the guest.",
-      completeLabel: "Record & advance",
+      completeLabel: "Continue",
       fields: [
         {
           name: "update",
@@ -277,7 +277,7 @@ export function ticketCurrentAction(t: CurrentActionInput): CurrentAction | null
       title: "Contact prior guest for feedback",
       because: "This follows up a past stay. Nobody currently in the home is involved.",
       then: "Then close it out when the follow-up is done.",
-      completeLabel: "Record & advance",
+      completeLabel: "Continue",
       fields: [
         {
           name: "update",
@@ -296,7 +296,7 @@ export function ticketCurrentAction(t: CurrentActionInput): CurrentAction | null
       title: "Update the guest",
       because: "Someone is in the home waiting to hear from us.",
       then: "Then close it out when it's genuinely done.",
-      completeLabel: "Record & advance",
+      completeLabel: "Continue",
       fields: [
         {
           name: "update",
