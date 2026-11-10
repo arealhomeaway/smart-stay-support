@@ -1,0 +1,7 @@
+{
+  "01_manual_trackers.sql": "33749bc8bc4a93850be5c8a361e6e7fb6d1d71d187338b875ada88880256b427",
+  "undo/01_manual_trackers.sql": "9e53c06a84b6b4eaf41a531622ca98dd2037ee9dc5cbec49fb19200b9e135fdc",
+  "practice_01_manual_trackers.sql": "9ab773014a52542c6f84b414db9146c6939e9ba329b44322d910c589365ab759",
+  "README.md": "d1b9fa23b421dba321726d8080e3bcee5d7bfa19cfe9f6c3de46513f126a6c14",
+  "drizzle/migrations/0328_manual_trackers.sql": "33749bc8bc4a93850be5c8a361e6e7fb6d1d71d187338b875ada88880256b427"
+}
