@@ -40,6 +40,7 @@ import {
   oversightPropertiesCsv,
 } from "@/lib/oversight-export";
 import { toast } from "sonner";
+import { useRole } from "@/hooks/useRole";
 
 export const Route = createFileRoute("/_authenticated/owner-oversight")({
   head: () => ({
@@ -74,6 +75,7 @@ const TONE: Record<string, StatusTone> = {
 
 function OwnerOversightPage() {
   const load = useServerFn(ownerOversight);
+  const { canOpen } = useRole();
   const { demoMode } = useDemo();
   const [showDemo, setShowDemo] = useState(false);
   const viewingDemo = demoMode || showDemo;
@@ -145,9 +147,11 @@ function OwnerOversightPage() {
         description="Every enrolled homeowner on one screen: hours they have reported against the program's own pace, the checkpoints coming due, and what is still waiting on them."
         actions={
           <div className="flex flex-wrap gap-2">
-            <Button asChild variant="outline">
-              <Link to="/oversight-access-log">Access log</Link>
-            </Button>
+            {canOpen("/oversight-access-log") ? (
+              <Button asChild variant="outline">
+                <Link to="/oversight-access-log">Access log</Link>
+              </Button>
+            ) : null}
             <Button asChild variant="outline">
               <Link to="/owner-programs">Open program admin</Link>
             </Button>

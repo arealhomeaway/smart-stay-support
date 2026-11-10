@@ -51,7 +51,8 @@ export function visibleInvites<T extends InviteLike>(list: T[], showUsed: boolea
  */
 export function TeamInvitePanel({ allowedRoles }: { allowedRoles?: InviteRole[] } = {}) {
   const { isAdmin, isLoading: roleLoading, can } = useRole();
-  const limited = !isAdmin && Boolean(allowedRoles?.length) && can("ops_user_invite");
+  const limited =
+    !isAdmin && Boolean(allowedRoles?.length) && (can("ops_user_invite") || can("onboarding_user_invite"));
   const canUse = isAdmin || limited;
   const roleChoices = (Object.keys(ROLE_LABEL) as InviteRole[]).filter((r) => !limited || allowedRoles!.includes(r));
   const qc = useQueryClient();

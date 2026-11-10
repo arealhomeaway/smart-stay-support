@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { applyRole, assertCanInvite, inviteScope, OPS_INVITE_ROLES, type AppRole } from "./access.server";
+import { applyRole, assertCanInvite, inviteRolesFor, inviteScope, type AppRole, type InviteScope } from "./access.server";
 import { isProtectedResponsibilitySeat } from "./responsibility-seats.server";
 
 type Client = SupabaseClient<Database>;
@@ -17,13 +17,13 @@ function newInviteCode() {
 }
 
 /** Invite codes the caller may see: every code for Admin, Coordinator and Supervisor codes for Operations leadership. */
-export async function loadTeamInvites(supabase: Client, scope: "all" | "operations" = "all") {
+export async function loadTeamInvites(supabase: Client, scope: Exclude<InviteScope, "none"> = "all") {
   let q = supabase
     .from("team_invites")
     .select(
       "id, code, role, invitee_email, invitee_name, note, expires_at, revoked_at, redeemed_at",
     );
-  if (scope === "operations") q = q.in("role", OPS_INVITE_ROLES);
+  if (scope !== "all") q = q.in("role", inviteRolesFor(scope));
   const { data, error } = await q.order("created_at", { ascending: false }).limit(100);
   if (error) throw error;
   return data ?? [];
@@ -36,8 +36,12 @@ async function assertCanManageInvite(supabase: Client, userId: string, inviteId:
   if (scope === "none") throw new Error("Only an admin can change team access.");
   const { data, error } = await supabase.from("team_invites").select("role").eq("id", inviteId).maybeSingle();
   if (error) throw error;
-  if (!data || !OPS_INVITE_ROLES.includes(data.role as AppRole))
-    throw new Error("You can manage Property Coordinator and Supervisor codes only.");
+  if (!data || !inviteRolesFor(scope).includes(data.role as AppRole))
+    throw new Error(
+      scope === "onboarding"
+        ? "You can manage Onboarding staff codes only."
+        : "You can manage Property Coordinator and Supervisor codes only.",
+    );
 }
 
 /** Admin (any account type) or Operations leadership (Coordinator and Supervisor): issue a single-use code. */

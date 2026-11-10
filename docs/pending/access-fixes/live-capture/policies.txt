@@ -1,0 +1,9 @@
+Live on Nov 10, 2026 (pg_policies), before 01_access_fixes.sql:
+help_tickets | Leadership reads help tickets | SELECT | (has_role(auth.uid(), 'admin'::app_role) OR is_director(auth.uid()) OR (submitted_by = auth.uid()))
+help_tickets | Leadership updates help tickets | UPDATE | USING (has_role(auth.uid(), 'admin'::app_role) OR is_director(auth.uid())) | WITH CHECK (has_role(auth.uid(), 'admin'::app_role) OR is_director(auth.uid()))
+help_tickets | Users submit own help tickets | INSERT | WITH CHECK ((submitted_by = auth.uid()) AND (status = 'new'::text))  (unchanged)
+help_tickets | Synthetic accounts: demo records only | ALL  (unchanged)
+help_ticket_events | Leadership reads help ticket events | SELECT | (has_role(auth.uid(), 'admin'::app_role) OR is_director(auth.uid()))
+help_ticket_events | Leadership writes help ticket events | INSERT | WITH CHECK ((author_id = auth.uid()) AND (has_role(auth.uid(), 'admin'::app_role) OR is_director(auth.uid())))
+team_invites | Admins create/read/update team invites | private.has_role(auth.uid(), 'admin')  (unchanged)
+team_invites | Operations leadership create/read/update Operations invites | role in (tech, manager) AND can_invite_operations_users(auth.uid())  (unchanged)

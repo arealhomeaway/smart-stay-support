@@ -9,6 +9,7 @@
  */
 import {
   capabilitiesFor,
+  isFinanceOnly,
   type AccessSeats,
   type AppRole,
   type Capability,
@@ -51,9 +52,11 @@ const RULES: Rule[] = [
   { prefix: "/vendors", capability: "vendor_directory" },
   { prefix: "/vendor", portal: "vendor" },
   { prefix: "/command-center", capability: "command_center" },
-  { prefix: "/help-tickets", capability: "audit_history" },
-  { prefix: "/audit", capability: "audit_history" },
-  { prefix: "/oversight-access-log", capability: "audit_history" },
+  // My reports: every staff member sees their own; the Admin sees all (register A20).
+  { prefix: "/help-tickets", capability: "help_tickets_own" },
+  // The other Admin pages are Admin only, by address too (register A20, M6).
+  { prefix: "/audit", capability: "admin_pages" },
+  { prefix: "/oversight-access-log", capability: "admin_pages" },
   { prefix: "/integrations", capability: "integrations" },
   // The playbook library opens read only for every staff account; saving is checked separately.
   { prefix: "/playbooks", capability: "playbooks_view" },
@@ -69,9 +72,16 @@ const RULES: Rule[] = [
   { prefix: "/ops-analytics", capability: "analytics" },
   // Work order oversight stays Operations only; the Work Orders pages also open read only
   // for the Director of Onboarding and Project Managers.
-  { prefix: "/work-orders/manager", portal: "operations" },
+  { prefix: "/work-orders/manager", portal: "operations", capability: "work_orders_internal" },
   { prefix: "/work-orders", capability: ["work_orders_internal", "work_orders_view"] },
-  { prefix: "/imported-tickets", capability: "audit_history" },
+  { prefix: "/imported-tickets", capability: "admin_pages" },
+  // Team Queue: Coordinator, Supervisor, Director of Operations, Admin (register A6).
+  { prefix: "/team-queue", capability: "team_queue" },
+  // Handoffs, read only: Operations leadership (register A1, A16; Emily, Nov 9).
+  { prefix: "/handoffs", capability: "handoffs_view" },
+  // Properties list and home pages: every role A12 names, Onboarding roles included.
+  { prefix: "/properties", capability: "properties" },
+  { prefix: "/property", capability: "properties" },
   { prefix: "/cleaner-hours", capability: "cleaner_hours" },
   { prefix: "/str-participation-report", capability: "str_participation_report" },
   { prefix: "/str-dispatch-check", capability: "cleaner_dispatch_check" },
@@ -92,7 +102,26 @@ function ruleFor(pathname: string): Rule {
 function portalIds(ctx: AccessContext): Set<string> {
   const ids = new Set(portalsFor(ctx.roles).map((p) => p.id));
   if (ctx.seats?.onboardingDirector) ids.add("onboarding");
+  // A Supervisor type account opens Onboarding only for the Director of Operations
+  // (register A16 View, handoff acceptance) and Finance (A16 View). The Operations
+  // Supervisor sees Onboarding only through the read only Handoffs page (Emily, Nov 9).
+  const s = ctx.seats ?? {};
+  if (
+    ctx.roles.includes("manager") &&
+    !ctx.roles.includes("admin") &&
+    !ctx.roles.includes("onboarding") &&
+    !s.onboardingDirector &&
+    !s.opsDirector &&
+    !s.finance
+  ) {
+    ids.delete("onboarding");
+  }
   return ids;
+}
+
+/** Portals this person may enter (the hub and the portal cards read this). */
+export function portalIdsFor(ctx: AccessContext): Set<string> {
+  return portalIds(ctx);
 }
 
 /** May this person open this page? Mirrors what the server enforces for data. */
@@ -131,6 +160,29 @@ export function homePathFor(ctx: AccessContext): string {
   }
   if (portals.has("operations")) return "/dashboard";
   return "/hub";
+}
+
+/**
+ * Pages Finance opens to look, not to change (register A4 Home, A8 Work orders, A9
+ * Vendors, A10 Claims and refunds, A12 Properties, A16 Onboarding). Finance pages
+ * (A18) and Direct Bookings (A11) stay as they are.
+ */
+export const FINANCE_VIEW_ONLY_PATHS = [
+  "/dashboard",
+  "/work-orders",
+  "/vendors",
+  "/claims",
+  "/recovery",
+  "/properties",
+  "/property",
+  "/onboarding",
+] as const;
+
+/** True when this person may only look at this page (Finance on the pages above). */
+export function viewOnlyPath(pathname: string, ctx: AccessContext): boolean {
+  if (!isFinanceOnly(ctx.roles, ctx.seats)) return false;
+  const path = pathname.split("?")[0]!.replace(/\/+$/, "") || "/";
+  return FINANCE_VIEW_ONLY_PATHS.some((p) => path === p || path.startsWith(p + "/"));
 }
 
 /** Onboarding is the only portal this person works in. */

@@ -445,6 +445,8 @@ function MyWork({
   const [query, setQuery] = useState("");
   const [priority, setPriority] = useState("all");
   const [layout, setLayout] = useState<"list" | "board">("list");
+  // Team Queue link only for people who work the Team Queue (register A5, A6).
+  const { can } = useRole();
   const { data: staff } = useStaffDirectory();
   const people = useMemo(() => new Map((staff ?? []).map((s) => [s.id, s])), [staff]);
 
@@ -474,13 +476,15 @@ function MyWork({
       description={HOME_COPY.myWorkHint}
       bodyClassName="space-y-3"
       actions={
-        <Link
-          to="/team-queue"
-          search={{ flags: "unassigned" } as never}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-        >
-          <Users className="size-4" aria-hidden="true" /> {HOME_COPY.teamQueueLink(unclaimed)}
-        </Link>
+        can("team_queue") ? (
+          <Link
+            to="/team-queue"
+            search={{ flags: "unassigned" } as never}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+          >
+            <Users className="size-4" aria-hidden="true" /> {HOME_COPY.teamQueueLink(unclaimed)}
+          </Link>
+        ) : undefined
       }
     >
       <div className="flex flex-wrap items-center gap-2">

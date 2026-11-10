@@ -60,12 +60,21 @@ export function writeDemoFlag(on: boolean) {
 export const PREVIEW_SEAT_KEY = "resolve.preview-seat";
 export const PREVIEW_SEAT_EVENT = "resolve:preview-seat";
 
-export type PreviewSeat = "director_ops" | "ops_supervisor";
+export const PREVIEW_SEATS = [
+  "director_ops",
+  "ops_supervisor",
+  "director_onboarding",
+  "project_manager",
+  "utilities",
+  "design",
+  "finance_lead",
+] as const;
+export type PreviewSeat = (typeof PREVIEW_SEATS)[number];
 
 export function readPreviewSeat(): PreviewSeat | null {
   if (typeof window === "undefined") return null;
   const value = window.sessionStorage.getItem(PREVIEW_SEAT_KEY);
-  return value === "director_ops" || value === "ops_supervisor" ? value : null;
+  return (PREVIEW_SEATS as readonly string[]).includes(value ?? "") ? (value as PreviewSeat) : null;
 }
 
 export function writePreviewSeat(seat: PreviewSeat | null) {
@@ -78,6 +87,11 @@ export function writePreviewSeat(seat: PreviewSeat | null) {
 export const PREVIEW_SEAT_LABEL: Record<PreviewSeat, string> = {
   director_ops: "Director of Operations",
   ops_supervisor: "Operations Supervisor",
+  director_onboarding: "Director of Onboarding",
+  project_manager: "Project Manager",
+  utilities: "Utilities",
+  design: "Design",
+  finance_lead: "Finance lead",
 };
 
 /**

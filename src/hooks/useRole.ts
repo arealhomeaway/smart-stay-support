@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import { useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { canOpenPath, homePathFor, isOnboardingOnly } from "@/lib/route-access";
+import { canOpenPath, homePathFor, isOnboardingOnly, viewOnlyPath } from "@/lib/route-access";
+import { seatsForPreview } from "@/lib/view-as";
 import {
   can,
   capabilitiesFor,
@@ -91,16 +93,21 @@ export function useRole() {
   // previewer is meant to act on.
   const demoMode = canOperateDemo(actualRoles, query.data?.demoFinanceTester) && demoFlag;
   const roles: AppRole[] = previewing && viewAs ? [viewAs] : actualRoles;
-  // A role preview shows the previewed role only, never the viewer's own seat.
-  const seats: AccessSeats = {
-    onboardingDirector: !previewing && Boolean(query.data?.onboardingDirector),
-    opsDirector: !previewing && Boolean(query.data?.opsDirector),
-    finance: !previewing && Boolean(query.data?.finance),
-    opsSupervisor: !previewing && Boolean(query.data?.opsSupervisor),
-    projectManager: !previewing && Boolean(query.data?.projectManager),
-    utilities: !previewing && Boolean(query.data?.utilities),
-  };
+  // A role preview shows the previewed role with its role on top, never the viewer's own seat.
+  const seats: AccessSeats = previewing
+    ? seatsForPreview(previewSeat)
+    : {
+        onboardingDirector: Boolean(query.data?.onboardingDirector),
+        opsDirector: Boolean(query.data?.opsDirector),
+        finance: Boolean(query.data?.finance),
+        opsSupervisor: Boolean(query.data?.opsSupervisor),
+        projectManager: Boolean(query.data?.projectManager),
+        utilities: Boolean(query.data?.utilities),
+      };
   const access = { roles, seats };
+  // Finance looks at some pages without changing them (register A4 to A12).
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const viewOnlyHere = viewOnlyPath(pathname, access);
 
   const isVendor = roles.includes("vendor") && !roles.some((r) => r !== "vendor");
   // Homeowners are program participants, never internal staff.
@@ -117,7 +124,7 @@ export function useRole() {
      * the safe demo environment may change demo records only, which the
      * queries and writes on each surface already scope by `is_demo`.
      */
-    readOnly: previewing && !demoMode,
+    readOnly: (previewing && !demoMode) || viewOnlyHere,
     /** True while previewing the isolated demo environment. */
     demoMode,
     /** The operational seat being previewed, when one was chosen. */

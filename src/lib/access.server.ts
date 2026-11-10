@@ -18,24 +18,34 @@ export async function assertAdmin(supabase: Client, userId: string) {
 
 /** Account types Operations leadership may invite: Coordinator and Supervisor. */
 export const OPS_INVITE_ROLES: AppRole[] = ["tech", "manager"];
+/** Account type the Director of Onboarding may invite: Onboarding staff (register A14). */
+export const ONBOARDING_INVITE_ROLES: AppRole[] = ["onboarding"];
+export type InviteScope = "all" | "operations" | "onboarding" | "none";
+/** Account types each limited scope may invite. */
+export function inviteRolesFor(scope: InviteScope): AppRole[] {
+  return scope === "operations" ? OPS_INVITE_ROLES : scope === "onboarding" ? ONBOARDING_INVITE_ROLES : [];
+}
 
 /**
  * Who may issue invite codes, read with the caller's own client:
  * "all" for Admin, "operations" for the Operations Supervisor (held or
- * covering) and the Director of Operations, otherwise "none".
+ * covering) and the Director of Operations, "onboarding" for the Director of
+ * Onboarding (register A14), otherwise "none".
  */
-export async function inviteScope(supabase: Client, userId: string): Promise<"all" | "operations" | "none"> {
+export async function inviteScope(supabase: Client, userId: string): Promise<InviteScope> {
   type Loose = { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }> };
   const db = supabase as unknown as Loose;
-  const [admin, director, holds, cover] = await Promise.all([
+  const [admin, director, holds, cover, onboardingDirector] = await Promise.all([
     db.rpc("has_role", { _user_id: userId, _role: "admin" }),
     db.rpc("is_director", { _user_id: userId }),
     db.rpc("holds_functional_role", { _user_id: userId, _code: "ops_supervisor" }),
     db.rpc("seat_holder_at", { _role_code: "ops_supervisor" }),
+    db.rpc("is_onboarding_director", { _user_id: userId }),
   ]);
   if (admin.error) throw new Error("Could not verify your access level.");
   if (admin.data === true) return "all";
   if (director.data === true || holds.data === true || (!cover.error && cover.data === userId)) return "operations";
+  if (onboardingDirector.data === true) return "onboarding";
   return "none";
 }
 
@@ -43,9 +53,11 @@ export async function inviteScope(supabase: Client, userId: string): Promise<"al
 export async function assertCanInvite(supabase: Client, userId: string, role: AppRole) {
   const scope = await inviteScope(supabase, userId);
   if (scope === "all") return scope;
-  if (scope === "operations" && OPS_INVITE_ROLES.includes(role)) return scope;
+  if (inviteRolesFor(scope).includes(role)) return scope;
   if (scope === "operations")
     throw new Error("You can add Property Coordinators and Supervisors. Ask an Admin for other account types.");
+  if (scope === "onboarding")
+    throw new Error("You can add Onboarding staff. Ask an Admin for other account types.");
   throw new Error("Only an admin can change team access.");
 }
 

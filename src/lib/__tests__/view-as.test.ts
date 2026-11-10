@@ -25,7 +25,11 @@ describe("who sees View as", () => {
     expect(VIEW_AS_COPY.menu).toBe("View as");
   });
   it("offers staff roles by their role names, never Admin", () => {
-    expect(VIEW_AS_OPTIONS.map((o) => o.label)).toEqual(["Property Coordinator", "Operations Supervisor", "Director of Operations", "Onboarding staff"]);
+    // Build 5 (register M5): every role, each keeping its role on top.
+    expect(VIEW_AS_OPTIONS.map((o) => o.label)).toEqual([
+      "Property Coordinator", "Operations Supervisor", "Director of Operations", "Director of Onboarding",
+      "Project Manager", "Utilities", "Design", "Finance lead",
+    ]);
     expect(VIEW_AS_OPTIONS.some((o) => o.role === "admin")).toBe(false);
   });
 });
@@ -38,7 +42,8 @@ describe("View as does not depend on demo mode and changes no data", () => {
   });
   it("the preview follows View as alone, and is read only whenever demo mode is off", () => {
     expect(role).toContain("const previewing = Boolean(viewAs) && canOperateDemo(actualRoles);");
-    expect(role).toContain("readOnly: previewing && !demoMode,");
+    // Still read only whenever demo mode is off; Finance view only pages are read only too (Build 5).
+    expect(role).toContain("readOnly: (previewing && !demoMode) || viewOnlyHere,");
   });
   it("a clear banner names the role, with one way out", () => {
     expect(VIEW_AS_COPY.banner("Property Coordinator")).toBe("Viewing as Property Coordinator. You can look around, but nothing can be changed.");

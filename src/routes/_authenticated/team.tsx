@@ -33,7 +33,9 @@ function TeamPage() {
   // Admin manages everyone. The Operations Supervisor and the Director of
   // Operations add Operations users (Coordinator and Supervisor) only.
   const opsInvite = !isAdmin && !readOnly && can("ops_user_invite");
-  const showUsers = isAdmin || opsInvite;
+  // Register A14: the Director of Onboarding adds people to the Onboarding department.
+  const onboardingInvite = !isAdmin && !readOnly && !opsInvite && can("onboarding_user_invite");
+  const showUsers = isAdmin || opsInvite || onboardingInvite;
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Operations" title="Team & coverage" description="Who is working, who is on call, and who is out." />
@@ -53,6 +55,11 @@ function TeamPage() {
         {opsInvite && (
           <TabsContent value="users" className="space-y-4">
             <TeamInvitePanel allowedRoles={["tech", "manager"]} />
+          </TabsContent>
+        )}
+        {onboardingInvite && (
+          <TabsContent value="users" className="space-y-4">
+            <TeamInvitePanel allowedRoles={["onboarding"]} />
           </TabsContent>
         )}
       </Tabs>

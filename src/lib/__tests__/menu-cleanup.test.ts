@@ -42,7 +42,8 @@ describe("who sees what", () => {
     expect(shape(operationsMenu(accessFor(["manager"])))).toEqual([
       ["My day", ["Home", "Team Queue", "Direct Bookings", "Databases", "Oversight"]],
       ["Team", ["Team & Coverage", "Playbooks"]],
-      ["Homes and owners", ["Properties", "Onboarding", "Active Owner"]],
+      // Build 5 (Emily, Nov 9): the Supervisor sees Onboarding only through the read only Handoffs page.
+      ["Homes and owners", ["Properties", "Handoffs", "Active Owner"]],
       ["Insight", ["Analytics"]],
       // Admin as today: Supervisors open it at the first Admin page they can open.
       ["Admin", ["Admin"]],
@@ -82,7 +83,10 @@ describe("who sees what", () => {
     });
     // Fix batch 2 (Nov 8): the shared pages the Director of Onboarding may open follow Active Owner.
     // Databases (Nov 8, register P3): onboarding accounts get it in their menu too.
-    expect(director.map((g) => g.label)).toEqual(["Onboarding", "Active Owner", "Team", "Databases"]);
+    // Build 5 (register A12): onboarding roles open the Properties list, named All homes beside
+    // the Onboarding Properties lens.
+    expect(director.map((g) => g.label)).toEqual(["Onboarding", "Active Owner", "Homes and owners", "Team", "Databases"]);
+    expect(director.find((g) => g.label === "Homes and owners")?.items.map((i) => [i.label, i.to])).toEqual([["All homes", "/properties"]]);
   });
 });
 

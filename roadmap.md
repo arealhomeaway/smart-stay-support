@@ -396,3 +396,11 @@
 - [x] Close ticket and Reopen ticket always both in the header, one disabled with a reason; onboarding sees neither (T12)
 - [x] Waiting card paused sentence; Analytics resolve times take Waiting out (T13)
 - [x] Board comparison report; tests; browser desktop and phone; register T5, T11, T12, T13
+## Nov 10 Build 5 of 7: Access fixes and the Supervisor handoff only view (no publish)
+- [x] Supervisor: no Onboarding workspace; read only Handoffs page under Homes and owners (A1, A16)
+- [x] Finance on a Supervisor type account: view only pages, hidden pages, Finance and Direct Bookings unchanged (A4 to A13, A18)
+- [x] Onboarding roles: Properties list, every Vendors tab read only, Director of Onboarding adds Onboarding staff, no routine work or Team Queue link (A5, A9, A12, A14)
+- [x] Admin group: Supervisor and Director see only Help Tickets; Admin pages Admin only by address and data (A20, M6)
+- [x] My reports for every staff member from the help button and account page; Admin manages; thank you line fixed (A20)
+- [x] View as: every role with its role on top, read only, refuses pages the role cannot open (M5)
+- [x] Staged database step applied after cancelled practice; access table and tests; browser check; register A1, A16, M6

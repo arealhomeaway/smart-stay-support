@@ -5,11 +5,11 @@
  * their inbox. Everything here is their own record — no one else's.
  */
 import { useEffect, useRef, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Bell, Camera, Loader2, Trash2 } from "lucide-react";
+import { Bell, Camera, ListChecks, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader, SectionCard, LoadingPage } from "@/components/ui/page";
 import { PersonAvatar } from "@/components/PersonAvatar";
+import { useRole } from "@/hooks/useRole";
 import { PasswordCard } from "@/components/account/PasswordCard";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyAccount, saveMyProfile, saveMyNotificationPreferences } from "@/lib/account.functions";
@@ -56,6 +57,7 @@ function AccountPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const account = useQuery({ queryKey: ["my-account"], queryFn: () => load() });
+  const canSeeReports = useRole().can("help_tickets_own");
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -137,6 +139,16 @@ function AccountPage() {
         eyebrow="My account"
         title={fullName || "My account"}
         description="Your photo, your details and what reaches your inbox."
+        actions={
+          // Register A20: every staff member sees their own help reports and their status.
+          canSeeReports ? (
+            <Button asChild variant="outline" className="min-h-11">
+              <Link to="/help-tickets">
+                <ListChecks className="size-4" aria-hidden="true" /> My reports
+              </Link>
+            </Button>
+          ) : undefined
+        }
       />
 
       <Tabs defaultValue="profile" className="space-y-6">
