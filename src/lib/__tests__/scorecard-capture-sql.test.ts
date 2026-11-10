@@ -71,7 +71,9 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.tickets TO authenticated;
 CREATE TABLE public.ticket_activity(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), ticket_id uuid, author_id uuid,
   kind text DEFAULT 'note', event_type text DEFAULT 'update', body text, internal boolean DEFAULT true,
   is_demo boolean DEFAULT false, created_at timestamptz DEFAULT now(), event_at timestamptz DEFAULT now(),
-  external_id text, external_author_name text);
+  external_id text, external_author_name text,
+  -- Test only (Build 9 A8): insert order, so two lines saved in the same instant read back in order.
+  seq bigint GENERATED ALWAYS AS IDENTITY);
 GRANT SELECT, INSERT ON public.ticket_activity TO authenticated;
 CREATE TABLE public.routine_controls(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), kind text DEFAULT 'guest_review',
   status text DEFAULT 'due', notes text, completed_at timestamptz, completed_by uuid, follow_up_ticket_id uuid,
@@ -340,7 +342,7 @@ describe("archive replaces delete", () => {
     await one(`SELECT public.restore_ticket($1)`, [t]);
     const back = await one(`SELECT archived_at FROM public.tickets WHERE id=$1`, [t]);
     expect(back.archived_at).toBeNull();
-    const lines = (await db.query(`SELECT event_type, body FROM public.ticket_activity WHERE ticket_id=$1 ORDER BY created_at`, [t])).rows;
+    const lines = (await db.query(`SELECT event_type, body FROM public.ticket_activity WHERE ticket_id=$1 ORDER BY created_at, seq`, [t])).rows;
     expect(lines.map((l) => l.event_type)).toEqual(["archived", "restored"]);
     expect(lines[0].body).toBe("Archived. Reason: Duplicate of another ticket");
   });
