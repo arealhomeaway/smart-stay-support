@@ -44,7 +44,7 @@ describe("Needs you now side panel (register T2)", () => {
     expect(NEEDS_WHY.handoff).toBe("Someone handed this ticket to you. It becomes yours only when you accept it. Decline it with a reason if it is not yours.");
     expect(NEEDS_WHY.approval).toBe("This is waiting for your decision.");
     expect(NEEDS_WHY.escalation).toBe("This ticket is yours and it has gone past its time. Open it and take the next step.");
-    expect(Object.keys(NEEDS_KIND_LABEL).sort()).toEqual(["approval", "booking", "escalation", "handoff"]);
+    expect(Object.keys(NEEDS_KIND_LABEL).sort()).toEqual(["approval", "arrival", "booking", "escalation", "handoff"]);
   });
 
   it("a wide screen gets a drawer from the right and a phone a full sheet (the shared side panel)", () => {

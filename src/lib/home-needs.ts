@@ -6,7 +6,7 @@
  */
 import { can, type AccessSeats, type AppRole } from "@/lib/permissions";
 
-export type NeedsKind = "handoff" | "escalation" | "approval" | "booking";
+export type NeedsKind = "handoff" | "escalation" | "approval" | "booking" | "arrival";
 
 /** What the row is and why it is waiting on this person, said in the panel's first line. */
 export const NEEDS_WHY: Record<NeedsKind, string> = {
@@ -14,6 +14,7 @@ export const NEEDS_WHY: Record<NeedsKind, string> = {
   escalation: "This ticket is yours and it has gone past its time. Open it and take the next step.",
   approval: "This is waiting for your decision.",
   booking: "This booking request was sent to you. Open it to start or keep it moving.",
+  arrival: "A guest arrives soon. Check the home is ready, or flag the issue with a safe backup plan.",
 };
 
 export const NEEDS_KIND_LABEL: Record<NeedsKind, string> = {
@@ -21,6 +22,7 @@ export const NEEDS_KIND_LABEL: Record<NeedsKind, string> = {
   escalation: "Escalated",
   approval: "Approval",
   booking: "Direct booking",
+  arrival: "Arrival check",
 };
 
 export const NEEDS_PANEL_COPY = {
@@ -65,6 +67,7 @@ export const MY_SCORECARD_KIND_LABELS: Record<string, string> = {
   weekly_submission: "Weekly scorecards sent",
   corrective_commitment: "Commitments",
   finance_packet: "Finance packets delivered",
+  arrival_check: "Arrival checks",
 };
 
 export const MY_SCORECARD_COPY = {
