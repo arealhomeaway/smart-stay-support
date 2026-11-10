@@ -298,7 +298,7 @@ function PortalCorrection({ id, onDone }: { id: string; onDone: () => void }) {
  * Answer in the partner's portal: open when the request has a portal link or
  * the sender reads no replies, otherwise behind one small button.
  */
-function PortalSection({ d, picked, body, subject, startOpen, onDone, to }: { d: Detail; picked: Home[]; body: string; subject: string; startOpen: boolean; onDone: () => void; to?: string }) {
+function PortalSection({ d, picked, body, subject, startOpen, onDone, to }: { d: Detail; picked: Home[]; body: string; subject: string; startOpen: boolean; onDone: () => void; to?: string | undefined }) {
   const lead = d.lead;
   const answer = useServerFn(answerDirectBookingInPortal);
   const submit = useServerFn(submitDirectBookingReply);

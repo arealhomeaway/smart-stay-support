@@ -110,7 +110,7 @@ export function portalLinkFrom(raw: string | null | undefined): string | null {
  * addresses hidden behind buttons (href values in the HTML) count as well as
  * links written in the text. Anything on another host is ignored.
  */
-export function findPortalLink(input: { content?: string | null; contentType?: string | null; text?: string | null }): string | null {
+export function findPortalLink(input: { content?: string | null | undefined; contentType?: string | null | undefined; text?: string | null | undefined }): string | null {
   const found: { at: number; link: string }[] = [];
   const scan = (source: string, offset: number) => {
     const href = /href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
