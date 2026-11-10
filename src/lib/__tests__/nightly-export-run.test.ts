@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { runNightlyExportStep, type SharePointIo } from "@/lib/nightly-export.server";
+import { runNightlyExportStep, withRetry, type SharePointIo } from "@/lib/nightly-export.server";
 import { EXPORT_PART_ROWS } from "@/lib/nightly-export";
 
 /**
@@ -223,6 +223,25 @@ async function runUntilDone(db: any, io: SharePointIo, opts: Parameters<typeof r
   }
   return last!;
 }
+
+describe("SharePoint busy answers", () => {
+  it("tries a busy answer again and stops at the first real answer", async () => {
+    const answers = [503, 429, 200];
+    const waits: number[] = [];
+    const res = await withRetry(async () => new Response(null, { status: answers.shift()! }), async (ms) => void waits.push(ms));
+    expect(res.status).toBe(200);
+    expect(waits).toEqual([2000, 4000]);
+  });
+
+  it("never repeats a refusal such as not found, and gives up after four busy answers", async () => {
+    let calls = 0;
+    expect((await withRetry(async () => (calls++, new Response(null, { status: 404 })), async () => {})).status).toBe(404);
+    expect(calls).toBe(1);
+    calls = 0;
+    expect((await withRetry(async () => (calls++, new Response(null, { status: 503 })), async () => {})).status).toBe(503);
+    expect(calls).toBe(4);
+  });
+});
 
 describe("nightly export run (stand-ins only)", () => {
   it("exports every table, the spreadsheets, the inventory and new files, then passes its check", async () => {
