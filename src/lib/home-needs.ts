@@ -68,6 +68,9 @@ export const MY_SCORECARD_KIND_LABELS: Record<string, string> = {
   corrective_commitment: "Commitments",
   finance_packet: "Finance packets delivered",
   arrival_check: "Arrival checks",
+  // Build 14 (register BN7): Team records reviews and the Director's double checks.
+  records_check: "Team records reviews",
+  records_check_review: "Team records double checks",
 };
 
 export const MY_SCORECARD_COPY = {

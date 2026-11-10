@@ -116,10 +116,15 @@ export type PageTabGroup = {
 export const PAGE_TAB_GROUPS: PageTabGroup[] = [
   {
     key: "oversight",
-    match: (p) => p === "/oversight" || p === "/supervisor-check",
+    match: (p) =>
+      ["/oversight", "/supervisor-check", "/team-records", "/coaching", "/weekly-scorecard"].includes(p),
     tabs: [
       { label: "Oversight", to: "/oversight", capability: "oversight" },
       { label: "Supervisor check", to: "/supervisor-check", capability: "oversight" },
+      // Build 14 (register BN7, BN8, BN9): the Supervisor's manual trackers.
+      { label: "Team records", to: "/team-records", capability: "team_records" },
+      { label: "Coaching", to: "/coaching", capability: "coaching_log" },
+      { label: "Weekly scorecard", to: "/weekly-scorecard", capability: "weekly_scorecard" },
     ],
   },
   {
