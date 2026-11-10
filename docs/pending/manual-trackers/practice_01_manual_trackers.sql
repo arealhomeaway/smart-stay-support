@@ -49,7 +49,7 @@ BEGIN
   _out := _out || jsonb_build_object('weekly_submit_1', public.weekly_scorecard_submit(_due,
             '{"wins": "Practice win"}'::jsonb, NULL));
 
-  -- The Director of Operations double checks and returns the scorecard.
+  -- The Director of Operations double checks one review.
   PERFORM set_config('request.jwt.claims', json_build_object('sub', _dir, 'role', 'authenticated')::text, true);
   PERFORM set_config('request.jwt.claim.sub', _dir::text, true);
   _w := public.team_records_week('2026-11-16');
