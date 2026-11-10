@@ -96,7 +96,11 @@ const newLead = async (db: PGlite, extra: Record<string, string> = {}) => {
   return r.rows[0]!.id;
 };
 const lead = async (db: PGlite, id: string) =>
-  (await db.query<Record<string, unknown>>(
+  (await db.query<{
+    reply_sent_at: string | null; reply_method: string | null; portal_answered_at: string | null; portal_answered_by: string | null;
+    portal_answer_note: string | null; stage: string; follow_hours: number | null; offered_property_ids: string[] | null;
+    reply_body: string | null; quote_sent_at: string | null;
+  }>(
     `SELECT reply_sent_at, reply_method, portal_answered_at, portal_answered_by, portal_answer_note, stage::text AS stage,
             extract(epoch FROM follow_up_due_at - reply_sent_at)::int / 3600 AS follow_hours, offered_property_ids, reply_body, quote_sent_at
        FROM public.leads WHERE id = $1`, [id])).rows[0]!;
