@@ -57,6 +57,7 @@ function AccountPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const account = useQuery({ queryKey: ["my-account"], queryFn: () => load() });
+  const canSeeReports = useRole().can("help_tickets_own");
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
