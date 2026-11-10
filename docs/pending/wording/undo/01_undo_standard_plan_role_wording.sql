@@ -1,5 +1,5 @@
--- UNDO for 01_standard_plan_role_wording.sql. Refuses if any home started on Standard version 5.
--- Restores the 9 working steps' title/detail from version 4 (unchanged) and removes version 5.
+-- UNDO for 01_standard_plan_role_wording.sql. Refuses if any home started on Standard version 5 or a later version exists.
+-- Restores the 9 working steps' title/detail from version 4 (never changed) and removes version 5, as earlier plan undos do.
 DO $do$ DECLARE v5 uuid; BEGIN
   SELECT id INTO v5 FROM public.onboarding_template_versions WHERE template_id = '84f3a777-44a8-430a-af7e-8f18dc9a7dae' AND version = 5;
   IF v5 IS NULL THEN RAISE EXCEPTION 'Version 5 is not there; nothing to undo'; END IF;
