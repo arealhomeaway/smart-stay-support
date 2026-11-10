@@ -59,7 +59,7 @@ describe("Needs you now side panel (register T2)", () => {
     expect(panel).toContain("<HandoffPanel ticket={item.ticket} closed onChanged={refresh} />");
     const hp = readFileSync("src/components/HandoffPanel.tsx", "utf8");
     expect(hp).toContain("handoffSelfAcceptCheck");
-    expect(hp).toContain('toast.error("A rejected reassignment must include a reason.")');
+    expect(hp).toContain('toast.error("A declined handoff needs a reason.")');
   });
 
   it("Approve uses the same Work Order spending decision as the Work Order panel, with the same authority check", () => {
