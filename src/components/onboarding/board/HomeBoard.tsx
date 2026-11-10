@@ -297,7 +297,7 @@ export function DesignTab({ propertyId }: { propertyId: string }) {
         entityType="property"
         entityId={propertyId}
         title="Add files or photos"
-        description="Pick a folder, then add the files."
+        description="Then pick a folder."
         categories={DESIGN_FOLDERS}
         defaultCategory="design_floor_plan"
         dropLabel="Drop files or photos here"
