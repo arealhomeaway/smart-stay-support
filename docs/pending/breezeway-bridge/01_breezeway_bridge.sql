@@ -7,6 +7,7 @@
 -- their own switch, off: while off no Resolve work order and no Breezeway task can be created.
 -- Additive: new nullable columns, two new tables, new functions and triggers. The 5,233 mirrored
 -- rows keep working (new columns are empty for them). Both switches stay off.
+-- Undo: undo/01_breezeway_bridge.sql. No BEGIN/COMMIT: the migration tool runs this in one transaction.
 
 -- 1. What the webhook already fetches, now kept on the mirror (empty where unknown).
 ALTER TABLE public.breezeway_work_orders
@@ -61,7 +62,12 @@ CREATE POLICY "Admins read bridge records" ON public.breezeway_bridge_records
 
 -- 4. Switches and the start line. The start line lives in app_settings key
 -- breezeway_bridge_start_line ({"at": ..., "by": ...}); no row means no start line yet.
--- The internal_work_orders switch row (off) is added by 02_switch_rows.sql.
+-- The internal_work_orders switch starts off: no Resolve work order and no Breezeway task is
+-- created while it is off (register C4).
+INSERT INTO public.feature_flags (key, enabled, description)
+VALUES ('internal_work_orders', false,
+        'Resolve work orders. Off: work orders are made in Breezeway and linked on the ticket; nothing is sent to Breezeway.')
+ON CONFLICT (key) DO NOTHING;
 
 CREATE OR REPLACE FUNCTION private.guard_breezeway_bridge_switch()
 RETURNS trigger
