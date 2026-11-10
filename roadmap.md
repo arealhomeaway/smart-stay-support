@@ -449,3 +449,14 @@
 - [x] (c) Run intake now hidden
 - [x] (e) One switch: staged database step (not applied, waits for Emily's okay); switch row and status panel show both
 - [x] Tests, cancelled database practice, browser check desktop and phone, register E1
+## Nov 10 Build 9: answers and fixes from the overnight questions (no publish)
+- [x] A portal: approved alert in app and by email; reply time written only by server steps (applied 0320); ALE draft regenerated; flaky history check fixed
+- [x] B Older open Move to queue, Supervisor and Director of Operations (database step staged, button hidden until applied); Admin tab and Integrations list hidden
+- [x] C Hand off form resolves a role to the person on shift; time off approval all or nothing (applied 0321); Central time; coordinator schedule only; full stop (staged)
+- [x] D Handoff box words and 44px; My scorecard page; Supervisor approved history line
+- [x] E Old Reopen inside Do this now removed; Command Center resolve time without Waiting; Send for review
+- [x] F Supervisor with Finance keeps Finance's Onboarding view; ready/accept authority (applied 0322); Handoffs page from each home's Tasks; All properties; Add users labels
+- [x] G Task role words and database text staged only; report sentence 4 commas
+- [x] H Export check link rule, fewer rows warning, Not copied list; next morning Admin alert staged
+- [x] I One switch applied (0319), switch off, timed check inactive
+- [ ] Waiting on Emily: apply 04 Move to queue, 05 full stop, 06 fewer rows alert; G1/G2 when approved; 4G vendor channel; SharePoint space check
