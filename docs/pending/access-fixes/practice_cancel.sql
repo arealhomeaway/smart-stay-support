@@ -128,3 +128,17 @@ $stage$;
   RAISE EXCEPTION 'PRACTICE CANCELLED: %', _out;
 END
 $practice$;
+
+-- Result, Nov 10 2026 (the practice raised its cancel error, so nothing was kept):
+--   help tickets 64, events 83.
+--   Home editing: before, every account listed could edit; after, only the Finance lead on the
+--   Supervisor account stops editing. Admin, Operations Supervisor, Director of Operations,
+--   Director of Onboarding, Project Manager, Project Manager with Utilities and the Coordinator still edit.
+--   Help tickets as each person: Admin sees all 64, sees all 83 events and could update 64.
+--   Director of Operations sees 0 (none of their own), 0 events, could update 0 (before: all 64).
+--   Operations Supervisor 0 / 0 / 0. Director of Onboarding sees their own 56 only, 0 events, updates 0.
+--   Project Manager sees their own 4 only. Coordinator 0.
+--   Invite codes: Director of Onboarding made an Onboarding staff code and was refused a Coordinator
+--   code, and sees only their Onboarding code; a Project Manager was refused both; the Director of
+--   Operations was refused an Onboarding code and made a Coordinator code (unchanged).
+--   Afterwards: no practice codes, the three new rules absent and the help rules as before.
