@@ -3,6 +3,7 @@
  * Acceptance, authorization, dispatch and completion stay separate facts.
  * Rules live in `src/lib/vendor-sourcing.ts`; the authority ladder is reused unchanged.
  */
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -41,6 +42,7 @@ export function VendorSourcingPanel({ workOrderId, readOnly, focusFindVendor = f
   const qc = useQueryClient();
   const push = useServerFn(pushWorkOrderToBreezeway);
   const reconcile = useServerFn(reconcileWorkOrderHandoff);
+  const flags = useFeatureFlags();
   const findRef = useRef<HTMLDivElement>(null);
   const [focusRequested] = useState(() => focusFindVendor || consumeFindVendorFocus(workOrderId));
   const staff = useStaffDirectory();
