@@ -106,6 +106,7 @@ import { REOPEN_COPY, reopenPathFor, type ReopenTicketLike } from "@/lib/ticket-
 import { ArchiveTicketButton, ArchivedTicketBanner } from "@/components/scorecard/TicketArchive";
 import { CorrectiveCommitments } from "@/components/scorecard/CorrectiveCommitments";
 import { canArchiveTicket, canRestoreTicket, isGuestIssueTicket } from "@/lib/scorecard-capture";
+import { TICKET_UNAVAILABLE, ticketAvailability } from "@/lib/ticket-availability";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -158,7 +159,7 @@ export const Route = createFileRoute("/_authenticated/tickets/$ticketId")({
     typeof raw["from"] === "string" && raw["from"] ? { from: raw["from"] } : {},
   component: TicketDetailPage,
   errorComponent: () => <p className="text-muted-foreground">This ticket could not be loaded.</p>,
-  notFoundComponent: () => <p className="text-muted-foreground">Ticket not found.</p>,
+  notFoundComponent: () => <p className="text-muted-foreground">{TICKET_UNAVAILABLE}</p>,
 });
 
 function TicketDetailPage() {
@@ -223,7 +224,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     }
   };
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     // Keyed and filtered by demoMode exactly like every list/queue view, so
     // toggling demo mode off a currently-open ticket re-fetches and comes
     // back not-found rather than continuing to render a demo record under
@@ -266,6 +267,23 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
         })),
       };
     },
+  });
+  // A link to a ticket that is not there under this lens: is it under the other lens
+  // (demo versus real), or removed? Removed shows a plain message, never an error.
+  const notHere = !isLoading && (isError || Boolean(data && !data.ticket));
+  const { data: otherLens, isLoading: otherLensLoading } = useQuery({
+    queryKey: ["ticket-other-lens", ticketId, demoMode],
+    enabled: notHere && !isError,
+    queryFn: async () => {
+      const r = await supabase.from("tickets").select("id, is_demo").eq("id", ticketId).maybeSingle();
+      return Boolean(r.data && Boolean(r.data.is_demo) !== demoMode);
+    },
+  });
+  const availability = ticketAvailability({
+    found: Boolean(data?.ticket) && !isError,
+    foundInOtherLens: otherLens === true,
+    archived: Boolean(data?.ticket?.archived_at),
+    canRestore: canRestoreTicket(role),
   });
 
   // One incident, several lanes. Resolve knows which lanes are actually live,
@@ -426,6 +444,8 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   const demoMismatch = ticketDemoMismatch(loadedTicketIsDemo, demoMode);
   useEffect(() => {
     if (!demoReady || isLoading || !data) return;
+    // A removed ticket shows its plain message instead (no toast, no redirect).
+    if (!data.ticket && (otherLensLoading || otherLens !== true)) return;
     // Fires when the filtered query already came back empty (a mismatched
     // ticket reached fresh), or when a ticket already in memory no longer
     // matches demoMode (toggled while this exact ticket stayed open).
@@ -437,7 +457,23 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     );
     if (onClose) onClose();
     else navigate({ to: "/tickets", replace: true });
-  }, [onClose, demoReady, isLoading, data, demoMode, demoMismatch, navigate]);
+  }, [onClose, demoReady, isLoading, data, demoMode, demoMismatch, navigate, otherLens, otherLensLoading]);
+
+  if (availability === "unavailable" && !(notHere && !isError && otherLensLoading))
+    return (
+      <div className="mx-auto max-w-md space-y-4 rounded-lg border border-border p-8 text-center" data-testid="ticket-unavailable">
+        <p className="font-display text-lg font-semibold">{TICKET_UNAVAILABLE}</p>
+        {onClose ? (
+          <Button type="button" variant="outline" className="min-h-11" onClick={onClose}>
+            Close
+          </Button>
+        ) : (
+          <Button asChild variant="outline" className="min-h-11">
+            <Link to="/tickets">Back to tickets</Link>
+          </Button>
+        )}
+      </div>
+    );
 
   if (isLoading || !data || !data.ticket || demoMismatch)
     return <Skeleton className="h-96 w-full" />;
