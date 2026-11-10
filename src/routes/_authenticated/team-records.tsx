@@ -60,7 +60,13 @@ function TeamRecordsPage() {
   return (
     <div className="space-y-6" data-team-records-page>
       <PageHeader title={C.title} description={C.hint} />
-      {leadish ? <LeadView /> : <MineView />}
+      {role.isLoading ? (
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      ) : leadish ? (
+        <LeadView />
+      ) : (
+        <MineView />
+      )}
     </div>
   );
 }
