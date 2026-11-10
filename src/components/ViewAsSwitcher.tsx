@@ -15,7 +15,7 @@ import { setViewAs } from "@/hooks/useViewAs";
 import { writeDemoFlag, writePreviewSeat } from "@/lib/demo-mode";
 import { OWNER_PREVIEW_EVENT, readOwnerPreview } from "@/lib/owner-preview";
 import { homePathFor } from "@/lib/route-access";
-import { VIEW_AS_COPY, VIEW_AS_OPTIONS, canUseViewAs, type ViewAsOption } from "@/lib/view-as";
+import { VIEW_AS_COPY, VIEW_AS_OPTIONS, canUseViewAs, seatsForPreview, type ViewAsOption } from "@/lib/view-as";
 
 /** Admin menu item: choose a role to look at the app as. Changes no data. */
 export function ViewAsMenuItem() {
@@ -29,7 +29,7 @@ export function ViewAsMenuItem() {
     writePreviewSeat(option.seat);
     setViewAs(option.role);
     if (isMobile) setOpenMobile(false);
-    void router.navigate({ to: homePathFor({ roles: [option.role] }) as never });
+    void router.navigate({ to: homePathFor({ roles: [option.role], seats: seatsForPreview(option.seat) }) as never });
   }
 
   return (
