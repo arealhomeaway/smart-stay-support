@@ -478,6 +478,11 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
             : `${totalExceptions} thing${totalExceptions === 1 ? "" : "s"} need${totalExceptions === 1 ? "s" : ""} intervention.`}
         </p>
         <ReportingBaselineNote className="mt-3 max-w-2xl" />
+        {canOpen("/export-check") ? (
+          <Button asChild variant="outline" className="mt-3 min-h-11">
+            <Link to="/export-check">Nightly export check</Link>
+          </Button>
+        ) : null}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
