@@ -1,5 +1,7 @@
 import { EmailTestChip } from "@/components/EmailTestChip";
-import { isEmailTestLead } from "@/lib/email-intake";
+import { isEmailTestLead, seesEmailTestRecords } from "@/lib/email-intake";
+import { EmailTestRecords } from "@/components/EmailTestRecords";
+import { useRole } from "@/hooks/useRole";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -107,6 +109,12 @@ function DirectBookingsPage() {
   });
 
   const requests = data?.requests ?? [];
+  // Register E1 (a): email test requests, in their own list, never in a count or tile.
+  const { roles, seats } = useRole();
+  const testBoard = (seesEmailTestRecords(roles, seats) && !demoMode ? (data?.tests ?? []) : []).map((r) => ({
+    ...r,
+    status: requestStatus({ ...r, pending_approval: false }),
+  }));
   const pending = useMemo(() => new Set(data?.pending ?? []), [data?.pending]);
   const board = requests.map((r) => ({ ...r, status: requestStatus({ ...r, pending_approval: pending.has(r.id) }) }));
   const counts = viewCounts(board);
@@ -231,6 +239,12 @@ function DirectBookingsPage() {
           <div className="rounded-2xl border border-dashed border-border p-7 text-center text-[15px] text-muted-foreground">{DB_COPY.empty}</div>
         ) : null}
       </div>
+
+      {testBoard.length > 0 ? (
+        <EmailTestRecords>
+          <div className="space-y-3">{testBoard.map(card)}</div>
+        </EmailTestRecords>
+      ) : null}
 
       {earlier.length > 0 ? (
         <div className="space-y-1.5">
