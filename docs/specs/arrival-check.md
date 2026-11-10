@@ -68,4 +68,9 @@ scorecard capture and Databases keep working; no live OwnerRez searches beyond t
 
 ## As built
 
-See docs/pending/arrival-check/README.md (filled in at build time).
+Built Nov 10, switch OFF, not published. Migrations 0325 (01) and 0326 (02 fixes), staged with undo, README
+and checksums in docs/pending/arrival-check/. Times are shown in Central. Homes ready for guests is one shared
+team score (correction E, docs/specs/bonus-guide-values.md). The sync stores bookings from the existing OwnerRez
+fetch only (no new requests); it reaches only through tomorrow, which is enough for the 6 AM creation. The
+published app does not store bookings until a publish Emily approves. Owner stay recognition (type owner, or a
+block titled as an owner stay) is not confirmed by Emily.
