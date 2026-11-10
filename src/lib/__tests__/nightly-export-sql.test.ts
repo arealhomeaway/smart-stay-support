@@ -21,16 +21,16 @@ CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
 CREATE SCHEMA auth; CREATE SCHEMA private; CREATE SCHEMA storage; CREATE SCHEMA cron;
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('test.uid', true), '')::uuid $$;
 CREATE TABLE public.user_roles(user_id uuid, role text);
-CREATE FUNCTION public.has_role(_user_id uuid, _role text) RETURNS boolean LANGUAGE sql STABLE AS $$
+CREATE FUNCTION public.has_role(_user_id uuid, _role text) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS $$
   SELECT EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = _user_id AND role = _role) $$;
 CREATE TABLE public.functional_roles(code text PRIMARY KEY, active boolean DEFAULT true, current_seat_holder uuid);
 CREATE TABLE public.functional_role_members(role_code text, user_id uuid);
-CREATE FUNCTION public.holds_functional_role(_user_id uuid, _code text) RETURNS boolean LANGUAGE sql STABLE AS $$
+CREATE FUNCTION public.holds_functional_role(_user_id uuid, _code text) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS $$
   SELECT EXISTS (SELECT 1 FROM public.functional_roles WHERE code = _code AND active AND current_seat_holder = _user_id)
       OR EXISTS (SELECT 1 FROM public.functional_role_members WHERE role_code = _code AND user_id = _user_id) $$;
-CREATE FUNCTION public.is_director(_user_id uuid) RETURNS boolean LANGUAGE sql STABLE AS $$
+CREATE FUNCTION public.is_director(_user_id uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS $$
   SELECT public.has_role(_user_id, 'admin') OR public.holds_functional_role(_user_id, 'director_ops') $$;
-CREATE FUNCTION public.is_onboarding_director(_user_id uuid) RETURNS boolean LANGUAGE sql STABLE AS $$
+CREATE FUNCTION public.is_onboarding_director(_user_id uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS $$
   SELECT public.holds_functional_role(_user_id, 'onboarding_director') $$;
 CREATE TABLE public.staff_notifications(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid, kind text, title text, body text,
   link_path text, priority text, email_status text DEFAULT 'none', is_demo boolean DEFAULT false, created_at timestamptz DEFAULT now());
