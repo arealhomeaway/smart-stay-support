@@ -88,6 +88,8 @@ export function VendorSourcingPanel({ workOrderId, readOnly, focusFindVendor = f
     if (focusRequested && loaded) { findRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); findRef.current?.focus({ preventScroll: true }); }
   }, [focusRequested, loaded]);
 
+  // Push to Breezeway is hidden while Resolve work orders are off (register C4).
+  const internalWorkOrdersOn = flags.enabled("internal_work_orders");
   if (q.isLoading || !q.data) return <p className="text-sm text-muted-foreground">Loading vendor sourcing…</p>;
   const { cands, visits, vendors } = q.data;
   const wo = q.data.wo as typeof q.data.wo & DispatchWorkOrder;
@@ -274,7 +276,7 @@ export function VendorSourcingPanel({ workOrderId, readOnly, focusFindVendor = f
             </div>
           </div>
         )}
-        {!readOnly && wo.breezeway_handoff_status !== "uncertain" && (
+        {!readOnly && internalWorkOrdersOn && wo.breezeway_handoff_status !== "uncertain" && (
           <Button size="sm" variant="outline" disabled={run.isPending || !elig.allowed}
             onClick={() => run.mutate(async () => { const r = await push({ data: { workOrderId } }); toast.message(r.message); })}>
             {wo.breezeway_handoff_status === "failed" ? "Retry Breezeway handoff" : "Push to Breezeway"}
