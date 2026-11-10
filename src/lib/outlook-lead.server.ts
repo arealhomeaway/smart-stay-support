@@ -11,6 +11,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { deriveLeadFromEmail, type OutlookSource } from "./outlook-email";
 import { isMissingColumn } from "./direct-bookings";
+import { findPortalLink } from "./portal-requests";
 
 type Db = SupabaseClient<Database>;
 type LeadSource = Database["public"]["Enums"]["lead_source"];
@@ -33,7 +34,14 @@ export type LeadIntakeResult = { leadId: string; contactName: string; source: Le
 
 export async function createLeadFromEmail(
   db: Db,
-  input: { subject: string; body: string; source: OutlookSource; isTest?: boolean },
+  input: {
+    subject: string;
+    body: string;
+    source: OutlookSource;
+    isTest?: boolean;
+    /** The message exactly as received (often HTML), read only for the partner portal link. */
+    raw?: { content?: string | null; contentType?: string | null };
+  },
 ): Promise<LeadIntakeResult> {
   // A [RESOLVE TEST] email from an ARHA address: the existing demo marking,
   // plus email_test so the request shows a Test chip and its alerts say Test.
@@ -80,14 +88,21 @@ export async function createLeadFromEmail(
       notes: derived.notes,
       ...(isTest ? { is_demo: true } : {}),
   };
+  // The partner's request link, from the link addresses in the HTML (a button
+  // such as View Details) as well as the text. Only a listed partner host is kept.
+  const portalLink = findPortalLink({ content: input.raw?.content, contentType: input.raw?.contentType, text: input.body });
   // Every tagged partner email is now a Direct Booking request. Until the
   // staged Direct Bookings columns are applied, the old lead row is written
   // exactly as before so intake never stops.
+  const request = { ...row, kind: "direct_booking", subject: input.source.subject };
   let result = await db
     .from("leads")
-    .insert({ ...row, kind: "direct_booking", subject: input.source.subject } as never)
+    .insert((portalLink ? { ...request, portal_link: portalLink } : request) as never)
     .select("id, contact_name, source")
     .single();
+  if (portalLink && result.error && isMissingColumn(result.error)) {
+    result = await db.from("leads").insert(request as never).select("id, contact_name, source").single();
+  }
   if (result.error && isMissingColumn(result.error)) {
     result = await db.from("leads").insert(row as never).select("id, contact_name, source").single();
   }
