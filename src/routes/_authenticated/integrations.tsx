@@ -15,6 +15,7 @@ import { NightlyBackupPanel } from "@/components/NightlyBackupPanel";
 import { FullBackupPanel } from "@/components/FullBackupPanel";
 import { BreezewayConnectionPanel } from "@/components/BreezewayConnectionPanel";
 import { BreezewayBridgePanel } from "@/components/BreezewayBridgePanel";
+import { ArrivalChecksPanel } from "@/components/ArrivalChecksPanel";
 import { BreezewayWebhookPanel } from "@/components/BreezewayWebhookPanel";
 import { BreezewayOutboundReviewPanel } from "@/components/BreezewayOutboundReviewPanel";
 import { BreezewaySyncReviewPanel } from "@/components/BreezewaySyncReviewPanel";
@@ -112,6 +113,7 @@ function IntegrationsPage() {
 
       <BreezewayConnectionPanel />
       <BreezewayBridgePanel />
+      <ArrivalChecksPanel />
       <BreezewaySendingPanel />
       <BreezewayWebhookPanel />
       <BreezewayOutboundReviewPanel />
