@@ -356,7 +356,8 @@ function Hub() {
     ...attention.oversight.map((r) => ({
       key: `o-${r.project.property.id}`,
       title: formatPropertyLabel(r.project.property).primary,
-      why: r.reasons.join(", "),
+      // A plain why line: the first two reasons, never a negative day count.
+      why: r.reasons.filter((x) => !/^handoff in -/.test(x)).slice(0, 2).join(", ") || "At risk",
       propertyId: r.project.property.id,
     })),
   ];
