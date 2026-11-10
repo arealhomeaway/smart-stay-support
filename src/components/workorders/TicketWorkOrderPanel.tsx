@@ -54,6 +54,8 @@ import {
 } from "@/lib/work-orders";
 import { ticketWorkOrdersQueryKey, type WorkOrderRow } from "@/lib/work-order-types";
 import { FieldHint } from "@/components/FieldHint";
+import { useFeatureFlags } from "@/lib/feature-flags";
+import { BreezewayRepairLink } from "@/components/workorders/BreezewayRepairLink";
 import { TRADES, categoryForTrade, categoryLabel, normalizeTrade, tradeLabel } from "@/lib/taxonomy";
 
 type TicketContext = {
@@ -111,7 +113,29 @@ function bucketTone(bucket: ReturnType<typeof workOrderBucket>): StatusTone {
   return "waiting";
 }
 
-export function TicketWorkOrderPanel({
+type TicketWorkOrderPanelProps = Parameters<typeof InternalTicketWorkOrderPanel>[0];
+
+/**
+ * The Repair card's work order (register C4). While Resolve work orders are switched off
+ * (`internal_work_orders`), the card links the Breezeway work order instead and nothing here
+ * creates a Resolve work order or a Breezeway task. The Resolve work order code stays, switched off.
+ */
+export function TicketWorkOrderPanel(props: TicketWorkOrderPanelProps) {
+  const flags = useFeatureFlags();
+  if (flags.isLoading) return null;
+  if (!flags.enabled("internal_work_orders")) {
+    return (
+      <BreezewayRepairLink
+        ticketId={props.ticket.id}
+        hasHome={Boolean(props.ticket.property_id)}
+        readOnly={props.readOnly ?? false}
+      />
+    );
+  }
+  return <InternalTicketWorkOrderPanel {...props} />;
+}
+
+function InternalTicketWorkOrderPanel({
   ticket,
   propertyName = "Property",
   readOnly: forceReadOnly = false,
