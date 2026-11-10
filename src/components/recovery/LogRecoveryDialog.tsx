@@ -407,7 +407,7 @@ export function LogRecoveryDialog() {
             <p className="text-sm font-medium">{verdict.label}</p>
             <p className="text-xs text-muted-foreground">{verdict.reason}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {policyBoundaryLabel(withinPolicy)} · {POLICY_VERSION}
+              {policyBoundaryLabel(withinPolicy)}
             </p>
           </div>
 
