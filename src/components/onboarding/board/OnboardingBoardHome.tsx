@@ -78,6 +78,8 @@ type Props = {
   view: BoardView;
   onViewChange: (v: BoardView) => void;
   originToken?: string | undefined;
+  /** Someone who only works assigned Tasks sees their own homes here instead. */
+  homesOverride?: ReactNode | undefined;
 };
 
 const btnLight =
@@ -184,6 +186,9 @@ export function OnboardingBoardHome(p: Props) {
         </SectionCard>
       </div>
 
+      {p.homesOverride ? (
+        <SectionCard title="Homes in onboarding">{p.homesOverride}</SectionCard>
+      ) : (
       <SectionCard
         title="Homes in onboarding"
         description={`${p.homes.length} home${p.homes.length === 1 ? "" : "s"}`}
@@ -220,6 +225,7 @@ export function OnboardingBoardHome(p: Props) {
           <WorkLoad homes={p.homes} />
         )}
       </SectionCard>
+      )}
 
       <SectionCard title="Upcoming handoffs" bodyClassName="space-y-1">
         {upcoming.length === 0 ? (

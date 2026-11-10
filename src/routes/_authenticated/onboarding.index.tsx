@@ -264,7 +264,9 @@ function Hub() {
     month: "long",
     day: "numeric",
   });
-  const addHome = mayAddHome ? (
+  const addHome = (
+    <>
+      {mayAddHome ? (
     <AddPropertyDialog
       disabled={readOnly}
       trigger={
@@ -277,7 +279,9 @@ function Hub() {
         </button>
       }
     />
-  ) : null;
+      ) : null}
+    </>
+  );
 
   // The homes on the board: every active onboarding home this person may see.
   const scopedRows = applyTestDataFilter(projectRows, showTest, (r) => r.summary.property);
@@ -365,6 +369,19 @@ function Hub() {
         new Date(),
       );
 
+  const assignedHomes = applyTestDataFilter(data.properties, false, (p) => p)
+    .map((p) => ({
+      id: p.id,
+      name: formatPropertyLabel(p).primary,
+      open: data.tasks.filter(
+        (t) => t.property_id === p.id && t.status !== "complete" && t.assigned_to === userId,
+      ).length,
+    }))
+    .filter((h) => h.open > 0);
+  // All properties, for someone who only works assigned Tasks: their own homes only.
+  if (lens === "all" && data.workspaceMode === "assigned")
+    return <AssignedOverview lens="all" firstName={firstName} homes={assignedHomes} />;
+
   if (lens !== "all")
     return (
       <OnboardingBoardHome
@@ -386,18 +403,7 @@ function Hub() {
         originToken={originToken}
         homesOverride={
           data.workspaceMode === "assigned" ? (
-            <AssignedHomes
-              homes={applyTestDataFilter(data.properties, false, (p) => p)
-                .map((p) => ({
-                  id: p.id,
-                  name: formatPropertyLabel(p).primary,
-                  open: data.tasks.filter(
-                    (t) =>
-                      t.property_id === p.id && t.status !== "complete" && t.assigned_to === userId,
-                  ).length,
-                }))
-                .filter((h) => h.open > 0)}
-            />
+            <AssignedHomes homes={assignedHomes} />
           ) : undefined
         }
       />
@@ -443,22 +449,7 @@ function Hub() {
             </Sheet>
           </div>
         ) : null}
-        {data.workspaceMode === "assigned" ? (
-          <AssignedOverview
-            lens="all"
-            firstName={firstName}
-            homes={applyTestDataFilter(data.properties, false, (p) => p)
-              .map((p) => ({
-                id: p.id,
-                name: formatPropertyLabel(p).primary,
-                open: data.tasks.filter(
-                  (t) =>
-                    t.property_id === p.id && t.status !== "complete" && t.assigned_to === userId,
-                ).length,
-              }))
-              .filter((h) => h.open > 0)}
-          />
-        ) : (
+        {(
           <DirectorHub
             projects={projects}
             viewer={{ userId, reviewCapabilities: data.reviewCapabilities }}
