@@ -121,9 +121,17 @@ function fakeDb(tables: Record<string, Row[]>, files: { bucket: string; name: st
     }
   }
   const sourceTables = () => Object.keys(tables);
+  const pageOf = <T,>(p: Promise<{ data: T[] | null; error: unknown }>) =>
+    Object.assign(p, {
+      // Like the data service: a range read returns that slice of the rows.
+      range: (a: number, b: number) => p.then((r) => ({ ...r, data: r.data ? r.data.slice(a, b + 1) : r.data })),
+    });
   const db = {
     from: (t: string) => new Q(t),
-    rpc: async (fn: string, args: Row = {}) => {
+    rpc: (fn: string, args: Row = {}) => pageOf(rpcResult(fn, args) as Promise<{ data: any[] | null; error: unknown }>),
+  };
+  const rpcResult = async (fn: string, args: Row = {}) => {
+    {
       rpcCalls.push({ fn, args });
       if (fn === "backup_list_tables")
         return { data: sourceTables().map((t) => ({ table_name: t, row_count: data[t]!.length, withheld_columns: [] })), error: null };

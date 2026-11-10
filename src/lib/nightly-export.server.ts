@@ -299,10 +299,16 @@ async function exportTable(
   };
 }
 
+/** Every stored file, read 1,000 at a time (the data service returns at most 1,000 rows per read). */
 async function listStoredFiles(db: Db): Promise<StoredFile[]> {
-  const { data, error } = await db.rpc("backup_list_files");
-  if (error) throw new Error(`Could not list the stored files: ${error.message}`);
-  return ((data ?? []) as StoredFile[]).map((f) => ({ ...f, size: Number(f.size ?? 0) }));
+  const out: StoredFile[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await db.rpc("backup_list_files").range(from, from + 999);
+    if (error) throw new Error(`Could not list the stored files: ${error.message}`);
+    const page = (data ?? []) as StoredFile[];
+    out.push(...page.map((f) => ({ ...f, size: Number(f.size ?? 0) })));
+    if (page.length < 1000) return out;
+  }
 }
 
 async function copyStoredFile(db: Db, sp: SharePointIo, driveId: string, folderId: string, f: CopyItem): Promise<number> {
