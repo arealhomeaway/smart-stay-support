@@ -17,9 +17,7 @@ import {
   BACKUP_EXPORTS,
   BACKUP_ROOT_FOLDER,
   backupFolderName,
-  foldersToPrune,
   toCsv,
-  type CreatedFolder,
 } from "@/lib/nightly-backup";
 
 type Db = { from: (t: string) => any };
@@ -165,26 +163,9 @@ export async function runNightlyBackup(db: Db, now = new Date(), trigger = "sche
       files.push({ file: exp.file, rows: rows.length, bytes });
     }
 
-    // Retention: only folders recorded in this log as created by the backup.
-    const prior = await db
-      .from("backup_runs")
-      .select("folder_name, folder_item_id")
-      .not("folder_item_id", "is", null)
-      .is("pruned_at", null);
-    if (prior.error) throw new Error(`Reading run log failed: ${prior.error.message}`);
-    const created: CreatedFolder[] = (prior.data ?? []).map(
-      (r: { folder_name: string; folder_item_id: string }) => ({ name: r.folder_name, itemId: r.folder_item_id }),
-    );
-    let pruned = 0;
-    for (const f of foldersToPrune(created, now)) {
-      try {
-        await graph(key, `/drives/${drive.id}/items/${f.itemId}`, { method: "DELETE" });
-      } catch (e) {
-        if (!String(e).includes("[404]")) throw e;
-      }
-      await db.from("backup_runs").update({ pruned_at: new Date().toISOString() }).eq("folder_item_id", f.itemId);
-      pruned++;
-    }
+    // Removing old folders now belongs to the full nightly export (30 nightly and 12 weekly
+    // folders kept, register N10), so this manual run never removes a folder the export keeps.
+    const pruned = 0;
 
     await db
       .from("backup_runs")

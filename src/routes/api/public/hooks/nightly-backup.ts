@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { isBackupHour } from "@/lib/nightly-backup";
+import { inExportWindow } from "@/lib/nightly-export";
 import { backupCallerAllowed } from "@/lib/backup-cron-auth";
 
 /**
- * Nightly backup trigger. Called at 07:00 and 08:00 UTC; only the call that
- * lands on 2 a.m. Central runs. The caller must present the database-held
+ * Nightly export trigger (register N10). Called at 07:00 and 08:00 UTC and every 10 minutes
+ * after, until 5 a.m. Central; each call between 2 and 5 a.m. Central starts or continues
+ * tonight's full export and saves where it got to. The caller must present the database-held
  * scheduler token (x-cron-secret), checked by a service-role-only function.
  * Never the publishable key, because this job writes to and deletes from SharePoint.
  */
@@ -19,11 +20,12 @@ export const Route = createFileRoute("/api/public/hooks/nightly-backup")({
         });
         if (!ok) return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
-        if (!isBackupHour(new Date())) {
-          return Response.json({ ok: true, skipped: "Not 2 a.m. Central" });
+        const now = new Date();
+        if (!inExportWindow(now)) {
+          return Response.json({ ok: true, skipped: "Not between 2 and 5 a.m. Central" });
         }
-        const { runNightlyBackup } = await import("@/lib/nightly-backup.server");
-        const result = await runNightlyBackup(supabaseAdmin as never);
+        const { runNightlyExportStep } = await import("@/lib/nightly-export.server");
+        const result = await runNightlyExportStep(supabaseAdmin as never, { now, trigger: "schedule" });
         return Response.json(result, { status: result.ok ? 200 : 500 });
       },
     },
