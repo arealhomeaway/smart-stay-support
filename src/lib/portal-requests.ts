@@ -83,7 +83,8 @@ export function portalApprovedAlertRow(input: {
     entity_id: input.leadId,
     link_path: `/direct-bookings/${input.leadId}`,
     priority: "high",
-    email_status: "pending",
+    // In app and by email (Emily, Nov 10); a demo request is never emailed.
+    email_status: input.isDemo ? "none" : "pending",
     is_demo: input.isDemo,
   };
 }
