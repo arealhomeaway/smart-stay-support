@@ -11,7 +11,6 @@ import {
   seesEmailTestRecords,
   ticketShownInLens,
 } from "@/lib/email-intake";
-import { viewCounts } from "@/lib/direct-bookings";
 
 /**
  * Email intake follow ups (Emily, Nov 9, register E1 (a), (c), (e)).
@@ -85,7 +84,7 @@ describe("(a) the Team Queue", () => {
     // The main list still reads only the current lens, so test tickets are not in it.
     expect(queue).toContain('.eq("is_demo", demoMode)\n        .is("archived_at", null)\n        .order("reported_at", { ascending: false });');
     const uses = queue.split("emailTests").length - 1;
-    expect(uses).toBe(4); // declared once, then only the separate list (length check, map, and nothing else)
+    expect(uses).toBe(3); // declared once, then only the separate list: its length check and its rows
     for (const counted of ["chipCounts({", "const flagButtons", "TEAM_QUEUE_COPY.summary("]) {
       const at = queue.indexOf(counted);
       expect(at).toBeGreaterThan(-1);
@@ -113,9 +112,10 @@ describe("(a) Direct Bookings", () => {
     expect(dbList).toContain("<div className=\"space-y-3\">{testBoard.map(card)}</div>");
     expect(dbList).toContain("{isEmailTestLead(r) ? <EmailTestChip /> : null}");
   });
-  it("counts are the same with or without test requests present", () => {
-    const real = [{ status: "new" }, { status: "working" }] as never[];
-    expect(viewCounts(real)).toEqual(viewCounts(real));
+  it("test requests never reach the counted board", () => {
+    const counted = dbList.slice(dbList.indexOf("const board = requests.map("), dbList.indexOf("const counts = viewCounts(board);"));
+    expect(counted).not.toContain("tests");
+    expect(dbFns).toContain("pending: pendingApprovals.map((a) => a.lead_id),");
   });
 });
 
