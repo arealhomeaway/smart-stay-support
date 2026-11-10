@@ -6,12 +6,14 @@ import { formatBytes } from "@/lib/attachments";
 import { FileUploadQueue } from "@/lib/file-upload-queue";
 import { isZip, prepareUploadSelection } from "@/lib/zip-upload";
 
-export function MultiFileUpload<R>({ upload, onResults, onBusyChange, disabled = false, multiple = true, autoStart = false }: {
+export function MultiFileUpload<R>({ upload, onResults, onBusyChange, disabled = false, multiple = true, autoStart = false, label }: {
   upload: (file: File, progress: (value: number) => void, key: string) => Promise<R>;
   onResults?: (results: R[]) => void; onBusyChange?: ((busy: boolean) => void) | undefined;
   disabled?: boolean; multiple?: boolean;
   /** Start uploading as soon as files are chosen, so a form is never blocked by an unstarted file. */
   autoStart?: boolean;
+  /** The drop prompt; defaults to the standard wording. */
+  label?: string | undefined;
 }) {
   const latest = useRef({ upload, onResults, onBusyChange });
   latest.current = { upload, onResults, onBusyChange };
@@ -39,7 +41,7 @@ export function MultiFileUpload<R>({ upload, onResults, onBusyChange, disabled =
   }
   return <div className="space-y-2" onDragOver={e => { e.preventDefault(); if (!disabled && !busy && !opening) setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={e => { e.preventDefault(); setDragging(false); void add(Array.from(e.dataTransfer.files)); }}>
     <input ref={input} type="file" multiple={multiple} className="hidden" aria-label="Choose files" disabled={disabled || busy || opening} onChange={e => { void add(Array.from(e.target.files ?? [])); e.target.value = ""; }}/>
-    <Button type="button" variant="outline" disabled={disabled || busy || opening} className={`h-auto w-full whitespace-normal border-dashed py-4 ${dragging ? "border-primary bg-accent" : ""}`} onClick={() => input.current?.click()}><Upload className="size-4 shrink-0"/>{opening ? "Opening ZIP..." : multiple ? "Select files or drop them here" : "Select a file or drop it here"}</Button>
+    <Button type="button" variant="outline" disabled={disabled || busy || opening} className={`h-auto w-full whitespace-normal border-dashed py-4 ${dragging ? "border-primary bg-accent" : ""}`} onClick={() => input.current?.click()}><Upload className="size-4 shrink-0"/>{opening ? "Opening ZIP..." : label ?? (multiple ? "Select files or drop them here" : "Select a file or drop it here")}</Button>
     {opening ? <p role="status" className="text-sm text-muted-foreground">Opening ZIP...</p> : null}
     {messages.map(message => <p key={message} role="alert" className="text-sm text-destructive">{message}</p>)}
     {rows.length ? <ul aria-label="File uploads" className="divide-y divide-border">{rows.map(row => <li key={row.id} className="space-y-1 py-2 text-sm"><div className="flex flex-wrap items-center gap-2"><span className="min-w-0 flex-1 break-all">{row.file.name}</span><span className="text-xs text-muted-foreground">{formatBytes(row.file.size)}</span><span role="status">{row.status === "done" ? "Done" : row.status === "failed" ? "Failed" : row.status === "uploading" ? `${row.progress}%` : "Ready"}</span>{row.status === "failed" && !row.invalid ? <Button type="button" size="sm" variant="outline" disabled={disabled} onClick={() => queue.retry(row.id)}>Retry</Button> : null}</div><Progress value={row.progress} aria-label={`${row.file.name} upload progress`}/>{row.reason ? <p role="alert" className="break-words text-destructive">{row.reason}</p> : null}</li>)}</ul> : null}

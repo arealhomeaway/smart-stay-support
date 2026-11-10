@@ -63,6 +63,16 @@ type Props = {
   readOnly?: boolean;
   onUploaded?: (ids: string[]) => void;
   onUploadBusyChange?: (busy: boolean) => void;
+  /** Limit the folder picker to these choices (the home's Design tab). */
+  categories?: readonly { value: string; label: string }[] | undefined;
+  /** The folder picked first. */
+  defaultCategory?: string | undefined;
+  /** The drop prompt. */
+  dropLabel?: string | undefined;
+  /** Only list files in these folders. */
+  onlyCategories?: readonly string[] | undefined;
+  /** List files under a heading per folder. */
+  groupByCategory?: boolean | undefined;
 };
 
 function iconFor(kind: string) {
@@ -80,9 +90,15 @@ export function AttachmentsPanel({
   readOnly = false,
   onUploaded,
   onUploadBusyChange,
+  categories,
+  defaultCategory,
+  dropLabel,
+  onlyCategories,
+  groupByCategory = false,
 }: Props) {
   const propertyLevel = entityType === "property";
-  const [category, setCategory] = useState<string>("reference");
+  const pickable = categories ?? DOCUMENT_CATEGORIES;
+  const [category, setCategory] = useState<string>(defaultCategory ?? "reference");
   const qc = useQueryClient();
   const list = useServerFn(listAttachmentsFn);
   const begin = useServerFn(beginUploadFn);
@@ -152,11 +168,11 @@ export function AttachmentsPanel({
           </div>
           {data?.canUpload && propertyLevel ? (
             <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="h-9 w-56" aria-label="Document type">
-                <SelectValue placeholder="Document type" />
+              <SelectTrigger className="h-11 w-56" aria-label={categories ? "Folder" : "Document type"}>
+                <SelectValue placeholder={categories ? "Folder" : "Document type"} />
               </SelectTrigger>
               <SelectContent>
-                {DOCUMENT_CATEGORIES.map((c) => (
+                {pickable.map((c) => (
                   <SelectItem key={c.value} value={c.value}>
                     {c.label}
                   </SelectItem>
@@ -167,7 +183,7 @@ export function AttachmentsPanel({
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        {canDrop ? <MultiFileUpload key={`${entityType}-${entityId}`} upload={upload} multiple={!fulfilsRequestId} onBusyChange={onUploadBusyChange} onResults={ids => {
+        {canDrop ? <MultiFileUpload key={`${entityType}-${entityId}`} upload={upload} multiple={!fulfilsRequestId} label={dropLabel} onBusyChange={onUploadBusyChange} onResults={ids => {
           onUploaded?.(ids);
           for (const queryKey of attachmentUploadInvalidationKeys(entityType, entityId)) void qc.invalidateQueries({ queryKey });
         }}/> : null}
