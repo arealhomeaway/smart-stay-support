@@ -1,11 +1,14 @@
 /**
  * Breezeway task webhook receiver logic (server-only).
  *
- * Scope of the approved pilot:
+ * Purpose (Emily, Nov 10; register T15, C6):
  *   - Breezeway delivers task events for the WHOLE company on one subscription.
- *   - We keep task detail only for company 3641 and property 1473933.
- *   - Everything else is counted and discarded; its payload is never logged,
- *     stored, or echoed back.
+ *   - We keep task detail only for company 3641 and homes bound to a verified
+ *     Resolve property. Other homes are counted with their Breezeway home id
+ *     (so a skipped home can be named); their payload is never stored.
+ *   - A processed update refreshes the work order mirror; the database bridge
+ *     then makes the Reported Issue ticket or the Maintenance Review, once per
+ *     task, only while the Breezeway bridge is on and after its start line.
  *
  * Trust model:
  *   - the random path segment is the shared secret and is compared in constant
@@ -26,9 +29,8 @@
  * re-runs this exact verification + scope + dedupe path so a recovered event
  * can never bypass a check a live delivery would have applied.
  *
- * This receiver is preview-only: it creates no matters, assigns no vendors,
- * sends no messages, changes no property stage, and writes nothing back to
- * Breezeway.
+ * This receiver assigns no vendors, sends no messages, changes no property
+ * stage, and writes nothing back to Breezeway.
  */
 import { BreezewayError } from "./breezeway.server";
 
@@ -37,8 +39,8 @@ export const PILOT_COMPANY_ID = 3641;
 /** The original pilot property; kept for fixtures and existing references. */
 export const PILOT_HOME_ID = 1473933;
 /**
- * The original limited-beta homes. Retained only as the fixture/self-test set
- * and as an offline fallback — real scope now comes from the database.
+ * The original limited-beta homes. Used only by the offline fixture self-test;
+ * real scope comes from the database (no fallback to this list).
  */
 export const PILOT_HOME_IDS: readonly number[] = [1473933, 1295301, 368125, 322641, 1293536];
 export function isPilotHome(homeId: number | null | undefined) {
@@ -49,18 +51,17 @@ export function isPilotHome(homeId: number | null | undefined) {
  * Portfolio scope: task detail is retained for any home bound to a Resolve
  * property whose mapping state is `verified`. That set is deterministic
  * (Breezeway home id + OwnerRez reference identity), so widening scope is a
- * data change, not a code change. If the lookup itself fails we fall back to
- * the original beta homes rather than storing detail we cannot justify.
+ * data change, not a code change. If the lookup itself fails the home is not
+ * retained (no fallback to the old beta homes).
  */
 export async function isRetainedHome(homeId: number | null | undefined) {
   if (homeId == null) return false;
   try {
     const { propertyForHomeId } = await import("./breezeway-mapping.server");
-    if (await propertyForHomeId(homeId)) return true;
+    return Boolean(await propertyForHomeId(homeId));
   } catch {
-    // fall through to the offline fallback
+    return false;
   }
-  return isPilotHome(homeId);
 }
 
 export type WebhookOutcome =
@@ -339,7 +340,12 @@ export async function verifyAndFinalizeTask(
   // Fixture self-tests stay offline and use the original beta set.
   if (!(isFixture ? isPilotHome(verified.homeId) : await isRetainedHome(verified.homeId))) {
     return recordAndReturn(
-      { outcome: "ignored_other_property", reason: "Outside verified portfolio", isFixture },
+      {
+        outcome: "ignored_other_property",
+        reason: "Outside verified portfolio",
+        homeId: verified.homeId,
+        isFixture,
+      },
       null,
     );
   }
@@ -383,7 +389,7 @@ export async function verifyAndFinalizeTask(
   // admin preview. Nothing operational happens.
   const { conflict, persisted } = await recordEvent({
     outcome: "processed",
-    reason: "Verified pilot task update",
+    reason: "Verified task update",
     taskId,
     homeId: verified.homeId,
     companyId: PILOT_COMPANY_ID,
@@ -427,7 +433,7 @@ export async function verifyAndFinalizeTask(
     await ingestCleanerTaskFromWebhook(taskId, verified.homeId, verified.department ?? null);
   }
 
-  return { outcome: "processed", reason: "Verified pilot task update", taskId };
+  return { outcome: "processed", reason: "Verified task update", taskId };
 }
 
 async function refreshMirroredWorkOrder(taskId: number) {
@@ -436,8 +442,25 @@ async function refreshMirroredWorkOrder(taskId: number) {
       await import("./breezeway-workorders.server");
     const mirrored = await refreshWorkOrder(taskId);
     if (mirrored) await syncWorkOrderComments(mirrored.id);
+    else await recordMirrorFailure(taskId, "The work order copy could not be refreshed.");
   } catch {
     /* mirror refresh is best-effort; delivery must still succeed */
+    await recordMirrorFailure(taskId, "The work order copy could not be refreshed.");
+  }
+}
+
+/** Mirror failures are kept and shown on Integrations. Never fails the delivery. */
+async function recordMirrorFailure(taskId: number, message: string) {
+  try {
+    const { recordBreezewayIntegrationEvent } = await import("./breezeway-bridge.server");
+    await recordBreezewayIntegrationEvent({
+      operation: "mirror_refresh",
+      status: "failed",
+      externalId: String(taskId),
+      message,
+    });
+  } catch {
+    /* bookkeeping only */
   }
 }
 
@@ -478,7 +501,12 @@ export async function processBreezewayWebhook(
     !(isFixture ? isPilotHome(parsed.homeId) : await isRetainedHome(parsed.homeId))
   ) {
     return recordAndReturn(
-      { outcome: "ignored_other_property", reason: "Outside verified portfolio", isFixture },
+      {
+        outcome: "ignored_other_property",
+        reason: "Outside verified portfolio",
+        homeId: parsed.homeId,
+        isFixture,
+      },
       null,
     );
   }
