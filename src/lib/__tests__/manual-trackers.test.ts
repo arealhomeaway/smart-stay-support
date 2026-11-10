@@ -28,3 +28,50 @@ describe("manual trackers (Build 14) helpers", () => {
     expect(words).not.toMatch(/\bseat\b|Median|\bP[1-4]\b/i);
   });
 });
+
+import { readFileSync } from "node:fs";
+import { can } from "@/lib/permissions";
+import { canOpenPath } from "@/lib/route-access";
+
+describe("manual trackers (Build 14) access", () => {
+  const PAGES = ["team_records", "coaching_log", "weekly_scorecard"] as const;
+  const who = (roles: Parameters<typeof can>[0], seats: Parameters<typeof can>[2] = {}) =>
+    PAGES.filter((p) => can(roles, p, seats));
+
+  it("the Supervisor, the Director of Operations and Admin open all three pages", () => {
+    expect(who(["manager"], { opsSupervisor: true })).toEqual([...PAGES]);
+    expect(who(["manager"], { opsDirector: true })).toEqual([...PAGES]);
+    expect(who(["admin"])).toEqual([...PAGES]);
+  });
+  it("Finance opens Team records and the Weekly scorecard only, never Coaching", () => {
+    expect(who(["manager"], { finance: true })).toEqual(["team_records", "weekly_scorecard"]);
+  });
+  it("a coordinator opens their own Team records and Coaching, never the Weekly scorecard", () => {
+    expect(who(["tech"])).toEqual(["team_records", "coaching_log"]);
+  });
+  it("onboarding roles, vendors and homeowners open none", () => {
+    expect(who(["onboarding"], { onboardingDirector: true, projectManager: true })).toEqual([]);
+    expect(who(["vendor"])).toEqual([]);
+    expect(who(["owner"])).toEqual([]);
+  });
+  it("the page addresses follow the same rule", () => {
+    expect(canOpenPath("/weekly-scorecard", { roles: ["tech"], seats: {} } as never)).toBe(false);
+    expect(canOpenPath("/coaching", { roles: ["manager"], seats: { finance: true } } as never)).toBe(false);
+    expect(canOpenPath("/team-records", { roles: ["onboarding"], seats: { projectManager: true } } as never)).toBe(false);
+  });
+  it("the new screens carry no banned word, tracking code or long dash", () => {
+    for (const f of [
+      "src/routes/_authenticated/team-records.tsx",
+      "src/routes/_authenticated/coaching.tsx",
+      "src/routes/_authenticated/weekly-scorecard.tsx",
+      "src/components/home/TrackersWaiting.tsx",
+      "src/components/trackers/parts.tsx",
+      "src/lib/manual-trackers.ts",
+    ]) {
+      const text = readFileSync(f, "utf8");
+      for (const re of [/\bseats?\b/i, /\bmedian\b/i, /\bPC\d\b/, /[\u2013\u2014]/]) {
+        expect({ f, re: String(re), hit: re.test(text) }).toEqual({ f, re: String(re), hit: false });
+      }
+    }
+  });
+});
