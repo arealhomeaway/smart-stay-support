@@ -181,5 +181,20 @@ export function activityCategoryFor(workTypeCategory: string | null | undefined)
   }
 }
 
-/** One touch stores what was done; the panel has one box, so the save says there was nothing more to do. */
+/** Older one touch saves had one box, so they say there was nothing more to do. */
 export const ONE_TOUCH_OUTCOME = "Nothing more to do.";
+
+/** Register T11: One touch asks what the person did, a short required line saved as the entry's outcome. */
+export const ONE_TOUCH_DID = {
+  label: "What did you do?",
+  placeholder: "For example: reset the breaker and the fridge is cooling.",
+  help: "Needed for One touch. One short line.",
+  max: 300,
+} as const;
+
+/** The outcome saved with a One touch entry, or null when the line is missing. */
+export function oneTouchOutcome(text: string | null | undefined): string | null {
+  const t = (text ?? "").trim().replace(/\s+/g, " ");
+  if (t.length < 2) return null;
+  return t.slice(0, ONE_TOUCH_DID.max);
+}

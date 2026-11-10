@@ -28,7 +28,8 @@ import {
   activityCategoryFor,
   guestInHomeFrom,
   NOT_SURE_PROBLEM,
-  ONE_TOUCH_OUTCOME,
+  ONE_TOUCH_DID,
+  oneTouchOutcome,
   REPAIR_WORDS,
   repeatLine,
   understandRecordWork,
@@ -129,6 +130,8 @@ type Saved = {
   home: string;
   who?: string;
   repeat: RepeatInfo;
+  /** One touch: what the person did (register T11). */
+  did?: string;
 };
 
 type SpeechCtor = new () => {
@@ -168,6 +171,7 @@ export function NewTicketForm({
   const [propertyId, setPropertyId] = useState(context.property ?? "");
   const [propertyQuery, setPropertyQuery] = useState("");
   const [description, setDescription] = useState("");
+  const [didWhat, setDidWhat] = useState("");
   const [chosenWorkTypeId, setChosenWorkTypeId] = useState<string | null>(null);
   const [pickingProblem, setPickingProblem] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
@@ -328,6 +332,7 @@ export function NewTicketForm({
 
   function resetForAnother() {
     setDescription("");
+    setDidWhat("");
     setChosenWorkTypeId(null);
     setPickingProblem(false);
     setFiles([]);
@@ -540,6 +545,11 @@ export function NewTicketForm({
 
   async function onOneTouch() {
     if (!ready || saving) return;
+    const did = oneTouchOutcome(didWhat);
+    if (!did) {
+      toast.error(`${ONE_TOUCH_DID.label} ${ONE_TOUCH_DID.help}`);
+      return;
+    }
     setSaving("one_touch");
     try {
       let attachmentIds: string[] = [];
@@ -552,7 +562,7 @@ export function NewTicketForm({
         occurred_at: new Date().toISOString(),
         category: activityCategoryFor(workType?.category),
         what_happened: description.trim(),
-        outcome: ONE_TOUCH_OUTCOME,
+        outcome: did,
         involved: null,
         ...(u.user ? { logged_by: u.user.id } : {}),
         is_demo: demoMode || Boolean(prop?.is_demo),
@@ -564,7 +574,7 @@ export function NewTicketForm({
       void qc.invalidateQueries({ queryKey: ["property-activity", propertyId] });
       void qc.invalidateQueries({ queryKey: ["home-repeat-flags"] });
       const repeat = await readRepeat();
-      setSaved({ kind: "one_touch", problem: understood.problem, home: homeLabel, repeat });
+      setSaved({ kind: "one_touch", problem: understood.problem, home: homeLabel, repeat, did });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Nothing was saved. Try again.");
     } finally {
@@ -654,6 +664,7 @@ export function NewTicketForm({
               {saved.problem === NOT_SURE_PROBLEM ? "Problem not clear yet" : saved.problem} at {saved.home}.
             </p>
             {saved.kind === "ticket" && <p>Sent to: {saved.who}.</p>}
+            {saved.kind === "one_touch" && saved.did && <p data-testid="one-touch-did">What you did: {saved.did}</p>}
             {saved.repeat && (
               <p className={saved.repeat.flagged ? "font-bold text-warning-ink" : undefined} data-repeat={saved.repeat.flagged ? "flagged" : "count"}>
                 {saved.repeat.line}
@@ -808,6 +819,22 @@ export function NewTicketForm({
           {insuranceBox}
           {escalatedBox}
 
+          <div className="space-y-2">
+            <Label htmlFor="rw-did" className="text-sm font-semibold">
+              {ONE_TOUCH_DID.label}
+            </Label>
+            <Input
+              id="rw-did"
+              className="h-11 text-[15px]"
+              maxLength={ONE_TOUCH_DID.max}
+              placeholder={ONE_TOUCH_DID.placeholder}
+              value={didWhat}
+              onChange={(e) => setDidWhat(e.target.value)}
+              aria-describedby="rw-did-help"
+            />
+            <p id="rw-did-help" className="text-sm text-muted-foreground">{ONE_TOUCH_DID.help}</p>
+          </div>
+
           <div className="flex flex-col gap-3">
             <Button
               type="button"
@@ -821,7 +848,7 @@ export function NewTicketForm({
               type="button"
               variant="outline"
               className="h-auto min-h-[52px] w-full whitespace-normal border-primary text-[15px] font-semibold text-primary"
-              disabled={!ready || saving !== null}
+              disabled={!ready || saving !== null || !oneTouchOutcome(didWhat)}
               onClick={() => void onOneTouch()}
             >
               {saving === "one_touch" ? "Saving" : "One touch: nothing more to do. Save to home history."}
