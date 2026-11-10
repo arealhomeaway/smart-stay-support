@@ -9,7 +9,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { canAcceptHandoff } from "./home-context";
+import { canAcceptHandoff, canMarkHomeReady } from "./home-context";
 import { homeownerApprovalRequired } from "./owner-dependency";
 import { unretiredOwnerWork } from "./owner-activity-queries";
 
@@ -350,7 +350,8 @@ export const readHandoffV2 = createServerFn({ method: "POST" })
       project: p,
       requirements,
       blockers: requirements.filter((t) => !["complete", "done"].includes(t.status)),
-      canMarkReady: isAdmin || holder("onboarding_director") === context.userId || p?.director === context.userId,
+      // Register O4 (Build 9): only the Director of Onboarding marks ready; perform_handoff_step checks the same.
+      canMarkReady: canMarkHomeReady(context.userId, holder("onboarding_director")),
       canAccept: canAcceptHandoff(context.userId, holder("director_ops"), isAdmin, cover.data ?? []),
     };
   });

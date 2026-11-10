@@ -32,6 +32,11 @@ export function isOpsDirectorSeat(userId: string | null, holder: string | null, 
   return Boolean(userId) && (userId === holder || userId === cover);
 }
 
+/** Register O4: only the Director of Onboarding role holder marks a home ready (not Admin, not the project director). */
+export function canMarkHomeReady(userId: string | null, onboardingDirector: string | null) {
+  return Boolean(userId) && userId === onboardingDirector;
+}
+
 /** Overrides must come from seat_override_at, which filters them at database now(). */
 export function canAcceptHandoff(userId: string, holder: string | null, isAdmin: boolean, currentOverrides: { kind: string; user_id: string }[]) {
   const cover = currentOverrides.find((o) => o.kind === "cover")?.user_id ?? null;
