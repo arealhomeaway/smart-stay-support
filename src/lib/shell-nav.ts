@@ -415,7 +415,7 @@ export function onboardingOnlyMenu(access: NavAccess): MenuGroup[] {
       // Register A12: the Director of Onboarding, Project Manager and Design open the
       // Properties list and edit homes; Utilities opens it for the Utilities tab.
       label: "Homes and owners",
-      items: [{ key: "properties", label: "Properties", to: "/properties", capability: "properties", alsoActive: ["/property"] }],
+      items: [{ key: "properties", label: "All homes", to: "/properties", capability: "properties", alsoActive: ["/property"] }],
     },
     {
       label: "Team",
