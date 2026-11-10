@@ -254,7 +254,10 @@ describe("arrival check SQL (isolated)", () => {
     expect(f.length).toBe(1);
     expect(f[0].about_user_id).toBe(COORD);
     expect(f[0].details.counted).toBe(true);
-    expect(f[0].details.counts_for).toBe("coordinator_homes_ready");
+    // Correction E: one shared team score; who is recorded, no individual score.
+    expect(f[0].details.counts_for).toBe("team_homes_ready");
+    expect(f[0].details.individual_score).toBe(false);
+    expect(f[0].details.completed_by).toBe(COORD);
     expect(await err(`SELECT private.arrival_check_complete('${COORD}', '${c.id}', true, NULL, true, 'ready', NULL, NULL, '2026-11-20T19:00:00Z')`))
       .toContain("already done");
   });
@@ -307,7 +310,8 @@ describe("arrival check SQL (isolated)", () => {
     expect((await one(`SELECT status FROM public.tickets WHERE id=$1`, [c.ticket_id])).status).toBe("open");
     const f = await one(`SELECT id, about_user_id, details FROM public.scorecard_records WHERE kind='arrival_check'`);
     expect(f.about_user_id).toBe(SUP);
-    expect(f.details.counts_for).toBe("ops_supervisor_team_follow_through");
+    expect(f.details.counts_for).toBe("team_homes_ready");
+    expect(f.details.also_counts_for).toBe("ops_supervisor_team_follow_through");
     // Finished after check in: still missed, a second line refers to the first.
     expect((await complete(COORD, c.id, "2026-11-20T21:30:00Z")).r.result).toBe("missed");
     const later = await one(`SELECT refers_to, details FROM public.scorecard_records WHERE refers_to IS NOT NULL`);

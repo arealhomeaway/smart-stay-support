@@ -1,5 +1,5 @@
 -- Arrival check fixes found on the spec re-read (Build 12; Emily, Nov 10; register BN10;
--- docs/specs/arrival-check.md items 2 and 5). Replaces two functions from 01; nothing else.
+-- docs/specs/arrival-check.md items 2 and 5). Replaces three functions from 01; nothing else.
 -- Undo: undo/02_arrival_check_fixes.sql. No BEGIN/COMMIT.
 
 -- 1. Times in the ticket text and the Supervisor alert are shown in Central time (item 2).
@@ -123,4 +123,47 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION private.arrival_check_complete(uuid, uuid, boolean, text, boolean, text, text, text, timestamptz)
   FROM PUBLIC, anon, authenticated;
+
+
+-- 3. Correction E (Emily, Nov 10; docs/specs/bonus-guide-values.md): Homes ready for guests is ONE
+--    shared team score. Every fact feeds the team score; who completed it is still recorded, but no
+--    individual score. A check nobody took still also counts against the Operations Supervisor's team
+--    on time follow through. Late bookings and tests are recorded but never counted.
+CREATE OR REPLACE FUNCTION private.arrival_check_fact(_check uuid, _event text, _refers uuid, _at timestamptz)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, private
+AS $$
+DECLARE
+  c public.arrival_checks;
+  _owner uuid;
+  _about uuid;
+  _credit text;
+  _id uuid;
+BEGIN
+  SELECT * INTO c FROM public.arrival_checks WHERE id = _check;
+  SELECT assigned_to INTO _owner FROM public.tickets WHERE id = c.ticket_id;
+  _about := coalesce(c.completed_by, _owner);
+  IF _about IS NULL THEN
+    _about := public.seat_holder_at('ops_supervisor', least(_at, c.check_in_at));
+    _credit := 'ops_supervisor_team_follow_through';
+  ELSE
+    _credit := NULL;
+  END IF;
+  INSERT INTO public.scorecard_records
+    (kind, recorded_by, recorded_at, about_user_id, property_id, stay_ref, ticket_id, details, refers_to, is_demo)
+  VALUES ('arrival_check', coalesce(c.completed_by, _owner, _about, '00000000-0000-0000-0000-000000000000'::uuid),
+          _at, _about, c.property_id, c.ownerrez_booking_id, c.ticket_id,
+          jsonb_build_object('event', _event, 'check_id', c.id, 'result', c.result, 'outcome', c.outcome,
+                             'arrival_on', c.arrival_on, 'check_in_at', c.check_in_at, 'deadline_at', c.deadline_at,
+                             'completed_at', c.completed_at, 'completed_by', c.completed_by,
+                             'late_booking', c.late_booking, 'counted', NOT c.late_booking AND NOT c.is_test,
+                             'counts_for', 'team_homes_ready', 'also_counts_for', _credit,
+                             'individual_score', false, 'owner_stay', c.owner_stay, 'team', c.team),
+          _refers, c.is_test)
+  RETURNING id INTO _id;
+  RETURN _id;
+END $$;
+REVOKE ALL ON FUNCTION private.arrival_check_fact(uuid, text, uuid, timestamptz) FROM PUBLIC, anon, authenticated;
 

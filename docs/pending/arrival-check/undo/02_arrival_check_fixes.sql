@@ -1,4 +1,4 @@
--- Undo for 02_arrival_check_fixes.sql: puts back the two functions exactly as 01 made them.
+-- Undo for 02_arrival_check_fixes.sql: puts back the three functions exactly as 01 made them.
 
 CREATE OR REPLACE FUNCTION private.arrival_fmt_time(_at timestamptz, _tz text)
 RETURNS text LANGUAGE sql STABLE AS $$
@@ -108,4 +108,43 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION private.arrival_check_complete(uuid, uuid, boolean, text, boolean, text, text, text, timestamptz)
   FROM PUBLIC, anon, authenticated;
+
+
+-- 10. The fact the scorecard reads later. Late bookings are recorded but never counted.
+CREATE OR REPLACE FUNCTION private.arrival_check_fact(_check uuid, _event text, _refers uuid, _at timestamptz)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, private
+AS $$
+DECLARE
+  c public.arrival_checks;
+  _owner uuid;
+  _about uuid;
+  _credit text;
+  _id uuid;
+BEGIN
+  SELECT * INTO c FROM public.arrival_checks WHERE id = _check;
+  SELECT assigned_to INTO _owner FROM public.tickets WHERE id = c.ticket_id;
+  _about := coalesce(c.completed_by, _owner);
+  IF _about IS NULL THEN
+    _about := public.seat_holder_at('ops_supervisor', least(_at, c.check_in_at));
+    _credit := 'ops_supervisor_team_follow_through';
+  ELSE
+    _credit := 'coordinator_homes_ready';
+  END IF;
+  INSERT INTO public.scorecard_records
+    (kind, recorded_by, recorded_at, about_user_id, property_id, stay_ref, ticket_id, details, refers_to, is_demo)
+  VALUES ('arrival_check', coalesce(c.completed_by, _owner, _about, '00000000-0000-0000-0000-000000000000'::uuid),
+          _at, _about, c.property_id, c.ownerrez_booking_id, c.ticket_id,
+          jsonb_build_object('event', _event, 'check_id', c.id, 'result', c.result, 'outcome', c.outcome,
+                             'arrival_on', c.arrival_on, 'check_in_at', c.check_in_at, 'deadline_at', c.deadline_at,
+                             'completed_at', c.completed_at, 'completed_by', c.completed_by,
+                             'late_booking', c.late_booking, 'counted', NOT c.late_booking AND NOT c.is_test,
+                             'counts_for', _credit, 'owner_stay', c.owner_stay, 'team', c.team),
+          _refers, c.is_test)
+  RETURNING id INTO _id;
+  RETURN _id;
+END $$;
+REVOKE ALL ON FUNCTION private.arrival_check_fact(uuid, text, uuid, timestamptz) FROM PUBLIC, anon, authenticated;
 
