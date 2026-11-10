@@ -273,8 +273,18 @@ export function movableToQueue(t: TicketFacts, now: number = Date.now()): boolea
   return notionTicketState(t, now) === "older_open" && t.import_hold !== "needs_home";
 }
 
+/**
+ * True once docs/pending/build9/04_move_to_queue.sql is applied. Until then the button stays hidden,
+ * so nobody presses a button that cannot work.
+ */
+export const MOVE_TO_QUEUE_LIVE = false;
+
 /** Who sees Move to queue: the Operations Supervisor and the Director of Operations (Emily, Nov 10). */
-export function canMoveToQueue(seats: { opsSupervisor?: boolean; opsDirector?: boolean }, readOnly: boolean): boolean {
-  return !readOnly && Boolean(seats.opsSupervisor || seats.opsDirector);
+export function canMoveToQueue(
+  seats: { opsSupervisor?: boolean; opsDirector?: boolean },
+  readOnly: boolean,
+  live: boolean = MOVE_TO_QUEUE_LIVE,
+): boolean {
+  return live && !readOnly && Boolean(seats.opsSupervisor || seats.opsDirector);
 }
 
