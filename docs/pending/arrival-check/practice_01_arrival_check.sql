@@ -37,6 +37,8 @@ BEGIN
   _r := private.arrival_check_complete(_admin, _c1, true, NULL, true, 'issue', 'Practice issue', 'Practice backup plan', '2026-11-20T18:00:00Z');
   _out := _out || jsonb_build_object('complete1', _r);
   _out := _out || jsonb_build_object('ticket1_after', (SELECT jsonb_build_object('status', status, 'outcome', outcome_type) FROM public.tickets WHERE id = _t1));
+  _out := _out || jsonb_build_object('issue1', (SELECT jsonb_build_object('priority', priority, 'owned_by_finder', assigned_to = _admin AND current_action_owner = _admin, 'note', assignment_note) FROM public.tickets WHERE id = (_r ->> 'issue_ticket_id')::uuid));
+  _out := _out || jsonb_build_object('fact1_team', (SELECT jsonb_build_object('counts_for', details ->> 'counts_for', 'individual', details ->> 'individual_score') FROM public.scorecard_records WHERE kind = 'arrival_check' AND ticket_id = _t1 LIMIT 1));
   _out := _out || jsonb_build_object('facts1', (SELECT count(*) FROM public.scorecard_records WHERE kind = 'arrival_check' AND ticket_id = _t1));
   _out := _out || jsonb_build_object('fact1_demo', (SELECT is_demo FROM public.scorecard_records WHERE kind = 'arrival_check' AND ticket_id = _t1));
   -- 5. The second check: alert, then missed.
