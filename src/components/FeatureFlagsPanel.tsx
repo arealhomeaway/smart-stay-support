@@ -58,9 +58,10 @@ export function FeatureFlagsPanel() {
                     await setIntake({ data: { enabled: v } });
                     await qc.invalidateQueries({ queryKey: ["feature-flags"] });
                     await qc.invalidateQueries({ queryKey: ["mailbox-status"] });
-                  } else {
-                    await setEnabled(f.key, v);
+                    toast.success(v ? "Email intake is on. The timed check started." : "Email intake is off. The timed check stopped.");
+                    return;
                   }
+                  await setEnabled(f.key, v);
                   toast.success(`${f.label} ${v ? "enabled" : "disabled"}.`);
                 } catch (e) {
                   toast.error(e instanceof Error ? e.message : "Could not change that.");
