@@ -3,6 +3,7 @@
  * Reached from the My scorecard button on Home, which shows only for a person who has a
  * record. No Analytics access is needed; the database shows each person only their own rows
  * (scorecard_records_read). Rules and wording live in src/lib/home-needs.ts.
+ * Build 13 (register BN5): My bonus sits on top for a person with a bonus plan.
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -12,6 +13,7 @@ import { useCurrentUserId } from "@/hooks/useTeam";
 import { useShellPageLabel } from "@/components/nav/ShellNav";
 import { usDate } from "@/lib/dates";
 import { MY_SCORECARD_COPY, myScorecardGroups, type MyScorecardRow } from "@/lib/home-needs";
+import { MyBonus } from "@/components/bonus/MyBonus";
 
 export const Route = createFileRoute("/_authenticated/my-scorecard")({
   component: MyScorecardPage,
@@ -49,6 +51,8 @@ function MyScorecardPage() {
   return (
     <div className="space-y-6" data-my-scorecard-page>
       <PageHeader title={MY_SCORECARD_COPY.title} description={MY_SCORECARD_COPY.description} />
+      {/* Build 13 (register BN5): the person's own bonus bars and dollars, when they have a plan. */}
+      {userId && <MyBonus userId={userId} />}
       {q.isPending ? (
         <p className="text-sm text-muted-foreground">Loading...</p>
       ) : q.error ? (
