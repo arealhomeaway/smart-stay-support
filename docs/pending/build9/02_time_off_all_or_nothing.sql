@@ -56,7 +56,7 @@ BEGIN
     IF v_kind = 'cover' AND v_user IS NULL THEN RAISE EXCEPTION 'Choose who is covering.'; END IF;
     IF v_kind = 'off' THEN v_user := NULL; END IF;
     -- Same rule as the Add time off form: only an Admin changes the three leadership roles.
-    IF v_role IN ('director_onboarding', 'director_ops', 'ops_supervisor')
+    IF v_role IN ('director_onboarding', 'onboarding_director', 'director_ops', 'ops_supervisor')
        AND NOT coalesce(public.has_role(v_me, 'admin'), false) THEN
       RAISE EXCEPTION 'Only an Admin can change cover for this role.';
     END IF;
