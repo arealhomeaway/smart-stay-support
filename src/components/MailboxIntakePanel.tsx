@@ -14,7 +14,7 @@ import {
 } from "@/lib/mailbox.functions";
 import { usDateTime } from "@/lib/dates";
 import { useRole } from "@/hooks/useRole";
-import { intakeStatusLines, notificationState } from "@/lib/email-intake";
+import { RUN_INTAKE_NOW_SHOWN, intakeStatusLines, notificationState } from "@/lib/email-intake";
 
 /**
  * Administrative view of Outlook intake.
@@ -156,6 +156,10 @@ export function MailboxIntakePanel() {
           <Badge variant={switchOn ? "default" : "secondary"}>
             {switchOn ? "Email intake on" : "Email intake off"}
           </Badge>
+          {/* Register E1 (e): one switch, and the panel shows both. */}
+          <Badge variant={intake?.sweepActive ? "default" : "secondary"}>
+            {intake?.sweepActive ? "Timed check on" : "Timed check off"}
+          </Badge>
           <Badge variant={notifications.live ? "default" : "secondary"} className="gap-1">
             <Radio className="size-3.5" />
             {notifications.label}
@@ -193,15 +197,19 @@ export function MailboxIntakePanel() {
           >
             <Eye className="size-4" /> Preview
           </Button>
-          <Button
-            size="sm"
-            className="min-h-11"
-            disabled={!connected || !switchOn || sync.isPending}
-            onClick={() => sync.mutate(false)}
-          >
-            <RefreshCw className={`size-4 ${sync.isPending ? "animate-spin" : ""}`} /> Run intake
-            now
-          </Button>
+          {/* Register E1 (c): hidden until it can create records; the push route and the timed
+              check do the work. */}
+          {RUN_INTAKE_NOW_SHOWN ? (
+            <Button
+              size="sm"
+              className="min-h-11"
+              disabled={!connected || !switchOn || sync.isPending}
+              onClick={() => sync.mutate(false)}
+            >
+              <RefreshCw className={`size-4 ${sync.isPending ? "animate-spin" : ""}`} /> Run intake
+              now
+            </Button>
+          ) : null}
           <Button
             size="sm"
             variant="outline"

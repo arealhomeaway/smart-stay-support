@@ -62,6 +62,62 @@ export function isEmailTestTicket(
   return Boolean(t?.is_demo) && (t?.external_source ?? "").toLowerCase() === "email";
 }
 
+/**
+ * Register E1 (a), Emily Nov 9: test records show, with their Test chip, in the normal
+ * screens for the people who run the test plan (Admin, Operations Supervisor, Director of
+ * Operations, Director of Onboarding) and stay hidden from everyone else. They are never
+ * counted anywhere, for anyone.
+ */
+export function seesEmailTestRecords(
+  roles: readonly string[],
+  seats: { opsSupervisor?: boolean; opsDirector?: boolean; onboardingDirector?: boolean } = {},
+): boolean {
+  return (
+    roles.includes("admin") ||
+    seats.opsSupervisor === true ||
+    seats.opsDirector === true ||
+    seats.onboardingDirector === true
+  );
+}
+
+/** The same rule, read from the role access object the screens already hold. */
+export function seesEmailTestsFor(access: {
+  roles: readonly string[];
+  seats: { opsSupervisor?: boolean; opsDirector?: boolean; onboardingDirector?: boolean };
+}): boolean {
+  return seesEmailTestRecords(access.roles, access.seats);
+}
+
+/**
+ * Whether a ticket shows under the current lens: the ordinary demo or real match, plus an
+ * email test ticket in the real lens for someone who runs the test plan.
+ */
+export function ticketShownInLens(
+  t: { is_demo?: boolean | null; external_source?: string | null } | null | undefined,
+  demoMode: boolean,
+  seesTests: boolean,
+): boolean {
+  if (!t) return false;
+  if (Boolean(t.is_demo) === demoMode) return true;
+  return !demoMode && seesTests && isEmailTestTicket(t);
+}
+
+/** Words for the separate, never counted list of test records. */
+export const EMAIL_TEST_COPY = {
+  heading: "Email intake tests",
+  hint: "Test records for the email intake test plan. They are never counted in any total.",
+  open: "Open",
+} as const;
+
+/** Register E1 (c): Run intake now is hidden until it can create records. */
+export const RUN_INTAKE_NOW_SHOWN = false;
+
+/** Register E1 (e): the switch and the timed check move together. */
+export const ONE_SWITCH_NOTE =
+  "Turning this on also starts the timed check every minute. Turning it off stops both.";
+export const OUT_OF_STEP_LINE =
+  "The switch and the timed check do not match. Turn email intake off and on again to fix it.";
+
 /** A Direct Booking request made from a [RESOLVE TEST] email. */
 export function isEmailTestLead(
   l: { is_demo?: boolean | null; source_detail?: Record<string, unknown> | null } | null | undefined,
@@ -110,7 +166,7 @@ export function intakeStatusLines(input: {
   format: (iso: string) => string;
 }): string[] {
   const f = input.format;
-  return [
+  const lines = [
     input.switchOn ? "Email intake is on." : INTAKE_OFF_MESSAGE,
     input.startLine
       ? `Mail received after ${f(input.startLine)} is read. Older mail is ignored.`
@@ -121,4 +177,7 @@ export function intakeStatusLines(input: {
     `Last message handled: ${input.lastMessageAt ? f(input.lastMessageAt) : "none yet"}.`,
     `${input.skippedSinceStart} message${input.skippedSinceStart === 1 ? "" : "s"} skipped since the start line.`,
   ];
+  // Register E1 (e): one switch. Say so plainly if the two are ever out of step.
+  if (input.switchOn !== input.sweepActive) lines.push(OUT_OF_STEP_LINE);
+  return lines;
 }

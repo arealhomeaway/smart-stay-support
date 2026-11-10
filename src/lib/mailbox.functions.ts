@@ -72,8 +72,9 @@ export const refreshMailboxSubscription = createServerFn({ method: "POST" })
 
 /**
  * The one way to turn email intake on or off (Admin only). Turning it on moves
- * the start line to that moment in the same database step; it only ever moves
- * forward. Who and when are recorded either way.
+ * the start line to that moment and starts the timed check in the same database
+ * step; turning it off stops the timed check (register E1 (e)). The start line
+ * only ever moves forward. Who and when are recorded either way.
  */
 export const setEmailIntake = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -84,7 +85,7 @@ export const setEmailIntake = createServerFn({ method: "POST" })
       { _enabled: data.enabled },
     );
     if (error) throw new Error(error.message);
-    return result as { enabled: boolean; changed: boolean; start_line: string | null };
+    return result as { enabled: boolean; changed: boolean; start_line: string | null; timed_check?: boolean };
   });
 
 /**
