@@ -63,7 +63,9 @@ function VendorsWorkspace() {
   const canManage = access.edit;
   const canLead = access.lead;
   const isLead = roles.includes("admin");
-  const current: Tab = tab === "database" && !canManage ? "directory" : tab;
+  // Register A9: whoever the rule gives the Database tab sees it, read only when they cannot edit.
+  const showDatabase = access.tabs.includes("database");
+  const current: Tab = tab === "database" && !showDatabase ? "directory" : tab;
 
   return (
     <div className="space-y-6">
@@ -76,13 +78,13 @@ function VendorsWorkspace() {
       <Tabs value={current} onValueChange={(v) => void navigate({ search: { tab: v as Tab } })}>
         <TabsList className="flex-wrap">
           <TabsTrigger value="directory">Directory</TabsTrigger>
-          {canManage && <TabsTrigger value="database">Database</TabsTrigger>}
+          {showDatabase && <TabsTrigger value="database">Database</TabsTrigger>}
           <TabsTrigger value="gold">Gold Standard</TabsTrigger>
           <TabsTrigger value="coverage">Market Coverage</TabsTrigger>
           <TabsTrigger value="review">Needs Review</TabsTrigger>
         </TabsList>
         <TabsContent value="directory" className="space-y-6 pt-4"><VendorDirectory /><AccountArchiveList kind="vendor" /></TabsContent>
-        {canManage && (
+        {showDatabase && (
           <TabsContent value="database" className="pt-4"><VendorDatabase canManage={canManage} canLead={canLead} isLead={isLead} /></TabsContent>
         )}
         <TabsContent value="gold" className="pt-4"><VendorGoldStandard /></TabsContent>
