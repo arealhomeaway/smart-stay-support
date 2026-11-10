@@ -86,7 +86,9 @@ describe("Vendors page: onboarding sees the full vendor database", () => {
     const database = readFileSync("src/components/vendors/VendorDatabase.tsx", "utf8");
     for (const src of [page, profile, sheet]) expect(src).not.toContain("showScreening");
     expect(page).toContain('<TabsTrigger value="review">Needs Review</TabsTrigger>');
-    expect(page).toContain('{canManage && <TabsTrigger value="database">Database</TabsTrigger>}');
+    // Build 5 (A9): the Database tab follows the tab rule, so a read only view still shows it.
+    expect(page).toContain('{showDatabase && <TabsTrigger value="database">Database</TabsTrigger>}');
+    expect(page).toContain('const showDatabase = access.tabs.includes("database");');
     expect(page).toContain("<VendorNeedsReview canManage={canLead} />");
     expect(sheet).toContain('<TabsTrigger value="screening">Screening</TabsTrigger>');
     expect(sheet).not.toMatch(/\{\w+ && <TabsTrigger value="screening">/);

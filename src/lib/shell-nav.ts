@@ -271,6 +271,8 @@ export type MenuItem = {
   search?: Record<string, string>;
   capability?: Capability;
   flag?: string;
+  /** Not shown to someone who holds this (they already have the fuller page). */
+  hiddenWith?: Capability;
   /** Other pages that also light up this item (its tab pages). */
   alsoActive?: string[];
 };
@@ -346,7 +348,8 @@ const OPERATIONS_MENU: MenuGroup[] = [
       { key: "properties", label: "Properties", to: "/properties", capability: "properties", alsoActive: ["/property"] },
       { key: "onboarding", label: "Onboarding", to: "/onboarding", capability: "onboarding_workspace" },
       // The Operations Supervisor sees Onboarding only here, read only (Emily, Nov 9).
-      { key: "handoffs", label: "Handoffs", to: "/handoffs", capability: "handoffs_view" },
+      // People who work in Onboarding (Director of Operations, Admin) keep their handoffs there.
+      { key: "handoffs", label: "Handoffs", to: "/handoffs", capability: "handoffs_view", hiddenWith: "onboarding_workspace" },
       { key: "owner-programs", label: "Active Owner", to: "/owner-programs", capability: "owner_programs" },
       { key: "quarterly", label: "Quarterly Reviews", to: "/quarterly", capability: "vendor_admin", flag: "quarterly_reviews" },
     ],
@@ -355,8 +358,11 @@ const OPERATIONS_MENU: MenuGroup[] = [
 
 /** The left menu for Operations staff. Pure, so who sees what is testable. */
 export function operationsMenu(access: NavAccess): MenuGroup[] {
-  const allowed = (i: { to: string; capability?: Capability; flag?: string }) =>
-    access.canOpen(i.to) && (!i.capability || access.can(i.capability)) && flagOn(access, i.flag);
+  const allowed = (i: { to: string; capability?: Capability; flag?: string; hiddenWith?: Capability }) =>
+    access.canOpen(i.to) &&
+    (!i.capability || access.can(i.capability)) &&
+    (!i.hiddenWith || !access.can(i.hiddenWith)) &&
+    flagOn(access, i.flag);
   const bookingTarget = directBookingsMenuTarget(access);
   const groups: MenuGroup[] = OPERATIONS_MENU.map((g) => ({
     label: g.label,

@@ -5,7 +5,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { can } from "../src/lib/permissions";
 
 mock.module("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
-mock.module("@tanstack/react-router", () => ({ Link: ({ children }: { children: unknown }) => children }));
+mock.module("@tanstack/react-router", () => ({
+  Link: ({ children }: { children: unknown }) => children,
+  // useRole reads the current page (Finance view only pages, Build 5).
+  useRouterState: (o?: { select?: (s: { location: { pathname: string } }) => unknown }) =>
+    o?.select ? o.select({ location: { pathname: "/" } }) : { location: { pathname: "/" } },
+}));
 mock.module("../src/lib/owner-program.functions", () => ({ ownerPrograms: () => {}, ownerProgramDetail: () => {}, setOwnerProgramStatus: () => {} }));
 mock.module("../src/lib/onboarding.functions", () => ({ startOnboardingProjectFn: () => {} }));
 mock.module("../src/lib/co-owners.functions", () => ({ listProgramHomeowners: () => {}, addProgramCoOwner: () => {}, removeProgramCoOwner: () => {} }));
