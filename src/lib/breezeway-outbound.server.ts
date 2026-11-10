@@ -1,3 +1,4 @@
+import { BRIDGE_COPY } from "./breezeway-bridge";
 import { formatPropertyLabel } from "@/lib/property-label";
 import { MAINTENANCE_POLICY_VERSION } from "@/lib/maintenance-policy";
 /**
@@ -123,10 +124,20 @@ async function outboundEnabled() {
   const db = await admin();
   const { data } = await db
     .from("feature_flags")
-    .select("enabled")
-    .eq("key", BREEZEWAY_OUTBOUND_FLAG)
-    .maybeSingle();
+    .select("key, enabled")
+    .in("key", [BREEZEWAY_OUTBOUND_FLAG, INTERNAL_WORK_ORDERS_FLAG]);
   // Unknown flag defaults to OFF — an unfinished workflow is never assumed live.
+  // While Resolve work orders are switched off, nothing is sent to Breezeway (register C4).
+  const on = new Set(((data ?? []) as { key: string; enabled: boolean }[]).filter((f) => f.enabled).map((f) => f.key));
+  return on.has(BREEZEWAY_OUTBOUND_FLAG) && on.has(INTERNAL_WORK_ORDERS_FLAG);
+}
+
+/** Resolve work orders and Breezeway sends from Resolve: off until the vendor network is in Resolve. */
+export const INTERNAL_WORK_ORDERS_FLAG = "internal_work_orders";
+
+async function internalWorkOrdersOn() {
+  const db = await admin();
+  const { data } = await db.from("feature_flags").select("enabled").eq("key", INTERNAL_WORK_ORDERS_FLAG).maybeSingle();
   return Boolean((data as { enabled: boolean } | null)?.enabled);
 }
 
@@ -321,6 +332,9 @@ export async function createOutboundTask(
     return resultForExisting(existing);
   }
 
+  if (!(await internalWorkOrdersOn())) {
+    return { ok: false, message: BRIDGE_COPY.outboundOff };
+  }
   if (!(await outboundEnabled())) {
     return { ok: false, message: "Breezeway outbound task creation is switched off." };
   }
