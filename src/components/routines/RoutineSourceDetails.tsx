@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usDate } from "@/lib/dates";
+import { breezewayTaskLink } from "@/lib/breezeway-bridge";
 import {
   maintenanceReviewWorkOrderId,
   surveyReviewFeedbackId,
@@ -41,7 +42,7 @@ function MaintenanceDetails({
       const [wo, comments, photos] = await Promise.all([
         supabase
           .from("breezeway_work_orders")
-          .select("name, description, status, scheduled_date, finished_at, assignees, last_synced_at")
+          .select("name, description, status, scheduled_date, finished_at, assignees, last_synced_at, breezeway_task_id, report_url")
           .eq("id", woId!)
           .maybeSingle(),
         supabase
@@ -97,6 +98,17 @@ function MaintenanceDetails({
           <p className="text-xs text-muted-foreground">
             Finished by the vendor is not the same as reviewed. Approving here records the team's review in Resolve only.
           </p>
+          {wo.breezeway_task_id ? (
+            <Button asChild variant="outline" className="min-h-11">
+              <a
+                href={breezewayTaskLink(wo.breezeway_task_id, (wo as { report_url?: string | null }).report_url ?? null)}
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                Open in Breezeway
+              </a>
+            </Button>
+          ) : null}
         </>
       ) : (
         <p className="text-muted-foreground">Loading the work order…</p>
