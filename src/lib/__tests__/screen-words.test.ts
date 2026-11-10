@@ -61,18 +61,24 @@ for (const n of NAMES) WORDS[n] = new RegExp(`\\b${n}\\b`);
 const FROZEN: Record<string, Record<string, number>> = {
   // Protected onboarding template Task text (Full Furnishing plan). Changing it needs its own
   // approval; the matching database template rows are not touched either.
-  "src/lib/onboarding-template.ts": { James: 2, Josh: 3, Kati: 4, Micah: 3, longDash: 0, shortDash: 0, hyphenDash: 0, symbol: 0 },
+  // Its punctuation is frozen with it (Build 7): the plan's own approval covers rewording.
+  "src/lib/onboarding-template.ts": {
+    James: 2, Josh: 3, Kati: 4, Micah: 3, longDash: 10, shortDash: 5, hyphenDash: 36, symbol: 7,
+  },
   // Recovery policy version stamp. It is saved on every refund and credit record, so
   // renaming it would split their history.
   "src/lib/recovery-policy.ts": { threshold: 1 },
   // Instructions sent to the AI models (Coach and evidence review). They are never shown on
   // a screen; the model is told to answer in Right now, Today and Routine.
-  "src/lib/coach.server.ts": {},
-  "src/lib/coach-field-notes.ts": {},
-  "src/lib/evidence.server.ts": {},
+  "src/lib/coach.server.ts": { longDash: 7, shortDash: 1, hyphenDash: 10, symbol: 1, urgencyCode: 2 },
+  "src/lib/coach-field-notes.ts": { longDash: 1, shortDash: 1, hyphenDash: 1 },
+  "src/lib/evidence.server.ts": { longDash: 1 },
   // The Outlook category name. It must match the category that already exists in the
   // shared mailbox, so it cannot be reworded here.
-  "src/lib/mail-categories.ts": {},
+  "src/lib/mail-categories.ts": { hyphenDash: 1 },
+  // The OpenStreetMap credit line. The map's licence requires the copyright sign.
+  "src/lib/search-map.ts": { symbol: 1 },
+  "src/components/direct-bookings/SearchMap.tsx": { symbol: 1 },
 };
 
 function files(dir: string, out: string[] = []) {
@@ -183,10 +189,16 @@ describe("screen words and names", () => {
       "Proposed. Waiting.",
       "a proposal only",
       "have not signed off",
+      "Waiting \u2014 owner",
+      "9\u201310 AM",
+      "Owner - reply",
+      "Done \u2705",
+      "Open \u2192",
+      "Unresolved P1",
       ...NAMES.map((n) => `Ask ${n} first`),
     ];
     for (const s of samples) expect(Object.values(WORDS).some((re) => re.test(s))).toBe(true);
-    for (const ok of ["Proposed amount", "Typical close", "Team and shift", "seatHolder", "median_ack"]) {
+    for (const ok of ["Proposed amount", "Typical close", "Team and shift", "seatHolder", "median_ack", "Right now", "follow-up", "2-3 homes", "-", "Home \u00b7 Team", "Loading\u2026", "p1"]) {
       expect(isIdentifier(ok) || !Object.values(WORDS).some((re) => re.test(ok))).toBe(true);
     }
   });
