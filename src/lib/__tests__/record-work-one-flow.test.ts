@@ -176,7 +176,10 @@ describe("The Record work panel", () => {
   });
   test("Create ticket and One touch wait for a home and a description", () => {
     expect(PANEL).toContain("const ready = Boolean(propertyId) && description.trim().length > 0;");
-    expect((PANEL.match(/disabled=\{!ready \|\| saving !== null\}/g) ?? []).length).toBe(3);
+    // Create ticket and Escalate wait for a home and a description; One touch
+    // also waits for What did you do? (register T11, Nov 10).
+    expect((PANEL.match(/disabled=\{!ready \|\| saving !== null\}/g) ?? []).length).toBe(2);
+    expect((PANEL.match(/disabled=\{!ready \|\| saving !== null \|\| !oneTouchOutcome\(didWhat\)\}/g) ?? []).length).toBe(1);
   });
   test("a ticket is created once: a second press reuses the same ticket", () => {
     expect(PANEL).toContain("if (createdTicketId) return createdTicketId;");
