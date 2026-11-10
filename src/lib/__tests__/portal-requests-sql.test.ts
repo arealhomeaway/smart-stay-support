@@ -89,8 +89,9 @@ const err = async (p: Promise<unknown>) => {
   try { await p; return null; } catch (e) { return (e as Error).message; }
 };
 const newLead = async (db: PGlite, extra: Record<string, string> = {}) => {
-  const cols = ["kind", "owned_by", "partner_name", "subject", "email", ...Object.keys(extra)];
-  const vals = ["direct_booking", PC, "Owl Marketplace", "Need a home", "noreply@owlmarketplace.com", ...Object.values(extra)];
+  const base: Record<string, string> = { kind: "direct_booking", owned_by: PC, partner_name: "Owl Marketplace", subject: "Need a home", email: "noreply@owlmarketplace.com", ...extra };
+  const cols = Object.keys(base);
+  const vals = Object.values(base);
   const r = await db.query<{ id: string }>(`INSERT INTO public.leads(${cols.join(", ")}) VALUES (${cols.map((_, i) => `$${i + 1}`).join(", ")}) RETURNING id`, vals);
   return r.rows[0]!.id;
 };
