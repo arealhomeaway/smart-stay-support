@@ -75,7 +75,7 @@ export function PortalAnswerPanel({
           {PORTAL_COPY.copyReply}
         </Button>
         {check.needsOk && onAskOk ? (
-          <Button type="button" className={BIG} disabled={busy} onClick={onAskOk} data-action="portal-ask-ok">
+          <Button type="button" className={BIG} disabled={busy || state.homesPicked < 1} onClick={onAskOk} data-action="portal-ask-ok">
             {PORTAL_COPY.askOk}
           </Button>
         ) : null}
@@ -84,7 +84,9 @@ export function PortalAnswerPanel({
         </Button>
       </div>
       {check.reason ? (
-        <span className="text-[13px] text-muted-foreground">{check.needsOk ? PORTAL_COPY.askOkHelp : check.reason}</span>
+        <span className="text-[13px] text-muted-foreground">
+          {check.needsOk ? (state.homesPicked < 1 ? PORTAL_COPY.pickFirst : PORTAL_COPY.askOkHelp) : check.reason}
+        </span>
       ) : null}
     </div>
   );

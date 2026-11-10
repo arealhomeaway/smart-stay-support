@@ -43,6 +43,7 @@ export const PORTAL_COPY = {
   waitingOk: "Waiting for a supervisor to OK the quote.",
   approvedForPortal: "The quote is OK. Answer in the partner's portal now.",
   approverToast: "Approved. The coordinator answers in the partner's portal.",
+  approverLine: "This quote is answered in the partner's portal, not by email.",
   needsOk: "A supervisor must OK this quote before you answer in the partner's portal.",
   pickFirst: "Pick at least one home first.",
   replyToLabel: "Reply to",

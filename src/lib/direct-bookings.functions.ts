@@ -302,7 +302,7 @@ export const getDirectBooking = createServerFn({ method: "POST" })
       myName: me?.full_name ?? "",
       settings,
       approvalRequiredNow: approvalRequired(settings),
-      pending: pending ? { id: pending.id, requested_at: pending.requested_at, escalated_at: pending.escalated_at } : null,
+      pending: pending ? { id: pending.id, requested_at: pending.requested_at, escalated_at: pending.escalated_at, portal: pending.reply?.portal === true } : null,
       approvedQuote,
       approvedForPortal: approvedQuote && latest?.reply?.portal === true && !lead.reply_sent_at,
       canCorrectPortal: isSupervisor || isAdmin,
