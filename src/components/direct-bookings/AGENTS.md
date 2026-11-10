@@ -1,2 +1,3 @@
 # src/components/direct-bookings rules
 - Direct Bookings map: only src/components/direct-bookings/SearchMap.tsx knows the map provider (Leaflet + OpenStreetMap, dynamically imported in the browser); provider-neutral rules (rings, labels, pin spreading, failure) live in src/lib/search-map.ts. Why: a provider switch changes one file.
+- Portal requests: link allowlist, no reply senders and when "I answered in the partner's portal" may be pressed live only in src/lib/portal-requests.ts; the DB repeats them (leads_portal_link_host_check, answer_direct_booking_in_portal, guard_lead_portal_fields) and reply_sent_at stays the one reply time for email and portal (reply_method only labels it). Why: one rule per behaviour, no double counted reply time.
