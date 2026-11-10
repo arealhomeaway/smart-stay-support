@@ -14,6 +14,7 @@ import { SharePointConnectionPanel } from "@/components/SharePointConnectionPane
 import { NightlyBackupPanel } from "@/components/NightlyBackupPanel";
 import { FullBackupPanel } from "@/components/FullBackupPanel";
 import { BreezewayConnectionPanel } from "@/components/BreezewayConnectionPanel";
+import { BreezewayBridgePanel } from "@/components/BreezewayBridgePanel";
 import { BreezewayWebhookPanel } from "@/components/BreezewayWebhookPanel";
 import { BreezewayOutboundReviewPanel } from "@/components/BreezewayOutboundReviewPanel";
 import { BreezewaySyncReviewPanel } from "@/components/BreezewaySyncReviewPanel";
@@ -110,6 +111,7 @@ function IntegrationsPage() {
       <NightlyBackupPanel />
 
       <BreezewayConnectionPanel />
+      <BreezewayBridgePanel />
       <BreezewaySendingPanel />
       <BreezewayWebhookPanel />
       <BreezewayOutboundReviewPanel />
