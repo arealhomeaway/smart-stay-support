@@ -967,20 +967,6 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
       Boolean(branches?.makeRightOpen) ||
       (Boolean((ticket as { guest_recovery_needed?: boolean | null }).guest_recovery_needed) && !activeBranch.recovery),
   });
-  const doNowDue = closed || quietLine
-    ? null
-    : dueInLabel(
-        doThisNowDueAt({
-          commState: guestComm.commState,
-          commDueAt: guestComm.commDueAt,
-          acknowledged_at: ticket.acknowledged_at,
-          action_started_at: ticket.action_started_at,
-          response_due_at: (ticket as { response_due_at?: string | null }).response_due_at ?? null,
-          action_due_at: (ticket as { action_due_at?: string | null }).action_due_at ?? null,
-          next_guest_update_at: ticket.next_guest_update_at ?? null,
-        }),
-      );
-  const firstActionLeads = !closeRequested && (currentAction?.id === "acknowledge" || currentAction?.id === "start_work");
   // The one next step with its due time (register T5, T13): a written step wins.
   const nextStep =
     closed || quietLine
@@ -999,6 +985,21 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             next_guest_update_at: ticket.next_guest_update_at ?? null,
           }),
         });
+  // The next step line carries the due time itself, so the corner label stays empty then.
+  const doNowDue = closed || quietLine || nextStep
+    ? null
+    : dueInLabel(
+        doThisNowDueAt({
+          commState: guestComm.commState,
+          commDueAt: guestComm.commDueAt,
+          acknowledged_at: ticket.acknowledged_at,
+          action_started_at: ticket.action_started_at,
+          response_due_at: (ticket as { response_due_at?: string | null }).response_due_at ?? null,
+          action_due_at: (ticket as { action_due_at?: string | null }).action_due_at ?? null,
+          next_guest_update_at: ticket.next_guest_update_at ?? null,
+        }),
+      );
+  const firstActionLeads = !closeRequested && (currentAction?.id === "acknowledge" || currentAction?.id === "start_work");
   const canWorkTickets = role.can("work_orders_internal") && !role.readOnly && !role.onboardingOnly;
   const closeReopen = closeReopenState({
     status: ticket.status,
@@ -1314,14 +1315,10 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
         <div className="space-y-5">
           <div className="space-y-4">
             <StepTracker tracker={tracker} />
-            <DoThisNow
-              due={doNowDue}
-              nextStep={
-                nextStep ? (
-                  <NextStepCard ticketId={ticketId} view={nextStep} canEdit={canWorkTickets} onChanged={refresh} />
-                ) : null
-              }
-            >
+            <DoThisNow due={doNowDue}>
+              {nextStep && (
+                <NextStepCard ticketId={ticketId} view={nextStep} canEdit={canWorkTickets} onChanged={refresh} />
+              )}
               {quietLine && <p className="text-sm text-muted-foreground">{quietLine}</p>}
               {sla.escalation && (
           <div className="flex items-start gap-3 rounded-lg border border-danger/40 bg-danger/10 p-4">

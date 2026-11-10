@@ -80,19 +80,17 @@ export function StepTracker({ tracker }: { tracker: Tracker }) {
   );
 }
 
-export function DoThisNow({ due, nextStep, children }: { due: string | null; nextStep?: ReactNode; children: ReactNode }) {
+export function DoThisNow({ due, children }: { due: string | null; children: ReactNode }) {
   return (
     <section aria-label="Do this now" className="rounded-xl border-2 border-primary/40 bg-card p-4" data-current-work>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-base font-semibold">Do this now</h2>
-        {/* The next step line carries its own due time (register T5). */}
-        {due && !nextStep && (
+        {due && (
           <span className={`text-sm font-medium ${due.startsWith("overdue") ? "text-danger" : "text-muted-foreground"}`} data-testid="do-this-now-due">
             {due}
           </span>
         )}
       </div>
-      {nextStep}
       {children}
     </section>
   );
