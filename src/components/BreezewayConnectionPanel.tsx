@@ -96,7 +96,7 @@ function MappingList({
             className="rounded border border-border px-2 py-1"
           >
             <span className="text-foreground">{r.breezewayName ?? r.resolveName ?? "Unnamed"}</span>
-            {r.resolveName && r.breezewayName ? ` → ${r.resolveName}` : ""} · {r.note}
+            {r.resolveName && r.breezewayName ? ` to ${r.resolveName}` : ""} · {r.note}
           </li>
         ))}
         {rows.length > limit ? <li>…and {rows.length - limit} more.</li> : null}

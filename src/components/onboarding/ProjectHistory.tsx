@@ -105,7 +105,7 @@ export function ProjectHistory({
         summary: e.summary,
         detail:
           e.detail ??
-          (e.prior_value || e.new_value ? `${e.prior_value ?? "-"} → ${e.new_value ?? "-"}` : null),
+          (e.prior_value || e.new_value ? `${e.prior_value ?? "Not set"} to ${e.new_value ?? "Not set"}` : null),
         actor: nameOf(e.actor ?? null),
       });
     }

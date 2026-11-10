@@ -339,7 +339,7 @@ export function VendorDatabase({
                       }
                     >
                       {c.label}
-                      {view.sort?.key === c.key ? (view.sort.dir === "asc" ? " ↑" : " ↓") : ""}
+                      {view.sort?.key === c.key ? (view.sort.dir === "asc" ? <ArrowUp className="ml-1 inline h-3 w-3" aria-label="Sorted up" /> : <ArrowDown className="ml-1 inline h-3 w-3" aria-label="Sorted down" />) : null}
                     </button>
                     {c.system && <Lock className="size-3 text-muted-foreground" aria-label="Protected system field" />}
                     <button aria-label={`Move ${c.label} left`} onClick={() => move(c.key, -1)}>

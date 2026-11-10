@@ -70,7 +70,7 @@ export function DbLinkButton({ link, children, tone = "outline" }: { link: DbLin
 export function BackToDatabases() {
   return (
     <Link to="/databases" className={cn(LINK_STYLE.outline, "self-start")}>
-      ← Back to Databases
+      Back to Databases
     </Link>
   );
 }

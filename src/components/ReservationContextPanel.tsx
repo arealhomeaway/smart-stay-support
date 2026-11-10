@@ -62,7 +62,7 @@ export function ReservationContextPanel({
 
   const stay = [day(ticket.reservation_arrival), day(ticket.reservation_departure)]
     .filter(Boolean)
-    .join(" → ");
+    .join(" to ");
   const bookingUrl = ticket.reservation_url ?? ownerRezBookingUrl(ticket.ownerrez_booking_id);
   const propertyUrl = ownerRezPropertyUrl(ownerRezPropertyId);
   const capturedAt = ticket.reservation_snapshot_at

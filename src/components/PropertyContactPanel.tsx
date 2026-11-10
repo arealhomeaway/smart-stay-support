@@ -21,7 +21,7 @@ import { useDemo } from "@/components/DemoProvider";
 
 function dateRange(arrival: string | null, departure: string | null) {
   if (!arrival || !departure) return "Not set";
-  return `${usDate(arrival)} → ${usDate(departure)}`;
+  return `${usDate(arrival)} to ${usDate(departure)}`;
 }
 
 function formatDate(v: string | null) {

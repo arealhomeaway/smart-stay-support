@@ -93,7 +93,7 @@ export const Route = createFileRoute("/_authenticated/owner-programs")({
       { property: "og:title", content: "Active Owner: Resolve" },
       {
         property: "og:description",
-        content: "One owner, one program window (closing date → December 31), one combined participation record.",
+        content: "One owner, one program window (closing date to December 31), one combined participation record.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -615,7 +615,7 @@ function ProgramDetail({
           <Home className="size-4" /> Properties in this program
         </h3>
         <p className="text-xs text-muted-foreground">
-          Every home shares the one program window (closing date → December 31) and the one combined hour goal. Properties are
+          Every home shares the one program window (closing date to December 31) and the one combined hour goal. Properties are
           measured by their tasks and decisions, never by their own hour target.
         </p>
         <div className="space-y-2">
@@ -1121,7 +1121,7 @@ function ProgramDetail({
 function ChecklistItem({ ok, label }: { ok: boolean; label: string }) {
   return (
     <li className="flex items-center gap-2">
-      <span className={ok ? "text-emerald-600" : "text-muted-foreground"}>{ok ? "✓" : "○"}</span>
+      <span className={ok ? "text-emerald-600" : "text-muted-foreground"}>{ok ? "Done" : "Not yet"}</span>
       <span className={ok ? "" : "text-muted-foreground"}>{label}</span>
     </li>
   );

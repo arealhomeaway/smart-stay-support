@@ -482,7 +482,7 @@ function SeatsCard({
                         </Badge>
                         {o.kind === "cover" ? nameFor(people, o.user_id) : "Role off duty"}{" "}
                         <span className="text-muted-foreground">
-                          {usDateTime(o.starts_at)} → {usDateTime(o.ends_at)}
+                          {usDateTime(o.starts_at)} to {usDateTime(o.ends_at)}
                         </span>
                       </span>
                       {canEdit && (
@@ -773,7 +773,7 @@ function TriageCard({ windows, roles }: { windows: Triage[]; roles: Role[] }) {
               <span className="text-muted-foreground">
                 {DAYS[w.weekday]} {clock(w.start_minute)} to {clock(w.end_minute)}
               </span>{" "}
-              → {label(w.role_code)}
+              to {label(w.role_code)}
             </p>
           ))
         )}
@@ -877,7 +877,7 @@ function OnCallCard({
                   <span>
                     <span className="font-medium">{nameFor(people, r.user_id)}</span>{" "}
                     <span className="text-muted-foreground">
-                      {r.starts_on} → {r.ends_on}
+                      {r.starts_on} to {r.ends_on}
                     </span>
                   </span>
                   <span className="flex items-center gap-2">

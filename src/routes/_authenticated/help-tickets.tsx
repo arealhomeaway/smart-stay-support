@@ -361,7 +361,7 @@ function TicketDetail({ t }: { t: any }) {
                   {["resolved", "closed"].includes(e.from_status ?? "") && OPEN.includes(e.to_status ?? "")
                     ? "reopened the ticket"
                     : "changed status"}
-                  : {label(e.from_status ?? "")} → {label(e.to_status ?? "")}
+                  : {label(e.from_status ?? "")} to {label(e.to_status ?? "")}
                 </p>
               ) : (
                 <>

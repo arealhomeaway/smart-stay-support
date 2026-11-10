@@ -421,7 +421,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
           <section className="space-y-2 rounded-lg border border-border bg-card p-4" aria-label="Notes and files">
             <h3 className="font-semibold">Notes &amp; files</h3>
             <Textarea aria-label="Notes" value={notes} disabled={locked} onChange={(e) => setNotes(e.target.value)} onBlur={() => notes !== (r.notes ?? "") && save({ notes: notes || null })} />
-            {q.data.docs.length > 0 && <ul className="text-sm">{q.data.docs.map((d) => <li key={d.id}>📎 {d.filename}</li>)}</ul>}
+            {q.data.docs.length > 0 && <ul className="text-sm">{q.data.docs.map((d) => <li key={d.id}>File: {d.filename}</li>)}</ul>}
             {!done && (
               <div className="flex flex-wrap items-center gap-2">
                 <Input type="file" multiple aria-label="Attach photos or files" className="max-w-xs" onChange={(e) => setFiles(Array.from(e.target.files ?? []))} />

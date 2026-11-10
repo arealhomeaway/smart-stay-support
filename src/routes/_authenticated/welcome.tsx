@@ -118,7 +118,7 @@ function WelcomePage() {
                 size="sm"
                 className="-ml-3 mt-1 px-3 hover:bg-transparent hover:underline"
               >
-                <Link to={b.to}>{b.cta} →</Link>
+                <Link to={b.to}>{b.cta}</Link>
               </Button>
             </div>
           </div>

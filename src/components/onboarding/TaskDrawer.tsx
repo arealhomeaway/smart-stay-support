@@ -614,7 +614,7 @@ export function TaskDrawer({
             <p className="eyebrow">Subtasks</p>
             {subtasks.map((s) => (
               <p key={s.id} className="text-sm">
-                {s.status === "complete" ? "✓" : "·"} {s.title}
+                {s.status === "complete" ? "Done: " : ""}{s.title}
               </p>
             ))}
           </section>

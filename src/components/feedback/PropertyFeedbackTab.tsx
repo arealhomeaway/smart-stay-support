@@ -265,7 +265,7 @@ function ReviewToolsCard({ propertyId, isDemo, isSupervisor }: { propertyId: str
                 await refresh();
                 setBusy(false);
               }}>
-                Add {stars}★ test review
+                Add {stars} star test review
               </Button>
             ))}
           </>

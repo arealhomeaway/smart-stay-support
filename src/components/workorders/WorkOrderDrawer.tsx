@@ -1442,7 +1442,7 @@ function Stamp({
         })
       }
     >
-      {done ? `${label} ✓` : label}
+      {done ? `${label}: done` : label}
     </Button>
   );
 }

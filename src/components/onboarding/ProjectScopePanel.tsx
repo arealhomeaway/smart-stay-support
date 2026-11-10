@@ -185,7 +185,7 @@ export function ProjectScopePanel({
                       say what the scope was and what it became. */}
                   {(e.prior_value || e.new_value) && (
                     <span className="block text-foreground/70">
-                      {e.prior_value ?? "Not set"} → {e.new_value ?? "Not set"}
+                      {e.prior_value ?? "Not set"} to {e.new_value ?? "Not set"}
                     </span>
                   )}
                 </li>

@@ -236,7 +236,7 @@ export function OccupancyGuestPanel({
                     label="Stay"
                     value={
                       guest.arrival && guest.departure
-                        ? `${usDate(guest.arrival)} → ${usDate(guest.departure)}`
+                        ? `${usDate(guest.arrival)} to ${usDate(guest.departure)}`
                         : "Not set"
                     }
                   />
@@ -266,7 +266,7 @@ export function OccupancyGuestPanel({
                 label="Stay"
                 value={
                   ticket.reservation_arrival && ticket.reservation_departure
-                    ? `${usDate(ticket.reservation_arrival)} → ${usDate(ticket.reservation_departure)}`
+                    ? `${usDate(ticket.reservation_arrival)} to ${usDate(ticket.reservation_departure)}`
                     : "Not set"
                 }
               />

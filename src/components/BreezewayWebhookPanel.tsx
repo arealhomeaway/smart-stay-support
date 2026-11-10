@@ -222,7 +222,7 @@ export function BreezewayWebhookPanel() {
           <div className="space-y-1 rounded-md border border-border p-3">
             {fixtures.cases.map((c) => (
               <Verdict key={c.name} ok={c.passed}>
-                {c.name} → {OUTCOME_LABELS[c.actual] ?? c.actual}
+                {c.name}: {OUTCOME_LABELS[c.actual] ?? c.actual}
                 {c.retryable != null ? (c.retryable ? " (retryable)" : " (not retryable)") : ""}
               </Verdict>
             ))}
@@ -231,7 +231,7 @@ export function BreezewayWebhookPanel() {
 
         {registration ? (
           <p className="text-xs">
-            {registration.ok ? "✅ " : "⚠️ "}
+            {registration.ok ? "Done: " : "Needs attention: "}
             {registration.message}
             {registration.subscriptionId ? ` (subscription ${registration.subscriptionId})` : ""}
           </p>
@@ -267,7 +267,7 @@ export function BreezewayWebhookPanel() {
                   {status.existing
                     .map(
                       (s) =>
-                        `${s.webhookType ?? "task"} → ${s.host ?? "unknown host"}${s.mine ? " (ours)" : ""}`,
+                        `${s.webhookType ?? "task"} to ${s.host ?? "unknown host"}${s.mine ? " (ours)" : ""}`,
                     )
                     .join(", ")}
                 </p>

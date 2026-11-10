@@ -45,7 +45,7 @@ export const linkCleanReservation = createServerFn({ method: "POST" })
       summary: `Reservation ${cand.code ?? data.bookingId} linked manually`, actor_id: context.userId,
     });
     const { writeAudit } = await import("./audit.server");
-    await writeAudit({ actorId: context.userId, action: "departure_clean.manual_link", entityType: "departure_clean_match", entityId: m.id, entityLabel: `Task ${m.breezeway_task_id} → reservation ${data.bookingId}` });
+    await writeAudit({ actorId: context.userId, action: "departure_clean.manual_link", entityType: "departure_clean_match", entityId: m.id, entityLabel: `Task ${m.breezeway_task_id} to reservation ${data.bookingId}` });
     // Real homes stay gated inside the function; demo homes get their review.
     await admin.rpc("create_departure_review_from_clean", { _wo_id: m.breezeway_work_order_id });
     return { ok: true };

@@ -158,7 +158,7 @@ export function OperationsContextPanel({
           ) : (
             linked.map((t) => (
               <p key={t.id} className="text-xs">
-                {t.title} → ticket {String(t.linked_ticket_id).slice(0, 8)}
+                {t.title}: ticket {String(t.linked_ticket_id).slice(0, 8)}
               </p>
             ))
           )}

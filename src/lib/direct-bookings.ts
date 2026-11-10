@@ -646,7 +646,7 @@ export const DB_COPY = {
   empty: "Nothing here right now.",
   startQuote: "Start the quote",
   open: "Open",
-  back: "← Back to Direct Bookings",
+  back: "Back to Direct Bookings",
   reviewNow: "Review now",
   someoneElseOwns: "A coordinator already owns this request.",
   ownedByOther: "A coordinator owns this request.",

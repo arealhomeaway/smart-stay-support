@@ -649,7 +649,7 @@ export function LeadDrawer({
                 <li key={a.id} className="text-sm">
                   <span className="font-medium">{CHANNEL_LABELS[a.channel as LeadChannel]}</span>
                   {a.outcome ? ` · ${a.outcome}` : ""}
-                  {a.to_stage ? ` → ${STAGE_LABELS[a.to_stage as LeadStage]}` : ""}
+                  {a.to_stage ? ` to ${STAGE_LABELS[a.to_stage as LeadStage]}` : ""}
                   <span className="ml-2 text-xs text-muted-foreground">
                     {formatDate(a.occurred_at)}
                   </span>

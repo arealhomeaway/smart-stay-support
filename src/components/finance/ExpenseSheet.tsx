@@ -482,7 +482,7 @@ function summarize(before: unknown, after: unknown) {
   return Object.keys(a)
     .filter((k) => !k.endsWith("_document_ids"))
     .slice(0, 6)
-    .map((k) => (k in b ? `${k}: ${JSON.stringify(b[k])} → ${JSON.stringify(a[k])}` : `${k}: ${JSON.stringify(a[k])}`))
+    .map((k) => (k in b ? `${k}: ${JSON.stringify(b[k])} to ${JSON.stringify(a[k])}` : `${k}: ${JSON.stringify(a[k])}`))
     .join(" · ");
 }
 

@@ -216,7 +216,7 @@ export function stayDatesLabel(lead: LeadRow): string {
   const from = start.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   if (!extra.desired_check_out) return `from ${from}`;
   const end = new Date(`${extra.desired_check_out}T00:00:00Z`);
-  return `${from} → ${end.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+  return `${from} to ${end.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
 }
 
 /** List column: "4 guests · 1 dog, 2 cats", falling back to the old pets flag. */

@@ -492,7 +492,7 @@ function PlaybookDetail({
           <ul className="space-y-1 text-sm">
             {(history.data ?? []).map((h) => (
               <li key={h.id} className="text-muted-foreground">
-                {STATUS_LABELS[(h.from_status as PlaybookStatus) ?? "draft"]} →{" "}
+                {STATUS_LABELS[(h.from_status as PlaybookStatus) ?? "draft"]} to{" "}
                 {STATUS_LABELS[(h.to_status as PlaybookStatus) ?? "draft"]} ·{" "}
                 {usDateTime(h.created_at)}
                 {` · v${(h as unknown as { version?: number }).version ?? pb.version}`}
