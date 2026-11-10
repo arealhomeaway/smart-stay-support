@@ -71,6 +71,9 @@ const FROZEN: Record<string, Record<string, number>> = {
   // The previous repair policy version stamp, saved on older Work Orders and matched by
   // policyForVersion; renaming it would lose which policy they were decided under.
   "src/lib/maintenance-policy.ts": { longDash: 1 },
+  // The first approved homeowner report sentences, kept as the record of the original wording.
+  // Reports print the saved wording, which already removes this dash; changing it needs approval.
+  "src/lib/report-v2.ts": { longDash: 1 },
   // Instructions sent to the AI models (Coach and evidence review). They are never shown on
   // a screen; the model is told to answer in Right now, Today and Routine.
   "src/lib/coach.server.ts": { longDash: 7, shortDash: 1, hyphenDash: 10, symbol: 1, urgencyCode: 2 },
