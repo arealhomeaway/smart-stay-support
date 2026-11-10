@@ -2151,9 +2151,9 @@ function MoreActions({
                 </SelectContent>
               </Select>
               {closed && (
-                // Reopening has one home: the explicit action in Current Work.
+                // Reopening has one home: Reopen ticket at the top of the ticket (Build 9 E2).
                 <p className="text-xs text-muted-foreground">
-                  This ticket is closed. Use “Reopen this ticket” to put it back into work.
+                  This ticket is closed. Use Reopen ticket at the top to put it back into work.
                 </p>
               )}
             </div>
