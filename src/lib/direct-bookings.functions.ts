@@ -38,6 +38,7 @@ import {
   type HomeCandidate,
   searchFailureMessage,
 } from "./direct-bookings";
+import { NO_REPLY_WARNING, isNoReplyAddress, portalLinkFrom, portalNote, usableReplyAddress } from "./portal-requests";
 
 type Client = SupabaseClient<Database>;
 // The staged functions and columns are not in the generated types yet.
@@ -72,6 +73,8 @@ const BASE_FIELDS =
 const FIX_FIELDS = "asap, stay_length, preferred_bedrooms, near_address, distance_wanted, follow_up_due_at, partner_approved_at, partner_approved_note";
 /** Added by docs/pending/direct-bookings-overnight/01; read only when present. */
 const NIGHT_FIELDS = "overnight_until, morning_alerted_at";
+/** Added by docs/pending/portal-requests/01; read only when present. */
+const PORTAL_FIELDS = "portal_link, reply_method, portal_answered_at, portal_answered_by, portal_answer_note";
 
 export type DirectBookingRow = {
   id: string;
@@ -122,6 +125,11 @@ export type DirectBookingRow = {
   partner_approved_note?: string | null;
   overnight_until?: string | null;
   morning_alerted_at?: string | null;
+  portal_link?: string | null;
+  reply_method?: "email" | "portal" | null;
+  portal_answered_at?: string | null;
+  portal_answered_by?: string | null;
+  portal_answer_note?: string | null;
 };
 
 /** Reads requests with the new fields, or without them while the staged change is not applied. */
@@ -129,6 +137,8 @@ async function selectLeads(
   db: Client,
   build: (cols: string) => PromiseLike<{ data: unknown; error: { code?: string; message: string } | null }>,
 ) {
+  const portal = await build(`${BASE_FIELDS}, ${FIX_FIELDS}, ${NIGHT_FIELDS}, ${PORTAL_FIELDS}`);
+  if (!(portal.error && isMissingColumn(portal.error))) return { ...portal, fieldsReady: !portal.error };
   const night = await build(`${BASE_FIELDS}, ${FIX_FIELDS}, ${NIGHT_FIELDS}`);
   if (!(night.error && isMissingColumn(night.error))) return { ...night, fieldsReady: !night.error };
   const full = await build(`${BASE_FIELDS}, ${FIX_FIELDS}`);
@@ -239,21 +249,29 @@ export const getDirectBooking = createServerFn({ method: "POST" })
     if (read.error) throw new Error(read.error.message);
     if (!read.data) throw new Error("This request was not found.");
     const lead = read.data as unknown as DirectBookingRow;
+    // Never show a link whose host is not on the partner list.
+    lead.portal_link = portalLinkFrom(lead.portal_link);
     const settings = await loadSettings(db);
     const { data: approvalRows } = await (db as unknown as Client)
       .from("direct_booking_approvals" as never)
-      .select("id, requested_by, requested_at, escalated_at, decision, decided_by, decided_at, decided_as, note")
+      .select("id, requested_by, requested_at, escalated_at, decision, decided_by, decided_at, decided_as, note, reply")
       .eq("lead_id" as never, data.id as never)
       .order("requested_at" as never, { ascending: false });
     const approvals = (approvalRows ?? []) as unknown as {
       id: string; requested_by: string; requested_at: string; escalated_at: string | null;
       decision: string | null; decided_by: string | null; decided_at: string | null; decided_as: string | null; note: string | null;
+      reply: { portal?: boolean } | null;
     }[];
     const pending = approvals.find((a) => a.decision === null) ?? null;
-    const [isSupervisor, isDirector] = await Promise.all([
+    // The latest quote sent for OK was approved (the same test the database uses).
+    const latest = approvals[0] ?? null;
+    const approvedQuote = Boolean(latest && latest.decision === "approved");
+    const [isSupervisor, isDirector, admin] = await Promise.all([
       holds(db, context.userId, "ops_supervisor"),
       holds(db, context.userId, "director_ops"),
+      loose(db).rpc("has_role", { _user_id: context.userId, _role: "admin" }),
     ]);
+    const isAdmin = (admin as { data: unknown }).data === true;
     const { data: templates } = await db
       .from("email_templates")
       .select("name, subject, body")
@@ -285,6 +303,9 @@ export const getDirectBooking = createServerFn({ method: "POST" })
       settings,
       approvalRequiredNow: approvalRequired(settings),
       pending: pending ? { id: pending.id, requested_at: pending.requested_at, escalated_at: pending.escalated_at } : null,
+      approvedQuote,
+      approvedForPortal: approvedQuote && latest?.reply?.portal === true && !lead.reply_sent_at,
+      canCorrectPortal: isSupervisor || isAdmin,
       lastSentBack: (() => {
         const back = approvals.find((a) => a.decision === "sent_back");
         return back ? { note: back.note, decided_at: back.decided_at } : null;
@@ -506,12 +527,18 @@ const replyInput = z.object({
   subject: z.string().min(1).max(300),
   body: z.string().min(1).max(20000),
   propertyIds: z.array(z.string().uuid()).min(1).max(3),
+  /** An address typed on the reply step, used instead of a no reply sender. */
+  to: z.string().max(320).optional(),
+  /** Sent for OK so it can be answered in the partner's portal: nothing is emailed. */
+  portal: z.boolean().optional(),
 });
 
 type Reply = { to: string; cc: string[]; subject: string; body: string };
 
 /** Sends one email. The copy list always comes from the two roles, whatever the caller passed. */
 async function sendAndRecord(db: Client, userId: string, leadId: string, reply: Omit<Reply, "cc">) {
+  // A no reply sender is never a reply address, whatever the screen did.
+  if (isNoReplyAddress(reply.to)) throw new Error(NO_REPLY_WARNING);
   const { data: lead } = await db.from("leads").select("is_demo, source_detail").eq("id", leadId).maybeSingle();
   if (!lead) throw new Error("This request was not found.");
   const detail = (lead.source_detail ?? {}) as Record<string, unknown>;
@@ -538,8 +565,14 @@ export const submitDirectBookingReply = createServerFn({ method: "POST" })
     const db = context.supabase;
     const { data: lead } = await db.from("leads").select("email, inquiry_source_id").eq("id", data.id).maybeSingle();
     if (!lead) throw new Error("This request was not found.");
-    const to = lead.email?.trim();
-    if (!to) throw new Error("Add their email in step 1 first.");
+    const typed = data.to?.trim() ? usableReplyAddress(data.to) : null;
+    if (data.to?.trim() && !typed) throw new Error(isNoReplyAddress(data.to) ? NO_REPLY_WARNING : "Type a full email address.");
+    const to = typed ?? lead.email?.trim() ?? "";
+    if (!data.portal) {
+      if (!to) throw new Error("Add their email in step 1 first.");
+      // A no reply sender is never a reply address.
+      if (isNoReplyAddress(to)) throw new Error(NO_REPLY_WARNING);
+    }
     // Active Owner homes can never be sent, even if picked earlier.
     await assertNoActiveOwner(db, data.propertyIds);
     // Homes without a rate cannot be sent.
@@ -550,11 +583,13 @@ export const submitDirectBookingReply = createServerFn({ method: "POST" })
     const reply: Reply = { to, cc: await ccEmails(db), subject: data.subject, body: data.body };
     const { data: result, error } = await loose(db).rpc("request_direct_booking_approval", {
       _lead_id: data.id,
-      _reply: reply,
+      _reply: data.portal ? { ...reply, portal: true } : reply,
       _property_ids: data.propertyIds,
     });
     if (error) throw new Error(notReady(error) ? NOT_READY : error.message);
     if ((result as { approval_required: boolean }).approval_required) return { state: "waiting_approval" as const };
+    // A portal answer outside the approval period needs no OK and sends nothing.
+    if (data.portal) return { state: "no_ok_needed" as const };
     const sent = await sendAndRecord(db, context.userId, data.id, reply);
     return sent.sent ? { state: "sent" as const } : { state: "not_sent" as const, reason: sent.reason, detail: sent.detail };
   });
@@ -582,7 +617,10 @@ export const decideDirectBookingApproval = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(notReady(error) ? NOT_READY : error.message);
     if (data.decision === "sent_back") return { state: "sent_back" as const };
-    const reply = (result as { reply: Reply }).reply;
+    const reply = (result as { reply: Reply & { portal?: boolean } }).reply;
+    // Approved for the partner's portal (or to a no reply sender): nothing is emailed;
+    // the coordinator answers in the portal and records it.
+    if (reply.portal === true || isNoReplyAddress(reply.to)) return { state: "approved_for_portal" as const };
     const sent = await sendAndRecord(db, context.userId, data.id, { to: reply.to, subject: reply.subject, body: reply.body });
     return sent.sent ? { state: "sent" as const } : { state: "approved_not_sent" as const, reason: sent.reason, detail: sent.detail };
   });
@@ -623,6 +661,8 @@ export const sendDirectBookingFollowUp = createServerFn({ method: "POST" })
       if (!l) throw new Error("This request was not found.");
       const to = (l.reply_to || l.email || "").trim();
       if (!to) throw new Error("Add their email in step 1 first.");
+      // A no reply sender is never a reply address.
+      if (isNoReplyAddress(to)) throw new Error(NO_REPLY_WARNING);
       const detail = l.source_detail ?? {};
       const { sendDirectBookingEmail } = await import("./direct-bookings-mail.server");
       const sent = await sendDirectBookingEmail(db, {
@@ -635,6 +675,57 @@ export const sendDirectBookingFollowUp = createServerFn({ method: "POST" })
     const { error } = await loose(db).rpc("record_direct_booking_follow_up", { _lead_id: data.id });
     if (error) throw new Error(error.message);
     return { state: "sent" as const };
+  });
+
+/**
+ * "I answered in the partner's portal". The database stops the clock at the
+ * press time, as for a sent reply, moves the request to Quote sent and sets the
+ * 48 hour follow up; during the approval period only after the quote is OK.
+ */
+export const answerDirectBookingInPortal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({
+      id: z.string().uuid(),
+      note: z.string().max(400),
+      subject: z.string().max(300).optional(),
+      body: z.string().max(20000).optional(),
+      propertyIds: z.array(z.string().uuid()).max(3).optional(),
+    }).parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const db = context.supabase;
+    await assertStaff(db, context.userId);
+    const note = portalNote(data.note);
+    if (!note) throw new Error("Add a short note, for example the portal quote number.");
+    const ids = data.propertyIds ?? [];
+    if (ids.length) {
+      // The same home checks as an emailed reply.
+      await assertNoActiveOwner(db, ids);
+      const { data: lead } = await db.from("leads").select("inquiry_source_id").eq("id", data.id).maybeSingle();
+      const settings = await loadSettings(db);
+      const { data: homes } = await db.from("properties").select("id, bedrooms").in("id", ids);
+      if ((homes ?? []).some((h) => !rentFor(h.bedrooms, lead?.inquiry_source_id ?? null, settings).ok))
+        throw new Error("One home has no rate yet. Remove it or ask the Operations Supervisor to set the rate.");
+    }
+    const { data: at, error } = await loose(db).rpc("answer_direct_booking_in_portal", {
+      _lead_id: data.id,
+      _note: note,
+      _reply: data.subject || data.body ? { subject: data.subject ?? null, body: data.body ?? null } : null,
+      _property_ids: ids.length ? ids : null,
+    });
+    if (error) throw new Error(notReady(error) ? STEP_NOT_READY : error.message);
+    return { answeredAt: at as string };
+  });
+
+/** The Operations Supervisor or an Admin corrects a portal answer, with a reason. */
+export const correctDirectBookingPortalAnswer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid(), reason: z.string().max(500) }).parse(input))
+  .handler(async ({ context, data }) => {
+    const { error } = await loose(context.supabase).rpc("correct_direct_booking_portal_answer", { _lead_id: data.id, _reason: data.reason });
+    if (error) throw new Error(notReady(error) ? STEP_NOT_READY : error.message);
+    return { ok: true };
   });
 
 /** The coordinator confirms the partner approved the quote: the request moves to Approved. */
