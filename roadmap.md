@@ -390,3 +390,9 @@
 - [x] OpenStreetMap map in one provider file: search point, 5/10/20 rings with labels, numbered pins with labels, straight line note
 - [x] Overlapping pins spread apart; map and cards connected; picked pins differ; attribution; failure message; phone scroll safe
 - [x] Tests, browser check desktop and phone, register D7 line
+## Nov 10 Build 4 of 7: Ticket page items (code only, no publish, no database change)
+- [x] Do this now next step line with due time and late wording; Change next step recorded with who and when; Continue; old words replaced (T5, T13)
+- [x] One touch What did you do? (required), shown in the repeat line detail (T11)
+- [x] Close ticket and Reopen ticket always both in the header, one disabled with a reason; onboarding sees neither (T12)
+- [x] Waiting card paused sentence; Analytics resolve times take Waiting out (T13)
+- [x] Board comparison report; tests; browser desktop and phone; register T5, T11, T12, T13
