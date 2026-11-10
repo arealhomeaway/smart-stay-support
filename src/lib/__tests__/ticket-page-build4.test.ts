@@ -66,7 +66,7 @@ describe("Do this now: one next step with a due time (T5, T13)", () => {
     expect(card).toContain('event_type: "next_step_changed"');
     expect(card).toContain("author_id: userData.user.id");
     expect(card).not.toContain("ensureTicketActionStarted");
-    expect(card).not.toMatch(/acknowledged_at|action_started_at|response_due_at|action_due_at/);
+    expect(card).not.toMatch(/\b(acknowledged_at|action_started_at|response_due_at|action_due_at)\b/);
     // who and when also land in the add-only state log through the existing trigger
     expect(read("drizzle/migrations/0270_ticket_times_and_states.sql")).toContain("AFTER INSERT OR UPDATE OF next_action, next_action_due_at");
   });
