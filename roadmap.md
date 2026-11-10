@@ -9,18 +9,18 @@
 - [ ] Build 14 (queued): 5 records per active PC, Director double check of 5, coaching per PC, report through Wednesday
 
 ## Nov 10 build 12: arrival check queue and Arrival readiness database (register BN4, BN10; no publish, switch OFF)
-- [ ] Register section 14 Bonus tracking (BN0 to BN10)
-- [ ] Spec saved as docs/specs/arrival-check.md
-- [ ] 1 Which arrivals (owner stays in; extensions, cancellations, blocks, unverified, New House out)
-- [ ] 2 Created 6 AM Central once per reservation; deadline = check in minus 2 hours in home time zone; Late booking
-- [ ] 3 Unowned Arrival check ticket, From OwnerRez, Team B unless home rule; never before 6 AM
-- [ ] 4 Checklist (lock, Breezeway work orders reviewed, ready or issue + backup plan) and arrival facts
-- [ ] 5 Issue found opens one linked ticket owned by the finder
-- [ ] 6 Result On time / Late / Missed; add only scorecard fact kind arrival_check
-- [ ] 7 One Supervisor alert 30 minutes before the deadline, in app and email
-- [ ] 8 Arrival readiness database card and list with filters, totals, access
-- [ ] 9 Switch arrival_checks OFF, forward only start line, test records, Integrations status
-- [ ] 10 Tests, cancelled real database practice, browser check, BN10 final wording
+- [x] Register section 14 Bonus tracking (BN0 to BN10)
+- [x] Spec saved as docs/specs/arrival-check.md
+- [x] 1 Which arrivals (owner stays in; extensions, cancellations, blocks, unverified, New House out)
+- [x] 2 Created 6 AM Central once per reservation; deadline = check in minus 2 hours in home time zone; Late booking
+- [x] 3 Unowned Arrival check ticket, From OwnerRez, Team B unless home rule; never before 6 AM
+- [x] 4 Checklist (lock, Breezeway work orders reviewed, ready or issue + backup plan) and arrival facts
+- [x] 5 Issue found opens one linked ticket owned by the finder
+- [x] 6 Result On time / Late / Missed; add only scorecard fact kind arrival_check
+- [x] 7 One Supervisor alert 30 minutes before the deadline, in app and email
+- [x] 8 Arrival readiness database card and list with filters, totals, access
+- [x] 9 Switch arrival_checks OFF, forward only start line, test records, Integrations status
+- [x] 10 Tests, cancelled real database practice, browser check, BN10 final wording
 
 ## Nov 10 build 9: answers and fixes from the overnight questions (no publish)
 - [ ] A4 Portal quote approved: coordinator alert in app and email "Approved. Post it in the portal."
