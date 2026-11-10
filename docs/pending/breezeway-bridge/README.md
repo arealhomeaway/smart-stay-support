@@ -1,7 +1,8 @@
 # Breezeway bridge (Build 10, Emily Nov 10; register T15, C4, C5, C6)
 
-Status: APPLIED after checks as migration 0323 (byte for byte `01_breezeway_bridge.sql`), and the
-webhook note text (`02_webhook_note.sql`). The bridge is OFF, Resolve work orders are OFF, the
+Status: APPLIED after checks as migration 0323 (byte for byte `01_breezeway_bridge.sql`; the live
+functions were re-read after applying and match it), and the webhook note text (`02_webhook_note.sql`,
+applied as a one-row data change). The bridge is OFF, Resolve work orders are OFF, the
 safety sweep is scheduled but INACTIVE. Nothing was created or changed in Breezeway.
 
 ## What 01 adds (additive only)
@@ -34,7 +35,7 @@ and inactive; on each run it reads the switch and does nothing while the bridge 
 
 - Isolated copy: `src/lib/__tests__/breezeway-bridge-sql.test.ts` (26 checks, including undo).
 - Real database, Nov 10, cancelled at the end on one verified home with fake task numbers:
-  `practice_01_breezeway_bridge.sql` (switch and start line refused directly; one ticket for a new
+  the steps in `practice_01_breezeway_bridge.sql`, run as one transaction ended on purpose (switch and start line refused directly; one ticket for a new
   issue, none on the second update; urgent issue Right now; old issue and old finish skipped; one
   review due 24 hours after finish, none on Approved; New House and other company skipped; nothing
   for cleaning or inspection; nothing while off; work order and outbound inserts refused; 0
