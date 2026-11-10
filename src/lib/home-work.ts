@@ -11,6 +11,7 @@ import { matchesPropertySearch, formatPropertyLabel, type PropertyLabelFields } 
 import { OPEN_STATUSES, STATUSES, isClosed, slaState, priorityMeta } from "@/lib/tickets";
 import { TEAM_B, teamOf } from "@/lib/coverage-model";
 import { automatedSourceOf } from "@/lib/automated-sources";
+import { arrivalDueLine, isArrivalCheckTicket } from "@/lib/arrival-check";
 
 export type HomeTab = "active" | "waiting" | "done";
 
