@@ -76,7 +76,8 @@ SELECT p.id AS project_id, p.property_id, p.director AS project_director,
  ORDER BY p.created_at LIMIT 1;
 GRANT SELECT ON practice_ids TO authenticated;
 INSERT INTO practice_result SELECT 'admin_is_separate_person', (admin_only IS NOT NULL)::text FROM practice_ids;
-INSERT INTO practice_result SELECT 'project_director_is_onboarding_director', (project_director = onb_dir)::text FROM practice_ids;
+INSERT INTO practice_result SELECT 'project_director_is_onboarding_director', coalesce((project_director = onb_dir)::text, 'no project director') FROM practice_ids;
+INSERT INTO practice_result SELECT 'director_of_onboarding_is_admin', public.has_role(onb_dir, 'admin')::text FROM practice_ids;
 
 CREATE OR REPLACE FUNCTION pg_temp.try_step(_who uuid, _step text, _first_ready boolean) RETURNS text LANGUAGE plpgsql AS $t$
 BEGIN
@@ -86,9 +87,7 @@ BEGIN
       PERFORM public.perform_handoff_step((SELECT project_id FROM practice_ids), 'ready', (SELECT items FROM practice_ids), false);
     END IF;
     PERFORM set_config('request.jwt.claims', json_build_object('sub', _who, 'role', 'authenticated')::text, true);
-    PERFORM public.perform_handoff_step((SELECT project_id FROM practice_ids), _step,
-      (SELECT coalesce(jsonb_agg(jsonb_build_object('key', ex->>'item_key')), '[]'::jsonb)
-         FROM jsonb_array_elements(public.handoff_open_items((SELECT property_id FROM practice_ids))) ex), true);
+    PERFORM public.perform_handoff_step((SELECT project_id FROM practice_ids), _step, (SELECT items FROM practice_ids), true);
     RAISE EXCEPTION 'ALLOWED';
   EXCEPTION WHEN others THEN RETURN CASE WHEN SQLERRM = 'ALLOWED' THEN 'allowed' ELSE 'refused: ' || SQLERRM END;
   END;
