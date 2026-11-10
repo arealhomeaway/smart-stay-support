@@ -26,6 +26,7 @@ import { Route as AuthenticatedCommandCenterRouteImport } from './routes/_authen
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDemoRouteImport } from './routes/_authenticated/demo'
 import { Route as AuthenticatedFinanceRouteImport } from './routes/_authenticated/finance'
+import { Route as AuthenticatedHandoffsRouteImport } from './routes/_authenticated/handoffs'
 import { Route as AuthenticatedHelpTicketsRouteImport } from './routes/_authenticated/help-tickets'
 import { Route as AuthenticatedHomeownersRouteImport } from './routes/_authenticated/homeowners'
 import { Route as AuthenticatedHubRouteImport } from './routes/_authenticated/hub'
@@ -209,6 +210,11 @@ const AuthenticatedDemoRoute = AuthenticatedDemoRouteImport.update({
 const AuthenticatedFinanceRoute = AuthenticatedFinanceRouteImport.update({
   id: '/finance',
   path: '/finance',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHandoffsRoute = AuthenticatedHandoffsRouteImport.update({
+  id: '/handoffs',
+  path: '/handoffs',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedHelpTicketsRoute =
@@ -779,6 +785,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/demo': typeof AuthenticatedDemoRoute
   '/finance': typeof AuthenticatedFinanceRoute
+  '/handoffs': typeof AuthenticatedHandoffsRoute
   '/help-tickets': typeof AuthenticatedHelpTicketsRoute
   '/homeowners': typeof AuthenticatedHomeownersRoute
   '/hub': typeof AuthenticatedHubRoute
@@ -892,6 +899,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/demo': typeof AuthenticatedDemoRoute
   '/finance': typeof AuthenticatedFinanceRoute
+  '/handoffs': typeof AuthenticatedHandoffsRoute
   '/help-tickets': typeof AuthenticatedHelpTicketsRoute
   '/homeowners': typeof AuthenticatedHomeownersRoute
   '/hub': typeof AuthenticatedHubRoute
@@ -1003,6 +1011,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/demo': typeof AuthenticatedDemoRoute
   '/_authenticated/finance': typeof AuthenticatedFinanceRoute
+  '/_authenticated/handoffs': typeof AuthenticatedHandoffsRoute
   '/_authenticated/help-tickets': typeof AuthenticatedHelpTicketsRoute
   '/_authenticated/homeowners': typeof AuthenticatedHomeownersRoute
   '/_authenticated/hub': typeof AuthenticatedHubRoute
@@ -1119,6 +1128,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/demo'
     | '/finance'
+    | '/handoffs'
     | '/help-tickets'
     | '/homeowners'
     | '/hub'
@@ -1232,6 +1242,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/demo'
     | '/finance'
+    | '/handoffs'
     | '/help-tickets'
     | '/homeowners'
     | '/hub'
@@ -1342,6 +1353,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/demo'
     | '/_authenticated/finance'
+    | '/_authenticated/handoffs'
     | '/_authenticated/help-tickets'
     | '/_authenticated/homeowners'
     | '/_authenticated/hub'
@@ -1582,6 +1594,13 @@ declare module '@tanstack/react-router' {
       path: '/finance'
       fullPath: '/finance'
       preLoaderRoute: typeof AuthenticatedFinanceRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/handoffs': {
+      id: '/_authenticated/handoffs'
+      path: '/handoffs'
+      fullPath: '/handoffs'
+      preLoaderRoute: typeof AuthenticatedHandoffsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/help-tickets': {
@@ -2429,6 +2448,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDemoRoute: typeof AuthenticatedDemoRoute
   AuthenticatedFinanceRoute: typeof AuthenticatedFinanceRoute
+  AuthenticatedHandoffsRoute: typeof AuthenticatedHandoffsRoute
   AuthenticatedHelpTicketsRoute: typeof AuthenticatedHelpTicketsRoute
   AuthenticatedHomeownersRoute: typeof AuthenticatedHomeownersRoute
   AuthenticatedHubRoute: typeof AuthenticatedHubRoute
@@ -2495,6 +2515,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDemoRoute: AuthenticatedDemoRoute,
   AuthenticatedFinanceRoute: AuthenticatedFinanceRoute,
+  AuthenticatedHandoffsRoute: AuthenticatedHandoffsRoute,
   AuthenticatedHelpTicketsRoute: AuthenticatedHelpTicketsRoute,
   AuthenticatedHomeownersRoute: AuthenticatedHomeownersRoute,
   AuthenticatedHubRoute: AuthenticatedHubRoute,

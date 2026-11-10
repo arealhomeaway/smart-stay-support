@@ -205,10 +205,11 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
       ),
     tabs: [
       { label: "Integrations", to: "/integrations", capability: "integrations" },
-      { label: "Audit History", to: "/audit", capability: "audit_history" },
-      { label: "Help Tickets", to: "/help-tickets", capability: "audit_history" },
+      // Admin pages are Admin only; Help Tickets shows each person their own reports (register A20, M6).
+      { label: "Audit History", to: "/audit", capability: "admin_pages" },
+      { label: "Help Tickets", to: "/help-tickets", capability: "help_tickets_own" },
       // The old review list: hidden behind its switch (register H9); Databases, Tickets holds these now.
-      { label: "Imported tickets", to: "/imported-tickets", capability: "audit_history", flag: "imported_tickets_page" },
+      { label: "Imported tickets", to: "/imported-tickets", capability: "admin_pages", flag: "imported_tickets_page" },
       { label: "Notion import", to: "/integrations/notion-import", capability: "integrations" },
     ],
   },
@@ -293,10 +294,14 @@ export const ANALYTICS_TARGETS: { to: string; capability: Capability }[] = [
   { to: "/finance", capability: "finance_workspace" },
   { to: "/command-center", capability: "command_center" },
 ];
-/** Where the one "Admin" item opens: the first of these this person can open. */
+/**
+ * Where the one "Admin" item opens: the first of these this person can open. The
+ * Operations Supervisor and the Directors get only Help Tickets, their own reports
+ * (register A20, M6); every other Admin page is Admin only.
+ */
 export const ADMIN_TARGETS: { to: string; capability: Capability }[] = [
   { to: "/integrations", capability: "integrations" },
-  { to: "/audit", capability: "audit_history" },
+  { to: "/audit", capability: "admin_pages" },
   { to: "/help-tickets", capability: "audit_history" },
 ];
 
@@ -340,6 +345,8 @@ const OPERATIONS_MENU: MenuGroup[] = [
     items: [
       { key: "properties", label: "Properties", to: "/properties", capability: "properties", alsoActive: ["/property"] },
       { key: "onboarding", label: "Onboarding", to: "/onboarding", capability: "onboarding_workspace" },
+      // The Operations Supervisor sees Onboarding only here, read only (Emily, Nov 9).
+      { key: "handoffs", label: "Handoffs", to: "/handoffs", capability: "handoffs_view" },
       { key: "owner-programs", label: "Active Owner", to: "/owner-programs", capability: "owner_programs" },
       { key: "quarterly", label: "Quarterly Reviews", to: "/quarterly", capability: "vendor_admin", flag: "quarterly_reviews" },
     ],
@@ -404,6 +411,12 @@ export function onboardingOnlyMenu(access: NavAccess): MenuGroup[] {
   const allowed = (i: MenuItem) =>
     access.canOpen(i.to) && (!i.capability || access.can(i.capability)) && flagOn(access, i.flag);
   const shared: MenuGroup[] = [
+    {
+      // Register A12: the Director of Onboarding, Project Manager and Design open the
+      // Properties list and edit homes; Utilities opens it for the Utilities tab.
+      label: "Homes and owners",
+      items: [{ key: "properties", label: "Properties", to: "/properties", capability: "properties", alsoActive: ["/property"] }],
+    },
     {
       label: "Team",
       items: [
