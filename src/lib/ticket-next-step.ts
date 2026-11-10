@@ -13,7 +13,7 @@ export const NEXT_STEP_COPY = {
   continue: "Continue",
   change: "Change next step",
   stepLabel: "Next step",
-  dueLabel: "Due",
+  dueLabel: "Due (Central time)",
   save: "Save next step",
   cancel: "Cancel",
   clear: "Use the suggested step",

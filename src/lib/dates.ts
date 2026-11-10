@@ -107,3 +107,12 @@ export function centralInputToIso(local: string): string | null {
   }
   return new Date(guess).toISOString();
 }
+
+/** An ISO instant as a "YYYY-MM-DDTHH:MM" Central wall clock form value. */
+export function isoToCentralInput(iso: string | null | undefined): string {
+  const d = toDate(iso);
+  if (!d) return "";
+  const p = centralParts(d);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${p.y}-${pad(p.m)}-${pad(p.d)}T${pad(p.h)}:${pad(p.min)}`;
+}
