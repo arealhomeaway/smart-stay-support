@@ -177,6 +177,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   const role = useRole();
   const navigate = useNavigate();
   const { demoMode, demoReady } = useDemo();
+  const seesTests = seesEmailTestRecords(role.roles, role.seats);
   const [note, setNote] = useState("");
   const [notePicked, setNotePicked] = useState<string[]>([]);
   const mentionPeople = useMentionPeople();
