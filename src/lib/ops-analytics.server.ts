@@ -12,6 +12,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { withoutQuietNotion } from "@/lib/notion-ticket-display";
+import { minutesExcludingWaiting, waitingSpans, type WaitingLogRow } from "@/lib/waiting-time";
 
 type Client = SupabaseClient<Database>;
 
@@ -158,9 +159,22 @@ export async function loadOpsAnalytics(
   const actionMinutes = rows
     .filter((t) => t.action_started_at)
     .map((t) => minutesBetween(t.reported_at, t.action_started_at!));
+  // Waiting never counts against the person or the team (register T13): time a
+  // ticket spent Waiting on someone else is taken out of every resolve time.
+  const waitingLog = ids.length
+    ? await supabase
+        .from("ticket_state_log")
+        .select("ticket_id, change, recorded_at")
+        .eq("field", "waiting")
+        .in("ticket_id", ids)
+    : { data: [], error: null };
+  if (waitingLog.error) throw waitingLog.error;
+  const waits = waitingSpans((waitingLog.data ?? []) as WaitingLogRow[]);
+  const resolveMinutesFor = (t: { id: string; reported_at: string; resolved_at: string | null }) =>
+    minutesExcludingWaiting(t.reported_at, t.resolved_at!, waits.get(t.id));
   const resolutionMinutes = rows
     .filter((t) => t.resolved_at)
-    .map((t) => minutesBetween(t.reported_at, t.resolved_at!));
+    .map((t) => resolveMinutesFor(t));
 
   const priorities = [...new Set(rows.map((t) => t.priority))].sort();
   const responseByPriority = priorities.map((priority) => {
@@ -176,7 +190,7 @@ export async function loadOpsAnalytics(
     return {
       priority,
       count: scope.length,
-      median: median(scope.map((t) => minutesBetween(t.reported_at, t.resolved_at!))),
+      median: median(scope.map((t) => resolveMinutesFor(t))),
     };
   });
 
@@ -278,7 +292,7 @@ export async function loadOpsAnalytics(
     }
     if (kind === "resolved" || kind === "closed") {
       a.resolved.add(e.ticket_id);
-      if (t.resolved_at) a.resolutionMinutes.push(minutesBetween(t.reported_at, t.resolved_at));
+      if (t.resolved_at) a.resolutionMinutes.push(resolveMinutesFor(t));
     }
   }
 

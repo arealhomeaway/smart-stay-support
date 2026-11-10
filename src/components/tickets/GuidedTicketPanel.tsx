@@ -112,7 +112,7 @@ export function GuidedTicketPanel({
   /** The existing Current Action card — shown when no guided step leads. */
   children?: ReactNode;
   /** Tells the page when a guided step leads, so older stage blocks step aside. */
-  onLeadChange?: (leads: boolean) => void;
+  onLeadChange?: (leads: boolean, leadTitle?: string | null) => void;
   /** A genuine vendor commitment miss from the Work Order rules, if any. */
   vendorFollowUp?: string | null;
   /** The existing Work Order list, shown inside the one Waiting on Vendor state. */
@@ -264,7 +264,17 @@ export function GuidedTicketPanel({
   const nextStep = ts?.steps.find((s) => !answered.has(s.id)) ?? null;
   const waitingOnVendor = !closed && !guidedStep && !needsWorkOrder && openWorkOrders > 0 && !ticket.waiting_on;
   const leads = (!closed && !readOnly && Boolean(guidedStep || needsWorkOrder)) || waitingOnVendor;
-  useEffect(() => onLeadChange?.(leads), [leads, onLeadChange]);
+  // What the leading guided step is called, so the Do this now line names the same step (register T5).
+  const leadTitle = !leads
+    ? null
+    : needsWorkOrder
+      ? "Open the Work Order"
+      : guidedStep && !closed && !readOnly
+        ? g.title
+        : vendorFollowUp
+          ? "Follow up with the vendor"
+          : "Wait for the vendor to finish";
+  useEffect(() => onLeadChange?.(leads, leadTitle), [leads, leadTitle, onLeadChange]);
 
   return (
     <div className="space-y-3">

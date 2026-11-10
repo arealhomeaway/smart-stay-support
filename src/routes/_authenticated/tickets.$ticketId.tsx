@@ -7,7 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { humanizeHistoryText } from "@/lib/ticket-lifecycle";
 import { finalReviewRequirement } from "@/lib/final-review";
 import { setTicketStatusFn } from "@/lib/ticket-lifecycle.functions";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { breezewayOutboundState } from "@/lib/breezeway-outbound.functions";
 import { ticketStage, repairIsPossible, repairIsComplete } from "@/lib/ticket-stage";
@@ -98,6 +98,10 @@ import { IMPORT_HOLD_LABELS, isImportHeld, type ImportHold } from "@/lib/import-
 import { activityAuthorLabel, claimStepsAvailable, cleanNotionText, hidesQuietAction, notionBadge, parseNotionBlock, quietImportLine, showsAssignee, visibleClocks } from "@/lib/notion-ticket-display";
 import { NotionImportBlock } from "@/components/tickets/NotionImportBlock";
 import { ReopenTicketDialog } from "@/components/tickets/ReopenTicketDialog";
+import { NextStepCard } from "@/components/tickets/NextStepCard";
+import { CloseReopenButtons } from "@/components/tickets/CloseReopenButtons";
+import { nextStepView } from "@/lib/ticket-next-step";
+import { CLOSE_REOPEN_COPY, closeReopenState } from "@/lib/ticket-close-reopen";
 import { REOPEN_COPY, reopenPathFor, type ReopenTicketLike } from "@/lib/ticket-reopen";
 import { ArchiveTicketButton, ArchivedTicketBanner } from "@/components/scorecard/TicketArchive";
 import { CorrectiveCommitments } from "@/components/scorecard/CorrectiveCommitments";
@@ -182,7 +186,14 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   const [finalComms, setFinalComms] = useState(false);
   // Closure stays compact until the coordinator is actually closing the ticket.
   const [closeOpen, setCloseOpen] = useState(false);
-  const [guidedLeads, setGuidedLeads] = useState(false);
+  // Close ticket in the header: show the closure checks whatever stage the work is at.
+  const [closeRequested, setCloseRequested] = useState(false);
+  const [guidedLeads, setGuidedLeadsFlag] = useState(false);
+  const [guidedLeadTitle, setGuidedLeadTitle] = useState<string | null>(null);
+  const setGuidedLeads = useCallback((leads: boolean, title?: string | null) => {
+    setGuidedLeadsFlag(leads);
+    setGuidedLeadTitle(leads ? (title ?? null) : null);
+  }, []);
   // Guided checklist: refund form opener and the repair/vendor tools toggle.
   const [refundSignal, setRefundSignal] = useState(0);
   const [checklistTools, setChecklistTools] = useState(false);
@@ -891,7 +902,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     ),
   });
   // The coordinator can say "this needs no repair" and go straight to finishing.
-  const stage = rawStage === "repair" && closeOpen ? "closure" : rawStage;
+  const stage = !closed && closeRequested ? "closure" : rawStage === "repair" && closeOpen ? "closure" : rawStage;
   const sections = ticketSections({
     stage,
     entryKind: (ticket as { entry_kind?: string | null }).entry_kind,
@@ -961,7 +972,27 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
       Boolean(branches?.makeRightOpen) ||
       (Boolean((ticket as { guest_recovery_needed?: boolean | null }).guest_recovery_needed) && !activeBranch.recovery),
   });
-  const doNowDue = closed || quietLine
+  // The one next step with its due time (register T5, T13): a written step wins.
+  const nextStep =
+    closed || quietLine
+      ? null
+      : nextStepView({
+          customStep: (ticket as { next_action?: string | null }).next_action ?? null,
+          customDueAt: (ticket as { next_action_due_at?: string | null }).next_action_due_at ?? null,
+          derivedLabel: (guidedLeads && guidedLeadTitle) || (currentAction?.title ?? null),
+          // A parked ticket's next step is due when it comes back to you.
+          derivedDueAt: ticket.status === "waiting" ? (ticket.next_review_at ?? null) : doThisNowDueAt({
+            commState: guestComm.commState,
+            commDueAt: guestComm.commDueAt,
+            acknowledged_at: ticket.acknowledged_at,
+            action_started_at: ticket.action_started_at,
+            response_due_at: (ticket as { response_due_at?: string | null }).response_due_at ?? null,
+            action_due_at: (ticket as { action_due_at?: string | null }).action_due_at ?? null,
+            next_guest_update_at: ticket.next_guest_update_at ?? null,
+          }),
+        });
+  // The next step line carries the due time itself, so the corner label stays empty then.
+  const doNowDue = closed || quietLine || nextStep
     ? null
     : dueInLabel(
         doThisNowDueAt({
@@ -974,7 +1005,16 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
           next_guest_update_at: ticket.next_guest_update_at ?? null,
         }),
       );
-  const firstActionLeads = currentAction?.id === "acknowledge" || currentAction?.id === "start_work";
+  const firstActionLeads = !closeRequested && (currentAction?.id === "acknowledge" || currentAction?.id === "start_work");
+  const canWorkTickets = role.can("work_orders_internal") && !role.readOnly && !role.onboardingOnly;
+  const closeReopen = closeReopenState({
+    status: ticket.status,
+    archived: Boolean(ticket["archived_at"]),
+    recordType: ticket.record_type ?? null,
+    canWorkTickets,
+    onboardingOnly: Boolean(role.onboardingOnly),
+    reopenPath,
+  });
 
   // One plain-language sentence: what is happening and what comes next. No stat wall.
   const nextStepLine = closed
@@ -1096,6 +1136,19 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
         ))}
       </ul>
 
+      {closeRequested && (
+        <Button
+          type="button"
+          variant="ghost"
+          className="min-h-11"
+          onClick={() => {
+            setCloseRequested(false);
+            setCloseOpen(false);
+          }}
+        >
+          {CLOSE_REOPEN_COPY.notYet}
+        </Button>
+      )}
       {!closeOpen ? (
         <Button onClick={() => setCloseOpen(true)} size="lg">
           {closureReady ? resolveActionLabel : "Work through what is missing"}
@@ -1219,6 +1272,28 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             onArchived={afterArchive}
           />
         </div>
+        <CloseReopenButtons
+          state={closeReopen}
+          onClose={() => {
+            setCloseRequested(true);
+            setCloseOpen(true);
+            setTimeout(() => document.querySelector("[data-current-work]")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+          }}
+          onReopen={() => {
+            if (reopenPath === "resolved") void reopen();
+            else if (reopenPath === "closed") setReopenOpen(true);
+          }}
+        />
+        {reopenPath === "closed" && (
+          <ReopenTicketDialog
+            ticketId={String(ticket.id)}
+            open={reopenOpen}
+            onOpenChange={setReopenOpen}
+            onReopened={async () => {
+              await refresh();
+            }}
+          />
+        )}
 
         {ticket["archived_at"] ? (
           <ArchivedTicketBanner
@@ -1247,6 +1322,9 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
           <div className="space-y-4">
             <StepTracker tracker={tracker} />
             <DoThisNow due={doNowDue}>
+              {nextStep && (
+                <NextStepCard ticketId={ticketId} view={nextStep} canEdit={canWorkTickets} onChanged={refresh} />
+              )}
               {quietLine && <p className="text-sm text-muted-foreground">{quietLine}</p>}
               {sla.escalation && (
           <div className="flex items-start gap-3 rounded-lg border border-danger/40 bg-danger/10 p-4">
@@ -1385,7 +1463,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
               </div>
 
               <div id="current-work-detail" />
-              {guidedLeads || firstActionLeads ? null : (<>
+              {(guidedLeads && !closeRequested) || firstActionLeads ? null : (<>
 
               {stage === "waiting" && (
                 <div className="mt-2 space-y-3">
@@ -1399,7 +1477,12 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                       ? ` · comes back to you ${usDateTime(ticket.next_review_at)}`
                       : ""}
                   </p>
-                  <Button size="lg" onClick={clearWaiting}>
+                  {ticket.next_review_at && (
+                    <p className="text-sm text-muted-foreground" data-testid="waiting-paused">
+                      The response timer is paused until then.
+                    </p>
+                  )}
+                  <Button size="lg" className="min-h-11" onClick={clearWaiting}>
                     Pick it back up
                   </Button>
                 </div>
@@ -1585,19 +1668,9 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                     </Button>
                   )}
                   {reopenPath === "closed" && (
-                    <>
-                      <Button variant="outline" onClick={() => setReopenOpen(true)}>
-                        {REOPEN_COPY.button}
-                      </Button>
-                      <ReopenTicketDialog
-                        ticketId={String(ticket.id)}
-                        open={reopenOpen}
-                        onOpenChange={setReopenOpen}
-                        onReopened={async () => {
-                          await refresh();
-                        }}
-                      />
-                    </>
+                    <Button variant="outline" onClick={() => setReopenOpen(true)}>
+                      {REOPEN_COPY.button}
+                    </Button>
                   )}
                 </div>
               )}

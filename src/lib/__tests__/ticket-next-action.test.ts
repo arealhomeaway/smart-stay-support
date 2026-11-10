@@ -15,11 +15,11 @@ describe("ticket next action", () => {
   it("asks for acknowledgement first", () => {
     expect(
       ticketNextAction({ ...base, acknowledged_at: null, action_started_at: null })?.label,
-    ).toBe("Acknowledge this ticket");
+    ).toBe("Confirm you have it");
   });
 
   it("asks to start work once acknowledged", () => {
-    expect(ticketNextAction({ ...base, action_started_at: null })?.label).toBe("Start the work");
+    expect(ticketNextAction({ ...base, action_started_at: null })?.label).toBe("Start work");
   });
 
   it("asks to follow up when a parked ticket is due back", () => {

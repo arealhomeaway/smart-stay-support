@@ -69,7 +69,7 @@ export function ticketNextAction(t: TicketNextActionInput): TicketNextAction | n
 
   if (!t.acknowledged_at) {
     return {
-      label: "Acknowledge this ticket",
+      label: "Confirm you have it",
       because: "Nobody has confirmed we have it yet.",
       then: "Then start the work and tell the guest what to expect.",
     };
@@ -82,8 +82,8 @@ export function ticketNextAction(t: TicketNextActionInput): TicketNextAction | n
     return {
       label: dueNow ? `Follow up with ${who}` : `Waiting on ${who}`,
       because: t.waiting_reason
-        ? `${t.waiting_reason} — the clock is paused, not finished.`
-        : "This is parked with someone else — the clock is paused, not finished.",
+        ? `${t.waiting_reason.replace(/[.!?\s]+$/, "")}. The response timer is paused until then.`
+        : "This is parked with someone else. The response timer is paused until then.",
       then: dueNow
         ? "Then pick the work back up, or park it again with a new follow-up time."
         : due
@@ -94,7 +94,7 @@ export function ticketNextAction(t: TicketNextActionInput): TicketNextAction | n
 
   if (!t.action_started_at) {
     return {
-      label: "Start the work",
+      label: "Start work",
       because: "It is acknowledged but nothing has actually moved yet.",
       ...((t.guest_comm_state === undefined ? t.guest_in_residence : t.guest_comm_state === "initial_ack")
         ? { then: "Then send the guest an acknowledgement." }

@@ -128,13 +128,13 @@ export function GuidedActionCard({
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         {action.handoff ? (
-          <Button size="lg" onClick={() => onHandoff?.(action.handoff!.target)}>
+          <Button size="lg" className="min-h-11" onClick={() => onHandoff?.(action.handoff!.target)}>
             {action.handoff.label}
             <ArrowRight className="ml-1 size-4" aria-hidden="true" />
           </Button>
         ) : (
           !readOnly && (
-            <Button size="lg" onClick={complete} disabled={saving}>
+            <Button size="lg" className="min-h-11" onClick={complete} disabled={saving}>
               <CheckCircle2 className="mr-1 size-4" aria-hidden="true" />
               {saving ? "Recording…" : action.completeLabel}
             </Button>

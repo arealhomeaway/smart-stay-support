@@ -406,7 +406,7 @@ function nextActionLabel(t: {
   if (t.status === "waiting") return "Follow up";
   if (t.status === "awaiting_guest") return "Awaiting guest reply";
   if (t.status === "resolved") return "Confirm closure";
-  return "Continue work";
+  return "Continue";
 }
 
 function TicketWorkCard({

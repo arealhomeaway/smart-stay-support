@@ -160,7 +160,7 @@ export function ticketGuidance(t: GuidanceInput): Guidance {
       ...base,
       stage: "needs_acknowledgment",
       step: null,
-      title: "Acknowledge this ticket",
+      title: "Confirm you have it",
       body: "Let the team know you have it.",
     };
   }
