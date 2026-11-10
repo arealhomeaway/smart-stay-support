@@ -45,6 +45,8 @@ export const FLAG_KEYS = [
   "work_map",
   // Guest Claims & Refunds in the menu. Off: Databases holds claims and refunds.
   "claims_menu",
+  // The old Admin imported tickets lists (Imported tickets tab and the Integrations list). Off: Databases, Tickets holds them.
+  "imported_tickets_page",
 ] as const;
 
 export type FlagKey = (typeof FLAG_KEYS)[number];

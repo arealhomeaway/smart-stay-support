@@ -23,6 +23,7 @@ import { ReviewImportStatusPanel } from "@/components/feedback/ReviewImportStatu
 import { notionStatusLabel } from "@/lib/notion-ticket-display";
 import { ArchivedTicketsPanel } from "@/components/scorecard/ArchivedTicketsPanel";
 import { useRole } from "@/hooks/useRole";
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { PropertyRefreshPanel } from "@/components/property/PropertyRefreshPanel";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
@@ -65,7 +66,10 @@ function IntegrationsPage() {
   const importedFn = useServerFn(listImportedMatters);
 
   const status = useQuery({ queryKey: ["inbound-status"], queryFn: () => statusFn() });
-  const imported = useQuery({ queryKey: ["imported-matters"], queryFn: () => importedFn() });
+  // The old imported tickets list sits behind its switch (register H9); Databases, Tickets holds it now.
+  const { enabled: flagEnabled } = useFeatureFlags();
+  const showImported = flagEnabled("imported_tickets_page");
+  const imported = useQuery({ queryKey: ["imported-matters"], queryFn: () => importedFn(), enabled: showImported });
 
   const rows = imported.data?.data ?? [];
   const isAdmin = useRole().isAdmin;
@@ -148,6 +152,7 @@ function IntegrationsPage() {
 
       {isAdmin && <ArchivedTicketsPanel />}
 
+      {showImported && (
       <SectionCard
         title="Imported tickets"
         description="The most recent work pulled in from an outside system."
@@ -185,6 +190,7 @@ function IntegrationsPage() {
           </div>
         )}
       </SectionCard>
+      )}
 
       <p className="flex items-center gap-2 text-xs text-muted-foreground">
         <ExternalLink className="size-3" />A scheduled job can call the inbound sync automatically
