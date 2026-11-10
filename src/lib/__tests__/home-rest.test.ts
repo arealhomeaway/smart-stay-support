@@ -141,7 +141,7 @@ describe("My scorecard (register T1)", () => {
   it("sits right after the banner, before Needs you now", () => {
     const btn = home.indexOf("<MyScorecardButton");
     expect(btn).toBeGreaterThan(home.indexOf("<PageHero"));
-    expect(btn).toBeLessThan(home.indexOf("<NeedsYouNow rows"));
+    expect(home.indexOf("<NeedsYouNow rows")).toBeGreaterThan(btn);
   });
 });
 
