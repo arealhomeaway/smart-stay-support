@@ -58,6 +58,8 @@ const RULES: Rule[] = [
   { prefix: "/audit", capability: "admin_pages" },
   { prefix: "/oversight-access-log", capability: "admin_pages" },
   { prefix: "/integrations", capability: "integrations" },
+  // The read only nightly Export check (register N10): Admin, Operations Supervisor, Directors.
+  { prefix: "/export-check", capability: "export_check" },
   // The playbook library opens read only for every staff account; saving is checked separately.
   { prefix: "/playbooks", capability: "playbooks_view" },
   // Ticket checklists follow the playbook rule: every staff account views, editing is checked separately.

@@ -149,7 +149,11 @@ export type Capability =
   // Help tickets (register A20): every staff member sees their own reports.
   | "help_tickets_own"
   // Add people to the Onboarding department (register A14): the Director of Onboarding.
-  | "onboarding_user_invite";
+  | "onboarding_user_invite"
+  // The read only nightly Export check (register N10; Emily, Nov 9): Admin, the Operations
+  // Supervisor, the Director of Operations and the Director of Onboarding. Mirrors the
+  // database rule can_view_export_check.
+  | "export_check";
 
 // Creating a ticket is internal-staff work. Vendors and homeowners never get it.
 const STAFF_BASE: Capability[] = [
@@ -223,6 +227,7 @@ export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
     "str_participation_report",
     "finance_workspace",
     "active_owner_enroll",
+    "export_check",
   ],
   manager: SUPERVISOR_CAPS,
   // Record routine work is Operations only (register A5), so Onboarding never gets routines.
@@ -360,6 +365,8 @@ export function capabilitiesFor(roles: AppRole[], seats: AccessSeats = {}): Set<
     for (const cap of caps) set.add(cap);
   }
   if (seats.onboardingDirector) for (const cap of ONBOARDING_DIRECTOR_CAPS) set.add(cap);
+  // The Export check follows the person's role, never the Supervisor type account alone (N10).
+  if (seats.onboardingDirector || seats.opsDirector || seats.opsSupervisor) set.add("export_check");
   if (seats.opsDirector) {
     set.add("playbooks_edit");
     set.add("str_participation_report");
