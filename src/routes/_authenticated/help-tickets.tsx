@@ -28,16 +28,17 @@ export const Route = createFileRoute("/_authenticated/help-tickets")({
   validateSearch: z.object({ ticket: z.number().int().optional() }),
   head: () => ({
     meta: [
-      { title: "Help tickets — Resolve" },
+      { title: "Help tickets | Resolve" },
       { name: "description", content: "Register of Help & Feedback submissions about the Resolve application." },
-      { property: "og:title", content: "Help tickets — Resolve" },
+      { property: "og:title", content: "Help tickets | Resolve" },
       { property: "og:description", content: "Issues and suggestions submitted from every Resolve page." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
   }),
   component: () => (
-    <RequireCapability capability="audit_history" title="Help tickets are for leadership">
+    // Register A20: every staff member sees their own reports; only the Admin sees all and changes them.
+    <RequireCapability capability="help_tickets_own" title="Help tickets">
       <HelpTicketsPage />
     </RequireCapability>
   ),
@@ -49,13 +50,15 @@ const OPEN = ["new", "reviewing", "planned", "in_progress"];
 const label = (s: string) => HELP_STATUS_LABEL[s] ?? s;
 const sel = "h-9 rounded-md border bg-background px-2 text-sm";
 
-function useTickets() {
+function useTickets(ownOnly: string | null) {
   return useQuery({
-    queryKey: ["help-tickets"],
+    queryKey: ["help-tickets", ownOnly ?? "all"],
     queryFn: async () => {
       const rows = [];
       for (let from = 0; ; from += 500) {
-        const { data, error } = await supabase.from("help_tickets").select("*")
+        let query = supabase.from("help_tickets").select("*");
+        if (ownOnly) query = query.eq("submitted_by", ownOnly);
+        const { data, error } = await query
           .order("submitted_at", { ascending: false }).order("id").range(from, from + 499);
         if (error) throw error;
         rows.push(...(data ?? []));
@@ -67,7 +70,10 @@ function useTickets() {
 
 function HelpTicketsPage() {
   const { ticket } = Route.useSearch();
-  const { data, isLoading } = useTickets();
+  const { isAdmin, userId, isLoading: roleLoading } = useRole();
+  const { data, isLoading } = useTickets(isAdmin ? null : (userId ?? "none"));
+  if (roleLoading) return <Skeleton className="h-96" />;
+  if (!isAdmin) return <MyReports rows={data ?? []} isLoading={isLoading} />;
   const current = ticket != null ? data?.find((r) => r.ticket_number === ticket) : undefined;
   if (ticket != null) {
     if (isLoading) return <Skeleton className="h-96" />;
@@ -86,8 +92,9 @@ export function TicketList({ rows: all, isLoading }: { rows: any[]; isLoading: b
   const [portal, setPortal] = useState("all");
   const [q, setQ] = useState("");
   const qc = useQueryClient();
-  const { roles, access, readOnly } = useRole();
-  const canBulk = !readOnly && (roles.includes("admin") || Boolean(access.seats.opsDirector));
+  const { roles, readOnly } = useRole();
+  // Register A20: only the Admin changes help tickets.
+  const canBulk = !readOnly && roles.includes("admin");
   const updateBulk = useServerFn(bulkUpdateHelpTickets);
   const [selection, setSelection] = useState<string[]>([]);
   const [bulkStatus, setBulkStatus] = useState<HelpBulkInput["status"]>("closed");
@@ -184,6 +191,43 @@ export function TicketList({ rows: all, isLoading }: { rows: any[]; isLoading: b
                     {usDateTime(r.last_activity_at ?? r.updated_at ?? r.submitted_at)}
                   </p>
                 </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </SectionCard>
+    </div>
+  );
+}
+
+export const MY_REPORTS_COPY = {
+  title: "My reports",
+  description: "What you sent from the help button and where each one stands.",
+  empty: "You have not sent any reports yet.",
+} as const;
+
+/** Register A20: a person's own reports and their status, read only. */
+export function MyReports({ rows, isLoading }: { rows: any[]; isLoading: boolean }) {
+  return (
+    <div className="space-y-6">
+      <PageHeader title={MY_REPORTS_COPY.title} description={MY_REPORTS_COPY.description} />
+      <SectionCard>
+        {isLoading ? (
+          <Skeleton className="h-40" />
+        ) : rows.length === 0 ? (
+          <EmptyState title={MY_REPORTS_COPY.empty} />
+        ) : (
+          <ul className="divide-y" data-testid="my-reports">
+            {rows.map((r) => (
+              <li key={r.id} className="space-y-1 py-3">
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <span className="font-semibold">#{r.ticket_number}</span>
+                  <span className="rounded bg-muted px-1.5 py-0.5 text-xs">{r.kind === "issue" ? "Issue" : "Suggestion"}</span>
+                  <span className="rounded border px-1.5 py-0.5 text-xs">{label(r.status)}</span>
+                  <span className="truncate text-muted-foreground">{r.page_title}</span>
+                </div>
+                <p className="line-clamp-2 text-sm">{r.description}</p>
+                <p className="text-xs text-muted-foreground">Sent {usDateTime(r.submitted_at)}</p>
               </li>
             ))}
           </ul>
