@@ -24,6 +24,7 @@ import { Route as AuthenticatedBonusVerifyRouteImport } from './routes/_authenti
 import { Route as AuthenticatedClaimsRouteImport } from './routes/_authenticated/claims'
 import { Route as AuthenticatedCleanerHoursRouteImport } from './routes/_authenticated/cleaner-hours'
 import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
+import { Route as AuthenticatedCoachingRouteImport } from './routes/_authenticated/coaching'
 import { Route as AuthenticatedCommandCenterRouteImport } from './routes/_authenticated/command-center'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDemoRouteImport } from './routes/_authenticated/demo'
@@ -206,6 +207,11 @@ const AuthenticatedCleanerHoursRoute =
 const AuthenticatedCoachRoute = AuthenticatedCoachRouteImport.update({
   id: '/coach',
   path: '/coach',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCoachingRoute = AuthenticatedCoachingRouteImport.update({
+  id: '/coaching',
+  path: '/coaching',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCommandCenterRoute =
@@ -818,6 +824,7 @@ export interface FileRoutesByFullPath {
   '/claims': typeof AuthenticatedClaimsRouteWithChildren
   '/cleaner-hours': typeof AuthenticatedCleanerHoursRoute
   '/coach': typeof AuthenticatedCoachRoute
+  '/coaching': typeof AuthenticatedCoachingRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/demo': typeof AuthenticatedDemoRoute
@@ -937,6 +944,7 @@ export interface FileRoutesByTo {
   '/bonus-verify': typeof AuthenticatedBonusVerifyRoute
   '/cleaner-hours': typeof AuthenticatedCleanerHoursRoute
   '/coach': typeof AuthenticatedCoachRoute
+  '/coaching': typeof AuthenticatedCoachingRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/demo': typeof AuthenticatedDemoRoute
@@ -1054,6 +1062,7 @@ export interface FileRoutesById {
   '/_authenticated/claims': typeof AuthenticatedClaimsRouteWithChildren
   '/_authenticated/cleaner-hours': typeof AuthenticatedCleanerHoursRoute
   '/_authenticated/coach': typeof AuthenticatedCoachRoute
+  '/_authenticated/coaching': typeof AuthenticatedCoachingRoute
   '/_authenticated/command-center': typeof AuthenticatedCommandCenterRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/demo': typeof AuthenticatedDemoRoute
@@ -1176,6 +1185,7 @@ export interface FileRouteTypes {
     | '/claims'
     | '/cleaner-hours'
     | '/coach'
+    | '/coaching'
     | '/command-center'
     | '/dashboard'
     | '/demo'
@@ -1295,6 +1305,7 @@ export interface FileRouteTypes {
     | '/bonus-verify'
     | '/cleaner-hours'
     | '/coach'
+    | '/coaching'
     | '/command-center'
     | '/dashboard'
     | '/demo'
@@ -1411,6 +1422,7 @@ export interface FileRouteTypes {
     | '/_authenticated/claims'
     | '/_authenticated/cleaner-hours'
     | '/_authenticated/coach'
+    | '/_authenticated/coaching'
     | '/_authenticated/command-center'
     | '/_authenticated/dashboard'
     | '/_authenticated/demo'
@@ -1645,6 +1657,13 @@ declare module '@tanstack/react-router' {
       path: '/coach'
       fullPath: '/coach'
       preLoaderRoute: typeof AuthenticatedCoachRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/coaching': {
+      id: '/_authenticated/coaching'
+      path: '/coaching'
+      fullPath: '/coaching'
+      preLoaderRoute: typeof AuthenticatedCoachingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/command-center': {
@@ -2546,6 +2565,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedClaimsRoute: typeof AuthenticatedClaimsRouteWithChildren
   AuthenticatedCleanerHoursRoute: typeof AuthenticatedCleanerHoursRoute
   AuthenticatedCoachRoute: typeof AuthenticatedCoachRoute
+  AuthenticatedCoachingRoute: typeof AuthenticatedCoachingRoute
   AuthenticatedCommandCenterRoute: typeof AuthenticatedCommandCenterRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDemoRoute: typeof AuthenticatedDemoRoute
@@ -2618,6 +2638,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedClaimsRoute: AuthenticatedClaimsRouteWithChildren,
   AuthenticatedCleanerHoursRoute: AuthenticatedCleanerHoursRoute,
   AuthenticatedCoachRoute: AuthenticatedCoachRoute,
+  AuthenticatedCoachingRoute: AuthenticatedCoachingRoute,
   AuthenticatedCommandCenterRoute: AuthenticatedCommandCenterRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDemoRoute: AuthenticatedDemoRoute,
