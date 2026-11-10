@@ -25,6 +25,7 @@ import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedCommandCenterRouteImport } from './routes/_authenticated/command-center'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDemoRouteImport } from './routes/_authenticated/demo'
+import { Route as AuthenticatedExportCheckRouteImport } from './routes/_authenticated/export-check'
 import { Route as AuthenticatedFinanceRouteImport } from './routes/_authenticated/finance'
 import { Route as AuthenticatedHandoffsRouteImport } from './routes/_authenticated/handoffs'
 import { Route as AuthenticatedHelpTicketsRouteImport } from './routes/_authenticated/help-tickets'
@@ -207,6 +208,12 @@ const AuthenticatedDemoRoute = AuthenticatedDemoRouteImport.update({
   path: '/demo',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedExportCheckRoute =
+  AuthenticatedExportCheckRouteImport.update({
+    id: '/export-check',
+    path: '/export-check',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedFinanceRoute = AuthenticatedFinanceRouteImport.update({
   id: '/finance',
   path: '/finance',
@@ -784,6 +791,7 @@ export interface FileRoutesByFullPath {
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/demo': typeof AuthenticatedDemoRoute
+  '/export-check': typeof AuthenticatedExportCheckRoute
   '/finance': typeof AuthenticatedFinanceRoute
   '/handoffs': typeof AuthenticatedHandoffsRoute
   '/help-tickets': typeof AuthenticatedHelpTicketsRoute
@@ -898,6 +906,7 @@ export interface FileRoutesByTo {
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/demo': typeof AuthenticatedDemoRoute
+  '/export-check': typeof AuthenticatedExportCheckRoute
   '/finance': typeof AuthenticatedFinanceRoute
   '/handoffs': typeof AuthenticatedHandoffsRoute
   '/help-tickets': typeof AuthenticatedHelpTicketsRoute
@@ -1010,6 +1019,7 @@ export interface FileRoutesById {
   '/_authenticated/command-center': typeof AuthenticatedCommandCenterRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/demo': typeof AuthenticatedDemoRoute
+  '/_authenticated/export-check': typeof AuthenticatedExportCheckRoute
   '/_authenticated/finance': typeof AuthenticatedFinanceRoute
   '/_authenticated/handoffs': typeof AuthenticatedHandoffsRoute
   '/_authenticated/help-tickets': typeof AuthenticatedHelpTicketsRoute
@@ -1127,6 +1137,7 @@ export interface FileRouteTypes {
     | '/command-center'
     | '/dashboard'
     | '/demo'
+    | '/export-check'
     | '/finance'
     | '/handoffs'
     | '/help-tickets'
@@ -1241,6 +1252,7 @@ export interface FileRouteTypes {
     | '/command-center'
     | '/dashboard'
     | '/demo'
+    | '/export-check'
     | '/finance'
     | '/handoffs'
     | '/help-tickets'
@@ -1352,6 +1364,7 @@ export interface FileRouteTypes {
     | '/_authenticated/command-center'
     | '/_authenticated/dashboard'
     | '/_authenticated/demo'
+    | '/_authenticated/export-check'
     | '/_authenticated/finance'
     | '/_authenticated/handoffs'
     | '/_authenticated/help-tickets'
@@ -1587,6 +1600,13 @@ declare module '@tanstack/react-router' {
       path: '/demo'
       fullPath: '/demo'
       preLoaderRoute: typeof AuthenticatedDemoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/export-check': {
+      id: '/_authenticated/export-check'
+      path: '/export-check'
+      fullPath: '/export-check'
+      preLoaderRoute: typeof AuthenticatedExportCheckRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/finance': {
@@ -2447,6 +2467,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCommandCenterRoute: typeof AuthenticatedCommandCenterRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDemoRoute: typeof AuthenticatedDemoRoute
+  AuthenticatedExportCheckRoute: typeof AuthenticatedExportCheckRoute
   AuthenticatedFinanceRoute: typeof AuthenticatedFinanceRoute
   AuthenticatedHandoffsRoute: typeof AuthenticatedHandoffsRoute
   AuthenticatedHelpTicketsRoute: typeof AuthenticatedHelpTicketsRoute
@@ -2514,6 +2535,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCommandCenterRoute: AuthenticatedCommandCenterRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDemoRoute: AuthenticatedDemoRoute,
+  AuthenticatedExportCheckRoute: AuthenticatedExportCheckRoute,
   AuthenticatedFinanceRoute: AuthenticatedFinanceRoute,
   AuthenticatedHandoffsRoute: AuthenticatedHandoffsRoute,
   AuthenticatedHelpTicketsRoute: AuthenticatedHelpTicketsRoute,

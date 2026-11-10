@@ -96,7 +96,7 @@ N6 Admin page: Check the connection, Dry run, Preview 20 tickets, then three run
 N7 Ticket property history shows same category history from all dates by default with a toggle for full history.
 N8 Clean slate before the import, after a full backup: delete every ticket including demo and test ones; delete the fake and demo users; remove the Demo button and add View as; move the 6 homes on old plans to Standard version 3 keeping completed work (dry run first); delete the old onboarding templates once unused. Nothing runs without a full backup and Emily's go.
 N9 Monday Nov 9 the whole coordinator team works only in Resolve. Notion stays editable until Resolve passes Emily's click through; then the full Notion export goes to SharePoint and Notion becomes view only for coordinators.
-N10 A nightly Resolve export to SharePoint covering every database and a supervisor double check view are promised and not built.
+N10 The nightly SharePoint export covers every table and a file inventory, is verified each night, alerts on failure, and has a read only check page (Emily, Nov 9).
 
 ## 8. Team and coverage, Users, on call, schedule
 Hours: Operations Supervisor Mon to Fri 8 to 5 (lunch 2 to 3). Guest Experience Day and Weekend (Team A) Thu to Mon 8 to 5 (lunch 1 to 2). Guest Experience Evening (A) Sat to Wed 1 to 10 (lunch 4 to 5). Guest Experience Part time (A) Tue and Wed 8 to 1, Thu and Fri 5 to 10, no lunch. Property Operations Weekday Day (Team B) Mon to Fri 8 to 5 (lunch 1 to 2). Property Operations Evening and Weekend (B) Mon to Fri 1 to 10 (lunch 3 to 4).

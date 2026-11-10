@@ -28,7 +28,8 @@ type TableInfo = { table_name: string; row_count: number; withheld_columns: stri
 
 const CONCURRENT = 4;
 
-async function listTables(db: Admin): Promise<TableInfo[]> {
+/** The one list of tables (every table in the public schema), shared with the nightly export. */
+export async function listTables(db: Admin): Promise<TableInfo[]> {
   const { data, error } = await db.rpc("backup_list_tables");
   if (error) throw new Error(`Could not list the tables: ${error.message}`);
   return (data ?? []) as TableInfo[];

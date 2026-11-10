@@ -1214,45 +1214,152 @@ export type Database = {
         }
         Relationships: []
       }
+      backup_export_alerts: {
+        Row: {
+          created_at: string
+          folder_name: string
+          message: string | null
+          notified: number
+          reason: string
+        }
+        Insert: {
+          created_at?: string
+          folder_name: string
+          message?: string | null
+          notified?: number
+          reason: string
+        }
+        Update: {
+          created_at?: string
+          folder_name?: string
+          message?: string | null
+          notified?: number
+          reason?: string
+        }
+        Relationships: []
+      }
+      backup_file_copies: {
+        Row: {
+          bucket: string
+          copied_at: string
+          etag: string | null
+          name: string
+          run_id: string | null
+          size: number
+        }
+        Insert: {
+          bucket: string
+          copied_at?: string
+          etag?: string | null
+          name: string
+          run_id?: string | null
+          size?: number
+        }
+        Update: {
+          bucket?: string
+          copied_at?: string
+          etag?: string | null
+          name?: string
+          run_id?: string | null
+          size?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "backup_file_copies_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "backup_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       backup_runs: {
         Row: {
+          bytes_copied: number | null
           error: string | null
           files: Json | null
+          files_copied: number | null
+          files_inventoried: number | null
           finished_at: string | null
           folder_item_id: string | null
           folder_name: string
           id: string
+          kind: string
+          lease_until: string | null
+          manifest_sha256: string | null
+          phase: string | null
+          progress: Json | null
           pruned_at: string | null
           pruned_count: number | null
+          sharepoint_path: string | null
           started_at: string
           status: string
+          table_count: number | null
+          total_rows: number | null
           trigger: string
+          verified_at: string | null
+          verify_reasons: string[] | null
+          verify_result: Json | null
+          verify_status: string | null
+          weekly: boolean
         }
         Insert: {
+          bytes_copied?: number | null
           error?: string | null
           files?: Json | null
+          files_copied?: number | null
+          files_inventoried?: number | null
           finished_at?: string | null
           folder_item_id?: string | null
           folder_name: string
           id?: string
+          kind?: string
+          lease_until?: string | null
+          manifest_sha256?: string | null
+          phase?: string | null
+          progress?: Json | null
           pruned_at?: string | null
           pruned_count?: number | null
+          sharepoint_path?: string | null
           started_at?: string
           status?: string
+          table_count?: number | null
+          total_rows?: number | null
           trigger?: string
+          verified_at?: string | null
+          verify_reasons?: string[] | null
+          verify_result?: Json | null
+          verify_status?: string | null
+          weekly?: boolean
         }
         Update: {
+          bytes_copied?: number | null
           error?: string | null
           files?: Json | null
+          files_copied?: number | null
+          files_inventoried?: number | null
           finished_at?: string | null
           folder_item_id?: string | null
           folder_name?: string
           id?: string
+          kind?: string
+          lease_until?: string | null
+          manifest_sha256?: string | null
+          phase?: string | null
+          progress?: Json | null
           pruned_at?: string | null
           pruned_count?: number | null
+          sharepoint_path?: string | null
           started_at?: string
           status?: string
+          table_count?: number | null
+          total_rows?: number | null
           trigger?: string
+          verified_at?: string | null
+          verify_reasons?: string[] | null
+          verify_result?: Json | null
+          verify_status?: string | null
+          weekly?: boolean
         }
         Relationships: []
       }
@@ -17199,6 +17306,20 @@ export type Database = {
         Args: { _reason: string; _ticket_id: string }
         Returns: Json
       }
+      backup_list_files: {
+        Args: never
+        Returns: {
+          bucket: string
+          etag: string
+          mimetype: string
+          name: string
+          owner_id: string
+          owner_label: string
+          owner_type: string
+          size: number
+          updated_at: string
+        }[]
+      }
       backup_list_tables: {
         Args: never
         Returns: {
@@ -17289,6 +17410,7 @@ export type Database = {
         Returns: string
       }
       can_save_playbooks: { Args: { _user_id: string }; Returns: boolean }
+      can_view_export_check: { Args: { _user_id: string }; Returns: boolean }
       can_view_owner_library_video: {
         Args: { _library_id: string }
         Returns: boolean
@@ -17882,6 +18004,10 @@ export type Database = {
         }[]
       }
       my_spending_approval_authority: { Args: never; Returns: boolean }
+      nightly_export_alert: {
+        Args: { _folder: string; _message: string; _reason: string }
+        Returns: number
+      }
       notify_marketing_photos_missing: {
         Args: { _property_id: string }
         Returns: boolean
