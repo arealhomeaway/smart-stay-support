@@ -50,31 +50,31 @@ const PROFILES = {
 const KEYS: DatabaseKey[] = [
   "properties", "house-items", "owners", "vendors", "utilities", "inventory",
   "onboarding-projects", "assessments", "handoffs", "budgets", "inspections",
-  "tickets", "departure-reviews", "reviews", "claims", "vendor-invoices", "direct-bookings", "referral-sources",
+  "tickets", "departure-reviews", "arrival-readiness", "reviews", "claims", "vendor-invoices", "direct-bookings", "referral-sources",
   "playbooks", "team",
 ];
 const MATRIX: Record<string, string> = {
-  //          prop hi own ven uti inv | onb ass han bud ins | tic dep rev cla inv dbk ref | pb team
-  PC:         "E E E V E V  - V V V V  E E E E V E E  V V",
-  Supervisor: "E E E E E V  - V E V V  E E E E V E E  E E",
-  DirOps:     "E E E E E V  V V E V V  E E E E V E E  E E",
-  DirOnb:     "E E E E E V  E E E E V  V V V O V O O  E V",
-  PM:         "E E E E E V  E E E E V  V V V O O O O  V V",
-  Utilities:  "V V V E E V  E E V V V  V V V O O O O  V V",
-  Design:     "E E E - E V  E E V V V  V V V O O O O  V V",
-  Finance:    "V V V V V V  V V V V V  V V V V E V V  V -",
-  Admin:      "E E E E E V  E E E E V  E E E E E E E  E E",
+  //          prop hi own ven uti inv | onb ass han bud ins | tic dep arr rev cla inv dbk ref | pb team
+  PC:         "E E E V E V  - V V V V  E E V E E V E E  V V",
+  Supervisor: "E E E E E V  - V E V V  E E V E E V E E  E E",
+  DirOps:     "E E E E E V  V V E V V  E E V E E V E E  E E",
+  DirOnb:     "E E E E E V  E E E E V  V V - V O V O O  E V",
+  PM:         "E E E E E V  E E E E V  V V - V O O O O  V V",
+  Utilities:  "V V V E E V  E E V V V  V V - V O O O O  V V",
+  Design:     "E E E - E V  E E V V V  V V - V O O O O  V V",
+  Finance:    "V V V V V V  V V V V V  V V V V V E V V  V -",
+  Admin:      "E E E E E V  E E E E V  E E V E E E E E  E E",
 };
 const LETTER = { edit: "E", view: "V", ops_finance: "O", hidden: "-" } as const;
 
 describe("the hub", () => {
-  it("has twenty cards in four groups, in board order", () => {
+  it("has twenty one cards in four groups, in board order", () => {
     expect(DATABASE_GROUPS.map((g) => g.label)).toEqual(["Homes & People", "Onboarding", "Operations & Finance", "Our Team"]);
     expect(ALL_DATABASES.map((c) => c.key)).toEqual(KEYS);
     expect(DATABASE_GROUPS.map((g) => g.cards.map((c) => c.name))).toEqual([
       ["Properties", "House items", "Owners", "Vendors", "Utilities", "Inventory"],
       ["Onboarding projects", "Assessments", "Handoffs", "Budgets and estimates", "Inspections"],
-      ["Tickets", "Departure reviews", "Reviews and surveys", "Claims and refunds", "Vendor invoices", "Direct bookings", "Referral sources"],
+      ["Tickets", "Departure reviews", "Arrival readiness", "Reviews and surveys", "Claims and refunds", "Vendor invoices", "Direct bookings", "Referral sources"],
       ["Playbooks", "Team and coverage"],
     ]);
   });

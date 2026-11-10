@@ -24,6 +24,7 @@ export type DatabaseKey =
   | "inspections"
   | "tickets"
   | "departure-reviews"
+  | "arrival-readiness"
   | "reviews"
   | "claims"
   | "vendor-invoices"
@@ -160,6 +161,14 @@ export const DATABASE_GROUPS: DatabaseGroup[] = [
         columns: ["Home", "Checked out", "Clean checked", "Damage", "Review request"],
         filters: ["Review request"],
         work: "Open the departure review to update it",
+      },
+      {
+        key: "arrival-readiness",
+        name: "Arrival readiness",
+        former: "Was not tracked before",
+        about: "Every arrival check, its result and who did it.",
+        columns: ["Home", "Check in", "Deadline", "Completed by", "Completed at", "Result", "Issue and backup plan", "Ticket"],
+        filters: ["Result", "Home"],
       },
       {
         key: "reviews",
@@ -307,6 +316,8 @@ const RULES: Record<DatabaseKey, Rule> = {
   budgets: { edit: ["admin", "dirOnb", "pm"], view: ["coordinator", "supervisor", "dirOps", "utilities", "design", "finance"] },
   tickets: { edit: OPS, view: [...ONB, "finance"] },
   "departure-reviews": { edit: OPS, view: [...ONB, "finance"] },
+  // Build 12 (register BN10): read only; a coordinator sees only their own checks (database rule).
+  "arrival-readiness": { view: ["admin", "coordinator", "supervisor", "dirOps", "finance"] },
   reviews: { edit: OPS, view: [...ONB, "finance"] },
   claims: { edit: OPS, view: ["finance"], ops_finance: ONB },
   "vendor-invoices": { edit: ["admin", "finance"], view: ["coordinator", "supervisor", "dirOps", "dirOnb"], ops_finance: ["pm", "utilities", "design"] },
