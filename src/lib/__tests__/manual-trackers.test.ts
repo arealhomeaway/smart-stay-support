@@ -55,9 +55,9 @@ describe("manual trackers (Build 14) access", () => {
     expect(who(["owner"])).toEqual([]);
   });
   it("the page addresses follow the same rule", () => {
-    expect(canOpenPath("/weekly-scorecard", { roles: ["tech"], seats: {} } as never)).toBe(false);
-    expect(canOpenPath("/coaching", { roles: ["manager"], seats: { finance: true } } as never)).toBe(false);
-    expect(canOpenPath("/team-records", { roles: ["onboarding"], seats: { projectManager: true } } as never)).toBe(false);
+    expect(canOpenPath("/weekly-scorecard", { roles: ["tech"], seats: {} })).toBe(false);
+    expect(canOpenPath("/coaching", { roles: ["manager"], seats: { finance: true } })).toBe(false);
+    expect(canOpenPath("/team-records", { roles: ["onboarding"], seats: { projectManager: true } })).toBe(false);
   });
   it("the new screens carry no banned word, tracking code or long dash", () => {
     for (const f of [
