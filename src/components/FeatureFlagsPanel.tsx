@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { setEmailIntake } from "@/lib/mailbox.functions";
-import { ONE_SWITCH_NOTE } from "@/lib/email-intake";
+import { ONE_SWITCH_NOTE, OUT_OF_STEP_LINE } from "@/lib/email-intake";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { useRole } from "@/hooks/useRole";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,10 +55,12 @@ export function FeatureFlagsPanel() {
                   if (f.key === "email_intake") {
                     // The one path: turning it on moves the start line and starts the
                     // timed check in the same step; off stops both.
-                    await setIntake({ data: { enabled: v } });
+                    const r = await setIntake({ data: { enabled: v } });
                     await qc.invalidateQueries({ queryKey: ["feature-flags"] });
                     await qc.invalidateQueries({ queryKey: ["mailbox-status"] });
-                    toast.success(v ? "Email intake is on. The timed check started." : "Email intake is off. The timed check stopped.");
+                    // Say plainly if the timed check did not follow the switch.
+                    if (r?.timed_check !== v) toast.error(OUT_OF_STEP_LINE);
+                    else toast.success(v ? "Email intake is on. The timed check started." : "Email intake is off. The timed check stopped.");
                     return;
                   }
                   await setEnabled(f.key, v);

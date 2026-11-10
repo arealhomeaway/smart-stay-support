@@ -164,12 +164,17 @@ describe("staged files", () => {
     for (const [f, sum] of Object.entries(sums)) {
       expect(createHash("sha256").update(readFileSync(`${dir}/${f}`)).digest("hex")).toBe(sum);
     }
-    expect(Object.keys(sums).sort()).toEqual(["01-one-switch.sql", "undo.sql"]);
+    expect(Object.keys(sums).sort()).toEqual(["01-one-switch.sql", "README.md", "undo.sql"]);
   });
-  it("the applied migration is byte identical to the staged change", () => {
-    const applied = readdirSync("drizzle/migrations").filter((f) => f.endsWith("_email_intake_one_switch.sql"));
-    expect(applied.length).toBe(1);
-    expect(read(`drizzle/migrations/${applied[0]}`)).toBe(read(`${dir}/01-one-switch.sql`));
+  it("is staged only: not in the applied migrations until approved", () => {
+    const sql = read(`${dir}/01-one-switch.sql`);
+    for (const f of readdirSync("drizzle/migrations").filter((x) => x.endsWith(".sql"))) {
+      expect(read(`drizzle/migrations/${f}`)).not.toContain("The timed check follows the switch in the same step.");
+    }
+    expect(sql).toContain("The timed check follows the switch in the same step.");
+  });
+  it("the switch row says so if the timed check did not follow", () => {
+    expect(flags).toContain("if (r?.timed_check !== v) toast.error(OUT_OF_STEP_LINE);");
   });
   it("the undo restores the safety batch function text exactly", () => {
     const safety = read("docs/pending/email-intake-safety/01-schema.sql");
