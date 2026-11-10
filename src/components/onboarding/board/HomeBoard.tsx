@@ -79,7 +79,7 @@ export function HomeBoardHeader(p: {
 }) {
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2">
         {p.back}
         {p.follow}
       </div>
@@ -89,10 +89,12 @@ export function HomeBoardHeader(p: {
           <div className="absolute left-3 top-3 flex flex-wrap gap-2">
             <Chip className="bg-background/90 text-foreground">{p.stage}</Chip>
             {p.activeOwner ? <Chip className="bg-background/90 text-foreground">Active Owner</Chip> : null}
-            <Chip className={cn("bg-background/90", HEALTH_CHIP[p.health.level])}>
-              <HealthDot level={p.health.level} className="mr-1.5" />
-              {p.health.line}
-            </Chip>
+            <span className="rounded-full bg-background/95">
+              <Chip className={HEALTH_CHIP[p.health.level]}>
+                <HealthDot level={p.health.level} className="mr-1.5" />
+                {p.health.line}
+              </Chip>
+            </span>
           </div>
         </div>
         <div className="space-y-4 p-4 sm:p-5">

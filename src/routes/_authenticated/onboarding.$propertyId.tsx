@@ -528,15 +528,13 @@ function PropertyWorkspace() {
   const planTasks = tasks.map((t) => ({ ...(t as unknown as BoardTask), roleLabel: taskRoleLabel(t) }));
   const refs = (details.external_refs ?? {}) as Record<string, string>;
   const tab = homeTabFor(search.tab);
-  const backOrigin =
-    origin.href.split("?")[0] === "/onboarding" ? { ...origin, label: "Onboarding Home" } : origin;
 
   return (
     <div className="space-y-5">
       <HomeContextHeader propertyId={current.id} current="onboarding" />
 
       <HomeBoardHeader
-        back={<BackControl origin={backOrigin} />}
+        back={null}
         follow={<FollowHomeButton propertyId={current.id} />}
         photo={current.primary_photo_url ?? null}
         address={formatPropertyLabel(current).primary}
