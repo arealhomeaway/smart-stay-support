@@ -300,12 +300,12 @@ $mig$;
   EXCEPTION WHEN OTHERS THEN ok := SQLERRM LIKE '%Only a Supervisor or Admin%';
   END;
   msg := msg || ' pm_correct_refused=' || ok;
-  PERFORM set_config('role', 'postgres', true);
+  PERFORM set_config('role', 'none', true);
 
   PERFORM set_config('request.jwt.claims', json_build_object('sub','452f6db5-ba38-44bf-a8bd-f4b9197a0032','role','authenticated')::text, true);
   PERFORM set_config('role', 'authenticated', true);
   PERFORM public.correct_committed_handoff_date('add4e549-2929-42db-b5fd-131787088768', '2026-11-27', 'Practice correction');
-  PERFORM set_config('role', 'postgres', true);
+  PERFORM set_config('role', 'none', true);
 
   SELECT owner_type, project_status, committed_handoff_on, committed_handoff_set_by INTO r FROM public.onboarding_projects WHERE id='add4e549-2929-42db-b5fd-131787088768';
   msg := msg || ' owner_type=' || r.owner_type || ' status=' || r.project_status || ' committed=' || r.committed_handoff_on
