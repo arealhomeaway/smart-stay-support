@@ -460,3 +460,12 @@
 - [x] H Export check link rule, fewer rows warning, Not copied list; next morning Admin alert staged
 - [x] I One switch applied (0319), switch off, timed check inactive
 - [ ] Waiting on Emily: apply 04 Move to queue, 05 full stop, 06 fewer rows alert; G1/G2 when approved; 4G vendor channel; SharePoint space check
+## Nov 10 Build 10: the Breezeway bridge (no publish, bridge stays off)
+- [ ] 1 Inspect real task fields (read only GET, about 30 tasks)
+- [ ] 2 Real bridge switch with forward only start line, status on Integrations
+- [ ] 3 Store tags, real finished time, creator and reported issue marker on the mirror
+- [ ] 4 Reported issue creates one ordinary ticket, Team B, From Breezeway
+- [ ] 5 Finished maintenance creates one Maintenance Review, due 24 hours, link, skips
+- [ ] 6 internal_work_orders switch off; Link the Breezeway work order on the Repair card
+- [ ] 7 Cleanup: pilot fallback, 10 minute safety sweep, Retry all, failures on Integrations, second escalation, webhook note
+- [ ] 8 Tests, cancelled database practice, browser check, register T15, C4 to C6
