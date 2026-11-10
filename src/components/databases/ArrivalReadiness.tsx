@@ -80,7 +80,7 @@ export function ArrivalReadiness({ demoMode }: { demoMode: boolean }) {
         to: range?.to ?? null,
         home: home || null,
         person: person || null,
-        result: (result || null) as ArrivalFilter["result"],
+        result: (result || null) as NonNullable<ArrivalFilter["result"]> | null,
         team: team || null,
       }),
     [rows, range?.from, range?.to, home, person, result, team],
