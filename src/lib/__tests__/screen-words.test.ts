@@ -67,7 +67,10 @@ const FROZEN: Record<string, Record<string, number>> = {
   },
   // Recovery policy version stamp. It is saved on every refund and credit record, so
   // renaming it would split their history.
-  "src/lib/recovery-policy.ts": { threshold: 1 },
+  "src/lib/recovery-policy.ts": { threshold: 1, longDash: 1 },
+  // The previous repair policy version stamp, saved on older Work Orders and matched by
+  // policyForVersion; renaming it would lose which policy they were decided under.
+  "src/lib/maintenance-policy.ts": { longDash: 1 },
   // Instructions sent to the AI models (Coach and evidence review). They are never shown on
   // a screen; the model is told to answer in Right now, Today and Routine.
   "src/lib/coach.server.ts": { longDash: 7, shortDash: 1, hyphenDash: 10, symbol: 1, urgencyCode: 2 },

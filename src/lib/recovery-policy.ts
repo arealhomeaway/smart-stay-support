@@ -7,7 +7,7 @@
  * this file changes and history keeps the version it was decided under.
  */
 
-export const POLICY_VERSION = "ARHA Operations Policy Thresholds for Resolve. V1";
+export const POLICY_VERSION = "ARHA Operations Policy Thresholds for Resolve — v1";
 
 export type Priority = "p1" | "p2" | "p3";
 

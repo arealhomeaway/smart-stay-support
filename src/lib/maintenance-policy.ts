@@ -35,7 +35,7 @@ export type MaintenancePolicyRecord = {
  * without the Supervisor. Never used for new work.
  */
 export const MAINTENANCE_POLICY_V2: MaintenancePolicyRecord = {
-  version: "ARHA Maintenance Authority Policy for Resolve. V2",
+  version: "ARHA Maintenance Authority Policy for Resolve — v2",
   supervisorApprovalThreshold: 200,
   ownerApprovalThreshold: 350,
   ownerThresholdInclusive: false,
