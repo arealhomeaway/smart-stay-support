@@ -2255,6 +2255,13 @@
       "when": 1794323337966,
       "tag": "0321_build9_time_off_all_or_nothing",
       "breakpoints": true
+    },
+    {
+      "idx": 322,
+      "version": "7",
+      "when": 1794323551697,
+      "tag": "0322_build9_handoff_ready_authority",
+      "breakpoints": true
     }
   ]
 }
