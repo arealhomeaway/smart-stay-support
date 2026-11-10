@@ -46,6 +46,7 @@ import {
   type WorkFilter,
 } from "@/lib/onboarding-work-views";
 import { isTestRecord } from "@/lib/test-data";
+import { taskViewsFor } from "@/lib/onboarding-task-views";
 import { assignablePeople } from "@/lib/assignable-people";
 import { ReviewsWaiting } from "@/components/onboarding/ReviewsWaiting";
 import {
@@ -187,42 +188,8 @@ function MyWork() {
 
   const propertyName = (id: string) =>
     data.properties.find((p) => p.id === id)?.name ?? "Unknown home";
-  const views = mine.flatMap((t) => {
-    const assignedContext = data.assignedWorkContexts.find(
-      (context) => context.propertyId === t.property_id,
-    );
-    if (assignedContext) {
-      const property = data.properties.find((item) => item.id === t.property_id);
-      return property && !isTestRecord(property)
-        ? [viewTask(t, assignedContext.tasks, restoreAssignedRelease(assignedContext))]
-        : [];
-    }
-    const property = data.properties.find((p) => p.id === t.property_id);
-    if (!property || isTestRecord(property)) return [];
-    const project =
-      data.projects.find((p) => p.property_id === t.property_id && p.status !== "cancelled") ??
-      null;
-    const scoped = splitByScope(
-      allTasks.filter((x) => x.property_id === t.property_id),
-      projectScope(project),
-    );
-    if (!scoped.inScope.some((x) => x.id === t.id)) return [];
-    const handoff =
-      data.handoffs.find(
-        (h) =>
-          h.property_id === t.property_id &&
-          ["requested", "accepted_pending_live"].includes(h.status),
-      ) ?? null;
-    const release = buildReleaseContext({
-      property,
-      project,
-      tasks: scoped.inScope,
-      handoff,
-      stageCaptures: data.stageCaptures.filter((c) => c.propertyId === t.property_id),
-      excludedTaskIds: scoped.outOfScope.map((x) => x.task.id),
-    });
-    return [viewTask(t, scoped.inScope, release)];
-  });
+  // Same reading as Onboarding Home's Today, for me (src/lib/onboarding-task-views.ts).
+  const views = taskViewsFor(data as never, allTasks, mine);
   const t0 = today();
 
   // Active Owner homes are the ones whose live project carries the module.
