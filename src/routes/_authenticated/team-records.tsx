@@ -12,7 +12,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { StatusBadge } from "@/components/ui/status";
+import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { EmptyState, PageHeader, SectionCard } from "@/components/ui/page";
 import { useShellPageLabel } from "@/components/nav/ShellNav";
 import { useRole } from "@/hooks/useRole";
@@ -169,8 +169,8 @@ function LeadView() {
   );
 }
 
-function statusTone(s: string) {
-  return s === "clean" ? "success" : s === "not_clean" ? "danger" : s === "skipped" ? "neutral" : "info";
+function statusTone(s: string): StatusTone {
+  return s === "clean" ? "resolved" : s === "not_clean" ? "escalated" : s === "skipped" ? "closed" : "progress";
 }
 
 function RecordRow({ item, canReview, onChanged }: { item: Item; canReview: boolean; onChanged: () => void }) {
@@ -181,7 +181,7 @@ function RecordRow({ item, canReview, onChanged }: { item: Item; canReview: bool
     <li className="rounded-[14px] border border-border p-4" data-record-row={item.status}>
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-medium">{item.label ?? RECORD_KIND_LABEL[item.kind]}</span>
-        <StatusBadge tone={statusTone(shown) as never}>{RECORD_STATUS_LABEL[shown] ?? shown}</StatusBadge>
+        <StatusBadge tone={statusTone(shown)}>{RECORD_STATUS_LABEL[shown] ?? shown}</StatusBadge>
       </div>
       <p className="mt-1 text-sm text-muted-foreground">
         {RECORD_KIND_LABEL[item.kind]}, {item.owner_name}, {centralStamp(item.record_at)}
@@ -322,7 +322,7 @@ function DoubleCheckRow({ item, onChanged }: { item: Item; onChanged: () => void
     <li className="rounded-[14px] border border-border p-4" data-double-check-row>
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-medium">{item.label}</span>
-        <StatusBadge tone={statusTone(item.status) as never}>{RECORD_STATUS_LABEL[item.status]}</StatusBadge>
+        <StatusBadge tone={statusTone(item.status)}>{RECORD_STATUS_LABEL[item.status]}</StatusBadge>
       </div>
       <p className="mt-1 text-sm text-muted-foreground">{item.owner_name}</p>
       {item.link && (
@@ -405,7 +405,7 @@ function MineView() {
             <li key={i.id} className="py-3 text-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium">{i.label}</span>
-                <StatusBadge tone={statusTone(i.final) as never}>{RECORD_STATUS_LABEL[i.final]}</StatusBadge>
+                <StatusBadge tone={statusTone(i.final)}>{RECORD_STATUS_LABEL[i.final]}</StatusBadge>
               </div>
               <p className="text-muted-foreground">{centralStamp(i.at)}</p>
               {i.note && <p className="break-words">{i.note}</p>}
