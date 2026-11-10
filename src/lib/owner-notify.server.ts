@@ -59,7 +59,7 @@ async function sendEmail(
   if (context?.item && !rendered.subject.includes(context.item)) parts.push(context.item);
   if (context?.propertyName && !parts.join(" ").includes(context.propertyName))
     parts.push(context.propertyName);
-  const fullSubject = parts.join("None");
+  const fullSubject = parts.join(" · ");
   const bodyText = context?.propertyName
     ? `Property: ${context.propertyName}\n\n${rendered.body}`
     : rendered.body;

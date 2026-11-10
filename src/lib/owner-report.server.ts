@@ -127,7 +127,7 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
       activity: e.activity,
       detail: [e.output, e.comments, reviewedOwnerUpdateText(e.owner_update_snapshot)]
         .filter(Boolean)
-        .join("None"),
+        .join(" · "),
       reviewedUpdate: reviewedOwnerUpdateText(e.owner_update_snapshot),
       minutes: e.minutes,
       hours: hoursFromMinutes(e.minutes),
@@ -304,7 +304,7 @@ export function reportCsv(report: OwnerReport) {
       "",
       "Review",
       "Participation history",
-      [receipt.response, reviewedOwnerUpdateText(receipt.ownerUpdate)].filter(Boolean).join("Not set"),
+      [receipt.response, reviewedOwnerUpdateText(receipt.ownerUpdate)].filter(Boolean).join(" · "),
       "",
       "",
       receipt.propertyName,

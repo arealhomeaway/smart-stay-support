@@ -526,7 +526,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   const requiredEvidence = scopedClosureEvidence(workType?.required_closure_evidence, {
     category: ticket.category,
     workTypeName: workType?.name ?? null,
-    text: [ticket.title, ticket.description].filter(Boolean).join("None"),
+    text: [ticket.title, ticket.description].filter(Boolean).join(" · "),
   });
   const attachmentRows = (attachments?.files ?? []) as {
     upload_status?: string | null;
@@ -1095,7 +1095,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             objectType: "ticket",
             workTypeName: workType?.name ?? null,
             category: ticket.category ?? null,
-            text: [ticket.title, ticket.description].filter(Boolean).join("None"),
+            text: [ticket.title, ticket.description].filter(Boolean).join(" · "),
             situationId:
               classifyTicketText([ticket.title, ticket.description].filter(Boolean).join(". "))
                 ?.situation.id ?? null,

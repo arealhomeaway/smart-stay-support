@@ -135,7 +135,7 @@ export function parseSurveyAnswers(input: unknown): SurveyAnswers {
 
 /** One-line summary stored on the shared feedback record. */
 export function surveySummary(a: SurveyAnswers): string {
-  return [a.issue_description, a.comments, a.improve_before_checkout].filter(Boolean).join("None").slice(0, 2000);
+  return [a.issue_description, a.comments, a.improve_before_checkout].filter(Boolean).join(" · ").slice(0, 2000);
 }
 
 /* ---------------- Repeat issues ---------------- */
