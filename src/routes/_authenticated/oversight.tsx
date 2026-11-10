@@ -37,6 +37,7 @@ import {
 } from "@/lib/tickets";
 import { RequireCapability } from "@/components/RequireCapability";
 import { useRole } from "@/hooks/useRole";
+import { showExportCheckLink } from "@/lib/route-access";
 import { finalReviewRequirement } from "@/lib/final-review";
 import { ReportingBaselineNote } from "@/components/ReportingBaselineNote";
 import { OnCallNowCard } from "@/components/OnCallNowCard";
@@ -203,7 +204,7 @@ function Oversight() {
 }
 
 function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSupport }) {
-  const { canOpen, access } = useRole();
+  const { access } = useRole();
   const open = data.filter((t) => OPEN_STATUSES.includes(t.status));
 
   const unackedP1 = open.filter((t) => t.priority === "p1" && !t.acknowledged_at);
