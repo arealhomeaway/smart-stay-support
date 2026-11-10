@@ -22,8 +22,8 @@ async function assertStaff(supabase: unknown, userId: string) {
 export type BridgeStatus = {
   enabled: boolean;
   start_line: string | null;
-  sweep_found: boolean;
-  sweep_active: boolean;
+  /** The safety sweep's last run, written by the sweep itself (no row until it first runs). */
+  sweep_last: { at: string; ran: boolean } | null;
   last_switch: { status: string; at: string | null; by: string | null } | null;
   last_processed_at: string | null;
   tickets_created: number;
@@ -66,7 +66,7 @@ export const breezewayBridgeStatus = createServerFn({ method: "GET" })
 
 /**
  * The one way to turn the bridge on or off (Admin only). On moves the start line forward to
- * that moment and starts the safety sweep in the same database step; off stops both.
+ * that moment; off stops creation. The safety sweep reads the switch on every run.
  */
 export const setBreezewayBridge = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -77,7 +77,7 @@ export const setBreezewayBridge = createServerFn({ method: "POST" })
       { _enabled: data.enabled },
     );
     if (error) throw new Error(error.message);
-    return result as { enabled: boolean; changed: boolean; start_line: string | null; sweep: boolean };
+    return result as { enabled: boolean; changed: boolean; start_line: string | null };
   });
 
 /** The ticket's linked Breezeway work orders and the home's others to pick from (mirror only). */

@@ -41,6 +41,18 @@ export async function recordBreezewayIntegrationEvent(row: {
   });
 }
 
+/** The sweep's last run, shown on Integrations (one settings row, overwritten each run). */
+async function noteSweepRun(ran: boolean) {
+  try {
+    const db = (await admin()) as unknown as Loose;
+    await db
+      .from("app_settings")
+      .upsert({ key: "breezeway_safety_sweep_last", value: { at: new Date().toISOString(), ran }, updated_at: new Date().toISOString() }, { onConflict: "key" });
+  } catch {
+    /* bookkeeping only */
+  }
+}
+
 /**
  * The safety sweep: refreshes the people directory and a bounded batch of verified homes.
  * Refuses while the bridge is off, so nothing runs before the start line.
@@ -48,6 +60,7 @@ export async function recordBreezewayIntegrationEvent(row: {
 export async function runBreezewaySafetySweep(limit = 10) {
   const { readBridgeGate, syncVerifiedPortfolio } = await import("./breezeway-workorders.server");
   const gate = await readBridgeGate();
+  await noteSweepRun(gate.on);
   if (!gate.on) return { ok: false as const, skipped: "The Breezeway bridge is off." };
   try {
     const people = await (await import("./breezeway-people.server")).syncBreezewayPeople();

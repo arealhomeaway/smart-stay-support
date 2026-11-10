@@ -49,7 +49,7 @@ export function FeatureFlagsPanel() {
               ) : null}
               {f.key === "breezeway_bridge" ? (
                 <p className="text-xs font-medium text-foreground">
-                  Turning it on sets the start line to now and starts the safety sweep. Older Breezeway work is skipped.
+                  Turning it on sets the start line to now. Older Breezeway work is skipped.
                 </p>
               ) : null}
             </div>
@@ -71,8 +71,8 @@ export function FeatureFlagsPanel() {
                     return;
                   }
                   if (f.key === "breezeway_bridge") {
-                    // The one path (register T15): on moves the start line forward and starts
-                    // the safety sweep in the same step; off stops creation and the sweep.
+                    // The one path (register T15): on moves the start line forward; off stops
+                    // creation. The safety sweep reads the switch on every run.
                     const r = await setBridge({ data: { enabled: v } });
                     await qc.invalidateQueries({ queryKey: ["feature-flags"] });
                     await qc.invalidateQueries({ queryKey: ["breezeway-bridge-status"] });

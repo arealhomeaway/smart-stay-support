@@ -105,7 +105,7 @@ export function BreezewayBridgePanel() {
               <dt className="text-xs text-muted-foreground">Last switch</dt>
               <dd>
                 {s.last_switch
-                  ? `${s.last_switch.status === "on" ? "Turned on" : "Turned off"}${s.last_switch.at ? ` ${usDateTime(s.last_switch.at)}` : ""}${s.last_switch.by ? ` by ${s.last_switch.by}` : ""}`
+                  ? `${s.last_switch.status === "on" ? "Turned on" : "Turned off"}${s.last_switch.at ? ` ${usDateTime(s.last_switch.at)}` : ""} by an Admin`
                   : "Never turned on"}
               </dd>
             </div>
@@ -115,7 +115,11 @@ export function BreezewayBridgePanel() {
             </div>
             <div>
               <dt className="text-xs text-muted-foreground">Safety sweep, every 10 minutes</dt>
-              <dd>{!s.sweep_found ? "Not set up" : s.sweep_active ? "Running" : "Stopped"}</dd>
+              <dd>
+                {!s.sweep_last
+                  ? "Not running yet"
+                  : `Last check ${usDateTime(s.sweep_last.at)}${s.sweep_last.ran ? "" : ", nothing done while off"}`}
+              </dd>
             </div>
             <div>
               <dt className="text-xs text-muted-foreground">Made</dt>
