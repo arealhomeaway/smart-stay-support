@@ -6,33 +6,42 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import {
-  ArrowRight,
-  ClipboardList,
-  Database,
-  ChevronDown,
-  Plus,
-  Users,
-  Workflow,
-} from "lucide-react";
+import { Database, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { LoadingPage, PageHero, SectionCard } from "@/components/ui/page";
-import { PropertyPhoto } from "@/components/PropertyPhoto";
-import { usDate } from "@/lib/dates";
-import { awaitingMyReview, needsMyAttention } from "@/lib/onboarding-hub";
-import { lifecycleStageMeta, withinDays, type ProjectSummary } from "@/lib/onboarding-lifecycle";
-import { cn } from "@/lib/utils";
+import { LoadingPage, SectionCard } from "@/components/ui/page";
+import { needsMyAttention } from "@/lib/onboarding-hub";
 import heroImage from "@/assets/hero-arha-property.jpg";
+import { bannerCaption, dailyHomePhoto } from "@/lib/daily-home-photo";
+import {
+  centralHour,
+  centralToday,
+  dueLabel,
+  firstNameOf,
+  greetingFor,
+  handoffDate,
+  healthFor,
+  sixStageFor,
+  stepperFor,
+  todayForMe,
+  type BoardTask,
+} from "@/lib/onboarding-board";
+import { canQuickComplete } from "@/lib/onboarding-work-views";
+import { taskViewsFor } from "@/lib/onboarding-task-views";
+import { taskPayload } from "@/components/onboarding/TaskDrawer";
+import {
+  OnboardingBoardHome,
+  BOARD_VIEWS,
+  type BoardHome,
+  type BoardView,
+  type NeedRow,
+  type TodayHome,
+} from "@/components/onboarding/board/OnboardingBoardHome";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
 import { ExternalRecordsPanel } from "@/components/onboarding/ExternalRecordsPanel";
 import { DirectorHub, type Lens } from "@/components/onboarding/DirectorHub";
-import { useOwnerCompletions, needsAttention } from "@/components/onboarding/OwnerCompletionsReview";
-import { useDemo } from "@/components/DemoProvider";
 import { AddPropertyDialog } from "@/components/property/AddPropertyDialog";
 import { canAddHome } from "@/lib/property-page";
-import { OnboardingActivityFeed } from "@/components/onboarding/OnboardingActivityFeed";
 
 import { useRole } from "@/hooks/useRole";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
@@ -44,7 +53,7 @@ import { applyTestDataFilter } from "@/lib/test-data";
 import {
   getOnboardingWorkspace,
   resolveExternalRecordFn,
-  reviewHandoffFn,
+  saveOnboardingTaskFn,
 } from "@/lib/onboarding.functions";
 
 export const Route = createFileRoute("/_authenticated/onboarding/")({
@@ -54,13 +63,13 @@ export const Route = createFileRoute("/_authenticated/onboarding/")({
       {
         name: "description",
         content:
-          "What needs attention today across every home in onboarding: derived risk, first-class blockers, review gates, upcoming handoffs and workload by project manager.",
+          "Today's onboarding work, what needs you now, every home in onboarding by stage, status and handoff, and the handoffs coming up.",
       },
       { property: "og:title", content: "Onboarding Home: Resolve" },
       {
         property: "og:description",
         content:
-          "Exception-first view of the whole onboarding pipeline, without opening every property.",
+          "Every home in onboarding in one place: gallery, active projects, status, Gantt and work load.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -75,6 +84,8 @@ export const Route = createFileRoute("/_authenticated/onboarding/")({
     if (typeof raw["find"] === "string" && raw["find"]) out.find = raw["find"];
     if (typeof raw["owner"] === "string" && raw["owner"]) out.owner = raw["owner"];
     if (raw["showTest"] === true || raw["showTest"] === "true") out.showTest = true;
+    if (typeof raw["view"] === "string" && BOARD_VIEWS.some((v) => v.value === raw["view"]))
+      out.view = raw["view"] as BoardView;
     return out;
   },
   component: Hub,
@@ -86,6 +97,8 @@ type HubSearch = {
   find?: string | undefined;
   owner?: string | undefined;
   showTest?: boolean | undefined;
+  /** The Homes in onboarding view; Gallery when absent. */
+  view?: BoardView | undefined;
 };
 
 function Hub() {
@@ -101,6 +114,8 @@ function Hub() {
   const find = params.find ?? "";
   const owner = params.owner ?? null;
   const showTest = params.showTest === true;
+  const view: BoardView = params.view ?? "gallery";
+  const [bannerFailed, setBannerFailed] = useState(false);
   const setParam = (patch: HubSearch) =>
     void navigate({
       search: (prev: HubSearch) => {
@@ -109,6 +124,7 @@ function Hub() {
         if (!next.find) delete next.find;
         if (!next.owner) delete next.owner;
         if (!next.showTest) delete next.showTest;
+        if (!next.view || next.view === "gallery") delete next.view;
         return next;
       },
       replace: true,
@@ -129,19 +145,20 @@ function Hub() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("full_name")
+        .select("first_name, full_name")
         .eq("id", userId!)
         .maybeSingle();
       if (error) throw error;
       return data;
     },
   });
-  const firstName = (me?.full_name ?? "").trim().split(/\s+/)[0] ?? "";
+  const firstName = firstNameOf(me);
 
-  const reviewHandoff = useMutation({
-    mutationFn: useServerFn(reviewHandoffFn),
+  // Ticking a Task on Today, for me is the same save My Tasks makes.
+  const saveTask = useMutation({
+    mutationFn: useServerFn(saveOnboardingTaskFn) as never,
     onSuccess: () => {
-      toast.success("Decision recorded.");
+      toast.success("Task done.");
       void refresh();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -155,7 +172,7 @@ function Hub() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const projects = useMemo(() => {
+  const projectRows = useMemo(() => {
     if (!data) return [];
     return data.properties
       .filter((p) => data.pipeline.includes(p.id))
@@ -174,7 +191,7 @@ function Hub() {
           null;
         const pm = data.people.find((x) => x.id === project?.project_manager);
         const scoped = splitByScope(tasks, projectScope(project));
-        return summarizeProject(
+        return { summary: summarizeProject(
           {
             property: p as unknown as ProjectProperty,
             tasks: scoped.inScope,
@@ -186,9 +203,10 @@ function Hub() {
               data.independentReadiness.find((row) => row.propertyId === p.id) ?? null,
           },
           pm?.full_name ?? pm?.email ?? null,
-        );
+        ), project, inScope: scoped.inScope };
       });
   }, [data]);
+  const projects = useMemo(() => projectRows.map((r) => r.summary), [projectRows]);
 
   if (isLoading || !data) return <LoadingPage />;
   // Staff who only hold assigned Tasks get a scoped Dashboard / Properties view
