@@ -98,7 +98,7 @@ const newLead = async (db: PGlite, extra: Record<string, string> = {}) => {
 const lead = async (db: PGlite, id: string) =>
   (await db.query<Record<string, unknown>>(
     `SELECT reply_sent_at, reply_method, portal_answered_at, portal_answered_by, portal_answer_note, stage::text AS stage,
-            follow_up_due_at - reply_sent_at AS follow_gap, offered_property_ids, reply_body, quote_sent_at
+            extract(epoch FROM follow_up_due_at - reply_sent_at)::int / 3600 AS follow_hours, offered_property_ids, reply_body, quote_sent_at
        FROM public.leads WHERE id = $1`, [id])).rows[0]!;
 const history = async (db: PGlite, id: string) =>
   (await db.query<{ outcome: string; note: string; actor_id: string }>("SELECT outcome, note, actor_id FROM public.lead_activity WHERE lead_id = $1 ORDER BY occurred_at", [id])).rows;
@@ -175,7 +175,7 @@ describe("I answered in the partner's portal", () => {
     expect(row.portal_answered_by).toBe(PC);
     expect(row.portal_answer_note).toBe("Portal quote 4471");
     expect(row.stage).toBe("engaged");
-    expect(row.follow_gap).toMatchObject({ hours: 48 });
+    expect(row.follow_hours).toBe(48);
     expect(row.offered_property_ids).toEqual([H_OK]);
     const lines = await history(db, id);
     expect(lines.filter((l) => l.outcome === "Answered in the partner's portal")).toEqual([{ outcome: "Answered in the partner's portal", note: "Portal quote 4471", actor_id: PC }]);
