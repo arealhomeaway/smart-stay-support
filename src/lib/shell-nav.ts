@@ -207,7 +207,8 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
       { label: "Integrations", to: "/integrations", capability: "integrations" },
       { label: "Audit History", to: "/audit", capability: "audit_history" },
       { label: "Help Tickets", to: "/help-tickets", capability: "audit_history" },
-      { label: "Imported tickets", to: "/imported-tickets", capability: "audit_history" },
+      // The old review list: hidden behind its switch (register H9); Databases, Tickets holds these now.
+      { label: "Imported tickets", to: "/imported-tickets", capability: "audit_history", flag: "imported_tickets_page" },
       { label: "Notion import", to: "/integrations/notion-import", capability: "integrations" },
     ],
   },

@@ -123,7 +123,7 @@ B9 Logic and Automations: rules move out of the code into a settings store with 
 ## 10. Properties, Databases, Vendors, Playbooks
 P1 The property page is organized exactly like the Notion PID, with its section names and field labels; linked databases appear as tabs; photos and files sit next to the item they belong to; empty fields hide behind Show empty fields; sections collapse with a jump menu.
 P2 Labels on homes: an Admin creates, renames, removes and assigns labels (one home or many); other staff who edit a property pick from the list on a single home and can remove one; gray chips under the home's name and on the Properties list; every change records person and time. Active Owner stays a program status, not a label.
-P3 Databases is one hub every role opens, twenty cards in four groups, each opening a list with a back link and filters; the work is done elsewhere, Databases is the window.
+P3 Databases is one hub every role opens, twenty cards in four groups, each opening a list with a back link and filters; the work is done elsewhere, Databases is the window. Databases, Tickets has the tabs All, Recent, Older open, Closed history, Needs a home and Claims history, each with Period, Problem type, Status and Owner filters and Reopen (Emily, Nov 9).
 P4 Vendors page tabs: Directory, Database, Gold Standard, Market Coverage, Needs Review.
 P5 SOP files live in SharePoint. An Upload button, with hover text Upload an SOP here to turn it into a playbook.
 P6 Quarterly inspections stay in the separate inspections portal until built in Resolve.

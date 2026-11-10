@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, SectionCard, EmptyState } from "@/components/ui/page";
 import { Button } from "@/components/ui/button";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
+import { LaunchStateGate } from "@/components/LaunchStateGate";
 import { useRole } from "@/hooks/useRole";
 import { IMPORT_HOLD_LABELS, type ImportHold } from "@/lib/import-hold";
 import { formatPropertyLabel } from "@/lib/property-label";
@@ -13,7 +14,14 @@ import { formatPropertyLabel } from "@/lib/property-label";
 export const Route = createFileRoute("/_authenticated/imported-tickets")({
   component: () => (
     <SupervisorOnly>
-      <ImportedTicketsPage />
+      {/* Hidden behind its switch, not deleted (register H9). Databases, Tickets holds these lists now. */}
+      <LaunchStateGate
+        flag="imported_tickets_page"
+        title="Imported tickets are in Databases"
+        description="Open Databases, then Tickets: Older open, Closed history and Needs a home."
+      >
+        <ImportedTicketsPage />
+      </LaunchStateGate>
     </SupervisorOnly>
   ),
   head: () => ({
