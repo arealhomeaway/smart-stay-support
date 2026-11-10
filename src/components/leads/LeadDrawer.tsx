@@ -345,7 +345,7 @@ export function LeadDrawer({
           <div className="flex flex-wrap items-center gap-2">
             <Chip className={stateChip(stageState(lead.stage))}>{LEAD_OUTCOME_LABELS[leadOutcome(lead)]}</Chip>
             <Chip>{SOURCE_LABELS[lead.source]}</Chip>
-            {leadRegion(lead) !== "—" ? <Chip>{leadRegion(lead)}</Chip> : null}
+            {leadRegion(lead) !== "Not set" ? <Chip>{leadRegion(lead)}</Chip> : null}
             {derived.flags.map((f) => (
               <Chip
                 key={f.key}
