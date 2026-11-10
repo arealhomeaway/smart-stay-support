@@ -282,15 +282,20 @@ BEGIN
       ELSE
         _priority := CASE lower(coalesce(NEW.priority, ''))
                        WHEN 'urgent' THEN 'p1' WHEN 'high' THEN 'p2' ELSE 'p3' END;
+        -- A normal ticket: the clocks start when Resolve receives it, with the same priority
+        -- defaults as every other new ticket (slaDueDates in src/lib/tickets.ts).
         INSERT INTO public.tickets
           (record_type, title, description, property_id, priority, suggested_priority, status,
            source_channel, initiator_type, external_source, external_id, external_url,
-           external_synced_at, breezeway_task_id, reported_at, department_code, is_demo)
+           external_synced_at, breezeway_task_id, reported_at, department_code, is_demo,
+           response_due_at, action_due_at)
         VALUES ('active_task', coalesce(nullif(btrim(NEW.name), ''), 'Breezeway reported issue'),
                 NEW.description, NEW.property_id, _priority, _priority, 'open',
                 'breezeway', 'external', 'breezeway', NEW.breezeway_task_id::text, _link,
                 now(), NEW.breezeway_task_id, least(now(), coalesce(_at, now())), 'operations',
-                coalesce(_prop.is_demo, false))
+                coalesce(_prop.is_demo, false),
+                now() + make_interval(mins => CASE _priority WHEN 'p1' THEN 3 WHEN 'p2' THEN 30 ELSE 120 END),
+                now() + make_interval(mins => CASE _priority WHEN 'p1' THEN 5 WHEN 'p2' THEN 60 ELSE 480 END))
         ON CONFLICT (external_source, external_id)
           WHERE external_source IS NOT NULL AND external_id IS NOT NULL
           DO NOTHING
