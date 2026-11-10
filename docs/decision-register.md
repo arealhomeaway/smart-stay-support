@@ -16,7 +16,7 @@ H11 Where a decision says automatic, build it automatic with no button.
 H12 Protect what exists: change only what a decision or request names; list every existing file modified; run the whole suite, type check and build before and after; never weaken a test. A decision overrides old code.
 
 ## 2. Who sees what (Edit = works and changes; View = read only; Own = only their own; Hidden = not in the menu and not reachable by address)
-A1 Operations stays in Operations, Onboarding in Onboarding. Only shared work crosses (handoff, carry over, Send to Operations, Send to Onboarding).
+A1 Operations stays in Operations, Onboarding in Onboarding. Only shared work crosses (handoff, carry over, Send to Operations, Send to Onboarding). The Operations Supervisor sees Onboarding only through a read only Handoffs page (Emily, Nov 9).
 A2 Account types today: Admin, Supervisor, Coordinator, Onboarding, Owner, Vendor. Directors, Project Manager, Utilities, Design, Finance lead, COO, CEO are roles on top. Real Finance, Director and Utilities account types are week one.
 A3 CEO sees everything an Admin sees and edits only scorecard metrics. COO opens every view below the CEO. Emily holds the COO role.
 A4 Home: everyone Edit, Finance View, Active Owner Hidden on the staff side.
@@ -31,7 +31,7 @@ A12 Properties: Coordinator, Supervisor, Director of Operations, Director of Onb
 A13 Schedule: Coordinator View; onboarding roles View; Supervisor, Director of Operations, Admin Edit; Finance Hidden.
 A14 Users: Supervisors and Directors add users in their own department; Admin manages everyone; coordinators do not see the full user list.
 A15 Playbooks and SOPs: Supervisor, Director of Operations, Director of Onboarding, Admin edit, approve or publish, archive and upload; Coordinator, Project Manager, Utilities, Design and Finance View. Ticket checklists follow the same rule.
-A16 Onboarding board, projects and plans: Director of Onboarding, Admin Edit; Project Manager, Utilities, Design Own; Director of Operations and Finance View; Coordinator and Supervisor Hidden. Templates: Director of Onboarding, Admin Edit; Director of Operations View.
+A16 Onboarding board, projects and plans: Director of Onboarding, Admin Edit; Project Manager, Utilities, Design Own; Director of Operations and Finance View; Coordinator and Supervisor Hidden. Templates: Director of Onboarding, Admin Edit; Director of Operations View. The Operations Supervisor sees Onboarding only through a read only Handoffs page (Emily, Nov 9).
 A17 Active Owner staff side: Director of Operations, Director of Onboarding, Admin Edit; Supervisor View; Project Manager Own; Coordinator Own (post handoff work).
 A18 Finance: Finance lead, Admin Edit; Director of Operations and Director of Onboarding View.
 A19 Scorecards: the Supervisor reviews coordinators, the Director of Operations the Supervisor, the COO the Director, the CEO the COO later; each person views their own, read only.
@@ -44,7 +44,7 @@ M2 Hidden, not deleted: My Work page, Work Orders (until the vendor portal), Wor
 M3 Sub pages are tabs at the top of the page. Finance goes in Admin tools later. The CEO opens Analytics first. Imported Notion tickets are not a Databases list and not an Admin page.
 M4 Top bar on every operations page: Record work and Record routine work side by side, one tap each on a phone; routine work opens as an overlay; onboarding, vendor and owner accounts never see either.
 M5 Clean slate removes the Demo button and adds an Admin only View as switcher that does not depend on demo mode.
-M6 Coordinators see My day, Team (Team and Coverage read only, Playbooks) and Properties; Supervisors add Oversight, Onboarding and Active Owner view, Analytics; Directors add their department and Logic and Automations (view); the COO sees everything except the frontline work lists; the CEO matches Admin.
+M6 Coordinators see My day, Team (Team and Coverage read only, Playbooks) and Properties; Supervisors add Oversight, Onboarding and Active Owner view, Analytics; Directors add their department and Logic and Automations (view); the COO sees everything except the frontline work lists; the CEO matches Admin. The Operations Supervisor sees Onboarding only through a read only Handoffs page (Emily, Nov 9).
 
 ## 4. Home, Team Queue, Record work, tickets and routing
 T1 Home: banner with a real home photo that changes daily and a small caption (home name and city), greeting and date; My scorecard button only for people with a scorecard; Needs you now; My work; Routine work due today; My shift; Recent activity collapsed. The operations banner tagline is Protect the stay. Own the outcome. (Emily, Nov 9). Built (Emily, Nov 7): the My scorecard button sits under the banner and shows only for a person with a scorecard record (recorded by them or about them, not demo) who can open the view it leads to (Analytics until a My scorecard view exists), so nobody sees a dead button; Recent activity is last, starts collapsed, reads "Recent activity (N)" with Show and Hide, and opens to the last 6 items.
