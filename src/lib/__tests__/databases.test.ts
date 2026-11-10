@@ -50,20 +50,20 @@ const PROFILES = {
 const KEYS: DatabaseKey[] = [
   "properties", "house-items", "owners", "vendors", "utilities", "inventory",
   "onboarding-projects", "assessments", "handoffs", "budgets", "inspections",
-  "tickets", "departure-reviews", "arrival-readiness", "reviews", "claims", "vendor-invoices", "direct-bookings", "referral-sources",
+  "tickets", "departure-reviews", "arrival-readiness", "reviews", "claims", "vendor-invoices", "direct-bookings", "referral-sources", "bonus-payouts",
   "playbooks", "team",
 ];
 const MATRIX: Record<string, string> = {
-  //          prop hi own ven uti inv | onb ass han bud ins | tic dep arr rev cla inv dbk ref | pb team
-  PC:         "E E E V E V  - V V V V  E E V E E V E E  V V",
-  Supervisor: "E E E E E V  - V E V V  E E V E E V E E  E E",
-  DirOps:     "E E E E E V  V V E V V  E E V E E V E E  E E",
-  DirOnb:     "E E E E E V  E E E E V  V V - V O V O O  E V",
-  PM:         "E E E E E V  E E E E V  V V - V O O O O  V V",
-  Utilities:  "V V V E E V  E E V V V  V V - V O O O O  V V",
-  Design:     "E E E - E V  E E V V V  V V - V O O O O  V V",
-  Finance:    "V V V V V V  V V V V V  V V V V V E V V  V -",
-  Admin:      "E E E E E V  E E E E V  E E V E E E E E  E E",
+  //          prop hi own ven uti inv | onb ass han bud ins | tic dep arr rev cla inv dbk ref bon | pb team
+  PC:         "E E E V E V  - V V V V  E E V E E V E E -  V V",
+  Supervisor: "E E E E E V  - V E V V  E E V E E V E E -  E E",
+  DirOps:     "E E E E E V  V V E V V  E E V E E V E E -  E E",
+  DirOnb:     "E E E E E V  E E E E V  V V - V O V O O -  E V",
+  PM:         "E E E E E V  E E E E V  V V - V O O O O -  V V",
+  Utilities:  "V V V E E V  E E V V V  V V - V O O O O -  V V",
+  Design:     "E E E - E V  E E V V V  V V - V O O O O -  V V",
+  Finance:    "V V V V V V  V V V V V  V V V V V E V V V  V -",
+  Admin:      "E E E E E V  E E E E V  E E V E E E E E V  E E",
 };
 const LETTER = { edit: "E", view: "V", ops_finance: "O", hidden: "-" } as const;
 

@@ -4,11 +4,32 @@
  * date; the database decides that (public.bonus_my_plans).
  */
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SectionCard } from "@/components/ui/page";
 import { BonusPeriodView } from "@/components/bonus/BonusPeriodView";
-import { BONUS_COPY, type BonusPlanRef } from "@/lib/bonus";
+import { BONUS_COPY, VERIFY_COPY, type BonusPlanRef } from "@/lib/bonus";
+
+/** For a reviewer, the COO, the CEO and Admin: the way to Bonus verify. */
+export function BonusVerifyLink() {
+  const q = useQuery({
+    queryKey: ["bonus-people"],
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("bonus_people");
+      if (error) return [];
+      return (data ?? []) as unknown[];
+    },
+  });
+  if (!q.data || q.data.length === 0) return null;
+  return (
+    <Button asChild variant="outline" className="min-h-11" data-bonus-verify-link>
+      <Link to="/bonus-verify">{VERIFY_COPY.title}</Link>
+    </Button>
+  );
+}
 
 export function useMyBonusPlans(enabled = true) {
   return useQuery({

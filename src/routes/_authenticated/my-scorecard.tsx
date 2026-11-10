@@ -13,7 +13,7 @@ import { useCurrentUserId } from "@/hooks/useTeam";
 import { useShellPageLabel } from "@/components/nav/ShellNav";
 import { usDate } from "@/lib/dates";
 import { MY_SCORECARD_COPY, myScorecardGroups, type MyScorecardRow } from "@/lib/home-needs";
-import { MyBonus } from "@/components/bonus/MyBonus";
+import { BonusVerifyLink, MyBonus } from "@/components/bonus/MyBonus";
 
 export const Route = createFileRoute("/_authenticated/my-scorecard")({
   component: MyScorecardPage,
@@ -52,6 +52,7 @@ function MyScorecardPage() {
     <div className="space-y-6" data-my-scorecard-page>
       <PageHeader title={MY_SCORECARD_COPY.title} description={MY_SCORECARD_COPY.description} />
       {/* Build 13 (register BN5): the person's own bonus bars and dollars, when they have a plan. */}
+      <BonusVerifyLink />
       {userId && <MyBonus userId={userId} />}
       {q.isPending ? (
         <p className="text-sm text-muted-foreground">Loading...</p>
