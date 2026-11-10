@@ -70,7 +70,8 @@ SET search_path = public
 AS $$
 BEGIN
   IF coalesce(current_setting('resolve.breezeway_bridge_switch', true), '') = 'on' THEN
-    RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
+    IF TG_OP = 'DELETE' THEN RETURN OLD; END IF;
+    RETURN NEW;
   END IF;
   IF TG_TABLE_NAME = 'feature_flags' THEN
     IF NEW.key = 'breezeway_bridge'
@@ -87,7 +88,8 @@ BEGIN
          AND (NEW.value IS DISTINCT FROM OLD.value OR NEW.key IS DISTINCT FROM OLD.key)) THEN
     RAISE EXCEPTION 'The Breezeway bridge start line only moves when the bridge is turned on.';
   END IF;
-  RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
+  IF TG_OP = 'DELETE' THEN RETURN OLD; END IF;
+  RETURN NEW;
 END $$;
 
 CREATE TRIGGER feature_flags_breezeway_bridge_guard
@@ -230,8 +232,10 @@ DECLARE
   _priority text;
   _at timestamptz;
   _link text;
+  -- Finished stage: Finished, Approved and Closed all sit in it. Lawn care is maintenance.
   _maint boolean := lower(coalesce(NEW.department, '')) = 'maintenance'
-                    AND lower(coalesce(NEW.status, '')) = 'finished';
+                    AND (lower(coalesce(NEW.stage, '')) = 'finished'
+                         OR lower(coalesce(NEW.status, '')) IN ('finished', 'approved', 'closed'));
 BEGIN
   IF coalesce(current_setting('resolve.breezeway_bridge_applying', true), '') = 'on' THEN
     RETURN NEW;
@@ -239,9 +243,13 @@ BEGIN
   IF NEW.breezeway_task_id IS NULL OR NOT (NEW.reported_issue IS TRUE OR _maint) THEN
     RETURN NEW;
   END IF;
+  -- Bridge off: nothing is created and nothing is recorded (turning it off stops creation).
+  SELECT enabled INTO _on FROM public.feature_flags WHERE key = 'breezeway_bridge';
+  IF NOT coalesce(_on, false) THEN
+    RETURN NEW;
+  END IF;
 
   BEGIN
-    SELECT enabled INTO _on FROM public.feature_flags WHERE key = 'breezeway_bridge';
     _line := private.breezeway_bridge_start_line();
     SELECT p.id, p.name, p.nickname, p.is_demo, p.breezeway_mapping_state
       INTO _prop FROM public.properties p WHERE p.id = NEW.property_id;
@@ -252,7 +260,9 @@ BEGIN
     IF NEW.reported_issue IS TRUE AND NOT EXISTS (
          SELECT 1 FROM public.breezeway_bridge_records
           WHERE breezeway_task_id = NEW.breezeway_task_id AND kind = 'reported_issue' AND outcome = 'created') THEN
-      _at := coalesce(NEW.breezeway_created_at, NEW.created_at);
+      -- Never later than Breezeway's own last update: old work first seen late stays old.
+      _at := least(coalesce(NEW.breezeway_created_at, NEW.created_at),
+                   coalesce(NEW.breezeway_updated_at, NEW.breezeway_created_at, NEW.created_at));
       _reason := private.breezeway_bridge_skip_reason(_on, _line, _at, _prop.id, _prop.breezeway_mapping_state);
       IF _reason IS NULL AND NEW.linked_ticket_id IS NOT NULL THEN
         _reason := 'already has a ticket';
@@ -300,7 +310,8 @@ BEGIN
     IF _maint AND NEW.finished_at IS NOT NULL AND NOT EXISTS (
          SELECT 1 FROM public.breezeway_bridge_records
           WHERE breezeway_task_id = NEW.breezeway_task_id AND kind = 'maintenance_review' AND outcome = 'created') THEN
-      _reason := private.breezeway_bridge_skip_reason(_on, _line, NEW.finished_at, _prop.id, _prop.breezeway_mapping_state);
+      _at := least(NEW.finished_at, coalesce(NEW.breezeway_updated_at, NEW.finished_at));
+      _reason := private.breezeway_bridge_skip_reason(_on, _line, _at, _prop.id, _prop.breezeway_mapping_state);
       IF _reason IS NULL AND private.breezeway_is_new_house(NEW.breezeway_home_id, NEW.tags, _prop.name, _prop.nickname) THEN
         _reason := 'New House home';
       END IF;
@@ -341,14 +352,20 @@ BEGIN
     END IF;
   EXCEPTION WHEN OTHERS THEN
     -- Never breaks the mirror write. The failure is kept and shown on Integrations.
-    INSERT INTO public.breezeway_bridge_records
-      (breezeway_task_id, work_order_id, breezeway_home_id, property_id, kind, outcome, reason)
-    VALUES (NEW.breezeway_task_id, NEW.id, NEW.breezeway_home_id, NEW.property_id,
-            CASE WHEN NEW.reported_issue IS TRUE THEN 'reported_issue' ELSE 'maintenance_review' END,
-            'failed', left(SQLERRM, 300));
-    INSERT INTO public.integration_events
-      (system, direction, operation, status, external_id, error_message)
-    VALUES ('breezeway', 'inbound', 'bridge_create', 'failed', NEW.breezeway_task_id::text, left(SQLERRM, 500));
+    PERFORM set_config('resolve.breezeway_bridge_applying', '', true);
+    _reason := left(SQLERRM, 300);
+    BEGIN
+      INSERT INTO public.breezeway_bridge_records
+        (breezeway_task_id, work_order_id, breezeway_home_id, property_id, kind, outcome, reason)
+      VALUES (NEW.breezeway_task_id, NEW.id, NEW.breezeway_home_id, NEW.property_id,
+              CASE WHEN NEW.reported_issue IS TRUE THEN 'reported_issue' ELSE 'maintenance_review' END,
+              'failed', _reason);
+      INSERT INTO public.integration_events
+        (system, direction, operation, status, external_id, error_message)
+      VALUES ('breezeway', 'inbound', 'bridge_create', 'failed', NEW.breezeway_task_id::text, _reason);
+    EXCEPTION WHEN OTHERS THEN
+      RAISE WARNING 'Breezeway bridge failure for task % not recorded: %', NEW.breezeway_task_id, SQLERRM;
+    END;
   END;
   RETURN NEW;
 END $$;
