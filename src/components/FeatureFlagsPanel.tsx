@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { setEmailIntake } from "@/lib/mailbox.functions";
+import { ONE_SWITCH_NOTE } from "@/lib/email-intake";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { useRole } from "@/hooks/useRole";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,8 +12,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Safe controls for workflows that are deliberately paused for launch.
- * Turning one on only unlocks the in-app surface — the scheduled jobs behind
- * email intake and quarterly inspections stay paused until explicitly resumed.
+ * Turning one on only unlocks the in-app surface. The one exception is email
+ * intake (register E1 (e)): its switch starts and stops its timed check in the
+ * same database step. The quarterly inspection job stays paused until resumed.
  */
 export function FeatureFlagsPanel() {
   const { flags, isLoading, setEnabled } = useFeatureFlags();
@@ -40,6 +42,9 @@ export function FeatureFlagsPanel() {
             <div>
               <p className="text-sm font-medium">{f.label}</p>
               {f.description && <p className="text-xs text-muted-foreground">{f.description}</p>}
+              {f.key === "email_intake" ? (
+                <p className="text-xs font-medium text-foreground">{ONE_SWITCH_NOTE}</p>
+              ) : null}
             </div>
             <Switch
               checked={f.enabled}
@@ -48,7 +53,8 @@ export function FeatureFlagsPanel() {
                 setBusy(f.key);
                 try {
                   if (f.key === "email_intake") {
-                    // The one path: turning it on moves the start line in the same step.
+                    // The one path: turning it on moves the start line and starts the
+                    // timed check in the same step; off stops both.
                     await setIntake({ data: { enabled: v } });
                     await qc.invalidateQueries({ queryKey: ["feature-flags"] });
                     await qc.invalidateQueries({ queryKey: ["mailbox-status"] });
