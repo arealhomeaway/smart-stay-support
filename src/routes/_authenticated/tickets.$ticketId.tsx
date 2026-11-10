@@ -40,6 +40,8 @@ import { CurrentActionCard } from "@/components/CurrentActionCard";
 import { GuidedTicketPanel, type GuidedTicket } from "@/components/tickets/GuidedTicketPanel";
 import { requestFindVendorFocus } from "@/lib/find-vendor-focus";
 import { GuestFeedbackFollowUpPanel } from "@/components/feedback/GuestFeedbackFollowUpPanel";
+import { ArrivalCheckPanel } from "@/components/tickets/ArrivalCheckPanel";
+import { isArrivalCheckTicket } from "@/lib/arrival-check";
 import { OccupancyGuestPanel } from "@/components/tickets/OccupancyGuestPanel";
 import { ticketGuestComm } from "@/lib/guest-impact";
 
@@ -1388,6 +1390,8 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
         )}
 
 
+              {/* Build 12 (register BN10): the arrival check steps. */}
+              {isArrivalCheckTicket(ticket) && <ArrivalCheckPanel ticketId={ticket.id} propertyId={ticket.property_id ?? null} readOnly={role.readOnly} />}
               {(ticket as { guest_feedback_id?: string | null }).guest_feedback_id && (
                 <div className="mt-2">
                   <GuestFeedbackFollowUpPanel

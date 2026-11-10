@@ -98,7 +98,7 @@ type Row = HomeTicket & {
   properties: (HomeTicket["properties"] & { primary_photo_url?: string | null }) | null;
 };
 
-const PROPERTY_FIELDS = "name, nickname, primary_photo_url, address_line1, unit, city, state, postal_code, ownerrez_property_id";
+const PROPERTY_FIELDS = "name, nickname, primary_photo_url, address_line1, unit, city, state, postal_code, ownerrez_property_id, time_zone";
 
 function Dashboard() {
   const { demoMode } = useDemo();
@@ -376,7 +376,7 @@ function NeedsYouNow({ rows, userId, originSearch }: { rows: Row[]; userId: stri
           onClick={() => {
             const t = rows.find((r) => r.id === i.ticketId);
             setPanel({
-              kind: i.kind === "handoff" ? "handoff" : "escalation",
+              kind: i.kind === "handoff" ? "handoff" : i.kind === "arrival" ? "arrival" : "escalation",
               id: i.id,
               title: i.title,
               detail: i.detail,
@@ -396,6 +396,8 @@ function NeedsYouNow({ rows, userId, originSearch }: { rows: Row[]; userId: stri
         >
           {i.kind === "handoff" ? (
             <Handshake className="size-4 shrink-0 text-primary" aria-hidden="true" />
+          ) : i.kind === "arrival" ? (
+            <ClipboardCheck className="size-4 shrink-0 text-primary" aria-hidden="true" />
           ) : (
             <AlertTriangle className="size-4 shrink-0 text-danger" aria-hidden="true" />
           )}

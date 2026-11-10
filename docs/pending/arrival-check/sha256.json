@@ -1,0 +1,8 @@
+{
+  "01_arrival_check.sql": "d67de2a97d9b690f47cc8758ab21947644b1d069928741ff8a5b71c37b8164e6",
+  "02_arrival_check_fixes.sql": "6450654033a9ef1e7c6960063a8fc370e80b33369b45cbbfd060b8b15c7d8ca7",
+  "README.md": "86c71d818bb0a8fbfd8113d4474009efc4e4d7aab348aa709d30ceaa6a0defd2",
+  "practice_01_arrival_check.sql": "c10d9e3523460c93da7004c0c5a772c746862b100cf331cabc5d199909715872",
+  "undo/01_arrival_check.sql": "38090dc34d251a1eafa1f2a6c5541843a0949da0b55b249fb6d556eb858c053c",
+  "undo/02_arrival_check_fixes.sql": "f1070024263c313f128cc1e5503dfc0384c3f0d6634417784a7a4130ae4834c0"
+}

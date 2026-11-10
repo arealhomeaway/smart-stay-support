@@ -11,6 +11,7 @@ import { matchesPropertySearch, formatPropertyLabel, type PropertyLabelFields } 
 import { OPEN_STATUSES, STATUSES, isClosed, slaState, priorityMeta } from "@/lib/tickets";
 import { TEAM_B, teamOf } from "@/lib/coverage-model";
 import { automatedSourceOf } from "@/lib/automated-sources";
+import { arrivalDueLine, isArrivalCheckTicket } from "@/lib/arrival-check";
 
 export type HomeTab = "active" | "waiting" | "done";
 
@@ -43,6 +44,9 @@ export type HomeTicket = MatterOwnership &
     action_due_at?: string | null;
     properties?: PropertyLabelFields | null;
     work_types?: { name?: string | null } | null;
+    external_source?: string | null;
+    external_id?: string | null;
+    due_at?: string | null;
   };
 
 /** Counts as Resolve work at all: not held on an import list, not a quiet Notion import. */
@@ -148,7 +152,7 @@ export function unclaimedCount(
 
 export type NeedsYouItem = {
   id: string;
-  kind: "handoff" | "escalation" | "approval";
+  kind: "handoff" | "escalation" | "approval" | "arrival";
   title: string;
   detail: string;
   ticketId?: string;
@@ -174,6 +178,12 @@ export function needsYouNow(
       continue;
     }
     if (!isMine(t, userId) || t.pending_handoff_to === userId) continue;
+    // Build 12 (register BN10): an arrival check this person owns, with its due time.
+    if (isArrivalCheckTicket(t)) {
+      const due = arrivalDueLine(t.due_at, (t.properties as { time_zone?: string | null } | null)?.time_zone ?? null, now);
+      out.push({ id: `arrival:${t.id}`, kind: "arrival", title: t.title ?? "Arrival check", detail: `${due.text} · ${home}`, ticketId: t.id });
+      continue;
+    }
     const escalated = (t.escalation_level && t.escalation_level !== "none") || Boolean(slaState(t).escalation);
     if (escalated) {
       out.push({ id: `escalation:${t.id}`, kind: "escalation", title: t.title ?? "Ticket", detail: `Escalated · ${home}`, ticketId: t.id });

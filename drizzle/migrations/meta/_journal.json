@@ -2276,6 +2276,20 @@
       "when": 1794332520032,
       "tag": "0324_onboarding_pages_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 325,
+      "version": "7",
+      "when": 1794339378446,
+      "tag": "0325_arrival_check",
+      "breakpoints": true
+    },
+    {
+      "idx": 326,
+      "version": "7",
+      "when": 1794340413663,
+      "tag": "0326_arrival_check_fixes",
+      "breakpoints": true
     }
   ]
 }
