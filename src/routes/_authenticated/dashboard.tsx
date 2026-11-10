@@ -480,7 +480,7 @@ function MyWork({
           <Link
             to="/team-queue"
             search={{ flags: "unassigned" } as never}
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+            className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-primary hover:underline"
           >
             <Users className="size-4" aria-hidden="true" /> {HOME_COPY.teamQueueLink(unclaimed)}
           </Link>
@@ -636,7 +636,7 @@ function RoutineWorkDue({ team }: { team: string | null }) {
         <button
           type="button"
           onClick={() => openRecordRoutine()}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+          className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-primary hover:underline"
         >
           <ClipboardCheck className="size-4" aria-hidden="true" /> {HOME_COPY.routineButton}
         </button>
