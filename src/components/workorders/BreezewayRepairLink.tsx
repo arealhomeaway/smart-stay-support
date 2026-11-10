@@ -155,7 +155,7 @@ export function BreezewayRepairLink({
             <p className="text-muted-foreground">Add the home to this ticket first.</p>
           ) : (
             <div className="space-y-3 rounded-md border p-3">
-              <p className="font-medium">{linked.length ? "Link another Breezeway work order" : BRIDGE_COPY.linkTitle}</p>
+              {linked.length ? <p className="font-medium">Link another Breezeway work order</p> : null}
               <div className="space-y-1">
                 <Label className="text-xs">This home's Breezeway work orders</Label>
                 {choices.length ? (
