@@ -15,6 +15,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { responsibilitySeatWriter } from "./responsibility-seats.server";
+import { scheduleOnlyPeople } from "./team-schedule";
 
 type Ctx = { supabase: SupabaseClient<Database>; userId: string };
 
