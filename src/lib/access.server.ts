@@ -44,9 +44,8 @@ export async function inviteScope(supabase: Client, userId: string): Promise<Inv
   ]);
   if (admin.error) throw new Error("Could not verify your access level.");
   if (admin.data === true) return "all";
-  if (holds.data === true || (!cover.error && cover.data === userId)) return "operations";
+  if (director.data === true || holds.data === true || (!cover.error && cover.data === userId)) return "operations";
   if (onboardingDirector.data === true) return "onboarding";
-  if (director.data === true) return "operations";
   return "none";
 }
 
