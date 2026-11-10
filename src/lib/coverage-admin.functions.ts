@@ -104,7 +104,18 @@ export const coverageModel = createServerFn({ method: "POST" })
         };
       });
     }
-    const eligibleIds = ((people.data ?? []) as { id: string; oncall_eligible: boolean | null }[])
+    // Register S4: a coordinator (read only) gets only the people the schedule names, never the full list.
+    const shownPeople =
+      canEdit.data === true
+        ? (people.data ?? [])
+        : scheduleOnlyPeople((people.data ?? []) as { id: string; full_name: string | null; oncall_eligible: boolean | null }[], {
+            roles: (roles.data ?? []) as { current_seat_holder?: string | null }[],
+            overrides: (overrides.data ?? []) as { user_id?: string | null }[],
+            roster: (roster.data ?? []) as { user_id?: string | null }[],
+            pattern: setting("oncall_weekday_pattern"),
+            self: context.userId,
+          });
+    const eligibleIds = (shownPeople as { id: string; oncall_eligible: boolean | null }[])
       .filter((p) => p.oncall_eligible)
       .map((p) => p.id);
     return {
@@ -118,17 +129,7 @@ export const coverageModel = createServerFn({ method: "POST" })
       overrides: overrides.data ?? [],
       triage: triage.data ?? [],
       roster: roster.data ?? [],
-      // Register S4: a coordinator (read only) gets only the people the schedule names.
-      people:
-        canEdit.data === true
-          ? (people.data ?? [])
-          : scheduleOnlyPeople((people.data ?? []) as { id: string; full_name: string | null; oncall_eligible: boolean | null }[], {
-              roles: (roles.data ?? []) as { current_seat_holder?: string | null }[],
-              overrides: (overrides.data ?? []) as { user_id?: string | null }[],
-              roster: (roster.data ?? []) as { user_id?: string | null }[],
-              pattern: setting("oncall_weekday_pattern"),
-              self: context.userId,
-            }),
+      people: shownPeople,
       config: cfg.data ?? null,
       canEdit: canEdit.data === true,
     };
