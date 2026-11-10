@@ -123,7 +123,7 @@ export async function readBridgeGate(): Promise<{ on: boolean; startLine: string
 }
 
 /** Breezeway home tags (read only), cached a day, so the New House skip can use the tag. */
-async function refreshHomeTags(homeId: number) {
+async function refreshHomeTags(homeId: number | string) {
   const db = await admin();
   const { data } = await db
     .from("breezeway_home_tags" as never)
@@ -256,7 +256,7 @@ export async function syncPropertyWorkOrders(
   );
   for (const t of bridgeExtra) if (!tasks.some((x) => x.id === t.id)) tasks.push(t);
   if (bridgeExtra.some(rawIsFinishedMaintenance)) {
-    await refreshHomeTags(gate.homeId as unknown as number);
+    await refreshHomeTags(gate.homeId);
   }
 
   const db = await admin();
