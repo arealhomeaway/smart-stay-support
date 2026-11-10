@@ -8,7 +8,7 @@ export const FIXED_REPORT_SENTENCES: readonly string[] = [
   "Reported hours are the homeowner's own record of participation, entered manually by the homeowner. ARHA does not certify or approve these hours.",
   "Entries replaced by a correction, and entries returned for a data-quality question, are excluded from the total.",
   "An activity shared across several homes is counted once in the combined total; the homes are listed for attribution only.",
-  "The shared total for each calendar year with a confirmed closing includes every activity dated that year. Tagged to any home, General, or before a closing. Counted once. Home figures only show which activities were tagged to that home; there is no separate per-home total or minimum.",
+  "The shared total for each calendar year with a confirmed closing includes every activity dated that year — tagged to any home, General, or before a closing — counted once. Home figures only show which activities were tagged to that home; there is no separate per-home total or minimum.",
   "Every hour is the homeowner's own record, entered manually. Approvals and revisions are logged as actions and never create hours.",
   "This report is an operational record of reported participation. It is not a tax certification and not a guarantee of any tax treatment.",
 ];
