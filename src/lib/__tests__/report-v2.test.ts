@@ -162,7 +162,10 @@ describe("report v2 app rules", () => {
   it("seed keeps five sentences unchanged and removes long dashes from sentence 4", () => {
     expect(WORDING_SEED_V1.filter((s, i) => s === FIXED_REPORT_SENTENCES[i]).length).toBe(5);
     expect(wordingProblem(WORDING_SEED_V1)).toBeNull();
-    expect(wordingProblem(FIXED_REPORT_SENTENCES)).not.toBeNull();
+    // Emily, Nov 10: the first approved sentence 4 now uses commas, so it passes the no long dash rule too.
+    expect(FIXED_REPORT_SENTENCES[3]).toContain("dated that year, tagged to any home, General, or before a closing, counted once.");
+    expect(FIXED_REPORT_SENTENCES.some((s) => s.includes("\u2014"))).toBe(false);
+    expect(wordingProblem(FIXED_REPORT_SENTENCES)).toBeNull();
   });
 
   const missing = { code: "PGRST202", message: "Could not find the function public.report_entry_labels" };
