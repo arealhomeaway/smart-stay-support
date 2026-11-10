@@ -1,5 +1,6 @@
 import { EmailTestChip } from "@/components/EmailTestChip";
-import { isEmailTestTicket } from "@/lib/email-intake";
+import { EMAIL_TEST_COPY, isEmailTestTicket, seesEmailTestRecords } from "@/lib/email-intake";
+import { EmailTestRecords } from "@/components/EmailTestRecords";
 import { formatPropertyLabel } from "@/lib/property-label";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -114,7 +115,10 @@ function TeamQueuePage() {
   const userId = useCurrentUserId();
   const { data: staff } = useStaffDirectory();
   const { homeTeamOf } = useHomeTeams();
-  const { can, isLoading: rolesLoading, readOnly } = useRole();
+  const { can, isLoading: rolesLoading, readOnly, roles, seats } = useRole();
+  // Register E1 (a): email test tickets show for the people who run the test plan, in their
+  // own list, never in a count. Coordinators never see them.
+  const seesTests = !demoMode && seesEmailTestRecords(roles, seats);
   const { enabled: flagEnabled } = useFeatureFlags();
   const operationsAccess = can("work_orders_internal");
   const canTake = operationsAccess && !readOnly;
@@ -283,6 +287,24 @@ function TeamQueuePage() {
       return data;
     },
   });
+  const testTickets = useQuery({
+    queryKey: ["team-queue-email-tests"],
+    enabled: seesTests,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tickets")
+        .select("id, ref, title, status, priority, is_demo, external_source, property_id, properties(name, nickname, market, city, state, address_line1, unit, postal_code, ownerrez_property_id)")
+        .eq("is_demo", true)
+        .ilike("external_source", "email")
+        .is("archived_at", null)
+        .order("reported_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return (data ?? []).filter((t) => isEmailTestTicket(t));
+    },
+  });
+  const emailTests = seesTests ? (testTickets.data ?? []) : [];
   const refreshQueue = async () => {
     await Promise.all([refetch(), handoffs.refetch()]);
   };
@@ -565,6 +587,31 @@ function TeamQueuePage() {
           </button>
         ))}
       </div>
+
+      {emailTests.length > 0 ? (
+        <EmailTestRecords>
+          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+            {emailTests.map((t) => (
+              <li key={t.id}>
+                <Link
+                  to="/tickets/$ticketId"
+                  params={{ ticketId: t.id }}
+                  search={originSearch}
+                  className="flex min-h-11 flex-wrap items-center gap-2 px-4 py-3 hover:bg-muted/40"
+                >
+                  <span className="numeric text-[13px] text-muted-foreground">#{t.ref}</span>
+                  <span className="font-bold text-[15px]">{t.title}</span>
+                  <EmailTestChip />
+                  <span className="text-[13px] text-muted-foreground">
+                    {t.property_id ? formatPropertyLabel(t.properties).primary : TEAM_QUEUE_COPY.noHome} · {labelFor(STATUSES, t.status)}
+                  </span>
+                  <span className="ml-auto text-sm font-semibold text-primary">{EMAIL_TEST_COPY.open}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </EmailTestRecords>
+      ) : null}
 
       <section aria-label={TEAM_QUEUE_COPY.pickUp} className="space-y-3.5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
