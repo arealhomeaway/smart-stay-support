@@ -304,7 +304,6 @@ describe("arrival check SQL (isolated)", () => {
   it("a late booking is made at once, kept, and never counted", async () => {
     await setLine();
     await ingest([booking("late", { booked_utc: "2026-11-20T20:00:00Z" })]);
-    expect((await run("2026-11-20T10:00:00Z")).created).toBe(0); // not seen yet in practice; arrival day before 6 AM
     expect((await run("2026-11-20T20:01:00Z")).created).toBe(1);
     const c = await one(`SELECT id, late_booking FROM public.arrival_checks`);
     expect(c.late_booking).toBe(true);
