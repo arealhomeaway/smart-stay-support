@@ -57,6 +57,37 @@ export const PORTAL_COPY = {
   corrected: "Corrected.",
 } as const;
 
+/**
+ * The alert the coordinator gets the moment a supervisor approves a portal quote
+ * (Emily, Nov 10): in app and by email through the normal team alert email pass.
+ */
+export const PORTAL_APPROVED_ALERT = {
+  kind: "direct_booking_portal_approved",
+  title: "Approved. Post it in the portal.",
+} as const;
+
+export function portalApprovedAlertRow(input: {
+  coordinatorId: string;
+  leadId: string;
+  partner: string | null;
+  subject: string | null;
+  isDemo: boolean;
+}) {
+  const who = (input.partner ?? "").trim() || (input.subject ?? "").trim() || "the partner";
+  return {
+    user_id: input.coordinatorId,
+    kind: PORTAL_APPROVED_ALERT.kind,
+    title: PORTAL_APPROVED_ALERT.title,
+    body: `The quote for ${who} is approved. Post it in the partner's portal, then record it in Resolve.`,
+    entity_type: "lead",
+    entity_id: input.leadId,
+    link_path: `/direct-bookings/${input.leadId}`,
+    priority: "high",
+    email_status: "pending",
+    is_demo: input.isDemo,
+  };
+}
+
 const MAX_LINK = 2000;
 
 function hostAllowed(host: string) {
