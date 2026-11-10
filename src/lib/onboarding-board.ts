@@ -420,7 +420,8 @@ export function workload(homes: { projectManager: string | null }[]) {
 /* ------------------------------------------------------- by Notion status */
 
 export function byStatus<T extends { status: string | null | undefined }>(homes: T[]) {
-  const columns = [...NOTION_STATUSES, NOT_SET].map((status) => ({
+  // Homes without a Status yet come first, so they are never off screen.
+  const columns = [NOT_SET, ...NOTION_STATUSES].map((status) => ({
     status,
     homes: homes.filter((h) => (h.status ? h.status === status : status === NOT_SET)),
   }));
