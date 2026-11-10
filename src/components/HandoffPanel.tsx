@@ -24,7 +24,8 @@ import {
   relativeTime,
   priorityMeta,
 } from "@/lib/tickets";
-import { usDateTime } from "@/lib/dates";
+import { centralDateTime, centralInputToIso } from "@/lib/dates";
+import { resolveHandoffReceiver } from "@/lib/handoff-receiver";
 import { useCurrentUserId } from "@/hooks/useTeam";
 import { handoffAcceptPatch, handoffSelfAcceptCheck, settleHandoff } from "@/lib/handoff-accept";
 
@@ -129,16 +130,38 @@ export function HandoffPanel({
       !form.next_action.trim() && "next required action",
     ].filter(Boolean);
     if (missing.length) {
-      toast.error(`A valid reassignment needs: ${missing.join(", ")}.`);
+      toast.error(`A handoff needs: ${missing.join(", ")}.`);
       return;
     }
     setSaving(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
+      // A role goes to the person on shift in it right now (register T6); nobody on shift is refused.
+      let toUser = form.to_user || null;
+      if (!toUser) {
+        const [onShift, holder] = await Promise.all([
+          supabase.rpc("seat_eligible_now", { _role_code: form.to_role_code }),
+          supabase.rpc("seat_holder_at", { _role_code: form.to_role_code }),
+        ]);
+        if (onShift.error) throw onShift.error;
+        if (holder.error) throw holder.error;
+        const pick = resolveHandoffReceiver({
+          chosenUser: null,
+          roleName: roleName(form.to_role_code),
+          onShift: Boolean(onShift.data),
+          holder: (holder.data as string | null) ?? null,
+          me: userData.user?.id ?? null,
+        });
+        if (!pick.ok) {
+          toast.error(pick.message);
+          return;
+        }
+        toUser = pick.toUser;
+      }
       const { error } = await supabase.from("handoffs").insert({
         ticket_id: ticket.id,
         from_user: userData.user?.id ?? null,
-        to_user: form.to_user || null,
+        to_user: toUser,
         to_role_code: form.to_role_code,
         handoff_type: form.handoff_type,
         summary: form.summary.trim(),
@@ -146,7 +169,7 @@ export function HandoffPanel({
         actions_completed: form.actions_completed.trim(),
         current_status: form.current_status.trim(),
         next_action: form.next_action.trim(),
-        due_at: form.due_at ? new Date(form.due_at).toISOString() : null,
+        due_at: form.due_at ? centralInputToIso(form.due_at) : null,
         guest_comm_status: form.guest_comm_status,
         risks: form.risks.trim() || null,
       });
@@ -155,26 +178,26 @@ export function HandoffPanel({
         .from("tickets")
         .update({
           handoff_status: "pending",
-          pending_handoff_to: form.to_user || null,
+          pending_handoff_to: toUser,
           handoff_type: form.handoff_type,
           handoff_note: form.summary.trim(),
           next_action: form.next_action.trim(),
         })
         .eq("id", ticket.id);
       await log(
-        `Reassignment requested to ${labelFor(
+        `Handoff sent to ${labelFor(
           (roles ?? []).map((r) => ({ value: r.code, label: r.name })),
           form.to_role_code,
-        )}. Not complete until accepted. You remain accountable.`,
+        )}${personName(toUser) ? ` (${personName(toUser)})` : ""}. Not complete until accepted. You stay responsible.`,
         "handoff_requested",
       );
-      toast.success("Reassignment requested. You stay accountable until it is accepted.");
+      toast.success("Handoff sent. You stay responsible until it is accepted.");
       setOpen(false);
       setForm({ ...form, summary: "", actions_completed: "", current_status: "", risks: "" });
       await refetch();
       await onChanged();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not send the reassignment");
+      toast.error(err instanceof Error ? err.message : "Could not send the handoff");
     } finally {
       setSaving(false);
     }
@@ -235,15 +258,15 @@ export function HandoffPanel({
       await onChanged();
       return;
     }
-    await log("Reassignment accepted: ownership of the next action transferred.", "handoff_accepted");
+    await log("Handoff accepted. The next step moved to the receiver.", "handoff_accepted");
     await refetch();
     await onChanged();
-    toast.success("Reassignment accepted.");
+    toast.success("Handoff accepted.");
   }
 
   async function reject(handoffId: string) {
     if (!rejectReason.trim()) {
-      toast.error("A rejected reassignment must include a reason.");
+      toast.error("A declined handoff needs a reason.");
       return;
     }
     const before = await ticketHandoffState();
@@ -279,14 +302,14 @@ export function HandoffPanel({
       return;
     }
     await log(
-      `Reassignment rejected: ${rejectReason.trim()}. Returned to the original owner.`,
+      `Handoff declined: ${rejectReason.trim()}. Returned to the original owner.`,
       "handoff_rejected",
     );
     setRejecting(null);
     setRejectReason("");
     await refetch();
     await onChanged();
-    toast.success("Reassignment rejected and returned.");
+    toast.success("Handoff declined and returned.");
   }
 
   const roleName = (code: string | null) =>
@@ -300,11 +323,10 @@ export function HandoffPanel({
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
-          <ArrowRightLeft className="size-4" /> Reassignments
+          <ArrowRightLeft className="size-4" /> Handoffs
         </CardTitle>
         <CardDescription>
-          Tagging someone is not a reassignment. It is not complete until the receiver accepts it, until
-          then you remain accountable.
+          Tagging someone is not a handoff. You stay responsible until the receiver accepts it.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -334,7 +356,7 @@ export function HandoffPanel({
               </p>
               <p className="text-muted-foreground">
                 <span className="font-medium text-foreground">Next action:</span> {h.next_action}
-                {h.due_at ? ` by ${usDateTime(h.due_at)}` : ""}
+                {h.due_at ? ` by ${centralDateTime(h.due_at)}` : ""}
               </p>
               <p className="text-muted-foreground">
                 <span className="font-medium text-foreground">Guest comms:</span>{" "}
@@ -348,22 +370,22 @@ export function HandoffPanel({
             </div>
             {h.priority === "p1" && (
               <p className="flex items-center gap-2 text-xs font-medium text-danger">
-                <ShieldAlert className="size-3.5" /> Unaccepted Right now reassignment. The Operations
-                Supervisor is notified.
+                <ShieldAlert className="size-3.5" /> Right now handoff not accepted yet. The Operations
+                Supervisor is told.
               </p>
             )}
             {rejecting === h.id ? (
               <div className="space-y-2">
                 <Input
-                  placeholder="Why are you rejecting this reassignment?"
+                  placeholder="Why are you declining this handoff?"
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
                 />
                 <div className="flex gap-2">
-                  <Button size="sm" variant="destructive" onClick={() => reject(h.id)}>
-                    Confirm rejection
+                  <Button size="sm" variant="destructive" className="min-h-11 px-4" onClick={() => reject(h.id)}>
+                    Decline
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setRejecting(null)}>
+                  <Button size="sm" variant="ghost" className="min-h-11 px-4" onClick={() => setRejecting(null)}>
                     Cancel
                   </Button>
                 </div>
@@ -377,12 +399,12 @@ export function HandoffPanel({
                 )}
                 <div className="flex gap-2">
                   {!(currentUserId && currentUserId === h.from_user) && (
-                    <Button size="sm" onClick={() => accept(h.id, h.from_user)}>
-                      Accept reassignment
+                    <Button size="sm" className="min-h-11 px-4" onClick={() => accept(h.id, h.from_user)}>
+                      Accept
                     </Button>
                   )}
-                  <Button size="sm" variant="outline" onClick={() => setRejecting(h.id)}>
-                    Reject
+                  <Button size="sm" variant="outline" className="min-h-11 px-4" onClick={() => setRejecting(h.id)}>
+                    Decline
                   </Button>
                 </div>
               </div>
@@ -393,7 +415,7 @@ export function HandoffPanel({
         {settled.map((h) => (
           <div key={h.id} className="rounded-lg border border-border p-3 text-sm">
             <p className="font-medium">
-              {h.status === "accepted" ? "Accepted" : "Rejected"} · {roleName(h.to_role_code)}{" "}
+              {h.status === "accepted" ? "Accepted" : "Declined"} · {roleName(h.to_role_code)}{" "}
               <span className="font-normal text-muted-foreground">
                 {relativeTime(h.responded_at)}
               </span>
@@ -418,8 +440,8 @@ export function HandoffPanel({
                     value={form.to_role_code}
                     onValueChange={(v) => setForm({ ...form, to_role_code: v })}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Who takes the next action?" />
+                    <SelectTrigger className="min-h-11">
+                      <SelectValue placeholder="Who takes the next step?" />
                     </SelectTrigger>
                     <SelectContent>
                       {(roles ?? []).map((r) => (
@@ -436,8 +458,8 @@ export function HandoffPanel({
                     value={form.to_user}
                     onValueChange={(v) => setForm({ ...form, to_user: v })}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Whoever is on duty" />
+                    <SelectTrigger className="min-h-11">
+                      <SelectValue placeholder="Whoever is on shift" />
                     </SelectTrigger>
                     <SelectContent>
                       {(people ?? []).map((p) => (
@@ -451,7 +473,7 @@ export function HandoffPanel({
               </div>
 
               <div className="space-y-1.5">
-                <Label>Reason for the reassignment</Label>
+                <Label>Reason for the handoff</Label>
                 <Select
                   value={form.handoff_type}
                   onValueChange={(v) => setForm({ ...form, handoff_type: v })}
@@ -505,9 +527,10 @@ export function HandoffPanel({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Deadline / expected follow-up</Label>
+                  <Label>Due by (Central time)</Label>
                   <Input
                     type="datetime-local"
+                    className="min-h-11"
                     value={form.due_at}
                     onChange={(e) => setForm({ ...form, due_at: e.target.value })}
                   />
@@ -541,16 +564,16 @@ export function HandoffPanel({
               </div>
 
               <div className="flex gap-2">
-                <Button onClick={submit} disabled={saving}>
-                  {saving ? "Sending…" : "Request reassignment"}
+                <Button className="min-h-11" onClick={submit} disabled={saving}>
+                  {saving ? "Sending..." : "Send handoff"}
                 </Button>
-                <Button variant="ghost" onClick={() => setOpen(false)}>
+                <Button variant="ghost" className="min-h-11" onClick={() => setOpen(false)}>
                   Cancel
                 </Button>
               </div>
             </div>
           ) : (
-            <Button variant="secondary" onClick={() => setOpen(true)}>
+            <Button variant="secondary" className="min-h-11" onClick={() => setOpen(true)}>
               <ArrowRightLeft className="size-4" /> Hand this off
             </Button>
           ))}
