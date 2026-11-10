@@ -69,7 +69,15 @@ describe("2. Add users", () => {
   });
   it("Admin still invites every account type; others none", async () => {
     expect(await assertCanInvite(fake({ has_role: true }), "u", "vendor")).toBe("all");
-    await expect(assertCanInvite(fake({ is_onboarding_director: true }), "u", "tech")).rejects.toThrow("Only an admin");
+    await expect(assertCanInvite(fake({}), "u", "tech")).rejects.toThrow("Only an admin");
+  });
+  // Build 5 (register A14): the Director of Onboarding adds people to their own department only.
+  it("the Director of Onboarding invites Onboarding staff and nothing else", async () => {
+    const dir = fake({ is_onboarding_director: true });
+    expect(await inviteScope(dir, "u")).toBe("onboarding");
+    expect(await assertCanInvite(dir, "u", "onboarding")).toBe("onboarding");
+    for (const r of ["admin", "manager", "tech", "vendor", "owner"] as AppRole[])
+      await expect(assertCanInvite(dir, "u", r)).rejects.toThrow("You can add Onboarding staff");
   });
 });
 
