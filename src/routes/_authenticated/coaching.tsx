@@ -163,7 +163,8 @@ function SessionForm({ people, onDone }: { people: Person[]; onDone: () => void 
     setBusy(true);
     const { error } = await supabase.rpc("coaching_save_session", {
       _coordinator: who, _on: on, _type: type, _agenda: agenda, _notes: notes, _went_well: well,
-      _follow_ups: fus.filter((f) => f.text.trim()), _next_on: next || undefined,
+      _follow_ups: fus.filter((f) => f.text.trim()),
+      ...(next ? { _next_on: next } : {}),
     });
     setBusy(false);
     if (error) { toast.error(plainError(error)); return; }

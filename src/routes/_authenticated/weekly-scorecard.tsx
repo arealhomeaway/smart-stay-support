@@ -130,7 +130,7 @@ function ScorecardView({ card, onChanged }: { card: Card; onChanged: () => void 
   };
   const saveDraft = () => run(() => supabase.rpc("weekly_scorecard_save_draft", { _due: card.due_on, _manual: manual }), C.saved);
   const submit = () =>
-    run(() => supabase.rpc("weekly_scorecard_submit", { _due: card.due_on, _manual: manual, _reason: correcting ? reason : undefined }), C.submitted);
+    run(() => supabase.rpc("weekly_scorecard_submit", { _due: card.due_on, _manual: manual, ...(correcting ? { _reason: reason } : {}) }), C.submitted);
   const decide = (reviewed: boolean) =>
     run(() => supabase.rpc("weekly_scorecard_decide", { _due: card.due_on, _reviewed: reviewed, _note: note }), C.saved);
 
@@ -223,7 +223,7 @@ function ScorecardView({ card, onChanged }: { card: Card; onChanged: () => void 
       )}
 
       {card.can_decide && (
-        <SectionCard title={WEEKLY_EVENT_LABEL.submitted}>
+        <SectionCard title={WEEKLY_EVENT_LABEL["submitted"] ?? "Submitted"}>
           <Field label={C.returnNote}>
             <textarea className={AREA_CLASS} value={note} onChange={(e) => setNote(e.target.value)} />
           </Field>
