@@ -274,7 +274,12 @@ describe("7. Staged database change", () => {
     const live = read(`${dir}live-capture/private.home_profile_editor.sql`);
     expect(undo).toContain("OR is_director(auth.uid()) OR (submitted_by = auth.uid())");
     expect(undo).toContain('DROP POLICY IF EXISTS "Director of Onboarding creates Onboarding invites" ON public.team_invites;');
-    const body = (s: string) => s.slice(s.indexOf("CREATE OR REPLACE FUNCTION private.home_profile_editor"), s.indexOf("$function$;", s.indexOf("CREATE OR REPLACE FUNCTION")) + 11);
+    // The live capture ends at $function$ (as pg_get_functiondef prints it); the undo adds the semicolon.
+    const body = (s: string) => {
+      const start = s.indexOf("CREATE OR REPLACE FUNCTION private.home_profile_editor");
+      return s.slice(start, s.indexOf("$function$", s.indexOf("AS $function$", start) + 13) + 10);
+    };
+    expect(body(live).length).toBeGreaterThan(400);
     expect(body(undo)).toBe(body(live));
   });
 });
