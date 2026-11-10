@@ -16,7 +16,7 @@ const NEW_HOUSE_HOME = "00000000-0000-4000-8000-000000000102";
 
 const STUBS = `
 CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
-CREATE SCHEMA auth; CREATE SCHEMA private; CREATE SCHEMA cron;
+CREATE SCHEMA auth; CREATE SCHEMA private;
 CREATE TYPE public.app_role AS ENUM ('admin','manager','tech');
 CREATE TABLE public.me(id uuid);
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT id FROM public.me LIMIT 1 $$;
@@ -39,11 +39,6 @@ CREATE TABLE public.integration_events(id uuid PRIMARY KEY DEFAULT gen_random_uu
   operation text NOT NULL, external_id text, entity_type text, entity_id uuid, status text NOT NULL DEFAULT 'pending',
   error_message text, request_payload jsonb, previous_value jsonb, resolved_by uuid, resolved_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT clock_timestamp());
-CREATE TABLE cron.job(jobid bigserial PRIMARY KEY, jobname text, schedule text, command text, active boolean);
-INSERT INTO cron.job(jobname, schedule, command, active) VALUES ('breezeway-safety-sweep','*/10 * * * *', 'select 1', false);
-CREATE FUNCTION cron.alter_job(job_id bigint, schedule text DEFAULT NULL, command text DEFAULT NULL, database text DEFAULT NULL,
-  username text DEFAULT NULL, active boolean DEFAULT NULL) RETURNS void LANGUAGE sql AS $f$
-  UPDATE cron.job SET active = coalesce(alter_job.active, cron.job.active) WHERE jobid = alter_job.job_id $f$;
 CREATE TABLE public.properties(id uuid PRIMARY KEY, name text, nickname text, address_line1 text, is_demo boolean NOT NULL DEFAULT false,
   breezeway_mapping_state text);
 INSERT INTO public.properties VALUES ('${HOME}', 'Maple', NULL, '1 Maple St', false, 'verified'),
@@ -90,7 +85,6 @@ const err = async (sql: string) => {
 };
 const flag = async (key: string) => (await one(`SELECT enabled FROM public.feature_flags WHERE key=$1`, [key]))?.enabled;
 const line = async () => (await one(`SELECT private.breezeway_bridge_start_line() AS l`)).l;
-const sweep = async () => (await one(`SELECT active FROM cron.job WHERE jobname='breezeway-safety-sweep'`))?.active;
 const turn = async (on: boolean) => (await one(`SELECT public.set_breezeway_bridge(${on}) AS r`)).r;
 
 /** One mirror write, as the webhook, recovery, sweep or a manual refresh makes it. */
@@ -150,11 +144,10 @@ beforeEach(async () => {
 });
 
 describe("T15 the bridge switch is real (E1 pattern)", () => {
-  it("starts off with no start line, the sweep off and Resolve work orders off", async () => {
+  it("starts off with no start line and Resolve work orders off", async () => {
     expect(await flag("breezeway_bridge")).toBe(false);
     expect(await flag("internal_work_orders")).toBe(false);
     expect(await line()).toBeNull();
-    expect(await sweep()).toBe(false);
   });
 
   it("the switch cannot be flipped directly and the start line cannot be moved directly", async () => {
@@ -174,13 +167,12 @@ describe("T15 the bridge switch is real (E1 pattern)", () => {
     expect(await flag("breezeway_bridge")).toBe(false);
   });
 
-  it("Turn on sets the start line, starts the sweep and records who and when", async () => {
+  it("Turn on sets the start line and records who and when", async () => {
     await as(ADMIN);
     const before = Date.now();
     const r = await turn(true);
-    expect(r).toMatchObject({ enabled: true, changed: true, sweep: true });
+    expect(r).toMatchObject({ enabled: true, changed: true });
     expect(await flag("breezeway_bridge")).toBe(true);
-    expect(await sweep()).toBe(true);
     expect(new Date(await line()).getTime()).toBeGreaterThan(before - 1000);
     const audit = await one(`SELECT status, resolved_by, resolved_at FROM public.integration_events WHERE operation='bridge_switch'`);
     expect(audit.status).toBe("on");
@@ -188,12 +180,12 @@ describe("T15 the bridge switch is real (E1 pattern)", () => {
     expect(audit.resolved_at).not.toBeNull();
   });
 
-  it("Turn off stops the sweep and keeps the start line", async () => {
+  it("Turn off stops creation, keeps the start line and records it", async () => {
     await bridgeOn();
     const l = await line();
     await turn(false);
     expect(await flag("breezeway_bridge")).toBe(false);
-    expect(await sweep()).toBe(false);
+    expect((await all(`SELECT status FROM public.integration_events WHERE operation='bridge_switch' ORDER BY created_at`)).map((r) => r.status)).toEqual(["on", "off"]);
     expect(String(await line())).toBe(String(l));
   });
 
@@ -212,11 +204,10 @@ describe("T15 the bridge switch is real (E1 pattern)", () => {
     expect(new Date(await line()).toISOString()).toBe("2099-01-01T00:00:00.000Z");
   });
 
-  it("never on without its safety sweep", async () => {
-    await db.exec(`DELETE FROM cron.job WHERE jobname='breezeway-safety-sweep'`);
+  it("asking for the state it is already in changes nothing", async () => {
     await as(ADMIN);
-    expect(await err(`SELECT public.set_breezeway_bridge(true)`)).toContain("safety sweep was not found");
-    expect(await flag("breezeway_bridge")).toBe(false);
+    expect(await turn(false)).toMatchObject({ enabled: false, changed: false });
+    expect((await one(`SELECT count(*)::int n FROM public.integration_events WHERE operation='bridge_switch'`)).n).toBe(0);
     expect(await line()).toBeNull();
   });
 });
@@ -398,7 +389,7 @@ describe("Integrations status and undo", () => {
     const s = (await one(`SELECT public.breezeway_bridge_status() AS s`)).s;
     expect(s.enabled).toBe(true);
     expect(s.start_line).not.toBeNull();
-    expect(s.sweep_active).toBe(true);
+    expect(s.sweep_last).toBeNull();
     expect(s.tickets_created).toBe(1);
     expect(s.skipped).toBe(1);
     expect(s.skipped_by_reason).toEqual({ "before the bridge started": 1 });
