@@ -68,6 +68,7 @@ export const TRACKER_COPY = {
     progress: (done: number, total: number) => `${done} of ${total} reviewed`,
     none: "No records were drawn for this week yet.",
     drawsAt: "Records are drawn at 6 AM on Monday.",
+    nothingToDraw: "There was no coordinator work to draw from that week.",
     open: "Open the record",
     review: "Review",
     clean: "Clean",

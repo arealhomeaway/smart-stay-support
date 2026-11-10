@@ -121,7 +121,10 @@ function LeadView() {
       ) : w && w.view === "finance" ? (
         <p className="text-sm text-muted-foreground">{C.financeHint}</p>
       ) : w && w.items.length === 0 ? (
-        <EmptyState title={C.none} hint={`${C.drawsAt} ${centralStamp(w.draws_at)}`} />
+        <EmptyState
+          title={C.none}
+          hint={new Date(w.draws_at).getTime() <= Date.now() ? C.nothingToDraw : `${C.drawsAt} ${centralStamp(w.draws_at)}`}
+        />
       ) : (
         <ul className="space-y-3" data-records-list>
           {(w?.items ?? []).map((i) => (
