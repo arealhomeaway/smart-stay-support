@@ -15,6 +15,12 @@ DECLARE
   _w jsonb; _n int; _ids uuid[]; _i int := 0; d record; _due date := '2026-11-05'; _card jsonb; _e text;
   _reviews uuid[];
 BEGIN
+  -- Every Property Coordinator record of Nov 9 to 15 so far is an imported Notion ticket (never
+  -- drawn), so the practice adds two practice shift ends per coordinator, cancelled with the rest.
+  INSERT INTO public.shift_end_records (user_id, ended_at, nothing_to_hand_off)
+  SELECT p.user_id, '2026-11-10 12:00-06'::timestamptz + (g * interval '1 hour'), g = 1
+    FROM public.bonus_participants p, generate_series(0, 1) g
+   WHERE p.plan_code = 'coordinator' AND p.active;
   UPDATE public.app_settings SET value = '{"per_coordinator": 1, "director_checks": 5}' WHERE key = 'team_records_settings';
   UPDATE public.app_settings SET value = jsonb_build_object('first_due', _due) WHERE key = 'weekly_scorecard_settings';
   _out := _out || jsonb_build_object('candidates', (SELECT count(*) FROM private.mt_candidates('2026-11-16')),
@@ -40,6 +46,8 @@ BEGIN
     END LOOP;
   END IF;
   _w := public.team_records_week('2026-11-16');
+  _out := _out || jsonb_build_object('draws_after_skip', (SELECT jsonb_agg(jsonb_build_object('no', draw_no, 'kind', record_kind,
+            'by', drawn_by)) FROM public.team_record_draws WHERE week_start = '2026-11-16'));
   _out := _out || jsonb_build_object('supervisor_week', jsonb_build_object('total', _w -> 'total', 'reviewed', _w -> 'reviewed',
             'clean', _w -> 'clean', 'not_clean', _w -> 'not_clean', 'skipped', _w -> 'skipped', 'can_review', _w -> 'can_review'));
   _out := _out || jsonb_build_object('coaching_session', public.coaching_save_session(_pc, (now() AT TIME ZONE 'America/Chicago')::date,
