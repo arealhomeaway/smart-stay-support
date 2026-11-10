@@ -5,7 +5,7 @@
  */
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { CircleHelp, Paperclip, Sparkles, X } from "lucide-react";
+import { CircleHelp, ListChecks, Paperclip, Sparkles, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -109,7 +109,7 @@ export function HelpFeedbackButton() {
       });
       reset();
       setOpen(false);
-      toast.success("Thanks — your feedback was sent.");
+      toast.success("Thanks. Your feedback was sent.");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not send feedback.");
     } finally {
@@ -153,6 +153,14 @@ export function HelpFeedbackButton() {
             <DropdownMenuItem onSelect={() => setOpen(true)}>
               <Paperclip className="size-4" aria-hidden="true" /> Report a problem or suggestion
             </DropdownMenuItem>
+            {/* Register A20: every staff member sees their own reports and their status. */}
+            {can("help_tickets_own") && (
+              <DropdownMenuItem asChild>
+                <Link to="/help-tickets">
+                  <ListChecks className="size-4" aria-hidden="true" /> My reports
+                </Link>
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </TooltipProvider>
