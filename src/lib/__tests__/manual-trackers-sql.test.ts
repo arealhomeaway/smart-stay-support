@@ -156,12 +156,12 @@ describe("manual trackers (01)", () => {
     await seedWork();
     await db.query(`SELECT private.mt_draw($1::date)`, [WEEK]);
     const first = (await draws()).map((r) => r.record_id);
-    // Move the same work into the next week's window; only the 4 never drawn can come.
+    // Move the same work into the next week's window: 15 records, 10 already drawn, so only the 5 never drawn can come.
     await db.exec(`UPDATE public.tickets SET created_at = created_at + interval '7 days';
                    UPDATE public.routine_controls SET completed_at = completed_at + interval '7 days';`);
     await db.query(`SELECT private.mt_draw('2026-09-21'::date)`);
     const second = (await all(`SELECT record_id FROM public.team_record_draws WHERE week_start = '2026-09-21'`)).map((r) => r.record_id);
-    expect(second.length).toBe(3);
+    expect(second.length).toBe(5);
     expect(second.some((id) => first.includes(id))).toBe(false);
   });
 
