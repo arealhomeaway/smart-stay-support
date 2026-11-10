@@ -7,6 +7,8 @@ export type ExportCheck = {
   runs: ExportRunRow[];
   settings: ExportSettings;
   alerts: { folder_name: string; reason: string; message: string | null; created_at: string }[];
+  /** The last checked night's tables with fewer rows now, and stores listed but not copied. */
+  last?: { fewer: string[]; notCopied: import("@/lib/nightly-export").NotCopiedStore[] };
 };
 
 /**
@@ -42,8 +44,25 @@ export const readExportCheck = createServerFn({ method: "GET" })
       sb.from("backup_export_alerts").select("folder_name, reason, message, created_at").order("created_at", { ascending: false }).limit(14),
     ]);
     if (runs.error) throw new Error("The export history could not be loaded.");
+    const { fewerLiveTables } = await import("@/lib/nightly-export");
+    const lastChecked = ((runs.data ?? []) as ExportRunRow[]).find((r) => r.phase !== null && r.verify_status !== null);
+    let last: ExportCheck["last"] = { fewer: [], notCopied: [] };
+    if (lastChecked) {
+      const d = await sb
+        .from("backup_runs")
+        .select("lines:verify_result->lines, not_copied:progress->stored_files->not_copied")
+        .eq("id", lastChecked.id)
+        .maybeSingle();
+      if (!d.error && d.data) {
+        last = {
+          fewer: fewerLiveTables(Array.isArray(d.data.lines) ? d.data.lines : []),
+          notCopied: Array.isArray(d.data.not_copied) ? d.data.not_copied : [],
+        };
+      }
+    }
     return {
       ready: true,
+      last,
       runs: (runs.data ?? []) as ExportRunRow[],
       settings: readExportSettings(setting.data?.value),
       alerts: alerts.error ? [] : (alerts.data ?? []),

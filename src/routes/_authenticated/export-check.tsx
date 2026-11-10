@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, PageHeader, SectionCard } from "@/components/ui/page";
 import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { readExportCheck } from "@/lib/nightly-export.functions";
-import { keptRange, plainSize, runResult, type ExportRunRow } from "@/lib/nightly-export";
+import { fewerLiveWarning, keptRange, notCopiedLines, plainSize, runResult, type ExportRunRow } from "@/lib/nightly-export";
 import { usDateTime } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/export-check")({
@@ -112,6 +112,11 @@ function ExportCheckPage() {
                 </dd>
               </div>
             </dl>
+            {fewerLiveWarning(data.last?.fewer ?? []) ? (
+              <p role="status" className="mt-4 rounded-md border border-border bg-muted p-3" data-testid="export-fewer-warning">
+                {fewerLiveWarning(data.last?.fewer ?? [])}
+              </p>
+            ) : null}
             {runResult(last) === "Failed" ? (
               <ul className="mt-4 list-disc space-y-1 pl-5 text-coral" data-testid="export-last-reasons">
                 {(last.verify_reasons?.length ? last.verify_reasons : [last.error ?? "The export did not finish."]).map((x) => (
@@ -120,6 +125,19 @@ function ExportCheckPage() {
               </ul>
             ) : null}
           </SectionCard>
+
+          {notCopiedLines(data.last?.notCopied).length ? (
+            <SectionCard title="Not copied" bodyClassName="text-sm">
+              <ul className="divide-y divide-border" data-testid="export-not-copied">
+                {notCopiedLines(data.last?.notCopied).map((x) => (
+                  <li key={x.key} className="py-2">
+                    <p className="font-medium">{x.title}</p>
+                    <p className="text-muted-foreground">{x.reason}</p>
+                  </li>
+                ))}
+              </ul>
+            </SectionCard>
+          ) : null}
 
           <SectionCard title={`Last ${Math.min(14, runs.length)} runs`} bodyClassName="text-sm">
             <ul className="divide-y divide-border" data-testid="export-runs">

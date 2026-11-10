@@ -338,3 +338,31 @@ export function plainSize(bytes: number): string {
   if (bytes >= 1e3) return `${Math.round(bytes / 1e3)} KB`;
   return `${bytes} bytes`;
 }
+
+/* ------------------------------------------------------------------------- */
+/* Export check details (Build 9 H2, H3)                                      */
+/* ------------------------------------------------------------------------- */
+
+export type NotCopiedStore = { bucket: string; files: number; bytes: number; reason: string };
+
+/** Tables that hold fewer rows now than the export saved (allowed, but worth a look). */
+export function fewerLiveTables(lines: readonly Pick<ExportVerifyLine, "table" | "state">[] | null | undefined): string[] {
+  return [...new Set((lines ?? []).filter((l) => l.state === "fewer").map((l) => l.table))].sort();
+}
+
+/** The warning on the check page when a table has fewer rows now than in the export. */
+export function fewerLiveWarning(tables: readonly string[]): string | null {
+  if (!tables.length) return null;
+  return `${tables.length === 1 ? "This table has" : "These tables have"} fewer rows now than in the export: ${tables.join(", ")}. The export still holds every row. Check that nothing was removed by mistake.`;
+}
+
+/** One line per store that is listed but not copied, with its reason. */
+export function notCopiedLines(stores: readonly NotCopiedStore[] | null | undefined): { key: string; title: string; reason: string }[] {
+  return [...(stores ?? [])]
+    .sort((a, b) => a.bucket.localeCompare(b.bucket))
+    .map((s) => ({
+      key: s.bucket,
+      title: `${s.bucket}: ${s.files.toLocaleString("en-US")} file${s.files === 1 ? "" : "s"} (${plainSize(s.bytes)})`,
+      reason: s.reason,
+    }));
+}
