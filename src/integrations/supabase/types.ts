@@ -1576,6 +1576,575 @@ export type Database = {
         }
         Relationships: []
       }
+      bonus_adjustments: {
+        Row: {
+          decided_at: string | null
+          decided_by: string | null
+          decision: string | null
+          decision_note: string | null
+          fact_key: string | null
+          goal_id: string
+          id: string
+          kind: string
+          period_start: string
+          plan_code: string
+          reason: string
+          requested_at: string
+          requested_by: string
+          user_id: string
+        }
+        Insert: {
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string | null
+          decision_note?: string | null
+          fact_key?: string | null
+          goal_id: string
+          id?: string
+          kind: string
+          period_start: string
+          plan_code: string
+          reason: string
+          requested_at?: string
+          requested_by: string
+          user_id: string
+        }
+        Update: {
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string | null
+          decision_note?: string | null
+          fact_key?: string | null
+          goal_id?: string
+          id?: string
+          kind?: string
+          period_start?: string
+          plan_code?: string
+          reason?: string
+          requested_at?: string
+          requested_by?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bonus_adjustments_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "bonus_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bonus_goal_thresholds: {
+        Row: {
+          applies_from: string
+          goal_id: string
+          threshold_exceeds: number
+          threshold_met: number
+          threshold_strong: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          applies_from: string
+          goal_id: string
+          threshold_exceeds: number
+          threshold_met: number
+          threshold_strong: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          applies_from?: string
+          goal_id?: string
+          threshold_exceeds?: number
+          threshold_met?: number
+          threshold_strong?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bonus_goal_thresholds_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "bonus_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bonus_goals: {
+        Row: {
+          active: boolean
+          code: string
+          how_measured: string | null
+          id: string
+          measure_key: string | null
+          name: string
+          plan_code: string
+          position: number
+          share: number
+          source: string
+          threshold_exceeds: number
+          threshold_met: number
+          threshold_strong: number
+          unit: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          how_measured?: string | null
+          id?: string
+          measure_key?: string | null
+          name: string
+          plan_code: string
+          position: number
+          share: number
+          source: string
+          threshold_exceeds: number
+          threshold_met: number
+          threshold_strong: number
+          unit: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          how_measured?: string | null
+          id?: string
+          measure_key?: string | null
+          name?: string
+          plan_code?: string
+          position?: number
+          share?: number
+          source?: string
+          threshold_exceeds?: number
+          threshold_met?: number
+          threshold_strong?: number
+          unit?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bonus_goals_plan_code_fkey"
+            columns: ["plan_code"]
+            isOneToOne: false
+            referencedRelation: "bonus_plans"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      bonus_manual_measures: {
+        Row: {
+          entered_at: string
+          entered_by: string
+          evidence_url: string | null
+          goal_id: string
+          id: string
+          note: string
+          period_start: string
+          plan_code: string
+          user_id: string
+          value: number | null
+        }
+        Insert: {
+          entered_at?: string
+          entered_by: string
+          evidence_url?: string | null
+          goal_id: string
+          id?: string
+          note: string
+          period_start: string
+          plan_code: string
+          user_id: string
+          value?: number | null
+        }
+        Update: {
+          entered_at?: string
+          entered_by?: string
+          evidence_url?: string | null
+          goal_id?: string
+          id?: string
+          note?: string
+          period_start?: string
+          plan_code?: string
+          user_id?: string
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bonus_manual_measures_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "bonus_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bonus_participants: {
+        Row: {
+          active: boolean
+          eligible_from: string
+          plan_code: string
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          eligible_from: string
+          plan_code: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          eligible_from?: string
+          plan_code?: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bonus_participants_plan_code_fkey"
+            columns: ["plan_code"]
+            isOneToOne: false
+            referencedRelation: "bonus_plans"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      bonus_period_amounts: {
+        Row: {
+          amount_exceeds: number
+          amount_goal_met: number
+          amount_strong: number
+          id: string
+          label: string
+          period_end: string
+          period_start: string
+          plan_code: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          amount_exceeds: number
+          amount_goal_met: number
+          amount_strong: number
+          id?: string
+          label: string
+          period_end: string
+          period_start: string
+          plan_code: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          amount_exceeds?: number
+          amount_goal_met?: number
+          amount_strong?: number
+          id?: string
+          label?: string
+          period_end?: string
+          period_start?: string
+          plan_code?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bonus_period_amounts_plan_code_fkey"
+            columns: ["plan_code"]
+            isOneToOne: false
+            referencedRelation: "bonus_plans"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      bonus_period_history: {
+        Row: {
+          action: string
+          done_at: string
+          done_by: string
+          id: string
+          period_id: string
+          reason: string | null
+          snapshot: Json | null
+          total: number | null
+          version: number
+        }
+        Insert: {
+          action: string
+          done_at?: string
+          done_by: string
+          id?: string
+          period_id: string
+          reason?: string | null
+          snapshot?: Json | null
+          total?: number | null
+          version: number
+        }
+        Update: {
+          action?: string
+          done_at?: string
+          done_by?: string
+          id?: string
+          period_id?: string
+          reason?: string | null
+          snapshot?: Json | null
+          total?: number | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bonus_period_history_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "bonus_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bonus_periods: {
+        Row: {
+          id: string
+          label: string
+          notified_at: string | null
+          period_end: string
+          period_start: string
+          plan_code: string
+          ready_at: string
+          reminded_at: string | null
+          snapshot: Json | null
+          status: string
+          total: number | null
+          user_id: string
+          verified_at: string | null
+          verified_by: string | null
+          version: number
+        }
+        Insert: {
+          id?: string
+          label: string
+          notified_at?: string | null
+          period_end: string
+          period_start: string
+          plan_code: string
+          ready_at?: string
+          reminded_at?: string | null
+          snapshot?: Json | null
+          status?: string
+          total?: number | null
+          user_id: string
+          verified_at?: string | null
+          verified_by?: string | null
+          version?: number
+        }
+        Update: {
+          id?: string
+          label?: string
+          notified_at?: string | null
+          period_end?: string
+          period_start?: string
+          plan_code?: string
+          ready_at?: string
+          reminded_at?: string | null
+          snapshot?: Json | null
+          status?: string
+          total?: number | null
+          user_id?: string
+          verified_at?: string | null
+          verified_by?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bonus_periods_plan_code_fkey"
+            columns: ["plan_code"]
+            isOneToOne: false
+            referencedRelation: "bonus_plans"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      bonus_plans: {
+        Row: {
+          amount_exceeds: number | null
+          amount_goal_met: number | null
+          amount_strong: number | null
+          code: string
+          counting_start: string
+          name: string
+          period_kind: string
+          position: number
+          reviewer_name: string
+          reviewer_role: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          amount_exceeds?: number | null
+          amount_goal_met?: number | null
+          amount_strong?: number | null
+          code: string
+          counting_start: string
+          name: string
+          period_kind: string
+          position: number
+          reviewer_name: string
+          reviewer_role: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          amount_exceeds?: number | null
+          amount_goal_met?: number | null
+          amount_strong?: number | null
+          code?: string
+          counting_start?: string
+          name?: string
+          period_kind?: string
+          position?: number
+          reviewer_name?: string
+          reviewer_role?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      bonus_priorities: {
+        Row: {
+          accepted_on: string | null
+          id: string
+          name: string
+          period_start: string
+          plan_code: string
+          points: number
+          result_note: string | null
+          status: string
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          accepted_on?: string | null
+          id?: string
+          name: string
+          period_start: string
+          plan_code?: string
+          points: number
+          result_note?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          accepted_on?: string | null
+          id?: string
+          name?: string
+          period_start?: string
+          plan_code?: string
+          points?: number
+          result_note?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bonus_priorities_plan_code_fkey"
+            columns: ["plan_code"]
+            isOneToOne: false
+            referencedRelation: "bonus_plans"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      bonus_questions: {
+        Row: {
+          answer: string | null
+          answered_at: string | null
+          answered_by: string | null
+          id: string
+          period_id: string
+          question: string
+          raised_at: string
+          raised_by: string
+        }
+        Insert: {
+          answer?: string | null
+          answered_at?: string | null
+          answered_by?: string | null
+          id?: string
+          period_id: string
+          question: string
+          raised_at?: string
+          raised_by: string
+        }
+        Update: {
+          answer?: string | null
+          answered_at?: string | null
+          answered_by?: string | null
+          id?: string
+          period_id?: string
+          question?: string
+          raised_at?: string
+          raised_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bonus_questions_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "bonus_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bonus_settings_history: {
+        Row: {
+          area: string
+          changed_at: string
+          changed_by: string | null
+          field: string
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          reason: string | null
+          row_key: string
+        }
+        Insert: {
+          area: string
+          changed_at?: string
+          changed_by?: string | null
+          field: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          reason?: string | null
+          row_key: string
+        }
+        Update: {
+          area?: string
+          changed_at?: string
+          changed_by?: string | null
+          field?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          reason?: string | null
+          row_key?: string
+        }
+        Relationships: []
+      }
       breezeway_bridge_records: {
         Row: {
           breezeway_home_id: string | null
@@ -17667,6 +18236,135 @@ export type Database = {
         Returns: Json
       }
       begin_email_job_run: { Args: never; Returns: string }
+      bonus_answer_question: {
+        Args: { _answer: string; _id: string }
+        Returns: undefined
+      }
+      bonus_decide_adjustment: {
+        Args: { _approve: boolean; _id: string; _note?: string }
+        Returns: undefined
+      }
+      bonus_enter_measure: {
+        Args: {
+          _evidence_url?: string
+          _goal: string
+          _note: string
+          _plan: string
+          _start: string
+          _user: string
+          _value: number
+        }
+        Returns: string
+      }
+      bonus_is_leader: { Args: { _u: string }; Returns: boolean }
+      bonus_my_plans: { Args: never; Returns: Json }
+      bonus_my_reviews: { Args: never; Returns: Json }
+      bonus_payouts: { Args: never; Returns: Json }
+      bonus_people: { Args: never; Returns: Json }
+      bonus_raise_question: {
+        Args: { _plan: string; _question: string; _start: string }
+        Returns: string
+      }
+      bonus_reopen: {
+        Args: { _plan: string; _reason: string; _start: string; _user: string }
+        Returns: undefined
+      }
+      bonus_request_adjustment: {
+        Args: {
+          _fact_key: string
+          _goal: string
+          _kind: string
+          _plan: string
+          _reason: string
+          _start: string
+          _user: string
+        }
+        Returns: string
+      }
+      bonus_save_goal: {
+        Args: {
+          _active: boolean
+          _exceeds: number
+          _how?: string
+          _id: string
+          _met: number
+          _name: string
+          _plan: string
+          _reason?: string
+          _share: number
+          _source: string
+          _strong: number
+          _unit: string
+        }
+        Returns: string
+      }
+      bonus_save_goal_targets: {
+        Args: {
+          _exceeds: number
+          _from: string
+          _goal: string
+          _met: number
+          _reason?: string
+          _strong: number
+        }
+        Returns: undefined
+      }
+      bonus_save_participant: {
+        Args: {
+          _active: boolean
+          _eligible_from: string
+          _plan: string
+          _reason?: string
+          _user: string
+        }
+        Returns: undefined
+      }
+      bonus_save_period_amounts: {
+        Args: {
+          _end: string
+          _exceeds: number
+          _label: string
+          _met: number
+          _plan: string
+          _reason?: string
+          _start: string
+          _strong: number
+        }
+        Returns: undefined
+      }
+      bonus_save_plan: {
+        Args: {
+          _code: string
+          _counting_start: string
+          _exceeds: number
+          _met: number
+          _reason?: string
+          _strong: number
+        }
+        Returns: undefined
+      }
+      bonus_save_priority: {
+        Args: {
+          _accepted_on: string
+          _id: string
+          _name: string
+          _points: number
+          _result_note: string
+          _start: string
+          _status: string
+          _user: string
+        }
+        Returns: string
+      }
+      bonus_scorecard: {
+        Args: { _plan: string; _start: string; _user: string }
+        Returns: Json
+      }
+      bonus_settings: { Args: never; Returns: Json }
+      bonus_verify: {
+        Args: { _plan: string; _start: string; _user: string }
+        Returns: Json
+      }
       breezeway_bridge_status: { Args: never; Returns: Json }
       bulk_update_onboarding_home_tasks: {
         Args: {
