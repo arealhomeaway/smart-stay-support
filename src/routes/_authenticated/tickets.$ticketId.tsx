@@ -7,7 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { humanizeHistoryText } from "@/lib/ticket-lifecycle";
 import { finalReviewRequirement } from "@/lib/final-review";
 import { setTicketStatusFn } from "@/lib/ticket-lifecycle.functions";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { breezewayOutboundState } from "@/lib/breezeway-outbound.functions";
 import { ticketStage, repairIsPossible, repairIsComplete } from "@/lib/ticket-stage";
