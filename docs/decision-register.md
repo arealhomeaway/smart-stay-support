@@ -141,3 +141,16 @@ K2 Defaults chosen so work could continue: import name match ignores capitals an
 
 ## 13. Email intake
 E1 Email intake (Emily, Nov 9): the switch is real; the start line is set when it is turned on and older mail is ignored; the sweep runs every minute; [RESOLVE TEST] mail from an ARHA address is a test record; mail from our own address never creates a Direct Booking request; intake is switched on only after the test plan passes and Emily says go. A test record shows with its Test chip in the normal screens to the Admin, the Operations Supervisor and the Directors, who run the test plan, and is hidden from coordinators; it is never counted in any count, queue total, scorecard, clock result or report, for anyone, and its alert still reads "Test: ..." (Emily, Nov 9). One switch: turning email intake on also starts the timed check and turning it off stops it, in the same action, so there is never a half on state; the status panel shows both (Emily, Nov 9).
+
+## 14. Bonus tracking (Emily and Micah, Nov 10)
+BN0 Bonus tracking supersedes B1 and B4 where they differ.
+BN1 Timing: the Operations Supervisor and the Director of Operations are tracked from Nov 9; the week of Nov 9 does not count for or against either; the Supervisor's bonus is monthly (November pays on the last payday of December); the Director's is quarterly (paid in January; the Q1 project goal is still to be set); PC bonuses start Jan 1, 2027, after the system is proven.
+BN2 Tiers: each goal pays on its own: Goal met 95 percent, Strong 96.5 percent, Exceeds 98 percent.
+BN3 Supervisor goals (5): team on time follow through (automated); clean records (5 random PC records a week, proof required, manual); queue checks (opening All unclaimed is clocked automatically); monthly coaching (manual, 15 percent); the weekly scorecard and report (one database, Submit by Thursday 3 PM, automated facts pre filled).
+BN4 PC goals (5): on time follow through (urgent means reply within 3 minutes and real action within 5); clean records (the 5 a week sample); shift handoff (every shift ends with one); team duties on time; homes ready for guests (every arriving home checked at least 2 hours before check in, or the issue flagged with a safe backup plan).
+BN5 What people see: each person sees their own goal progress bars and estimated payout in dollars; a reviewer sees the dollars of the people they verify; Finance sees verified amounts; live by Mon Nov 16.
+BN6 Verify chain: the Director verifies the Supervisor's data, the COO verifies the Director's, and verified data reaches Finance in Resolve before each payroll; no bonus packages.
+BN7 Team records check: the Supervisor reviews 5 random PC records a week and records clean or not clean with evidence.
+BN8 Coaching log: one session a month: date, agenda, notes, follow ups; replaces the Notion Coaching and Accountability database.
+BN9 Weekly scorecard and report: one database; the Supervisor presses Submit and it reaches the Director in Resolve by Thursday 3 PM; the first is due Thu Nov 19.
+BN10 Arrival check queue: the spec in docs/specs/arrival-check.md.
