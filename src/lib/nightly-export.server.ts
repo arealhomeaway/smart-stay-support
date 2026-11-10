@@ -76,15 +76,30 @@ export interface SharePointIo {
 const CHUNK = 320 * 1024 * 16; // 5 MiB, a multiple of 320 KiB as Graph requires
 const encPath = (rel: string) => rel.split("/").map(encodeURIComponent).join("/");
 
+/** SharePoint's brief "busy" answers are tried again, up to 4 times, waiting a little longer each time. */
+export const RETRY_STATUSES = [429, 500, 502, 503, 504];
+const RETRIES = 4;
+const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
+export async function withRetry(send: () => Promise<Response>, wait = pause): Promise<Response> {
+  for (let attempt = 1; ; attempt++) {
+    const res = await send();
+    if (!RETRY_STATUSES.includes(res.status) || attempt >= RETRIES) return res;
+    const after = Number(res.headers.get("Retry-After"));
+    await wait(Math.min(Number.isFinite(after) && after > 0 ? after * 1000 : 2000 * attempt, 15_000));
+  }
+}
+
 export function realSharePoint(key: string): SharePointIo {
   const call = (path: string, init?: RequestInit) =>
-    callAsAppUser({
-      gatewayBaseUrl: SHAREPOINT_GATEWAY_BASE_URL,
-      connectorId: SHAREPOINT_CONNECTOR_ID,
-      connectionAPIKey: key,
-      path,
-      ...(init ? { init } : {}),
-    });
+    withRetry(() =>
+      callAsAppUser({
+        gatewayBaseUrl: SHAREPOINT_GATEWAY_BASE_URL,
+        connectorId: SHAREPOINT_CONNECTOR_ID,
+        connectionAPIKey: key,
+        path,
+        ...(init ? { init } : {}),
+      }),
+    );
   const graph = async (path: string, init?: RequestInit) => {
     const res = await call(path, init);
     if (!res.ok) {
@@ -109,11 +124,13 @@ export function realSharePoint(key: string): SharePointIo {
       const end = Math.min(start + CHUNK, size);
       const body = await readChunk(start, end);
       // The pre-authenticated upload URL goes straight to Microsoft, without credentials.
-      const res = await fetch(uploadUrl, {
-        method: "PUT",
-        headers: { "Content-Length": String(end - start), "Content-Range": `bytes ${start}-${end - 1}/${size}` },
-        body: body as BodyInit,
-      });
+      const res = await withRetry(() =>
+        fetch(uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Length": String(end - start), "Content-Range": `bytes ${start}-${end - 1}/${size}` },
+          body: body as BodyInit,
+        }),
+      );
       if (!res.ok && res.status !== 202) {
         throw new Error(`Upload of ${name} failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
       }
@@ -227,7 +244,8 @@ export type ExportStepResult =
 
 /** Stop after this many calls in a row fail on the same night; the run is then Failed and alerts. */
 const MAX_FAILED_CALLS = 3;
-const TABLE_CONCURRENCY = 3;
+const TABLE_CONCURRENCY = 4;
+const FILE_CONCURRENCY = 4;
 
 const text = (s: string) => new TextEncoder().encode(s);
 
@@ -508,22 +526,26 @@ export async function runNightlyExportStep(
       }
       const c = p.copy!;
       while (c.index < c.queue.length && timeLeft()) {
-        const f = c.queue[c.index]!;
-        try {
-          const n = await copyStoredFile(db, sp, driveId, folderId, f);
-          c.copied++;
-          c.bytes += n;
-          if (kind === "nightly") {
-            const { error } = await db
-              .from("backup_file_copies")
-              .upsert({ bucket: f.b, name: f.n, etag: f.e, size: f.s, copied_at: new Date().toISOString(), run_id: runId });
-            if (error) throw new Error(`Could not save the copy record: ${error.message}`);
-          }
-        } catch (e) {
-          c.failed.push({ bucket: f.b, name: f.n, reason: (e instanceof Error ? e.message : String(e)).slice(0, 200) });
-        }
-        c.index++;
-        if (c.index % 10 === 0 || c.index === c.queue.length) await save({ files_copied: c.copied, bytes_copied: c.bytes });
+        const batch = c.queue.slice(c.index, c.index + FILE_CONCURRENCY);
+        await Promise.all(
+          batch.map(async (f) => {
+            try {
+              const n = await copyStoredFile(db, sp!, driveId, folderId, f);
+              c.copied++;
+              c.bytes += n;
+              if (kind === "nightly") {
+                const { error } = await db
+                  .from("backup_file_copies")
+                  .upsert({ bucket: f.b, name: f.n, etag: f.e, size: f.s, copied_at: new Date().toISOString(), run_id: runId });
+                if (error) throw new Error(`Could not save the copy record: ${error.message}`);
+              }
+            } catch (e) {
+              c.failed.push({ bucket: f.b, name: f.n, reason: (e instanceof Error ? e.message : String(e)).slice(0, 200) });
+            }
+          }),
+        );
+        c.index += batch.length;
+        await save({ files_copied: c.copied, bytes_copied: c.bytes });
       }
       if (c.index >= c.queue.length) {
         const stored = await listStoredFiles(db);
