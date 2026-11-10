@@ -128,8 +128,9 @@ const EXPECTED: Record<string, { pages: string[]; actions: string[]; savePlayboo
     approvePlaybooks: false,
   },
   // The Supervisor role gives more than Finance on every page above, so the Supervisor's access stays.
+  // Onboarding: Finance views it (A16), so a Supervisor who also holds Finance keeps that view.
   SupFinance: {
-    pages: ["/dashboard", "/tickets", "/direct-bookings", "/direct-bookings/settings", "/vendors", "/work-orders", "/work-orders/manager", "/team", "/playbooks", "/ticket-checklists", "/oversight", "/supervisor-check", "/analytics", "/ops-analytics", "/finance", "/owner-library", "/owner-analytics", "/owner-programs", "/owner-report-wording", "/properties", "/admin", "/owner", "/databases", "/team-queue", "/handoffs", "/help-tickets", "/claims", "/recovery", "/property/home"],
+    pages: ["/dashboard", "/tickets", "/direct-bookings", "/direct-bookings/settings", "/vendors", "/work-orders", "/work-orders/manager", "/team", "/playbooks", "/ticket-checklists", "/oversight", "/supervisor-check", "/analytics", "/ops-analytics", "/finance", "/owner-library", "/owner-analytics", "/owner-programs", "/owner-report-wording", "/onboarding", "/properties", "/admin", "/owner", "/databases", "/team-queue", "/handoffs", "/help-tickets", "/claims", "/recovery", "/property/home"],
     actions: ["ops_user_invite", "vendor_admin", "work_orders_internal", "finance_workspace", "owner_program_admin", "owner_insight_view", "playbooks_edit", "user_management", "team_schedule_view", "oversight", "analytics", "direct_bookings_work", "leads_work", "team_queue", "routines"],
     savePlaybooks: true,
     approvePlaybooks: true,
