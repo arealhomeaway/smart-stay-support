@@ -21,6 +21,8 @@ import { importTeamGroup } from "@/lib/notion-import/mapping";
 export const NOTION_RECENT_DAYS = 30;
 /** Written to tickets.external_status by the reopen action. */
 export const NOTION_LIVE_STATUS = "reopened_in_resolve";
+/** The hold value move_notion_to_queue writes (docs/pending/build9/04). Never set before that step is applied. */
+export const NOTION_IN_QUEUE_HOLD = "in_queue";
 export const NOTION_REOPEN_HISTORY_LINE = "Reopened from Notion history";
 export const NOTION_TAKEN_HISTORY_LINE = "Taken from the Notion import";
 
@@ -39,6 +41,8 @@ export function notionTicketState(t: NotionTicketLike, now: number = Date.now())
   if (t.external_status === NOTION_LIVE_STATUS) return "live";
   if (!OPEN_STATUSES.includes(t.status)) return "historical";
   // The import holds every older open ticket (and any with a blank created date) as Backlog review.
+  // Moved to the Team Queue by the Supervisor or a Director (Build 9 B1): quiet like a recent import.
+  if (t.import_hold === NOTION_IN_QUEUE_HOLD) return "recent_open";
   if (t.import_hold === "backlog_review") return "older_open";
   const created = Date.parse(t.reported_at ?? "");
   if (!Number.isFinite(created)) return "older_open";

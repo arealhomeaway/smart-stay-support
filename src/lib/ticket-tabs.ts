@@ -255,3 +255,25 @@ export const NEEDS_HOME_COPY = {
   saved: (ref: string) => `Ticket ${ref ? `#${ref} ` : ""}now has its home.`,
   who: "An Operations Supervisor or an Admin chooses the home.",
 } as const;
+
+/* ---------- Move to queue (Build 9 B1) ---------- */
+
+export const MOVE_TO_QUEUE_COPY = {
+  button: (n: number) => (n === 1 ? "Move 1 ticket to the queue" : `Move ${n} tickets to the queue`),
+  selectAll: "Select all shown",
+  clear: "Clear",
+  pick: (ref: string) => `Pick ticket ${ref}`,
+  moved: (n: number) => (n === 1 ? "1 ticket moved to the Team Queue." : `${n} tickets moved to the Team Queue.`),
+  needsHome: "Choose the home first.",
+} as const;
+
+/** An older open Notion import the Operations Supervisor or a Director may move into the Team Queue. */
+export function movableToQueue(t: TicketFacts, now: number = Date.now()): boolean {
+  return notionTicketState(t, now) === "older_open" && t.import_hold !== "needs_home";
+}
+
+/** Who sees Move to queue: the Operations Supervisor, the Director of Operations and the Director of Onboarding. */
+export function canMoveToQueue(seats: { opsSupervisor?: boolean; opsDirector?: boolean; onboardingDirector?: boolean }, readOnly: boolean): boolean {
+  return !readOnly && Boolean(seats.opsSupervisor || seats.opsDirector || seats.onboardingDirector);
+}
+
