@@ -120,8 +120,9 @@ const directorThreeGoals = async (start: string, vendorValue: number) => {
     [DIROPS, start, await goalId("director_ops", "guest_issues_fixed")]);
   await db.query(`SELECT public.bonus_enter_measure('director_ops', $1, $2::date, $3, $4, 'Coverage count', 'https://example.com/sheet')`,
     [DIROPS, start, await goalId("director_ops", "vendor_coverage"), vendorValue]);
-  await db.query(`SELECT public.bonus_save_priority(NULL, $1, $2::date, 'Vendor bench', 100, 'result_agreed', $3::date, 'Agreed result')`,
-    [DIROPS, start, start]);
+  // Accepted before the period starts and used for 30 days inside it.
+  await db.query(`SELECT public.bonus_save_priority(NULL, $1, $2::date, 'Vendor bench', 100, 'result_agreed', ($2::date - 5), 'Agreed result')`,
+    [DIROPS, start]);
 };
 
 describe("bonus engine (01)", () => {
@@ -257,8 +258,8 @@ describe("bonus engine (01)", () => {
     // The same team score for every coordinator.
     const pc2 = await compute("coordinator", PC2, "2026-11-01", "2026-12-02T12:00:00Z");
     expect(goal(pc2, "homes_ready").value).toEqual(goal(pc, "homes_ready").value);
-    // Personal follow through is each coordinator's own tickets.
-    expect(goal(pc, "follow_through").denominator).toBe(1);
+    // Personal follow through is each coordinator's own tickets (counting moved to Nov 1 here, so Nov 12 counts).
+    expect(goal(pc, "follow_through").denominator).toBe(2);
     expect(goal(pc2, "follow_through").numerator).toBe(0);
   });
 
@@ -358,7 +359,7 @@ describe("bonus engine (01)", () => {
 
   it("a period that has not ended cannot be verified", async () => {
     await as(DIROPS);
-    expect(await err(`SELECT public.bonus_verify('ops_supervisor', $1, '2027-12-01')`, [SUP])).toContain("not found");
+    expect(await err(`SELECT public.bonus_verify('ops_supervisor', $1, '2027-12-02')`, [SUP])).toContain("not found");
     await db.exec(`INSERT INTO public.bonus_period_amounts (plan_code, period_start, period_end, label, amount_goal_met, amount_strong, amount_exceeds)
                    VALUES ('ops_supervisor', '2099-01-01', '2099-01-31', 'Future', 1, 2, 3)`);
     expect(await err(`SELECT public.bonus_verify('ops_supervisor', $1, '2099-01-01')`, [SUP])).toContain("has not ended yet");
