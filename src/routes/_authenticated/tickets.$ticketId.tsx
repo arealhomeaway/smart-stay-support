@@ -1391,7 +1391,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
 
 
               {/* Build 12 (register BN10): the arrival check steps. */}
-              {isArrivalCheckTicket(ticket) && <ArrivalCheckPanel ticketId={ticket.id} readOnly={role.readOnly} />}
+              {isArrivalCheckTicket(ticket) && <ArrivalCheckPanel ticketId={ticket.id} propertyId={ticket.property_id ?? null} readOnly={role.readOnly} />}
               {(ticket as { guest_feedback_id?: string | null }).guest_feedback_id && (
                 <div className="mt-2">
                   <GuestFeedbackFollowUpPanel
