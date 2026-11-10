@@ -233,6 +233,8 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     // Register E1 (a): an email test ticket also opens in the real lens for the people who
     // run the test plan; for everyone else it stays out of reach.
     queryKey: ["ticket", ticketId, demoMode, seesTests],
+    // Wait for roles, so a test ticket never reads as unavailable to the test plan roles.
+    enabled: !role.isLoading,
     queryFn: async () => {
       const [ticket, steps, activity] = await Promise.all([
         supabase
@@ -465,7 +467,10 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     else navigate({ to: "/tickets", replace: true });
   }, [onClose, demoReady, isLoading, data, demoMode, demoMismatch, navigate, otherLens, otherLensLoading]);
 
-  if (availability === "unavailable" && !(notHere && !isError && otherLensLoading))
+  // Shown only once the answer is known: never while the ticket or the other lens is loading.
+  const availabilitySettled =
+    !isLoading && !role.isLoading && Boolean(data || isError) && !(notHere && !isError && otherLensLoading);
+  if (availability === "unavailable" && availabilitySettled)
     return (
       <div className="mx-auto max-w-md space-y-4 rounded-lg border border-border p-8 text-center" data-testid="ticket-unavailable">
         <p className="font-display text-lg font-semibold">{TICKET_UNAVAILABLE}</p>
