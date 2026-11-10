@@ -342,7 +342,6 @@ export function RecoveryDrawer({
             <div className="rounded-md border bg-muted/40 p-3 text-xs">
               <p className="text-sm font-medium">{verdict.label}</p>
               <p className="text-muted-foreground">{verdict.reason}</p>
-              <p className="mt-1 text-muted-foreground">{POLICY_VERSION}</p>
             </div>
 
             <div className="space-y-1">

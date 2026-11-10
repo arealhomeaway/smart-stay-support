@@ -21,7 +21,6 @@ import { useRole } from "@/hooks/useRole";
 import type { RequirementLike } from "@/lib/claims";
 import {
   MANAGER_FILTER_LABELS,
-  POLICY_VERSION,
   matchesManagerFilter,
   recoverySort,
   repeatProperties,
@@ -108,7 +107,6 @@ function RecoveryManager() {
         </SectionCard>
       ) : null}
 
-      <p className="text-xs text-muted-foreground">{POLICY_VERSION}</p>
     </div>
   );
 }

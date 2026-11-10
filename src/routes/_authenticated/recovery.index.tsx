@@ -21,7 +21,6 @@ import type { RequirementLike } from "@/lib/claims";
 import {
   BUCKET_LABELS,
   BUCKET_ORDER,
-  POLICY_VERSION,
   formatMoney,
   isOpenRecovery,
   recoveryBucket,
@@ -123,7 +122,6 @@ function RecoveryHome() {
         })
       )}
 
-      <p className="text-xs text-muted-foreground">{POLICY_VERSION}</p>
     </div>
   );
 }
