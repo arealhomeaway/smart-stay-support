@@ -209,16 +209,34 @@ export const listDirectBookings = createServerFn({ method: "POST" })
         .order("created_at", { ascending: false })
         .limit(200),
     );
-    const [isSupervisor, isDirector, settings] = await Promise.all([
+    const [isSupervisor, isDirector, settings, seesTests] = await Promise.all([
       holds(db, context.userId, "ops_supervisor"),
       holds(db, context.userId, "director_ops"),
       loadSettings(db),
+      data.demo ? Promise.resolve(false) : canSeeEmailTests(db, context.userId),
     ]);
     if (current.error && notReady(current.error)) {
-      return { ready: false as const, requests: [], pending: [] as string[], pendingApprovals: [], past: past.data ?? [], isSupervisor, isDirector, settings };
+      return { ready: false as const, requests: [], tests: [] as DirectBookingRow[], pending: [] as string[], pendingApprovals: [], past: past.data ?? [], isSupervisor, isDirector, settings };
     }
     if (current.error) throw new Error(current.error.message);
     const rows = (current.data ?? []) as unknown as DirectBookingRow[];
+    // Register E1 (a): email test requests, for the people who run the test plan only, in their
+    // own list so they never reach a count, a tile or the approval strip.
+    let tests: DirectBookingRow[] = [];
+    if (seesTests) {
+      const read = await selectLeads(db, (cols) =>
+        db
+          .from("leads")
+          .select(cols as never)
+          .eq("is_demo", true)
+          .eq("kind" as never, "direct_booking" as never)
+          .eq("source_detail->>email_test" as never, "true" as never)
+          .order("created_at", { ascending: false })
+          .limit(50),
+      );
+      tests = ((read.error ? [] : read.data) ?? []) as unknown as DirectBookingRow[];
+      tests = tests.filter((t) => isEmailTestLead(t));
+    }
     const approvals = await (db as unknown as Client)
       .from("direct_booking_approvals" as never)
       .select("lead_id, requested_at")
@@ -229,6 +247,7 @@ export const listDirectBookings = createServerFn({ method: "POST" })
     return {
       ready: true as const,
       requests: rows,
+      tests,
       pending: pendingApprovals.map((a) => a.lead_id),
       pendingApprovals,
       past: pastRows,
@@ -249,6 +268,10 @@ export const getDirectBooking = createServerFn({ method: "POST" })
     if (read.error) throw new Error(read.error.message);
     if (!read.data) throw new Error("This request was not found.");
     const lead = read.data as unknown as DirectBookingRow;
+    // Register E1 (a): an email test request is hidden from anyone outside the test plan.
+    if (isEmailTestLead(lead) && !(await canSeeEmailTests(db, context.userId))) {
+      throw new Error("This request was not found.");
+    }
     // Never show a link whose host is not on the partner list.
     lead.portal_link = portalLinkFrom(lead.portal_link);
     const settings = await loadSettings(db);
