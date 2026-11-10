@@ -1,5 +1,12 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 9 portal requests in Direct Bookings (staged and applied, no publish)
+- [x] 1 Partner portal link from HTML href and text, allowlist only, Open in partner portal button
+- [x] 2 No reply sender guard: warning, send buttons off, server refuses
+- [x] 3 I answered in the partner's portal: note, Copy the reply, clock stops, Quote sent, 48 h follow up, one history line, approval period, method column, Supervisor or Admin correction
+- [x] 4 Tests and a cancelled real database step
+- [x] 5 Register D8 line
+
 ## Nov 9 email intake safety batch (switch stays OFF, sweep stays disabled, no real mail)
 - [x] 1 Switch is real on every path (push, sweep, Run intake now, Preview, Refresh notifications)
 - [x] 2 Turning on moves the start line (forward only), who and when recorded

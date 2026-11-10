@@ -7301,6 +7301,10 @@ export type Database = {
           partner_name: string | null
           pets: boolean | null
           phone: string | null
+          portal_answer_note: string | null
+          portal_answered_at: string | null
+          portal_answered_by: string | null
+          portal_link: string | null
           preferred_bedrooms: number | null
           preferred_channel: Database["public"]["Enums"]["lead_channel"] | null
           quote_amount: number | null
@@ -7308,6 +7312,7 @@ export type Database = {
           quote_sent_at: string | null
           reply_body: string | null
           reply_cc: string[] | null
+          reply_method: string | null
           reply_sent_at: string | null
           reply_sent_by: string | null
           reply_sent_via: string | null
@@ -7378,6 +7383,10 @@ export type Database = {
           partner_name?: string | null
           pets?: boolean | null
           phone?: string | null
+          portal_answer_note?: string | null
+          portal_answered_at?: string | null
+          portal_answered_by?: string | null
+          portal_link?: string | null
           preferred_bedrooms?: number | null
           preferred_channel?: Database["public"]["Enums"]["lead_channel"] | null
           quote_amount?: number | null
@@ -7385,6 +7394,7 @@ export type Database = {
           quote_sent_at?: string | null
           reply_body?: string | null
           reply_cc?: string[] | null
+          reply_method?: string | null
           reply_sent_at?: string | null
           reply_sent_by?: string | null
           reply_sent_via?: string | null
@@ -7455,6 +7465,10 @@ export type Database = {
           partner_name?: string | null
           pets?: boolean | null
           phone?: string | null
+          portal_answer_note?: string | null
+          portal_answered_at?: string | null
+          portal_answered_by?: string | null
+          portal_link?: string | null
           preferred_bedrooms?: number | null
           preferred_channel?: Database["public"]["Enums"]["lead_channel"] | null
           quote_amount?: number | null
@@ -7462,6 +7476,7 @@ export type Database = {
           quote_sent_at?: string | null
           reply_body?: string | null
           reply_cc?: string[] | null
+          reply_method?: string | null
           reply_sent_at?: string | null
           reply_sent_by?: string | null
           reply_sent_via?: string | null
@@ -17001,6 +17016,15 @@ export type Database = {
         Args: { _action: string; _id: string; _note: string; _send_on: string }
         Returns: undefined
       }
+      answer_direct_booking_in_portal: {
+        Args: {
+          _lead_id: string
+          _note: string
+          _property_ids?: string[]
+          _reply?: Json
+        }
+        Returns: string
+      }
       answer_expense_clarification: {
         Args: { _answer: string; _work_item: string }
         Returns: undefined
@@ -17449,6 +17473,10 @@ export type Database = {
           _worker_id: string
         }
         Returns: string
+      }
+      correct_direct_booking_portal_answer: {
+        Args: { _lead_id: string; _reason: string }
+        Returns: undefined
       }
       correct_owner_time_entry: {
         Args: {

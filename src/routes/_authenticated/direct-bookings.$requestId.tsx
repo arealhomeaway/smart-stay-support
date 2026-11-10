@@ -14,9 +14,13 @@ import { cn } from "@/lib/utils";
 import { HomePhoto } from "@/components/property/HomePhoto";
 import { SearchMap } from "@/components/direct-bookings/SearchMap";
 import { MAP_COPY, noLocationLine, splitMappable } from "@/lib/search-map";
+import { NoReplyWarning, PartnerPortalButton, PortalAnswerPanel } from "@/components/direct-bookings/PortalAnswer";
+import { copyReplyText, isNoReplyAddress, PORTAL_COPY, replyAddressState } from "@/lib/portal-requests";
 import {
   checkDirectBookingApprovals,
+  answerDirectBookingInPortal,
   checkDirectBookingPartnerReply,
+  correctDirectBookingPortalAnswer,
   decideDirectBookingApproval,
   getDirectBooking,
   markDirectBookingOutcome,
@@ -176,6 +180,7 @@ function RequestView({ d, refetch }: { d: Detail; refetch: () => void }) {
           <StatusBadge tone={chip.tone} className="text-[13px] font-semibold">{chip.text}</StatusBadge>
         </div>
         <span className="text-sm text-muted-foreground">{lead.subject || "Request entered by hand"}</span>
+        <PartnerPortalButton href={lead.portal_link} className="mt-1" />
       </div>
 
       {!lead.owned_by ? (
@@ -198,7 +203,10 @@ function RequestView({ d, refetch }: { d: Detail; refetch: () => void }) {
         <p className="text-sm text-muted-foreground">{DB_COPY.ownedByOther}</p>
       ) : null}
 
-      {lead.reply_sent_at ? <SentBanner d={d} /> : null}
+      {lead.reply_sent_at ? <SentBanner d={d} onDone={refetch} /> : null}
+      {lead.reply_sent_at && mine && lead.reply_method !== "portal" && !lead.portal_answered_at && !lead.outcome ? (
+        <PortalSection d={d} picked={[]} body={lead.reply_body ?? ""} subject={lead.reply_subject ?? ""} startOpen={Boolean(lead.portal_link)} onDone={refetch} />
+      ) : null}
       {lostOpen && !lead.outcome ? <NotBookedPanel d={d} onClose={() => setLostOpen(false)} onDone={refetch} /> : null}
       {status === "partner_approved" ? <ApprovedPanel d={d} onLost={() => setLostOpen(true)} onDone={refetch} /> : null}
       {status === "sent" ? <FollowUpPanel d={d} onLost={() => setLostOpen(true)} onDone={refetch} /> : null}
@@ -217,19 +225,144 @@ function RequestView({ d, refetch }: { d: Detail; refetch: () => void }) {
   );
 }
 
-function SentBanner({ d }: { d: Detail }) {
+function SentBanner({ d, onDone }: { d: Detail; onDone: () => void }) {
   const lead = d.lead;
   const took = replyClock(clockStart(lead, d.settings.overnightClockStart), lead.reply_sent_at, new Date(), d.settings.replyTargetMinutes);
   const due = followUpDueAt(lead);
+  const inPortal = lead.reply_method === "portal";
   const parts = [
-    `Sent in ${clockLabel(took.seconds)}${lead.reply_sent_via === "manual" ? " from Outlook" : ""}.`,
+    inPortal ? null : `Sent in ${clockLabel(took.seconds)}${lead.reply_sent_via === "manual" ? " from Outlook" : ""}.`,
+    !inPortal && lead.portal_answered_at ? PORTAL_COPY.alsoPortal : null,
+    lead.portal_answered_at && lead.portal_answer_note ? `${PORTAL_COPY.noteLabel}: ${lead.portal_answer_note}.` : null,
     lead.last_follow_up_at ? `Last follow-up ${new Date(lead.last_follow_up_at).toLocaleString()}.` : null,
     !lead.outcome && !lead.partner_approved_at && due ? `Follow up ${new Date(due).toLocaleDateString(undefined, { month: "short", day: "numeric" })}.` : null,
   ].filter(Boolean);
   return (
-    <div className="rounded-2xl border border-sage/40 bg-sage/10 p-[18px] text-[15px]">
-      <strong>{DB_COPY.replySent}</strong> {parts.join(" ")}
+    <div className="flex flex-col gap-2.5 rounded-2xl border border-sage/40 bg-sage/10 p-[18px] text-[15px]">
+      <span>
+        <strong>{inPortal ? PORTAL_COPY.sentInPortal(clockLabel(took.seconds)) : DB_COPY.replySent}</strong> {parts.join(" ")}
+      </span>
+      {lead.portal_answered_at && !lead.outcome && d.canCorrectPortal ? <PortalCorrection id={lead.id} onDone={onDone} /> : null}
     </div>
+  );
+}
+
+/** The Operations Supervisor or an Admin corrects a portal answer, with a reason. */
+function PortalCorrection({ id, onDone }: { id: string; onDone: () => void }) {
+  const correct = useServerFn(correctDirectBookingPortalAnswer);
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  if (!open)
+    return (
+      <div>
+        <Button variant="outline" className={cn(BTN, "border-primary text-primary")} onClick={() => setOpen(true)}>{PORTAL_COPY.correct}</Button>
+      </div>
+    );
+  return (
+    <div className="flex flex-col gap-2">
+      <strong className="text-sm">{PORTAL_COPY.correctTitle}</strong>
+      <label className="flex flex-col gap-1 text-xs">
+        {PORTAL_COPY.correctReason}
+        <Input className={FIELD} value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} />
+      </label>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          className={BTN}
+          disabled={busy || reason.trim().length < 3}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              await correct({ data: { id, reason } });
+              toast.success(PORTAL_COPY.corrected);
+              setOpen(false);
+              onDone();
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Could not save.");
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          {PORTAL_COPY.correctSave}
+        </Button>
+        <Button variant="outline" className={BTN} disabled={busy} onClick={() => setOpen(false)}>Cancel</Button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Answer in the partner's portal: open when the request has a portal link or
+ * the sender reads no replies, otherwise behind one small button.
+ */
+function PortalSection({ d, picked, body, subject, startOpen, onDone, to }: { d: Detail; picked: Home[]; body: string; subject: string; startOpen: boolean; onDone: () => void; to?: string | undefined }) {
+  const lead = d.lead;
+  const answer = useServerFn(answerDirectBookingInPortal);
+  const submit = useServerFn(submitDirectBookingReply);
+  const [open, setOpen] = useState(startOpen);
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { if (startOpen) setOpen(true); }, [startOpen]);
+  if (!open)
+    return (
+      <div>
+        <Button variant="link" className="h-11 px-0 text-primary" onClick={() => setOpen(true)}>{PORTAL_COPY.showSection}</Button>
+      </div>
+    );
+  // The approved text when a supervisor checked it, otherwise the reply as it reads now.
+  const text = d.approvedQuote && lead.reply_body ? lead.reply_body : body;
+  const run = async (fn: () => Promise<void>) => {
+    setBusy(true);
+    try {
+      await fn();
+      onDone();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not save.");
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <PortalAnswerPanel
+      state={{
+        approvalRequiredNow: d.approvalRequiredNow,
+        approved: d.approvedQuote,
+        pending: Boolean(d.pending),
+        replySent: Boolean(lead.reply_sent_at),
+        portalAnswered: Boolean(lead.portal_answered_at),
+        finished: Boolean(lead.outcome),
+        homesPicked: picked.length,
+        note,
+      }}
+      approvedForPortal={d.approvedForPortal}
+      note={note}
+      onNote={setNote}
+      busy={busy}
+      onCopy={() => {
+        copyReplyText(text, navigator.clipboard).then(() => toast.success(PORTAL_COPY.copied)).catch(() => toast.error("Could not copy."));
+      }}
+      onAskOk={() =>
+        run(async () => {
+          const r = await submit({ data: { id: lead.id, subject, body, propertyIds: picked.map((p) => p.id), portal: true, to } });
+          if (r.state === "waiting_approval") toast.success("Sent to a supervisor for OK.");
+          else toast.info("No OK is needed now. Answer in the partner's portal.");
+        })
+      }
+      onAnswer={() =>
+        run(async () => {
+          const fresh = !lead.reply_sent_at && !d.approvedQuote;
+          await answer({
+            data: {
+              id: lead.id,
+              note,
+              ...(fresh ? { subject, body, propertyIds: picked.map((p) => p.id) } : {}),
+            },
+          });
+          toast.success(PORTAL_COPY.answered);
+        })
+      }
+    />
   );
 }
 
@@ -367,6 +500,8 @@ function FollowUpPanel({ d, onLost, onDone }: { d: Detail; onLost: () => void; o
   const values = { contact_name: lead.contact_name ?? "there", dates: dates || "your dates", sender_name: d.myName };
   const [body, setBody] = useState(() => fillTemplate(template?.body ?? DEFAULT_FOLLOW_UP_TEMPLATE, values));
   const [busy, setBusy] = useState(false);
+  // A no reply sender: the follow-up is not emailed; copy it into the portal instead.
+  const noReply = isNoReplyAddress(lead.reply_to || lead.email);
   const run = async (fn: () => Promise<unknown>, done: string) => {
     setBusy(true);
     try {
@@ -395,9 +530,10 @@ function FollowUpPanel({ d, onLost, onDone }: { d: Detail; onLost: () => void; o
       <Panel tone="plain">
         <strong className="text-base">{DB_COPY.followTitle}</strong>
         <span className="text-[13px] text-muted-foreground">{DB_COPY.followHint}</span>
+        {noReply ? <NoReplyWarning /> : null}
         <Textarea aria-label="Follow-up" className="min-h-[110px] text-sm leading-relaxed" value={body} onChange={(e) => setBody(e.target.value)} />
         <div className="flex flex-wrap gap-2">
-          {d.mailboxConnected ? (
+          {d.mailboxConnected && !noReply ? (
             <Button
               className={BIG}
               disabled={busy || !body.trim()}
@@ -434,6 +570,7 @@ function ApprovalBanner({ d, refetch }: { d: Detail; refetch: () => void }) {
     try {
       const r = await decide({ data: { id: d.lead.id, decision, note: decision === "sent_back" ? note : undefined } });
       if (r.state === "sent") toast.success("Reply sent.");
+      else if (r.state === "approved_for_portal") toast.success(PORTAL_COPY.approverToast);
       else if (r.state === "approved_not_sent") toast.warning(`Approved. ${r.detail} The coordinator can copy the reply and send it from Outlook.`);
       else toast.success("Sent back to edit.");
       setBackOpen(false);
@@ -450,6 +587,7 @@ function ApprovalBanner({ d, refetch }: { d: Detail; refetch: () => void }) {
       {d.canApprove ? (
         <>
           <span className="text-sm">{DB_COPY.approvalSupervisor}</span>
+          {d.pending?.portal ? <strong className="text-sm">{PORTAL_COPY.approverLine}</strong> : null}
           {referralSourceWarning(d.lead.inquiry_source_id) ? (
             <strong role="status" className="text-sm">{referralSourceWarning(d.lead.inquiry_source_id)}</strong>
           ) : null}
@@ -788,12 +926,18 @@ function ReplySection({ d, editable, picked, partner, onDone }: { d: Detail; edi
   }, [built, touched, lead.reply_body]);
   const [busy, setBusy] = useState(false);
   const [notSent, setNotSent] = useState(false);
-  const to = lead.reply_to ?? lead.email ?? "";
+  const saved = lead.reply_to ?? lead.email ?? "";
+  // A no reply sender is never a reply address: the send buttons stay off until another address is typed.
+  const [typedTo, setTypedTo] = useState("");
+  const address = replyAddressState(saved, typedTo);
+  const to = address.to;
+  const askForAddress = isNoReplyAddress(saved);
+  const toForServer = address.typedUsed ? address.to : undefined;
 
   async function send() {
     setBusy(true);
     try {
-      const r = await submit({ data: { id: lead.id, subject, body, propertyIds: picked.map((p) => p.id) } });
+      const r = await submit({ data: { id: lead.id, subject, body, propertyIds: picked.map((p) => p.id), to: toForServer } });
       if (r.state === "waiting_approval") toast.success("Sent to a supervisor for OK. It sends the moment they approve.");
       else if (r.state === "sent") toast.success("Reply sent.");
       else {
@@ -819,6 +963,20 @@ function ReplySection({ d, editable, picked, partner, onDone }: { d: Detail; edi
         <span>Subject: <strong className="text-foreground">{subject}</strong></span>
         <span>Cc: <strong className="text-foreground">{CC_ROLE_LINE}</strong></span>
       </div>
+      {address.warning ? <NoReplyWarning /> : null}
+      {askForAddress && editable ? (
+        <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+          {PORTAL_COPY.replyToLabel}
+          <Input
+            aria-label={PORTAL_COPY.replyToLabel}
+            type="email"
+            className={cn(FIELD, "text-foreground sm:max-w-[360px]")}
+            placeholder={PORTAL_COPY.replyToPlaceholder}
+            value={typedTo}
+            onChange={(e) => setTypedTo(e.target.value)}
+          />
+        </label>
+      ) : null}
       {sourceWarning ? (
         <p role="status" className="rounded-lg border border-amber/40 bg-amber/10 px-3 py-2 text-sm">{sourceWarning}</p>
       ) : null}
@@ -831,7 +989,7 @@ function ReplySection({ d, editable, picked, partner, onDone }: { d: Detail; edi
       />
       <div className="flex flex-wrap items-center gap-2.5">
         {editable ? (
-          <Button className="min-h-[52px] px-7 text-base font-semibold" disabled={busy || picked.length === 0 || !to} onClick={send}>
+          <Button className="min-h-[52px] px-7 text-base font-semibold" disabled={busy || picked.length === 0 || !to || address.blocked} onClick={send}>
             {d.approvalRequiredNow ? DB_COPY.sendForOk : DB_COPY.sendReply}
           </Button>
         ) : null}
@@ -844,7 +1002,7 @@ function ReplySection({ d, editable, picked, partner, onDone }: { d: Detail; edi
             <Button
               variant="outline"
               className={BTN}
-              disabled={busy}
+              disabled={busy || address.blocked}
               onClick={async () => {
                 try {
                   await byHand({ data: { id: lead.id } });
@@ -860,6 +1018,9 @@ function ReplySection({ d, editable, picked, partner, onDone }: { d: Detail; edi
           </>
         ) : null}
       </div>
+      {lead.owned_by === d.me ? (
+        <PortalSection d={d} picked={picked} body={body} subject={subject} startOpen={Boolean(lead.portal_link) || askForAddress} onDone={onDone} to={toForServer} />
+      ) : null}
     </Section>
   );
 }

@@ -213,7 +213,9 @@ describe("5. Reply wording and the referral source warning", () => {
     expect(approval).toContain("referralSourceWarning(d.lead.inquiry_source_id)");
     const reply = page.slice(page.indexOf("function ReplySection"));
     expect(reply).toContain("const sourceWarning = referralSourceWarning(lead.inquiry_source_id);");
-    expect(reply).toContain("disabled={busy || picked.length === 0 || !to}");
+    // The send button: the referral source never turns it off (only the no reply guard was added, Nov 9, D8).
+    expect(reply).toContain("disabled={busy || picked.length === 0 || !to || address.blocked}");
+    expect(reply).not.toMatch(/disabled=\{[^}]*sourceWarning/);
   });
 });
 

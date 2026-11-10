@@ -8,6 +8,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { mailboxGraph, mailboxReadEnabled } from "./mailbox.server";
 import { mailboxMessagesPath, mailboxRoot } from "./mailbox-allowlist.server";
 import { verifyEmailSafety } from "./email-safety.server";
+import { NO_REPLY_WARNING, isNoReplyAddress } from "./portal-requests";
 
 export type OutgoingReply = { to: string; cc: string[]; subject: string; body: string };
 export type SendOutcome = { sent: true } | { sent: false; reason: "not_connected" | "blocked" | "failed"; detail: string };
@@ -24,6 +25,8 @@ export async function sendDirectBookingEmail(
   db: SupabaseClient,
   input: OutgoingReply & { leadId: string; threadMessageId: string | null; isDemo: boolean; sentBy: string },
 ): Promise<SendOutcome> {
+  // A no reply sender is never a reply address (register D8), checked again here.
+  if (isNoReplyAddress(input.to)) throw new Error(NO_REPLY_WARNING);
   if (!mailboxReadEnabled()) return { sent: false, reason: "not_connected", detail: "The team mailbox is not connected." };
   // The database guard has no "lead" record type, so naming one would refuse
   // every send. The demo check runs here from the saved lead (isDemo, read by

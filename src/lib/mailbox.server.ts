@@ -698,7 +698,13 @@ export async function processMessage(
 
   try {
     if (trigger === "lead") {
-      const lead = await createLeadFromEmail(db, { subject, body, source, isTest });
+      const lead = await createLeadFromEmail(db, {
+        subject,
+        body,
+        source,
+        isTest,
+        raw: { content: msg.body?.content ?? msg.bodyPreview ?? "", contentType: msg.body?.contentType ?? null },
+      });
       const tagged = await setCategories(msg.id, categoriesAfterCreate(msg.categories));
       await settleClaim(db, messageIds, {
         status: "created",
