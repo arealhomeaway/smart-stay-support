@@ -258,7 +258,7 @@ function ItemCard({ item, period, current, canDecide, onOpen, onDone }: {
           {disp === "exclude" ? <Input aria-label="Exclusion treatment" placeholder="Recorded financial treatment" value={excl} onChange={(e) => setExcl(e.target.value)} /> : null}
           {disp === "include" && needsTreatment ? <Input aria-label="Recovery treatment" placeholder="Finance treatment of the outstanding recovery / open claim" value={recTreat} onChange={(e) => setRecTreat(e.target.value)} /> : null}
           {disp === "include" && !docReady ? (
-            <p className="text-xs text-destructive sm:col-span-2" role="status">Include is unavailable: documentation is incomplete: missing {docMissing.join(", ")}. Hold it until Operations supplies the missing facts.</p>
+            <p className="text-xs text-destructive sm:col-span-2" role="status">Include is unavailable. Documentation is incomplete, missing {docMissing.join(", ")}. Hold it until Operations supplies the missing facts.</p>
           ) : null}
           <Button size="sm" className="sm:col-span-2" disabled={save.isPending || (disp === "include" && (!docReady || authQ.isLoading))} onClick={() => save.mutate()}>Record disposition</Button>
         </div>

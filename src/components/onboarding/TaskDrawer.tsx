@@ -346,7 +346,7 @@ export function TaskDrawer({
       readOnly={disabled}
       successMessage={
         nextTask && action.id === "complete_task"
-          ? `Step recorded: next: ${nextTask.title}`
+          ? `Step recorded. Next: ${nextTask.title}`
           : "Step recorded."
       }
       onHandoff={() =>

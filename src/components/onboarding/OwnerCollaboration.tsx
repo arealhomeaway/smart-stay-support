@@ -171,7 +171,7 @@ export function OpportunityDetail({ o, files, readOnly = false }: { o: CollabOpp
       {o.owner_response.filter((r) => r.task_approval).slice(-1).map((r, i) => (
         <p key={i} className="text-xs font-medium">
           {r.task_approval === "approved"
-            ? "Owner approval on this Task: approved: the Task can proceed."
+            ? "Owner approval on this Task: approved. The Task can proceed."
             : "Owner approval on this Task: still waiting for the homeowner's authorization."}
         </p>
       ))}
