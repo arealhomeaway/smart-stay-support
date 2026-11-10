@@ -21,7 +21,6 @@ import { listTables } from "@/lib/full-backup.server";
 import {
   EXPORT_PART_ROWS,
   EXPORT_SETTINGS_KEY,
-  FILES_FOLDER,
   INVENTORY_FILE,
   MANIFEST_FILE,
   SIMPLE_UPLOAD_MAX,
@@ -668,5 +667,3 @@ export async function removeTestExportFolder(db: Db, runId: string, io?: SharePo
   await db.from("backup_runs").update({ pruned_at: new Date().toISOString() }).eq("id", runId);
   return { ok: true as const };
 }
-
-export { FILES_FOLDER };
