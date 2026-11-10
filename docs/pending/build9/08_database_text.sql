@@ -61,7 +61,7 @@ BEGIN
     END IF;
   END IF;
   routed_to := NULL; basis := 'exception';
-  note := 'No eligible supervisor could be found · leadership must route this waiver.';
+  note := 'No eligible supervisor could be found. Leadership must route this waiver.';
 END $function$;
 
 CREATE OR REPLACE FUNCTION public.decide_claim_waiver(_waiver_id uuid, _approve boolean, _notes text)
@@ -281,11 +281,11 @@ BEGIN
   ELSIF e.amount >= sup THEN who := 'supervisor';
   ELSE RETURN jsonb_build_object('required',false,'ok',true,'reason',
     CASE WHEN incl THEN 'Under $' || sup::text || ': it proceeds and the cost is recorded.'
-      ELSE 'Below the supervisor approval threshold · no approval required.' END);
+      ELSE 'Below the supervisor approval threshold. No approval required.' END);
   END IF;
   IF wo.id IS NOT NULL THEN
     IF coalesce(wo.authorization_stale,false) THEN
-      RETURN jsonb_build_object('required',true,'ok',false,'who',who,'reason','The Work Order approval no longer covers its vendor, scope or amount · it must be re-approved.');
+      RETURN jsonb_build_object('required',true,'ok',false,'who',who,'reason','The Work Order approval no longer covers its vendor, scope or amount. It must be re-approved.');
     END IF;
     IF who = 'owner' AND wo.approval_status = 'approved' THEN
       SELECT * INTO ap FROM public.approvals a WHERE a.id = wo.approval_id AND a.status = 'approved'
@@ -866,7 +866,7 @@ BEGIN
       'task:dur:'||_task, _task, NULL, s.breezeway_home_id, s.property_id, s.source_updated_at,
       jsonb_build_object('task', s.task_name, 'total_time', s.total_time, 'elapsed_seconds', secs, 'completed', comp_date), s.is_fixture);
   ELSE
-    PERFORM private.cleaner_close_review('task:dur:'||_task, 'Elapsed time now within 10 minutes · 8 hours');
+    PERFORM private.cleaner_close_review('task:dur:'||_task, 'Elapsed time now within 10 minutes to 8 hours');
   END IF;
   IF n_comp > 0 AND n_ind = 0 THEN
     PERFORM private.cleaner_open_review('company_only', 'task:company:'||_task, _task, NULL, s.breezeway_home_id, s.property_id,
@@ -928,7 +928,7 @@ BEGIN
       PERFORM public.notify_staff(_u, 'vendor_transitional_' || _th,
         CASE WHEN _th = 'ended' THEN r.display_name || ': Transitional Review ended'
              ELSE r.display_name || ': Transitional Review ends ' || to_char(r.transitional_deadline, 'FMMM/FMDD/YYYY') END,
-        CASE WHEN _th = 'ended' AND _clear THEN 'All Must Pass checks are complete. Set the right Gold Standard status · nothing was changed automatically.'
+        CASE WHEN _th = 'ended' AND _clear THEN 'All Must Pass checks are complete. Set the right Gold Standard status. Nothing was changed automatically.'
              WHEN _th = 'ended' THEN 'Must Pass checks are still missing, so this vendor can no longer be chosen for new work. Leadership review needed.'
              ELSE 'Finish the missing Must Pass checks before the deadline, or the vendor can no longer be chosen for new work.' END,
         'vendor', r.id, '/vendors/' || r.id, CASE WHEN _th IN ('1_day','ended') THEN 'urgent' ELSE 'normal' END,
@@ -990,7 +990,7 @@ BEGIN
     INSERT INTO public.ticket_activity(ticket_id, author_id, kind, body, event_type, event_at, is_demo, internal)
     VALUES (NEW.id, auth.uid(), 'note',
       'Potential insurance-related event: ' || COALESCE(initcap(NEW.insurance_risk), 'cleared') ||
-      CASE WHEN NEW.insurance_risk IN ('yes','unsure') THEN ' · flagged for supervisor visibility. No insurance action taken.' ELSE '' END,
+      CASE WHEN NEW.insurance_risk IN ('yes','unsure') THEN '. Flagged for supervisor visibility. No insurance action taken.' ELSE '' END,
       'insurance_risk', now(), COALESCE(NEW.is_demo,false), true);
   END IF;
   RETURN NEW;

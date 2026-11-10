@@ -6,7 +6,7 @@
 - `' — '` becomes `' · '`
 
 ## private.route_claim_waiver
-- `'No eligible supervisor could be found — leadership must route this waiver.'` becomes `'No eligible supervisor could be found · leadership must route this waiver.'`
+- `'No eligible supervisor could be found — leadership must route this waiver.'` becomes `'No eligible supervisor could be found. Leadership must route this waiver.'`
 
 ## public.decide_claim_waiver
 - `'Waiver approved — Finance treatment pending'` becomes `'Waiver approved · Finance treatment pending'`
@@ -29,8 +29,8 @@
 - `'Authorization is missing — %'` becomes `'Authorization is missing · %'`
 
 ## private.expense_authorization_detail
-- `'Below the supervisor approval threshold — no approval required.'` becomes `'Below the supervisor approval threshold · no approval required.'`
-- `'The Work Order approval no longer covers its vendor, scope or amount — it must be re-approved.'` becomes `'The Work Order approval no longer covers its vendor, scope or amount · it must be re-approved.'`
+- `'Below the supervisor approval threshold — no approval required.'` becomes `'Below the supervisor approval threshold. No approval required.'`
+- `'The Work Order approval no longer covers its vendor, scope or amount — it must be re-approved.'` becomes `'The Work Order approval no longer covers its vendor, scope or amount. It must be re-approved.'`
 
 ## public.wo_candidate_after
 - `' — '` becomes `' · '`
@@ -60,19 +60,19 @@
 - `' — estimate recorded'` becomes `' · estimate recorded'`
 
 ## private.cleaner_recompute_core
-- `'Elapsed time now within 10 minutes – 8 hours'` becomes `'Elapsed time now within 10 minutes · 8 hours'`
+- `'Elapsed time now within 10 minutes – 8 hours'` becomes `'Elapsed time now within 10 minutes to 8 hours'`
 
 ## public.cleaner_safeguard_weekly_digest
 - `' enrolled STR home(s). Open states — Warning: '` becomes `' enrolled STR home(s). Open states · Warning: '`
 
 ## public.vendor_transitional_sweep
-- `'All Must Pass checks are complete. Set the right Gold Standard status — nothing was changed automatically.'` becomes `'All Must Pass checks are complete. Set the right Gold Standard status · nothing was changed automatically.'`
+- `'All Must Pass checks are complete. Set the right Gold Standard status — nothing was changed automatically.'` becomes `'All Must Pass checks are complete. Set the right Gold Standard status. Nothing was changed automatically.'`
 
 ## public.request_new_vendor
 - `'No eligible vendor found — requested a new '` becomes `'No eligible vendor found · requested a new '`
 
 ## public.log_ticket_insurance_risk
-- `' — flagged for supervisor visibility. No insurance action taken.'` becomes `' · flagged for supervisor visibility. No insurance action taken.'`
+- `' — flagged for supervisor visibility. No insurance action taken.'` becomes `'. Flagged for supervisor visibility. No insurance action taken.'`
 
 ## public.create_departure_review_from_clean
 - `'Departure Review created — departure clean completed in Breezeway'` becomes `'Departure Review created · departure clean completed in Breezeway'`
