@@ -385,10 +385,10 @@ BEGIN
   IF coalesce((SELECT enabled FROM public.feature_flags WHERE key = 'internal_work_orders'), false) THEN
     RETURN NEW;
   END IF;
-  IF TG_TABLE_NAME = 'work_orders' AND coalesce(NEW.is_demo, false) THEN
-    RETURN NEW;
-  END IF;
   IF TG_TABLE_NAME = 'work_orders' THEN
+    IF coalesce(NEW.is_demo, false) THEN
+      RETURN NEW;
+    END IF;
     RAISE EXCEPTION 'Work orders are made in Breezeway for now. Link the Breezeway work order on the ticket.'
       USING ERRCODE = '42501';
   END IF;
