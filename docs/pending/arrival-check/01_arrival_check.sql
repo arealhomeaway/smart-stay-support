@@ -930,10 +930,4 @@ CREATE TRIGGER owner_reviews_skip_arrival_check
   FOR EACH ROW EXECUTE FUNCTION private.skip_arrival_check_owner_rows();
 
 -- 20. The every minute pass. It does nothing but test upkeep while the switch is off.
-DO $do$
-BEGIN
-  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
-    PERFORM cron.unschedule(jobid) FROM cron.job WHERE jobname = 'arrival-checks';
-    PERFORM cron.schedule('arrival-checks', '* * * * *', 'SELECT public.run_arrival_checks()');
-  END IF;
-END $do$;
+SELECT cron.schedule('arrival-checks', '* * * * *', $$SELECT public.run_arrival_checks()$$);

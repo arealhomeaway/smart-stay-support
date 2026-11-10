@@ -1,11 +1,6 @@
 -- Undo for 01_arrival_check.sql. Run only with Emily's approval. Kept records (checks, facts,
 -- tickets) are never deleted: tables are kept and only the steps that make new ones are removed.
-DO $do$
-BEGIN
-  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
-    PERFORM cron.unschedule(jobid) FROM cron.job WHERE jobname = 'arrival-checks';
-  END IF;
-END $do$;
+SELECT cron.unschedule('arrival-checks');
 DROP TRIGGER IF EXISTS owner_notifications_skip_arrival_check ON public.owner_notifications;
 DROP TRIGGER IF EXISTS owner_reviews_skip_arrival_check ON public.owner_reviews;
 DROP FUNCTION IF EXISTS private.skip_arrival_check_owner_rows();

@@ -21,7 +21,11 @@ const CENTRAL_HOME = "00000000-0000-4000-8000-000000000105"; // no zone, no time
 
 const STUBS = `
 CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
-CREATE SCHEMA auth; CREATE SCHEMA private;
+CREATE SCHEMA auth; CREATE SCHEMA private; CREATE SCHEMA cron;
+CREATE TABLE cron.jobs(name text PRIMARY KEY, schedule text, command text);
+CREATE FUNCTION cron.schedule(_n text, _s text, _c text) RETURNS bigint LANGUAGE sql AS
+  $$ INSERT INTO cron.jobs VALUES (_n, _s, _c) ON CONFLICT (name) DO UPDATE SET schedule = EXCLUDED.schedule RETURNING 1::bigint $$;
+CREATE FUNCTION cron.unschedule(_n text) RETURNS boolean LANGUAGE sql AS $$ DELETE FROM cron.jobs WHERE name = _n RETURNING true $$;
 CREATE TYPE public.app_role AS ENUM ('admin','manager','tech','onboarding');
 CREATE TABLE public.me(id uuid);
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT id FROM public.me LIMIT 1 $$;
@@ -136,6 +140,8 @@ describe("arrival check SQL (isolated)", () => {
 
   it("creates the switch off, the work type out of the problem list and the new fact kind", async () => {
     expect((await one(`SELECT enabled FROM public.feature_flags WHERE key='arrival_checks'`)).enabled).toBe(false);
+    expect(await one(`SELECT schedule, command FROM cron.jobs WHERE name='arrival-checks'`))
+      .toEqual({ schedule: "* * * * *", command: "SELECT public.run_arrival_checks()" });
     const wt = await one(`SELECT active, default_priority, team FROM public.work_types WHERE name='Arrival check'`);
     expect(wt).toEqual({ active: false, default_priority: "p2", team: "property_operations" });
     await db.exec(`INSERT INTO public.scorecard_records(kind, recorded_by) VALUES ('arrival_check', '${ADMIN}')`);
@@ -381,6 +387,7 @@ describe("arrival check SQL (isolated)", () => {
     await db.exec(readFileSync(`${DIR}/undo/01_arrival_check.sql`, "utf8"));
     expect((await one(`SELECT count(*)::int n FROM pg_proc WHERE proname LIKE '%arrival_check%'`)).n).toBeLessThanOrEqual(6);
     expect((await one(`SELECT count(*)::int n FROM public.arrival_checks`)).n).toBe(1);
+    expect((await one(`SELECT count(*)::int n FROM cron.jobs`)).n).toBe(0);
     expect((await one(`SELECT enabled FROM public.feature_flags WHERE key='arrival_checks'`)).enabled).toBe(false);
   });
 });
