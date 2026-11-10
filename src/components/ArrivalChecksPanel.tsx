@@ -136,7 +136,7 @@ export function ArrivalChecksPanel() {
       description="One check for each arriving home, at least 2 hours before check in. Only arrivals at least 2 hours after it is turned on."
       actions={
         s ? (
-          <StatusBadge tone={s.enabled ? "success" : "neutral"}>{s.enabled ? "On" : "Off"}</StatusBadge>
+          <StatusBadge tone={s.enabled ? "progress" : "waiting"}>{s.enabled ? "On" : "Off"}</StatusBadge>
         ) : null
       }
     >
