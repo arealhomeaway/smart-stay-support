@@ -1,5 +1,5 @@
 import { EmailTestChip } from "@/components/EmailTestChip";
-import { isEmailTestTicket } from "@/lib/email-intake";
+import { isEmailTestTicket, seesEmailTestRecords, ticketShownInLens } from "@/lib/email-intake";
 import { formatPropertyLabel } from "@/lib/property-label";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -229,7 +229,9 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     // toggling demo mode off a currently-open ticket re-fetches and comes
     // back not-found rather than continuing to render a demo record under
     // real permissions (or a real record under the demo lens).
-    queryKey: ["ticket", ticketId, demoMode],
+    // Register E1 (a): an email test ticket also opens in the real lens for the people who
+    // run the test plan; for everyone else it stays out of reach.
+    queryKey: ["ticket", ticketId, demoMode, seesTests],
     queryFn: async () => {
       const [ticket, steps, activity] = await Promise.all([
         supabase
@@ -238,7 +240,6 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             "*, properties(id, name, nickname, address_line1, city, market, access_notes, notes, ownerrez_property_id, primary_photo_url, unit, state, postal_code), work_types(name, category, response_minutes, action_start_minutes, completion_target, required_closure_evidence, guest_communication_required)",
           )
           .eq("id", ticketId)
-          .eq("is_demo", demoMode)
           .maybeSingle(),
         supabase.from("ticket_steps").select("*").eq("ticket_id", ticketId).order("position"),
         supabase
@@ -248,7 +249,8 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
           .order("event_at", { ascending: false }),
       ]);
       if (ticket.error) throw ticket.error;
-      if (!ticket.data) return { ticket: null, steps: [], activity: [] };
+      if (!ticket.data || !ticketShownInLens(ticket.data, demoMode, seesTests))
+        return { ticket: null, steps: [], activity: [] };
       const authorIds = [
         ...new Set((activity.data ?? []).map((a) => a.author_id).filter(Boolean)),
       ] as string[];
@@ -275,8 +277,9 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     queryKey: ["ticket-other-lens", ticketId, demoMode],
     enabled: notHere && !isError,
     queryFn: async () => {
-      const r = await supabase.from("tickets").select("id, is_demo").eq("id", ticketId).maybeSingle();
-      return Boolean(r.data && Boolean(r.data.is_demo) !== demoMode);
+      const r = await supabase.from("tickets").select("id, is_demo, external_source").eq("id", ticketId).maybeSingle();
+      // An email test ticket outside the test plan reads as no longer available.
+      return Boolean(r.data && Boolean(r.data.is_demo) !== demoMode && !isEmailTestTicket(r.data));
     },
   });
   const availability = ticketAvailability({
@@ -441,7 +444,9 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   //    long the requery takes — this effect (and the render guard below)
   //    do not wait for it.
   const loadedTicketIsDemo = data?.ticket?.is_demo ?? null;
-  const demoMismatch = ticketDemoMismatch(loadedTicketIsDemo, demoMode);
+  const demoMismatch =
+    ticketDemoMismatch(loadedTicketIsDemo, demoMode) &&
+    !(data?.ticket && ticketShownInLens(data.ticket, demoMode, seesTests));
   useEffect(() => {
     if (!demoReady || isLoading || !data) return;
     // A removed ticket shows its plain message instead (no toast, no redirect).
