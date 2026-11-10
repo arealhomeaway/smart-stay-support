@@ -52,6 +52,8 @@ export type HandoffProjectRow = {
   handoff_state: string | null;
   status: string;
   target_handoff_on: string | null;
+  /** Set once, then locked (register O3). Wins over the estimate once set. */
+  committed_handoff_on?: string | null;
   ready_for_ops_at: string | null;
   is_demo: boolean;
 };
@@ -145,7 +147,7 @@ export function handoffOverviewRow(input: {
     home: input.home.primary,
     place: input.home.secondary,
     status: homeLifecycle({ lifecycleStatus: input.lifecycleStatus, handoffState: input.project.handoff_state }),
-    committedOn: input.project.target_handoff_on,
+    committedOn: input.project.committed_handoff_on ?? input.project.target_handoff_on,
     readyAt: input.project.ready_for_ops_at,
     readyBy: input.project.ready_for_ops_at ? input.readyBy ?? "the Onboarding team" : null,
     // After acceptance the open items live on as carry over items, so they are not repeated.
