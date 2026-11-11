@@ -41,6 +41,14 @@ export function useLabelList() {
   return useQuery({
     queryKey: ["property-labels"],
     queryFn: async (): Promise<LabelRow[]> => {
+      // system_key marks a label Resolve adds and removes by itself (Active Owner); it exists only
+      // once the staged change is applied, so read without it until then.
+      const withKey = await supabase
+        .from("property_labels")
+        .select("id, name, system_key" as "id, name")
+        .is("retired_at", null)
+        .order("name");
+      if (!withKey.error) return (withKey.data ?? []) as LabelRow[];
       const { data, error } = await supabase
         .from("property_labels")
         .select("id, name")
@@ -71,9 +79,14 @@ export function useHomeLabels(propertyId: string) {
           .limit(1),
       ]);
       if (assigned.error) throw assigned.error;
+      const system = new Set(
+        ((await supabase.from("property_labels").select("id, system_key" as "id").not("system_key" as "id", "is", null)).data ?? [])
+          .map((r) => r.id),
+      );
       const labels = (assigned.data ?? [])
         .map((a) => a.property_labels as unknown as LabelRow | null)
         .filter((l): l is LabelRow => Boolean(l))
+        .map((l) => (system.has(l.id) ? { ...l, system_key: "system" } : l))
         .sort((a, b) => a.name.localeCompare(b.name));
       return { labels, last: (last.data ?? [])[0] ?? null };
     },
@@ -209,7 +222,7 @@ export function PropertyLabelsSection({
               <LabelChip
                 key={l.id}
                 name={l.name}
-                onRemove={editing ? () => setDraft((d) => d.filter((x) => x.id !== l.id)) : undefined}
+                onRemove={editing && !l.system_key ? () => setDraft((d) => d.filter((x) => x.id !== l.id)) : undefined}
               />
             ))
           )}
@@ -291,7 +304,9 @@ export function PropertyLabelsSection({
                       ) : (
                         <span className="text-sm">{l.name}</span>
                       )}
-                      {renaming?.id === l.id ? null : (
+                      {renaming?.id === l.id ? null : l.system_key ? (
+                        <span className="text-xs text-muted-foreground">Follows the homeowner program</span>
+                      ) : (
                         <span className="flex gap-1">
                           <Button size="sm" variant="ghost" className="min-h-11" onClick={() => setRenaming({ id: l.id, name: l.name })}>
                             Rename
