@@ -62,18 +62,33 @@ async function noteSweepRun(ran: boolean) {
 export const SWEEP_DEFAULT_HOMES = 20;
 export const SWEEP_MAX_HOMES = 60;
 
-export async function runBreezewaySafetySweep(limit = SWEEP_DEFAULT_HOMES) {
-  const { readBridgeGate, syncVerifiedPortfolio } = await import("./breezeway-workorders.server");
-  const gate = await readBridgeGate();
+type SweepDeps = {
+  readGate: () => Promise<{ on: boolean }>;
+  syncPeople: () => Promise<unknown>;
+  syncPortfolio: (limit: number) => Promise<unknown>;
+  note: (ran: boolean) => Promise<void>;
+  recordFailure: (message: string) => Promise<void>;
+};
+
+const sweepDeps: SweepDeps = {
+  readGate: async () => (await import("./breezeway-workorders.server")).readBridgeGate(),
+  syncPeople: async () => (await import("./breezeway-people.server")).syncBreezewayPeople(),
+  syncPortfolio: async (limit) => (await import("./breezeway-workorders.server")).syncVerifiedPortfolio(limit),
+  note: noteSweepRun,
+  recordFailure: (message) => recordBreezewayIntegrationEvent({ operation: "safety_sweep", status: "failed", message }),
+};
+
+export async function runBreezewaySafetySweep(limit = SWEEP_DEFAULT_HOMES, deps: SweepDeps = sweepDeps) {
+  const gate = await deps.readGate();
   try {
-    const people = await (await import("./breezeway-people.server")).syncBreezewayPeople();
-    const mirror = await syncVerifiedPortfolio(Math.min(Math.max(Math.trunc(limit) || SWEEP_DEFAULT_HOMES, 1), SWEEP_MAX_HOMES));
-    await noteSweepRun(true);
+    const people = await deps.syncPeople();
+    const mirror = await deps.syncPortfolio(Math.min(Math.max(Math.trunc(limit) || SWEEP_DEFAULT_HOMES, 1), SWEEP_MAX_HOMES));
+    await deps.note(true);
     return { ok: true as const, bridgeOn: gate.on, people, mirror };
   } catch (error) {
     const message = error instanceof Error ? error.message : "The safety sweep failed.";
-    await noteSweepRun(false);
-    await recordBreezewayIntegrationEvent({ operation: "safety_sweep", status: "failed", message });
+    await deps.note(false);
+    await deps.recordFailure(message);
     return { ok: false as const, error: message };
   }
 }
