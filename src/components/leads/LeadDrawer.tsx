@@ -58,7 +58,6 @@ import {
   sortOffers,
   stayDatesLabel,
   validateLeadLost,
-  waitingOffer,
   type LeadOffer,
 } from "@/lib/lead-offers";
 import { decideLeadOffer, updateLeadDetails } from "@/lib/lead-offers.functions";
