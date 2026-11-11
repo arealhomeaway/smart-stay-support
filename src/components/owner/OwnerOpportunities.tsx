@@ -648,16 +648,16 @@ function OpportunityDetail({
             </div>
           ) : null}
 
-          {arha ? (
-            <OwnerConversation
-              workItemId={item.id}
-              status={item.finished ? "complete" : "open"}
-              legacy={item.responses}
-              viewer="homeowner"
-              readOnly={readOnly}
-              refreshKeys={[["owner-opportunities"]]}
-            />
-          ) : null}
+          {/* Build 17 finding 2: every Opportunity carries the conversation, so a staff message is seen
+              and answered from the moment the thread exists, whoever leads the item. */}
+          <OwnerConversation
+            workItemId={item.id}
+            status={item.finished ? "complete" : "open"}
+            legacy={item.responses}
+            viewer="homeowner"
+            readOnly={readOnly}
+            refreshKeys={[["owner-opportunities"]]}
+          />
 
           {canRespond ? (
             <div className="space-y-2">
