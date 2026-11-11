@@ -61,3 +61,27 @@ describe("Build 17 finding 7: an owner notification opens the exact item", () =>
     expect(src).toContain('const view = search.view ?? (search.opportunity ? "opportunities" : "home");');
   });
 });
+
+describe("Build 17 finding 8: an undated OwnerRez review is historical, never today", () => {
+  it("the import and the preview agree: no publish date is historical and starts nothing", async () => {
+    const gf = await import("@/lib/guest-feedback");
+    expect(gf.reviewImportDecision(1, null, "2026-11-01")).toBe("historical");
+    const fields = (gf as unknown as { reviewDateFields: (d: string | null, stayEnd: string | null, now: Date) => { submitted_at: string; published_date_known: boolean } }).reviewDateFields;
+    expect(typeof fields).toBe("function");
+    const now = new Date("2026-11-11T15:00:00Z");
+    const undated = fields(null, "2025-06-02", now);
+    expect(undated.published_date_known).toBe(false);
+    expect(undated.submitted_at.slice(0, 10)).not.toBe("2026-11-11");
+    expect(fields("2026-11-10T12:00:00Z", null, now)).toEqual({ submitted_at: "2026-11-10T12:00:00Z", published_date_known: true });
+  });
+  it("an undated review never shows as a new review to check", async () => {
+    const { reviewNeedsCheck } = await import("@/lib/record-routine");
+    const r = { id: "x", feedback_type: "external_review", rating: 2, submitted_at: new Date().toISOString(), published_date_known: false };
+    expect(reviewNeedsCheck(r as never, new Set())).toBe(false);
+  });
+  it("the real import uses the shared date rule, not today", () => {
+    const src = read("src/lib/guest-feedback.server.ts");
+    expect(src).not.toContain("submitted_at: r.date ?? new Date().toISOString()");
+    expect(src).toContain("...reviewDateFields(r.date, r.stay_end ?? null, new Date())");
+  });
+});
