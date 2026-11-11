@@ -132,6 +132,13 @@ async function outboundEnabled() {
   return on.has(BREEZEWAY_OUTBOUND_FLAG) && on.has(INTERNAL_WORK_ORDERS_FLAG);
 }
 
+/** Onboarding Work order sends: their own switch, unknown or missing means OFF. */
+async function onboardingSendOn() {
+  const db = await admin();
+  const { data } = await db.from("feature_flags").select("enabled").eq("key", "onboarding_breezeway_send").maybeSingle();
+  return (data as { enabled?: boolean } | null)?.enabled === true;
+}
+
 /** Resolve work orders and Breezeway sends from Resolve: off until the vendor network is in Resolve. */
 export const INTERNAL_WORK_ORDERS_FLAG = "internal_work_orders";
 
@@ -337,6 +344,14 @@ export async function createOutboundTask(
   }
   if (!(await outboundEnabled())) {
     return { ok: false, message: "Breezeway outbound task creation is switched off." };
+  }
+  // Onboarding Work order tasks have their own switch, off until Emily turns it
+  // on after a verification send (Kati ticket 67). Checked before any write.
+  if (input.sourceType === "onboarding_task" && !(await onboardingSendOn())) {
+    return {
+      ok: false,
+      message: "Sending to Breezeway from onboarding is switched off. Create the work order in Breezeway, then paste its number on the task.",
+    };
   }
 
   // Guard failures (missing record, demo, archived, no property) are turned
