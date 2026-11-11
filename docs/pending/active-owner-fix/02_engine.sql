@@ -786,7 +786,7 @@ GRANT EXECUTE ON FUNCTION public.owner_item_reply(uuid, text) TO authenticated, 
 CREATE OR REPLACE FUNCTION private.owner_item_event_sync()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
-  IF NEW.review_id IS NULL OR NEW.event NOT IN ('resolved', 'reopened')
+  IF NEW.review_id IS NULL OR coalesce(NEW.event, '') NOT IN ('resolved', 'reopened')
      OR NOT EXISTS (SELECT 1 FROM public.owner_item_task_sends s WHERE s.review_id = NEW.review_id) THEN
     RETURN NULL;
   END IF;
