@@ -736,3 +736,18 @@ Note: the Phase A batch table lists batches 1 to 144 twice, because the watcher 
 - Silence: 0 rows since the start line in staff notifications, owner notifications, email log, ticket timed alerts, escalations, owner contact alerts and owner alert log.
 - Anomalies: none from the import. There were three interruptions, all from my watcher, and each was resumed from the saved place: a text parsing bug after batch 2, the watcher's browser closing after batch 144, and my correction of the Phase B stop limits after batch 1.
 - Not done yet: the end-of-run checks (screens, by team counts, and the Period, Status, Owner, Open and Reopen practice). They wait until Phase B finishes.
+
+## RESUME, Nov 11 (Emily's go about 6:40 AM Central): Phase B closed history from the saved place
+
+### Before the resume (12:40 UTC)
+- Saved place: closed history run `9dce0f9d`, 233 batches, 693 done, 6 skipped, 0 failed, 0 failed files, cursor saved Nov 11 07:34:53 UTC. The import code and saved state were not changed.
+- Baseline: 1,378 imported tickets (90 first run, 595 older open, 693 closed), 0 duplicates, 0 imported tickets with a clock, Needs a home counted against the limit 54 of 149 (16 older open, 38 closed), 614 claims (36 existing, 554 older open, 24 closed).
+- Fingerprints taken of the 90 first run tickets (with their activity), the 2 live tickets (with their activity) and the 36 existing claims; the 6 kept tickets (1457, 1492, 1495, 1498, 1500, 1515) are in the 90 and are still open, In progress.
+- Watched every 15 seconds; any one stops the run: a failed batch, any failed ticket or file, a Notion problem, a duplicate, new imported tickets above 2,823 in all, Needs a home above 149 in all, a clock on any imported ticket, any change to the fingerprints, any non-comment activity on imported tickets, any staff notification, owner notification, email, timed alert, escalation or owner contact alert tied to an imported ticket. Rows in those tables not tied to an imported ticket are recorded below as not from the import.
+
+### Phase B batches after the resume
+| At (UTC) | Batch | Result | Tickets | Comments, files | Progress | Note |
+|---|---|---|---|---|---|---|
+| 2026-11-11 12:42:00 UTC | closed resumed from the saved cursor (Nov 11 resume, watch line 2026-11-11 12:41:47.385834+00) | | | | | Emily's go about 6:40 AM Central. |
+| 2026-11-11 12:42:09 | 234 | ok | done 3, skipped 0, failed 0 | comments 10, files 0 | total done 696, cursor saved |  |
+| 2026-11-11 12:42:20 | 235 | ok | done 3, skipped 0, failed 0 | comments 7, files 1 | total done 699, cursor saved |  |
