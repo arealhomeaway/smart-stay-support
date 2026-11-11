@@ -1277,3 +1277,247 @@ Note: the Phase A batch table lists batches 1 to 144 twice, because the watcher 
 | 2026-11-11 14:56:19 | 743 | ok | done 3, skipped 0, failed 0 | comments 29, files 2 | total done 2223, cursor saved |  |
 | 2026-11-11 14:56:26 | 744 | ok | done 3, skipped 0, failed 0 | comments 12, files 0 | total done 2226, cursor saved |  |
 | 2026-11-11 14:56:34 | 745 | ok | done 2, skipped 0, failed 0 | comments 2, files 2 | total done 2228, cursor saved |  last batch, run done |
+
+## FINAL REPORT, Nov 11 15:10 UTC: NOTION HISTORY IMPORT FINISHED
+
+### The run
+- Backup before the run: `d170df7a-2dd1-4f9e-9aaa-295bbb07a375`, folder `2026-11-11_051821Z`, verified.
+- Phase A, older open: done (06:43 UTC). 595 imported, 5 kept as they were, 0 failed.
+- Phase B, closed history, newest first: done 14:56:34 UTC. 745 batches, 2,228 imported, 6 skipped (1457, 1492, 1495, 1498, 1500, 1515, kept), 0 failed tickets, 0 failed files, no Notion problem, no restart of Notion's list. It ran in three sittings, each resumed from the saved place: 06:48 to 07:35, 12:42 to 13:44, 13:53 to 14:56. Both pauses were mine (session time limit), each after a finished, saved batch.
+- Anomalies: none. No stop line was crossed. The two end counts sit exactly on their limits, as the dry run predicted: new imported tickets 2,823 of 2,823, Needs a home 149 of 149.
+
+### Claim check, closed set, against a fresh Notion read
+| | Claims | Damages | Paid back |
+|---|---|---|---|
+| Expected | 81 | $29,435.24 | $25,370.40 |
+| Notion today | 81 | $29,435.24 | $25,370.40 |
+| Resolve | 81 (all Closed) | $29,435.24 | $25,370.40 |
+| Difference | 0% | 0% | 0% |
+Older open set, same check: 554, $93,598.21, $83,810.63 in both. Exact.
+
+### Totals by Notion status (imported tickets, 2,913)
+| Notion status | In Notion today | In Resolve | Why different |
+|---|---|---|---|
+| Done | 2,232 | 2,226 | the 6 kept tickets are Done in Notion and stay open in Resolve (answer 3) |
+| Claim review | 393 | 393 | |
+| In progress | 310 | 292 | 24 Notion tickets not imported yet: the 14 new and the 10 found in the reread, for the top up run (N12); minus the 6 kept |
+| Completed Same Day | 2 | 2 | |
+| All | 2,937 | 2,913 | 24 waiting for the top up run |
+Resolve status: 2,228 Closed, 685 open (90 recent, 595 older open). No Resolve ticket is missing from Notion.
+
+### Resolve tabs (Databases, Tickets, read on screen as Admin, desktop and phone the same)
+| Tab | Count |
+|---|---|
+| All | 2,913 |
+| Recent | 94 |
+| Older open | 600 |
+| Closed history | 2,228 |
+| Needs a home | 164 |
+| Claims history | 671 (damages $126,960.47, paid back $110,172.16, still open 36 claims) |
+Tabs overlap by design: Recent holds 4 older open tickets with a blank Notion date as well as the 90; Needs a home is every ticket with no home (9 recent, 22 older open, 133 closed).
+
+### By team and by owner
+- Team (only open recent tickets have one; older open and closed history are never in the Team Queue): Team A 3, Team B 77 (36 of them because of an open claim), Unassigned 10 (9 Needs a home, 1 with no owner). 90 in all, unchanged.
+- Owner: 64 tickets have an owner, all from the first run: Property Coordinator Team B day shift 25, Property Coordinator Team A evening shift 23, Property Coordinator Team B evening shift 16. 26 first run tickets have none. All 595 older open and all 2,228 closed history tickets have no owner (N2).
+
+### Comments and files against a Notion reread (5,906 read only calls, no rate limits)
+| Set | Comments in Notion | In Resolve | Files in Notion | In Resolve |
+|---|---|---|---|---|
+| Closed history (2,228) | 14,059 | 14,059 | 2,906 | 2,906 |
+| Older open (595) | 3,405 | 3,405 | 2,313 | 2,313 |
+| First run (90) | 285 | 269 | 124 | 120 |
+- Closed history and older open match exactly, item by item. Resolve holds nothing that is not in Notion.
+- First run: 16 Notion comments on 14 tickets and 4 files on 3 tickets are not in Resolve. These tickets come only from the recent open run, which these history runs never redo; the top up run brings them in.
+- Comment counts include each page's notes. Phase B's own count (14,069 comments, 2,907 files) is 10 comments and 1 file higher, because it also added new Notion comments to the 6 kept tickets in its first batches (answer 3 allows comments and files only). Those tickets' own details did not change.
+- Duplicates: 0 tickets, 0 comments, 0 files.
+
+### Tickets with no home matched
+164 in all: 133 closed history, 22 older open, 9 recent open (first run). Each one is listed at the end of this file. All 164 show on the Needs a home tab.
+
+### Screens that must not move
+- Money we could still lose: $3,927.02 (unchanged). Waiting to be paid back: $0.
+- Team Queue: Team A 0, Team B 0, All teams 0, All unclaimed 0 (unchanged). The Imported from Notion group is collapsed, Quiet, no clocks or alerts.
+- Home (Admin): Escalations to me 0, Approval requests 9, Needs review before closing 0, Unassigned work 0, Team blockers 0, Overdue or high risk 0, Recently escalated 0, Team queue 0 unclaimed. The 9 approvals are open requests from Sep 22, none on an imported ticket. No count on Home reads imported history. No Home count was written down before the run, so this says what Home shows now and why the import cannot move it, not a before and after comparison.
+- Protected records: the 90 first run tickets, the 2 live tickets and the 36 existing claims match their before fingerprints exactly. The 6 kept tickets are still open, In progress.
+
+### Cancelled practice
+- Filters on Closed history (screen): Period All time 2,228, This week 0, This month 6, This year 1,182, Choose a month (November) 6. Status: All 2,228, Closed 2,228. No Owner filter on Closed history (N2). Owner on Older open: All 600, and its one other choice also 600 (none of them has an owner). Every filter reset back to the full count.
+- Open: an imported closed ticket (#2654) opened in the Ticket drawer, showing Historical record from Notion and the Notion details.
+- Reopen on screen: the Reopen window opened ("Reopen this ticket ... Why are you reopening it?") and was cancelled. Nothing saved.
+- Reopen on the real database, as the Admin, then cancelled on purpose: the ticket became open, assigned to the Admin, with a fresh clock and its history line "Reopened from Notion history"; it created 0 staff notifications, 0 emails and 0 timed alerts. Everything was rolled back: #2654 reads Closed, no owner, no clock, Notion status Done, no new history line.
+
+### Silence proof (from the first start line, Nov 11 05:23:27 UTC, to the end)
+- Tied to an imported ticket: 0 staff notifications, 0 owner notifications, 0 emails, 0 timed alerts, 0 escalations, 0 owner contact alerts, 0 owner alert log rows, 0 non-comment history lines, 0 imported tickets with a clock.
+- Not from the import: 6 staff notifications and 6 staff emails between 14:04 and 14:10 UTC, all about a homeowner finishing and answering Active Owner items (work items, not tickets).
+
+### Not done here
+- The 24 newer Notion tickets and the 16 comments and 4 files on first run tickets wait for the cutover weekend top up run (N12).
+- Nothing was published.
+
+### Tickets with no home matched (164)
+| Ref | Title | Set | Notion status |
+|---|---|---|---|
+| 1481 | 401 E 10th  - Property Turnover Maintenance Review & Owner Quote Preparation | Recent open (first run) | In progress |
+| 1488 | 1016 - Order Coffee pot | Recent open (first run) | In progress |
+| 1508 | 6629 S 22nd - Replacement of pans | Recent open (first run) | In progress |
+| 1513 | 5217 - Departure Clean update | Recent open (first run) | In progress |
+| 1519 | 136 - Departure Clean Report | Recent open (first run) | In progress |
+| 1523 | 5923 - oven issue (?) not working | Recent open (first run) | In progress |
+| 1524 | 2100 - broken dining table leg | Recent open (first run) | In progress |
+| 1525 | 9211 - possible water leak | Recent open (first run) | In progress |
+| 1526 | 6017 - reconnect yale lock | Recent open (first run) | In progress |
+| 2062 | Aircover - 1601 - Ricki Rebeiro - House is a mess | Older open | Claim review |
+| 2069 | Aircover - 21036  - DJ Hosford - Damaged Linens, paint stains on floor, dog wast | Older open | Claim review |
+| 2129 | Updates Discussion | Older open | In progress |
+| 2164 | Aircover - Monee Hollins at 21036 Owens Rd - Area Rug Replacement | Older open | Claim review |
+| 2277 | Imported Notion ticket | Older open | In progress |
+| 2346 | Timothy Griffith - $300 Refundable Deposit for the three pets. | Older open | In progress |
+| 2391 | Airbnb - Kristen’s Group New Booking - Check-in Apr 16 (2 Days) - No Welcome Mes | Older open | In progress |
+| 2430 | Imported Notion ticket | Older open | In progress |
+| 2438 | Imported Notion ticket | Older open | In progress |
+| 2463 | Aircover - Joshua Ramlal at 21036 Owens - nasty and stinks bad | Older open | Claim review |
+| 2472 | Imported Notion ticket | Older open | In progress |
+| 2520 | Imported Notion ticket | Older open | In progress |
+| 2569 | Imported Notion ticket | Older open | In progress |
+| 2581 | 16216 - Paint touch up | Older open | In progress |
+| 2584 | Imported Notion ticket | Older open | In progress |
+| 2601 | Imported Notion ticket | Older open | In progress |
+| 2646 | Imported Notion ticket | Older open | In progress |
+| 2649 | Imported Notion ticket | Older open | In progress |
+| 2650 | Imported Notion ticket | Older open | In progress |
+| 2651 | Imported Notion ticket | Older open | In progress |
+| 2652 | Imported Notion ticket | Older open | In progress |
+| 2653 | 9201 - Guest Survey - refrigerator water filter + air filter in ceiling | Older open | In progress |
+| 2711 | 453 - order pan set + drinking glass + bowl | Closed history | Done |
+| 2723 | 1152 - 845 - not drying again - schedule dryer vent cleaning | Closed history | Done |
+| 2778 | 3715 - missing ice maker cover | Closed history | Done |
+| 2840 | 11720 - spiders - schedule pest control - | Closed history | Done |
+| 2841 | Send email for DFW Homeowners (Thomas’ Lawn Care) | Closed history | Done |
+| 2849 | Send email for Yukon Homeowners (Cody’s Lawn Care) for Flower Bed Tuneup approva | Closed history | Done |
+| 2893 | 721 Vaquero - microwave issue | Closed history | Done |
+| 2942 | Initiate your payment from Generali Global Assistance - As Micah for it. | Closed history | Done |
+| 2960 | 504 - additional cleaning, trip charge, late checkout, etc | Closed history | Done |
+| 2991 | 628 - Guest feedback | Closed history | Done |
+| 2992 | 1152 - Guest feedback | Closed history | Done |
+| 3001 | 7422 - Dryer haul away | Closed history | Done |
+| 3017 | 8708 | Closed history | Done |
+| 3049 | 5253 - Guest feedback. | Closed history | Done |
+| 3051 | 11508 -  Painting + Stove | Closed history | Done |
+| 3063 | 1640 - Trash and big spill in garage | Closed history | Done |
+| 3064 | 1600 - Compensate Kelly for AC issue | Closed history | Done |
+| 3073 | 7351 - Bathroom flooded + no wifi | Closed history | Done |
+| 3080 | 2 STAR From Anthony Taylor | Closed history | Done |
+| 3093 | 136 - Dryer doesn’t work | Closed history | Done |
+| 3096 | 220 - Haul away some stuff + drywall damage + garbage disposal not working | Closed history | Done |
+| 3102 | 4718 - Short glass is cracked | Closed history | Done |
+| 3103 | 7422 -  Driveway debris + Appliance haul off + Dining chair | Closed history | Done |
+| 3104 | 845 - Dryer doesn’t work. | Closed history | Done |
+| 3119 | Trash pick up - 11514, 2901, 7422 and 2522 | Closed history | Done |
+| 3214 | 21036 - Guest Bathroom Clogged | Closed history | Done |
+| 3231 | 1016 - co2 detector | Closed history | Done |
+| 3238 | 1056 - The garage AND backyard is dirty + Wasps | Closed history | Done |
+| 3253 | 3712 - Garage door key pad doesn’t work, Front door lock | Closed history | Done |
+| 3255 | 11508 - Air intake filter replacement | Closed history | Done |
+| 3256 | 1012 - Broken Shower Head | Closed history | Done |
+| 3259 | 1068 - Blind Broken | Closed history | Done |
+| 3262 | 6017 - Order New Pot and Pans | Closed history | Done |
+| 3284 | 13117 - Order the new Sofa | Closed history | Done |
+| 3316 | William Nichols - LTR | Closed history | Done |
+| 3322 | Falisha - 4star | Closed history | Done |
+| 3339 | 409 - Release the deposit | Closed history | Done |
+| 3342 | 3333 - confirm if sprinkler is working - owner | Closed history | Done |
+| 3372 | Call Lanette and Stephanie and Joseph for the 4STAR | Closed history | Done |
+| 3373 | Call Connor - 4 Star | Closed history | Done |
+| 3394 | 2525 - Dsposal Not working | Closed history | Done |
+| 3402 | 11508 - Missing Cushion | Closed history | Done |
+| 3455 | can you review all Daniels future tasks and make sure they are accepted. | Closed history | Done |
+| 3459 | Airbnb - Carrie’s Group WiFi Issue - 1700 Whispering Creek Dr (Currently Hosting | Closed history | Done |
+| 3482 | Fraud Purchases - Amazon Redeem Rewards | Closed history | Done |
+| 3483 | 5253 - Carpet Cleaning | Closed history | Done |
+| 3494 | 509 - Trash Cart update | Closed history | Done |
+| 3495 | 504 - inspection for early checkout | Closed history | Done |
+| 3524 | 5047 - No hot water | Closed history | Done |
+| 3529 | 1152 - Guest Feedback | Closed history | Done |
+| 3534 | 5512 - Track the order of the cart from Warr Acres | Closed history | Done |
+| 3536 | 21036 - plumbing seems to be backed up again. In the bathroom near the front foo | Closed history | Done |
+| 3551 | 207 - sink in master is draining slow ( sink nearest closet )and the hot water h | Closed history | Done |
+| 3570 | 21036 - The bathroom next to the living room is starting to back up. | Closed history | Done |
+| 3607 | Process E-GC for Kyleigh | Closed history | Done |
+| 3611 | 3712 - Order 94 Inche Curtains Panels. | Closed history | Done |
+| 3612 | 1 Star Dispute for AJ Geeslin | Closed history | Done |
+| 3621 | 11736 - Booked through Web/OR - asking for discount | Closed history | Done |
+| 3712 | 3029 - Fridge Water Filter Replacement | Closed history | Done |
+| 3739 | 21036 - Wasp in the house | Closed history | Done |
+| 3913 | 2012 - Haul the trash | Closed history | Done |
+| 3955 | Cleaning fee refund for Tara Heath - 10302 S. 230th East Ave | Closed history | Done |
+| 3980 | 735 S - Change the lease agreement back | Closed history | Done |
+| 3982 | 21036 - no water | Closed history | Done |
+| 4001 | Sprinklers Status | Closed history | Done |
+| 4016 | Yale Low Batteries | Closed history | Done |
+| 4034 | 21036 - Guest Room Shower - No hot water | Closed history | Done |
+| 4065 | Question on claim | Closed history | Done |
+| 4071 | change codes - 13317 | Closed history | Done |
+| 4081 | 1601 - Back door lock issue | Closed history | Done |
+| 4088 | 21036 - Garbage Disposal | Closed history | Done |
+| 4095 | 1169 - Master Toilet Flush needs repair | Closed history | Done |
+| 4097 | 15905 - Thermostats - Not keeping set temp | Closed history | Done |
+| 4125 | 4 star reviews | Closed history | Done |
+| 4135 | 28th Cleaning Work Order | Closed history | Done |
+| 4147 | Kathy Lamont - vrbo id | Closed history | Done |
+| 4149 | Louella Ryan at 13117 NE 9th St - Pet fee | Closed history | Done |
+| 4155 | CITY INSPECTIONS | Closed history | Done |
+| 4206 | 1601 - Front and Back Doors Sticking Out | Closed history | Done |
+| 4245 | 19013 - potential water leak | Closed history | Done |
+| 4247 | question on Daniel’s additional lawn care (irrigation) | Closed history | Done |
+| 4249 | Aracely left a 4-star review - 721 Vaquero | Closed history | Done |
+| 4251 | question on pet fee | Closed history | Done |
+| 4254 | 9120 Yassir - work on sending quote | Closed history | Done |
+| 4255 | 19104 - offer to refund $200 | Closed history | Done |
+| 4259 | Utility Review Update | Closed history | Done |
+| 4274 | 1215 - cooking pot replacement question | Closed history | Done |
+| 4307 | Review booking for Amy - 453 (discuss current booking policy) | Closed history | Done |
+| 4328 | Pool Amenity in Airbnb - | Closed history | Done |
+| 4332 | Booking question for Jim Foster 10549 | Closed history | Done |
+| 4340 | Responding to Poor reviews on Airbnb | Closed history | Done |
+| 4341 | LEAVE notes in OR (James m email) | Closed history | Done |
+| 4373 | 3200 - Follow UP with BC’s Booking | Closed history | Done |
+| 4377 | Call Amerincan Pros for Returned Check Payment Notification | Closed history | Done |
+| 4378 | Discuss lawn care owner emails | Closed history | Done |
+| 4382 | Larry Robinson - Lawn Care Schedule | Closed history | Done |
+| 4399 | On Call - Escalation / Over provide information | Closed history | Done |
+| 4400 | Remember to “close” any of Larry’s “overdue” WO in BW that have comments | Closed history | Done |
+| 4401 | Disputing 1 Stars and 3 Star Rating | Closed history | Done |
+| 4405 | Changing Casey’s personal email to Info email for VRBO | Closed history | Done |
+| 4419 | 1601 - Maintenance Issue and Lawn | Closed history | Done |
+| 4426 | Airbnb Quick Replies | Closed history | Done |
+| 4427 | 904 - AC not cooling | Closed history | Done |
+| 4432 | Larry Robinson Question | Closed history | Done |
+| 4433 | 21036 Owens - electrical issue | Closed history | Done |
+| 4437 | 1601 - Kitchen Light | Closed history | Done |
+| 4440 | Updating the property description for listings that have pool | Closed history | Done |
+| 4442 | Wasp Nests Issues | Closed history | Done |
+| 4448 | Update OR blocks | Closed history | Done |
+| 4450 | 4816 - Question about the bed | Closed history | Done |
+| 4500 | Owens - few maint items | Closed history | Done |
+| 4521 | 21036 - Pest Control Needed | Closed history | Done |
+| 4534 | 1601 - Fence Repair | Closed history | Done |
+| 4557 | 1601 - new sink replacement / new vacuum | Closed history | Done |
+| 4561 | Discuss reviewing/approving WO for Lotis | Closed history | Done |
+| 4573 | LAWN CARE QUESTION | Closed history | Done |
+| 4613 | Updating Trash Info | Closed history | Done |
+| 4619 | 21036 - Cleaning the Storm Shelter - Water Spiket not working outside / exterior | Closed history | Done |
+| 4636 | 21036 Lawn Schedule | Closed history | Done |
+| 4651 | Resolution - 21036 - Sarah Newman - Broken Mirror | Closed history | Done |
+| 4707 | 1601 - measure sinks / possible smoking / door issue | Closed history | Done |
+| 4713 | Reviewing Maint Work. See link | Closed history | Done |
+| 4714 | Reviewing Maintenance Work Orders (weekends) | Closed history | Done |
+| 4720 | 19120 Water Line Disconnection Notice | Closed history | Done |
+| 4732 | 1601 - Extension Request | Closed history | Done |
+| 4739 | Future Bookings Airbnb | Closed history | Done |
+| 4763 | 1601 - AC not responding | Closed history | Done |
+| 4771 | Aircover  Jianbin Chen - 1601 Damaged Back Door | Closed history | Done |
+| 4792 | 1601 - Back Door Damaged | Closed history | Done |
+| 4859 | 309 - Patio Light, Lamp, Storm damaged | Closed history | Done |
+| 4861 | 5020 - Airbnb Background Check | Closed history | Done |
+| 4867 | Templete review/addition | Closed history | Done |
+| 4881 | Investigate Pet Fees | Closed history | Done |
