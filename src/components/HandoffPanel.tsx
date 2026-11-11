@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { TEAM_QUEUE_COPY } from "@/lib/team-queue-board";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowRightLeft, ShieldAlert } from "lucide-react";
@@ -376,14 +377,20 @@ export function HandoffPanel({
             )}
             {rejecting === h.id ? (
               <div className="space-y-2">
+                {/* Same words as the Team Queue decline (Build 16 D). */}
+                <label htmlFor={`reject-${h.id}`} className="block text-sm font-medium">
+                  {TEAM_QUEUE_COPY.declineLabel}
+                </label>
                 <Input
-                  placeholder="Why are you declining this handoff?"
+                  id={`reject-${h.id}`}
+                  className="h-11"
+                  placeholder={TEAM_QUEUE_COPY.declinePlaceholder}
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
                 />
                 <div className="flex gap-2">
-                  <Button size="sm" variant="destructive" className="min-h-11 px-4" onClick={() => reject(h.id)}>
-                    Decline
+                  <Button size="sm" className="min-h-11 px-4" onClick={() => reject(h.id)}>
+                    {TEAM_QUEUE_COPY.send}
                   </Button>
                   <Button size="sm" variant="ghost" className="min-h-11 px-4" onClick={() => setRejecting(null)}>
                     Cancel
