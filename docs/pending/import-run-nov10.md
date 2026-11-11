@@ -491,3 +491,13 @@ No batches run.
 |---|---|---|---|---|---|---|
 | 2026-11-11 06:48:42 UTC | closed started (watch line 2026-11-11 06:48:30.562601+00) | | | | | |
 | 2026-11-11 06:49:06 UTC | watcher | | | | | Watcher paused by me after batch 1 to correct its own stop limits for this phase (it counted Phase A tickets toward the Phase B limits, which would only have stopped the run early). Batch 1 finished and saved (2 done, 1 skipped, 0 failed). Limits now: new imported tickets at most 2,823 in all (595 + 2,228) and Needs a home at most 149 in all (16 + 133). Resumed from the saved cursor. |
+| 2026-11-11 06:52:26 UTC | closed resumed from the saved cursor (watch line 2026-11-11 06:48:30.562601+00) | | | | | |
+| 2026-11-11 06:49:06 | 1 | ok | done 2, skipped 1, failed 0 | comments 10, files 8 | total done 5, cursor saved |  |
+| 2026-11-11 06:52:39 | 2 | ok | done 3, skipped 0, failed 0 | comments 10, files 2 | total done 5, cursor saved |  |
+| 2026-11-11 06:52:46 | 3 | ok | done 2, skipped 1, failed 0 | comments 6, files 1 | total done 10, cursor saved |  |
+| 2026-11-11 06:52:51 | 4 | ok | done 0, skipped 3, failed 0 | comments 4, files 0 | total done 10, cursor saved |  |
+| 2026-11-11 06:52:57 | 5 | ok | done 3, skipped 0, failed 0 | comments 6, files 0 | total done 10, cursor saved |  |
+| 2026-11-11 06:53:06 | 6 | ok | done 3, skipped 0, failed 0 | comments 10, files 1 | total done 16, cursor saved |  |
+| 2026-11-11 06:53:18 | 7 | ok | done 3, skipped 0, failed 0 | comments 10, files 0 | total done 16, cursor saved |  |
+| 2026-11-11 06:53:46 | 8 | ok | done 3, skipped 0, failed 0 | comments 6, files 10 | total done 19, cursor saved |  |
+| 2026-11-11 06:54:00 | 9 | ok | done 3, skipped 0, failed 0 | comments 12, files 5 | total done 22, cursor saved |  |
