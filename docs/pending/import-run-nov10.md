@@ -850,3 +850,4 @@ Note: the Phase A batch table lists batches 1 to 144 twice, because the watcher 
 | 2026-11-11 13:02:40 | 332 | ok | done 3, skipped 0, failed 0 | comments 23, files 5 | total done 990, cursor saved |  |
 | 2026-11-11 13:02:51 | 333 | ok | done 3, skipped 0, failed 0 | comments 19, files 1 | total done 993, cursor saved |  |
 | 2026-11-11 13:03:07 | 334 | ok | done 3, skipped 0, failed 0 | comments 20, files 5 | total done 996, cursor saved |  |
+| 2026-11-11 13:03:36 | 335 | ok | done 3, skipped 0, failed 0 | comments 22, files 15 | total done 999, cursor saved |  |
