@@ -12,13 +12,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { getMyScorecardRoles, recordFinancePacket } from "@/lib/scorecard-capture.functions";
 import { CAPTURE_COPY, financePacketVisible, financeWeekEnding } from "@/lib/scorecard-capture";
+import { useFeatureFlags } from "@/lib/feature-flags";
 
 /** The Supervisor's records on Home. Shows only for the Operations Supervisor or Director role. */
 export function SupervisorRecords() {
   const rolesFn = useServerFn(getMyScorecardRoles);
   const roles = useQuery({ queryKey: ["scorecard-roles"], queryFn: () => rolesFn(), staleTime: 5 * 60 * 1000 });
   const [finance, setFinance] = useState(false);
-  const showFinance = financePacketVisible(new Date());
+  const flags = useFeatureFlags();
+  // Behind the finance_packet_button switch, OFF: the weekly packet is retired (Build 16 B2).
+  const showFinance = flags.enabled("finance_packet_button") && financePacketVisible(new Date());
 
   const r = roles.data;
   if (!r || (!r.supervisor && !r.leads)) return null;
