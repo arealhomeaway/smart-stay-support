@@ -16,7 +16,7 @@ import { SectionCard } from "@/components/ui/page";
 import { usDateTime } from "@/lib/dates";
 import { LABEL_CREATE_NOTE } from "@/lib/property-page";
 
-export type LabelRow = { id: string; name: string };
+export type LabelRow = { id: string; name: string; system_key?: string | null };
 
 export function LabelChip({ name, onRemove }: { name: string; onRemove?: (() => void) | undefined }) {
   return (
@@ -116,7 +116,7 @@ export function PropertyLabelsSection({
 
   const current = home.data?.labels ?? [];
   const available = useMemo(
-    () => (list.data ?? []).filter((l) => !draft.some((d) => d.id === l.id)),
+    () => (list.data ?? []).filter((l) => !l.system_key && !draft.some((d) => d.id === l.id)),
     [list.data, draft],
   );
 
