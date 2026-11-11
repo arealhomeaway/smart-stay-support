@@ -639,7 +639,8 @@ export function NewTicketForm({
   );
 
   return (
-    <div className="mx-auto max-w-[600px] space-y-5">
+    // Bottom room on phones so the ? Help button never covers the last line (Build 16 D).
+    <div className="mx-auto max-w-[600px] space-y-5 pb-24 sm:pb-0">
       {!inPanel && <BackControl origin={resolveOrigin(context.origin, "ticket")} />}
       <h1 className="text-3xl font-semibold">Record work</h1>
 
