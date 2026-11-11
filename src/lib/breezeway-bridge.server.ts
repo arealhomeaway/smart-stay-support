@@ -7,7 +7,7 @@
  * Breezeway) and links a Breezeway work order to a ticket. Nothing here creates, changes or
  * deletes anything in Breezeway.
  */
-import { BRIDGE_COPY, breezewayTaskLink, type TicketBreezewayOrder } from "./breezeway-bridge";
+import { BRIDGE_COPY, breezewayReportLink, breezewayTaskLink, breezewayTaskPage, type TicketBreezewayOrder } from "./breezeway-bridge";
 export type { TicketBreezewayOrder } from "./breezeway-bridge";
 
 async function admin() {
@@ -104,6 +104,8 @@ function toOrder(r: OrderRow): TicketBreezewayOrder {
       ? (r.assignees as { name?: string | null }[]).map((a) => a?.name ?? "").filter(Boolean)
       : [],
     link: breezewayTaskLink(r.breezeway_task_id, r.report_url),
+    taskPage: breezewayTaskPage(r.breezeway_task_id),
+    reportLink: breezewayReportLink(r.report_url),
     linkedTicketId: r.linked_ticket_id,
     updatedAt: r.breezeway_updated_at,
   };

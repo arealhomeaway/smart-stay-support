@@ -88,11 +88,20 @@ function LinkedOrder({ order }: { order: TicketBreezewayOrder }) {
           ))}
         </div>
       ) : null}
-      <Button asChild variant="outline" className="min-h-11">
-        <a href={order.link} target="_blank" rel="noreferrer noopener">
-          <ExternalLink className="size-4" /> Open in Breezeway
-        </a>
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button asChild variant="outline" className="min-h-11">
+          <a href={order.taskPage} target="_blank" rel="noreferrer noopener">
+            <ExternalLink className="size-4" /> Open in Breezeway
+          </a>
+        </Button>
+        {order.reportLink ? (
+          <Button asChild variant="outline" className="min-h-11">
+            <a href={order.reportLink} target="_blank" rel="noreferrer noopener">
+              <ExternalLink className="size-4" /> Open the report
+            </a>
+          </Button>
+        ) : null}
+      </div>
     </div>
   );
 }
