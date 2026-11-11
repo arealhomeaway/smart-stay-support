@@ -11,6 +11,7 @@ import type { GuidedAction } from "@/lib/guided-action";
 import type { TaskView, WorkflowTask } from "@/lib/onboarding-workflow";
 import type { ReleaseContext } from "@/lib/onboarding-state";
 import { viewTask } from "@/lib/onboarding-workflow";
+import { EVIDENCE_NOTE_MIN, evidenceSatisfied } from "@/lib/onboarding-evidence";
 
 export type TaskActionId =
   | "wait_for_dependency"
@@ -142,11 +143,10 @@ export function onboardingTaskAction(view: TaskView): TaskAction | null {
     };
   }
 
-  if (
-    task.requires_owner_approval &&
-    task.owner_approval_status !== "approved" &&
-    task.owner_approval_status !== "not_required"
-  ) {
+  // A step that needs the homeowner's approval offers the send whatever its
+  // stored status, including the older "not_required" left on some plan steps
+  // (Kati ticket 66): otherwise the step can never be sent or finished.
+  if (task.requires_owner_approval && task.owner_approval_status !== "approved") {
     return {
       id: "send_for_approval",
       title: "Send it to the homeowner",
@@ -172,21 +172,24 @@ export function onboardingTaskAction(view: TaskView): TaskAction | null {
     };
   }
 
-  if (task.evidence_required && !(task.evidence_note ?? "").trim()) {
+  if (
+    task.evidence_required &&
+    !evidenceSatisfied({ note: task.evidence_note, fileCount: task.evidence_file_count })
+  ) {
     return {
       id: "capture_evidence",
       title: "Record what proves this is done",
-      because: "This step can't be completed until the required evidence is on file.",
+      because: "Attach a file below, or write where the proof is.",
       then: "Then you can mark it complete.",
       completeLabel: "Save & advance",
       fields: [
         {
           name: "evidence",
-          label: "What proves this is done",
+          label: "Where the proof is",
           type: "longtext",
           required: true,
-          minLength: 3,
-          help: "Photo location, document name, meter reading, confirmation number.",
+          minLength: EVIDENCE_NOTE_MIN,
+          help: "For example: Signed copy is in the SharePoint home folder.",
         },
       ],
     };
