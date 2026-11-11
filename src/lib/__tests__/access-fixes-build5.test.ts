@@ -183,8 +183,9 @@ describe("4. Admin menu and pages", () => {
       expect(adminTabs(p)).toEqual(["Help Tickets"]);
       for (const path of ["/integrations", "/integrations/notion-import", "/audit", "/imported-tickets", "/oversight-access-log"])
         expect(canOpenPath(path, p)).toBe(false);
+      // Build 16 D: no Admin tools menu item for them; Help Tickets opens from the ? control and the account page.
       const admin = operationsMenu(nav(p)).find((g) => g.label === "Admin");
-      expect(admin?.items.map((i) => i.to)).toEqual(["/help-tickets"]);
+      expect(admin).toBeUndefined();
     }
   });
   it("the Admin keeps every Admin page", () => {
