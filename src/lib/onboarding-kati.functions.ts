@@ -177,6 +177,8 @@ export const sendOnboardingWorkOrderFn = createServerFn({ method: "POST" })
     if (!switchOn) {
       return { ok: false as const, message: sendToBreezewayRefusal({ switchOn, homeEligible: false, tentativeDate: null, alreadyLinked: false })! };
     }
+    const staff = await context.supabase.rpc("is_onboarding_staff", { _user_id: context.userId });
+    if (staff.error || !staff.data) throw new Error("Onboarding staff access is required.");
     const [task, link] = await Promise.all([
       db.from("onboarding_tasks").select("id, title, detail, property_id").eq("id", data.taskId).maybeSingle(),
       db.from("onboarding_task_breezeway_links").select("*").eq("task_id", data.taskId).maybeSingle(),
@@ -194,8 +196,6 @@ export const sendOnboardingWorkOrderFn = createServerFn({ method: "POST" })
       alreadyLinked: Boolean(link.data?.breezeway_task_id),
     });
     if (refusal) return { ok: false as const, message: refusal };
-    const staff = await context.supabase.rpc("is_onboarding_staff", { _user_id: context.userId });
-    if (staff.error || !staff.data) throw new Error("Onboarding staff access is required.");
     return createOutboundTask(
       {
         sourceType: "onboarding_task",
