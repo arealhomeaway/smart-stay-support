@@ -140,6 +140,11 @@ export function RecordRoutinePanel({
       onOpenChange={onOpenChange}
       title={PANEL_COPY.title}
       subtitle={PANEL_COPY.intro}
+      headerAction={
+        <Button variant="outline" className="min-h-11" onClick={() => onOpenChange(false)}>
+          {PANEL_COPY.close}
+        </Button>
+      }
       footer={
         <Button variant="outline" onClick={() => onOpenChange(false)}>
           {PANEL_COPY.close}
