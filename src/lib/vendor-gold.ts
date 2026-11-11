@@ -150,8 +150,12 @@ export type CoverageCell = {
   status: "complete" | "missing_primary" | "missing_backup" | "missing_both";
 };
 
-/** Only these lifecycle states count as a qualified Primary/Backup. */
-const QUALIFIED = new Set(["pilot", "approved", "gold", "corrective_action"]);
+/**
+ * Only Approved and Gold count as a qualified Primary/Backup (register B3; Build 16 C1).
+ * "transitional" is the screen's stand in for a vendor whose Transitional Review window is open,
+ * which counts under its own decision while the window lasts.
+ */
+const QUALIFIED = new Set(["approved", "gold", "transitional"]);
 
 export function coverageMatrix(
   markets: string[],

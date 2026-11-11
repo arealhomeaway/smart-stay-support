@@ -21,7 +21,7 @@ export function VendorMarketCoverage({ focusMarket }: { focusMarket?: string }) 
     const rows = ws.data.coverage.flatMap((c) => {
       const v = nameById.get(c.org_id);
       return v
-        ? [{ orgId: v.id, orgName: v.display_name, market: c.market, category: c.service_category, preference: c.preference as Preference, status: inTransitionalReview(v) ? "pilot" : v.status, isActive: !v.emergency_only && v.is_active && !qualificationHold(v, ws.data!.gateStatus) && ws.data!.compliance.get(v.id)?.state !== "expired" }]
+        ? [{ orgId: v.id, orgName: v.display_name, market: c.market, category: c.service_category, preference: c.preference as Preference, status: inTransitionalReview(v) ? "transitional" : v.status, isActive: !v.emergency_only && v.is_active && !qualificationHold(v, ws.data!.gateStatus) && ws.data!.compliance.get(v.id)?.state !== "expired" }]
         : [];
     });
     const cats = ws.data.categories.filter((c) => tier === "all" || c.tier === tier);
@@ -76,8 +76,8 @@ export function VendorMarketCoverage({ focusMarket }: { focusMarket?: string }) 
         </div>
       )}
       <p className="text-xs text-muted-foreground">
-        Emergency Only vendors never count. Existing vendors in Transitional Review count while their review window is open. Critical categories need a qualified Primary and Backup in every market. Only Pilot, Approved, Gold and
-        Corrective Action vendors count as qualified. Vendors with an expired insurance or licence are left out until it is renewed.
+        Emergency Only vendors never count. Existing vendors in Transitional Review count while their review window is open. Critical categories need a qualified Primary and Backup in every market. Only Approved and Gold
+        vendors count as qualified. Vendors with an expired insurance or licence are left out until it is renewed.
       </p>
       <div className="overflow-x-auto rounded-md border border-border">
         <table className="w-full text-sm">
