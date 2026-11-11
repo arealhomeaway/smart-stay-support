@@ -243,6 +243,8 @@ export type TicketBreezewayOrder = {
   taskPage: string;
   /** Open the report: only when Breezeway gives one. */
   reportLink: string | null;
+  /** Finished in Breezeway (Finished, Approved or Closed). */
+  finished: boolean;
   linkedTicketId: string | null;
   updatedAt: string | null;
 };
