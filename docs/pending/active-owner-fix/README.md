@@ -1,0 +1,35 @@
+# Active Owner fix (Nov 11) — staged, NOT applied
+
+Approved spec: "Active Owner Fix Spec" (Emily, Nov 11). Nothing in this folder has been applied to
+the database. Apply only with the approving Admin's go, in this order, each with its undo ready.
+
+| Order | File | What it does | Undo |
+| --- | --- | --- | --- |
+| 1 | `01_fix1_plan_cards_read.sql` | Fix 1 alone: signed-in users may run `private.owner_current_property_for_actor`. Policies unchanged. | `01_fix1_plan_cards_read.undo.sql` |
+| 2 | `02_engine.sql` | Fixes 2, 3, 4, 6, 7: second homes, one shared rule for preview and turn on, the plan is ready email and the one daily email (9 AM Central setting), plans start at enrollment, the Active Owner label rules, Start plans for enrolled homes (preview + all or none), handoff opens A33 and N10, send to the owner completes the Task and the owner talks it through in the same item. | `02_engine.undo.sql` (run after the 04 undo) |
+| 3 | `03_retire_a56.sql` | Fix 6: A56 retired through the card action (version + history). | `03_retire_a56.undo.sql` |
+| 4 | `04_active_owner_label.sql` | Fix 4: creates the Admin owned Active Owner label and puts it on every home now included in a live program. Starts no plan. | `04_active_owner_label.undo.sql` |
+| 5a | `05a_v2_to_standard_dry_run.sql` | Fix 5 dry run, read only. Output of Nov 11: `05a_dry_run_output_nov11.txt` (run with the home name in place of the display helper, which this sandbox role may not run). | none (writes nothing) |
+| 5b | `05b_v2_to_standard_move.sql` | Fix 5 move of the four V2 homes, ONLY after the dry run is approved (Thursday meeting with the Director of Onboarding, Ledger 39) and any real handoff is recorded. | `05b_v2_to_standard_move.undo.sql` (exact, from receipts) |
+| then | in the app | Program oversight, Admin: Start plans for enrolled homes → Preview → approve → Turn on. | per home switch off |
+
+`live-capture/` holds the live function text captured read only on Nov 11; the 02 undo restores
+`ao_set_home_automation`, `ao_preview_home_automation` and `owner_business_decision_guard` from it.
+`CHECKSUMS.sha256` covers every file here.
+
+## Proofs
+- `src/lib/__tests__/active-owner-fix-sql.test.ts` and `active-owner-fix-plan-move.test.ts` run every
+  file above on an isolated PostgreSQL copy built from the live table shapes and the live engine
+  functions, including every undo.
+- Real database practice: `practice_active_owner_fix.sql` (BEGIN … ROLLBACK). It could not run from
+  this sandbox: its database role has no rights on the `private` schema ("permission denied for
+  schema private"), so the practice must be run by whoever applies, before applying.
+
+## Points for the approving Admin
+- Fix 5: 206 of each home's 212 V2 Tasks have no Standard step of the same title; 05b leaves them exactly
+  as they are and adds 137 to 138 Standard steps per home. Decide at the Thursday review.
+- Fix 7 changes the current rule that a homeowner decision gates a Task: a Task sent as an owner item
+  completes on send and the decision lives on the owner item (register O9 tasks would complete on send).
+- A card whose linked Task is already finished when a plan starts is Already covered (Fix 5 wording,
+  applied to every home so preview and turn on agree).
+- A handed off home gets operations cards only: anytime cards are now skipped at the operations stage.
