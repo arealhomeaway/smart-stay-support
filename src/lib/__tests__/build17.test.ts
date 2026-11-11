@@ -34,3 +34,22 @@ describe("Build 17 finding 5: Send to Active Owner shows for every home in a liv
     expect(fn).toContain("owner_program_properties");
   });
 });
+
+describe("Build 17 finding 6: the Enroll result stays on screen until staff close it", () => {
+  const src = read("src/components/property/ActiveOwnerEnrollForm.tsx");
+  const panel = read("src/components/property/ActiveOwnerPanel.tsx");
+  it("saving does not refresh the page underneath; that waits for Done", () => {
+    const onSuccess = src.slice(src.indexOf("const run = useMutation"), src.indexOf("if (receipt) return"));
+    expect(onSuccess).not.toContain("invalidateQueries");
+    expect(onSuccess).not.toContain("onDone()");
+  });
+  it("every step shows, each failed step has its own Retry, a plain success line and the counts", () => {
+    expect(src).toContain("Retry this step");
+    expect(src).toContain(ENROLL_SUCCESS);
+    expect(src).toContain("receipt.onboardingAdded} onboarding and");
+  });
+  it("the panel keeps the window mounted while it is open", () => {
+    expect(panel).toContain("canEnroll || enrollOpen");
+  });
+});
+const ENROLL_SUCCESS = "The homeowner is enrolled in Active Owner.";
