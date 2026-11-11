@@ -95,9 +95,7 @@ function MaintenanceDetails({
             {wo.finished_at ? ` · Finished ${usDate(wo.finished_at)}` : ""}
             {assignees ? ` · ${assignees}` : ""}
           </p>
-          <p className="text-xs text-muted-foreground">
-            Finished by the vendor is not the same as reviewed. Approving here records the team's review in Resolve only.
-          </p>
+          {/* One warning only: the check's own notice says Finished is not our review (Build 16 D). */}
           {wo.breezeway_task_id ? (
             <Button asChild variant="outline" className="min-h-11">
               <a
@@ -118,7 +116,10 @@ function MaintenanceDetails({
         {data?.comments.length ? (
           data.comments.map((c) => (
             <p key={c.id} className="whitespace-pre-line">
-              <span className="text-muted-foreground">{c.author ?? "Note"}: </span>
+              {/* The vendor's name shows once: in the status line, not again on each of their notes. */}
+              {c.author && assignees.split(", ").includes(c.author) ? null : (
+                <span className="text-muted-foreground">{c.author ?? "Note"}: </span>
+              )}
               {c.body}
             </p>
           ))
