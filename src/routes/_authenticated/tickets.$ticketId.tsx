@@ -11,7 +11,8 @@ import { setTicketStatusFn } from "@/lib/ticket-lifecycle.functions";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { breezewayOutboundState } from "@/lib/breezeway-outbound.functions";
-import { ticketStage, repairIsPossible, repairIsComplete } from "@/lib/ticket-stage";
+import { ticketStage, repairIsPossible, repairIsComplete, breezewayRepairSignal, BREEZEWAY_CHECK_STEP } from "@/lib/ticket-stage";
+import { ticketBreezewayOrdersFn } from "@/lib/breezeway-bridge.functions";
 import { scopedClosureEvidence } from "@/lib/closure-evidence";
 import { closureEvidenceSatisfied, requiresPhotoOrFile } from "@/lib/evidence-requirements";
 import { listAttachmentsFn } from "@/lib/attachments.functions";
@@ -406,6 +407,13 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   // invalidates what this page reads too — no separate, differently-shaped
   // cache to fall out of sync.
   const { data: workOrders } = useTicketWorkOrders(ticketId);
+  // Linked Breezeway work orders (same key as the Repair card), so a finished one moves the
+  // ticket to Verify the outcome (Build 16 A3).
+  const bzOrdersFn = useServerFn(ticketBreezewayOrdersFn);
+  const { data: bzOrders } = useQuery({
+    queryKey: ["ticket-breezeway-orders", ticketId],
+    queryFn: () => bzOrdersFn({ data: { ticketId } }),
+  });
   const [showAllDetails, setShowAllDetails] = useState(false);
 
   // Waiting is a saved state, not a form: reopening the ticket shows exactly
@@ -876,18 +884,21 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   }
 
   /** The guest has told us it is genuinely fixed. */
-  async function markVerified() {
+  async function markVerified(workOnly = false) {
+    // Build 16 A3: the Check the finished work step is done once the outcome is recorded.
+    const clearStep = (data?.ticket as { next_action?: string | null } | undefined)?.next_action === BREEZEWAY_CHECK_STEP;
     const { error } = await supabase
       .from("tickets")
-      .update({ guest_confirmed: true })
+      .update({ guest_confirmed: true, ...(clearStep ? { next_action: null, next_action_due_at: null } : {}) })
       .eq("id", ticketId);
     if (error) {
       toast.error(error.message);
       return;
     }
-    await log("guest", "Guest confirmed the issue is resolved.", "guest_confirmed");
+    if (workOnly) await log("repair", "Checked the finished work in Breezeway.", "breezeway_work_checked");
+    else await log("guest", "Guest confirmed the issue is resolved.", "guest_confirmed");
     await refresh();
-    toast.success("Recorded: the guest confirmed it.");
+    toast.success(workOnly ? "Recorded: the finished work is checked." : "Recorded: the guest confirmed it.");
   }
 
   /**
@@ -925,7 +936,8 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     closed_at: string | null;
   }[];
   const liveOrders = orders.filter((o) => o.phase !== "cancelled");
-  const repairExists = repairLinks.length > 0 || liveOrders.length > 0;
+  const bzRepair = breezewayRepairSignal(bzOrders?.linked);
+  const repairExists = repairLinks.length > 0 || liveOrders.length > 0 || bzRepair.exists;
   // "Repair complete" never blindly closes the Ticket — it only advances the
   // displayed Current Work stage (below, via ticketStage()) to "verify" then
   // "closure", which still requires guest confirmation, evidence and Final
@@ -935,11 +947,18 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   // (creating/created/synced/error/needs_review/abandoned) has no
   // "completed" value — Breezeway is an execution channel off the Work
   // Order, not a second source of truth for this ticket.
-  const repairComplete = repairIsComplete({
-    vendorStatus: ticket.vendor_status,
-    liveOrders,
-  });
-  const verified = !guestComm.activeCadence || Boolean(ticket.guest_confirmed);
+  const repairComplete =
+    repairIsComplete({
+      vendorStatus: ticket.vendor_status,
+      liveOrders,
+    }) ||
+    (liveOrders.length === 0 && bzRepair.finished);
+  // A finished Breezeway work order is checked by the team before the ticket moves on, guest or
+  // not (Build 16 A3); "The finished work is checked" records it on the same field.
+  const breezewayCheck = liveOrders.length === 0 && bzRepair.finished;
+  const verified = breezewayCheck
+    ? Boolean(ticket.guest_confirmed)
+    : !guestComm.activeCadence || Boolean(ticket.guest_confirmed);
   const rawStage = ticketStage({
     status: ticket.status,
     closed,
@@ -1562,8 +1581,9 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                 <div className="mt-2 space-y-3">
                   <h2 className="text-xl font-semibold">Verify the outcome</h2>
                   <p className="text-sm text-muted-foreground">
-                    The repair is reported complete. Contact the guest and confirm it is genuinely
-                    fixed.
+                    {breezewayCheck && !guestComm.activeCadence
+                      ? "Breezeway says the work is finished. Check the finished work."
+                      : "The repair is reported complete. Contact the guest and confirm it is genuinely fixed."}
                   </p>
                   {role.can("work_orders_internal") ? (
                     <TicketWorkOrderPanel
@@ -1581,9 +1601,15 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                     />
                   )}
                   <div className="flex flex-wrap gap-2">
-                    <Button size="lg" onClick={markVerified}>
-                      Guest confirmed it is fixed
-                    </Button>
+                    {breezewayCheck && !guestComm.activeCadence ? (
+                      <Button size="lg" onClick={() => void markVerified(true)}>
+                        The finished work is checked
+                      </Button>
+                    ) : (
+                      <Button size="lg" onClick={() => void markVerified()}>
+                        Guest confirmed it is fixed
+                      </Button>
+                    )}
                     <Button size="lg" variant="outline" onClick={stillNeedsRepair}>
                       Still needs repair
                     </Button>

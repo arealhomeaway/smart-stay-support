@@ -413,7 +413,9 @@ function OwnerHubBody({
     (a) => !selectedHomeId || !a.propertyId || a.propertyId === selectedHomeId,
   ).length;
   const search = Route.useSearch();
-  const view = search.view ?? "home";
+  // Build 17 finding 7: a notification link names the item (?opportunity=), new and old alike; it
+  // opens the Opportunities view with that item open, never the dashboard plan.
+  const view = search.view ?? (search.opportunity ? "opportunities" : "home");
 
   return (
     <LogTimeContext.Provider value={preview ? null : openLogTime}>

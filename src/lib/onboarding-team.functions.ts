@@ -14,6 +14,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assignablePeople } from "@/lib/assignable-people";
+import { projectTeamRefusal } from "@/lib/onboarding-team-rules";
 
 const POOL_ROLES = ["onboarding_project_manager", "utilities", "design_staging"] as const;
 const OPERATIONS_OWNED = new Set(["property_coordinator", "owner"]);
@@ -26,6 +27,16 @@ async function canManageTeam({ supabase, userId }: Ctx) {
     supabase.rpc("is_onboarding_director", { _user_id: userId }),
   ]);
   return sup.data === true || dir.data === true;
+}
+
+/**
+ * Build 17 finding 9: the Project Team rule is the database's own (can_manage_project_team),
+ * the same rule the save function applies, so the screen never offers a change the save refuses.
+ */
+async function canManageProjectTeam({ supabase, userId }: Ctx) {
+  const rpc = supabase.rpc.bind(supabase) as unknown as (n: string, a: Record<string, unknown>) => Promise<{ data: unknown }>;
+  const r = await rpc("can_manage_project_team", { _user_id: userId });
+  return r.data === true;
 }
 
 async function assertCanManage(ctx: Ctx) {
@@ -204,18 +215,21 @@ export const setProjectRoleAssignee = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertCanManage(context as unknown as Ctx);
+    if (!(await canManageProjectTeam(context as unknown as Ctx)))
+      throw new Error(projectTeamRefusal("Only the Onboarding Director or leadership can change the Onboarding team."));
     if (OPERATIONS_OWNED.has(data.roleCode) || data.roleCode === "onboarding_director")
       throw new Error("That role is not assigned from the Project Team.");
     // Pending SQL, intentionally no separate-write fallback.
-    type TeamRpc = (name: string, args: Record<string, unknown>) => Promise<{ data: { ok: true; moved: number } | null; error: { message: string } | null }>;
+    type TeamRpc = (name: string, args: Record<string, unknown>) => Promise<{ data: { ok: true; changed?: boolean; moved: number } | null; error: { message: string } | null }>;
     // Bind: supabase-js rpc reads this.rest, so a detached reference crashes.
     const rpc = context.supabase.rpc.bind(context.supabase) as unknown as TeamRpc;
     const result = await rpc("set_onboarding_project_role", {
       _project_id: data.projectId, _role_code: data.roleCode,
-      _user_id: data.userId, _reassign_pending: data.reassignPending,
+      _user_id: data.userId,
+      // A new Project Manager takes the home's unfinished Project Manager work (Build 17 finding 9).
+      _reassign_pending: data.roleCode === "onboarding_project_manager" ? true : data.reassignPending,
     });
-    if (result.error) throw new Error(result.error.message);
+    if (result.error) throw new Error(projectTeamRefusal(result.error.message));
     if (!result.data) throw new Error("Project Team did not return a saved result. Nothing was changed.");
     return result.data;
   });
@@ -241,7 +255,7 @@ export const readProjectTeam = createServerFn({ method: "POST" })
         ? sb.from("onboarding_template_versions").select("snapshot").eq("id", project.template_version_id).maybeSingle()
         : Promise.resolve({ data: null }),
       sb.from("onboarding_tasks").select("assigned_seat").eq("property_id", data.propertyId).in("status", ["open", "in_progress", "blocked"]),
-      canManageTeam(context as unknown as Ctx),
+      canManageProjectTeam(context as unknown as Ctx),
     ]);
     const used = new Set<string>(POOL_ROLES);
     const steps = ((version.data?.snapshot as { steps?: { functional_role?: string | null }[] } | null)?.steps ?? []);

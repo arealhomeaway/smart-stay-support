@@ -121,6 +121,7 @@ export function TaskWorkspace({
   title,
   subtitle,
   headerExtra,
+  headerAction,
   footer,
   children,
   /** "wide" is the default working panel; "full" is for dense records. */
@@ -137,6 +138,8 @@ export function TaskWorkspace({
   title: React.ReactNode;
   subtitle?: React.ReactNode;
   headerExtra?: React.ReactNode;
+  /** A labelled control at the top right (for example Close); replaces the bare X. */
+  headerAction?: React.ReactNode;
   footer?: React.ReactNode;
   children: React.ReactNode;
   width?: "wide" | "full";
@@ -144,12 +147,13 @@ export function TaskWorkspace({
 }) {
   const body = (
     <>
-      <div className="flex shrink-0 items-start gap-3 border-b px-5 py-4 pr-12">
+      <div className={cn("flex shrink-0 items-start gap-3 border-b px-5 py-4", headerAction ? "" : "pr-12")}>
         <div className="min-w-0 flex-1">
           <div className="truncate text-base font-semibold">{title}</div>
           {subtitle ? <div className="mt-0.5 text-sm text-muted-foreground">{subtitle}</div> : null}
           {headerExtra ? <div className="mt-2">{headerExtra}</div> : null}
         </div>
+        {headerAction ? <div className="shrink-0">{headerAction}</div> : null}
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{children}</div>
       {footer ? (
@@ -166,6 +170,7 @@ export function TaskWorkspace({
         <DialogContent
           className={cn(
             "flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0",
+            headerAction && "[&>button.absolute]:hidden",
             width === "full"
               ? "sm:max-w-[min(96vw,72rem)]"
               : "sm:max-w-[min(94vw,56rem)] lg:max-w-[min(90vw,60rem)]",
@@ -187,6 +192,7 @@ export function TaskWorkspace({
         side="right"
         className={cn(
           "flex w-full flex-col gap-0 p-0",
+          headerAction && "[&>button.absolute]:hidden",
           // Phone: full screen. Desktop: a genuine working panel, not a strip.
           width === "full"
             ? "sm:max-w-[min(100vw,72rem)]"

@@ -7,10 +7,20 @@ import { SectionCard } from "@/components/ui/page";
 import { getPropertyContactContext } from "@/lib/guest-context.functions";
 import { arrivalReadyStatus, recordArrivalReady } from "@/lib/scorecard-capture.functions";
 import { CAPTURE_COPY } from "@/lib/scorecard-capture";
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { usDate, usDateTime } from "@/lib/dates";
 
-/** "Ready for arrival" on a home's next arrival. Operations staff only (the caller decides). */
+/**
+ * "Ready for arrival" on a home's next arrival. Operations staff only (the caller decides).
+ * Behind the arrival_ready_button switch, OFF: the arrival check replaces it (Build 16 B1).
+ */
 export function ArrivalReadyCard({ propertyId }: { propertyId: string }) {
+  const flags = useFeatureFlags();
+  if (!flags.enabled("arrival_ready_button")) return null;
+  return <ArrivalReadyCardBody propertyId={propertyId} />;
+}
+
+function ArrivalReadyCardBody({ propertyId }: { propertyId: string }) {
   const contextFn = useServerFn(getPropertyContactContext);
   const statusFn = useServerFn(arrivalReadyStatus);
   const recordFn = useServerFn(recordArrivalReady);

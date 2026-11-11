@@ -1,5 +1,4 @@
 import { formatPropertyLabel } from "@/lib/property-label";
-import { QueueOpenLogger } from "@/components/scorecard/QueueOpenLogger";
 /**
  * Supervisor Operations Home — an exception board, not a stat dashboard.
  *
@@ -197,7 +196,6 @@ function Oversight() {
 
   return (
     <>
-      <QueueOpenLogger source="oversight" />
       <OversightBoard data={tickets.data} s={support.data} />
     </>
   );

@@ -170,9 +170,11 @@ function AvailabilityFinderPage() {
       const quote = option.result.sourceQuote
         ? { total: option.result.sourceQuote.total, currency: option.result.sourceQuote.currency }
         : { total: option.result.quote?.total ?? null, currency: option.result.quote?.currency ?? null };
+      // Build 17 finding 4: a further home joins the lead the first offer made, never a new lead.
+      const leadId = search.leadId ?? offeredLeadId ?? undefined;
       const saved = await offerPropertyToLead({
         data: {
-          ...(search.leadId ? { leadId: search.leadId } : {}),
+          ...(leadId ? { leadId } : {}),
           propertyId: option.result.id,
           search: {
             location: search.location!, checkIn: search.checkIn!, checkOut: search.checkOut!,
@@ -193,6 +195,9 @@ function AvailabilityFinderPage() {
       setChosen([option.result.id]);
       setOfferedId(option.result.id);
       setOfferedLeadId(saved.leadId);
+      if (!search.leadId && saved.leadId) {
+        void navigate({ search: (prev: FinderSearch) => ({ ...prev, leadId: saved.leadId }), replace: true });
+      }
       setSeenIds((currentIds) => currentIds.includes(option.result.id) ? currentIds : [...currentIds, option.result.id]);
       setOfferDialog(null);
     } catch (error) {

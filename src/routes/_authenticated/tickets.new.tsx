@@ -639,20 +639,26 @@ export function NewTicketForm({
   );
 
   return (
-    <div className="mx-auto max-w-[600px] space-y-5">
+    // Bottom room on phones so the ? Help button never covers the last line (Build 16 D).
+    <div className="mx-auto max-w-[600px] space-y-5 pb-24 sm:pb-0">
       {!inPanel && <BackControl origin={resolveOrigin(context.origin, "ticket")} />}
       <h1 className="text-3xl font-semibold">Record work</h1>
 
-      <Link
-        to="/coach"
-        className="flex min-h-11 items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm transition hover:bg-primary/10"
-      >
-        <span>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
+        <span className="min-w-0 flex-1">
           Not sure how to handle it? Describe it to the Coach and it will set the priority, build the checklist and write the
           vendor brief.
         </span>
-        <span className="whitespace-nowrap font-semibold text-primary">Ask the Coach</span>
-      </Link>
+        <Button asChild variant="outline" className="min-h-11 border-primary font-semibold text-primary">
+          <Link
+            to="/coach"
+            search={{ q: description.trim() || undefined, propertyId: propertyId || undefined }}
+            data-testid="ask-the-coach"
+          >
+            Ask the Coach
+          </Link>
+        </Button>
+      </div>
 
       {saved ? (
         <div className="space-y-4">
@@ -772,7 +778,7 @@ export function NewTicketForm({
 
           {showUnderstood && (
             <div className="space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4" data-testid="resolve-understood">
-              <strong className="text-sm">Resolve understood:</strong>
+              <strong className="text-sm">Resolve understood</strong>
               <dl className="grid grid-cols-1 gap-x-3 gap-y-2 text-sm sm:grid-cols-[220px_1fr]">
                 <dt className="text-muted-foreground">Problem</dt>
                 <dd className="font-semibold">{understood.problem}</dd>

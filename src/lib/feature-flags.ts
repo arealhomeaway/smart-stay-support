@@ -50,6 +50,9 @@ export const FLAG_KEYS = [
   // Resolve work orders and Breezeway sends from Resolve (register C4). Off: work orders are
   // made in Breezeway and linked on the ticket.
   "internal_work_orders",
+  // Build 16 B1, B2: retired Home buttons, kept behind switches that stay OFF.
+  "arrival_ready_button",
+  "finance_packet_button",
 ] as const;
 
 export type FlagKey = (typeof FLAG_KEYS)[number];

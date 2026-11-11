@@ -104,6 +104,7 @@ type Item = {
     stay: string | null;
     platform: string | null;
     link: string | null;
+    posted: string | null;
   };
 };
 
@@ -139,8 +140,8 @@ export function RecordRoutinePanel({
       onOpenChange={onOpenChange}
       title={PANEL_COPY.title}
       subtitle={PANEL_COPY.intro}
-      footer={
-        <Button variant="outline" onClick={() => onOpenChange(false)}>
+      headerAction={
+        <Button variant="outline" className="min-h-11" onClick={() => onOpenChange(false)}>
           {PANEL_COPY.close}
         </Button>
       }
@@ -183,6 +184,11 @@ export function RecordRoutinePanel({
           <p className="flex items-center gap-2 text-base font-semibold text-success">
             <CheckCircle2 className="size-5" aria-hidden="true" /> {PANEL_COPY.saved}
           </p>
+          {!data.loading && (
+            <p className="text-sm" data-testid="routine-left-today">
+              {PANEL_COPY.leftToday(checks.filter((c) => c.mine).reduce((n, c) => n + (data.counts[c.kind] ?? 0), 0))}
+            </p>
+          )}
           {view.ticketId && (
             <Link
               to="/tickets/$ticketId"
@@ -226,7 +232,7 @@ function usePanelData(open: boolean) {
           .limit(200),
         supabase
           .from("guest_feedback")
-          .select(`id, feedback_type, property_id, rating, summary, response_text, source_url, submitted_at, stay_start, stay_end, booking_platform, ownerrez_booking_id, reviewer_display_name, guest_name, reservation_guest_name, properties(${PROP_FIELDS})`)
+          .select(`id, feedback_type, property_id, rating, summary, response_text, source_url, submitted_at, published_date_known, stay_start, stay_end, booking_platform, ownerrez_booking_id, reviewer_display_name, guest_name, reservation_guest_name, properties(${PROP_FIELDS})`)
           .eq("is_demo", demoMode)
           .eq("feedback_type", "external_review")
           .gte("submitted_at", reviewSince)
@@ -304,6 +310,7 @@ function usePanelData(open: boolean) {
             stay: r.stay_start && r.stay_end ? `${usDate(r.stay_start)} to ${usDate(r.stay_end)}` : null,
             platform: r.booking_platform,
             link: r.source_url ?? ownerRezBookingUrl(r.ownerrez_booking_id),
+            posted: r.submitted_at ? usDate(r.submitted_at) : null,
           },
         });
       }
@@ -419,6 +426,7 @@ function ItemList({
         <p className="rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm">{PANEL_COPY.emptyCheck}</p>
       ) : (
         <div className="space-y-1.5">
+          <h3 className="text-sm font-semibold">{PANEL_COPY.dueNow}</h3>
           {items.map((i) => (
             <button
               key={i.key}
@@ -499,7 +507,7 @@ function ByHand({ surveyOn, onBack, onStart }: { surveyOn: boolean; onBack: () =
             setQuery(e.target.value);
             setHome(null);
           }}
-          placeholder="Start typing an address or home name"
+          placeholder={PANEL_COPY.homeSearch}
         />
         {query.trim() && !home && (
           <div className="max-h-48 space-y-1 overflow-y-auto rounded-md border border-border p-1">
@@ -758,6 +766,7 @@ function ReviewCard({ r }: { r: NonNullable<Item["review"]> }) {
         {r.platform && <span className="text-muted-foreground">{r.platform}</span>}
       </div>
       {r.reviewer && <p className="text-muted-foreground">From {r.reviewer}{r.stay ? `, stay ${r.stay}` : ""}</p>}
+      {r.posted && <p className="text-muted-foreground" data-testid="review-posted">{PANEL_COPY.postedOn(r.posted)}</p>}
       <p className="whitespace-pre-line">{r.text || "No review text was copied from OwnerRez."}</p>
       {r.reply && (
         <p className="whitespace-pre-line text-muted-foreground">

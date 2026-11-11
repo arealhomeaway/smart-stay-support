@@ -884,14 +884,10 @@ export const getDirectBookingSettings = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const db = context.supabase;
     await assertStaff(db, context.userId);
-    // Same rule as the database: the Operations Supervisor or Director of
-    // Operations role, or Admin. Approving a quote is a separate rule.
-    const [supervisor, director, admin] = await Promise.all([
-      holds(db, context.userId, "ops_supervisor"),
-      holds(db, context.userId, "director_ops"),
-      loose(db).rpc("has_role", { _user_id: context.userId, _role: "admin" }),
-    ]);
-    return { settings: await loadSettings(db), canEdit: supervisor || director || (admin as { data: unknown }).data === true };
+    // Same rule as the database: Admin edits; the Operations Supervisor and the
+    // Director of Operations view (register A11; Build 16 C2). Approving a quote is a separate rule.
+    const admin = await loose(db).rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    return { settings: await loadSettings(db), canEdit: (admin as { data: unknown }).data === true };
   });
 
 export const saveDirectBookingSettings = createServerFn({ method: "POST" })

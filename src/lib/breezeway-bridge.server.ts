@@ -7,7 +7,7 @@
  * Breezeway) and links a Breezeway work order to a ticket. Nothing here creates, changes or
  * deletes anything in Breezeway.
  */
-import { BRIDGE_COPY, breezewayTaskLink, type TicketBreezewayOrder } from "./breezeway-bridge";
+import { BRIDGE_COPY, breezewayReportLink, breezewayTaskLink, breezewayTaskPage, isFinishedState, type TicketBreezewayOrder } from "./breezeway-bridge";
 export type { TicketBreezewayOrder } from "./breezeway-bridge";
 
 async function admin() {
@@ -74,7 +74,7 @@ export async function runBreezewaySafetySweep(limit = 10) {
 }
 
 const ORDER_SELECT =
-  "id, breezeway_task_id, property_id, name, department, status, scheduled_date, finished_at, assignees, report_url, linked_ticket_id, breezeway_updated_at";
+  "id, breezeway_task_id, property_id, name, department, status, stage, scheduled_date, finished_at, assignees, report_url, linked_ticket_id, breezeway_updated_at";
 
 type OrderRow = {
   id: string;
@@ -83,6 +83,7 @@ type OrderRow = {
   name: string | null;
   department: string | null;
   status: string | null;
+  stage?: string | null;
   scheduled_date: string | null;
   finished_at: string | null;
   assignees: unknown;
@@ -104,6 +105,9 @@ function toOrder(r: OrderRow): TicketBreezewayOrder {
       ? (r.assignees as { name?: string | null }[]).map((a) => a?.name ?? "").filter(Boolean)
       : [],
     link: breezewayTaskLink(r.breezeway_task_id, r.report_url),
+    taskPage: breezewayTaskPage(r.breezeway_task_id),
+    reportLink: breezewayReportLink(r.report_url),
+    finished: isFinishedState(r.stage ?? null, r.status),
     linkedTicketId: r.linked_ticket_id,
     updatedAt: r.breezeway_updated_at,
   };

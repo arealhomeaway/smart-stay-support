@@ -1,5 +1,37 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 11 build 17: nine review panel findings (after Build 16, before the smoke test; stage in docs/pending/build17/)
+- [x] 1 Both bulk edit Saves (template steps, home tasks) save and record who and when
+- [x] 2 Homeowner sees a staff message and can reply as soon as a thread exists
+- [x] 3 Business decision required blocks completion until owner approval (single and bulk complete)
+- [x] 4 Availability Finder second home joins the same lead, no duplicate; report reachability
+- [x] 5 Send to Active Owner shows for every home in a live program; hides only archived or closed
+- [x] 6 Enroll result stays open: steps, counts, Retry per failed step, success message, setup link
+- [x] 7 Owner notifications open the exact item (new and existing)
+- [x] 8 Undated OwnerRez reviews are historical, never today, never start follow ups
+- [x] 9 Project Team screen rule matches database; saved only when PM changed; plain refusal; routing
+- [x] Each: published or preview, failing test first, fix, passing test; suite, browser desktop and phone (pages open on both; the new clicks themselves were not tried in the browser)
+
+## Nov 11 build 16: answers, drift and small board fixes (no publish; stage in docs/pending/build16/)
+- [x] A1 Breezeway safety sweep always scheduled, does nothing while bridge off; Turn on only moves start line
+- [x] A2 Ticket shows Open in Breezeway and Open the report
+- [x] A3 Linked Breezeway work order finished: ticket to Verify the outcome, next step Check the finished work
+- [x] A4 Connection panel: webhook registered wording; remove old pilot home
+- [x] B1 Ready for arrival button on Home behind switch OFF
+- [x] B2 Finance packet delivered button on Home behind switch OFF
+- [x] B3 Queue checks only from All unclaimed and Team Queue
+- [x] B4 Register B1, B2, B4, B5, BN7, BN8 aligned with the guide
+- [x] B5 Owner stays recognised (owner booking type or owner stay block) and counted
+- [x] C1 Vendor coverage counts only Approved and Gold
+- [x] C2 Direct Bookings settings: Admin edits, Supervisor and Director view
+- [x] C3 Active Owner not in the coordinator menu
+- [x] C4 Add user keeps the invite code (no change)
+- [x] C5 Register T7 matches the built Notion group; label reads Quiet, no number
+- [x] C6 Ticket handoff keeps Person (optional) (no change)
+- [x] D Small board fixes: Record work, Record routine work, Team Queue, Navigation, Direct Bookings, Properties
+- [x] E Register lines T8, T9, C11, N11, P7 and timing
+- [x] F Tests, cancelled practice, browser desktop and phone, report conflicts
+
 ## Nov 10 build 15: Kati's onboarding tickets 65, 66, 67 (O7 to O10; no publish, Breezeway send OFF)
 - [x] 65 Evidence = file or note (5+ characters); task details over 2,000 characters no longer block saving
 - [x] 65 Bulk Mark complete with one shared note or file and Done before Resolve date (applied 0329, 0330)

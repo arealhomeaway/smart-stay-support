@@ -427,8 +427,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                         onClick={() => openRecordRoutine()}
                       >
                         <ClipboardCheck className="size-4" aria-hidden="true" />
-                        <span className="sm:hidden">Routine work</span>
-                        <span className="hidden sm:inline">Record routine work</span>
+                        <span>Record routine work</span>
                       </Button>
                     )}
                   </div>

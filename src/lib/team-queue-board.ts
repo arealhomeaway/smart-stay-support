@@ -34,7 +34,8 @@ export const TEAM_QUEUE_COPY = {
     notion: "Imported from Notion",
   },
   groupCount: (n: number, longest: string) => `${n} waiting · Longest: ${longest}`,
-  notionCount: (n: number) => `${n} quiet · No clocks or alerts`,
+  // Build 16 C5 (register T7): no number on the quiet Notion group.
+  notionCount: (_n?: number) => "Quiet · No clocks or alerts",
   show: "Show",
   hide: "Hide",
   notionTeams: { team_a: "Team A", team_b: "Team B", unassigned: "Unassigned" },
@@ -48,6 +49,8 @@ export const TEAM_QUEUE_COPY = {
     before: (sup: number, dir: number) => `If nobody takes it, a supervisor is alerted at ${sup} minutes and the director at ${dir}.`,
     supervisor: (dir: number) => `A supervisor has been alerted. The director is alerted at ${dir} minutes.`,
     both: "A supervisor and the director have been alerted.",
+    handoffBefore: (m: number) => `If nobody accepts it, a supervisor is alerted at ${m} minutes.`,
+    handoffSent: "A supervisor has been alerted.",
   },
   openBreezeway: "Open in Breezeway",
   nextStep: (s: string) => `Next step: ${s}`,
@@ -267,6 +270,21 @@ export function alertLine(
   if (sent?.director) return TEAM_QUEUE_COPY.alert.both;
   if (sent?.supervisor) return TEAM_QUEUE_COPY.alert.supervisor(timing.directorMinutes);
   return TEAM_QUEUE_COPY.alert.before(timing.supervisorMinutes, timing.directorMinutes);
+}
+
+/**
+ * The alert line under a Right now handoff row (Build 16 D, register T6): the minute check tells
+ * the Operations Supervisor when nobody has accepted it after the handoff minutes (default 15).
+ */
+export function handoffAlertLine(
+  priority: string | null | undefined,
+  supervisorAlerted: boolean,
+  handoffMinutes = 15,
+): string | null {
+  if (priority !== "p1") return null;
+  return supervisorAlerted
+    ? TEAM_QUEUE_COPY.alert.handoffSent
+    : TEAM_QUEUE_COPY.alert.handoffBefore(handoffMinutes);
 }
 
 /** Groups the recorded alerts by ticket, keeping only those for the ticket's current wait. */

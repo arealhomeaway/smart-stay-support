@@ -586,7 +586,13 @@ export const bulkUpdateHomeTasksFn = createServerFn({ method: "POST" })
       _set_stage: p.stage !== undefined,
       _stage: p.stage ?? null,
     });
-    if (result.error) throw new Error(result.error.message);
+    if (result.error) {
+      // Build 17 finding 1: a refusal names who can edit, never a misleading or database message.
+      const { data: proj } = await context.supabase
+        .from("onboarding_projects").select("id").eq("property_id", data.propertyId).neq("status", "cancelled").limit(1);
+      const { bulkEditRefusal } = await import("@/lib/bulk-edit-refusal");
+      throw new Error(bulkEditRefusal(result.error.message, (proj ?? []).length > 0));
+    }
     if (!result.data) throw new Error("The bulk edit did not return a result. Nothing was saved.");
     return result.data;
   });

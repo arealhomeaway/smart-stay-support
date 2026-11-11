@@ -150,8 +150,11 @@ export type CoverageCell = {
   status: "complete" | "missing_primary" | "missing_backup" | "missing_both";
 };
 
-/** Only these lifecycle states count as a qualified Primary/Backup. */
-const QUALIFIED = new Set(["pilot", "approved", "gold", "corrective_action"]);
+/**
+ * Only Approved and Gold count as a qualified Primary/Backup (register B3; Build 16 C1).
+ * Candidates, Pilot, Transitional Review and Corrective Action never fill a coverage slot.
+ */
+const QUALIFIED = new Set(["approved", "gold"]);
 
 export function coverageMatrix(
   markets: string[],

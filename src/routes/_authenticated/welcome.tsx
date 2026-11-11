@@ -46,7 +46,7 @@ const basics = [
     title: "Work goes to roles",
     body: "The property determines the pod; priority and time determine who gets it. Coverage keeps routing working at lunch and after hours.",
     to: "/team" as const,
-    cta: "Team & Coverage",
+    cta: "Team and Coverage",
   },
   {
     icon: ShieldAlert,

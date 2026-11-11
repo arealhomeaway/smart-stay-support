@@ -143,7 +143,7 @@ describe("7. Playbook library read only", () => {
   });
   it("the Team group in the Operations menu shows Team & Coverage and Playbooks to coordinators", () => {
     const menu = operationsMenu({ can: (c) => has(PC.roles, PC.seats, c), canOpen: (path) => canOpenPath(path, PC) });
-    expect(menu.find((g) => g.label === "Team")?.items.map((i) => i.label)).toEqual(["Team & Coverage", "Playbooks"]);
+    expect(menu.find((g) => g.label === "Team")?.items.map((i) => i.label)).toEqual(["Team and Coverage", "Playbooks"]);
   });
 });
 

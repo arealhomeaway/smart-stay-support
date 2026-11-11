@@ -107,9 +107,10 @@ describe("the top bar button opens the panel in place", () => {
     expect(routineButton).not.toContain("asChild");
   });
 
-  it("shortens to Routine work on a phone, full words from small screens up", () => {
-    expect(routineButton).toContain('<span className="sm:hidden">Routine work</span>');
-    expect(routineButton).toContain('<span className="hidden sm:inline">Record routine work</span>');
+  // Build 16 D (board 2): the full words on every screen size, phone included.
+  it("reads Record routine work on a phone and on larger screens", () => {
+    expect(routineButton).toContain("<span>Record routine work</span>");
+    expect(routineButton).not.toContain(">Routine work</span>");
     expect(routineButton).toContain('aria-label="Record routine work"');
   });
 

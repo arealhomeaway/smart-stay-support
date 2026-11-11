@@ -54,7 +54,7 @@ describe("the page words, exactly as drawn", () => {
   it("group titles in board order, and the count lines", () => {
     expect(Object.values(TEAM_QUEUE_COPY.groups)).toEqual(["Handoffs waiting for you", "From email", "From Breezeway", "From OwnerRez", "Imported from Notion"]);
     expect(TEAM_QUEUE_COPY.groupCount(3, "12 minutes")).toBe("3 waiting · Longest: 12 minutes");
-    expect(TEAM_QUEUE_COPY.notionCount(4)).toBe("4 quiet · No clocks or alerts");
+    expect(TEAM_QUEUE_COPY.notionCount(4)).toBe("Quiet · No clocks or alerts");
     expect(TEAM_QUEUE_COPY.notionLine).toBe("Imported from Notion. No clock.");
   });
   it("row words: home, guest, alert lines, buttons and done states", () => {

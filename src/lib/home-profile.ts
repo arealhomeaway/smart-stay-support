@@ -143,8 +143,8 @@ export const HOME_PROFILE_SECTIONS: ProfileSection[] = [
       { key: "gps", label: "GPS Coordinates", src: sys("gps"), judged: true },
       { key: "status", label: "Status", src: sys("status"), judged: true },
       { key: "handoff_date", label: "Handoff Date", src: sys("handoff_date"), judged: true },
-      { key: "or_link", label: "OR Property Link", src: link("OR Property Link", "system", false), judged: true },
-      { key: "bw_link", label: "BW Property Link", src: link("BW Property Link", "system", false), judged: true },
+      { key: "or_link", label: "OwnerRez property link", src: link("OR Property Link", "system", false), judged: true },
+      { key: "bw_link", label: "Breezeway property link", src: link("BW Property Link", "system", false), judged: true },
     ],
   },
   {

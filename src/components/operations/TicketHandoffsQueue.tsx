@@ -5,6 +5,7 @@
  * changed (settleHandoff), the same order as the ticket's own Reassignments panel.
  */
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import {
   TEAM_QUEUE_COPY,
   declineReasonOk,
   groupCountLine,
+  handoffAlertLine,
   handoffFromLine,
   handoffsForMe,
   isLate,
@@ -90,6 +92,24 @@ export function TicketHandoffsQueue({
   const [declining, setDeclining] = useState<string | null>(null);
   const [reason, setReason] = useState("");
   const db = supabase as unknown as Db;
+  // The 15 minute handoff alerts the minute check has sent (Build 16 D: the alert line on handoff rows).
+  const rightNowTickets = rows.filter((h) => (h.priority ?? h.ticket?.priority) === "p1").map((h) => h.ticket_id).sort();
+  const sent = useQuery({
+    queryKey: ["team-queue-handoff-alerts", rightNowTickets],
+    enabled: rightNowTickets.length > 0,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("ticket_timed_alerts")
+        .select("ticket_id, kind, episode_at")
+        .in("ticket_id", rightNowTickets)
+        .eq("kind", "handoff_supervisor");
+      if (error) throw error;
+      return (data ?? []) as { ticket_id: string; kind: string; episode_at: string }[];
+    },
+  });
+  const supervisorAlerted = (ticketId: string, createdAt: string) =>
+    (sent.data ?? []).some((r) => r.ticket_id === ticketId && Date.parse(r.episode_at) === Date.parse(createdAt));
 
   const liveIds = new Set(rows.map((h) => h.id));
   const doneRows = Object.values(done)
@@ -254,6 +274,7 @@ export function TicketHandoffsQueue({
             home={rowHome(t)}
             fromLine={handoffFromLine(homeTeamOf(h.from_user), ticketTeam(t) ?? myTeam)}
             wait={{ text: waitLine(h.created_at, now, late), late }}
+            alert={handoffAlertLine(priority, supervisorAlerted(h.ticket_id, h.created_at))}
             breezewayUrl={rowBreezeway(t)}
             nextStep={h.next_action}
             done={

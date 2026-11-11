@@ -127,7 +127,7 @@ describe("2. Finance on a Supervisor type account", () => {
       expect(canOpenPath(path, FIN)).toBe(false);
     expect(labels(FIN)).not.toContain("Team Queue");
     expect(labels(FIN)).not.toContain("Oversight");
-    expect(labels(FIN)).not.toContain("Team & Coverage");
+    expect(labels(FIN)).not.toContain("Team and Coverage");
   });
   it("A8 Work orders view, A9 Vendors view, A10 Claims and refunds view, A12 Properties view", () => {
     for (const path of ["/work-orders", "/vendors", "/claims", "/recovery", "/properties", "/property/abc"]) {
@@ -183,8 +183,9 @@ describe("4. Admin menu and pages", () => {
       expect(adminTabs(p)).toEqual(["Help Tickets"]);
       for (const path of ["/integrations", "/integrations/notion-import", "/audit", "/imported-tickets", "/oversight-access-log"])
         expect(canOpenPath(path, p)).toBe(false);
+      // Build 16 D: no Admin tools menu item for them; Help Tickets opens from the ? control and the account page.
       const admin = operationsMenu(nav(p)).find((g) => g.label === "Admin");
-      expect(admin?.items.map((i) => i.to)).toEqual(["/help-tickets"]);
+      expect(admin === undefined).toBe(true);
     }
   });
   it("the Admin keeps every Admin page", () => {

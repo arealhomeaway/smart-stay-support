@@ -100,7 +100,8 @@ export const recordArrivalReady = createServerFn({ method: "POST" })
 
 export const logQueueOpen = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ source: z.enum(["team_queue", "supervisor_check", "oversight"]) }).parse(d))
+  .inputValidator((d: unknown) => // Build 16 B: only opening All unclaimed or the Team Queue is a queue check.
+    z.object({ source: z.literal("team_queue") }).parse(d))
   .handler(async ({ data, context }) => {
     // Never blocks the page: a missing function or any error just means nothing was logged.
     const { data: r, error } = await loose(context.supabase).rpc("log_queue_open", { _source: data.source });

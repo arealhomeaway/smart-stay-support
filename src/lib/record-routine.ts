@@ -56,19 +56,19 @@ export const CHECKS: Record<LiveCheck, CheckDef> = {
     label: "Guest touch bases",
     single: "Guest touch base",
     team: "guest_experience",
-    teamLine: "Team A, the guest experience queue",
+    teamLine: "Team A, guest experience queue",
     purpose:
       "A mid stay check in call to make sure the guest is settled and catch small problems before they become a bad review.",
-    stepsHeading: "Work through it",
+    stepsHeading: "Check each one",
     steps: ROUTINE_CONFIG.guest_touch_base.steps,
     outcomes: ["looks_good", "needs_follow_up", "no_answer", "not_applicable"],
   },
   maintenance_review: {
     kind: "maintenance_review",
-    label: "Work order review",
-    single: "Work order review",
+    label: "Maintenance reviews",
+    single: "Maintenance review",
     team: "property_operations",
-    teamLine: "Team B, the property operations queue",
+    teamLine: "Team B, property operations queue",
     purpose:
       "Check maintenance and any Breezeway work order a vendor marked Finished, including lawn care and landscaping. Due within 24 hours.",
     stepsHeading: "Check each one",
@@ -81,9 +81,9 @@ export const CHECKS: Record<LiveCheck, CheckDef> = {
     label: "Guest reviews",
     single: "Guest review",
     team: "guest_experience",
-    teamLine: "Team A, the guest experience queue",
+    teamLine: "Team A, guest experience queue",
     purpose: "Read the review, reply to the guest and decide what the home or the team needs to fix. Reviews under 5 stars come first.",
-    stepsHeading: "Work through it",
+    stepsHeading: "Check each one",
     steps: [
       { id: "read", prompt: "Read the full review and the stay history" },
       { id: "respond", prompt: "Reply to the guest publicly or privately", hint: "Match the tone to the stay." },
@@ -97,9 +97,9 @@ export const CHECKS: Record<LiveCheck, CheckDef> = {
     label: "Survey reviews",
     single: "Survey review",
     team: "guest_experience",
-    teamLine: "Team A, the guest experience queue",
+    teamLine: "Team A, guest experience queue",
     purpose: ROUTINE_CONFIG.survey_review.purpose,
-    stepsHeading: "Work through it",
+    stepsHeading: "Check each one",
     steps: ROUTINE_CONFIG.survey_review.steps,
     outcomes: ["looks_good", "needs_follow_up", "not_applicable"],
   },
@@ -144,10 +144,10 @@ export function teamAllDone(checks: PanelCheck[], counts: Partial<Record<LiveChe
 // ---------- outcomes and review fields ----------
 
 export const PANEL_OUTCOME_LABELS: Record<RoutineOutcome, string> = {
-  looks_good: "All good",
-  needs_follow_up: "Found something to fix",
+  looks_good: "Looks good",
+  needs_follow_up: "Needs follow-up",
   no_answer: "No answer",
-  not_applicable: "Does not apply",
+  not_applicable: "Not applicable",
 };
 
 export const POST_PLACES = [
@@ -270,11 +270,14 @@ type ReviewLike = {
   feedback_type?: string | null;
   rating: number | null;
   submitted_at: string | null;
+  /** False for an OwnerRez review with no publish date: history only (Build 17 finding 8). */
+  published_date_known?: boolean | null;
 };
 
 /** A synced OwnerRez review from the past 14 days that nobody has checked yet. */
 export function reviewNeedsCheck(r: ReviewLike, checkedKeys: Set<string>, now: number = Date.now()): boolean {
   if (r.feedback_type && r.feedback_type !== "external_review") return false;
+  if (r.published_date_known === false) return false;
   if (checkedKeys.has(reviewCheckKey(r.id))) return false;
   const at = Date.parse(r.submitted_at ?? "");
   return Number.isFinite(at) && now - at <= REVIEW_LOOKBACK_DAYS * 86_400_000;
@@ -333,7 +336,11 @@ export const PANEL_COPY = {
   allDone: "Every routine check for your team is done. Nice work.",
   byHand: "Not on the list? Start one by hand",
   byHandTitle: "Start a check by hand",
-  whichHome: "Which home?",
+  whichHome: "Select a home",
+  homeSearch: "Start typing an address or home name",
+  dueNow: "Due now",
+  postedOn: (date: string) => `Posted ${date}`,
+  leftToday: (n: number) => (n === 0 ? "Nothing left today. Nice work." : `${n} left today.`),
   howDidItGo: "How did it go?",
   whatNeedsFixing: "What needs fixing?",
   whoFixes: "Who should fix it?",

@@ -205,6 +205,16 @@ export function breezewayTaskLink(taskId: number | string, reportUrl: string | n
   return reportUrl && reportUrl.trim() ? reportUrl.trim() : `https://app.breezeway.io/task/${taskId}`;
 }
 
+/** The Breezeway task page, always (Build 16 A2: a ticket shows it beside the report). */
+export function breezewayTaskPage(taskId: number | string): string {
+  return `https://app.breezeway.io/task/${taskId}`;
+}
+
+/** The report link Breezeway gives, or null when there is none. */
+export function breezewayReportLink(reportUrl: string | null | undefined): string | null {
+  return reportUrl && reportUrl.trim() ? reportUrl.trim() : null;
+}
+
 /**
  * Tasks the safety sweep mirrors even when they are no longer current, so the bridge sees them:
  * a reported issue created after the start line, or maintenance finished after it.
@@ -229,6 +239,12 @@ export type TicketBreezewayOrder = {
   finishedAt: string | null;
   assignees: string[];
   link: string;
+  /** Open in Breezeway: the task page. */
+  taskPage: string;
+  /** Open the report: only when Breezeway gives one. */
+  reportLink: string | null;
+  /** Finished in Breezeway (Finished, Approved or Closed). */
+  finished: boolean;
   linkedTicketId: string | null;
   updatedAt: string | null;
 };

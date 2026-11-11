@@ -82,8 +82,9 @@ describe("1. Properties list card, as the board", () => {
   });
 
   it("wording of the lines", () => {
+    // Build 16 D: the board's facts line has no neighborhood.
     expect(homeFactsLine({ bedrooms: 4, bathrooms: 3, max_guests: 8, neighborhood: "Rose District" })).toBe(
-      "4 bd · 3 ba · sleeps 8 · Rose District",
+      "4 bd · 3 ba · sleeps 8",
     );
     expect(homeFactsLine({ bedrooms: 3, bathrooms: null, max_guests: null, neighborhood: " " })).toBe("3 bd");
     expect(openTicketsChip(1)).toBe("1 open ticket");

@@ -167,7 +167,7 @@ export function SearchMap({ center, distance, distances, pins, highlightedId, fo
       icon: L.divIcon({
         className: "",
         iconSize: [0, 0],
-        html: `<span data-search-point class="absolute -left-2.5 -top-2.5 size-5 rounded-sm border-[3px] border-background bg-foreground shadow"></span><span data-search-label class="absolute left-4 -top-3 whitespace-nowrap rounded-md bg-foreground px-2 py-0.5 text-xs font-semibold text-background shadow">${escapeHtml(center.label)}</span>`,
+        html: `<span data-search-point class="absolute -left-2.5 -top-2.5 size-5 rounded-full border-[3px] border-background bg-foreground shadow"></span><span data-search-label class="absolute left-4 -top-3 whitespace-nowrap rounded-md bg-foreground px-2 py-0.5 text-xs font-semibold text-background shadow">${escapeHtml(center.label)}</span>`,
       }),
     }).addTo(group);
 

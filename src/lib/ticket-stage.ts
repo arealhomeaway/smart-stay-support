@@ -103,3 +103,18 @@ export function repairIsComplete(input: {
     (input.liveOrders.length > 0 && input.liveOrders.every((o) => Boolean(o.closed_at)))
   );
 }
+
+/**
+ * A linked Breezeway work order (register C4: Breezeway holds the only work orders). Build 16 A3:
+ * once every linked order is finished in Breezeway the ticket moves to Verify the outcome, with
+ * the next step Check the finished work, until someone records that the work was checked.
+ */
+export const BREEZEWAY_CHECK_STEP = "Check the finished work";
+
+export function breezewayRepairSignal(orders: { finished: boolean }[] | null | undefined): {
+  exists: boolean;
+  finished: boolean;
+} {
+  const list = orders ?? [];
+  return { exists: list.length > 0, finished: list.length > 0 && list.every((o) => o.finished) };
+}

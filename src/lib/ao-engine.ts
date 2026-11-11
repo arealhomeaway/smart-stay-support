@@ -110,9 +110,14 @@ export function ownerPace(loggedHours: number, now: Date, endDate: Date, goal = 
   return { weeklyNeeded, onTrack, label: onTrack ? "On track" : "Behind" };
 }
 
-/** Send to Active Owner is offered only when the home has an active program. */
+/**
+ * Send to Active Owner shows for every home in a live program, including a program's second home
+ * and an owner who reached the hour goal; it hides only when there is no program or the program
+ * is closed or archived (Build 17 finding 5).
+ */
 export function canSendToActiveOwner(programStatus: string | null | undefined): boolean {
-  return programStatus === "active";
+  if (!programStatus) return false;
+  return programStatus !== "closed" && programStatus !== "archived";
 }
 
 export function contributionsCsv(rows: { card: string; home: string; member: string; submittedAt: string; values: Record<string, unknown> }[]): string {

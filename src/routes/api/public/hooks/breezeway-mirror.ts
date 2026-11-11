@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
 
 /**
- * The Breezeway safety sweep (every 10 minutes while the bridge is on).
+ * The Breezeway safety sweep: always scheduled every 10 minutes; does nothing while the bridge is off.
  *
  * Keeps Resolve's copy of current Breezeway work close to live for the verified homes and,
  * while the bridge is on, keeps reported issues and finished maintenance from after the start

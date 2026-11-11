@@ -154,7 +154,7 @@ describe("The Record work panel", () => {
     expect(PANEL).not.toContain("ModeCard");
     expect(PANEL).not.toContain("What are you recording?");
     for (const text of ["Which home?", "Describe the problem or request.", "Add photo", "Speak",
-      "Short sentences are fine. Example: The refrigerator is not cold.", "Resolve understood:", "Change the problem",
+      "Short sentences are fine. Example: The refrigerator is not cold.", "Resolve understood</strong>", "Change the problem",
       "Repair needed at the home", "How urgent", "Who will do it",
       "This could be an insurance claim. Escalate this ticket before taking action.", "Escalate now",
       "A supervisor has been told. Wait for their answer before you act.", "Create ticket",

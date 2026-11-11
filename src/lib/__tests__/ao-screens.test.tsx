@@ -60,7 +60,9 @@ describe("screen visibility", () => {
   });
   test("Send to Active Owner gate", () => {
     expect(canSendToActiveOwner("active")).toBe(true);
-    for (const s of ["draft", "paused", "complete", null, undefined]) expect(canSendToActiveOwner(s)).toBe(false);
+    // Build 17 finding 5: live programs (paused, goal reached) keep it; closed, archived or none hide it.
+    for (const s of ["paused", "complete"]) expect(canSendToActiveOwner(s)).toBe(true);
+    for (const s of ["closed", "archived", null, undefined]) expect(canSendToActiveOwner(s)).toBe(false);
   });
   test("verify badge only after homeowner completion", () => {
     expect(showVerifyBadge(null)).toBe(false);
