@@ -87,11 +87,18 @@ describe("the page", () => {
       expect({ w: String(w), hit: w.test(page.replace(/"Supervisor check — Resolve"/g, "")) }).toEqual({ w: String(w), hit: false });
     }
   });
-  it("stays read only, keeps its sweep clocking and its access", () => {
-    expect(page).toContain('<QueueOpenLogger source="supervisor_check" />');
+  it("stays read only and keeps its access; it never clocks a queue check (Build 16 B3, register C2)", () => {
+    expect(page).not.toContain("QueueOpenLogger");
     expect(page).toContain('capability="oversight"');
     expect(page).not.toMatch(/\.(insert|update|upsert|delete)\(/);
     expect(page).not.toMatch(/\.rpc\(/);
     for (const label of ["Last 24 hours", "Overdue", "Unassigned", "Refunds waiting on approval"]) expect(page).toContain(label);
+  });
+});
+
+describe("queue checks count only from the Team Queue (Build 16 B3)", () => {
+  it("Oversight does not clock a queue check and the Team Queue does", () => {
+    expect(readFileSync("src/routes/_authenticated/oversight.tsx", "utf8")).not.toContain("QueueOpenLogger");
+    expect(readFileSync("src/routes/_authenticated/team-queue.tsx", "utf8")).toContain('<QueueOpenLogger source="team_queue" />');
   });
 });
