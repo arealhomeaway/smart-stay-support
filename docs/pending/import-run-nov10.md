@@ -1314,7 +1314,7 @@ Resolve status: 2,228 Closed, 685 open (90 recent, 595 older open). No Resolve t
 | Closed history | 2,228 |
 | Needs a home | 164 |
 | Claims history | 671 (damages $126,960.47, paid back $110,172.16, still open 36 claims) |
-Tabs overlap by design: Recent holds 4 older open tickets with a blank Notion date as well as the 90; Needs a home is every ticket with no home (9 recent, 22 older open, 133 closed).
+Recent and Older open are the same as after Phase A: Recent is 85 first run tickets plus 9 older open tickets with a blank Notion date and a recent page; Older open is the 595 plus the 5 first run tickets now past 30 days. Needs a home is every ticket with no home (9 recent, 22 older open, 133 closed).
 
 ### By team and by owner
 - Team (only open recent tickets have one; older open and closed history are never in the Team Queue): Team A 3, Team B 77 (36 of them because of an open claim), Unassigned 10 (9 Needs a home, 1 with no owner). 90 in all, unchanged.
