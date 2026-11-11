@@ -145,11 +145,6 @@ export function RecordRoutinePanel({
           {PANEL_COPY.close}
         </Button>
       }
-      footer={
-        <Button variant="outline" onClick={() => onOpenChange(false)}>
-          {PANEL_COPY.close}
-        </Button>
-      }
     >
       {view.name === "list" && (
         <CheckList
