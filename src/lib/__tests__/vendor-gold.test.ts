@@ -33,10 +33,10 @@ describe("vendor gold standard", () => {
     });
     for (const status of ["candidate", "pilot", "transitional", "corrective_action"]) {
       const [cell] = coverageMatrix(["OKC"], cat, [row(status, "primary"), row(status, "backup")]);
-      expect(cell.status).toBe("missing_both");
+      expect(cell?.status).toBe("missing_both");
     }
     const [ok] = coverageMatrix(["OKC"], cat, [row("approved", "primary"), row("gold", "backup")]);
-    expect(ok.status).toBe("complete");
+    expect(ok?.status).toBe("complete");
   });
 
   it("coverage shows Missing Primary / Missing Backup / Complete", () => {

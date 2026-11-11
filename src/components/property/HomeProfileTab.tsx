@@ -538,7 +538,7 @@ function ProfileRow({
   onCodeDraft: (id: string, v: string) => void;
   focused: boolean;
   /** Opens the card's Edit (Build 16 D: Fill it in on an empty field). */
-  onFill?: () => void;
+  onFill?: (() => void) | undefined;
 }) {
   const f = flagsFor(item);
   const empty = onFill && isEditable(item) ? (

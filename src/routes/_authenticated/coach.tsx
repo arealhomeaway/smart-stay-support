@@ -47,10 +47,14 @@ import {
 
 export const Route = createFileRoute("/_authenticated/coach")({
   // Record work's Ask the Coach button carries the description and home (Build 16 D).
-  validateSearch: (s: Record<string, unknown>): { q?: string; propertyId?: string } => ({
-    q: typeof s.q === "string" && s.q.trim() ? s.q.slice(0, 2000) : undefined,
-    propertyId: typeof s.propertyId === "string" && /^[0-9a-f-]{36}$/i.test(s.propertyId) ? s.propertyId : undefined,
-  }),
+  validateSearch: (s: Record<string, unknown>): { q?: string | undefined; propertyId?: string | undefined } => {
+    const q = s["q"];
+    const pid = s["propertyId"];
+    return {
+      q: typeof q === "string" && q.trim() ? q.slice(0, 2000) : undefined,
+      propertyId: typeof pid === "string" && /^[0-9a-f-]{36}$/i.test(pid) ? pid : undefined,
+    };
+  },
   head: () => ({
     meta: [
       { title: "Ask the Coach: Resolve Operations" },

@@ -185,7 +185,7 @@ describe("4. Admin menu and pages", () => {
         expect(canOpenPath(path, p)).toBe(false);
       // Build 16 D: no Admin tools menu item for them; Help Tickets opens from the ? control and the account page.
       const admin = operationsMenu(nav(p)).find((g) => g.label === "Admin");
-      expect(admin).toBeUndefined();
+      expect(admin === undefined).toBe(true);
     }
   });
   it("the Admin keeps every Admin page", () => {
