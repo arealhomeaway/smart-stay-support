@@ -54,3 +54,10 @@ describe("Build 17 finding 6: the Enroll result stays on screen until staff clos
   });
 });
 const ENROLL_SUCCESS = "The homeowner is enrolled in Active Owner.";
+
+describe("Build 17 finding 7: an owner notification opens the exact item", () => {
+  it("a link naming an Opportunity opens the Opportunities view with that item open", () => {
+    const src = read("src/routes/_authenticated/owner.tsx");
+    expect(src).toContain('const view = search.view ?? (search.opportunity ? "opportunities" : "home");');
+  });
+});
