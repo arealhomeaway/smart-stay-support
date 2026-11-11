@@ -67,4 +67,4 @@ BEGIN
   PERFORM set_config('app.ao_engine', '', true);
   RETURN jsonb_build_object('automated', true, 'stage', stage, 'outcomes', counts);
 END $function$
-
+;

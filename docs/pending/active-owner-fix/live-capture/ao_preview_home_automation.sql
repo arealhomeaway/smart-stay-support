@@ -40,4 +40,4 @@ BEGIN
   END LOOP;
   RETURN jsonb_build_object('ready', true, 'stage', stage, 'outcomes', counts, 'already_on_plan', already, 'covered', covered);
 END $function$
-
+;
