@@ -257,7 +257,8 @@ BEGIN
   nid := gen_random_uuid();
   got := 0;
   IF prog.notify_email THEN
-    INSERT INTO public.ao_owner_email_days(owner_key, day, kind, notification_id) VALUES (prog.owner_user_id, today, _kind, nid)
+    INSERT INTO public.ao_owner_email_days(owner_key, day, kind, notification_id)
+      VALUES (prog.owner_user_id, today, CASE _kind WHEN 'ao_home_live' THEN 'home_live' WHEN 'ao_plan_ready' THEN 'plan_ready' ELSE 'daily' END, nid)
       ON CONFLICT DO NOTHING;
     GET DIAGNOSTICS got = ROW_COUNT;
   END IF;
