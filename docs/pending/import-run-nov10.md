@@ -1,6 +1,6 @@
 # Notion history import run, Nov 10 (overnight Nov 11 UTC)
 
-## Status: RUNNING (START THE IMPORT received Nov 11 05:13 UTC, Emily's go at about 10:50 PM Central Nov 10). See the Run log at the end; the final report is written there when the run ends.
+## Status: DONE. Phase A and Phase B finished Nov 11 14:56 UTC. The final report is at the end of this file.
 
 (Earlier status, Nov 11 04:50 UTC: armed and waiting.)
 
@@ -1043,3 +1043,481 @@ Note: the Phase A batch table lists batches 1 to 144 twice, because the watcher 
 - Silence since the resume: 0 rows in staff notifications, owner notifications, email log, timed alerts, escalations, owner contact alerts and owner alert log; 0 non-comment activity on imported tickets.
 - Anomalies: none.
 - Not done yet (wait for the finish): the full set claim check, totals by Notion status and by tab, counts by team and owner, comments and files versus a Notion reread, the no home list, Money we could still lose, Team Queue and Home counts, and the cancelled practice.
+
+### Phase B batches after the second resume
+| At (UTC) | Batch | Result | Tickets | Comments, files | Progress | Note |
+|---|---|---|---|---|---|---|
+| 2026-11-11 13:53:05 UTC | closed resumed from the saved cursor (second resume, same go, watch line 2026-11-11 13:52:53.815041+00) | | | | | |
+| 2026-11-11 13:53:15 | 517 | ok | done 3, skipped 0, failed 0 | comments 8, files 0 | total done 1545, cursor saved |  |
+| 2026-11-11 13:53:23 | 518 | ok | done 3, skipped 0, failed 0 | comments 16, files 1 | total done 1548, cursor saved |  |
+| 2026-11-11 13:53:42 | 519 | ok | done 3, skipped 0, failed 0 | comments 31, files 5 | total done 1551, cursor saved |  |
+| 2026-11-11 13:54:04 | 520 | ok | done 3, skipped 0, failed 0 | comments 66, files 12 | total done 1554, cursor saved |  |
+| 2026-11-11 13:55:10 | 521 | ok | done 3, skipped 0, failed 0 | comments 117, files 25 | total done 1557, cursor saved |  |
+| 2026-11-11 13:55:44 | 522 | ok | done 3, skipped 0, failed 0 | comments 17, files 16 | total done 1560, cursor saved |  |
+| 2026-11-11 13:55:54 | 523 | ok | done 3, skipped 0, failed 0 | comments 9, files 1 | total done 1563, cursor saved |  |
+| 2026-11-11 13:56:06 | 524 | ok | done 3, skipped 0, failed 0 | comments 17, files 2 | total done 1566, cursor saved |  |
+| 2026-11-11 13:56:13 | 525 | ok | done 3, skipped 0, failed 0 | comments 13, files 0 | total done 1569, cursor saved |  |
+| 2026-11-11 13:56:21 | 526 | ok | done 3, skipped 0, failed 0 | comments 19, files 1 | total done 1572, cursor saved |  |
+| 2026-11-11 13:56:27 | 527 | ok | done 3, skipped 0, failed 0 | comments 10, files 0 | total done 1575, cursor saved |  |
+| 2026-11-11 13:56:48 | 528 | ok | done 3, skipped 0, failed 0 | comments 44, files 11 | total done 1578, cursor saved |  |
+| 2026-11-11 13:57:06 | 529 | ok | done 3, skipped 0, failed 0 | comments 19, files 6 | total done 1581, cursor saved |  |
+| 2026-11-11 13:57:19 | 530 | ok | done 3, skipped 0, failed 0 | comments 14, files 4 | total done 1584, cursor saved |  |
+| 2026-11-11 13:57:36 | 531 | ok | done 3, skipped 0, failed 0 | comments 28, files 7 | total done 1587, cursor saved |  |
+| 2026-11-11 13:57:46 | 532 | ok | done 3, skipped 0, failed 0 | comments 30, files 2 | total done 1590, cursor saved |  |
+| 2026-11-11 13:57:52 | 533 | ok | done 3, skipped 0, failed 0 | comments 10, files 0 | total done 1593, cursor saved |  |
+| 2026-11-11 13:58:08 | 534 | ok | done 3, skipped 0, failed 0 | comments 12, files 4 | total done 1596, cursor saved |  |
+| 2026-11-11 13:58:17 | 535 | ok | done 3, skipped 0, failed 0 | comments 18, files 2 | total done 1599, cursor saved |  |
+| 2026-11-11 13:58:24 | 536 | ok | done 3, skipped 0, failed 0 | comments 11, files 0 | total done 1602, cursor saved |  |
+| 2026-11-11 13:58:39 | 537 | ok | done 3, skipped 0, failed 0 | comments 30, files 5 | total done 1605, cursor saved |  |
+| 2026-11-11 13:58:48 | 538 | ok | done 3, skipped 0, failed 0 | comments 15, files 1 | total done 1608, cursor saved |  |
+| 2026-11-11 13:58:58 | 539 | ok | done 3, skipped 0, failed 0 | comments 20, files 3 | total done 1611, cursor saved |  |
+| 2026-11-11 13:59:10 | 540 | ok | done 3, skipped 0, failed 0 | comments 35, files 3 | total done 1614, cursor saved |  |
+| 2026-11-11 13:59:24 | 541 | ok | done 3, skipped 0, failed 0 | comments 18, files 4 | total done 1617, cursor saved |  |
+| 2026-11-11 13:59:38 | 542 | ok | done 3, skipped 0, failed 0 | comments 25, files 3 | total done 1620, cursor saved |  |
+| 2026-11-11 13:59:49 | 543 | ok | done 3, skipped 0, failed 0 | comments 31, files 2 | total done 1623, cursor saved |  |
+| 2026-11-11 13:59:58 | 544 | ok | done 3, skipped 0, failed 0 | comments 14, files 1 | total done 1626, cursor saved |  |
+| 2026-11-11 14:00:07 | 545 | ok | done 3, skipped 0, failed 0 | comments 7, files 1 | total done 1629, cursor saved |  |
+| 2026-11-11 14:00:20 | 546 | ok | done 3, skipped 0, failed 0 | comments 15, files 2 | total done 1632, cursor saved |  |
+| 2026-11-11 14:00:27 | 547 | ok | done 3, skipped 0, failed 0 | comments 15, files 0 | total done 1635, cursor saved |  |
+| 2026-11-11 14:00:50 | 548 | ok | done 3, skipped 0, failed 0 | comments 25, files 8 | total done 1638, cursor saved |  |
+| 2026-11-11 14:01:28 | 549 | ok | done 3, skipped 0, failed 0 | comments 34, files 5 | total done 1641, cursor saved |  |
+| 2026-11-11 14:01:36 | 550 | ok | done 3, skipped 0, failed 0 | comments 8, files 0 | total done 1644, cursor saved |  |
+| 2026-11-11 14:01:53 | 551 | ok | done 3, skipped 0, failed 0 | comments 12, files 5 | total done 1647, cursor saved |  |
+| 2026-11-11 14:02:23 | 552 | ok | done 3, skipped 0, failed 0 | comments 40, files 13 | total done 1650, cursor saved |  |
+| 2026-11-11 14:02:36 | 553 | ok | done 3, skipped 0, failed 0 | comments 10, files 4 | total done 1653, cursor saved |  |
+| 2026-11-11 14:02:46 | 554 | ok | done 3, skipped 0, failed 0 | comments 9, files 3 | total done 1656, cursor saved |  |
+| 2026-11-11 14:02:59 | 555 | ok | done 3, skipped 0, failed 0 | comments 54, files 5 | total done 1659, cursor saved |  |
+| 2026-11-11 14:03:04 | 556 | ok | done 3, skipped 0, failed 0 | comments 6, files 0 | total done 1662, cursor saved |  |
+| 2026-11-11 14:03:23 | 557 | ok | done 3, skipped 0, failed 0 | comments 5, files 3 | total done 1665, cursor saved |  |
+| 2026-11-11 14:03:40 | 558 | ok | done 3, skipped 0, failed 0 | comments 23, files 4 | total done 1668, cursor saved |  |
+| 2026-11-11 14:03:51 | 559 | ok | done 3, skipped 0, failed 0 | comments 95, files 4 | total done 1671, cursor saved |  |
+| 2026-11-11 14:04:04 | 560 | ok | done 3, skipped 0, failed 0 | comments 37, files 4 | total done 1674, cursor saved |  |
+| 2026-11-11 14:04:16 | 561 | ok | done 3, skipped 0, failed 0 | comments 6, files 2 | total done 1677, cursor saved |  |
+| 2026-11-11 14:05:02 | 562 | ok | done 3, skipped 0, failed 0 | comments 70, files 32 | total done 1680, cursor saved |  |
+| 2026-11-11 14:05:44 | 563 | ok | done 3, skipped 0, failed 0 | comments 64, files 22 | total done 1683, cursor saved |  |
+| 2026-11-11 14:05:51 | 564 | ok | done 3, skipped 0, failed 0 | comments 3, files 0 | total done 1686, cursor saved |  |
+| 2026-11-11 14:05:59 | 565 | ok | done 3, skipped 0, failed 0 | comments 6, files 1 | total done 1689, cursor saved |  |
+| 2026-11-11 14:06:18 | 566 | ok | done 3, skipped 0, failed 0 | comments 21, files 8 | total done 1692, cursor saved |  |
+| 2026-11-11 14:06:29 | 567 | ok | done 3, skipped 0, failed 0 | comments 24, files 1 | total done 1695, cursor saved |  |
+| 2026-11-11 14:06:48 | 568 | ok | done 3, skipped 0, failed 0 | comments 36, files 7 | total done 1698, cursor saved |  |
+| 2026-11-11 14:06:59 | 569 | ok | done 3, skipped 0, failed 0 | comments 33, files 4 | total done 1701, cursor saved |  |
+| 2026-11-11 14:07:05 | 570 | ok | done 3, skipped 0, failed 0 | comments 18, files 0 | total done 1704, cursor saved |  |
+| 2026-11-11 14:07:14 | 571 | ok | done 3, skipped 0, failed 0 | comments 8, files 1 | total done 1707, cursor saved |  |
+| 2026-11-11 14:07:23 | 572 | ok | done 3, skipped 0, failed 0 | comments 12, files 1 | total done 1710, cursor saved |  |
+| 2026-11-11 14:08:12 | 573 | ok | done 3, skipped 0, failed 0 | comments 40, files 25 | total done 1713, cursor saved |  |
+| 2026-11-11 14:08:24 | 574 | ok | done 3, skipped 0, failed 0 | comments 6, files 2 | total done 1716, cursor saved |  |
+| 2026-11-11 14:08:33 | 575 | ok | done 3, skipped 0, failed 0 | comments 20, files 1 | total done 1719, cursor saved |  |
+| 2026-11-11 14:08:42 | 576 | ok | done 3, skipped 0, failed 0 | comments 14, files 1 | total done 1722, cursor saved |  |
+| 2026-11-11 14:08:48 | 577 | ok | done 3, skipped 0, failed 0 | comments 8, files 0 | total done 1725, cursor saved |  |
+| 2026-11-11 14:09:02 | 578 | ok | done 3, skipped 0, failed 0 | comments 46, files 4 | total done 1728, cursor saved |  |
+| 2026-11-11 14:09:31 | 579 | ok | done 3, skipped 0, failed 0 | comments 97, files 17 | total done 1731, cursor saved |  |
+| 2026-11-11 14:09:44 | 580 | ok | done 3, skipped 0, failed 0 | comments 21, files 4 | total done 1734, cursor saved |  |
+| 2026-11-11 14:10:01 | 581 | ok | done 3, skipped 0, failed 0 | comments 31, files 6 | total done 1737, cursor saved |  |
+| 2026-11-11 14:10:13 | 582 | ok | done 3, skipped 0, failed 0 | comments 7, files 2 | total done 1740, cursor saved |  |
+| 2026-11-11 14:10:21 | 583 | ok | done 3, skipped 0, failed 0 | comments 11, files 0 | total done 1743, cursor saved |  |
+| 2026-11-11 14:10:34 | 584 | ok | done 3, skipped 0, failed 0 | comments 21, files 4 | total done 1746, cursor saved |  |
+| 2026-11-11 14:10:59 | 585 | ok | done 3, skipped 0, failed 0 | comments 36, files 9 | total done 1749, cursor saved |  |
+| 2026-11-11 14:11:06 | 586 | ok | done 3, skipped 0, failed 0 | comments 9, files 0 | total done 1752, cursor saved |  |
+| 2026-11-11 14:11:43 | 587 | ok | done 3, skipped 0, failed 0 | comments 91, files 16 | total done 1755, cursor saved |  |
+| 2026-11-11 14:12:00 | 588 | ok | done 3, skipped 0, failed 0 | comments 10, files 1 | total done 1758, cursor saved |  |
+| 2026-11-11 14:12:18 | 589 | ok | done 3, skipped 0, failed 0 | comments 10, files 0 | total done 1761, cursor saved |  |
+| 2026-11-11 14:12:49 | 590 | ok | done 3, skipped 0, failed 0 | comments 19, files 4 | total done 1764, cursor saved |  |
+| 2026-11-11 14:12:57 | 591 | ok | done 3, skipped 0, failed 0 | comments 17, files 0 | total done 1767, cursor saved |  |
+| 2026-11-11 14:13:04 | 592 | ok | done 3, skipped 0, failed 0 | comments 8, files 0 | total done 1770, cursor saved |  |
+| 2026-11-11 14:13:18 | 593 | ok | done 3, skipped 0, failed 0 | comments 7, files 4 | total done 1773, cursor saved |  |
+| 2026-11-11 14:13:33 | 594 | ok | done 3, skipped 0, failed 0 | comments 27, files 5 | total done 1776, cursor saved |  |
+| 2026-11-11 14:13:39 | 595 | ok | done 3, skipped 0, failed 0 | comments 5, files 0 | total done 1779, cursor saved |  |
+| 2026-11-11 14:13:46 | 596 | ok | done 3, skipped 0, failed 0 | comments 19, files 0 | total done 1782, cursor saved |  |
+| 2026-11-11 14:14:15 | 597 | ok | done 3, skipped 0, failed 0 | comments 21, files 7 | total done 1785, cursor saved |  |
+| 2026-11-11 14:14:24 | 598 | ok | done 3, skipped 0, failed 0 | comments 5, files 1 | total done 1788, cursor saved |  |
+| 2026-11-11 14:14:54 | 599 | ok | done 3, skipped 0, failed 0 | comments 60, files 16 | total done 1791, cursor saved |  |
+| 2026-11-11 14:15:07 | 600 | ok | done 3, skipped 0, failed 0 | comments 30, files 5 | total done 1794, cursor saved |  |
+| 2026-11-11 14:15:14 | 601 | ok | done 3, skipped 0, failed 0 | comments 13, files 0 | total done 1797, cursor saved |  |
+| 2026-11-11 14:15:32 | 602 | ok | done 3, skipped 0, failed 0 | comments 35, files 7 | total done 1800, cursor saved |  |
+| 2026-11-11 14:15:53 | 603 | ok | done 3, skipped 0, failed 0 | comments 31, files 5 | total done 1803, cursor saved |  |
+| 2026-11-11 14:15:59 | 604 | ok | done 3, skipped 0, failed 0 | comments 26, files 0 | total done 1806, cursor saved |  |
+| 2026-11-11 14:16:14 | 605 | ok | done 3, skipped 0, failed 0 | comments 12, files 4 | total done 1809, cursor saved |  |
+| 2026-11-11 14:16:37 | 606 | ok | done 3, skipped 0, failed 0 | comments 47, files 11 | total done 1812, cursor saved |  |
+| 2026-11-11 14:16:43 | 607 | ok | done 3, skipped 0, failed 0 | comments 14, files 0 | total done 1815, cursor saved |  |
+| 2026-11-11 14:16:50 | 608 | ok | done 3, skipped 0, failed 0 | comments 10, files 0 | total done 1818, cursor saved |  |
+| 2026-11-11 14:17:04 | 609 | ok | done 3, skipped 0, failed 0 | comments 17, files 3 | total done 1821, cursor saved |  |
+| 2026-11-11 14:17:11 | 610 | ok | done 3, skipped 0, failed 0 | comments 14, files 0 | total done 1824, cursor saved |  |
+| 2026-11-11 14:17:25 | 611 | ok | done 3, skipped 0, failed 0 | comments 21, files 3 | total done 1827, cursor saved |  |
+| 2026-11-11 14:17:40 | 612 | ok | done 3, skipped 0, failed 0 | comments 45, files 6 | total done 1830, cursor saved |  |
+| 2026-11-11 14:17:48 | 613 | ok | done 3, skipped 0, failed 0 | comments 9, files 1 | total done 1833, cursor saved |  |
+| 2026-11-11 14:17:55 | 614 | ok | done 3, skipped 0, failed 0 | comments 22, files 0 | total done 1836, cursor saved |  |
+| 2026-11-11 14:18:15 | 615 | ok | done 3, skipped 0, failed 0 | comments 13, files 5 | total done 1839, cursor saved |  |
+| 2026-11-11 14:19:07 | 616 | ok | done 3, skipped 0, failed 0 | comments 26, files 35 | total done 1842, cursor saved |  |
+| 2026-11-11 14:19:23 | 617 | ok | done 3, skipped 0, failed 0 | comments 19, files 4 | total done 1845, cursor saved |  |
+| 2026-11-11 14:19:30 | 618 | ok | done 3, skipped 0, failed 0 | comments 21, files 0 | total done 1848, cursor saved |  |
+| 2026-11-11 14:19:40 | 619 | ok | done 3, skipped 0, failed 0 | comments 22, files 2 | total done 1851, cursor saved |  |
+| 2026-11-11 14:20:37 | 620 | ok | done 3, skipped 0, failed 0 | comments 73, files 29 | total done 1854, cursor saved |  |
+| 2026-11-11 14:20:44 | 621 | ok | done 3, skipped 0, failed 0 | comments 7, files 0 | total done 1857, cursor saved |  |
+| 2026-11-11 14:20:57 | 622 | ok | done 3, skipped 0, failed 0 | comments 9, files 3 | total done 1860, cursor saved |  |
+| 2026-11-11 14:21:19 | 623 | ok | done 3, skipped 0, failed 0 | comments 63, files 6 | total done 1863, cursor saved |  |
+| 2026-11-11 14:21:33 | 624 | ok | done 3, skipped 0, failed 0 | comments 17, files 3 | total done 1866, cursor saved |  |
+| 2026-11-11 14:21:44 | 625 | ok | done 3, skipped 0, failed 0 | comments 30, files 3 | total done 1869, cursor saved |  |
+| 2026-11-11 14:22:02 | 626 | ok | done 3, skipped 0, failed 0 | comments 93, files 7 | total done 1872, cursor saved |  |
+| 2026-11-11 14:22:54 | 627 | ok | done 3, skipped 0, failed 0 | comments 108, files 25 | total done 1875, cursor saved |  |
+| 2026-11-11 14:23:02 | 628 | ok | done 3, skipped 0, failed 0 | comments 13, files 1 | total done 1878, cursor saved |  |
+| 2026-11-11 14:23:13 | 629 | ok | done 3, skipped 0, failed 0 | comments 10, files 1 | total done 1881, cursor saved |  |
+| 2026-11-11 14:23:27 | 630 | ok | done 3, skipped 0, failed 0 | comments 8, files 2 | total done 1884, cursor saved |  |
+| 2026-11-11 14:23:41 | 631 | ok | done 3, skipped 0, failed 0 | comments 20, files 7 | total done 1887, cursor saved |  |
+| 2026-11-11 14:23:59 | 632 | ok | done 3, skipped 0, failed 0 | comments 41, files 7 | total done 1890, cursor saved |  |
+| 2026-11-11 14:24:09 | 633 | ok | done 3, skipped 0, failed 0 | comments 8, files 1 | total done 1893, cursor saved |  |
+| 2026-11-11 14:24:45 | 634 | ok | done 3, skipped 0, failed 0 | comments 85, files 12 | total done 1896, cursor saved |  |
+| 2026-11-11 14:25:03 | 635 | ok | done 3, skipped 0, failed 0 | comments 44, files 7 | total done 1899, cursor saved |  |
+| 2026-11-11 14:25:12 | 636 | ok | done 3, skipped 0, failed 0 | comments 14, files 1 | total done 1902, cursor saved |  |
+| 2026-11-11 14:25:24 | 637 | ok | done 3, skipped 0, failed 0 | comments 36, files 3 | total done 1905, cursor saved |  |
+| 2026-11-11 14:25:36 | 638 | ok | done 3, skipped 0, failed 0 | comments 5, files 2 | total done 1908, cursor saved |  |
+| 2026-11-11 14:25:57 | 639 | ok | done 3, skipped 0, failed 0 | comments 48, files 9 | total done 1911, cursor saved |  |
+| 2026-11-11 14:26:13 | 640 | ok | done 3, skipped 0, failed 0 | comments 29, files 6 | total done 1914, cursor saved |  |
+| 2026-11-11 14:26:24 | 641 | ok | done 3, skipped 0, failed 0 | comments 12, files 3 | total done 1917, cursor saved |  |
+| 2026-11-11 14:26:31 | 642 | ok | done 3, skipped 0, failed 0 | comments 10, files 1 | total done 1920, cursor saved |  |
+| 2026-11-11 14:26:46 | 643 | ok | done 3, skipped 0, failed 0 | comments 29, files 6 | total done 1923, cursor saved |  |
+| 2026-11-11 14:26:52 | 644 | ok | done 3, skipped 0, failed 0 | comments 11, files 0 | total done 1926, cursor saved |  |
+| 2026-11-11 14:27:28 | 645 | ok | done 3, skipped 0, failed 0 | comments 27, files 22 | total done 1929, cursor saved |  |
+| 2026-11-11 14:27:41 | 646 | ok | done 3, skipped 0, failed 0 | comments 19, files 3 | total done 1932, cursor saved |  |
+| 2026-11-11 14:28:12 | 647 | ok | done 3, skipped 0, failed 0 | comments 40, files 8 | total done 1935, cursor saved |  |
+| 2026-11-11 14:28:23 | 648 | ok | done 3, skipped 0, failed 0 | comments 27, files 2 | total done 1938, cursor saved |  |
+| 2026-11-11 14:28:35 | 649 | ok | done 3, skipped 0, failed 0 | comments 29, files 3 | total done 1941, cursor saved |  |
+| 2026-11-11 14:29:27 | 650 | ok | done 3, skipped 0, failed 0 | comments 37, files 38 | total done 1944, cursor saved |  |
+| 2026-11-11 14:29:40 | 651 | ok | done 3, skipped 0, failed 0 | comments 19, files 2 | total done 1947, cursor saved |  |
+| 2026-11-11 14:29:57 | 652 | ok | done 3, skipped 0, failed 0 | comments 44, files 9 | total done 1950, cursor saved |  |
+| 2026-11-11 14:30:06 | 653 | ok | done 3, skipped 0, failed 0 | comments 25, files 1 | total done 1953, cursor saved |  |
+| 2026-11-11 14:30:16 | 654 | ok | done 3, skipped 0, failed 0 | comments 8, files 0 | total done 1956, cursor saved |  |
+| 2026-11-11 14:30:40 | 655 | ok | done 3, skipped 0, failed 0 | comments 33, files 9 | total done 1959, cursor saved |  |
+| 2026-11-11 14:30:49 | 656 | ok | done 3, skipped 0, failed 0 | comments 33, files 2 | total done 1962, cursor saved |  |
+| 2026-11-11 14:31:05 | 657 | ok | done 3, skipped 0, failed 0 | comments 12, files 5 | total done 1965, cursor saved |  |
+| 2026-11-11 14:31:32 | 658 | ok | done 3, skipped 0, failed 0 | comments 18, files 12 | total done 1968, cursor saved |  |
+| 2026-11-11 14:31:54 | 659 | ok | done 3, skipped 0, failed 0 | comments 28, files 8 | total done 1971, cursor saved |  |
+| 2026-11-11 14:32:14 | 660 | ok | done 3, skipped 0, failed 0 | comments 29, files 9 | total done 1974, cursor saved |  |
+| 2026-11-11 14:32:24 | 661 | ok | done 3, skipped 0, failed 0 | comments 15, files 1 | total done 1977, cursor saved |  |
+| 2026-11-11 14:32:44 | 662 | ok | done 3, skipped 0, failed 0 | comments 69, files 9 | total done 1980, cursor saved |  |
+| 2026-11-11 14:32:56 | 663 | ok | done 3, skipped 0, failed 0 | comments 24, files 3 | total done 1983, cursor saved |  |
+| 2026-11-11 14:33:08 | 664 | ok | done 3, skipped 0, failed 0 | comments 25, files 4 | total done 1986, cursor saved |  |
+| 2026-11-11 14:33:22 | 665 | ok | done 3, skipped 0, failed 0 | comments 16, files 2 | total done 1989, cursor saved |  |
+| 2026-11-11 14:33:31 | 666 | ok | done 3, skipped 0, failed 0 | comments 11, files 2 | total done 1992, cursor saved |  |
+| 2026-11-11 14:33:49 | 667 | ok | done 3, skipped 0, failed 0 | comments 55, files 9 | total done 1995, cursor saved |  |
+| 2026-11-11 14:34:04 | 668 | ok | done 3, skipped 0, failed 0 | comments 53, files 7 | total done 1998, cursor saved |  |
+| 2026-11-11 14:34:50 | 669 | ok | done 3, skipped 0, failed 0 | comments 95, files 28 | total done 2001, cursor saved |  |
+| 2026-11-11 14:35:02 | 670 | ok | done 3, skipped 0, failed 0 | comments 8, files 2 | total done 2004, cursor saved |  |
+| 2026-11-11 14:35:23 | 671 | ok | done 3, skipped 0, failed 0 | comments 21, files 9 | total done 2007, cursor saved |  |
+| 2026-11-11 14:35:42 | 672 | ok | done 3, skipped 0, failed 0 | comments 20, files 7 | total done 2010, cursor saved |  |
+| 2026-11-11 14:36:13 | 673 | ok | done 3, skipped 0, failed 0 | comments 35, files 10 | total done 2013, cursor saved |  |
+| 2026-11-11 14:36:23 | 674 | ok | done 3, skipped 0, failed 0 | comments 6, files 3 | total done 2016, cursor saved |  |
+| 2026-11-11 14:36:36 | 675 | ok | done 3, skipped 0, failed 0 | comments 14, files 4 | total done 2019, cursor saved |  |
+| 2026-11-11 14:36:49 | 676 | ok | done 3, skipped 0, failed 0 | comments 15, files 3 | total done 2022, cursor saved |  |
+| 2026-11-11 14:36:57 | 677 | ok | done 3, skipped 0, failed 0 | comments 11, files 1 | total done 2025, cursor saved |  |
+| 2026-11-11 14:37:04 | 678 | ok | done 3, skipped 0, failed 0 | comments 15, files 0 | total done 2028, cursor saved |  |
+| 2026-11-11 14:37:19 | 679 | ok | done 3, skipped 0, failed 0 | comments 23, files 5 | total done 2031, cursor saved |  |
+| 2026-11-11 14:37:25 | 680 | ok | done 3, skipped 0, failed 0 | comments 16, files 0 | total done 2034, cursor saved |  |
+| 2026-11-11 14:37:47 | 681 | ok | done 3, skipped 0, failed 0 | comments 56, files 12 | total done 2037, cursor saved |  |
+| 2026-11-11 14:38:14 | 682 | ok | done 3, skipped 0, failed 0 | comments 66, files 14 | total done 2040, cursor saved |  |
+| 2026-11-11 14:38:22 | 683 | ok | done 3, skipped 0, failed 0 | comments 18, files 1 | total done 2043, cursor saved |  |
+| 2026-11-11 14:38:37 | 684 | ok | done 3, skipped 0, failed 0 | comments 19, files 5 | total done 2046, cursor saved |  |
+| 2026-11-11 14:38:47 | 685 | ok | done 3, skipped 0, failed 0 | comments 11, files 2 | total done 2049, cursor saved |  |
+| 2026-11-11 14:39:09 | 686 | ok | done 3, skipped 0, failed 0 | comments 24, files 11 | total done 2052, cursor saved |  |
+| 2026-11-11 14:39:24 | 687 | ok | done 3, skipped 0, failed 0 | comments 30, files 4 | total done 2055, cursor saved |  |
+| 2026-11-11 14:39:44 | 688 | ok | done 3, skipped 0, failed 0 | comments 27, files 11 | total done 2058, cursor saved |  |
+| 2026-11-11 14:39:50 | 689 | ok | done 3, skipped 0, failed 0 | comments 9, files 0 | total done 2061, cursor saved |  |
+| 2026-11-11 14:40:02 | 690 | ok | done 3, skipped 0, failed 0 | comments 32, files 3 | total done 2064, cursor saved |  |
+| 2026-11-11 14:40:08 | 691 | ok | done 3, skipped 0, failed 0 | comments 5, files 0 | total done 2067, cursor saved |  |
+| 2026-11-11 14:40:18 | 692 | ok | done 3, skipped 0, failed 0 | comments 12, files 2 | total done 2070, cursor saved |  |
+| 2026-11-11 14:40:37 | 693 | ok | done 3, skipped 0, failed 0 | comments 69, files 6 | total done 2073, cursor saved |  |
+| 2026-11-11 14:41:46 | 694 | ok | done 3, skipped 0, failed 0 | comments 75, files 43 | total done 2076, cursor saved |  |
+| 2026-11-11 14:41:56 | 695 | ok | done 3, skipped 0, failed 0 | comments 22, files 3 | total done 2079, cursor saved |  |
+| 2026-11-11 14:42:03 | 696 | ok | done 3, skipped 0, failed 0 | comments 19, files 0 | total done 2082, cursor saved |  |
+| 2026-11-11 14:42:30 | 697 | ok | done 3, skipped 0, failed 0 | comments 37, files 8 | total done 2085, cursor saved |  |
+| 2026-11-11 14:42:41 | 698 | ok | done 3, skipped 0, failed 0 | comments 21, files 3 | total done 2088, cursor saved |  |
+| 2026-11-11 14:43:03 | 699 | ok | done 3, skipped 0, failed 0 | comments 42, files 14 | total done 2091, cursor saved |  |
+| 2026-11-11 14:43:12 | 700 | ok | done 3, skipped 0, failed 0 | comments 7, files 1 | total done 2094, cursor saved |  |
+| 2026-11-11 14:43:19 | 701 | ok | done 3, skipped 0, failed 0 | comments 11, files 0 | total done 2097, cursor saved |  |
+| 2026-11-11 14:43:26 | 702 | ok | done 3, skipped 0, failed 0 | comments 22, files 0 | total done 2100, cursor saved |  |
+| 2026-11-11 14:44:26 | 703 | ok | done 3, skipped 0, failed 0 | comments 93, files 26 | total done 2103, cursor saved |  |
+| 2026-11-11 14:45:18 | 704 | ok | done 3, skipped 0, failed 0 | comments 57, files 25 | total done 2106, cursor saved |  |
+| 2026-11-11 14:45:45 | 705 | ok | done 3, skipped 0, failed 0 | comments 83, files 15 | total done 2109, cursor saved |  |
+| 2026-11-11 14:45:53 | 706 | ok | done 3, skipped 0, failed 0 | comments 14, files 1 | total done 2112, cursor saved |  |
+| 2026-11-11 14:46:35 | 707 | ok | done 3, skipped 0, failed 0 | comments 67, files 22 | total done 2115, cursor saved |  |
+| 2026-11-11 14:46:46 | 708 | ok | done 3, skipped 0, failed 0 | comments 11, files 2 | total done 2118, cursor saved |  |
+| 2026-11-11 14:46:54 | 709 | ok | done 3, skipped 0, failed 0 | comments 7, files 2 | total done 2121, cursor saved |  |
+| 2026-11-11 14:47:21 | 710 | ok | done 3, skipped 0, failed 0 | comments 29, files 15 | total done 2124, cursor saved |  |
+| 2026-11-11 14:47:29 | 711 | ok | done 3, skipped 0, failed 0 | comments 10, files 0 | total done 2127, cursor saved |  |
+| 2026-11-11 14:47:35 | 712 | ok | done 3, skipped 0, failed 0 | comments 5, files 0 | total done 2130, cursor saved |  |
+| 2026-11-11 14:47:47 | 713 | ok | done 3, skipped 0, failed 0 | comments 6, files 2 | total done 2133, cursor saved |  |
+| 2026-11-11 14:47:59 | 714 | ok | done 3, skipped 0, failed 0 | comments 22, files 2 | total done 2136, cursor saved |  |
+| 2026-11-11 14:48:11 | 715 | ok | done 3, skipped 0, failed 0 | comments 23, files 4 | total done 2139, cursor saved |  |
+| 2026-11-11 14:48:19 | 716 | ok | done 3, skipped 0, failed 0 | comments 14, files 0 | total done 2142, cursor saved |  |
+| 2026-11-11 14:48:40 | 717 | ok | done 3, skipped 0, failed 0 | comments 33, files 10 | total done 2145, cursor saved |  |
+| 2026-11-11 14:48:59 | 718 | ok | done 3, skipped 0, failed 0 | comments 10, files 7 | total done 2148, cursor saved |  |
+| 2026-11-11 14:49:08 | 719 | ok | done 3, skipped 0, failed 0 | comments 17, files 2 | total done 2151, cursor saved |  |
+| 2026-11-11 14:49:29 | 720 | ok | done 3, skipped 0, failed 0 | comments 48, files 9 | total done 2154, cursor saved |  |
+| 2026-11-11 14:49:40 | 721 | ok | done 3, skipped 0, failed 0 | comments 71, files 2 | total done 2157, cursor saved |  |
+| 2026-11-11 14:50:59 | 722 | ok | done 3, skipped 0, failed 0 | comments 115, files 43 | total done 2160, cursor saved |  |
+| 2026-11-11 14:51:10 | 723 | ok | done 3, skipped 0, failed 0 | comments 6, files 1 | total done 2163, cursor saved |  |
+| 2026-11-11 14:51:18 | 724 | ok | done 3, skipped 0, failed 0 | comments 3, files 0 | total done 2166, cursor saved |  |
+| 2026-11-11 14:51:45 | 725 | ok | done 3, skipped 0, failed 0 | comments 19, files 13 | total done 2169, cursor saved |  |
+| 2026-11-11 14:51:57 | 726 | ok | done 3, skipped 0, failed 0 | comments 7, files 2 | total done 2172, cursor saved |  |
+| 2026-11-11 14:52:11 | 727 | ok | done 3, skipped 0, failed 0 | comments 12, files 4 | total done 2175, cursor saved |  |
+| 2026-11-11 14:52:49 | 728 | ok | done 3, skipped 0, failed 0 | comments 54, files 20 | total done 2178, cursor saved |  |
+| 2026-11-11 14:53:16 | 729 | ok | done 3, skipped 0, failed 0 | comments 72, files 15 | total done 2181, cursor saved |  |
+| 2026-11-11 14:53:25 | 730 | ok | done 3, skipped 0, failed 0 | comments 22, files 1 | total done 2184, cursor saved |  |
+| 2026-11-11 14:53:37 | 731 | ok | done 3, skipped 0, failed 0 | comments 18, files 3 | total done 2187, cursor saved |  |
+| 2026-11-11 14:53:47 | 732 | ok | done 3, skipped 0, failed 0 | comments 30, files 2 | total done 2190, cursor saved |  |
+| 2026-11-11 14:54:37 | 733 | ok | done 3, skipped 0, failed 0 | comments 132, files 34 | total done 2193, cursor saved |  |
+| 2026-11-11 14:54:46 | 734 | ok | done 3, skipped 0, failed 0 | comments 16, files 1 | total done 2196, cursor saved |  |
+| 2026-11-11 14:54:53 | 735 | ok | done 3, skipped 0, failed 0 | comments 9, files 0 | total done 2199, cursor saved |  |
+| 2026-11-11 14:55:04 | 736 | ok | done 3, skipped 0, failed 0 | comments 22, files 2 | total done 2202, cursor saved |  |
+| 2026-11-11 14:55:17 | 737 | ok | done 3, skipped 0, failed 0 | comments 18, files 1 | total done 2205, cursor saved |  |
+| 2026-11-11 14:55:23 | 738 | ok | done 3, skipped 0, failed 0 | comments 7, files 0 | total done 2208, cursor saved |  |
+| 2026-11-11 14:55:39 | 739 | ok | done 3, skipped 0, failed 0 | comments 51, files 5 | total done 2211, cursor saved |  |
+| 2026-11-11 14:55:45 | 740 | ok | done 3, skipped 0, failed 0 | comments 7, files 0 | total done 2214, cursor saved |  |
+| 2026-11-11 14:55:54 | 741 | ok | done 3, skipped 0, failed 0 | comments 30, files 1 | total done 2217, cursor saved |  |
+| 2026-11-11 14:56:08 | 742 | ok | done 3, skipped 0, failed 0 | comments 21, files 1 | total done 2220, cursor saved |  |
+| 2026-11-11 14:56:19 | 743 | ok | done 3, skipped 0, failed 0 | comments 29, files 2 | total done 2223, cursor saved |  |
+| 2026-11-11 14:56:26 | 744 | ok | done 3, skipped 0, failed 0 | comments 12, files 0 | total done 2226, cursor saved |  |
+| 2026-11-11 14:56:34 | 745 | ok | done 2, skipped 0, failed 0 | comments 2, files 2 | total done 2228, cursor saved |  last batch, run done |
+
+## FINAL REPORT, Nov 11 15:10 UTC: NOTION HISTORY IMPORT FINISHED
+
+### The run
+- Backup before the run: `d170df7a-2dd1-4f9e-9aaa-295bbb07a375`, folder `2026-11-11_051821Z`, verified.
+- Phase A, older open: done (06:43 UTC). 595 imported, 5 kept as they were, 0 failed.
+- Phase B, closed history, newest first: done 14:56:34 UTC. 745 batches, 2,228 imported, 6 skipped (1457, 1492, 1495, 1498, 1500, 1515, kept), 0 failed tickets, 0 failed files, no Notion problem, no restart of Notion's list. It ran in three sittings, each resumed from the saved place: 06:48 to 07:35, 12:42 to 13:44, 13:53 to 14:56. Both pauses were mine (session time limit), each after a finished, saved batch.
+- Anomalies: none. No stop line was crossed. The two end counts sit exactly on their limits, as the dry run predicted: new imported tickets 2,823 of 2,823, Needs a home 149 of 149.
+
+### Claim check, closed set, against a fresh Notion read
+| | Claims | Damages | Paid back |
+|---|---|---|---|
+| Expected | 81 | $29,435.24 | $25,370.40 |
+| Notion today | 81 | $29,435.24 | $25,370.40 |
+| Resolve | 81 (all Closed) | $29,435.24 | $25,370.40 |
+| Difference | 0% | 0% | 0% |
+Older open set, same check: 554, $93,598.21, $83,810.63 in both. Exact.
+
+### Totals by Notion status (imported tickets, 2,913)
+| Notion status | In Notion today | In Resolve | Why different |
+|---|---|---|---|
+| Done | 2,232 | 2,226 | the 6 kept tickets are Done in Notion and stay open in Resolve (answer 3) |
+| Claim review | 393 | 393 | |
+| In progress | 310 | 292 | 24 Notion tickets not imported yet: the 14 new and the 10 found in the reread, for the top up run (N12); minus the 6 kept |
+| Completed Same Day | 2 | 2 | |
+| All | 2,937 | 2,913 | 24 waiting for the top up run |
+Resolve status: 2,228 Closed, 685 open (90 recent, 595 older open). No Resolve ticket is missing from Notion.
+
+### Resolve tabs (Databases, Tickets, read on screen as Admin, desktop and phone the same)
+| Tab | Count |
+|---|---|
+| All | 2,913 |
+| Recent | 94 |
+| Older open | 600 |
+| Closed history | 2,228 |
+| Needs a home | 164 |
+| Claims history | 671 (damages $126,960.47, paid back $110,172.16, still open 36 claims) |
+Recent and Older open are the same as after Phase A: Recent is 85 first run tickets plus 9 older open tickets with a blank Notion date and a recent page; Older open is the 595 plus the 5 first run tickets now past 30 days. Needs a home is every ticket with no home (9 recent, 22 older open, 133 closed).
+
+### By team and by owner
+- Team (only open recent tickets have one; older open and closed history are never in the Team Queue): Team A 3, Team B 77 (36 of them because of an open claim), Unassigned 10 (9 Needs a home, 1 with no owner). 90 in all, unchanged.
+- Owner: 64 tickets have an owner, all from the first run: Property Coordinator Team B day shift 25, Property Coordinator Team A evening shift 23, Property Coordinator Team B evening shift 16. 26 first run tickets have none. All 595 older open and all 2,228 closed history tickets have no owner (N2).
+
+### Comments and files against a Notion reread (5,906 read only calls, no rate limits)
+| Set | Comments in Notion | In Resolve | Files in Notion | In Resolve |
+|---|---|---|---|---|
+| Closed history (2,228) | 14,059 | 14,059 | 2,906 | 2,906 |
+| Older open (595) | 3,405 | 3,405 | 2,313 | 2,313 |
+| First run (90) | 285 | 269 | 124 | 120 |
+- Closed history and older open match exactly, item by item. Resolve holds nothing that is not in Notion.
+- First run: 16 Notion comments on 14 tickets and 4 files on 3 tickets are not in Resolve. These tickets come only from the recent open run, which these history runs never redo; the top up run brings them in.
+- Comment counts include each page's notes. Phase B's own count (14,069 comments, 2,907 files) is 10 comments and 1 file higher, because it also added new Notion comments to the 6 kept tickets in its first batches (answer 3 allows comments and files only). Those tickets' own details did not change.
+- Duplicates: 0 tickets, 0 comments, 0 files.
+
+### Tickets with no home matched
+164 in all: 133 closed history, 22 older open, 9 recent open (first run). Each one is listed at the end of this file. All 164 show on the Needs a home tab.
+
+### Screens that must not move
+- Money we could still lose: $3,927.02 (unchanged). Waiting to be paid back: $0.
+- Team Queue: Team A 0, Team B 0, All teams 0, All unclaimed 0 (unchanged). The Imported from Notion group is collapsed, Quiet, no clocks or alerts.
+- Home (Admin): Escalations to me 0, Approval requests 9, Needs review before closing 0, Unassigned work 0, Team blockers 0, Overdue or high risk 0, Recently escalated 0, Team queue 0 unclaimed. The 9 approvals are open requests from Sep 22, none on an imported ticket. No count on Home reads imported history. No Home count was written down before the run, so this says what Home shows now and why the import cannot move it, not a before and after comparison.
+- Protected records: the 90 first run tickets, the 2 live tickets and the 36 existing claims match their before fingerprints exactly. The 6 kept tickets are still open, In progress.
+
+### Cancelled practice
+- Filters on Closed history (screen): Period All time 2,228, This week 0, This month 6, This year 1,182, Choose a month (November) 6. Status: All 2,228, Closed 2,228. No Owner filter on Closed history (N2). Owner on Older open: All 600, and its one other choice also 600 (none of them has an owner). Every filter reset back to the full count.
+- Open: an imported closed ticket (#2654) opened in the Ticket drawer, showing Historical record from Notion and the Notion details.
+- Reopen on screen: the Reopen window opened ("Reopen this ticket ... Why are you reopening it?") and was cancelled. Nothing saved.
+- Reopen on the real database, as the Admin, then cancelled on purpose: the ticket became open, assigned to the Admin, with a fresh clock and its history line "Reopened from Notion history"; it created 0 staff notifications, 0 emails and 0 timed alerts. Everything was rolled back: #2654 reads Closed, no owner, no clock, Notion status Done, no new history line.
+
+### Silence proof (from the first start line, Nov 11 05:23:27 UTC, to the end)
+- Tied to an imported ticket: 0 staff notifications, 0 owner notifications, 0 emails, 0 timed alerts, 0 escalations, 0 owner contact alerts, 0 owner alert log rows, 0 non-comment history lines, 0 imported tickets with a clock.
+- Not from the import: 6 staff notifications and 6 staff emails between 14:04 and 14:10 UTC, all about a homeowner finishing and answering Active Owner items (work items, not tickets).
+
+### Not done here
+- The 24 newer Notion tickets and the 16 comments and 4 files on first run tickets wait for the cutover weekend top up run (N12).
+- Nothing was published.
+
+### Tickets with no home matched (164)
+| Ref | Title | Set | Notion status |
+|---|---|---|---|
+| 1481 | 401 E 10th  - Property Turnover Maintenance Review & Owner Quote Preparation | Recent open (first run) | In progress |
+| 1488 | 1016 - Order Coffee pot | Recent open (first run) | In progress |
+| 1508 | 6629 S 22nd - Replacement of pans | Recent open (first run) | In progress |
+| 1513 | 5217 - Departure Clean update | Recent open (first run) | In progress |
+| 1519 | 136 - Departure Clean Report | Recent open (first run) | In progress |
+| 1523 | 5923 - oven issue (?) not working | Recent open (first run) | In progress |
+| 1524 | 2100 - broken dining table leg | Recent open (first run) | In progress |
+| 1525 | 9211 - possible water leak | Recent open (first run) | In progress |
+| 1526 | 6017 - reconnect yale lock | Recent open (first run) | In progress |
+| 2062 | Aircover - 1601 - Ricki Rebeiro - House is a mess | Older open | Claim review |
+| 2069 | Aircover - 21036  - DJ Hosford - Damaged Linens, paint stains on floor, dog wast | Older open | Claim review |
+| 2129 | Updates Discussion | Older open | In progress |
+| 2164 | Aircover - Monee Hollins at 21036 Owens Rd - Area Rug Replacement | Older open | Claim review |
+| 2277 | Imported Notion ticket | Older open | In progress |
+| 2346 | Timothy Griffith - $300 Refundable Deposit for the three pets. | Older open | In progress |
+| 2391 | Airbnb - Kristen’s Group New Booking - Check-in Apr 16 (2 Days) - No Welcome Mes | Older open | In progress |
+| 2430 | Imported Notion ticket | Older open | In progress |
+| 2438 | Imported Notion ticket | Older open | In progress |
+| 2463 | Aircover - Joshua Ramlal at 21036 Owens - nasty and stinks bad | Older open | Claim review |
+| 2472 | Imported Notion ticket | Older open | In progress |
+| 2520 | Imported Notion ticket | Older open | In progress |
+| 2569 | Imported Notion ticket | Older open | In progress |
+| 2581 | 16216 - Paint touch up | Older open | In progress |
+| 2584 | Imported Notion ticket | Older open | In progress |
+| 2601 | Imported Notion ticket | Older open | In progress |
+| 2646 | Imported Notion ticket | Older open | In progress |
+| 2649 | Imported Notion ticket | Older open | In progress |
+| 2650 | Imported Notion ticket | Older open | In progress |
+| 2651 | Imported Notion ticket | Older open | In progress |
+| 2652 | Imported Notion ticket | Older open | In progress |
+| 2653 | 9201 - Guest Survey - refrigerator water filter + air filter in ceiling | Older open | In progress |
+| 2711 | 453 - order pan set + drinking glass + bowl | Closed history | Done |
+| 2723 | 1152 - 845 - not drying again - schedule dryer vent cleaning | Closed history | Done |
+| 2778 | 3715 - missing ice maker cover | Closed history | Done |
+| 2840 | 11720 - spiders - schedule pest control - | Closed history | Done |
+| 2841 | Send email for DFW Homeowners (Thomas’ Lawn Care) | Closed history | Done |
+| 2849 | Send email for Yukon Homeowners (Cody’s Lawn Care) for Flower Bed Tuneup approva | Closed history | Done |
+| 2893 | 721 Vaquero - microwave issue | Closed history | Done |
+| 2942 | Initiate your payment from Generali Global Assistance - As Micah for it. | Closed history | Done |
+| 2960 | 504 - additional cleaning, trip charge, late checkout, etc | Closed history | Done |
+| 2991 | 628 - Guest feedback | Closed history | Done |
+| 2992 | 1152 - Guest feedback | Closed history | Done |
+| 3001 | 7422 - Dryer haul away | Closed history | Done |
+| 3017 | 8708 | Closed history | Done |
+| 3049 | 5253 - Guest feedback. | Closed history | Done |
+| 3051 | 11508 -  Painting + Stove | Closed history | Done |
+| 3063 | 1640 - Trash and big spill in garage | Closed history | Done |
+| 3064 | 1600 - Compensate Kelly for AC issue | Closed history | Done |
+| 3073 | 7351 - Bathroom flooded + no wifi | Closed history | Done |
+| 3080 | 2 STAR From Anthony Taylor | Closed history | Done |
+| 3093 | 136 - Dryer doesn’t work | Closed history | Done |
+| 3096 | 220 - Haul away some stuff + drywall damage + garbage disposal not working | Closed history | Done |
+| 3102 | 4718 - Short glass is cracked | Closed history | Done |
+| 3103 | 7422 -  Driveway debris + Appliance haul off + Dining chair | Closed history | Done |
+| 3104 | 845 - Dryer doesn’t work. | Closed history | Done |
+| 3119 | Trash pick up - 11514, 2901, 7422 and 2522 | Closed history | Done |
+| 3214 | 21036 - Guest Bathroom Clogged | Closed history | Done |
+| 3231 | 1016 - co2 detector | Closed history | Done |
+| 3238 | 1056 - The garage AND backyard is dirty + Wasps | Closed history | Done |
+| 3253 | 3712 - Garage door key pad doesn’t work, Front door lock | Closed history | Done |
+| 3255 | 11508 - Air intake filter replacement | Closed history | Done |
+| 3256 | 1012 - Broken Shower Head | Closed history | Done |
+| 3259 | 1068 - Blind Broken | Closed history | Done |
+| 3262 | 6017 - Order New Pot and Pans | Closed history | Done |
+| 3284 | 13117 - Order the new Sofa | Closed history | Done |
+| 3316 | William Nichols - LTR | Closed history | Done |
+| 3322 | Falisha - 4star | Closed history | Done |
+| 3339 | 409 - Release the deposit | Closed history | Done |
+| 3342 | 3333 - confirm if sprinkler is working - owner | Closed history | Done |
+| 3372 | Call Lanette and Stephanie and Joseph for the 4STAR | Closed history | Done |
+| 3373 | Call Connor - 4 Star | Closed history | Done |
+| 3394 | 2525 - Dsposal Not working | Closed history | Done |
+| 3402 | 11508 - Missing Cushion | Closed history | Done |
+| 3455 | can you review all Daniels future tasks and make sure they are accepted. | Closed history | Done |
+| 3459 | Airbnb - Carrie’s Group WiFi Issue - 1700 Whispering Creek Dr (Currently Hosting | Closed history | Done |
+| 3482 | Fraud Purchases - Amazon Redeem Rewards | Closed history | Done |
+| 3483 | 5253 - Carpet Cleaning | Closed history | Done |
+| 3494 | 509 - Trash Cart update | Closed history | Done |
+| 3495 | 504 - inspection for early checkout | Closed history | Done |
+| 3524 | 5047 - No hot water | Closed history | Done |
+| 3529 | 1152 - Guest Feedback | Closed history | Done |
+| 3534 | 5512 - Track the order of the cart from Warr Acres | Closed history | Done |
+| 3536 | 21036 - plumbing seems to be backed up again. In the bathroom near the front foo | Closed history | Done |
+| 3551 | 207 - sink in master is draining slow ( sink nearest closet )and the hot water h | Closed history | Done |
+| 3570 | 21036 - The bathroom next to the living room is starting to back up. | Closed history | Done |
+| 3607 | Process E-GC for Kyleigh | Closed history | Done |
+| 3611 | 3712 - Order 94 Inche Curtains Panels. | Closed history | Done |
+| 3612 | 1 Star Dispute for AJ Geeslin | Closed history | Done |
+| 3621 | 11736 - Booked through Web/OR - asking for discount | Closed history | Done |
+| 3712 | 3029 - Fridge Water Filter Replacement | Closed history | Done |
+| 3739 | 21036 - Wasp in the house | Closed history | Done |
+| 3913 | 2012 - Haul the trash | Closed history | Done |
+| 3955 | Cleaning fee refund for Tara Heath - 10302 S. 230th East Ave | Closed history | Done |
+| 3980 | 735 S - Change the lease agreement back | Closed history | Done |
+| 3982 | 21036 - no water | Closed history | Done |
+| 4001 | Sprinklers Status | Closed history | Done |
+| 4016 | Yale Low Batteries | Closed history | Done |
+| 4034 | 21036 - Guest Room Shower - No hot water | Closed history | Done |
+| 4065 | Question on claim | Closed history | Done |
+| 4071 | change codes - 13317 | Closed history | Done |
+| 4081 | 1601 - Back door lock issue | Closed history | Done |
+| 4088 | 21036 - Garbage Disposal | Closed history | Done |
+| 4095 | 1169 - Master Toilet Flush needs repair | Closed history | Done |
+| 4097 | 15905 - Thermostats - Not keeping set temp | Closed history | Done |
+| 4125 | 4 star reviews | Closed history | Done |
+| 4135 | 28th Cleaning Work Order | Closed history | Done |
+| 4147 | Kathy Lamont - vrbo id | Closed history | Done |
+| 4149 | Louella Ryan at 13117 NE 9th St - Pet fee | Closed history | Done |
+| 4155 | CITY INSPECTIONS | Closed history | Done |
+| 4206 | 1601 - Front and Back Doors Sticking Out | Closed history | Done |
+| 4245 | 19013 - potential water leak | Closed history | Done |
+| 4247 | question on Daniel’s additional lawn care (irrigation) | Closed history | Done |
+| 4249 | Aracely left a 4-star review - 721 Vaquero | Closed history | Done |
+| 4251 | question on pet fee | Closed history | Done |
+| 4254 | 9120 Yassir - work on sending quote | Closed history | Done |
+| 4255 | 19104 - offer to refund $200 | Closed history | Done |
+| 4259 | Utility Review Update | Closed history | Done |
+| 4274 | 1215 - cooking pot replacement question | Closed history | Done |
+| 4307 | Review booking for Amy - 453 (discuss current booking policy) | Closed history | Done |
+| 4328 | Pool Amenity in Airbnb - | Closed history | Done |
+| 4332 | Booking question for Jim Foster 10549 | Closed history | Done |
+| 4340 | Responding to Poor reviews on Airbnb | Closed history | Done |
+| 4341 | LEAVE notes in OR (James m email) | Closed history | Done |
+| 4373 | 3200 - Follow UP with BC’s Booking | Closed history | Done |
+| 4377 | Call Amerincan Pros for Returned Check Payment Notification | Closed history | Done |
+| 4378 | Discuss lawn care owner emails | Closed history | Done |
+| 4382 | Larry Robinson - Lawn Care Schedule | Closed history | Done |
+| 4399 | On Call - Escalation / Over provide information | Closed history | Done |
+| 4400 | Remember to “close” any of Larry’s “overdue” WO in BW that have comments | Closed history | Done |
+| 4401 | Disputing 1 Stars and 3 Star Rating | Closed history | Done |
+| 4405 | Changing Casey’s personal email to Info email for VRBO | Closed history | Done |
+| 4419 | 1601 - Maintenance Issue and Lawn | Closed history | Done |
+| 4426 | Airbnb Quick Replies | Closed history | Done |
+| 4427 | 904 - AC not cooling | Closed history | Done |
+| 4432 | Larry Robinson Question | Closed history | Done |
+| 4433 | 21036 Owens - electrical issue | Closed history | Done |
+| 4437 | 1601 - Kitchen Light | Closed history | Done |
+| 4440 | Updating the property description for listings that have pool | Closed history | Done |
+| 4442 | Wasp Nests Issues | Closed history | Done |
+| 4448 | Update OR blocks | Closed history | Done |
+| 4450 | 4816 - Question about the bed | Closed history | Done |
+| 4500 | Owens - few maint items | Closed history | Done |
+| 4521 | 21036 - Pest Control Needed | Closed history | Done |
+| 4534 | 1601 - Fence Repair | Closed history | Done |
+| 4557 | 1601 - new sink replacement / new vacuum | Closed history | Done |
+| 4561 | Discuss reviewing/approving WO for Lotis | Closed history | Done |
+| 4573 | LAWN CARE QUESTION | Closed history | Done |
+| 4613 | Updating Trash Info | Closed history | Done |
+| 4619 | 21036 - Cleaning the Storm Shelter - Water Spiket not working outside / exterior | Closed history | Done |
+| 4636 | 21036 Lawn Schedule | Closed history | Done |
+| 4651 | Resolution - 21036 - Sarah Newman - Broken Mirror | Closed history | Done |
+| 4707 | 1601 - measure sinks / possible smoking / door issue | Closed history | Done |
+| 4713 | Reviewing Maint Work. See link | Closed history | Done |
+| 4714 | Reviewing Maintenance Work Orders (weekends) | Closed history | Done |
+| 4720 | 19120 Water Line Disconnection Notice | Closed history | Done |
+| 4732 | 1601 - Extension Request | Closed history | Done |
+| 4739 | Future Bookings Airbnb | Closed history | Done |
+| 4763 | 1601 - AC not responding | Closed history | Done |
+| 4771 | Aircover  Jianbin Chen - 1601 Damaged Back Door | Closed history | Done |
+| 4792 | 1601 - Back Door Damaged | Closed history | Done |
+| 4859 | 309 - Patio Light, Lamp, Storm damaged | Closed history | Done |
+| 4861 | 5020 - Airbnb Background Check | Closed history | Done |
+| 4867 | Templete review/addition | Closed history | Done |
+| 4881 | Investigate Pet Fees | Closed history | Done |
