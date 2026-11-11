@@ -5,7 +5,7 @@ import { formatPropertyLabel } from "@/lib/property-label";
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { FEEDBACK_WORK_TYPE, REVIEW_FOLLOWUP_START_KEY, SURVEY_VALID_DAYS, needsFollowUp, normalizeName, readReviewFollowUpStart, reviewImportDecision, surveyWindowOpen } from "./guest-feedback";
+import { FEEDBACK_WORK_TYPE, REVIEW_FOLLOWUP_START_KEY, SURVEY_VALID_DAYS, needsFollowUp, normalizeName, readReviewFollowUpStart, reviewDateFields, reviewImportDecision, surveyWindowOpen } from "./guest-feedback";
 
 type Admin = SupabaseClient<Database>;
 
@@ -285,7 +285,7 @@ export async function ingestReviews(admin: Admin, items: ReviewInput[]) {
         summary: r.body,
         response_text: r.response,
         source_url: r.url,
-        submitted_at: r.date ?? new Date().toISOString(),
+        ...reviewDateFields(r.date, r.stay_end ?? null, new Date()),
         booking_platform: r.listing_site,
         stay_start: r.stay_start ?? null,
         stay_end: r.stay_end ?? null,

@@ -232,7 +232,7 @@ function usePanelData(open: boolean) {
           .limit(200),
         supabase
           .from("guest_feedback")
-          .select(`id, feedback_type, property_id, rating, summary, response_text, source_url, submitted_at, stay_start, stay_end, booking_platform, ownerrez_booking_id, reviewer_display_name, guest_name, reservation_guest_name, properties(${PROP_FIELDS})`)
+          .select(`id, feedback_type, property_id, rating, summary, response_text, source_url, submitted_at, published_date_known, stay_start, stay_end, booking_platform, ownerrez_booking_id, reviewer_display_name, guest_name, reservation_guest_name, properties(${PROP_FIELDS})`)
           .eq("is_demo", demoMode)
           .eq("feedback_type", "external_review")
           .gte("submitted_at", reviewSince)

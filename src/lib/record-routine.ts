@@ -270,11 +270,14 @@ type ReviewLike = {
   feedback_type?: string | null;
   rating: number | null;
   submitted_at: string | null;
+  /** False for an OwnerRez review with no publish date: history only (Build 17 finding 8). */
+  published_date_known?: boolean | null;
 };
 
 /** A synced OwnerRez review from the past 14 days that nobody has checked yet. */
 export function reviewNeedsCheck(r: ReviewLike, checkedKeys: Set<string>, now: number = Date.now()): boolean {
   if (r.feedback_type && r.feedback_type !== "external_review") return false;
+  if (r.published_date_known === false) return false;
   if (checkedKeys.has(reviewCheckKey(r.id))) return false;
   const at = Date.parse(r.submitted_at ?? "");
   return Number.isFinite(at) && now - at <= REVIEW_LOOKBACK_DAYS * 86_400_000;

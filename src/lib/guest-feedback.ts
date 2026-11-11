@@ -208,6 +208,21 @@ export function chicagoDay(iso: string): string | null {
  * historical: stored for history and reporting, never a Ticket.
  * On or after → under 5 stars opens follow-up; 5 stars does not.
  */
+/**
+ * The stored date of an imported OwnerRez review (Build 17 finding 8). With a publish date it is
+ * that date. Without one the review is history: it is never stamped today; it takes the stay's end
+ * (or, with no stay, the import time) and is marked date unknown so no check or follow up starts.
+ */
+export function reviewDateFields(
+  publishedAt: string | null,
+  stayEnd: string | null,
+  now: Date,
+): { submitted_at: string; published_date_known: boolean } {
+  if (publishedAt) return { submitted_at: publishedAt, published_date_known: true };
+  const stay = stayEnd && /^\d{4}-\d{2}-\d{2}/.test(stayEnd) ? `${stayEnd.slice(0, 10)}T18:00:00Z` : null;
+  return { submitted_at: stay ?? now.toISOString(), published_date_known: false };
+}
+
 export function reviewImportDecision(rating: number | null, publishedAt: string | null, startDate: string | null): ReviewImportDecision {
   if (!startDate || !publishedAt) return "historical";
   const day = chicagoDay(publishedAt);
