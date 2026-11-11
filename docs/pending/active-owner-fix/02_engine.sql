@@ -469,7 +469,7 @@ BEGIN
       PERFORM private.ao_label_sync(h, auth.uid());
     END LOOP;
     -- A program that becomes active for the first time starts its included homes.
-    IF NEW.status = 'active' AND OLD.status IN ('draft', 'pending', 'waiting_for_closing', 'ready_for_onboarding')
+    IF NEW.status = 'active' AND OLD.status IS DISTINCT FROM 'active' AND OLD.status IS DISTINCT FROM 'closed'
        AND NEW.archived_at IS NULL AND NOT NEW.is_demo THEN
       FOR h IN SELECT property_id FROM public.owner_program_properties
                 WHERE program_id = NEW.id AND inclusion_status = 'included' AND archived_at IS NULL ORDER BY property_id LOOP
