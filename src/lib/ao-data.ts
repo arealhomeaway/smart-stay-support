@@ -118,8 +118,23 @@ export async function loadContributions() {
 }
 
 export async function loadHomeProgramStatus(propertyId: string): Promise<string | null> {
-  const { data } = await supabase.from("owner_programs").select("status").eq("property_id", propertyId).is("archived_at", null).order("created_at", { ascending: false }).limit(1).maybeSingle();
-  return (data as { status?: string } | null)?.status ?? null;
+  // The program's primary home, or any home added to the program (owner_program_properties).
+  const linked = await db
+    .from("owner_program_properties")
+    .select("program_id")
+    .eq("property_id", propertyId)
+    .is("archived_at", null);
+  const programIds = ((linked.data ?? []) as { program_id: string }[]).map((r) => r.program_id);
+  const filter = programIds.length ? `property_id.eq.${propertyId},id.in.(${programIds.join(",")})` : `property_id.eq.${propertyId}`;
+  const { data } = await supabase
+    .from("owner_programs")
+    .select("status")
+    .or(filter)
+    .is("archived_at", null)
+    .order("created_at", { ascending: false });
+  const statuses = ((data ?? []) as { status?: string | null }[]).map((r) => r.status ?? null);
+  // A live program wins over a closed one on the same home.
+  return statuses.find((s) => s && s !== "closed" && s !== "archived") ?? statuses[0] ?? null;
 }
 
 // ---- De-duplication: confirmed map, step-link suggestions, one-off sends ----
