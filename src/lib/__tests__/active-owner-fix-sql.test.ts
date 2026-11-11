@@ -171,7 +171,6 @@ describe("Active Owner fix, staged SQL on an isolated database", () => {
   });
 
   it("Fix 2 and 5: duplicate Task cards are covered on turn on, finished linked Tasks are covered, a handed off home gets operations cards only", async () => {
-    console.log("DBG h1", JSON.stringify(await outcomes(h1)), JSON.stringify((await db.query("SELECT c.code, pc.join_outcome FROM public.ao_home_plan_cards pc JOIN public.ao_library_cards c ON c.id=pc.card_id WHERE pc.property_id=$1 AND c.code !~ '^O' ORDER BY 1",[h1])).rows));
     expect(await outcomes(h1)).toEqual({ open: 27, locked: 6, already_covered: 2 });
     expect((await pc_(h1, "D02")).covered_reason).toBe("same_task_other_card");
     expect((await pc_(h1, "C01")).covered_reason).toBe("linked_task_done");
@@ -278,7 +277,6 @@ describe("Active Owner fix, staged SQL on an isolated database", () => {
     await db.query("UPDATE public.owner_program_properties SET archived_at=now() WHERE program_id=$1 AND property_id=$2", [prog2, h4]);
     expect(await n("SELECT count(*)::int n FROM public.ao_home_plan_settings WHERE property_id=$1", [h4])).toBe(0); // never on its own
     const q = (await one<{ p: { homes: { open: number; locked: number; already_covered: number; skipped: number }[]; blocked: boolean; token: string } }>("SELECT public.ao_preview_enrolled_homes() p")).p;
-    console.log("DBG q", JSON.stringify(q.homes));
     expect(q.blocked).toBe(false);
     expect(q.homes[0]).toMatchObject({ open: 27, locked: 6, already_covered: 2, skipped: 0 });
     await expect(db.query("SELECT public.ao_start_enrolled_homes('stale')")).rejects.toThrow(/Preview again/);
@@ -317,7 +315,6 @@ describe("Active Owner fix, staged SQL on an isolated database", () => {
   it("Fix 7: sending to the owner completes the Task; the owner and the PM talk it through in the same item", async () => {
     const sendTask = U(901);
     await task(sendTask, h1, stepSend, "open", { dependency: "business_decision", approval: true, title: "Share the design" });
-    try { const r = await db.query("UPDATE public.onboarding_tasks SET status='complete' WHERE id=$1 RETURNING status", [sendTask]); console.log("DBG upd", JSON.stringify(r.rows), JSON.stringify((await db.query("SELECT prosrc LIKE '%task_sent_to_owner%' x, prosrc LIKE '%homeowner decision%' y FROM pg_proc WHERE proname='owner_business_decision_guard'")).rows)); } catch (e) { console.log("DBG raised", (e as Error).message); }
     await expect(db.query("UPDATE public.onboarding_tasks SET status='complete' WHERE id=$1", [sendTask])).rejects.toThrow(/homeowner decision is required/);
     await as(pc);
     await expect(db.query("SELECT public.send_task_to_owner_item($1, 'Please review the design PDF')", [sendTask])).rejects.toThrow(/Only the person on this task/);

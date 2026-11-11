@@ -686,7 +686,7 @@ BEGIN
   IF uid IS NULL OR t.id IS NULL OR NOT coalesce(private.is_onboarding_staff(uid), false) THEN RAISE EXCEPTION 'That task is not available.'; END IF;
   IF coalesce(private.is_synthetic_account(), false) AND NOT coalesce(t.is_demo, false) THEN RAISE EXCEPTION 'That task is not available.'; END IF;
   SELECT * INTO pr FROM public.onboarding_projects WHERE property_id = t.property_id AND status <> 'cancelled' ORDER BY created_at DESC LIMIT 1;
-  IF NOT (coalesce(private.is_onboarding_leader(uid), false) OR t.assigned_to = uid OR pr.project_manager = uid OR pr.director = uid) THEN
+  IF NOT coalesce(private.is_onboarding_leader(uid) OR t.assigned_to = uid OR pr.project_manager = uid OR pr.director = uid, false) THEN
     RAISE EXCEPTION 'Only the person on this task or the home''s project lead can send it.';
   END IF;
   IF t.status = 'complete' THEN RAISE EXCEPTION 'This task is already complete.'; END IF;
