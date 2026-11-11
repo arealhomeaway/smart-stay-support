@@ -294,7 +294,7 @@ describe("Active Owner fix, staged SQL on an isolated database", () => {
     }
     for (const code of ["A35", "A14"]) expect((await pc_(h1, code)).unlocked_at).toBeNull();
     const after = await pc_(h1, "O01");
-    expect(after.deadline_at).toBe(o01.deadline_at);
+    expect(String(after.deadline_at)).toBe(String(o01.deadline_at));
     expect((await one<{ status: string }>("SELECT status FROM public.owner_reviews WHERE id=$1", [after.owner_review_id])).status).toBe("awaiting_owner");
     const live = await one<{ title: string; email_status: string }>("SELECT * FROM public.owner_notifications WHERE kind='ao_home_live'");
     expect(live.title).toBe("Your home is live: new activities are in your portal.");
