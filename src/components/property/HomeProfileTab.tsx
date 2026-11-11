@@ -257,6 +257,9 @@ export function HomeProfileTab({
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
+        <label htmlFor="hp-jump" className="text-sm font-medium">
+          Jump to
+        </label>
         <Select
           value={jump}
           onValueChange={(v) => {
