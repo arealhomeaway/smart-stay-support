@@ -5,8 +5,9 @@ import { logQueueOpen } from "@/lib/scorecard-capture.functions";
 /**
  * Logs a queue sweep on the server, with server time, when the Operations Supervisor opens
  * this page. The database decides who counts; nothing shows on screen and there is no button.
+ * Only the Team Queue (including its All unclaimed view) counts (register C2, BN3; Build 16 B3).
  */
-export function QueueOpenLogger({ source }: { source: "team_queue" | "supervisor_check" | "oversight" }) {
+export function QueueOpenLogger({ source }: { source: "team_queue" }) {
   const logFn = useServerFn(logQueueOpen);
   const sent = useRef(false);
   useEffect(() => {

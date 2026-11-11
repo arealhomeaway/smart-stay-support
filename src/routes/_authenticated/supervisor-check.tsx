@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { RequireCapability } from "@/components/RequireCapability";
-import { QueueOpenLogger } from "@/components/scorecard/QueueOpenLogger";
 import { RatingChannelsCard } from "@/components/scorecard/RatingChannelsCard";
 import { WeeklyRepeatList } from "@/components/work-entry/HomeRepeatFlags";
 import { SectionCard } from "@/components/ui/page";
@@ -87,7 +86,6 @@ function SupervisorCheck() {
 
   return (
     <div className="space-y-6">
-      <QueueOpenLogger source="supervisor_check" />
       <header>
         <h1 className="font-display text-2xl font-semibold">Supervisor check</h1>
         <p className="text-sm text-muted-foreground">
