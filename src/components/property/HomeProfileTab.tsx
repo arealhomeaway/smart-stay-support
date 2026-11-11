@@ -265,8 +265,8 @@ export function HomeProfileTab({
             scrollTo(`hp-${v}`);
           }}
         >
-          <SelectTrigger className="min-h-11 w-60" aria-label="Jump to">
-            <SelectValue placeholder="Jump to: Choose a section" />
+          <SelectTrigger id="hp-jump" className="min-h-11 w-60" aria-label="Jump to">
+            <SelectValue placeholder="Choose a section" />
           </SelectTrigger>
           <SelectContent>
             {HOME_PROFILE_SECTIONS.map((s) => (
@@ -480,6 +480,7 @@ function ProfileCard({
                   codeDrafts={codeDrafts}
                   onCodeDraft={(id, v) => setCodeDrafts((d) => ({ ...d, [id]: v }))}
                   focused={focusKey === item.key}
+                  onFill={editable ? () => void startEdit() : undefined}
                 />
               ))}
             </dl>
@@ -521,6 +522,7 @@ function ProfileRow({
   codeDrafts,
   onCodeDraft,
   focused,
+  onFill,
 }: {
   propertyId: string;
   item: ProfileItem;
@@ -532,8 +534,20 @@ function ProfileRow({
   codeDrafts: Record<string, string>;
   onCodeDraft: (id: string, v: string) => void;
   focused: boolean;
+  /** Opens the card's Edit (Build 16 D: Fill it in on an empty field). */
+  onFill?: () => void;
 }) {
   const f = flagsFor(item);
+  const empty = onFill && isEditable(item) ? (
+    <span className="flex flex-wrap items-center gap-2">
+      <span className="text-muted-foreground">Nothing here yet</span>
+      <Button size="sm" variant="outline" className="min-h-11" onClick={onFill}>
+        Fill it in
+      </Button>
+    </span>
+  ) : (
+    <span className="text-muted-foreground">Nothing here yet</span>
+  );
   const value = displayValue(item, ctx);
   const codes = codesFor(item, ctx);
   const link = linkFor(item, ctx);
@@ -578,12 +592,12 @@ function ProfileRow({
               Open {item.label}
             </a>
           ) : (
-            <span className="text-muted-foreground">Nothing here yet</span>
+            empty
           )
         ) : item.src.kind === "photo" ? null : sysValue ? (
           <span className="whitespace-pre-line">{sysValue}</span>
         ) : (
-          <span className="text-muted-foreground">Nothing here yet</span>
+          empty
         )}
         {f.photo ? <ItemPhotos propertyId={propertyId} item={item} ctx={ctx} editing={editing} /> : null}
       </dd>
