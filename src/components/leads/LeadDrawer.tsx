@@ -245,11 +245,6 @@ export function LeadDrawer({
     }
   }
 
-  function openFinder() {
-    if (!lead) return;
-    void navigate({ to: "/availability-finder", search: finderSearchFromLead(lead) });
-  }
-
   const derived = useMemo(() => {
     if (!lead) return null;
     return {
@@ -536,21 +531,11 @@ export function LeadDrawer({
           <section className="space-y-2">
             <div className="flex items-center justify-between gap-2">
               <h3 className="text-sm font-semibold">Offers</h3>
-              {canEdit && isOpen(lead.stage) && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="resolve-press"
-                  onClick={() => (waiting ? setChoosePrompt(true) : openFinder())}
-                >
-                  Choose another property
-                </Button>
-              )}
             </div>
             {candidates.error ? (
               <p className="text-sm text-muted-foreground">Offers will appear here once the pending lead update is applied.</p>
             ) : offers.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No homes offered yet. Use Choose another property to offer one.</p>
+              <p className="text-sm text-muted-foreground">No homes offered yet. Offer homes from Direct Bookings.</p>
             ) : (
               <ul className="space-y-2">
                 {offers.map((offer) => (
@@ -606,37 +591,6 @@ export function LeadDrawer({
                   </li>
                 ))}
               </ul>
-            )}
-            {choosePrompt && waiting && (
-              <div className="space-y-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm">
-                <p>
-                  {waiting.properties ? formatPropertyLabel(waiting.properties).primary : "The current offer"} is still
-                  waiting on an answer. Mark it Declined first?
-                </p>
-                <Input
-                  placeholder="Reason it was declined"
-                  value={declineReason}
-                  onChange={(e) => setDeclineReason(e.target.value)}
-                />
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    className="resolve-press"
-                    disabled={saving || !declineReason.trim()}
-                    onClick={() => {
-                      const offerId = waiting.id;
-                      void (async () => {
-                        await decide(offerId, "declined", declineReason);
-                        setChoosePrompt(false);
-                        openFinder();
-                      })();
-                    }}
-                  >
-                    Mark declined and choose another
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setChoosePrompt(false)}>Cancel</Button>
-                </div>
-              </div>
             )}
           </section>
 
