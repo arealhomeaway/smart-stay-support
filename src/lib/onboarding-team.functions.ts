@@ -14,6 +14,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assignablePeople } from "@/lib/assignable-people";
+import { projectTeamRefusal } from "@/lib/onboarding-team-rules";
 
 const POOL_ROLES = ["onboarding_project_manager", "utilities", "design_staging"] as const;
 const OPERATIONS_OWNED = new Set(["property_coordinator", "owner"]);
