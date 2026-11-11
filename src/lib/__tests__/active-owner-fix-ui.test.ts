@@ -27,7 +27,7 @@ describe("Active Owner fix, screen rules", () => {
   it("homeowner wording added by this build never mentions hours estimates, investment or pay dates", () => {
     const sql = readFileSync("docs/pending/active-owner-fix/02_engine.sql", "utf8");
     const owner = [...sql.matchAll(/'(Your homeowner plan[^']*|We added %s[^']*|Your home is live[^']*|Here is what is new[^']*)'/g)].map((m) => m[1]);
-    expect(owner.length).toBeGreaterThanOrEqual(4);
+    expect(owner.length).toBeGreaterThan(3);
     for (const t of owner) expect(t).not.toMatch(/hour|invest|pay|paid/i);
   });
 });
