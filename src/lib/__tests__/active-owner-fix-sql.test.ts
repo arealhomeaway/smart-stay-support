@@ -115,7 +115,7 @@ describe("Active Owner fix, staged SQL on an isolated database", () => {
     await db.exec(`
       INSERT INTO public.staff VALUES ('${ADMIN}', true, false), ('${dirOnb}', false, true), ('${pc}', false, false), ('${pm}', false, false);
       INSERT INTO public.profiles(id, full_name) VALUES ('${owner1}', 'Pat Owner'), ('${owner2}', 'Sam Owner');
-      INSERT INTO public.property_owners(id, active) VALUES ('${or1}', true), ('${or2}', true);
+      INSERT INTO public.property_owners(id, active, source_owner_id) VALUES ('${or1}', true, 'o1'), ('${or2}', true, 'o2');
       INSERT INTO public.properties(id, name, owner_record_id) VALUES ('${h1}','1 First St','${or1}'),('${h2}','2 Second St','${or1}'),
         ('${h3}','3 Third St','${or2}'),('${h4}','4 Fourth St','${or1}'),('${h5}','5 Fifth St','${or1}');
       INSERT INTO public.owner_programs(id, property_id, owner_user_id, status, owner_record_id, notify_email) VALUES
