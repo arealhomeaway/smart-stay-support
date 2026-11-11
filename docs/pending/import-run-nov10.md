@@ -475,3 +475,17 @@ No batches run.
 | 2026-11-11 06:43:41 | 199 | ok | done 3, skipped 0, failed 0 | comments 8, files 2 | total done 595, cursor end |  |
 | 2026-11-11 06:43:46 | 200 | completed | done 3, skipped 0, failed 0 | comments 0, files 0 | total done 595, cursor end |  |
 | 2026-11-11 06:43:53 UTC | older_open done | job done after 200 batches | progress {"done": 595, "bytes": 536777224, "files": 2313, "failed": 0, "skipped": 5, "comments": 3405} | | cursor none |  |
+
+### Phase A check (older open), Nov 11 06:47 UTC
+- Run finished 06:43:53 UTC, 200 batches: 595 imported, 5 skipped (the 5 already imported tickets 1437, 1438, 1439, 1440, 1458, kept exactly as they were), 0 failed, 0 files on the failed list. 600 read = Notion's 600.
+- Copied: 3,405 comments, 2,313 files (537 MB).
+- Resolve now: 685 imported tickets (90 + 595), 0 duplicates, 0 imported tickets with a clock.
+- Claims on the 595 new tickets: 554 claims, all Closed, damages $93,598.21, paid back $83,810.63. Notion reread for the same 595: 554, $93,598.21, $83,810.63. Exact match.
+- No home: 16 held as Needs a home plus 6 with a blank Notion created date and no home, held as older by the existing blank date rule (refs 2646, 2649, 2650, 2651, 2652, 2653); 22 in all, under the 24 expected. All 22 show on the Needs a home tab.
+- Protected rows unchanged: the 90 first run tickets (fingerprint same), the 2 live tickets, the 36 existing claims. The 90 got no new comments.
+- Created by the run: 0 staff notifications, 0 owner notifications, 0 emails, 0 timed alerts, 0 escalations, 0 owner contact alerts, 0 owner alert log rows (no rows at all in these tables since the start line).
+- Screens: Team Queue Team A 0, Team B 0, All teams 0, All unclaimed 0 (unchanged; imported group collapsed, Quiet). Money we could still lose $3,927.02 (unchanged, 36 claims). Databases tabs: All 685, Recent 94, Older open 600, Closed history 0, Needs a home 31, Claims history 590. (Tabs overlap by design: Recent counts open tickets by their original date, so 9 older open tickets with a blank Notion created date and a recent page also show on Recent; Needs a home counts any ticket with no home.)
+
+### Phase B batches (closed history, newest closed first)
+| At (UTC) | Batch | Result | Tickets | Comments, files | Progress | Note |
+|---|---|---|---|---|---|---|
