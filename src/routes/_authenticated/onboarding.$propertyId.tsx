@@ -210,6 +210,19 @@ function PropertyWorkspace() {
       return data === true;
     },
   });
+  // Build 18 item 6b: Edit selected shows only to the people the bulk save itself allows
+  // (database can_bulk_edit_home_tasks mirrors bulk_update_onboarding_home_tasks).
+  const bulkEditQuery = useQuery({
+    queryKey: ["can-bulk-edit-home-tasks", propertyId, userId],
+    enabled: Boolean(userId),
+    staleTime: 60 * 1000,
+    queryFn: async () => {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const rpc = supabase.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
+      const { data, error } = await rpc("can_bulk_edit_home_tasks", { _property_id: propertyId });
+      return !error && data === true;
+    },
+  });
   const linkedTask = "task" in search && typeof search.task === "string" ? search.task : null;
   const linkedOpp = "opp" in search && typeof search.opp === "string" ? search.opp : null;
   const [openTaskId, setOpenTaskId] = useState<string | null>(linkedTask);
@@ -617,7 +630,7 @@ function PropertyWorkspace() {
                 voided={data.retiredTasks ?? []}
                 bulk={
                   canEdit && !life.locked
-                    ? { propertyId: current.id, homeName: formatPropertyLabel(current).primary, onSaved: () => void refresh() }
+                    ? { propertyId: current.id, homeName: formatPropertyLabel(current).primary, canEditSelected: bulkEditQuery.data === true, onSaved: () => void refresh() }
                     : undefined
                 }
               />
