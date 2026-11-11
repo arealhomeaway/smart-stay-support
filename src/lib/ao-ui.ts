@@ -195,3 +195,40 @@ export async function runAoClocksGuarded(db: Pick<SupabaseClient, "rpc">) {
   }
   return { skipped: false as const, result: res.data };
 }
+
+/** Plan cards grouped under each home, homes in the same order as the owner's other items. */
+export function groupPlanByHome<T extends { property_id?: string | null }>(
+  cards: T[],
+  homes: { propertyId: string; name: string }[],
+): { propertyId: string | null; name: string; cards: T[] }[] {
+  const order = new Map(homes.map((h, i) => [h.propertyId, i]));
+  const groups = new Map<string, { propertyId: string | null; name: string; cards: T[] }>();
+  for (const c of cards) {
+    const id = c.property_id ?? null;
+    const key = id ?? "";
+    const g = groups.get(key) ?? { propertyId: id, name: homes.find((h) => h.propertyId === id)?.name ?? "Your home", cards: [] };
+    g.cards.push(c);
+    groups.set(key, g);
+  }
+  return [...groups.values()].sort((a, b) =>
+    (order.get(a.propertyId ?? "") ?? 999) - (order.get(b.propertyId ?? "") ?? 999) || a.name.localeCompare(b.name));
+}
+
+/** Only a missing daily email function means "not set up yet"; anything else is a job error. */
+export function isOwnerEmailRunMissing(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const e = err as { code?: string; message?: string };
+  const m = `${e.message ?? ""}`.toLowerCase();
+  if (!/\bao_owner_email_run\b/.test(m)) return false;
+  return (e.code === "PGRST202" && m.includes("could not find the function")) || (e.code === "42883" && m.includes("does not exist"));
+}
+
+/** Five minute job step: plan is ready emails, then the one daily email at the set time. */
+export async function runAoOwnerEmailGuarded(db: Pick<SupabaseClient, "rpc">) {
+  const res = await db.rpc("ao_owner_email_run" as never, {} as never);
+  if (res.error) {
+    if (isOwnerEmailRunMissing(res.error)) return { skipped: true as const };
+    throw new Error((res.error as { message?: string }).message ?? "Daily homeowner email failed");
+  }
+  return { skipped: false as const, result: res.data };
+}

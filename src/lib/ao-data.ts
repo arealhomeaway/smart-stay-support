@@ -175,3 +175,58 @@ export async function confirmOneOff(propertyId: string, taskId: string | null, t
   if (!r.available) throw new Error("This check is not set up yet");
   return r.data;
 }
+
+// ---- Active Owner fix (Nov 11): staged functions; each returns { available: false } until applied.
+
+export type EnrolledHomeRow = {
+  property_id: string; home: string; program_id: string | null; stage: string;
+  open: number | null; locked: number | null; already_covered: number | null; skipped: number | null; reason: string | null;
+};
+/** Admin: what Start plans for enrolled homes would do. Writes nothing. */
+export async function previewEnrolledHomes() {
+  return unwrap<{ homes: EnrolledHomeRow[]; blocked: boolean; token: string }>(await db.rpc("ao_preview_enrolled_homes"));
+}
+/** Admin: starts every previewed home in one step, all or none. */
+export async function startEnrolledHomes(token: string) {
+  const r = unwrap<{ started: number }>(await db.rpc("ao_start_enrolled_homes", { _token: token }));
+  if (!r.available) throw new Error("Starting plans for enrolled homes is not set up yet");
+  return r.data;
+}
+/** Admin: the daily homeowner email time (Central). */
+export async function loadOwnerDigestTime(): Promise<string> {
+  const r = await supabase.from("app_settings").select("value").eq("key", "owner_digest_time").maybeSingle();
+  const v = (r.data?.value ?? null) as { time?: string } | null;
+  return v?.time ?? "09:00";
+}
+export async function setOwnerDigestTime(time: string) {
+  const r = unwrap<string>(await db.rpc("set_owner_digest_time", { _time: time }));
+  if (!r.available) throw new Error("The daily homeowner email is not set up yet");
+  return r.data;
+}
+
+export type OwnerItemMessage = { id: string; author_type: "homeowner" | "staff" | "system"; author_name: string; event: string | null; body: string; created_at: string };
+export type OwnerItemDetail = { conversation: boolean; open: boolean; status: string; updated_at: string; messages: OwnerItemMessage[] };
+export async function loadOwnerItemDetail(reviewId: string) {
+  return unwrap<OwnerItemDetail>(await db.rpc("owner_item_detail", { _review_id: reviewId }));
+}
+/** The homeowner writes back in the same item. */
+export async function replyToOwnerItem(reviewId: string, body: string) {
+  const r = unwrap<string>(await db.rpc("owner_item_reply", { _review_id: reviewId, _body: body }));
+  if (!r.available) throw new Error("Replies are not set up yet");
+  return r.data;
+}
+/** Staff reply, resolve or reopen through the existing conversation action. */
+export async function manageOwnerItem(reviewId: string, action: "reply" | "resolve" | "reopen", body = "") {
+  const r = unwrap(await db.rpc("manage_owner_review_conversation", { _id: reviewId, _action: action, _body: body }));
+  if (!r.available) throw new Error("Replies are not set up yet");
+}
+/** The owner item a Task was sent as, when it was sent through Send to the owner. */
+export async function loadTaskOwnerItem(taskId: string) {
+  return unwrap<{ review_id: string; sent_at: string } | null>(
+    await db.from("owner_item_task_sends").select("review_id,sent_at").eq("task_id", taskId).order("sent_at", { ascending: false }).limit(1).maybeSingle());
+}
+export type OwnerItemNeed = { review_id: string; property_id: string; task_id: string | null; title: string; why: string; since: string };
+export async function loadMyOwnerItemNeeds(): Promise<OwnerItemNeed[]> {
+  const r = unwrap<OwnerItemNeed[]>(await db.rpc("my_owner_item_needs"));
+  return r.available ? r.data ?? [] : [];
+}
