@@ -2311,6 +2311,13 @@
       "when": 1794356104653,
       "tag": "0329_kati_tickets_bulk_complete_breezeway",
       "breakpoints": true
+    },
+    {
+      "idx": 330,
+      "version": "7",
+      "when": 1794356300018,
+      "tag": "0330_kati_bulk_complete_review_blocker_fix",
+      "breakpoints": true
     }
   ]
 }
