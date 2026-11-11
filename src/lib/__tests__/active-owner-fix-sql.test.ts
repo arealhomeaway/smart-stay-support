@@ -376,4 +376,19 @@ describe("Active Owner fix, staged SQL on an isolated database", () => {
     expect(anon).toBe(0);
     expect((await one<{ ok: boolean }>("SELECT has_function_privilege('authenticated','public.ao_owner_email_run(timestamptz)','EXECUTE') ok")).ok).toBe(false);
   });
+  it("the undo files put the switch, preview and decision rule back exactly and remove everything new", async () => {
+    const def = async (f: string) => (await one<{ d: string }>(`SELECT pg_get_functiondef('${f}'::regprocedure) d`)).d;
+    await db.exec(read(`${DIR}/04_active_owner_label.undo.sql`));
+    await db.exec(read(`${DIR}/03_retire_a56.undo.sql`));
+    await db.exec(read(`${DIR}/02_engine.undo.sql`));
+    await db.exec(read(`${DIR}/01_fix1_plan_cards_read.undo.sql`));
+    const strip = (t: string) => t.replace(/;\s*$/, "").trim();
+    expect(strip(await def("public.ao_set_home_automation(uuid,boolean,uuid[])"))).toBe(strip(live("ao_set_home_automation")));
+    expect(strip(await def("public.ao_preview_home_automation(uuid,uuid[])"))).toBe(strip(live("ao_preview_home_automation")));
+    expect(strip(await def("public.owner_business_decision_guard()"))).toBe(strip(live("owner_business_decision_guard")));
+    expect(await n(`SELECT count(*)::int n FROM pg_proc WHERE proname IN ('ao_home_program','ao_plan_outcomes','ao_owner_email_run','send_task_to_owner_item','owner_item_reply','ao_label_sync')`)).toBe(0);
+    expect(await n(`SELECT count(*)::int n FROM pg_class WHERE relname IN ('ao_owner_email_days','ao_plan_ready_notices','ao_daily_email_items','owner_item_task_sends')`)).toBe(0);
+    expect(await n("SELECT count(*)::int n FROM public.owner_notifications WHERE email_status='held'")).toBe(0);
+    expect((await one<{ status: string }>("SELECT status FROM public.ao_library_cards WHERE code='A56'")).status).toBe("released");
+  });
 });
