@@ -129,3 +129,9 @@ No batches run.
 |---|---|---|---|---|---|---|
 | 2026-11-11 05:23:42 UTC | older_open started (start line 2026-11-11 05:23:27.678975+00) | | | | | |
 | 2026-11-11 05:24:20 UTC | watcher | | | | | The watcher script (not the import) crashed on its own text parsing after batch 2; closing its browser ended the page's batch loop. The import saved its place after batch 2 (6 tickets done, 0 failed). Nothing was lost or doubled. Watcher fixed; the run is resumed from the saved cursor once the import marks the run as interrupted (3 minutes). |
+| 2026-11-11 05:27:54 UTC | older_open resumed from the saved cursor (watch line 2026-11-11 05:23:27.678975+00) | | | | | |
+| 2026-11-11 05:23:56 | 1 | ok | done 3, skipped 0, failed 0 | comments 12, files 4 | total done 6, cursor saved |  |
+| 2026-11-11 05:24:19 | 2 | ok | done 3, skipped 0, failed 0 | comments 43, files 13 | total done 6, cursor saved |  |
+| 2026-11-11 05:28:28 | 3 | ok | done 3, skipped 0, failed 0 | comments 35, files 21 | total done 9, cursor saved |  |
+| 2026-11-11 05:29:02 | 4 | ok | done 3, skipped 0, failed 0 | comments 35, files 20 | total done 12, cursor saved |  |
+| 2026-11-11 05:29:25 | 5 | ok | done 3, skipped 0, failed 0 | comments 35, files 13 | total done 15, cursor saved |  |
