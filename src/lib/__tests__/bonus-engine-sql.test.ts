@@ -130,6 +130,9 @@ describe("bonus engine (01)", () => {
     db = new PGlite();
     await db.exec(STUBS);
     await db.exec(readFileSync(`${DIR}/01_bonus_engine.sql`, "utf8"));
+    // Build 18 (Nov 10): no pay date on any card or payout row. The onboarding helper in the same
+    // file reads tables this fixture does not stub, so bodies are not checked at creation here.
+    await db.exec("SET check_function_bodies = off;\n" + readFileSync("docs/pending/build18/01_build18.sql", "utf8") + "\nSET check_function_bodies = on;");
     await as(null);
   });
 
@@ -180,7 +183,7 @@ describe("bonus engine (01)", () => {
     expect((await one(`SELECT schedule FROM cron.jobs WHERE name='bonus-periods'`)).schedule).toBe("17 * * * *");
   });
 
-  it("periods: the first Supervisor and Director periods, then months and quarters, and the Pays on line", async () => {
+  it("periods: the first Supervisor and Director periods, then months and quarters (the unused pay date helper is kept, not shown)", async () => {
     const p = async (plan: string, day: string) =>
       await one(`SELECT period_start::text s, period_end::text e, label, amount_goal_met::text m FROM private.bonus_period($1, $2::date)`, [plan, day]);
     expect(await p("ops_supervisor", "2026-11-20")).toEqual({ s: "2026-11-09", e: "2026-11-30", label: "November 2026", m: "73.33" });
@@ -388,7 +391,8 @@ describe("bonus engine (01)", () => {
     expect(verified.goals.map((g) => g.name)).toEqual([
       "Team on time follow through", "Queue checks", "Team clean records", "Monthly coaching", "Weekly report on time",
     ]);
-    expect(verified.pays_on).toBe("The last payday in October 2026");
+    // Build 18 item 2: the Finance list and its export carry no pay date.
+    expect(verified.pays_on).toBeUndefined();
   });
 
   it("each role sees only what it should", async () => {
@@ -471,6 +475,8 @@ describe("bonus engine (01)", () => {
     const card = (await one(`SELECT public.bonus_scorecard('ops_supervisor', $1, '2026-09-01') c`, [SUP])).c;
     expect(card.can_raise_question).toBe(true);
     expect(card.status).toBe("verified");
+    // Build 18 item 2: the person's card promises no pay date.
+    expect(card.pays_on).toBeUndefined();
     await db.query(`SELECT public.bonus_raise_question('ops_supervisor', '2026-09-01', 'Why is coaching low?')`);
     // The Director (reviewer) and the COO (settles Supervisor questions) are told.
     expect((await all(`SELECT user_id FROM public.staff_notifications WHERE kind='bonus_question' ORDER BY user_id`)).map((x) => x.user_id))
