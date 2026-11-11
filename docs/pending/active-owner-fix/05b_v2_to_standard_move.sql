@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS public.ao_plan_move_receipts (
 GRANT SELECT ON public.ao_plan_move_receipts TO authenticated;
 GRANT ALL ON public.ao_plan_move_receipts TO service_role;
 ALTER TABLE public.ao_plan_move_receipts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS ao_plan_move_receipts_staff_read ON public.ao_plan_move_receipts;
 CREATE POLICY ao_plan_move_receipts_staff_read ON public.ao_plan_move_receipts FOR SELECT TO authenticated
   USING (public.is_internal_staff(auth.uid()));
 
