@@ -306,16 +306,22 @@ export function assigneeRows(sum: DryRunSummary): { label: string; n: number }[]
 // ---------- duplicate guard and reopen protection ----------
 
 export type ExistingImport = { id: string; external_status: string | null; external_synced_at: string | null } | null;
-export type WritePlan = "create" | "update" | "unchanged" | "keep_live";
+export type WritePlan = "create" | "update" | "unchanged" | "keep_live" | "keep_existing";
 
 /**
  * One ticket per Notion page ID. A ticket someone reopened or took in Resolve is
  * never written again (its claim is left alone too); only missing Notion
  * comments and files are added to its history.
+ *
+ * The older open and closed history runs never rewrite, close, reassign or
+ * retitle a ticket that is already in Resolve, even when Notion changed it
+ * (Emily, Nov 11): they only add missing Notion comments and files. Only the
+ * recent open run updates an imported ticket that Notion changed.
  */
-export function planTicketWrite(existing: ExistingImport, mapped: { external_synced_at: string }): WritePlan {
+export function planTicketWrite(existing: ExistingImport, mapped: { external_synced_at: string }, group: ImportGroup): WritePlan {
   if (!existing) return "create";
   if (existing.external_status === "reopened_in_resolve") return "keep_live";
+  if (group !== "recent_open") return "keep_existing";
   const same =
     existing.external_synced_at != null && Date.parse(existing.external_synced_at) === Date.parse(mapped.external_synced_at);
   return same ? "unchanged" : "update";
@@ -330,6 +336,17 @@ export function planTicketWrite(existing: ExistingImport, mapped: { external_syn
 export function ticketForWrite<T extends { claim: unknown }>(plan: WritePlan, group: ImportGroup, ticket: T): T {
   if (plan === "update" && group !== "recent_open") return { ...ticket, claim: null };
   return ticket;
+}
+
+// ---------- reading order ----------
+
+/**
+ * Which way a run reads Notion, by created time. The closed history run reads
+ * newest first (Emily, Nov 11); the dry run, the recent open run and the older
+ * open run read oldest first, as the first run did.
+ */
+export function notionSortDirection(group: ImportGroup | null): "ascending" | "descending" {
+  return group === "closed" ? "descending" : "ascending";
 }
 
 // ---------- Notion rate limit ----------
