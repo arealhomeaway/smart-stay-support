@@ -12,3 +12,12 @@ describe("Build 17 finding 2: the homeowner sees the conversation from the first
     expect(before).not.toContain("arha ?");
   });
 });
+
+describe("Build 17 finding 4: a second home from the Availability Finder joins the lead just made", () => {
+  const src = read("src/routes/_authenticated/availability-finder.tsx");
+  it("the offer uses the lead from the page, else the lead the first offer made", () => {
+    const save = src.slice(src.indexOf("async function saveOffer"), src.indexOf("async function saveOffer") + 900);
+    expect(save).toContain("const leadId = search.leadId ?? offeredLeadId");
+    expect(save).toContain("...(leadId ? { leadId } : {})");
+  });
+});
