@@ -6728,6 +6728,7 @@ export type Database = {
           issue_categories: string[]
           ownerrez_booking_id: string | null
           property_id: string | null
+          published_date_known: boolean
           rating: number | null
           reservation_confirmation: string | null
           reservation_enriched_at: string | null
@@ -6765,6 +6766,7 @@ export type Database = {
           issue_categories?: string[]
           ownerrez_booking_id?: string | null
           property_id?: string | null
+          published_date_known?: boolean
           rating?: number | null
           reservation_confirmation?: string | null
           reservation_enriched_at?: string | null
@@ -6802,6 +6804,7 @@ export type Database = {
           issue_categories?: string[]
           ownerrez_booking_id?: string | null
           property_id?: string | null
+          published_date_known?: boolean
           rating?: number | null
           reservation_confirmation?: string | null
           reservation_enriched_at?: string | null
@@ -18675,6 +18678,7 @@ export type Database = {
       }
       can_manage_credentials: { Args: { _user_id: string }; Returns: boolean }
       can_manage_playbooks: { Args: { _user_id: string }; Returns: boolean }
+      can_manage_project_team: { Args: { _user_id: string }; Returns: boolean }
       can_read_completed_onboarding_document: {
         Args: { _document_id: string }
         Returns: string
