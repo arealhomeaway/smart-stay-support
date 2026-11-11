@@ -723,3 +723,16 @@ No batches run.
 | 2026-11-11 07:34:14 | 229 | ok | done 3, skipped 0, failed 0 | comments 6, files 1 | total done 687, cursor saved |  |
 | 2026-11-11 07:34:20 | 230 | ok | done 3, skipped 0, failed 0 | comments 8, files 0 | total done 687, cursor saved |  |
 | 2026-11-11 07:34:26 | 231 | ok | done 3, skipped 0, failed 0 | comments 4, files 0 | total done 687, cursor saved |  |
+| 2026-11-11 07:34:53 UTC | paused | | | | | Paused by me at a saved place (the session was running long). Batch 233 finished and saved; no batch was cut off. |
+
+Note: the Phase A batch table lists batches 1 to 144 twice, because the watcher logged them again when it restarted. Each batch ran once (the integration log has one row per batch).
+
+## FINAL REPORT, Nov 11 07:36 UTC: PHASE A DONE, PHASE B PAUSED PART WAY (NOT FINISHED)
+- Backup: `d170df7a-2dd1-4f9e-9aaa-295bbb07a375`, folder `2026-11-11_051821Z`, verified.
+- Phase A, older open: done. 595 imported, 5 kept as they were, 0 failed. Claims 554 Closed, $93,598.21 damages, $83,810.63 paid back. Exact match with Notion.
+- Phase B, closed history, newest first: PAUSED, not finished. 233 batches: 693 imported, 6 skipped (the 6 tickets 1457, 1492, 1495, 1498, 1500, 1515, kept as they were), 0 failed, 0 failed files. 2,797 comments, 623 files. 1,535 of 2,228 left. The saved place is kept. Resume continues from it (Notion import page, Resume). Claims so far 24 Closed, $100.00 damages, $525.00 paid back. The full-set claim check (81, $29,435, $25,370) waits until the phase finishes.
+- Resolve at the pause: 1,378 imported tickets (90 + 595 + 693), 0 duplicates, 69 with no home (Needs a home tab), 0 with a clock.
+- Protected: the 90 first run tickets, the 2 live tickets and the 36 existing claims match their before fingerprints exactly. Money we could still lose was $3,927.02 after Phase A (open claims are still the 24 Potential and 12 Gathering only).
+- Silence: 0 rows since the start line in staff notifications, owner notifications, email log, ticket timed alerts, escalations, owner contact alerts and owner alert log.
+- Anomalies: none from the import. There were three interruptions, all from my watcher, and each was resumed from the saved place: a text parsing bug after batch 2, the watcher's browser closing after batch 144, and my correction of the Phase B stop limits after batch 1.
+- Not done yet: the end-of-run checks (screens, by team counts, and the Period, Status, Owner, Open and Reopen practice). They wait until Phase B finishes.
