@@ -153,6 +153,7 @@ DROP TRIGGER IF EXISTS owner_item_event_sync ON public.owner_request_messages;
 DROP FUNCTION IF EXISTS public.my_owner_item_needs();
 DROP FUNCTION IF EXISTS public.owner_item_reply(uuid, text);
 DROP FUNCTION IF EXISTS public.owner_item_thread(uuid);
+DROP FUNCTION IF EXISTS public.owner_item_detail(uuid);
 DROP FUNCTION IF EXISTS public.send_task_to_owner_item(uuid, text, date);
 DROP FUNCTION IF EXISTS private.owner_item_event_sync();
 DROP FUNCTION IF EXISTS private.owner_item_answerer(uuid);

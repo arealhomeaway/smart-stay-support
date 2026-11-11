@@ -828,3 +828,24 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, private AS $$
 $$;
 REVOKE ALL ON FUNCTION public.my_owner_item_needs() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.my_owner_item_needs() TO authenticated, service_role;
+
+-- The owner item as the portal and the Task drawer show it: is it a send-and-talk item, is it open,
+-- and its messages (staff shown as the ARHA team). Same access as the thread reader.
+CREATE OR REPLACE FUNCTION public.owner_item_detail(_review_id uuid)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public, private AS $$
+DECLARE r public.owner_reviews; msgs jsonb; staff boolean := coalesce(private.is_staff(auth.uid()), false);
+BEGIN
+  SELECT * INTO r FROM public.owner_reviews WHERE id = _review_id AND archived_at IS NULL;
+  IF auth.uid() IS NULL OR r.id IS NULL OR r.status = 'prepared'
+     OR NOT (coalesce(private.is_program_member(r.program_id, auth.uid()), false) OR staff) THEN
+    RAISE EXCEPTION 'This activity is not available.';
+  END IF;
+  SELECT coalesce(jsonb_agg(jsonb_build_object('id', m.id, 'author_type', m.author_type,
+           'author_name', CASE WHEN m.author_type = 'homeowner' OR staff THEN m.author_name ELSE 'ARHA team' END,
+           'event', m.event, 'body', m.body, 'created_at', m.created_at) ORDER BY m.created_at, m.id), '[]'::jsonb)
+    INTO msgs FROM public.owner_request_messages m WHERE m.review_id = r.id;
+  RETURN jsonb_build_object('conversation', EXISTS (SELECT 1 FROM public.owner_item_task_sends s WHERE s.review_id = r.id),
+    'open', r.status <> 'closed', 'status', r.status, 'updated_at', r.updated_at, 'messages', msgs);
+END $$;
+REVOKE ALL ON FUNCTION public.owner_item_detail(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.owner_item_detail(uuid) TO authenticated, service_role;

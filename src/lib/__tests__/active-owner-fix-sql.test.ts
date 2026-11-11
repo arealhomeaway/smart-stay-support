@@ -339,6 +339,9 @@ describe("Active Owner fix, staged SQL on an isolated database", () => {
     await as(owner1);
     expect((await db.query<{ author_type: string; body: string }>("SELECT author_type, body FROM public.owner_item_thread($1)", [rid])).rows)
       .toEqual([{ author_type: "homeowner", body: "Love it, can the sofa be blue?" }, { author_type: "staff", body: "Yes, blue works." }]);
+    const detail = (await one<{ d: { conversation: boolean; open: boolean; messages: { author_name: string }[] } }>("SELECT public.owner_item_detail($1) d", [rid])).d;
+    expect(detail.conversation && detail.open).toBe(true);
+    expect(detail.messages.map((m) => m.author_name)).toEqual(["Pat Owner", "ARHA team"]);
     await as(pm);
     expect((await db.query("SELECT * FROM public.my_owner_item_needs()")).rows).toHaveLength(0);
     await db.query("SELECT public.manage_owner_review_conversation($1, 'resolve')", [rid]);
