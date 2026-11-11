@@ -127,7 +127,7 @@ describe("2. Finance on a Supervisor type account", () => {
       expect(canOpenPath(path, FIN)).toBe(false);
     expect(labels(FIN)).not.toContain("Team Queue");
     expect(labels(FIN)).not.toContain("Oversight");
-    expect(labels(FIN)).not.toContain("Team & Coverage");
+    expect(labels(FIN)).not.toContain("Team and Coverage");
   });
   it("A8 Work orders view, A9 Vendors view, A10 Claims and refunds view, A12 Properties view", () => {
     for (const path of ["/work-orders", "/vendors", "/claims", "/recovery", "/properties", "/property/abc"]) {

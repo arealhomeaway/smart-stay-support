@@ -33,7 +33,7 @@ describe("who sees what", () => {
       // Vendors left the menu (Nov 9, register M1): it opens from the Databases card.
       ["My day", ["Home", "Team Queue", "Direct Bookings", "Databases"]],
       // Fix batch 2 (Nov 8): coordinators open the Team group read only.
-      ["Team", ["Team & Coverage", "Playbooks"]],
+      ["Team", ["Team and Coverage", "Playbooks"]],
       ["Homes and owners", ["Properties"]],
     ]);
   });
@@ -41,22 +41,21 @@ describe("who sees what", () => {
   it("a Supervisor", () => {
     expect(shape(operationsMenu(accessFor(["manager"])))).toEqual([
       ["My day", ["Home", "Team Queue", "Direct Bookings", "Databases", "Oversight"]],
-      ["Team", ["Team & Coverage", "Playbooks"]],
+      ["Team", ["Team and Coverage", "Playbooks"]],
       // Build 5 (Emily, Nov 9): the Supervisor sees Onboarding only through the read only Handoffs page.
       ["Homes and owners", ["Properties", "Handoffs", "Active Owner"]],
       ["Insight", ["Analytics"]],
-      // Admin as today: Supervisors open it at the first Admin page they can open.
-      ["Admin", ["Admin"]],
+      // Build 16 D: no Admin tools item for a Supervisor, who opens no Admin page.
     ]);
   });
 
   it("an Admin", () => {
     expect(shape(operationsMenu(accessFor(["admin"])))).toEqual([
       ["My day", ["Home", "Team Queue", "Direct Bookings", "Databases", "Oversight"]],
-      ["Team", ["Team & Coverage", "Playbooks"]],
+      ["Team", ["Team and Coverage", "Playbooks"]],
       ["Homes and owners", ["Properties", "Onboarding", "Active Owner"]],
       ["Insight", ["Analytics"]],
-      ["Admin", ["Admin"]],
+      ["Admin", ["Admin tools"]],
     ]);
   });
 
@@ -87,7 +86,7 @@ describe("who sees what", () => {
     // Build 5 (register A12): onboarding roles open the Properties list, named All homes beside
     // the Onboarding Properties lens.
     expect(director.map((g) => g.label)).toEqual(["Onboarding", "Active Owner", "Homes and owners", "Team", "Databases"]);
-    expect(director.find((g) => g.label === "Homes and owners")?.items.map((i) => [i.label, i.to])).toEqual([["All homes", "/properties"]]);
+    expect(director.find((g) => g.label === "Homes and owners")?.items.map((i) => [i.label, i.to])).toEqual([["Properties", "/properties"]]);
   });
 });
 
