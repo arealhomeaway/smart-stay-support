@@ -46,6 +46,11 @@ import {
 } from "@/lib/tickets";
 
 export const Route = createFileRoute("/_authenticated/coach")({
+  // Record work's Ask the Coach button carries the description and home (Build 16 D).
+  validateSearch: (s: Record<string, unknown>): { q?: string; propertyId?: string } => ({
+    q: typeof s.q === "string" && s.q.trim() ? s.q.slice(0, 2000) : undefined,
+    propertyId: typeof s.propertyId === "string" && /^[0-9a-f-]{36}$/i.test(s.propertyId) ? s.propertyId : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Ask the Coach: Resolve Operations" },
@@ -75,8 +80,9 @@ const EXAMPLES = [
 
 function CoachPage() {
   const router = useRouter();
-  const [question, setQuestion] = useState("");
-  const [propertyId, setPropertyId] = useState("");
+  const carried = Route.useSearch();
+  const [question, setQuestion] = useState(carried.q ?? "");
+  const [propertyId, setPropertyId] = useState(carried.propertyId ?? "");
   const [session, setSession] = useState<{ id: string; guidance: Guidance } | null>(null);
   const [chat, setChat] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [followUp, setFollowUp] = useState("");

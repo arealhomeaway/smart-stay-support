@@ -144,9 +144,10 @@ export function TicketDrawerHost({ children }: { children: ReactNode }) {
           className="flex w-full flex-col gap-0 p-0 sm:max-w-[min(1100px,92vw)] [&>button.absolute]:hidden"
         >
           <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
-            <SheetTitle className="text-base">{newCtx ? "Record work" : "Ticket"}</SheetTitle>
+            {/* Record work shows its own heading in the form, so the panel title is for screen readers only (Build 16 D). */}
+            <SheetTitle className={newCtx ? "sr-only" : "text-base"}>{newCtx ? "Record work" : "Ticket"}</SheetTitle>
             <SheetDescription className="sr-only">
-              Work this Ticket without leaving the page you were on.
+              {newCtx ? "Record work at a home." : "Work this Ticket without leaving the page you were on."}
             </SheetDescription>
             <div className="flex items-center gap-2">
               {ticketId && (
