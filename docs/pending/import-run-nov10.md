@@ -1032,3 +1032,14 @@ Note: the Phase A batch table lists batches 1 to 144 twice, because the watcher 
 | 2026-11-11 13:43:16 | 514 | ok | done 3, skipped 0, failed 0 | comments 22, files 2 | total done 1536, cursor saved |  |
 | 2026-11-11 13:43:26 | 515 | ok | done 3, skipped 0, failed 0 | comments 10, files 1 | total done 1539, cursor saved |  |
 | 2026-11-11 13:43:41 | 516 | ok | done 3, skipped 0, failed 0 | comments 38, files 6 | total done 1542, cursor saved |  |
+| 2026-11-11 13:43:41 UTC | paused | | | | | Paused by me at a saved place: the session reached its time limit. Batch 516 finished and saved; no batch was cut off. |
+
+### Pause report, Nov 11 13:44 UTC: PHASE B STILL NOT FINISHED
+- Closed history: 516 batches in all, 1,542 of 2,228 imported (849 since the resume), 6 skipped (the 6 kept tickets, unchanged), 0 failed tickets, 0 failed files, no Notion problem. 686 left. Saved place kept; Resume on the Notion import page continues from it.
+- Copied in this phase so far: 7,797 comments, 1,597 files.
+- Closed set claims so far: 34 claims, damages $3280.74, paid back $2025.00. The full set claim check waits until the phase finishes.
+- Resolve now: 2,227 imported tickets (90 + 595 + 1,542), 0 duplicates, 0 with a clock, Needs a home against the limit 94 of 149, new imported 2,137 of 2,823.
+- Protected: the 90 first run tickets (and their activity), the 2 live tickets (and their activity) and the 36 existing claims match their before fingerprints exactly.
+- Silence since the resume: 0 rows in staff notifications, owner notifications, email log, timed alerts, escalations, owner contact alerts and owner alert log; 0 non-comment activity on imported tickets.
+- Anomalies: none.
+- Not done yet (wait for the finish): the full set claim check, totals by Notion status and by tab, counts by team and owner, comments and files versus a Notion reread, the no home list, Money we could still lose, Team Queue and Home counts, and the cancelled practice.
