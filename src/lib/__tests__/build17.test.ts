@@ -39,7 +39,8 @@ describe("Build 17 finding 6: the Enroll result stays on screen until staff clos
   const src = read("src/components/property/ActiveOwnerEnrollForm.tsx");
   const panel = read("src/components/property/ActiveOwnerPanel.tsx");
   it("saving does not refresh the page underneath; that waits for Done", () => {
-    const onSuccess = src.slice(src.indexOf("const run = useMutation"), src.indexOf("if (receipt) return"));
+    const start = src.indexOf("const run = useMutation");
+    const onSuccess = src.slice(start, src.indexOf("onError", start));
     expect(onSuccess).not.toContain("invalidateQueries");
     expect(onSuccess).not.toContain("onDone()");
   });
