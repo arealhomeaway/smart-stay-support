@@ -16,6 +16,14 @@ import {
 } from "@/lib/onboarding-breezeway";
 import { onboardingTaskAction } from "@/lib/onboarding-task-action";
 import { viewTask, type WorkflowTask } from "@/lib/onboarding-workflow";
+import { buildReleaseContext, releaseState } from "@/lib/onboarding-state";
+
+const HOME = {
+  id: "p1", name: "Test home", lifecycle_status: "onboarding", onboarding_stage: "phase1_inspection",
+  access_notes: null, actual_access_on: null, planned_closing_on: "2026-11-20", handoff_accepted_at: null,
+};
+const canFinish = (t: WorkflowTask) =>
+  releaseState(t, [t], buildReleaseContext({ property: HOME as never, project: { id: "pr1", status: "active", completed_at: null }, tasks: [t], handoff: null })).canComplete;
 
 /** Kati's onboarding tickets 65, 66, 67 (Build 15, Emily Nov 10). */
 const base: WorkflowTask = {
@@ -36,9 +44,10 @@ describe("ticket 65: evidence is a file or a note of at least 5 characters", () 
     expect(evidenceSatisfied({ note: "done." })).toBe(true);
   });
   it("the step can be completed with a file and no note, and not with neither", () => {
-    expect(viewTask({ ...base, evidence_file_count: 1 }, []).canComplete).toBe(true);
-    expect(viewTask({ ...base, evidence_file_count: 0 }, []).canComplete).toBe(false);
-    expect(viewTask({ ...base, evidence_note: "In the home folder" }, []).canComplete).toBe(true);
+    expect(canFinish({ ...base, evidence_file_count: 1 })).toBe(true);
+    expect(canFinish({ ...base, evidence_file_count: 0 })).toBe(false);
+    expect(canFinish({ ...base, evidence_note: "In the home folder" })).toBe(true);
+    expect(canFinish({ ...base, evidence_note: "done" })).toBe(false);
   });
   it("the guided card stops asking for proof once a file is on the step", () => {
     expect(onboardingTaskAction(viewTask(base, []))?.id).toBe("capture_evidence");
