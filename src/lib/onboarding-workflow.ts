@@ -41,6 +41,8 @@ export type WorkflowTask = {
   blocks_handoff: boolean;
   evidence_required: boolean;
   evidence_note: string | null;
+  /** Stored files on the step, when the caller loaded them; a file counts as evidence. */
+  evidence_file_count?: number | null;
   requires_owner_approval: boolean;
   owner_approval_status: string;
   /** What the Task needs from the homeowner; see owner-dependency.ts. */

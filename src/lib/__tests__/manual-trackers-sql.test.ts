@@ -286,13 +286,13 @@ describe("manual trackers (01)", () => {
 
   it("a coaching session saves, the month counts it against the setting, and a coordinator sees only their own", async () => {
     await as(SUP);
-    expect(await err(`SELECT public.coaching_save_session($1, current_date, 'check_in', ARRAY[]::text[], 'notes here', NULL, '[]', NULL)`, [PC1]))
+    expect(await err(`SELECT public.coaching_save_session($1, (now() AT TIME ZONE 'America/Chicago')::date, 'check_in', ARRAY[]::text[], 'notes here', NULL, '[]', NULL)`, [PC1]))
       .toContain("agenda item");
-    expect(await err(`SELECT public.coaching_save_session($1, current_date, 'check_in', ARRAY['Reply times'], 'notes here', NULL,
+    expect(await err(`SELECT public.coaching_save_session($1, (now() AT TIME ZONE 'America/Chicago')::date, 'check_in', ARRAY['Reply times'], 'notes here', NULL,
                         '[{"text":"Shadow a shift","owner":"coordinator"}]', NULL)`, [PC1])).toContain("due date");
-    await db.query(`SELECT public.coaching_save_session($1, current_date, 'check_in', ARRAY['Reply times', 'Handoffs'], 'Talked through the week',
-                      'Calm with guests', jsonb_build_array(jsonb_build_object('text','Shadow a shift','owner','coordinator','due_on', current_date + 7)),
-                      current_date + 30)`, [PC1]);
+    await db.query(`SELECT public.coaching_save_session($1, (now() AT TIME ZONE 'America/Chicago')::date, 'check_in', ARRAY['Reply times', 'Handoffs'], 'Talked through the week',
+                      'Calm with guests', jsonb_build_array(jsonb_build_object('text','Shadow a shift','owner','coordinator','due_on', (now() AT TIME ZONE 'America/Chicago')::date + 7)),
+                      (now() AT TIME ZONE 'America/Chicago')::date + 30)`, [PC1]);
     let log = (await one(`SELECT public.coaching_log(NULL) AS l`)).l;
     expect(log.required).toBe(2); // 1 for each of the 2 active coordinators
     expect(log.done).toBe(1);

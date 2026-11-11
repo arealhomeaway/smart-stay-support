@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { HomeTaskBulkEditDialog } from "@/components/onboarding/HomeTaskBulkEditDialog";
+import { BulkCompleteDialog } from "@/components/onboarding/BulkCompleteDialog";
 import { homeTaskSelectable, type HomeBulkTask } from "@/lib/home-task-bulk-edit";
 import { stageLabel } from "@/lib/onboarding";
 import { Chip } from "@/components/ui/page";
@@ -54,6 +55,7 @@ export function PropertyWorkQueue({
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [completeOpen, setCompleteOpen] = useState(false);
   const bulkTasks = tasks as unknown as HomeBulkTask[];
   const selectableIds = useMemo(
     () => new Set(bulkTasks.filter(homeTaskSelectable).map((t) => t.id)),
@@ -234,7 +236,8 @@ export function PropertyWorkQueue({
           </span>
           <span className="flex gap-2">
             <Button size="sm" variant="outline" onClick={() => setSelected(new Set())}>Clear</Button>
-            <Button size="sm" onClick={() => setBulkOpen(true)}>Edit selected</Button>
+            <Button size="sm" variant="outline" onClick={() => setBulkOpen(true)}>Edit selected</Button>
+            <Button size="sm" onClick={() => setCompleteOpen(true)}>Mark complete</Button>
           </span>
         </div>
       ) : null}
@@ -248,6 +251,19 @@ export function PropertyWorkQueue({
           onClose={() => setBulkOpen(false)}
           onSaved={() => {
             setBulkOpen(false);
+            setSelected(new Set());
+            bulk.onSaved();
+          }}
+        />
+      ) : null}
+      {bulk && completeOpen ? (
+        <BulkCompleteDialog
+          propertyId={bulk.propertyId}
+          homeName={bulk.homeName}
+          selectedIds={[...selected]}
+          onClose={() => setCompleteOpen(false)}
+          onSaved={() => {
+            setCompleteOpen(false);
             setSelected(new Set());
             bulk.onSaved();
           }}

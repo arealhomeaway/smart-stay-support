@@ -1012,6 +1012,17 @@ function TaskCalendar({
   );
 }
 
+/** Roles a new step can go to; the person is whoever holds the role on this home. */
+const NEW_TASK_ROLES = [
+  { code: "onboarding_director", label: "Director of Onboarding" },
+  { code: "onboarding_manager", label: "Onboarding Manager" },
+  { code: "onboarding_project_manager", label: "Project Manager" },
+  { code: "utilities", label: "Utilities" },
+  { code: "lead_designer", label: "Lead Designer" },
+  { code: "designer", label: "Designer" },
+  { code: "staging_team", label: "Staging Team" },
+] as const;
+
 function NewTaskDialog({
   propertyId,
   people,
@@ -1030,6 +1041,7 @@ function NewTaskDialog({
   const [title, setTitle] = useState("");
   const [detail, setDetail] = useState("");
   const [assignedTo, setAssignedTo] = useState("unassigned");
+  const [role, setRole] = useState("none");
   const [dueOn, setDueOn] = useState("");
   const [requiresOwnerApproval, setRequiresOwnerApproval] = useState(false);
   const [evidenceRequired, setEvidenceRequired] = useState(false);
@@ -1079,6 +1091,22 @@ function NewTaskDialog({
             <Label>Detail</Label>
             <Textarea value={detail} onChange={(e) => setDetail(e.target.value)} rows={3} />
           </div>
+          <div className="space-y-1">
+            <Label>Role</Label>
+            <Select value={role} onValueChange={setRole}>
+              <SelectTrigger className="min-h-11">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No role</SelectItem>
+                {NEW_TASK_ROLES.map((r) => (
+                  <SelectItem key={r.code} value={r.code}>
+                    {r.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1">
               <Label>Assignee</Label>
@@ -1122,14 +1150,14 @@ function NewTaskDialog({
               checked={requiresOwnerApproval}
               onCheckedChange={(v) => setRequiresOwnerApproval(Boolean(v))}
             />
-            Requires a homeowner approval
+            Needs the homeowner&apos;s approval (sent only when you press Send for approval)
           </label>
           <label className="flex items-center gap-2 text-sm">
             <Checkbox
               checked={evidenceRequired}
               onCheckedChange={(v) => setEvidenceRequired(Boolean(v))}
             />
-            Requires evidence before it counts as complete
+            Needs evidence (a file or a note on where the proof is)
           </label>
           <label className="flex items-center gap-2 text-sm">
             <Checkbox
@@ -1148,6 +1176,7 @@ function NewTaskDialog({
                 title: title.trim(),
                 detail: detail.trim(),
                 assignedTo: assignedTo === "unassigned" ? null : assignedTo,
+                assignedSeat: role === "none" ? null : role,
                 dueOn: dueOn || null,
                 blocker: "",
                 requiresOwnerApproval,
@@ -1164,6 +1193,7 @@ function NewTaskDialog({
               setTitle("");
               setDetail("");
               setAssignedTo("unassigned");
+              setRole("none");
               setDueOn("");
               setRequiresOwnerApproval(false);
               setEvidenceRequired(false);

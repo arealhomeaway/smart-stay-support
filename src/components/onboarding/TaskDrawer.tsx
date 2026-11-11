@@ -11,7 +11,7 @@
 import { OpenPhotosFolderButton } from "@/components/property/MarketingPhotosButtons";
 import { isPhotoStep } from "@/lib/marketing-photos";
 import { useEffect, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -62,6 +62,10 @@ import {
   type TaskActionId,
 } from "@/lib/onboarding-task-action";
 import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
+import { BreezewayHomeLink, OnboardingBreezewaySection } from "@/components/onboarding/OnboardingBreezewaySection";
+import { isBreezewayWorkOrderStep, showsBreezewayHomeLink } from "@/lib/onboarding-breezeway";
+import { EVIDENCE_PROBLEM, evidenceSatisfied } from "@/lib/onboarding-evidence";
+import { listAttachmentsFn } from "@/lib/attachments.functions";
 import { SendToHomeownerDialog } from "@/components/onboarding/SendToHomeownerDialog";
 import { SendToActiveOwnerGate, TaskVerifyBadge } from "@/components/ao/TaskPlanLink";
 import { TaskGallery } from "@/components/onboarding/TaskGallery";
@@ -208,6 +212,16 @@ export function TaskDrawer({
   const [reopenReason, setReopenReason] = useState("");
   const [voidOpen, setVoidOpen] = useState(false);
   const [voidReason, setVoidReason] = useState("");
+  // Same list (and cache key) the step's file panel reads: a stored file is evidence.
+  const listFiles = useServerFn(listAttachmentsFn);
+  const stepFiles = useQuery({
+    queryKey: ["attachments", "onboarding_task", task?.id ?? "none"],
+    queryFn: () => listFiles({ data: { entityType: "onboarding_task", entityId: task!.id } }),
+    enabled: Boolean(task?.id),
+  });
+  const fileCount = (stepFiles.data?.files ?? []).filter(
+    (f) => f.upload_status === "stored" && !f.archived_at,
+  ).length;
 
   useEffect(() => {
     setEvidence(task?.evidence_note ?? "");
@@ -226,7 +240,7 @@ export function TaskDrawer({
 
   if (!task) return null;
 
-  const view = viewTask(task, tasks, release);
+  const view = viewTask({ ...task, evidence_file_count: fileCount }, tasks, release);
   // One canonical approval record per request — the drawer must never look
   // like a request that already went out has never been sent.
   const taskApprovals = approvals
@@ -240,7 +254,9 @@ export function TaskDrawer({
     .map((id) => tasks.find((t) => t.id === id))
     .filter((t): t is WorkflowTask => Boolean(t));
   const downstream = tasks.filter((t) => (t.depends_on ?? []).includes(task.id));
-  const evidenceMissing = task.evidence_required && !(task.evidence_note ?? "").trim();
+  const evidenceMissing =
+    task.evidence_required && !evidenceSatisfied({ note: task.evidence_note, fileCount });
+  const typedEvidenceOk = evidenceSatisfied({ note: evidence, fileCount });
   const awaitingOwner = task.requires_owner_approval && task.owner_approval_status !== "approved";
   const dueChanged = (due || null) !== (task.due_on ?? null);
   // Design and listing work is looked at, not read — those drawers get the gallery.
@@ -425,9 +441,7 @@ export function TaskDrawer({
                 disabled={
                   disabled ||
                   awaitingOwner ||
-                  (evidenceMissing
-                    ? evidence.trim().length < 3
-                    : !view.canComplete)
+                  (evidenceMissing ? !typedEvidenceOk : !view.canComplete)
                 }
                 onClick={() =>
                   onSave(
@@ -441,10 +455,8 @@ export function TaskDrawer({
               >
                 Complete
               </Button>
-              {evidenceMissing && evidence.trim().length < 3 ? (
-                <p className="text-xs text-muted-foreground">
-                  Add a short completion note under Notes &amp; files to complete this Task.
-                </p>
+              {evidenceMissing && !typedEvidenceOk ? (
+                <p className="text-xs text-muted-foreground">{EVIDENCE_PROBLEM}</p>
               ) : (
                 !view.canComplete &&
                 view.reason && <p className="text-xs text-muted-foreground">{view.reason}</p>
@@ -497,7 +509,16 @@ export function TaskDrawer({
             {sendToOwner}
           </section>
         )}
-        {mode === "vendor" && (
+        {/* Work order steps: the only work orders are work orders in Breezeway. */}
+        {isBreezewayWorkOrderStep(task.title) && (
+          <OnboardingBreezewaySection
+            taskId={task.id}
+            propertyId={task.property_id}
+            disabled={disabled}
+          />
+        )}
+        {showsBreezewayHomeLink(task.title) && <BreezewayHomeLink propertyId={task.property_id} />}
+        {mode === "vendor" && !isBreezewayWorkOrderStep(task.title) && (
           <section className="space-y-2 rounded-lg border border-primary/40 bg-primary/5 p-4">
             <p className="font-medium">Dispatch to a vendor</p>
             <p className="text-xs text-muted-foreground">
@@ -625,18 +646,18 @@ export function TaskDrawer({
         {/* Evidence gate */}
         <section className="space-y-2">
           <p className="eyebrow">
-            {task.evidence_required ? "Notes & files · a completion note is needed to finish" : "Notes & files"}
+            {task.evidence_required ? "Notes & files · a file or a note on where the proof is" : "Notes & files"}
           </p>
           {evidenceMissing && (
             <p className="text-sm text-state-blocked">
-              You can keep working on this Task. Add a short note on what was done before completing it.
+              Attach a file below, or write where the proof is (at least 5 characters).
             </p>
           )}
           <Textarea
             rows={3}
             value={evidence}
             onChange={(e) => setEvidence(e.target.value)}
-            placeholder="What proves this is done. Photo location, document name, meter reading, confirmation number."
+            placeholder="Where the proof is. For example: Signed copy is in the SharePoint home folder."
           />
           <Button
             size="sm"

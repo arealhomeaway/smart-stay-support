@@ -21,8 +21,23 @@ export const saveOnboardingTaskFn = createServerFn({ method: "POST" })
         propertyId: z.string().uuid(),
         stage: z.string().min(1).max(40),
         title: z.string().trim().min(3).max(200),
-        detail: z.string().trim().max(2000).default(""),
+        // Plan instructions copied from the template run past 2000 characters
+        // on some steps; the old cap refused every save on them (Kati ticket 65).
+        detail: z.string().trim().max(20000).default(""),
         assignedTo: z.string().uuid().nullable().default(null),
+        /** New steps only: the role whose holder on this home does the work. */
+        assignedSeat: z
+          .enum([
+            "onboarding_director",
+            "onboarding_manager",
+            "onboarding_project_manager",
+            "utilities",
+            "lead_designer",
+            "designer",
+            "staging_team",
+          ])
+          .nullable()
+          .optional(),
         dueOn: z.string().date().nullable().default(null),
         blocker: z.string().trim().max(500).default(""),
         requiresOwnerApproval: z.boolean().default(false),

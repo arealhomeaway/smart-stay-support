@@ -119,6 +119,23 @@ describe("onboarding task source", () => {
     expect(calls.length).toBe(0);
   });
 
+  it("a Work order: onboarding task is refused while onboarding_breezeway_send is off, before any write", async () => {
+    store.state.onboarding[0]!["title"] = "Work order: Pick up keys from the post office";
+    const result = await createOutboundTask(taskInput("key-onb-wo-off-00000"), "actor");
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.message).toContain("switched off");
+    expect(calls.length).toBe(0);
+    expect(store.outbound().length).toBe(0);
+  });
+
+  it("a Work order: onboarding task sends once onboarding_breezeway_send is on", async () => {
+    store.state.onboarding[0]!["title"] = "Work order: Pick up keys from the post office";
+    store.state.flags.push({ key: "onboarding_breezeway_send", enabled: true });
+    const result = await createOutboundTask(taskInput("key-onb-wo-on-000000"), "actor");
+    expect(result.ok).toBe(true);
+    expect(calls.filter((c) => c.method === "POST").length).toBe(1);
+  });
+
   it("refuses demo and archived onboarding tasks", async () => {
     store.state.onboarding[0]!["is_demo"] = true;
     expect((await createOutboundTask(taskInput("key-onb-demo-0000000"), "actor")).ok).toBe(false);

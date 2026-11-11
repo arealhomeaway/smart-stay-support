@@ -402,6 +402,7 @@ export async function saveOnboardingTask(
     title: string;
     detail: string;
     assignedTo: string | null;
+    assignedSeat?: string | null | undefined;
     dueOn: string | null;
     blocker: string;
     requiresOwnerApproval: boolean;
@@ -417,6 +418,33 @@ export async function saveOnboardingTask(
   },
 ) {
   await assertCap(supabase, userId, "is_onboarding_staff");
+  // Evidence is a stored file OR a note of at least 5 characters. When a file
+  // alone is the proof, the saved note names it so the record still says what
+  // proves the step (src/lib/onboarding-evidence.ts).
+  if (input.id && input.status === "complete" && input.evidenceRequired) {
+    const { evidenceNoteOk, fileEvidenceNote, EVIDENCE_PROBLEM } = await import("./onboarding-evidence");
+    if (!evidenceNoteOk(input.evidenceNote)) {
+      const files = await supabase
+        .from("documents")
+        .select("original_filename, title")
+        .eq("entity_type", "onboarding_task")
+        .eq("entity_id", input.id)
+        .eq("upload_status", "stored")
+        .is("deleted_at", null)
+        .is("archived_at", null)
+        .order("created_at", { ascending: true })
+        .limit(1);
+      if (files.error) throw files.error;
+      const file = files.data?.[0];
+      if (!file) throw new Error(EVIDENCE_PROBLEM);
+      input = {
+        ...input,
+        evidenceNote: input.evidenceNote.trim()
+          ? `${input.evidenceNote.trim()}\n${fileEvidenceNote(file.original_filename ?? file.title)}`
+          : fileEvidenceNote(file.original_filename ?? file.title),
+      };
+    }
+  }
   // Adding work to a plan is a director decision; project managers work the
   // plan they are given and may still edit existing steps.
   if (!input.id) await assertCap(supabase, userId, "is_onboarding_leader");
@@ -606,7 +634,12 @@ export async function saveOnboardingTask(
 
   const { data, error } = await supabase
     .from("onboarding_tasks")
-    .insert({ ...row, created_by: userId, is_demo: parent.data?.is_demo ?? false })
+    .insert({
+      ...row,
+      ...(input.assignedSeat ? { assigned_seat: input.assignedSeat } : {}),
+      created_by: userId,
+      is_demo: parent.data?.is_demo ?? false,
+    })
     .select("id")
     .single();
   if (error) throw error;
@@ -618,16 +651,10 @@ export async function saveOnboardingTask(
     entityLabel: input.title,
     after: row,
   });
-  if (input.requiresOwnerApproval) {
-    await ensureOwnerApprovalRequest(supabase, userId, {
-      taskId: data.id,
-      propertyId: input.propertyId,
-      title: input.title,
-      detail: input.detail,
-      dueOn: input.dueOn,
-      isDemo: parent.data?.is_demo ?? false,
-    });
-  }
+  // A new step that needs the homeowner's approval is saved as waiting to be
+  // sent. Nothing reaches the homeowner until staff press Send for approval
+  // when the work is ready (Kati ticket 66: a task added tonight must not
+  // reach the owner before the floor plans exist).
   return { id: data.id };
 }
 
