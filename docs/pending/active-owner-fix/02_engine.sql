@@ -48,6 +48,8 @@ BEGIN
     IF c.id = ANY (_covered_card_ids) THEN cov := jsonb_build_object('reason', 'staff_marked');
     ELSIF t_id IS NOT NULL AND t_id = ANY (claimed) THEN cov := jsonb_build_object('reason', 'same_task_other_card');
     ELSE cov := private.ao_card_coverage(_property, c.code, t_id); END IF;
+    -- A card whose linked Task is already completed when the plan starts is Already covered; the owner never gets it.
+    IF cov IS NULL AND coalesce(t_done, false) THEN cov := jsonb_build_object('reason', 'linked_task_done', 'source', 'onboarding_task', 'item_id', t_id); END IF;
     res := CASE
       WHEN stage = 'operations' AND c.stage_window <> 'operations' THEN 'skipped_passed'
       WHEN c.stage_window <> 'anytime' AND
