@@ -1,5 +1,7 @@
 # Bonus guide values and scoring rules (source: Notion Operations Bonus Guides, Nov 10, 2026)
 
+> Build 18 (Emily, Nov 10), register BN12: no screen, export or text shows a Pays on date or any pay date. The pay date lines below are kept as the guide wrote them and are not shown anywhere.
+
 Emily sent the Notion Operations Bonus Guides on Nov 10 (How the Operations Bonus Works, the
 Supervisor guide, the Director guide). They are the source for every number and scoring rule
 below. This file replaces any number in register BN2 to BN4 that differs (register BN11) and the
