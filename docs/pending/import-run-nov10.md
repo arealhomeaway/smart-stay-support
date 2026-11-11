@@ -490,3 +490,4 @@ No batches run.
 | At (UTC) | Batch | Result | Tickets | Comments, files | Progress | Note |
 |---|---|---|---|---|---|---|
 | 2026-11-11 06:48:42 UTC | closed started (watch line 2026-11-11 06:48:30.562601+00) | | | | | |
+| 2026-11-11 06:49:06 UTC | watcher | | | | | Watcher paused by me after batch 1 to correct its own stop limits for this phase (it counted Phase A tickets toward the Phase B limits, which would only have stopped the run early). Batch 1 finished and saved (2 done, 1 skipped, 0 failed). Limits now: new imported tickets at most 2,823 in all (595 + 2,228) and Needs a home at most 149 in all (16 + 133). Resumed from the saved cursor. |
