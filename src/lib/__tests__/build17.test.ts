@@ -21,3 +21,16 @@ describe("Build 17 finding 4: a second home from the Availability Finder joins t
     expect(save).toContain("...(leadId ? { leadId } : {})");
   });
 });
+
+describe("Build 17 finding 5: Send to Active Owner shows for every home in a live program", () => {
+  it("shows for any live program status, hides only for closed or archived, or no program", async () => {
+    const { canSendToActiveOwner } = await import("@/lib/ao-engine");
+    for (const s of ["active", "complete", "goal_reached", "paused"]) expect(canSendToActiveOwner(s)).toBe(true);
+    for (const s of ["closed", "archived", null, undefined]) expect(canSendToActiveOwner(s)).toBe(false);
+  });
+  it("a program's second home counts: the lookup reads the program's homes too", () => {
+    const src = read("src/lib/ao-data.ts");
+    const fn = src.slice(src.indexOf("export async function loadHomeProgramStatus"), src.indexOf("export async function loadHomeProgramStatus") + 900);
+    expect(fn).toContain("owner_program_properties");
+  });
+});
