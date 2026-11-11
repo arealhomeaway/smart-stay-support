@@ -47,11 +47,11 @@ function assigneeNames(raw: unknown): string {
 
 export function OnboardingBreezewaySection({
   taskId,
-  propertyId,
   disabled,
 }: {
   taskId: string;
-  propertyId: string;
+  /** The home, kept for callers; the server reads the task's own home. */
+  propertyId?: string;
   disabled: boolean;
 }) {
   const qc = useQueryClient();
