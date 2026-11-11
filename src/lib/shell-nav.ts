@@ -313,7 +313,8 @@ export const ANALYTICS_TARGETS: { to: string; capability: Capability }[] = [
 export const ADMIN_TARGETS: { to: string; capability: Capability }[] = [
   { to: "/integrations", capability: "integrations" },
   { to: "/audit", capability: "admin_pages" },
-  { to: "/help-tickets", capability: "audit_history" },
+  // Build 16 D: the Admin tools item shows only to people who can open an Admin page.
+  // Help Tickets alone (each person's own reports) is not one; the ? control opens it.
 ];
 
 const tabPaths = (key: string) =>
@@ -347,7 +348,7 @@ const OPERATIONS_MENU: MenuGroup[] = [
   {
     label: "Team",
     items: [
-      { key: "team", label: "Team & Coverage", to: "/team", capability: "team_schedule_view" },
+      { key: "team", label: "Team and Coverage", to: "/team", capability: "team_schedule_view" },
       { key: "playbooks", label: "Playbooks", to: "/playbooks", capability: "playbooks_view", alsoActive: ["/ticket-checklists"] },
     ],
   },
@@ -392,7 +393,7 @@ export function operationsMenu(access: NavAccess): MenuGroup[] {
   if (admin)
     groups.push({
       label: "Admin",
-      items: [{ key: "admin", label: "Admin", to: admin.to, alsoActive: tabPaths("admin") }],
+      items: [{ key: "admin", label: "Admin tools", to: admin.to, alsoActive: tabPaths("admin") }],
     });
   return groups.filter((g) => g.items.length > 0);
 }
@@ -430,12 +431,12 @@ export function onboardingOnlyMenu(access: NavAccess): MenuGroup[] {
       // Register A12: the Director of Onboarding, Project Manager and Design open the
       // Properties list and edit homes; Utilities opens it for the Utilities tab.
       label: "Homes and owners",
-      items: [{ key: "properties", label: "All homes", to: "/properties", capability: "properties", alsoActive: ["/property"] }],
+      items: [{ key: "properties", label: "Properties", to: "/properties", capability: "properties", alsoActive: ["/property"] }],
     },
     {
       label: "Team",
       items: [
-        { key: "team", label: "Team & Coverage", to: "/team", capability: "team_schedule_view" },
+        { key: "team", label: "Team and Coverage", to: "/team", capability: "team_schedule_view" },
         { key: "playbooks", label: "Playbooks", to: "/playbooks", capability: "playbooks_view" },
       ],
     },
