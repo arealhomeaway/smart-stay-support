@@ -173,10 +173,7 @@ function PropertiesPage() {
     });
   }, [data]);
 
-  const markets = useMemo(
-    () => Array.from(new Set(homes.map((h) => h.market).filter((m): m is string => Boolean(m)))).sort(),
-    [homes],
-  );
+  const markets = useMemo(() => marketOptions(homes.map((h) => h.market)), [homes]);
 
   const visible = filterHomes(homes, params);
   const filtered = Boolean(params.q || params.market || params.status || params.open);
@@ -356,7 +353,7 @@ function PropertiesPage() {
       {isLoading || !data ? (
         <LoadingRows rows={4} />
       ) : visible.length === 0 ? (
-        <EmptyState title="No homes match" />
+        <EmptyState title="No homes match" hint="Clear a filter or the search." />
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {visible.map((h) => {

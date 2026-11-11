@@ -3,7 +3,7 @@
  * Pure wording rules so the card reads the same everywhere it is tested.
  */
 
-/** "4 bd · 3 ba · sleeps 8 · neighborhood", leaving out anything not recorded. */
+/** "4 bd · 3 ba · sleeps 8", leaving out anything not recorded; no neighborhood (board, Build 16 D). */
 export function homeFactsLine(p: {
   bedrooms?: number | null;
   bathrooms?: number | null;
@@ -14,7 +14,6 @@ export function homeFactsLine(p: {
     p.bedrooms == null ? null : `${p.bedrooms} bd`,
     p.bathrooms == null ? null : `${p.bathrooms} ba`,
     p.max_guests == null ? null : `sleeps ${p.max_guests}`,
-    p.neighborhood?.trim() || null,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -34,4 +33,13 @@ export function ticketCountLine(open: number, total: number): string | null {
 /** "N carried over" when work was carried over at handoff. */
 export function carriedOverChip(carried: number): string | null {
   return carried > 0 ? `${carried} carried over` : null;
+}
+
+/** The board's market order on the Properties list; any other market a home has follows (Build 16 D). */
+export const BOARD_MARKETS = ["Fort Worth", "OKC", "Tulsa", "Indy"] as const;
+
+export function marketOptions(homeMarkets: (string | null | undefined)[]): string[] {
+  const seen = new Set(homeMarkets.filter((m): m is string => Boolean(m && m.trim())));
+  const extra = [...seen].filter((m) => !(BOARD_MARKETS as readonly string[]).includes(m)).sort();
+  return [...BOARD_MARKETS, ...extra];
 }
