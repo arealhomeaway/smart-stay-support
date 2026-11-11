@@ -36,7 +36,7 @@ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
 DECLARE stage text := private.ao_home_stage(_property); c public.ao_library_cards; t_id uuid; t_done boolean;
   cov jsonb; claimed uuid[] := ARRAY[]::uuid[]; res text;
 BEGIN
-  FOR c IN SELECT * FROM public.ao_library_cards WHERE status = 'released' ORDER BY code LOOP
+  FOR c IN SELECT l.* FROM public.ao_library_cards l WHERE l.status = 'released' ORDER BY l.code LOOP
     IF EXISTS (SELECT 1 FROM public.ao_home_plan_cards pc WHERE pc.property_id = _property AND pc.card_id = c.id) THEN
       card_id := c.id; code := c.code; stage_window := c.stage_window; outcome := 'already_on_plan'; task_id := NULL; coverage := NULL;
       RETURN NEXT; CONTINUE;
@@ -534,7 +534,7 @@ GRANT EXECUTE ON FUNCTION public.ao_preview_enrolled_homes() TO authenticated, s
 
 CREATE OR REPLACE FUNCTION public.ao_start_enrolled_homes(_token text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE uid uuid := auth.uid(); rows jsonb; x jsonb; r jsonb; started int := 0; prog record;
+DECLARE uid uuid := auth.uid(); rows jsonb; x jsonb; r jsonb; started int := 0; prog record; acc jsonb := '[]'::jsonb;
 BEGIN
   IF uid IS NULL OR NOT public.has_role(uid, 'admin') THEN
     RAISE EXCEPTION 'Only an Admin can start plans for enrolled homes.' USING ERRCODE = '42501';
@@ -545,14 +545,15 @@ BEGIN
   SELECT x2 INTO x FROM jsonb_array_elements(rows) x2 WHERE x2 ->> 'reason' IS NOT NULL LIMIT 1;
   IF x IS NOT NULL THEN RAISE EXCEPTION '% cannot start: %', x ->> 'home', x ->> 'reason'; END IF;
   IF jsonb_array_length(rows) = 0 THEN RETURN jsonb_build_object('started', 0); END IF;
-  CREATE TEMP TABLE IF NOT EXISTS ao_started(program_id uuid, property_id uuid, open int) ON COMMIT DROP;
-  DELETE FROM ao_started;
   FOR x IN SELECT * FROM jsonb_array_elements(rows) LOOP
     r := private.ao_start_home_plan((x ->> 'property_id')::uuid, uid);
-    INSERT INTO ao_started VALUES ((r ->> 'program_id')::uuid, (x ->> 'property_id')::uuid, (r ->> 'open')::int);
+    acc := acc || jsonb_build_array(jsonb_build_object('program_id', r ->> 'program_id', 'property_id', x ->> 'property_id', 'open', (r ->> 'open')::int));
     started := started + 1;
   END LOOP;
-  FOR prog IN SELECT program_id, array_agg(property_id ORDER BY property_id) homes, sum(open)::int opened FROM ao_started GROUP BY 1 LOOP
+  -- One plan is ready email per owner, covering every home started now.
+  FOR prog IN SELECT (e ->> 'program_id')::uuid AS program_id, array_agg((e ->> 'property_id')::uuid ORDER BY e ->> 'property_id') AS homes,
+                     sum((e ->> 'open')::int)::int AS opened
+                FROM jsonb_array_elements(acc) e GROUP BY 1 LOOP
     PERFORM private.ao_plan_ready_notice(prog.program_id, prog.homes, prog.opened);
   END LOOP;
   INSERT INTO public.audit_log(actor_id, action, entity_type, entity_label, after_value)
@@ -686,6 +687,9 @@ BEGIN
     RAISE EXCEPTION 'Only the person on this task or the home''s project lead can send it.';
   END IF;
   IF t.status = 'complete' THEN RAISE EXCEPTION 'This task is already complete.'; END IF;
+  IF private.onboarding_work_locked(ARRAY[t.property_id]) THEN
+    RAISE EXCEPTION 'Return the handoff before changing its onboarding work; accepted work is retained in history.';
+  END IF;
   IF length(btrim(coalesce(_note, ''))) < 5 OR length(_note) > 2000 THEN RAISE EXCEPTION 'Write what you are asking the homeowner, at least a sentence.'; END IF;
   IF _respond_by IS NOT NULL AND _respond_by < today THEN RAISE EXCEPTION 'Choose an answer by date of today or later.'; END IF;
   hp := private.ao_home_program(t.property_id);
