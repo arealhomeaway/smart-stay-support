@@ -132,7 +132,7 @@ describe("Active Owner fix, staged SQL on an isolated database", () => {
     await card("D01", { links: [stepB] });
     await card("D02", { links: [stepB] });
     await card("C01", { links: [stepC] });
-    for (const code of ["A33", "N10", "A35", "A14", "A56"]) await card(code, { stage: "operations", lock: "until_linked_step_done", links: [stepOps] });
+    for (const code of ["A33", "N10", "A35", "A14", "A56"]) await card(code, { stage: "operations", lock: "until_linked_step_done" });
     for (const home of [h1, h2, h3, h4, h5]) {
       const b = home.slice(-2);
       await task(U(100 + Number(b) * 10 + 1), home, stepA);
@@ -317,7 +317,7 @@ describe("Active Owner fix, staged SQL on an isolated database", () => {
   it("Fix 7: sending to the owner completes the Task; the owner and the PM talk it through in the same item", async () => {
     const sendTask = U(901);
     await task(sendTask, h1, stepSend, "open", { dependency: "business_decision", approval: true, title: "Share the design" });
-    console.log("DBG t", JSON.stringify((await db.query("SELECT status, owner_dependency, requires_owner_approval, owner_approval_status FROM public.onboarding_tasks WHERE id=$1",[sendTask])).rows));
+    console.log("DBG t", JSON.stringify((await db.query("SELECT tgname, tgenabled FROM pg_trigger WHERE tgrelid='public.onboarding_tasks'::regclass")).rows), JSON.stringify((await db.query("SELECT private.task_sent_to_owner($1) s, current_setting('session_replication_role') r",[sendTask])).rows));
     await expect(db.query("UPDATE public.onboarding_tasks SET status='complete' WHERE id=$1", [sendTask])).rejects.toThrow(/homeowner decision is required/);
     await as(pc);
     await expect(db.query("SELECT public.send_task_to_owner_item($1, 'Please review the design PDF')", [sendTask])).rejects.toThrow(/Only the person on this task/);
