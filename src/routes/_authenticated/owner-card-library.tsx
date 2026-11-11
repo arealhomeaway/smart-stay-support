@@ -53,7 +53,8 @@ const TEXT_FIELDS: { key: keyof LibraryCardRow; label: string; long?: boolean }[
   { key: "deadline_text", label: "Deadline wording" }, { key: "takeover_text", label: "If the homeowner does not finish", long: true },
 ];
 const NUM_FIELDS: { key: keyof LibraryCardRow; label: string }[] = [
-  { key: "est_hours_min", label: "Hours, low" }, { key: "est_hours_max", label: "Hours, high" },
+  // Build 18 item 3: hour estimates are hidden everywhere; the stored numbers stay as they are
+  // (the save sends no hour fields, so ao_card_save keeps them).
   { key: "deadline_business_days", label: "Deadline, business days" }, { key: "deadline_calendar_days", label: "Deadline, calendar days" },
 ];
 

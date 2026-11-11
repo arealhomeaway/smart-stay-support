@@ -113,7 +113,6 @@ export function BonusPayouts() {
                 </StatusBadge>
                 <span className="ml-auto text-lg font-bold">{payoutAmount(r)}</span>
               </div>
-              <p className="text-sm text-muted-foreground">{r.pays_on}</p>
               {r.status === "verified" && (
                 <>
                   <p className="text-sm text-muted-foreground">

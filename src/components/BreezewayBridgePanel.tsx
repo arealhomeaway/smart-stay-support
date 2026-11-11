@@ -28,6 +28,13 @@ const FAILURE_LABEL: Record<string, string> = {
   second_escalation: "Second escalation opened the existing ticket",
 };
 
+/** Rows written before Build 18 carry only `ran` (false meant switched off, nothing done). */
+function sweepNote(last: { ran: boolean; refreshed?: boolean }) {
+  if (last.refreshed === true) return ", copies refreshed";
+  if (last.refreshed === false) return ", refresh failed";
+  return last.ran ? "" : ", nothing done while off";
+}
+
 export function BreezewayBridgePanel() {
   const { isAdmin } = useRole();
   const qc = useQueryClient();
@@ -118,7 +125,7 @@ export function BreezewayBridgePanel() {
               <dd>
                 {!s.sweep_last
                   ? "Not running yet"
-                  : `Last check ${usDateTime(s.sweep_last.at)}${s.sweep_last.ran ? "" : ", nothing done while off"}`}
+                  : `Last check ${usDateTime(s.sweep_last.at)}${sweepNote(s.sweep_last)}`}
               </dd>
             </div>
             <div>

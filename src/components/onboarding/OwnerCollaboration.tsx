@@ -424,7 +424,6 @@ export function OpportunityEditor({
 
           {operations ? null : <><div className="grid gap-1"><Label htmlFor="op-ways">Ways to document your participation</Label><Textarea id="op-ways" rows={2} value={form.ways} onChange={set("ways")} /></div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="grid gap-1"><Label htmlFor="op-min">Suggested time (hours, optional)</Label><Input id="op-min" type="number" min={0} step={0.25} value={form.minutes} onChange={set("minutes")} /></div>
             {fixedTaskId ? null : (
               <div className="grid gap-1">
                 <Label>Related internal Task (optional)</Label>

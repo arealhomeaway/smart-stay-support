@@ -18664,6 +18664,10 @@ export type Database = {
         }
         Returns: Json
       }
+      can_bulk_edit_home_tasks: {
+        Args: { _property_id: string }
+        Returns: boolean
+      }
       can_correct_actual_closing: { Args: never; Returns: boolean }
       can_edit_claims_in_databases: {
         Args: { _user_id: string }

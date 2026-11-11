@@ -93,10 +93,7 @@ export function arhaStatus(o: Pick<Live, "finished" | "queue">) {
   return "Open";
 }
 
-function minutesLabel(m: number | null | undefined) {
-  if (!m) return null;
-  return m >= 60 ? `About ${Math.round((m / 60) * 10) / 10} hr` : `About ${m} min`;
-}
+// Build 18 item 3: no suggested time is shown to homeowners; the stored minutes stay untouched.
 
 /** Shared data hook: live Opportunities + library templates, scoped to the portal filter. */
 export function useOwnerOpportunityData(homes: OpportunityHome[], selectedHomeId: string | null) {
@@ -370,7 +367,6 @@ export function OwnerOpportunities({
                 label="Optional"
                 summary={o.summary}
                 status={o.finished ? "Completed" : "In Progress"}
-                meta={minutesLabel(o.suggestedMinutes)}
                 video={videoForOpportunity(o.templateId, videos) ? () => setOpenId(o.id) : null}
                 action={<Button size="sm" variant="outline" onClick={() => setOpenId(o.id)}>Open</Button>}
               />
@@ -385,7 +381,6 @@ export function OwnerOpportunities({
                 propertyHint={!selectedHomeId && homes.length > 1 ? "Choose a property when you start" : null}
                 label="Optional"
                 summary={t.summary}
-                meta={minutesLabel(t.suggested_minutes)}
                 video={videos.has(t.id) ? () => setWatch(t) : null}
                 action={
                   readOnly ? (videos.has(t.id) ? <Button size="sm" variant="outline" onClick={() => setWatch(t)}>Watch video</Button> : null) : (
@@ -638,7 +633,6 @@ function OpportunityDetail({
               <div><dt className="font-medium">Helpful link</dt><dd><a href={item.templateLink.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary hover:underline"><Link2 className="size-3.5" /> {item.templateLink.label}</a></dd></div>
             ) : null}
             {item.document ? <div><dt className="font-medium">Ways to document your participation</dt><dd className="whitespace-pre-wrap text-muted-foreground">{item.document}</dd></div> : null}
-            {item.suggestedMinutes ? <div><dt className="font-medium">Suggested time</dt><dd className="text-muted-foreground">{minutesLabel(item.suggestedMinutes)}. Log the time you actually spend.</dd></div> : null}
           </dl>
 
           {linked.length ? (

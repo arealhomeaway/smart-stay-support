@@ -51,7 +51,7 @@ export function PropertyWorkQueue({
   /** Voided Tasks — kept on record, never counted as work. */
   voided?: { id: string; title: string; archived_at: string; exception_reason: string | null }[];
   /** Present only for people who can edit this home's Tasks; the server re-checks. */
-  bulk?: { propertyId: string; homeName: string; onSaved: () => void } | undefined;
+  bulk?: { propertyId: string; homeName: string; canEditSelected?: boolean; onSaved: () => void } | undefined;
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -236,12 +236,14 @@ export function PropertyWorkQueue({
           </span>
           <span className="flex gap-2">
             <Button size="sm" variant="outline" onClick={() => setSelected(new Set())}>Clear</Button>
-            <Button size="sm" variant="outline" onClick={() => setBulkOpen(true)}>Edit selected</Button>
+            {bulk.canEditSelected ? (
+              <Button size="sm" variant="outline" onClick={() => setBulkOpen(true)}>Edit selected</Button>
+            ) : null}
             <Button size="sm" onClick={() => setCompleteOpen(true)}>Mark complete</Button>
           </span>
         </div>
       ) : null}
-      {bulk && bulkOpen ? (
+      {bulk && bulk.canEditSelected && bulkOpen ? (
         <HomeTaskBulkEditDialog
           propertyId={bulk.propertyId}
           homeName={bulk.homeName}

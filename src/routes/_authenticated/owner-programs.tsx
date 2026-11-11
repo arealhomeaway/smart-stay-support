@@ -1167,8 +1167,7 @@ function RoadmapCatalog({ templates, loading }: { templates: TaskTemplate[]; loa
                     </div>
                     <p className="text-sm text-muted-foreground">{t.owner_action}</p>
                     <p className="text-xs text-muted-foreground">
-                      Internal plan {t.planning_hours_low} to {t.planning_hours_high} hrs · respond
-                      within {t.respond_within_days} days
+                      Respond within {t.respond_within_days} days
                       {t.recurring ? " · recurring" : ""}
                     </p>
                   </div>

@@ -23,7 +23,7 @@ export type BridgeStatus = {
   enabled: boolean;
   start_line: string | null;
   /** The safety sweep's last run, written by the sweep itself (no row until it first runs). */
-  sweep_last: { at: string; ran: boolean } | null;
+  sweep_last: { at: string; ran: boolean; refreshed?: boolean } | null;
   last_switch: { status: string; at: string | null; by: string | null } | null;
   last_processed_at: string | null;
   tickets_created: number;

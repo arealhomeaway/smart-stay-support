@@ -68,7 +68,6 @@ export type BonusCard = {
   label: string;
   counting_from: string;
   closed: boolean;
-  pays_on: string;
   amount_goal_met: number | null;
   amount_strong: number | null;
   amount_exceeds: number | null;
@@ -119,7 +118,6 @@ export type BonusPayoutRow = {
   period_end: string;
   label: string;
   status: "ready" | "verified";
-  pays_on: string;
   total: number | null;
   verified_at: string | null;
   verified_by: string | null;
@@ -150,7 +148,6 @@ export const BONUS_COPY = {
   verifiedTotal: "Verified total",
   notSet: "Not set",
   dataAsOf: "Data as of",
-  paysOn: "Pays on",
   period: "Period",
   countingStarts: "Counting starts",
   fewerThanThree: "Fewer than 3 goals can be measured, so the full Goal met amount is paid for this period.",
@@ -359,7 +356,7 @@ export function payoutsCsv(rows: BonusPayoutRow[]): string {
   const verified = rows.filter((r) => r.status === "verified");
   const goalNames: string[] = [];
   for (const r of verified) for (const g of r.goals) if (!goalNames.includes(g.name)) goalNames.push(g.name);
-  const head = ["Person", "Plan", "Period", "First day", "Last day", "Verified total", "Pays on", "Verified by", "Verified at"];
+  const head = ["Person", "Plan", "Period", "First day", "Last day", "Verified total", "Verified by", "Verified at"];
   for (const n of goalNames) head.push(`${n} measure`, `${n} level`, `${n} dollars`);
   const lines = [head.map(csvCell).join(",")];
   for (const r of verified) {
@@ -370,7 +367,6 @@ export function payoutsCsv(rows: BonusPayoutRow[]): string {
       r.period_start,
       r.period_end,
       r.total === null ? "" : Number(r.total).toFixed(2),
-      r.pays_on,
       r.verified_by ?? "",
       r.verified_at ? centralStamp(r.verified_at) : "",
     ];

@@ -9,7 +9,7 @@ import { formatPropertyLabel } from "@/lib/property-label";
  */
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,7 +50,6 @@ import {
 import {
   LEAD_OUTCOME_LABELS,
   OFFER_OUTCOME_LABELS,
-  finderSearchFromLead,
   guestsPetsLabel,
   leadFollowUpDate,
   leadOutcome,
@@ -59,7 +58,6 @@ import {
   sortOffers,
   stayDatesLabel,
   validateLeadLost,
-  waitingOffer,
   type LeadOffer,
 } from "@/lib/lead-offers";
 import { decideLeadOffer, updateLeadDetails } from "@/lib/lead-offers.functions";
@@ -95,7 +93,6 @@ export function LeadDrawer({
 }) {
   const qc = useQueryClient();
   const userId = useCurrentUserId();
-  const navigate = useNavigate();
   const decideOffer = useServerFn(decideLeadOffer);
   const saveLeadDetails = useServerFn(updateLeadDetails);
   const [channel, setChannel] = useState<LeadChannel>("email");
@@ -109,7 +106,6 @@ export function LeadDrawer({
   const [followUpOn, setFollowUpOn] = useState("");
   const [declineId, setDeclineId] = useState<string | null>(null);
   const [declineReason, setDeclineReason] = useState("");
-  const [choosePrompt, setChoosePrompt] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const leadId = lead?.id ?? null;
@@ -202,7 +198,6 @@ export function LeadDrawer({
 
   const offers = sortOffers(candidates.data ?? []);
   const hasProperty = offers.length > 0;
-  const waiting = waitingOffer(offers);
 
   async function decide(offerId: string, decision: "declined" | "accepted", reason?: string) {
     setSaving(true);
@@ -243,11 +238,6 @@ export function LeadDrawer({
     } finally {
       setSaving(false);
     }
-  }
-
-  function openFinder() {
-    if (!lead) return;
-    void navigate({ to: "/availability-finder", search: finderSearchFromLead(lead) });
   }
 
   const derived = useMemo(() => {
@@ -536,21 +526,11 @@ export function LeadDrawer({
           <section className="space-y-2">
             <div className="flex items-center justify-between gap-2">
               <h3 className="text-sm font-semibold">Offers</h3>
-              {canEdit && isOpen(lead.stage) && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="resolve-press"
-                  onClick={() => (waiting ? setChoosePrompt(true) : openFinder())}
-                >
-                  Choose another property
-                </Button>
-              )}
             </div>
             {candidates.error ? (
               <p className="text-sm text-muted-foreground">Offers will appear here once the pending lead update is applied.</p>
             ) : offers.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No homes offered yet. Use Choose another property to offer one.</p>
+              <p className="text-sm text-muted-foreground">No homes offered yet.</p>
             ) : (
               <ul className="space-y-2">
                 {offers.map((offer) => (
@@ -606,37 +586,6 @@ export function LeadDrawer({
                   </li>
                 ))}
               </ul>
-            )}
-            {choosePrompt && waiting && (
-              <div className="space-y-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm">
-                <p>
-                  {waiting.properties ? formatPropertyLabel(waiting.properties).primary : "The current offer"} is still
-                  waiting on an answer. Mark it Declined first?
-                </p>
-                <Input
-                  placeholder="Reason it was declined"
-                  value={declineReason}
-                  onChange={(e) => setDeclineReason(e.target.value)}
-                />
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    className="resolve-press"
-                    disabled={saving || !declineReason.trim()}
-                    onClick={() => {
-                      const offerId = waiting.id;
-                      void (async () => {
-                        await decide(offerId, "declined", declineReason);
-                        setChoosePrompt(false);
-                        openFinder();
-                      })();
-                    }}
-                  >
-                    Mark declined and choose another
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setChoosePrompt(false)}>Cancel</Button>
-                </div>
-              </div>
             )}
           </section>
 

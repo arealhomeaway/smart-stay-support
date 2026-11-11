@@ -158,10 +158,6 @@ function Editor({ draft, onDone }: { draft: Draft; onDone: () => void }) {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="t-min">Suggested minutes</Label>
-            <Input id="t-min" type="number" min={5} max={1440} value={d.suggested_minutes ?? ""} onChange={(e) => set("suggested_minutes", e.target.value ? Number(e.target.value) : null)} />
-          </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1"><Label htmlFor="t-rl">Helpful link label (optional)</Label><Input id="t-rl" value={d.resource_label ?? ""} onChange={(e) => set("resource_label", e.target.value)} /></div>
