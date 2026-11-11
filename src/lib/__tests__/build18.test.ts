@@ -88,7 +88,7 @@ describe("Build 18 item 6: Build 17 leftovers", () => {
 
   it("Edit selected shows only when the database says this person may edit this home", () => {
     const queue = read("src/components/onboarding/PropertyWorkQueue.tsx");
-    expect(queue).toMatch(/bulk\.canEditSelected \? \(\s*<Button[^>]*>Edit selected<\/Button>/);
+    expect(queue).toMatch(/bulk\.canEditSelected \? \(\s*<Button[\s\S]{0,120}>Edit selected<\/Button>/);
     expect(queue).toMatch(/bulk && bulk\.canEditSelected && bulkOpen/);
     const page = read("src/routes/_authenticated/onboarding.$propertyId.tsx");
     expect(page).toMatch(/rpc\("can_bulk_edit_home_tasks", \{ _property_id: propertyId \}\)/);
