@@ -67,6 +67,8 @@ import { isBreezewayWorkOrderStep, showsBreezewayHomeLink } from "@/lib/onboardi
 import { EVIDENCE_PROBLEM, evidenceSatisfied } from "@/lib/onboarding-evidence";
 import { listAttachmentsFn } from "@/lib/attachments.functions";
 import { SendToHomeownerDialog } from "@/components/onboarding/SendToHomeownerDialog";
+import { OwnerItemConversation } from "@/components/owner/OwnerItemConversation";
+import { loadTaskOwnerItem } from "@/lib/ao-data";
 import { SendToActiveOwnerGate, TaskVerifyBadge } from "@/components/ao/TaskPlanLink";
 import { TaskGallery } from "@/components/onboarding/TaskGallery";
 import { ReviewAwareComplete, TaskReviewPanel } from "@/components/onboarding/TaskReviewPanel";
@@ -309,6 +311,7 @@ export function TaskDrawer({
           Waiting on the homeowner since the last send.
         </span>
       )}
+      <TaskOwnerConversation taskId={task.id} readOnly={disabled} />
     </div>
   );
 
@@ -979,6 +982,18 @@ function Field({
       <dt className="eyebrow">{label}</dt>
       <dd className="text-sm">{value}</dd>
       {hint && <dd className="text-[0.6875rem] text-muted-foreground">{hint}</dd>}
+    </div>
+  );
+}
+
+/** The homeowner's answer to a Task sent as an owner item lives on that item; staff talk it through here. */
+function TaskOwnerConversation({ taskId, readOnly }: { taskId: string; readOnly: boolean }) {
+  const q = useQuery({ queryKey: ["task-owner-item", taskId], queryFn: () => loadTaskOwnerItem(taskId), retry: false });
+  const reviewId = q.data?.available ? q.data.data?.review_id : null;
+  if (!reviewId) return null;
+  return (
+    <div className="w-full">
+      <OwnerItemConversation reviewId={reviewId} side="staff" readOnly={readOnly} />
     </div>
   );
 }
