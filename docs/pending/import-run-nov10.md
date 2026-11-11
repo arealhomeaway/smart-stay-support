@@ -720,3 +720,6 @@ No batches run.
 | 2026-11-11 07:33:47 | 226 | ok | done 3, skipped 0, failed 0 | comments 20, files 36 | total done 672, cursor saved |  |
 | 2026-11-11 07:33:58 | 227 | ok | done 3, skipped 0, failed 0 | comments 7, files 2 | total done 678, cursor saved |  |
 | 2026-11-11 07:34:05 | 228 | ok | done 3, skipped 0, failed 0 | comments 4, files 0 | total done 678, cursor saved |  |
+| 2026-11-11 07:34:14 | 229 | ok | done 3, skipped 0, failed 0 | comments 6, files 1 | total done 687, cursor saved |  |
+| 2026-11-11 07:34:20 | 230 | ok | done 3, skipped 0, failed 0 | comments 8, files 0 | total done 687, cursor saved |  |
+| 2026-11-11 07:34:26 | 231 | ok | done 3, skipped 0, failed 0 | comments 4, files 0 | total done 687, cursor saved |  |
