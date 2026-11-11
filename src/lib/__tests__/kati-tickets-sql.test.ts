@@ -51,6 +51,7 @@ CREATE TRIGGER owner_business_decision_completion_guard BEFORE UPDATE OF status 
 CREATE TABLE public.onboarding_step_review_settings(template_task_id uuid PRIMARY KEY, reviewer_roles text[]);
 CREATE TABLE public.onboarding_task_reviews(task_id uuid, status text, submitted_at timestamptz DEFAULT now(), round int DEFAULT 1);
 CREATE FUNCTION private.review_blocker(_t uuid) RETURNS text LANGUAGE sql STABLE AS $$ SELECT NULL::text $$;
+REVOKE ALL ON FUNCTION private.review_blocker(uuid) FROM PUBLIC;
 CREATE TABLE public.onboarding_project_events(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), project_id uuid, kind text, new_value text);
 CREATE TABLE public.documents(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), entity_type text, entity_id uuid, title text,
   original_filename text, upload_status text DEFAULT 'stored', deleted_at timestamptz, archived_at timestamptz, created_at timestamptz DEFAULT now());
@@ -89,6 +90,7 @@ beforeEach(async () => {
   db = new PGlite();
   await db.exec(STUBS);
   await db.exec(readFileSync(`${DIR}/01_kati_tickets.sql`, "utf8"));
+  await db.exec(readFileSync(`${DIR}/01b_review_blocker_fix.sql`, "utf8"));
 });
 
 describe("bulk complete (ticket 65)", () => {
@@ -196,6 +198,13 @@ describe("Breezeway section on Work order tasks (ticket 67)", () => {
 });
 
 describe("staged files", () => {
+  it("bulk complete reads the review blocker only through the staff wrapper", () => {
+    const fix = readFileSync(`${DIR}/01b_review_blocker_fix.sql`, "utf8");
+    const body = fix.slice(fix.indexOf("CREATE OR REPLACE FUNCTION public.bulk_complete_onboarding_tasks"));
+    expect(body).toContain("private.onboarding_bulk_review_blocker(t.id)");
+    expect(body).not.toContain("private.review_blocker(");
+  });
+
   it("plan version 5 is staged only, never in the applied migrations", () => {
     const v5 = readFileSync(`${DIR}/02_standard_plan_v5.sql`, "utf8");
     expect(v5).toContain("STAGED, NOT APPLIED");
