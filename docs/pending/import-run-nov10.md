@@ -461,3 +461,17 @@ No batches run.
 | 2026-11-11 06:39:48 | 185 | ok | done 3, skipped 0, failed 0 | comments 19, files 11 | total done 558, cursor saved |  |
 | 2026-11-11 06:40:04 | 186 | ok | done 3, skipped 0, failed 0 | comments 11, files 6 | total done 558, cursor saved |  |
 | 2026-11-11 06:40:18 | 187 | ok | done 3, skipped 0, failed 0 | comments 15, files 4 | total done 561, cursor saved |  |
+| 2026-11-11 06:41:42 | 188 | ok | done 3, skipped 0, failed 0 | comments 28, files 49 | total done 567, cursor saved |  |
+| 2026-11-11 06:41:52 | 189 | ok | done 3, skipped 0, failed 0 | comments 11, files 2 | total done 567, cursor saved |  |
+| 2026-11-11 06:42:06 | 190 | ok | done 3, skipped 0, failed 0 | comments 18, files 5 | total done 570, cursor saved |  |
+| 2026-11-11 06:42:21 | 191 | ok | done 3, skipped 0, failed 0 | comments 10, files 5 | total done 576, cursor saved |  |
+| 2026-11-11 06:42:32 | 192 | ok | done 3, skipped 0, failed 0 | comments 11, files 2 | total done 576, cursor saved |  |
+| 2026-11-11 06:42:43 | 193 | ok | done 3, skipped 0, failed 0 | comments 13, files 4 | total done 584, cursor saved |  |
+| 2026-11-11 06:42:55 | 194 | ok | done 3, skipped 0, failed 0 | comments 12, files 5 | total done 584, cursor saved |  |
+| 2026-11-11 06:43:01 | 195 | ok | done 2, skipped 1, failed 0 | comments 5, files 0 | total done 584, cursor saved |  |
+| 2026-11-11 06:43:16 | 196 | ok | done 1, skipped 2, failed 0 | comments 5, files 5 | total done 585, cursor saved |  |
+| 2026-11-11 06:43:27 | 197 | ok | done 2, skipped 1, failed 0 | comments 4, files 3 | total done 595, cursor end |  |
+| 2026-11-11 06:43:33 | 198 | ok | done 2, skipped 1, failed 0 | comments 1, files 0 | total done 595, cursor end |  |
+| 2026-11-11 06:43:41 | 199 | ok | done 3, skipped 0, failed 0 | comments 8, files 2 | total done 595, cursor end |  |
+| 2026-11-11 06:43:46 | 200 | completed | done 3, skipped 0, failed 0 | comments 0, files 0 | total done 595, cursor end |  |
+| 2026-11-11 06:43:53 UTC | older_open done | job done after 200 batches | progress {"done": 595, "bytes": 536777224, "files": 2313, "failed": 0, "skipped": 5, "comments": 3405} | | cursor none |  |
