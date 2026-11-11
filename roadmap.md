@@ -1,13 +1,13 @@
 # Roadmap — approved build work, NO publish
 
 ## Nov 11 build 18: six small decided fixes (after the import report; stage in docs/pending/build18/)
-- [ ] 1 Breezeway safety sweep refreshes copies every run whatever the bridge says; only creation is gated
-- [ ] 2 No pay dates on bonus screens, Verify, Bonus payouts card and CSV
-- [ ] 3 No suggested card hours anywhere (stored numbers kept; logged hours, goal and pace unchanged)
-- [ ] 4 Eight card titles (N05 to N08, P09, P16 to P18) with history
-- [ ] 5 Retire A15 and A41 (draft cards); list references; A27, A28, A58 untouched
-- [ ] 6a Remove old Availability Finder button from a lead; 6b hide Edit selected from staff who cannot edit; 6c three reviews date unknown
-- [ ] Tests, cancelled practice, suite, type check, build, browser desktop and phone
+- [x] 1 Breezeway safety sweep refreshes copies every run whatever the bridge says; only creation is gated
+- [x] 2 No pay dates on bonus screens, Verify, Bonus payouts card and CSV
+- [x] 3 No suggested card hours anywhere (stored numbers kept; logged hours, goal and pace unchanged)
+- [x] 4 Eight card titles (N05 to N08, P09, P16 to P18) with history
+- [x] 5 Retire A15 and A41 (draft cards); list references; A27, A28, A58 untouched
+- [x] 6a Remove old Availability Finder button from a lead; 6b hide Edit selected from staff who cannot edit; 6c three reviews date unknown
+- [x] Tests, cancelled practice, suite, type check, build, browser desktop and phone
 
 ## Nov 11 Notion import (paused part way)
 - [x] Phase A older open done (595)
