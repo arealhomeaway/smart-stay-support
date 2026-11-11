@@ -118,7 +118,7 @@ export function BreezewayBridgePanel() {
               <dd>
                 {!s.sweep_last
                   ? "Not running yet"
-                  : `Last check ${usDateTime(s.sweep_last.at)}${s.sweep_last.ran ? "" : ", nothing done while off"}`}
+                  : `Last check ${usDateTime(s.sweep_last.at)}${s.sweep_last.ran ? ", copies refreshed" : ", refresh failed"}`}
               </dd>
             </div>
             <div>
