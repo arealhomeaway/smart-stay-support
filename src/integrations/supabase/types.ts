@@ -9270,6 +9270,131 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_task_breezeway_events: {
+        Row: {
+          actor: string
+          after_value: Json
+          before_value: Json | null
+          created_at: string
+          id: string
+          is_demo: boolean
+          property_id: string
+          task_id: string
+        }
+        Insert: {
+          actor: string
+          after_value: Json
+          before_value?: Json | null
+          created_at?: string
+          id?: string
+          is_demo?: boolean
+          property_id: string
+          task_id: string
+        }
+        Update: {
+          actor?: string
+          after_value?: Json
+          before_value?: Json | null
+          created_at?: string
+          id?: string
+          is_demo?: boolean
+          property_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_task_breezeway_events_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "onboarding_task_breezeway_events_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_task_breezeway_events_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_task_breezeway_links: {
+        Row: {
+          assignee_choice: string | null
+          assignee_name: string | null
+          breezeway_person_id: number | null
+          breezeway_task_id: number | null
+          breezeway_url: string | null
+          created_at: string
+          created_by: string
+          is_demo: boolean
+          property_id: string
+          task_id: string
+          tentative_date: string | null
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          assignee_choice?: string | null
+          assignee_name?: string | null
+          breezeway_person_id?: number | null
+          breezeway_task_id?: number | null
+          breezeway_url?: string | null
+          created_at?: string
+          created_by: string
+          is_demo?: boolean
+          property_id: string
+          task_id: string
+          tentative_date?: string | null
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          assignee_choice?: string | null
+          assignee_name?: string | null
+          breezeway_person_id?: number | null
+          breezeway_task_id?: number | null
+          breezeway_url?: string | null
+          created_at?: string
+          created_by?: string
+          is_demo?: boolean
+          property_id?: string
+          task_id?: string
+          tentative_date?: string | null
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_task_breezeway_links_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "onboarding_task_breezeway_links_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_task_breezeway_links_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: true
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       onboarding_task_file_links: {
         Row: {
           created_at: string
@@ -18473,6 +18598,17 @@ export type Database = {
         Returns: Json
       }
       breezeway_bridge_status: { Args: never; Returns: Json }
+      bulk_complete_onboarding_tasks: {
+        Args: {
+          _done_on?: string
+          _dry_run?: boolean
+          _file_task_id?: string
+          _note: string
+          _property_id: string
+          _task_ids: string[]
+        }
+        Returns: Json
+      }
       bulk_update_onboarding_home_tasks: {
         Args: {
           _blocks_handoff?: boolean
@@ -20054,6 +20190,16 @@ export type Database = {
       }
       save_onboarding_project_details: {
         Args: { _patch: Json; _project_id: string }
+        Returns: Json
+      }
+      save_onboarding_task_breezeway: {
+        Args: {
+          _assignee_choice: string
+          _breezeway_person_id: number
+          _breezeway_ref: string
+          _task_id: string
+          _tentative_date: string
+        }
         Returns: Json
       }
       save_owner_alert_preferences: {
