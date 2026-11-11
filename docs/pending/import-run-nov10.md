@@ -1259,3 +1259,17 @@ Note: the Phase A batch table lists batches 1 to 144 twice, because the watcher 
 | 2026-11-11 14:53:16 | 729 | ok | done 3, skipped 0, failed 0 | comments 72, files 15 | total done 2181, cursor saved |  |
 | 2026-11-11 14:53:25 | 730 | ok | done 3, skipped 0, failed 0 | comments 22, files 1 | total done 2184, cursor saved |  |
 | 2026-11-11 14:53:37 | 731 | ok | done 3, skipped 0, failed 0 | comments 18, files 3 | total done 2187, cursor saved |  |
+| 2026-11-11 14:53:47 | 732 | ok | done 3, skipped 0, failed 0 | comments 30, files 2 | total done 2190, cursor saved |  |
+| 2026-11-11 14:54:37 | 733 | ok | done 3, skipped 0, failed 0 | comments 132, files 34 | total done 2193, cursor saved |  |
+| 2026-11-11 14:54:46 | 734 | ok | done 3, skipped 0, failed 0 | comments 16, files 1 | total done 2196, cursor saved |  |
+| 2026-11-11 14:54:53 | 735 | ok | done 3, skipped 0, failed 0 | comments 9, files 0 | total done 2199, cursor saved |  |
+| 2026-11-11 14:55:04 | 736 | ok | done 3, skipped 0, failed 0 | comments 22, files 2 | total done 2202, cursor saved |  |
+| 2026-11-11 14:55:17 | 737 | ok | done 3, skipped 0, failed 0 | comments 18, files 1 | total done 2205, cursor saved |  |
+| 2026-11-11 14:55:23 | 738 | ok | done 3, skipped 0, failed 0 | comments 7, files 0 | total done 2208, cursor saved |  |
+| 2026-11-11 14:55:39 | 739 | ok | done 3, skipped 0, failed 0 | comments 51, files 5 | total done 2211, cursor saved |  |
+| 2026-11-11 14:55:45 | 740 | ok | done 3, skipped 0, failed 0 | comments 7, files 0 | total done 2214, cursor saved |  |
+| 2026-11-11 14:55:54 | 741 | ok | done 3, skipped 0, failed 0 | comments 30, files 1 | total done 2217, cursor saved |  |
+| 2026-11-11 14:56:08 | 742 | ok | done 3, skipped 0, failed 0 | comments 21, files 1 | total done 2220, cursor saved |  |
+| 2026-11-11 14:56:19 | 743 | ok | done 3, skipped 0, failed 0 | comments 29, files 2 | total done 2223, cursor saved |  |
+| 2026-11-11 14:56:26 | 744 | ok | done 3, skipped 0, failed 0 | comments 12, files 0 | total done 2226, cursor saved |  |
+| 2026-11-11 14:56:34 | 745 | ok | done 2, skipped 0, failed 0 | comments 2, files 2 | total done 2228, cursor saved |  last batch, run done |
