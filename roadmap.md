@@ -1,5 +1,14 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 10 build 15: Kati's onboarding tickets 65, 66, 67 (O7 to O10; no publish, Breezeway send OFF)
+- [x] 65 Evidence = file or note (5+ characters); task details over 2,000 characters no longer block saving
+- [x] 65 Bulk Mark complete with one shared note or file and Done before Resolve date (applied 0329, 0330)
+- [x] 66 Send for owner review shows on approval tasks marked not required; Add a task has a role
+- [x] 66 Standard plan version 5 staged only (two Lead Designer owner review tasks)
+- [x] 67 Breezeway section on Work order tasks; Send to Breezeway behind onboarding_breezeway_send OFF
+- [x] Isolated SQL tests, cancelled real practices, browser desktop and phone, register O7 to O10
+- [ ] Waiting on Emily: approve plan version 5; turn on onboarding_breezeway_send after a verification send; publish
+
 ## Nov 10 bonus guide corrections (docs only; replaces conflicting parts of Builds 12 to 14)
 - [x] Save docs/specs/bonus-guide-values.md (A to G, exact numbers)
 - [x] Register BN11 line in section 14
