@@ -40,9 +40,9 @@ export function ProjectTeamPanel({ propertyId }: { propertyId: string }) {
     mutationFn: (v: { roleCode: string; userId: string | null; reassignPending: boolean }) =>
       setFn({ data: { projectId: q.data!.projectId, ...v } }),
     onSuccess: (r, v) => {
-      toast.success(
-        v.reassignPending ? `Saved. ${r.moved} unfinished Task(s) moved.` : "Project Team updated.",
-      );
+      // Build 17 finding 9: Saved only when the person actually changed.
+      if (r.changed === false) toast.info("No change: that person already holds this role.");
+      else toast.success(r.moved > 0 ? `Saved. ${r.moved} unfinished Task(s) moved.` : "Project Team updated.");
       setPending((p) => {
         const n = { ...p };
         delete n[v.roleCode];
