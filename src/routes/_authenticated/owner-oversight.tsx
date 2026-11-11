@@ -6,6 +6,7 @@ import { CalendarClock, Download, FlaskConical, Search, Users } from "lucide-rea
 import { EmptyState, LoadingPage, PageHeader, SectionCard, StatTile } from "@/components/ui/page";
 import { CapabilityGate } from "@/components/CapabilityGate";
 import { OversightAlertsPanel } from "@/components/owner/OversightAlertsPanel";
+import { StartEnrolledPlans } from "@/components/ao/StartEnrolledPlans";
 import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -177,6 +178,8 @@ function OwnerOversightPage() {
       </div>
 
       <OversightAlertsPanel rows={rows} />
+
+      <StartEnrolledPlans />
 
       <SectionCard
         title="Enrolled homes"

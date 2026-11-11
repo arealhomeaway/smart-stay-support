@@ -9,18 +9,26 @@ import { SectionCard } from "@/components/ui/page";
 import { loadOwnerPlan, submitCard } from "@/lib/ao-data";
 import { ownerPace } from "@/lib/ao-engine";
 import {
-  paceSentence, portalCardView, submissionValues, validateSubmission, type OutputField, type PortalPlanCard,
+  groupPlanByHome, paceSentence, portalCardView, submissionValues, validateSubmission, type OutputField, type PortalPlanCard,
 } from "@/lib/ao-ui";
 
-/** Homeowner plan cards. Hidden entirely while the plan engine is not set up. */
-export function OwnerPlanCards({ programId, readOnly }: { programId: string; readOnly: boolean }) {
+/** Homeowner plan cards, grouped under each home. Hidden entirely while the plan engine is not set up. */
+export function OwnerPlanCards({ programId, readOnly, homes = [] }: { programId: string; readOnly: boolean; homes?: { propertyId: string; name: string }[] }) {
   const q = useQuery({ queryKey: ["ao-owner-plan", programId], queryFn: () => loadOwnerPlan(programId), retry: false });
   if (!q.data?.available || q.data.data.length === 0) return null;
+  const groups = groupPlanByHome(q.data.data, homes);
   return (
     <SectionCard title="Your homeowner plan">
-      <ul className="space-y-3">
-        {q.data.data.map((c) => <li key={c.plan_card_id}><PlanCardItem card={c} programId={programId} readOnly={readOnly} /></li>)}
-      </ul>
+      <div className="space-y-5">
+        {groups.map((g) => (
+          <section key={g.propertyId ?? "home"} className="space-y-2" aria-label={g.name}>
+            {groups.length > 1 || homes.length > 1 ? <h3 className="text-sm font-semibold">{g.name}</h3> : null}
+            <ul className="space-y-3">
+              {g.cards.map((c) => <li key={c.plan_card_id}><PlanCardItem card={c} programId={programId} readOnly={readOnly} /></li>)}
+            </ul>
+          </section>
+        ))}
+      </div>
     </SectionCard>
   );
 }

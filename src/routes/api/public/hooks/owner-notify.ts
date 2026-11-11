@@ -24,7 +24,7 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
         const { drainScheduledEmails } = await import("@/lib/email-composer.server");
         const { drainOwnerWelcomes } = await import("@/lib/owner-welcome.server");
         const { runEmailJob } = await import("@/lib/email-job.server");
-        const { runAoClocksGuarded } = await import("@/lib/ao-ui");
+        const { runAoClocksGuarded, runAoOwnerEmailGuarded } = await import("@/lib/ao-ui");
         const { runReviewOverdueSweep } = await import("@/lib/onboarding-reviews");
         const { runNightlyReviewSync } = await import("@/lib/review-sync.server");
         const { runGuestTouchBaseSync } = await import("@/lib/guest-touch-base.server");
@@ -34,6 +34,10 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
           const result = await runEmailJob(supabaseAdmin, [
             { name: "progress", run: (id) => evaluateAllPrograms(supabaseAdmin, id) },
             { name: "deadlines_and_vendor_reminders", run: () => sweepDeadlineAlerts(supabaseAdmin) },
+            // Active Owner email: plan is ready, then one daily email at the set time (default 9 AM Central),
+            // never more than one a day per owner. Before delivery so they go out in this pass.
+            // Skipped silently until the staged function exists.
+            { name: "ao_owner_email", run: () => runAoOwnerEmailGuarded(supabaseAdmin) },
             { name: "owner", run: (id) => drainOwnerAlerts(supabaseAdmin, 50, undefined, id) },
             { name: "staff", run: (id) => drainStaffNotifications(supabaseAdmin, 50, undefined, id) },
             { name: "scheduled", run: (id) => drainScheduledEmails(new Date(), id) },

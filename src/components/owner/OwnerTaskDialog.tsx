@@ -8,6 +8,7 @@
  * through the single-shot published approval, and a written response still
  * goes through the review record.
  */
+import { OwnerItemConversation } from "@/components/owner/OwnerItemConversation";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -119,6 +120,8 @@ export function OwnerTaskDialog({
   logTimeBlockedReason,
   onDecided,
   sharedFiles,
+  reviewId,
+  readOnly = false,
 }: {
   open: boolean;
   onOpenChange: (next: boolean) => void;
@@ -134,6 +137,9 @@ export function OwnerTaskDialog({
   onDecided: () => void;
   /** Files shared on the card's linked onboarding step, when no decision carries them. */
   sharedFiles?: OwnerOnboardingFile[];
+  /** The owner item; a Task sent as a conversation shows it here instead of the one-time reply. */
+  reviewId?: string;
+  readOnly?: boolean;
 }) {
   const [response, setResponse] = useState("");
   const [note, setNote] = useState("");
@@ -269,7 +275,36 @@ export function OwnerTaskDialog({
             </div>
           ) : null}
 
-          {canRespond ? (
+          {reviewId && open ? (
+            <OwnerItemConversation
+              reviewId={reviewId}
+              side="owner"
+              readOnly={readOnly}
+              onChanged={onDecided}
+              fallback={canRespond ? (
+            <div className="rounded-xl border border-border p-3">
+              <p className="text-sm font-medium">Your reply</p>
+              <Textarea
+                className="mt-2"
+                rows={4}
+                placeholder="Write your answer, question or decision"
+                aria-label="Your reply"
+                value={response}
+                onChange={(e) => setResponse(e.target.value)}
+                disabled={responding}
+              />
+              <Button
+                className="mt-2"
+                size="sm"
+                disabled={responding}
+                onClick={() => onRespond(response.trim())}
+              >
+                Send response
+              </Button>
+            </div>
+              ) : null}
+            />
+          ) : canRespond ? (
             <div className="rounded-xl border border-border p-3">
               <p className="text-sm font-medium">Your reply</p>
               <Textarea

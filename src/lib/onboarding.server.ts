@@ -782,6 +782,44 @@ export async function submitOwnerApproval(
  * homeowner then sees it in their Onboarding actions queue, or by
  * Resolve-generated email when they are not enrolled.
  */
+async function sendTaskAsOwnerItem(
+  supabase: Client,
+  userId: string,
+  task: { id: string; due_on: string | null },
+  input: { taskId: string; note: string; version: string; documentIds: string[] },
+) {
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Chicago" });
+  const note = input.version.trim() ? `${input.note.trim()}\n\nLooking at: ${input.version.trim()}` : input.note.trim();
+  const rpc = supabase.rpc as unknown as (
+    fn: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ data: { sent?: boolean; review_id?: string } | null; error: { code?: string; message?: string } | null }>;
+  const probe = await rpc("send_task_to_owner_item", { _task_id: task.id, _note: "", _respond_by: null });
+  const { isMissingDbObject } = await import("./ao-ui");
+  if (probe.error && isMissingDbObject(probe.error)) return null;
+  if (input.documentIds.length > 0) {
+    const { loadViewer, setVisibility } = await import("./attachments.server");
+    const viewer = await loadViewer(supabase, userId);
+    for (const documentId of input.documentIds) await setVisibility(viewer, documentId, "owner_shared");
+  }
+  const res = await rpc("send_task_to_owner_item", {
+    _task_id: task.id,
+    _note: note,
+    _respond_by: task.due_on && task.due_on >= today ? task.due_on : null,
+  });
+  if (res.error) throw new Error(res.error.message ?? "Could not send to the homeowner.");
+  if (!res.data?.sent) return null;
+  return {
+    ok: true as const,
+    approvalId: null,
+    channel: "in_app" as const,
+    published: true,
+    completed: true as const,
+    reviewId: res.data.review_id ?? null,
+    sharedFiles: input.documentIds.length,
+  };
+}
+
 export async function sendTaskToOwner(
   supabase: Client,
   userId: string,
@@ -807,12 +845,20 @@ export async function sendTaskToOwner(
     throw new Error("The homeowner already approved this step.");
   }
 
+  if (!task.data.requires_owner_approval && !access.canManage) {
+    throw new Error(
+      "Only the project lead can send a step that is not already marked for a homeowner decision.",
+    );
+  }
+
+  // Active Owner fix (Fix 7): for a home in a live Active Owner program, the send becomes one owner
+  // item the homeowner can talk through, and the Task completes with the send as its evidence.
+  // Until that staged database change is applied, or for a home with no live program, the
+  // existing approval path below runs unchanged.
+  const sentItem = await sendTaskAsOwnerItem(supabase, userId, task.data, input);
+  if (sentItem) return sentItem;
+
   if (!task.data.requires_owner_approval) {
-    if (!access.canManage) {
-      throw new Error(
-        "Only the project lead can send a step that is not already marked for a homeowner decision.",
-      );
-    }
     const { error } = await supabase
       .from("onboarding_tasks")
       .update({ requires_owner_approval: true, owner_approval_status: "pending" })

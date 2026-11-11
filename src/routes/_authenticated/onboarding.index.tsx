@@ -10,6 +10,7 @@ import { Database, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingPage, SectionCard } from "@/components/ui/page";
 import { needsMyAttention } from "@/lib/onboarding-hub";
+import { loadMyOwnerItemNeeds } from "@/lib/ao-data";
 import heroImage from "@/assets/hero-arha-property.jpg";
 import { bannerCaption, dailyHomePhoto } from "@/lib/daily-home-photo";
 import {
@@ -138,6 +139,13 @@ function Hub() {
   const refresh = () => qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
 
   // A person's own name, so the hub greets them the way Operations Home does.
+  // Owner items sent from this person's Tasks: the homeowner wrote back, or no answer by the deadline.
+  const { data: ownerItemNeeds = [] } = useQuery({
+    queryKey: ["my-owner-item-needs", userId],
+    enabled: Boolean(userId),
+    queryFn: loadMyOwnerItemNeeds,
+    retry: false,
+  });
   const { data: me } = useQuery({
     queryKey: ["my-name", userId],
     enabled: Boolean(userId),
@@ -342,6 +350,12 @@ function Hub() {
     today,
   );
   const needs: NeedRow[] = [
+    ...ownerItemNeeds.map((x) => ({
+      key: `oi-${x.review_id}`,
+      title: `${homes.find((h) => h.propertyId === x.property_id)?.address ?? "Homeowner item"}: ${x.title}`,
+      why: x.why,
+      propertyId: x.property_id,
+    })),
     ...attention.mine.map((r) => ({
       key: `m-${r.project.property.id}`,
       title: formatPropertyLabel(r.project.property).primary,

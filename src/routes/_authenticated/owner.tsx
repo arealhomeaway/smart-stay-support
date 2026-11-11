@@ -599,7 +599,7 @@ function OwnerHubBody({
           </div>
         )}
         <OnboardingActions readOnly={preview} programId={preview ? program.id : null} homeId={selectedHomeId} />
-        <OwnerPlanCards programId={program.id} readOnly={preview} />
+        <OwnerPlanCards programId={program.id} readOnly={preview} homes={ownerHomes.map((h) => ({ propertyId: h.propertyId, name: h.address ?? h.name }))} />
         <OwnerApprovalPanel readOnly={preview} embedded hasOtherItems={openReviews.length > 0 || onboardingPending > 0} />
         </div>
       </SectionCard>
@@ -868,6 +868,8 @@ function ReviewRow({
         }}
         action={action}
         sharedFiles={sharedFiles}
+        reviewId={review.id}
+        readOnly={readOnly}
         canRespond={canRespond}
         responding={respond.isPending}
         onRespond={(value) => respond.mutate(value)}
