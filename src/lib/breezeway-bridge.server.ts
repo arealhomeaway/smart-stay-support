@@ -42,12 +42,12 @@ export async function recordBreezewayIntegrationEvent(row: {
 }
 
 /** The sweep's last run, shown on Integrations (one settings row, overwritten each run). */
-async function noteSweepRun(ran: boolean) {
+async function noteSweepRun(refreshed: boolean) {
   try {
     const db = (await admin()) as unknown as Loose;
     await db
       .from("app_settings")
-      .upsert({ key: "breezeway_safety_sweep_last", value: { at: new Date().toISOString(), ran }, updated_at: new Date().toISOString() }, { onConflict: "key" });
+      .upsert({ key: "breezeway_safety_sweep_last", value: { at: new Date().toISOString(), ran: true, refreshed }, updated_at: new Date().toISOString() }, { onConflict: "key" });
   } catch {
     /* bookkeeping only */
   }
@@ -66,7 +66,7 @@ type SweepDeps = {
   readGate: () => Promise<{ on: boolean }>;
   syncPeople: () => Promise<unknown>;
   syncPortfolio: (limit: number) => Promise<unknown>;
-  note: (ran: boolean) => Promise<void>;
+  note: (refreshed: boolean) => Promise<void>;
   recordFailure: (message: string) => Promise<void>;
 };
 
