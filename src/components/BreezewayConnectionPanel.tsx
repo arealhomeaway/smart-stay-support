@@ -8,63 +8,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import {
   breezewayInventoryReport,
-  breezewayPilotPreview,
   breezewayStatus,
-  saveBreezewayMapping,
+  breezewayWebhookStatus,
   testBreezewayConnection,
 } from "@/lib/breezeway.functions";
 import type {
   BreezewayInventoryReport,
   BreezewayMappingRow,
-  BreezewayPilotPreview,
-  BreezewayTaskSummary,
 } from "@/lib/breezeway";
 import { usDateTime } from "@/lib/dates";
-
-/** The single approved pilot pair. Nothing else is linked automatically. */
-const PILOT = {
-  resolveId: "79319968-80c9-4f00-b6c9-608c0b1881dc",
-  breezewayId: "1473933",
-  label: "9211 Fitzgerald Dr., Indianapolis IN 46239",
-};
-
-function TaskRows({ tasks }: { tasks: BreezewayTaskSummary[] }) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-xs">
-        <thead className="text-muted-foreground">
-          <tr className="text-left">
-            <th className="py-1 pr-3 font-medium">Task ID</th>
-            <th className="py-1 pr-3 font-medium">Name</th>
-            <th className="py-1 pr-3 font-medium">Status</th>
-            <th className="py-1 pr-3 font-medium">Scheduled</th>
-            <th className="py-1 font-medium">Assigned to</th>
-          </tr>
-        </thead>
-        <tbody>
-          {tasks.map((t) => (
-            <tr key={t.id} className="border-t border-border align-top">
-              <td className="py-1 pr-3 font-mono">{t.id}</td>
-              <td className="py-1 pr-3 text-foreground">{t.name ?? "Not set"}</td>
-              <td className="py-1 pr-3">{t.status ?? t.stage ?? "Not set"}</td>
-              <td className="py-1 pr-3">
-                {t.scheduledDate ?? "unscheduled"}
-                {t.scheduledTime ? ` ${t.scheduledTime}` : ""}
-              </td>
-              <td className="py-1">
-                {t.assignments.length === 0
-                  ? "Unassigned"
-                  : t.assignments
-                      .map((a) => `${a.name ?? "Unnamed"} (${a.status ?? "Not set"})`)
-                      .join(", ")}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
 
 function errorText(error: unknown) {
   return error instanceof Error ? error.message : "Something went wrong. Try again.";
@@ -115,17 +67,21 @@ export function BreezewayConnectionPanel() {
   const statusFn = useServerFn(breezewayStatus);
   const testFn = useServerFn(testBreezewayConnection);
   const reportFn = useServerFn(breezewayInventoryReport);
-  const saveMappingFn = useServerFn(saveBreezewayMapping);
-  const previewFn = useServerFn(breezewayPilotPreview);
+  const webhookFn = useServerFn(breezewayWebhookStatus);
 
   const [panelError, setPanelError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [report, setReport] = useState<BreezewayInventoryReport | null>(null);
-  const [preview, setPreview] = useState<BreezewayPilotPreview | null>(null);
 
   const status = useQuery({
     queryKey: ["breezeway-status"],
     queryFn: () => statusFn(),
+    retry: false,
+  });
+  // The connection card says what is true about the webhook (Emily, Nov 11, Build 16 A4).
+  const webhook = useQuery({
+    queryKey: ["breezeway-webhook-status"],
+    queryFn: () => webhookFn(),
     retry: false,
   });
 
@@ -148,25 +104,6 @@ export function BreezewayConnectionPanel() {
     onError: (error) => setPanelError(errorText(error)),
   });
 
-  const saveMapping = useMutation({
-    mutationFn: () =>
-      saveMappingFn({ data: { resolveId: PILOT.resolveId, breezewayId: PILOT.breezewayId } }),
-    onSuccess: () => {
-      setPanelError(null);
-      setMessage(`Pilot mapping saved for ${PILOT.label}. Lifecycle stage unchanged.`);
-    },
-    onError: (error) => setPanelError(errorText(error)),
-  });
-
-  const pilot = useMutation({
-    mutationFn: () => previewFn({ data: { resolveId: PILOT.resolveId } }),
-    onSuccess: (res) => {
-      setPanelError(null);
-      setPreview(res);
-    },
-    onError: (error) => setPanelError(errorText(error)),
-  });
-
   const s = status.data;
   const statusError = status.error ? errorText(status.error) : null;
 
@@ -184,8 +121,12 @@ export function BreezewayConnectionPanel() {
         </CardTitle>
         <CardDescription>
           Read-only connection check. Breezeway credentials grant full read and write access to the
-          Breezeway account. Resolve restricts itself to reads. No webhook is registered and
-          nothing is imported.
+          Breezeway account. Resolve restricts itself to reads.{" "}
+          {webhook.data?.registered
+            ? "A webhook is registered, so Breezeway tells Resolve when a task changes."
+            : webhook.isLoading
+              ? ""
+              : "No webhook is registered yet."}
         </CardDescription>
       </CardHeader>
 
@@ -242,79 +183,7 @@ export function BreezewayConnectionPanel() {
           >
             {inventory.isPending ? "Comparing…" : "Compare property inventory"}
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => saveMapping.mutate()}
-            disabled={saveMapping.isPending}
-          >
-            {saveMapping.isPending ? "Saving…" : "Save pilot mapping"}
-          </Button>
-          <Button variant="outline" onClick={() => pilot.mutate()} disabled={pilot.isPending}>
-            {pilot.isPending ? "Reading tasks…" : "Preview pilot tasks"}
-          </Button>
         </div>
-
-        {preview ? (
-          <>
-            <Separator />
-            <div className="space-y-3">
-              <p className="text-sm">
-                <strong>Pilot preview: {preview.resolveName ?? PILOT.label}</strong>
-              </p>
-              <dl className="grid gap-x-6 gap-y-1 text-xs sm:grid-cols-2">
-                <div className="flex justify-between gap-2">
-                  <dt className="text-muted-foreground">Resolve</dt>
-                  <dd className="text-right">
-                    {preview.resolveAddress} · {preview.resolveId}
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-2">
-                  <dt className="text-muted-foreground">Breezeway</dt>
-                  <dd className="text-right">
-                    {preview.breezewayName ?? "Not set"} · {preview.breezewayId} (
-                    {preview.breezewayStatus ?? "Not set"})
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-2">
-                  <dt className="text-muted-foreground">Address match</dt>
-                  <dd>{preview.addressMatches ? "Exact" : "Review"}</dd>
-                </div>
-                <div className="flex justify-between gap-2">
-                  <dt className="text-muted-foreground">Resolve lifecycle stage</dt>
-                  <dd>{preview.resolveLifecycleStatus} (unchanged)</dd>
-                </div>
-              </dl>
-              <p className="text-xs text-muted-foreground">
-                Scheduled between <strong>{preview.windowStart}</strong> and{" "}
-                <strong>{preview.windowEnd}</strong>. {preview.tasksTotalForProperty} task(s) exist
-                for this property in Breezeway; read {preview.pagesFetched} of {preview.totalPages}{" "}
-                page(s).{" "}
-                {preview.pagesRemaining
-                  ? "Additional pages remain."
-                  : "No additional pages remain."}
-              </p>
-              {preview.tasksInWindow.length > 0 ? (
-                <TaskRows tasks={preview.tasksInWindow} />
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  No tasks scheduled inside the window.
-                </p>
-              )}
-              {preview.unscheduledOpenTasks.length > 0 ? (
-                <>
-                  <p className="text-xs font-medium">
-                    Open, no scheduled date ({preview.unscheduledOpenTasks.length})
-                  </p>
-                  <TaskRows tasks={preview.unscheduledOpenTasks} />
-                </>
-              ) : null}
-              <p className="text-xs text-muted-foreground">
-                Preview only. No matters were created, no vendors assigned, no notifications sent,
-                and nothing was written back to Breezeway.
-              </p>
-            </div>
-          </>
-        ) : null}
 
         {report ? (
           <>
