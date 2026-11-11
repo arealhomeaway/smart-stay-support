@@ -56,9 +56,10 @@ describe("owner pace and send gate", () => {
     expect(p.onTrack).toBe(true);
     expect(ownerPace(0, new Date("2026-12-01T00:00:00Z"), new Date("2026-12-31T00:00:00Z")).label).toBe("Behind");
   });
-  it("Send to Active Owner hidden for non-enrolled homes", () => {
+  // Build 17 finding 5 (Emily, Nov 10): hidden only with no program, or a closed or archived one.
+  it("Send to Active Owner hidden for non-enrolled homes and closed programs", () => {
     expect(canSendToActiveOwner(null)).toBe(false);
-    expect(canSendToActiveOwner("pending")).toBe(false);
+    expect(canSendToActiveOwner("closed")).toBe(false);
     expect(canSendToActiveOwner("active")).toBe(true);
   });
   it("exports contributions as CSV", () => {
