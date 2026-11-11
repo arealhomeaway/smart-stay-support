@@ -1,5 +1,25 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 11 build 16: answers, drift and small board fixes (no publish; stage in docs/pending/build16/)
+- [ ] A1 Breezeway safety sweep always scheduled, does nothing while bridge off; Turn on only moves start line
+- [ ] A2 Ticket shows Open in Breezeway and Open the report
+- [ ] A3 Linked Breezeway work order finished: ticket to Verify the outcome, next step Check the finished work
+- [ ] A4 Connection panel: webhook registered wording; remove old pilot home
+- [ ] B1 Ready for arrival button on Home behind switch OFF
+- [ ] B2 Finance packet delivered button on Home behind switch OFF
+- [ ] B3 Queue checks only from All unclaimed and Team Queue
+- [ ] B4 Register B1, B2, B4, B5, BN7, BN8 aligned with the guide
+- [ ] B5 Owner stays recognised (owner booking type or owner stay block) and counted
+- [ ] C1 Vendor coverage counts only Approved and Gold
+- [ ] C2 Direct Bookings settings: Admin edits, Supervisor and Director view
+- [ ] C3 Active Owner not in the coordinator menu
+- [ ] C4 Add user keeps the invite code (no change)
+- [ ] C5 Register T7 matches the built Notion group; label reads Quiet, no number
+- [ ] C6 Ticket handoff keeps Person (optional) (no change)
+- [ ] D Small board fixes: Record work, Record routine work, Team Queue, Navigation, Direct Bookings, Properties
+- [ ] E Register lines T8, T9, C11, N11, P7 and timing
+- [ ] F Tests, cancelled practice, browser desktop and phone, report conflicts
+
 ## Nov 10 build 15: Kati's onboarding tickets 65, 66, 67 (O7 to O10; no publish, Breezeway send OFF)
 - [x] 65 Evidence = file or note (5+ characters); task details over 2,000 characters no longer block saving
 - [x] 65 Bulk Mark complete with one shared note or file and Done before Resolve date (applied 0329, 0330)
