@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { EmptyState, LoadingRows, PageHeader } from "@/components/ui/page";
 import { PropertyListCard } from "@/components/property/PropertyListCard";
 import { homePhotoUrl } from "@/components/property/HomePhoto";
-import { homeFactsLine } from "@/lib/property-card";
+import { homeFactsLine, marketOptions } from "@/lib/property-card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { openTicketsForTotal } from "@/lib/notion-ticket-display";
 import { AddPropertyDialog } from "@/components/property/AddPropertyDialog";
