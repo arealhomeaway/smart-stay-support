@@ -317,7 +317,7 @@ describe("Active Owner fix, staged SQL on an isolated database", () => {
   it("Fix 7: sending to the owner completes the Task; the owner and the PM talk it through in the same item", async () => {
     const sendTask = U(901);
     await task(sendTask, h1, stepSend, "open", { dependency: "business_decision", approval: true, title: "Share the design" });
-    console.log("DBG t", JSON.stringify((await db.query("SELECT tgname, tgenabled FROM pg_trigger WHERE tgrelid='public.onboarding_tasks'::regclass")).rows), JSON.stringify((await db.query("SELECT private.task_sent_to_owner($1) s, current_setting('session_replication_role') r",[sendTask])).rows));
+    try { const r = await db.query("UPDATE public.onboarding_tasks SET status='complete' WHERE id=$1 RETURNING status", [sendTask]); console.log("DBG upd", JSON.stringify(r.rows), JSON.stringify((await db.query("SELECT prosrc LIKE '%task_sent_to_owner%' x, prosrc LIKE '%homeowner decision%' y FROM pg_proc WHERE proname='owner_business_decision_guard'")).rows)); } catch (e) { console.log("DBG raised", (e as Error).message); }
     await expect(db.query("UPDATE public.onboarding_tasks SET status='complete' WHERE id=$1", [sendTask])).rejects.toThrow(/homeowner decision is required/);
     await as(pc);
     await expect(db.query("SELECT public.send_task_to_owner_item($1, 'Please review the design PDF')", [sendTask])).rejects.toThrow(/Only the person on this task/);
