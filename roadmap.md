@@ -1,16 +1,16 @@
 # Roadmap — approved build work, NO publish
 
 ## Nov 11 build 17: nine review panel findings (after Build 16, before the smoke test; stage in docs/pending/build17/)
-- [ ] 1 Both bulk edit Saves (template steps, home tasks) save and record who and when
-- [ ] 2 Homeowner sees a staff message and can reply as soon as a thread exists
-- [ ] 3 Business decision required blocks completion until owner approval (single and bulk complete)
-- [ ] 4 Availability Finder second home joins the same lead, no duplicate; report reachability
-- [ ] 5 Send to Active Owner shows for every home in a live program; hides only archived or closed
-- [ ] 6 Enroll result stays open: steps, counts, Retry per failed step, success message, setup link
-- [ ] 7 Owner notifications open the exact item (new and existing)
-- [ ] 8 Undated OwnerRez reviews are historical, never today, never start follow ups
-- [ ] 9 Project Team screen rule matches database; saved only when PM changed; plain refusal; routing
-- [ ] Each: published or preview, failing test first, fix, passing test; suite, browser desktop and phone
+- [x] 1 Both bulk edit Saves (template steps, home tasks) save and record who and when
+- [x] 2 Homeowner sees a staff message and can reply as soon as a thread exists
+- [x] 3 Business decision required blocks completion until owner approval (single and bulk complete)
+- [x] 4 Availability Finder second home joins the same lead, no duplicate; report reachability
+- [x] 5 Send to Active Owner shows for every home in a live program; hides only archived or closed
+- [x] 6 Enroll result stays open: steps, counts, Retry per failed step, success message, setup link
+- [x] 7 Owner notifications open the exact item (new and existing)
+- [x] 8 Undated OwnerRez reviews are historical, never today, never start follow ups
+- [x] 9 Project Team screen rule matches database; saved only when PM changed; plain refusal; routing
+- [x] Each: published or preview, failing test first, fix, passing test; suite, browser desktop and phone (pages open on both; the new clicks themselves were not tried in the browser)
 
 ## Nov 11 build 16: answers, drift and small board fixes (no publish; stage in docs/pending/build16/)
 - [x] A1 Breezeway safety sweep always scheduled, does nothing while bridge off; Turn on only moves start line
