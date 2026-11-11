@@ -308,9 +308,9 @@ async function runOneBatch(ctx: Ctx, state: RunnerState): Promise<{ result: Batc
         .eq("external_id", p.id)
         .maybeSingle();
       if (exErr) throw new Error(exErr.message);
-      const plan = planTicketWrite(existing, out.ticket);
+      const plan = planTicketWrite(existing, out.ticket, job.group!);
       let ticketId = existing?.id ?? null;
-      if (plan === "keep_live" || plan === "unchanged") {
+      if (plan === "keep_live" || plan === "unchanged" || plan === "keep_existing") {
         result.counts.skipped++;
       } else {
         const { data, error } = await rpc(ctx)("import_notion_ticket", { p: ticketForWrite(plan, out.group, out.ticket) });

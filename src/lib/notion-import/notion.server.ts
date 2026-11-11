@@ -5,7 +5,7 @@
  * backoff on 429, timeouts, server errors and dropped connections.
  */
 import { CLOSED_NOTION_STATUSES, NOTION_TICKET_DATA_SOURCE_ID, type ImportGroup, type NotionPage } from "./mapping";
-import { NOTION_ATTEMPTS, isRetryableStatus, retryDelayMs } from "./runner";
+import { NOTION_ATTEMPTS, isRetryableStatus, notionSortDirection, retryDelayMs } from "./runner";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/notion/v1";
 const MIN_GAP_MS = 350;
@@ -105,7 +105,7 @@ export async function queryTicketPage(opts: { cursor: string | null; pageSize: n
     method: "POST",
     body: {
       page_size: opts.pageSize,
-      sorts: [{ timestamp: "created_time", direction: "ascending" }],
+      sorts: [{ timestamp: "created_time", direction: notionSortDirection(opts.group) }],
       ...(filter ? { filter } : {}),
       ...(opts.cursor ? { start_cursor: opts.cursor } : {}),
     },
