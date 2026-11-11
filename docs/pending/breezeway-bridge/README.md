@@ -3,7 +3,7 @@
 Status: APPLIED after checks as migration 0323 (byte for byte `01_breezeway_bridge.sql`; the live
 functions were re-read after applying and match it), and the webhook note text (`02_webhook_note.sql`,
 applied as a one-row data change). The bridge is OFF, Resolve work orders are OFF, the
-safety sweep is scheduled but INACTIVE. Nothing was created or changed in Breezeway.
+safety sweep is scheduled and ACTIVE (Build 16 A1, Nov 11) and does nothing while the bridge is off. Nothing was created or changed in Breezeway.
 
 ## What 01 adds (additive only)
 
@@ -29,7 +29,8 @@ safety sweep is scheduled but INACTIVE. Nothing was created or changed in Breeze
 
 Database steps may no longer start or stop timed jobs, so the switch does not start the safety
 sweep. The sweep (`breezeway-safety-sweep`, every 10 minutes, private scheduler secret) is created
-and inactive; on each run it reads the switch and does nothing while the bridge is off.
+and active since Build 16 (Nov 11); on each run it reads the switch and does nothing while the
+bridge is off. Turn on only moves the start line.
 
 ## Practice
 
