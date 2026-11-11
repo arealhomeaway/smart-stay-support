@@ -133,7 +133,7 @@ export function OnboardingBreezewaySection({
     <section className="space-y-4 rounded-lg border border-primary/40 bg-primary/5 p-4" aria-label="Breezeway work order">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="font-medium">Breezeway work order</p>
-        <Chip className={stateChip(connection === "connected" ? "complete" : connection === "waiting_for_sync" ? "waiting" : "ready")}>
+        <Chip className={stateChip(connection === "connected" ? "done" : connection === "waiting_for_sync" ? "waiting" : "new")}>
           {CONNECTION_LABEL[connection]}
         </Chip>
       </div>
