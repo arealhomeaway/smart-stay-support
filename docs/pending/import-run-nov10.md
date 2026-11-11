@@ -1,6 +1,8 @@
 # Notion history import run, Nov 10 (overnight Nov 11 UTC)
 
-## Status, Nov 11 04:50 UTC: ARMED AND WAITING. Nothing imported. No backup taken yet.
+## Status: RUNNING (START THE IMPORT received Nov 11 05:13 UTC, Emily's go at about 10:50 PM Central Nov 10). See the Run log at the end; the final report is written there when the run ends.
+
+(Earlier status, Nov 11 04:50 UTC: armed and waiting.)
 
 Emily answered the five questions on Nov 11. The two code changes are made and tested. The import starts only when Emily sends a separate message that says START THE IMPORT (after 10 PM Central). Then: full backup first, then Phase A older open, then Phase B closed history, logged per batch below. No ticket, claim or comment was written to Resolve for this step. Notion was only read.
 
@@ -110,3 +112,19 @@ No batches run.
 | Batch | Phase | Done | Skipped | Failed | Comments | Files | Cursor | Anomalies |
 |---|---|---|---|---|---|---|---|---|
 | none | | | | | | | | Stopped before step 1 |
+
+
+---
+
+## Run log (START THE IMPORT, Nov 11 UTC)
+
+### Before the run
+- Readiness: the five-question task finished; importer changes in place (closed history newest first, history runs never rewrite an already imported ticket); saved run state idle (last job: first run, done). Preview signed in as the Admin.
+- Fresh full backup: id `d170df7a-2dd1-4f9e-9aaa-295bbb07a375`, folder `2026-11-11_051821Z`, 266 tables, 102,068 rows, finished 05:19:39 UTC, Verify passed 05:21:33 UTC (every table matches).
+- Baseline 05:16 UTC: 90 imported tickets (81 open, 9 Needs a home), 2 live tickets, 36 claims (24 Potential $100.00, 12 Gathering $3,827.02 damages and $991.13 paid back), 259 imported comments, 119 ticket files, 0 duplicates, 0 imported tickets with a clock, 0 ticket timed alerts, 0 escalations. Team Queue: Team A 0, Team B 0, All teams 0, All unclaimed 0. Databases tabs: All 90, Recent 85, Older open 5, Closed history 0, Needs a home 9, Claims history 36. Money we could still lose $3,927.02.
+- Watched on every poll (every 15 seconds): duplicates, clocks on imported tickets, Needs a home above the expectation (24 older open, 133 closed), new tickets above the expectation (595, 2,228), any non-comment activity on new imported tickets, any new staff notification, owner notification or email tied to a ticket, any timed alert, escalation or owner contact alert, and fingerprints of the 90 already imported tickets, the 2 live tickets and the 36 existing claims. Any one stops the run.
+
+### Batches
+| At (UTC) | Batch | Result | Tickets | Comments, files | Progress | Note |
+|---|---|---|---|---|---|---|
+| 2026-11-11 05:23:42 UTC | older_open started (start line 2026-11-11 05:23:27.678975+00) | | | | | |
