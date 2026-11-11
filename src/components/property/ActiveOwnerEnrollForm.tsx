@@ -76,21 +76,30 @@ function EnrollmentFields({ propertyId, context, onReceipt, onDone, close }: {
     queryFn: () => load({ data: { propertyId, email } }) });
   const input = { requestId, propertyId, ownerRecordId: context.owner.id, name, email, closingDate, reason, onboardingLead, operationsLead, notes };
   const changedConfirmed = Boolean(context.actualClosing && closingDate !== context.actualClosing);
+  // Build 17 finding 6: the result stays on screen; the page underneath refreshes only on Done.
   const run = useMutation({ mutationFn: () => enroll({ data: enrollmentInput.parse(input) }), onSuccess: (r) => {
-    setReceipt(r); onReceipt(); void qc.invalidateQueries(); if (r.complete) onDone();
+    setReceipt(r); onReceipt();
   }, onError: (e: Error) => toast.error(e.message) });
+  const finish = () => {
+    void qc.invalidateQueries();
+    if (receipt?.complete) onDone();
+    close();
+  };
   if (receipt) return <div className="space-y-4" role="status">
     <h3 className="font-semibold">{receipt.complete ? "Enrollment complete" : "Enrollment needs attention"}</h3>
+    {receipt.complete ? <p className="text-sm">The homeowner is enrolled in Active Owner.</p> : null}
     {receipt.accountId && !receipt.programId ? <p className="text-sm text-destructive">The homeowner login exists, but its program has not been linked yet. Retry to finish setup.</p> : null}
     <ol className="space-y-3">{receipt.steps.map((step) => <li key={step.key} className="text-sm">
       <strong>{step.key === "welcome" && step.status === "done" ? (receipt.welcomeHeld ? "Welcome email held until the wording is approved" : "Welcome email queued") : STEP_NAMES[step.key]}</strong>
       {step.key !== "welcome" || step.status !== "done" ? `: ${step.status === "done" ? "Done" : step.status === "failed" ? "Failed" : "Not reached"}` : ""}
       {step.detail ? <p className="text-destructive">{step.detail}</p> : null}
+      {/* The same saved request resumes from this step; finished steps are never repeated. */}
+      {step.status === "failed" ? <Button size="sm" variant="outline" className="mt-1 min-h-11" onClick={() => run.mutate()} disabled={run.isPending}>{run.isPending ? "Retrying…" : "Retry this step"}</Button> : null}
     </li>)}</ol>
-    {receipt.complete ? <p className="text-sm">{receipt.onboardingAdded} onboarding and {receipt.operatingAdded} operating Opportunities added.</p> : null}
-    {receipt.complete && receipt.welcomeHeld && receipt.accountId ? <HeldWelcomeSetupLink accountId={receipt.accountId} /> : null}
-    {!receipt.complete ? <Button onClick={() => run.mutate()} disabled={run.isPending}>{run.isPending ? "Retrying…" : "Retry"}</Button> : null}
-    <Button onClick={close} disabled={run.isPending}>Done</Button>
+    <p className="text-sm">{receipt.onboardingAdded} onboarding and {receipt.operatingAdded} operating Opportunities added.</p>
+    {receipt.welcomeHeld && receipt.accountId ? <HeldWelcomeSetupLink accountId={receipt.accountId} /> : null}
+    {!receipt.complete && !receipt.steps.some((s) => s.status === "failed") ? <Button className="min-h-11" onClick={() => run.mutate()} disabled={run.isPending}>{run.isPending ? "Retrying…" : "Retry"}</Button> : null}
+    <Button className="min-h-11" onClick={finish} disabled={run.isPending}>Done</Button>
   </div>;
   return <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); run.mutate(); }}>
     <section className="space-y-3"><h3 className="font-semibold">Homeowner</h3>

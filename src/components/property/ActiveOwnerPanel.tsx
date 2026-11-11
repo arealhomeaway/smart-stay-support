@@ -68,6 +68,8 @@ export function ActiveOwnerPanel({
   const statusFn = useServerFn(setOwnerProgramStatus);
   const startProjectFn = useServerFn(startOnboardingProjectFn);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
+  // Build 17 finding 6: an open Enroll window stays mounted even if the panel's rule changes.
+  const [enrollOpen, setEnrollOpen] = useState(false);
 
   // Enrolment alone never moves a home; onboarding is a deliberate second step.
   const inOnboarding = lifecycleStatus === "onboarding";
@@ -279,12 +281,13 @@ export function ActiveOwnerPanel({
       {canEnroll && row ? <ProgramHomeowners programId={row.id} /> : null}
       {row ? <HomeAutomation propertyId={propertyId} /> : null}
       <ActualClosingCorrection propertyId={propertyId} />
-      {canEnroll ? <ActiveOwnerEnrollForm
+      {canEnroll || enrollOpen ? <ActiveOwnerEnrollForm
         propertyId={propertyId}
         propertyName={propertyName}
         finishing={Boolean(row)}
         showTrigger={programs.isSuccess && (!row || !row.ownerLinked || row.status === "draft")}
         onDone={refresh}
+        onOpenChange={setEnrollOpen}
       /> : null}
     </SectionCard>
   );
