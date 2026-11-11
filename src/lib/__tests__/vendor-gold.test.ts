@@ -26,6 +26,19 @@ describe("vendor gold standard", () => {
     expect(isSystemField("cf_gate_code")).toBe(false);
     expect(customFieldKey("Gate Code #")).toBe("cf_gate_code");
   });
+  it("coverage counts only Approved and Gold vendors (register B3, Build 16 C1)", () => {
+    const cat = [{ label: "HVAC", tier: "core" }];
+    const row = (status: string, preference: "primary" | "backup") => ({
+      orgId: status + preference, orgName: status, market: "OKC", category: "HVAC", preference, status, isActive: true,
+    });
+    for (const status of ["candidate", "pilot", "transitional", "corrective_action"]) {
+      const [cell] = coverageMatrix(["OKC"], cat, [row(status, "primary"), row(status, "backup")]);
+      expect(cell.status).toBe("missing_both");
+    }
+    const [ok] = coverageMatrix(["OKC"], cat, [row("approved", "primary"), row("gold", "backup")]);
+    expect(ok.status).toBe("complete");
+  });
+
   it("coverage shows Missing Primary / Missing Backup / Complete", () => {
     const rows = [
       { orgId: "a", orgName: "AirWorks", market: "OKC", category: "HVAC", preference: "primary" as const, status: "gold", isActive: true },
