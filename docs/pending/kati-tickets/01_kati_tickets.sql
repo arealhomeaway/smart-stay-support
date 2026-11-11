@@ -1,16 +1,7 @@
 -- Build 15: Kati's three onboarding tickets (help tickets 65, 66, 67). Approved by Emily Nov 10.
+-- Applied from docs/pending/kati-tickets/01_kati_tickets.sql (sha256 336bdf25e1d101196ed85a5d74f78d6a28dad87c8b9d6da6e75eb95469fcfa90).
 -- Additive only. Nothing here changes an existing table, function, trigger, policy or row.
--- No BEGIN/COMMIT: the migration tool runs the file in one transaction.
---   1. bulk_complete_onboarding_tasks: one caller-authenticated transaction that completes several
---      ticked steps on one home with one shared note (and optionally one shared file), with an
---      optional "Done before Resolve" date. Existing completion guards (homeowner decision, step
---      review, accepted-handoff lock) still fire on every row.
---   2. onboarding_task_breezeway_links + _events and save_onboarding_task_breezeway: the Breezeway
---      section on "Work order:" steps (tentative date, assignee or unassigned, pasted Breezeway task).
---      Nothing is written to Breezeway.
---   3. feature_flags row onboarding_breezeway_send, OFF.
 
--- 1. Bulk complete -----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION private.write_onboarding_bulk_completion(_actor uuid, _rows jsonb, _file_task_id uuid)
 RETURNS void
 LANGUAGE plpgsql
@@ -28,7 +19,6 @@ BEGIN
   FROM jsonb_array_elements(COALESCE(_rows, '[]'::jsonb)) r;
   IF _file_task_id IS NOT NULL THEN
     SELECT property_id INTO _property FROM public.onboarding_tasks WHERE id = _file_task_id;
-    -- The shared file lives on the first ticked step; every other ticked step shows it.
     INSERT INTO public.onboarding_task_file_links(property_id, receiving_task_id, source_task_id, origin, created_by)
     SELECT _property, (r->>'taskId')::uuid, _file_task_id, 'manual', _actor
     FROM jsonb_array_elements(COALESCE(_rows, '[]'::jsonb)) r
@@ -82,12 +72,9 @@ BEGIN
   IF private.onboarding_work_locked(ARRAY[_property_id]) THEN
     RAISE EXCEPTION 'Operations has this home, so onboarding tasks are locked. Reopen a task with a reason instead.';
   END IF;
-  -- Same people as one-at-a-time completion: supervisors, the Director of Onboarding and this
-  -- home's project leads complete any task; anyone else only the tasks assigned to them.
   _lead := COALESCE(private.is_supervisor(_actor) OR public.is_onboarding_director(_actor)
                     OR _project.project_manager = _actor OR _project.director = _actor, false);
 
-  -- Evidence: one shared note of at least 5 characters, or one stored file on a ticked task.
   IF _file_task_id IS NOT NULL THEN
     IF NOT (_file_task_id = ANY(_task_ids)) THEN RAISE EXCEPTION 'The shared file must be on one of the ticked tasks.'; END IF;
     SELECT COALESCE(original_filename, title) INTO _file_name FROM public.documents
@@ -181,7 +168,6 @@ END $fn$;
 REVOKE ALL ON FUNCTION public.bulk_complete_onboarding_tasks(uuid, uuid[], text, date, uuid, boolean) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.bulk_complete_onboarding_tasks(uuid, uuid[], text, date, uuid, boolean) TO authenticated;
 
--- 2. Breezeway section on "Work order:" steps --------------------------------------------------
 CREATE TABLE public.onboarding_task_breezeway_links (
   task_id uuid PRIMARY KEY REFERENCES public.onboarding_tasks(id),
   property_id uuid NOT NULL REFERENCES public.properties(id),
@@ -346,7 +332,6 @@ END $fn$;
 REVOKE ALL ON FUNCTION public.save_onboarding_task_breezeway(uuid, date, text, bigint, text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.save_onboarding_task_breezeway(uuid, date, text, bigint, text) TO authenticated;
 
--- 3. Send to Breezeway from onboarding: built, OFF until Emily turns it on after a verification send.
 INSERT INTO public.feature_flags(key, label, description, enabled)
 VALUES ('onboarding_breezeway_send', 'Send onboarding work orders to Breezeway',
         'Lets a Work order task create its Breezeway task once, for verified homes only. Off until a verification send.', false)
