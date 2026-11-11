@@ -34,7 +34,8 @@ export const TEAM_QUEUE_COPY = {
     notion: "Imported from Notion",
   },
   groupCount: (n: number, longest: string) => `${n} waiting · Longest: ${longest}`,
-  notionCount: (n: number) => `${n} quiet · No clocks or alerts`,
+  // Build 16 C5 (register T7): no number on the quiet Notion group.
+  notionCount: (_n?: number) => "Quiet · No clocks or alerts",
   show: "Show",
   hide: "Hide",
   notionTeams: { team_a: "Team A", team_b: "Team B", unassigned: "Unassigned" },
