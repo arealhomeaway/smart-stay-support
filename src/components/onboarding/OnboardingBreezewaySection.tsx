@@ -34,17 +34,6 @@ import {
   sendOnboardingWorkOrderFn,
 } from "@/lib/onboarding-kati.functions";
 
-function assigneeNames(raw: unknown): string {
-  if (!Array.isArray(raw)) return "";
-  return raw
-    .map((a) => {
-      const r = a as { name?: string; first_name?: string; last_name?: string };
-      return r.name || [r.first_name, r.last_name].filter(Boolean).join(" ");
-    })
-    .filter(Boolean)
-    .join(", ");
-}
-
 export function OnboardingBreezewaySection({
   taskId,
   disabled,
@@ -183,7 +172,7 @@ export function OnboardingBreezewaySection({
             <>
               <p className="text-muted-foreground">Status: {data.mirror.stage || data.mirror.status || "Not reported"}</p>
               <p className="flex items-center gap-2 text-muted-foreground">
-                <UserCheck className="size-4 shrink-0" /> {assigneeNames(data.mirror.assignees) || "Not assigned in Breezeway"}
+                <UserCheck className="size-4 shrink-0" /> {data.mirror.assignee_names || "Not assigned in Breezeway"}
               </p>
               <p className="flex items-center gap-2 text-muted-foreground">
                 <CalendarClock className="size-4 shrink-0" />

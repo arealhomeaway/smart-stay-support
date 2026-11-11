@@ -67,7 +67,7 @@ export type OnboardingBreezewayState = {
     status: string | null;
     stage: string | null;
     scheduled_date: string | null;
-    assignees: unknown;
+    assignee_names: string;
     finished_at: string | null;
     last_synced_at: string | null;
   } | null;
@@ -98,7 +98,7 @@ export const onboardingBreezewayStateFn = createServerFn({ method: "POST" })
     if (!task.data) throw new Error("That task is not available.");
     const sentTaskId = (outbound.data?.[0]?.breezeway_task_id as number | null) ?? null;
     const bzId = (link.data?.breezeway_task_id as number | null) ?? sentTaskId;
-    let mirror = null;
+    let mirror: OnboardingBreezewayState["mirror"] = null;
     let comments: OnboardingBreezewayState["comments"] = [];
     let photos: OnboardingBreezewayState["photos"] = [];
     if (bzId) {
@@ -112,7 +112,21 @@ export const onboardingBreezewayStateFn = createServerFn({ method: "POST" })
           .eq("breezeway_task_id", bzId).order("breezeway_created_at", { ascending: false }).limit(6),
       ]);
       for (const r of [wo, c, p]) if (r.error) throw new Error(r.error.message);
-      mirror = wo.data ?? null;
+      mirror = wo.data
+        ? {
+            name: wo.data.name ?? null,
+            status: wo.data.status ?? null,
+            stage: wo.data.stage ?? null,
+            scheduled_date: wo.data.scheduled_date ?? null,
+            assignee_names: (Array.isArray(wo.data.assignees) ? wo.data.assignees : [])
+              .map((a: { name?: string; first_name?: string; last_name?: string }) =>
+                a?.name || [a?.first_name, a?.last_name].filter(Boolean).join(" "))
+              .filter(Boolean)
+              .join(", "),
+            finished_at: wo.data.finished_at ?? null,
+            last_synced_at: wo.data.last_synced_at ?? null,
+          }
+        : null;
       comments = c.data ?? [];
       photos = p.data ?? [];
     }
@@ -161,7 +175,8 @@ export const saveOnboardingBreezewayFn = createServerFn({ method: "POST" })
       _breezeway_ref: data.breezewayRef,
     });
     if (error) throw new Error(error.message);
-    return out as Record<string, unknown>;
+    const row = (out ?? {}) as { breezeway_task_id?: number | null };
+    return { ok: true as const, breezewayTaskId: row.breezeway_task_id ?? null };
   });
 
 /** Send to Breezeway: built, behind onboarding_breezeway_send (OFF). Refuses before any write while off. */
