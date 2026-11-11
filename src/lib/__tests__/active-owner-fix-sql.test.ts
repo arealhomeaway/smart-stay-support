@@ -93,16 +93,17 @@ const card = (code: string, o: { stage?: string; lock?: string; links?: string[]
   db.query(`INSERT INTO public.ao_library_cards(code, title, lane, stage_window, status, lock_rule, linked_template_task_ids, deadline_business_days, why_text)
     VALUES ($1, 'Card ' || $1, 'critical', $2, 'released', $3, $4::uuid[], 3, 'Why')`,
     [code, o.stage ?? "anytime", o.lock ?? "none", `{${o.links?.join(",") ?? ""}}`]);
-const task = (id: string, home: string, step: string | null, status = "open", extra: Record<string, unknown> = {}) =>
+type TaskExtra = { title?: string; assigned?: string | null; dependency?: string; approval?: boolean };
+const task = (id: string, home: string, step: string | null, status = "open", extra: TaskExtra = {}) =>
   db.query(`INSERT INTO public.onboarding_tasks(id, property_id, title, template_task_id, status, assigned_to, completed_at, completed_by, owner_dependency, requires_owner_approval)
     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-    [id, home, (extra.title as string) ?? `Task ${id.slice(-3)}`, step, status, extra.assigned === undefined ? pm : extra.assigned,
+    [id, home, extra.title ?? `Task ${id.slice(-3)}`, step, status, extra.assigned === undefined ? pm : extra.assigned,
      status === "complete" ? new Date().toISOString() : null, status === "complete" ? pm : null,
      extra.dependency ?? null, extra.approval ?? false]);
 const outcomes = async (home: string) =>
   (await db.query<{ join_outcome: string; c: number }>(
     "SELECT join_outcome, count(*)::int c FROM public.ao_home_plan_cards WHERE property_id=$1 GROUP BY 1", [home])).rows
-    .reduce<Record<string, number>>((m, r) => ({ ...m, [r.join_outcome]: r.c }), {});
+    .reduce<Partial<Record<"open" | "locked" | "already_covered" | "skipped_passed", number>>>((m, r) => ({ ...m, [r.join_outcome]: r.c }), {});
 const pc_ = (home: string, code: string) => one<{ join_outcome: string; unlocked_at: string | null; deadline_at: string | null; owner_review_id: string | null; covered_reason: string | null }>(
   "SELECT pc.* FROM public.ao_home_plan_cards pc JOIN public.ao_library_cards c ON c.id = pc.card_id WHERE pc.property_id=$1 AND c.code=$2", [home, code]);
 
@@ -202,7 +203,7 @@ describe("Active Owner fix, staged SQL on an isolated database", () => {
     expect(rows).toEqual([{ kind: "ao_plan_ready", email_status: "held", title: "Your homeowner plan is ready",
       body: "We added 54 activities to your portal for 1 First St and 2 Second St. Open your portal to see what's next." }]);
     expect(await n("SELECT count(*)::int n FROM public.owner_notifications WHERE program_id=$1 AND email_status <> 'skipped'", [prog2])).toBe(0);
-    const run = (await one<{ r: Record<string, number> }>(`SELECT public.ao_owner_email_run(${central(0, "08:00")}) r`)).r;
+    const run = (await one<{ r: { daily_sent: number; plan_ready_sent: number; plan_ready_waiting: number } }>(`SELECT public.ao_owner_email_run(${central(0, "08:00")}) r`)).r;
     expect(run).toEqual({ plan_ready_sent: 1, plan_ready_waiting: 0, daily_sent: 0 });
     expect(await n("SELECT count(*)::int n FROM public.owner_notifications WHERE email_status='pending'")).toBe(1);
   });
@@ -216,10 +217,10 @@ describe("Active Owner fix, staged SQL on an isolated database", () => {
     expect(held).toBeGreaterThan(1);
     expect(await n("SELECT count(*)::int n FROM public.owner_notifications WHERE program_id=$1 AND kind='review_ready' AND email_status='pending'", [prog1])).toBe(0);
     // Same day as the plan is ready email: the cap holds everything.
-    expect((await one<{ r: Record<string, number> }>(`SELECT public.ao_owner_email_run(${central(0, "09:05")}) r`)).r.daily_sent).toBe(0);
-    expect((await one<{ r: Record<string, number> }>(`SELECT public.ao_owner_email_run(${central(1, "08:55")}) r`)).r.daily_sent).toBe(0);
-    expect((await one<{ r: Record<string, number> }>(`SELECT public.ao_owner_email_run(${central(1, "09:00")}) r`)).r.daily_sent).toBe(1);
-    expect((await one<{ r: Record<string, number> }>(`SELECT public.ao_owner_email_run(${central(1, "09:10")}) r`)).r.daily_sent).toBe(0);
+    expect((await one<{ r: { daily_sent: number; plan_ready_sent: number; plan_ready_waiting: number } }>(`SELECT public.ao_owner_email_run(${central(0, "09:05")}) r`)).r.daily_sent).toBe(0);
+    expect((await one<{ r: { daily_sent: number; plan_ready_sent: number; plan_ready_waiting: number } }>(`SELECT public.ao_owner_email_run(${central(1, "08:55")}) r`)).r.daily_sent).toBe(0);
+    expect((await one<{ r: { daily_sent: number; plan_ready_sent: number; plan_ready_waiting: number } }>(`SELECT public.ao_owner_email_run(${central(1, "09:00")}) r`)).r.daily_sent).toBe(1);
+    expect((await one<{ r: { daily_sent: number; plan_ready_sent: number; plan_ready_waiting: number } }>(`SELECT public.ao_owner_email_run(${central(1, "09:10")}) r`)).r.daily_sent).toBe(0);
     const daily = await one<{ title: string; body: string; email_status: string }>("SELECT * FROM public.owner_notifications WHERE kind='ao_daily'");
     expect(daily.title).toBe("Your homeowner plan today");
     expect(daily.email_status).toBe("pending");

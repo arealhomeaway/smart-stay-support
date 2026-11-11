@@ -33,7 +33,7 @@ export function OwnerItemConversation({
   const [text, setText] = useState("");
   const done = () => { setText(""); void qc.invalidateQueries({ queryKey: key }); onChanged?.(); };
   const send = useMutation({
-    mutationFn: () => (side === "owner" ? replyToOwnerItem(reviewId, text.trim()) : manageOwnerItem(reviewId, "reply", text.trim())),
+    mutationFn: async () => { if (side === "owner") await replyToOwnerItem(reviewId, text.trim()); else await manageOwnerItem(reviewId, "reply", text.trim()); },
     onSuccess: () => { toast.success(side === "owner" ? "Sent to your ARHA team" : "Reply sent"); done(); },
     onError: (e: Error) => toast.error(e.message),
   });
