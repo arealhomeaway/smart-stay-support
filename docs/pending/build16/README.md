@@ -1,5 +1,7 @@
 # Build 16 database change (Emily, Nov 11)
 
+Applied as migration 0331 on Nov 11 after the cancelled practice passed.
+
 Files
 - `01_build16.sql`: the change (additive).
 - `01_build16.undo.sql`: puts back the live rules exactly.
