@@ -105,7 +105,7 @@ export function previewSummary(outcomes: Record<string, number> | undefined): st
 
 /** Homeowner portal view of one plan card. Locked cards are visible but never actionable. */
 export type PortalPlanCard = {
-  plan_card_id: string; title: string; opens_text: string; what_text: string; output_fields: unknown;
+  plan_card_id: string; property_id?: string | null; title: string; opens_text: string; what_text: string; output_fields: unknown;
   join_outcome: string; unlocked_at: string | null; expired_at: string | null; owner_completed_at: string | null;
 };
 export type PortalView =
