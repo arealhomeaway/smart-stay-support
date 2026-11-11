@@ -116,8 +116,5 @@ describe("ticket 67: Breezeway work orders on onboarding steps", () => {
     expect(sendToBreezewayRefusal({ switchOn: true, homeEligible: true, tentativeDate: "2026-11-12", alreadyLinked: false })).toBeNull();
     expect(onboardingSendRequestKey("abc")).toBe(onboardingSendRequestKey("abc"));
   });
-  it("the shared outbound path refuses onboarding sends while the switch is off", () => {
-    const server = readFileSync("src/lib/breezeway-outbound.server.ts", "utf8");
-    expect(server).toContain('input.sourceType === "onboarding_task" && !(await onboardingSendOn())');
-  });
+  // The send refusal itself is exercised against the real send path in breezeway-outbound.test.ts.
 });
