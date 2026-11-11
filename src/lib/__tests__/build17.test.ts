@@ -85,3 +85,28 @@ describe("Build 17 finding 8: an undated OwnerRez review is historical, never to
     expect(src).toContain("...reviewDateFields(r.date, r.stay_end ?? null, new Date())");
   });
 });
+
+describe("Build 17 finding 9: Project Team screen and database apply one rule", () => {
+  const fn = read("src/lib/onboarding-team.functions.ts");
+  const panel = read("src/components/onboarding/ProjectTeamPanel.tsx");
+  it("the screen asks the database's own rule, not a separate one", () => {
+    expect(fn).toContain('rpc("can_manage_project_team"');
+  });
+  it("saved shows only when the person actually changed; no change says so", () => {
+    expect(panel).toContain("r.changed");
+    expect(panel).toContain(TEAM_NO_CHANGE);
+  });
+  it("a refusal is a plain message, never a database error", async () => {
+    const { projectTeamRefusal } = await import("@/lib/onboarding-team-rules");
+    expect(projectTeamRefusal('permission denied for table onboarding_projects')).toBe(
+      "You cannot change this home's Project Team. Ask the Director of Onboarding.",
+    );
+    expect(projectTeamRefusal("Only the Onboarding Director or leadership can change the Onboarding team.")).toBe(
+      "Only the Onboarding Director or leadership can change the Onboarding team.",
+    );
+  });
+  it("a new Project Manager takes the home's unfinished Project Manager work", () => {
+    expect(fn).toContain('data.roleCode === "onboarding_project_manager" ? true : data.reassignPending');
+  });
+});
+const TEAM_NO_CHANGE = "No change: that person already holds this role.";
