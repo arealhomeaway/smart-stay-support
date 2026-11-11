@@ -218,8 +218,7 @@ function PropertyWorkspace() {
     staleTime: 60 * 1000,
     queryFn: async () => {
       const { supabase } = await import("@/integrations/supabase/client");
-      const rpc = supabase.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
-      const { data, error } = await rpc("can_bulk_edit_home_tasks", { _property_id: propertyId });
+      const { data, error } = await supabase.rpc("can_bulk_edit_home_tasks", { _property_id: propertyId });
       return !error && data === true;
     },
   });
