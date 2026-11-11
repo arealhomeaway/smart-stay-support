@@ -1,4 +1,5 @@
 import { BRIDGE_COPY } from "./breezeway-bridge";
+import { ONBOARDING_BREEZEWAY_SEND_FLAG, isBreezewayWorkOrderStep } from "@/lib/onboarding-breezeway";
 import { formatPropertyLabel } from "@/lib/property-label";
 import { MAINTENANCE_POLICY_VERSION } from "@/lib/maintenance-policy";
 /**
@@ -135,7 +136,7 @@ async function outboundEnabled() {
 /** Onboarding Work order sends: their own switch, unknown or missing means OFF. */
 async function onboardingSendOn() {
   const db = await admin();
-  const { data } = await db.from("feature_flags").select("enabled").eq("key", "onboarding_breezeway_send").maybeSingle();
+  const { data } = await db.from("feature_flags").select("enabled").eq("key", ONBOARDING_BREEZEWAY_SEND_FLAG).maybeSingle();
   return (data as { enabled?: boolean } | null)?.enabled === true;
 }
 
@@ -345,15 +346,6 @@ export async function createOutboundTask(
   if (!(await outboundEnabled())) {
     return { ok: false, message: "Breezeway outbound task creation is switched off." };
   }
-  // Onboarding Work order tasks have their own switch, off until Emily turns it
-  // on after a verification send (Kati ticket 67). Checked before any write.
-  if (input.sourceType === "onboarding_task" && !(await onboardingSendOn())) {
-    return {
-      ok: false,
-      message: "Sending to Breezeway from onboarding is switched off. Create the work order in Breezeway, then paste its number on the task.",
-    };
-  }
-
   // Guard failures (missing record, demo, archived, no property) are turned
   // into a sanitized refusal — they are never surfaced as thrown errors.
   let resolved: Awaited<ReturnType<typeof resolveSource>>;
@@ -366,6 +358,15 @@ export async function createOutboundTask(
     };
   }
   const { propertyId, defaults } = resolved;
+  // Onboarding "Work order:" tasks have their own switch, off until Emily turns it
+  // on after a verification send (Kati ticket 67). Checked before any write; other
+  // onboarding vendor tasks keep the existing dispatch rules unchanged.
+  if (input.sourceType === "onboarding_task" && isBreezewayWorkOrderStep(defaults.title) && !(await onboardingSendOn())) {
+    return {
+      ok: false,
+      message: "Sending to Breezeway from onboarding is switched off. Create the work order in Breezeway, then paste its number on the task.",
+    };
+  }
   if (!propertyId) return { ok: false, message: "This record has no home." };
   try {
     const { assertPilotHome } = await import("./pilot-dispatch.server");
