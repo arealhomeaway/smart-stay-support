@@ -1043,3 +1043,6 @@ Note: the Phase A batch table lists batches 1 to 144 twice, because the watcher 
 - Silence since the resume: 0 rows in staff notifications, owner notifications, email log, timed alerts, escalations, owner contact alerts and owner alert log; 0 non-comment activity on imported tickets.
 - Anomalies: none.
 - Not done yet (wait for the finish): the full set claim check, totals by Notion status and by tab, counts by team and owner, comments and files versus a Notion reread, the no home list, Money we could still lose, Team Queue and Home counts, and the cancelled practice.
+| 2026-11-11 13:53:05 UTC | closed resumed from the saved cursor (second resume, same go, watch line 2026-11-11 13:52:53.815041+00) | | | | | |
+| 2026-11-11 13:53:15 | 517 | ok | done 3, skipped 0, failed 0 | comments 8, files 0 | total done 1545, cursor saved |  |
+| 2026-11-11 13:53:23 | 518 | ok | done 3, skipped 0, failed 0 | comments 16, files 1 | total done 1548, cursor saved |  |
