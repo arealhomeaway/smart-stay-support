@@ -9,7 +9,7 @@ import { formatPropertyLabel } from "@/lib/property-label";
  */
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,7 +50,6 @@ import {
 import {
   LEAD_OUTCOME_LABELS,
   OFFER_OUTCOME_LABELS,
-  finderSearchFromLead,
   guestsPetsLabel,
   leadFollowUpDate,
   leadOutcome,
@@ -95,7 +94,6 @@ export function LeadDrawer({
 }) {
   const qc = useQueryClient();
   const userId = useCurrentUserId();
-  const navigate = useNavigate();
   const decideOffer = useServerFn(decideLeadOffer);
   const saveLeadDetails = useServerFn(updateLeadDetails);
   const [channel, setChannel] = useState<LeadChannel>("email");
@@ -109,7 +107,6 @@ export function LeadDrawer({
   const [followUpOn, setFollowUpOn] = useState("");
   const [declineId, setDeclineId] = useState<string | null>(null);
   const [declineReason, setDeclineReason] = useState("");
-  const [choosePrompt, setChoosePrompt] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const leadId = lead?.id ?? null;
@@ -202,7 +199,6 @@ export function LeadDrawer({
 
   const offers = sortOffers(candidates.data ?? []);
   const hasProperty = offers.length > 0;
-  const waiting = waitingOffer(offers);
 
   async function decide(offerId: string, decision: "declined" | "accepted", reason?: string) {
     setSaving(true);
@@ -535,7 +531,7 @@ export function LeadDrawer({
             {candidates.error ? (
               <p className="text-sm text-muted-foreground">Offers will appear here once the pending lead update is applied.</p>
             ) : offers.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No homes offered yet. Offer homes from Direct Bookings.</p>
+              <p className="text-sm text-muted-foreground">No homes offered yet.</p>
             ) : (
               <ul className="space-y-2">
                 {offers.map((offer) => (
