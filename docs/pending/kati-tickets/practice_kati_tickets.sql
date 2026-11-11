@@ -1,5 +1,5 @@
 -- Practice for Build 15 on the real database, cancelled on purpose at the end (nothing kept).
--- Runs as the Director of Onboarding's own account on 624 Daniel Court.
+-- Runs as the Director of Onboarding's own account on 624 Daniel Court. Ran Nov 10 after 0330.
 DO $$
 DECLARE
   _kati uuid := '40de2f41-5596-4ec1-98d7-29e16549a25f';
@@ -11,12 +11,10 @@ DECLARE
   _owner uuid := (SELECT owner_user_id FROM public.owner_programs WHERE id = '2d05252c-dd0d-4473-adf8-b979fc5b5216');
   _mirror bigint := (SELECT breezeway_task_id FROM public.breezeway_work_orders ORDER BY last_synced_at DESC NULLS LAST LIMIT 1);
   _person bigint := (SELECT breezeway_person_id FROM public.breezeway_people WHERE active AND NOT is_integration_identity ORDER BY first_name LIMIT 1);
-  _out jsonb := '{}'::jsonb; _r jsonb; _e text; _id uuid;
+  _out jsonb := '{}'::jsonb; _r jsonb; _id uuid;
 BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', _kati, 'role', 'authenticated')::text, true);
   EXECUTE 'SET LOCAL ROLE authenticated';
-
-  -- Ticket 65: bulk complete five evidence tasks with one shared note, Done before Resolve.
   _r := public.bulk_complete_onboarding_tasks(_home, _five || _mood, 'Signed copies are in the SharePoint home folder', NULL, NULL, true);
   _out := _out || jsonb_build_object('dry_ready', jsonb_array_length(_r->'ready'), 'dry_held', _r->'held');
   BEGIN PERFORM public.bulk_complete_onboarding_tasks(_home, _five, 'done', NULL, NULL, false);
@@ -28,22 +26,16 @@ BEGIN
   EXECUTE 'RESET ROLE';
   _out := _out || jsonb_build_object('audit', (SELECT count(*) FROM public.audit_log WHERE action = 'onboarding_task_bulk_completed' AND entity_id = ANY(_five)));
   EXECUTE 'SET LOCAL ROLE authenticated';
-
-  -- Ticket 66: the owner review submit on the mood boards task (the canonical prepare step, then
-  -- the in-app routing the server does for an Active Owner home). Nothing is kept or sent.
   _id := public.prepare_onboarding_task_approval(_mood, _home, 'Mood boards v1');
   UPDATE public.approvals SET approver_id = _owner WHERE id = _id AND status = 'pending';
   _out := _out || jsonb_build_object('approval', (SELECT jsonb_build_object('status', a.status, 'routed_to_owner', a.approver_id = _owner,
             'task_status', t.owner_approval_status) FROM public.approvals a JOIN public.onboarding_tasks t ON t.id = a.entity_id WHERE a.id = _id));
-  -- Add a task: the second owner review task by hand, Lead Designer, needs approval, waiting to be sent.
   INSERT INTO public.onboarding_tasks(property_id, stage, title, assigned_seat, due_on, requires_owner_approval,
     owner_approval_status, evidence_required, status, blocks_handoff, created_by, is_demo)
   VALUES (_home, 'Pre-Close', 'Share the floor plans with the owner', 'lead_designer', '2026-11-12', true, 'pending', false, 'open', false, _kati, false)
   RETURNING id INTO _id;
   _out := _out || jsonb_build_object('added_task', (SELECT jsonb_build_object('seat', assigned_seat, 'approval', owner_approval_status,
             'approvals', (SELECT count(*) FROM public.approvals WHERE entity_id = _id)) FROM public.onboarding_tasks WHERE id = _id));
-
-  -- Ticket 67: the Breezeway section on Work order: Pick up keys.
   _r := public.save_onboarding_task_breezeway(_keys, '2026-11-12', 'unassigned', NULL, '');
   _out := _out || jsonb_build_object('bz_unassigned', _r->>'assignee_choice');
   _r := public.save_onboarding_task_breezeway(_keys, '2026-11-12', 'person', _person, 'https://app.breezeway.io/task/' || _mirror);
