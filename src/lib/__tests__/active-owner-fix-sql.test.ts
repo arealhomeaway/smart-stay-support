@@ -304,6 +304,7 @@ describe("Active Owner fix, staged SQL on an isolated database", () => {
   });
 
   it("Fix 6: A56 is retired, kept, with history", async () => {
+    await as(null);
     await db.exec(read(`${DIR}/03_retire_a56.sql`));
     const c = await one<{ status: string; retired_at: string | null }>("SELECT * FROM public.ao_library_cards WHERE code='A56'");
     expect(c.status).toBe("retired");
@@ -378,6 +379,7 @@ describe("Active Owner fix, staged SQL on an isolated database", () => {
   });
   it("the undo files put the switch, preview and decision rule back exactly and remove everything new", async () => {
     const def = async (f: string) => (await one<{ d: string }>(`SELECT pg_get_functiondef('${f}'::regprocedure) d`)).d;
+    await as(null);
     await db.exec(read(`${DIR}/04_active_owner_label.undo.sql`));
     await db.exec(read(`${DIR}/03_retire_a56.undo.sql`));
     await db.exec(read(`${DIR}/02_engine.undo.sql`));
