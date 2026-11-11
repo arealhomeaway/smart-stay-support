@@ -219,8 +219,9 @@ export function TaskDrawer({
     queryFn: () => listFiles({ data: { entityType: "onboarding_task", entityId: task!.id } }),
     enabled: Boolean(task?.id),
   });
-  const fileCount = ((stepFiles.data ?? []) as { upload_status?: string | null; archived_at?: string | null }[])
-    .filter((f) => f.upload_status === "stored" && !f.archived_at).length;
+  const fileCount = (stepFiles.data?.files ?? []).filter(
+    (f) => f.upload_status === "stored" && !f.archived_at,
+  ).length;
 
   useEffect(() => {
     setEvidence(task?.evidence_note ?? "");
