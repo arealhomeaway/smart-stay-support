@@ -185,7 +185,7 @@ export function onboardingTaskAction(view: TaskView): TaskAction | null {
       fields: [
         {
           name: "evidence",
-          label: "Where the proof is",
+          label: "What proves this is done",
           type: "longtext",
           required: true,
           minLength: EVIDENCE_NOTE_MIN,
