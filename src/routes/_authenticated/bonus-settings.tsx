@@ -149,7 +149,7 @@ function PlanForm({ p }: { p: Plan }) {
     <div className="rounded-[14px] border border-border p-4" data-bonus-plan={p.code}>
       <h3 className="font-semibold">{p.name}</h3>
       <p className="text-sm text-muted-foreground">
-        Paid {p.period_kind === "monthly" ? "monthly" : "quarterly"}. Verified by the {p.reviewer_name}. Full period: {dollars(p.amount_goal_met)}, {dollars(p.amount_strong)},{" "}
+        Period: {p.period_kind === "monthly" ? "monthly" : "quarterly"}. Verified by the {p.reviewer_name}. Full period: {dollars(p.amount_goal_met)}, {dollars(p.amount_strong)},{" "}
         {dollars(p.amount_exceeds)}.
       </p>
       <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
