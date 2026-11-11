@@ -16,6 +16,7 @@ import {
   finishBatch,
   leftInGroup,
   parseState,
+  notionSortDirection,
   planTicketWrite,
   requestStop,
   resumeJob,
@@ -119,12 +120,79 @@ describe("stop and resume", () => {
 describe("duplicate guard and reopen protection", () => {
   const mapped = { external_synced_at: "2026-11-01T00:00:00Z" };
   it("one ticket per Notion page ID: new creates, unchanged skips, changed updates", () => {
-    expect(planTicketWrite(null, mapped)).toBe("create");
-    expect(planTicketWrite({ id: "t", external_status: "In progress", external_synced_at: "2026-11-01T00:00:00+00:00" }, mapped)).toBe("unchanged");
-    expect(planTicketWrite({ id: "t", external_status: "In progress", external_synced_at: "2026-10-01T00:00:00Z" }, mapped)).toBe("update");
+    expect(planTicketWrite(null, mapped, "recent_open")).toBe("create");
+    expect(planTicketWrite({ id: "t", external_status: "In progress", external_synced_at: "2026-11-01T00:00:00+00:00" }, mapped, "recent_open")).toBe("unchanged");
+    expect(planTicketWrite({ id: "t", external_status: "In progress", external_synced_at: "2026-10-01T00:00:00Z" }, mapped, "recent_open")).toBe("update");
   });
   it("a ticket reopened or taken in Resolve is never written again", () => {
-    expect(planTicketWrite({ id: "t", external_status: "reopened_in_resolve", external_synced_at: "2026-10-01T00:00:00Z" }, mapped)).toBe("keep_live");
+    for (const g of ["recent_open", "older_open", "closed"] as const)
+      expect(planTicketWrite({ id: "t", external_status: "reopened_in_resolve", external_synced_at: "2026-10-01T00:00:00Z" }, mapped, g)).toBe("keep_live");
+  });
+});
+
+describe("history runs never rewrite a ticket already in Resolve (Emily, Nov 11)", () => {
+  // The six tickets from the first run that were marked Done in Notion on Nov 9 and 10.
+  // They are open and assigned in Resolve and must stay exactly as they are.
+  const firstRunSync = "2026-11-09T16:55:31Z";
+  const sixRefs = [1457, 1492, 1495, 1498, 1500, 1515];
+  const doneInNotion = { external_synced_at: "2026-11-10T21:00:00Z" };
+  const existing = (ref: number) => ({ id: `ticket-${ref}`, external_status: "In progress", external_synced_at: firstRunSync });
+
+  it("the closed history run keeps each of the six exactly as it is", () => {
+    for (const ref of sixRefs) expect(planTicketWrite(existing(ref), doneInNotion, "closed")).toBe("keep_existing");
+  });
+  it("the older open run keeps an already imported ticket exactly as it is, changed in Notion or not", () => {
+    for (const ref of sixRefs) {
+      expect(planTicketWrite(existing(ref), doneInNotion, "older_open")).toBe("keep_existing");
+      expect(planTicketWrite(existing(ref), { external_synced_at: firstRunSync }, "older_open")).toBe("keep_existing");
+    }
+  });
+  it("only the recent open run may update an imported ticket Notion changed", () => {
+    for (const ref of sixRefs) expect(planTicketWrite(existing(ref), doneInNotion, "recent_open")).toBe("update");
+  });
+  it("a ticket not yet in Resolve is still created by every run", () => {
+    for (const g of ["recent_open", "older_open", "closed"] as const) expect(planTicketWrite(null, doneInNotion, g)).toBe("create");
+  });
+  it("the batch skips a kept ticket and still copies its new Notion comments and files", () => {
+    const src = readFileSync("src/lib/notion-import.functions.ts", "utf8");
+    expect(src).toContain("planTicketWrite(existing, out.ticket, job.group!)");
+    expect(src).toMatch(/plan === "keep_live" \|\| plan === "unchanged" \|\| plan === "keep_existing"\) \{\s*result\.counts\.skipped\+\+;/);
+    expect(src).toMatch(/let ticketId = existing\?\.id \?\? null;[\s\S]*if \(ticketId\) await copyHistory\(/);
+  });
+});
+
+describe("reading order (Emily, Nov 11)", () => {
+  it("closed history reads newest first; every other run reads oldest first", () => {
+    expect(notionSortDirection("closed")).toBe("descending");
+    expect(notionSortDirection("older_open")).toBe("ascending");
+    expect(notionSortDirection("recent_open")).toBe("ascending");
+    expect(notionSortDirection(null)).toBe("ascending");
+  });
+  it("the Notion query sends that order and still only reads", async () => {
+    const realFetch = globalThis.fetch;
+    const saved = { l: process.env["LOVABLE_API_KEY"], n: process.env["NOTION_API_KEY"] };
+    process.env["LOVABLE_API_KEY"] = "test-lovable";
+    process.env["NOTION_API_KEY"] = "test-notion";
+    const sent: { url: string; method: string; body: { sorts: { timestamp: string; direction: string }[] } }[] = [];
+    globalThis.fetch = (async (url: string, init: RequestInit) => {
+      sent.push({ url, method: String(init.method), body: JSON.parse(String(init.body)) });
+      return new Response(JSON.stringify({ results: [], has_more: false, next_cursor: null }), { status: 200 });
+    }) as unknown as typeof fetch;
+    try {
+      const { queryTicketPage } = await import("@/lib/notion-import/notion.server");
+      for (const group of ["closed", "older_open", "recent_open", null] as const)
+        await queryTicketPage({ cursor: null, pageSize: 3, group, cutoffIso: "2026-10-12T00:00:00Z" });
+    } finally {
+      globalThis.fetch = realFetch;
+      process.env["LOVABLE_API_KEY"] = saved.l;
+      process.env["NOTION_API_KEY"] = saved.n;
+    }
+    expect(sent.map((r) => r.body.sorts[0]!.direction)).toEqual(["descending", "ascending", "ascending", "ascending"]);
+    for (const r of sent) {
+      expect(r.method).toBe("POST");
+      expect(r.url).toMatch(/\/data_sources\/[^/]+\/query$/);
+      expect(r.body.sorts[0]!.timestamp).toBe("created_time");
+    }
   });
 });
 
