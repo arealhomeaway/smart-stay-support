@@ -110,3 +110,22 @@ describe("Build 17 finding 9: Project Team screen and database apply one rule", 
   });
 });
 const TEAM_NO_CHANGE = "No change: that person already holds this role.";
+
+describe("Build 17 finding 1: a refused bulk Save says why in plain words", () => {
+  it("a home the person cannot edit is not called an unstarted project", async () => {
+    const { bulkEditRefusal } = await import("@/lib/bulk-edit-refusal");
+    expect(bulkEditRefusal("Start the onboarding project before editing its Tasks.", true)).toBe(
+      "Only this home's Project Manager, the Director of Onboarding or a Supervisor can change these Tasks.",
+    );
+    expect(bulkEditRefusal("Start the onboarding project before editing its Tasks.", false)).toBe(
+      "Start the onboarding project before editing its Tasks.",
+    );
+    expect(bulkEditRefusal("permission denied for table onboarding_tasks", true)).toBe(
+      "Only this home's Project Manager, the Director of Onboarding or a Supervisor can change these Tasks.",
+    );
+  });
+  it("the home bulk Save uses the plain refusal", () => {
+    const src = read("src/lib/onboarding.functions.ts");
+    expect(src).toContain("bulkEditRefusal(result.error.message");
+  });
+});
