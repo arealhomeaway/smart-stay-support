@@ -241,7 +241,7 @@ Facts checked: both homes are real (not demo), both are in one live program (sta
 - Open cards start their clock at once: deadline at 5 PM Central after the card's business or calendar days. Cards that are not flexible also get one reminder (5 PM, one business day before) and a cutoff (9 AM, business days after the deadline), after which ARHA takes it over.
 - Locked cards open by themselves when the linked onboarding Task is completed.
 - **Email: yes.** Every open card's owner item is created waiting on the owner, and the trigger `notify_owner_of_review` then queues one email per item when `notify_email` is on. The automation does not use the batch summary. The five-minute job sends one email per row (`L/owner-notify.server.ts:100-140`). The reminder step in `ao_process_clocks` also queues owner emails. The `owner_alerts` switch does not stop any of this.
-- Turning it off stops the clocks; Not verified whether it removes cards already shown.
+- What turning it off does to cards and clocks already started: Not verified.
 
 ### 4c. What each home would get if staff turned it on today (simulated read only, not done)
 Of 55 released cards: **27 open, 11 locked, 17 skipped (stage passed), 0 already covered.** No card's linked step matched these homes' Tasks, so locked cards would stay locked until someone uses Unlock now. The same result applies to both homes, but only 9211 Fitzgerald Dr can actually be turned on.
