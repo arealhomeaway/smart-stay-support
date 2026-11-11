@@ -68,7 +68,9 @@ export function SendToHomeownerDialog({
       send({ data: input }),
     onSuccess: (result) => {
       toast.success(
-        result.channel === "email"
+        "completed" in result && result.completed
+          ? "Sent: it is in the homeowner's portal and this task is complete. Their answer comes back to you there."
+          : result.channel === "email"
           ? "Sent: the homeowner received a Resolve email."
           : result.published
             ? "Sent: your instructions are in the homeowner's portal and they can respond."
