@@ -13,8 +13,6 @@ DECLARE
   _person bigint := (SELECT breezeway_person_id FROM public.breezeway_people WHERE active AND NOT is_integration_identity ORDER BY first_name LIMIT 1);
   _out jsonb := '{}'::jsonb; _r jsonb; _e text; _id uuid;
 BEGIN
-  -- Plan version 5, staged file, run inside this cancelled practice only.
-  EXECUTE pg_read_file('/dev/null');
   PERFORM set_config('request.jwt.claims', json_build_object('sub', _kati, 'role', 'authenticated')::text, true);
   EXECUTE 'SET LOCAL ROLE authenticated';
 
