@@ -345,13 +345,16 @@ export const readHandoffV2 = createServerFn({ method: "POST" })
     const duplicates = await rpc("handoff_duplicate_task_ids", {_property_id:data.propertyId});
     if(duplicates.error && !["PGRST202","42883"].includes(duplicates.error.code??"")) throw new Error(duplicates.error.message);
     const excluded = new Set(duplicates.data??[]);
+    // Staged file 06: an Admin marks ready only once the database allows it (missing function = not yet).
+    const adminChecks = isAdmin ? await (sb.rpc as unknown as (name: string) => Promise<{ data: boolean | null; error: { message: string } | null }>)("admin_passes_role_checks") : null;
+    const adminChecksOn = adminChecks?.data === true;
     const requirements = (blockers.data??[]).filter(t=>!excluded.has(t.id));
     return {
       project: p,
       requirements,
       blockers: requirements.filter((t) => !["complete", "done"].includes(t.status)),
-      // Register O4 (Build 9): only the Director of Onboarding marks ready; perform_handoff_step checks the same.
-      canMarkReady: canMarkHomeReady(context.userId, holder("onboarding_director")),
+      // Register O4 as changed Nov 11: the Director of Onboarding or an Admin marks ready; perform_handoff_step checks the same.
+      canMarkReady: canMarkHomeReady(context.userId, holder("onboarding_director"), isAdmin, adminChecksOn),
       canAccept: canAcceptHandoff(context.userId, holder("director_ops"), isAdmin, cover.data ?? []),
     };
   });
