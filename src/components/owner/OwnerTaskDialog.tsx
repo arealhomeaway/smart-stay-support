@@ -215,11 +215,12 @@ export function OwnerTaskDialog({
         <PanelSection label="What we're asking">
           <div className="space-y-2">
             {details.question ? <p className="whitespace-pre-wrap">{linkifyText(details.question)}</p> : null}
-            {action?.detail ? <p className="whitespace-pre-wrap text-muted-foreground">{linkifyText(action.detail)}</p> : null}
+            {action?.detail && !sameText(action.detail, details.question) ? <p className="whitespace-pre-wrap text-muted-foreground">{linkifyText(action.detail)}</p> : null}
           </div>
         </PanelSection>
       ) : null}
-      {details.recommendation ? (
+      {/* Fix 23: "Our recommendation" only when it differs from what we're asking. */}
+      {details.recommendation && !sameText(details.recommendation, details.question) && !sameText(details.recommendation, action?.detail) ? (
         <PanelSection label="Our recommendation"><p className="whitespace-pre-wrap">{linkifyText(details.recommendation)}</p></PanelSection>
       ) : null}
       {details.guidance ? <p className="text-sm text-muted-foreground">{details.guidance}</p> : null}
@@ -285,4 +286,10 @@ export function OwnerTaskDialog({
 /** Deadline text shown next to a task row, matching the dialog. */
 export function taskDeadlineLabel(respondBy: string | null) {
   return respondBy ? `Please respond by ${usCalendarDate(respondBy)}` : "No due date";
+}
+
+/** Fix 23: the same words (ignoring spaces and case) are shown once. */
+export function sameText(a: string | null | undefined, b: string | null | undefined): boolean {
+  const n = (v: string | null | undefined) => (v ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+  return Boolean(n(a)) && n(a) === n(b);
 }
