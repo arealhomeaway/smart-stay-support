@@ -69,6 +69,9 @@ import {
 } from "@/lib/onboarding-work-views";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { PropertyWorkQueue } from "@/components/onboarding/PropertyWorkQueue";
+import { PlanCatchUpBar, usePlanCatchUp } from "@/components/onboarding/PlanCatchUp";
+import { planCatchUpViewerFn } from "@/lib/plan-catch-up.functions";
+import { canUseCatchUp, type CatchUpTask, type CatchUpViewer } from "@/lib/plan-catch-up";
 import { PhotoStrip } from "@/components/onboarding/PhotoStrip";
 import { ProjectHistory } from "@/components/onboarding/ProjectHistory";
 import { buildReleaseContext, deriveLifecycle, handoffReadiness } from "@/lib/onboarding-state";
@@ -679,6 +682,21 @@ function PropertyWorkspace() {
               />
             </div>
           </details>
+        {catchUpOn ? (
+            <>
+              {catchUp.selected.size > 0 ? <div className="h-28" aria-hidden="true" /> : null}
+              <PlanCatchUpBar
+                propertyId={current.id}
+                homeName={formatPropertyLabel(current).primary}
+                tasks={tasks as never}
+                people={data.people}
+                selection={catchUp}
+                canEditSelected={bulkEditQuery.data === true}
+                stages={catchUpStages}
+                onChanged={() => void qc.invalidateQueries()}
+              />
+            </>
+          ) : null}
         </TabsContent>
 
         <TabsContent value="design" className="space-y-4">
