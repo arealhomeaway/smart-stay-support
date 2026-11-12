@@ -384,6 +384,7 @@ function OwnerHubBody({
   const navigate = Route.useNavigate();
   const search = Route.useSearch();
   // Every owner item opens in its own side panel, with the onboarding Task, files and photos behind it.
+  const outsideLines = useOutsideLines(program.id);
   const renderReview = (r: { id: string }, open: boolean, onOpenChange: (next: boolean) => void) => {
     const review = (reviews as Review[]).find((x) => x.id === r.id);
     if (!review) return null;
@@ -401,6 +402,7 @@ function OwnerHubBody({
         photoPropertyId={onboardingQuery.data?.photoCards?.[review.id] ?? null}
         canLogHours={canLogHours}
         logHoursBlockedReason={logHoursBlockedReason}
+        outsideLine={outsideLines.get(`review:${review.id}`) ?? null}
       />
     );
   };
@@ -702,6 +704,8 @@ function ReviewPanel({
   sharedFiles?: OwnerOnboardingFile[];
   /** Set for cards that use the home's marketing photos. */
   photoPropertyId?: string | null;
+  /** Item 2: a Task done outside Resolve; shown instead of the request text. */
+  outsideLine?: string | null;
 }) {
   const setOpen = onOpenChange;
   const [logOpen, setLogOpen] = useState(false);
@@ -756,8 +760,8 @@ function ReviewPanel({
           homes: names,
           sentAt: (review as { available_from?: string | null }).available_from ?? review.updated_at ?? null,
           respondBy: review.respond_by,
-          question: review.business_question ?? responseContext?.description ?? null,
-          recommendation: review.recommendation,
+          question: outsideLine ?? review.business_question ?? responseContext?.description ?? null,
+          recommendation: outsideLine ? null : review.recommendation,
           guidance: review.auto_ticket
             ? ownerTicketResponseGuidance(responseContext?.requestCategory)
             : null,
