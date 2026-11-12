@@ -170,6 +170,12 @@ describe("Active Owner plan starts at enrollment, staged SQL on an isolated data
     const prog = (await one<{ id: string }>("SELECT id FROM public.owner_programs WHERE property_id=$1", [h1])).id;
     await db.query("UPDATE public.owner_programs SET status='draft' WHERE id=$1", [prog]);
     await as(owner1);
+    // Cards: the owner reads the home's plan under the live read policy; both homes' open items wait on the owner.
+    await db.exec("SET ROLE authenticated");
+    const seen = await n("SELECT count(*)::int n FROM public.ao_home_plan_cards WHERE program_id=$1", [prog]);
+    await db.exec("RESET ROLE");
+    expect(seen).toBeGreaterThan(0);
+    expect(await n("SELECT count(*)::int n FROM public.owner_reviews WHERE program_id=$1 AND status='awaiting_owner'", [prog])).toBe(4);
     expect((await one<{ e: { eligible: boolean } }>("SELECT public.owner_hours_eligibility($1) e", [prog])).e).toEqual({ eligible: true });
     expect((await one<{ id: string }>("SELECT (private.lock_owner_time_program($1, $2, false, true)).id", [prog, owner1])).id).toBe(prog);
     for (const s of ["waiting_for_closing", "ready_for_onboarding", "active", "target_reached"]) {
