@@ -70,7 +70,7 @@ import {
 } from "@/lib/email-composer.functions";
 import { clearDraft, loadDraft, saveDraft } from "@/lib/email-draft-store";
 import { NO_HOMEOWNER_EMAIL, checkedCc, suggestTemplateId } from "@/lib/task-email";
-import { emptyBrackets, fillBrackets } from "@/lib/onboarding-task-kinds";
+import { bracketSegments, emptyBrackets, fillBrackets } from "@/lib/onboarding-task-kinds";
 
 type Props = {
   context: ComposerContext;
@@ -90,6 +90,10 @@ type Props = {
   onSent?: (info: { subject: string; to: string }) => void;
   /** A typed-in recipient, e.g. a vendor's email on a Vendor request Task. */
   initialTo?: string | null;
+  /** Extra fill-ins for this send, e.g. the vendor's name and the home's market (item 4). */
+  extraMergeValues?: Record<string, string>;
+  /** Vendor or team request: the vendor this goes to, so history logs a vendor request. */
+  vendorOrgId?: string | null;
   /** Trigger style. */
   variant?: "button" | "primary";
 };
@@ -118,6 +122,8 @@ export function EmailComposer({
   onSent,
   variant = "button",
   initialTo = null,
+  extraMergeValues,
+  vendorOrgId = null,
 }: Props) {
   const [open, setOpen] = useState(false);
 
@@ -138,6 +144,8 @@ export function EmailComposer({
             presetTemplateId={presetTemplateId ?? null}
             bracketFillIns={Boolean(bracketFillIns)}
             initialTo={initialTo}
+            {...(extraMergeValues ? { extraMergeValues } : {})}
+            vendorOrgId={vendorOrgId}
             onSent={(info) => {
               onSent?.(info);
               setOpen(false);
@@ -158,6 +166,8 @@ function ComposerBody({
   bracketFillIns = false,
   onSent,
   initialTo = null,
+  extraMergeValues,
+  vendorOrgId = null,
 }: {
   context: ComposerContext;
   recordId: string;
@@ -167,6 +177,8 @@ function ComposerBody({
   bracketFillIns?: boolean;
   onSent?: (info: { subject: string; to: string }) => void;
   initialTo?: string | null;
+  extraMergeValues?: Record<string, string>;
+  vendorOrgId?: string | null;
 }) {
   const queryClient = useQueryClient();
   const loadContext = useServerFn(getComposerContext);
@@ -192,7 +204,12 @@ function ComposerBody({
 
   const recipients = ctx.data?.recipients ?? [];
   const templates = (ctx.data?.templates ?? []) as TemplateRow[];
-  const mergeValues = ctx.data?.mergeValues ?? {};
+  const extraKey = JSON.stringify(extraMergeValues ?? {});
+  const mergeValues = useMemo(
+    () => ({ ...(ctx.data?.mergeValues ?? {}), ...(extraMergeValues ?? {}) }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [ctx.data?.mergeValues, extraKey],
+  );
 
   const [recipientKey, setRecipientKey] = useState<string>(initialTo ? CUSTOM : "");
   const [customTo, setCustomTo] = useState(initialTo ?? "");
@@ -513,6 +530,7 @@ function ComposerBody({
           attachments,
           scheduledFor: when ? when.toISOString() : null,
           scheduledTimeZone: when ? timeZone : null,
+          ...(vendorOrgId ? { vendorOrgId } : {}),
         },
       });
     },
@@ -758,14 +776,18 @@ function ComposerBody({
 
           <div className="grid gap-2">
             <Label htmlFor="composer-subject">Subject</Label>
-            <Input
-              id="composer-subject"
-              ref={subjectRef}
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              aria-invalid={Boolean(fieldProblems.subject)}
-              aria-describedby={fieldProblems.subject ? "composer-subject-error" : undefined}
-            />
+            <BracketHighlight text={subject} on={bracketFillIns} single>
+              <Input
+                id="composer-subject"
+                ref={subjectRef}
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                onScroll={syncScroll}
+                aria-invalid={Boolean(fieldProblems.subject) || (bracketFillIns && emptyBrackets(subject).length > 0)}
+                aria-describedby={fieldProblems.subject ? "composer-subject-error" : undefined}
+                className={bracketFillIns ? "relative bg-transparent" : undefined}
+              />
+            </BracketHighlight>
             {fieldProblems.subject ? (
               <p id="composer-subject-error" role="alert" className="text-sm text-destructive">
                 {fieldProblems.subject}
@@ -775,16 +797,25 @@ function ComposerBody({
 
           <div className="grid gap-2">
             <Label htmlFor="composer-body">Message</Label>
-            <Textarea
-              id="composer-body"
-              ref={bodyRef}
-              value={body}
-              rows={12}
-              onChange={(e) => setBody(e.target.value)}
-              placeholder="Write the message. Edit anything the template filled in. Every word is yours to change."
-              aria-invalid={Boolean(fieldProblems.body)}
-              aria-describedby={bodyDescribedBy}
-            />
+            <BracketHighlight text={body} on={bracketFillIns}>
+              <Textarea
+                id="composer-body"
+                ref={bodyRef}
+                value={body}
+                rows={12}
+                onChange={(e) => setBody(e.target.value)}
+                onScroll={syncScroll}
+                placeholder="Write the message. Edit anything the template filled in. Every word is yours to change."
+                aria-invalid={Boolean(fieldProblems.body) || (bracketFillIns && emptyBrackets(body).length > 0)}
+                aria-describedby={[bodyDescribedBy, bracketFillIns && emptyFillIns.length ? "composer-fillins" : null].filter(Boolean).join(" ") || undefined}
+                className={bracketFillIns ? "relative bg-transparent" : undefined}
+              />
+            </BracketHighlight>
+            {bracketFillIns && emptyFillIns.length > 0 ? (
+              <p id="composer-fillins" role="status" className="text-sm text-warning-ink">
+                Fill in the highlighted words: {emptyFillIns.join(", ")}
+              </p>
+            ) : null}
             {fieldProblems.body ? (
               <p id="composer-body-error" role="alert" className="text-sm text-destructive">
                 {fieldProblems.body}
@@ -1166,6 +1197,51 @@ function TemplateManager({
           </Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+
+/** Keeps the highlight layer lined up with the text box as it scrolls. */
+function syncScroll(e: React.UIEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  const el = e.currentTarget;
+  const layer = el.parentElement?.querySelector<HTMLElement>("[data-bracket-layer]");
+  if (layer) {
+    layer.scrollTop = el.scrollTop;
+    layer.scrollLeft = el.scrollLeft;
+  }
+}
+
+/**
+ * Item 3 (Nov 12): empty [bracketed] fill-ins are highlighted inside the subject and message
+ * themselves. A layer with the same text sits behind the transparent text box and marks each one.
+ */
+function BracketHighlight({ text, on, single = false, children }: { text: string; on: boolean; single?: boolean; children: React.ReactNode }) {
+  if (!on) return <>{children}</>;
+  const parts = bracketSegments(text);
+  return (
+    <div className="relative">
+      <div
+        data-bracket-layer
+        aria-hidden="true"
+        className={
+          single
+            ? "pointer-events-none absolute inset-0 flex items-center overflow-hidden whitespace-pre rounded-md border border-transparent px-3 py-1 text-base text-transparent md:text-sm"
+            : "pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-words rounded-md border border-transparent px-3 py-2 text-base text-transparent md:text-sm"
+        }
+      >
+        {parts.map((p, i) =>
+          p.empty ? (
+            <mark key={i} data-empty-fill-in className="rounded-sm bg-warning/50 text-transparent ring-1 ring-warning">
+              {p.text}
+            </mark>
+          ) : (
+            <span key={i}>{p.text}</span>
+          ),
+        )}
+        {single ? null : "\n"}
+      </div>
+      {children}
     </div>
   );
 }
