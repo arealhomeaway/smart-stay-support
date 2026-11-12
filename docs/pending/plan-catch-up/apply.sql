@@ -50,7 +50,7 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public'
           coalesce(_project_manager = _actor, false)
           OR coalesce(_assigned_to = _actor, false)
           OR (coalesce(_assigned_seat = ANY (ARRAY['utilities', 'designer', 'lead_designer', 'design_staging', 'staging_team']), false)
-              AND public.holds_functional_role(_actor, _assigned_seat)))), false)
+              AND public.holds_functional_role(_actor, _assigned_seat))))), false)
 $$;
 
 -- A Breezeway work order already went out for this Task.
