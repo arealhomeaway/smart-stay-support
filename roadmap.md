@@ -1,13 +1,13 @@
 # Roadmap — approved build work, NO publish
 
 ## Nov 12 Property page Part 1 fix (onboarding view of one home, no DB change expected, no publish)
-- [ ] 1 Do now selected stage only; late line and all-late view with clear chip; rail note
-- [ ] 2 Owner row one line with legal owner; preferred button and "Call or email"; note removed
-- [ ] 3 Needs attention off header, on Overview with 3 chips and +N more; no weekly chip
-- [ ] 4 Pinned tab bar with only tabs
-- [ ] 5 Owner badge only
-- [ ] 6 Opens on Overview; one Back button after a jump; browser Back
-- [ ] Tests, suite, type check, build, browser check
+- [x] 1 Do now selected stage only; late line and all-late view with clear chip; rail note
+- [x] 2 Owner row one line with legal owner; preferred button and "Call or email"; note removed
+- [x] 3 Needs attention off header, on Overview with 3 chips and +N more; no weekly chip
+- [x] 4 Pinned tab bar with only tabs
+- [x] 5 Owner badge only
+- [x] 6 Opens on Overview; one Back button after a jump; browser Back
+- [x] Tests, suite, type check, build, browser check
 
 ## Nov 12 Property page rebuild Part 1 of 3 (onboarding view of one home; staged SQL in docs/pending/property-page-part1, no apply, no publish)
 - [x] 1.1 Header: photo row, tags + more, facts line, owner row, buttons row, tabs with ?tab=, temporary More tab
