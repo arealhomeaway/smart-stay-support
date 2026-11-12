@@ -88,7 +88,7 @@ export function answerChip(i: Pick<BoardItem, "answerBy" | "newReply">, today: s
   if (by && i.newReply) return { text: `New reply · answer by ${shortDate(by)}`, overdue: false };
   if (by) {
     const left = dayDiff(today, by);
-    return { text: `Due ${shortDate(by)} · ${left === 0 ? "due today" : `${left} day${left === 1 ? "" : "s"} left`}`, overdue: false };
+    return { text: `Due ${shortDate(by)} · ${`${left} day${left === 1 ? "" : "s"} left`}`, overdue: false };
   }
   return { text: "Waiting on you", overdue: false };
 }
