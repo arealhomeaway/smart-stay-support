@@ -1280,11 +1280,25 @@ export async function reopenOnboardingTask(
   await assertCap(supabase, userId, "is_onboarding_staff");
   const { data: task, error: readError } = await supabase
     .from("onboarding_tasks")
-    .select("id, property_id, title, completed_at, status, stage, assigned_to")
+    .select("id, property_id, title, completed_at, completed_by, status, stage, assigned_to")
     .eq("id", input.taskId)
     .single();
   if (readError) throw readError;
-  const access = await onboardingTaskAccess(supabase, userId, task.property_id, task.assigned_to);
+  // Fix 17 (Nov 12): Admin, the Director of Onboarding, or the person who completed the Task
+  // reopens it; the same rule the drawer's Reopen button uses (canReopenCompletedTask).
+  const [admin, director] = await Promise.all([
+    supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
+    supabase.rpc("is_onboarding_director", { _user_id: userId }),
+  ]);
+  if (admin.error || director.error) throw new Error("Could not verify who can reopen this Task.");
+  const { canReopenCompletedTask } = await import("./onboarding-task-kinds");
+  if (
+    !canReopenCompletedTask(
+      { userId, isAdmin: admin.data === true, isOnboardingDirector: director.data === true },
+      (task as { completed_by?: string | null }).completed_by ?? null,
+    )
+  )
+    throw new Error("Only an Admin, the Director of Onboarding or the person who completed this Task can reopen it.");
   if (task.status !== "complete") throw new Error("Only a completed step can be reopened.");
   if (input.reason.trim().length < 3) throw new Error("Record why this step needs a correction.");
   await assertTaskRequirementEditable(supabase, input.taskId);
@@ -1294,7 +1308,6 @@ export async function reopenOnboardingTask(
     .update({ status: "open" })
     .eq("id", input.taskId)
     .eq("status", "complete");
-  if (!access.canManage) update.eq("assigned_to", userId);
   const unchanged = task.completed_at
     ? update.eq("completed_at", task.completed_at)
     : update.is("completed_at", null);
@@ -1311,6 +1324,7 @@ export async function reopenOnboardingTask(
       propertyId: task.property_id,
       kind: "task_reopened",
       summary: `Reopened "${task.title}"`,
+      // Who and when are kept on the event itself (actor, created_at) and in the audit row.
       detail: input.reason,
       priorValue: task.completed_at ? `Completed ${task.completed_at.slice(0, 10)}` : "Complete",
       newValue: "Open",
@@ -1325,7 +1339,8 @@ export async function reopenOnboardingTask(
     entityType: "onboarding_task",
     entityId: input.taskId,
     reason: input.reason,
-  });
+    afterValue: { reopened_at: new Date().toISOString(), reopened_by: userId, completed_by: (task as { completed_by?: string | null }).completed_by ?? null },
+  } as never);
   return { ok: true as const };
 }
 
