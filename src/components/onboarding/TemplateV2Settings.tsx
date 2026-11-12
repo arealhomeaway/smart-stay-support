@@ -629,7 +629,7 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
         })()}
       </details>
 
-      {editing ? <StepDialog step={editing} saving={stepM.isPending || removeM.isPending} onClose={() => setEditing(null)} onSave={(v, showFrom) => stepM.mutate({ d: v, showFrom })} onRemove={() => removeM.mutate(editing.id)} fileSources={{ ready: Boolean(sourcesQ.data?.ready), selected: sourcesQ.data?.byStep[editing.id] ?? [], options: steps.map((s) => ({ id: s.id, title: s.title, stage: s.stage })) }} stageNames={stageNames} /> : null}
+      {editing ? <StepDialog step={editing} saving={stepM.isPending || removeM.isPending} onClose={() => setEditing(null)} onSave={(v, showFrom, kind) => stepM.mutate({ d: v, showFrom, kind })} onRemove={() => removeM.mutate(editing.id)} fileSources={{ ready: Boolean(sourcesQ.data?.ready), selected: sourcesQ.data?.byStep[editing.id] ?? [], options: steps.map((s) => ({ id: s.id, title: s.title, stage: s.stage })) }} stageNames={stageNames} kinds={kindsQ.data ?? { ready: false, byStep: {}, emailTemplates: [], trades: [] }} /> : null}
       {bulkOpen ? (
         <TemplateBulkEditDialog
           templateId={templateId}
