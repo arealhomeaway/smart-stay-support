@@ -38,14 +38,17 @@ import { evidenceSatisfied } from "@/lib/onboarding-evidence";
 import { listAttachmentsFn } from "@/lib/attachments.functions";
 import { bulkUpdateHomeTasksFn, markTaskStartedFn } from "@/lib/onboarding.functions";
 import { SendToHomeownerSection, sendFormId } from "@/components/onboarding/SendToHomeownerDialog";
-import { OpenFormButton, TaskKindMiddle, missingFillFields, outsideEvidence, useFillIn, type OutsideDraft } from "@/components/onboarding/TaskKindMiddle";
+import { ApprovalComplete, OpenFormButton, TaskKindMiddle, missingFillFields, outsideEvidence, useFillIn, type OutsideDraft } from "@/components/onboarding/TaskKindMiddle";
+import { TaskOwnerCompletions } from "@/components/onboarding/OwnerCompletionsReview";
 import { EmailComposer } from "@/components/EmailComposer";
 import { readTaskKindFn } from "@/lib/onboarding-task-kinds.functions";
 import {
+  canReopenCompletedTask,
   completionBlock,
   drawerMiddle,
   effectiveTaskKind,
   firstLink,
+  followUpLinks,
   isOutsideForm,
   isTaskKind,
   mainButtonLabel,
@@ -359,7 +362,11 @@ export function TaskDrawer({
   const dueText = dueChip(task.due_on, task.status, today);
   const hasStartedColumn = "started_at" in task;
   const startedAt = (task as WorkflowTask & { started_at?: string | null }).started_at ?? null;
-  const detailText = stripPlanRoleLine(task.detail);
+  // Fix 19: the stored link names the source Task, so its text line is not repeated.
+  const links = followUpLinks(task as WorkflowTask & { follow_up_of?: string | null }, tasks as (WorkflowTask & { follow_up_of?: string | null })[]);
+  const detailText = links.from
+    ? stripPlanRoleLine(task.detail)?.replace(/^Follow-up from: .*$/m, "").trim() ?? null
+    : stripPlanRoleLine(task.detail);
   const instructions = firstLines(detailText);
   const formLink = isOutsideForm(task.title) ? firstLink(task.detail) : null;
   const fullExtra = Boolean(
@@ -425,7 +432,8 @@ export function TaskDrawer({
     );
   const completerId = (task as WorkflowTask & { completed_by?: string | null }).completed_by ?? null;
   const completedBy = completerId ? people.find((p) => p.id === completerId) : null;
-  const canReopenTop = Boolean(isAdmin || isOnboardingDirector || (userId && completerId === userId));
+  // Fix 17: the same rule the server enforces on Reopen.
+  const canReopenTop = canReopenCompletedTask({ userId, isAdmin: Boolean(isAdmin), isOnboardingDirector: Boolean(isOnboardingDirector) }, completerId);
   const scrollToFiles = () =>
     document.getElementById(`task-files-${task.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
@@ -440,6 +448,31 @@ export function TaskDrawer({
           <p className="text-xs text-muted-foreground">
             {propertyName} · {stageLabel(task.stage)}
           </p>
+          {(links.from || links.followUps.length > 0) && (
+            <div className="space-y-0.5 text-sm">
+              {links.from && (
+                <p>
+                  <span className="text-muted-foreground">Follow-up from </span>
+                  <Link to="/onboarding/$propertyId" params={{ propertyId: task.property_id }} search={{ tab: "plan", task: links.from.id } as never} className="text-primary underline-offset-4 hover:underline">
+                    {links.from.title}
+                  </Link>
+                </p>
+              )}
+              {links.followUps.length > 0 && (
+                <p>
+                  <span className="text-muted-foreground">Follow-ups: </span>
+                  {links.followUps.map((f, i) => (
+                    <span key={f.id}>
+                      {i > 0 ? ", " : ""}
+                      <Link to="/onboarding/$propertyId" params={{ propertyId: task.property_id }} search={{ tab: "plan", task: f.id } as never} className="text-primary underline-offset-4 hover:underline">
+                        {f.title}
+                      </Link>
+                    </span>
+                  ))}
+                </p>
+              )}
+            </div>
+          )}
           {finished && (
             <div className="space-y-2 rounded-md border border-border p-3 text-sm">
               <p>
@@ -580,6 +613,14 @@ export function TaskDrawer({
                 disabled={disabled || Boolean(releaseHint)}
                 onSent={(info) => complete(`Email sent to ${info.to}: ${info.subject}`.slice(0, 1000))}
               />
+            ) : middle === "approval" ? (
+              <ApprovalComplete
+                taskId={task.id}
+                assignedTo={task.assigned_to}
+                disabled={disabled}
+                blockedReason={releaseHint}
+                onApprove={() => complete(evidence.trim() || "Approved")}
+              />
             ) : (
               <ReviewAwareComplete taskId={task.id} disabled={disabled || Boolean(hint)}>
                 <Button
@@ -591,7 +632,7 @@ export function TaskDrawer({
                 </Button>
               </ReviewAwareComplete>
             )}
-            {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+            {hint && middle !== "approval" && <p className="text-xs text-muted-foreground">{hint}</p>}
           </div>
         )
       }
@@ -680,7 +721,12 @@ export function TaskDrawer({
             outside={outside}
             onOutside={setOutside}
             onEmailSent={(info) => complete(`Email sent to ${info.to}: ${info.subject}`.slice(0, 1000))}
-            onVendorRequested={(vendor, info) => onAddObservation(task.id, `Requested ${vendor} by email: ${info.subject}`.slice(0, 1000))}
+            // Item 4: the send itself logs a vendor request in the Task history.
+            onVendorRequested={() => {
+              void qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
+              void router.invalidate();
+            }}
+            assignedTo={task.assigned_to}
           />
         )}
 
@@ -740,6 +786,13 @@ export function TaskDrawer({
               </div>
             )}
           </SendToHomeownerSection>
+          {/* Fixes 11, 12: the owner's completion and its Record review sit beside the conversation. */}
+          <TaskOwnerCompletions taskId={task.id} propertyId={task.property_id} demoMode={Boolean((task as { is_demo?: boolean | null }).is_demo)} />
+          </div>
+        )}
+        {middle !== "send_to_owner" && (
+          <div id={`owner-conversation-${task.id}`}>
+            <TaskOwnerCompletions taskId={task.id} propertyId={task.property_id} demoMode={Boolean((task as { is_demo?: boolean | null }).is_demo)} />
           </div>
         )}
 
@@ -869,26 +922,6 @@ export function TaskDrawer({
               )}
               <TaskStageTrail taskId={task.id} />
             </section>
-
-            {finished && (
-              <section className="space-y-2">
-                <p className="eyebrow">Reopen</p>
-                <Input
-                  value={reopenReason}
-                  onChange={(e) => setReopenReason(e.target.value)}
-                  placeholder="Why is this being reopened?"
-                  className="h-11"
-                />
-                <Button
-                  variant="secondary"
-                  className="min-h-11"
-                  disabled={disabled || reopenReason.trim().length < 3}
-                  onClick={() => onReopen(task.id, reopenReason.trim())}
-                >
-                  Reopen with reason
-                </Button>
-              </section>
-            )}
 
             {onVoid && canManageTask && !finished && (
               <section className="space-y-2">
