@@ -28,7 +28,6 @@ import { portalCardView } from "@/lib/ao-ui";
 import { inQueue } from "@/lib/owner-opportunity-filters";
 import { ownerApprovals } from "@/lib/owner-portal.functions";
 import { ownerOnboardingActions } from "@/lib/owner-onboarding.functions";
-import type { OwnerOnboardingAction } from "@/lib/owner-onboarding.server";
 import { ownerReviewPresentation } from "@/lib/owner-review-presentation";
 import { startOptionalOpportunity, type LibraryTemplate } from "@/lib/opportunity-library.functions";
 import { arhaCover, imageFor } from "@/lib/opportunity-images";
@@ -134,13 +133,6 @@ export function OwnerOpportunityBoard({
 
   const homeName = (id: string) => homes.find((h) => h.propertyId === id)?.address || homes.find((h) => h.propertyId === id)?.name || null;
   const photo = (id: string | null | undefined) => homes.find((h) => h.propertyId === id)?.photoUrl ?? null;
-
-  const actionByReview = useMemo(() => {
-    const m = new Map<string, OwnerOnboardingAction>();
-    for (const a of [...(onboarding.data?.pending ?? []), ...(onboarding.data?.decided ?? [])])
-      if (a.participation?.reviewId) m.set(a.participation.reviewId, a);
-    return m;
-  }, [onboarding.data]);
 
   const items = useMemo<Item[]>(() => {
     const out: Item[] = [];
