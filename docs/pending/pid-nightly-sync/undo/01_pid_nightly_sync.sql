@@ -2,6 +2,7 @@
 -- Values the copy already wrote to homes, source records, links and the code vault stay, as every
 -- other import's do; this removes only the machinery. Turn the switch off before running.
 DROP FUNCTION IF EXISTS public.pid_sync_apply_home(uuid, uuid, text, date, timestamptz, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb);
+DROP FUNCTION IF EXISTS public.pid_sync_credential_links_read();
 DROP FUNCTION IF EXISTS public.pid_sync_changed_since_copy();
 DROP FUNCTION IF EXISTS private.pid_jsonb_set_deep(jsonb, text[], jsonb);
 DROP TABLE IF EXISTS private.pid_sync_credential_links;

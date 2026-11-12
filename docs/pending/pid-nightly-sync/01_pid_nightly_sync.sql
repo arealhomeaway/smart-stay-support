@@ -253,3 +253,12 @@ BEGIN
 END $fn$;
 REVOKE ALL ON FUNCTION public.pid_sync_apply_home(uuid, uuid, text, date, timestamptz, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.pid_sync_apply_home(uuid, uuid, text, date, timestamptz, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb) TO service_role;
+
+-- 8. The code-field links for the run (the private table is not reachable through the Data API).
+CREATE OR REPLACE FUNCTION public.pid_sync_credential_links_read()
+RETURNS TABLE (property_id uuid, pid_field text, credential_id uuid)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, private AS $fn$
+  SELECT l.property_id, l.pid_field, l.credential_id FROM private.pid_sync_credential_links l
+$fn$;
+REVOKE ALL ON FUNCTION public.pid_sync_credential_links_read() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.pid_sync_credential_links_read() TO service_role;
