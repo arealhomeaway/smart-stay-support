@@ -5,10 +5,10 @@
 - [ ] Apply apply.sql — waits on approval
 
 ## Nov 12 PID nightly sync (built OFF, staged SQL, no apply, no publish)
-- [ ] 1 Nightly 2 AM Central job behind pid_nightly_sync (default off)
-- [ ] 2 Provenance per write, run summary + review list on Integrations
-- [ ] 3 One transaction per home, errors shown
-- [ ] 4 From the PID section for unmapped fields
+- [x] 1 Nightly 2 AM Central job behind pid_nightly_sync (default off)
+- [x] 2 Provenance per write, run summary + review list on Integrations
+- [x] 3 One transaction per home, errors shown
+- [x] 4 From the PID section for unmapped fields
 - [ ] Tests (overwrite, blank, credential, per-home transaction), suite, typecheck, build
 
 ## Nov 12 follow-up fixes (Task drawer only, no publish)
