@@ -11,7 +11,9 @@ import { CREDENTIAL_FIELDS } from "./plan";
 const SHOWN_AS_ADDRESS = new Set(["Property", "City", "State", "Zip"]);
 const NEVER_TYPES = new Set(["formula", "button"]);
 
-const profileLabels = () => new Set(HOME_PROFILE_SECTIONS.flatMap((s) => s.items.map((i) => i.label.trim())));
+/** Labels that show a value on the page. A linked-record row there never shows one, so it counts as no place. */
+const profileLabels = () =>
+  new Set(HOME_PROFILE_SECTIONS.flatMap((s) => s.items.filter((i) => i.src.kind !== "relation").map((i) => i.label.trim())));
 
 /** PID fields (name → Notion type) that get a row in From the PID, in name order. */
 export function pidExtraFields(fieldTypes: Record<string, string>): string[] {

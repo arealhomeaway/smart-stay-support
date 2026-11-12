@@ -142,6 +142,8 @@ describe("From the PID fields", () => {
   it("lists PID fields with no place on the page; formulas and buttons stay out", () => {
     const f = pidExtraFields({ Owner: "relation", "Base Price": "number", "Home ID": "formula", "Archive this Property": "button", "Property Nickname": "rich_text", City: "rich_text", "Front Photo": "files", "Garage Remote Photo": "files" });
     expect(f).toEqual(["Base Price", "Garage Remote Photo", "Owner"]);
+    // The page's linked inspection rows never show a value, so their PID titles show here.
+    expect(pidExtraFields({ "Inspection Requests": "relation", "Home Inspection Schedule": "relation" })).toEqual(["Home Inspection Schedule", "Inspection Requests"]);
   });
   it("shows linked records by title and photo fields by count", () => {
     const titles = new Map([["abc123", "Jane Owner"]]);
