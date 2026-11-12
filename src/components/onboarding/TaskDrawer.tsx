@@ -1,24 +1,59 @@
 /**
- * Task detail drawer — the operational intelligence a plain task list does not give us.
+ * Task drawer: the same top and bottom on every onboarding Task; only the middle
+ * changes with the kind of Task (ordinary, work order, goes to the homeowner).
+ * Everything else folds under Details.
  *
- * Every field shown already exists on `onboarding_tasks` or the canonical
- * template. The drawer never invents state: it explains what Resolve already
- * decided (release conditions, automatic due dates, evidence gates, owner
- * approvals, Breezeway linkage) and routes edits through the same server
- * functions the previous UI used.
+ * Presentation only. Every effect routes through the same server functions the
+ * previous drawer used, so the release, evidence, approval, Breezeway and owner
+ * item rules stay the single authority.
  */
-
 import { OpenPhotosFolderButton } from "@/components/property/MarketingPhotosButtons";
 import { isPhotoStep } from "@/lib/marketing-photos";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "@tanstack/react-router";
+import { Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
 import { takeOnboardingTask } from "@/lib/onboarding-team.functions";
+import { TaskWorkspace } from "@/components/ui/workspace";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Chip } from "@/components/ui/page";
+import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { OwnerParticipationOffer } from "@/components/OwnerParticipationOffer";
+import { AttachmentsPanel } from "@/components/AttachmentsPanel";
+import { LinkedStepFiles } from "@/components/onboarding/LinkedStepFiles";
+import { TaskStageTrail } from "@/components/onboarding/TaskStageTrail";
+import { TaskTeamComments } from "@/components/onboarding/TaskTeamComments";
+import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
+import { BreezewayHomeLink, OnboardingBreezewaySection } from "@/components/onboarding/OnboardingBreezewaySection";
+import { showsBreezewayHomeLink } from "@/lib/onboarding-breezeway";
+import { evidenceSatisfied } from "@/lib/onboarding-evidence";
+import { listAttachmentsFn } from "@/lib/attachments.functions";
+import { bulkUpdateHomeTasksFn, markTaskStartedFn } from "@/lib/onboarding.functions";
+import { SendToHomeownerSection } from "@/components/onboarding/SendToHomeownerDialog";
+import { loadTaskOwnerSend, loadTaskPlanCard } from "@/lib/ao-data";
+import { TaskVerifyBadge } from "@/components/ao/TaskPlanLink";
+import { TaskGallery } from "@/components/onboarding/TaskGallery";
+import { ReviewAwareComplete, TaskReviewPanel } from "@/components/onboarding/TaskReviewPanel";
+import { trackForTask } from "@/lib/onboarding-workstreams";
+import { showsBreezeway, taskKind, uploadHint } from "@/lib/onboarding-task-kind";
+import { FUNCTIONAL_ROLES, roleLabel } from "@/lib/v2-workflow.functions";
+import { completeHint, drawerKind, dueChip, firstLines, startedLabel, stepsDone } from "@/lib/task-drawer";
+import { stateChip } from "@/lib/semantic";
+import { repairApprovalGuidance } from "@/lib/onboarding-scope";
+import type { ReleaseContext } from "@/lib/onboarding-state";
+import { stageLabel } from "@/lib/onboarding";
+import { STATUS_LABEL, STATUS_STATE, assigneeLabel, viewTask, type WorkflowTask } from "@/lib/onboarding-workflow";
+import { usDate, usDateTime } from "@/lib/dates";
 
-/** Assign to me — the Director (or leadership) takes any Onboarding Task. */
+/** Assign to me: the Director (or leadership) takes any onboarding Task. */
 function TakeTaskButton({ taskId, assignedTo }: { taskId: string; assignedTo: string | null }) {
   const { userId } = useRole();
   const take = useServerFn(takeOnboardingTask);
@@ -35,60 +70,11 @@ function TakeTaskButton({ taskId, assignedTo }: { taskId: string; assignedTo: st
   });
   if (!userId || assignedTo === userId) return null;
   return (
-    <Button variant="secondary" disabled={m.isPending} onClick={() => m.mutate()}>
+    <Button variant="secondary" size="sm" className="min-h-11" disabled={m.isPending} onClick={() => m.mutate()}>
       Assign to me
     </Button>
   );
 }
-import { TaskWorkspace } from "@/components/ui/workspace";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Chip } from "@/components/ui/page";
-import { Separator } from "@/components/ui/separator";
-import { OwnerParticipationOffer } from "@/components/OwnerParticipationOffer";
-import { TaskOwnerCollaboration } from "@/components/onboarding/OwnerCollaboration";
-import { TaskOwnerDependency } from "@/components/onboarding/TaskOwnerDependency";
-import { DEPENDENCY_RESPONSE_TYPE, dependencyWaitingLabel, effectiveDependency } from "@/lib/owner-dependency";
-import { AttachmentsPanel } from "@/components/AttachmentsPanel";
-import { LinkedStepFiles } from "@/components/onboarding/LinkedStepFiles";
-import { TaskStageTrail } from "@/components/onboarding/TaskStageTrail";
-import { EmailComposer } from "@/components/EmailComposer";
-import { GuidedActionCard } from "@/components/GuidedActionCard";
-import {
-  nextActionableTask,
-  onboardingTaskAction,
-  type TaskActionId,
-} from "@/lib/onboarding-task-action";
-import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
-import { BreezewayHomeLink, OnboardingBreezewaySection } from "@/components/onboarding/OnboardingBreezewaySection";
-import { isBreezewayWorkOrderStep, showsBreezewayHomeLink } from "@/lib/onboarding-breezeway";
-import { EVIDENCE_PROBLEM, evidenceSatisfied } from "@/lib/onboarding-evidence";
-import { listAttachmentsFn } from "@/lib/attachments.functions";
-import { SendToHomeownerDialog } from "@/components/onboarding/SendToHomeownerDialog";
-import { OwnerItemConversation } from "@/components/owner/OwnerItemConversation";
-import { loadTaskOwnerItem } from "@/lib/ao-data";
-import { SendToActiveOwnerGate, TaskVerifyBadge } from "@/components/ao/TaskPlanLink";
-import { TaskGallery } from "@/components/onboarding/TaskGallery";
-import { ReviewAwareComplete, TaskReviewPanel } from "@/components/onboarding/TaskReviewPanel";
-import { trackForTask } from "@/lib/onboarding-workstreams";
-import { showsBreezeway, taskKind, uploadHint, uploadTitle } from "@/lib/onboarding-task-kind";
-
-import { stateChip } from "@/lib/semantic";
-import { repairApprovalGuidance } from "@/lib/onboarding-scope";
-import type { ReleaseContext } from "@/lib/onboarding-state";
-import { stageLabel } from "@/lib/onboarding";
-import {
-  STATUS_LABEL,
-  STATUS_STATE,
-  assigneeLabel,
-  dueExplanation,
-  viewTask,
-  whyThisTaskExists,
-  type WorkflowTask,
-} from "@/lib/onboarding-workflow";
-import { usDate, usDateTime } from "@/lib/dates";
 
 export type SaveTaskInput = {
   id: string;
@@ -149,7 +135,6 @@ export function TaskDrawer({
   onClose,
   onSave,
   onSaveDate,
-  onSubmitApproval,
   onRecordOwnerDecision,
 
   onRecordException,
@@ -201,12 +186,10 @@ export function TaskDrawer({
     decision_note: string | null;
     detail?: string | null;
   }[];
-}) {
-  const [evidence, setEvidence] = useState("");
+}) {  const [evidence, setEvidence] = useState("");
   const [due, setDue] = useState("");
+  const [dueOpen, setDueOpen] = useState(false);
   const [overrideReason, setOverrideReason] = useState("");
-  const [approvalVersion, setApprovalVersion] = useState("");
-  const [approvalNote, setApprovalNote] = useState("");
   const [decisionNote, setDecisionNote] = useState("");
   const [decisionEvidence, setDecisionEvidence] = useState("");
   const [exception, setException] = useState("");
@@ -214,7 +197,10 @@ export function TaskDrawer({
   const [reopenReason, setReopenReason] = useState("");
   const [voidOpen, setVoidOpen] = useState(false);
   const [voidReason, setVoidReason] = useState("");
-  // Same list (and cache key) the step's file panel reads: a stored file is evidence.
+  const [fullOpen, setFullOpen] = useState(false);
+  const qc = useQueryClient();
+  const router = useRouter();
+  // Same list (and cache key) the Task's file panel reads: a stored file is proof.
   const listFiles = useServerFn(listAttachmentsFn);
   const stepFiles = useQuery({
     queryKey: ["attachments", "onboarding_task", task?.id ?? "none"],
@@ -224,13 +210,54 @@ export function TaskDrawer({
   const fileCount = (stepFiles.data?.files ?? []).filter(
     (f) => f.upload_status === "stored" && !f.archived_at,
   ).length;
+  const ownerSend = useQuery({
+    queryKey: ["task-owner-send", task?.id ?? "none"],
+    queryFn: () => loadTaskOwnerSend(task!.id),
+    enabled: Boolean(task?.id),
+    retry: false,
+  });
+  const planCard = useQuery({
+    queryKey: ["ao-task-plan", task?.id ?? "none"],
+    queryFn: () => loadTaskPlanCard(task!.id),
+    enabled: Boolean(task?.id),
+    retry: false,
+  });
+  // Role changes use the same people rule and transaction as Edit selected.
+  const canAssignRole = useQuery({
+    queryKey: ["can-bulk-edit-home-tasks", task?.property_id ?? "none"],
+    enabled: Boolean(task?.property_id) && !disabled,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("can_bulk_edit_home_tasks", { _property_id: task!.property_id });
+      if (error) return false;
+      return data === true;
+    },
+  });
+  const bulk = useServerFn(bulkUpdateHomeTasksFn);
+  const setRole = useMutation({
+    mutationFn: (role: string | null) =>
+      bulk({ data: { propertyId: task!.property_id, taskIds: [task!.id], patch: { role } } }),
+    onSuccess: () => {
+      toast.success("Role changed.");
+      void qc.invalidateQueries();
+      void router.invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message || "The role could not be changed."),
+  });
+  const markStarted = useServerFn(markTaskStartedFn);
+  const started = useMutation({
+    mutationFn: () => markStarted({ data: { taskId: task!.id } }),
+    onSuccess: () => {
+      void qc.invalidateQueries();
+      void router.invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message || "This Task could not be marked started."),
+  });
 
   useEffect(() => {
     setEvidence(task?.evidence_note ?? "");
     setDue(task?.due_on ?? "");
+    setDueOpen(false);
     setOverrideReason("");
-    setApprovalVersion("");
-    setApprovalNote("");
     setDecisionNote("");
     setDecisionEvidence("");
     setException("");
@@ -238,19 +265,16 @@ export function TaskDrawer({
     setReopenReason("");
     setVoidOpen(false);
     setVoidReason("");
+    setFullOpen(false);
   }, [task?.id, task?.evidence_note, task?.due_on]);
 
   if (!task) return null;
 
   const view = viewTask({ ...task, evidence_file_count: fileCount }, tasks, release);
-  // One canonical approval record per request — the drawer must never look
-  // like a request that already went out has never been sent.
-  const taskApprovals = approvals
-    .filter((a) => a.entity_id === task.id)
-    .sort((a, b) => b.created_at.localeCompare(a.created_at));
-  const openApproval = taskApprovals.find((a) => a.status === "pending") ?? null;
-  const lastApproval = taskApprovals[0] ?? null;
-  const why = whyThisTaskExists(view, tasks);
+  const lastApproval =
+    approvals
+      .filter((a) => a.entity_id === task.id)
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))[0] ?? null;
   const subtasks = tasks.filter((t) => t.parent_task_id === task.id);
   const deps = (task.depends_on ?? [])
     .map((id) => tasks.find((t) => t.id === id))
@@ -258,124 +282,66 @@ export function TaskDrawer({
   const downstream = tasks.filter((t) => (t.depends_on ?? []).includes(task.id));
   const evidenceMissing =
     task.evidence_required && !evidenceSatisfied({ note: task.evidence_note, fileCount });
-  const typedEvidenceOk = evidenceSatisfied({ note: evidence, fileCount });
+  const proofOk = evidenceSatisfied({ note: evidence, fileCount });
   const awaitingOwner = task.requires_owner_approval && task.owner_approval_status !== "approved";
   const dueChanged = (due || null) !== (task.due_on ?? null);
-  // Design and listing work is looked at, not read — those drawers get the gallery.
   const track = trackForTask({ title: task.title, stage: task.stage });
   const visualTrack = track === "furnishing_staging" || track === "media_listing";
-  // The kind of work this step is — decides which tools its pop-up shows.
-  const kind = taskKind({ title: task.title, detail: task.detail });
+  const tags = (task.tags ?? []) as string[];
+  const ownerItem = ownerSend.data?.available ? ownerSend.data.data : null;
+  const linkedCard = planCard.data?.available ? planCard.data.data : null;
+  const kind = drawerKind({
+    title: task.title,
+    requires_owner_approval: task.requires_owner_approval,
+    owner_dependency: task.owner_dependency,
+    tags,
+    hasOwnerItem: Boolean(ownerItem),
+    hasPlanCard: Boolean(linkedCard),
+  });
   const dispatchable = showsBreezeway({ title: task.title, detail: task.detail });
-
-
-  // One guided step at a time — the same pattern as the ticket workspace.
-  // Every effect below routes through the callbacks this drawer already uses,
-  // so the release, evidence and approval rules stay the single authority.
-  const t: WorkflowTask = task;
-  const action = onboardingTaskAction(view);
-  const nextTask = nextActionableTask(t, tasks, release);
-
-  const advance = () => {
-    if (nextTask && onAdvance) onAdvance(nextTask.id);
-  };
-
-  const finishesStep = action?.id === "complete_task" || action?.id === "reopen_or_move_on";
-  // A step the plan tagged Active Owner is the homeowner's own work.
-  const activeOwnerStep = ((task.tags ?? []) as string[]).includes("active_owner");
-  const mode: "active_owner" | "vendor" | "internal" = activeOwnerStep
-    ? "active_owner"
-    : dispatchable
-      ? "vendor"
-      : "internal";
-  const sendDialog = (
-    <SendToHomeownerDialog
-      taskId={task.id}
-      taskTitle={task.title}
-      propertyId={task.property_id}
-      disabled={disabled || task.owner_approval_status === "approved"}
-      alreadyWaiting={task.owner_approval_status === "awaiting_owner"}
-      {...(activeOwnerStep ? { label: "Send to Active Owner" } : {})}
-    />
+  const finished = task.status === "complete" || task.status === "carryover";
+  const sentToOwner = kind === "homeowner" && (Boolean(ownerItem) || task.owner_approval_status === "awaiting_owner");
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Chicago" });
+  const dueText = dueChip(task.due_on, task.status, today);
+  const hasStartedColumn = "started_at" in task;
+  const startedAt = (task as WorkflowTask & { started_at?: string | null }).started_at ?? null;
+  const instructions = firstLines(task.detail);
+  const fullExtra = Boolean(
+    instructions.more || task.description || task.done_when || repairApprovalGuidance(task.title) ||
+      (task.video_url && /^https:\/\//.test(task.video_url)),
   );
-  const sendToOwner = (
-    <div className="flex flex-wrap items-center gap-2">
-      {/* Send to Active Owner only for homes with an active program; same send path, linked to this Task. */}
-      {activeOwnerStep ? (
-        <SendToActiveOwnerGate propertyId={task.property_id}>{sendDialog}</SendToActiveOwnerGate>
-      ) : sendDialog}
-      <TaskVerifyBadge taskId={task.id} />
-      {isPhotoStep(task.title) && <OpenPhotosFolderButton propertyId={task.property_id} />}
-      {task.owner_approval_status === "awaiting_owner" && (
-        <span className="text-xs text-muted-foreground">
-          Waiting on the homeowner since the last send.
-        </span>
+  const fullInstructions = (
+    <div className="space-y-3 text-sm">
+      {task.detail && <p className="whitespace-pre-wrap text-muted-foreground">{task.detail}</p>}
+      {task.description && <p className="whitespace-pre-wrap text-muted-foreground">{task.description}</p>}
+      {task.done_when && (
+        <p className="whitespace-pre-wrap text-muted-foreground">
+          <span className="font-medium text-foreground">Done when: </span>
+          {task.done_when}
+        </p>
       )}
-      <TaskOwnerConversation taskId={task.id} readOnly={disabled} />
+      {repairApprovalGuidance(task.title) && (
+        <p className="text-xs text-muted-foreground">{repairApprovalGuidance(task.title)}</p>
+      )}
+      {task.video_url && /^https:\/\//.test(task.video_url) && (
+        <a href={task.video_url} target="_blank" rel="noopener noreferrer" className="text-primary underline-offset-4 hover:underline">
+          Watch the how-to video
+        </a>
+      )}
     </div>
   );
-
-  const runAction = (id: TaskActionId, values: Record<string, string>) => {
-    const text = (k: string) => (values[k] ?? "").trim();
-    if (id === "clear_blocker") {
-      onAddObservation(t.id, text("update"));
-      onSave(
-        taskPayload(t, {
-          blocker: values["outcome"] === "cleared" ? "" : text("update"),
-        }),
-      );
-      return true;
-    }
-    if (id === "capture_evidence") {
-      onSave(taskPayload(t, { evidenceNote: text("evidence") }));
-      return true;
-    }
-    if (id === "send_for_approval" || id === "resubmit_for_approval") {
-      onSubmitApproval(t.id, text("version"), text("note"));
-      return true;
-    }
-    if (id === "record_owner_answer") {
-      onRecordOwnerDecision(
-        t.id,
-        values["decision"] === "approved",
-        text("note"),
-        text("evidence_url"),
-      );
-      return true;
-    }
-    if (id === "complete_task") {
-      if (text("observation")) onAddObservation(t.id, text("observation"));
-      onSave(taskPayload(t, { status: "complete", blocker: "" }));
-      advance();
-      return true;
-    }
-    if (id === "reopen_or_move_on") {
-      advance();
-      return true;
-    }
-    return false;
-  };
-
-  const guidedCard = action ? (
-    <GuidedActionCard
-      action={{
-        ...action,
-        ...(nextTask && finishesStep ? { then: `Next: ${nextTask.title}` } : {}),
-      }}
-      readOnly={disabled}
-      successMessage={
-        nextTask && action.id === "complete_task"
-          ? `Step recorded. Next: ${nextTask.title}`
-          : "Step recorded."
-      }
-      onHandoff={() =>
-        document
-          .getElementById("task-detail-body")
-          ?.scrollIntoView({ behavior: "smooth", block: "start" })
-      }
-      onComplete={(values) => runAction(action.id, values)}
-    />
-  ) : null;
+  const hint = finished
+    ? null
+    : completeHint({
+        kind,
+        releaseBlocked: !evidenceMissing && !view.canComplete && !awaitingOwner,
+        reason: view.reason,
+        evidenceMissing: Boolean(evidenceMissing),
+        proofOk,
+        awaitingOwner,
+      });
+  const scrollToFiles = () =>
+    document.getElementById(`task-files-${task.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   return (
     <TaskWorkspace
@@ -383,486 +349,236 @@ export function TaskDrawer({
       placement="center"
       onOpenChange={(v) => !v && onClose()}
       title={task.title}
-
       headerExtra={
-        <>
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            {propertyName} · {stageLabel(task.stage)}
+          </p>
           <div className="flex flex-wrap items-center gap-1.5">
             <Chip className={stateChip(STATUS_STATE[view.status])}>
-              {STATUS_LABEL[view.status]}
+              {startedAt && view.status !== "complete" && !view.overdue ? "Started" : STATUS_LABEL[view.status]}
             </Chip>
-            {view.overdue && view.status !== "complete" && (
-              <Chip className={stateChip("blocked")}>Overdue</Chip>
+            {dueText && (
+              <Chip className={stateChip(dueText.startsWith("Overdue") ? "blocked" : "waiting")}>{dueText}</Chip>
             )}
-            <span className="text-xs text-muted-foreground">
-              {propertyName} · {stageLabel(task.stage)}
-            </span>
           </div>
-          {view.reason && <p className="mt-1 text-xs text-muted-foreground">{view.reason}</p>}
-          {onVoid && canManageTask && task.status !== "complete" && (
-            <div className="mt-2">
-              {voidOpen ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <Input
-                    className="h-8 w-64"
-                    value={voidReason}
-                    onChange={(e) => setVoidReason(e.target.value)}
-                    placeholder="Why is this step not needed?"
-                  />
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    disabled={disabled || voidReason.trim().length < 3}
-                    onClick={() => onVoid(task.id, voidReason.trim())}
-                  >
-                    Void step
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setVoidOpen(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={disabled}
-                  onClick={() => setVoidOpen(true)}
+          <div className="grid gap-3 text-sm sm:grid-cols-2">
+            <div className="space-y-1">
+              <p className="eyebrow">Assigned to</p>
+              {canAssignRole.data && !finished ? (
+                <Select
+                  value={task.assigned_seat ?? "none"}
+                  onValueChange={(v) => setRole.mutate(v === "none" ? null : v)}
+                  disabled={setRole.isPending}
                 >
-                  Void / Not needed
-                </Button>
+                  <SelectTrigger className="h-11 w-full" aria-label="Assigned to">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Unassigned</SelectItem>
+                    {DRAWER_ROLES.map((r) => (
+                      <SelectItem key={r.code} value={r.code}>{r.label}</SelectItem>
+                    ))}
+                    {task.assigned_seat && !DRAWER_ROLES.some((r) => r.code === task.assigned_seat) && (
+                      <SelectItem value={task.assigned_seat}>{roleLabel(task.assigned_seat)}</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p>{assigneeLabel(task, people)}</p>
+              )}
+              {canManageTask && !disabled && !finished && (
+                <TakeTaskButton taskId={task.id} assignedTo={task.assigned_to} />
               )}
             </div>
-          )}
-        </>
+            <div className="space-y-1">
+              <p className="eyebrow">Due</p>
+              {canManageTask && !disabled && !finished ? (
+                dueOpen ? (
+                  <div className="space-y-2">
+                    <Input type="date" value={due} onChange={(e) => setDue(e.target.value)} className="h-11 w-48" aria-label="Due date" />
+                    <Input
+                      value={overrideReason}
+                      onChange={(e) => setOverrideReason(e.target.value)}
+                      placeholder="Reason for the new date (required)"
+                      aria-label="Reason for changing the due date"
+                      className="h-11"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        className="min-h-11"
+                        size="sm"
+                        disabled={!dueChanged || !task.updated_at || overrideReason.trim().length < 3}
+                        onClick={() => {
+                          if (task.updated_at) onSaveDate(task.id, task.updated_at, due || null, overrideReason.trim());
+                          setDueOpen(false);
+                        }}
+                      >
+                        Save date
+                      </Button>
+                      <Button className="min-h-11" size="sm" variant="ghost" onClick={() => setDueOpen(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button variant="outline" className="min-h-11" onClick={() => setDueOpen(true)} aria-label="Change the due date">
+                    {task.due_on ? usDate(task.due_on) : "Set a date"}
+                  </Button>
+                )
+              ) : (
+                <p>{task.due_on ? usDate(task.due_on) : "Not set"}</p>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {hasStartedColumn && !finished && (
+              startedAt ? (
+                <span className="text-sm text-muted-foreground">{startedLabel(startedAt, usDate)}</span>
+              ) : (
+                <Button
+                  variant="secondary"
+                  className="min-h-11"
+                  disabled={disabled || started.isPending}
+                  onClick={() => started.mutate()}
+                >
+                  Mark as started
+                </Button>
+              )
+            )}
+            <Link
+              to="/onboarding/$propertyId"
+              params={{ propertyId: task.property_id }}
+              search={{ tab: "info" } as never}
+              className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline"
+            >
+              Home info
+            </Link>
+          </div>
+        </div>
       }
       footer={
         <>
-          {task.status !== "complete" ? (
-            <ReviewAwareComplete taskId={task.id} disabled={disabled || awaitingOwner}>
-            <div className="flex flex-1 flex-col gap-1">
-              <Button
-                className="w-full"
-                disabled={
-                  disabled ||
-                  awaitingOwner ||
-                  (evidenceMissing ? !typedEvidenceOk : !view.canComplete)
-                }
-                onClick={() =>
-                  onSave(
-                    taskPayload(task, {
-                      status: "complete",
-                      blocker: "",
-                      ...(evidence.trim() ? { evidenceNote: evidence.trim() } : {}),
-                    }),
-                  )
-                }
-              >
-                Complete
-              </Button>
-              {evidenceMissing && !typedEvidenceOk ? (
-                <p className="text-xs text-muted-foreground">{EVIDENCE_PROBLEM}</p>
-              ) : (
-                !view.canComplete &&
-                view.reason && <p className="text-xs text-muted-foreground">{view.reason}</p>
-              )}
-            </div>
+          {!finished && !sentToOwner && (
+            <ReviewAwareComplete taskId={task.id} disabled={disabled || Boolean(hint)}>
+              <div className="flex flex-1 flex-col gap-1">
+                <Button
+                  className="min-h-11 w-full"
+                  disabled={disabled || Boolean(hint)}
+                  onClick={() =>
+                    onSave(
+                      taskPayload(task, {
+                        status: "complete",
+                        blocker: "",
+                        ...(evidence.trim() ? { evidenceNote: evidence.trim() } : {}),
+                      }),
+                    )
+                  }
+                >
+                  Complete
+                </Button>
+                {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+              </div>
             </ReviewAwareComplete>
-          ) : (
-            <div className="flex flex-1 flex-col gap-1.5">
-              <Input
-                value={reopenReason}
-                onChange={(e) => setReopenReason(e.target.value)}
-                placeholder="Why is this being reopened?"
-              />
-              <Button
-                variant="secondary"
-                disabled={disabled || reopenReason.trim().length < 3}
-                onClick={() => onReopen(task.id, reopenReason.trim())}
-              >
-                Reopen with reason
-              </Button>
-            </div>
           )}
-          {canManageTask && !disabled && task.status !== "complete" && (
-            <TakeTaskButton taskId={task.id} assignedTo={task.assigned_to} />
-          )}
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" className="min-h-11" onClick={onClose}>
             Close
           </Button>
         </>
       }
     >
       <div className="space-y-5">
-        {/* Staff who can work this home's Tasks can write to the homeowner. */}
-        {!disabled && (
-          <div className="flex justify-end">
-            <EmailComposer context="onboarding_task" recordId={task.id} label="Email homeowner" />
-          </div>
-        )}
-        {visualTrack && <TaskGallery taskId={task.id} />}
-
-        {/* What this kind of step is for, first: the homeowner's own work,
-            a vendor job, or ordinary internal work finished below. */}
-        {mode === "active_owner" && (
-          <section className="space-y-2 rounded-lg border border-primary/40 bg-primary/5 p-4">
-            <p className="font-medium">Send to Active Owner</p>
-            <p className="text-xs text-muted-foreground">
-              This step is tagged Active Owner. The homeowner does it. Sending puts it in their
-              portal as a task, with your instructions and any files you pick.
-            </p>
-            {sendToOwner}
-          </section>
-        )}
-        {/* Work order steps: the only work orders are work orders in Breezeway. */}
-        {isBreezewayWorkOrderStep(task.title) && (
-          <OnboardingBreezewaySection
-            taskId={task.id}
-            propertyId={task.property_id}
-            disabled={disabled}
-          />
-        )}
-        {showsBreezewayHomeLink(task.title) && <BreezewayHomeLink propertyId={task.property_id} />}
-        {mode === "vendor" && !isBreezewayWorkOrderStep(task.title) && (
-          <section className="space-y-2 rounded-lg border border-primary/40 bg-primary/5 p-4">
-            <p className="font-medium">Dispatch to a vendor</p>
-            <p className="text-xs text-muted-foreground">
-              Send this job to Breezeway, or track a non-Breezeway vendor under Work Orders on the
-              Property &amp; Financial tab.
-            </p>
-            <BreezewayTaskPanel
-              sourceType="onboarding_task"
-              sourceId={task.id}
-              defaultTitle={task.title}
-              defaultDescription={task.detail ?? null}
-            />
-          </section>
-        )}
-
-
-        {/*
-         * Finishing comes last. Anything that unblocks the step stays at the
-         * top where it is read first; the card that closes the step sits at the
-         * bottom, after the instructions, so the drawer reads in Work Order.
-         */}
-        {action && !finishesStep && guidedCard}
-
-        <div id="task-detail-body" />
-
-        <TaskReviewPanel taskId={task.id} />
-
-        <dl className="grid grid-cols-2 gap-3 text-sm">
-          <Field label="Assignee" value={assigneeLabel(task, people)} />
-          <Field
-            label="Due date"
-            value={task.due_on ?? "Not set"}
-            hint={dueExplanation(task) ?? undefined}
-          />
-          <Field label="Status" value={STATUS_LABEL[view.status]} />
-          {!task.requires_owner_approval &&
-            dependencyWaitingLabel(effectiveDependency(task), task.title) && (
-              <Field
-                label="From the homeowner"
-                value={dependencyWaitingLabel(effectiveDependency(task), task.title)!}
-              />
-            )}
-          {task.requires_owner_approval && (
-            <Field
-              label="Homeowner decision"
-              value={
-                task.owner_approval_status === "approved"
-                  ? "Approved"
-                  : task.owner_approval_status === "awaiting_owner"
-                    ? "Waiting on homeowner"
-                    : task.owner_approval_status === "changes_requested"
-                      ? "Changes requested"
-                      : "Required"
-              }
-            />
-          )}
-        </dl>
-
-        {void why}
-
-        {repairApprovalGuidance(task.title) && (
-          <p className="rounded-lg border border-border p-3 text-xs text-muted-foreground">
-            {repairApprovalGuidance(task.title)}
-          </p>
-        )}
-
-        {task.description && (
-          <section>
-            <p className="eyebrow">Description</p>
-            <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{task.description}</p>
-          </section>
-        )}
-        {task.detail && (
-          <section>
-            <p className="eyebrow">Instructions</p>
-            <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{task.detail}</p>
-          </section>
-        )}
-        {task.done_when && (
-          <section>
-            <p className="eyebrow">Done when</p>
-            <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{task.done_when}</p>
-          </section>
-        )}
-        {task.video_url && /^https:\/\//.test(task.video_url) && (
-          <section>
-            <p className="eyebrow">Video</p>
-            <a href={task.video_url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-sm text-primary underline-offset-4 hover:underline">Watch the how-to video</a>
-          </section>
-        )}
-
-        {(deps.length > 0 || downstream.length > 0) && (
+        {/* What to do: the first lines, the rest on request. Logins stay exactly as written. */}
+        {(task.detail || fullExtra) && (
           <section className="space-y-1">
-            <p className="eyebrow">Dependencies &amp; release</p>
-            {deps.map((d) => (
-              <p key={d.id} className="text-sm">
-                <span className="text-muted-foreground">Waits for </span>
-                {d.title}
-                <span className="text-muted-foreground">
-                  {" "} · {d.status === "complete" ? "complete" : "not complete"}
-                </span>
-              </p>
-            ))}
-            {downstream.map((d) => (
-              <p key={d.id} className="text-sm text-muted-foreground">
-                Releases {d.title}
-              </p>
-            ))}
+            <p className="eyebrow">What to do</p>
+            {instructions.head && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{instructions.head}</p>}
+            {fullExtra && kind !== "homeowner" && (
+              <>
+                <Button variant="link" className="h-auto min-h-11 px-0" aria-expanded={fullOpen} onClick={() => setFullOpen((v) => !v)}>
+                  Full instructions
+                </Button>
+                {fullOpen && fullInstructions}
+              </>
+            )}
           </section>
         )}
 
         {subtasks.length > 0 && (
           <section className="space-y-1">
-            <p className="eyebrow">Subtasks</p>
-            {subtasks.map((s) => (
-              <p key={s.id} className="text-sm">
-                {s.status === "complete" ? "Done: " : ""}{s.title}
-              </p>
-            ))}
+            <p className="eyebrow">Steps · {stepsDone(subtasks)}</p>
+            <ul className="space-y-1">
+              {subtasks.map((s) => {
+                const done = s.status === "complete";
+                return (
+                  <li key={s.id} className="flex min-h-11 items-center gap-2">
+                    <Checkbox
+                      id={`step-${s.id}`}
+                      checked={done}
+                      disabled={disabled || done}
+                      onCheckedChange={() => {
+                        // A step that needs proof opens so the proof can be added there.
+                        if (s.evidence_required && !s.evidence_note) onAdvance?.(s.id);
+                        else onSave(taskPayload(s, { status: "complete", blocker: "" }));
+                      }}
+                    />
+                    <Label htmlFor={`step-${s.id}`} className="text-sm font-normal">{s.title}</Label>
+                  </li>
+                );
+              })}
+            </ul>
           </section>
         )}
 
-        <Separator />
-
-        {/* Evidence gate */}
-        <section className="space-y-2">
-          <p className="eyebrow">
-            {task.evidence_required ? "Notes & files · a file or a note on where the proof is" : "Notes & files"}
-          </p>
-          {evidenceMissing && (
-            <p className="text-sm text-state-blocked">
-              Attach a file below, or write where the proof is (at least 5 characters).
-            </p>
-          )}
-          <Textarea
-            rows={3}
-            value={evidence}
-            onChange={(e) => setEvidence(e.target.value)}
-            placeholder="Where the proof is. For example: Signed copy is in the SharePoint home folder."
-          />
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled={
-              disabled ||
-              evidence.trim().length < 3 ||
-              evidence.trim() === (task.evidence_note ?? "")
-            }
-            onClick={() => onSave(taskPayload(task, { evidenceNote: evidence.trim() }))}
-          >
-            Save note
-          </Button>
-          {/*
-           * Every step can take files — a document step is the whole point of
-           * some of them — and the wording follows the kind of work the step is.
-           */}
+        <section id={`task-files-${task.id}`} className="space-y-2">
           <AttachmentsPanel
             entityType="onboarding_task"
             entityId={task.id}
-            title={uploadTitle(kind)}
-            description={uploadHint(kind)}
+            title="Files"
+            description={uploadHint(taskKind({ title: task.title, detail: task.detail }))}
           />
           <LinkedStepFiles taskId={task.id} canManage={canManageTask && !disabled} />
+          {isPhotoStep(task.title) && <OpenPhotosFolderButton propertyId={task.property_id} />}
         </section>
 
-        <TaskOwnerDependency task={task} canManage={canManageTask && !disabled} />
-
-        <TaskOwnerCollaboration
-          propertyId={task.property_id}
-          taskId={task.id}
-          taskTitle={task.title}
-          defaultResponseType={(() => {
-            const dep = effectiveDependency(task);
-            return dep === "none" ? undefined : DEPENDENCY_RESPONSE_TYPE[dep];
-          })()}
-        />
-
-
-        <Separator />
-
-
-        {/* Native capture: what the person actually found in the home. */}
-        <section className="space-y-2">
-          <p className="eyebrow">What did you find?</p>
-          <p className="text-xs text-muted-foreground">
-            Record the observation here, in Resolve, not in a separate form. It stays on this step
-            and on the home&apos;s history.
-          </p>
-          <Textarea
-            rows={2}
-            value={observation}
-            onChange={(e) => setObservation(e.target.value)}
-            placeholder="Condition, measurement, missing item, something the next person needs to know."
-          />
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled={disabled || observation.trim().length < 3}
-            onClick={() => {
-              onAddObservation(task.id, observation.trim());
-              setObservation("");
-            }}
-          >
-            Record observation
-          </Button>
-        </section>
-
-        <Separator />
-
-        {/* Management-only date edits; the current date remains visible above. */}
-        {canManageTask && (
-          <section className="space-y-2">
-            <p className="eyebrow">Due date</p>
-            <div className="flex flex-wrap items-end gap-2">
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Date</Label>
-                <Input
-                  type="date"
-                  value={due}
-                  onChange={(e) => setDue(e.target.value)}
-                  className="w-44"
-                />
-              </div>
-              <Button
-                size="sm"
-                variant="secondary"
-                disabled={
-                  disabled || !dueChanged || !task.updated_at || overrideReason.trim().length < 3
-                }
-                onClick={() => {
-                  if (task.updated_at)
-                    onSaveDate(task.id, task.updated_at, due || null, overrideReason.trim());
-                }}
-              >
-                Save date
-              </Button>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">
-                Reason for changing the due date (required)
-              </Label>
-              <Input
-                value={overrideReason}
-                onChange={(e) => setOverrideReason(e.target.value)}
-                placeholder="Why does this task need a different date?"
-              />
-            </div>
+        {/* The middle changes with the kind of Task. */}
+        {kind === "ordinary" && !finished && (
+          <section className="space-y-2 rounded-lg border border-border p-4" aria-label="Proof it's done">
+            <p className="font-medium">Proof it&apos;s done</p>
+            <Label htmlFor={`proof-${task.id}`} className="text-sm">Where is the proof?</Label>
+            <Textarea
+              id={`proof-${task.id}`}
+              rows={2}
+              value={evidence}
+              disabled={disabled}
+              onChange={(e) => setEvidence(e.target.value)}
+              placeholder="For example: the signed copy is in the home folder."
+            />
+            <Button variant="link" className="h-auto min-h-11 px-0" onClick={scrollToFiles}>
+              Or attach a file
+            </Button>
           </section>
         )}
 
-        {task.requires_owner_approval && task.owner_approval_status !== "approved" && (
-          <>
-            <Separator />
-            {lastApproval && (
-              <section className="space-y-1 rounded-lg border border-border p-3 text-sm">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Chip
-                    className={stateChip(
-                      lastApproval.status === "approved"
-                        ? "done"
-                        : lastApproval.status === "pending"
-                          ? "waiting"
-                          : "info",
-                    )}
-                  >
-                    {lastApproval.status === "pending"
-                      ? "Request sent: waiting on the homeowner"
-                      : lastApproval.status === "approved"
-                        ? "Approved"
-                        : "Changes requested"}
-                  </Chip>
-                  <span className="numeric text-xs text-muted-foreground">
-                    Sent {usDate(lastApproval.created_at)}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Channel:{" "}
-                  {task.owner_approval_status === "awaiting_owner"
-                    ? "Recorded on the canonical approval record. Active Owner portal or Resolve-generated email."
-                    : "Canonical approval record."}
-                  {lastApproval.decided_at
-                    ? ` Decided ${usDateTime(lastApproval.decided_at)}.`
-                    : ""}
-                </p>
-                {lastApproval.decision_note && (
-                  <p className="text-xs text-muted-foreground">{lastApproval.decision_note}</p>
-                )}
-              </section>
-            )}
+        {kind === "work_order" && (
+          <section className="space-y-2" aria-label="Breezeway work order">
+            <OnboardingBreezewaySection taskId={task.id} propertyId={task.property_id} disabled={disabled} />
+          </section>
+        )}
 
-            <section className="space-y-2">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="eyebrow">
-                  {openApproval ? "Resend this request" : "Send to the homeowner"}
-                </p>
-                {/* Write to the homeowner with the home and their name already filled in. */}
-                <EmailComposer
-                  context="onboarding_task"
-                  recordId={task.id}
-                  label="Write to the homeowner"
-                />
-              </div>
-              <Input
-                value={approvalVersion}
-                onChange={(e) => setApprovalVersion(e.target.value)}
-                placeholder="Version being reviewed: e.g. Mood boards v2"
-              />
-              <Textarea
-                rows={2}
-                value={approvalNote}
-                onChange={(e) => setApprovalNote(e.target.value)}
-                placeholder="What the homeowner is being asked to approve."
-              />
-              <p className="text-xs text-muted-foreground">
-                An enrolled Active Owner sees this in their portal. A standard homeowner gets a
-                Resolve-generated email. They never need Resolve access to answer. Either way it is
-                the same approval record. Sending alone does not complete the step.
-              </p>
-              <Button
-                size="sm"
-                variant="secondary"
-                disabled={disabled || approvalVersion.trim().length < 2}
-                onClick={() =>
-                  onSubmitApproval(task.id, approvalVersion.trim(), approvalNote.trim())
-                }
-              >
-                {openApproval
-                  ? "Resend request"
-                  : task.owner_approval_status === "changes_requested"
-                    ? "Resubmit for approval"
-                    : "Send for approval"}
-              </Button>
-            </section>
-
-            {task.owner_approval_status === "awaiting_owner" && (
-              <section className="space-y-2 rounded-lg border border-border p-3">
+        {kind === "homeowner" && (
+          <SendToHomeownerSection
+            taskId={task.id}
+            taskTitle={task.title}
+            propertyId={task.property_id}
+            disabled={disabled || task.owner_approval_status === "approved"}
+            alreadyWaiting={task.owner_approval_status === "awaiting_owner"}
+            badge={<TaskVerifyBadge taskId={task.id} />}
+          >
+            {/* A standard owner answers by email or phone: staff record it on the same approval record. */}
+            {!ownerItem && task.requires_owner_approval && task.owner_approval_status === "awaiting_owner" && !disabled && (
+              <div className="space-y-2 border-t border-border pt-3">
                 <p className="eyebrow">Record the homeowner&apos;s answer</p>
-                <p className="text-xs text-muted-foreground">
-                  When the homeowner replies by email or phone, record it here. It is written to the
-                  same approval record with your name and the time.
-                </p>
                 <Textarea
                   rows={2}
                   value={decisionNote}
@@ -873,127 +589,213 @@ export function TaskDrawer({
                   value={decisionEvidence}
                   onChange={(e) => setDecisionEvidence(e.target.value)}
                   placeholder="Link to the reply email or saved document (optional)"
+                  className="h-11"
                 />
                 <div className="flex flex-wrap gap-2">
                   <Button
+                    className="min-h-11"
                     size="sm"
-                    disabled={disabled || decisionNote.trim().length < 3}
-                    onClick={() =>
-                      onRecordOwnerDecision(
-                        task.id,
-                        true,
-                        decisionNote.trim(),
-                        decisionEvidence.trim(),
-                      )
-                    }
+                    disabled={decisionNote.trim().length < 3}
+                    onClick={() => onRecordOwnerDecision(task.id, true, decisionNote.trim(), decisionEvidence.trim())}
                   >
                     Homeowner approved
                   </Button>
                   <Button
+                    className="min-h-11"
                     size="sm"
                     variant="outline"
-                    disabled={disabled || decisionNote.trim().length < 3}
-                    onClick={() =>
-                      onRecordOwnerDecision(
-                        task.id,
-                        false,
-                        decisionNote.trim(),
-                        decisionEvidence.trim(),
-                      )
-                    }
+                    disabled={decisionNote.trim().length < 3}
+                    onClick={() => onRecordOwnerDecision(task.id, false, decisionNote.trim(), decisionEvidence.trim())}
                   >
                     Changes requested
                   </Button>
                 </div>
+              </div>
+            )}
+          </SendToHomeownerSection>
+        )}
+
+        <TaskTeamComments taskId={task.id} propertyId={task.property_id} people={people} disabled={disabled} />
+
+        <Separator />
+
+        {/* Everything else folds under Details. */}
+        <details className="space-y-4 text-sm">
+          <summary className="flex min-h-11 cursor-pointer items-center text-muted-foreground">Details</summary>
+          <div className="mt-3 space-y-5">
+            {kind === "work_order" && !finished && (
+              <section className="space-y-2">
+                <p className="eyebrow">Proof</p>
+                <Label htmlFor={`wo-proof-${task.id}`} className="text-sm">Where is the proof?</Label>
+                <Textarea
+                  id={`wo-proof-${task.id}`}
+                  rows={2}
+                  value={evidence}
+                  disabled={disabled}
+                  onChange={(e) => setEvidence(e.target.value)}
+                  placeholder="Only when finishing by hand: where the proof is."
+                />
+                <Button variant="link" className="h-auto min-h-11 px-0" onClick={scrollToFiles}>
+                  Or attach a file
+                </Button>
               </section>
             )}
-          </>
-        )}
+            {kind === "homeowner" && fullExtra && (
+              <section className="space-y-1">
+                <p className="eyebrow">Full instructions</p>
+                {fullInstructions}
+              </section>
+            )}
 
-        {mode === "active_owner" && (
-          <>
-            <Separator />
             <section className="space-y-2">
-              <p className="eyebrow">Active Owner participation</p>
-              <OwnerParticipationOffer source="onboarding" sourceId={task.id} />
-            </section>
-          </>
-        )}
-
-        {canRecordException && !task.exception_reason && (
-          <>
-            <Separator />
-            <section className="space-y-2">
-              <p className="eyebrow">Authorised exception</p>
+              <p className="eyebrow">What did you find?</p>
               <Textarea
                 rows={2}
-                value={exception}
-                onChange={(e) => setException(e.target.value)}
-                placeholder="Why is this requirement being waived, and who approved it?"
+                value={observation}
+                disabled={disabled}
+                onChange={(e) => setObservation(e.target.value)}
+                placeholder="Condition, measurement, missing item, something the next person needs to know."
               />
               <Button
                 size="sm"
-                variant="ghost"
-                disabled={disabled || exception.trim().length < 3}
-                onClick={() => onRecordException(task.id, exception.trim())}
+                variant="secondary"
+                className="min-h-11"
+                disabled={disabled || observation.trim().length < 3}
+                onClick={() => {
+                  onAddObservation(task.id, observation.trim());
+                  setObservation("");
+                }}
               >
-                Record exception
+                Record observation
               </Button>
             </section>
-          </>
-        )}
 
-        {action && finishesStep && (
-          <>
-            <Separator />
-            {guidedCard}
-          </>
-        )}
+            {canRecordException && !task.exception_reason && (
+              <section className="space-y-2">
+                <p className="eyebrow">Exception</p>
+                <Textarea
+                  rows={2}
+                  value={exception}
+                  onChange={(e) => setException(e.target.value)}
+                  placeholder="Why is this requirement being waived, and who approved it?"
+                />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="min-h-11"
+                  disabled={disabled || exception.trim().length < 3}
+                  onClick={() => onRecordException(task.id, exception.trim())}
+                >
+                  Record exception
+                </Button>
+              </section>
+            )}
 
-        {/* Standard internal steps keep homeowner sending out of the way. */}
-        {mode !== "active_owner" && (
-          <>
-            <Separator />
-            <details className="text-sm">
-              <summary className="cursor-pointer text-muted-foreground">
-                Need something from the homeowner?
-              </summary>
-              <div className="mt-2">{sendToOwner}</div>
-            </details>
-          </>
-        )}
+            <TaskReviewPanel taskId={task.id} />
+            {visualTrack && <TaskGallery taskId={task.id} />}
+            {showsBreezewayHomeLink(task.title) && <BreezewayHomeLink propertyId={task.property_id} />}
+            {kind !== "work_order" && dispatchable && (
+              <section className="space-y-2">
+                <p className="eyebrow">Dispatch to a vendor</p>
+                <BreezewayTaskPanel
+                  sourceType="onboarding_task"
+                  sourceId={task.id}
+                  defaultTitle={task.title}
+                  defaultDescription={task.detail ?? null}
+                />
+              </section>
+            )}
+            {tags.includes("active_owner") && (
+              <section className="space-y-2">
+                <p className="eyebrow">Active Owner participation</p>
+                <OwnerParticipationOffer source="onboarding" sourceId={task.id} />
+              </section>
+            )}
+
+            <section className="space-y-2">
+              <p className="eyebrow">History</p>
+              {(deps.length > 0 || downstream.length > 0) && (
+                <div className="space-y-1">
+                  {deps.map((d) => (
+                    <p key={d.id}>
+                      <span className="text-muted-foreground">Waits for </span>
+                      {d.title}
+                      <span className="text-muted-foreground"> · {d.status === "complete" ? "complete" : "not complete"}</span>
+                    </p>
+                  ))}
+                  {downstream.map((d) => (
+                    <p key={d.id} className="text-muted-foreground">Releases {d.title}</p>
+                  ))}
+                </div>
+              )}
+              {lastApproval && (
+                <p className="text-muted-foreground">
+                  Homeowner request sent {usDate(lastApproval.created_at)}
+                  {lastApproval.decided_at ? ` · answered ${usDateTime(lastApproval.decided_at)}` : ""}
+                  {lastApproval.decision_note ? ` · ${lastApproval.decision_note}` : ""}
+                </p>
+              )}
+              <TaskStageTrail taskId={task.id} />
+            </section>
+
+            {finished && (
+              <section className="space-y-2">
+                <p className="eyebrow">Reopen</p>
+                <Input
+                  value={reopenReason}
+                  onChange={(e) => setReopenReason(e.target.value)}
+                  placeholder="Why is this being reopened?"
+                  className="h-11"
+                />
+                <Button
+                  variant="secondary"
+                  className="min-h-11"
+                  disabled={disabled || reopenReason.trim().length < 3}
+                  onClick={() => onReopen(task.id, reopenReason.trim())}
+                >
+                  Reopen with reason
+                </Button>
+              </section>
+            )}
+
+            {onVoid && canManageTask && !finished && (
+              <section className="space-y-2">
+                {voidOpen ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Input
+                      className="h-11 w-64"
+                      value={voidReason}
+                      onChange={(e) => setVoidReason(e.target.value)}
+                      placeholder="Why is this step not needed?"
+                    />
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="min-h-11"
+                      disabled={disabled || voidReason.trim().length < 3}
+                      onClick={() => onVoid(task.id, voidReason.trim())}
+                    >
+                      Void step
+                    </Button>
+                    <Button size="sm" variant="ghost" className="min-h-11" onClick={() => setVoidOpen(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <Button size="sm" variant="outline" className="min-h-11" disabled={disabled} onClick={() => setVoidOpen(true)}>
+                    Void / Not needed
+                  </Button>
+                )}
+              </section>
+            )}
+          </div>
+        </details>
       </div>
-
     </TaskWorkspace>
   );
 }
 
-function Field({
-  label,
-  value,
-  hint,
-}: {
-  label: string;
-  value: string;
-  hint?: string | undefined;
-}) {
-  return (
-    <div>
-      <dt className="eyebrow">{label}</dt>
-      <dd className="text-sm">{value}</dd>
-      {hint && <dd className="text-[0.6875rem] text-muted-foreground">{hint}</dd>}
-    </div>
-  );
-}
-
-/** The homeowner's answer to a Task sent as an owner item lives on that item; staff talk it through here. */
-function TaskOwnerConversation({ taskId, readOnly }: { taskId: string; readOnly: boolean }) {
-  const q = useQuery({ queryKey: ["task-owner-item", taskId], queryFn: () => loadTaskOwnerItem(taskId), retry: false });
-  const reviewId = q.data?.available ? q.data.data?.review_id : null;
-  if (!reviewId) return null;
-  return (
-    <div className="w-full">
-      <OwnerItemConversation reviewId={reviewId} side="staff" readOnly={readOnly} />
-    </div>
-  );
-}
+/** The onboarding roles a Task can be assigned to (the same list Edit selected offers). */
+const DRAWER_ROLES = FUNCTIONAL_ROLES.filter((r) =>
+  ["onboarding_director", "onboarding_manager", "onboarding_project_manager", "utilities", "lead_designer", "designer", "staging_team"].includes(r.code),
+);
