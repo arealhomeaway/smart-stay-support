@@ -62,7 +62,7 @@ export const saveStatusStageMapFn = createServerFn({ method: "POST" })
     const prev = await context.supabase.from("app_settings").select("value").eq("key", STATUS_STAGE_MAP_KEY).maybeSingle();
     const { error } = await context.supabase
       .from("app_settings")
-      .upsert({ key: STATUS_STAGE_MAP_KEY, value: data.map as never, updated_at: new Date().toISOString() } as never, { onConflict: "key" });
+      .upsert({ key: STATUS_STAGE_MAP_KEY, value: data.map as never, updated_by: context.userId, updated_at: new Date().toISOString() }, { onConflict: "key" });
     if (error) throw new Error(error.message);
     const { writeAudit } = await import("@/lib/audit.server");
     await writeAudit({
