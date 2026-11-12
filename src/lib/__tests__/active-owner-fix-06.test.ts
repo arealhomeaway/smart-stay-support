@@ -19,6 +19,8 @@ const h1 = U(11), h2 = U(12), h3 = U(13), h4 = U(14), h5 = U(15);
 const prog1 = U(21), prog2 = U(22);
 const stepA = U(31), stepB = U(32), stepC = U(33), stepOps = U(34), stepX = U(37);
 const reviewer = U(40);
+// Item 6: a demo owner, a demo program on a demo home, two more demo homes.
+const owner3 = U(9), or3 = U(10), h6 = U(16), h7 = U(17), h8 = U(18), prog3 = U(23);
 const LIVE06 = ["ao_plan_outcomes", "ao_start_home_plan", "ao_preview_home_automation", "ao_on_handoff",
   "perform_handoff_step", "decide_onboarding_task_review", "record_onboarding_review_edit"];
 const SIGS: Record<string, string> = {
@@ -70,7 +72,7 @@ CREATE FUNCTION public.is_onboarding_director(uuid) RETURNS boolean LANGUAGE sql
 CREATE FUNCTION public.is_director(uuid) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT false $$;
 CREATE FUNCTION public.seat_holder(text) RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT CASE WHEN $1='onboarding_director' THEN '${dirOnb}'::uuid END $$;
 CREATE FUNCTION private.actor_label(uuid) RETURNS text LANGUAGE sql STABLE AS $$ SELECT 'Admin'::text $$;
-CREATE FUNCTION private.is_synthetic_account() RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT false $$;
+CREATE FUNCTION private.is_synthetic_account() RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT coalesce(current_setting('test.synthetic', true), '') = 'on' $$;
 CREATE FUNCTION public.active_owner_may_act(boolean) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT true $$;
 GRANT USAGE ON SCHEMA auth TO authenticated;
 CREATE FUNCTION private.onboarding_work_locked(uuid[]) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT false $$;
@@ -147,6 +149,7 @@ const staged = (sql: string) => sql.replace(/;\s*$/, "").trim();
 describe("Active Owner fix file 06, staged SQL on an isolated database", () => {
   const def = async (sig: string) => (await one<{ d: string }>(`SELECT pg_get_functiondef('${sig}'::regprocedure) d`)).d;
   let preview06Before: Record<string, number> = {};
+  let demoBefore: { ready: boolean; reason?: string } = { ready: true };
   beforeAll(async () => {
     db = new PGlite();
     await db.exec(STUBS);
@@ -167,7 +170,17 @@ describe("Active Owner fix file 06, staged SQL on an isolated database", () => {
       INSERT INTO public.owner_program_properties(program_id, property_id) VALUES
         ('${prog1}','${h1}'),('${prog1}','${h2}'),('${prog2}','${h3}');
       INSERT INTO public.onboarding_projects(id, property_id, handoff_state) VALUES
-        ('${U(51)}','${h1}','in_progress'),('${U(52)}','${h2}','in_progress'),('${U(53)}','${h3}','accepted');`);
+        ('${U(51)}','${h1}','in_progress'),('${U(52)}','${h2}','in_progress'),('${U(53)}','${h3}','accepted');
+      INSERT INTO public.profiles(id, full_name) VALUES ('${owner3}', 'Demo Owner');
+      INSERT INTO public.property_owners(id, active, source_owner_id) VALUES ('${or3}', true, 'o3');
+      INSERT INTO public.properties(id, name, owner_record_id, is_demo) VALUES ('${h6}','6 Demo St','${or3}', true),
+        ('${h7}','7 Demo St','${or3}', true),('${h8}','8 Demo St','${or1}', true);
+      INSERT INTO public.owner_programs(id, property_id, owner_user_id, status, owner_record_id, notify_email, is_demo) VALUES
+        ('${prog3}','${h6}','${owner3}','active','${or3}', true, true);
+      INSERT INTO private.members VALUES ('${prog3}','${owner3}',null);
+      INSERT INTO public.owner_program_properties(program_id, property_id, is_demo) VALUES ('${prog3}','${h6}', true);
+      INSERT INTO public.onboarding_projects(id, property_id, handoff_state, is_demo) VALUES
+        ('${U(56)}','${h6}','in_progress', true),('${U(57)}','${h7}','in_progress', true);`);
     for (let i = 1; i <= 20; i++) await card(`O${String(i).padStart(2, "0")}`); // anytime, no lock
     await card("L01", { lock: "until_linked_step_done", links: [stepA] }); // anytime, waits on a step the home has
     await card("D01", { links: [stepB] });
@@ -176,13 +189,14 @@ describe("Active Owner fix file 06, staged SQL on an isolated database", () => {
     await card("P01", { stage: "onboarding_early" });
     for (const code of ["A33", "N10", "A35", "A14", "A56", "A51"]) await card(code, { stage: "operations", lock: "until_linked_step_done" });
     await card("A60", { stage: "operations", lock: "until_linked_step_done", links: [stepOps] }); // waits on a step the home has
-    for (const home of [h1, h2, h3]) {
+    for (const home of [h1, h2, h3, h6, h7]) {
       const b = home.slice(-2);
       await task(U(100 + Number(b) * 10 + 1), home, stepA);
       await task(U(100 + Number(b) * 10 + 2), home, stepB);
       await task(U(100 + Number(b) * 10 + 3), home, stepC, "complete");
       await task(U(100 + Number(b) * 10 + 4), home, stepOps);
     }
+    await db.query("UPDATE public.onboarding_tasks SET is_demo = true WHERE property_id = ANY($1::uuid[])", [[h6, h7]]);
     // The live state on Nov 11: files 01 to 04 applied, the onboarding functions as captured.
     await db.exec(read(`${DIR}/01_fix1_plan_cards_read.sql`));
     await db.exec(read(`${DIR}/02_engine.sql`));
@@ -191,6 +205,7 @@ describe("Active Owner fix file 06, staged SQL on an isolated database", () => {
     for (const f of ["perform_handoff_step", "decide_onboarding_task_review", "record_onboarding_review_edit"]) await db.exec(live06(f));
     await as(ADMIN);
     preview06Before = (await one<{ p: { outcomes: Record<string, number> } }>("SELECT public.ao_preview_home_automation($1) p", [h3])).p.outcomes;
+    demoBefore = (await one<{ p: { ready: boolean; reason?: string } }>("SELECT public.ao_preview_home_automation($1) p", [h6])).p;
     // Before 06 an Admin cannot mark a home ready or decide a review for another reviewer.
     await expect(db.query("SELECT public.perform_handoff_step($1, 'ready', '[]'::jsonb)", [U(52)])).rejects.toThrow(/Only the Director of Onboarding can mark/);
     await db.exec(SIX);
