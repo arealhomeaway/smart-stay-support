@@ -269,6 +269,22 @@ export async function loadOwnerPortalPlan(programId: string): Promise<import("@/
   return { available: true, data: base.data.map((c) => ({ ...c, owner_review_id: byId.get(c.plan_card_id) ?? null })) };
 }
 
+/**
+ * Item 2 (Nov 12): owner cards whose Task is done outside Resolve, keyed "plan:", "review:" or
+ * "work:" + id, with the "Check your email for the {where} from ARHA" line. Empty until the
+ * staged owner_outside_resolve_lines is applied.
+ */
+export async function loadOwnerOutsideLines(programId: string): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  const r = await db.rpc("owner_outside_resolve_lines", { _program: programId });
+  if (r.error) return out;
+  const { outsideOwnerLine } = await import("@/lib/onboarding-task-kinds");
+  for (const row of (r.data ?? []) as { source: string; item_id: string; where_code: string | null }[]) {
+    out.set(`${row.source}:${row.item_id}`, outsideOwnerLine(row.where_code));
+  }
+  return out;
+}
+
 /** Who wrote last on each owner item, read from the append-only conversation the owner can already see. */
 export async function loadOwnerItemLastSpeakers(reviewIds: string[]): Promise<Map<string, "homeowner" | "staff">> {
   const out = new Map<string, "homeowner" | "staff">();

@@ -23,7 +23,7 @@ import { OwnerItemConversation } from "@/components/owner/OwnerItemConversation"
 import { OwnerApprovalPanel } from "@/components/OwnerApprovalPanel";
 import { OnboardingActions } from "@/components/owner/OnboardingActions";
 import { LibraryVideoPlayer, useLibraryVideoIndex } from "@/components/owner/LibraryVideoPlayer";
-import { loadOwnerItemLastSpeakers, loadOwnerPortalPlan, type OwnerPortalPlanRow } from "@/lib/ao-data";
+import { loadOwnerItemLastSpeakers, loadOwnerPortalPlan, loadOwnerOutsideLines, type OwnerPortalPlanRow } from "@/lib/ao-data";
 import { portalCardView } from "@/lib/ao-ui";
 import { inQueue } from "@/lib/owner-opportunity-filters";
 import { ownerApprovals } from "@/lib/owner-portal.functions";
@@ -113,6 +113,8 @@ export function OwnerOpportunityBoard({
   // Plan cards (automatic), with the owner item each one created.
   const plan = useQuery({ queryKey: ["ao-owner-plan", programId, "portal"], queryFn: () => loadOwnerPortalPlan(programId), retry: false });
   const planRows: OwnerPortalPlanRow[] = plan.data?.available ? plan.data.data : [];
+  // Item 2: cards for work done outside Resolve say where to look instead of asking for an upload.
+  const outside = useOutsideLines(programId);
   const planTitles = useMemo(() => {
     const m = new Map<string, string[]>();
     for (const c of planRows) if (c.property_id) m.set(c.property_id, [...(m.get(c.property_id) ?? []), c.title]);
@@ -152,7 +154,7 @@ export function OwnerOpportunityBoard({
         title: c.title,
         propertyIds: c.property_id ? [c.property_id] : [],
         from: "Your homeowner plan",
-        summary: oneLine(view.kind === "locked" ? "" : c.what_text),
+        summary: oneLine(view.kind === "locked" ? "" : outside.get(`plan:${c.plan_card_id}`) ?? c.what_text),
         cover: arhaCover(c.title, [], photo(c.property_id)),
         sentAt: c.unlocked_at,
         answerBy: null,
@@ -182,7 +184,7 @@ export function OwnerOpportunityBoard({
         title: r.title,
         propertyIds: r.propertyIds,
         from: r.auto_ticket ? "Operations Team" : "Onboarding Team",
-        summary: oneLine(r.business_question ?? r.recommendation),
+        summary: oneLine(outside.get(`review:${r.id}`) ?? r.business_question ?? r.recommendation),
         cover: arhaCover(r.title, [], photo(r.propertyIds[0])),
         sentAt: r.available_from ?? r.updated_at ?? null,
         answerBy: r.respond_by,
@@ -255,7 +257,7 @@ export function OwnerOpportunityBoard({
         title: o.title,
         propertyIds: o.propertyId ? [o.propertyId] : [],
         from: arha ? (o.team?.includes("Operations") ? "Operations Team" : "Onboarding Team") : "Optional",
-        summary: oneLine(o.summary),
+        summary: oneLine(outside.get(`work:${o.id}`) ?? o.summary),
         cover: o.cover,
         sentAt: o.createdAt,
         answerBy: o.dueOn ?? null,
@@ -295,7 +297,7 @@ export function OwnerOpportunityBoard({
     // Fix 5: ARHA's setup step never shows as owner work.
     return mergeOncePerOwner(out.filter((i) => !isArhaSetupStep(i.title)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [planRows, reviews, onboarding.data, approvals.data, opp, speakers.data, homes]);
+  }, [planRows, reviews, onboarding.data, approvals.data, opp, speakers.data, homes, outside]);
 
   // Which tab is showing.
   const homeIds = homes.map((h) => h.propertyId);
@@ -654,6 +656,7 @@ function ItemPanel({
   onLogHours?: (activity: string, propertyId: string | null) => void;
 }) {
   const home = sourceLine({ ...item, from: "" }, homeName, multi);
+  const outsideLines = useOutsideLines(programId);
   const onOpenChange = (next: boolean) => { if (!next) onClose(); };
   const logFooter =
     onLogHours && !blockedReason && !readOnly ? (
@@ -675,6 +678,7 @@ function ItemPanel({
         homes={homes}
         blockedReason={blockedReason}
         statusLabel={item.status}
+        outsideLine={outsideLines.get(`work:${item.id}`) ?? null}
         {...(onLogHours ? { onLogHours } : {})}
       />
     );
@@ -707,6 +711,7 @@ function PlanCardPanel({
 }) {
   const q = useQuery({ queryKey: ["ao-owner-plan", programId, "portal"], queryFn: () => loadOwnerPortalPlan(programId), retry: false });
   const row = q.data?.available ? q.data.data.find((c) => c.plan_card_id === item.id) : undefined;
+  const outsideLine = useOutsideLines(programId).get(`plan:${item.id}`) ?? null;
   if (!row) return null;
   const view = portalCardView(row);
   return (
@@ -721,7 +726,7 @@ function PlanCardPanel({
       answerBy={item.optional ? null : row.deadline_at ?? null}
       footer={footer}
     >
-      {row.what_text ? <PanelSection label="What we're asking"><p className="whitespace-pre-wrap text-muted-foreground">{row.what_text}</p></PanelSection> : null}
+      {outsideLine || row.what_text ? <PanelSection label="What we're asking"><p className="whitespace-pre-wrap text-muted-foreground">{outsideLine ?? row.what_text}</p></PanelSection> : null}
       {item.allHomes ? <p className="text-sm text-muted-foreground">Answer once and it counts for every one of your homes.</p> : null}
       {view.kind === "open" ? (
         <PanelSection label="Your answer">
@@ -781,3 +786,11 @@ function TemplatePanel({
     </OwnerSidePanel>
   );
 }
+
+
+/** Item 2: the outside-Resolve owner lines for this program (shared cache). */
+export function useOutsideLines(programId: string): Map<string, string> {
+  const q = useQuery({ queryKey: ["owner-outside-lines", programId], queryFn: () => loadOwnerOutsideLines(programId), retry: false, staleTime: 60_000 });
+  return q.data ?? EMPTY_LINES;
+}
+const EMPTY_LINES = new Map<string, string>();

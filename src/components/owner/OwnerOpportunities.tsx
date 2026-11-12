@@ -258,7 +258,7 @@ function ResourceLinks({ items }: { items: Live["resources"] }) {
 
 /** The full Opportunity, in the side panel. Opening an ARHA Opportunity is what records it as viewed. */
 export function OpportunityDetail({
-  item, onClose, readOnly, homes, blockedReason, onLogHours, statusLabel,
+  item, onClose, readOnly, homes, blockedReason, onLogHours, statusLabel, outsideLine = null,
 }: {
   item: Live | null;
   onClose: () => void;
@@ -268,6 +268,8 @@ export function OpportunityDetail({
   onLogHours?: (activity: string, propertyId: string | null) => void;
   /** The chip text the card showed, repeated at the top of the panel. */
   statusLabel?: string | null;
+  /** Item 2: work done outside Resolve; shown instead of an upload request. */
+  outsideLine?: string | null;
 }) {
   const qc = useQueryClient();
   const docs = useOwnerDocuments();
@@ -324,14 +326,14 @@ export function OpportunityDetail({
               </Button>
             ) : null}
             {/* Fix 24: an approval item has only Approve and Ask a question. */}
-            {homes.length && !(arha && t.includes("decision")) ? <Button className="min-h-11" size="sm" variant="outline" onClick={() => setUpload(true)}>Upload documentation</Button> : null}
+            {homes.length && !outsideLine && !(arha && t.includes("decision")) ? <Button className="min-h-11" size="sm" variant="outline" onClick={() => setUpload(true)}>Upload documentation</Button> : null}
             {!item.finished && !(arha && t.includes("decision")) ? <Button className="min-h-11" size="sm" disabled={done.isPending} onClick={() => done.mutate()}>Mark complete</Button> : null}
           </>
         )
       }
     >
       {video && item.templateId ? <LibraryVideoPlayer libraryId={item.templateId} poster={item.cover} label={video.label} /> : null}
-      {item.what ? <PanelSection label="What we're asking"><p className="whitespace-pre-wrap text-muted-foreground">{item.what}</p></PanelSection> : null}
+      {outsideLine || item.what ? <PanelSection label="What we're asking"><p className="whitespace-pre-wrap text-muted-foreground">{outsideLine ?? item.what}</p></PanelSection> : null}
       {item.why ? <PanelSection label={arha ? "Why this matters" : "Why it matters"}><p className="whitespace-pre-wrap text-muted-foreground">{item.why}</p></PanelSection> : null}
       {item.how ? <PanelSection label={arha ? "How to complete it" : "How to complete it remotely"}><p className="whitespace-pre-wrap text-muted-foreground">{item.how}</p></PanelSection> : null}
       {item.resources.length || item.templateLink || linked.length ? (
@@ -345,7 +347,7 @@ export function OpportunityDetail({
           </div>
         </PanelSection>
       ) : null}
-      {item.document ? <PanelSection label="Ways to document your participation"><p className="whitespace-pre-wrap text-muted-foreground">{item.document}</p></PanelSection> : null}
+      {item.document && !outsideLine ? <PanelSection label="Ways to document your participation"><p className="whitespace-pre-wrap text-muted-foreground">{item.document}</p></PanelSection> : null}
 
       {/* Build 17 finding 2: every Opportunity carries the conversation, so a staff message is seen
           and answered from the moment the thread exists, whoever leads the item. */}
