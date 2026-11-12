@@ -19,8 +19,6 @@ import { EmptyState, LoadingPage, PageHero, PriorityRail, SectionCard, Segmented
 import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { ActivityList, type ActivityEvent } from "@/components/ui/activity";
 import heroImage from "@/assets/hero-arha-property.jpg";
-import { homePhotoUrl } from "@/components/property/HomePhoto";
-import { applyTestDataFilter } from "@/lib/test-data";
 import { bannerCaption, dailyHomePhoto } from "@/lib/daily-home-photo";
 import { useHomeBannerPhotos } from "@/hooks/useHomeBannerPhotos";
 import { AlertTriangle, ArrowRight, ChevronDown, ClipboardCheck, Handshake, Inbox, Users } from "lucide-react";
