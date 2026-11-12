@@ -157,12 +157,26 @@ function CompletionCard({ row: r }: { row: CompletionRow }) {
         </p>
       ) : null}
       <div className="mt-2 flex flex-wrap gap-2">
-        <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => setViewing(true)}>
-          Open evidence and thread
-        </button>
-        <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => setOpen((v) => !v)}>
-          {open ? "Cancel" : "Record review"}
-        </button>
+        {/* Fixes 11, 12: one place to work it. A row with a Task opens the Task drawer at its owner conversation. */}
+        {r.source_task_id ? (
+          <Link
+            to="/onboarding/$propertyId"
+            params={{ propertyId: r.property_id }}
+            search={{ tab: "plan", task: r.source_task_id, at: "conversation" } as never}
+            className="inline-flex min-h-11 items-center text-xs font-medium text-primary hover:underline"
+          >
+            Open the Task
+          </Link>
+        ) : (
+          <>
+            <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => setViewing(true)}>
+              Open evidence and thread
+            </button>
+            <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => setOpen((v) => !v)}>
+              {open ? "Cancel" : "Record review"}
+            </button>
+          </>
+        )}
       </div>
       {open ? (
         <div className="mt-3 space-y-2 border-t border-border pt-3">

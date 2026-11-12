@@ -204,7 +204,18 @@ export function PlanStages({
       list.length === 0 ? (
         <p className="px-3 py-3 text-sm text-muted-foreground">No tasks match.</p>
       ) : (
-        <ul className="divide-y divide-border">{list.map(row)}</ul>
+        // Fixes 10, 27: open Tasks first; finished ones fold into "Finished (n)".
+        <>
+          <ul className="divide-y divide-border">{list.filter((t) => !isFinished(t)).map(row)}</ul>
+          {list.some(isFinished) ? (
+            <details className="border-t border-border">
+              <summary className="flex min-h-11 cursor-pointer items-center px-3 text-sm text-muted-foreground">
+                Finished ({list.filter(isFinished).length})
+              </summary>
+              <ul className="divide-y divide-border">{list.filter(isFinished).map(row)}</ul>
+            </details>
+          ) : null}
+        </>
       );
     const head = (
       <span className="flex flex-wrap items-baseline gap-2">
