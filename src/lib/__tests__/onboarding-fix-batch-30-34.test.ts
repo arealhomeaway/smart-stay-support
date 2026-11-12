@@ -11,14 +11,12 @@ import {
 } from "@/lib/searchable-picker";
 import { SIX_STAGES } from "@/lib/onboarding-board";
 
-const STAGE_INTAKE = Object.keys({}).length === 0 ? "intake" : "";
-
 describe("item 30: Plan search", () => {
   const tasks = [
-    { id: "1", title: "Order the welcome book", stage: "ordering", status: "open" },
-    { id: "2", title: "Photograph the home", stage: "media", status: "complete" },
+    { id: "1", title: "Order the welcome book", stage: "Ordering & Repairs", status: "open" },
+    { id: "2", title: "Photograph the home", stage: "Setup & Staging", status: "complete" },
     { id: "3", title: "Order photos frames", stage: "unknown-stage", status: "complete" },
-    { id: "4", title: "Schedule the cleaner", stage: STAGE_INTAKE, status: "open" },
+    { id: "4", title: "Schedule the cleaner", stage: "Intake", status: "open" },
   ];
 
   it("a blank search returns null so the normal list shows", () => {
@@ -39,9 +37,10 @@ describe("item 30: Plan search", () => {
     for (const h of hits) expect([...SIX_STAGES, OTHER_STAGE_LABEL]).toContain(h.stage);
   });
 
-  it("matches across every stage, not only the current one", () => {
+  it("matches across every stage, not only the current one, listed in stage order", () => {
     const hits = searchPlanTasks(tasks, "the")!;
-    expect(hits.map((h) => h.task.id).sort()).toEqual(["1", "2", "4"]);
+    expect(hits.map((h) => h.task.id)).toEqual(["4", "1", "2"]);
+    expect(hits.map((h) => h.stage)).toEqual(["Intake", "Ordering & Repairs", "Setup & Staging"]);
   });
 });
 
