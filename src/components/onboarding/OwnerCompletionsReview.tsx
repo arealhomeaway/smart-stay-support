@@ -168,15 +168,13 @@ function CompletionCard({ row: r }: { row: CompletionRow }) {
             Open the Task
           </Link>
         ) : (
-          <>
-            <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => setViewing(true)}>
-              Open evidence and thread
-            </button>
-            <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => setOpen((v) => !v)}>
-              {open ? "Cancel" : "Record review"}
-            </button>
-          </>
+          <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => setViewing(true)}>
+            Open evidence and thread
+          </button>
         )}
+        <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => setOpen((v) => !v)}>
+          {open ? "Cancel" : "Record review"}
+        </button>
       </div>
       {open ? (
         <div className="mt-3 space-y-2 border-t border-border pt-3">
