@@ -790,7 +790,8 @@ async function sendTaskAsOwnerItem(
 ) {
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Chicago" });
   const note = input.version.trim() ? `${input.note.trim()}\n\nLooking at: ${input.version.trim()}` : input.note.trim();
-  const rpc = supabase.rpc as unknown as (
+  // Bind: supabase-js rpc reads this.rest, so a detached reference crashes.
+  const rpc = supabase.rpc.bind(supabase) as unknown as (
     fn: string,
     args: Record<string, unknown>,
   ) => Promise<{ data: { sent?: boolean; review_id?: string } | null; error: { code?: string; message?: string } | null }>;

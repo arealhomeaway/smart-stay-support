@@ -741,6 +741,7 @@ export type Database = {
           lane: string
           linked_template_task_ids: string[]
           lock_rule: string
+          once_per_owner: boolean
           opens_text: string
           output_fields: Json
           required_output: string
@@ -774,6 +775,7 @@ export type Database = {
           lane: string
           linked_template_task_ids?: string[]
           lock_rule?: string
+          once_per_owner?: boolean
           opens_text?: string
           output_fields?: Json
           required_output?: string
@@ -807,6 +809,7 @@ export type Database = {
           lane?: string
           linked_template_task_ids?: string[]
           lock_rule?: string
+          once_per_owner?: boolean
           opens_text?: string
           output_fields?: Json
           required_output?: string
@@ -9816,6 +9819,8 @@ export type Database = {
           schedule_offset_unit: string
           sort_order: number
           stage: string
+          started_at: string | null
+          started_by: string | null
           status: string
           tags: string[]
           template_task_id: string | null
@@ -9863,6 +9868,8 @@ export type Database = {
           schedule_offset_unit?: string
           sort_order?: number
           stage?: string
+          started_at?: string | null
+          started_by?: string | null
           status?: string
           tags?: string[]
           template_task_id?: string | null
@@ -9910,6 +9917,8 @@ export type Database = {
           schedule_offset_unit?: string
           sort_order?: number
           stage?: string
+          started_at?: string | null
+          started_by?: string | null
           status?: string
           tags?: string[]
           template_task_id?: string | null
@@ -18554,6 +18563,27 @@ export type Database = {
           what_text: string
         }[]
       }
+      ao_owner_portal_plan: {
+        Args: { _program: string }
+        Returns: {
+          code: string
+          deadline_at: string
+          expired_at: string
+          join_outcome: string
+          lane: string
+          once_per_owner: boolean
+          opens_text: string
+          output_fields: Json
+          owner_completed_at: string
+          owner_review_id: string
+          plan_card_id: string
+          property_id: string
+          stage_window: string
+          title: string
+          unlocked_at: string
+          what_text: string
+        }[]
+      }
       ao_preview_enrolled_homes: { Args: never; Returns: Json }
       ao_preview_home_automation: {
         Args: { _covered_card_ids?: string[]; _property: string }
@@ -19482,6 +19512,10 @@ export type Database = {
       mark_direct_booking_partner_approved: {
         Args: { _lead_id: string; _note?: string }
         Returns: string
+      }
+      mark_onboarding_task_started: {
+        Args: { _task_id: string }
+        Returns: Json
       }
       mark_owner_alerts_read: { Args: { _ids: string[] }; Returns: number }
       mark_owner_opportunity_viewed: {
