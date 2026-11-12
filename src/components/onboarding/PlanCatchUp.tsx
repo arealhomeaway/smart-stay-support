@@ -84,11 +84,14 @@ export function CatchUpBox({
   label,
   onToggle,
   className,
+  large = false,
 }: {
   state: StageCheck | boolean;
   label: string;
   onToggle: (shift: boolean) => void;
   className?: string;
+  /** Property page Part 1: a 28 px box on the Tasks tab rows. */
+  large?: boolean;
 }) {
   const checked = state === true || state === "all" ? true : state === "some" ? "indeterminate" : false;
   return (
@@ -104,7 +107,7 @@ export function CatchUpBox({
         checked={checked}
         aria-label={label}
         onClick={(e) => e.preventDefault()}
-        className="grid size-[26px] place-content-center rounded-md border-2 border-primary bg-background text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=checked]:bg-primary data-[state=indeterminate]:bg-primary"
+        className={cn(large ? "size-7" : "size-[26px]", "grid place-content-center rounded-md border-2 border-primary bg-background text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=checked]:bg-primary data-[state=indeterminate]:bg-primary")}
       >
         <CheckboxPrimitive.Indicator className="grid place-content-center">
           {checked === "indeterminate" ? <Minus className="size-4" strokeWidth={3} /> : <Check className="size-4" strokeWidth={3} />}
