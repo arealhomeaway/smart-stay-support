@@ -474,6 +474,8 @@ DO $do$ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'Changed since the refresh: %', '11249 Pegasus Dr. / waste.valet'; END IF;
 END $do$;
 DELETE FROM public.property_field_provenance WHERE property_id = 'ee4213af-ad43-4d22-b58b-105eb2b60977' AND field_key = 'waste.valet' AND note = 'PID refresh 2026-11-12';
+UPDATE public.properties SET systems = systems #- '{"co"}', updated_at = now() WHERE id = 'ee4213af-ad43-4d22-b58b-105eb2b60977' AND systems #> '{"co"}' = '{}'::jsonb;
+UPDATE public.properties SET systems = systems #- '{"smoke"}', updated_at = now() WHERE id = 'ee4213af-ad43-4d22-b58b-105eb2b60977' AND systems #> '{"smoke"}' = '{}'::jsonb;
 
 -- 11508 E 94th Pl N
 DO $do$ BEGIN
@@ -1044,6 +1046,8 @@ DO $do$ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'Changed since the refresh: %', '1399 Foxtail Ln. / year_built'; END IF;
 END $do$;
 DELETE FROM public.property_field_provenance WHERE property_id = 'bacd3693-5a52-4ec0-a560-1281aadac37e' AND field_key = 'year_built' AND note = 'PID refresh 2026-11-12';
+UPDATE public.properties SET systems = systems #- '{"co"}', updated_at = now() WHERE id = 'bacd3693-5a52-4ec0-a560-1281aadac37e' AND systems #> '{"co"}' = '{}'::jsonb;
+UPDATE public.properties SET systems = systems #- '{"smoke"}', updated_at = now() WHERE id = 'bacd3693-5a52-4ec0-a560-1281aadac37e' AND systems #> '{"smoke"}' = '{}'::jsonb;
 
 -- 14553 Serrano Ridge Rd
 DO $do$ BEGIN
@@ -1712,6 +1716,8 @@ DO $do$ BEGIN
 END $do$;
 UPDATE public.property_field_provenance SET value_source = 'notion_pid', source_record_id = '1664658d-5f4f-80cd-b8f1-e1ede5224c97', as_of = '2026-08-30T04:11:00+00:00', note = NULL, updated_at = now()
   WHERE property_id = 'a3aaffe1-2ffc-41d4-bf9f-f58cdd8ddcf2' AND field_key = 'systems.fridge_filter' AND note = 'PID refresh 2026-11-12';
+UPDATE public.properties SET systems = systems #- '{"co"}', updated_at = now() WHERE id = 'a3aaffe1-2ffc-41d4-bf9f-f58cdd8ddcf2' AND systems #> '{"co"}' = '{}'::jsonb;
+UPDATE public.properties SET systems = systems #- '{"smoke"}', updated_at = now() WHERE id = 'a3aaffe1-2ffc-41d4-bf9f-f58cdd8ddcf2' AND systems #> '{"smoke"}' = '{}'::jsonb;
 
 -- 2601 W 65th St S
 DO $do$ BEGIN
@@ -2515,6 +2521,8 @@ DO $do$ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'Changed since the refresh: %', '3915 W 104th St. S. / waste.valet'; END IF;
 END $do$;
 DELETE FROM public.property_field_provenance WHERE property_id = '9de75678-9e34-4219-a186-ed0da15f0092' AND field_key = 'waste.valet' AND note = 'PID refresh 2026-11-12';
+UPDATE public.properties SET systems = systems #- '{"co"}', updated_at = now() WHERE id = '9de75678-9e34-4219-a186-ed0da15f0092' AND systems #> '{"co"}' = '{}'::jsonb;
+UPDATE public.properties SET systems = systems #- '{"smoke"}', updated_at = now() WHERE id = '9de75678-9e34-4219-a186-ed0da15f0092' AND systems #> '{"smoke"}' = '{}'::jsonb;
 
 -- 4003 Bendale Rd
 DO $do$ BEGIN
@@ -2887,6 +2895,8 @@ DO $do$ BEGIN
 END $do$;
 UPDATE public.property_field_provenance SET value_source = 'notion_pid', source_record_id = '3574658d-5f4f-81d2-bed2-e345f40bca1a', as_of = '2026-08-30T04:09:00+00:00', note = NULL, updated_at = now()
   WHERE property_id = '09e74a21-8489-4ef1-b0fb-295800859029' AND field_key = 'utilities.wifi_ssid' AND note = 'PID refresh 2026-11-12';
+UPDATE public.properties SET systems = systems #- '{"co"}', updated_at = now() WHERE id = '09e74a21-8489-4ef1-b0fb-295800859029' AND systems #> '{"co"}' = '{}'::jsonb;
+UPDATE public.properties SET systems = systems #- '{"smoke"}', updated_at = now() WHERE id = '09e74a21-8489-4ef1-b0fb-295800859029' AND systems #> '{"smoke"}' = '{}'::jsonb;
 
 -- 409 S. 85th St.
 DO $do$ BEGIN
@@ -3914,6 +3924,8 @@ DO $do$ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'Changed since the refresh: %', '852 Inland Dr. / waste.valet'; END IF;
 END $do$;
 DELETE FROM public.property_field_provenance WHERE property_id = '9837359e-7233-44d7-aa4a-e0ee8f4d1001' AND field_key = 'waste.valet' AND note = 'PID refresh 2026-11-12';
+UPDATE public.properties SET systems = systems #- '{"co"}', updated_at = now() WHERE id = '9837359e-7233-44d7-aa4a-e0ee8f4d1001' AND systems #> '{"co"}' = '{}'::jsonb;
+UPDATE public.properties SET systems = systems #- '{"smoke"}', updated_at = now() WHERE id = '9837359e-7233-44d7-aa4a-e0ee8f4d1001' AND systems #> '{"smoke"}' = '{}'::jsonb;
 
 -- 8602 E. Galveston St.
 DO $do$ BEGIN
@@ -4370,6 +4382,8 @@ DO $do$ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'Changed since the refresh: %', '9211 Fitzgerald Dr. / waste.valet'; END IF;
 END $do$;
 DELETE FROM public.property_field_provenance WHERE property_id = '79319968-80c9-4f00-b6c9-608c0b1881dc' AND field_key = 'waste.valet' AND note = 'PID refresh 2026-11-12';
+UPDATE public.properties SET systems = systems #- '{"co"}', updated_at = now() WHERE id = '79319968-80c9-4f00-b6c9-608c0b1881dc' AND systems #> '{"co"}' = '{}'::jsonb;
+UPDATE public.properties SET systems = systems #- '{"smoke"}', updated_at = now() WHERE id = '79319968-80c9-4f00-b6c9-608c0b1881dc' AND systems #> '{"smoke"}' = '{}'::jsonb;
 
 -- 9213 Anaum Ln (30D Firm)
 DO $do$ BEGIN

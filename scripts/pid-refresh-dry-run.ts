@@ -855,6 +855,7 @@ for (const [pid, list] of byProp) {
   const label = q(`${prop.name} ${list[0]!.field}`.slice(0, 0) + prop.name);
   apply.push(`\n-- ${prop.name} (OwnerRez ${digits(prop.ownerrez_property_id)}): ${list.length} value(s)`);
   undo.push(`\n-- ${prop.name}`);
+  const created = new Set<string>();
   for (const w of list) {
     const lbl = q(`${prop.name} / ${w.field}`);
     if (w.path.length === 1) {
@@ -865,12 +866,26 @@ for (const [pid, list] of byProp) {
       apply.push(step(`UPDATE public.properties SET ${w.path[0]} = ${setExpr(w.path, w.notion)}, updated_at = now() WHERE id = ${q(pid)} AND ${pathIs(w.path, w.current)}`, lbl, "Changed since the dry run"));
       const restore = w.current === undefined ? `${w.path[0]} #- ${pathLit(w.path.slice(1))}` : setExpr(w.path, w.current);
       undo.push(step(`UPDATE public.properties SET ${w.path[0]} = ${restore}, updated_at = now() WHERE id = ${q(pid)} AND ${pathIs(w.path, w.notion)}`, lbl, "Changed since the refresh"));
+      const top = prop[w.path[0]!];
+      if (top != null && (typeof top !== "object" || Array.isArray(top))) throw new Error(`${prop.name} ${w.path[0]} is not an object`);
+      for (let d = 2; d < w.path.length; d++) {
+        const mid = getPath(prop, w.path.slice(0, d));
+        if (mid != null && (typeof mid !== "object" || Array.isArray(mid))) throw new Error(`${prop.name} ${w.path.slice(0, d).join(".")} is not an object`);
+        if (mid === undefined) created.add(JSON.stringify(w.path.slice(0, d)));
+      }
+      if (top == null) created.add(JSON.stringify([w.path[0]!]));
     }
     const prior = provBy.get(`${pid}|${w.field}`);
     apply.push(`INSERT INTO public.property_field_provenance (property_id, field_key, value_source, source_record_id, as_of, note)\n  VALUES (${q(pid)}, ${q(w.field)}, 'notion_pid', ${q(w.pageId)}, ${q(AS_OF)}, ${q(MARK)})\n  ON CONFLICT (property_id, field_key) DO UPDATE SET value_source = EXCLUDED.value_source, source_record_id = EXCLUDED.source_record_id,\n    as_of = EXCLUDED.as_of, note = EXCLUDED.note, updated_at = now();`);
     undo.push(prior
       ? `UPDATE public.property_field_provenance SET value_source = ${q(prior.value_source)}, source_record_id = ${prior.source_record_id == null ? "NULL" : q(prior.source_record_id)}, as_of = ${q(prior.as_of)}, note = ${prior.note == null ? "NULL" : q(prior.note)}, updated_at = now()\n  WHERE property_id = ${q(pid)} AND field_key = ${q(w.field)} AND note = ${q(MARK)};`
       : `DELETE FROM public.property_field_provenance WHERE property_id = ${q(pid)} AND field_key = ${q(w.field)} AND note = ${q(MARK)};`);
+  }
+  // Objects the refresh created on the way (and columns that were empty) go back to how they were.
+  for (const c of [...created].map((x) => JSON.parse(x) as string[]).sort((x, y) => y.length - x.length)) {
+    undo.push(c.length === 1
+      ? `UPDATE public.properties SET ${c[0]} = NULL, updated_at = now() WHERE id = ${q(pid)} AND ${c[0]} = '{}'::jsonb;`
+      : `UPDATE public.properties SET ${c[0]} = ${c[0]} #- ${pathLit(c.slice(1))}, updated_at = now() WHERE id = ${q(pid)} AND ${c[0]} #> ${pathLit(c.slice(1))} = '{}'::jsonb;`);
   }
   void label;
 }
