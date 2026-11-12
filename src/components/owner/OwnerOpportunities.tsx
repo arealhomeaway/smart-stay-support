@@ -1,17 +1,13 @@
 /**
- * The homeowner's Opportunities: two sources, never blended.
+ * Homeowner Opportunity data and the Opportunity side panel.
  *
- *  FROM YOUR ARHA TEAM — Opportunities ARHA intentionally shared (structured
- *  ARHA source). They always carry the home of the ARHA work they came from.
- *
- *  MORE WAYS TO PARTICIPATE — optional, remote ideas from the Optional
- *  Opportunity Library. A template only becomes a live Opportunity when the
- *  homeowner starts it, on exactly one home.
- *
- * Cards stay compact; opening one shows everything. Owner-facing language
- * only: "Opportunity", never task, ticket or requirement.
+ * Two work-item sources keep their provenance: ARHA-shared Opportunities and
+ * Optional Library ones. A library template only becomes a live Opportunity
+ * when the homeowner starts it, on exactly one home. The one Opportunities page
+ * that shows them with every other owner item is OwnerOpportunityBoard.
+ * Owner-facing language only: "Opportunity", never task, ticket or requirement.
  */
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { OwnerConversation } from "@/components/OwnerConversation";
