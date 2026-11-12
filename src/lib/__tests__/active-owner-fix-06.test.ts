@@ -302,14 +302,26 @@ describe("Active Owner fix file 06, staged SQL on an isolated database", () => {
     expect((await one<{ ok: boolean }>("SELECT has_function_privilege('authenticated','private.ao_ops_card_rule(text)','EXECUTE') ok")).ok).toBe(false);
   });
 
-  it("06 changes exactly the named line in Mark ready and keeps every other line of the three onboarding functions", () => {
+  it("06 changes only the Admin checks in the three onboarding functions and keeps every other line", () => {
     const lines = (s: string) => s.split("\n");
-    const was = lines(live06("perform_handoff_step"));
+    const was = lines(live06("perform_handoff_step").trimEnd());
     const now = lines(SIX.slice(SIX.indexOf("CREATE OR REPLACE FUNCTION public.perform_handoff_step"), SIX.indexOf("-- 4b.")).trimEnd());
     expect(now.length).toBe(was.length);
     const diff = was.map((l, i) => [l, now[i]]).filter(([a, b]) => a !== b);
     expect(diff).toHaveLength(1);
     expect(diff[0]![1]).toContain("OR public.has_role(auth.uid(),'admin')");
+    // The two review functions only gain the Admin check: every live line is kept, in order.
+    for (const [f, from, to] of [["decide_onboarding_task_review", "-- 4b.", "-- 4c."], ["record_onboarding_review_edit", "-- 4c.", "-- 4d."]] as const) {
+      const part = lines(SIX.slice(SIX.indexOf(from), SIX.indexOf(to)));
+      const kept = lines(live06(f).trimEnd());
+      let at = 0;
+      for (const l of kept) {
+        const i = part.indexOf(l, at);
+        if (l.includes("IF NOT EXISTS (SELECT 1 FROM unnest(rv.reviewer_roles)")) { expect(part.some((x) => x.includes("AND NOT EXISTS (SELECT 1 FROM unnest(rv.reviewer_roles)"))).toBe(true); continue; }
+        expect(i).toBeGreaterThanOrEqual(at);
+        at = i + 1;
+      }
+    }
   });
 
   it("the undo puts back the exact live text of all seven functions and removes the two new ones", async () => {
