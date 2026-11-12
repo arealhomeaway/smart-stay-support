@@ -168,7 +168,8 @@ describe("Part B screens", () => {
     const comments = readFileSync("src/components/onboarding/TaskTeamComments.tsx", "utf8");
     for (const t of ["Team comments", "Add a comment", "Attach", "Post comment"]) expect(comments).toContain(t);
   });
-  it("B4: a sent homeowner Task shows only Close", () => {
-    expect(drawer).toMatch(/\{!finished && !sentToOwner && \(\s*<ReviewAwareComplete/);
+  it("B4 as changed Nov 12 (fix 18): a sent homeowner Task shows no main button and no Close; the X closes", () => {
+    expect(drawer).toContain('finished || (middle === "send_to_owner" && sentToOwner) ? undefined');
+    expect(drawer).not.toMatch(/>\s*Close\s*</);
   });
 });
