@@ -4,12 +4,11 @@
  * Renders `fallback` while the item is not a conversation or the staged functions are not applied.
  */
 import { useRef, useState, type ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { loadOwnerItemDetail, manageOwnerItem, replyToOwnerItem } from "@/lib/ao-data";
+import { approveOwnerItem, isOwnerItemApproval, loadOwnerItemDetail, manageOwnerItem, replyToOwnerItem } from "@/lib/ao-data";
 import { linkifyText } from "@/lib/linkify";
 
 const when = (iso: string) =>
@@ -33,22 +32,16 @@ export function OwnerItemConversation({
   const q = useQuery({ queryKey: key, queryFn: () => loadOwnerItemDetail(reviewId), retry: false });
   const [text, setText] = useState("");
   const replyRef = useRef<HTMLTextAreaElement>(null);
-  // Fix 24: an item sent as an approval offers Approve and Ask a question (staged file 02).
-  const call = supabase.rpc as unknown as (n: string, a: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
+  // Fix 24: an item sent as an approval offers Approve and Ask a question. The calls go through
+  // ao-data so the database client keeps its connection (a detached rpc lost `this.rest`).
   const approval = useQuery({
     queryKey: ["owner-item-is-approval", reviewId],
     enabled: side === "owner" && !readOnly,
     retry: false,
-    queryFn: async () => {
-      const { data, error } = await call("owner_item_is_approval", { _review_id: reviewId });
-      return !error && data === true;
-    },
+    queryFn: () => isOwnerItemApproval(reviewId),
   });
   const approve = useMutation({
-    mutationFn: async () => {
-      const { error } = await call("owner_item_approve", { _review_id: reviewId });
-      if (error) throw new Error((error as { message?: string }).message || "Your approval was not recorded.");
-    },
+    mutationFn: () => approveOwnerItem(reviewId),
     onSuccess: () => {
       toast.success("Approved. Your ARHA team has it.");
       void qc.invalidateQueries({ queryKey: ["owner-item-is-approval", reviewId] });

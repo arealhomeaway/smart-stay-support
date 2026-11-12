@@ -270,19 +270,49 @@ export async function loadOwnerPortalPlan(programId: string): Promise<import("@/
 }
 
 /**
- * Item 2 (Nov 12): owner cards whose Task is done outside Resolve, keyed "plan:", "review:" or
- * "work:" + id, with the "Check your email for the {where} from ARHA" line. Empty until the
- * staged owner_outside_resolve_lines is applied.
+ * Owner cards whose Task is done outside Resolve, keyed "plan:", "review:" or "work:" + id, with
+ * the owner wording (outsideOwnerMessage). Reads the staged owner_outside_resolve_notes (document
+ * name, owner message, live program per home); until it is applied, the live
+ * owner_outside_resolve_lines with "document" and the viewed program's own live state.
  */
 export async function loadOwnerOutsideLines(programId: string): Promise<Map<string, string>> {
   const out = new Map<string, string>();
-  const r = await db.rpc("owner_outside_resolve_lines", { _program: programId });
-  if (r.error) return out;
-  const { outsideOwnerLine } = await import("@/lib/onboarding-task-kinds");
-  for (const row of (r.data ?? []) as { source: string; item_id: string; where_code: string | null }[]) {
-    out.set(`${row.source}:${row.item_id}`, outsideOwnerLine(row.where_code));
+  const { outsideOwnerMessage } = await import("@/lib/onboarding-task-kinds");
+  type Note = { source: string; item_id: string; where_code: string | null; document_name?: string | null; owner_message?: string | null; live_program?: boolean | null };
+  const notes = await db.rpc("owner_outside_resolve_notes", { _program: programId });
+  let rows: Note[];
+  let live: (row: Note) => boolean;
+  if (!notes.error) {
+    rows = (notes.data ?? []) as Note[];
+    live = (row) => row.live_program === true;
+  } else {
+    const r = await db.rpc("owner_outside_resolve_lines", { _program: programId });
+    if (r.error) return out;
+    rows = (r.data ?? []) as Note[];
+    const prog = await db.from("owner_programs").select("status, archived_at").eq("id", programId).maybeSingle();
+    const p = prog.data as { status?: string | null; archived_at?: string | null } | null;
+    const { canSendToActiveOwner } = await import("@/lib/ao-engine");
+    const programLive = Boolean(p && !p.archived_at && canSendToActiveOwner(p.status));
+    live = () => programLive;
+  }
+  for (const row of rows) {
+    out.set(`${row.source}:${row.item_id}`, outsideOwnerMessage({
+      where: row.where_code, documentName: row.document_name ?? null, ownerMessage: row.owner_message ?? null, liveProgram: live(row),
+    }));
   }
   return out;
+}
+
+/** Fix 24: whether the homeowner is asked to approve this owner item. */
+export async function isOwnerItemApproval(reviewId: string): Promise<boolean> {
+  const { data, error } = await db.rpc("owner_item_is_approval", { _review_id: reviewId });
+  if (error) throw new Error((error as { message?: string }).message || "Could not check this item.");
+  return data === true;
+}
+/** Fix 24: the homeowner approves the owner item; marks the linked Task approved. */
+export async function approveOwnerItem(reviewId: string): Promise<void> {
+  const { error } = await db.rpc("owner_item_approve", { _review_id: reviewId });
+  if (error) throw new Error((error as { message?: string }).message || "Your approval was not recorded.");
 }
 
 /** Who wrote last on each owner item, read from the append-only conversation the owner can already see. */
