@@ -8,13 +8,17 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { usCalendarDate } from "@/lib/dates";
 import type { ExtraValue } from "@/lib/pid-sync/extras";
+import { useFeatureFlags } from "@/lib/feature-flags";
 
 type Row = { field_name: string; value: ExtraValue; synced_on: string; as_of: string };
 
 export function PidExtraFieldsCard({ propertyId }: { propertyId: string }) {
   const [open, setOpen] = useState(true);
+  // The switch row arrives with the staged tables; before that there is nothing to read.
+  const setUp = useFeatureFlags().flags.some((f) => f.key === "pid_nightly_sync");
   const q = useQuery({
     queryKey: ["pid-extra-fields", propertyId],
+    enabled: setUp,
     retry: false,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
