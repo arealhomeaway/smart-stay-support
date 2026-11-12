@@ -39,7 +39,8 @@ function shift(dateIso: string, days: number) {
 }
 
 function detailFor(t: TemplateTask) {
-  const bits = [`Project plan role: ${t.role}`];
+  // Fix 14 (Nov 12): the plan role is not written into the instructions.
+  const bits: string[] = [];
   if (t.breezewayTemplateId) {
     bits.push(`Breezeway template ID: ${t.breezewayTemplateId}`);
   }
