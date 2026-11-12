@@ -248,6 +248,26 @@ export function headerFactsLine(input: { ownerType: string | null | undefined; s
   return parts.length ? parts.join(" · ") : null;
 }
 
+/**
+ * Fix 41: the summary card chips, in order: owner type, the risk chip, the project status.
+ * The stage is never a chip (Progress shows it). Owner type falls back to Active Owner for
+ * an enrolled home whose Owner Type is not set; a value not set shows no chip.
+ */
+export function summaryChips(input: {
+  ownerType: string | null | undefined;
+  activeOwner: boolean;
+  projectStatus: string | null | undefined;
+}): { ownerType: string | null; projectStatus: string | null } {
+  const owner = (input.ownerType ?? "").trim() || (input.activeOwner ? "Active Owner" : "");
+  const status = (input.projectStatus ?? "").trim();
+  return { ownerType: owner || null, projectStatus: status || null };
+}
+
+/** Fix 41: the Plan tab opens with only the current stage expanded. */
+export function planStageOpenByDefault(index: number, stepper: Pick<Stepper, "current">): boolean {
+  return index === stepper.current - 1;
+}
+
 export function shown(value: string | null | undefined): string {
   const v = (value ?? "").trim();
   return v ? v : NOT_SET;

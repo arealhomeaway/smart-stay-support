@@ -567,7 +567,6 @@ function PropertyWorkspace() {
         photo={current.primary_photo_url ?? null}
         address={formatPropertyLabel(current).primary}
         place={place}
-        stage={stepper.currentStage}
         activeOwner={Boolean(activeOwner)}
         health={health}
         ownerType={details.owner_type ?? null}

@@ -75,3 +75,37 @@ export function StageStepper({ stepper, onSelect }: { stepper: Stepper; onSelect
     </ol>
   );
 }
+
+/** Fix 41: six thin bars, each with the stage name and its note under it; a bar opens that stage on the Plan tab. */
+export function StageProgress({ stepper, onSelect }: { stepper: Stepper; onSelect?: ((index: number) => void) | undefined }) {
+  return (
+    <ol aria-label="Stages" className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-3 lg:grid-cols-6">
+      {stepper.steps.map((s) => {
+        const body = (
+          <>
+            <span className="block h-1.5 overflow-hidden rounded-full bg-muted">
+              <span className="block h-full rounded-full bg-primary" style={{ width: `${s.percent}%` }} />
+            </span>
+            <span className={cn("mt-2 block text-sm leading-tight", s.state === "current" ? "font-semibold" : "font-medium")}>{s.stage}</span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">{s.note}</span>
+          </>
+        );
+        return (
+          <li key={s.stage} aria-current={s.state === "current" ? "step" : undefined}>
+            {onSelect ? (
+              <button
+                type="button"
+                onClick={() => onSelect(s.index)}
+                className="block min-h-11 w-full rounded-md p-1 text-left hover:bg-muted/50"
+              >
+                {body}
+              </button>
+            ) : (
+              <div className="p-1">{body}</div>
+            )}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
