@@ -24,7 +24,8 @@ CREATE TABLE public.onboarding_template_tasks(id uuid PRIMARY KEY, kind_settings
 CREATE TABLE public.onboarding_tasks(id uuid PRIMARY KEY, property_id uuid, template_task_id uuid, task_kind text DEFAULT 'do_it',
   kind_settings jsonb NOT NULL DEFAULT '{}', archived_at timestamptz);
 CREATE TABLE public.ao_home_plan_cards(id uuid PRIMARY KEY, program_id uuid, property_id uuid, linked_task_id uuid);
-CREATE TABLE public.owner_reviews(id uuid PRIMARY KEY, program_id uuid, property_id uuid, archived_at timestamptz, onboarding_task_id uuid);
+CREATE TABLE public.owner_reviews(id uuid PRIMARY KEY, program_id uuid, property_id uuid, archived_at timestamptz, onboarding_task_id uuid, status text DEFAULT 'awaiting_owner');
+CREATE TABLE public.owner_request_messages(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), review_id uuid, author_type text, event text, body text, created_at timestamptz);
 CREATE TABLE public.owner_item_task_sends(review_id uuid PRIMARY KEY, task_id uuid);
 CREATE TABLE public.work_items(id uuid PRIMARY KEY, program_id uuid, property_id uuid, source_task_id uuid);
 `;
@@ -85,5 +86,43 @@ describe("item 3: owner_outside_resolve_notes (staged)", () => {
     const db = await fresh();
     await db.exec(read("01_owner_outside_notes.undo.sql"));
     expect((await db.query<{ n: number }>("SELECT count(*)::int n FROM pg_proc WHERE proname = 'owner_outside_resolve_notes'")).rows[0]!.n).toBe(0);
+  });
+});
+
+describe("item 2: owner_item_last_speakers (staged)", () => {
+  const answered = U(61), replied = U(62), silent = U(63), prepared = U(64), elsewhere = U(65), otherProg = U(29);
+  async function speakers(withFile = true) {
+    const db = await fresh();
+    await db.exec(`
+      INSERT INTO public.owner_programs VALUES ('${otherProg}', '${U(13)}', 'active', NULL);
+      INSERT INTO public.owner_reviews(id, program_id, property_id, status) VALUES ('${answered}', '${prog}', '${home}', 'awaiting_owner'),
+        ('${replied}', '${prog}', '${home}', 'awaiting_owner'), ('${silent}', '${prog}', '${home}', 'awaiting_owner'),
+        ('${prepared}', '${prog}', '${home}', 'prepared'), ('${elsewhere}', '${otherProg}', '${U(13)}', 'awaiting_owner');
+      INSERT INTO public.owner_request_messages(review_id, author_type, event, body, created_at) VALUES
+        ('${answered}', 'staff', NULL, 'Please approve', '2026-11-10'), ('${answered}', 'homeowner', NULL, 'Looks good', '2026-11-11'),
+        ('${answered}', 'system', NULL, 'Reminder', '2026-11-12'),
+        ('${replied}', 'homeowner', NULL, 'Question', '2026-11-10'), ('${replied}', 'staff', NULL, 'Answer', '2026-11-11'),
+        ('${replied}', 'staff', 'resolved', '', '2026-11-12'),
+        ('${prepared}', 'homeowner', NULL, 'x', '2026-11-10'), ('${elsewhere}', 'homeowner', NULL, 'x', '2026-11-10');`);
+    if (withFile) await db.exec(read("02_owner_item_last_speakers.sql"));
+    return db;
+  }
+  const list = (ids: string[]) => `ARRAY[${ids.map((i) => `'${i}'::uuid`).join(",")}]`;
+  it("an owner answer reads homeowner (With ARHA); a staff reply reads staff; events and system lines are ignored", async () => {
+    const db = await speakers();
+    await as(db, owner);
+    const r = (await db.query<{ review_id: string; last_speaker: string }>(
+      `SELECT review_id::text, last_speaker FROM public.owner_item_last_speakers(${list([answered, replied, silent, prepared, elsewhere])}) ORDER BY review_id`)).rows;
+    expect(r).toEqual([{ review_id: answered, last_speaker: "homeowner" }, { review_id: replied, last_speaker: "staff" }]);
+  });
+  it("a stranger reads nothing", async () => {
+    const db = await speakers();
+    await as(db, stranger);
+    expect((await db.query(`SELECT * FROM public.owner_item_last_speakers(${list([answered, replied])})`)).rows).toEqual([]);
+  });
+  it("undo removes it", async () => {
+    const db = await speakers();
+    await db.exec(read("02_owner_item_last_speakers.undo.sql"));
+    expect((await db.query<{ n: number }>("SELECT count(*)::int n FROM pg_proc WHERE proname = 'owner_item_last_speakers'")).rows[0]!.n).toBe(0);
   });
 });
