@@ -1,5 +1,12 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 12 Fix 41 onboarding home page (onboarding only, no publish)
+- [x] 1 Summary card: photo left 360x240, chips, place, 4x2 details grid; stacks under 768 px
+- [x] 2 Chips: owner type, risk, project status; no stage chip
+- [x] 3 Progress card with six bars, clickable
+- [x] 4 Plan tab: current stage open, others folded
+- [ ] 5 Empty values as a long dash — blocked by register H3 (no long dashes); waits on a decision
+
 ## Nov 12 Active Owner: plan starts at enrollment (staged SQL, no apply, no publish)
 - [x] 1 Live set rule, enrollment trigger, home program and related checks staged in docs/pending/ao-enrollment-start
 - [x] 2 Release button removed from /owner-programs; seedOwnerRoadmap refuses; page wording
