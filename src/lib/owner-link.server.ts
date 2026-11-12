@@ -182,8 +182,8 @@ export async function updateOwnerRecord(
     coOwnerEmail?: string | null;
     coOwnerPhone?: string | null;
     /** Sent only once the staged columns exist (the form shows them only then). */
-    preferredMethod?: string | null;
-    telegram?: string | null;
+    preferredMethod?: string | null | undefined;
+    telegram?: string | null | undefined;
   },
 ) {
   if (!isStaff(viewer)) throw new Error(DENY);
