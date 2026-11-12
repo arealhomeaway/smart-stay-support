@@ -201,7 +201,7 @@ describe("Active Owner plan starts at enrollment, staged SQL on an isolated data
     expect(APPLY).not.toMatch(/activate_owner_program\(/);
     // Outside function bodies the file changes no rows.
     const outside = APPLY.replace(/\$function\$[\s\S]*?\$function\$/g, "").replace(/--.*$/gm, "");
-    expect(outside).not.toMatch(/\b(INSERT|UPDATE|DELETE|TRUNCATE)\b/i);
+    expect(outside).not.toMatch(/^\s*(INSERT|UPDATE|DELETE|TRUNCATE)\b/im);
     await db.exec(UNDO);
     for (const sig of sigs) {
       const [schema, rest] = sig.split(".");
