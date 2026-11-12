@@ -151,12 +151,18 @@ export function PlanStages({
   userId,
   today,
   onOpen,
+  catchUp,
+  notNeeded = [],
 }: {
   tasks: PlanTask[];
   stepper: Stepper;
   userId: string | null;
   today: string;
   onOpen: (taskId: string) => void;
+  /** Plan catch-up selection (Admin approval Nov 12), present only for people who may use it. */
+  catchUp?: CatchUpSelection | undefined;
+  /** Tasks marked Not needed for this home; kept on record, never counted. */
+  notNeeded?: { id: string; title: string; stage: string; exception_reason: string | null }[];
 }) {
   const [filter, setFilter] = useState<PlanFilter>("everyone");
   const [term, setTerm] = useState("");
@@ -168,14 +174,29 @@ export function PlanStages({
       .filter((t) => sixStageFor(t.stage) === stage && !t.parent_task_id)
       .sort((a, b) => Number(isFinished(a)) - Number(isFinished(b)) || (a.due_on ?? "9").localeCompare(b.due_on ?? "9"));
   const unmapped = shownTasks.filter((t) => !sixStageFor(t.stage) && !t.parent_task_id);
-  const row = (t: PlanTask, stageName?: string) => {
+  const row = (t: PlanTask, order: string[], stageName?: string) => {
     const label = dueLabel(t, today);
+    const canTick = Boolean(catchUp?.selectable.has(t.id));
     return (
-      <li key={t.id}>
+      <li key={t.id} className="flex min-h-[52px] items-stretch">
+        {catchUp ? (
+          <span className="flex w-12 shrink-0 items-center justify-center">
+            {canTick ? (
+              <CatchUpBox
+                state={catchUp.selected.has(t.id)}
+                label={`Select ${t.title}`}
+                onToggle={(shift) => catchUp.toggle(t.id, shift, order)}
+              />
+            ) : null}
+          </span>
+        ) : null}
         <button
           type="button"
           onClick={() => onOpen(t.id)}
-          className="flex min-h-11 w-full flex-wrap items-center gap-x-3 gap-y-0.5 px-3 py-2 text-left text-sm hover:bg-muted/50"
+          className={cn(
+            "flex min-h-[52px] w-full min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 py-2 pr-3 text-left text-sm hover:bg-muted/50",
+            !catchUp && "pl-3",
+          )}
         >
           <span className={cn("min-w-0 flex-1 font-medium", isFinished(t) && "text-muted-foreground")}>{t.title}</span>
           {stageName ? <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">{stageName}</span> : null}
@@ -195,33 +216,64 @@ export function PlanStages({
   const stageBlock = (stage: string, i: number, open: boolean) => {
     const list = byStage(stage);
     const step = stepper.steps[i]!;
+    const order = [...list.filter((t) => !isFinished(t)), ...list.filter(isFinished)].map((t) => t.id);
+    const skipped = notNeeded.filter((t) => sixStageFor(t.stage) === stage);
     const body =
-      list.length === 0 ? (
+      list.length === 0 && skipped.length === 0 ? (
         <p className="px-3 py-3 text-sm text-muted-foreground">No tasks match.</p>
       ) : (
         // Fixes 10, 27: open Tasks first; finished ones fold into "Finished (n)".
         <>
-          <ul className="divide-y divide-border">{list.filter((t) => !isFinished(t)).map((t) => row(t))}</ul>
+          <ul className="divide-y divide-border">{list.filter((t) => !isFinished(t)).map((t) => row(t, order))}</ul>
           {list.some(isFinished) ? (
             <details className="border-t border-border">
               <summary className="flex min-h-11 cursor-pointer items-center px-3 text-sm text-muted-foreground">
                 Finished ({list.filter(isFinished).length})
               </summary>
-              <ul className="divide-y divide-border">{list.filter(isFinished).map((t) => row(t))}</ul>
+              <ul className="divide-y divide-border">{list.filter(isFinished).map((t) => row(t, order))}</ul>
+            </details>
+          ) : null}
+          {skipped.length > 0 ? (
+            <details className="border-t border-border">
+              <summary className="flex min-h-11 cursor-pointer items-center px-3 text-sm text-muted-foreground">
+                Not needed ({skipped.length})
+              </summary>
+              <ul className="divide-y divide-border">
+                {skipped.map((t) => (
+                  <li key={t.id} className="px-3 py-2 text-sm">
+                    <span className="text-muted-foreground line-through">{t.title}</span>
+                    <span className="block text-xs text-muted-foreground">{notNeededLabel(t.exception_reason)}</span>
+                  </li>
+                ))}
+              </ul>
             </details>
           ) : null}
         </>
       );
+    const openIds = catchUp ? openSelectable(list, catchUp) : [];
+    const check = catchUp ? stageCheckState(order, openIds, catchUp.selected) : "none";
     const head = (
-      <span className="flex flex-wrap items-baseline gap-2">
+      <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-2">
         <span className="font-semibold">{stage}</span>
         <span className="text-xs text-muted-foreground">{step.note}</span>
       </span>
     );
+    const box =
+      catchUp && openIds.length > 0 ? (
+        <CatchUpBox
+          state={check}
+          label={`Select every open Task in ${stage}`}
+          className="-my-2 -ml-2"
+          onToggle={() => catchUp.replace(toggleStage(catchUp.selected, openIds, check))}
+        />
+      ) : null;
     // Fix 41: every stage folds; the current one starts open, a finished one reads Done.
     return (
       <details key={stage} id={planStageElementId(i)} open={open} className="surface scroll-mt-4 overflow-hidden">
-        <summary className="flex min-h-11 cursor-pointer items-center border-b border-border bg-muted/20 px-3 py-2">{head}</summary>
+        <summary className="flex min-h-[52px] cursor-pointer items-center gap-1 border-b border-border bg-muted/20 px-3 py-2">
+          {box}
+          {head}
+        </summary>
         {body}
       </details>
     );
@@ -253,7 +305,7 @@ export function PlanStages({
           {hits.length === 0 ? (
             <p className="px-3 py-3 text-sm text-muted-foreground">No tasks match.</p>
           ) : (
-            <ul className="divide-y divide-border">{hits.map((h) => row(h.task, h.stage))}</ul>
+            <ul className="divide-y divide-border">{hits.map((h) => row(h.task, hits.map((x) => x.task.id), h.stage))}</ul>
           )}
         </section>
       ) : (
@@ -286,13 +338,19 @@ export function PlanStages({
           <summary className="flex min-h-11 cursor-pointer items-center bg-muted/20 px-3 py-2 font-semibold">
             Other tasks ({unmapped.length})
           </summary>
-          <ul className="divide-y divide-border">{unmapped.map((t) => row(t))}</ul>
+          <ul className="divide-y divide-border">{unmapped.map((t) => row(t, unmapped.map((x) => x.id)))}</ul>
         </details>
       ) : null}
       </>
       )}
     </div>
   );
+}
+
+/** Not needed Tasks keep the stored "Voided — not needed: <reason>" record; the screen shows only the reason. */
+export function notNeededLabel(reason: string | null) {
+  const r = (reason ?? "").replace(/^Voided\s*[—-]\s*not needed:\s*/i, "").trim();
+  return r ? `Not needed: ${r}` : "Not needed";
 }
 
 /** Item 31: open the Plan tab's stage block and bring it into view. */
