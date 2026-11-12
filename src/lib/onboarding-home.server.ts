@@ -136,7 +136,7 @@ export async function loadOnboardingHome(supabase: Client, userId: string, now =
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (ids.length ? (q as any).in(col, ids) : (q as any).eq(col, "00000000-0000-0000-0000-000000000000")) as Q;
 
-  const [tasksRes, profiles, follows, messages, needs, labels, owners, stagers, aoLinks, roleMembers, stagingVendors, saved] = await Promise.all([
+  const [tasksRes, profiles, follows, messages, needs, labels, owners, stagers, aoLinks, roleMembers, stagingVendors, saved, directorSeat] = await Promise.all([
     readCountedRows<Record<string, unknown>>(
       inIds(
         db
@@ -160,6 +160,7 @@ export async function loadOnboardingHome(supabase: Client, userId: string, now =
     db.from("functional_role_members").select("role_code, user_id"),
     db.from("vendor_orgs").select("id, display_name, legal_name, status, primary_contact_phone, primary_contact_email").contains("service_categories", ["Staging"]).order("display_name"),
     db.from("saved_views").select("id, kind, name, filters, view, sort, columns").eq("user_id", userId).eq("page", "onboarding_home").is("archived_at", null).order("name"),
+    db.from("functional_roles").select("current_seat_holder").eq("code", "onboarding_director").maybeSingle(),
   ]);
 
   const nameOf = new Map((profiles.data ?? []).map((p) => [p.id, p.full_name || p.email || "Team member"] as const));
@@ -287,9 +288,11 @@ export async function loadOnboardingHome(supabase: Client, userId: string, now =
       pm: pool(["onboarding_project_manager"]),
       designer: pool(DESIGN_ROLE_CODES),
       utilities: pool(["utilities"]),
+      director: pool(["onboarding_director", "director_onboarding"]),
       stager: ((stagingVendors.data ?? []) as { id: string; display_name: string | null; legal_name: string | null }[]).map((v) => ({ id: v.id, name: v.display_name || v.legal_name || "Vendor" })),
     },
     stagersReady,
+    directorDefault: person((directorSeat.data as { current_seat_holder?: string | null } | null)?.current_seat_holder ?? null),
     // Null until the staged saved_views table is applied.
     savedViews: saved.error ? null : ((saved.data ?? []) as (SavedView & { kind: string })[]).filter((v) => v.kind === "view").map(({ id, name, filters, view, sort }) => ({ id, name, filters, view, sort })),
     columns: saved.error ? null : ((((saved.data ?? []) as { kind: string; columns: string[] | null }[]).find((v) => v.kind === "columns")?.columns ?? []) as string[]),
