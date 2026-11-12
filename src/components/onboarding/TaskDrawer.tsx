@@ -37,7 +37,24 @@ import { showsBreezewayHomeLink } from "@/lib/onboarding-breezeway";
 import { evidenceSatisfied } from "@/lib/onboarding-evidence";
 import { listAttachmentsFn } from "@/lib/attachments.functions";
 import { bulkUpdateHomeTasksFn, markTaskStartedFn } from "@/lib/onboarding.functions";
-import { SendToHomeownerSection } from "@/components/onboarding/SendToHomeownerDialog";
+import { SendToHomeownerSection, sendFormId } from "@/components/onboarding/SendToHomeownerDialog";
+import { OpenFormButton, TaskKindMiddle, missingFillFields, outsideEvidence, useFillIn, type OutsideDraft } from "@/components/onboarding/TaskKindMiddle";
+import { EmailComposer } from "@/components/EmailComposer";
+import { readTaskKindFn } from "@/lib/onboarding-task-kinds.functions";
+import {
+  completionBlock,
+  drawerMiddle,
+  effectiveTaskKind,
+  firstLink,
+  isOutsideForm,
+  isTaskKind,
+  mainButtonLabel,
+  type TaskKindCode,
+} from "@/lib/onboarding-task-kinds";
+import { loadHomeProgramStatus } from "@/lib/ao-data";
+import { canSendToActiveOwner } from "@/lib/ao-engine";
+import { stripPlanRoleLine } from "@/lib/task-drawer";
+import { FollowUpTask } from "@/components/onboarding/FollowUpTask";
 import { loadTaskOwnerSend, loadTaskPlanCard } from "@/lib/ao-data";
 import { TaskVerifyBadge } from "@/components/ao/TaskPlanLink";
 import { TaskGallery } from "@/components/onboarding/TaskGallery";
@@ -198,6 +215,10 @@ export function TaskDrawer({
   const [voidOpen, setVoidOpen] = useState(false);
   const [voidReason, setVoidReason] = useState("");
   const [fullOpen, setFullOpen] = useState(false);
+  const [outside, setOutside] = useState<OutsideDraft>({ where: null, proof: "", note: "" });
+  const [ownerReady, setOwnerReady] = useState(false);
+  const [topReopen, setTopReopen] = useState(false);
+  const { userId, isAdmin, isOnboardingDirector } = useRole() as ReturnType<typeof useRole> & { isAdmin?: boolean; isOnboardingDirector?: boolean };
   const qc = useQueryClient();
   const router = useRouter();
   // Same list (and cache key) the Task's file panel reads: a stored file is proof.
@@ -222,6 +243,22 @@ export function TaskDrawer({
     enabled: Boolean(task?.id),
     retry: false,
   });
+  // Nov 12 kinds: the stored kind once staged file 01 is applied, else the approved rule.
+  const readKind = useServerFn(readTaskKindFn);
+  const kindQ = useQuery({
+    queryKey: ["task-kind", task?.id ?? "none"],
+    queryFn: () => readKind({ data: { taskId: task!.id } }),
+    enabled: Boolean(task?.id),
+    retry: false,
+  });
+  const programQ = useQuery({
+    queryKey: ["ao-program-status", task?.property_id ?? "none"],
+    queryFn: () => loadHomeProgramStatus(task!.property_id),
+    enabled: Boolean(task?.property_id),
+  });
+  const storedKind = kindQ.data?.ready && isTaskKind(kindQ.data.kind) ? (kindQ.data.kind as TaskKindCode) : null;
+  const settings = kindQ.data?.ready ? kindQ.data.settings : {};
+  const fillQ = useFillIn(task?.property_id ?? "", settings.fields ?? [], storedKind === "fill_in" && Boolean(task?.property_id));
   // Role changes use the same people rule and transaction as Edit selected.
   const canAssignRole = useQuery({
     queryKey: ["can-bulk-edit-home-tasks", task?.property_id ?? "none"],
@@ -266,7 +303,19 @@ export function TaskDrawer({
     setVoidOpen(false);
     setVoidReason("");
     setFullOpen(false);
+    setTopReopen(false);
   }, [task?.id, task?.evidence_note, task?.due_on]);
+  useEffect(() => {
+    setOutside({ where: (settings.where as OutsideDraft["where"]) ?? null, proof: "", note: "" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task?.id, settings.where]);
+  // Fix 11/12: a link from Owner Completions opens the drawer at the owner conversation.
+  useEffect(() => {
+    if (!task?.id || typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).get("at") !== "conversation") return;
+    const t = setTimeout(() => document.getElementById(`owner-conversation-${task.id}`)?.scrollIntoView({ block: "start" }), 400);
+    return () => clearTimeout(t);
+  }, [task?.id]);
 
   if (!task) return null;
 
@@ -298,6 +347,11 @@ export function TaskDrawer({
     hasOwnerItem: Boolean(ownerItem),
     hasPlanCard: Boolean(linkedCard),
   });
+  // The kind decides the middle, the main button and the completion rule.
+  const code: TaskKindCode =
+    ownerItem ? "send_to_owner" : storedKind ?? (kind === "homeowner" ? "send_to_owner" : effectiveTaskKind(task));
+  const hasPortal = canSendToActiveOwner(programQ.data);
+  const middle = drawerMiddle(code, settings, hasPortal);
   const dispatchable = showsBreezeway({ title: task.title, detail: task.detail });
   const finished = task.status === "complete" || task.status === "carryover";
   const sentToOwner = kind === "homeowner" && (Boolean(ownerItem) || task.owner_approval_status === "awaiting_owner");
@@ -305,14 +359,16 @@ export function TaskDrawer({
   const dueText = dueChip(task.due_on, task.status, today);
   const hasStartedColumn = "started_at" in task;
   const startedAt = (task as WorkflowTask & { started_at?: string | null }).started_at ?? null;
-  const instructions = firstLines(task.detail);
+  const detailText = stripPlanRoleLine(task.detail);
+  const instructions = firstLines(detailText);
+  const formLink = isOutsideForm(task.title) ? firstLink(task.detail) : null;
   const fullExtra = Boolean(
     instructions.more || task.description || task.done_when || repairApprovalGuidance(task.title) ||
       (task.video_url && /^https:\/\//.test(task.video_url)),
   );
   const fullInstructions = (
     <div className="space-y-3 text-sm">
-      {task.detail && <p className="whitespace-pre-wrap text-muted-foreground">{task.detail}</p>}
+      {detailText && <p className="whitespace-pre-wrap text-muted-foreground">{detailText}</p>}
       {task.description && <p className="whitespace-pre-wrap text-muted-foreground">{task.description}</p>}
       {task.done_when && (
         <p className="whitespace-pre-wrap text-muted-foreground">
@@ -330,16 +386,45 @@ export function TaskDrawer({
       )}
     </div>
   );
+  const kindBlock = completionBlock(middle, {
+    proofNote: evidence,
+    fileCount,
+    evidenceRequired: task.evidence_required,
+    missingFields: middle === "fill_in" ? missingFillFields(settings.fields ?? [], fillQ.data?.filled) : [],
+    where: outside.where,
+    outsideProof: outside.proof,
+    sent: false,
+    approved: true,
+  });
+  const releaseHint = !view.canComplete && !evidenceMissing && !awaitingOwner ? view.reason ?? "Not workable yet." : null;
   const hint = finished
     ? null
-    : completeHint({
-        kind,
-        releaseBlocked: !evidenceMissing && !view.canComplete && !awaitingOwner,
-        reason: view.reason,
-        evidenceMissing: Boolean(evidenceMissing),
-        proofOk,
-        awaitingOwner,
-      });
+    : middle === "do_it" || middle === "work_order" || middle === "send_to_owner"
+      ? middle === "send_to_owner"
+        ? ownerReady ? null : releaseHint ?? "Write what you're asking (20 characters or more)."
+        : middle === "work_order"
+          ? kindBlock
+          : kindBlock ?? completeHint({
+              kind: "ordinary",
+              releaseBlocked: !evidenceMissing && !view.canComplete && !awaitingOwner,
+              reason: view.reason,
+              evidenceMissing: false,
+              proofOk: true,
+              awaitingOwner,
+            })
+      : middle === "email" || middle === "approval"
+        ? releaseHint
+        : kindBlock ?? releaseHint;
+  const complete = (note?: string) =>
+    onSave(
+      taskPayload(task, {
+        status: "complete",
+        blocker: "",
+        ...(note ? { evidenceNote: note } : evidence.trim() ? { evidenceNote: evidence.trim() } : {}),
+      }),
+    );
+  const completedBy = task.completed_by ? people.find((p) => p.id === task.completed_by) : null;
+  const canReopenTop = Boolean(isAdmin || isOnboardingDirector || (userId && task.completed_by === userId));
   const scrollToFiles = () =>
     document.getElementById(`task-files-${task.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
@@ -354,6 +439,25 @@ export function TaskDrawer({
           <p className="text-xs text-muted-foreground">
             {propertyName} · {stageLabel(task.stage)}
           </p>
+          {finished && (
+            <div className="space-y-2 rounded-md border border-border p-3 text-sm">
+              <p>
+                Completed by {completedBy?.full_name || completedBy?.email || "a teammate"}
+                {task.completed_at ? ` on ${usDate(task.completed_at)}` : ""}
+              </p>
+              {canReopenTop && !disabled && (
+                topReopen ? (
+                  <div className="flex flex-wrap gap-2">
+                    <Input value={reopenReason} onChange={(e) => setReopenReason(e.target.value)} placeholder="Why is this being reopened?" className="h-11 w-full sm:w-72" aria-label="Reason for reopening" />
+                    <Button className="min-h-11" size="sm" disabled={reopenReason.trim().length < 3} onClick={() => onReopen(task.id, reopenReason.trim())}>Reopen</Button>
+                    <Button className="min-h-11" size="sm" variant="ghost" onClick={() => setTopReopen(false)}>Cancel</Button>
+                  </div>
+                ) : (
+                  <Button className="min-h-11" size="sm" variant="secondary" onClick={() => setTopReopen(true)}>Reopen</Button>
+                )
+              )}
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-1.5">
             <Chip className={stateChip(STATUS_STATE[view.status])}>
               {startedAt && view.status !== "complete" && !view.overdue ? "Started" : STATUS_LABEL[view.status]}
@@ -458,49 +562,52 @@ export function TaskDrawer({
         </div>
       }
       footer={
-        <>
-          {!finished && !sentToOwner && (
-            <ReviewAwareComplete taskId={task.id} disabled={disabled || Boolean(hint)}>
-              <div className="flex flex-1 flex-col gap-1">
+        finished || (middle === "send_to_owner" && sentToOwner) ? undefined : (
+          <div className="flex flex-1 flex-col gap-1">
+            {middle === "work_order" ? null : middle === "send_to_owner" ? (
+              <Button type="submit" form={sendFormId(task.id)} className="min-h-11 w-full" disabled={disabled || !ownerReady}>
+                Send to the homeowner
+              </Button>
+            ) : middle === "email" ? (
+              <EmailComposer
+                context="onboarding_task"
+                recordId={task.id}
+                label="Send email"
+                variant="primary"
+                presetTemplateId={settings.emailTemplateId ?? null}
+                bracketFillIns
+                disabled={disabled || Boolean(releaseHint)}
+                onSent={(info) => complete(`Email sent to ${info.to}: ${info.subject}`.slice(0, 1000))}
+              />
+            ) : (
+              <ReviewAwareComplete taskId={task.id} disabled={disabled || Boolean(hint)}>
                 <Button
                   className="min-h-11 w-full"
                   disabled={disabled || Boolean(hint)}
-                  onClick={() =>
-                    onSave(
-                      taskPayload(task, {
-                        status: "complete",
-                        blocker: "",
-                        ...(evidence.trim() ? { evidenceNote: evidence.trim() } : {}),
-                      }),
-                    )
-                  }
+                  onClick={() => complete(middle === "outside_resolve" ? outsideEvidence(outside) : undefined)}
                 >
-                  Complete
+                  {mainButtonLabel(middle)}
                 </Button>
-                {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
-              </div>
-            </ReviewAwareComplete>
-          )}
-          <Button variant="ghost" className="min-h-11" onClick={onClose}>
-            Close
-          </Button>
-        </>
+              </ReviewAwareComplete>
+            )}
+            {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+          </div>
+        )
       }
     >
       <div className="space-y-5">
         {/* What to do: the first lines, the rest on request. Logins stay exactly as written. */}
-        {(task.detail || fullExtra) && (
+        {(detailText || fullExtra || formLink) && (
           <section className="space-y-1">
             <p className="eyebrow">What to do</p>
-            {instructions.head && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{instructions.head}</p>}
-            {fullExtra && kind !== "homeowner" && (
-              <>
-                <Button variant="link" className="h-auto min-h-11 px-0" aria-expanded={fullOpen} onClick={() => setFullOpen((v) => !v)}>
-                  Full instructions
-                </Button>
-                {fullOpen && fullInstructions}
-              </>
+            {/* Fix 16: the short version, or the full text in its place, never both. */}
+            {fullOpen ? fullInstructions : instructions.head && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{instructions.head}</p>}
+            {fullExtra && middle !== "send_to_owner" && (
+              <Button variant="link" className="h-auto min-h-11 px-0" aria-expanded={fullOpen} onClick={() => setFullOpen((v) => !v)}>
+                {fullOpen ? "Show less" : "Show full instructions"}
+              </Button>
             )}
+            {formLink && <OpenFormButton href={formLink} />}
           </section>
         )}
 
@@ -535,14 +642,14 @@ export function TaskDrawer({
             entityType="onboarding_task"
             entityId={task.id}
             title="Files"
-            description={uploadHint(taskKind({ title: task.title, detail: task.detail }))}
+            description={middle === "upload_files" && task.done_when ? task.done_when : uploadHint(taskKind({ title: task.title, detail: task.detail }))}
           />
           <LinkedStepFiles taskId={task.id} canManage={canManageTask && !disabled} />
           {isPhotoStep(task.title) && <OpenPhotosFolderButton propertyId={task.property_id} />}
         </section>
 
         {/* The middle changes with the kind of Task. */}
-        {kind === "ordinary" && !finished && (
+        {middle === "do_it" && !finished && (
           <section className="space-y-2 rounded-lg border border-border p-4" aria-label="Proof it's done">
             <p className="font-medium">Proof it&apos;s done</p>
             <Label htmlFor={`proof-${task.id}`} className="text-sm">Where is the proof?</Label>
@@ -560,14 +667,33 @@ export function TaskDrawer({
           </section>
         )}
 
-        {kind === "work_order" && (
+        {!finished && !["do_it", "work_order", "send_to_owner"].includes(middle) && (
+          <TaskKindMiddle
+            kind={middle}
+            settings={settings}
+            taskId={task.id}
+            propertyId={task.property_id}
+            disabled={disabled}
+            canEdit={canManageTask}
+            plannedClosingOn={null}
+            outside={outside}
+            onOutside={setOutside}
+            onEmailSent={(info) => complete(`Email sent to ${info.to}: ${info.subject}`.slice(0, 1000))}
+            onVendorRequested={(vendor, info) => onAddObservation(task.id, `Requested ${vendor} by email: ${info.subject}`.slice(0, 1000))}
+          />
+        )}
+
+        {middle === "work_order" && (
           <section className="space-y-2" aria-label="Breezeway work order">
-            <OnboardingBreezewaySection taskId={task.id} propertyId={task.property_id} disabled={disabled} />
+            <OnboardingBreezewaySection taskId={task.id} propertyId={task.property_id} disabled={disabled} defaultTitle={task.title} defaultDescription={task.detail ?? null} />
           </section>
         )}
 
-        {kind === "homeowner" && (
+        {middle === "send_to_owner" && (
+          <div id={`owner-conversation-${task.id}`}>
           <SendToHomeownerSection
+            footerSend
+            onReady={setOwnerReady}
             taskId={task.id}
             taskTitle={task.title}
             propertyId={task.property_id}
@@ -613,6 +739,11 @@ export function TaskDrawer({
               </div>
             )}
           </SendToHomeownerSection>
+          </div>
+        )}
+
+        {!finished && canManageTask && !disabled && (
+          <FollowUpTask task={task} people={people} roles={DRAWER_ROLES} />
         )}
 
         <TaskTeamComments taskId={task.id} propertyId={task.property_id} people={people} disabled={disabled} />
@@ -623,7 +754,7 @@ export function TaskDrawer({
         <details className="space-y-4 text-sm">
           <summary className="flex min-h-11 cursor-pointer items-center text-muted-foreground">Details</summary>
           <div className="mt-3 space-y-5">
-            {kind === "work_order" && !finished && (
+            {middle === "work_order" && !finished && (
               <section className="space-y-2">
                 <p className="eyebrow">Proof</p>
                 <Label htmlFor={`wo-proof-${task.id}`} className="text-sm">Where is the proof?</Label>
@@ -640,7 +771,7 @@ export function TaskDrawer({
                 </Button>
               </section>
             )}
-            {kind === "homeowner" && fullExtra && (
+            {middle === "send_to_owner" && fullExtra && (
               <section className="space-y-1">
                 <p className="eyebrow">Full instructions</p>
                 {fullInstructions}
@@ -691,10 +822,10 @@ export function TaskDrawer({
               </section>
             )}
 
-            <TaskReviewPanel taskId={task.id} />
+            {middle !== "approval" && <TaskReviewPanel taskId={task.id} />}
             {visualTrack && <TaskGallery taskId={task.id} />}
             {showsBreezewayHomeLink(task.title) && <BreezewayHomeLink propertyId={task.property_id} />}
-            {kind !== "work_order" && dispatchable && (
+            {middle !== "work_order" && dispatchable && (
               <section className="space-y-2">
                 <p className="eyebrow">Dispatch to a vendor</p>
                 <BreezewayTaskPanel
