@@ -46,13 +46,35 @@ const OLD_PAGE_TAB: Record<string, PageTab> = {
   handoff: "more",
 };
 
-/** The page opens on Tasks; an Opportunity link opens the Owner tab. */
+/** Part 1 fix 6: the page opens on Overview; an Opportunity link opens the Owner tab. */
+export const DEFAULT_PAGE_TAB: PageTab = "overview";
+
 export function pageTabFor(raw: unknown, hasOpportunity = false): PageTab {
   if (typeof raw === "string") {
     if (PAGE_TABS.some((t) => t.value === raw)) return raw as PageTab;
     if (OLD_PAGE_TAB[raw]) return OLD_PAGE_TAB[raw]!;
   }
-  return hasOpportunity ? "owner" : "tasks";
+  return hasOpportunity ? "owner" : DEFAULT_PAGE_TAB;
+}
+
+/** Set in the address when a Needs attention chip took the person to another tab. */
+export const FROM_ATTENTION = "attention";
+type TabSearch = Record<string, unknown>;
+
+/** A Needs attention jump: a new history entry, marked so one Back button shows. */
+export function attentionJumpSearch<S extends TabSearch>(search: S, tab: PageTab): S & { tab: PageTab; from: string } {
+  return { ...search, tab, from: FROM_ATTENTION };
+}
+
+/** A tab clicked directly (or "Back to Needs attention" with Overview): the mark goes. */
+export function tabClickSearch<S extends TabSearch>(search: S, tab: PageTab): Omit<S, "from"> & { tab: PageTab } {
+  const { from: _from, ...rest } = search;
+  return { ...rest, tab } as Omit<S, "from"> & { tab: PageTab };
+}
+
+/** One "Back to Needs attention" button, only after a jump and never on Overview itself. */
+export function showBackToAttention(search: TabSearch, tab: PageTab): boolean {
+  return search.from === FROM_ATTENTION && tab !== "overview";
 }
 
 /* -------------------------------------------------------------- stages */
@@ -244,9 +266,10 @@ function addDaysIso(iso: string, n: number) {
 export type ListedTask<T extends PageTask> = { task: T; fromStage: string | null; late: number };
 
 /**
- * 1.5: Do now = this stage's open Tasks late or due within 2 days, plus every late Task from
- * any other stage (labeled with its stage); Up next = the rest of this stage's open Tasks by due
- * date; Done = this stage's finished Tasks. stage null means All stages. A tag filter narrows all three.
+ * 1.5 as fixed: Do now = the selected stage's open Tasks late or due within 2 days; Up next = the
+ * rest of that stage's open Tasks by due date; Done = that stage's finished Tasks. Late Tasks in
+ * other stages are only counted (lateElsewhere) for the one line above Do now. stage null means
+ * All stages. A whose-Task filter narrows everything.
  */
 export function stageLists<T extends PageTask>(
   tasks: T[],
@@ -258,19 +281,45 @@ export function stageLists<T extends PageTask>(
   const lateBy = (t: T) => (t.due_on && t.due_on < input.today ? daysBetween(t.due_on, input.today) : 0);
   const open = tasks.filter((t) => !isFinished(t) && keep(t));
   const byDue = (a: T, b: T) => (a.due_on ?? "9999").localeCompare(b.due_on ?? "9999") || a.title.localeCompare(b.title);
-  const doNow = open
-    .filter((t) => (inStage(t) && t.due_on !== null && t.due_on <= soon) || lateBy(t) > 0)
+  const doNow: ListedTask<T>[] = open
+    .filter((t) => inStage(t) && t.due_on !== null && t.due_on <= soon)
     .sort(byDue)
-    .map((task) => {
-      const i = stageIndexOf(task.stage);
-      return { task, late: lateBy(task), fromStage: inStage(task) ? null : i >= 0 ? PAGE_STAGE_NAMES[i]! : "Other tasks" };
-    });
+    .map((task) => ({ task, late: lateBy(task), fromStage: null }));
   const now = new Set(doNow.map((x) => x.task.id));
   const upNext = open.filter((t) => inStage(t) && !now.has(t.id)).sort(byDue);
   const done = tasks
     .filter((t) => isFinished(t) && inStage(t) && keep(t))
     .sort((a, b) => (b.completed_at ?? "").localeCompare(a.completed_at ?? ""));
-  return { doNow, upNext, done };
+  const lateElsewhere = open.filter((t) => !inStage(t) && lateBy(t) > 0).length;
+  return { doNow, upNext, done, lateElsewhere };
+}
+
+function stageNameOf(stage: string) {
+  const i = stageIndexOf(stage);
+  return i >= 0 ? PAGE_STAGE_NAMES[i]! : "Other tasks";
+}
+
+/** The all-late view: every open late Task in every stage, most late first, each with its stage. */
+export function lateEverywhere<T extends PageTask>(
+  tasks: T[],
+  input: { today: string; tag: OwnerTag | null; viewerId: string | null | undefined; pmId: string | null | undefined },
+): ListedTask<T>[] {
+  return tasks
+    .filter(
+      (t) =>
+        !t.parent_task_id &&
+        !isFinished(t) &&
+        t.due_on !== null &&
+        t.due_on < input.today &&
+        (!input.tag || ownerTagFor(t, input.viewerId, input.pmId) === input.tag),
+    )
+    .sort((a, b) => a.due_on!.localeCompare(b.due_on!) || a.title.localeCompare(b.title))
+    .map((task) => ({ task, late: daysBetween(task.due_on!, input.today), fromStage: stageNameOf(task.stage) }));
+}
+
+/** The one line above Do now: "N late Tasks in other stages ›". */
+export function lateElsewhereLabel(n: number): string {
+  return `${n} late ${n === 1 ? "Task" : "Tasks"} in other stages ›`;
 }
 
 /** The row's due words: "2 days late" (red) or the date. */
@@ -327,6 +376,13 @@ export type AttentionJump =
   | { tab: "details"; section: "team" | "dates" };
 
 export type AttentionChip = { key: string; label: string; jump: AttentionJump };
+
+/** Fix 3: the first 3 chips show; the rest fold behind "+N more". */
+export const ATTENTION_SHOWN = 3;
+export function foldChips<C>(chips: C[], open: boolean): { shown: C[]; more: number } {
+  if (open || chips.length <= ATTENTION_SHOWN) return { shown: chips, more: open ? chips.length - ATTENTION_SHOWN : 0 };
+  return { shown: chips.slice(0, ATTENTION_SHOWN), more: chips.length - ATTENTION_SHOWN };
+}
 
 /** 1.2, in order; a chip shows only when true. */
 export function needsAttention(input: {
@@ -440,31 +496,49 @@ export function telegramLink(handle: string | null | undefined): string | null {
   return /^[A-Za-z0-9_]{3,64}$/.test(h) ? `https://t.me/${h}` : null;
 }
 
-export type ContactButton = { method: ContactMethod; label: string; href: string; preferred: boolean };
+export type ContactButton = { method: ContactMethod; label: string; href: string; preferred: boolean; detail: string | null };
 
-/** 1.1 (4): one button per method on file, the preferred one marked. */
-export function ownerContactButtons(input: {
-  name: string | null | undefined;
+/**
+ * Fix 2: the owner row on one line. Names = the owner contacts (people); legal = the owner record's
+ * name, shown in gray after them (omitted when there are no separate people, so it is not repeated).
+ * One button for the preferred method, marked "(preferred)"; with none set (or the preferred one
+ * not on file) the first button is Text, else the first method on file. "Call or email" opens the rest.
+ */
+export function ownerRow(input: {
+  people: string[];
+  legal: string | null | undefined;
   phone: string | null | undefined;
   email: string | null | undefined;
   telegram: string | null | undefined;
   preferred: string | null | undefined;
-}): ContactButton[] {
-  const first = firstName(input.name);
+}): { names: string; legal: string | null; primary: ContactButton | null; others: ContactButton[] } {
+  const seen = new Set<string>();
+  const people = input.people
+    .map((p) => p.trim())
+    .filter((p) => p && !seen.has(p.toLowerCase()) && seen.add(p.toLowerCase()));
+  const legal = (input.legal ?? "").trim() || null;
+  const first = firstName(people[0] ?? legal);
   const phone = (input.phone ?? "").trim();
   const dial = dialable(phone);
-  const pref = (CONTACT_METHODS as readonly string[]).includes(input.preferred ?? "") ? (input.preferred as ContactMethod) : null;
-  const out: ContactButton[] = [];
-  if (dial) {
-    out.push({ method: "text", label: `Text ${first}${first ? " " : ""}· ${phone}`, href: `sms:${dial}`, preferred: pref === "text" });
-    out.push({ method: "call", label: `Call ${first}${first ? " " : ""}· ${phone}`, href: `tel:${dial}`, preferred: pref === "call" });
-  }
   const email = (input.email ?? "").trim();
-  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-    out.push({ method: "email", label: `Email · ${email}`, href: `mailto:${email}`, preferred: pref === "email" });
   const tg = telegramLink(input.telegram);
-  if (tg) out.push({ method: "telegram", label: "Telegram", href: tg, preferred: pref === "telegram" });
-  return out;
+  const who = first ? ` ${first}` : "";
+  const avail: Omit<ContactButton, "preferred">[] = [];
+  if (dial) {
+    avail.push({ method: "text", label: `Text${who}`, href: `sms:${dial}`, detail: phone });
+    avail.push({ method: "call", label: `Call${who}`, href: `tel:${dial}`, detail: phone });
+  }
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) avail.push({ method: "email", label: "Email", href: `mailto:${email}`, detail: email });
+  if (tg) avail.push({ method: "telegram", label: "Telegram", href: tg, detail: null });
+  const pref = avail.find((b) => b.method === input.preferred) ?? null;
+  const lead = pref ?? avail.find((b) => b.method === "text") ?? avail[0] ?? null;
+  const primary = lead ? { ...lead, label: pref ? `${lead.label} (preferred)` : lead.label, preferred: Boolean(pref) } : null;
+  return {
+    names: people.length ? people.join(" and ") : (legal ?? ""),
+    legal: people.length ? legal : null,
+    primary,
+    others: avail.filter((b) => b.method !== lead?.method).map((b) => ({ ...b, preferred: false })),
+  };
 }
 
 /* ------------------------------------------------------ add a Task */
