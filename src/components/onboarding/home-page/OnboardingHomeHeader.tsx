@@ -1,9 +1,10 @@
 /**
- * Property page Part 1 (1.1): the header shown on every tab of one home's Onboarding view.
- * Photo and name row, three tags plus "+N more", one quiet facts line, the owner row with a
- * button per contact method (the preferred one highlighted), and the buttons row.
+ * Property page Part 1 (1.1, as fixed): the header shown on every tab of one home's Onboarding
+ * view. Photo and name row, three tags plus "+N more", one quiet facts line, the one-line owner
+ * row (people, the legal owner in gray, the preferred button and "Call or email"), and the
+ * buttons row. Needs attention lives on Overview, not here.
  */
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ import { FollowHomeButton } from "@/components/onboarding/OnboardingActivityFeed
 import { HomeContextHeader } from "@/components/property/HomeContextHeader";
 import { ShellInlineTrail } from "@/components/nav/ShellNav";
 import { readPropertyOwnerFn } from "@/lib/owner-link.functions";
-import { ownerContactButtons } from "@/lib/onboarding-home-page";
+import { ownerRow, type ContactButton } from "@/lib/onboarding-home-page";
 import { cn } from "@/lib/utils";
 
 export function OnboardingHomeHeader(p: {
@@ -30,18 +31,23 @@ export function OnboardingHomeHeader(p: {
   /** Admin and Director of Onboarding: "Add owner" when no owner is on file. */
   canAddOwner: boolean;
   onAskOwner: () => void;
-  /** The Needs attention strip (1.2), shown between the buttons and the tabs. */
-  attention?: ReactNode;
 }) {
   const [showMore, setShowMore] = useState(false);
+  const [showWays, setShowWays] = useState(false);
   const [adding, setAdding] = useState(false);
   const read = useServerFn(readPropertyOwnerFn);
   const ownerQ = useQuery({ queryKey: ["property-owner", p.propertyId], queryFn: () => read({ data: { propertyId: p.propertyId } }) });
   const owner = ownerQ.data?.owner ?? null;
-  const names = [owner?.name, owner?.coOwnerName].filter((x): x is string => Boolean(x && x.trim()));
-  const buttons = owner
-    ? ownerContactButtons({ name: owner.name, phone: owner.phone, email: owner.email, telegram: owner.telegram, preferred: owner.preferredMethod })
-    : [];
+  const row = owner
+    ? ownerRow({
+        people: owner.people ?? [],
+        legal: owner.name,
+        phone: owner.phone,
+        email: owner.email,
+        telegram: owner.telegram,
+        preferred: owner.preferredMethod,
+      })
+    : null;
   const tag = "inline-flex min-h-8 items-center rounded-full px-3 text-xs font-medium";
   return (
     <header className="space-y-3" aria-label="This home">
@@ -87,40 +93,35 @@ export function OnboardingHomeHeader(p: {
       {/* 3) Facts line. */}
       <p className="numeric text-sm text-muted-foreground">{p.facts}</p>
 
-      {/* 4) Owner row. */}
-      <section className="space-y-2 rounded-lg bg-muted/50 px-3 py-2.5" aria-label="Owner">
+      {/* 4) Owner row, one line. */}
+      <section className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg bg-muted/50 px-3 py-2" aria-label="Owner">
         {ownerQ.isPending ? (
           <p className="text-sm text-muted-foreground">Loading the owner…</p>
-        ) : owner ? (
+        ) : owner && row ? (
           <>
-            <p className="text-sm">
+            <p className="min-w-0 text-sm">
               <span className="text-muted-foreground">Owner </span>
-              <span className="font-medium">{names.join(" and ") || "Name not on file"}</span>
+              <span className="font-medium">{row.names || "Name not on file"}</span>
+              {row.legal ? <span className="text-muted-foreground"> · {row.legal}</span> : null}
             </p>
-            {buttons.length > 0 ? (
-              <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
-                {buttons.map((b) => (
-                  <a
-                    key={b.method}
-                    href={b.href}
-                    target={b.method === "telegram" ? "_blank" : undefined}
-                    rel={b.method === "telegram" ? "noopener noreferrer" : undefined}
-                    className={cn(
-                      "relative inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-md border bg-background px-3 text-sm font-medium hover:bg-muted",
-                      b.preferred ? "border-2 border-role-you-bar bg-role-you-bg text-role-you-fg" : "border-border",
-                    )}
+            {row.primary ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <ContactLink b={row.primary} />
+                {row.others.length > 0 ? (
+                  <button
+                    type="button"
+                    aria-expanded={showWays}
+                    onClick={() => setShowWays((v) => !v)}
+                    className="inline-flex min-h-11 items-center rounded-md border border-border bg-background px-3 text-sm font-medium hover:bg-muted"
                   >
-                    <span className="truncate">{b.label}</span>
-                    {b.preferred ? (
-                      <span className="shrink-0 rounded-full bg-role-you-bar px-1.5 py-0.5 text-[10px] font-semibold text-stage-selected-fg">Preferred</span>
-                    ) : null}
-                  </a>
-                ))}
+                    {showWays ? "Less" : "Call or email"}
+                  </button>
+                ) : null}
+                {showWays ? row.others.map((b) => <ContactLink key={b.method} b={b} />) : null}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">No phone or email on file.</p>
+              <span className="text-sm text-muted-foreground">No phone or email on file.</span>
             )}
-            <p className="text-xs text-muted-foreground">Text and Call open Grasshopper. Email opens Outlook.</p>
           </>
         ) : (
           <p className="flex flex-wrap items-center gap-2 text-sm">
@@ -151,8 +152,23 @@ export function OnboardingHomeHeader(p: {
         )}
         <FollowHomeButton propertyId={p.propertyId} myHomes />
       </div>
-
-      {p.attention}
     </header>
+  );
+}
+
+function ContactLink({ b }: { b: ContactButton }) {
+  return (
+    <a
+      href={b.href}
+      title={b.detail ?? undefined}
+      target={b.method === "telegram" ? "_blank" : undefined}
+      rel={b.method === "telegram" ? "noopener noreferrer" : undefined}
+      className={cn(
+        "inline-flex min-h-11 items-center rounded-md border bg-background px-3 text-sm font-medium hover:bg-muted",
+        b.preferred ? "border-2 border-role-you-bar bg-role-you-bg text-role-you-fg" : "border-border",
+      )}
+    >
+      {b.label}
+    </a>
   );
 }
