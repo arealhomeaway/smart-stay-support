@@ -48,7 +48,10 @@ export function OwnerApprovalPanel({
   readOnly = false,
   embedded = false,
   hasOtherItems = false,
+  onlyId = null,
 }: {
+  /** Show just this one approval, inside the homeowner's side panel. */
+  onlyId?: string | null;
   readOnly?: boolean;
   /** Render as rows inside the unified "Needs your attention" section. */
   embedded?: boolean;
@@ -61,8 +64,9 @@ export function OwnerApprovalPanel({
       key={user.id}
       userId={user.id}
       readOnly={readOnly}
-      embedded={embedded}
-      hasOtherItems={hasOtherItems}
+      embedded={embedded || Boolean(onlyId)}
+      hasOtherItems={hasOtherItems || Boolean(onlyId)}
+      onlyId={onlyId}
     />
   );
 }
@@ -72,7 +76,9 @@ function AccountApprovals({
   readOnly,
   embedded,
   hasOtherItems,
+  onlyId,
 }: {
+  onlyId: string | null;
   userId: string;
   readOnly: boolean;
   embedded: boolean;
@@ -123,7 +129,9 @@ function AccountApprovals({
   if (q.error) return <p role="alert">{q.error.message}</p>;
 
   // Onboarding items have their own section, with the shared design files.
-  const all = (q.data?.approvals ?? []).filter((a) => a.entity_type !== "onboarding_task");
+  const all = (q.data?.approvals ?? [])
+    .filter((a) => a.entity_type !== "onboarding_task")
+    .filter((a) => !onlyId || a.id === onlyId);
   const pending = all.filter((a) => a.status === "pending");
   const decided = all.filter((a) => a.status !== "pending");
 
@@ -137,7 +145,7 @@ function AccountApprovals({
         {pending.length === 0 && embedded && !hasOtherItems && (
           <p className="text-sm text-muted-foreground">Nothing is waiting on you right now.</p>
         )}
-        {embedded && pending.length > 0 && (
+        {embedded && !onlyId && pending.length > 0 && (
           <h3 className="text-sm font-semibold">Approvals</h3>
         )}
 
@@ -266,9 +274,11 @@ function AccountApprovals({
 
         {decided.length > 0 && (
           <div className="pt-2">
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Decision history
-            </p>
+            {onlyId ? null : (
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Decision history
+              </p>
+            )}
             <div className="space-y-2">
               {decided.map((a) => (
                 <div key={a.id} className="rounded-md border border-border/60 p-3 text-sm">
