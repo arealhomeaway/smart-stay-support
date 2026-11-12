@@ -116,7 +116,7 @@ BEGIN
   IF t.owner_approval_status = 'approved' THEN RETURN jsonb_build_object('approved', true, 'already', true); END IF;
   SELECT coalesce(nullif(btrim(full_name), ''), 'Homeowner') INTO name FROM public.profiles WHERE id = uid;
   UPDATE public.onboarding_tasks SET owner_approval_status = 'approved' WHERE id = t.id;
-  UPDATE public.approvals SET status = 'approved', decided_at = at, responded_at = at, response_channel = 'portal',
+  UPDATE public.approvals SET status = 'approved', decided_at = at, responded_at = at,
          decision_note = coalesce(decision_note, 'Approved in the homeowner portal')
    WHERE entity_type = 'onboarding_task' AND entity_id = t.id AND status IN ('pending', 'awaiting_owner');
   PERFORM set_config('resolve.owner_release_batch', 'on', true);
