@@ -744,10 +744,12 @@ function titleCase(value: string) {
 }
 
 /**
- * One item waiting on the homeowner. The row stays short; opening it gives the
- * homeowner everything the team sent and every action they can take on it.
+ * One owner item in the homeowner's side panel: everything the team sent and
+ * every action they can take on it. The Opportunities page opens it.
  */
-function ReviewRow({
+function ReviewPanel({
+  open,
+  onOpenChange,
   review,
   properties,
   programId,
@@ -759,6 +761,8 @@ function ReviewRow({
   sharedFiles = [],
   photoPropertyId = null,
 }: {
+  open: boolean;
+  onOpenChange: (next: boolean) => void;
   review: Review;
   properties: { propertyId: string; name: string }[];
   programId: string;
@@ -773,7 +777,7 @@ function ReviewRow({
   /** Set for cards that use the home's marketing photos. */
   photoPropertyId?: string | null;
 }) {
-  const [open, setOpen] = useState(false);
+  const setOpen = onOpenChange;
   const [logOpen, setLogOpen] = useState(false);
   const openShared = useOpenLogTime();
   const [reviewed, setReviewed] = useState<ReturnType<typeof captureReviewedOpportunity> | null>(
@@ -787,10 +791,10 @@ function ReviewRow({
   const [responseContext, setResponseContext] = useState<ReturnType<
     typeof captureReviewedResponse
   > | null>(null);
-  const setResponseOpen = (next: boolean) => {
-    if (next && !open) setResponseContext(captureReviewedResponse(review));
-    setOpen(next);
-  };
+  // The panel opens already open: capture the reviewed version once, as opening did before.
+  const [captured] = useState(() => captureReviewedResponse(review));
+  if (responseContext === null && open) setResponseContext(captured);
+  const setResponseOpen = (next: boolean) => setOpen(next);
   const answer = useServerFn(answerOwnerReview);
 
   const respond = useMutation({
@@ -816,48 +820,19 @@ function ReviewRow({
     .filter((p) => review.propertyIds.includes(p.propertyId))
     .map((p) => p.name)
     .join(", ");
-  const fileCount = action?.files.length ? action.files.length : sharedFiles.length;
   const timeLoggable = canLogHours && !readOnly && review.status !== "closed";
 
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-border/70 px-4 py-3">
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="text-sm font-semibold">{review.title}</p>
-          <StatusBadge tone={reviewTone(review.status)}>{presentation.label}</StatusBadge>
-        </div>
-        {review.business_question ? (
-          <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-            {review.business_question}
-          </p>
-        ) : null}
-        <p className="mt-1 text-xs text-muted-foreground">
-          {names ? `${names} · ` : ""}
-          {taskDeadlineLabel(review.respond_by)}
-          {fileCount > 0
-            ? ` · ${fileCount} file${fileCount === 1 ? "" : "s"} attached`
-            : ""}
-        </p>
-        {photoPropertyId && !readOnly ? (
-          <div className="mt-2">
-            <DownloadPhotosButton propertyId={photoPropertyId} />
-          </div>
-        ) : null}
-      </div>
-      <div className="flex shrink-0 gap-2">
-        <Button size="sm" onClick={() => setResponseOpen(true)}>
-          <MessageSquare className="size-4" /> Open and work this
-        </Button>
-      </div>
-
+    <>
       <OwnerTaskDialog
         open={open}
         onOpenChange={setResponseOpen}
         details={{
           title: responseContext?.title ?? review.title,
           statusLabel: presentation.label,
-          source: review.auto_ticket ? "Property work" : "Onboarding",
+          source: review.auto_ticket ? "Operations Team" : "Onboarding Team",
           homes: names,
+          sentAt: (review as { available_from?: string | null }).available_from ?? review.updated_at ?? null,
           respondBy: review.respond_by,
           question: review.business_question ?? responseContext?.description ?? null,
           recommendation: review.recommendation,
@@ -886,6 +861,7 @@ function ReviewRow({
           setLogOpen(true);
         }}
         onDecided={onDone}
+        extra={photoPropertyId && !readOnly ? <DownloadPhotosButton propertyId={photoPropertyId} /> : null}
       />
 
       {!openShared && (
@@ -897,7 +873,7 @@ function ReviewRow({
           onDone={onDone}
         />
       )}
-    </div>
+    </>
   );
 }
 
