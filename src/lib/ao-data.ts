@@ -226,12 +226,15 @@ export async function loadTaskOwnerItem(taskId: string) {
     await db.from("owner_item_task_sends").select("review_id,sent_at").eq("task_id", taskId).order("sent_at", { ascending: false }).limit(1).maybeSingle());
 }
 /** The latest owner item a Task was sent as, with its answer-by date (Task drawer summary line). */
-export async function loadTaskOwnerSend(taskId: string) {
+export type TaskOwnerSend = { review_id: string; sent_at: string; respond_by: string | null };
+export async function loadTaskOwnerSend(taskId: string): Promise<Available<TaskOwnerSend | null>> {
   const sent = unwrap<{ review_id: string; sent_at: string } | null>(
     await db.from("owner_item_task_sends").select("review_id,sent_at").eq("task_id", taskId).order("sent_at", { ascending: false }).limit(1).maybeSingle());
-  if (!sent.available || !sent.data) return sent as { available: boolean; data: (null | { review_id: string; sent_at: string; respond_by: string | null }) };
+  if (!sent.available) return { available: false };
+  if (!sent.data) return { available: true, data: null };
   const review = await db.from("owner_reviews").select("respond_by").eq("id", sent.data.review_id).maybeSingle();
-  return { available: true as const, data: { ...sent.data, respond_by: (review.data as { respond_by?: string | null } | null)?.respond_by ?? null } };
+  const respondBy = (review.data as { respond_by?: string | null } | null)?.respond_by ?? null;
+  return { available: true, data: { ...sent.data, respond_by: respondBy } };
 }
 export type OwnerItemNeed = { review_id: string; property_id: string; task_id: string | null; title: string; why: string; since: string };
 export async function loadMyOwnerItemNeeds(): Promise<OwnerItemNeed[]> {
