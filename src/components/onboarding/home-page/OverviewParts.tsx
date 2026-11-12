@@ -1,5 +1,5 @@
 /**
- * Property page Part 1: the Needs attention strip (1.2), the Overview cards (1.3), the no-plan
+ * Property page Part 1: the Needs attention box (1.2, on Overview only since the fix), the Overview cards (1.3), the no-plan
  * card (1.9) and the Admin's Status to stage map (1.4). Overview only shows; nothing is edited.
  */
 import { useEffect, useState } from "react";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { NOTION_STATUSES, type Stepper } from "@/lib/onboarding-board";
 import {
   PAGE_STAGE_NAMES,
+  foldChips,
   rowDue,
   type AttentionChip,
   type OwnerTag,
@@ -19,21 +20,28 @@ import { readStatusStageMapFn, saveStatusStageMapFn } from "@/lib/onboarding-hom
 import { TAG_CLASS } from "./TasksTab";
 import { cn } from "@/lib/utils";
 
+/** Fix 3: at the top of Overview only. The first 3 chips, then "+N more" / "Less". */
 export function NeedsAttentionStrip({ chips, onJump }: { chips: AttentionChip[]; onJump: (c: AttentionChip) => void }) {
+  const [open, setOpen] = useState(false);
   if (chips.length === 0) return null;
+  const fold = foldChips(chips, open);
+  const chip = "inline-flex min-h-11 shrink-0 items-center rounded-full border border-amber/40 bg-background px-3 text-sm font-medium hover:bg-amber/10";
   return (
-    <div className="flex gap-2 overflow-x-auto rounded-lg bg-amber/10 px-3 py-2" role="region" aria-label="Needs attention">
-      {chips.map((c) => (
-        <button
-          key={c.key}
-          type="button"
-          onClick={() => onJump(c)}
-          className="inline-flex min-h-11 shrink-0 items-center rounded-full border border-amber/40 bg-background px-3 text-sm font-medium hover:bg-amber/10"
-        >
-          {c.label}
-        </button>
-      ))}
-    </div>
+    <section className="space-y-2 rounded-xl border border-amber/30 bg-amber/10 px-4 py-3" aria-label="Needs attention on this home">
+      <h2 className="text-sm font-semibold">Needs attention on this home</h2>
+      <div className="flex flex-wrap gap-2">
+        {fold.shown.map((c) => (
+          <button key={c.key} type="button" onClick={() => onJump(c)} className={chip}>
+            {c.label}
+          </button>
+        ))}
+        {fold.more > 0 ? (
+          <button type="button" aria-expanded={open} onClick={() => setOpen((v) => !v)} className={cn(chip, "border-dashed text-muted-foreground")}>
+            {open ? "Less" : `+${fold.more} more`}
+          </button>
+        ) : null}
+      </div>
+    </section>
   );
 }
 
