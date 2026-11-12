@@ -200,7 +200,7 @@ export function PlanStages({
             !catchUp && "pl-3",
           )}
         >
-          <span className={cn("min-w-0 flex-1 font-medium", isFinished(t) && "text-muted-foreground")}>{t.title}</span>
+          <span className={cn("min-w-0 flex-1 basis-full font-medium sm:basis-0", isFinished(t) && "text-muted-foreground")}>{t.title}</span>
           {stageName ? <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">{stageName}</span> : null}
           <span className="text-xs text-muted-foreground">{t.roleLabel ?? "No role"}</span>
           <span
