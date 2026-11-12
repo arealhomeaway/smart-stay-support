@@ -5,7 +5,7 @@
 -- Undo: apply.undo.sql.
 
 -- 1. One row per bulk save, so Undo restores exactly those Tasks for 10 minutes.
-CREATE TABLE public.onboarding_task_batches (
+CREATE TABLE IF NOT EXISTS public.onboarding_task_batches (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   property_id uuid NOT NULL REFERENCES public.properties(id) ON DELETE CASCADE,
   project_id uuid NOT NULL,
@@ -21,10 +21,12 @@ CREATE TABLE public.onboarding_task_batches (
   undone_by uuid,
   undo_result jsonb
 );
-CREATE INDEX onboarding_task_batches_property_idx ON public.onboarding_task_batches (property_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS onboarding_task_batches_property_idx ON public.onboarding_task_batches (property_id, created_at DESC);
 GRANT SELECT ON public.onboarding_task_batches TO authenticated;
 GRANT ALL ON public.onboarding_task_batches TO service_role;
 ALTER TABLE public.onboarding_task_batches ENABLE ROW LEVEL SECURITY;
+COMMENT ON TABLE public.onboarding_task_batches IS 'Plan catch-up receipts: one row per bulk save on a home plan, used by Undo for 10 minutes.';
+DROP POLICY IF EXISTS "Onboarding staff read task batches" ON public.onboarding_task_batches;
 CREATE POLICY "Onboarding staff read task batches" ON public.onboarding_task_batches
   FOR SELECT TO authenticated USING (private.is_onboarding_staff(auth.uid()));
 
