@@ -10,7 +10,7 @@ the database. Apply only with the approving Admin's go, in this order, each with
 | 3 | `03_retire_a56.sql` | Fix 6: A56 retired through the card action (version + history). | `03_retire_a56.undo.sql` |
 | 4 | `04_active_owner_label.sql` | Fix 4: creates the Admin owned Active Owner label and puts it on every home now included in a live program. Starts no plan. | `04_active_owner_label.undo.sql` |
 | 5a | `05a_v2_to_standard_dry_run.sql` | Fix 5 dry run, read only. Output of Nov 11: `05a_dry_run_output_nov11.txt` (run with the home name in place of the display helper, which this sandbox role may not run). | none (writes nothing) |
-| 5b | `05b_v2_to_standard_move.sql` | Fix 5 move of the four V2 homes, ONLY after the dry run is approved (Thursday meeting with the Director of Onboarding, Ledger 39) and any real handoff is recorded. | `05b_v2_to_standard_move.undo.sql` (exact, from receipts) |
+| 5b | `05b_v2_to_standard_move.sql` | Fix 5 move of the four V2 homes, ONLY after the dry run is approved. Changed Nov 11 (Admin): every V2 Task is archived (who and when, receipts, nothing deleted); every Standard step is created, open and assigned as the plan assigns it, except the steps in the confirmed done list at the top of the file (empty until the Admin's checklist), which are created completed with the note "Done before Resolve, confirmed by the COO, Nov 11"; no title matching. Stops with nothing written if a listed step needs a homeowner decision, is a handoff step or is not on the home's plan, or if a home's handoff is already accepted. The same list must be pasted into 05a. | `05b_v2_to_standard_move.undo.sql` (exact, from receipts: un-archives those V2 Tasks, archives the created Tasks) |
 | then | in the app | Program oversight, Admin: Start plans for enrolled homes → Preview → approve → Turn on. | per home switch off |
 
 `live-capture/` holds the live function text captured read only on Nov 11; the 02 undo restores
@@ -26,8 +26,8 @@ the database. Apply only with the approving Admin's go, in this order, each with
   schema private"), so the practice must be run by whoever applies, before applying.
 
 ## Points for the approving Admin
-- Fix 5: 206 of each home's 212 V2 Tasks have no Standard step of the same title; 05b leaves them exactly
-  as they are and adds 137 to 138 Standard steps per home. Decide at the Thursday review.
+- Fix 5 (changed Nov 11): 05b archives every V2 Task and creates the Standard plan; only steps in the
+  confirmed done list start completed. See the 05a output for the counts per home.
 - Fix 7 changes the current rule that a homeowner decision gates a Task: a Task sent as an owner item
   completes on send and the decision lives on the owner item (register O9 tasks would complete on send).
 - A card whose linked Task is already finished when a plan starts is Already covered (Fix 5 wording,

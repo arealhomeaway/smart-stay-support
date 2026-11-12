@@ -1,67 +1,83 @@
--- Fix 5 dry run (read only, writes nothing). For the four homes on ARHA Onboarding V2 it lists:
---   mapped      a V2 Task and the Standard step it maps to (same title, ignoring capitals, spaces and marks)
---   no_match    a V2 Task with no Standard step of the same title, with the closest Standard step by shared
---               words as a suggestion only (never applied unless added to the approved list in 05b)
---   new_step    a Standard step the home does not have, which the move would add as an open Task
--- Standard plan = latest published version of 'arha_onboarding_standard' (v4 on Nov 11).
-WITH std_version AS (
+-- Fix 5 dry run (changed Nov 11; read only, writes nothing). One row per home moving from ARHA Onboarding
+-- V2 to the Standard plan (latest published version of 'arha_onboarding_standard', v4 on Nov 11):
+--   v2_tasks_to_archive      every current Task on the home (all of them come from the V2 plan)
+--   standard_steps_to_create Standard steps the move creates (plus subtasks_to_create under them)
+--   created_completed        listed steps created completed from the confirmed done list below
+--   already_covered_cards    released owner cards whose linked steps on this home are ALL listed
+--   stops                    anything that would stop 05b before it writes anything
+-- The confirmed done list below must be identical to the one at the top of 05b (a test checks it).
+-- To find a step's ID for the list: SELECT s ->> 'id', s ->> 'stage', s ->> 'title' FROM
+--   public.onboarding_template_versions v, jsonb_array_elements(v.snapshot -> 'steps') s
+--   WHERE v.id = '94ef41f6-b195-4b94-b09c-830f706f5d1a' ORDER BY (s ->> 'sort_order')::int;
+WITH input AS (SELECT
+-- >>> CONFIRMED DONE LIST >>>
+'[
+  {"project": "0c2d2b1d-6967-4b2a-a973-2685c06cfd3b", "home": "9211 Fitzgerald Dr", "done_steps": []},
+  {"project": "94338f4a-4a97-4268-869a-79ed103bbc8b", "home": "3915 W 104th St S", "done_steps": []},
+  {"project": "add4e549-2929-42db-b5fd-131787088768", "home": "1399 Foxtail Ln", "done_steps": []},
+  {"project": "11bb7e6a-cb17-4b6d-b27f-df9b505d4400", "home": "1464 Buckland Ct", "done_steps": []}
+]'
+-- <<< CONFIRMED DONE LIST <<<
+  ::jsonb AS list
+), listed AS (
+  SELECT (e ->> 'project')::uuid AS project_id, x::uuid AS step_id
+  FROM input, jsonb_array_elements(list) e, jsonb_array_elements_text(coalesce(e -> 'done_steps', '[]'::jsonb)) x
+), std_version AS (
   SELECT v.id, v.snapshot FROM public.onboarding_template_versions v
   JOIN public.onboarding_templates t ON t.id = v.template_id AND t.key = 'arha_onboarding_standard'
   ORDER BY v.version DESC LIMIT 1
 ), homes AS (
-  SELECT op.id AS project_id, op.property_id, op.furnishing_scope, op.modules,
+  SELECT op.id AS project_id, op.property_id, op.furnishing_scope, op.modules, ct.key = 'arha_v2' AS on_v2,
+         op.handoff_state = 'accepted' OR op.status = 'complete' AS handed_off,
          public.format_property_label(to_jsonb(h)) ->> 'primary' AS home
   FROM public.onboarding_projects op
   JOIN public.properties h ON h.id = op.property_id
-  JOIN public.onboarding_template_versions cv ON cv.id = op.template_version_id
-  JOIN public.onboarding_templates ct ON ct.id = cv.template_id AND ct.key = 'arha_v2'
-  WHERE op.status <> 'cancelled' AND NOT h.is_demo
-    AND EXISTS (SELECT 1 FROM public.owner_program_properties e JOIN public.owner_programs p ON p.id = e.program_id
-                WHERE e.property_id = op.property_id AND e.inclusion_status = 'included' AND e.archived_at IS NULL
-                  AND p.status = 'active' AND p.archived_at IS NULL AND NOT p.is_demo)
+  LEFT JOIN public.onboarding_template_versions cv ON cv.id = op.template_version_id
+  LEFT JOIN public.onboarding_templates ct ON ct.id = cv.template_id
+  WHERE op.id = ANY (ARRAY['0c2d2b1d-6967-4b2a-a973-2685c06cfd3b', '94338f4a-4a97-4268-869a-79ed103bbc8b',
+                           'add4e549-2929-42db-b5fd-131787088768', '11bb7e6a-cb17-4b6d-b27f-df9b505d4400']::uuid[])
 ), steps AS (
-  SELECT hm.property_id, (s ->> 'id')::uuid AS step_id, s ->> 'title' AS title, s ->> 'stage' AS stage,
-         lower(regexp_replace(s ->> 'title', '[^a-zA-Z0-9]+', '', 'g')) AS k
+  SELECT hm.project_id, (s ->> 'id')::uuid AS step_id, s ->> 'title' AS title,
+         jsonb_array_length(coalesce(s -> 'subtasks', '[]'::jsonb)) AS subs,
+         coalesce((s ->> 'requires_owner_approval')::boolean, false) OR coalesce(s ->> 'owner_dependency' = 'business_decision', false) AS needs_owner,
+         coalesce(s -> 'tags', '[]'::jsonb) ?| ARRAY['handoff_step:ready', 'handoff_step:accepted']
+           OR pg_get_functiondef('public.handoff_step_for_task(uuid)'::regprocedure) LIKE '%' || (s ->> 'id') || '%' AS handoff
   FROM homes hm, std_version sv, jsonb_array_elements(sv.snapshot -> 'steps') s
   WHERE coalesce((s ->> 'is_active')::boolean, true)
     AND public.plan_step_applies(s -> 'condition', hm.furnishing_scope, hm.modules)
-), v2 AS (
-  SELECT t.property_id, t.id AS task_id, t.title, t.status, t.parent_task_id IS NOT NULL AS subtask,
-         lower(regexp_replace(t.title, '[^a-zA-Z0-9]+', '', 'g')) AS k
-  FROM public.onboarding_tasks t JOIN homes hm ON hm.property_id = t.property_id
-  WHERE t.archived_at IS NULL
-), exact AS (
-  -- one Standard step per V2 Task and one V2 Task per Standard step (the oldest Task wins)
-  SELECT DISTINCT ON (v.property_id, s.step_id) v.property_id, v.task_id, s.step_id
-  FROM v2 v JOIN steps s ON s.property_id = v.property_id AND s.k = v.k
-  WHERE NOT v.subtask
-  ORDER BY v.property_id, s.step_id, v.task_id
-), words AS (
-  SELECT property_id, task_id AS id, 'v2' AS side, w FROM v2, regexp_split_to_table(lower(title), '[^a-z0-9]+') w WHERE length(w) > 2
-  UNION ALL
-  SELECT property_id, step_id, 'std', w FROM steps, regexp_split_to_table(lower(title), '[^a-z0-9]+') w WHERE length(w) > 2
-), overlap AS (
-  SELECT a.property_id, a.id AS task_id, b.id AS step_id, count(DISTINCT a.w) AS shared
-  FROM words a JOIN words b ON b.property_id = a.property_id AND b.side = 'std' AND b.w = a.w AND a.side = 'v2'
-  GROUP BY 1, 2, 3
-), best AS (
-  SELECT DISTINCT ON (o.property_id, o.task_id) o.property_id, o.task_id, o.step_id,
-    round(o.shared::numeric / nullif((SELECT count(DISTINCT w) FROM words x WHERE x.id = o.task_id AND x.side = 'v2')
-      + (SELECT count(DISTINCT w) FROM words x WHERE x.id = o.step_id AND x.side = 'std' AND x.property_id = o.property_id) - o.shared, 0), 2) AS score
-  FROM overlap o ORDER BY o.property_id, o.task_id, o.shared DESC, o.step_id
+), per_home AS (
+  SELECT hm.*,
+    (SELECT count(*) FROM public.onboarding_tasks t WHERE t.property_id = hm.property_id AND t.archived_at IS NULL) AS v2_tasks_to_archive,
+    (SELECT count(*) FROM steps s WHERE s.project_id = hm.project_id) AS standard_steps_to_create,
+    (SELECT coalesce(sum(s.subs), 0) FROM steps s WHERE s.project_id = hm.project_id) AS subtasks_to_create,
+    (SELECT count(DISTINCT l.step_id) FROM listed l JOIN steps s ON s.project_id = l.project_id AND s.step_id = l.step_id
+      WHERE l.project_id = hm.project_id AND NOT s.needs_owner AND NOT s.handoff) AS created_completed,
+    (SELECT string_agg(c.code, ', ' ORDER BY c.code) FROM public.ao_library_cards c
+      WHERE c.status = 'released'
+        AND EXISTS (SELECT 1 FROM steps s WHERE s.project_id = hm.project_id AND s.step_id = ANY (c.linked_template_task_ids))
+        AND NOT EXISTS (SELECT 1 FROM steps s WHERE s.project_id = hm.project_id AND s.step_id = ANY (c.linked_template_task_ids)
+                          AND NOT EXISTS (SELECT 1 FROM listed l WHERE l.project_id = hm.project_id AND l.step_id = s.step_id))) AS already_covered_cards,
+    concat_ws('; ',
+      CASE WHEN NOT coalesce(hm.on_v2, false) THEN 'home is no longer on ARHA Onboarding V2' END,
+      CASE WHEN hm.handed_off THEN 'handoff already accepted: take this home out of the move' END,
+      (SELECT 'not on this home''s Standard plan: ' || string_agg(l.step_id::text, ', ') FROM listed l
+        WHERE l.project_id = hm.project_id AND NOT EXISTS (SELECT 1 FROM steps s WHERE s.project_id = l.project_id AND s.step_id = l.step_id)),
+      (SELECT 'needs a homeowner decision: ' || string_agg(s.title, ', ') FROM listed l JOIN steps s ON s.project_id = l.project_id AND s.step_id = l.step_id
+        WHERE l.project_id = hm.project_id AND s.needs_owner),
+      (SELECT 'handoff step: ' || string_agg(s.title, ', ') FROM listed l JOIN steps s ON s.project_id = l.project_id AND s.step_id = l.step_id
+        WHERE l.project_id = hm.project_id AND s.handoff)) AS stops
+  FROM homes hm
 )
-SELECT hm.home, 'mapped' AS kind, v.task_id, v.title AS v2_task, v.status AS v2_status, s.step_id, s.title AS standard_step, NULL::numeric AS suggestion_score
-FROM exact e JOIN homes hm ON hm.property_id = e.property_id JOIN v2 v ON v.task_id = e.task_id
-JOIN steps s ON s.property_id = e.property_id AND s.step_id = e.step_id
+SELECT home, v2_tasks_to_archive, standard_steps_to_create, subtasks_to_create, created_completed,
+       coalesce(already_covered_cards, 'none') AS already_covered_cards, nullif(stops, '') AS stops
+FROM per_home
 UNION ALL
-SELECT hm.home, 'no_match', v.task_id, v.title, v.status, b.step_id,
-       CASE WHEN b.step_id IS NULL THEN NULL ELSE 'closest: ' || s.title END, b.score
-FROM v2 v JOIN homes hm ON hm.property_id = v.property_id
-LEFT JOIN best b ON b.property_id = v.property_id AND b.task_id = v.task_id
-LEFT JOIN steps s ON s.property_id = v.property_id AND s.step_id = b.step_id
-WHERE NOT EXISTS (SELECT 1 FROM exact e WHERE e.task_id = v.task_id)
-UNION ALL
-SELECT hm.home, 'new_step', NULL, NULL, NULL, s.step_id, s.title, NULL
-FROM steps s JOIN homes hm ON hm.property_id = s.property_id
-WHERE NOT EXISTS (SELECT 1 FROM exact e WHERE e.property_id = s.property_id AND e.step_id = s.step_id)
-ORDER BY 1, 2, 4, 7;
+SELECT 'list problem', NULL, NULL, NULL, NULL, NULL,
+       concat_ws('; ',
+         CASE WHEN bool_or(NOT EXISTS (SELECT 1 FROM homes h WHERE h.project_id = (e ->> 'project')::uuid))
+              THEN 'the list names a home that is not part of this move' END,
+         CASE WHEN count(*) <> count(DISTINCT e ->> 'project') THEN 'the list names a home twice' END)
+FROM input, jsonb_array_elements(list) e
+HAVING bool_or(NOT EXISTS (SELECT 1 FROM homes h WHERE h.project_id = (e ->> 'project')::uuid))
+    OR count(*) <> count(DISTINCT e ->> 'project')
+ORDER BY 1;
