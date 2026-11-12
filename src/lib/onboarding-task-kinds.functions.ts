@@ -251,12 +251,12 @@ export const setDefaultCleanerFn = createServerFn({ method: "POST" })
     const { DEFAULT_CLEANER_TRADE } = await import("./onboarding-task-kinds");
     const [home, org, current] = await Promise.all([
       db.from("properties").select("is_demo").eq("id", data.propertyId).maybeSingle(),
-      db.from("vendor_orgs").select("id, display_name, legal_name, is_active, is_demo, status").eq("id", data.orgId).maybeSingle(),
+      db.from("vendor_orgs").select("id, display_name, legal_name, is_active, is_demo").eq("id", data.orgId).maybeSingle(),
       readDefaultCleaner(db, data.propertyId),
     ]);
     if (!home.data) throw new Error("That home could not be found.");
-    const o = org.data as { display_name: string | null; legal_name: string | null; is_active: boolean | null; is_demo: boolean | null; status: string | null } | null;
-    if (!o || o.is_active === false || o.status === "candidate") throw new Error("Choose an active cleaning vendor.");
+    const o = org.data as { display_name: string | null; legal_name: string | null; is_active: boolean | null; is_demo: boolean | null } | null;
+    if (!o || o.is_active === false) throw new Error("Choose an active cleaning vendor.");
     if (Boolean(o.is_demo) !== Boolean(home.data.is_demo)) throw new Error("Choose a cleaning vendor for this home.");
     if (current?.orgId === data.orgId) return { ok: true as const, unchanged: true };
     const today = centralToday();
