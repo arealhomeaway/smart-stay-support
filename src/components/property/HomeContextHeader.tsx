@@ -17,10 +17,13 @@ export function HomeContextHeader({
   propertyId,
   current,
   line,
+  toggleOnly = false,
 }: {
   propertyId: string;
   current: "operations" | "onboarding";
   line?: { before?: ReactNode; after?: ReactNode };
+  /** Property page Part 1: only the small Operations view / Onboarding view switch. */
+  toggleOnly?: boolean;
 }) {
   const read = useServerFn(readHomeContext);
   const { can } = useRole();
@@ -29,9 +32,22 @@ export function HomeContextHeader({
   const h = q.data;
   const life = homeLifecycle({ lifecycleStatus: h.lifecycleStatus, handoffState: h.project?.handoffState ?? null });
   const onboarding = showOnboardingView(Boolean(h.project), can("onboarding_workspace"));
-  if (line) {
+  if (line || toggleOnly) {
     const pill = (active: boolean) =>
       `inline-flex min-h-11 items-center rounded px-2.5 text-xs sm:min-h-8 ${active ? "bg-background font-medium shadow-sm" : "text-muted-foreground hover:text-foreground"}`;
+    const toggle = (
+      <nav aria-label="Switch view" className="ml-auto flex rounded-md bg-muted p-0.5">
+        <Link to="/property/$propertyId" params={{ propertyId }} className={pill(current === "operations")} aria-current={current === "operations" ? "page" : undefined}>
+          Operations view
+        </Link>
+        {onboarding ? (
+          <Link to="/onboarding/$propertyId" params={{ propertyId }} className={pill(current === "onboarding")} aria-current={current === "onboarding" ? "page" : undefined}>
+            Onboarding view
+          </Link>
+        ) : null}
+      </nav>
+    );
+    if (toggleOnly || !line) return toggle;
     return (
       <header className="flex flex-wrap items-center gap-x-3 gap-y-2" aria-label="This home">
         {line.before}
