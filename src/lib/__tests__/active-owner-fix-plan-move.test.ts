@@ -170,7 +170,7 @@ describe("Fix 5: move to the Standard plan, isolated PostgreSQL", () => {
       await db.close();
     }
     await setup();
-  });
+  }, 60_000);
 
   it("a repeat changes nothing and the undo un-archives exactly the V2 Tasks from the receipts", async () => {
     await setup();
