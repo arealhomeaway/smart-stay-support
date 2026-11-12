@@ -290,36 +290,36 @@ BEGIN
   SELECT x.*,
     (x.held_reason IS NULL AND x.needs_approval) AS approve_outside
   FROM (
-    SELECT t.id, t.title, t.sort_order,
-      ((t.owner_dependency = 'business_decision' OR COALESCE(t.requires_owner_approval, false))
-        AND t.owner_approval_status IS DISTINCT FROM 'approved') AS needs_approval,
+    SELECT ot.id, ot.title, ot.sort_order,
+      ((ot.owner_dependency = 'business_decision' OR COALESCE(ot.requires_owner_approval, false))
+        AND ot.owner_approval_status IS DISTINCT FROM 'approved') AS needs_approval,
       CASE
-        WHEN t.status IN ('complete', 'done', 'carryover') THEN 'Already done.'
-        WHEN t.archived_at IS NOT NULL OR t.exception_at IS NOT NULL THEN 'Not needed or recorded as an exception.'
-        WHEN NOT private.plan_catch_up_can(_actor, _project.project_manager, t.assigned_to, t.assigned_seat)
+        WHEN ot.status IN ('complete', 'done', 'carryover') THEN 'Already done.'
+        WHEN ot.archived_at IS NOT NULL OR ot.exception_at IS NOT NULL THEN 'Not needed or recorded as an exception.'
+        WHEN NOT private.plan_catch_up_can(_actor, _project.project_manager, ot.assigned_to, ot.assigned_seat)
           THEN 'Not assigned to you or your role.'
-        WHEN (t.owner_dependency = 'business_decision' OR COALESCE(t.requires_owner_approval, false))
-             AND t.owner_approval_status IS DISTINCT FROM 'approved' AND _done_on IS NULL
+        WHEN (ot.owner_dependency = 'business_decision' OR COALESCE(ot.requires_owner_approval, false))
+             AND ot.owner_approval_status IS DISTINCT FROM 'approved' AND _done_on IS NULL
           THEN 'Needs the homeowner''s approval first.'
-        WHEN (t.owner_dependency = 'business_decision' OR COALESCE(t.requires_owner_approval, false))
-             AND t.owner_approval_status IS DISTINCT FROM 'approved' AND private.plan_catch_up_owner_asked(t.id)
+        WHEN (ot.owner_dependency = 'business_decision' OR COALESCE(ot.requires_owner_approval, false))
+             AND ot.owner_approval_status IS DISTINCT FROM 'approved' AND private.plan_catch_up_owner_asked(ot.id)
           THEN 'Already sent to the homeowner. Record their answer on the Task.'
-        WHEN NULLIF(btrim(COALESCE(t.blocker, '')), '') IS NOT NULL THEN 'Blocked: ' || btrim(t.blocker)
-        WHEN private.plan_catch_up_bz_sent(t.id) THEN 'A Breezeway work order was already sent for it.'
+        WHEN NULLIF(btrim(COALESCE(ot.blocker, '')), '') IS NOT NULL THEN 'Blocked: ' || btrim(ot.blocker)
+        WHEN private.plan_catch_up_bz_sent(ot.id) THEN 'A Breezeway work order was already sent for it.'
         WHEN EXISTS (SELECT 1 FROM public.onboarding_step_review_settings rs
-                     WHERE rs.template_task_id = t.template_task_id AND cardinality(rs.reviewer_roles) > 0)
-             AND COALESCE((SELECT r.status FROM public.onboarding_task_reviews r WHERE r.task_id = t.id
+                     WHERE rs.template_task_id = ot.template_task_id AND cardinality(rs.reviewer_roles) > 0)
+             AND COALESCE((SELECT r.status FROM public.onboarding_task_reviews r WHERE r.task_id = ot.id
                            ORDER BY r.submitted_at DESC, r.round DESC LIMIT 1), '') NOT IN ('approved', 'skipped')
           THEN 'Needs review first. Open it and use Submit for review.'
-        WHEN private.onboarding_bulk_review_blocker(t.id) IS NOT NULL THEN 'Waiting on review of ' || private.onboarding_bulk_review_blocker(t.id) || '.'
+        WHEN private.onboarding_bulk_review_blocker(ot.id) IS NOT NULL THEN 'Waiting on review of ' || private.onboarding_bulk_review_blocker(ot.id) || '.'
         WHEN (SELECT e.new_value::jsonb->>'status' FROM public.onboarding_project_events e
-              WHERE e.project_id = _project.id AND e.kind = 'stage_capture:' || t.stage
+              WHERE e.project_id = _project.id AND e.kind = 'stage_capture:' || ot.stage
               ORDER BY (e.new_value::jsonb->>'revision')::integer DESC LIMIT 1) IN ('complete', 'awaiting_review')
           THEN 'Its stage is under review or complete. Return or reopen the stage first.'
         ELSE NULL
       END AS held_reason
-    FROM public.onboarding_tasks t
-    WHERE t.property_id = _property_id AND t.id = ANY(_task_ids)
+    FROM public.onboarding_tasks ot
+    WHERE ot.property_id = _property_id AND ot.id = ANY(_task_ids)
   ) x;
 
   SELECT count(*) INTO _n FROM bulk_complete_selected;
@@ -455,26 +455,26 @@ BEGIN
   PERFORM 1 FROM public.onboarding_tasks WHERE property_id = _property_id AND id = ANY(_task_ids) FOR UPDATE;
   DROP TABLE IF EXISTS pg_temp.plan_catch_up_selected;
   CREATE TEMPORARY TABLE plan_catch_up_selected ON COMMIT DROP AS
-  SELECT t.id, t.title, t.sort_order,
+  SELECT ot.id, ot.title, ot.sort_order,
     CASE
-      WHEN t.archived_at IS NOT NULL THEN 'Already not needed.'
-      WHEN t.exception_at IS NOT NULL THEN 'Recorded as an exception.'
-      WHEN NOT private.plan_catch_up_can(_actor, _project.project_manager, t.assigned_to, t.assigned_seat)
+      WHEN ot.archived_at IS NOT NULL THEN 'Already not needed.'
+      WHEN ot.exception_at IS NOT NULL THEN 'Recorded as an exception.'
+      WHEN NOT private.plan_catch_up_can(_actor, _project.project_manager, ot.assigned_to, ot.assigned_seat)
         THEN 'Not assigned to you or your role.'
-      WHEN _action = 'reopen' AND t.status IS DISTINCT FROM 'complete' THEN 'Not finished.'
-      WHEN _action = 'reopen' AND NOT _can_reopen_any AND t.completed_by IS DISTINCT FROM _actor
+      WHEN _action = 'reopen' AND ot.status IS DISTINCT FROM 'complete' THEN 'Not finished.'
+      WHEN _action = 'reopen' AND NOT _can_reopen_any AND ot.completed_by IS DISTINCT FROM _actor
         THEN 'Only an Admin, the Director of Onboarding or the person who finished it can reopen it.'
-      WHEN _action <> 'reopen' AND t.status IN ('complete', 'done', 'carryover') THEN 'Already done. Reopen it first.'
-      WHEN _action = 'not_needed' AND private.plan_catch_up_bz_sent(t.id) THEN 'A Breezeway work order was already sent for it.'
-      WHEN _action = 'not_needed' AND private.plan_catch_up_owner_asked(t.id) THEN 'Already sent to the homeowner.'
+      WHEN _action <> 'reopen' AND ot.status IN ('complete', 'done', 'carryover') THEN 'Already done. Reopen it first.'
+      WHEN _action = 'not_needed' AND private.plan_catch_up_bz_sent(ot.id) THEN 'A Breezeway work order was already sent for it.'
+      WHEN _action = 'not_needed' AND private.plan_catch_up_owner_asked(ot.id) THEN 'Already sent to the homeowner.'
       WHEN (SELECT e.new_value::jsonb->>'status' FROM public.onboarding_project_events e
-            WHERE e.project_id = _project.id AND e.kind = 'stage_capture:' || t.stage
+            WHERE e.project_id = _project.id AND e.kind = 'stage_capture:' || ot.stage
             ORDER BY (e.new_value::jsonb->>'revision')::integer DESC LIMIT 1) IN ('complete', 'awaiting_review')
         THEN 'Its stage is under review or complete. Return or reopen the stage first.'
       ELSE NULL
     END AS held_reason
-  FROM public.onboarding_tasks t
-  WHERE t.property_id = _property_id AND t.id = ANY(_task_ids);
+  FROM public.onboarding_tasks ot
+  WHERE ot.property_id = _property_id AND ot.id = ANY(_task_ids);
 
   SELECT count(*) INTO _n FROM plan_catch_up_selected;
   IF _n <> cardinality(_task_ids) THEN
