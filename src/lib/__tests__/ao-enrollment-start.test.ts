@@ -102,6 +102,7 @@ describe("Active Owner plan starts at enrollment, staged SQL on an isolated data
     await db.exec("SET check_function_bodies = off;");
     await db.exec(STUBS);
     await db.exec(read("src/lib/__tests__/fixtures/active-owner-fix-schema.sql"));
+    await db.exec(read("src/lib/__tests__/fixtures/ao-enrollment-start-extra.sql"));
     await db.exec(AFTER_SCHEMA);
     for (const f of LIVE_FILES) await db.exec(read(`${DIR}/live-capture/${f}`));
     await db.exec(TRIGGERS);
