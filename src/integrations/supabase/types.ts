@@ -9199,6 +9199,7 @@ export type Database = {
           greater_area: string | null
           handoff_state: string
           id: string
+          inspection_on: string | null
           invoice_status: string | null
           is_demo: boolean
           modules: string[]
@@ -9240,6 +9241,7 @@ export type Database = {
           greater_area?: string | null
           handoff_state?: string
           id?: string
+          inspection_on?: string | null
           invoice_status?: string | null
           is_demo?: boolean
           modules?: string[]
@@ -9281,6 +9283,7 @@ export type Database = {
           greater_area?: string | null
           handoff_state?: string
           id?: string
+          inspection_on?: string | null
           invoice_status?: string | null
           is_demo?: boolean
           modules?: string[]
@@ -9804,6 +9807,7 @@ export type Database = {
           exception_at: string | null
           exception_by: string | null
           exception_reason: string | null
+          follow_up_of: string | null
           id: string
           is_demo: boolean
           is_required: boolean
@@ -9855,6 +9859,7 @@ export type Database = {
           exception_at?: string | null
           exception_by?: string | null
           exception_reason?: string | null
+          follow_up_of?: string | null
           id?: string
           is_demo?: boolean
           is_required?: boolean
@@ -9906,6 +9911,7 @@ export type Database = {
           exception_at?: string | null
           exception_by?: string | null
           exception_reason?: string | null
+          follow_up_of?: string | null
           id?: string
           is_demo?: boolean
           is_required?: boolean
@@ -9936,6 +9942,13 @@ export type Database = {
           {
             foreignKeyName: "onboarding_tasks_carryover_of_fkey"
             columns: ["carryover_of"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_tasks_follow_up_of_fkey"
+            columns: ["follow_up_of"]
             isOneToOne: false
             referencedRelation: "onboarding_tasks"
             referencedColumns: ["id"]
@@ -18626,6 +18639,11 @@ export type Database = {
         }
         Returns: undefined
       }
+      approval_task_reviewer: { Args: { _task_id: string }; Returns: string }
+      approval_task_send_back: {
+        Args: { _note: string; _task_id: string }
+        Returns: Json
+      }
       approve_corrective_commitment: {
         Args: { _record_id: string }
         Returns: Json
@@ -19683,6 +19701,14 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      owner_outside_resolve_lines: {
+        Args: { _program: string }
+        Returns: {
+          item_id: string
+          source: string
+          where_code: string
+        }[]
       }
       owner_owns_program: { Args: { _program_id: string }; Returns: boolean }
       owner_program_staff_choices: {

@@ -6,6 +6,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllPages, unwrap, type Available } from "@/lib/ao-ui";
 import type { LinkSuggestionRow, MapRow } from "@/lib/ao-dedupe";
+import { ownerItemApproval } from "@/lib/owner-item-approval";
+import { lastSpeaker } from "@/lib/owner-item-speakers";
 
 // The engine tables are staged and not in generated types yet.
 const db = supabase as unknown as {
@@ -270,25 +272,52 @@ export async function loadOwnerPortalPlan(programId: string): Promise<import("@/
 }
 
 /**
- * Item 2 (Nov 12): owner cards whose Task is done outside Resolve, keyed "plan:", "review:" or
- * "work:" + id, with the "Check your email for the {where} from ARHA" line. Empty until the
- * staged owner_outside_resolve_lines is applied.
+ * Owner cards whose Task is done outside Resolve, keyed "plan:", "review:" or "work:" + id, with
+ * the owner wording (outsideOwnerMessage). Reads the staged owner_outside_resolve_notes (document
+ * name, owner message, live program per home); until it is applied, the live
+ * owner_outside_resolve_lines with "document" and the viewed program's live state (programLive).
  */
-export async function loadOwnerOutsideLines(programId: string): Promise<Map<string, string>> {
+export async function loadOwnerOutsideLines(programId: string, programLive: boolean): Promise<Map<string, string>> {
   const out = new Map<string, string>();
-  const r = await db.rpc("owner_outside_resolve_lines", { _program: programId });
-  if (r.error) return out;
-  const { outsideOwnerLine } = await import("@/lib/onboarding-task-kinds");
-  for (const row of (r.data ?? []) as { source: string; item_id: string; where_code: string | null }[]) {
-    out.set(`${row.source}:${row.item_id}`, outsideOwnerLine(row.where_code));
+  const { outsideOwnerMessage } = await import("@/lib/onboarding-task-kinds");
+  type Note = { source: string; item_id: string; where_code: string | null; document_name?: string | null; owner_message?: string | null; live_program?: boolean | null };
+  const notes = await db.rpc("owner_outside_resolve_notes", { _program: programId });
+  let rows: Note[];
+  let live: (row: Note) => boolean;
+  if (!notes.error) {
+    rows = (notes.data ?? []) as Note[];
+    live = (row) => row.live_program === true;
+  } else {
+    const r = await db.rpc("owner_outside_resolve_lines", { _program: programId });
+    if (r.error) return out;
+    rows = (r.data ?? []) as Note[];
+    // Homeowners cannot read owner_programs directly; the page passes the viewed program's state.
+    live = () => programLive;
+  }
+  for (const row of rows) {
+    out.set(`${row.source}:${row.item_id}`, outsideOwnerMessage({
+      where: row.where_code, documentName: row.document_name ?? null, ownerMessage: row.owner_message ?? null, liveProgram: live(row),
+    }));
   }
   return out;
 }
 
+/** Fix 24: Approve on an owner item (see owner-item-approval.ts). */
+const approvalCalls = ownerItemApproval(db);
+export const isOwnerItemApproval = (reviewId: string) => approvalCalls.isApproval(reviewId);
+export const approveOwnerItem = (reviewId: string) => approvalCalls.approve(reviewId);
+
 /** Who wrote last on each owner item, read from the append-only conversation the owner can already see. */
-export async function loadOwnerItemLastSpeakers(reviewIds: string[]): Promise<Map<string, "homeowner" | "staff">> {
+export async function loadOwnerItemLastSpeakers(reviewIds: string[], ownerSide = false): Promise<Map<string, "homeowner" | "staff">> {
   const out = new Map<string, "homeowner" | "staff">();
   if (reviewIds.length === 0) return out;
+  // Item 2 (Nov 12): one call when the staged owner_item_last_speakers is applied.
+  const batch = await db.rpc("owner_item_last_speakers", { _review_ids: reviewIds });
+  if (!batch.error) {
+    for (const r of (batch.data ?? []) as { review_id: string; last_speaker: string }[])
+      out.set(r.review_id, r.last_speaker === "homeowner" ? "homeowner" : "staff");
+    return out;
+  }
   const rows = await inChunks<{ review_id: string; author_type: string; event: string | null; created_at: string }>(
     reviewIds,
     (ids) => db.from("owner_request_messages").select("review_id, author_type, event, created_at").in("review_id", ids).order("created_at"),
@@ -297,5 +326,18 @@ export async function loadOwnerItemLastSpeakers(reviewIds: string[]): Promise<Ma
     if (r.event || r.author_type === "system") continue;
     out.set(r.review_id, r.author_type === "homeowner" ? "homeowner" : "staff");
   }
+  if (!ownerSide) return out;
+  // A homeowner cannot read these messages directly (the message rule joins owner_reviews, which
+  // homeowners cannot read), so each remaining item is read through the live owner_item_detail.
+  const rest = reviewIds.filter((id) => !out.has(id));
+  for (let i = 0; i < rest.length; i += 8) {
+    await Promise.all(rest.slice(i, i + 8).map(async (id) => {
+      const d = await db.rpc("owner_item_detail", { _review_id: id });
+      if (d.error || !d.data) return;
+      const speaker = lastSpeaker((d.data as OwnerItemDetail).messages ?? []);
+      if (speaker) out.set(id, speaker);
+    }));
+  }
   return out;
 }
+

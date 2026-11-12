@@ -35,6 +35,7 @@ import { answerOwnerReview, ownerHome, ownerHomePreview } from "@/lib/owner-port
 import { OWNER_GOAL_LABEL } from "@/lib/owner-participation";
 import { LogTimeContext, LogTimeDialog, useOpenLogTime, type LogTimeAnchor } from "@/components/owner/LogTimeDialog";
 import { OwnerOpportunityBoard, useOutsideLines } from "@/components/owner/OwnerOpportunityBoard";
+import { canSendToActiveOwner } from "@/lib/ao-engine";
 import { OwnerPaceCard } from "@/components/owner/OwnerPlanCards";
 import { isOwnerQueue, type OwnerQueue } from "@/lib/owner-opportunity-filters";
 import { captureReviewedOpportunity, captureReviewedResponse } from "@/lib/owner-reviewed-update";
@@ -384,7 +385,8 @@ function OwnerHubBody({
   const navigate = Route.useNavigate();
   const search = Route.useSearch();
   // Every owner item opens in its own side panel, with the onboarding Task, files and photos behind it.
-  const outsideLines = useOutsideLines(program.id);
+  const programLive = canSendToActiveOwner(program.status);
+  const outsideLines = useOutsideLines(program.id, programLive);
   const renderReview = (r: { id: string }, open: boolean, onOpenChange: (next: boolean) => void) => {
     const review = (reviews as Review[]).find((x) => x.id === r.id);
     if (!review) return null;
@@ -542,6 +544,7 @@ function OwnerHubBody({
           focusId={search.opportunity ?? null}
           onCloseDetail={() => void navigate({ search: (prev) => { const { opportunity: _o, ...rest } = prev; return rest; }, replace: true })}
           renderReview={renderReview}
+          programLive={programLive}
           blockedReason={preview ? null : logHoursBlockedReason}
           {...(preview || logHoursBlockedReason ? {} : { onLogHours: openManualLog })}
         />
@@ -564,6 +567,7 @@ function OwnerHubBody({
           focusId={search.opportunity ?? null}
           onViewAll={() => void navigate({ search: (prev) => { const { queue: _q, ...rest } = prev; return { ...rest, view: "opportunities" as const }; } })}
           renderReview={renderReview}
+          programLive={programLive}
           blockedReason={preview ? null : logHoursBlockedReason}
           {...(preview || logHoursBlockedReason ? {} : { onLogHours: openManualLog })}
         />

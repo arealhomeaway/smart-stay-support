@@ -124,14 +124,15 @@ export type BoardView<T extends BoardItem = BoardItem> = { answer: T[]; with_arh
 
 /**
  * The page for one tab. `homeId` null = a one-home owner (everything);
- * "all" = All homes: just what needs you (Needs your answer only, every home).
+ * "all" = All homes: just what needs you (Needs your answer, then With ARHA, every home).
+ * Fix 25: With ARHA shows in every tab, directly under Needs your answer.
  */
 export function boardView<T extends BoardItem>(items: T[], homeId: string | "all" | null): BoardView<T> {
   const view: BoardView<T> = { answer: [], with_arha: [], ready: [], optional: [], soon: [], done: [] };
   for (const i of items) {
     const g = boardGroup(i);
     if (homeId === "all") {
-      if (g === "answer") view.answer.push(i);
+      if (g === "answer" || g === "with_arha") view[g].push(i);
       continue;
     }
     if (homeId && !inHome(i, homeId)) continue;

@@ -7,7 +7,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { TASK_KINDS, kindSettings, type FillFieldCode, type VendorRow } from "./onboarding-task-kinds";
+import { OUTSIDE_DOCUMENT_MAX, OUTSIDE_MESSAGE_MAX, TASK_KINDS, kindSettings, type FillFieldCode, type VendorRow } from "./onboarding-task-kinds";
 
 type Loose = {
   from: (t: string) => any; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -21,6 +21,8 @@ const settingsSchema = z
     fields: z.array(z.string().max(40)).max(12).optional(),
     where: z.enum(["docusign", "houzz_pro", "quickbooks", "email", "text", "other"]).nullable().optional(),
     fallback: z.enum(["outside_resolve", "email"]).nullable().optional(),
+    documentName: z.string().trim().max(OUTSIDE_DOCUMENT_MAX).nullable().optional(),
+    ownerMessage: z.string().trim().max(OUTSIDE_MESSAGE_MAX).nullable().optional(),
   })
   .strict();
 

@@ -587,3 +587,8 @@
 - [x] 6 internal_work_orders switch off; Link the Breezeway work order on the Repair card
 - [x] 7 Cleanup: pilot fallback, 10 minute safety sweep, Retry all, failures on Integrations, second escalation, webhook note
 - [x] 8 Tests, cancelled database practice, browser check, register T15, C4 to C6
+
+## Small fix batch (Nov 12)
+- [x] Fix 24: owner Approve / Ask a question (detached rpc fixed); browser check as the test owner still needs sign-in approval
+- [x] Fix 25: With ARHA in every tab and on the home summary; homeowner last-speaker read fixed (staged 02 optional)
+- [x] Done outside Resolve owner wording, Document name and Owner message (staged 01 for name/message)

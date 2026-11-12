@@ -73,6 +73,10 @@ export type KindSettings = {
   where?: WhereCode | null | undefined;
   /** Send to the homeowner steps on a standard owner's home (no live program). */
   fallback?: "outside_resolve" | "email" | null | undefined;
+  /** Done outside Resolve: the document's name on the owner card (fallback "document"). */
+  documentName?: string | null | undefined;
+  /** Done outside Resolve: replaces the default owner wording; [document] and {where} fill in. */
+  ownerMessage?: string | null | undefined;
 };
 
 export function isTaskKind(v: unknown): v is TaskKindCode {
@@ -98,7 +102,7 @@ export function effectiveTaskKind(t: {
 
 export function kindSettings(raw: unknown): KindSettings {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
-  const r = raw as { emailTemplateId?: unknown; trade?: unknown; fields?: unknown; where?: unknown; fallback?: unknown };
+  const r = raw as { emailTemplateId?: unknown; trade?: unknown; fields?: unknown; where?: unknown; fallback?: unknown; documentName?: unknown; ownerMessage?: unknown };
   const out: KindSettings = {};
   if (typeof r.emailTemplateId === "string" && r.emailTemplateId) out.emailTemplateId = r.emailTemplateId;
   if (typeof r.trade === "string" && r.trade) out.trade = r.trade;
@@ -108,6 +112,8 @@ export function kindSettings(raw: unknown): KindSettings {
   }
   if (typeof r.where === "string" && WHERE_IT_WENT.some((w) => w.code === r.where)) out.where = r.where as WhereCode;
   if (r.fallback === "outside_resolve" || r.fallback === "email") out.fallback = r.fallback;
+  if (typeof r.documentName === "string" && r.documentName.trim()) out.documentName = r.documentName.trim().slice(0, OUTSIDE_DOCUMENT_MAX);
+  if (typeof r.ownerMessage === "string" && r.ownerMessage.trim()) out.ownerMessage = r.ownerMessage.trim().slice(0, OUTSIDE_MESSAGE_MAX);
   return out;
 }
 
@@ -183,11 +189,34 @@ export function completionBlock(kind: TaskKindCode, s: CompletionState): string 
   }
 }
 
-/** What the owner sees on a Done outside Resolve step that also has an owner card. */
-export function outsideOwnerLine(where: string | null | undefined): string {
-  const label = WHERE_IT_WENT.find((w) => w.code === where)?.label;
-  const place = !label || where === "other" || where === "text" || where === "email" ? "document" : label;
-  return `Check your email for the ${place} from ARHA`;
+export const OUTSIDE_DOCUMENT_MAX = 80;
+export const OUTSIDE_MESSAGE_MAX = 600;
+/** The default owner wording on a Done outside Resolve card; [document] and {where} fill in. */
+export const OUTSIDE_DEFAULT_MESSAGE = "Your [document] was sent to you through {where}. Please check your email, then review and sign it.";
+/** Shown after the default wording only when the home has a live Active Owner program. */
+export const OUTSIDE_LOG_TIME_SENTENCE = "Once it's signed, come back here and log your time.";
+
+/** The place named on the owner card: DocuSign, Houzz Pro or QuickBooks; anything else reads "email". */
+export function outsidePlaceName(where: string | null | undefined): string {
+  if (where === "docusign" || where === "houzz_pro" || where === "quickbooks") return WHERE_IT_WENT.find((w) => w.code === where)!.label;
+  return "email";
+}
+
+/**
+ * What the owner sees on a Done outside Resolve card. The step's Owner message, when filled,
+ * replaces the default wording; both fill in [document] and {where}.
+ */
+export function outsideOwnerMessage(input: {
+  where: string | null | undefined;
+  documentName?: string | null | undefined;
+  ownerMessage?: string | null | undefined;
+  liveProgram: boolean;
+}): string {
+  const doc = input.documentName?.trim() || "document";
+  const place = outsidePlaceName(input.where);
+  const custom = input.ownerMessage?.trim();
+  const text = custom || (input.liveProgram ? `${OUTSIDE_DEFAULT_MESSAGE} ${OUTSIDE_LOG_TIME_SENTENCE}` : OUTSIDE_DEFAULT_MESSAGE);
+  return text.replace(/\[document\]/gi, doc).replace(/\{where\}/gi, place);
 }
 
 /* ------------------------------------------------------------- Email fill-ins */
