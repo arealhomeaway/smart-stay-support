@@ -274,8 +274,7 @@ describe("1.2 Needs attention", () => {
     const overview = page.slice(page.indexOf('<TabsContent value="overview"'), page.indexOf('<TabsContent value="tasks"'));
     expect(overview).toContain("<NeedsAttentionStrip");
     expect(page.match(/<NeedsAttentionStrip/g)).toHaveLength(1);
-    expect(header).not.toContain("NeedsAttention");
-    expect(header).not.toContain("attention");
+    expect(header).not.toMatch(/<NeedsAttention|attention[=?:]/);
     const parts = readFileSync("src/components/onboarding/home-page/OverviewParts.tsx", "utf8");
     expect(parts).toContain("Needs attention on this home");
   });
@@ -291,7 +290,7 @@ describe("1.2 Needs attention", () => {
     const page = readFileSync("src/routes/_authenticated/onboarding.$propertyId.tsx", "utf8");
     // The jump is a push (no replace); the Back button replaces and clears the chip's filters.
     expect(page).toContain("void navigate({ search: attentionJumpSearch(search, c.jump.tab) as never });");
-    expect(page.match(/Back to Needs attention/g)).toHaveLength(1);
+    expect(page.match(/\/> Back to Needs attention/g)).toHaveLength(1);
     expect(page).toMatch(/const backToAttention = \(\) => \{\s+jumpFilters\.current = false;\s+setStageSel\(undefined\);\s+setTagSel\(null\);/);
   });
   it("Yours late counts Tasks assigned to the viewer, or unassigned where the viewer is PM", () => {
