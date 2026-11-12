@@ -168,8 +168,10 @@ describe("Part B screens", () => {
     const comments = readFileSync("src/components/onboarding/TaskTeamComments.tsx", "utf8");
     for (const t of ["Team comments", "Add a comment", "Attach", "Post comment"]) expect(comments).toContain(t);
   });
-  it("B4 as changed Nov 12 (fix 18): a sent homeowner Task shows no main button and no Close; the X closes", () => {
-    expect(drawer).toContain('finished || (middle === "send_to_owner" && sentToOwner) ? undefined');
+  it("B4 as changed Nov 12 (fix 18, then 18b): a sent homeowner Task shows no main button; Done only closes", () => {
+    expect(drawer).toContain('finished || (middle === "send_to_owner" && sentToOwner) || middle === "work_order" ? null');
     expect(drawer).not.toMatch(/>\s*Close\s*</);
+    // 18b: the footer Done button calls onClose and nothing else (never saves or sends).
+    expect(drawer).toMatch(/<Button type="button" variant="outline" className="[^"]*" onClick=\{onClose\}>\s*Done\s*<\/Button>/);
   });
 });
