@@ -84,6 +84,16 @@
   --color-amber: var(--amber);
   --color-coral: var(--coral);
   --color-lavender: var(--lavender);
+  /* Homeowner Opportunities: Needs your answer (approved board values). */
+  --color-answer: var(--answer);
+  --color-answer-border: var(--answer-border);
+  --color-answer-chip: var(--answer-chip);
+  --color-answer-chip-foreground: var(--answer-chip-foreground);
+  --color-answer-action: var(--answer-action);
+  --color-answer-action-foreground: var(--answer-action-foreground);
+  --color-overdue: var(--overdue);
+  --color-overdue-border: var(--overdue-border);
+  --color-overdue-foreground: var(--overdue-foreground);
   --color-aqua: var(--aqua);
   --color-sand: var(--sand);
   --color-cool-grey: var(--cool-grey);
@@ -201,6 +211,16 @@
   --module-approval: var(--lavender);
   --module-coverage: var(--sky);
   --module-override: var(--amber);
+  /* Homeowner Opportunities: Needs your answer, from the approved board. */
+  --answer: #fdf4f3;
+  --answer-border: #e6a39d;
+  --answer-chip: #f8dedb;
+  --answer-chip-foreground: #8a2a24;
+  --answer-action: #b9524b;
+  --answer-action-foreground: #ffffff;
+  --overdue: #fdf1ef;
+  --overdue-border: #b4312a;
+  --overdue-foreground: #ffffff;
   /* Cross-team triage: cool grey, so it never reads as a team colour. */
   --triage: var(--cool-grey);
 }
@@ -284,6 +304,15 @@
   --module-coverage: var(--sky);
   --module-override: var(--amber);
   --triage: var(--cool-grey);
+  --answer: oklch(0.27 0.04 25);
+  --answer-border: oklch(0.55 0.11 25);
+  --answer-chip: oklch(0.34 0.06 25);
+  --answer-chip-foreground: oklch(0.9 0.04 25);
+  --answer-action: #b9524b;
+  --answer-action-foreground: #ffffff;
+  --overdue: oklch(0.25 0.06 25);
+  --overdue-border: #b4312a;
+  --overdue-foreground: #ffffff;
 }
 
 /**
