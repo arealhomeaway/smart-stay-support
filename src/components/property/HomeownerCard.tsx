@@ -31,6 +31,8 @@ type Form = {
   coOwnerName: string;
   coOwnerEmail: string;
   coOwnerPhone: string;
+  preferredMethod: string;
+  telegram: string;
 };
 
 const EMPTY: Form = {
@@ -40,6 +42,8 @@ const EMPTY: Form = {
   coOwnerName: "",
   coOwnerEmail: "",
   coOwnerPhone: "",
+  preferredMethod: "",
+  telegram: "",
 };
 
 export function HomeownerCard({
@@ -70,11 +74,26 @@ export function HomeownerCard({
       coOwnerName: owner.coOwnerName ?? "",
       coOwnerEmail: owner.coOwnerEmail ?? "",
       coOwnerPhone: owner.coOwnerPhone ?? "",
+      preferredMethod: owner.preferredMethod ?? "",
+      telegram: owner.telegram ?? "",
     });
-  }, [owner?.id, owner?.name, owner?.email, owner?.phone, owner?.coOwnerName]);
+  }, [owner?.id, owner?.name, owner?.email, owner?.phone, owner?.coOwnerName, owner?.preferredMethod, owner?.telegram]);
 
+  // Property page Part 1: preferred method and Telegram are saved only once their columns exist.
+  const contactReady = owner?.contactFieldsReady === true;
   const save = useMutation({
-    mutationFn: () => update({ data: { ownerId: owner!.id, ...form } }),
+    mutationFn: () => {
+      const { preferredMethod, telegram, ...rest } = form;
+      return update({
+        data: {
+          ownerId: owner!.id,
+          ...rest,
+          ...(contactReady
+            ? { preferredMethod: (preferredMethod || null) as "text" | "call" | "email" | "telegram" | null, telegram: telegram || null }
+            : {}),
+        },
+      });
+    },
     onSuccess: async () => {
       toast.success("Homeowner details saved.");
       setOpen(false);
@@ -170,6 +189,26 @@ export function HomeownerCard({
               value={form.phone}
               onChange={(v) => setForm({ ...form, phone: v })}
             />
+            {contactReady ? (
+              <>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground" htmlFor="owner-preferred">Preferred way to reach</Label>
+                  <select
+                    id="owner-preferred"
+                    className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={form.preferredMethod}
+                    onChange={(e) => setForm({ ...form, preferredMethod: e.target.value })}
+                  >
+                    <option value="">Not set</option>
+                    <option value="text">Text</option>
+                    <option value="call">Call</option>
+                    <option value="email">Email</option>
+                    <option value="telegram">Telegram</option>
+                  </select>
+                </div>
+                <Field label="Telegram username" value={form.telegram} onChange={(v) => setForm({ ...form, telegram: v })} />
+              </>
+            ) : null}
             <div className="sm:col-span-2 pt-2 text-sm font-medium">Second owner (optional)</div>
             <Field
               label="Name"
