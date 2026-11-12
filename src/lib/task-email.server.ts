@@ -6,12 +6,15 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { taskEmailEventSummary } from "./task-email";
+import { taskEmailHistory } from "./onboarding-task-kinds";
 
 export async function recordTaskEmailEvents(
   supabase: SupabaseClient,
-  input: { taskId: string; propertyId: string; isDemo: boolean; subject: string; actor: string },
+  input: { taskId: string; propertyId: string; isDemo: boolean; subject: string; actor: string; vendorName?: string | null },
 ) {
-  const summary = taskEmailEventSummary(input.subject);
+  // Item 4 (Nov 12): a Vendor or team request is logged as a vendor request, never a homeowner email.
+  const kind = taskEmailHistory({ subject: input.subject, vendorName: input.vendorName ?? null });
+  const summary = kind.kind === "vendor_requested" ? kind.summary : taskEmailEventSummary(input.subject);
   const { data: project } = await supabase
     .from("onboarding_projects" as never)
     .select("id")
@@ -24,7 +27,7 @@ export async function recordTaskEmailEvents(
     const { error } = await supabase.from("onboarding_project_events" as never).insert({
       project_id: projectId,
       property_id: input.propertyId,
-      kind: "homeowner_emailed",
+      kind: kind.kind,
       summary,
       new_value: input.taskId,
       actor: input.actor,
@@ -34,9 +37,9 @@ export async function recordTaskEmailEvents(
   }
   const { error: logError } = await supabase.from("property_activity_log" as never).insert({
     property_id: input.propertyId,
-    category: "administrative",
+    category: kind.category,
     what_happened: summary,
-    outcome: "Email sent from an onboarding Task.",
+    outcome: kind.outcome,
     is_demo: input.isDemo,
   } as never);
   if (logError) console.error("task email: home history not saved", logError.message);

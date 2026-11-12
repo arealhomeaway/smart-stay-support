@@ -159,8 +159,12 @@ export const sendComposedEmail = createServerFn({ method: "POST" })
       scheduledFor?: string | null;
       scheduledTimeZone?: string | null;
       attachments?: { name: string; contentType: string; contentBytes: string }[];
+      /** Onboarding Vendor or team request (item 4): the vendor this request goes to. */
+      vendorOrgId?: string | null;
     }) => {
       if (!CONTEXTS.includes(input?.context)) throw new Error("Unknown record type.");
+      if (input.vendorOrgId != null && (input.context !== "onboarding_task" || !/^[0-9a-f-]{36}$/i.test(input.vendorOrgId)))
+        throw new Error("That vendor could not be read.");
       if (!input?.recordId) throw new Error("Pick a record.");
       if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test((input?.to ?? "").trim()))
         throw new Error("Add a valid email address to send to.");
@@ -249,6 +253,17 @@ export const sendComposedEmail = createServerFn({ method: "POST" })
       templateId: data.templateId ?? null,
     });
     if (taskRow && result.status === "sent") {
+      // A vendor request names the vendor from the vendor record, never from the browser.
+      let vendorName: string | null = null;
+      if (data.vendorOrgId) {
+        const { data: org } = await context.supabase
+          .from("vendor_orgs")
+          .select("display_name, legal_name")
+          .eq("id", data.vendorOrgId)
+          .maybeSingle();
+        vendorName = (org as { display_name?: string | null; legal_name?: string | null } | null)?.display_name
+          || (org as { legal_name?: string | null } | null)?.legal_name || "a vendor";
+      }
       const { recordTaskEmailEvents } = await import("./task-email.server");
       await recordTaskEmailEvents(context.supabase as never, {
         taskId: data.recordId,
@@ -256,6 +271,7 @@ export const sendComposedEmail = createServerFn({ method: "POST" })
         isDemo: taskRow.is_demo,
         subject: data.subject,
         actor: context.userId,
+        vendorName,
       });
     }
     return result;
