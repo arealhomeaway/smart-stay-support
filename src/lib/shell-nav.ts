@@ -485,17 +485,23 @@ const SUBPAGE_LABELS: Record<string, string> = {
   "/str-participation-report": "Participation report",
 };
 
-// A home's onboarding page tabs (register O1). Plan is the page itself, so it adds no crumb
-// and Back from it returns to Onboarding. Older tab links read as the tab that holds them now.
+// A home's onboarding page tabs (property page Part 1, Nov 12). Tasks is the page itself, so it
+// adds no crumb. Older tab links read as the tab that holds them now.
 const ONBOARDING_TABS: Record<string, string> = {
-  design: "Design",
-  budget: "Budget & Invoices",
-  agreements: "Agreements",
-  info: "General Info",
+  overview: "Overview",
+  owner: "Owner",
+  details: "Home details",
+  vendors: "Vendors and work",
   files: "Files",
+  budget: "Budget",
   activity: "Activity",
-  handoff: "Handoff",
-  property: "General Info",
+  more: "More",
+  design: "More",
+  agreements: "More",
+  info: "More",
+  handoff: "More",
+  property: "More",
+  financial: "Budget",
   history: "Activity",
 };
 
@@ -520,6 +526,8 @@ export function buildTrail(input: {
   if (onbProperty && !RESERVED_ONBOARDING.has(onbProperty[1]!)) {
     const id = onbProperty[1]!;
     trail.push({ label: "Onboarding", to: "/onboarding" });
+    // Part 1: "Onboarding › Homes" above the home's name.
+    trail.push({ label: "Homes", to: "/onboarding/properties" });
     trail.push({ label: name, to: `/onboarding/${id}` });
     const tab = typeof search["tab"] === "string" ? ONBOARDING_TABS[search["tab"]] : undefined;
     if (tab) trail.push({ label: tab, to: `/onboarding/${id}`, search: { tab: search["tab"] as string } });
