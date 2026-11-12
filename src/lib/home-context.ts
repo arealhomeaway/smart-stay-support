@@ -32,9 +32,24 @@ export function isOpsDirectorSeat(userId: string | null, holder: string | null, 
   return Boolean(userId) && (userId === holder || userId === cover);
 }
 
-/** Register O4: only the Director of Onboarding role holder marks a home ready (not Admin, not the project director). */
-export function canMarkHomeReady(userId: string | null, onboardingDirector: string | null) {
-  return Boolean(userId) && userId === onboardingDirector;
+/**
+ * Register O4 as changed Nov 11 (staged file 06): the Director of Onboarding role holder or an Admin marks a home
+ * ready, never the project director. The Admin path shows only once the database allows it (adminChecksOn).
+ */
+export function canMarkHomeReady(userId: string | null, onboardingDirector: string | null, isAdmin = false, adminChecksOn = false) {
+  return Boolean(userId) && (userId === onboardingDirector || (isAdmin && adminChecksOn));
+}
+
+/** A pending step review this person may decide: an assigned reviewer, or an Admin once the database allows it. */
+export function canDecideStepReview(
+  userId: string | null,
+  reviewers: { user_id: string | null; decision?: string | null }[],
+  isAdmin = false,
+  adminChecksOn = false,
+) {
+  const waiting = reviewers.filter((r) => !r.decision);
+  if (!userId || waiting.length === 0) return false;
+  return waiting.some((r) => r.user_id === userId) || (isAdmin && adminChecksOn);
 }
 
 /** Overrides must come from seat_override_at, which filters them at database now(). */

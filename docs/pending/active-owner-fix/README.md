@@ -1,7 +1,8 @@
 # Active Owner fix (Nov 11) — staged, NOT applied
 
-Approved spec: "Active Owner Fix Spec" (Emily, Nov 11). Nothing in this folder has been applied to
-the database. Apply only with the approving Admin's go, in this order, each with its undo ready.
+Approved spec: "Active Owner Fix Spec" (Emily, Nov 11). Files 01 to 04 were applied by the Admin on Nov 11
+(checked Nov 12 against the live functions); 05a, 05b and 06 are staged and NOT applied. Apply only with the
+approving Admin's go, in this order, each with its undo ready.
 
 | Order | File | What it does | Undo |
 | --- | --- | --- | --- |
@@ -11,15 +12,16 @@ the database. Apply only with the approving Admin's go, in this order, each with
 | 4 | `04_active_owner_label.sql` | Fix 4: creates the Admin owned Active Owner label and puts it on every home now included in a live program. Starts no plan. | `04_active_owner_label.undo.sql` |
 | 5a | `05a_v2_to_standard_dry_run.sql` | Fix 5 dry run, read only. Output of Nov 11: `05a_dry_run_output_nov11.txt` (run with the home name in place of the display helper, which this sandbox role may not run). | none (writes nothing) |
 | 5b | `05b_v2_to_standard_move.sql` | Fix 5 move of the four V2 homes, ONLY after the dry run is approved. Changed Nov 11 (Admin): every V2 Task is archived (who and when, receipts, nothing deleted); every Standard step is created, open and assigned as the plan assigns it, except the steps in the confirmed done list at the top of the file (empty until the Admin's checklist), which are created completed with the note "Done before Resolve, confirmed by the COO, Nov 11"; no title matching. Stops with nothing written if a listed step needs a homeowner decision, is a handoff step or is not on the home's plan, or if a home's handoff is already accepted. The same list must be pasted into 05a. | `05b_v2_to_standard_move.undo.sql` (exact, from receipts: un-archives those V2 Tasks, archives the created Tasks) |
-| then | in the app | Program oversight, Admin: Start plans for enrolled homes → Preview → approve → Turn on. | per home switch off |
+| 6 | `06_operations_stage_and_admin.sql` | Added Nov 11 (Admin). Needs 01 to 04; independent of 05a/05b. At the operations stage: anytime cards are added (open, or by their own lock), never skipped; A33 and N10 open with no lock when a plan starts on a handed off home, the same as at handoff; an operations card that waits on an onboarding step the home does not have (A51 today) is not added, and A14 and A35 stay out until the Breezeway bridge (one rule, `private.ao_ops_card_rule`, read by the preview, the turn on, Start plans for enrolled homes and the handoff step). Admin passes every onboarding and Active Owner role check: the three that refused an Admin (Mark ready, deciding a step review, recording a review edit) now allow an Admin, recorded as the Admin with the time; `admin_passes_role_checks` lets the screens show those buttons only once 06 is applied. Live text of the seven replaced functions is in `live-capture/06/`. | `06_operations_stage_and_admin.undo.sql` (exact live text back, the two added functions removed) |
+| then | in the app | Program oversight, Admin: Start plans for enrolled homes → Preview → approve → Turn on. Apply 06 first so the three handed off homes get their anytime cards. | per home switch off |
 
 `live-capture/` holds the live function text captured read only on Nov 11; the 02 undo restores
 `ao_set_home_automation`, `ao_preview_home_automation` and `owner_business_decision_guard` from it.
 `CHECKSUMS.sha256` covers every file here.
 
 ## Proofs
-- `src/lib/__tests__/active-owner-fix-sql.test.ts` and `active-owner-fix-plan-move.test.ts` run every
-  file above on an isolated PostgreSQL copy built from the live table shapes and the live engine
+- `src/lib/__tests__/active-owner-fix-sql.test.ts`, `active-owner-fix-plan-move.test.ts` and
+  `active-owner-fix-06.test.ts` run every file above on an isolated PostgreSQL copy built from the live table shapes and the live engine
   functions, including every undo.
 - Real database practice: `practice_active_owner_fix.sql` (BEGIN … ROLLBACK). It could not run from
   this sandbox: its database role has no rights on the `private` schema ("permission denied for
@@ -32,4 +34,6 @@ the database. Apply only with the approving Admin's go, in this order, each with
   completes on send and the decision lives on the owner item (register O9 tasks would complete on send).
 - A card whose linked Task is already finished when a plan starts is Already covered (Fix 5 wording,
   applied to every home so preview and turn on agree).
-- A handed off home gets operations cards only: anytime cards are now skipped at the operations stage.
+- A handed off home gets operations cards only: anytime cards are skipped at the operations stage (02 as applied).
+  06 changes this: anytime cards are added at the operations stage (register O5).
+- 06 changes register O4: an Admin may also mark a home ready (the Director of Onboarding still may).

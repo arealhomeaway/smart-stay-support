@@ -14,8 +14,25 @@ import { roleLabel } from "@/lib/v2-workflow.functions";
 import { decideTaskReview, readTaskReviewState, recordReviewEdit, submitTaskReview } from "@/lib/onboarding-reviews.functions";
 import { REVIEW_EVENT_LABEL, REVIEW_STATUS_LABEL, reviewAction, waitingLabel } from "@/lib/onboarding-reviews";
 import { usDateTime } from "@/lib/dates";
+import { canDecideStepReview } from "@/lib/home-context";
+import { supabase } from "@/integrations/supabase/client";
 
 const key = (taskId: string) => ["task-review", taskId];
+
+/** Staged file 06: an Admin decides any step review once the database allows it (missing function = not yet). */
+function useAdminChecksOn(isAdmin: boolean) {
+  const q = useQuery({
+    queryKey: ["admin-passes-role-checks"],
+    enabled: isAdmin,
+    retry: false,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as unknown as (name: string) => Promise<{ data: boolean | null; error: unknown }>)("admin_passes_role_checks");
+      return !error && data === true;
+    },
+  });
+  return isAdmin && q.data === true;
+}
 
 export function useTaskReview(taskId: string) {
   const read = useServerFn(readTaskReviewState);
@@ -67,7 +84,8 @@ export function ReviewAwareComplete({ taskId, disabled, children }: { taskId: st
 
 export function TaskReviewPanel({ taskId }: { taskId: string }) {
   const q = useTaskReview(taskId);
-  const { userId } = useRole();
+  const { userId, isAdmin } = useRole();
+  const adminChecksOn = useAdminChecksOn(isAdmin);
   const refresh = useRefresh(taskId);
   const decide = useServerFn(decideTaskReview);
   const edit = useServerFn(recordReviewEdit);
@@ -88,7 +106,7 @@ export function TaskReviewPanel({ taskId }: { taskId: string }) {
   if (!s || (!s.enabled && !s.review)) return null;
   const rv = s.review;
   const pending = rv?.status === "pending";
-  const mine = pending && s.reviewers.some((r) => r.user_id === userId && !r.decision);
+  const mine = pending && canDecideStepReview(userId, s.reviewers, isAdmin, adminChecksOn);
 
   return (
     <section className="space-y-2 rounded-md border border-border p-3" aria-label="Review">

@@ -452,6 +452,39 @@ export type Database = {
           },
         ]
       }
+      ao_daily_email_items: {
+        Row: {
+          created_at: string
+          daily_notification_id: string
+          notification_id: string
+        }
+        Insert: {
+          created_at?: string
+          daily_notification_id: string
+          notification_id: string
+        }
+        Update: {
+          created_at?: string
+          daily_notification_id?: string
+          notification_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ao_daily_email_items_daily_notification_id_fkey"
+            columns: ["daily_notification_id"]
+            isOneToOne: false
+            referencedRelation: "owner_notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ao_daily_email_items_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: true
+            referencedRelation: "owner_notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ao_dedupe_events: {
         Row: {
           action: string
@@ -820,6 +853,62 @@ export type Database = {
           used_at?: string | null
         }
         Relationships: []
+      }
+      ao_owner_email_days: {
+        Row: {
+          created_at: string
+          day: string
+          kind: string
+          notification_id: string | null
+          owner_key: string
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          kind: string
+          notification_id?: string | null
+          owner_key: string
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          kind?: string
+          notification_id?: string | null
+          owner_key?: string
+        }
+        Relationships: []
+      }
+      ao_plan_ready_notices: {
+        Row: {
+          created_at: string
+          notification_id: string
+          open_count: number
+          program_id: string
+          property_ids: string[]
+        }
+        Insert: {
+          created_at?: string
+          notification_id: string
+          open_count?: number
+          program_id: string
+          property_ids?: string[]
+        }
+        Update: {
+          created_at?: string
+          notification_id?: string
+          open_count?: number
+          program_id?: string
+          property_ids?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ao_plan_ready_notices_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: true
+            referencedRelation: "owner_notifications"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       app_settings: {
         Row: {
@@ -10627,6 +10716,54 @@ export type Database = {
           },
         ]
       }
+      owner_item_task_sends: {
+        Row: {
+          is_demo: boolean
+          note: string
+          program_id: string
+          property_id: string
+          review_id: string
+          sent_at: string
+          sent_by: string
+          task_id: string
+        }
+        Insert: {
+          is_demo?: boolean
+          note: string
+          program_id: string
+          property_id: string
+          review_id: string
+          sent_at?: string
+          sent_by: string
+          task_id: string
+        }
+        Update: {
+          is_demo?: boolean
+          note?: string
+          program_id?: string
+          property_id?: string
+          review_id?: string
+          sent_at?: string
+          sent_by?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_item_task_sends_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: true
+            referencedRelation: "owner_reviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_item_task_sends_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       owner_library_videos: {
         Row: {
           id: string
@@ -13061,6 +13198,7 @@ export type Database = {
           renamed_by: string | null
           retired_at: string | null
           retired_by: string | null
+          system_key: string | null
         }
         Insert: {
           created_at?: string
@@ -13071,6 +13209,7 @@ export type Database = {
           renamed_by?: string | null
           retired_at?: string | null
           retired_by?: string | null
+          system_key?: string | null
         }
         Update: {
           created_at?: string
@@ -13081,6 +13220,7 @@ export type Database = {
           renamed_by?: string | null
           retired_at?: string | null
           retired_by?: string | null
+          system_key?: string | null
         }
         Relationships: []
       }
@@ -18355,6 +18495,7 @@ export type Database = {
         Args: { _property: string; _task: string; _title: string }
         Returns: string
       }
+      ao_owner_email_run: { Args: { _now?: string }; Returns: Json }
       ao_owner_plan: {
         Args: { _program: string }
         Returns: {
@@ -18373,6 +18514,7 @@ export type Database = {
           what_text: string
         }[]
       }
+      ao_preview_enrolled_homes: { Args: never; Returns: Json }
       ao_preview_home_automation: {
         Args: { _covered_card_ids?: string[]; _property: string }
         Returns: Json
@@ -18382,6 +18524,7 @@ export type Database = {
         Args: { _covered_card_ids?: string[]; _on: boolean; _property: string }
         Returns: Json
       }
+      ao_start_enrolled_homes: { Args: { _token: string }; Returns: Json }
       ao_step_link_decide: {
         Args: { _accept: boolean; _id: string }
         Returns: string
@@ -19320,6 +19463,17 @@ export type Database = {
           title: string
         }[]
       }
+      my_owner_item_needs: {
+        Args: never
+        Returns: {
+          property_id: string
+          review_id: string
+          since: string
+          task_id: string
+          title: string
+          why: string
+        }[]
+      }
       my_spending_approval_authority: { Args: never; Returns: boolean }
       nightly_export_alert: {
         Args: { _folder: string; _message: string; _reason: string }
@@ -19412,6 +19566,36 @@ export type Database = {
         Returns: boolean
       }
       owner_hours_eligibility: { Args: { _program_id: string }; Returns: Json }
+      owner_item_detail: { Args: { _review_id: string }; Returns: Json }
+      owner_item_reply: {
+        Args: { _body: string; _review_id: string }
+        Returns: string
+      }
+      owner_item_thread: {
+        Args: { _review_id: string }
+        Returns: {
+          author_id: string | null
+          author_name: string
+          author_type: string
+          body: string
+          created_at: string
+          event: string | null
+          id: string
+          is_demo: boolean
+          program_id: string | null
+          property_id: string | null
+          request_kind: string | null
+          review_id: string | null
+          task_id: string | null
+          work_item_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "owner_request_messages"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       owner_owns_program: { Args: { _program_id: string }; Returns: boolean }
       owner_program_staff_choices: {
         Args: never
@@ -20292,6 +20476,10 @@ export type Database = {
         Args: { _actor?: string }
         Returns: undefined
       }
+      send_task_to_owner_item: {
+        Args: { _note: string; _respond_by?: string; _task_id: string }
+        Returns: Json
+      }
       set_account_archived: {
         Args: { _archived: boolean; _user: string }
         Returns: undefined
@@ -20353,6 +20541,7 @@ export type Database = {
         Args: { _id: string; _on: boolean }
         Returns: undefined
       }
+      set_owner_digest_time: { Args: { _time: string }; Returns: string }
       set_owner_library_video: {
         Args: {
           _label: string
