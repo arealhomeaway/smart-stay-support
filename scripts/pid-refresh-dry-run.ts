@@ -719,7 +719,7 @@ const show = (v: any) => (v === undefined || v === null ? "" : typeof v === "str
 
 type Change = {
   orId: string; home: string; propertyId: string; pageId: string; field: string; path: string[];
-  current: any; notion: any; kind: "fill" | "update" | "conflict"; conflictWith: "" | "Resolve" | "OwnerRez"; reason: string;
+  current: any; notion: any; kind: "fill" | "update" | "conflict"; conflictWith: "" | "Resolve" | "OwnerRez" | "Notion"; reason: string;
 };
 const changes: Change[] = [];
 let unchanged = 0;
@@ -775,7 +775,7 @@ for (const x of report.conflicts) {
   });
 }
 for (const d of dupeConflicts) {
-  changes.push({ orId: d.c.orId, home: d.c.prop.name, propertyId: d.c.prop.id, pageId: d.c.page.id, field: `notion:${d.field}`, path: [], current: null, notion: d.values.join(" | "), kind: "conflict", conflictWith: "Resolve", reason: "two PID pages on this OwnerRez ID disagree; nothing proposed" });
+  changes.push({ orId: d.c.orId, home: d.c.prop.name, propertyId: d.c.prop.id, pageId: d.c.page.id, field: `notion:${d.field}`, path: [], current: null, notion: d.values.join(" | "), kind: "conflict", conflictWith: "Notion", reason: "two PID pages on this OwnerRez ID disagree; nothing proposed" });
 }
 for (const g of report.gpsDiffOwnerRezWins) {
   const c = candidates.find((k) => (k.values["Property"] ?? k.orId) === g.property)!;

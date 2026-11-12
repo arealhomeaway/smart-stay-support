@@ -673,7 +673,7 @@ Not needed at hand off (Mingees to handle later):
 484034,401 E. 10th St.,utilities.wifi_ssid,HFE 401,"ARHA 2.4, ARHA 5",update,,"still notion_pid, not edited since"
 484034,401 E. 10th St.,bathrooms,3,2.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
 484034,401 E. 10th St.,instant_book,false,true,conflict,OwnerRez,OwnerRez-owned field; never written
-484034,401 E. 10th St.,notion:Pool & Hot Tub Technician Form,,"""https://arha.fillout.com/pool?id=4144658d5f4f80be8fd8f052375bd74b"" | ""https://arha.fillout.com/pool?id=3574658d5f4f81d2bed2e345f40bca1a""",conflict,Resolve,two PID pages on this OwnerRez ID disagree; nothing proposed
+484034,401 E. 10th St.,notion:Pool & Hot Tub Technician Form,,"""https://arha.fillout.com/pool?id=4144658d5f4f80be8fd8f052375bd74b"" | ""https://arha.fillout.com/pool?id=3574658d5f4f81d2bed2e345f40bca1a""",conflict,Notion,two PID pages on this OwnerRez ID disagree; nothing proposed
 453794,409 S. 85th St.,access.yale_needs_calibration,,false,fill,,new Notion value
 453794,409 S. 85th St.,waste.valet,,No,fill,,new Notion value
 453794,409 S. 85th St.,"latitude,longitude","36.048113, -95.682091","36.05625670, -95.68303470",conflict,OwnerRez,PID pin more than 0.001 from the Resolve pin
