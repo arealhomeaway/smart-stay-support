@@ -34,7 +34,7 @@ describe("the mapping is the approved Sep 1 mapping", () => {
     const md = readFileSync("docs/pending/pid-import-mapping-v1.md", "utf8");
     const rows = md.split("\n").filter((l) => l.startsWith("| ")).map((l) => l.split("|").map((s) => s.trim())).filter((c) => c.length >= 13 && /^\d+$/.test(c[1]!));
     expect(rows).toHaveLength(166);
-    expect(PID_MAPPING_V1.map((m) => [m.i, m.name, m.action, m.target, m.authority])).toEqual(rows.map((c) => [Number(c[1]), c[2]!.replace(/\*\*/g, ""), c[7], c[6], c[8]]));
+    expect(PID_MAPPING_V1.map((m) => [m.i, m.name, m.action, m.target, m.authority])).toEqual(rows.map((c) => [Number(c[1]), c[2]!.replace(/\*\*/g, ""), c[7]!, c[6]!, c[8]!]));
   });
 });
 
@@ -87,7 +87,7 @@ describe("overwrite rule: a value changed in Resolve is never overwritten", () =
 describe("blank rule: a blank in Notion never clears a value", () => {
   it("leaves the Resolve value alone when the PID field is empty", () => {
     const h = plan(page({ "Property Nickname": rt("") }), snapshot({ nickname: "Keep me" }, { provenance: [prov("nickname")] }));
-    expect(h.changes.find((c) => c.field === "nickname")).toBeUndefined();
+    expect(h.changes.some((c) => c.field === "nickname")).toBe(false);
     expect(homeWrites(h)).toHaveLength(0);
   });
   it("keeps the last From the PID value when the field is now empty", () => {
