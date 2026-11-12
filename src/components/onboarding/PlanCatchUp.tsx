@@ -229,19 +229,24 @@ export function PlanCatchUpBar({
             </div>
           ) : null}
           {selectedTasks.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="numeric mr-1 text-sm font-semibold">{selectedLabel(selectedTasks.length)}</span>
-              <Button className="min-h-11" onClick={() => setDialog("mark_done")}>Mark done</Button>
-              <Button variant="outline" className="min-h-11" onClick={() => setDialog("not_needed")}>Not needed for this home</Button>
-              <Button variant="outline" className="min-h-11" onClick={() => setDialog("assign")}>Assign to…</Button>
-              <Button variant="outline" className="min-h-11" onClick={() => setDialog("due_date")}>Change due date…</Button>
-              {actions.includes("reopen") ? (
-                <Button variant="outline" className="min-h-11" onClick={() => setDialog("reopen")}>Reopen</Button>
-              ) : null}
-              {editable ? (
-                <Button variant="outline" className="min-h-11" onClick={() => setDialog("edit")}>Edit selected</Button>
-              ) : null}
-              <Button variant="ghost" className="min-h-11" onClick={selection.clear}>Clear</Button>
+            // Phone: count, Mark done and Clear on one line, the rest scroll sideways underneath.
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+              <div className="flex items-center gap-2 sm:contents">
+                <span className="numeric mr-1 text-sm font-semibold">{selectedLabel(selectedTasks.length)}</span>
+                <Button className="min-h-11" onClick={() => setDialog("mark_done")}>Mark done</Button>
+                <Button variant="ghost" className="ml-auto min-h-11 sm:order-last sm:ml-0" onClick={selection.clear}>Clear</Button>
+              </div>
+              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:contents">
+                <Button variant="outline" className="min-h-11 shrink-0" onClick={() => setDialog("not_needed")}>Not needed for this home</Button>
+                <Button variant="outline" className="min-h-11 shrink-0" onClick={() => setDialog("assign")}>Assign to…</Button>
+                <Button variant="outline" className="min-h-11 shrink-0" onClick={() => setDialog("due_date")}>Change due date…</Button>
+                {actions.includes("reopen") ? (
+                  <Button variant="outline" className="min-h-11 shrink-0" onClick={() => setDialog("reopen")}>Reopen</Button>
+                ) : null}
+                {editable ? (
+                  <Button variant="outline" className="min-h-11 shrink-0" onClick={() => setDialog("edit")}>Edit selected</Button>
+                ) : null}
+              </div>
             </div>
           ) : null}
         </div>
