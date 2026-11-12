@@ -71,7 +71,11 @@ SELECT home, v2_tasks_to_archive, standard_steps_to_create, subtasks_to_create, 
 FROM per_home
 UNION ALL
 SELECT 'list problem', NULL, NULL, NULL, NULL, NULL,
-       'the list names a home that is not part of this move: ' || string_agg(DISTINCT l.project_id::text, ', ')
-FROM listed l WHERE NOT EXISTS (SELECT 1 FROM homes h WHERE h.project_id = l.project_id)
-HAVING count(*) > 0
+       concat_ws('; ',
+         CASE WHEN bool_or(NOT EXISTS (SELECT 1 FROM homes h WHERE h.project_id = (e ->> 'project')::uuid))
+              THEN 'the list names a home that is not part of this move' END,
+         CASE WHEN count(*) <> count(DISTINCT e ->> 'project') THEN 'the list names a home twice' END)
+FROM input, jsonb_array_elements(list) e
+HAVING bool_or(NOT EXISTS (SELECT 1 FROM homes h WHERE h.project_id = (e ->> 'project')::uuid))
+    OR count(*) <> count(DISTINCT e ->> 'project')
 ORDER BY 1;
