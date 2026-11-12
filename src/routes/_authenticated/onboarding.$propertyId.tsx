@@ -338,7 +338,7 @@ function PropertyWorkspace() {
     [allTasks, scope],
   );
 
-  // Plan catch-up (Admin approval Nov 12): one selection across the stage lists and Every task.
+  // Plan catch-up (Admin approval Nov 12): one selection across the stage lists.
   const catchUpViewerFn = useServerFn(planCatchUpViewerFn);
   const catchUpViewerQuery = useQuery({
     queryKey: ["plan-catch-up-viewer", propertyId, userId],

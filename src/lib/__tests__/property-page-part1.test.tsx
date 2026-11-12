@@ -357,7 +357,8 @@ describe("1.7 Add task and the permission rule", () => {
 describe("removed from the page", () => {
   const page = readFileSync("src/routes/_authenticated/onboarding.$propertyId.tsx", "utf8");
   it("no banner photo, no Owner Type line, no separate Every task list", () => {
-    expect(page).not.toMatch(/Every task/);
+    expect(page).not.toMatch(/"Every task"|>\s*Every task\s*</);
+    expect(page).not.toContain("<PropertyWorkQueue");
     expect(page).not.toContain("headerFactsLine");
     expect(page).not.toContain("HomeBoardHeader");
   });
