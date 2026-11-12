@@ -15,7 +15,6 @@ import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { CheckCircle2, Clock, Download, FileText, ImageIcon, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { usCalendarDate, usDateTime } from "@/lib/dates";
@@ -78,14 +77,6 @@ function SharedFile({ file, disabled }: { file: OwnerOnboardingFile; disabled: b
   );
 }
 
-function Block({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <div className="mt-1 whitespace-pre-line text-sm">{children}</div>
-    </div>
-  );
-}
 
 export type OwnerTaskDetails = {
   title: string;
@@ -98,6 +89,8 @@ export type OwnerTaskDetails = {
   recommendation: string | null;
   guidance: string | null;
   priorResponse: string | null;
+  /** When it was sent to the homeowner. */
+  sentAt?: string | null;
 };
 
 export function OwnerTaskDialog({
