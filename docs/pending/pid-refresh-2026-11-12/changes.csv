@@ -1,14 +1,27 @@
 ownerrez_id,home,field_key,current_resolve_value,notion_value,kind,conflict_with,reason
+425447,1012 Wasatch Ct,access.yale_needs_calibration,,false,fill,,new Notion value
+484588,10121 E. 131st Pl. S.,access.yale_needs_calibration,,false,fill,,new Notion value
+461754,1016 NW 191st St,access.yale_needs_calibration,,false,fill,,new Notion value
 461754,1016 NW 191st St,max_guests,7,8,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+446094,10302 S. 230th East Ave,access.yale_needs_calibration,,true,fill,,new Notion value
 446094,10302 S. 230th East Ave,waste.valet,,No,fill,,new Notion value
+401685,10320 Lightning Creek Dr. (30D FIRM),access.yale_needs_calibration,,false,fill,,new Notion value
 401685,10320 Lightning Creek Dr. (30D FIRM),facts.tv_specs,ROKU Pin: See Guest Access & Credentials,ROKU Pin: [removed — credentials are not stored in Resolve],update,,"still notion_pid, not edited since"
 401685,10320 Lightning Creek Dr. (30D FIRM),parking.summary,3 Car Garage,3 Car Garage. Per the HOA cars can only be parked in the garage and driveway. Max of 3 cars in driveway. NO street parking.,update,,"still notion_pid, not edited since"
+475429,1039 Swinton Way,access.yale_needs_calibration,,false,fill,,new Notion value
 475429,1039 Swinton Way,max_guests,6,8,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+413421,105 Summit Bnd,access.yale_needs_calibration,,false,fill,,new Notion value
+425324,10549 SE 23rd St,access.yale_needs_calibration,,false,fill,,new Notion value
+424809,1056 Wildwood Drive,access.yale_needs_calibration,,false,fill,,new Notion value
+477909,1068 Berrywood Dr.,access.yale_needs_calibration,,false,fill,,new Notion value
+427066,10845 Sara Ct,access.yale_needs_calibration,,false,fill,,new Notion value
+390700,11109 SW 34th Terrace,access.yale_needs_calibration,,false,fill,,new Notion value
 492044,11249 Pegasus Dr.,access.emergency_key_access,,Yes,fill,,new Notion value
 492044,11249 Pegasus Dr.,access.garage_remote,,Genie https://www.amazon.com/dp/B0DH81245P?ref=fed_asin_title&th=1,fill,,new Notion value
 492044,11249 Pegasus Dr.,access.key_storage,,"[""Garage Door"",""Front Door/Smartlock"",""Front Door - Storm Door""]",fill,,new Notion value
 492044,11249 Pegasus Dr.,access.lock_brand,,Yale,fill,,new Notion value
 492044,11249 Pegasus Dr.,access.yale_module,,Connected & Setup,fill,,new Notion value
+492044,11249 Pegasus Dr.,access.yale_needs_calibration,,false,fill,,new Notion value
 492044,11249 Pegasus Dr.,amenities.access_notes,,No key necessary,fill,,new Notion value
 492044,11249 Pegasus Dr.,amenities.list,,"[""Basketball Court"",""Pond""]",fill,,new Notion value
 492044,11249 Pegasus Dr.,facts.grill,,No Grill,fill,,new Notion value
@@ -84,14 +97,17 @@ Water spicket in the backyard was repaired, however it could leak in the future 
 492044,11249 Pegasus Dr.,waste.strict_rules,,N/A,fill,,new Notion value
 492044,11249 Pegasus Dr.,waste.trash_days,,"[""Monday""]",fill,,new Notion value
 492044,11249 Pegasus Dr.,waste.valet,,No,fill,,new Notion value
-492044,11249 Pegasus Dr.,instant_book,false,true,update,,"still notion_pid, not edited since"
+492044,11249 Pegasus Dr.,instant_book,false,true,conflict,OwnerRez,OwnerRez-owned field; never written
+454815,11508 E 94th Pl N,access.yale_needs_calibration,,true,fill,,new Notion value
 454815,11508 E 94th Pl N,waste.valet,,No,fill,,new Notion value
+425054,11514 S. Locust Ave,access.yale_needs_calibration,,false,fill,,new Notion value
 425054,11514 S. Locust Ave,waste.valet,,No,fill,,new Notion value
 425054,11514 S. Locust Ave,operating_notes,"The owner has a membership with 
 American Home Pros
  for annual tune ups (HVAC). For general maintenance you can try them, but from past experience, their pricing is high.","The owner has a membership with 
 American Home Pros for annual tune ups (HVAC). For general maintenance you can try them, but from past experience, their pricing is high. 
 Update: We have free service calls from them until July 2027 please make sure they are the first point of contact for any HVAC related issues.",update,,"still notion_pid, not edited since"
+419166,1152 Western Yarrow Ave,access.yale_needs_calibration,,false,fill,,new Notion value
 419166,1152 Western Yarrow Ave,hvac.filter_sizes,,"[""20x25x4""]",fill,,new Notion value
 419166,1152 Western Yarrow Ave,sprinklers.brand,,Rain bird,fill,,new Notion value
 419166,1152 Western Yarrow Ave,sprinklers.controller_location,,Garage,fill,,new Notion value
@@ -99,10 +115,18 @@ Update: We have free service calls from them until July 2027 please make sure th
 419166,1152 Western Yarrow Ave,hvac.filter_notes,Not Mentioned,20x25x4,update,,"still notion_pid, not edited since"
 419166,1152 Western Yarrow Ave,sprinklers.status,Property Does Not Have Sprinkler System,Property Has Sprinkler System and It's On,update,,"still notion_pid, not edited since"
 419166,1152 Western Yarrow Ave,systems.smoke.batteries_changed_on,2026-02-02,2026-09-16,update,,"still notion_pid, not edited since"
+418726,1169 Blue Sky Lane,access.yale_needs_calibration,,false,fill,,new Notion value
 418726,1169 Blue Sky Lane,systems.smoke.batteries_changed_on,2025-10-29,2026-09-17,update,,"still notion_pid, not edited since"
+405661,11720 NW 136th Ter,access.yale_needs_calibration,,false,fill,,new Notion value
+443819,11736 SW 15th Terr (30D Firm),access.yale_needs_calibration,,false,fill,,new Notion value
+409727,1215 N Elder Ave,access.yale_needs_calibration,,false,fill,,new Notion value
 409727,1215 N Elder Ave,waste.valet,,No,fill,,new Notion value
+427725,13117 NE 9th St,access.yale_needs_calibration,,false,fill,,new Notion value
+437182,13317 Brampton Way,access.yale_needs_calibration,,true,fill,,new Notion value
+428972,13325 E 43rd Pl S,access.yale_needs_calibration,,false,fill,,new Notion value
 428972,13325 E 43rd Pl S,waste.valet,,No,fill,,new Notion value
 428972,13325 E 43rd Pl S,"latitude,longitude","36.1004495, -95.7732076","36.1007283, -95.8274618",conflict,OwnerRez,PID pin more than 0.001 from the Resolve pin
+433281,136 Magnolia Estates St,access.yale_needs_calibration,,false,fill,,new Notion value
 433281,136 Magnolia Estates St,systems.smoke.batteries_changed_on,2025-08-13,2026-09-04,update,,"still notion_pid, not edited since"
 494863,1399 Foxtail Ln.,access.emergency_key_access,,Yes,fill,,home not imported before
 494863,1399 Foxtail Ln.,access.garage_remote,,LiftMaster,fill,,home not imported before
@@ -110,12 +134,12 @@ Update: We have free service calls from them until July 2027 please make sure th
 494863,1399 Foxtail Ln.,access.lock_brand,,Yale,fill,,home not imported before
 494863,1399 Foxtail Ln.,access.yale_integration_live,,false,fill,,home not imported before
 494863,1399 Foxtail Ln.,access.yale_module,,Connected & Setup,fill,,home not imported before
+494863,1399 Foxtail Ln.,access.yale_needs_calibration,,false,fill,,home not imported before
 494863,1399 Foxtail Ln.,amenities.access_notes,,"The CC&Rs do not list specific amenities, access instructions, or fees. The neighborhood ponds are for drainage and views only; swimming, ice skating, and boating are not permitted.",fill,,home not imported before
 494863,1399 Foxtail Ln.,amenities.list,,"[""Pond""]",fill,,home not imported before
 494863,1399 Foxtail Ln.,compliance.permit_status,,"{""text"":""No permit required for Greenwood, IN"",""as_of"":""2026-11-05T17:51:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
 494863,1399 Foxtail Ln.,compliance.rental_restrictions,,"{""text"":""No STR rental restrictions"",""as_of"":""2026-11-05T17:51:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
 494863,1399 Foxtail Ln.,external_refs.breezeway_url,,https://app.breezeway.io/property/1494604/profile,fill,,home not imported before
-494863,1399 Foxtail Ln.,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/494863/info,fill,,home not imported before
 494863,1399 Foxtail Ln.,facts.grill,,No Grill,fill,,home not imported before
 494863,1399 Foxtail Ln.,facts.interior_paint,,Unknown. No extra paint left,fill,,home not imported before
 494863,1399 Foxtail Ln.,facts.tv_locations,,"[""Living Room"",""Primary Bedroom""]",fill,,home not imported before
@@ -134,10 +158,8 @@ Update: We have free service calls from them until July 2027 please make sure th
 494863,1399 Foxtail Ln.,hoa.present,,true,fill,,home not imported before
 494863,1399 Foxtail Ln.,hvac.filter_notes,,1 -16×25×4,fill,,home not imported before
 494863,1399 Foxtail Ln.,hvac.filter_sizes,,"[""16x25x4""]",fill,,home not imported before
-494863,1399 Foxtail Ln.,instant_book,,true,fill,,home not imported before
 494863,1399 Foxtail Ln.,link:BW Property Link,,https://app.breezeway.io/property/1494604/profile,fill,,new system link
 494863,1399 Foxtail Ln.,link:Furniture Pick List Link,,https://arealhomeaway-my.sharepoint.com/:f:/p/info/IgD4qXqglNXTQ7RM_sBVC-CRAZaMEv3I930Qy3fwIvZf6CI?e=s2DOXo,fill,,new legacy_onedrive link
-494863,1399 Foxtail Ln.,link:OR Property Link,,https://app.ownerrez.com/properties/494863/info,fill,,new system link
 494863,1399 Foxtail Ln.,link:Security Camera Feed,,https://account.ring.com/account/dashboard?l=38ab7465-5308-4bc6-b18f-86c31d46b9c8,fill,,new camera_portal link
 494863,1399 Foxtail Ln.,listing_alias,,Cozy 4BR Home | Greenwood | Pet Friendly,fill,,home not imported before
 494863,1399 Foxtail Ln.,market,,Indy,fill,,home not imported before
@@ -193,17 +215,19 @@ Free Parking on Premises",fill,,home not imported before
 494863,1399 Foxtail Ln.,waste.trash_days,,"[""Thursday""]",fill,,home not imported before
 494863,1399 Foxtail Ln.,waste.valet,,No,fill,,home not imported before
 494863,1399 Foxtail Ln.,year_built,,2024,fill,,home not imported before
+494863,1399 Foxtail Ln.,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/494863/info,conflict,OwnerRez,OwnerRez-owned field; never written
+494863,1399 Foxtail Ln.,instant_book,,true,conflict,OwnerRez,OwnerRez-owned field; never written
+494863,1399 Foxtail Ln.,link:OR Property Link,,https://app.ownerrez.com/properties/494863/info,conflict,OwnerRez,OwnerRez-owned link; never written
+423193,14553 Serrano Ridge Rd,access.yale_needs_calibration,,false,fill,,new Notion value
 423193,14553 Serrano Ridge Rd,access.garage_remote,LiftMaster 38OUT,LiftMaster 380 UT,update,,"still notion_pid, not edited since"
 423193,14553 Serrano Ridge Rd,systems.smoke.batteries_changed_on,2025-10-16,2026-09-08,update,,"still notion_pid, not edited since"
 496703,1464 Buckland Ct.,access.yale_integration_live,,false,fill,,home not imported before
+496703,1464 Buckland Ct.,access.yale_needs_calibration,,false,fill,,home not imported before
 496703,1464 Buckland Ct.,compliance.permit_status,,"{""text"":""No permit required for Avon, IN"",""as_of"":""2026-11-03T22:19:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
 496703,1464 Buckland Ct.,compliance.rental_restrictions,,"{""text"":""No STR rental restrictions"",""as_of"":""2026-11-03T22:19:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
 496703,1464 Buckland Ct.,external_refs.breezeway_url,,https://app.breezeway.io/property/1509882/profile,fill,,home not imported before
-496703,1464 Buckland Ct.,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/496703/info,fill,,home not imported before
 496703,1464 Buckland Ct.,furniture_package,,Signature (Gold),fill,,home not imported before
-496703,1464 Buckland Ct.,instant_book,,false,fill,,home not imported before
 496703,1464 Buckland Ct.,link:BW Property Link,,https://app.breezeway.io/property/1509882/profile,fill,,new system link
-496703,1464 Buckland Ct.,link:OR Property Link,,https://app.ownerrez.com/properties/496703/info,fill,,new system link
 496703,1464 Buckland Ct.,market,,Indy,fill,,home not imported before
 496703,1464 Buckland Ct.,nickname,,The Buckland Blue (1464),fill,,home not imported before
 496703,1464 Buckland Ct.,parking.summary,,"2 Car Garage
@@ -211,51 +235,90 @@ Free Parking on Premises",fill,,home not imported before
 496703,1464 Buckland Ct.,tier,,B,fill,,home not imported before
 496703,1464 Buckland Ct.,utilities.wifi_split_confirmed,,false,fill,,home not imported before
 496703,1464 Buckland Ct.,year_built,,2021,fill,,home not imported before
+496703,1464 Buckland Ct.,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/496703/info,conflict,OwnerRez,OwnerRez-owned field; never written
+496703,1464 Buckland Ct.,instant_book,,false,conflict,OwnerRez,OwnerRez-owned field; never written
+496703,1464 Buckland Ct.,link:OR Property Link,,https://app.ownerrez.com/properties/496703/info,conflict,OwnerRez,OwnerRez-owned link; never written
 496703,1464 Buckland Ct.,max_guests,6,8,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+463600,15226 High Timber Ln,access.yale_needs_calibration,,true,fill,,new Notion value
 463600,15226 High Timber Ln,max_guests,8,6,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+418086,15701 E 75th Pl N,access.yale_needs_calibration,,false,fill,,new Notion value
 418086,15701 E 75th Pl N,waste.valet,,No,fill,,new Notion value
 418086,15701 E 75th Pl N,access.yale_module,Not Connected,Connected & Setup,update,,"still notion_pid, not edited since"
+342579,15905 Sky Run Dr.,access.yale_needs_calibration,,false,fill,,new Notion value
+407261,1600 E Quantico St,access.yale_needs_calibration,,true,fill,,new Notion value
 407261,1600 E Quantico St,waste.valet,,No,fill,,new Notion value
 407261,1600 E Quantico St,facts.tv_specs,Smart TV ROKU Pin: See Guest Access & Credentials,Smart TV ROKU Pin: [removed — credentials are not stored in Resolve],update,,"still notion_pid, not edited since"
+398530,16216 Whistle Creek (30D Firm),access.yale_needs_calibration,,false,fill,,new Notion value
+405885,1636 NE 32nd St.,access.yale_needs_calibration,,false,fill,,new Notion value
+432973,1640 Glade Meadows Dr,access.yale_needs_calibration,,false,fill,,new Notion value
+443111,16401 Villa Valeria Way (30D FIRM),access.yale_needs_calibration,,false,fill,,new Notion value
 443111,16401 Villa Valeria Way (30D FIRM),max_guests,8,6,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+349772,1700 NW 179th Ter (30D FIRM),access.yale_needs_calibration,,false,fill,,new Notion value
+348274,1700 Whispering Creek Dr,access.yale_needs_calibration,,false,fill,,new Notion value
 348274,1700 Whispering Creek Dr,operating_notes,,Casey sometimes prefers to handle minor maintenance repairs himself. Always reach out to him first before scheduling a handyman.,fill,,new Notion value
 348274,1700 Whispering Creek Dr,facts.tv_specs,"ROKU Pin: See Guest Access & Credentials
 ROKU Email: 
 cdunham1119@gmail.com","ROKU Pin: [removed — credentials are not stored in Resolve]
 ROKU Email: 
 cdunham1119@gmail.com",update,,"still notion_pid, not edited since"
+349771,1701 Park Lane Dr.,access.yale_needs_calibration,,false,fill,,new Notion value
+480829,1722 Westchester Dr,access.yale_needs_calibration,,false,fill,,new Notion value
 480829,1722 Westchester Dr,operating_notes,"For REPAIR ISSUES AND APPROVAL - only reach out to Delilah: 
 delilah@quintessamarketing.com
 . Do not reach out to Lauren or Leo. Delilah is Operations contact.","For REPAIR ISSUES AND APPROVAL - only reach out to Tereance: tereance.james@quintessamarketing.com and CC Delilah: 
 delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & Delilah are our Operations contact.",update,,"still notion_pid, not edited since"
+347787,17404 Zinc Dr.,access.yale_needs_calibration,,false,fill,,new Notion value
+349766,18000 Barracho Dr (30D),access.yale_needs_calibration,,false,fill,,new Notion value
+393830,18104 Calle Way (12M),access.yale_needs_calibration,,false,fill,,new Notion value
 393830,18104 Calle Way (12M),bedrooms,4,3,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+349767,18200 Bodegon Rd. (12M),access.yale_needs_calibration,,false,fill,,new Notion value
 349767,18200 Bodegon Rd. (12M),max_guests,5,6,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+349774,18205 Allora Dr. (12M),access.yale_needs_calibration,,false,fill,,new Notion value
 349774,18205 Allora Dr. (12M),living_area_sqft,2400,2406,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+349773,19013 Meadows Crossing (30D FIRM),access.yale_needs_calibration,,false,fill,,new Notion value
+348272,19021 Meadows Crossing (30D FIRM),access.yale_needs_calibration,,false,fill,,new Notion value
+460239,1908 E Urbana St,access.yale_needs_calibration,,false,fill,,new Notion value
 460239,1908 E Urbana St,waste.valet,,No,fill,,new Notion value
 460239,1908 E Urbana St,bedrooms,4,5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+340884,19104 Meadows Crossings,access.yale_needs_calibration,,false,fill,,new Notion value
 340884,19104 Meadows Crossings,operating_notes,,Casey sometimes prefers to handle minor maintenance repairs himself. Always reach out to him first before scheduling a handyman.,fill,,new Notion value
+348614,19117 Meadows Crossing (30D FIRM),access.yale_needs_calibration,,false,fill,,new Notion value
 348614,19117 Meadows Crossing (30D FIRM),operating_notes,,Casey sometimes prefers to handle minor maintenance repairs himself. Always reach out to him first before scheduling a handyman.,fill,,new Notion value
+347789,19120 Meadows Crossing,access.yale_needs_calibration,,false,fill,,new Notion value
 347789,19120 Meadows Crossing,operating_notes,,Casey sometimes prefers to handle minor maintenance repairs himself. Always reach out to him first before scheduling a handyman.,fill,,new Notion value
+480827,2004 Cedar Ridge Rd.,access.yale_needs_calibration,,false,fill,,new Notion value
 480827,2004 Cedar Ridge Rd.,operating_notes,"For REPAIR ISSUES AND APPROVAL - only reach out to Delilah: 
 delilah@quintessamarketing.com
 . Do not reach out to Lauren or Leo. Delilah is Operations contact.","For REPAIR ISSUES AND APPROVAL - only reach out to Tereance: tereance.james@quintessamarketing.com and CC Delilah: 
 delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & Delilah are our Operations contact.",update,,"still notion_pid, not edited since"
 480827,2004 Cedar Ridge Rd.,bathrooms,3,2.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
 480827,2004 Cedar Ridge Rd.,max_guests,7,8,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+460413,2008 Ladera Ln,access.yale_needs_calibration,,false,fill,,new Notion value
+397054,2012 W Black Powder Way,access.yale_needs_calibration,,false,fill,,new Notion value
+409665,2014 E 52nd St,access.yale_needs_calibration,,false,fill,,new Notion value
 409665,2014 E 52nd St,waste.valet,,No,fill,,new Notion value
+461756,2016 NW 172nd St,access.yale_needs_calibration,,false,fill,,new Notion value
+446400,2017 W. Flintlock Way,access.yale_needs_calibration,,true,fill,,new Notion value
 446400,2017 W. Flintlock Way,"latitude,longitude","35.3967353, -97.7675029","35.39652350, -97.76433580",conflict,OwnerRez,PID pin more than 0.001 from the Resolve pin
+440621,207 High Point Way,access.yale_needs_calibration,,false,fill,,new Notion value
+487357,2100 Liberty Way Dr.,access.yale_needs_calibration,,false,fill,,new Notion value
+430528,220 SW 167th St. (30D FIRM),access.yale_needs_calibration,,false,fill,,new Notion value
+483306,2208 E. Toledo St.,access.yale_needs_calibration,,false,fill,,new Notion value
 483306,2208 E. Toledo St.,"latitude,longitude","36.035157, -95.764617","36.03479830, -95.77131550",conflict,OwnerRez,PID pin more than 0.001 from the Resolve pin
+484127,2259 Summer Shore Dr,access.yale_needs_calibration,,false,fill,,new Notion value
+375242,2321 NW 158th (30D),access.yale_needs_calibration,,false,fill,,new Notion value
+429765,2332 Los Angeles Ave,access.yale_needs_calibration,,true,fill,,new Notion value
+483140,236 N. Starnes St. (30D FIRM),access.yale_needs_calibration,,false,fill,,new Notion value
 483140,236 N. Starnes St. (30D FIRM),access.key_storage,"[""N/A""]","[""N/A"",""Front Door/Smartlock"",""Backdoor""]",update,,"still notion_pid, not edited since"
+467225,2414 W. Kingsport Ct. S,access.yale_needs_calibration,,false,fill,,new Notion value
 467225,2414 W. Kingsport Ct. S,max_guests,8,6,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
 497213,250 Springfield Xing,access.yale_integration_live,,false,fill,,home not imported before
+497213,250 Springfield Xing,access.yale_needs_calibration,,false,fill,,home not imported before
 497213,250 Springfield Xing,compliance.permit_status,,"{""text"":""No permit required for Greenfield, IN"",""as_of"":""2026-11-03T22:19:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
 497213,250 Springfield Xing,compliance.rental_restrictions,,"{""text"":""No STR rental restrictions"",""as_of"":""2026-11-03T22:19:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
 497213,250 Springfield Xing,external_refs.breezeway_url,,https://app.breezeway.io/property/1514895/profile,fill,,home not imported before
-497213,250 Springfield Xing,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/497213/info,fill,,home not imported before
 497213,250 Springfield Xing,furniture_package,,Signature (Gold),fill,,home not imported before
-497213,250 Springfield Xing,instant_book,,false,fill,,home not imported before
 497213,250 Springfield Xing,link:BW Property Link,,https://app.breezeway.io/property/1514895/profile,fill,,new system link
-497213,250 Springfield Xing,link:OR Property Link,,https://app.ownerrez.com/properties/497213/info,fill,,new system link
 497213,250 Springfield Xing,market,,Indy,fill,,home not imported before
 497213,250 Springfield Xing,nickname,,Springfield Sanctuary (250),fill,,home not imported before
 497213,250 Springfield Xing,parking.summary,,"3 Car Garage
@@ -263,14 +326,21 @@ Free Parking on Premises",fill,,home not imported before
 497213,250 Springfield Xing,tier,,B,fill,,home not imported before
 497213,250 Springfield Xing,utilities.wifi_split_confirmed,,false,fill,,home not imported before
 497213,250 Springfield Xing,year_built,,2026,fill,,home not imported before
+497213,250 Springfield Xing,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/497213/info,conflict,OwnerRez,OwnerRez-owned field; never written
+497213,250 Springfield Xing,instant_book,,false,conflict,OwnerRez,OwnerRez-owned field; never written
 497213,250 Springfield Xing,latitude,,39.782429,conflict,OwnerRez,OwnerRez-owned field; never written
+497213,250 Springfield Xing,link:OR Property Link,,https://app.ownerrez.com/properties/497213/info,conflict,OwnerRez,OwnerRez-owned link; never written
 497213,250 Springfield Xing,longitude,,-85.929803,conflict,OwnerRez,OwnerRez-owned field; never written
 497213,250 Springfield Xing,max_guests,,8,conflict,OwnerRez,OwnerRez-owned field; never written
+410055,2522 S Irvington Ave,access.yale_needs_calibration,,false,fill,,new Notion value
 410055,2522 S Irvington Ave,waste.valet,,No,fill,,new Notion value
+367954,2525 Fallview Dr.,access.yale_needs_calibration,,true,fill,,new Notion value
+453185,2527 NE 15th St,access.yale_needs_calibration,,true,fill,,new Notion value
 453185,2527 NE 15th St,utilities.wifi_ssid,Arealhomeaway,ARHA,update,,"still notion_pid, not edited since"
 349768,2536 NW 116th (12M),access.emergency_key_access,,Yes,fill,,new Notion value
 349768,2536 NW 116th (12M),access.garage_remote,,Unknown,fill,,new Notion value
 349768,2536 NW 116th (12M),access.yale_module,,Not Applicable (Not Yale),fill,,new Notion value
+349768,2536 NW 116th (12M),access.yale_needs_calibration,,false,fill,,new Notion value
 349768,2536 NW 116th (12M),facts.grill,,No Grill,fill,,new Notion value
 349768,2536 NW 116th (12M),facts.interior_paint,,Unsure,fill,,new Notion value
 349768,2536 NW 116th (12M),fireplace.present,,false,fill,,new Notion value
@@ -300,12 +370,10 @@ No more Information
 349768,2536 NW 116th (12M),systems.fridge_filter,Not Mentioned,HAF-CIN,update,,"still notion_pid, not edited since"
 349768,2536 NW 116th (12M),living_area_sqft,2100,2095,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
 501998,2601 W 65th St S,access.yale_integration_live,,false,fill,,home not imported before
+501998,2601 W 65th St S,access.yale_needs_calibration,,false,fill,,home not imported before
 501998,2601 W 65th St S,external_refs.breezeway_url,,https://app.breezeway.io/property/1564238/profile,fill,,home not imported before
-501998,2601 W 65th St S,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/501998/info,fill,,home not imported before
 501998,2601 W 65th St S,furniture_package,,Signature (Gold),fill,,home not imported before
-501998,2601 W 65th St S,instant_book,,false,fill,,home not imported before
 501998,2601 W 65th St S,link:BW Property Link,,https://app.breezeway.io/property/1564238/profile,fill,,new system link
-501998,2601 W 65th St S,link:OR Property Link,,https://app.ownerrez.com/properties/501998/info,fill,,new system link
 501998,2601 W 65th St S,market,,Tulsa,fill,,home not imported before
 501998,2601 W 65th St S,nickname,,Hillside Hollow (2601),fill,,home not imported before
 501998,2601 W 65th St S,parking.summary,,"2 Car Garage
@@ -313,37 +381,58 @@ Free Parking on Premises",fill,,home not imported before
 501998,2601 W 65th St S,tier,,B,fill,,home not imported before
 501998,2601 W 65th St S,utilities.wifi_split_confirmed,,false,fill,,home not imported before
 501998,2601 W 65th St S,year_built,,2026,fill,,home not imported before
+501998,2601 W 65th St S,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/501998/info,conflict,OwnerRez,OwnerRez-owned field; never written
+501998,2601 W 65th St S,instant_book,,false,conflict,OwnerRez,OwnerRez-owned field; never written
 501998,2601 W 65th St S,latitude,,36.0704603,conflict,OwnerRez,OwnerRez-owned field; never written
+501998,2601 W 65th St S,link:OR Property Link,,https://app.ownerrez.com/properties/501998/info,conflict,OwnerRez,OwnerRez-owned link; never written
 501998,2601 W 65th St S,longitude,,-96.0210016,conflict,OwnerRez,OwnerRez-owned field; never written
 501998,2601 W 65th St S,max_guests,,6,conflict,OwnerRez,OwnerRez-owned field; never written
+432985,2608 SE 38th St,access.yale_needs_calibration,,false,fill,,new Notion value
+406964,2617 W Madison St.,access.yale_needs_calibration,,false,fill,,new Notion value
 406964,2617 W Madison St.,waste.valet,,No,fill,,new Notion value
+380978,2701 Berkshire Way,access.yale_needs_calibration,,false,fill,,new Notion value
+474143,2817 Hazel Hollow,access.yale_needs_calibration,,false,fill,,new Notion value
 474143,2817 Hazel Hollow,hvac.filter_notes,"There are two returns inside the house. However, those are not getting used. There is a big 5 inch filter in the attic that the owner only wants changed.
 Do not install these filters in the house:
   • 20x30x1 - 1 
   • 14x14x1 - 1","There are two returns inside the house. However, those are not getting used. There is a big 5 inch filter in the attic that the owner only wants changed.
 Do not install filters in the house.",update,,"still notion_pid, not edited since"
 474143,2817 Hazel Hollow,bathrooms,3,2.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+480826,2901 E. 75th St.,access.yale_needs_calibration,,false,fill,,new Notion value
 480826,2901 E. 75th St.,operating_notes,For REPAIR ISSUES AND APPROVAL - only reach out to Delilah: delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Delilah is Operations contact.nown,"For REPAIR ISSUES AND APPROVAL - only reach out to Tereance: tereance.james@quintessamarketing.com and CC Delilah: 
 delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & Delilah are our Operations contact.",update,,"still notion_pid, not edited since"
+343538,2913 NW 188th St (30D FIRM),access.yale_needs_calibration,,false,fill,,new Notion value
+351100,3000 Meriweather Rd (30D),access.yale_needs_calibration,,false,fill,,new Notion value
 351100,3000 Meriweather Rd (30D),living_area_sqft,3000,3095,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+411823,3000 W Charlotte St,access.yale_needs_calibration,,false,fill,,new Notion value
 411823,3000 W Charlotte St,waste.valet,,No,fill,,new Notion value
+451638,3012 Piper St,access.yale_needs_calibration,,false,fill,,new Notion value
 451638,3012 Piper St,hvac.filter_notes,1: 14x30x1,"1: 14x30x1 & 91-005
 
 There is a 16x25x4 filter inside the unit in the attic. this needs to be changed every 6 months. (it was changed on Sep 2026 by Silver Creek)",update,,"still notion_pid, not edited since"
 451638,3012 Piper St,hvac.filter_sizes,"[""14x30x1""]","[""14x30x1"",""16x25x4""]",update,,"still notion_pid, not edited since"
+347550,3029 NW 181st,access.yale_needs_calibration,,false,fill,,new Notion value
 347550,3029 NW 181st,operating_notes,,Casey sometimes prefers to handle minor maintenance repairs himself. Always reach out to him first before scheduling a handyman.,fill,,new Notion value
+388604,3040 NW 183rd St. (30D FIRM),access.yale_needs_calibration,,false,fill,,new Notion value
 388604,3040 NW 183rd St. (30D FIRM),systems.fridge_filter,GF-841,GF-841 ( HAF-QIN/EXP),update,,"still notion_pid, not edited since"
+479698,305 W 7th St.,access.yale_needs_calibration,,false,fill,,new Notion value
 479698,305 W 7th St.,facts.tv_specs,Living Room - 305 W 7th ST - 65,"Living Room - 305 W 7th ST - 65
 Primary bedroom- 65",update,,"still notion_pid, not edited since"
 479698,305 W 7th St.,hvac.filter_notes,"14x14x1 - 2 locations 
 20x25x1","14x14x1 - 2 locations  dining and primary bedroom 
 20x25x1 hallway",update,,"still notion_pid, not edited since"
 479698,305 W 7th St.,systems.fridge_filter,Frigidaire,Frigidaire FPPWFU01,update,,"still notion_pid, not edited since"
+440620,309 Prince John Dr,access.yale_needs_calibration,,false,fill,,new Notion value
 440620,309 Prince John Dr,systems.smoke.batteries_changed_on,2025-12-03,2026-10-15,update,,"still notion_pid, not edited since"
+440216,3117 Scissortail Way (30D FIRM),access.yale_needs_calibration,,false,fill,,new Notion value
 440216,3117 Scissortail Way (30D FIRM),compliance.permit_status,,"{""text"":""Permit required in OKC. $1,200"",""as_of"":""2026-11-11T18:51:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,new Notion value
 440216,3117 Scissortail Way (30D FIRM),compliance.rental_restrictions,,"{""text"":""No STR rental restrictions"",""as_of"":""2026-11-11T18:51:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,new Notion value
 440216,3117 Scissortail Way (30D FIRM),storm_shelter.location_access,Garage -use provided pin to depress button to slide door open depress button to slide door open,Garage - use provided pin: [removed — credentials are not stored in Resolve] depress button to slide door open,update,,"still notion_pid, not edited since"
+487894,31445 Moore Rd.,access.yale_needs_calibration,,false,fill,,new Notion value
+419860,3200 Birmingham Dr,access.yale_needs_calibration,,false,fill,,new Notion value
+479957,3201 Belmont Circle,access.yale_needs_calibration,,false,fill,,new Notion value
 479957,3201 Belmont Circle,bathrooms,2,1.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+480825,33 Center Lane S,access.yale_needs_calibration,,false,fill,,new Notion value
 480825,33 Center Lane S,access.lock_brand,"Yale at side door, Schlage at front door",Schlage at side door.,update,,"still notion_pid, not edited since"
 480825,33 Center Lane S,access.yale_module,Not Connected,Not Applicable (Not Yale),update,,"still notion_pid, not edited since"
 480825,33 Center Lane S,amenities.access_notes,"Carlton Landing requires all vehicles to be registered through the link found  - here .The passcode: See Guest Access & Credentials will use in the form is 250570. Unregistered cars can be ticketed or towed, so please take care of this ahead of time.
@@ -355,22 +444,19 @@ here
 . Unregistered cars can be ticketed or towed, so please take care of this ahead of time.
 
 The above information is included in the Breezeway Parking Guidelines.",update,,"still notion_pid, not edited since"
-480825,33 Center Lane S,hoa.notes + external_links,Contact: You can reach Taylor at taylor@carltonlanding.com or 918-707-6138 ext 101.,"Contact: You can reach Taylor at 
-taylor@carltonlanding.com
- or 918-707-6138 ext 101.",update,,"still notion_pid, not edited since"
 480825,33 Center Lane S,operating_notes,For REPAIR ISSUES AND APPROVAL - only reach out to Delilah: delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Delilah is Operations contact.,"NO PETS ALLOWED
 
 For REPAIR ISSUES AND APPROVAL - only reach out to Tereance: tereance.james@quintessamarketing.com and CC Delilah: 
 delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & Delilah are our Operations contact.",update,,"still notion_pid, not edited since"
 480825,33 Center Lane S,bathrooms,4,3.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+350572,3316 NW 176th,access.yale_needs_calibration,,false,fill,,new Notion value
 350572,3316 NW 176th,operating_notes,,Casey sometimes prefers to handle minor maintenance repairs himself. Always reach out to him first before scheduling a handyman.,fill,,new Notion value
+437940,3333 Welling Rd,access.yale_needs_calibration,,false,fill,,new Notion value
 502215,3361 E 153rd St S,access.yale_integration_live,,false,fill,,home not imported before
+502215,3361 E 153rd St S,access.yale_needs_calibration,,false,fill,,home not imported before
 502215,3361 E 153rd St S,external_refs.breezeway_url,,https://app.breezeway.io/property/1565707/profile,fill,,home not imported before
-502215,3361 E 153rd St S,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/502215/info,fill,,home not imported before
 502215,3361 E 153rd St S,furniture_package,,Signature (Gold),fill,,home not imported before
-502215,3361 E 153rd St S,instant_book,,false,fill,,home not imported before
 502215,3361 E 153rd St S,link:BW Property Link,,https://app.breezeway.io/property/1565707/profile,fill,,new system link
-502215,3361 E 153rd St S,link:OR Property Link,,https://app.ownerrez.com/properties/502215/info,fill,,new system link
 502215,3361 E 153rd St S,market,,Tulsa,fill,,home not imported before
 502215,3361 E 153rd St S,nickname,,The Bixby Bloom (3361),fill,,home not imported before
 502215,3361 E 153rd St S,parking.summary,,"2 Car Garage
@@ -378,18 +464,19 @@ Free Parking on Premises",fill,,home not imported before
 502215,3361 E 153rd St S,tier,,B,fill,,home not imported before
 502215,3361 E 153rd St S,utilities.wifi_split_confirmed,,false,fill,,home not imported before
 502215,3361 E 153rd St S,year_built,,2026,fill,,home not imported before
+502215,3361 E 153rd St S,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/502215/info,conflict,OwnerRez,OwnerRez-owned field; never written
+502215,3361 E 153rd St S,instant_book,,false,conflict,OwnerRez,OwnerRez-owned field; never written
 502215,3361 E 153rd St S,latitude,,35.942256,conflict,OwnerRez,OwnerRez-owned field; never written
+502215,3361 E 153rd St S,link:OR Property Link,,https://app.ownerrez.com/properties/502215/info,conflict,OwnerRez,OwnerRez-owned link; never written
 502215,3361 E 153rd St S,longitude,,-95.939448,conflict,OwnerRez,OwnerRez-owned field; never written
 502215,3361 E 153rd St S,max_guests,,6,conflict,OwnerRez,OwnerRez-owned field; never written
 499899,3400 N Fern Avenue,access.yale_integration_live,,false,fill,,home not imported before
+499899,3400 N Fern Avenue,access.yale_needs_calibration,,false,fill,,home not imported before
 499899,3400 N Fern Avenue,compliance.permit_status,,"{""text"":""Permit required for Broken Arrow. $600"",""as_of"":""2026-11-06T21:06:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
 499899,3400 N Fern Avenue,compliance.rental_restrictions,,"{""text"":""No STR rental restrictions"",""as_of"":""2026-11-06T21:06:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
 499899,3400 N Fern Avenue,external_refs.breezeway_url,,https://app.breezeway.io/property/1542591/profile,fill,,home not imported before
-499899,3400 N Fern Avenue,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/499899/info,fill,,home not imported before
 499899,3400 N Fern Avenue,furniture_package,,Signature (Gold),fill,,home not imported before
-499899,3400 N Fern Avenue,instant_book,,false,fill,,home not imported before
 499899,3400 N Fern Avenue,link:BW Property Link,,https://app.breezeway.io/property/1542591/profile,fill,,new system link
-499899,3400 N Fern Avenue,link:OR Property Link,,https://app.ownerrez.com/properties/499899/info,fill,,new system link
 499899,3400 N Fern Avenue,market,,Tulsa,fill,,home not imported before
 499899,3400 N Fern Avenue,nickname,,Fernstone House (3400),fill,,home not imported before
 499899,3400 N Fern Avenue,parking.summary,,"2 Car Garage
@@ -397,9 +484,17 @@ Free Parking on Premises",fill,,home not imported before
 499899,3400 N Fern Avenue,tier,,B,fill,,home not imported before
 499899,3400 N Fern Avenue,utilities.wifi_split_confirmed,,false,fill,,home not imported before
 499899,3400 N Fern Avenue,year_built,,2026,fill,,home not imported before
+499899,3400 N Fern Avenue,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/499899/info,conflict,OwnerRez,OwnerRez-owned field; never written
+499899,3400 N Fern Avenue,instant_book,,false,conflict,OwnerRez,OwnerRez-owned field; never written
 499899,3400 N Fern Avenue,"latitude,longitude","36.08861821, -95.79896315","36.08006800, -95.79866140",conflict,OwnerRez,PID pin more than 0.001 from the Resolve pin
+499899,3400 N Fern Avenue,link:OR Property Link,,https://app.ownerrez.com/properties/499899/info,conflict,OwnerRez,OwnerRez-owned link; never written
+434333,3405 NW 159th Ter,access.yale_needs_calibration,,false,fill,,new Notion value
+462238,341 Thistlewood Dr,access.yale_needs_calibration,,true,fill,,new Notion value
 462238,341 Thistlewood Dr,waste.valet,,No,fill,,new Notion value
+401684,3613 Upland Ridge Dr.,access.yale_needs_calibration,,false,fill,,new Notion value
+418090,3712 N 39th St.,access.yale_needs_calibration,,false,fill,,new Notion value
 418090,3712 N 39th St.,waste.valet,,No,fill,,new Notion value
+460190,3715 W 109th St S,access.yale_needs_calibration,,false,fill,,new Notion value
 460190,3715 W 109th St S,amenities.access_notes,"The Pool Code: See Guest Access & Credentials. This neighborhood has no restrictions for who can use the pool, even guest staying less than 30 days can use it.","The Pool Code is: 42909. This neighborhood has no restrictions for who can use the pool, even guest staying less than 30 days can use it.",update,,"still notion_pid, not edited since"
 460190,3715 W 109th St S,facts.tv_specs,"Netflix guest profile code: See Guest Access & Credentials
 HiSense Smart TV's (living room & downstairs game room, no Roku details). 
@@ -411,6 +506,7 @@ Login information: [removed — credentials are not stored in Resolve] the netfl
 492465,3915 W 104th St. S.,access.key_storage,,"[""Front Door/Smartlock"",""Backdoor"",""Garage Door""]",fill,,new Notion value
 492465,3915 W 104th St. S.,access.lock_brand,,Yale,fill,,new Notion value
 492465,3915 W 104th St. S.,access.yale_module,,Connected & Setup,fill,,new Notion value
+492465,3915 W 104th St. S.,access.yale_needs_calibration,,false,fill,,new Notion value
 492465,3915 W 104th St. S.,amenities.access_notes,,N/A,fill,,new Notion value
 492465,3915 W 104th St. S.,amenities.list,,"[""Pool"",""Pond"",""Walking Trail""]",fill,,new Notion value
 492465,3915 W 104th St. S.,facts.grill,,No Grill,fill,,new Notion value
@@ -487,167 +583,80 @@ A cost segregation study will need to be scheduled. The company is planning to c
 492465,3915 W 104th St. S.,waste.strict_rules,,"Trash cans out of street view, out ≤12 hrs before pickup and in ≤12 hrs after",fill,,new Notion value
 492465,3915 W 104th St. S.,waste.trash_days,,"[""Wednesday""]",fill,,new Notion value
 492465,3915 W 104th St. S.,waste.valet,,No,fill,,new Notion value
-492465,3915 W 104th St. S.,instant_book,false,true,update,,"still notion_pid, not edited since"
-484034,401 E. 10th St.,access.emergency_key_access,,Yes,fill,,new Notion value
+492465,3915 W 104th St. S.,instant_book,false,true,conflict,OwnerRez,OwnerRez-owned field; never written
+458889,4003 Bendale Rd,access.yale_needs_calibration,,false,fill,,new Notion value
 484034,401 E. 10th St.,access.emergency_key_access,,Yes,fill,,new Notion value
 484034,401 E. 10th St.,access.garage_remote,,Genie & Chamberlain,fill,,new Notion value
-484034,401 E. 10th St.,access.garage_remote,,Genie & Chamberlain,fill,,new Notion value
-484034,401 E. 10th St.,access.key_storage,,"[""Backdoor"",""Front Door/Smartlock"",""Garage Door""]",fill,,new Notion value
 484034,401 E. 10th St.,access.key_storage,,"[""Backdoor"",""Front Door/Smartlock"",""Garage Door""]",fill,,new Notion value
 484034,401 E. 10th St.,access.yale_module,,Connected & Setup,fill,,new Notion value
-484034,401 E. 10th St.,access.yale_module,,Connected & Setup,fill,,new Notion value
-484034,401 E. 10th St.,amenities.access_notes,,N/A,fill,,new Notion value
+484034,401 E. 10th St.,access.yale_needs_calibration,,false,fill,,new Notion value
 484034,401 E. 10th St.,amenities.access_notes,,N/A,fill,,new Notion value
 484034,401 E. 10th St.,amenities.list,,"[""None""]",fill,,new Notion value
-484034,401 E. 10th St.,amenities.list,,"[""None""]",fill,,new Notion value
-484034,401 E. 10th St.,facts.grill,,No Grill,fill,,new Notion value
 484034,401 E. 10th St.,facts.grill,,No Grill,fill,,new Notion value
 484034,401 E. 10th St.,facts.interior_paint,,"There are some gallons of paint at the house, but no specific colors listed.",fill,,new Notion value
-484034,401 E. 10th St.,facts.interior_paint,,"There are some gallons of paint at the house, but no specific colors listed.",fill,,new Notion value
-484034,401 E. 10th St.,facts.tv_locations,,"[""Living Room"",""Bonus Room"",""Primary Bedroom""]",fill,,new Notion value
 484034,401 E. 10th St.,facts.tv_locations,,"[""Living Room"",""Bonus Room"",""Primary Bedroom""]",fill,,new Notion value
 484034,401 E. 10th St.,facts.tv_specs,,"Bonus Room - 401 E 10th St - 50″ Insignia, 4K UHD — model NS-50F301NA24
 Living Room - 401 E 10th St - 55″ Insignia, 4K UHD — model NS-55F301NA22
 Primary bedroom - 401 E 10th St -  43″ TCL, 1080p Full HD — model 43S310R",fill,,new Notion value
-484034,401 E. 10th St.,facts.tv_specs,,"Bonus Room - 401 E 10th St - 50″ Insignia, 4K UHD — model NS-50F301NA24
-Living Room - 401 E 10th St - 55″ Insignia, 4K UHD — model NS-55F301NA22
-Primary bedroom - 401 E 10th St -  43″ TCL, 1080p Full HD — model 43S310R",fill,,new Notion value
-484034,401 E. 10th St.,facts.workstation,,No,fill,,new Notion value
 484034,401 E. 10th St.,facts.workstation,,No,fill,,new Notion value
 484034,401 E. 10th St.,fireplace.fuel_type,,N/A,fill,,new Notion value
-484034,401 E. 10th St.,fireplace.fuel_type,,N/A,fill,,new Notion value
-484034,401 E. 10th St.,fireplace.model,,Unknown. Not currently accessible for guests until we confirm operating instructions.,fill,,new Notion value
 484034,401 E. 10th St.,fireplace.model,,Unknown. Not currently accessible for guests until we confirm operating instructions.,fill,,new Notion value
 484034,401 E. 10th St.,fireplace.present,,true,fill,,new Notion value
-484034,401 E. 10th St.,fireplace.present,,true,fill,,new Notion value
-484034,401 E. 10th St.,grounds.mowing_cadence,,Owner Responsible,fill,,new Notion value
 484034,401 E. 10th St.,grounds.mowing_cadence,,Owner Responsible,fill,,new Notion value
 484034,401 E. 10th St.,grounds.mowing_days,,"[""Wednesday""]",fill,,new Notion value
 484034,401 E. 10th St.,hoa.notes + external_links,,No HOA,fill,,new Notion value
-484034,401 E. 10th St.,hoa.notes + external_links,,No HOA,fill,,new Notion value
-484034,401 E. 10th St.,hoa.present,,false,fill,,new Notion value
 484034,401 E. 10th St.,hoa.present,,false,fill,,new Notion value
 484034,401 E. 10th St.,hvac.filter_notes,,14x24x1 x2,fill,,new Notion value
-484034,401 E. 10th St.,hvac.filter_notes,,14x24x1 x2,fill,,new Notion value
-484034,401 E. 10th St.,hvac.filter_sizes,,"[""14x24x1""]",fill,,new Notion value
 484034,401 E. 10th St.,hvac.filter_sizes,,"[""14x24x1""]",fill,,new Notion value
 484034,401 E. 10th St.,legacy_handoff_date,,2026-10-29,fill,,new Notion value
-484034,401 E. 10th St.,legacy_handoff_date,,2026-10-29,fill,,new Notion value
-484034,401 E. 10th St.,link:Pool & Hot Tub Technician Form,,https://arha.fillout.com/pool?id=4144658d5f4f80be8fd8f052375bd74b,fill,,new fillout_form link
-484034,401 E. 10th St.,listing_alias,,Spacious Edmond Home | Pool & Game Room,fill,,new Notion value
 484034,401 E. 10th St.,listing_alias,,Spacious Edmond Home | Pool & Game Room,fill,,new Notion value
 484034,401 E. 10th St.,neighborhood,,This home is not located within a specific neighborhood. The home is located closest to the cross streets of E 9th St & S Rankin St in Edmond,fill,,new Notion value
-484034,401 E. 10th St.,neighborhood,,This home is not located within a specific neighborhood. The home is located closest to the cross streets of E 9th St & S Rankin St in Edmond,fill,,new Notion value
-484034,401 E. 10th St.,parking.cluster_mailbox,,false,fill,,new Notion value
 484034,401 E. 10th St.,parking.cluster_mailbox,,false,fill,,new Notion value
 484034,401 E. 10th St.,parking.mailbox_location,,N/A,fill,,new Notion value
-484034,401 E. 10th St.,parking.mailbox_location,,N/A,fill,,new Notion value
-484034,401 E. 10th St.,parking.mailbox_number,,N/A,fill,,new Notion value
 484034,401 E. 10th St.,parking.mailbox_number,,N/A,fill,,new Notion value
 484034,401 E. 10th St.,pool_spa.control_panel_location,,N/A - No hot tub,fill,,new Notion value
-484034,401 E. 10th St.,pool_spa.control_panel_location,,N/A - No hot tub,fill,,new Notion value
-484034,401 E. 10th St.,pool_spa.heated,,false,fill,,new Notion value
 484034,401 E. 10th St.,pool_spa.heated,,false,fill,,new Notion value
 484034,401 E. 10th St.,pool_spa.heater,,N/A - No pool heater,fill,,new Notion value
-484034,401 E. 10th St.,pool_spa.heater,,N/A - No pool heater,fill,,new Notion value
-484034,401 E. 10th St.,pool_spa.season,,Pool will be opened around may and closed in October,fill,,new Notion value
 484034,401 E. 10th St.,pool_spa.season,,Pool will be opened around may and closed in October,fill,,new Notion value
 484034,401 E. 10th St.,pool_spa.service_schedule,,Pool serviced every Friday no swimming for 2 hours,fill,,new Notion value
-484034,401 E. 10th St.,pool_spa.service_schedule,,Pool serviced every Friday no swimming for 2 hours,fill,,new Notion value
-484034,401 E. 10th St.,security.alarm,,No,fill,,new Notion value
 484034,401 E. 10th St.,security.alarm,,No,fill,,new Notion value
 484034,401 E. 10th St.,security.battery_type,,"[""None""]",fill,,new Notion value
-484034,401 E. 10th St.,security.battery_type,,"[""None""]",fill,,new Notion value
-484034,401 E. 10th St.,security.devices,,"[""None"",""Backyard""]",fill,,new Notion value
 484034,401 E. 10th St.,security.devices,,"[""None"",""Backyard""]",fill,,new Notion value
 484034,401 E. 10th St.,security.monitoring_plan,,"[""None""]",fill,,new Notion value
-484034,401 E. 10th St.,security.monitoring_plan,,"[""None""]",fill,,new Notion value
 484034,401 E. 10th St.,sprinklers.brand,,N/A,fill,,new Notion value
-484034,401 E. 10th St.,sprinklers.brand,,N/A,fill,,new Notion value
-484034,401 E. 10th St.,sprinklers.controller_location,,N/A,fill,,new Notion value
 484034,401 E. 10th St.,sprinklers.controller_location,,N/A,fill,,new Notion value
 484034,401 E. 10th St.,sprinklers.set_for_season,,"{""value"":""N/A"",""as_of"":""2026-11-11T03:25:00.000Z"",""source"":""notion_pid""}",fill,,new Notion value
-484034,401 E. 10th St.,sprinklers.set_for_season,,"{""value"":""N/A"",""as_of"":""2026-11-10T19:18:00.000Z"",""source"":""notion_pid""}",fill,,new Notion value
-484034,401 E. 10th St.,sprinklers.status,,Property Does Not Have Sprinkler System,fill,,new Notion value
 484034,401 E. 10th St.,sprinklers.status,,Property Does Not Have Sprinkler System,fill,,new Notion value
 484034,401 E. 10th St.,storm_shelter.location_access,,N/A,fill,,new Notion value
-484034,401 E. 10th St.,storm_shelter.location_access,,N/A,fill,,new Notion value
-484034,401 E. 10th St.,systems.breaker_panel_location,,Laundry room,fill,,new Notion value
 484034,401 E. 10th St.,systems.breaker_panel_location,,Laundry room,fill,,new Notion value
 484034,401 E. 10th St.,systems.co.installed,,true,fill,,new Notion value
-484034,401 E. 10th St.,systems.co.installed,,true,fill,,new Notion value
-484034,401 E. 10th St.,systems.co.location,,Kitchen,fill,,new Notion value
 484034,401 E. 10th St.,systems.co.location,,Kitchen,fill,,new Notion value
 484034,401 E. 10th St.,systems.fridge_filter,,HAF/CIN,fill,,new Notion value
-484034,401 E. 10th St.,systems.fridge_filter,,HAF/CIN,fill,,new Notion value
-484034,401 E. 10th St.,systems.fridge_filter_5yr,,false,fill,,new Notion value
 484034,401 E. 10th St.,systems.fridge_filter_5yr,,false,fill,,new Notion value
 484034,401 E. 10th St.,systems.smoke.batteries_changed_on,,2022-01-01,fill,,new Notion value
-484034,401 E. 10th St.,systems.smoke.batteries_changed_on,,2022-01-01,fill,,new Notion value
-484034,401 E. 10th St.,systems.smoke.battery_type,,10-Year Sealed Lithium,fill,,new Notion value
 484034,401 E. 10th St.,systems.smoke.battery_type,,10-Year Sealed Lithium,fill,,new Notion value
 484034,401 E. 10th St.,systems.smoke.brand,,First Alert,fill,,new Notion value
-484034,401 E. 10th St.,systems.smoke.brand,,First Alert,fill,,new Notion value
-484034,401 E. 10th St.,systems.smoke.expires_on,,2032-12-31,fill,,new Notion value
 484034,401 E. 10th St.,systems.smoke.expires_on,,2032-12-31,fill,,new Notion value
 484034,401 E. 10th St.,systems.smoke.expires_precision,,year,fill,,new Notion value
-484034,401 E. 10th St.,systems.smoke.expires_precision,,year,fill,,new Notion value
-484034,401 E. 10th St.,systems.smoke.expires_source_text,,2032,fill,,new Notion value
 484034,401 E. 10th St.,systems.smoke.expires_source_text,,2032,fill,,new Notion value
 484034,401 E. 10th St.,systems.smoke.notes,,N/A,fill,,new Notion value
-484034,401 E. 10th St.,systems.smoke.notes,,N/A,fill,,new Notion value
-484034,401 E. 10th St.,systems.smoke.power_type,,Battery Powered,fill,,new Notion value
 484034,401 E. 10th St.,systems.smoke.power_type,,Battery Powered,fill,,new Notion value
 484034,401 E. 10th St.,systems.supply_box_location,,None,fill,,new Notion value
-484034,401 E. 10th St.,systems.supply_box_location,,None,fill,,new Notion value
-484034,401 E. 10th St.,systems.supply_storage,,Closet,fill,,new Notion value
 484034,401 E. 10th St.,systems.supply_storage,,Closet,fill,,new Notion value
 484034,401 E. 10th St.,systems.water_shutoff_indoor,,N/A,fill,,new Notion value
-484034,401 E. 10th St.,systems.water_shutoff_indoor,,N/A,fill,,new Notion value
-484034,401 E. 10th St.,systems.water_shutoff_outdoor,,In the middle of the driveway,fill,,new Notion value
 484034,401 E. 10th St.,systems.water_shutoff_outdoor,,In the middle of the driveway,fill,,new Notion value
 484034,401 E. 10th St.,tier,,B,fill,,new Notion value
-484034,401 E. 10th St.,tier,,B,fill,,new Notion value
-484034,401 E. 10th St.,utilities.router_location,,Living room,fill,,new Notion value
 484034,401 E. 10th St.,utilities.router_location,,Living room,fill,,new Notion value
 484034,401 E. 10th St.,warranty.builder_present,,false,fill,,new Notion value
-484034,401 E. 10th St.,warranty.builder_present,,false,fill,,new Notion value
-484034,401 E. 10th St.,waste.cart_count,,2,fill,,new Notion value
 484034,401 E. 10th St.,waste.cart_count,,2,fill,,new Notion value
 484034,401 E. 10th St.,waste.cart_notes,,2,fill,,new Notion value
-484034,401 E. 10th St.,waste.cart_notes,,2,fill,,new Notion value
-484034,401 E. 10th St.,waste.holiday_notes,,"If pickup falls on a holiday, it’ll be done the next day (Wednesday).",fill,,new Notion value
 484034,401 E. 10th St.,waste.holiday_notes,,"If pickup falls on a holiday, it’ll be done the next day (Wednesday).",fill,,new Notion value
 484034,401 E. 10th St.,waste.recycling,,true,fill,,new Notion value
-484034,401 E. 10th St.,waste.recycling,,true,fill,,new Notion value
-484034,401 E. 10th St.,waste.recycling_days,,Every other Tuesday,fill,,new Notion value
 484034,401 E. 10th St.,waste.recycling_days,,Every other Tuesday,fill,,new Notion value
 484034,401 E. 10th St.,waste.trash_days,,"[""Tuesday""]",fill,,new Notion value
-484034,401 E. 10th St.,waste.trash_days,,"[""Tuesday""]",fill,,new Notion value
-484034,401 E. 10th St.,waste.valet,,Yes,fill,,new Notion value
 484034,401 E. 10th St.,waste.valet,,Yes,fill,,new Notion value
 484034,401 E. 10th St.,year_built,,1968,fill,,new Notion value
-484034,401 E. 10th St.,year_built,,1968,fill,,new Notion value
 484034,401 E. 10th St.,access.lock_brand,Schlage,Yale,update,,"still notion_pid, not edited since"
-484034,401 E. 10th St.,access.lock_brand,Schlage,Yale,update,,"still notion_pid, not edited since"
-484034,401 E. 10th St.,instant_book,false,true,update,,"still notion_pid, not edited since"
-484034,401 E. 10th St.,instant_book,false,true,update,,"still notion_pid, not edited since"
-484034,401 E. 10th St.,operating_notes,"FIRST vendor for all maintenance and repairs: Untitled . Contact them first on all work orders before scheduling any other vendor. Only use an alternate only if Ruben is unavailable or unresponsive.
-
-For REPAIR ISSUES AND APPROVAL - only reach out to Delilah: delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Delilah is Operations contact.","For REPAIR ISSUES AND APPROVAL - only reach out to Tereance: tereance.james@quintessamarketing.com and CC Delilah: 
-delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & Delilah are our Operations contact.
-
-Not needed at hand off (Mingees to handle later):
-  • Confirm instructions for operating the fireplace in the basement 
-• Full siding repair (multiple places)
-• Haul away fence panels in backyard
-• Backyard landscaping and cleanup
-• Remove stumps and trim all trees/bushes
-• Purchase/install new dining room rug
-• Garage door seal
-• Water damage on garage wall (find and repair the leak source)
-• Door or curtain for pantry
-• Gutters",update,,"still notion_pid, not edited since"
 484034,401 E. 10th St.,operating_notes,"FIRST vendor for all maintenance and repairs: Untitled . Contact them first on all work orders before scheduling any other vendor. Only use an alternate only if Ruben is unavailable or unresponsive.
 
 For REPAIR ISSUES AND APPROVAL - only reach out to Delilah: delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Delilah is Operations contact.","For REPAIR ISSUES AND APPROVAL - only reach out to Tereance: tereance.james@quintessamarketing.com and CC Delilah: 
@@ -665,23 +674,37 @@ Not needed at hand off (Mingees to handle later):
 • Door or curtain for pantry
 • Gutters",update,,"still notion_pid, not edited since"
 484034,401 E. 10th St.,utilities.wifi_ssid,HFE 401,"ARHA 2.4, ARHA 5",update,,"still notion_pid, not edited since"
-484034,401 E. 10th St.,utilities.wifi_ssid,HFE 401,"ARHA 2.4, ARHA 5",update,,"still notion_pid, not edited since"
 484034,401 E. 10th St.,bathrooms,3,2.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
-484034,401 E. 10th St.,bathrooms,3,2.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+484034,401 E. 10th St.,instant_book,false,true,conflict,OwnerRez,OwnerRez-owned field; never written
+484034,401 E. 10th St.,notion:Pool & Hot Tub Technician Form,,"""https://arha.fillout.com/pool?id=4144658d5f4f80be8fd8f052375bd74b"" | ""https://arha.fillout.com/pool?id=3574658d5f4f81d2bed2e345f40bca1a""",conflict,Resolve,two PID pages on this OwnerRez ID disagree; nothing proposed
+453794,409 S. 85th St.,access.yale_needs_calibration,,false,fill,,new Notion value
 453794,409 S. 85th St.,waste.valet,,No,fill,,new Notion value
 453794,409 S. 85th St.,"latitude,longitude","36.048113, -95.682091","36.05625670, -95.68303470",conflict,OwnerRez,PID pin more than 0.001 from the Resolve pin
+480828,417 Dauphin Ave.,access.yale_needs_calibration,,false,fill,,new Notion value
 480828,417 Dauphin Ave.,operating_notes,"For REPAIR ISSUES AND APPROVAL - only reach out to Delilah: 
 delilah@quintessamarketing.com
 . Do not reach out to Lauren or Leo. Delilah is Operations contact.","For REPAIR ISSUES AND APPROVAL - only reach out to Tereance: tereance.james@quintessamarketing.com and CC Delilah: 
 delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & Delilah are our Operations contact.",update,,"still notion_pid, not edited since"
+437201,428 Drowsy Water Trl (30D FIRM),access.yale_needs_calibration,,true,fill,,new Notion value
+440423,4308 NW 158th (30D Firm),access.yale_needs_calibration,,true,fill,,new Notion value
 440423,4308 NW 158th (30D Firm),amenities.access_notes,"Pool Access Code: See Guest Access & Credentials 
  Pool rules and hours can be found on site on the pool building wall.","Pool Access Code: [removed — credentials are not stored in Resolve] 
  Pool rules and hours can be found on site on the pool building wall.",update,,"still notion_pid, not edited since"
+410574,4308 S 177th Pl E,access.yale_needs_calibration,,false,fill,,new Notion value
 410574,4308 S 177th Pl E,waste.valet,,No,fill,,new Notion value
 410574,4308 S 177th Pl E,"latitude,longitude","36.0989138, -95.7750881","36.100718, -95.7792424",conflict,OwnerRez,PID pin more than 0.001 from the Resolve pin
+347786,4317 NW 19th,access.yale_needs_calibration,,false,fill,,new Notion value
 347786,4317 NW 19th,operating_notes,,Casey sometimes prefers to handle minor maintenance repairs himself. Always reach out to him first before scheduling a handyman.,fill,,new Notion value
+385839,441 Belmont,access.yale_needs_calibration,,false,fill,,new Notion value
+415412,4513 Black Mesa Ln,access.yale_needs_calibration,,true,fill,,new Notion value
+418721,453 Blue Crow Lane,access.yale_needs_calibration,,false,fill,,new Notion value
 418721,453 Blue Crow Lane,systems.smoke.batteries_changed_on,2025-06-22,2026-09-22,update,,"still notion_pid, not edited since"
+411249,4607 S. Lakewood Ave,access.yale_needs_calibration,,false,fill,,new Notion value
 411249,4607 S. Lakewood Ave,waste.valet,,No,fill,,new Notion value
+485207,4607 W. Union St.,access.yale_needs_calibration,,false,fill,,new Notion value
+463601,4718 E Shadowbrook Dr,access.yale_needs_calibration,,true,fill,,new Notion value
+437509,4816 Hazy Hollow Ln,access.yale_needs_calibration,,true,fill,,new Notion value
+378665,5020 S.168th E Ave (30D FIRM),access.yale_needs_calibration,,false,fill,,new Notion value
 378665,5020 S.168th E Ave (30D FIRM),waste.valet,,No,fill,,new Notion value
 378665,5020 S.168th E Ave (30D FIRM),hoa.notes + external_links,"https://trinitycreekhoa.com/contact-us/
 Ph: 918-901-9311
@@ -696,30 +719,40 @@ Address: 9246 S Sheridan Rd, Suite 209, Tulsa, OK 74133 - call when you get ther
 Portal to make payment for new pool card: https://resident.gozego.com/payments/summary
 Login: [removed — credentials are not stored in Resolve]
 Matrix3161!",update,,"still notion_pid, not edited since"
+432974,5034 N 35th St,access.yale_needs_calibration,,false,fill,,new Notion value
 432974,5034 N 35th St,waste.valet,,No,fill,,new Notion value
+452367,504 S. 47th St,access.yale_needs_calibration,,true,fill,,new Notion value
 452367,504 S. 47th St,waste.valet,,No,fill,,new Notion value
+455967,5047 Skipping Stone Dr,access.yale_needs_calibration,,false,fill,,new Notion value
 455967,5047 Skipping Stone Dr,waste.valet,,No,fill,,new Notion value
+435796,508 NW 183rd St,access.yale_needs_calibration,,false,fill,,new Notion value
+441628,509 Houndstooth Dr (30D Firm),access.yale_needs_calibration,,false,fill,,new Notion value
 441628,509 Houndstooth Dr (30D Firm),amenities.access_notes,Not Mentioned,"ARHA can fill out the pool access card form (attached in comments) then send it Christina for approval and next steps to receive the card.
 Contact: Christina Villarreal
 CVillarreal@insightam.com
  (972) 993-6746",update,,"still notion_pid, not edited since"
+480823,5217 NW 109th St. (30D Firm),access.yale_needs_calibration,,false,fill,,new Notion value
 480823,5217 NW 109th St. (30D Firm),operating_notes,"For REPAIR ISSUES AND APPROVAL - only reach out to Delilah: 
 delilah@quintessamarketing.com
 . Do not reach out to Lauren or Leo. Delilah is Operations contact.","For REPAIR ISSUES AND APPROVAL - only reach out to Tereance: tereance.james@quintessamarketing.com and CC Delilah: 
 delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & Delilah are our Operations contact.",update,,"still notion_pid, not edited since"
+420585,525 23rd Ave,access.yale_needs_calibration,,false,fill,,new Notion value
+470695,5253 Tracey Jo Rd,access.yale_needs_calibration,,false,fill,,new Notion value
 470695,5253 Tracey Jo Rd,max_guests,8,6,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+412758,5512 Hidden Trail Ln.,access.yale_needs_calibration,,false,fill,,new Notion value
 412758,5512 Hidden Trail Ln.,bathrooms,2,22,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+488440,5671 Teak Ln.,access.yale_needs_calibration,,false,fill,,new Notion value
+487893,5923 Hollyhock Lane,access.yale_needs_calibration,,false,fill,,new Notion value
 487893,5923 Hollyhock Lane,bathrooms,3,2.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+450120,6017 S. 13th St (30D FIRM),access.yale_needs_calibration,,false,fill,,new Notion value
 450120,6017 S. 13th St (30D FIRM),waste.valet,,No,fill,,new Notion value
 498633,624 Daniel Court,access.yale_integration_live,,false,fill,,home not imported before
+498633,624 Daniel Court,access.yale_needs_calibration,,false,fill,,home not imported before
 498633,624 Daniel Court,compliance.permit_status,,"{""text"":""No permit required for Westfield, IN"",""as_of"":""2026-11-03T22:19:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
 498633,624 Daniel Court,compliance.rental_restrictions,,"{""text"":""No STR rental restrictions"",""as_of"":""2026-11-03T22:19:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
 498633,624 Daniel Court,external_refs.breezeway_url,,https://app.breezeway.io/property/1529710/profile,fill,,home not imported before
-498633,624 Daniel Court,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/498633/info,fill,,home not imported before
 498633,624 Daniel Court,furniture_package,,Signature (Gold),fill,,home not imported before
-498633,624 Daniel Court,instant_book,,false,fill,,home not imported before
 498633,624 Daniel Court,link:BW Property Link,,https://app.breezeway.io/property/1529710/profile,fill,,new system link
-498633,624 Daniel Court,link:OR Property Link,,https://app.ownerrez.com/properties/498633/info,fill,,new system link
 498633,624 Daniel Court,market,,Indy,fill,,home not imported before
 498633,624 Daniel Court,nickname,,Dovetail Court (624),fill,,home not imported before
 498633,624 Daniel Court,parking.summary,,"2 Car Garage
@@ -727,14 +760,16 @@ Free Parking on Premises",fill,,home not imported before
 498633,624 Daniel Court,tier,,B,fill,,home not imported before
 498633,624 Daniel Court,utilities.wifi_split_confirmed,,false,fill,,home not imported before
 498633,624 Daniel Court,year_built,,2002,fill,,home not imported before
+498633,624 Daniel Court,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/498633/info,conflict,OwnerRez,OwnerRez-owned field; never written
+498633,624 Daniel Court,instant_book,,false,conflict,OwnerRez,OwnerRez-owned field; never written
+498633,624 Daniel Court,link:OR Property Link,,https://app.ownerrez.com/properties/498633/info,conflict,OwnerRez,OwnerRez-owned link; never written
+429148,628 Joy Ct,access.yale_needs_calibration,,false,fill,,new Notion value
 429148,628 Joy Ct,systems.smoke.batteries_changed_on,2025-10-29,2026-09-07,update,,"still notion_pid, not edited since"
 501851,6302 Meadow Path Way,access.yale_integration_live,,false,fill,,home not imported before
+501851,6302 Meadow Path Way,access.yale_needs_calibration,,false,fill,,home not imported before
 501851,6302 Meadow Path Way,external_refs.breezeway_url,,https://app.breezeway.io/property/1563499/profile,fill,,home not imported before
-501851,6302 Meadow Path Way,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/501851/info,fill,,home not imported before
 501851,6302 Meadow Path Way,furniture_package,,Signature (Gold),fill,,home not imported before
-501851,6302 Meadow Path Way,instant_book,,false,fill,,home not imported before
 501851,6302 Meadow Path Way,link:BW Property Link,,https://app.breezeway.io/property/1563499/profile,fill,,new system link
-501851,6302 Meadow Path Way,link:OR Property Link,,https://app.ownerrez.com/properties/501851/info,fill,,new system link
 501851,6302 Meadow Path Way,market,,Indy,fill,,home not imported before
 501851,6302 Meadow Path Way,nickname,,Meadow Path Hideaway (6302),fill,,home not imported before
 501851,6302 Meadow Path Way,parking.summary,,"2 Car Garage 
@@ -742,29 +777,35 @@ Free Parking on Premises",fill,,home not imported before
 501851,6302 Meadow Path Way,tier,,B,fill,,home not imported before
 501851,6302 Meadow Path Way,utilities.wifi_split_confirmed,,false,fill,,home not imported before
 501851,6302 Meadow Path Way,year_built,,2024,fill,,home not imported before
+501851,6302 Meadow Path Way,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/501851/info,conflict,OwnerRez,OwnerRez-owned field; never written
+501851,6302 Meadow Path Way,instant_book,,false,conflict,OwnerRez,OwnerRez-owned field; never written
 501851,6302 Meadow Path Way,latitude,,39.677582,conflict,OwnerRez,OwnerRez-owned field; never written
+501851,6302 Meadow Path Way,link:OR Property Link,,https://app.ownerrez.com/properties/501851/info,conflict,OwnerRez,OwnerRez-owned link; never written
 501851,6302 Meadow Path Way,longitude,,-85.989508,conflict,OwnerRez,OwnerRez-owned field; never written
 501851,6302 Meadow Path Way,max_guests,,6,conflict,OwnerRez,OwnerRez-owned field; never written
+432975,6312 Red Cliff Dr,access.yale_needs_calibration,,false,fill,,new Notion value
+480831,64 Turtle Loop,access.yale_needs_calibration,,false,fill,,new Notion value
 480831,64 Turtle Loop,operating_notes,"NO PETS ALLOWED
 
 For REPAIR ISSUES AND APPROVAL - only reach out to Delilah: delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Delilah is Operations contact.","NO PETS ALLOWED
 
 For REPAIR ISSUES AND APPROVAL - only reach out to Tereance: tereance.james@quintessamarketing.com and CC Delilah: 
 delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & Delilah are our Operations contact.",update,,"still notion_pid, not edited since"
-480831,64 Turtle Loop,warranty.claim_process + external_links,"Builder Warranty is fluid. Contact Delilah delilah@quintessamarketing.com for any questions
-
-240-463-3236 Kerney Homes - mike@kerneyhomes.com","Builder Warranty is fluid. Contact Delilah 
-delilah@quintessamarketing.com
- for any questions
-
-240-463-3236 Kerney Homes - mike@kerneyhomes.com",update,,"still notion_pid, not edited since"
 480831,64 Turtle Loop,bathrooms,7,5.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+429480,6629 S 22nd Ct E,access.yale_needs_calibration,,false,fill,,new Notion value
 429480,6629 S 22nd Ct E,waste.valet,,No,fill,,new Notion value
 429480,6629 S 22nd Ct E,amenities.access_notes,There is a community pool (only available for guests 30+ days). A waiver is required to be completed per tenant in order to gain access. It is saved to the property’s one drive folder. It and the rules are also attached to this field as a comment.,There is a community pool (only available for guests 30+ days). A waiver is required to be completed per tenant in order to gain access. It is saved to the property’s one drive folder. It and the rules are also attached to this field as a comment. The owner has to complete the waiver.,update,,"still notion_pid, not edited since"
 429480,6629 S 22nd Ct E,amenities.list,"[""Not Mentioned""]","[""Pool""]",update,,"still notion_pid, not edited since"
+459111,6847 Cardiff Dr,access.yale_needs_calibration,,false,fill,,new Notion value
 459111,6847 Cardiff Dr,waste.valet,,No,fill,,new Notion value
+403353,7006 E 154th St S,access.yale_needs_calibration,,false,fill,,new Notion value
 403353,7006 E 154th St S,waste.valet,,No,fill,,new Notion value
+463624,7071 Richardson Ct,access.yale_needs_calibration,,false,fill,,new Notion value
+376992,721 Dusty Trail,access.yale_needs_calibration,,false,fill,,new Notion value
 376992,721 Dusty Trail,max_guests,7,8,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+419842,721 Vaquero St.,access.yale_needs_calibration,,false,fill,,new Notion value
+398358,724 Abilene Way,access.yale_needs_calibration,,false,fill,,new Notion value
+481007,730 E 38th St. N.,access.yale_needs_calibration,,false,fill,,new Notion value
 481007,730 E 38th St. N.,facts.interior_paint,"1. Location & quantity - garage several
 2. Brand - sherwin Williams 
 3. Color name & code - 7004 , JH70-30
@@ -781,23 +822,34 @@ delilah@quintessamarketing.com
 1- 14x30x1",update,,"still notion_pid, not edited since"
 481007,730 E 38th St. N.,systems.fridge_filter,Samsung Water Filter,Samsung Water Filter NSF,update,,"still notion_pid, not edited since"
 481007,730 E 38th St. N.,systems.water_shutoff_outdoor,I do not see one on the outside of the house if there is it’s in the water meter box and it’s flooded,aside the mailbox,update,,"still notion_pid, not edited since"
-481007,730 E 38th St. N.,warranty.claim_process + external_links,"918-693-9019, Sean Thompson, email: sean.thompson127@yahoo.com RLS Dream Homes, rlsdreamhomes@gmail.com","918-693-9019, Sean Thompson, email: 
-sean.thompson127@yahoo.com
- RLS Dream Homes, rlsdreamhomes@gmail.com",update,,"still notion_pid, not edited since"
+491601,7317 NW 159th Ter. (30D FIRM),access.yale_needs_calibration,,false,fill,,new Notion value
 491601,7317 NW 159th Ter. (30D FIRM),amenities.access_notes,"Pool rules can be found in the guidebook custom fields, and also save to onedrive - here. The pool is expected to be open seasonally during the summer time.","Pool rules can be found in the guidebook custom fields, and also save to onedrive - here. The pool is open seasonally, estimated from Memorial Day weekend through Labor Day, open from 10am–10pm.",update,,"still notion_pid, not edited since"
 491601,7317 NW 159th Ter. (30D FIRM),bathrooms,4,3.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+480764,7351 Red Rock Rd,access.yale_needs_calibration,,false,fill,,new Notion value
 480764,7351 Red Rock Rd,"latitude,longitude","39.8889196, -85.9418308","39.88891960, -85.94354741",conflict,OwnerRez,PID pin more than 0.001 from the Resolve pin
+408959,7380 S 69th E Ave,access.yale_needs_calibration,,false,fill,,new Notion value
 408959,7380 S 69th E Ave,waste.valet,,No,fill,,new Notion value
+480830,7422 S. Granite Ave.,access.yale_needs_calibration,,false,fill,,new Notion value
 480830,7422 S. Granite Ave.,operating_notes,"For REPAIR ISSUES AND APPROVAL - only reach out to Delilah: 
 delilah@quintessamarketing.com
 . Do not reach out to Lauren or Leo. Delilah is Operations contact.","For REPAIR ISSUES AND APPROVAL - only reach out to Tereance: tereance.james@quintessamarketing.com and CC Delilah: 
 delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & Delilah are our Operations contact.",update,,"still notion_pid, not edited since"
 480830,7422 S. Granite Ave.,bathrooms,3,2.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
-488148,758 N. Johnson Branch Rd.,instant_book,false,true,update,,"still notion_pid, not edited since"
+488148,758 N. Johnson Branch Rd.,access.yale_needs_calibration,,false,fill,,new Notion value
+488148,758 N. Johnson Branch Rd.,instant_book,false,true,conflict,OwnerRez,OwnerRez-owned field; never written
+414805,815 E Fulton St.,access.yale_needs_calibration,,false,fill,,new Notion value
 414805,815 E Fulton St.,waste.valet,,No,fill,,new Notion value
+471329,816 Lakeview Dr,access.yale_needs_calibration,,false,fill,,new Notion value
 471329,816 Lakeview Dr,max_guests,8,6,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+419863,817 Halley Dr.,access.yale_needs_calibration,,true,fill,,new Notion value
+415301,8217 NW 151st St. (30D FIRM),access.yale_needs_calibration,,false,fill,,new Notion value
+416276,8316 NW 142nd,access.yale_needs_calibration,,true,fill,,new Notion value
+489357,8332 Welder Pl.,access.yale_needs_calibration,,false,fill,,new Notion value
 489357,8332 Welder Pl.,bathrooms,3,2.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+409752,8408 NW 162nd (30D FIRM),access.yale_needs_calibration,,false,fill,,new Notion value
 409752,8408 NW 162nd (30D FIRM),sprinklers.controller_location,Garahe,Garage,update,,"still notion_pid, not edited since"
+432406,845 Alexandria,access.yale_needs_calibration,,false,fill,,new Notion value
+480824,85 Lower Green Way,access.yale_needs_calibration,,false,fill,,new Notion value
 480824,85 Lower Green Way,link:BW Property Link,,https://app.breezeway.io/property/1295307/profile,fill,,new system link
 480824,85 Lower Green Way,amenities.access_notes,"Carlton Landing requires all vehicles to be registered through the link found  - here .The passcode: See Guest Access & Credentials will use in the form is 447732. Unregistered cars can be ticketed or towed, so please take care of this ahead of time.
 
@@ -809,9 +861,6 @@ here
 
 The above information is included in the Breezeway Parking Guidelines.",update,,"still notion_pid, not edited since"
 480824,85 Lower Green Way,external_refs.breezeway_url,https://app.breezeway.io/property/1295302/profile,https://app.breezeway.io/property/1295307/profile,update,,"still notion_pid, not edited since"
-480824,85 Lower Green Way,hoa.notes + external_links,Contact: You can reach Taylor at taylor@carltonlanding.com or 918-707-6138 ext 101.,"Contact: You can reach Taylor at 
-taylor@carltonlanding.com
- or 918-707-6138 ext 101.",update,,"still notion_pid, not edited since"
 480824,85 Lower Green Way,operating_notes,For REPAIR ISSUES AND APPROVAL - only reach out to Delilah: delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Delilah is Operations contact.,"NO PETS ALLOWED
 
 For REPAIR ISSUES AND APPROVAL - only reach out to Tereance: tereance.james@quintessamarketing.com and CC Delilah: 
@@ -824,6 +873,7 @@ delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & De
 490410,852 Inland Dr.,access.key_storage,,"[""Front Door/Smartlock"",""Storage Closet"",""Storage Building"",""Garage Door""]",fill,,new Notion value
 490410,852 Inland Dr.,access.lock_brand,,Yale,fill,,new Notion value
 490410,852 Inland Dr.,access.yale_module,,Connected & Setup,fill,,new Notion value
+490410,852 Inland Dr.,access.yale_needs_calibration,,false,fill,,new Notion value
 490410,852 Inland Dr.,amenities.access_notes,,N/A,fill,,new Notion value
 490410,852 Inland Dr.,amenities.list,,"[""None""]",fill,,new Notion value
 490410,852 Inland Dr.,facts.grill,,No Grill,fill,,new Notion value
@@ -895,32 +945,40 @@ delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & De
 490410,852 Inland Dr.,waste.strict_rules,,Garbage/Trash containers are only permitted to be left outside for trash collection Containers cannot be permanently stored in front of or alongside a home Must be kept in an enclosed garage on non-trash collection days,fill,,new Notion value
 490410,852 Inland Dr.,waste.trash_days,,"[""Thursday""]",fill,,new Notion value
 490410,852 Inland Dr.,waste.valet,,No,fill,,new Notion value
-490410,852 Inland Dr.,instant_book,false,true,update,,"still notion_pid, not edited since"
 490410,852 Inland Dr.,bathrooms,3,2.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+490410,852 Inland Dr.,instant_book,false,true,conflict,OwnerRez,OwnerRez-owned field; never written
 490410,852 Inland Dr.,max_guests,6,8,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
 497214,8602 E. Galveston St.,access.yale_integration_live,,false,fill,,home not imported before
+497214,8602 E. Galveston St.,access.yale_needs_calibration,,false,fill,,home not imported before
 497214,8602 E. Galveston St.,compliance.permit_status,,"{""text"":""Permit required in Broken Arrow. $600"",""as_of"":""2026-11-03T22:19:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
 497214,8602 E. Galveston St.,compliance.rental_restrictions,,"{""text"":""No STR rental restrictions"",""as_of"":""2026-11-03T22:19:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
 497214,8602 E. Galveston St.,external_refs.breezeway_url,,https://app.breezeway.io/property/1514896/profile,fill,,home not imported before
-497214,8602 E. Galveston St.,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/497214/info,fill,,home not imported before
 497214,8602 E. Galveston St.,furniture_package,,Signature (Gold),fill,,home not imported before
-497214,8602 E. Galveston St.,instant_book,,false,fill,,home not imported before
 497214,8602 E. Galveston St.,link:BW Property Link,,https://app.breezeway.io/property/1514896/profile,fill,,new system link
-497214,8602 E. Galveston St.,link:OR Property Link,,https://app.ownerrez.com/properties/497214/info,fill,,new system link
 497214,8602 E. Galveston St.,nickname,,Rosewood on Galveston (8602),fill,,home not imported before
 497214,8602 E. Galveston St.,parking.summary,,"2 Car Garage
 Free Parking on Premises",fill,,home not imported before
 497214,8602 E. Galveston St.,tier,,B,fill,,home not imported before
 497214,8602 E. Galveston St.,utilities.wifi_split_confirmed,,false,fill,,home not imported before
 497214,8602 E. Galveston St.,year_built,,2026,fill,,home not imported before
+497214,8602 E. Galveston St.,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/497214/info,conflict,OwnerRez,OwnerRez-owned field; never written
+497214,8602 E. Galveston St.,instant_book,,false,conflict,OwnerRez,OwnerRez-owned field; never written
 497214,8602 E. Galveston St.,latitude,,36.046767,conflict,OwnerRez,OwnerRez-owned field; never written
+497214,8602 E. Galveston St.,link:OR Property Link,,https://app.ownerrez.com/properties/497214/info,conflict,OwnerRez,OwnerRez-owned link; never written
 497214,8602 E. Galveston St.,longitude,,-95.6845786,conflict,OwnerRez,OwnerRez-owned field; never written
 497214,8602 E. Galveston St.,max_guests,,8,conflict,OwnerRez,OwnerRez-owned field; never written
+468337,8708 Scirocco Circle,access.yale_needs_calibration,,false,fill,,new Notion value
+435218,8910 N 73rd Pl E,access.yale_needs_calibration,,false,fill,,new Notion value
+425257,9008 Scarlet Blvd (30D FIRM),access.yale_needs_calibration,,false,fill,,new Notion value
+401887,904 NE 34th Ter,access.yale_needs_calibration,,false,fill,,new Notion value
+439580,9100 NW 123rd (30D Firm),access.yale_needs_calibration,,false,fill,,new Notion value
+396058,9120 Yassir Blvd (30D FIRM),access.yale_needs_calibration,,false,fill,,new Notion value
 492500,9211 Fitzgerald Dr.,access.emergency_key_access,,Yes,fill,,new Notion value
 492500,9211 Fitzgerald Dr.,access.garage_remote,,R27- GDR-27 MLT - https://www.amazon.com/dp/B08CNKBTYJ?ref=fed_asin_title&th=1,fill,,new Notion value
 492500,9211 Fitzgerald Dr.,access.key_storage,,"[""Front Door/Smartlock"",""Backdoor"",""Garage Door""]",fill,,new Notion value
 492500,9211 Fitzgerald Dr.,access.lock_brand,,Yale,fill,,new Notion value
 492500,9211 Fitzgerald Dr.,access.yale_module,,Connected & Setup,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,access.yale_needs_calibration,,false,fill,,new Notion value
 492500,9211 Fitzgerald Dr.,amenities.access_notes,,N/A,fill,,new Notion value
 492500,9211 Fitzgerald Dr.,amenities.list,,"[""Pond"",""Walking Trail""]",fill,,new Notion value
 492500,9211 Fitzgerald Dr.,facts.grill,,No Grill,fill,,new Notion value
@@ -1016,6 +1074,8 @@ Warranty request: https://www.drhorton.com/Warranty
 492500,9211 Fitzgerald Dr.,waste.strict_rules,,"Keep trash in enclosed cans out of street and neighbor view, don’t let it pile up, and dumping anywhere in the subdivision costs at least $150 (pickup: City of Indianapolis, 317-917-7300).",fill,,new Notion value
 492500,9211 Fitzgerald Dr.,waste.trash_days,,"[""Friday""]",fill,,new Notion value
 492500,9211 Fitzgerald Dr.,waste.valet,,No,fill,,new Notion value
-492500,9211 Fitzgerald Dr.,instant_book,false,true,update,,"still notion_pid, not edited since"
 492500,9211 Fitzgerald Dr.,bathrooms,3,2.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+492500,9211 Fitzgerald Dr.,instant_book,false,true,conflict,OwnerRez,OwnerRez-owned field; never written
+393344,9213 Anaum Ln (30D Firm),access.yale_needs_calibration,,false,fill,,new Notion value
+439579,9235 E 133rd St S,access.yale_needs_calibration,,false,fill,,new Notion value
 439579,9235 E 133rd St S,waste.valet,,No,fill,,new Notion value

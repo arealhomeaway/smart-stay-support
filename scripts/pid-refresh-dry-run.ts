@@ -863,7 +863,7 @@ for (const c of candidates) perHome.set(c.prop.id, { home: c.prop.name, orId: c.
 for (const ch of changes) perHome.get(ch.propertyId)![ch.kind] += 1;
 
 await Bun.write(`/tmp/pidr/summary.json`, JSON.stringify({
-  pidRows: pages.length, matched: candidates.length, matchedHomes: perHome.size, dupes: [...dupes].filter(([, n]) => n > 1),
+  pidRows: pages.length, matched: candidates.length, matchedHomes: perHome.size, dupes, pidPagesMatched: pages.length - unmatched.length,
   unmatched, unchanged, fills: count("fill"), linkFills: linkFills.length, updates: count("update"),
   resolveConflicts: count("conflict", "Resolve"), ownerRezConflicts: count("conflict", "OwnerRez"),
   invalid: { manualReview: report.manualReview, unmappableMarket: report.unmappableMarket, failures: report.failures },
