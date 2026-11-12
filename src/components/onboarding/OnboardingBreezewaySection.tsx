@@ -24,6 +24,8 @@ import {
   CONNECTION_LABEL,
   breezewayConnection,
   breezewayTaskUrl,
+  breezewayTitleDefault,
+  nextBreezewayTitle,
   parseBreezewayRef,
   sendToBreezewayRefusal,
 } from "@/lib/onboarding-breezeway";
@@ -52,8 +54,11 @@ export function OnboardingBreezewaySection({
   disabled,
   defaultTitle,
   defaultDescription,
+  onSent,
 }: {
   taskId: string;
+  /** Item 35: called after Breezeway accepts the send, so the drawer can close. */
+  onSent?: () => void;
   /** B2: prefilled from the Task, editable before sending. */
   defaultTitle?: string;
   defaultDescription?: string | null;
@@ -75,7 +80,8 @@ export function OnboardingBreezewaySection({
   const [pasteOpen, setPasteOpen] = useState(false);
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [priority, setPriority] = useState("normal");
-  const [title, setTitle] = useState((defaultTitle ?? "").replace(/^\s*(draft\s+)?work order\s*:\s*/i, ""));
+  // Item 37: the Title follows the chosen template until the user edits it.
+  const [title, setTitle] = useState(() => breezewayTitleDefault(defaultTitle));
   const [description, setDescription] = useState(defaultDescription ?? "");
   const templatesFn = useServerFn(onboardingBreezewayTemplatesFn);
   const templates = useQuery({ queryKey: ["onboarding-breezeway-templates"], queryFn: () => templatesFn(), staleTime: 10 * 60_000 });
@@ -127,7 +133,10 @@ export function OnboardingBreezewaySection({
     },
     onSuccess: (r) => {
       if (r && "ok" in r && r.ok === false) toast.error(r.message);
-      else toast.success("Sent to Breezeway.");
+      else {
+        toast.success("Sent to Breezeway.");
+        onSent?.();
+      }
       void qc.invalidateQueries({ queryKey: key });
     },
     onError: (e: Error) => {
@@ -139,6 +148,14 @@ export function OnboardingBreezewaySection({
   const people = state.data?.people ?? [];
   const personOptions = useMemo(() => breezewayPersonOptions(people), [people]);
   const templateOptions = useMemo(() => breezewayTemplateOptions(templates.data?.templates ?? []), [templates.data]);
+  const templateName = (id: string | null) =>
+    id ? (templates.data?.templates ?? []).find((t) => String(t.id) === id)?.name ?? null : null;
+  const chooseTemplate = (id: string | null) => {
+    setTitle((current) =>
+      nextBreezewayTitle(current, breezewayTitleDefault(defaultTitle, templateName(templateId)), breezewayTitleDefault(defaultTitle, templateName(id))),
+    );
+    setTemplateId(id);
+  };
   if (state.isLoading) return <p className="text-sm text-muted-foreground">Loading Breezeway details…</p>;
   if (state.error) return <p className="text-sm text-destructive">{(state.error as Error).message}</p>;
   const data = state.data!;
@@ -226,7 +243,7 @@ export function OnboardingBreezewaySection({
               label="Breezeway template"
               value={templateId}
               options={templateOptions}
-              onChange={setTemplateId}
+              onChange={chooseTemplate}
               placeholder="Choose a template"
               searchPlaceholder="Type part of the template name"
               loading={templates.isLoading}

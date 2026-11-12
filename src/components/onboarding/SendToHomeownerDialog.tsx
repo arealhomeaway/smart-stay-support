@@ -36,6 +36,7 @@ export function SendToHomeownerSection({
   children,
   footerSend = false,
   onReady,
+  onSent,
 }: {
   taskId: string;
   taskTitle: string;
@@ -50,6 +51,8 @@ export function SendToHomeownerSection({
   footerSend?: boolean;
   /** Tells the drawer whether Send can go now. */
   onReady?: (ready: boolean) => void;
+  /** Item 35: called after a successful send, so the drawer can close. */
+  onSent?: () => void;
 }) {
   const router = useRouter();
   const [note, setNote] = useState("");
@@ -87,6 +90,7 @@ export function SendToHomeownerSection({
       // Fix 22: the drawer's status chip reads Complete straight away.
       void queryClient.invalidateQueries();
       void router.invalidate();
+      onSent?.();
     },
     onError: (e: Error, input) => {
       if (!isCardExistsError(e.message)) { toast.error(e.message); return; }

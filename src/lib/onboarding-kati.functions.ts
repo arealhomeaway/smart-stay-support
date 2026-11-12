@@ -196,7 +196,7 @@ export const sendOnboardingWorkOrderFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const db = context.supabase as unknown as Loose;
-    const { sendToBreezewayRefusal, onboardingSendRequestKey } = await import("@/lib/onboarding-breezeway");
+    const { sendToBreezewayRefusal, onboardingSendRequestKey, stripWorkOrderPrefix, breezewayStepSummary } = await import("@/lib/onboarding-breezeway");
     const flag = await db.from("feature_flags").select("enabled").eq("key", "onboarding_breezeway_send").maybeSingle();
     if (flag.error) throw new Error(flag.error.message);
     const switchOn = flag.data?.enabled === true;
@@ -228,8 +228,9 @@ export const sendOnboardingWorkOrderFn = createServerFn({ method: "POST" })
         sourceType: "onboarding_task",
         sourceId: data.taskId,
         requestKey: onboardingSendRequestKey(data.taskId),
-        title: data.title ?? String(task.data.title).replace(/^\s*(draft\s+)?work order\s*:\s*/i, "").slice(0, 200),
-        description: data.description !== undefined ? data.description : task.data.detail ? String(task.data.detail).slice(0, 4000) : null,
+        title: data.title ?? stripWorkOrderPrefix(String(task.data.title)).slice(0, 200),
+        // Item 36: without a typed description, only the step's short summary goes.
+        description: data.description !== undefined ? data.description : breezewayStepSummary(task.data.detail ? String(task.data.detail) : null).slice(0, 4000) || null,
         department: "maintenance",
         priority: data.priority,
         scheduledDate: link.data.tentative_date,

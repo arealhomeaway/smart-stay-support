@@ -73,3 +73,62 @@ export function sendToBreezewayRefusal(input: {
 export function onboardingSendRequestKey(taskId: string): string {
   return `onboarding-task-${taskId}`;
 }
+
+/** The Task title without "Work order:" or "Draft work order:". */
+export function stripWorkOrderPrefix(title: string | null | undefined): string {
+  return String(title ?? "").replace(/^\s*(draft\s+)?work order\s*:\s*/i, "").trim();
+}
+
+/**
+ * Item 37: the Breezeway Title default. The chosen template's name; before a
+ * template is chosen, the Task title without its work order prefix.
+ */
+export function breezewayTitleDefault(taskTitle: string | null | undefined, templateName?: string | null): string {
+  return (templateName ?? "").trim() || stripWorkOrderPrefix(taskTitle);
+}
+
+/**
+ * Item 37: a new template replaces the title only while it still reads the last
+ * default, so a title the user typed is kept.
+ */
+export function nextBreezewayTitle(current: string, previousDefault: string, nextDefault: string): string {
+  return current.trim() === previousDefault.trim() ? nextDefault : current;
+}
+
+const HEADING = /^\s*[A-Z][A-Za-z ]{1,30}:\s*$/;
+
+/**
+ * Item 36: the Breezeway Description default is the step's short summary only:
+ * the "About this step" text, else the first sentence of the step description.
+ * Never the full About this step / Instructions text.
+ */
+export function breezewayStepSummary(detail: string | null | undefined, description?: string | null): string {
+  const text = String(detail ?? "").replace(/\r\n/g, "\n");
+  const lines = text.split("\n");
+  const at = lines.findIndex((l) => /^\s*about this step\s*:/i.test(l));
+  if (at >= 0) {
+    const out: string[] = [];
+    const inline = lines[at]!.replace(/^\s*about this step\s*:\s*/i, "").trim();
+    if (inline) out.push(inline);
+    for (let n = at + 1; n < lines.length; n++) {
+      const l = lines[n]!;
+      if (!l.trim()) { if (out.length) break; continue; }
+      if (HEADING.test(l)) break;
+      out.push(l.trim());
+    }
+    if (out.length) return out.join(" ");
+  }
+  return firstSentence(text) || firstSentence(description);
+}
+
+function firstSentence(text: string | null | undefined): string {
+  const line = String(text ?? "")
+    .replace(/\r\n/g, "\n")
+    .split("\n")
+    .map((l) => l.trim())
+    .find((l) => l && !HEADING.test(l));
+  if (!line) return "";
+  const body = line.replace(/^(\d+[.)]|[-*\u2022])\s+/, "");
+  const m = body.match(/^(.+?[.!?])(\s|$)/);
+  return (m ? m[1]! : body).trim();
+}
