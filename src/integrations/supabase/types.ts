@@ -18459,6 +18459,7 @@ export type Database = {
         Args: { _note: string; _routine_id: string }
         Returns: Json
       }
+      admin_passes_role_checks: { Args: never; Returns: boolean }
       after_handoff_access: {
         Args: never
         Returns: {
