@@ -148,7 +148,7 @@ export function OnboardingBreezewaySection({
         </div>
       </div>
       <div className="grid gap-1.5">
-        <Label htmlFor={`bz-ref-${taskId}`}>Breezeway task number or link</Label>
+        <Label htmlFor={`bz-ref-${taskId}`}>Paste the work order number</Label>
         <Input id={`bz-ref-${taskId}`} className="min-h-11" value={ref} disabled={disabled}
           placeholder="Paste it after you create the work order in Breezeway"
           onChange={(e) => setRef(e.target.value)} />

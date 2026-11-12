@@ -167,7 +167,10 @@ export function OnboardingActions({
   readOnly,
   programId,
   homeId = null,
+  onlyId = null,
 }: {
+  /** Show just this one item, inside the homeowner's side panel. */
+  onlyId?: string | null;
   readOnly: boolean;
   programId: string | null;
   /** The homeowner's selected home; null means All Homes. */
@@ -243,7 +246,8 @@ export function OnboardingActions({
   if (q.isLoading) return <Skeleton className="h-40 w-full" />;
   const data = q.data;
   if (q.error || !data || !data.inOnboarding) return null;
-  const inHome = (a: OwnerOnboardingAction) => !homeId || !a.propertyId || a.propertyId === homeId;
+  const inHome = (a: OwnerOnboardingAction) =>
+    (!onlyId || a.approvalId === onlyId) && (!homeId || !a.propertyId || a.propertyId === homeId);
   const pending = data.pending.filter(inHome);
   const decided = data.decided.filter(inHome);
   if (pending.length === 0 && decided.length === 0 && !logPrompt) return null;
@@ -304,9 +308,11 @@ export function OnboardingActions({
 
         {decided.length > 0 && (
           <div className="mt-4 space-y-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Recently decided
-            </p>
+            {onlyId ? null : (
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Recently decided
+              </p>
+            )}
             {decided.slice(0, 3).map((action) => (
               <div
                 key={action.approvalId}

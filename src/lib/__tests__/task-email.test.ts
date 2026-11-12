@@ -97,9 +97,13 @@ describe("recordTaskEmailEvents", () => {
 });
 
 describe("drawer visibility", () => {
-  it("Email homeowner shows only when the person can work the Task", () => {
-    const src = readFileSync("src/components/onboarding/TaskDrawer.tsx", "utf8");
-    expect(/\{!disabled && \([\s\S]{0,200}label="Email homeowner"/.test(String(src))).toBe(true);
+  // Owner Opportunities and Task Drawer (B2.3, B6): "Email homeowner" became "Email instead" inside
+  // Send to the homeowner, for a standard owner without the portal. Same gate: only someone who can work the Task.
+  it("Email instead shows only when the person can work the Task, and only without the portal", () => {
+    const section = readFileSync("src/components/onboarding/SendToHomeownerDialog.tsx", "utf8");
+    expect(/\{!disabled && !hasPortal && [\s\S]{0,120}<EmailComposer context="onboarding_task" recordId=\{taskId\} label="Email instead"/.test(String(section))).toBe(true);
+    const drawer = readFileSync("src/components/onboarding/TaskDrawer.tsx", "utf8");
+    expect(drawer).not.toContain('label="Email homeowner"');
   });
   it("send records events only after a real send, never for scheduled or blocked", () => {
     const src = readFileSync("src/lib/email-composer.functions.ts", "utf8");

@@ -786,7 +786,7 @@ async function sendTaskAsOwnerItem(
   supabase: Client,
   userId: string,
   task: { id: string; due_on: string | null },
-  input: { taskId: string; note: string; version: string; documentIds: string[] },
+  input: { taskId: string; note: string; version: string; documentIds: string[]; respondBy?: string | null | undefined },
 ) {
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Chicago" });
   const note = input.version.trim() ? `${input.note.trim()}\n\nLooking at: ${input.version.trim()}` : input.note.trim();
@@ -805,7 +805,10 @@ async function sendTaskAsOwnerItem(
   const res = await rpc("send_task_to_owner_item", {
     _task_id: task.id,
     _note: note,
-    _respond_by: task.due_on && task.due_on >= today ? task.due_on : null,
+    // A date chosen in the drawer wins; otherwise today's rule: the Task's own due date when still ahead.
+    _respond_by: input.respondBy && input.respondBy >= today
+      ? input.respondBy
+      : task.due_on && task.due_on >= today ? task.due_on : null,
   });
   if (res.error) throw new Error(res.error.message ?? "Could not send to the homeowner.");
   if (!res.data?.sent) return null;
@@ -823,7 +826,7 @@ async function sendTaskAsOwnerItem(
 export async function sendTaskToOwner(
   supabase: Client,
   userId: string,
-  input: { taskId: string; note: string; version: string; documentIds: string[] },
+  input: { taskId: string; note: string; version: string; documentIds: string[]; respondBy?: string | null | undefined },
 ) {
   await assertCap(supabase, userId, "is_onboarding_staff");
   const task = await supabase

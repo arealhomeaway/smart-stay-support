@@ -7,12 +7,11 @@ import {
   Clock,
   Download,
   Home as HomeIcon,
-  MessageSquare,
   Paperclip,
 } from "lucide-react";
 import { participationEvidenceUrlFn } from "@/lib/owner-evidence.functions";
 import { EmptyState, LoadingPage, PageHero, ProgressRing, SectionCard } from "@/components/ui/page";
-import { StatusBadge, type StatusTone } from "@/components/ui/status";
+import { StatusBadge } from "@/components/ui/status";
 import { Celebrate } from "@/components/ui/feedback";
 import { useRole } from "@/hooks/useRole";
 import { usCalendarDate, usDate, usDateTime } from "@/lib/dates";
@@ -35,16 +34,13 @@ import {
 import { answerOwnerReview, ownerHome, ownerHomePreview } from "@/lib/owner-portal.functions";
 import { OWNER_GOAL_LABEL } from "@/lib/owner-participation";
 import { LogTimeContext, LogTimeDialog, useOpenLogTime, type LogTimeAnchor } from "@/components/owner/LogTimeDialog";
-import { OwnerOpportunities } from "@/components/owner/OwnerOpportunities";
-import { OwnerPaceCard, OwnerPlanCards } from "@/components/owner/OwnerPlanCards";
-import { OwnerQueueCards } from "@/components/owner/OwnerQueueCards";
+import { OwnerOpportunityBoard } from "@/components/owner/OwnerOpportunityBoard";
+import { OwnerPaceCard } from "@/components/owner/OwnerPlanCards";
 import { isOwnerQueue, type OwnerQueue } from "@/lib/owner-opportunity-filters";
 import { captureReviewedOpportunity, captureReviewedResponse } from "@/lib/owner-reviewed-update";
 import { ownerTicketResponseGuidance } from "@/lib/owner-ticket-intent";
-import { OwnerApprovalPanel } from "@/components/OwnerApprovalPanel";
-import { OnboardingActions } from "@/components/owner/OnboardingActions";
 import { StrReportPanel } from "@/components/owner/StrReportPanel";
-import { OwnerTaskDialog, taskDeadlineLabel } from "@/components/owner/OwnerTaskDialog";
+import { OwnerTaskDialog } from "@/components/owner/OwnerTaskDialog";
 import { DownloadPhotosButton } from "@/components/property/MarketingPhotosButtons";
 import { ownerOnboardingActions } from "@/lib/owner-onboarding.functions";
 import type { OwnerOnboardingAction, OwnerOnboardingFile } from "@/lib/owner-onboarding.server";
@@ -235,30 +231,8 @@ function OwnerHubBody({
   const openReviews = (reviews as Review[])
     .filter((r) => ownerReviewPresentation(r).attention)
     .filter(inScope);
-  const availableReviews = (reviews as Review[])
-    .filter((r) => r.auto_ticket && !ownerReviewPresentation(r).attention)
-    .filter(inScope);
   const heroPhoto = properties.find((p) => p.photoUrl)?.photoUrl ?? undefined;
 
-  /**
-   * Homeowners think per home, so the attention list is grouped by the home it
-   * belongs to. Items covering the whole program keep their own group.
-   */
-  const attentionGroups = useMemo(() => {
-    const groups: { key: string; name: string; reviews: Review[] }[] = [];
-    const push = (key: string, name: string, review: Review) => {
-      const found = groups.find((g) => g.key === key);
-      if (found) found.reviews.push(review);
-      else groups.push({ key, name, reviews: [review] });
-    };
-    for (const review of openReviews) {
-      const ids = properties.filter((p) => review.propertyIds.includes(p.propertyId));
-      if (ids.length === 1 && ids[0]) push(ids[0].propertyId, ids[0].name, review);
-      else if (ids.length > 1) push("multi", ids.map((p) => p.name).join(" · "), review);
-      else push("program", "All your homes", review);
-    }
-    return groups;
-  }, [openReviews, properties]);
 
   // The Welcome Packet's six milestones, positioned from signals ARHA already
   // tracks on each enrolled home.
@@ -408,11 +382,28 @@ function OwnerHubBody({
 
   const ownerHomes = properties.map((p) => ({ propertyId: p.propertyId, name: p.name, address: (p as { address?: string | null }).address ?? null }));
   const navigate = Route.useNavigate();
-  // Same data OnboardingActions renders: keeps one consistent empty state.
-  const onboardingPending = (onboardingQuery.data?.pending ?? []).filter(
-    (a) => !selectedHomeId || !a.propertyId || a.propertyId === selectedHomeId,
-  ).length;
   const search = Route.useSearch();
+  // Every owner item opens in its own side panel, with the onboarding Task, files and photos behind it.
+  const renderReview = (r: { id: string }, open: boolean, onOpenChange: (next: boolean) => void) => {
+    const review = (reviews as Review[]).find((x) => x.id === r.id);
+    if (!review) return null;
+    return (
+      <ReviewPanel
+        open={open}
+        onOpenChange={onOpenChange}
+        review={review}
+        properties={properties}
+        programId={program.id}
+        onDone={invalidate}
+        readOnly={preview}
+        action={actionByReview.get(review.id) ?? null}
+        sharedFiles={onboardingQuery.data?.cardFiles?.[review.id] ?? []}
+        photoPropertyId={onboardingQuery.data?.photoCards?.[review.id] ?? null}
+        canLogHours={canLogHours}
+        logHoursBlockedReason={logHoursBlockedReason}
+      />
+    );
+  };
   // Build 17 finding 7: a notification link names the item (?opportunity=), new and old alike; it
   // opens the Opportunities view with that item open, never the dashboard plan.
   const view = search.view ?? (search.opportunity ? "opportunities" : "home");
@@ -511,7 +502,7 @@ function OwnerHubBody({
       ) : null}
 
       <div className="flex flex-wrap items-center justify-end gap-4">
-        {properties.length > 1 ? (
+        {properties.length > 1 && view !== "opportunities" ? (
           <div className="flex items-center gap-2">
             <Label htmlFor="owner-home-filter" className="text-sm text-muted-foreground">Viewing:</Label>
             <Select
@@ -537,16 +528,18 @@ function OwnerHubBody({
       {view === "documents" ? (
         <OwnerFilesPanel homes={ownerHomes} selectedHomeId={selectedHomeId} readOnly={preview} />
       ) : view === "opportunities" ? (
-        <OwnerOpportunities
+        <OwnerOpportunityBoard
           variant="full"
-          queue={search.queue ?? null}
-          onQueueChange={(q) => void navigate({ search: (prev) => { const { queue: _q, ...rest } = prev; return q ? { ...rest, queue: q } : rest; } })}
-          onBackToDashboard={() => void navigate({ search: (prev) => { const { queue: _q, view: _v, opportunity: _o, ...rest } = prev; return rest; } })}
+          programId={program.id}
+          homes={ownerHomes}
+          reviews={reviews as Review[]}
+          readOnly={preview}
+          preview={preview}
+          homeTab={homeParam ?? null}
+          onHomeTab={(tab: string) => void navigate({ search: (prev) => { const { opportunity: _o, ...rest } = prev; return { ...rest, home: tab }; } })}
           focusId={search.opportunity ?? null}
           onCloseDetail={() => void navigate({ search: (prev) => { const { opportunity: _o, ...rest } = prev; return rest; }, replace: true })}
-          homes={ownerHomes}
-          selectedHomeId={selectedHomeId}
-          readOnly={preview}
+          renderReview={renderReview}
           blockedReason={preview ? null : logHoursBlockedReason}
           {...(preview || logHoursBlockedReason ? {} : { onLogHours: openManualLog })}
         />
@@ -557,85 +550,22 @@ function OwnerHubBody({
         />
       ) : (
         <>
-      <OwnerQueueCards
-        homes={ownerHomes}
-        selectedHomeId={selectedHomeId}
-        onOpen={(q) => void navigate({ search: (prev) => { const { opportunity: _o, ...rest } = prev; return { ...rest, view: "opportunities" as const, queue: q }; } })}
-      />
-
       <div id="owner-decisions" className="scroll-mt-24">
-      <SectionCard
-        title="Your approvals"
-        description="Approvals and property decisions your ARHA team has sent you."
-      >
-        <div className="space-y-5">
-        {openReviews.length > 0 && (
-          <div className="space-y-5">
-            {attentionGroups.map((group) => (
-              <div key={group.key} className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold">{group.name}</h3>
-                  <span className="numeric rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                    {group.reviews.length}
-                  </span>
-                </div>
-                {group.reviews.map((r) => (
-                  <ReviewRow
-                    key={r.id}
-                    review={r}
-                    properties={properties}
-                    programId={program.id}
-                    onDone={invalidate}
-                    readOnly={preview}
-                    action={actionByReview.get(r.id) ?? null}
-                    sharedFiles={onboardingQuery.data?.cardFiles?.[r.id] ?? []}
-                    photoPropertyId={onboardingQuery.data?.photoCards?.[r.id] ?? null}
-                    canLogHours={canLogHours}
-                    logHoursBlockedReason={logHoursBlockedReason}
-                  />
-                ))}
-              </div>
-            ))}
-          </div>
-        )}
-        <OnboardingActions readOnly={preview} programId={preview ? program.id : null} homeId={selectedHomeId} />
-        <OwnerPlanCards programId={program.id} readOnly={preview} homes={ownerHomes.map((h) => ({ propertyId: h.propertyId, name: h.address ?? h.name }))} />
-        <OwnerApprovalPanel readOnly={preview} embedded hasOtherItems={openReviews.length > 0 || onboardingPending > 0} />
-        </div>
-      </SectionCard>
+        <OwnerOpportunityBoard
+          variant="home"
+          programId={program.id}
+          homes={ownerHomes}
+          reviews={reviews as Review[]}
+          readOnly={preview}
+          preview={preview}
+          homeTab={selectedHomeId}
+          focusId={search.opportunity ?? null}
+          onViewAll={() => void navigate({ search: (prev) => { const { queue: _q, ...rest } = prev; return { ...rest, view: "opportunities" as const }; } })}
+          renderReview={renderReview}
+          blockedReason={preview ? null : logHoursBlockedReason}
+          {...(preview || logHoursBlockedReason ? {} : { onLogHours: openManualLog })}
+        />
       </div>
-
-      <OwnerOpportunities
-        variant="preview"
-        onViewAll={() => void navigate({ search: (prev) => { const { queue: _q, ...rest } = prev; return { ...rest, view: "opportunities" as const }; } })}
-        focusId={search.opportunity ?? null}
-        homes={ownerHomes}
-        selectedHomeId={selectedHomeId}
-        readOnly={preview}
-        blockedReason={preview ? null : logHoursBlockedReason}
-        {...(preview || logHoursBlockedReason ? {} : { onLogHours: openManualLog })}
-        arhaExtra={
-          availableReviews.length ? (
-            <div className="space-y-3">
-              {availableReviews.map((r) => (
-                <ReviewRow
-                  key={r.id}
-                  review={r}
-                  properties={properties}
-                  programId={program.id}
-                  onDone={invalidate}
-                  readOnly={preview}
-                  action={actionByReview.get(r.id) ?? null}
-                    sharedFiles={onboardingQuery.data?.cardFiles?.[r.id] ?? []}
-                    photoPropertyId={onboardingQuery.data?.photoCards?.[r.id] ?? null}
-                  canLogHours={canLogHours}
-                  logHoursBlockedReason={logHoursBlockedReason}
-                />
-              ))}
-            </div>
-          ) : undefined
-        }
-      />
 
       <OnboardingProgress
         readOnly={preview}
@@ -714,10 +644,6 @@ function ReportDownloads() {
   );
 }
 
-function reviewTone(status: string): StatusTone {
-  if (status === "returned") return "waiting";
-  return "review";
-}
 
 type OwnerHome = {
   id: string;
@@ -744,10 +670,12 @@ function titleCase(value: string) {
 }
 
 /**
- * One item waiting on the homeowner. The row stays short; opening it gives the
- * homeowner everything the team sent and every action they can take on it.
+ * One owner item in the homeowner's side panel: everything the team sent and
+ * every action they can take on it. The Opportunities page opens it.
  */
-function ReviewRow({
+function ReviewPanel({
+  open,
+  onOpenChange,
   review,
   properties,
   programId,
@@ -759,6 +687,8 @@ function ReviewRow({
   sharedFiles = [],
   photoPropertyId = null,
 }: {
+  open: boolean;
+  onOpenChange: (next: boolean) => void;
   review: Review;
   properties: { propertyId: string; name: string }[];
   programId: string;
@@ -773,7 +703,7 @@ function ReviewRow({
   /** Set for cards that use the home's marketing photos. */
   photoPropertyId?: string | null;
 }) {
-  const [open, setOpen] = useState(false);
+  const setOpen = onOpenChange;
   const [logOpen, setLogOpen] = useState(false);
   const openShared = useOpenLogTime();
   const [reviewed, setReviewed] = useState<ReturnType<typeof captureReviewedOpportunity> | null>(
@@ -784,13 +714,9 @@ function ReviewRow({
     !readOnly &&
     ["awaiting_owner", "returned"].includes(review.status) &&
     Boolean(review.updated_at);
-  const [responseContext, setResponseContext] = useState<ReturnType<
-    typeof captureReviewedResponse
-  > | null>(null);
-  const setResponseOpen = (next: boolean) => {
-    if (next && !open) setResponseContext(captureReviewedResponse(review));
-    setOpen(next);
-  };
+  // The panel mounts when it opens: capture the reviewed version once, as opening did before.
+  const [responseContext] = useState(() => captureReviewedResponse(review));
+  const setResponseOpen = (next: boolean) => setOpen(next);
   const answer = useServerFn(answerOwnerReview);
 
   const respond = useMutation({
@@ -816,48 +742,19 @@ function ReviewRow({
     .filter((p) => review.propertyIds.includes(p.propertyId))
     .map((p) => p.name)
     .join(", ");
-  const fileCount = action?.files.length ? action.files.length : sharedFiles.length;
   const timeLoggable = canLogHours && !readOnly && review.status !== "closed";
 
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-border/70 px-4 py-3">
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="text-sm font-semibold">{review.title}</p>
-          <StatusBadge tone={reviewTone(review.status)}>{presentation.label}</StatusBadge>
-        </div>
-        {review.business_question ? (
-          <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-            {review.business_question}
-          </p>
-        ) : null}
-        <p className="mt-1 text-xs text-muted-foreground">
-          {names ? `${names} · ` : ""}
-          {taskDeadlineLabel(review.respond_by)}
-          {fileCount > 0
-            ? ` · ${fileCount} file${fileCount === 1 ? "" : "s"} attached`
-            : ""}
-        </p>
-        {photoPropertyId && !readOnly ? (
-          <div className="mt-2">
-            <DownloadPhotosButton propertyId={photoPropertyId} />
-          </div>
-        ) : null}
-      </div>
-      <div className="flex shrink-0 gap-2">
-        <Button size="sm" onClick={() => setResponseOpen(true)}>
-          <MessageSquare className="size-4" /> Open and work this
-        </Button>
-      </div>
-
+    <>
       <OwnerTaskDialog
         open={open}
         onOpenChange={setResponseOpen}
         details={{
           title: responseContext?.title ?? review.title,
           statusLabel: presentation.label,
-          source: review.auto_ticket ? "Property work" : "Onboarding",
+          source: review.auto_ticket ? "Operations Team" : "Onboarding Team",
           homes: names,
+          sentAt: (review as { available_from?: string | null }).available_from ?? review.updated_at ?? null,
           respondBy: review.respond_by,
           question: review.business_question ?? responseContext?.description ?? null,
           recommendation: review.recommendation,
@@ -886,6 +783,7 @@ function ReviewRow({
           setLogOpen(true);
         }}
         onDecided={onDone}
+        extra={photoPropertyId && !readOnly ? <DownloadPhotosButton propertyId={photoPropertyId} /> : null}
       />
 
       {!openShared && (
@@ -897,7 +795,7 @@ function ReviewRow({
           onDone={onDone}
         />
       )}
-    </div>
+    </>
   );
 }
 

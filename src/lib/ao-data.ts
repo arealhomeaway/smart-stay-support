@@ -225,8 +225,61 @@ export async function loadTaskOwnerItem(taskId: string) {
   return unwrap<{ review_id: string; sent_at: string } | null>(
     await db.from("owner_item_task_sends").select("review_id,sent_at").eq("task_id", taskId).order("sent_at", { ascending: false }).limit(1).maybeSingle());
 }
+/** The latest owner item a Task was sent as, with its answer-by date (Task drawer summary line). */
+export type TaskOwnerSend = { review_id: string; sent_at: string; respond_by: string | null };
+export async function loadTaskOwnerSend(taskId: string): Promise<Available<TaskOwnerSend | null>> {
+  const sent = unwrap<{ review_id: string; sent_at: string } | null>(
+    await db.from("owner_item_task_sends").select("review_id,sent_at").eq("task_id", taskId).order("sent_at", { ascending: false }).limit(1).maybeSingle());
+  if (!sent.available) return { available: false };
+  if (!sent.data) return { available: true, data: null };
+  const review = await db.from("owner_reviews").select("respond_by").eq("id", sent.data.review_id).maybeSingle();
+  const respondBy = (review.data as { respond_by?: string | null } | null)?.respond_by ?? null;
+  return { available: true, data: { ...sent.data, respond_by: respondBy } };
+}
 export type OwnerItemNeed = { review_id: string; property_id: string; task_id: string | null; title: string; why: string; since: string };
 export async function loadMyOwnerItemNeeds(): Promise<OwnerItemNeed[]> {
   const r = unwrap<OwnerItemNeed[]>(await db.rpc("my_owner_item_needs"));
   return r.available ? r.data ?? [] : [];
+}
+
+/** One plan card as the homeowner's Opportunities page reads it. */
+export type OwnerPortalPlanRow = import("@/lib/ao-ui").PortalPlanCard & {
+  code?: string | null; lane?: string | null; stage_window?: string | null; deadline_at?: string | null;
+  owner_review_id?: string | null; once_per_owner?: boolean | null;
+};
+
+/**
+ * The homeowner's plan cards for the Opportunities page. Reads the staged
+ * ao_owner_portal_plan (stage window, owner item link, once per owner); until it
+ * is applied, falls back to ao_owner_plan plus the owner item link the owner can
+ * already read, so plan cards and their owner items never show twice.
+ */
+export async function loadOwnerPortalPlan(programId: string): Promise<import("@/lib/ao-ui").Available<OwnerPortalPlanRow[]>> {
+  const staged = await db.rpc("ao_owner_portal_plan", { _program: programId });
+  if (!staged.error) return { available: true, data: (staged.data ?? []) as OwnerPortalPlanRow[] };
+  const { isMissingDbObject } = await import("@/lib/ao-ui");
+  if (!isMissingDbObject(staged.error)) throw new Error((staged.error as { message?: string }).message ?? "Could not load");
+  const base = unwrap<OwnerPortalPlanRow[]>(await db.rpc("ao_owner_plan", { _program: programId }));
+  if (!base.available || base.data.length === 0) return base;
+  const links = await inChunks<{ id: string; owner_review_id: string | null }>(
+    base.data.map((c) => c.plan_card_id),
+    (ids) => db.from("ao_home_plan_cards").select("id, owner_review_id").in("id", ids),
+  );
+  const byId = new Map(links.data.map((l) => [l.id, l.owner_review_id]));
+  return { available: true, data: base.data.map((c) => ({ ...c, owner_review_id: byId.get(c.plan_card_id) ?? null })) };
+}
+
+/** Who wrote last on each owner item, read from the append-only conversation the owner can already see. */
+export async function loadOwnerItemLastSpeakers(reviewIds: string[]): Promise<Map<string, "homeowner" | "staff">> {
+  const out = new Map<string, "homeowner" | "staff">();
+  if (reviewIds.length === 0) return out;
+  const rows = await inChunks<{ review_id: string; author_type: string; event: string | null; created_at: string }>(
+    reviewIds,
+    (ids) => db.from("owner_request_messages").select("review_id, author_type, event, created_at").in("review_id", ids).order("created_at"),
+  );
+  for (const r of rows.data) {
+    if (r.event || r.author_type === "system") continue;
+    out.set(r.review_id, r.author_type === "homeowner" ? "homeowner" : "staff");
+  }
+  return out;
 }

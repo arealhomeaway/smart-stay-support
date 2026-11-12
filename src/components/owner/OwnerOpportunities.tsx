@@ -1,28 +1,23 @@
 /**
- * The homeowner's Opportunities: two sources, never blended.
+ * Homeowner Opportunity data and the Opportunity side panel.
  *
- *  FROM YOUR ARHA TEAM — Opportunities ARHA intentionally shared (structured
- *  ARHA source). They always carry the home of the ARHA work they came from.
- *
- *  MORE WAYS TO PARTICIPATE — optional, remote ideas from the Optional
- *  Opportunity Library. A template only becomes a live Opportunity when the
- *  homeowner starts it, on exactly one home.
- *
- * Cards stay compact; opening one shows everything. Owner-facing language
- * only: "Opportunity", never task, ticket or requirement.
+ * Two work-item sources keep their provenance: ARHA-shared Opportunities and
+ * Optional Library ones. A library template only becomes a live Opportunity
+ * when the homeowner starts it, on exactly one home. The one Opportunities page
+ * that shows them with every other owner item is OwnerOpportunityBoard.
+ * Owner-facing language only: "Opportunity", never task, ticket or requirement.
  */
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { OwnerConversation } from "@/components/OwnerConversation";
-import { AlertCircle, CheckCircle2, Clock, FileText, Link2, PlayCircle } from "lucide-react";
-import { OWNER_QUEUES, inQueue, queueCounts, type OwnerQueue, type QueueInput } from "@/lib/owner-opportunity-filters";
+import { Clock, FileText, Link2 } from "lucide-react";
+import { inQueue, queueCounts, type QueueInput } from "@/lib/owner-opportunity-filters";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
-  Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -40,17 +35,19 @@ import {
   type OwnerResponse,
   type ResponseType,
 } from "@/lib/v2-workflow.functions";
-import { listOptionalLibrary, startOptionalOpportunity, type LibraryTemplate } from "@/lib/opportunity-library.functions";
+import { listOptionalLibrary, type LibraryTemplate } from "@/lib/opportunity-library.functions";
 import { arhaCover, duplicatesArha, imageFor } from "@/lib/opportunity-images";
 import { OwnerUploadDialog } from "@/components/owner/OwnerUploadDialog";
 import { LibraryVideoPlayer, useLibraryVideoIndex } from "@/components/owner/LibraryVideoPlayer";
 import { videoForOpportunity } from "@/lib/library-video";
 import { OwnerFileRow, useOwnerDocuments } from "@/components/OwnerFilesPanel";
+import { OwnerSidePanel, PanelSection } from "@/components/owner/OwnerSidePanel";
 
 export type OpportunityHome = { propertyId: string; name: string; address?: string | null; photoUrl?: string | null };
 
-type Live = {
+export type Live = {
   id: string;
+  createdAt: string | null;
   source: "arha" | "optional";
   title: string;
   propertyId: string | null;
@@ -85,6 +82,8 @@ function oneLine(text: string | null | undefined) {
   return t.length > 150 ? `${t.slice(0, 147)}…` : t;
 }
 
+const EMPTY_TITLES = new Map<string, string[]>();
+
 export function arhaStatus(o: Pick<Live, "finished" | "queue">) {
   if (o.finished) return "Completed";
   if (inQueue(o.queue, "new")) return "New";
@@ -96,7 +95,12 @@ export function arhaStatus(o: Pick<Live, "finished" | "queue">) {
 // Build 18 item 3: no suggested time is shown to homeowners; the stored minutes stay untouched.
 
 /** Shared data hook: live Opportunities + library templates, scoped to the portal filter. */
-export function useOwnerOpportunityData(homes: OpportunityHome[], selectedHomeId: string | null) {
+export function useOwnerOpportunityData(
+  homes: OpportunityHome[],
+  selectedHomeId: string | null,
+  /** Plan card titles per home: a library card the home's plan already carries is never offered twice. */
+  planTitles: Map<string, string[]> = EMPTY_TITLES,
+) {
   const list = useServerFn(listMyCollaboration);
   const lib = useServerFn(listOptionalLibrary);
   const live = useQuery({ queryKey: ["owner-opportunities"], queryFn: () => list() });
@@ -116,6 +120,7 @@ export function useOwnerOpportunityData(homes: OpportunityHome[], selectedHomeId
         const arha = o.source === "arha";
         return {
           id: o.id,
+          createdAt: (o as { created_at?: string | null }).created_at ?? null,
           source: arha ? "arha" : "optional",
           title: o.title,
           propertyId: o.property_id,
@@ -164,11 +169,13 @@ export function useOwnerOpportunityData(homes: OpportunityHome[], selectedHomeId
     // Templates the owner could still start in this view.
     const scopeHomes = selectedHomeId ? [selectedHomeId] : homes.map((h) => h.propertyId);
     const allLive = live.data ?? [];
+    const norm = (t: string) => t.trim().toLowerCase();
+    const onPlan = (title: string, home: string) => (planTitles.get(home) ?? []).some((p) => norm(p) === norm(title));
     const templates = (library.data ?? []).filter((t) => {
       const openHomes = scopeHomes.filter((h) => {
         const started = allLive.some((o) => o.library_template_id === t.id && o.property_id === h);
         const arhaTitles = allLive.filter((o) => o.source === "arha" && o.property_id === h && o.status !== "complete").map((o) => o.title);
-        return !started && !duplicatesArha(t.category, t.title, arhaTitles);
+        return !started && !duplicatesArha(t.category, t.title, arhaTitles) && !onPlan(t.title, h);
       });
       return openHomes.length > 0;
     });
@@ -176,7 +183,7 @@ export function useOwnerOpportunityData(homes: OpportunityHome[], selectedHomeId
       homes.filter((h) => {
         const started = allLive.some((o) => o.library_template_id === t.id && o.property_id === h.propertyId);
         const arhaTitles = allLive.filter((o) => o.source === "arha" && o.property_id === h.propertyId && o.status !== "complete").map((o) => o.title);
-        return !started && !duplicatesArha(t.category, t.title, arhaTitles);
+        return !started && !duplicatesArha(t.category, t.title, arhaTitles) && !onPlan(t.title, h.propertyId);
       });
     return {
       loading: live.isLoading || library.isLoading,
@@ -187,321 +194,10 @@ export function useOwnerOpportunityData(homes: OpportunityHome[], selectedHomeId
       needsAttention: arha.filter((a) => inQueue(a.queue, "attention")),
       counts: queueCounts(arha.map((a) => a.queue)),
     };
-  }, [live.data, library.data, homes, selectedHomeId, live.isLoading, library.isLoading]);
+  }, [live.data, library.data, homes, selectedHomeId, live.isLoading, library.isLoading, planTitles]);
 }
 
-export function OwnerOpportunities({
-  onLogHours,
-  readOnly = false,
-  homes = [],
-  selectedHomeId = null,
-  blockedReason = null,
-  focusId = null,
-  variant = "full",
-  onViewAll,
-  arhaExtra,
-  queue = null,
-  onQueueChange,
-  onBackToDashboard,
-  onCloseDetail,
-}: {
-  /** Dashboard card filter applied to the ARHA Opportunities (full page only). */
-  queue?: OwnerQueue | null;
-  onQueueChange?: (q: OwnerQueue | null) => void;
-  onBackToDashboard?: () => void;
-  /** Clears a direct-link focus so closing returns to the same list and filters. */
-  onCloseDetail?: () => void;
-  focusId?: string | null;
-  onLogHours?: (activity: string, propertyId: string | null) => void;
-  readOnly?: boolean;
-  homes?: OpportunityHome[];
-  /** Portal-wide property filter; null = All Homes (a view, never a home). */
-  selectedHomeId?: string | null;
-  blockedReason?: string | null;
-  variant?: "preview" | "full";
-  onViewAll?: () => void;
-  /** Ticket-based property items the homeowner may review (ARHA column, full page). */
-  arhaExtra?: ReactNode;
-}) {
-  const data = useOwnerOpportunityData(homes, selectedHomeId);
-  const [statusFilter, setStatusFilter] = useState<"open" | "completed">("open");
-  const [openId, setOpenId] = useState<string | null>(focusId);
-  const [startFor, setStartFor] = useState<LibraryTemplate | null>(null);
-  const [watch, setWatch] = useState<LibraryTemplate | null>(null);
-  const videos = useLibraryVideoIndex();
-  useEffect(() => { if (focusId) setOpenId(focusId); }, [focusId]);
-
-  const preview = variant === "preview";
-  const limit = preview ? 3 : Infinity;
-  const pick = (rows: Live[]) =>
-    preview ? rows.filter((r) => !r.finished) : rows.filter((r) => (statusFilter === "open" ? !r.finished : r.finished));
-  const queued = !preview && queue;
-  const arha = queued ? data.arha.filter((r) => inQueue(r.queue, queue)) : pick(data.arha);
-  const optionalLive = queued ? [] : pick(data.optional);
-  const templates = queued ? [] : statusFilter === "open" || preview ? data.templates : [];
-  const queueLabel = queue ? OWNER_QUEUES.find((q) => q.key === queue)?.label ?? null : null;
-  const all = [...data.arha, ...data.optional];
-  const opened = all.find((o) => o.id === openId) ?? null;
-  const multi = homes.length > 1;
-  const showProperty = multi;
-
-  const qc = useQueryClient();
-  const start = useServerFn(startOptionalOpportunity);
-  const starting = useMutation({
-    mutationFn: (v: { templateId: string; propertyId: string }) => start({ data: v }),
-    onSuccess: async (r) => {
-      setStartFor(null);
-      await qc.invalidateQueries({ queryKey: ["owner-opportunities"] });
-      toast.success("Opportunity started.");
-      setOpenId(r.id);
-    },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not start this Opportunity."),
-  });
-  const beginStart = (t: LibraryTemplate) => {
-    if (readOnly || starting.isPending) return;
-    if (selectedHomeId) starting.mutate({ templateId: t.id, propertyId: selectedHomeId });
-    else if (homes.length === 1 && homes[0]) starting.mutate({ templateId: t.id, propertyId: homes[0].propertyId });
-    else setStartFor(t);
-  };
-
-  return (
-    <section aria-labelledby="owner-opps-heading" className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 id="owner-opps-heading" className="text-lg font-semibold">Opportunities</h2>
-          <p className="text-sm text-muted-foreground">
-            Your participation can help move certain parts of your property's setup forward. ARHA will continue
-            managing the property according to its approved scope, timeline, design approach, and property-readiness
-            standards.
-          </p>
-        </div>
-        {preview ? (
-          onViewAll ? <Button variant="outline" size="sm" onClick={onViewAll}>View all Opportunities</Button> : null
-        ) : queue ? null : (
-          <div className="flex gap-1.5" role="tablist" aria-label="Show">
-            {(["open", "completed"] as const).map((k) => (
-              <Button key={k} size="sm" role="tab" aria-selected={statusFilter === k} variant={statusFilter === k ? "default" : "outline"} onClick={() => setStatusFilter(k)}>
-                {k === "open" ? "Open" : "Completed"}
-              </Button>
-            ))}
-          </div>
-        )}
-      </div>
-      {!preview ? (
-        <div className="space-y-2">
-          {queueLabel ? (
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-muted/40 px-4 py-3">
-              <p className="text-sm">Showing: <span className="font-semibold">{queueLabel}</span></p>
-              <div className="flex flex-wrap gap-2">
-                {onBackToDashboard ? <Button size="sm" variant="outline" onClick={onBackToDashboard}>Back to Dashboard</Button> : null}
-                <Button size="sm" variant="outline" onClick={() => onQueueChange?.(null)}>View All Opportunities</Button>
-              </div>
-            </div>
-          ) : null}
-          <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Filter Opportunities">
-            <Button size="sm" role="tab" aria-selected={!queue} variant={!queue ? "default" : "outline"} onClick={() => onQueueChange?.(null)}>All</Button>
-            {OWNER_QUEUES.map((q) => (
-              <Button key={q.key} size="sm" role="tab" aria-selected={queue === q.key} variant={queue === q.key ? "default" : "outline"} onClick={() => onQueueChange?.(q.key)}>
-                {q.label} <span className="numeric ml-1 opacity-70">{data.counts[q.key]}</span>
-              </Button>
-            ))}
-          </div>
-        </div>
-      ) : null}
-      {blockedReason ? (
-        <p className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">{blockedReason}</p>
-      ) : null}
-
-      <div className="grid gap-5 lg:grid-cols-2">
-        {/* FROM YOUR ARHA TEAM */}
-        <div className="rounded-2xl border border-info/20 bg-info/5 p-4 sm:p-5">
-          <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-info">From your ARHA team</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Opportunities shared by your ARHA team as part of your property's setup and ongoing care.
-          </p>
-          <ul className="mt-4 space-y-3">
-            {arha.slice(0, limit).map((o) => (
-              <OppCard
-                key={o.id}
-                tone="arha"
-                cover={o.cover}
-                title={o.title}
-                property={showProperty || !selectedHomeId ? o.propertyName : null}
-                label={o.team}
-                summary={o.summary}
-                status={arhaStatus(o)}
-                priority={inQueue(o.queue, "attention")}
-                action={<Button size="sm" onClick={() => setOpenId(o.id)}>Open Opportunity</Button>}
-              />
-            ))}
-          </ul>
-          {arha.length === 0 && !data.loading ? (
-            <p className="mt-2 text-sm text-muted-foreground">
-              {statusFilter === "completed" && !preview
-                ? "No completed Opportunities from your ARHA team yet."
-                : queueLabel
-                  ? `Nothing in ${queueLabel} right now.`
-                  : "Nothing needs your attention from the ARHA team right now."}
-            </p>
-          ) : null}
-          {preview && arha.length > limit ? (
-            <p className="mt-3 text-xs text-muted-foreground">+{arha.length - limit} more on the Opportunities page</p>
-          ) : null}
-          {!preview && arhaExtra ? <div className="mt-4 space-y-2"><p className="text-sm font-semibold">Property items you can review</p>{arhaExtra}</div> : null}
-        </div>
-
-        {/* MORE WAYS TO PARTICIPATE */}
-        <div className="rounded-2xl border border-sage/25 bg-sage/5 p-4 sm:p-5">
-          <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-sage">More ways to participate</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Additional, optional ways to participate remotely in work related to your properties.
-          </p>
-          <ul className="mt-4 space-y-3">
-            {optionalLive.slice(0, limit).map((o) => (
-              <OppCard
-                key={o.id}
-                tone="optional"
-                cover={o.cover}
-                title={o.title}
-                property={o.propertyName}
-                label="Optional"
-                summary={o.summary}
-                status={o.finished ? "Completed" : "In Progress"}
-                video={videoForOpportunity(o.templateId, videos) ? () => setOpenId(o.id) : null}
-                action={<Button size="sm" variant="outline" onClick={() => setOpenId(o.id)}>Open</Button>}
-              />
-            ))}
-            {templates.slice(0, preview ? Math.max(0, limit - Math.min(optionalLive.length, limit)) : Infinity).map((t) => (
-              <OppCard
-                key={t.id}
-                tone="optional"
-                cover={imageFor(t.image_key)}
-                title={t.title}
-                property={selectedHomeId ? homes.find((h) => h.propertyId === selectedHomeId)?.name ?? null : homes.length === 1 ? homes[0]?.name ?? null : null}
-                propertyHint={!selectedHomeId && homes.length > 1 ? "Choose a property when you start" : null}
-                label="Optional"
-                summary={t.summary}
-                video={videos.has(t.id) ? () => setWatch(t) : null}
-                action={
-                  readOnly ? (videos.has(t.id) ? <Button size="sm" variant="outline" onClick={() => setWatch(t)}>Watch video</Button> : null) : (
-                    <Button size="sm" className="bg-sage text-success-foreground hover:bg-sage/90" disabled={starting.isPending} onClick={() => beginStart(t)}>
-                      Start Opportunity
-                    </Button>
-                  )
-                }
-              />
-            ))}
-          </ul>
-          {optionalLive.length === 0 && templates.length === 0 && !data.loading ? (
-            <p className="mt-2 text-sm text-muted-foreground">
-              {statusFilter === "completed" && !preview ? "No completed optional Opportunities yet." : "Explore optional ways to participate remotely in your property."}
-            </p>
-          ) : null}
-        </div>
-      </div>
-
-      <OpportunityDetail
-        item={opened}
-        onClose={() => { setOpenId(null); onCloseDetail?.(); }}
-        readOnly={readOnly}
-        homes={homes}
-        blockedReason={blockedReason}
-        {...(onLogHours ? { onLogHours } : {})}
-      />
-
-      <Dialog open={watch !== null} onOpenChange={(v) => !v && setWatch(null)}>
-        {watch ? (
-          <DialogContent className="sm:max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>{watch.title}</DialogTitle>
-              <DialogDescription>{videos.get(watch.id)?.label ?? watch.summary}</DialogDescription>
-            </DialogHeader>
-            <LibraryVideoPlayer libraryId={watch.id} poster={imageFor(watch.image_key)} label={videos.get(watch.id)?.label ?? watch.title} />
-          </DialogContent>
-        ) : null}
-      </Dialog>
-
-      <Dialog open={startFor !== null} onOpenChange={(v) => !v && setStartFor(null)}>
-        {startFor ? (
-          <StartDialog
-            template={startFor}
-            homes={data.startableHomes(startFor)}
-            busy={starting.isPending}
-            onStart={(propertyId) => starting.mutate({ templateId: startFor.id, propertyId })}
-          />
-        ) : null}
-      </Dialog>
-      {multi ? null : null}
-    </section>
-  );
-}
-
-function OppCard({
-  tone, cover, title, property, propertyHint = null, label, summary, status = null, meta = null, action, priority = false, video = null,
-}: {
-  video?: (() => void) | null;
-  priority?: boolean;
-  tone: "arha" | "optional";
-  cover: string;
-  title: string;
-  property: string | null;
-  propertyHint?: string | null;
-  label: string | null;
-  summary: string;
-  status?: string | null;
-  meta?: string | null;
-  action: ReactNode;
-}) {
-  const statusClass =
-    status === "Completed" ? "text-state-done" : status === "New" || status === "Awaiting Your Response" ? "text-info" : "text-muted-foreground";
-  return (
-    <li className="flex gap-3 overflow-hidden rounded-xl border border-border bg-card p-3 shadow-sm sm:gap-4">
-      <div className="relative h-20 w-24 shrink-0 sm:h-24 sm:w-32">
-        <img
-          src={cover}
-          alt=""
-          loading="lazy"
-          width={1024}
-          height={640}
-          className="h-full w-full rounded-lg object-cover"
-        />
-        {video ? (
-          <button type="button" onClick={video} aria-label={`Play video: ${title}`} className="absolute inset-0 flex items-center justify-center rounded-lg bg-foreground/25 text-background transition hover:bg-foreground/40">
-            <PlayCircle className="size-9 drop-shadow" aria-hidden="true" />
-          </button>
-        ) : null}
-      </div>
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <div className="flex flex-wrap items-start justify-between gap-x-2">
-          <p className="font-semibold leading-snug">{title}</p>
-          {priority ? (
-            <span className="flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">
-              <AlertCircle className="size-3.5" aria-hidden="true" /> Needs your attention
-            </span>
-          ) : null}
-          {status ? (
-            <span className={`flex items-center gap-1 text-xs font-medium ${statusClass}`}>
-              {status === "Completed" ? <CheckCircle2 className="size-3.5" aria-hidden="true" /> : null}
-              {status}
-            </span>
-          ) : null}
-        </div>
-        <p className="text-xs text-muted-foreground">
-          {[property ?? propertyHint, label, meta].filter(Boolean).map((part, i) => (
-            <span key={i}>
-              {i > 0 ? " · " : ""}
-              <span className={i === 0 && property ? "font-medium text-foreground" : tone === "optional" && part === "Optional" ? "font-medium text-sage" : ""}>{part}</span>
-            </span>
-          ))}
-        </p>
-        {summary ? <p className="line-clamp-2 text-sm text-muted-foreground">{summary}</p> : null}
-        {action ? <div className="mt-1">{action}</div> : null}
-      </div>
-    </li>
-  );
-}
-
-function StartDialog({
+export function StartDialog({
   template, homes, busy, onStart,
 }: {
   template: LibraryTemplate;
@@ -560,9 +256,9 @@ function ResourceLinks({ items }: { items: Live["resources"] }) {
   );
 }
 
-/** The full Opportunity. Opening an ARHA Opportunity is what records it as viewed. */
-function OpportunityDetail({
-  item, onClose, readOnly, homes, blockedReason, onLogHours,
+/** The full Opportunity, in the side panel. Opening an ARHA Opportunity is what records it as viewed. */
+export function OpportunityDetail({
+  item, onClose, readOnly, homes, blockedReason, onLogHours, statusLabel,
 }: {
   item: Live | null;
   onClose: () => void;
@@ -570,6 +266,8 @@ function OpportunityDetail({
   homes: OpportunityHome[];
   blockedReason: string | null;
   onLogHours?: (activity: string, propertyId: string | null) => void;
+  /** The chip text the card showed, repeated at the top of the panel. */
+  statusLabel?: string | null;
 }) {
   const qc = useQueryClient();
   const docs = useOwnerDocuments();
@@ -605,94 +303,86 @@ function OpportunityDetail({
   // Live from the current library item, so a replaced video reaches Opportunities already started.
   const videoIndex = useLibraryVideoIndex();
   const video = item ? videoForOpportunity(item.templateId, videoIndex) : null;
+  if (!item) return null;
 
   return (
-    <Dialog open={item !== null} onOpenChange={(v) => !v && onClose()}>
-      {item ? (
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <img src={item.cover} alt="" width={1024} height={640} className="-mx-6 -mt-6 h-40 w-[calc(100%+3rem)] max-w-none rounded-t-lg object-cover" />
-          <DialogHeader>
-            <DialogTitle>{item.title}</DialogTitle>
-            <DialogDescription>
-              <span className="font-medium text-foreground">{item.propertyName}</span>
-              {" · "}
-              {arha ? item.team ?? "From your ARHA team" : <span className="text-sage">Optional participation</span>}
-              {item.finished ? " · Completed" : ""}
-            </DialogDescription>
-          </DialogHeader>
-          {video && item.templateId ? <LibraryVideoPlayer libraryId={item.templateId} poster={item.cover} label={video.label} /> : null}
-          <dl className="grid gap-3 text-sm">
-            {item.dueOn ? <div><dt className="font-medium">Due date</dt><dd>{item.dueOn}</dd></div> : null}
-            {item.what ? <div><dt className="font-medium">What you'll do</dt><dd className="whitespace-pre-wrap text-muted-foreground">{item.what}</dd></div> : null}
-            {item.why ? <div><dt className="font-medium">{arha ? "Why this matters" : "Why it matters"}</dt><dd className="whitespace-pre-wrap text-muted-foreground">{item.why}</dd></div> : null}
-            {item.how ? <div><dt className="font-medium">{arha ? "How to complete it" : "How to complete it remotely"}</dt><dd className="whitespace-pre-wrap text-muted-foreground">{item.how}</dd></div> : null}
-            {item.resources.length ? (
-              <div><dt className="font-medium">Resources from your ARHA team</dt><dd className="space-y-0.5"><ResourceLinks items={item.resources} /></dd></div>
+    <OwnerSidePanel
+      open
+      onOpenChange={(v) => !v && onClose()}
+      cover={item.cover}
+      status={statusLabel ?? (arha ? arhaStatus(item) : item.finished ? "Completed" : "Optional")}
+      title={item.title}
+      home={[item.propertyName, arha ? item.team ?? "From your ARHA team" : "Optional"].filter(Boolean).join(" · ")}
+      sentAt={item.createdAt}
+      answerBy={item.dueOn ?? null}
+      footer={
+        readOnly ? null : (
+          <>
+            {onLogHours && !blockedReason ? (
+              <Button className="min-h-11" size="sm" variant="outline" onClick={() => { const p = item.propertyId; const a = item.title; onClose(); onLogHours(a, p); }}>
+                <Clock className="size-4" aria-hidden="true" /> Log hours for this
+              </Button>
             ) : null}
+            {homes.length ? <Button className="min-h-11" size="sm" variant="outline" onClick={() => setUpload(true)}>Upload documentation</Button> : null}
+            {!item.finished ? <Button className="min-h-11" size="sm" disabled={done.isPending} onClick={() => done.mutate()}>Mark complete</Button> : null}
+          </>
+        )
+      }
+    >
+      {video && item.templateId ? <LibraryVideoPlayer libraryId={item.templateId} poster={item.cover} label={video.label} /> : null}
+      {item.what ? <PanelSection label="What we're asking"><p className="whitespace-pre-wrap text-muted-foreground">{item.what}</p></PanelSection> : null}
+      {item.why ? <PanelSection label={arha ? "Why this matters" : "Why it matters"}><p className="whitespace-pre-wrap text-muted-foreground">{item.why}</p></PanelSection> : null}
+      {item.how ? <PanelSection label={arha ? "How to complete it" : "How to complete it remotely"}><p className="whitespace-pre-wrap text-muted-foreground">{item.how}</p></PanelSection> : null}
+      {item.resources.length || item.templateLink || linked.length ? (
+        <PanelSection label="Files">
+          <div className="space-y-1">
+            <ResourceLinks items={item.resources} />
             {item.templateLink ? (
-              <div><dt className="font-medium">Helpful link</dt><dd><a href={item.templateLink.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary hover:underline"><Link2 className="size-3.5" /> {item.templateLink.label}</a></dd></div>
+              <a href={item.templateLink.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary hover:underline"><Link2 className="size-3.5" /> {item.templateLink.label}</a>
             ) : null}
-            {item.document ? <div><dt className="font-medium">Ways to document your participation</dt><dd className="whitespace-pre-wrap text-muted-foreground">{item.document}</dd></div> : null}
-          </dl>
-
-          {linked.length ? (
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Your documentation</p>
-              <ul className="space-y-2">{linked.map((f) => <OwnerFileRow key={f.id} f={f} showHome={false} />)}</ul>
-            </div>
-          ) : null}
-
-          {/* Build 17 finding 2: every Opportunity carries the conversation, so a staff message is seen
-              and answered from the moment the thread exists, whoever leads the item. */}
-          <OwnerConversation
-            workItemId={item.id}
-            status={item.finished ? "complete" : "open"}
-            legacy={item.responses}
-            viewer="homeowner"
-            readOnly={readOnly}
-            refreshKeys={[["owner-opportunities"]]}
-          />
-
-          {canRespond ? (
-            <div className="space-y-2">
-              {(t.includes("feedback") || t.includes("decision")) && !item.responses.length ? (
-                <Textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="Share your thoughts or the changes you'd like…" aria-label="Your response" />
-              ) : null}
-              <div className="flex flex-wrap gap-2">
-                {t.includes("acknowledge") && !item.responses.length ? <Button size="sm" variant="outline" disabled={send.isPending} onClick={() => send.mutate({ kind: "acknowledge" })}>I&apos;ve reviewed this</Button> : null}
-                {t.includes("feedback") && !item.responses.length ? <Button size="sm" disabled={send.isPending || !text.trim()} onClick={() => send.mutate({ kind: "feedback" })}>Send feedback</Button> : null}
-                {t.includes("decision") ? (
-                  <>
-                    <Button size="sm" disabled={send.isPending} onClick={() => send.mutate({ kind: "decision", decision: "authorize" })}>Authorize</Button>
-                    <Button size="sm" variant="outline" disabled={send.isPending} onClick={() => send.mutate({ kind: "decision", decision: "changes" })}>Request changes</Button>
-                  </>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
-
-          {!readOnly ? (
-            <DialogFooter className="flex-wrap gap-2 sm:justify-start">
-              {homes.length ? <Button size="sm" variant="outline" onClick={() => setUpload(true)}>Upload documentation</Button> : null}
-              {onLogHours && !blockedReason ? (
-                <Button size="sm" variant="outline" onClick={() => { const p = item.propertyId; const a = item.title; onClose(); onLogHours(a, p); }}>
-                  <Clock className="size-4" aria-hidden="true" /> Log time
-                </Button>
-              ) : null}
-              {!item.finished ? <Button size="sm" disabled={done.isPending} onClick={() => done.mutate()}>Mark complete</Button> : null}
-            </DialogFooter>
-          ) : null}
-
-          <OwnerUploadDialog
-            open={upload}
-            onOpenChange={setUpload}
-            homes={homes}
-            fixedPropertyId={item.propertyId}
-            opportunity={{ id: item.id, title: item.title }}
-            defaultCategory="participation"
-          />
-        </DialogContent>
+            {linked.length ? <ul className="space-y-2 pt-1">{linked.map((f) => <OwnerFileRow key={f.id} f={f} showHome={false} />)}</ul> : null}
+          </div>
+        </PanelSection>
       ) : null}
-    </Dialog>
+      {item.document ? <PanelSection label="Ways to document your participation"><p className="whitespace-pre-wrap text-muted-foreground">{item.document}</p></PanelSection> : null}
+
+      {/* Build 17 finding 2: every Opportunity carries the conversation, so a staff message is seen
+          and answered from the moment the thread exists, whoever leads the item. */}
+      <OwnerConversation
+        workItemId={item.id}
+        status={item.finished ? "complete" : "open"}
+        legacy={item.responses}
+        viewer="homeowner"
+        readOnly={readOnly}
+        refreshKeys={[["owner-opportunities"]]}
+      />
+
+      {canRespond ? (
+        <div className="space-y-2">
+          {(t.includes("feedback") || t.includes("decision")) && !item.responses.length ? (
+            <Textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="Share your thoughts or the changes you'd like…" aria-label="Your reply" />
+          ) : null}
+          <div className="flex flex-wrap gap-2">
+            {t.includes("acknowledge") && !item.responses.length ? <Button className="min-h-11" size="sm" variant="outline" disabled={send.isPending} onClick={() => send.mutate({ kind: "acknowledge" })}>I&apos;ve reviewed this</Button> : null}
+            {t.includes("feedback") && !item.responses.length ? <Button className="min-h-11" size="sm" disabled={send.isPending || !text.trim()} onClick={() => send.mutate({ kind: "feedback" })}>Send to ARHA</Button> : null}
+            {t.includes("decision") ? (
+              <>
+                <Button className="min-h-11" size="sm" disabled={send.isPending} onClick={() => send.mutate({ kind: "decision", decision: "authorize" })}>Authorize</Button>
+                <Button className="min-h-11" size="sm" variant="outline" disabled={send.isPending} onClick={() => send.mutate({ kind: "decision", decision: "changes" })}>Request changes</Button>
+              </>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      <OwnerUploadDialog
+        open={upload}
+        onOpenChange={setUpload}
+        homes={homes}
+        fixedPropertyId={item.propertyId}
+        opportunity={{ id: item.id, title: item.title }}
+        defaultCategory="participation"
+      />
+    </OwnerSidePanel>
   );
 }
