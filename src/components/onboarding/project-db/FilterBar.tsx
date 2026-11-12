@@ -226,7 +226,6 @@ export function FilterBar(p: {
           >
             <Label htmlFor="view-name">Name</Label>
             <Input id="view-name" maxLength={60} value={name} onChange={(e) => setName(e.target.value)} className="min-h-11" autoFocus />
-            <p className="text-xs text-muted-foreground">Only you see your saved views.</p>
             <DialogFooter>
               <Button type="submit" className="min-h-11" disabled={!name.trim() || p.saving}>
                 Save
