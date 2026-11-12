@@ -127,8 +127,8 @@ describe("Fix 5: move to the Standard plan, isolated PostgreSQL", () => {
     expect(arch.archived_at).not.toBeNull();
     expect(arch.archived_by).toBe(ACTOR);
     expect(arch).toMatchObject({ status: "complete", completed_by: who, evidence_note: "Met on site" });
-    expect(await n("SELECT count(*)::int n FROM public.onboarding_tasks WHERE property_id=$1 AND archived_at IS NULL
-      AND id NOT IN (SELECT task_id FROM public.ao_plan_move_receipts WHERE kind IN ('created','created_done'))", [home])).toBe(0);
+    expect(await n(`SELECT count(*)::int n FROM public.onboarding_tasks WHERE property_id=$1 AND archived_at IS NULL
+      AND id NOT IN (SELECT task_id FROM public.ao_plan_move_receipts WHERE kind IN ('created','created_done'))`, [home])).toBe(0);
     expect(await n("SELECT count(*)::int n FROM public.ao_plan_move_receipts WHERE kind='archived_v2' AND property_id=$1", [home])).toBe(3);
     expect(await n("SELECT count(*)::int n FROM public.ao_plan_move_receipts WHERE kind='archived_v2' AND task_id=$1", [U(500)])).toBe(0);
     // No title matching: Standard step A starts open even though a completed V2 Task had the same title.
