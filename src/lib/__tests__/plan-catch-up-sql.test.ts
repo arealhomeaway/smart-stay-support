@@ -92,7 +92,7 @@ describe("plan catch-up: Mark done", () => {
   it("Earlier is refused for an approval the homeowner was already asked about in Resolve", async () => {
     const a = await task({ title: "Mood boards", requires_owner_approval: true, owner_approval_status: "pending" });
     await db.query("INSERT INTO public.approvals(entity_type, entity_id, property_id, status) VALUES ('onboarding_task', $1, $2, 'pending')", [a, HOME]);
-    await db.query("DELETE FROM public.owner_notifications; DELETE FROM public.email_log;");
+    await db.exec("DELETE FROM public.owner_notifications; DELETE FROM public.email_log;");
     await as(PM);
     const out = await done([a], "Owner said yes by phone", await daysAgo(3));
     expect(out.completed).toBe(0);
