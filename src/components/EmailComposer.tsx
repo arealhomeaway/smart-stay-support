@@ -88,7 +88,9 @@ type Props = {
   bracketFillIns?: boolean;
   /** Called after a real send (not a schedule). */
   onSent?: (info: { subject: string; to: string }) => void;
-  /** Open the composer straight away (no trigger button). */
+  /** A typed-in recipient, e.g. a vendor's email on a Vendor request Task. */
+  initialTo?: string | null;
+  /** Trigger style. */
   variant?: "button" | "primary";
 };
 
@@ -115,6 +117,7 @@ export function EmailComposer({
   bracketFillIns,
   onSent,
   variant = "button",
+  initialTo = null,
 }: Props) {
   const [open, setOpen] = useState(false);
 
@@ -134,6 +137,7 @@ export function EmailComposer({
             {...(initialBody === undefined ? {} : { initialBody })}
             presetTemplateId={presetTemplateId ?? null}
             bracketFillIns={Boolean(bracketFillIns)}
+            initialTo={initialTo}
             onSent={(info) => {
               onSent?.(info);
               setOpen(false);
@@ -153,6 +157,7 @@ function ComposerBody({
   presetTemplateId = null,
   bracketFillIns = false,
   onSent,
+  initialTo = null,
 }: {
   context: ComposerContext;
   recordId: string;
@@ -161,6 +166,7 @@ function ComposerBody({
   presetTemplateId?: string | null;
   bracketFillIns?: boolean;
   onSent?: (info: { subject: string; to: string }) => void;
+  initialTo?: string | null;
 }) {
   const queryClient = useQueryClient();
   const loadContext = useServerFn(getComposerContext);
@@ -188,8 +194,8 @@ function ComposerBody({
   const templates = (ctx.data?.templates ?? []) as TemplateRow[];
   const mergeValues = ctx.data?.mergeValues ?? {};
 
-  const [recipientKey, setRecipientKey] = useState<string>("");
-  const [customTo, setCustomTo] = useState("");
+  const [recipientKey, setRecipientKey] = useState<string>(initialTo ? CUSTOM : "");
+  const [customTo, setCustomTo] = useState(initialTo ?? "");
   const [templateId, setTemplateId] = useState<string>(BLANK);
   const [subject, setSubject] = useState(initialSubject ?? "");
   const [body, setBody] = useState(initialBody ?? "");
@@ -303,7 +309,7 @@ function ComposerBody({
     setBody(withSignature(fill(picked.body), signature));
     setAudience(picked.audience as MessageAudience);
     const match = recipients.find((r) => r.audience === picked.audience);
-    if (match) setRecipientKey(match.email);
+    if (match && !initialTo) setRecipientKey(match.email);
   }
 
   // A Task can suggest a template linked by name; staff can still change it.
