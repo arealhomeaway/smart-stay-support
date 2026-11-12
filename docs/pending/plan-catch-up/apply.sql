@@ -530,13 +530,17 @@ BEGIN
           UPDATE public.onboarding_tasks SET assigned_to = _person WHERE id = s.id;
           _next := private.plan_catch_up_person(_person);
         END IF;
-        INSERT INTO public.onboarding_project_events(project_id, property_id, kind, summary, prior_value, new_value, actor, is_demo)
-        VALUES (_project.id, _property_id, 'task_assigned', 'Assigned "' || s.title || '"', _prior, _next, _actor, COALESCE(t.is_demo, false));
+        -- Roles read by their name (functional_roles.name), never their code.
+        _prior := COALESCE((SELECT fr.name FROM public.functional_roles fr WHERE fr.code = _prior), _prior);
+        _next := COALESCE((SELECT fr.name FROM public.functional_roles fr WHERE fr.code = _next), _next);
+        INSERT INTO public.onboarding_project_events(project_id, property_id, kind, summary, detail, prior_value, new_value, actor, is_demo)
+        VALUES (_project.id, _property_id, 'task_assigned', 'Assigned "' || s.title || '"', 'From ' || _prior || ' to ' || _next,
+                _prior, _next, _actor, COALESCE(t.is_demo, false));
       ELSIF _action = 'due_date' THEN
         UPDATE public.onboarding_tasks SET due_on = _due_on, due_on_overridden = true, due_on_source = 'manual' WHERE id = s.id;
         INSERT INTO public.onboarding_project_events(project_id, property_id, kind, summary, prior_value, new_value, actor, is_demo)
         VALUES (_project.id, _property_id, 'task_due_changed', 'Due date changed: "' || s.title || '"',
-                COALESCE(to_char(t.due_on, 'YYYY-MM-DD'), 'No due date'), to_char(_due_on, 'YYYY-MM-DD'), _actor, COALESCE(t.is_demo, false));
+                COALESCE(to_char(t.due_on, 'Mon DD, YYYY'), 'No due date'), to_char(_due_on, 'Mon DD, YYYY'), _actor, COALESCE(t.is_demo, false));
       ELSE
         -- Reopen keeps the earlier evidence on the Task, as the one-at-a-time Reopen does.
         UPDATE public.onboarding_tasks SET status = 'open' WHERE id = s.id;
