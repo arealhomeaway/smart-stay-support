@@ -142,12 +142,12 @@ export const fillInValuesFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ propertyId: z.string().uuid(), fields: z.array(z.string().max(40)).max(12) }).parse(d))
   .handler(async ({ context, data }) => {
     const db = context.supabase as unknown as Loose;
-    const [home, project, budget, team] = await Promise.all([
+    const [home, project] = await Promise.all([
       db.from("properties").select("planned_closing_on, access, access_notes, wifi_notes, utilities, address_line1, formatted_address").eq("id", data.propertyId).maybeSingle(),
-      db.from("onboarding_projects").select("id, target_handoff_on, committed_handoff_on, planned_closing_on, utility_manager").eq("property_id", data.propertyId).neq("status", "cancelled").order("created_at", { ascending: false }).limit(1).maybeSingle(),
-      db.from("onboarding_budgets").select("id").eq("property_id", data.propertyId).limit(1),
-      db.from("onboarding_projects").select("project_manager").eq("property_id", data.propertyId).neq("status", "cancelled").limit(1).maybeSingle(),
+      db.from("onboarding_projects").select("id, target_handoff_on, committed_handoff_on, planned_closing_on, project_manager, role_assignments").eq("property_id", data.propertyId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
     ]);
+    const projectId = (project.data as { id?: string } | null)?.id ?? null;
+    const budget = projectId ? await db.from("onboarding_budgets").select("id").eq("project_id", projectId).limit(1) : { data: [] };
     const h = (home.data ?? {}) as Record<string, unknown>;
     const p = (project.data ?? {}) as Record<string, unknown>;
     const has = (v: unknown) => v !== null && v !== undefined && String(typeof v === "object" ? JSON.stringify(v) : v).replace(/[{}[\]"]/g, "").trim() !== "";
@@ -157,7 +157,7 @@ export const fillInValuesFn = createServerFn({ method: "POST" })
       access_plan: has(h.access) || has(h.access_notes),
       budget: (budget.data ?? []).length > 0,
       wifi: has(h.wifi_notes),
-      team_roles: has((team.data as Record<string, unknown> | null)?.project_manager),
+      team_roles: has(p.project_manager) || has(p.role_assignments),
       verified_address: has(h.formatted_address) || has(h.address_line1),
       utility_accounts: has(h.utilities),
       // No home or project field holds these yet; they cannot be filled in Resolve.
