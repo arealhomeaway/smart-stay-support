@@ -124,6 +124,22 @@ describe("plan catch-up: Mark done", () => {
     expect(await ownerReached()).toBe(0);
   });
 
+  it("covered owner cards: a card on the plan with no linked Task is matched through its template step (as on the live plan)", async () => {
+    const step = "00000000-0000-4000-8000-0000000000c3";
+    const a = await task({ title: "Order the welcome book", template_task_id: step });
+    const card = (await one("INSERT INTO public.ao_library_cards(code, title, linked_template_task_ids) VALUES ('C14', 'Your welcome book', ARRAY[$1]::uuid[]) RETURNING id", [step])).id;
+    await db.query("INSERT INTO public.ao_home_plan_settings VALUES ($1, true)", [HOME]);
+    const pc = (await one("INSERT INTO public.ao_home_plan_cards(property_id, card_id, join_outcome, linked_task_id) VALUES ($1,$2,'locked',NULL) RETURNING id", [HOME, card])).id;
+    await as(PM);
+    expect((await done([a], "", null, true)).covered.map((c) => c.title)).toEqual(["Your welcome book"]);
+    const out = await done([a], "Book ordered, receipt in folder");
+    expect(out.batchId).toBeTruthy();
+    expect(await one("SELECT join_outcome, covered_item_id FROM public.ao_home_plan_cards WHERE id=$1", [pc])).toEqual({ join_outcome: "already_covered", covered_item_id: a });
+    expect((await db.query("SELECT public.undo_onboarding_task_batch($1)", [out.batchId])).rows.length).toBe(1);
+    expect(await one("SELECT join_outcome, covered_item_id FROM public.ao_home_plan_cards WHERE id=$1", [pc])).toEqual({ join_outcome: "locked", covered_item_id: null });
+    expect(await ownerReached()).toBe(0);
+  });
+
   it("covered owner cards on a home whose plan has not started are listed and count as covered", async () => {
     const step = "00000000-0000-4000-8000-0000000000c2";
     const a = await task({ title: "Utilities set up", template_task_id: step });
