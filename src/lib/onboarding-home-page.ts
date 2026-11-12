@@ -216,7 +216,7 @@ export function ownerTagText(
   pmId: string | null | undefined,
   nameOf: (id: string) => string | null,
 ): string {
-  const role = t.task_kind === "send_to_owner" ? "Homeowner" : (t.roleLabel ?? (t.assigned_seat ? null : null)) || "Unassigned";
+  const role = t.task_kind === "send_to_owner" ? "Homeowner" : t.roleLabel || "Unassigned";
   const owner = effectiveOwner(t, pmId);
   const who =
     viewerId && owner === viewerId
@@ -456,7 +456,7 @@ export function ownerContactButtons(input: {
   const pref = (CONTACT_METHODS as readonly string[]).includes(input.preferred ?? "") ? (input.preferred as ContactMethod) : null;
   const out: ContactButton[] = [];
   if (dial) {
-    out.push({ method: "text", label: `Text ${first}${first ? " " : ""}· ${phone}`.replace("Text · ", "Text · "), href: `sms:${dial}`, preferred: pref === "text" });
+    out.push({ method: "text", label: `Text ${first}${first ? " " : ""}· ${phone}`, href: `sms:${dial}`, preferred: pref === "text" });
     out.push({ method: "call", label: `Call ${first}${first ? " " : ""}· ${phone}`, href: `tel:${dial}`, preferred: pref === "call" });
   }
   const email = (input.email ?? "").trim();
@@ -514,7 +514,13 @@ export function oneOffColumns(whose: Whose, viewerId: string): { assigned_to: st
   return { assigned_to: null, assigned_seat: null, task_kind: "send_to_owner" };
 }
 
-/** The stored stage key for one of the six stages (the Standard plan uses the six names). */
-export function stageKeyFor(index: number): string {
-  return SIX_STAGES[index]!;
+/**
+ * The stored stage key for a new Task in one of the six stages: the key this home's own Tasks
+ * use there (older plans keep their own stage names), else the Standard plan's name.
+ */
+export function stageKeyFor(index: number, tasks: Pick<PageTask, "stage">[] = []): string {
+  const counts = new Map<string, number>();
+  for (const t of tasks) if (stageIndexOf(t.stage) === index) counts.set(t.stage, (counts.get(t.stage) ?? 0) + 1);
+  const best = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
+  return best ? best[0] : SIX_STAGES[index]!;
 }
