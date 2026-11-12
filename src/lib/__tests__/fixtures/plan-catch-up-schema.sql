@@ -135,3 +135,6 @@ BEGIN
                         AND l.removed_at IS NULL);
   END IF;
 END $function$;
+
+CREATE TABLE IF NOT EXISTS public.functional_roles(code text PRIMARY KEY, name text);
+INSERT INTO public.functional_roles VALUES ('utilities', 'Onboarding Utilities Coordinator'), ('onboarding_project_manager', 'Project Manager') ON CONFLICT DO NOTHING;
