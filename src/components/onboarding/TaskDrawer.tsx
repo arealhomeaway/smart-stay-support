@@ -47,11 +47,13 @@ import {
   completionBlock,
   drawerMiddle,
   effectiveTaskKind,
+  filesPlacement,
   firstLink,
   followUpLinks,
   isOutsideForm,
   isTaskKind,
   mainButtonLabel,
+  sendNeedsFile,
   type TaskKindCode,
 } from "@/lib/onboarding-task-kinds";
 import { loadHomeProgramStatus } from "@/lib/ao-data";
@@ -404,6 +406,10 @@ export function TaskDrawer({
     approved: true,
   });
   const releaseHint = !view.canComplete && !evidenceMissing && !awaitingOwner ? view.reason ?? "Not workable yet." : null;
+  // Item 39: Send waits for a file on the Task when the step says so; the server refuses it too.
+  const sendFileBlock = !finished && (middle === "send_to_owner" || middle === "email") ? sendNeedsFile(settings, fileCount) : null;
+  // Item 38: where the Files box sits for this kind.
+  const filesAt = filesPlacement(middle);
   const hint = finished
     ? null
     : middle === "do_it" || middle === "work_order" || middle === "send_to_owner"
@@ -434,6 +440,18 @@ export function TaskDrawer({
   const completedBy = completerId ? people.find((p) => p.id === completerId) : null;
   // Fix 17: the same rule the server enforces on Reopen.
   const canReopenTop = canReopenCompletedTask({ userId, isAdmin: Boolean(isAdmin), isOnboardingDirector: Boolean(isOnboardingDirector) }, completerId);
+  const filesSection = (
+    <section id={`task-files-${task.id}`} className="space-y-2">
+      <AttachmentsPanel
+        entityType="onboarding_task"
+        entityId={task.id}
+        title="Files"
+        description={middle === "upload_files" && task.done_when ? task.done_when : uploadHint(taskKind({ title: task.title, detail: task.detail }))}
+      />
+      <LinkedStepFiles taskId={task.id} canManage={canManageTask && !disabled} />
+      {isPhotoStep(task.title) && <OpenPhotosFolderButton propertyId={task.property_id} />}
+    </section>
+  );
   const scrollToFiles = () =>
     document.getElementById(`task-files-${task.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
@@ -602,7 +620,7 @@ export function TaskDrawer({
             {finished || (middle === "send_to_owner" && sentToOwner) || middle === "work_order" ? null : (
               <div className="min-w-0 flex-1">
                 {middle === "send_to_owner" ? (
-                  <Button type="submit" form={sendFormId(task.id)} className="min-h-11 w-full" disabled={disabled || !ownerReady}>
+                  <Button type="submit" form={sendFormId(task.id)} className="min-h-11 w-full" disabled={disabled || !ownerReady || Boolean(sendFileBlock)}>
                     Send to the homeowner
                   </Button>
                 ) : middle === "email" ? (
@@ -613,7 +631,7 @@ export function TaskDrawer({
                     variant="primary"
                     presetTemplateId={settings.emailTemplateId ?? null}
                     bracketFillIns
-                    disabled={disabled || Boolean(releaseHint)}
+                    disabled={disabled || Boolean(releaseHint) || Boolean(sendFileBlock)}
                     onSent={(info) => { complete(`Email sent to ${info.to}: ${info.subject}`.slice(0, 1000)); onClose(); }}
                   />
                 ) : middle === "approval" ? (
@@ -635,13 +653,14 @@ export function TaskDrawer({
                     </Button>
                   </ReviewAwareComplete>
                 )}
+                {sendFileBlock && <p className="mt-1 text-xs text-muted-foreground">{sendFileBlock}</p>}
               </div>
             )}
             <Button type="button" variant="outline" className="min-h-11 min-w-24" onClick={onClose}>
               Done
             </Button>
           </div>
-          {!finished && !(middle === "send_to_owner" && sentToOwner) && hint && middle !== "approval" && (
+          {!finished && !(middle === "send_to_owner" && sentToOwner) && hint && middle !== "approval" && !sendFileBlock && (
             <p className="text-xs text-muted-foreground">{hint}</p>
           )}
         </div>
@@ -710,19 +729,8 @@ export function TaskDrawer({
           </section>
         )}
 
-        {/* Item 32: a work order Task shows only the Breezeway work order, no Files box. */}
-        {middle !== "work_order" && (
-        <section id={`task-files-${task.id}`} className="space-y-2">
-          <AttachmentsPanel
-            entityType="onboarding_task"
-            entityId={task.id}
-            title="Files"
-            description={middle === "upload_files" && task.done_when ? task.done_when : uploadHint(taskKind({ title: task.title, detail: task.detail }))}
-          />
-          <LinkedStepFiles taskId={task.id} canManage={canManageTask && !disabled} />
-          {isPhotoStep(task.title) && <OpenPhotosFolderButton propertyId={task.property_id} />}
-        </section>
-        )}
+        {/* Item 32: a work order Task has no Files box. Item 38: Do it and Upload files keep it here. */}
+        {filesAt === "top" && filesSection}
 
         {/* The middle changes with the kind of Task. */}
         {middle === "do_it" && !finished && (
@@ -756,6 +764,7 @@ export function TaskDrawer({
             onOutside={setOutside}
             onEmailSent={(info) => { complete(`Email sent to ${info.to}: ${info.subject}`.slice(0, 1000)); onClose(); }}
             // Item 4: the send itself logs a vendor request in the Task history.
+            sendBlocked={sendFileBlock}
             onVendorRequested={() => {
               void qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
               void router.invalidate();
@@ -770,6 +779,7 @@ export function TaskDrawer({
             footerSend
             onReady={setOwnerReady}
             onSent={onClose}
+            sendBlocked={sendFileBlock}
             taskId={task.id}
             taskTitle={task.title}
             propertyId={task.property_id}
@@ -828,6 +838,9 @@ export function TaskDrawer({
         {!finished && canManageTask && !disabled && (
           <FollowUpTask task={task} people={people} roles={DRAWER_ROLES} />
         )}
+
+        {/* Item 38: every other kind shows Files after the main section, just above Team comments. */}
+        {filesAt === "bottom" && filesSection}
 
         <TaskTeamComments taskId={task.id} propertyId={task.property_id} people={people} disabled={disabled} />
 

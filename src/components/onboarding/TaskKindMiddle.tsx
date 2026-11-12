@@ -75,6 +75,7 @@ export function TaskKindMiddle({
   onEmailSent,
   onVendorRequested,
   assignedTo,
+  sendBlocked = null,
 }: {
   kind: TaskKindCode;
   settings: KindSettings;
@@ -88,6 +89,8 @@ export function TaskKindMiddle({
   onEmailSent: (info: { subject: string; to: string }) => void;
   onVendorRequested: (vendor: string, info: { subject: string; to: string }) => void;
   assignedTo?: string | null;
+  /** Item 39: why the email must wait (the step needs a file and the Task has none). */
+  sendBlocked?: string | null;
 }) {
   if (kind === "fill_in") {
     return <FillIn settings={settings} propertyId={propertyId} canEdit={canEdit && !disabled} plannedClosingOn={plannedClosingOn} />;
@@ -117,7 +120,7 @@ export function TaskKindMiddle({
           <Label htmlFor={`outside-proof-${taskId}`}>Proof</Label>
           <Input id={`outside-proof-${taskId}`} className="min-h-11" value={outside.proof} disabled={disabled}
             onChange={(e) => onOutside({ ...outside, proof: e.target.value })}
-            placeholder="Paste a link or envelope number, or upload a screenshot above" />
+            placeholder="Paste a link or envelope number, or upload a screenshot below" />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor={`outside-note-${taskId}`}>Note</Label>
@@ -138,9 +141,10 @@ export function TaskKindMiddle({
           label="Choose an email template"
           presetTemplateId={settings.emailTemplateId ?? null}
           bracketFillIns
-          disabled={disabled}
+          disabled={disabled || Boolean(sendBlocked)}
           onSent={onEmailSent}
         />
+        {sendBlocked && <p className="text-xs text-muted-foreground">{sendBlocked}</p>}
       </section>
     );
   }
@@ -267,7 +271,7 @@ export function useApprovalMode(taskId: string, assignedTo: string | null) {
 
 /**
  * Item 9: an Approval step with a configured step review keeps today's review panel. Without
- * one, the Task's assigned person reviews the files above and the step text, then presses
+ * one, the Task's assigned person reviews the files below and the step text, then presses
  * Approve below (completes the Task) or sends it back here with a required note.
  */
 function ApprovalMiddle({ taskId, disabled, assignedTo }: { taskId: string; disabled: boolean; assignedTo: string | null }) {
@@ -291,7 +295,7 @@ function ApprovalMiddle({ taskId, disabled, assignedTo }: { taskId: string; disa
     return (
       <section className="space-y-2 rounded-lg border border-border p-4" aria-label="Approval">
         <p className="font-medium">What to review</p>
-        <p className="text-sm text-muted-foreground">The files above and the step text. Approve, or send it back with a note.</p>
+        <p className="text-sm text-muted-foreground">The files below and the step text. Approve, or send it back with a note.</p>
         <TaskReviewPanel taskId={taskId} />
       </section>
     );
@@ -299,7 +303,7 @@ function ApprovalMiddle({ taskId, disabled, assignedTo }: { taskId: string; disa
   return (
     <section className="space-y-2 rounded-lg border border-border p-4" aria-label="Approval">
       <p className="font-medium">What to review</p>
-      <p className="text-sm text-muted-foreground">The files above and the step text.</p>
+      <p className="text-sm text-muted-foreground">The files below and the step text.</p>
       {a.mode === "waiting" && <p className="text-sm">Waiting on the assigned person to review.</p>}
       {a.mode === "no_reviewer" && <p className="text-sm">Assign this Task to a person to review it.</p>}
       {a.mode === "decide" && a.ready && !disabled && (
