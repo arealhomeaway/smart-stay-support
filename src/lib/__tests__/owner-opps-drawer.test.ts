@@ -129,6 +129,7 @@ describe("Part B: three kinds of Task", () => {
     const r = firstLines(text);
     expect(r.head).toBe("Log in to the portal\nUser: arha@example.com\nPassword: S3cret!");
     expect(r.more).toBe(true);
+    expect(firstLines("Role: Project Manager\n\nInstructions:\n\nCall the city\nBook the inspection").head).toBe("Role: Project Manager\n\nInstructions:\n\nCall the city");
   });
   it("Steps show {done} of {total} done", () => {
     expect(stepsDone([{ status: "complete" }, { status: "open" }, { status: "complete" }])).toBe("2 of 3 done");

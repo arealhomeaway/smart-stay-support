@@ -48,9 +48,16 @@ export function dueChip(dueOn: string | null | undefined, status: string | null 
 export function firstLines(text: string | null | undefined, lines = 3): { head: string; more: boolean } {
   const all = (text ?? "").replace(/\r\n/g, "\n").trim();
   if (!all) return { head: "", more: false };
+  // Count only lines with words on them, so a heading and a blank line never use up the preview.
   const parts = all.split("\n");
-  const head = parts.slice(0, lines).join("\n");
-  return { head, more: parts.length > lines };
+  let seen = 0;
+  let cut = parts.length;
+  for (let n = 0; n < parts.length; n++) {
+    if (parts[n]!.trim()) seen++;
+    if (seen === lines) { cut = n + 1; break; }
+  }
+  const head = parts.slice(0, cut).join("\n").trim();
+  return { head, more: parts.slice(cut).some((l) => l.trim()) };
 }
 
 export function stepsDone(steps: { status: string | null }[]): string {
