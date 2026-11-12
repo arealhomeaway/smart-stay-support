@@ -21,6 +21,8 @@ import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { listAttachmentsFn } from "@/lib/attachments.functions";
 import { stateChip } from "@/lib/semantic";
 import { cn } from "@/lib/utils";
+import { CatchUpBox, openSelectable, type CatchUpSelection } from "@/components/onboarding/PlanCatchUp";
+import { stageCheckState, toggleStage } from "@/lib/plan-catch-up";
 import {
   DESIGN_FOLDERS,
   INVOICE_STATUSES,
