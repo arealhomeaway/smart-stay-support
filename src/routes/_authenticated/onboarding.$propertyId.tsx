@@ -309,6 +309,20 @@ function PropertyWorkspace() {
     [allTasks, scope],
   );
 
+  // Plan catch-up (Admin approval Nov 12): one selection across the stage lists and Every task.
+  const catchUpViewerFn = useServerFn(planCatchUpViewerFn);
+  const catchUpViewerQuery = useQuery({
+    queryKey: ["plan-catch-up-viewer", propertyId, userId],
+    enabled: Boolean(userId) && PROPERTY_ID_RE.test(propertyId),
+    staleTime: 60 * 1000,
+    queryFn: () => catchUpViewerFn({ data: { propertyId } }),
+  });
+  const catchUpViewer = useMemo<CatchUpViewer | null>(
+    () => (catchUpViewerQuery.data && userId ? { ...catchUpViewerQuery.data, userId } : null),
+    [catchUpViewerQuery.data, userId],
+  );
+  const catchUp = usePlanCatchUp(tasks as unknown as CatchUpTask[], catchUpViewer);
+
   if (isLoading || !data) return <LoadingPage />;
   if (
     data.workspaceMode === "assigned" ||
@@ -542,6 +556,10 @@ function PropertyWorkspace() {
   const canEditBoard =
     canEdit && (isAdminViewer || isOnboardingDirector || projectRow?.project_manager === userId);
   const planTasks = tasks.map((t) => ({ ...(t as unknown as BoardTask), roleLabel: taskRoleLabel(t) }));
+  // Item 7: Director of Onboarding and Admin on every home, the home's Project Manager, Utilities
+  // and Design on their own Tasks; never Operations. The database enforces the same rule.
+  const catchUpOn = !readOnly && !life.locked && Boolean(catchUpViewer && canUseCatchUp(catchUpViewer));
+  const catchUpStages = [...new Set(tasks.map((t) => t.stage))];
   const refs = (details.external_refs ?? {}) as Record<string, string>;
   const tab = homeTabFor(search.tab);
 
@@ -599,6 +617,8 @@ function PropertyWorkspace() {
             userId={userId}
             today={today}
             onOpen={setOpenTaskId}
+            catchUp={catchUpOn ? catchUp : undefined}
+            notNeeded={(data.retiredTasks ?? []).filter((t) => (t.exception_reason ?? "").startsWith("Voided"))}
           />
           <PropertyOwnerCompletions propertyId={current.id} isDemo={Boolean((current as { is_demo?: boolean }).is_demo)} />
           {life.locked && (
@@ -642,11 +662,7 @@ function PropertyWorkspace() {
                 onSelect={(task) => setOpenTaskId(task.id)}
                 release={release}
                 voided={data.retiredTasks ?? []}
-                bulk={
-                  canEdit && !life.locked
-                    ? { propertyId: current.id, homeName: formatPropertyLabel(current).primary, canEditSelected: bulkEditQuery.data === true, onSaved: () => void refresh() }
-                    : undefined
-                }
+                catchUp={catchUpOn ? catchUp : undefined}
               />
             </div>
           </details>
