@@ -6,6 +6,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllPages, unwrap, type Available } from "@/lib/ao-ui";
 import type { LinkSuggestionRow, MapRow } from "@/lib/ao-dedupe";
+import { ownerItemApproval } from "@/lib/owner-item-approval";
 
 // The engine tables are staged and not in generated types yet.
 const db = supabase as unknown as {
@@ -303,17 +304,10 @@ export async function loadOwnerOutsideLines(programId: string): Promise<Map<stri
   return out;
 }
 
-/** Fix 24: whether the homeowner is asked to approve this owner item. */
-export async function isOwnerItemApproval(reviewId: string): Promise<boolean> {
-  const { data, error } = await db.rpc("owner_item_is_approval", { _review_id: reviewId });
-  if (error) throw new Error((error as { message?: string }).message || "Could not check this item.");
-  return data === true;
-}
-/** Fix 24: the homeowner approves the owner item; marks the linked Task approved. */
-export async function approveOwnerItem(reviewId: string): Promise<void> {
-  const { error } = await db.rpc("owner_item_approve", { _review_id: reviewId });
-  if (error) throw new Error((error as { message?: string }).message || "Your approval was not recorded.");
-}
+/** Fix 24: Approve on an owner item (see owner-item-approval.ts). */
+const approvalCalls = ownerItemApproval(db);
+export const isOwnerItemApproval = (reviewId: string) => approvalCalls.isApproval(reviewId);
+export const approveOwnerItem = (reviewId: string) => approvalCalls.approve(reviewId);
 
 /** Who wrote last on each owner item, read from the append-only conversation the owner can already see. */
 export async function loadOwnerItemLastSpeakers(reviewIds: string[]): Promise<Map<string, "homeowner" | "staff">> {
