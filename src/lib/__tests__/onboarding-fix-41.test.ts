@@ -17,9 +17,10 @@ describe("41 summary chips", () => {
 describe("41 Plan tab folding", () => {
   it("only the current stage starts open", () => {
     const t = (id: string, stage: string, status: string) => ({ id, stage, status, due_on: null, completed_at: null }) as unknown as BoardTask;
-    const stepper = stepperFor([t("1", "intake", "complete"), t("2", "design", "open"), t("3", "design", "complete")]);
+    const stepper = stepperFor([t("1", "intake_identity", "complete"), t("2", "documents_assessment", "open"), t("3", "documents_assessment", "complete")]);
     const open = [0, 1, 2, 3, 4, 5].filter((i) => planStageOpenByDefault(i, stepper));
-    expect(open).toEqual([stepper.current - 1]);
+    expect(stepper.current).toBe(2);
+    expect(open).toEqual([1]);
     expect(stepper.steps[0]!.note).toBe("Done");
   });
 });
