@@ -8,7 +8,7 @@ import { useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Lock } from "lucide-react";
+import { Lock, Search } from "lucide-react";
 import { Chip } from "@/components/ui/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +45,7 @@ import {
 } from "@/lib/onboarding-board";
 import { correctCommittedHandoffFn, saveOnboardingDetailsFn } from "@/lib/onboarding-details.functions";
 import { HealthDot, StageStepper } from "./BoardParts";
+import { planStageElementId, searchPlanTasks } from "@/lib/plan-search";
 
 const HEALTH_CHIP: Record<HealthLevel, string> = {
   on_track: stateChip("done"),
@@ -60,8 +61,6 @@ function dateOrNotSet(d: string | null | undefined) {
 /* ---------------------------------------------------------------- header */
 
 export function HomeBoardHeader(p: {
-  back: ReactNode;
-  follow: ReactNode;
   photo: string | null;
   address: string;
   place: string;
@@ -76,13 +75,11 @@ export function HomeBoardHeader(p: {
   estimateOn: string | null;
   weeklyStatus: string | null;
   stepper: Stepper;
+  /** Item 31: a stage card scrolls the Plan tab to that stage. */
+  onSelectStage?: (index: number) => void;
 }) {
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        {p.back}
-        {p.follow}
-      </div>
       <section className="overflow-hidden rounded-2xl border border-border bg-card">
         {/* Fix 9: a 160 px banner so the Tasks show without scrolling. */}
         <div className="relative h-40 w-full bg-sunken">
@@ -99,9 +96,8 @@ export function HomeBoardHeader(p: {
           </div>
         </div>
         <div className="space-y-4 p-4 sm:p-5">
+          {/* Item 31: the home's name sits once, in the header line above. */}
           <div>
-            <p className="eyebrow">Onboarding</p>
-            <h1 className="font-display text-2xl leading-tight sm:text-3xl">{p.address}</h1>
             {p.place ? <p className="text-sm text-muted-foreground">{p.place}</p> : null}
             <p className="mt-1 text-sm text-muted-foreground">
               Owner Type: {shown(p.ownerType)} · Status: {shown(p.status)}
@@ -141,7 +137,7 @@ export function HomeBoardHeader(p: {
               <span className="text-xs text-muted-foreground">Progress </span>
               <span className="numeric font-medium">{p.stepper.progressLine}</span>
             </p>
-            <StageStepper stepper={p.stepper} />
+            <StageStepper stepper={p.stepper} onSelect={p.onSelectStage} />
           </div>
         </div>
       </section>
@@ -167,6 +163,9 @@ export function PlanStages({
   onOpen: (taskId: string) => void;
 }) {
   const [filter, setFilter] = useState<PlanFilter>("everyone");
+  const [term, setTerm] = useState("");
+  // Item 30: a search looks through every Task in the plan, finished ones included.
+  const hits = searchPlanTasks(tasks, term);
   const shownTasks = planFilter(tasks, filter, userId, today);
   const byStage = (stage: string) =>
     shownTasks
@@ -174,7 +173,7 @@ export function PlanStages({
       .sort((a, b) => Number(isFinished(a)) - Number(isFinished(b)) || (a.due_on ?? "9").localeCompare(b.due_on ?? "9"));
   const unmapped = shownTasks.filter((t) => !sixStageFor(t.stage) && !t.parent_task_id);
   const currentIndex = stepper.current - 1;
-  const row = (t: PlanTask) => {
+  const row = (t: PlanTask, stageName?: string) => {
     const label = dueLabel(t, today);
     return (
       <li key={t.id}>
@@ -184,6 +183,7 @@ export function PlanStages({
           className="flex min-h-11 w-full flex-wrap items-center gap-x-3 gap-y-0.5 px-3 py-2 text-left text-sm hover:bg-muted/50"
         >
           <span className={cn("min-w-0 flex-1 font-medium", isFinished(t) && "text-muted-foreground")}>{t.title}</span>
+          {stageName ? <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">{stageName}</span> : null}
           <span className="text-xs text-muted-foreground">{t.roleLabel ?? "No role"}</span>
           <span
             className={cn(
@@ -206,13 +206,13 @@ export function PlanStages({
       ) : (
         // Fixes 10, 27: open Tasks first; finished ones fold into "Finished (n)".
         <>
-          <ul className="divide-y divide-border">{list.filter((t) => !isFinished(t)).map(row)}</ul>
+          <ul className="divide-y divide-border">{list.filter((t) => !isFinished(t)).map((t) => row(t))}</ul>
           {list.some(isFinished) ? (
             <details className="border-t border-border">
               <summary className="flex min-h-11 cursor-pointer items-center px-3 text-sm text-muted-foreground">
                 Finished ({list.filter(isFinished).length})
               </summary>
-              <ul className="divide-y divide-border">{list.filter(isFinished).map(row)}</ul>
+              <ul className="divide-y divide-border">{list.filter(isFinished).map((t) => row(t))}</ul>
             </details>
           ) : null}
         </>
@@ -224,12 +224,12 @@ export function PlanStages({
       </span>
     );
     return open ? (
-      <section key={stage} aria-label={stage} className="surface overflow-hidden">
+      <section key={stage} id={planStageElementId(i)} aria-label={stage} className="surface scroll-mt-4 overflow-hidden">
         <div className="border-b border-border bg-muted/40 px-3 py-2">{head}</div>
         {body}
       </section>
     ) : (
-      <details key={stage} className="surface overflow-hidden">
+      <details key={stage} id={planStageElementId(i)} className="surface scroll-mt-4 overflow-hidden">
         <summary className="flex min-h-11 cursor-pointer items-center border-b border-border bg-muted/20 px-3 py-2">{head}</summary>
         {body}
       </details>
@@ -237,6 +237,36 @@ export function PlanStages({
   };
   return (
     <div className="space-y-3">
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+        <Input
+          type="search"
+          value={term}
+          onChange={(e) => setTerm(e.target.value)}
+          placeholder="Search this plan"
+          aria-label="Search this plan"
+          className="h-11 pl-9"
+          maxLength={120}
+        />
+      </div>
+      {hits ? (
+        <section aria-label="Search results" className="surface overflow-hidden">
+          <div className="flex min-h-11 items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2">
+            <span className="text-sm font-semibold">
+              {hits.length === 1 ? "1 task" : `${hits.length} tasks`}
+            </span>
+            <Button variant="ghost" size="sm" className="min-h-11" onClick={() => setTerm("")}>
+              Clear
+            </Button>
+          </div>
+          {hits.length === 0 ? (
+            <p className="px-3 py-3 text-sm text-muted-foreground">No tasks match.</p>
+          ) : (
+            <ul className="divide-y divide-border">{hits.map((h) => row(h.task, h.stage))}</ul>
+          )}
+        </section>
+      ) : (
+      <>
       <div role="group" aria-label="Show" className="flex flex-wrap gap-2">
         {(
           [
@@ -274,11 +304,22 @@ export function PlanStages({
           <summary className="flex min-h-11 cursor-pointer items-center bg-muted/20 px-3 py-2 font-semibold">
             Other tasks ({unmapped.length})
           </summary>
-          <ul className="divide-y divide-border">{unmapped.map(row)}</ul>
+          <ul className="divide-y divide-border">{unmapped.map((t) => row(t))}</ul>
         </details>
       ) : null}
+      </>
+      )}
     </div>
   );
+}
+
+/** Item 31: open the Plan tab's stage block and bring it into view. */
+export function scrollToPlanStage(index: number) {
+  const el = document.getElementById(planStageElementId(index));
+  if (!el) return false;
+  if (el instanceof HTMLDetailsElement) el.open = true;
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+  return true;
 }
 
 /* ---------------------------------------------------------------- Design */
