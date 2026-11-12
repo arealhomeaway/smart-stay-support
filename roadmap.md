@@ -1,5 +1,11 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 12 Active Owner: plan starts at enrollment (staged SQL, no apply, no publish)
+- [x] 1 Live set rule, enrollment trigger, home program and related checks staged in docs/pending/ao-enrollment-start
+- [x] 2 Release button removed from /owner-programs; seedOwnerRoadmap refuses; page wording
+- [x] Practice on isolated copy; real-database practice refused (no private schema rights)
+- [ ] Apply docs/pending/ao-enrollment-start/apply.sql — waits on approval
+
 ## Nov 12 small fix batch 38-40 (no DB change, no publish)
 - [x] 38 Files below the main section for send/email/approval/outside/vendor/fill in
 - [x] 39 Needs a file before sending (template checkbox, drawer, server)

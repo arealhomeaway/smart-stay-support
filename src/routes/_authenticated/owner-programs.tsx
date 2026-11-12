@@ -1,5 +1,4 @@
 import { OwnerProgramSetup } from "@/components/OwnerProgramSetup";
-import { ProgramActivityRelease } from "@/components/owner/ProgramActivityRelease";
 import { ownerAttention as attentionReason } from "@/lib/owner-attention";
 import { EmptyState, LoadingPage, PageHeader, SectionCard, StatTile } from "@/components/ui/page";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
@@ -257,7 +256,8 @@ function ProgramsBoard() {
 
       <p className="text-sm text-muted-foreground">
         To enroll a home, open it and choose Active Owner. Setup links the homeowner and queues
-        their welcome in one step.
+        their welcome in one step. Creating the program starts the homeowner's plan. Activate
+        starts the 90-day clock.
       </p>
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3">
@@ -816,7 +816,6 @@ function ProgramDetail({
           </p>
         )}
         <div className="flex flex-wrap gap-2">
-          {canEnroll ? <ProgramActivityRelease programId={programId} expectedVersion={detail.data.activationVersion} onRefresh={refresh} /> : null}
           <Button
             size="sm"
             variant="outline"

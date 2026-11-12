@@ -195,7 +195,7 @@ export const correctOwnerTimeEntry = createServerFn({ method: "POST" })
     return recordTimeCorrection(context.supabase, context.userId, data, supabaseAdmin);
   });
 
-/** Admin / Onboarding Director: one transaction for the complete activity release. */
+/** Retired Nov 12: owner activities come only from the automated homeowner plan; every call is refused. */
 export const seedOwnerRoadmap = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
@@ -209,9 +209,12 @@ export const seedOwnerRoadmap = createServerFn({ method: "POST" })
       })
       .parse(data),
   )
-  .handler(async ({ context, data }) => {
-    const { programActivityRelease } = await import("./owner-program-release.server");
-    return programActivityRelease(context.supabase, context.userId, data);
+  .handler(async (): Promise<{
+    preview: { programId: string; count: number; missing: number; prepared: number; homes: string[]; reportVersion: string } | null;
+    receipt: { programId: string; added: number; opened: number; summaryId: string | null } | null;
+  }> => {
+    const { refuseManualOwnerRelease } = await import("./owner-plan-source");
+    return refuseManualOwnerRelease();
   });
 
 /** Staff: one program with its homes, roadmap, participation log and history. */
