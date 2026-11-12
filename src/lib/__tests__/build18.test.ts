@@ -87,11 +87,13 @@ describe("Build 18 item 6: Build 17 leftovers", () => {
   });
 
   it("Edit selected shows only when the database says this person may edit this home", () => {
-    const queue = read("src/components/onboarding/PropertyWorkQueue.tsx");
-    expect(queue).toMatch(/bulk\.canEditSelected \? \(\s*<Button[\s\S]{0,120}>Edit selected<\/Button>/);
-    expect(queue).toMatch(/bulk && bulk\.canEditSelected && bulkOpen/);
+    // Plan catch-up (Nov 12) moved Edit selected into the bar pinned to the bottom of the Plan tab.
+    const bar = read("src/components/onboarding/PlanCatchUp.tsx");
+    expect(bar).toMatch(/const editable = canEditSelected && /);
+    expect(bar).toMatch(/editable \? \(\s*<Button[\s\S]{0,120}>Edit selected<\/Button>/);
+    expect(bar).toMatch(/dialog === "edit" && editable/);
     const page = read("src/routes/_authenticated/onboarding.$propertyId.tsx");
     expect(page).toMatch(/rpc\("can_bulk_edit_home_tasks", \{ _property_id: propertyId \}\)/);
-    expect(page).toMatch(/canEditSelected: bulkEditQuery\.data === true/);
+    expect(page).toMatch(/canEditSelected=\{bulkEditQuery\.data === true\}/);
   });
 });

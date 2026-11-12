@@ -241,7 +241,7 @@ export function PlanCatchUpBar({
           }
         />
       ) : null}
-      {dialog === "edit" ? (
+      {dialog === "edit" && editable ? (
         <HomeTaskBulkEditDialog
           propertyId={propertyId}
           homeName={homeName}
