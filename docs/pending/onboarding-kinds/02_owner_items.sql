@@ -110,7 +110,7 @@ BEGIN
   END IF;
   SELECT task_id INTO tid FROM public.owner_item_task_sends WHERE review_id = r.id;
   SELECT * INTO t FROM public.onboarding_tasks WHERE id = coalesce(tid, r.onboarding_task_id) FOR UPDATE;
-  IF t.id IS NULL OR NOT (coalesce(t.requires_owner_approval, false) OR t.owner_dependency = 'business_decision') THEN
+  IF t.id IS NULL OR NOT (coalesce(t.requires_owner_approval, false) OR coalesce(t.owner_dependency, '') = 'business_decision') THEN
     RAISE EXCEPTION 'This item does not ask for an approval.';
   END IF;
   IF t.owner_approval_status = 'approved' THEN RETURN jsonb_build_object('approved', true, 'already', true); END IF;
