@@ -222,6 +222,7 @@ export const sendOnboardingWorkOrderFn = createServerFn({ method: "POST" })
       alreadyLinked: Boolean(link.data?.breezeway_task_id),
     });
     if (refusal) return { ok: false as const, message: refusal };
+    if (!link.data?.assignee_choice) return { ok: false as const, message: "Choose a Breezeway person, or Leave unassigned, and save first." };
     return createOutboundTask(
       {
         sourceType: "onboarding_task",
