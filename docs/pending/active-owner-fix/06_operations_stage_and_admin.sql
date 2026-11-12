@@ -280,3 +280,297 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS
 $$;
 REVOKE ALL ON FUNCTION public.admin_passes_role_checks() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.admin_passes_role_checks() TO authenticated, service_role;
+
+
+-- ---------------------------------------------------------------- Item 6: demo programs and demo homes run the engine
+-- Added Nov 11 (approved by the Admin). A demo home in a demo program now runs exactly like a real one: its plan starts
+-- at enrollment or from the switch, cards lock and unlock, the deadline, reminder and takeover run, Send to the owner
+-- works and the owner conversation works. Every notification a demo item creates is marked skipped for email and SMS
+-- (the existing demo guard on owner notifications still wins; demo staff notices are marked skipped below). A demo
+-- home only ever matches a demo program and a real home only ever matches a real program, so nothing about real
+-- programs or homes changes: every edit below keeps the real path's condition exactly (for real rows the new
+-- "flag = flag" test is the old "NOT demo" test). Demo items stay out of real counts, reports and real accounts'
+-- Needs you now. Start plans for enrolled homes stays real homes only (private.ao_enrolled_rows is not changed).
+
+-- 6a. A home's program: the live program with the same demo flag as the home.
+CREATE OR REPLACE FUNCTION private.ao_home_program(_property uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE ids uuid[]; home_demo boolean := coalesce((SELECT h.is_demo FROM public.properties h WHERE h.id = _property), false);
+BEGIN
+  SELECT array_agg(DISTINCT p.id ORDER BY p.id) INTO ids FROM public.owner_programs p
+   WHERE p.status = 'active' AND p.archived_at IS NULL AND p.is_demo = home_demo
+     AND (p.property_id = _property OR EXISTS (
+           SELECT 1 FROM public.owner_program_properties e
+            WHERE e.program_id = p.id AND e.property_id = _property
+              AND e.inclusion_status = 'included' AND e.archived_at IS NULL));
+  IF coalesce(array_length(ids, 1), 0) = 0 THEN
+    RETURN jsonb_build_object('reason', 'This home has no active Active Owner program');
+  ELSIF array_length(ids, 1) > 1 THEN
+    RETURN jsonb_build_object('reason', 'This home is in more than one homeowner program. Ask an Admin to fix it first.');
+  END IF;
+  RETURN jsonb_build_object('program_id', ids[1]);
+END $function$
+;
+
+-- 6b. The Active Owner label: a demo home in a live demo program gets it the same way (recorded who and when).
+CREATE OR REPLACE FUNCTION private.ao_label_sync(_property uuid, _actor uuid)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'private'
+AS $function$
+DECLARE lbl public.property_labels; should boolean; live uuid; who text;
+BEGIN
+  SELECT * INTO lbl FROM public.property_labels WHERE system_key = 'active_owner' AND retired_at IS NULL;
+  IF NOT FOUND THEN RETURN 'no_label'; END IF;
+  SELECT EXISTS (SELECT 1 FROM public.owner_program_properties e JOIN public.owner_programs p ON p.id = e.program_id
+                  JOIN public.properties h ON h.id = e.property_id
+                 WHERE e.property_id = _property AND e.inclusion_status = 'included' AND e.archived_at IS NULL
+                   AND p.status = 'active' AND p.archived_at IS NULL AND p.is_demo = h.is_demo) INTO should;
+  SELECT id INTO live FROM public.property_label_assignments WHERE property_id = _property AND label_id = lbl.id AND removed_at IS NULL;
+  who := CASE WHEN _actor IS NULL THEN 'Resolve' ELSE coalesce(private.actor_label(_actor), 'Resolve') END;
+  PERFORM set_config('app.system_label', 'on', true);
+  IF should AND live IS NULL THEN
+    INSERT INTO public.property_label_assignments(property_id, label_id, added_by) VALUES (_property, lbl.id, _actor);
+    INSERT INTO public.property_label_events(label_id, property_id, action, to_name, actor_id, actor_label)
+      VALUES (lbl.id, _property, 'added', lbl.name, _actor, who);
+    INSERT INTO public.audit_log(actor_id, actor_label, action, entity_type, entity_id, entity_label, reason)
+      VALUES (_actor, who, 'label_added', 'property', _property, lbl.name, 'Active Owner enrollment');
+    PERFORM set_config('app.system_label', '', true);
+    RETURN 'added';
+  ELSIF NOT should AND live IS NOT NULL THEN
+    UPDATE public.property_label_assignments SET removed_at = now(), removed_by = _actor WHERE id = live;
+    INSERT INTO public.property_label_events(label_id, property_id, action, from_name, actor_id, actor_label)
+      VALUES (lbl.id, _property, 'removed', lbl.name, _actor, who);
+    INSERT INTO public.audit_log(actor_id, actor_label, action, entity_type, entity_id, entity_label, reason)
+      VALUES (_actor, who, 'label_removed', 'property', _property, lbl.name, 'Left the Active Owner program');
+    PERFORM set_config('app.system_label', '', true);
+    RETURN 'removed';
+  END IF;
+  PERFORM set_config('app.system_label', '', true);
+  RETURN 'unchanged';
+END $function$
+;
+
+-- 6c. Start at enrollment: no longer stops at a demo home (the callers below pass only matching demo flags).
+CREATE OR REPLACE FUNCTION private.ao_start_on_enrollment(_property uuid, _actor uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE hp jsonb; r jsonb;
+BEGIN
+  IF EXISTS (SELECT 1 FROM public.ao_home_plan_settings WHERE property_id = _property) THEN RETURN NULL; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.properties WHERE id = _property) THEN RETURN NULL; END IF;
+  hp := private.ao_home_program(_property);
+  IF hp ? 'reason' THEN
+    INSERT INTO public.audit_log(actor_id, action, entity_type, entity_id, entity_label, reason)
+      VALUES (_actor, 'ao_plan_not_started', 'property', _property, 'Automated homeowner plan', hp ->> 'reason');
+    RETURN hp;
+  END IF;
+  r := private.ao_start_home_plan(_property, _actor);
+  PERFORM private.ao_plan_ready_notice((r ->> 'program_id')::uuid, ARRAY[_property], (r ->> 'open')::int);
+  RETURN r;
+END $function$
+;
+
+-- 6d. Enrollment and program changes: a demo home in a demo program starts like a real one; real rows as before.
+CREATE OR REPLACE FUNCTION private.ao_enrollment_changed()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE prog public.owner_programs; h uuid; home_demo boolean;
+BEGIN
+  IF TG_TABLE_NAME = 'owner_program_properties' THEN
+    PERFORM private.ao_label_sync(NEW.property_id, auth.uid());
+    SELECT coalesce(x.is_demo, false) INTO home_demo FROM public.properties x WHERE x.id = NEW.property_id;
+    IF NEW.inclusion_status = 'included' AND NEW.archived_at IS NULL AND (NOT NEW.is_demo OR coalesce(home_demo, false))
+       AND (TG_OP = 'INSERT' OR OLD.inclusion_status IS DISTINCT FROM 'included' OR OLD.archived_at IS NOT NULL) THEN
+      SELECT * INTO prog FROM public.owner_programs WHERE id = NEW.program_id;
+      IF prog.status = 'active' AND prog.archived_at IS NULL AND prog.is_demo = coalesce(home_demo, false) THEN
+        PERFORM private.ao_start_on_enrollment(NEW.property_id, auth.uid());
+      END IF;
+    END IF;
+  ELSE
+    FOR h IN SELECT DISTINCT property_id FROM public.owner_program_properties WHERE program_id = NEW.id LOOP
+      PERFORM private.ao_label_sync(h, auth.uid());
+    END LOOP;
+    IF NEW.status = 'active' AND OLD.status IS DISTINCT FROM 'active' AND OLD.status IS DISTINCT FROM 'closed'
+       AND NEW.archived_at IS NULL THEN
+      FOR h IN SELECT property_id FROM public.owner_program_properties
+                WHERE program_id = NEW.id AND inclusion_status = 'included' AND archived_at IS NULL
+                  AND coalesce((SELECT x.is_demo FROM public.properties x WHERE x.id = property_id), false) = NEW.is_demo
+                ORDER BY property_id LOOP
+        PERFORM private.ao_start_on_enrollment(h, auth.uid());
+      END LOOP;
+    END IF;
+  END IF;
+  RETURN NULL;
+END $function$
+;
+
+-- 6e. Plan is ready: a demo owner gets it in the portal, marked skipped for email and SMS.
+CREATE OR REPLACE FUNCTION private.ao_plan_ready_notice(_program uuid, _property_ids uuid[], _open integer)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE prog public.owner_programs; nid uuid; homes uuid[]; total int; names text[]; label text;
+BEGIN
+  IF coalesce(_open, 0) <= 0 THEN RETURN NULL; END IF;
+  SELECT * INTO prog FROM public.owner_programs WHERE id = _program;
+  IF NOT FOUND OR prog.owner_user_id IS NULL THEN RETURN NULL; END IF;
+  SELECT n.id, x.property_ids, x.open_count INTO nid, homes, total
+    FROM public.owner_notifications n JOIN public.ao_plan_ready_notices x ON x.notification_id = n.id
+   WHERE n.program_id = _program AND n.kind = 'ao_plan_ready' AND n.email_status IN ('held', 'skipped') AND n.delivered_at IS NULL
+     AND NOT EXISTS (SELECT 1 FROM public.ao_owner_email_days d WHERE d.notification_id = n.id)
+   ORDER BY n.created_at DESC LIMIT 1 FOR UPDATE OF n;
+  homes := (SELECT array_agg(DISTINCT h ORDER BY h) FROM unnest(coalesce(homes, ARRAY[]::uuid[]) || _property_ids) h);
+  total := coalesce(total, 0) + _open;
+  SELECT array_agg(public.format_property_label(to_jsonb(h)) ->> 'primary' ORDER BY h.name) INTO names
+    FROM public.properties h WHERE h.id = ANY (homes);
+  label := CASE WHEN coalesce(array_length(names, 1), 0) = 0 THEN 'your home'
+                WHEN array_length(names, 1) = 1 THEN names[1]
+                ELSE array_to_string(names[1:array_length(names, 1) - 1], ', ') || ' and ' || names[array_length(names, 1)] END;
+  IF nid IS NULL THEN
+    INSERT INTO public.owner_notifications(program_id, owner_user_id, kind, priority, title, body, action_path, email_status, sms_status, is_demo)
+    VALUES (prog.id, prog.owner_user_id, 'ao_plan_ready', 'p3', 'Your homeowner plan is ready',
+      format('We added %s %s to your portal for %s. Open your portal to see what''s next.', total, CASE WHEN total = 1 THEN 'activity' ELSE 'activities' END, label),
+      '/owner', CASE WHEN prog.notify_email AND NOT prog.is_demo THEN 'held' ELSE 'skipped' END, 'skipped', prog.is_demo)
+    RETURNING id INTO nid;
+    INSERT INTO public.ao_plan_ready_notices(notification_id, program_id, property_ids, open_count) VALUES (nid, prog.id, homes, total);
+  ELSE
+    UPDATE public.owner_notifications SET
+      body = format('We added %s %s to your portal for %s. Open your portal to see what''s next.', total, CASE WHEN total = 1 THEN 'activity' ELSE 'activities' END, label)
+     WHERE id = nid;
+    UPDATE public.ao_plan_ready_notices SET property_ids = homes, open_count = total WHERE notification_id = nid;
+  END IF;
+  RETURN nid;
+END $function$
+;
+
+-- 6f. Your home is live: a demo owner gets it in the portal, marked skipped, and it uses no email day.
+CREATE OR REPLACE FUNCTION private.ao_owner_email_now(_program uuid, _kind text, _title text, _body text)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE prog public.owner_programs; nid uuid; got int; today date := (now() AT TIME ZONE 'America/Chicago')::date;
+BEGIN
+  SELECT * INTO prog FROM public.owner_programs WHERE id = _program;
+  IF NOT FOUND OR prog.owner_user_id IS NULL THEN RETURN NULL; END IF;
+  nid := gen_random_uuid();
+  got := 0;
+  IF prog.notify_email AND NOT prog.is_demo THEN
+    INSERT INTO public.ao_owner_email_days(owner_key, day, kind, notification_id)
+      VALUES (prog.owner_user_id, today, CASE _kind WHEN 'ao_home_live' THEN 'home_live' WHEN 'ao_plan_ready' THEN 'plan_ready' ELSE 'daily' END, nid)
+      ON CONFLICT DO NOTHING;
+    GET DIAGNOSTICS got = ROW_COUNT;
+  END IF;
+  INSERT INTO public.owner_notifications(id, program_id, owner_user_id, kind, priority, title, body, action_path, email_status, sms_status, is_demo)
+  VALUES (nid, prog.id, prog.owner_user_id, _kind, 'p3', _title, _body, '/owner',
+          CASE WHEN NOT prog.notify_email OR prog.is_demo THEN 'skipped' WHEN got = 1 THEN 'pending' ELSE 'held' END, 'skipped', prog.is_demo);
+  RETURN nid;
+END $function$
+;
+
+-- 6g. A card that opens, and Send to the owner: a demo owner item in a demo program on a demo home tells the demo owner
+-- in the portal, marked skipped for email and SMS. Real items: the same three tests as before.
+CREATE OR REPLACE FUNCTION public.notify_owner_of_review()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE prog record; home_id uuid;
+BEGIN
+ IF NEW.status<>'awaiting_owner' THEN RETURN NEW; END IF;
+ IF TG_OP='UPDATE' AND OLD.status='awaiting_owner' THEN RETURN NEW; END IF;
+ -- Batch release: the caller writes one summary via owner_release_summary().
+ IF coalesce(current_setting('resolve.owner_release_batch', true),'')='on' THEN RETURN NEW; END IF;
+ SELECT p.* INTO prog FROM public.owner_programs p JOIN public.property_owners o ON o.id=p.owner_record_id AND o.active
+ WHERE p.id=NEW.program_id AND p.status IN ('pending','active') AND p.archived_at IS NULL AND p.is_demo=coalesce(NEW.is_demo,false);
+ IF NOT FOUND THEN RETURN NEW; END IF;
+ home_id := NEW.property_id;
+ IF NEW.ticket_id IS NOT NULL THEN
+    SELECT property_id INTO home_id FROM public.tickets WHERE id=NEW.ticket_id AND is_demo=prog.is_demo;
+   IF NOT FOUND OR home_id IS NULL OR home_id IS DISTINCT FROM NEW.property_id THEN RETURN NEW; END IF;
+ END IF;
+ IF home_id IS NOT NULL AND NOT EXISTS(
+   SELECT 1 FROM public.properties h JOIN public.owner_program_properties e ON e.property_id=h.id
+   WHERE h.id=home_id AND h.owner_record_id=prog.owner_record_id AND h.is_demo=prog.is_demo
+     AND e.program_id=prog.id AND e.inclusion_status='included'
+ ) THEN RETURN NEW; END IF;
+ INSERT INTO public.owner_notifications(program_id,owner_user_id,review_id,ticket_id,kind,priority,title,body,action_path,email_status,sms_status,is_demo)
+ VALUES(prog.id,prog.owner_user_id,NEW.id,NEW.ticket_id,'review_ready','p3','Participation opportunity ready',
+    'Open your owner portal to review the opportunity and whether an owner response is required.',
+   '/owner',CASE WHEN prog.notify_email AND NOT prog.is_demo THEN 'pending' ELSE 'skipped' END,'skipped',prog.is_demo);
+ RETURN NEW;
+END $function$
+;
+
+-- 6h. Needs you now: a real account sees only real owner items; a test account sees only demo owner items (as before).
+CREATE OR REPLACE FUNCTION public.my_owner_item_needs()
+ RETURNS TABLE(review_id uuid, property_id uuid, task_id uuid, title text, why text, since timestamp with time zone)
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'private'
+AS $function$
+  WITH items AS (
+    SELECT r.id, r.property_id, s.task_id, r.title, r.respond_by, s.sent_at,
+      (SELECT m.author_type FROM public.owner_request_messages m WHERE m.review_id = r.id AND m.event IS NULL ORDER BY m.created_at DESC, m.id DESC LIMIT 1) AS last_author,
+      (SELECT m.created_at FROM public.owner_request_messages m WHERE m.review_id = r.id AND m.event IS NULL ORDER BY m.created_at DESC, m.id DESC LIMIT 1) AS last_at,
+      EXISTS (SELECT 1 FROM public.owner_request_messages m WHERE m.review_id = r.id AND m.author_type = 'homeowner') AS owner_spoke
+    FROM public.owner_item_task_sends s JOIN public.owner_reviews r ON r.id = s.review_id
+    WHERE r.archived_at IS NULL AND r.status <> 'closed' AND private.owner_item_answerer(r.id) = auth.uid()
+      AND coalesce(r.is_demo, false) = coalesce(private.is_synthetic_account(), false)
+  )
+  SELECT id, property_id, task_id, title,
+         CASE WHEN last_author = 'homeowner' THEN 'The homeowner wrote back' ELSE 'No answer from the homeowner yet' END,
+         CASE WHEN last_author = 'homeowner' THEN last_at ELSE (respond_by + 1)::timestamp AT TIME ZONE 'America/Chicago' END
+  FROM items
+  WHERE last_author = 'homeowner'
+     OR (NOT owner_spoke AND respond_by IS NOT NULL AND respond_by < (now() AT TIME ZONE 'America/Chicago')::date)
+  ORDER BY 6
+$function$
+;
+
+-- 6i. Staff notices from demo owner items (the homeowner wrote back; the homeowner did not complete a card) are marked
+-- skipped for email. Staff notices have no SMS. The staff email sender already blocks every demo notice.
+CREATE OR REPLACE FUNCTION private.ao_demo_staff_notice()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF coalesce(NEW.is_demo, false) AND NEW.kind IN ('owner_item_message', 'ao_card_expired') THEN
+    NEW.email_status := 'skipped';
+    NEW.email_error := coalesce(NEW.email_error, 'Demo notification: external delivery blocked.');
+  END IF;
+  RETURN NEW;
+END $$;
+REVOKE ALL ON FUNCTION private.ao_demo_staff_notice() FROM PUBLIC, anon, authenticated;
+CREATE TRIGGER ao_demo_staff_notice BEFORE INSERT ON public.staff_notifications
+  FOR EACH ROW EXECUTE FUNCTION private.ao_demo_staff_notice();
+
+-- 6j. Demo homes already in a live demo program get the Active Owner label now, as real homes did in file 04.
+-- Each add is recorded who (Resolve) and when, with a receipt so the undo removes exactly these. No plan starts.
+DO $$
+DECLARE hid uuid;
+BEGIN
+  FOR hid IN SELECT DISTINCT e.property_id FROM public.owner_program_properties e
+               JOIN public.owner_programs p ON p.id = e.program_id JOIN public.properties h ON h.id = e.property_id
+              WHERE e.inclusion_status = 'included' AND e.archived_at IS NULL AND p.status = 'active' AND p.archived_at IS NULL
+                AND p.is_demo AND h.is_demo ORDER BY 1 LOOP
+    IF private.ao_label_sync(hid, NULL) = 'added' THEN
+      INSERT INTO public.audit_log(actor_id, actor_label, action, entity_type, entity_id, entity_label, reason)
+        VALUES (NULL, 'Resolve', 'ao_fix06_demo_label', 'property', hid, 'Active Owner', 'File 06 item 6: demo home label');
+    END IF;
+  END LOOP;
+END $$;
