@@ -467,13 +467,16 @@ export function myWorkSelection<T extends { assigned_to: string | null; property
 }
 
 export function validateMyWorkSearch(
-  search: { who?: unknown; program?: unknown; home?: unknown; state?: unknown } & SearchSchemaInput,
+  search: { who?: unknown; program?: unknown; home?: unknown; state?: unknown; task?: unknown } & SearchSchemaInput,
 ) {
   const text = (v: unknown, fallback: string) => (typeof v === "string" && v ? v : fallback);
   const who = text(search.who, "me");
   const program = text(search.program, "all");
   const state = text(search.state, "all");
+  // Nov 12 item 30: Search Resolve opens a Task's drawer here by its id.
+  const task = text(search.task, "");
   return {
+    ...(/^[0-9a-f-]{36}$/i.test(task) ? { task } : {}),
     who: who === "unassigned" || who === "all" || /^[0-9a-f-]{36}$/i.test(who) ? who : "me",
     program: ["all", "active_owner", "standard"].includes(program) ? program : "all",
     home: /^[0-9a-f-]{36}$/i.test(text(search.home, "")) ? text(search.home, "all") : "all",

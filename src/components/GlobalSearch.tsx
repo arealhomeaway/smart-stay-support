@@ -15,6 +15,10 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { notionBadge } from "@/lib/notion-ticket-display";
+import { useServerFn } from "@tanstack/react-start";
+import { useRole } from "@/hooks/useRole";
+import { searchOnboardingTasksFn } from "@/lib/onboarding-search.functions";
+import { onboardingTaskHref } from "@/lib/onboarding-search";
 
 export type SearchTarget = { to: string; label: string; group: string; keywords?: string };
 
@@ -43,6 +47,16 @@ export function GlobalSearch({ targets }: { targets: SearchTarget[] }) {
   }, []);
 
   const q = term.trim();
+  // Nov 12 item 30: onboarding Tasks by title and home name, for people who open Onboarding.
+  const { can } = useRole();
+  const searchTasks = useServerFn(searchOnboardingTasksFn);
+  const onboardingOn = can("onboarding_workspace");
+  const { data: taskHits, isFetching: tasksFetching } = useQuery({
+    queryKey: ["global-search-onboarding-tasks", q],
+    enabled: open && onboardingOn && q.length >= 2,
+    staleTime: 15_000,
+    queryFn: () => searchTasks({ data: { term: q.slice(0, 80) } }),
+  });
   const { data: records, isFetching } = useQuery({
     queryKey: ["global-search", q],
     enabled: open && q.length >= 2,
@@ -99,12 +113,12 @@ export function GlobalSearch({ targets }: { targets: SearchTarget[] }) {
       </Button>
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput
-          placeholder="Search tickets, homes and sections…"
+          placeholder={onboardingOn ? "Search tickets, homes, onboarding tasks and sections…" : "Search tickets, homes and sections…"}
           value={term}
           onValueChange={setTerm}
         />
         <CommandList>
-          <CommandEmpty>{isFetching ? "Searching…" : "Nothing matches that."}</CommandEmpty>
+          <CommandEmpty>{isFetching || tasksFetching ? "Searching…" : "Nothing matches that."}</CommandEmpty>
 
           {(records?.tickets.length ?? 0) > 0 && (
             <CommandGroup heading="Tickets">
@@ -141,6 +155,25 @@ export function GlobalSearch({ targets }: { targets: SearchTarget[] }) {
                   <span className="ml-auto truncate pl-3 text-xs text-muted-foreground">
                     {formatPropertyLabel(p).secondary}
                   </span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+
+          {onboardingOn && (taskHits?.hits.length ?? 0) > 0 && (
+            <CommandGroup heading="Onboarding Tasks">
+              {taskHits?.hits.map((t) => (
+                <CommandItem
+                  key={t.id}
+                  value={`onboarding task ${t.id} ${t.title} ${t.homeName} ${q}`}
+                  onSelect={() => {
+                    setOpen(false);
+                    setTerm("");
+                    void router.navigate({ href: onboardingTaskHref(t) });
+                  }}
+                >
+                  <span className="truncate">{t.title}</span>
+                  <span className="ml-auto truncate pl-3 text-xs text-muted-foreground">{t.homeName}</span>
                 </CommandItem>
               ))}
             </CommandGroup>

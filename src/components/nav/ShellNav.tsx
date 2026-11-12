@@ -14,12 +14,22 @@ import { cn } from "@/lib/utils";
 import { buildTrail, departmentFor, parentOf } from "@/lib/shell-nav";
 
 const PageLabelCtx = createContext<(label: string | null) => void>(() => {});
+/** Set while a page shows the shell breadcrumb inside its own header line. */
+const InlineTrailCtx = createContext<{ inline: boolean; setInline: (v: boolean) => void }>({
+  inline: false,
+  setInline: () => {},
+});
 
 export function ShellNavProvider({ children }: { children: (label: string | null) => ReactNode }) {
   const [label, setLabel] = useState<string | null>(null);
+  const [inline, setInline] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   useEffect(() => setLabel(null), [pathname]);
-  return <PageLabelCtx.Provider value={setLabel}>{children(label)}</PageLabelCtx.Provider>;
+  return (
+    <PageLabelCtx.Provider value={setLabel}>
+      <InlineTrailCtx.Provider value={{ inline, setInline }}>{children(label)}</InlineTrailCtx.Provider>
+    </PageLabelCtx.Provider>
+  );
 }
 
 /** Let a page name its current view in the breadcrumb (e.g. a template name). */
@@ -29,6 +39,48 @@ export function useShellPageLabel(label: string | null | undefined) {
     set(label ?? null);
     return () => set(null);
   }, [label, set]);
+}
+
+/**
+ * The shell breadcrumb, shown inline in a page's own header line (onboarding
+ * home, Nov 12 item 31). Same trail as the shell; the crumbs up to the current
+ * home are links and the page's own heading follows them. While mounted, the
+ * shell does not repeat the trail above the page.
+ */
+export function ShellInlineTrail() {
+  const { setInline } = useContext(InlineTrailCtx);
+  const location = useRouterState({ select: (s) => s.location });
+  const params = useParams({ strict: false }) as { propertyId?: string };
+  const propertyName = usePropertyName(params.propertyId);
+  useEffect(() => {
+    setInline(true);
+    return () => setInline(false);
+  }, [setInline]);
+  const trail = buildTrail({
+    pathname: location.pathname,
+    search: (location.search ?? {}) as Record<string, unknown>,
+    propertyName,
+    pageLabel: null,
+  });
+  const here = trail.findIndex((c) => c.to === location.pathname && !c.search);
+  const before = here > 0 ? trail.slice(0, here) : trail.slice(0, -1);
+  if (before.length === 0) return null;
+  return (
+    <nav aria-label="Breadcrumb" className="flex items-center text-sm text-muted-foreground">
+      {before.map((c) => (
+        <span key={c.label} className="inline-flex items-center">
+          <Link
+            to={c.to}
+            search={(c.search ?? {}) as never}
+            className="inline-flex min-h-11 items-center hover:text-foreground hover:underline"
+          >
+            {c.label}
+          </Link>
+          <ChevronRight className="mx-1 size-3.5 opacity-60" aria-hidden="true" />
+        </span>
+      ))}
+    </nav>
+  );
 }
 
 function usePropertyName(propertyId: string | undefined) {
@@ -59,6 +111,7 @@ export function ShellNav({
   const location = useRouterState({ select: (s) => s.location });
   const params = useParams({ strict: false }) as { propertyId?: string };
   const { can } = useRole();
+  const { inline } = useContext(InlineTrailCtx);
   const propertyName = usePropertyName(params.propertyId);
   const search = (location.search ?? {}) as Record<string, unknown>;
   const trail = buildTrail({ pathname: location.pathname, search, propertyName, pageLabel });
@@ -68,7 +121,8 @@ export function ShellNav({
     ? []
     : (dept?.links.filter((l) => !l.capability || can(l.capability)) ?? []);
 
-  if ((!dept || links.length === 0) && trail.length < 2) return null;
+  const showTrail = trail.length >= 2 && !inline;
+  if ((!dept || links.length === 0) && !showTrail) return null;
 
   return (
     <div className="mb-5 space-y-3">
@@ -99,7 +153,7 @@ export function ShellNav({
           })}
         </nav>
       )}
-      {trail.length >= 2 && (
+      {showTrail && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           {parent && (
             <Link

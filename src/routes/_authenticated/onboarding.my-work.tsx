@@ -92,7 +92,11 @@ function MyWork() {
   const setFilter = (patch: Record<string, string>) => {
     void navigate({ search: { ...search, ...patch }, replace: true });
   };
-  const [openTaskId, setOpenTaskId] = useState<string | null>(null);
+  const linkedTask = (search as { task?: string }).task ?? null;
+  const [openTaskId, setOpenTaskId] = useState<string | null>(linkedTask);
+  useEffect(() => {
+    if (linkedTask) setOpenTaskId(linkedTask);
+  }, [linkedTask]);
 
   const { data, isLoading } = useQuery({
     queryKey: onboardingWorkspaceKey(userId),

@@ -49,7 +49,7 @@ export function breezewayConnection(input: {
 }
 
 export const CONNECTION_LABEL: Record<BreezewayConnection, string> = {
-  not_linked: "Not linked to Breezeway yet",
+  not_linked: "Not sent yet",
   waiting_for_sync: "Linked. Waiting for the Breezeway sync",
   connected: "Connected to Breezeway",
 };

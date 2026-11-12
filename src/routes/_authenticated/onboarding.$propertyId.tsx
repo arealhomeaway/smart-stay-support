@@ -96,7 +96,9 @@ import {
   HomeBoardHeader,
   PlanStages,
   ProjectDetailsSection,
+  scrollToPlanStage,
 } from "@/components/onboarding/board/HomeBoard";
+import { ShellInlineTrail } from "@/components/nav/ShellNav";
 import { listAttachmentsFn } from "@/lib/attachments.functions";
 import { documentCategoryLabel } from "@/lib/attachments";
 import { TaskDrawer, type SaveTaskInput } from "@/components/onboarding/TaskDrawer";
@@ -545,11 +547,23 @@ function PropertyWorkspace() {
 
   return (
     <div className="space-y-5">
-      <HomeContextHeader propertyId={current.id} current="onboarding" />
+      {/* Item 31: one header line: breadcrumb, name, status, Follow this home, view toggle. */}
+      <HomeContextHeader
+        propertyId={current.id}
+        current="onboarding"
+        line={{ before: <ShellInlineTrail />, after: <FollowHomeButton propertyId={current.id} /> }}
+      />
 
       <HomeBoardHeader
-        back={null}
-        follow={<FollowHomeButton propertyId={current.id} />}
+        onSelectStage={(i) => {
+          if (tab !== "plan") void navigate({ search: { ...search, tab: "plan" } as never, replace: true });
+          // The Plan tab may be mounting; try again briefly until the stage block exists.
+          let tries = 0;
+          const go = () => {
+            if (!scrollToPlanStage(i) && tries++ < 10) window.setTimeout(go, 60);
+          };
+          window.setTimeout(go, 0);
+        }}
         photo={current.primary_photo_url ?? null}
         address={formatPropertyLabel(current).primary}
         place={place}

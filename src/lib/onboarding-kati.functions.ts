@@ -266,5 +266,5 @@ export const onboardingBreezewayTemplatesFn = createServerFn({ method: "POST" })
     if (staff.error || !staff.data) throw new Error("Onboarding staff access is required.");
     const { listBreezewayTemplates } = await import("@/lib/breezeway-directory.server");
     const templates = await listBreezewayTemplates().catch(() => []);
-    return { templates: templates.map((t) => ({ id: t.id, name: t.name })) };
+    return { templates: templates.map((t) => ({ id: t.id, name: t.name, department: t.department ?? null })) };
   });

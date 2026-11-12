@@ -638,8 +638,29 @@ export function TaskDrawer({
       }
     >
       <div className="space-y-5">
+        {/* Item 32: on a work order Task, What to do folds into a small Instructions link. */}
+        {middle === "work_order" && (detailText || fullExtra || formLink) && (
+          <section className="space-y-1">
+            <Button variant="link" className="h-auto min-h-11 px-0" aria-expanded={fullOpen} onClick={() => setFullOpen((v) => !v)}>
+              {fullOpen ? "Hide instructions" : "Instructions"}
+            </Button>
+            {fullOpen && (
+              <>
+                {fullInstructions}
+                {formLink && <OpenFormButton href={formLink} />}
+              </>
+            )}
+          </section>
+        )}
+
+        {middle === "work_order" && (
+          <section className="space-y-2" aria-label="Breezeway work order">
+            <OnboardingBreezewaySection taskId={task.id} propertyId={task.property_id} disabled={disabled} defaultTitle={task.title} defaultDescription={task.detail ?? null} />
+          </section>
+        )}
+
         {/* What to do: the first lines, the rest on request. Logins stay exactly as written. */}
-        {(detailText || fullExtra || formLink) && (
+        {middle !== "work_order" && (detailText || fullExtra || formLink) && (
           <section className="space-y-1">
             <p className="eyebrow">What to do</p>
             {/* Fix 16: the short version, or the full text in its place, never both. */}
@@ -679,6 +700,8 @@ export function TaskDrawer({
           </section>
         )}
 
+        {/* Item 32: a work order Task shows only the Breezeway work order, no Files box. */}
+        {middle !== "work_order" && (
         <section id={`task-files-${task.id}`} className="space-y-2">
           <AttachmentsPanel
             entityType="onboarding_task"
@@ -689,6 +712,7 @@ export function TaskDrawer({
           <LinkedStepFiles taskId={task.id} canManage={canManageTask && !disabled} />
           {isPhotoStep(task.title) && <OpenPhotosFolderButton propertyId={task.property_id} />}
         </section>
+        )}
 
         {/* The middle changes with the kind of Task. */}
         {middle === "do_it" && !finished && (
@@ -728,12 +752,6 @@ export function TaskDrawer({
             }}
             assignedTo={task.assigned_to}
           />
-        )}
-
-        {middle === "work_order" && (
-          <section className="space-y-2" aria-label="Breezeway work order">
-            <OnboardingBreezewaySection taskId={task.id} propertyId={task.property_id} disabled={disabled} defaultTitle={task.title} defaultDescription={task.detail ?? null} />
-          </section>
         )}
 
         {middle === "send_to_owner" && (
@@ -820,9 +838,6 @@ export function TaskDrawer({
                   onChange={(e) => setEvidence(e.target.value)}
                   placeholder="Only when finishing by hand: where the proof is."
                 />
-                <Button variant="link" className="h-auto min-h-11 px-0" onClick={scrollToFiles}>
-                  Or attach a file
-                </Button>
               </section>
             )}
             {middle === "send_to_owner" && fullExtra && (

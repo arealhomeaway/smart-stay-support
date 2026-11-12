@@ -19673,6 +19673,13 @@ export type Database = {
       owner_item_approve: { Args: { _review_id: string }; Returns: Json }
       owner_item_detail: { Args: { _review_id: string }; Returns: Json }
       owner_item_is_approval: { Args: { _review_id: string }; Returns: boolean }
+      owner_item_last_speakers: {
+        Args: { _review_ids: string[] }
+        Returns: {
+          last_speaker: string
+          review_id: string
+        }[]
+      }
       owner_item_reply: {
         Args: { _body: string; _review_id: string }
         Returns: string
@@ -19706,6 +19713,18 @@ export type Database = {
         Args: { _program: string }
         Returns: {
           item_id: string
+          source: string
+          where_code: string
+        }[]
+      }
+      owner_outside_resolve_notes: {
+        Args: { _program: string }
+        Returns: {
+          document_name: string
+          item_id: string
+          live_program: boolean
+          owner_message: string
+          property_id: string
           source: string
           where_code: string
         }[]
