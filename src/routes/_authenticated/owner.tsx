@@ -35,14 +35,11 @@ import {
 import { answerOwnerReview, ownerHome, ownerHomePreview } from "@/lib/owner-portal.functions";
 import { OWNER_GOAL_LABEL } from "@/lib/owner-participation";
 import { LogTimeContext, LogTimeDialog, useOpenLogTime, type LogTimeAnchor } from "@/components/owner/LogTimeDialog";
-import { OwnerOpportunities } from "@/components/owner/OwnerOpportunities";
-import { OwnerPaceCard, OwnerPlanCards } from "@/components/owner/OwnerPlanCards";
-import { OwnerQueueCards } from "@/components/owner/OwnerQueueCards";
+import { OwnerOpportunityBoard } from "@/components/owner/OwnerOpportunityBoard";
+import { OwnerPaceCard } from "@/components/owner/OwnerPlanCards";
 import { isOwnerQueue, type OwnerQueue } from "@/lib/owner-opportunity-filters";
 import { captureReviewedOpportunity, captureReviewedResponse } from "@/lib/owner-reviewed-update";
 import { ownerTicketResponseGuidance } from "@/lib/owner-ticket-intent";
-import { OwnerApprovalPanel } from "@/components/OwnerApprovalPanel";
-import { OnboardingActions } from "@/components/owner/OnboardingActions";
 import { StrReportPanel } from "@/components/owner/StrReportPanel";
 import { OwnerTaskDialog, taskDeadlineLabel } from "@/components/owner/OwnerTaskDialog";
 import { DownloadPhotosButton } from "@/components/property/MarketingPhotosButtons";
@@ -566,7 +563,7 @@ function OwnerHubBody({
           readOnly={preview}
           preview={preview}
           homeTab={homeParam ?? null}
-          onHomeTab={(tab) => void navigate({ search: (prev) => { const { opportunity: _o, ...rest } = prev; return { ...rest, home: tab }; } })}
+          onHomeTab={(tab: string) => void navigate({ search: (prev) => { const { opportunity: _o, ...rest } = prev; return { ...rest, home: tab }; } })}
           focusId={search.opportunity ?? null}
           onCloseDetail={() => void navigate({ search: (prev) => { const { opportunity: _o, ...rest } = prev; return rest; }, replace: true })}
           renderReview={renderReview}

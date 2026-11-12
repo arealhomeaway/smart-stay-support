@@ -117,14 +117,14 @@ export function inHome(i: Pick<BoardItem, "propertyIds">, homeId: string): boole
   return i.propertyIds.length === 0 || i.propertyIds.includes(homeId);
 }
 
-export type BoardView = { answer: BoardItem[]; ready: BoardItem[]; optional: BoardItem[]; soon: BoardItem[]; done: BoardItem[] };
+export type BoardView<T extends BoardItem = BoardItem> = { answer: T[]; ready: T[]; optional: T[]; soon: T[]; done: T[] };
 
 /**
  * The page for one tab. `homeId` null = a one-home owner (everything);
  * "all" = All homes: just what needs you (Needs your answer only, every home).
  */
-export function boardView(items: BoardItem[], homeId: string | "all" | null): BoardView {
-  const view: BoardView = { answer: [], ready: [], optional: [], soon: [], done: [] };
+export function boardView<T extends BoardItem>(items: T[], homeId: string | "all" | null): BoardView<T> {
+  const view: BoardView<T> = { answer: [], ready: [], optional: [], soon: [], done: [] };
   for (const i of items) {
     const g = boardGroup(i);
     if (homeId === "all") {
