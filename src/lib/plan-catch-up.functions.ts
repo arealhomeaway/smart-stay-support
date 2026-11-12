@@ -26,28 +26,47 @@ export function notReadyMessage(error: { message: string; code?: string }) {
   return error.code === "PGRST202" || /Could not find the function/i.test(error.message) ? "This action is not available yet." : error.message;
 }
 
+/** Who the signed-in person is on this home, read as that person (item 7; reused by Add task, Part 1). */
+export async function loadCatchUpViewer(
+  sb: { rpc: (...a: never[]) => unknown; from: (t: string) => unknown },
+  uid: string,
+  propertyId: string,
+): Promise<Omit<CatchUpViewer, "userId">> {
+  const db = sb as unknown as {
+    rpc: (n: string, a: Record<string, unknown>) => Promise<{ data: unknown }>;
+    from: (t: string) => {
+      select: (c: string) => {
+        eq: (c: string, v: string) => {
+          neq: (c: string, v: string) => {
+            order: (c: string, o: { ascending: boolean }) => { limit: (n: number) => { maybeSingle: () => Promise<{ data: unknown }> } };
+          };
+        };
+      };
+    };
+  };
+  const [admin, onboarding, director, project, ...seats] = await Promise.all([
+    db.rpc("has_role", { _user_id: uid, _role: "admin" }),
+    db.rpc("has_role", { _user_id: uid, _role: "onboarding" }),
+    db.rpc("is_onboarding_director", { _user_id: uid }),
+    db.from("onboarding_projects").select("project_manager").eq("property_id", propertyId).neq("status", "cancelled")
+      .order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    ...SHARED_ROLE_SEATS.map((code) => db.rpc("holds_functional_role", { _user_id: uid, _code: code })),
+  ]);
+  return {
+    isAdmin: admin.data === true,
+    isOnboarding: onboarding.data === true,
+    isOnboardingDirector: director.data === true,
+    isHomePm: (project.data as { project_manager?: string | null } | null)?.project_manager === uid,
+    roleCodes: SHARED_ROLE_SEATS.filter((_, i) => (seats[i] as { data: unknown } | undefined)?.data === true),
+  };
+}
+
 export const planCatchUpViewerFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ propertyId: z.string().uuid() }).parse(d))
-  .handler(async ({ context, data }): Promise<Omit<CatchUpViewer, "userId">> => {
-    const sb = context.supabase;
-    const uid = context.userId;
-    const [admin, onboarding, director, project, ...seats] = await Promise.all([
-      sb.rpc("has_role", { _user_id: uid, _role: "admin" }),
-      sb.rpc("has_role", { _user_id: uid, _role: "onboarding" }),
-      sb.rpc("is_onboarding_director", { _user_id: uid }),
-      sb.from("onboarding_projects").select("project_manager").eq("property_id", data.propertyId).neq("status", "cancelled")
-        .order("created_at", { ascending: false }).limit(1).maybeSingle(),
-      ...SHARED_ROLE_SEATS.map((code) => sb.rpc("holds_functional_role", { _user_id: uid, _code: code })),
-    ]);
-    return {
-      isAdmin: admin.data === true,
-      isOnboarding: onboarding.data === true,
-      isOnboardingDirector: director.data === true,
-      isHomePm: (project.data as { project_manager?: string | null } | null)?.project_manager === uid,
-      roleCodes: SHARED_ROLE_SEATS.filter((_, i) => seats[i]?.data === true),
-    };
-  });
+  .handler(async ({ context, data }): Promise<Omit<CatchUpViewer, "userId">> =>
+    loadCatchUpViewer(context.supabase as never, context.userId, data.propertyId),
+  );
 
 export const planCatchUpTasksFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
