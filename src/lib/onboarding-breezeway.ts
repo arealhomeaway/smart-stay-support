@@ -11,7 +11,7 @@
 export const ONBOARDING_BREEZEWAY_SEND_FLAG = "onboarding_breezeway_send";
 
 export function isBreezewayWorkOrderStep(title: string | null | undefined): boolean {
-  return /^\s*work order\s*:/i.test(title ?? "");
+  return /^\s*(draft\s+)?work order\s*:/i.test(title ?? "");
 }
 
 /** Setup steps that show the home's Breezeway property link from the mirror. */

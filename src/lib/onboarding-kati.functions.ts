@@ -216,7 +216,7 @@ export const sendOnboardingWorkOrderFn = createServerFn({ method: "POST" })
         sourceType: "onboarding_task",
         sourceId: data.taskId,
         requestKey: onboardingSendRequestKey(data.taskId),
-        title: String(task.data.title).replace(/^\s*work order\s*:\s*/i, "").slice(0, 200),
+        title: String(task.data.title).replace(/^\s*(draft\s+)?work order\s*:\s*/i, "").slice(0, 200),
         description: task.data.detail ? String(task.data.detail).slice(0, 4000) : null,
         department: "maintenance",
         priority: "normal",
