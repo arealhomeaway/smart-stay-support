@@ -1,5 +1,12 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 11 build: Owner Opportunities and Task Drawer (preview only; stage DB in docs/pending/owner-opps-drawer/)
+- [ ] A1 four groups and styles, overdue red, Ready shows 4 + Show more, market once per owner
+- [ ] A2 home tabs; A3 side panel; A4 home page; A5 notice wording
+- [ ] B1 drawer top; B2 three middles; B3 team comments; B4 grey reason; B5 Details; B6 removals
+- [ ] C1 staged library changes + file 07 in repo
+- [ ] Tests, suite, type check, build before and after; final table
+
 ## Nov 11 build 18: six small decided fixes (after the import report; stage in docs/pending/build18/)
 - [x] 1 Breezeway safety sweep refreshes copies every run whatever the bridge says; only creation is gated
 - [x] 2 No pay dates on bonus screens, Verify, Bonus payouts card and CSV
