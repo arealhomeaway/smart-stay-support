@@ -109,15 +109,15 @@ async function vendorsFor(db: Loose, propertyId: string, trade: string) {
   if (!ids.length) return { market, isDemo: Boolean(home.data?.is_demo), rows: [] as VendorRow[] };
   const orgs = await db
     .from("vendor_orgs")
-    .select("id, legal_name, display_name, primary_contact_name, primary_contact_phone, primary_contact_email, work_order_email, breezeway_person_id, is_active, is_demo, status")
+    .select("id, legal_name, display_name, primary_contact_name, primary_contact_phone, primary_contact_email, work_order_email, breezeway_person_id, is_active, is_demo")
     .in("id", ids);
   type Org = {
     id: string; legal_name: string | null; display_name: string | null; primary_contact_name: string | null;
     primary_contact_phone: string | null; primary_contact_email: string | null; work_order_email: string | null;
-    breezeway_person_id: string | number | null; is_active: boolean | null; is_demo: boolean | null; status: string | null;
+    breezeway_person_id: string | number | null; is_active: boolean | null; is_demo: boolean | null;
   };
   const rows: VendorRow[] = ((orgs.data ?? []) as Org[])
-    .filter((o) => o.is_active !== false && o.status !== "candidate" && Boolean(o.is_demo) === Boolean(home.data?.is_demo))
+    .filter((o) => o.is_active !== false && Boolean(o.is_demo) === Boolean(home.data?.is_demo))
     .map((o) => ({
       orgId: String(o.id),
       name: String(o.display_name || o.legal_name || "Vendor"),
