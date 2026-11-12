@@ -485,6 +485,8 @@ export const updateOnboardingProjectFn = createServerFn({ method: "POST" })
         plannedClosingOn: z.string().date().nullable().optional(),
         possessionOn: z.string().date().nullable().optional(),
         targetHandoffOn: z.string().date().nullable().optional(),
+        /** Item 1 (Nov 12): the home inspection date (staged column onboarding_projects.inspection_on). */
+        inspectionOn: z.string().date().nullable().optional(),
         furnishingScope: z
           .enum(["full_furnishing", "owner_furnished", "no_furnishing"])
           .optional(),

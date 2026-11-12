@@ -286,6 +286,7 @@ export async function updateProject(
     plannedClosingOn?: string | null | undefined;
     possessionOn?: string | null | undefined;
     targetHandoffOn?: string | null | undefined;
+    inspectionOn?: string | null | undefined;
     furnishingScope?: FurnishingScope | undefined;
     modules?: ModuleKey[] | undefined;
     poolLocation?: "none" | "neighborhood" | "property" | undefined;
@@ -349,6 +350,12 @@ export async function updateProject(
   if (input.plannedClosingOn !== undefined) patch.planned_closing_on = input.plannedClosingOn;
   if (input.possessionOn !== undefined) patch.possession_on = input.possessionOn;
   if (input.targetHandoffOn !== undefined) patch.target_handoff_on = input.targetHandoffOn;
+  if (input.inspectionOn !== undefined) {
+    // The inspection date column is staged (docs/pending/onboarding-kinds-2/01); until it is
+    // applied the save says so plainly instead of failing on an unknown column.
+    if (!("inspection_on" in current.data)) throw new Error("The inspection date can be saved once the database update is applied.");
+    (patch as Record<string, unknown>).inspection_on = input.inspectionOn;
+  }
   if (input.furnishingScope !== undefined) patch.furnishing_scope = input.furnishingScope;
   if (input.modules !== undefined) patch.modules = input.modules;
   if (input.poolLocation !== undefined) patch.pool_location = input.poolLocation;
