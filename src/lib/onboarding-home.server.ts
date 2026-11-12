@@ -159,7 +159,7 @@ export async function loadOnboardingHome(supabase: Client, userId: string, now =
     import("./active-owner.server").then((m) => m.activeOwnerLinks(supabase, ids)).catch(() => new Map()),
     db.from("functional_role_members").select("role_code, user_id"),
     db.from("vendor_orgs").select("id, display_name, legal_name, status, primary_contact_phone, primary_contact_email").contains("service_categories", ["Staging"]).order("display_name"),
-    db.from("saved_views").select("id, name, filters, view, sort, columns").eq("user_id", userId).eq("page", "onboarding_home").is("archived_at", null).order("name"),
+    db.from("saved_views").select("id, kind, name, filters, view, sort, columns").eq("user_id", userId).eq("page", "onboarding_home").is("archived_at", null).order("name"),
   ]);
 
   const nameOf = new Map((profiles.data ?? []).map((p) => [p.id, p.full_name || p.email || "Team member"] as const));
@@ -290,7 +290,9 @@ export async function loadOnboardingHome(supabase: Client, userId: string, now =
       stager: ((stagingVendors.data ?? []) as { id: string; display_name: string | null; legal_name: string | null }[]).map((v) => ({ id: v.id, name: v.display_name || v.legal_name || "Vendor" })),
     },
     stagersReady,
-    savedViews: saved.error ? null : ((saved.data ?? []) as (SavedView & { columns: string[] | null })[]),
+    // Null until the staged saved_views table is applied.
+    savedViews: saved.error ? null : ((saved.data ?? []) as (SavedView & { kind: string })[]).filter((v) => v.kind === "view").map(({ id, name, filters, view, sort }) => ({ id, name, filters, view, sort })),
+    columns: saved.error ? null : ((((saved.data ?? []) as { kind: string; columns: string[] | null }[]).find((v) => v.kind === "columns")?.columns ?? []) as string[]),
   };
 }
 
