@@ -3,7 +3,8 @@
  * Homeowner side: read every message and write back. Staff side: reply, resolve, reopen.
  * Renders `fallback` while the item is not a conversation or the staged functions are not applied.
  */
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,31 @@ export function OwnerItemConversation({
   const key = ["owner-item-detail", reviewId];
   const q = useQuery({ queryKey: key, queryFn: () => loadOwnerItemDetail(reviewId), retry: false });
   const [text, setText] = useState("");
+  const replyRef = useRef<HTMLTextAreaElement>(null);
+  // Fix 24: an item sent as an approval offers Approve and Ask a question (staged file 02).
+  const call = supabase.rpc as unknown as (n: string, a: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
+  const approval = useQuery({
+    queryKey: ["owner-item-is-approval", reviewId],
+    enabled: side === "owner" && !readOnly,
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await call("owner_item_is_approval", { _review_id: reviewId });
+      return !error && data === true;
+    },
+  });
+  const approve = useMutation({
+    mutationFn: async () => {
+      const { error } = await call("owner_item_approve", { _review_id: reviewId });
+      if (error) throw new Error((error as { message?: string }).message || "Your approval was not recorded.");
+    },
+    onSuccess: () => {
+      toast.success("Approved. Your ARHA team has it.");
+      void qc.invalidateQueries({ queryKey: ["owner-item-is-approval", reviewId] });
+      void qc.invalidateQueries({ queryKey: ["owner-item-speakers"] });
+      done();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
   const done = () => { setText(""); void qc.invalidateQueries({ queryKey: key }); onChanged?.(); };
   const send = useMutation({
     mutationFn: async () => { if (side === "owner") await replyToOwnerItem(reviewId, text.trim()); else await manageOwnerItem(reviewId, "reply", text.trim()); },
@@ -46,7 +72,7 @@ export function OwnerItemConversation({
   const detail = q.data?.available ? q.data.data : null;
   if (!detail?.conversation) return <>{fallback}</>;
   const messages = detail.messages.filter((m) => !m.event);
-  const busy = send.isPending || manage.isPending;
+  const busy = send.isPending || manage.isPending || approve.isPending;
 
   return (
     <section className="space-y-3 rounded-xl border border-border p-3" aria-label="Conversation">
@@ -70,9 +96,16 @@ export function OwnerItemConversation({
       ) : null}
       {readOnly ? null : (
         <div className="space-y-2">
+          {side === "owner" && approval.data === true ? (
+            <div className="flex flex-wrap gap-2">
+              <Button className="min-h-11" disabled={busy} onClick={() => approve.mutate()}>Approve</Button>
+              <Button className="min-h-11" variant="outline" disabled={busy} onClick={() => replyRef.current?.focus()}>Ask a question</Button>
+            </div>
+          ) : null}
           {side === "owner" || detail.open ? (
             <>
               <Textarea
+                ref={replyRef}
                 rows={3}
                 maxLength={5000}
                 aria-label={side === "owner" ? "Your reply" : "Reply to the homeowner"}

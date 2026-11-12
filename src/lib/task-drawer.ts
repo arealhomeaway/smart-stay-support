@@ -103,3 +103,12 @@ export function mentionIds(role: { assignee: string | null; pool: { id: string }
   if (role.assignee) return [role.assignee];
   return [...new Set(role.pool.map((p) => p.id))];
 }
+
+/** Fix 14: the "Project plan role: …" line is never shown at the start of What to do. */
+export function stripPlanRoleLine(detail: string | null | undefined): string {
+  return (detail ?? "")
+    .split("\n")
+    .filter((line) => !/^\s*project plan role\s*:/i.test(line))
+    .join("\n")
+    .replace(/^\s*\n+/, "");
+}

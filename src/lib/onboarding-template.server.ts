@@ -39,7 +39,8 @@ function shift(dateIso: string, days: number) {
 }
 
 function detailFor(t: TemplateTask) {
-  const bits = [`Project plan role: ${t.role}`];
+  // Fix 14 (Nov 12): the plan role is not written into the instructions.
+  const bits: string[] = [];
   if (t.breezewayTemplateId) {
     bits.push(`Breezeway template ID: ${t.breezewayTemplateId}`);
   }
@@ -170,7 +171,8 @@ async function planFor(supabase: Client, templateId?: string | null) {
   const { resolveTemplateTasks } = await import("./onboarding-template-admin.server");
   const custom = await resolveTemplateTasks(supabase, templateId ?? null);
   if (custom) return { key: custom.templateKey, tasks: custom.tasks };
-  return { key: TEMPLATE_KEY, tasks: MASTER_ONBOARDING_TEMPLATE };
+  // Fix 28: a new home always uses the plan marked default; the built-in plan is not a fallback.
+  throw new Error("Mark a plan as the default before starting a home.");
 }
 
 export async function previewOnboardingTemplate(

@@ -142,8 +142,8 @@ export async function listOnboardingTemplates(
     taskCount: counts.get(t.id)?.tasks ?? 0,
     subtaskCount: counts.get(t.id)?.subtasks ?? 0,
   }));
-  const materialised = saved.some((t) => t.key === BUILT_IN_TEMPLATE_KEY);
-  return materialised ? saved : [builtInSummary(), ...saved];
+  // Fix 28 (Nov 12): the built-in "ARHA Full Furnishing" plan is no longer listed. Its data stays.
+  return saved.filter((t) => t.key !== BUILT_IN_TEMPLATE_KEY);
 }
 
 export async function readOnboardingTemplate(
@@ -577,18 +577,7 @@ export async function resolveTemplateTasks(
       .maybeSingle();
     if (found.error) throw found.error;
     row = found.data;
-    if (!row) {
-      // Nothing marked default: the built-in plan applies, and if it has been
-      // edited the edited version is the one that counts.
-      const builtIn = await supabase
-        .from("onboarding_templates")
-        .select("id, key")
-        .eq("key", BUILT_IN_TEMPLATE_KEY)
-        .eq("is_archived", false)
-        .maybeSingle();
-      if (builtIn.error) throw builtIn.error;
-      row = builtIn.data;
-    }
+    // Fix 28: nothing marked default means no plan; the built-in plan is never a fallback.
   }
   if (!row) return null;
 

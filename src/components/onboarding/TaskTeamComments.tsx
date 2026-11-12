@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { addOnboardingNoteFn } from "@/lib/onboarding.functions";
 import { readProjectTeam } from "@/lib/onboarding-team.functions";
+import { mentionDirectoryFn } from "@/lib/onboarding-task-kinds.functions";
 import { listAttachmentsFn } from "@/lib/attachments.functions";
 import { mentionIds } from "@/lib/task-drawer";
 import { usDateTime } from "@/lib/dates";
@@ -58,14 +59,26 @@ export function TaskTeamComments({
     },
   });
   const roles = useQuery({ queryKey: ["project-team", propertyId], queryFn: () => team({ data: { propertyId } }) });
+  const directoryFn = useServerFn(mentionDirectoryFn);
+  const directory = useQuery({ queryKey: ["mention-directory"], queryFn: () => directoryFn(), staleTime: 5 * 60_000 });
   const files = useQuery({
     queryKey: ["attachments", "onboarding_task", taskId],
     queryFn: () => listFiles({ data: { entityType: "onboarding_task", entityId: taskId } }),
   });
-  const roleList = roles.data?.roles ?? [];
+  // The home's own role holders first; every other onboarding role (Director of Onboarding
+  // included) from the directory, then people by name.
+  const homeRoles = roles.data?.roles ?? [];
+  const options = [
+    ...homeRoles.map((r) => ({ key: `role:${r.code}`, label: `@${r.name}`, ids: mentionIds(r) })),
+    ...(directory.data?.roles ?? [])
+      .filter((r) => !homeRoles.some((h) => h.code === r.code))
+      .map((r) => ({ key: `role:${r.code}`, label: `@${r.name}`, ids: r.userIds })),
+    ...(directory.data?.people ?? []).map((p) => ({ key: `person:${p.id}`, label: `@${p.name}`, ids: [p.id] })),
+  ];
+  // Fix 13: the person's name, never "Teammate".
   const nameOf = (id: string | null) => {
     const p = people.find((x) => x.id === id);
-    return p?.full_name || p?.email || "Teammate";
+    return p?.full_name || p?.email || (id ? directory.data?.names[id] : "") || "Former teammate";
   };
 
   const post = useMutation({
@@ -74,12 +87,12 @@ export function TaskTeamComments({
         .map((id) => (files.data?.files ?? []).find((f) => f.id === id))
         .map((f) => f?.title || f?.original_filename)
         .filter(Boolean);
-      const chosen = roleList.find((r) => r.code === role);
+      const chosen = options.find((o) => o.key === role);
       const text = [
-        chosen ? `@${chosen.name} ${body.trim()}` : body.trim(),
+        chosen ? `${chosen.label} ${body.trim()}` : body.trim(),
         names.length ? `Attached: ${names.join(", ")}` : "",
       ].filter(Boolean).join("\n");
-      return add({ data: { propertyId, taskId, body: text, mentions: mentionIds(chosen) } });
+      return add({ data: { propertyId, taskId, body: text, mentions: chosen?.ids ?? [] } });
     },
     onSuccess: () => {
       setBody("");
@@ -118,12 +131,12 @@ export function TaskTeamComments({
           <div className="flex flex-wrap items-center gap-2">
             <Select value={role} onValueChange={setRole}>
               <SelectTrigger className="h-11 w-56" aria-label="Notify a role">
-                <SelectValue placeholder="@ a role" />
+                <SelectValue placeholder="@ a role or person" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">No one</SelectItem>
-                {roleList.map((r) => (
-                  <SelectItem key={r.code} value={r.code} disabled={mentionIds(r).length === 0}>@{r.name}</SelectItem>
+                {options.map((o) => (
+                  <SelectItem key={o.key} value={o.key} disabled={o.ids.length === 0}>{o.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

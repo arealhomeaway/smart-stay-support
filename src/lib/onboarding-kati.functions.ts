@@ -182,7 +182,18 @@ export const saveOnboardingBreezewayFn = createServerFn({ method: "POST" })
 /** Send to Breezeway: built, behind onboarding_breezeway_send (OFF). Refuses before any write while off. */
 export const sendOnboardingWorkOrderFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ taskId: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        taskId: z.string().uuid(),
+        /** B2: the Breezeway template is required; title and description come prefilled from the Task. */
+        templateId: z.number().int().positive(),
+        priority: z.enum(["low", "normal", "high", "urgent", "watch"]).default("normal"),
+        title: z.string().trim().min(3).max(200).optional(),
+        description: z.string().trim().max(4000).nullable().optional(),
+      })
+      .parse(d),
+  )
   .handler(async ({ context, data }) => {
     const db = context.supabase as unknown as Loose;
     const { sendToBreezewayRefusal, onboardingSendRequestKey } = await import("@/lib/onboarding-breezeway");
@@ -211,18 +222,19 @@ export const sendOnboardingWorkOrderFn = createServerFn({ method: "POST" })
       alreadyLinked: Boolean(link.data?.breezeway_task_id),
     });
     if (refusal) return { ok: false as const, message: refusal };
+    if (!link.data?.assignee_choice) return { ok: false as const, message: "Choose a Breezeway person, or Leave unassigned, and save first." };
     return createOutboundTask(
       {
         sourceType: "onboarding_task",
         sourceId: data.taskId,
         requestKey: onboardingSendRequestKey(data.taskId),
-        title: String(task.data.title).replace(/^\s*(draft\s+)?work order\s*:\s*/i, "").slice(0, 200),
-        description: task.data.detail ? String(task.data.detail).slice(0, 4000) : null,
+        title: data.title ?? String(task.data.title).replace(/^\s*(draft\s+)?work order\s*:\s*/i, "").slice(0, 200),
+        description: data.description !== undefined ? data.description : task.data.detail ? String(task.data.detail).slice(0, 4000) : null,
         department: "maintenance",
-        priority: "normal",
+        priority: data.priority,
         scheduledDate: link.data.tentative_date,
         scheduledTime: null,
-        templateId: null,
+        templateId: data.templateId,
         assigneeIds: link.data.assignee_choice === "person" && link.data.breezeway_person_id ? [Number(link.data.breezeway_person_id)] : [],
         resolveEvidenceNote: null,
       },
@@ -244,4 +256,15 @@ export const breezewayHomeLinkFn = createServerFn({ method: "POST" })
       mappingState: (r.data?.breezeway_mapping_state as string | null) ?? null,
       verifiedAt: (r.data?.breezeway_mapping_verified_at as string | null) ?? null,
     };
+  });
+
+/** B2: Breezeway's own active templates for the Work order section (onboarding staff, read only). */
+export const onboardingBreezewayTemplatesFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const staff = await context.supabase.rpc("is_onboarding_staff", { _user_id: context.userId });
+    if (staff.error || !staff.data) throw new Error("Onboarding staff access is required.");
+    const { listBreezewayTemplates } = await import("@/lib/breezeway-directory.server");
+    const templates = await listBreezewayTemplates().catch(() => []);
+    return { templates: templates.map((t) => ({ id: t.id, name: t.name })) };
   });

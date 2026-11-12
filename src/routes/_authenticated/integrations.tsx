@@ -14,6 +14,7 @@ import { SharePointConnectionPanel } from "@/components/SharePointConnectionPane
 import { NightlyBackupPanel } from "@/components/NightlyBackupPanel";
 import { FullBackupPanel } from "@/components/FullBackupPanel";
 import { BreezewayConnectionPanel } from "@/components/BreezewayConnectionPanel";
+import { BreezewayMatchPanel } from "@/components/BreezewayMatchPanel";
 import { BreezewayBridgePanel } from "@/components/BreezewayBridgePanel";
 import { ArrivalChecksPanel } from "@/components/ArrivalChecksPanel";
 import { BreezewayWebhookPanel } from "@/components/BreezewayWebhookPanel";
@@ -112,6 +113,7 @@ function IntegrationsPage() {
       <NightlyBackupPanel />
 
       <BreezewayConnectionPanel />
+      {isAdmin ? <BreezewayMatchPanel /> : null}
       <BreezewayBridgePanel />
       <ArrivalChecksPanel />
       <BreezewaySendingPanel />

@@ -101,6 +101,7 @@ describe("onboarding task source", () => {
   }
 
   it("creates one Breezeway task and records it against the onboarding task", async () => {
+    store.state.flags.push({ key: "onboarding_breezeway_send", enabled: true }); // Nov 12 B1: the onboarding switch governs onboarding sends
     const result = await createOutboundTask(taskInput("key-onb-happy-000000"), "actor");
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -110,6 +111,22 @@ describe("onboarding task source", () => {
       expect(result.link.breezewayTaskId).toBe(900001);
     }
     expect(calls.filter((c) => c.method === "POST").length).toBe(1);
+  });
+
+  it("Nov 12 B1: sends with internal_work_orders and breezeway_outbound off when onboarding_breezeway_send is on", async () => {
+    store.setFlag(false);
+    store.state.flags.push({ key: "onboarding_breezeway_send", enabled: true });
+    const result = await createOutboundTask(taskInput("key-onb-own-switch-0"), "actor");
+    expect(result.ok).toBe(true);
+    expect(calls.filter((c) => c.method === "POST").length).toBe(1);
+  });
+
+  it("Nov 12 B1: refuses any onboarding send while onboarding_breezeway_send is off, even with the ticket switches on", async () => {
+    store.setFlag(true);
+    const result = await createOutboundTask(taskInput("key-onb-own-off-0000"), "actor");
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.message).toContain("switched off");
+    expect(calls.length).toBe(0);
   });
 
   it("refuses when the flag is off", async () => {
@@ -153,6 +170,7 @@ describe("onboarding task source", () => {
   });
 
   it("a repeated request key never sends a second task", async () => {
+    store.state.flags.push({ key: "onboarding_breezeway_send", enabled: true }); // Nov 12 B1: the onboarding switch governs onboarding sends
     const key = "key-onb-repeat-00000";
     await createOutboundTask(taskInput(key), "actor");
     const second = await createOutboundTask(taskInput(key), "actor");
@@ -162,6 +180,7 @@ describe("onboarding task source", () => {
   });
 
   it("an uncertain outcome is needs_review and locks further sends for the task", async () => {
+    store.state.flags.push({ key: "onboarding_breezeway_send", enabled: true }); // Nov 12 B1: the onboarding switch governs onboarding sends
     responder = () => {
       throw new FakeBreezewayError(500, "server error");
     };
@@ -174,6 +193,7 @@ describe("onboarding task source", () => {
   });
 
   it("an unresolved onboarding-task record does not block the ticket on the same property", async () => {
+    store.state.flags.push({ key: "onboarding_breezeway_send", enabled: true }); // Nov 12 B1: the onboarding switch governs onboarding sends
     responder = () => {
       throw new FakeBreezewayError(500, "server error");
     };
@@ -359,6 +379,7 @@ describe("canonical Work Order linkage", () => {
   });
 
   it("never creates or links a Work Order for an onboarding-task source", async () => {
+    store.state.flags.push({ key: "onboarding_breezeway_send", enabled: true }); // Nov 12 B1: the onboarding switch governs onboarding sends
     const result = await createOutboundTask(
       {
         ...input("key-wo-onb-0000000000"),
@@ -624,6 +645,7 @@ describe('approved pilot dispatch with mocked Breezeway', () => {
     expect((await createOutboundTask(d,'actor')).ok).toBe(false); expect(calls.filter(c => c.method === 'POST')).toHaveLength(0);
   });
   it('pilot scope blocks both clicked source types at server boundary', async () => {
+    store.state.flags.push({ key: "onboarding_breezeway_send", enabled: true }); // Nov 12 B1: the onboarding switch governs onboarding sends
     store.state.sending.push({ mode: 'pilot_only', home_ids: [] });
     for (const sourceType of ['ticket','onboarding_task'] as const) {
       const r = await createOutboundTask({ ...input('approved-pilot-' + sourceType), sourceType, sourceId: sourceType === 'ticket' ? TICKET : ONBOARDING_TASK },'actor');

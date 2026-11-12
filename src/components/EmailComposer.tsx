@@ -70,6 +70,7 @@ import {
 } from "@/lib/email-composer.functions";
 import { clearDraft, loadDraft, saveDraft } from "@/lib/email-draft-store";
 import { NO_HOMEOWNER_EMAIL, checkedCc, suggestTemplateId } from "@/lib/task-email";
+import { emptyBrackets, fillBrackets } from "@/lib/onboarding-task-kinds";
 
 type Props = {
   context: ComposerContext;
@@ -81,6 +82,16 @@ type Props = {
   /** Pre-written body. Still fully editable. */
   initialBody?: string;
   disabled?: boolean;
+  /** Onboarding Email and Vendor request Tasks (Nov 12): the step's template, chosen up front. */
+  presetTemplateId?: string | null;
+  /** Fill [bracketed] words from the home and sender, and block Send while any stay empty. */
+  bracketFillIns?: boolean;
+  /** Called after a real send (not a schedule). */
+  onSent?: (info: { subject: string; to: string }) => void;
+  /** A typed-in recipient, e.g. a vendor's email on a Vendor request Task. */
+  initialTo?: string | null;
+  /** Trigger style. */
+  variant?: "button" | "primary";
 };
 
 type TemplateRow = {
@@ -102,13 +113,18 @@ export function EmailComposer({
   initialSubject,
   initialBody,
   disabled,
+  presetTemplateId,
+  bracketFillIns,
+  onSent,
+  variant = "button",
+  initialTo = null,
 }: Props) {
   const [open, setOpen] = useState(false);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2" disabled={disabled}>
+        <Button variant={variant === "primary" ? "default" : "outline"} size={variant === "primary" ? "default" : "sm"} className={variant === "primary" ? "min-h-11 w-full gap-2" : "gap-2"} disabled={disabled}>
           <Mail className="size-4" aria-hidden /> {label}
         </Button>
       </DialogTrigger>
@@ -119,6 +135,13 @@ export function EmailComposer({
             recordId={recordId}
             {...(initialSubject === undefined ? {} : { initialSubject })}
             {...(initialBody === undefined ? {} : { initialBody })}
+            presetTemplateId={presetTemplateId ?? null}
+            bracketFillIns={Boolean(bracketFillIns)}
+            initialTo={initialTo}
+            onSent={(info) => {
+              onSent?.(info);
+              setOpen(false);
+            }}
           />
         ) : null}
       </DialogContent>
@@ -131,11 +154,19 @@ function ComposerBody({
   recordId,
   initialSubject,
   initialBody,
+  presetTemplateId = null,
+  bracketFillIns = false,
+  onSent,
+  initialTo = null,
 }: {
   context: ComposerContext;
   recordId: string;
   initialSubject?: string;
   initialBody?: string;
+  presetTemplateId?: string | null;
+  bracketFillIns?: boolean;
+  onSent?: (info: { subject: string; to: string }) => void;
+  initialTo?: string | null;
 }) {
   const queryClient = useQueryClient();
   const loadContext = useServerFn(getComposerContext);
@@ -163,8 +194,8 @@ function ComposerBody({
   const templates = (ctx.data?.templates ?? []) as TemplateRow[];
   const mergeValues = ctx.data?.mergeValues ?? {};
 
-  const [recipientKey, setRecipientKey] = useState<string>("");
-  const [customTo, setCustomTo] = useState("");
+  const [recipientKey, setRecipientKey] = useState<string>(initialTo ? CUSTOM : "");
+  const [customTo, setCustomTo] = useState(initialTo ?? "");
   const [templateId, setTemplateId] = useState<string>(BLANK);
   const [subject, setSubject] = useState(initialSubject ?? "");
   const [body, setBody] = useState(initialBody ?? "");
@@ -273,11 +304,12 @@ function ComposerBody({
     if (id === BLANK) return;
     const picked = templates.find((t) => t.id === id);
     if (!picked) return;
-    setSubject(applyMergeFields(picked.subject, mergeValues));
-    setBody(withSignature(applyMergeFields(picked.body, mergeValues), signature));
+    const fill = (t: string) => (bracketFillIns ? fillBrackets(applyMergeFields(t, mergeValues), mergeValues) : applyMergeFields(t, mergeValues));
+    setSubject(fill(picked.subject));
+    setBody(withSignature(fill(picked.body), signature));
     setAudience(picked.audience as MessageAudience);
     const match = recipients.find((r) => r.audience === picked.audience);
-    if (match) setRecipientKey(match.email);
+    if (match && !initialTo) setRecipientKey(match.email);
   }
 
   // A Task can suggest a template linked by name; staff can still change it.
@@ -285,6 +317,10 @@ function ComposerBody({
     if (suggestedLoaded.current || !ctx.data || context !== "onboarding_task") return;
     suggestedLoaded.current = true;
     if (subject || templateId !== BLANK) return;
+    if (presetTemplateId && templates.some((t) => t.id === presetTemplateId)) {
+      chooseTemplate(presetTemplateId);
+      return;
+    }
     const id = suggestTemplateId(templates, (ctx.data as { suggestFor?: string | null }).suggestFor);
     if (id) chooseTemplate(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -446,8 +482,11 @@ function ComposerBody({
     );
   }
 
+  // Onboarding Email steps: every [bracketed] fill-in must be filled before Send.
+  const emptyFillIns = bracketFillIns ? emptyBrackets(`${subject}\n${body}`) : [];
   const problems = [
     ...gate.blockers,
+    ...(emptyFillIns.length ? [`Fill in ${emptyFillIns.join(", ")}.`] : []),
     ...recipientListProblems,
     ...(attachmentProblem ? [attachmentProblem] : []),
     ...scheduleIssues,
@@ -488,6 +527,7 @@ function ComposerBody({
         setBody("");
         setTemplateId(BLANK);
         clearDraft(context, recordId);
+        if (result.status === "sent") onSent?.({ subject, to });
       } else {
         toast.error(result.error ?? "The message did not go out.");
       }

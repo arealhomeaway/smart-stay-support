@@ -323,8 +323,9 @@ export function OpportunityDetail({
                 <Clock className="size-4" aria-hidden="true" /> Log hours for this
               </Button>
             ) : null}
-            {homes.length ? <Button className="min-h-11" size="sm" variant="outline" onClick={() => setUpload(true)}>Upload documentation</Button> : null}
-            {!item.finished ? <Button className="min-h-11" size="sm" disabled={done.isPending} onClick={() => done.mutate()}>Mark complete</Button> : null}
+            {/* Fix 24: an approval item has only Approve and Ask a question. */}
+            {homes.length && !(arha && t.includes("decision")) ? <Button className="min-h-11" size="sm" variant="outline" onClick={() => setUpload(true)}>Upload documentation</Button> : null}
+            {!item.finished && !(arha && t.includes("decision")) ? <Button className="min-h-11" size="sm" disabled={done.isPending} onClick={() => done.mutate()}>Mark complete</Button> : null}
           </>
         )
       }
@@ -348,6 +349,19 @@ export function OpportunityDetail({
 
       {/* Build 17 finding 2: every Opportunity carries the conversation, so a staff message is seen
           and answered from the moment the thread exists, whoever leads the item. */}
+      {canRespond && t.includes("decision") ? (
+        <div className="flex flex-wrap gap-2">
+          <Button className="min-h-11" disabled={send.isPending} onClick={() => send.mutate({ kind: "decision", decision: "authorize" })}>Approve</Button>
+          <Button
+            className="min-h-11"
+            variant="outline"
+            onClick={() => document.querySelector<HTMLTextAreaElement>(`#owner-conv-${item.id} textarea`)?.focus()}
+          >
+            Ask a question
+          </Button>
+        </div>
+      ) : null}
+      <div id={`owner-conv-${item.id}`}>
       <OwnerConversation
         workItemId={item.id}
         status={item.finished ? "complete" : "open"}
@@ -356,21 +370,17 @@ export function OpportunityDetail({
         readOnly={readOnly}
         refreshKeys={[["owner-opportunities"]]}
       />
+      </div>
 
       {canRespond ? (
         <div className="space-y-2">
-          {(t.includes("feedback") || t.includes("decision")) && !item.responses.length ? (
+          {t.includes("feedback") && !t.includes("decision") && !item.responses.length ? (
             <Textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="Share your thoughts or the changes you'd like…" aria-label="Your reply" />
           ) : null}
           <div className="flex flex-wrap gap-2">
             {t.includes("acknowledge") && !item.responses.length ? <Button className="min-h-11" size="sm" variant="outline" disabled={send.isPending} onClick={() => send.mutate({ kind: "acknowledge" })}>I&apos;ve reviewed this</Button> : null}
-            {t.includes("feedback") && !item.responses.length ? <Button className="min-h-11" size="sm" disabled={send.isPending || !text.trim()} onClick={() => send.mutate({ kind: "feedback" })}>Send to ARHA</Button> : null}
-            {t.includes("decision") ? (
-              <>
-                <Button className="min-h-11" size="sm" disabled={send.isPending} onClick={() => send.mutate({ kind: "decision", decision: "authorize" })}>Authorize</Button>
-                <Button className="min-h-11" size="sm" variant="outline" disabled={send.isPending} onClick={() => send.mutate({ kind: "decision", decision: "changes" })}>Request changes</Button>
-              </>
-            ) : null}
+            {t.includes("feedback") && !t.includes("decision") && !item.responses.length ? <Button className="min-h-11" size="sm" disabled={send.isPending || !text.trim()} onClick={() => send.mutate({ kind: "feedback" })}>Send to ARHA</Button> : null}
+
           </div>
         </div>
       ) : null}

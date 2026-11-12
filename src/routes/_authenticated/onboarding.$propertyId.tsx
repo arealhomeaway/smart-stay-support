@@ -163,7 +163,8 @@ export const Route = createFileRoute("/_authenticated/onboarding/$propertyId")({
     const rawTab = typeof raw.tab === "string" ? raw.tab : undefined;
     const tab =
       rawTab ?? (typeof raw.opp === "string" && typeof raw.task !== "string" ? "info" : "plan");
-    return { ...parsed, tab };
+    // Fixes 11, 12: Owner Completions opens the Task drawer at its owner conversation.
+    return { ...parsed, tab, ...((raw as { at?: unknown }).at === "conversation" ? { at: "conversation" as const } : {}) };
   },
   // Only a real property id may open a workspace; anything else never
   // reaches the server.

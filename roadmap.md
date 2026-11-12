@@ -1,5 +1,12 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 12 build: onboarding Task kinds, Breezeway and test fixes (no publish; stage DB in docs/pending/onboarding-kinds/)
+- [x] A1 task_kind field (template step + onboarding_tasks, backfill rule); A2 template editor pickers; A3 drawer by kind; A4 Notion/form steps
+- [x] B1 onboarding send needs only its own switch; B2 pickers on Work order Tasks; B3 Breezeway match screen + report; B4 no switch change
+- [x] C owner portal fixes 1-5, 23-25; drawer/home fixes 9-14, 16-22, 26, 27; plans 28, 29
+- [x] AGENTS.md: names on comments/notes/messages/history; roles for assignment
+- [x] Tests listed in Part E; suite, type check, build; final table
+
 ## Nov 11 build: Owner Opportunities and Task Drawer (preview only; stage DB in docs/pending/owner-opps-drawer/)
 - [x] A1 four groups and styles, overdue red, Ready shows 4 + Show more, market once per owner
 - [x] A2 home tabs; A3 side panel; A4 home page; A5 notice wording

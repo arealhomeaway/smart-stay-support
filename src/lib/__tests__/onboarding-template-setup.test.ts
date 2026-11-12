@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { MASTER_ONBOARDING_TEMPLATE, templateCounts } from "../onboarding-template";
+import { builtInAsRows } from "../onboarding-template-catalog";
 import { applyOnboardingTemplate, previewOnboardingTemplate } from "../onboarding-template.server";
 import { ensureOwnerApprovalRequest } from "../onboarding.server";
 import type { AuditEntry } from "../audit.server";
@@ -81,8 +82,8 @@ function fixture(partiallySaved = false, allowOwnerContactRead = false) {
           "functional_roles",
           "owner_program_properties",
           "approvals",
-          // No team-authored template is marked default in this fixture, so the
-          // built-in plan is the one that applies.
+          // Fix 28 (Nov 12): a new home always uses the plan marked default. This
+          // fixture marks a default plan with the same steps the tests expect.
           "onboarding_templates",
           "onboarding_template_tasks",
         ].includes(table)
@@ -95,7 +96,9 @@ function fixture(partiallySaved = false, allowOwnerContactRead = false) {
         data:
           table === "onboarding_tasks"
             ? (inserted ?? tasks.filter((task) => matches.every((match) => match(task))))
-            : [],
+            : table === "onboarding_template_tasks"
+              ? builtInAsRows("default-plan").map((row, index) => ({ id: `step-${index}`, ...row }))
+              : [],
         error: null,
       });
       const query = {
@@ -127,7 +130,9 @@ function fixture(partiallySaved = false, allowOwnerContactRead = false) {
         single: async () => query.maybeSingle(),
         maybeSingle: async () => ({
           data:
-            table === "onboarding_templates" || table === "onboarding_template_tasks"
+            table === "onboarding_templates"
+              ? { id: "default-plan", key: "arha_onboarding_standard" }
+              : table === "onboarding_template_tasks"
               ? null
               : table === "properties"
               ? property

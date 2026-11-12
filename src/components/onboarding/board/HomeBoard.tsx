@@ -84,7 +84,8 @@ export function HomeBoardHeader(p: {
         {p.follow}
       </div>
       <section className="overflow-hidden rounded-2xl border border-border bg-card">
-        <div className="relative aspect-[16/7] max-h-72 w-full bg-sunken sm:aspect-[16/5]">
+        {/* Fix 9: a 160 px banner so the Tasks show without scrolling. */}
+        <div className="relative h-40 w-full bg-sunken">
           <PropertyPhoto url={p.photo} name={p.address} rounded="rounded-none" className="size-full object-cover" />
           <div className="absolute left-3 top-3 flex flex-wrap gap-2">
             <Chip className="bg-background/90 text-foreground">{p.stage}</Chip>
@@ -203,7 +204,18 @@ export function PlanStages({
       list.length === 0 ? (
         <p className="px-3 py-3 text-sm text-muted-foreground">No tasks match.</p>
       ) : (
-        <ul className="divide-y divide-border">{list.map(row)}</ul>
+        // Fixes 10, 27: open Tasks first; finished ones fold into "Finished (n)".
+        <>
+          <ul className="divide-y divide-border">{list.filter((t) => !isFinished(t)).map(row)}</ul>
+          {list.some(isFinished) ? (
+            <details className="border-t border-border">
+              <summary className="flex min-h-11 cursor-pointer items-center px-3 text-sm text-muted-foreground">
+                Finished ({list.filter(isFinished).length})
+              </summary>
+              <ul className="divide-y divide-border">{list.filter(isFinished).map(row)}</ul>
+            </details>
+          ) : null}
+        </>
       );
     const head = (
       <span className="flex flex-wrap items-baseline gap-2">
