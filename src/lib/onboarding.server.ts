@@ -492,6 +492,17 @@ export async function saveOnboardingTask(
     throw new Error("Return or reopen the original stage before moving its work.");
   if (prior?.data.status === "complete")
     throw new Error("Reopen the completed step with a reason before editing it.");
+  // Item 9 (Nov 12): an Approval Task with no step review is approved only by its reviewer, the
+  // Task's assigned person (staged approval_task_reviewer; a configured review returns null and
+  // keeps today's review rules; before the function exists nothing changes).
+  if (input.id && input.status === "complete" && (prior?.data as { task_kind?: string } | undefined)?.task_kind === "approval") {
+    const reviewer = await (supabase.rpc as unknown as (n: string, a: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>)(
+      "approval_task_reviewer",
+      { _task_id: input.id },
+    );
+    if (!reviewer.error && typeof reviewer.data === "string" && reviewer.data !== userId)
+      throw new Error("Only the person reviewing this Task can approve it.");
+  }
   // Locked handoff: once Operations accepts the home, the onboarding plan is
   // history. Anything found afterwards is a correction (reopen with a reason)
   // or an Operations ticket — never a silent edit to a finished project.
