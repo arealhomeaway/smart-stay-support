@@ -39,12 +39,15 @@ export type BoardItem = {
   locked: boolean;
   finished: boolean;
   opensText?: string | null;
+  /** Fix 25: the owner answered last; it waits on ARHA. */
+  withArha?: boolean;
 };
 
 /** Where an item sits on the page. One rule for every source. */
-export function boardGroup(i: Pick<BoardItem, "finished" | "locked" | "needsAnswer" | "newReply" | "optional">): BoardGroup {
+export function boardGroup(i: Pick<BoardItem, "finished" | "locked" | "needsAnswer" | "newReply" | "optional" | "withArha">): BoardGroup {
   if (i.finished) return "done";
   if (i.locked) return "soon";
+  if (i.withArha && !i.newReply) return "with_arha";
   if (i.needsAnswer || i.newReply) return "answer";
   if (i.optional) return "optional";
   return "ready";
@@ -117,14 +120,14 @@ export function inHome(i: Pick<BoardItem, "propertyIds">, homeId: string): boole
   return i.propertyIds.length === 0 || i.propertyIds.includes(homeId);
 }
 
-export type BoardView<T extends BoardItem = BoardItem> = { answer: T[]; ready: T[]; optional: T[]; soon: T[]; done: T[] };
+export type BoardView<T extends BoardItem = BoardItem> = { answer: T[]; with_arha: T[]; ready: T[]; optional: T[]; soon: T[]; done: T[] };
 
 /**
  * The page for one tab. `homeId` null = a one-home owner (everything);
  * "all" = All homes: just what needs you (Needs your answer only, every home).
  */
 export function boardView<T extends BoardItem>(items: T[], homeId: string | "all" | null): BoardView<T> {
-  const view: BoardView<T> = { answer: [], ready: [], optional: [], soon: [], done: [] };
+  const view: BoardView<T> = { answer: [], with_arha: [], ready: [], optional: [], soon: [], done: [] };
   for (const i of items) {
     const g = boardGroup(i);
     if (homeId === "all") {
@@ -207,4 +210,22 @@ export function sourceLine(i: Pick<BoardItem, "allHomes" | "propertyIds" | "from
       ? multiHome ? "All your homes" : ""
       : i.propertyIds.map(homeName).filter(Boolean).join(" · ");
   return [home, i.from].filter(Boolean).join(" · ");
+}
+
+/** Fix 2: one short line on a card, the first sentence cut at 90 characters. */
+export function cardLine(text: string | null | undefined): string {
+  const t = (text ?? "").replace(/\s+/g, " ").trim();
+  const first = (/^(.+?[.!?])(\s|$)/.exec(t)?.[1] ?? t).trim();
+  return first.length > 90 ? `${first.slice(0, 89).trimEnd()}…` : first;
+}
+
+/** Fix 3: the street address only ("101 Willow Way"), never city and state. */
+export function streetOnly(address: string | null | undefined): string | null {
+  const t = (address ?? "").split(",")[0]?.trim();
+  return t || null;
+}
+
+/** Fix 5: ARHA's own setup step is never owner work. */
+export function isArhaSetupStep(title: string | null | undefined): boolean {
+  return /^\s*activate (your|the) homeowner workspace/i.test(title ?? "");
 }
