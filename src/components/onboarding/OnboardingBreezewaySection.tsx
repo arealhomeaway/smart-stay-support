@@ -28,7 +28,10 @@ import {
   sendToBreezewayRefusal,
 } from "@/lib/onboarding-breezeway";
 import { Textarea } from "@/components/ui/textarea";
+import { SearchablePicker } from "@/components/SearchablePicker";
+import { UNASSIGNED_VALUE, breezewayPersonOptions, breezewayTemplateOptions } from "@/lib/searchable-picker";
 import {
+  type OnboardingBreezewayState,
   breezewayHomeLinkFn,
   onboardingBreezewayStateFn,
   onboardingBreezewayTemplatesFn,
@@ -66,39 +69,42 @@ export function OnboardingBreezewaySection({
   const state = useQuery({ queryKey: key, queryFn: () => stateFn({ data: { taskId } }) });
 
   const [date, setDate] = useState("");
-  const [assignee, setAssignee] = useState<string>("choose");
+  // Item 33: Unassigned is a choice and the default.
+  const [assignee, setAssignee] = useState<string>(UNASSIGNED_VALUE);
   const [ref, setRef] = useState("");
-  const [templateId, setTemplateId] = useState("none");
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [templateId, setTemplateId] = useState<string | null>(null);
   const [priority, setPriority] = useState("normal");
   const [title, setTitle] = useState((defaultTitle ?? "").replace(/^\s*(draft\s+)?work order\s*:\s*/i, ""));
   const [description, setDescription] = useState(defaultDescription ?? "");
   const templatesFn = useServerFn(onboardingBreezewayTemplatesFn);
   const templates = useQuery({ queryKey: ["onboarding-breezeway-templates"], queryFn: () => templatesFn(), staleTime: 10 * 60_000 });
+  const savedAssignee = (link: OnboardingBreezewayState["link"] | undefined) =>
+    link?.assignee_choice === "person" && link.breezeway_person_id
+      ? String(link.breezeway_person_id)
+      : link?.assignee_choice === "unassigned"
+        ? UNASSIGNED_VALUE
+        : null;
+  const savedRef = (link: OnboardingBreezewayState["link"] | undefined) =>
+    link?.breezeway_url ?? (link?.breezeway_task_id ? String(link.breezeway_task_id) : "");
   useEffect(() => {
     const link = state.data?.link;
     setDate(link?.tentative_date ?? "");
-    setAssignee(
-      link?.assignee_choice === "person" && link.breezeway_person_id
-        ? String(link.breezeway_person_id)
-        : link?.assignee_choice === "unassigned"
-          ? "unassigned"
-          : "choose",
-    );
-    setRef(link?.breezeway_url ?? (link?.breezeway_task_id ? String(link.breezeway_task_id) : ""));
+    setAssignee(savedAssignee(link) ?? UNASSIGNED_VALUE);
+    setRef(savedRef(link));
+    if (savedRef(link)) setPasteOpen(true);
   }, [state.data?.link]);
 
   const parsed = parseBreezewayRef(ref);
+  const saveInput = () => ({
+    taskId,
+    tentativeDate: date || null,
+    assigneeChoice: assignee === UNASSIGNED_VALUE ? ("unassigned" as const) : ("person" as const),
+    breezewayPersonId: assignee !== UNASSIGNED_VALUE ? Number(assignee) : null,
+    breezewayRef: ref.trim(),
+  });
   const save = useMutation({
-    mutationFn: () =>
-      saveFn({
-        data: {
-          taskId,
-          tentativeDate: date || null,
-          assigneeChoice: assignee === "choose" ? null : assignee === "unassigned" ? "unassigned" : "person",
-          breezewayPersonId: assignee !== "choose" && assignee !== "unassigned" ? Number(assignee) : null,
-          breezewayRef: ref.trim(),
-        },
-      }),
+    mutationFn: () => saveFn({ data: saveInput() }),
     onSuccess: () => {
       toast.success("Breezeway details saved.");
       void qc.invalidateQueries({ queryKey: key });
@@ -106,8 +112,10 @@ export function OnboardingBreezewaySection({
     onError: (e: Error) => toast.error(e.message),
   });
   const send = useMutation({
-    mutationFn: () =>
-      sendFn({
+    mutationFn: async () => {
+      // The date and Assign to are saved with the send, so one press does both.
+      if (dirty) await saveFn({ data: saveInput() });
+      return sendFn({
         data: {
           taskId,
           templateId: Number(templateId),
@@ -115,17 +123,22 @@ export function OnboardingBreezewaySection({
           title: title.trim(),
           description: description.trim() || null,
         },
-      }),
+      });
+    },
     onSuccess: (r) => {
       if (r && "ok" in r && r.ok === false) toast.error(r.message);
       else toast.success("Sent to Breezeway.");
       void qc.invalidateQueries({ queryKey: key });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      toast.error(e.message);
+      void qc.invalidateQueries({ queryKey: key });
+    },
   });
 
   const people = state.data?.people ?? [];
-  const peopleSorted = useMemo(() => people.slice().sort((a, b) => a.name.localeCompare(b.name)), [people]);
+  const personOptions = useMemo(() => breezewayPersonOptions(people), [people]);
+  const templateOptions = useMemo(() => breezewayTemplateOptions(templates.data?.templates ?? []), [templates.data]);
   if (state.isLoading) return <p className="text-sm text-muted-foreground">Loading Breezeway details…</p>;
   if (state.error) return <p className="text-sm text-destructive">{(state.error as Error).message}</p>;
   const data = state.data!;
@@ -136,21 +149,15 @@ export function OnboardingBreezewaySection({
       switchOn: data.sendSwitchOn,
       homeEligible: data.home?.eligible ?? false,
       homeReason: data.home?.reason ?? null,
-      tentativeDate: data.link?.tentative_date ?? null,
+      tentativeDate: date || null,
       alreadyLinked: Boolean(linkedId),
     }) ??
-    (!data.link?.assignee_choice ? "Choose a Breezeway person, or Leave unassigned, and save first." : null) ??
-    (templateId === "none" ? "Choose a Breezeway template." : null) ??
+    (!templateId ? "Choose a Breezeway template." : null) ??
     (title.trim().length < 3 ? "Give the work order a title." : null);
   const dirty =
     (date || "") !== (data.link?.tentative_date ?? "") ||
-    assignee !==
-      (data.link?.assignee_choice === "person" && data.link.breezeway_person_id
-        ? String(data.link.breezeway_person_id)
-        : data.link?.assignee_choice === "unassigned"
-          ? "unassigned"
-          : "choose") ||
-    ref.trim() !== (data.link?.breezeway_url ?? (data.link?.breezeway_task_id ? String(data.link.breezeway_task_id) : ""));
+    assignee !== savedAssignee(data.link) ||
+    ref.trim() !== savedRef(data.link);
 
   return (
     <section className="space-y-4 rounded-lg border border-primary/40 bg-primary/5 p-4" aria-label="Breezeway work order">
@@ -160,38 +167,6 @@ export function OnboardingBreezewaySection({
           {CONNECTION_LABEL[connection]}
         </Chip>
       </div>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="grid gap-1.5">
-          <Label htmlFor={`bz-date-${taskId}`}>Tentative date</Label>
-          <Input id={`bz-date-${taskId}`} type="date" className="min-h-11" value={date} disabled={disabled}
-            onChange={(e) => setDate(e.target.value)} />
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Assign to</Label>
-          <Select value={assignee} onValueChange={setAssignee} disabled={disabled}>
-            <SelectTrigger className="min-h-11"><SelectValue placeholder="Choose" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="choose">Not chosen yet</SelectItem>
-              <SelectItem value="unassigned">Leave unassigned</SelectItem>
-              {peopleSorted.map((p) => (
-                <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      <div className="grid gap-1.5">
-        <Label htmlFor={`bz-ref-${taskId}`}>Paste a Breezeway number or link</Label>
-        <Input id={`bz-ref-${taskId}`} className="min-h-11" value={ref} disabled={disabled}
-          placeholder="Paste it after you create the work order in Breezeway"
-          onChange={(e) => setRef(e.target.value)} />
-        {parsed && !parsed.ok ? <p className="text-xs text-destructive">{parsed.error}</p> : null}
-      </div>
-      <Button className="min-h-11 w-full sm:w-auto" disabled={disabled || save.isPending || !dirty || Boolean(parsed && !parsed.ok)}
-        onClick={() => save.mutate()}>
-        <Link2 className="size-4" /> {save.isPending ? "Saving…" : "Save Breezeway details"}
-      </Button>
 
       {linkedId ? (
         <div className="space-y-2 rounded-lg border border-border bg-background/70 p-3 text-sm">
@@ -241,21 +216,44 @@ export function OnboardingBreezewaySection({
         </div>
       ) : null}
 
-      {!linkedId ? (
-        <div className="space-y-3 border-t border-border pt-3">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="grid gap-1.5">
-              <Label>Breezeway template</Label>
-              <Select value={templateId} onValueChange={setTemplateId} disabled={disabled}>
-                <SelectTrigger className="min-h-11" aria-label="Breezeway template"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{templates.isLoading ? "Loading templates…" : "Choose a template"}</SelectItem>
-                  {(templates.data?.templates ?? []).map((t) => (
-                    <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      {/* Item 33: template, Assign to, Tentative date, Priority, Title, Description, then Send. */}
+      <div className="space-y-3">
+        {!linkedId ? (
+          <div className="grid gap-1.5">
+            <Label htmlFor={`bz-template-${taskId}`}>Breezeway template</Label>
+            <SearchablePicker
+              id={`bz-template-${taskId}`}
+              label="Breezeway template"
+              value={templateId}
+              options={templateOptions}
+              onChange={setTemplateId}
+              placeholder="Choose a template"
+              searchPlaceholder="Type part of the template name"
+              loading={templates.isLoading}
+              disabled={disabled}
+            />
+          </div>
+        ) : null}
+        <div className="grid gap-1.5">
+          <Label htmlFor={`bz-assign-${taskId}`}>Assign to</Label>
+          <SearchablePicker
+            id={`bz-assign-${taskId}`}
+            label="Assign to"
+            value={assignee}
+            options={personOptions}
+            onChange={setAssignee}
+            placeholder="Unassigned"
+            searchPlaceholder="Type part of a name"
+            disabled={disabled}
+          />
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor={`bz-date-${taskId}`}>Tentative date</Label>
+          <Input id={`bz-date-${taskId}`} type="date" className="min-h-11" value={date} disabled={disabled}
+            onChange={(e) => setDate(e.target.value)} />
+        </div>
+        {!linkedId ? (
+          <>
             <div className="grid gap-1.5">
               <Label>Priority</Label>
               <Select value={priority} onValueChange={setPriority} disabled={disabled}>
@@ -265,29 +263,49 @@ export function OnboardingBreezewaySection({
                 </SelectContent>
               </Select>
             </div>
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor={`bz-title-${taskId}`}>Title</Label>
-            <Input id={`bz-title-${taskId}`} className="min-h-11" value={title} disabled={disabled} maxLength={200}
-              onChange={(e) => setTitle(e.target.value)} />
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor={`bz-desc-${taskId}`}>Description</Label>
-            <Textarea id={`bz-desc-${taskId}`} rows={3} value={description} disabled={disabled} maxLength={4000}
-              onChange={(e) => setDescription(e.target.value)} />
-          </div>
-        </div>
-      ) : null}
+            <div className="grid gap-1.5">
+              <Label htmlFor={`bz-title-${taskId}`}>Title</Label>
+              <Input id={`bz-title-${taskId}`} className="min-h-11" value={title} disabled={disabled} maxLength={200}
+                onChange={(e) => setTitle(e.target.value)} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor={`bz-desc-${taskId}`}>Description</Label>
+              <Textarea id={`bz-desc-${taskId}`} rows={3} value={description} disabled={disabled} maxLength={4000}
+                onChange={(e) => setDescription(e.target.value)} />
+            </div>
+          </>
+        ) : null}
+      </div>
 
       <div className="space-y-1">
-        <Button variant="outline" className="min-h-11 w-full sm:w-auto" disabled={disabled || Boolean(sendRefusal) || send.isPending}
+        <Button className="min-h-11 w-full sm:w-auto" disabled={disabled || Boolean(sendRefusal) || send.isPending}
           onClick={() => {
             if (window.confirm("Create this work order in Breezeway now? It is sent once and cannot be recalled.")) send.mutate();
           }}>
-          <Send className="size-4" /> Send to Breezeway
+          <Send className="size-4" /> {send.isPending ? "Sending…" : "Send to Breezeway"}
         </Button>
         {sendRefusal ? <p className="text-xs text-muted-foreground">{sendRefusal}</p> : null}
       </div>
+
+      {/* Item 33: pasting a number made in Breezeway is a small link under the button. */}
+      {!pasteOpen ? (
+        <Button variant="link" className="h-auto min-h-11 px-0 text-sm" disabled={disabled} aria-expanded={false}
+          onClick={() => setPasteOpen(true)}>
+          Already made it in Breezeway? Paste its number
+        </Button>
+      ) : (
+        <div className="grid gap-1.5">
+          <Label htmlFor={`bz-ref-${taskId}`}>Breezeway number or link</Label>
+          <Input id={`bz-ref-${taskId}`} className="min-h-11" value={ref} disabled={disabled}
+            placeholder="For example 81234567"
+            onChange={(e) => setRef(e.target.value)} />
+          {parsed && !parsed.ok ? <p className="text-xs text-destructive">{parsed.error}</p> : null}
+          <Button variant="outline" className="min-h-11 w-full sm:w-auto" disabled={disabled || save.isPending || !dirty || Boolean(parsed && !parsed.ok)}
+            onClick={() => save.mutate()}>
+            <Link2 className="size-4" /> {save.isPending ? "Saving…" : "Save"}
+          </Button>
+        </div>
+      )}
       {data.history > 0 && data.link ? (
         <p className="text-xs text-muted-foreground">Last saved {usDateTime(data.link.updated_at)}</p>
       ) : null}
