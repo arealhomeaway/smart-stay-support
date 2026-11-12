@@ -1,5 +1,16 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 12 Plan catch-up: update many Tasks at once (onboarding home Plan tab, staged SQL, no apply, no publish)
+- [x] 1 Selection: 52 px rows, 26 px box in 44 px tap area, stage header box, shift range, Select all open, finished selectable
+- [x] 2 Pinned action bar
+- [x] 3 Mark done form (Today/Earlier, proof, covered owner cards, approved outside Resolve, skip and save)
+- [x] 4 Not needed for this home
+- [x] 5 Assign to / Change due date
+- [x] 6 Result line, 10 minute Undo, live refresh, Activity + audit
+- [x] 7 Role limits on the server
+- [x] 8 O8 skip and save
+- [ ] Apply docs/pending/plan-catch-up (built, staged, practiced on isolated copy) - blocked: waits on the Admin's approval to apply
+
 ## Nov 12 Fix 41 onboarding home page (onboarding only, no publish)
 - [x] 1 Summary card: photo left 360x240, chips, place, 4x2 details grid; stacks under 768 px
 - [x] 2 Chips: owner type, risk, project status; no stage chip

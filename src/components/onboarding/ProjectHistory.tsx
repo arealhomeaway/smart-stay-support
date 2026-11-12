@@ -51,6 +51,11 @@ const KIND_LABEL: Record<string, string> = {
   scope_changed: "Scope changed",
   task_completed: "Task completed",
   task_reopened: "Task reopened",
+  // Plan catch-up (Admin approval Nov 12).
+  task_not_needed: "Not needed",
+  task_assigned: "Assigned",
+  task_due_changed: "Due date changed",
+  task_change_undone: "Undone",
   owner_approval_requested: "Owner approval requested",
   owner_decision: "Owner decision",
   fact_decision: "Permanent fact reviewed",

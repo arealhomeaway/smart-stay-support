@@ -21,6 +21,10 @@ export type BulkCompleteResult = {
   completed: number;
   completedAt?: string;
   doneBeforeResolve?: string | null;
+  /** Plan catch-up (staged Nov 12): the Undo receipt, owner cards no longer sent, approvals recorded outside Resolve. */
+  batchId?: string | null;
+  covered?: { taskId: string; title: string; code: string; onPlan: boolean }[];
+  approvedOutside?: { taskId: string; title: string }[];
 };
 
 export const bulkCompleteHomeTasksFn = createServerFn({ method: "POST" })
