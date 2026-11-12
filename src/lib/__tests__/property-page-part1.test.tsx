@@ -16,10 +16,14 @@ import {
   computedStage,
   factsLine,
   moreTags,
+  attentionJumpSearch,
+  foldChips,
+  lateElsewhereLabel,
+  lateEverywhere,
   needsAttention,
   nextBusinessDay,
   oneOffColumns,
-  ownerContactButtons,
+  ownerRow,
   ownerDecisionsDue,
   ownerTagFor,
   ownerTagText,
@@ -27,9 +31,11 @@ import {
   parseStatusStageMap,
   rowDue,
   scheduleHealth,
+  showBackToAttention,
   stageKeyFor,
   stageLists,
   stageMismatch,
+  tabClickSearch,
   tagCounts,
   telegramLink,
   yoursLate,
@@ -59,8 +65,9 @@ describe("1.1 tabs and ?tab=", () => {
   it("are in the approved order, ending with the temporary More", () => {
     expect(PAGE_TABS.map((x) => x.label)).toEqual(["Overview", "Tasks", "Owner", "Home details", "Vendors and work", "Files", "Budget", "Activity", "More"]);
   });
-  it("the page opens on Tasks; old links open the tab that holds their content now", () => {
-    expect(pageTabFor(undefined)).toBe("tasks");
+  it("the page opens on Overview; old links open the tab that holds their content now", () => {
+    expect(pageTabFor(undefined)).toBe("overview");
+    expect(pageTabFor("tasks")).toBe("tasks");
     expect(pageTabFor("plan")).toBe("tasks");
     expect(pageTabFor("work")).toBe("tasks");
     expect(pageTabFor("design")).toBe("more");
@@ -74,7 +81,8 @@ describe("1.1 tabs and ?tab=", () => {
   it("the route keeps the tab in the address and renders PAGE_TABS", () => {
     const page = readFileSync("src/routes/_authenticated/onboarding.$propertyId.tsx", "utf8");
     expect(page).toContain("PAGE_TABS.map(");
-    expect(page).toMatch(/navigate\(\{ search: \{ \.\.\.search, tab: next \} as never, replace: true \}\)/);
+    expect(page).toMatch(/navigate\(\{ search: tabClickSearch\(search, pageTabFor\(next\)\) as never, replace: true \}\)/);
+    expect(page).toMatch(/: DEFAULT_PAGE_TAB\);/);
     expect(page).not.toContain("HomeBoardHeader");
     expect(page).not.toContain("<PropertyWorkQueue");
   });
@@ -156,11 +164,27 @@ describe("1.5 Do now, Up next, Done", () => {
     t({ id: "done", stage: "Pre-Close", status: "complete", completed_at: "2026-11-01T10:00:00Z" }),
     t({ id: "future-other", stage: "Handoff", due_on: "2026-11-13" }),
   ];
-  it("Do now = this stage late or due within 2 days plus every late Task from other stages, labeled", () => {
+  it("Do now = only the selected stage's Tasks late or due within 2 days; late Tasks elsewhere are only counted", () => {
     const l = stageLists(tasks, { stage: 1, today: TODAY, tag: null, viewerId: ME, pmId: PM });
-    expect(l.doNow.map((x) => [x.task.id, x.fromStage])).toEqual([["late-other", "Intake"], ["soon", null]]);
+    expect(l.doNow.map((x) => [x.task.id, x.fromStage])).toEqual([["soon", null]]);
     expect(l.upNext.map((x) => x.id)).toEqual(["later", "nodate"]);
     expect(l.done.map((x) => x.id)).toEqual(["done"]);
+    expect(l.lateElsewhere).toBe(1);
+    // A late Task in the selected stage is in Do now, not in the other-stages count.
+    const own = stageLists([...tasks, t({ id: "late-here", stage: "Pre-Close", due_on: "2026-11-01" })], { stage: 1, today: TODAY, tag: null, viewerId: ME, pmId: PM });
+    expect(own.doNow.map((x) => x.task.id)).toEqual(["late-here", "soon"]);
+    expect(own.lateElsewhere).toBe(1);
+    // Intake has no other-stage late Task once its own late one is counted there.
+    expect(stageLists(tasks, { stage: 0, today: TODAY, tag: null, viewerId: ME, pmId: PM }).lateElsewhere).toBe(0);
+  });
+  it("one line for late Tasks in other stages; the all-late view lists every late Task with its stage", () => {
+    expect(lateElsewhereLabel(1)).toBe("1 late Task in other stages ›");
+    expect(lateElsewhereLabel(104)).toBe("104 late Tasks in other stages ›");
+    const all = lateEverywhere([...tasks, t({ id: "late-handoff", stage: "Handoff", due_on: "2026-11-05" })], { today: TODAY, tag: null, viewerId: ME, pmId: PM });
+    expect(all.map((x) => [x.task.id, x.fromStage, x.late])).toEqual([
+      ["late-handoff", "Handoff", 7],
+      ["late-other", "Intake", 2],
+    ]);
   });
   it("a whose-Task filter narrows every list", () => {
     const l = stageLists([...tasks, t({ id: "mine", stage: "Pre-Close", assigned_to: ME, due_on: "2026-12-01" })], { stage: 1, today: TODAY, tag: "you", viewerId: ME, pmId: PM });
@@ -189,16 +213,20 @@ describe("1.5 Do now, Up next, Done", () => {
         notNeededLabel={(r) => r ?? ""}
       />,
     );
-    expect(html).toContain("DO NOW · 2");
+    expect(html).toContain("DO NOW · 1");
     expect(html).toContain("UP NEXT · 2");
     expect(html).toContain("Done (1)");
-    expect(html).toContain("· from Intake");
+    expect(html).toContain("1 late Task in other stages ›");
+    expect(html).not.toContain("late-other");
+    expect(html).not.toContain("Showing: late Tasks in every stage");
     expect(html).toContain("bg-role-unassigned-bar");
     expect(html).toContain("size-7");
     expect(html).toContain("min-h-[60px]");
     expect(html).toContain("md:min-h-14");
     expect(html).toContain("bg-stage-selected");
-    expect(html).toContain("Green is always you, whoever is signed in.");
+    expect(html).toContain(
+      "Green is always you, whoever is signed in. Late Tasks in other stages show as one line at the top. Unassigned Tasks belong to the PM until handed off.",
+    );
     const css = readFileSync("src/styles.css", "utf8");
     for (const hex of ["#e3f4ea", "#1e6b3e", "#2e9e5b", "#efe6fb", "#5e3399", "#8a5cd1", "#e3eefb", "#1d5596", "#3b7fd1", "#fdf0dc", "#8a5200", "#d08a1e", "#e9ecee", "#3d4a52", "#6b7a84", "#f3f1ec", "#a8a194", "#5f5f5f", "#b8b1a4", "#145a5e", "#9a2f22"])
       expect(css).toContain(hex);
@@ -232,6 +260,38 @@ describe("1.2 Needs attention", () => {
       { tab: "details", section: "dates" },
     ]);
     expect(needsAttention({ ownerWaitingOnUs: 0, ownerDecisionsDue: 0, yoursLate: 0, mismatch: null, missingRoles: [], committedMissing: false })).toEqual([]);
+    expect(chips.some((c) => /weekly/i.test(c.label) || /weekly/i.test(c.key))).toBe(false);
+  });
+  it("the first 3 chips show, the rest behind +N more", () => {
+    const six = [1, 2, 3, 4, 5, 6];
+    expect(foldChips(six, false)).toEqual({ shown: [1, 2, 3], more: 3 });
+    expect(foldChips(six, true)).toEqual({ shown: six, more: 3 });
+    expect(foldChips([1, 2], false)).toEqual({ shown: [1, 2], more: 0 });
+  });
+  it("lives on Overview only, never in the header", () => {
+    const page = readFileSync("src/routes/_authenticated/onboarding.$propertyId.tsx", "utf8");
+    const header = readFileSync("src/components/onboarding/home-page/OnboardingHomeHeader.tsx", "utf8");
+    const overview = page.slice(page.indexOf('<TabsContent value="overview"'), page.indexOf('<TabsContent value="tasks"'));
+    expect(overview).toContain("<NeedsAttentionStrip");
+    expect(page.match(/<NeedsAttentionStrip/g)).toHaveLength(1);
+    expect(header).not.toMatch(/<NeedsAttention|attention[=?:]/);
+    const parts = readFileSync("src/components/onboarding/home-page/OverviewParts.tsx", "utf8");
+    expect(parts).toContain("Needs attention on this home");
+  });
+  it("a jump pushes history with one Back button; a tab click or Back drops it", () => {
+    const s0 = { tab: "overview", task: "x" };
+    const jumped = attentionJumpSearch(s0, "owner");
+    expect(jumped).toEqual({ tab: "owner", task: "x", from: "attention" });
+    expect(showBackToAttention(jumped, "owner")).toBe(true);
+    expect(showBackToAttention(jumped, "overview")).toBe(false);
+    expect(tabClickSearch(jumped, "files")).toEqual({ tab: "files", task: "x" });
+    expect(showBackToAttention(tabClickSearch(jumped, "files"), "files")).toBe(false);
+    expect(showBackToAttention({ tab: "owner" }, "owner")).toBe(false);
+    const page = readFileSync("src/routes/_authenticated/onboarding.$propertyId.tsx", "utf8");
+    // The jump is a push (no replace); the Back button replaces and clears the chip's filters.
+    expect(page).toContain("void navigate({ search: attentionJumpSearch(search, c.jump.tab) as never });");
+    expect(page.match(/\/> Back to Needs attention/g)).toHaveLength(1);
+    expect(page).toMatch(/const backToAttention = \(\) => \{\s+jumpFilters\.current = false;\s+setStageSel\(undefined\);\s+setTagSel\(null\);/);
   });
   it("Yours late counts Tasks assigned to the viewer, or unassigned where the viewer is PM", () => {
     const tasks = [t({ assigned_to: ME, due_on: "2026-11-11" }), t({ due_on: "2026-11-11" }), t({ assigned_to: ME, due_on: TODAY })];
@@ -271,15 +331,36 @@ describe("1.1 header lines", () => {
   it("+N more holds only what is set", () => {
     expect(moreTags({ market: "OKC", scope: "Full furnishing", hoa: true, breezeway: false, labels: ["Pool"] })).toEqual(["OKC", "Full furnishing", "HOA", "Pool"]);
   });
-  it("owner buttons: sms, tel, mailto and t.me links, the preferred one marked", () => {
-    const b = ownerContactButtons({ name: "Ryan Lee", phone: "(405) 555-0142", email: "ryan@example.test", telegram: "@ryanlee", preferred: "call" });
-    expect(b.map((x) => [x.label, x.href, x.preferred])).toEqual([
-      ["Text Ryan · (405) 555-0142", "sms:+14055550142", false],
-      ["Call Ryan · (405) 555-0142", "tel:+14055550142", true],
-      ["Email · ryan@example.test", "mailto:ryan@example.test", false],
-      ["Telegram", "https://t.me/ryanlee", false],
+  const contact = { phone: "(405) 555-0142", email: "ryan@example.test", telegram: "@ryanlee" };
+  it("owner row: the people, then the legal owner; one preferred button, the rest behind Call or email", () => {
+    const r = ownerRow({ people: ["Ryan Lee", "Lindsey Lee"], legal: "Adriel Properties, LLC", ...contact, preferred: "call" });
+    expect([r.names, r.legal]).toEqual(["Ryan Lee and Lindsey Lee", "Adriel Properties, LLC"]);
+    expect([r.primary?.label, r.primary?.href, r.primary?.preferred]).toEqual(["Call Ryan (preferred)", "tel:+14055550142", true]);
+    expect(r.others.map((x) => [x.label, x.href])).toEqual([
+      ["Text Ryan", "sms:+14055550142"],
+      ["Email", "mailto:ryan@example.test"],
+      ["Telegram", "https://t.me/ryanlee"],
     ]);
-    expect(ownerContactButtons({ name: "A", phone: null, email: null, telegram: null, preferred: null })).toEqual([]);
+    const labels = (m: string) => ownerRow({ people: ["Ryan Lee"], legal: "X", ...contact, preferred: m }).primary;
+    expect([labels("text")?.label, labels("text")?.href]).toEqual(["Text Ryan (preferred)", "sms:+14055550142"]);
+    expect([labels("email")?.label, labels("email")?.href]).toEqual(["Email (preferred)", "mailto:ryan@example.test"]);
+    expect([labels("telegram")?.label, labels("telegram")?.href]).toEqual(["Telegram (preferred)", "https://t.me/ryanlee"]);
+  });
+  it("with no preferred method the first button is Text, not highlighted; Telegram only when set", () => {
+    const r = ownerRow({ people: ["Ryan Lee"], legal: "X", ...contact, telegram: null, preferred: null });
+    expect([r.primary?.label, r.primary?.preferred]).toEqual(["Text Ryan", false]);
+    expect(r.others.map((x) => x.label)).toEqual(["Call Ryan", "Email"]);
+    // No phone: the first method on file leads.
+    expect(ownerRow({ people: [], legal: "Mike & Rachel Ramsey", phone: null, email: "m@example.test", telegram: null, preferred: null }).primary?.label).toBe("Email");
+    // No separate people: the record's name shows once, not twice.
+    const solo = ownerRow({ people: [], legal: "Mike & Rachel Ramsey", phone: null, email: null, telegram: null, preferred: null });
+    expect([solo.names, solo.legal, solo.primary, solo.others]).toEqual(["Mike & Rachel Ramsey", null, null, []]);
+  });
+  it("the header has one owner line and no Grasshopper or Outlook note", () => {
+    const header = readFileSync("src/components/onboarding/home-page/OnboardingHomeHeader.tsx", "utf8");
+    expect(header).not.toMatch(/Grasshopper|Outlook/);
+    expect(header).toContain('{showWays ? "Less" : "Call or email"}');
+    expect(readFileSync("src/lib/owner-link.server.ts", "utf8")).toMatch(/people,\n\s+\},\n\s+canManage: true/);
     expect(telegramLink("https://t.me/some_one")).toBe("https://t.me/some_one");
     expect(telegramLink("not a handle")).toBeNull();
   });
@@ -351,6 +432,21 @@ describe("1.7 Add task and the permission rule", () => {
     expect(fn).toMatch(/requireSupabaseAuth/);
     expect(fn).toMatch(/loadCatchUpViewer\(context\.supabase as never, context\.userId, data\.propertyId\)/);
     expect(fn).toMatch(/addStageTask\(context\.supabase/);
+  });
+});
+
+describe("tab bar (fix 4) and badges (fix 5)", () => {
+  const page = readFileSync("src/routes/_authenticated/onboarding.$propertyId.tsx", "utf8");
+  it("the tabs sit alone in a pinned bar", () => {
+    const bar = page.slice(page.indexOf('data-testid="home-tab-bar"') - 200, page.indexOf("</TabsList>"));
+    expect(bar).toMatch(/className="sticky [^"]*bg-card[^"]*shadow-sm"/);
+    expect(bar).toContain("<TabsList");
+    expect(bar).not.toMatch(/<Button|<h1|homeName|<p /);
+  });
+  it("only the Owner tab carries a count", () => {
+    const bar = page.slice(page.indexOf("PAGE_TABS.map("), page.indexOf("</TabsList>"));
+    expect(bar.match(/t\.value === "/g)).toEqual(['t.value === "']);
+    expect(bar).toContain('t.value === "owner" && ownerSummary.waitingOnUs > 0');
   });
 });
 

@@ -114,7 +114,48 @@ export type OwnerCard = {
   telegram: string | null;
   /** True once the staged preferred_method and telegram columns exist. */
   contactFieldsReady: boolean;
+  /**
+   * Property page Part 1 fix 2: the owner contacts by name (the home's homeowner logins, main
+   * then co-owners, then the record's co-owner name), shown before the record's name.
+   */
+  people: string[];
 };
+
+type AdminClient = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
+
+/** The people behind a home's owner record: homeowner logins on its programs, then the co-owner name. */
+async function ownerPeople(sb: AdminClient, propertyId: string, coOwnerName: string | null): Promise<string[]> {
+  const links = await sb.from("owner_program_properties").select("program_id").eq("property_id", propertyId).is("archived_at", null);
+  if (links.error) throw links.error;
+  const programIds = [...new Set((links.data ?? []).map((r) => r.program_id))];
+  const userIds: string[] = [];
+  if (programIds.length) {
+    const progs = await sb.from("owner_programs").select("owner_user_id, status").in("id", programIds);
+    if (progs.error) throw progs.error;
+    for (const p of progs.data ?? []) if (p.owner_user_id && p.status !== "archived") userIds.push(p.owner_user_id);
+    const members = await sb
+      .from("program_members" as never)
+      .select("user_id")
+      .in("program_id", programIds)
+      .is("removed_at", null);
+    // Co-owner membership is optional until it is turned on; its absence only lists fewer names.
+    if (!members.error) for (const m of (members.data ?? []) as { user_id: string }[]) userIds.push(m.user_id);
+  }
+  const names: string[] = [];
+  const ids = [...new Set(userIds)];
+  if (ids.length) {
+    const prof = await sb.from("profiles").select("id, full_name").in("id", ids);
+    if (prof.error) throw prof.error;
+    const byId = new Map((prof.data ?? []).map((r) => [r.id, r.full_name]));
+    for (const id of ids) {
+      const n = byId.get(id)?.trim();
+      if (n) names.push(n);
+    }
+  }
+  if (coOwnerName?.trim()) names.push(coOwnerName.trim());
+  const seen = new Set<string>();
+  return names.filter((n) => !seen.has(n.toLowerCase()) && seen.add(n.toLowerCase()));
+}
 
 /** The homeowner shown on a property — one read used by every surface. */
 export async function readPropertyOwner(
@@ -148,6 +189,7 @@ export async function readPropertyOwner(
     .select("id", { count: "exact", head: true })
     .eq("owner_record_id", ownerId)
     .is("archived_at", null);
+  const people = await ownerPeople(supabaseAdmin, propertyId, rec.data.co_owner_name);
 
   return {
     owner: {
@@ -165,6 +207,7 @@ export async function readPropertyOwner(
       preferredMethod: typeof extra["preferred_method"] === "string" ? (extra["preferred_method"] as string) : null,
       telegram: typeof extra["telegram"] === "string" ? (extra["telegram"] as string) : null,
       contactFieldsReady,
+      people,
     },
     canManage: true,
   };

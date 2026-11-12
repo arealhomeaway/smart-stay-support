@@ -1,14 +1,15 @@
 /**
- * Property page Part 1 (1.5 to 1.8): the Tasks tab. A left rail (search, the six stages with
- * done/total, whose Task with open counts) and the stage list: Do now (late or due within 2
- * days, plus late Tasks from other stages), Up next, + Add task to this stage, Done folded.
+ * Property page Part 1 (1.5 to 1.8, as fixed): the Tasks tab. A left rail (search, the six stages
+ * with done/total, whose Task with open counts) and the selected stage's list: one line for late
+ * Tasks in other stages (opens the all-late view), Do now (late or due within 2 days), Up next,
+ * + Add task to this stage, Done folded.
  * Selection reuses the plan catch-up bar; the rules live in src/lib/onboarding-home-page.ts.
  */
 import { useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Check, Search } from "lucide-react";
+import { Check, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +25,8 @@ import {
   OWNER_TAG_ORDER,
   PAGE_STAGE_NAMES,
   canAddOneOff,
+  lateElsewhereLabel,
+  lateEverywhere,
   ownerTagFor,
   ownerTagText,
   rowDue,
@@ -86,6 +89,12 @@ export function TasksTab(p: {
   notNeededLabel: (reason: string | null) => string;
 }) {
   const [term, setTerm] = useState("");
+  // The all-late view; × or picking any stage returns to the stage list.
+  const [allLate, setAllLate] = useState(false);
+  const pickStage = (stage: number | null) => {
+    setAllLate(false);
+    p.onStage(stage);
+  };
   const nameOf = (id: string) => {
     const x = p.people.find((q) => q.id === id);
     return x?.full_name || x?.email || null;
@@ -94,8 +103,11 @@ export function TasksTab(p: {
   const inScope = p.stage === null ? p.tasks : p.tasks.filter((t) => stageIndexOf(t.stage) === p.stage);
   const counts = tagCounts(inScope, p.viewerId, p.pmId);
   const lists = stageLists(p.tasks, { stage: p.stage, today: p.today, tag: p.tag, viewerId: p.viewerId, pmId: p.pmId });
+  const late = allLate ? lateEverywhere(p.tasks, { today: p.today, tag: p.tag, viewerId: p.viewerId, pmId: p.pmId }) : [];
   const hits = searchPlanTasks(p.tasks, term);
-  const order = [...lists.doNow.map((x) => x.task.id), ...lists.upNext.map((t) => t.id), ...lists.done.map((t) => t.id)];
+  const order = allLate
+    ? late.map((x) => x.task.id)
+    : [...lists.doNow.map((x) => x.task.id), ...lists.upNext.map((t) => t.id), ...lists.done.map((t) => t.id)];
   const stageRow = p.stage === null ? null : rail[p.stage]!;
   const allDone = p.tasks.filter((t) => !t.parent_task_id && isFinished(t)).length;
   const allTotal = p.tasks.filter((t) => !t.parent_task_id).length;
@@ -120,7 +132,7 @@ export function TasksTab(p: {
           <button type="button" onClick={() => p.onOpen(t.id)} className="min-h-11 min-w-0 flex-1 basis-full text-left text-sm sm:basis-0">
             <span className={cn("font-medium", isFinished(t) && "text-muted-foreground line-through")}>{t.title}</span>
             {kind ? <span className="text-muted-foreground"> · {kind}</span> : null}
-            {from ? <span className="text-muted-foreground"> · from {from}</span> : null}
+            {from ? <span className="text-muted-foreground"> · {from}</span> : null}
           </button>
           <span className={cn("inline-flex min-h-7 items-center rounded-full px-2.5 text-xs font-medium", TAG_CLASS[tag].tag)}>
             {ownerTagText(t, p.viewerId, p.pmId, nameOf)}
@@ -164,7 +176,7 @@ export function TasksTab(p: {
             id="stage-pick"
             className="mt-1 h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
             value={p.stage === null ? "all" : String(p.stage)}
-            onChange={(e) => p.onStage(e.target.value === "all" ? null : Number(e.target.value))}
+            onChange={(e) => pickStage(e.target.value === "all" ? null : Number(e.target.value))}
           >
             {rail.map((s) => (
               <option key={s.index} value={s.index}>
@@ -180,11 +192,11 @@ export function TasksTab(p: {
             <button
               key={s.index}
               type="button"
-              aria-pressed={p.stage === s.index}
-              onClick={() => p.onStage(s.index)}
+              aria-pressed={!allLate && p.stage === s.index}
+              onClick={() => pickStage(s.index)}
               className={cn(
                 "flex min-h-11 w-full items-center gap-2 rounded-md px-3 text-left text-sm",
-                p.stage === s.index ? "bg-stage-selected font-semibold text-stage-selected-fg" : "hover:bg-muted",
+                !allLate && p.stage === s.index ? "bg-stage-selected font-semibold text-stage-selected-fg" : "hover:bg-muted",
               )}
             >
               <span className="min-w-0 flex-1 truncate">{s.name}</span>
@@ -196,11 +208,11 @@ export function TasksTab(p: {
           ))}
           <button
             type="button"
-            aria-pressed={p.stage === null}
-            onClick={() => p.onStage(null)}
+            aria-pressed={!allLate && p.stage === null}
+            onClick={() => pickStage(null)}
             className={cn(
               "flex min-h-11 w-full items-center rounded-md border border-dashed border-border px-3 text-left text-sm",
-              p.stage === null ? "bg-stage-selected font-semibold text-stage-selected-fg" : "hover:bg-muted",
+              !allLate && p.stage === null ? "bg-stage-selected font-semibold text-stage-selected-fg" : "hover:bg-muted",
             )}
           >
             All stages
@@ -233,7 +245,7 @@ export function TasksTab(p: {
           ) : null}
         </div>
         <p className="text-xs text-muted-foreground">
-          Green is always you, whoever is signed in. Late Tasks from other stages always show in Do now. Unassigned Tasks belong to the PM until handed off.
+          Green is always you, whoever is signed in. Late Tasks in other stages show as one line at the top. Unassigned Tasks belong to the PM until handed off.
         </p>
       </aside>
 
@@ -258,8 +270,41 @@ export function TasksTab(p: {
               </ul>
             )}
           </div>
+        ) : allLate ? (
+          <>
+            <div>
+              <span className="inline-flex min-h-11 items-center gap-1 rounded-full bg-foreground pl-4 pr-1 text-sm font-medium text-background">
+                Showing: late Tasks in every stage
+                <button
+                  type="button"
+                  onClick={() => setAllLate(false)}
+                  aria-label="Back to the stage"
+                  className="inline-flex size-11 items-center justify-center rounded-full hover:bg-background/15"
+                >
+                  <X className="size-4" aria-hidden="true" />
+                </button>
+              </span>
+            </div>
+            <div className="surface overflow-hidden">
+              <p className="border-b border-border bg-muted/30 px-3 py-2 text-xs font-semibold tracking-wide text-late">LATE · {late.length}</p>
+              {late.length ? (
+                <ul className="divide-y divide-border">{late.map((x) => row(x.task, x.fromStage))}</ul>
+              ) : (
+                <p className="px-3 py-3 text-sm text-muted-foreground">Nothing late.</p>
+              )}
+            </div>
+          </>
         ) : (
           <>
+            {lists.lateElsewhere > 0 ? (
+              <button
+                type="button"
+                onClick={() => setAllLate(true)}
+                className="flex min-h-11 w-full items-center rounded-lg border border-state-blocked/30 bg-state-blocked/10 px-4 text-left text-sm font-medium text-late hover:bg-state-blocked/15"
+              >
+                {lateElsewhereLabel(lists.lateElsewhere)}
+              </button>
+            ) : null}
             <div className="flex flex-wrap items-center gap-2">
               {stageBox}
               <h2 className="min-w-0 flex-1 font-display text-xl">{stageRow ? stageRow.name : "All stages"}</h2>

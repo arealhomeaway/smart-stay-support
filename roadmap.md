@@ -1,5 +1,14 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 12 Property page Part 1 fix (onboarding view of one home, no DB change expected, no publish)
+- [x] 1 Do now selected stage only; late line and all-late view with clear chip; rail note
+- [x] 2 Owner row one line with legal owner; preferred button and "Call or email"; note removed
+- [x] 3 Needs attention off header, on Overview with 3 chips and +N more; no weekly chip
+- [x] 4 Pinned tab bar with only tabs
+- [x] 5 Owner badge only
+- [x] 6 Opens on Overview; one Back button after a jump; browser Back
+- [x] Tests, suite, type check, build, browser check
+
 ## Nov 12 Property page rebuild Part 1 of 3 (onboarding view of one home; staged SQL in docs/pending/property-page-part1, no apply, no publish)
 - [x] 1.1 Header: photo row, tags + more, facts line, owner row, buttons row, tabs with ?tab=, temporary More tab
 - [x] 1.2 Needs attention strip with jumps and live counts
@@ -11,7 +20,7 @@
 - [x] 1.8 Handoff checklist on stage 6
 - [x] 1.9 No plan yet card
 - [x] Phone layout; permissions on the server with tests; suite, type check, build; browser check
-- [ ] Apply docs/pending/property-page-part1 (built, staged, practiced on isolated copy) - blocked: waits on the Admin's approval
+- [x] Apply docs/pending/property-page-part1: found in place on the live database Nov 12 (owner preferred method and Telegram, one-off flag, Status to stage map row)
 
 ## Nov 12 Plan catch-up: update many Tasks at once (onboarding home Plan tab, staged SQL, no apply, no publish)
 - [x] 1 Selection: 52 px rows, 26 px box in 44 px tap area, stage header box, shift range, Select all open, finished selectable
