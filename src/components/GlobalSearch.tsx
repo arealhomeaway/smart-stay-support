@@ -166,7 +166,11 @@ export function GlobalSearch({ targets }: { targets: SearchTarget[] }) {
                 <CommandItem
                   key={t.id}
                   value={`onboarding task ${t.id} ${t.title} ${t.homeName} ${q}`}
-                  onSelect={() => go(onboardingTaskHref(t))}
+                  onSelect={() => {
+                    setOpen(false);
+                    setTerm("");
+                    void router.navigate({ href: onboardingTaskHref(t) });
+                  }}
                 >
                   <span className="truncate">{t.title}</span>
                   <span className="ml-auto truncate pl-3 text-xs text-muted-foreground">{t.homeName}</span>
