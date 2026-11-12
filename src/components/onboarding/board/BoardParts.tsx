@@ -43,9 +43,9 @@ export function StageStepper({ stepper, onSelect }: { stepper: Stepper; onSelect
       {stepper.steps.map((s) => {
         const body = (
           <>
-            <p className="text-xs text-muted-foreground">Stage {s.index + 1}</p>
-            <p className="text-sm font-semibold leading-tight">{s.stage}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{s.note}</p>
+            <span className="block text-xs text-muted-foreground">Stage {s.index + 1}</span>
+            <span className="block text-sm font-semibold leading-tight">{s.stage}</span>
+            <span className="mt-1 block text-xs text-muted-foreground">{s.note}</span>
             <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-muted">
               <span className="block h-full rounded-full bg-primary" style={{ width: `${s.percent}%` }} />
             </span>
