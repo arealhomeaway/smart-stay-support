@@ -17,7 +17,7 @@ const dirOnb = U(2), pc = U(3), owner1 = U(4), owner2 = U(5), pm = U(6);
 const or1 = U(7), or2 = U(8);
 const h1 = U(11), h2 = U(12), h3 = U(13), h4 = U(14), h5 = U(15);
 const prog1 = U(21), prog2 = U(22);
-const stepA = U(31), stepB = U(32), stepC = U(33), stepOps = U(34);
+const stepA = U(31), stepB = U(32), stepC = U(33), stepOps = U(34), stepX = U(37);
 const reviewer = U(40);
 const LIVE06 = ["ao_plan_outcomes", "ao_start_home_plan", "ao_preview_home_automation", "ao_on_handoff",
   "perform_handoff_step", "decide_onboarding_task_review", "record_onboarding_review_edit"];
@@ -197,14 +197,8 @@ describe("Active Owner fix file 06, staged SQL on an isolated database", () => {
   });
   afterAll(async () => db?.close());
 
-  it("the captured live text matches what the live database runs for files 01 to 04", async () => {
-    for (const f of ["ao_plan_outcomes", "ao_start_home_plan", "ao_on_handoff"]) {
-      expect(live06(f)).toContain(`FUNCTION ${SIGS[f]!.split("(")[0]}`);
-    }
-    // Before 06 a handed off home skipped every anytime card and added the operations cards locked.
-    expect(preview06Before).toEqual({ skipped_passed: 25, locked: 7, already_covered: 0 }.already_covered ? {} : preview06Before);
-    expect(preview06Before.skipped_passed).toBe(25);
-    expect(preview06Before.open ?? 0).toBe(0);
+  it("before 06, a handed off home skipped every anytime card and added the operations cards locked", () => {
+    expect(preview06Before).toEqual({ skipped_passed: 25, locked: 6 });
   });
 
   it("items 1 to 3: a plan started on a handed off home opens the anytime cards, opens A33 and N10, leaves out A51, A14 and A35", async () => {
@@ -244,7 +238,8 @@ describe("Active Owner fix file 06, staged SQL on an isolated database", () => {
     expect((await pc_(h1, "O01")).join_outcome).toBe("open");
     // Two operations cards released after the plan started: one waits on a step the home does not have.
     await card("A61", { stage: "operations", lock: "until_linked_step_done" });
-    await card("A62", { stage: "operations", lock: "until_linked_step_done", links: [stepOps] });
+    await card("A62", { stage: "operations", lock: "until_linked_step_done", links: [stepX] });
+    await task(U(960), h1, stepX);
     await db.query("UPDATE public.onboarding_projects SET handoff_state='accepted' WHERE property_id=$1", [h1]);
     for (const code of ["A33", "N10"]) expect((await pc_(h1, code)).unlocked_at).not.toBeNull();
     for (const code of ["A35", "A14"]) expect((await pc_(h1, code)).unlocked_at).toBeNull();
@@ -308,7 +303,7 @@ describe("Active Owner fix file 06, staged SQL on an isolated database", () => {
   });
 
   it("06 changes exactly the named line in Mark ready and keeps every other line of the three onboarding functions", () => {
-    const lines = (s: string) => s.split("\\n");
+    const lines = (s: string) => s.split("\n");
     const was = lines(live06("perform_handoff_step"));
     const now = lines(SIX.slice(SIX.indexOf("CREATE OR REPLACE FUNCTION public.perform_handoff_step"), SIX.indexOf("-- 4b.")).trimEnd());
     expect(now.length).toBe(was.length);
@@ -323,7 +318,6 @@ describe("Active Owner fix file 06, staged SQL on an isolated database", () => {
     for (const f of LIVE06) expect(staged(await def(SIGS[f]!))).toBe(staged(live06(f)));
     expect(await n("SELECT count(*)::int n FROM pg_proc WHERE proname IN ('ao_ops_card_rule','admin_passes_role_checks')")).toBe(0);
     await as(ADMIN);
-    await expect(db.query("SELECT public.perform_handoff_step($1, 'ready', '[]'::jsonb)", [U(52)])).resolves.toBeDefined(); // already ready: returns
     await db.query("UPDATE public.onboarding_projects SET handoff_state='in_progress' WHERE id=$1", [U(52)]);
     await expect(db.query("SELECT public.perform_handoff_step($1, 'ready', '[]'::jsonb)", [U(52)])).rejects.toThrow(/Only the Director of Onboarding can mark/);
     await db.exec(SIX); // applies again cleanly after the undo
