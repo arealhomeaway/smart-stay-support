@@ -6,8 +6,8 @@
 -- that the two copies are identical. Step IDs are the "id" of each step in the Standard plan.
 -- >>> CONFIRMED DONE LIST >>>
 CREATE TEMP TABLE IF NOT EXISTS ao_move_input(list jsonb);
-TRUNCATE ao_move_input;
-INSERT INTO ao_move_input(list) VALUES ('[
+TRUNCATE pg_temp.ao_move_input;
+INSERT INTO pg_temp.ao_move_input(list) VALUES ('[
   {"project": "0c2d2b1d-6967-4b2a-a973-2685c06cfd3b", "home": "9211 Fitzgerald Dr", "done_steps": []},
   {"project": "94338f4a-4a97-4268-869a-79ed103bbc8b", "home": "3915 W 104th St S", "done_steps": []},
   {"project": "add4e549-2929-42db-b5fd-131787088768", "home": "1399 Foxtail Ln", "done_steps": []},
@@ -55,7 +55,7 @@ DECLARE std uuid; snap jsonb; pr public.onboarding_projects; step jsonb; who uui
                            'add4e549-2929-42db-b5fd-131787088768', '11bb7e6a-cb17-4b6d-b27f-df9b505d4400']::uuid[];
   p uuid; stamp timestamptz := now();
 BEGIN
-  SELECT list INTO input FROM ao_move_input;
+  SELECT list INTO input FROM pg_temp.ao_move_input;
   SELECT v2.id, v2.snapshot INTO std, snap FROM public.onboarding_template_versions v2
     JOIN public.onboarding_templates t ON t.id = v2.template_id AND t.key = 'arha_onboarding_standard'
    ORDER BY v2.version DESC LIMIT 1;
@@ -170,4 +170,4 @@ BEGIN
                 'confirmed_done_steps', to_jsonb(done_steps)));
   END LOOP;
 END $move$;
-DROP TABLE IF EXISTS ao_move_input;
+DROP TABLE IF EXISTS pg_temp.ao_move_input;
