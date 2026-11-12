@@ -92,7 +92,7 @@ describe("Fix 5: move to the Standard plan, isolated PostgreSQL", () => {
     expect(a).toEqual(b);
     expect(b.map((e) => e.project)).toEqual(PROJECTS);
     expect(b.every((e) => e.done_steps.length === 0)).toBe(true);
-    expect(MOVE.indexOf("CONFIRMED DONE LIST")).toBeLessThan(MOVE.indexOf("CREATE TABLE IF NOT EXISTS public.ao_plan_move_receipts"));
+    expect(MOVE.indexOf("CONFIRMED DONE LIST") < MOVE.indexOf("CREATE TABLE IF NOT EXISTS public.ao_plan_move_receipts")).toBe(true);
     expect(MOVE).not.toMatch(/regexp_replace\(t\.title/);
   });
 
