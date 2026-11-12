@@ -4,7 +4,7 @@
 --   standard_steps_to_create Standard steps the move creates (plus subtasks_to_create under them)
 --   created_completed        listed steps created completed from the confirmed done list below
 --   already_covered_cards    released owner cards whose linked steps on this home are ALL listed
---   stops                    anything in the list that would stop 05b before it writes anything
+--   stops                    anything that would stop 05b before it writes anything
 -- The confirmed done list below must be identical to the one at the top of 05b (a test checks it).
 -- To find a step's ID for the list: SELECT s ->> 'id', s ->> 'stage', s ->> 'title' FROM
 --   public.onboarding_template_versions v, jsonb_array_elements(v.snapshot -> 'steps') s
@@ -28,6 +28,7 @@ WITH input AS (SELECT
   ORDER BY v.version DESC LIMIT 1
 ), homes AS (
   SELECT op.id AS project_id, op.property_id, op.furnishing_scope, op.modules, ct.key = 'arha_v2' AS on_v2,
+         op.handoff_state = 'accepted' OR op.status = 'complete' AS handed_off,
          public.format_property_label(to_jsonb(h)) ->> 'primary' AS home
   FROM public.onboarding_projects op
   JOIN public.properties h ON h.id = op.property_id
@@ -58,6 +59,7 @@ WITH input AS (SELECT
                           AND NOT EXISTS (SELECT 1 FROM listed l WHERE l.project_id = hm.project_id AND l.step_id = s.step_id))) AS already_covered_cards,
     concat_ws('; ',
       CASE WHEN NOT coalesce(hm.on_v2, false) THEN 'home is no longer on ARHA Onboarding V2' END,
+      CASE WHEN hm.handed_off THEN 'handoff already accepted: take this home out of the move' END,
       (SELECT 'not on this home''s Standard plan: ' || string_agg(l.step_id::text, ', ') FROM listed l
         WHERE l.project_id = hm.project_id AND NOT EXISTS (SELECT 1 FROM steps s WHERE s.project_id = l.project_id AND s.step_id = l.step_id)),
       (SELECT 'needs a homeowner decision: ' || string_agg(s.title, ', ') FROM listed l JOIN steps s ON s.project_id = l.project_id AND s.step_id = l.step_id

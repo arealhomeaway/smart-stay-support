@@ -172,6 +172,17 @@ describe("Fix 5: move to the Standard plan, isolated PostgreSQL", () => {
     await setup();
   }, 60_000);
 
+  it("a home whose handoff is already accepted stops the move with nothing written, and the dry run says so", async () => {
+    await setup();
+    await db.query("UPDATE public.onboarding_projects SET handoff_state='accepted', status='complete' WHERE id=$1", [PROJECTS[1]]);
+    const before = await fp();
+    const rows = (await db.query<{ stops: string | null }>(DRY)).rows;
+    expect(rows[1]!.stops).toContain("handoff already accepted");
+    await expect(db.exec(`BEGIN; ${MOVE} COMMIT;`)).rejects.toThrow(/already accepted/);
+    await db.exec("ROLLBACK").catch(() => undefined);
+    expect(await fp()).toBe(before);
+  });
+
   it("a repeat changes nothing and the undo un-archives exactly the V2 Tasks from the receipts", async () => {
     await setup();
     const before = await one<{ h: string }>("SELECT md5(string_agg(t::text,'|' ORDER BY id)) h FROM (SELECT id, title, status, archived_at, archived_by, completed_at, completed_by, evidence_note FROM public.onboarding_tasks) t");

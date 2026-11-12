@@ -24,7 +24,8 @@ INSERT INTO pg_temp.ao_move_input(list) VALUES ('[
 --                    when the plan starts.
 --   other step    -> created open, assigned and dated as the Standard plan assigns them.
 -- There is no title matching. A listed step that needs a homeowner decision, is a handoff step, or is
--- not on the home's Standard plan stops the move before anything is written. No email or notification
+-- not on the home's Standard plan stops the move before anything is written, and so does a home whose
+-- handoff is already accepted. No email or notification
 -- is sent by this file (Tasks are created already completed; no status change happens).
 CREATE TABLE IF NOT EXISTS public.ao_plan_move_receipts (
   id bigserial PRIMARY KEY,
@@ -75,6 +76,10 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM public.onboarding_template_versions cv JOIN public.onboarding_templates ct ON ct.id = cv.template_id
                     WHERE cv.id = pr.template_version_id AND ct.key = 'arha_v2') THEN
       RAISE EXCEPTION 'Project % is no longer on ARHA Onboarding V2. Run 05a again.', p;
+    END IF;
+    -- A handed off home gets no onboarding Tasks: the move would add open Tasks after the handoff.
+    IF pr.handoff_state = 'accepted' OR pr.status = 'complete' THEN
+      RAISE EXCEPTION 'The handoff for project % is already accepted. Take this home out of the move first; nothing was changed.', p;
     END IF;
     SELECT coalesce(array_agg(DISTINCT x::uuid), ARRAY[]::uuid[]) INTO done_steps
       FROM jsonb_array_elements(input) e, jsonb_array_elements_text(coalesce(e -> 'done_steps', '[]'::jsonb)) x
