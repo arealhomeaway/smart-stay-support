@@ -77,7 +77,7 @@ PID fields with no place on the property page today, shown read-only under "From
 Excluded as in the Sep 1 mapping: 26 formulas and 2 buttons. Not repeated: Property, City, State and Zip
 (the address shows in Quick Overview) and the nine code fields (Guest Access & Credentials).
 Photo fields show how many photos the PID holds; the photos themselves wait for the second PID import (register P7).
-Ten linked fields point at Notion lists the connection cannot read (the six inspection stages,
+Nine linked fields and one rollup point at Notion lists the connection cannot read (the six inspection stages,
 Household and Appliances, Inspections Executed, Utility Info, Last Inspection Date); they stay empty.
 
 ## Checks
