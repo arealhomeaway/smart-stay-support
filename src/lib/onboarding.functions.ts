@@ -59,6 +59,8 @@ export const saveOnboardingTaskFn = createServerFn({ method: "POST" })
         dependsOn: z.array(z.string().uuid()).max(20).optional(),
         sortOrder: z.number().int().min(0).max(999).optional(),
         linkedTicketId: z.string().uuid().nullable().optional(),
+        /** Fix 19 (Nov 12): a new follow-up Task stores the Task it came from. */
+        followUpOf: z.string().uuid().nullable().optional(),
       })
       .parse(data),
   )

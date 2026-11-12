@@ -51,6 +51,7 @@ export function FollowUpTask({
           evidenceNote: "",
           status: "open",
           blocksHandoff: false,
+          followUpOf: task.id,
         },
       } as never);
     },

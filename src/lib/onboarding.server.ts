@@ -415,9 +415,11 @@ export async function saveOnboardingTask(
     dependsOn?: string[] | undefined;
     sortOrder?: number | undefined;
     linkedTicketId?: string | null | undefined;
+    followUpOf?: string | null | undefined;
   },
 ) {
   await assertCap(supabase, userId, "is_onboarding_staff");
+  if (input.followUpOf && input.id) throw new Error("A follow-up link is set when the follow-up Task is added.");
   // Evidence is a stored file OR a note of at least 5 characters. When a file
   // alone is the proof, the saved note names it so the record still says what
   // proves the step (src/lib/onboarding-evidence.ts).
@@ -643,17 +645,35 @@ export async function saveOnboardingTask(
     .eq("id", input.propertyId)
     .maybeSingle();
 
-  const { data, error } = await supabase
+  // Fix 19: a follow-up stores its source Task (same home only; staged column follow_up_of).
+  if (input.followUpOf) {
+    const source = await supabase
+      .from("onboarding_tasks")
+      .select("id")
+      .eq("id", input.followUpOf)
+      .eq("property_id", input.propertyId)
+      .is("archived_at", null)
+      .maybeSingle();
+    if (source.error) throw source.error;
+    if (!source.data) throw new Error("A follow-up must be on the same home as its Task.");
+  }
+  const insertRow = {
+    ...row,
+    ...(input.assignedSeat ? { assigned_seat: input.assignedSeat } : {}),
+    created_by: userId,
+    is_demo: parent.data?.is_demo ?? false,
+  };
+  let { data, error } = await supabase
     .from("onboarding_tasks")
-    .insert({
-      ...row,
-      ...(input.assignedSeat ? { assigned_seat: input.assignedSeat } : {}),
-      created_by: userId,
-      is_demo: parent.data?.is_demo ?? false,
-    })
+    .insert({ ...insertRow, ...(input.followUpOf ? { follow_up_of: input.followUpOf } : {}) } as never)
     .select("id")
     .single();
+  // Until the follow-up column is applied, the Task is still added, linked by its text line only.
+  if (error && input.followUpOf && /follow_up_of/.test(error.message ?? "")) {
+    ({ data, error } = await supabase.from("onboarding_tasks").insert(insertRow).select("id").single());
+  }
   if (error) throw error;
+  if (!data) throw new Error("The Task could not be added.");
   await writeAudit({
     actorId: userId,
     action: "onboarding_task_created",
