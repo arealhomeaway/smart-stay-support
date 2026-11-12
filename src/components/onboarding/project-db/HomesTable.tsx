@@ -31,7 +31,7 @@ export function Photo({ row, className }: { row: Pick<HomeRow, "photo" | "lifecy
         className={cn(
           "block shrink-0 rounded-md",
           row.lifecycle === "upcoming"
-            ? "bg-[repeating-linear-gradient(135deg,var(--muted)_0_6px,var(--sunken)_6px_12px)]"
+            ? "stripe-placeholder"
             : "bg-warm",
           className,
         )}
