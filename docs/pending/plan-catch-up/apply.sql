@@ -96,9 +96,21 @@ BEGIN
   END IF;
   IF _reason NOT IN ('done_outside_resolve', 'task_not_needed') THEN RAISE EXCEPTION 'Unknown cover reason.'; END IF;
   FOR r IN
-    SELECT pc.id, pc.linked_task_id, pc.join_outcome, pc.covered_reason, pc.covered_source, pc.covered_item_id, c.code, c.title
+    -- A plan card is covered by a selected Task when it is linked to it directly or, as in
+    -- ao_plan_outcomes, the card's linked template steps include that Task's template step.
+    SELECT pc.id, coalesce(
+             CASE WHEN pc.linked_task_id = ANY (_task_ids) THEN pc.linked_task_id END,
+             (SELECT t.id FROM public.onboarding_tasks t
+               WHERE t.property_id = _property AND t.id = ANY (_task_ids)
+                 AND t.template_task_id = ANY (c.linked_template_task_ids)
+               ORDER BY t.created_at LIMIT 1)) AS linked_task_id,
+           pc.join_outcome, pc.covered_reason, pc.covered_source, pc.covered_item_id, c.code, c.title
       FROM public.ao_home_plan_cards pc JOIN public.ao_library_cards c ON c.id = pc.card_id
-     WHERE pc.property_id = _property AND pc.linked_task_id = ANY (_task_ids)
+     WHERE pc.property_id = _property
+       AND (pc.linked_task_id = ANY (_task_ids)
+            OR EXISTS (SELECT 1 FROM public.onboarding_tasks t
+                        WHERE t.property_id = _property AND t.id = ANY (_task_ids)
+                          AND t.template_task_id = ANY (c.linked_template_task_ids)))
        AND pc.join_outcome = 'locked' AND pc.unlocked_at IS NULL
        AND pc.owner_completed_at IS NULL AND pc.expired_at IS NULL
      ORDER BY c.code
