@@ -259,11 +259,7 @@ function TemplatesPage() {
               </div>
             </div>
           ))}
-          {(data ?? []).some((t) => t.isDefault) ? (
-            <Button size="sm" variant="ghost" onClick={() => doDefault.mutate(null)}>
-              Use the built-in plan for new homes
-            </Button>
-          ) : null}
+          {/* Fix 28: no built-in fallback; a new home always uses the plan marked default. */}
         </CardContent>
       </Card>
 

@@ -171,7 +171,8 @@ async function planFor(supabase: Client, templateId?: string | null) {
   const { resolveTemplateTasks } = await import("./onboarding-template-admin.server");
   const custom = await resolveTemplateTasks(supabase, templateId ?? null);
   if (custom) return { key: custom.templateKey, tasks: custom.tasks };
-  return { key: TEMPLATE_KEY, tasks: MASTER_ONBOARDING_TEMPLATE };
+  // Fix 28: a new home always uses the plan marked default; the built-in plan is not a fallback.
+  throw new Error("Mark a plan as the default before starting a home.");
 }
 
 export async function previewOnboardingTemplate(
