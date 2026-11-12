@@ -28,10 +28,10 @@ describe("38 Files placement", () => {
 
 describe("39 Needs a file before sending: the drawer rule", () => {
   it("is off by default and kept only when ticked", () => {
-    expect(kindSettings({}).requireFile).toBeUndefined();
+    expect(kindSettings({}).requireFile).toBe(undefined);
     expect(kindSettings({ requireFile: true }).requireFile).toBe(true);
-    expect(kindSettings({ requireFile: "yes" }).requireFile).toBeUndefined();
-    expect(kindSettings({ requireFile: false }).requireFile).toBeUndefined();
+    expect(kindSettings({ requireFile: "yes" }).requireFile).toBe(undefined);
+    expect(kindSettings({ requireFile: false }).requireFile).toBe(undefined);
   });
   it("holds Send with the line until the Task has a file", () => {
     expect(ATTACH_FILE_FIRST).toBe("Attach the file first.");
@@ -105,21 +105,21 @@ describe("39 Needs a file before sending: the server refuses", () => {
   });
   it("sends once the Task has a file", async () => {
     const b = backend({ requireFile: true, files: 1 });
-    await expect(sendTaskToOwner(b.client as never, ADMIN, payload())).resolves.toMatchObject({ ok: true, completed: true });
+    expect(await sendTaskToOwner(b.client as never, ADMIN, payload())).toMatchObject({ ok: true, completed: true });
     expect(b.sends).toHaveLength(1);
   });
   it("sends as before when the step does not need a file", async () => {
     const b = backend({ requireFile: false, files: 0 });
-    await expect(sendTaskToOwner(b.client as never, ADMIN, payload())).resolves.toMatchObject({ ok: true });
+    expect(await sendTaskToOwner(b.client as never, ADMIN, payload())).toMatchObject({ ok: true });
     expect(b.fileQueries).toHaveLength(0);
   });
   it("refuses a Send email from the Task the same way; vendor requests and other records are not held", async () => {
     const b = backend({ requireFile: true, files: 0 });
     await expect(taskEmailFileGate(b.client as never, { context: "onboarding_task", recordId: TASK })).rejects.toThrow("Attach the file first.");
-    await expect(taskEmailFileGate(b.client as never, { context: "onboarding_task", recordId: TASK, vendorOrgId: HOME })).resolves.toBeUndefined();
-    await expect(taskEmailFileGate(b.client as never, { context: "ticket", recordId: TASK })).resolves.toBeUndefined();
+    expect(await taskEmailFileGate(b.client as never, { context: "onboarding_task", recordId: TASK, vendorOrgId: HOME })).toBe(undefined);
+    expect(await taskEmailFileGate(b.client as never, { context: "ticket", recordId: TASK })).toBe(undefined);
     const ok = backend({ requireFile: true, files: 2 });
-    await expect(taskEmailFileGate(ok.client as never, { context: "onboarding_task", recordId: TASK })).resolves.toBeUndefined();
+    expect(await taskEmailFileGate(ok.client as never, { context: "onboarding_task", recordId: TASK })).toBe(undefined);
   });
 });
 
