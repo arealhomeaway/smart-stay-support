@@ -50,7 +50,7 @@ export function OwnerItemConversation({
 
   return (
     <section className="space-y-3 rounded-xl border border-border p-3" aria-label="Conversation">
-      <p className="text-sm font-medium">{side === "owner" ? "Talk it through with your ARHA team" : "Conversation with the homeowner"}</p>
+      <p className="text-sm font-medium">{side === "owner" ? "Conversation" : "Conversation with the homeowner"}</p>
       {messages.length === 0 ? (
         <p className="text-sm text-muted-foreground">{side === "owner" ? "No messages yet. Write your feedback below." : "No answer from the homeowner yet."}</p>
       ) : (
@@ -75,14 +75,14 @@ export function OwnerItemConversation({
               <Textarea
                 rows={3}
                 maxLength={5000}
-                aria-label={side === "owner" ? "Your feedback" : "Reply to the homeowner"}
+                aria-label={side === "owner" ? "Your reply" : "Reply to the homeowner"}
                 placeholder={side === "owner" ? "Write your feedback or question" : "Write your reply"}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 disabled={busy}
               />
               <div className="flex flex-wrap gap-2">
-                <Button className="min-h-11" size="sm" disabled={busy || !text.trim()} onClick={() => send.mutate()}>Send</Button>
+                <Button className="min-h-11" size="sm" disabled={busy || !text.trim()} onClick={() => send.mutate()}>{side === "owner" ? "Send to ARHA" : "Send reply"}</Button>
                 {side === "staff" ? (
                   <Button className="min-h-11" size="sm" variant="outline" disabled={busy} onClick={() => manage.mutate("resolve")}>Mark resolved</Button>
                 ) : null}

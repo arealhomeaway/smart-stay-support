@@ -86,7 +86,7 @@ export function OwnerConversation({
   return (
     <section className="space-y-2" aria-label="Conversation with homeowner">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-medium">{viewer === "staff" ? "Conversation with homeowner" : "Conversation with your ARHA team"}</p>
+        <p className="text-sm font-medium">{viewer === "staff" ? "Conversation with homeowner" : "Conversation"}</p>
         <span className="flex gap-1">
           {pending && !resolved ? (
             <span className="rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-xs">
@@ -145,7 +145,7 @@ export function OwnerConversation({
           ) : null}
           <div className="flex flex-wrap gap-2">
             <Button size="sm" disabled={send.isPending || !text.trim()} onClick={() => send.mutate()}>
-              {viewer === "staff" ? (askKind ? "Send request" : "Send reply") : "Send"}
+              {viewer === "staff" ? (askKind ? "Send request" : "Send reply") : "Send to ARHA"}
             </Button>
             {viewer === "staff" ? (
               <Button size="sm" variant="outline" disabled={doResolve.isPending} onClick={() => doResolve.mutate()}>
