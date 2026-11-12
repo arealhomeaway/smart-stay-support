@@ -168,3 +168,37 @@ export const fillInValuesFn = createServerFn({ method: "POST" })
     for (const f of data.fields) out[f] = (filled as Record<string, boolean | null | undefined>)[f] ?? null;
     return { filled: out };
   });
+
+/**
+ * Fix 21: the comment @ picker offers every onboarding role (Director of Onboarding included)
+ * with the people who hold it, plus people by name. Fix 13: names for comment authors.
+ */
+export const mentionDirectoryFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const db = context.supabase as unknown as Loose;
+    const staff = await db.rpc("is_staff", { _user_id: context.userId });
+    if (staff.error || staff.data !== true) throw new Error("Staff access is required.");
+    const { roleLabel } = await import("./v2-workflow.functions");
+    const [roles, members, profiles] = await Promise.all([
+      db.from("functional_roles").select("code, team, active, sort_order").eq("team", "onboarding").eq("active", true).order("sort_order"),
+      db.from("functional_role_members").select("role_code, user_id"),
+      db.from("profiles").select("id, full_name, email"),
+    ]);
+    const memberRows = (members.data ?? []) as { role_code: string; user_id: string }[];
+    const people = ((profiles.data ?? []) as { id: string; full_name: string | null; email: string | null }[]).filter((p) => p.full_name || p.email);
+    const onboardingIds = new Set<string>();
+    const roleRows = ((roles.data ?? []) as { code: string }[]).map((r) => {
+      const ids = [...new Set(memberRows.filter((m) => m.role_code === r.code).map((m) => m.user_id))];
+      ids.forEach((id) => onboardingIds.add(id));
+      return { code: r.code, name: roleLabel(r.code), userIds: ids };
+    });
+    return {
+      roles: roleRows,
+      people: people
+        .filter((p) => onboardingIds.has(p.id))
+        .map((p) => ({ id: p.id, name: p.full_name || p.email || "" }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+      names: Object.fromEntries(people.map((p) => [p.id, p.full_name || p.email || ""])),
+    };
+  });
