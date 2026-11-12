@@ -34,7 +34,7 @@ import {
 import { answerOwnerReview, ownerHome, ownerHomePreview } from "@/lib/owner-portal.functions";
 import { OWNER_GOAL_LABEL } from "@/lib/owner-participation";
 import { LogTimeContext, LogTimeDialog, useOpenLogTime, type LogTimeAnchor } from "@/components/owner/LogTimeDialog";
-import { OwnerOpportunityBoard } from "@/components/owner/OwnerOpportunityBoard";
+import { OwnerOpportunityBoard, useOutsideLines } from "@/components/owner/OwnerOpportunityBoard";
 import { OwnerPaceCard } from "@/components/owner/OwnerPlanCards";
 import { isOwnerQueue, type OwnerQueue } from "@/lib/owner-opportunity-filters";
 import { captureReviewedOpportunity, captureReviewedResponse } from "@/lib/owner-reviewed-update";
@@ -688,6 +688,7 @@ function ReviewPanel({
   logHoursBlockedReason = null,
   sharedFiles = [],
   photoPropertyId = null,
+  outsideLine = null,
 }: {
   open: boolean;
   onOpenChange: (next: boolean) => void;
