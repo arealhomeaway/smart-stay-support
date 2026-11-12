@@ -7,12 +7,11 @@ import {
   Clock,
   Download,
   Home as HomeIcon,
-  MessageSquare,
   Paperclip,
 } from "lucide-react";
 import { participationEvidenceUrlFn } from "@/lib/owner-evidence.functions";
 import { EmptyState, LoadingPage, PageHero, ProgressRing, SectionCard } from "@/components/ui/page";
-import { StatusBadge, type StatusTone } from "@/components/ui/status";
+import { StatusBadge } from "@/components/ui/status";
 import { Celebrate } from "@/components/ui/feedback";
 import { useRole } from "@/hooks/useRole";
 import { usCalendarDate, usDate, usDateTime } from "@/lib/dates";
@@ -41,7 +40,7 @@ import { isOwnerQueue, type OwnerQueue } from "@/lib/owner-opportunity-filters";
 import { captureReviewedOpportunity, captureReviewedResponse } from "@/lib/owner-reviewed-update";
 import { ownerTicketResponseGuidance } from "@/lib/owner-ticket-intent";
 import { StrReportPanel } from "@/components/owner/StrReportPanel";
-import { OwnerTaskDialog, taskDeadlineLabel } from "@/components/owner/OwnerTaskDialog";
+import { OwnerTaskDialog } from "@/components/owner/OwnerTaskDialog";
 import { DownloadPhotosButton } from "@/components/property/MarketingPhotosButtons";
 import { ownerOnboardingActions } from "@/lib/owner-onboarding.functions";
 import type { OwnerOnboardingAction, OwnerOnboardingFile } from "@/lib/owner-onboarding.server";
@@ -232,30 +231,8 @@ function OwnerHubBody({
   const openReviews = (reviews as Review[])
     .filter((r) => ownerReviewPresentation(r).attention)
     .filter(inScope);
-  const availableReviews = (reviews as Review[])
-    .filter((r) => r.auto_ticket && !ownerReviewPresentation(r).attention)
-    .filter(inScope);
   const heroPhoto = properties.find((p) => p.photoUrl)?.photoUrl ?? undefined;
 
-  /**
-   * Homeowners think per home, so the attention list is grouped by the home it
-   * belongs to. Items covering the whole program keep their own group.
-   */
-  const attentionGroups = useMemo(() => {
-    const groups: { key: string; name: string; reviews: Review[] }[] = [];
-    const push = (key: string, name: string, review: Review) => {
-      const found = groups.find((g) => g.key === key);
-      if (found) found.reviews.push(review);
-      else groups.push({ key, name, reviews: [review] });
-    };
-    for (const review of openReviews) {
-      const ids = properties.filter((p) => review.propertyIds.includes(p.propertyId));
-      if (ids.length === 1 && ids[0]) push(ids[0].propertyId, ids[0].name, review);
-      else if (ids.length > 1) push("multi", ids.map((p) => p.name).join(" · "), review);
-      else push("program", "All your homes", review);
-    }
-    return groups;
-  }, [openReviews, properties]);
 
   // The Welcome Packet's six milestones, positioned from signals ARHA already
   // tracks on each enrolled home.
@@ -405,10 +382,6 @@ function OwnerHubBody({
 
   const ownerHomes = properties.map((p) => ({ propertyId: p.propertyId, name: p.name, address: (p as { address?: string | null }).address ?? null }));
   const navigate = Route.useNavigate();
-  // Same data OnboardingActions renders: keeps one consistent empty state.
-  const onboardingPending = (onboardingQuery.data?.pending ?? []).filter(
-    (a) => !selectedHomeId || !a.propertyId || a.propertyId === selectedHomeId,
-  ).length;
   const search = Route.useSearch();
   // Every owner item opens in its own side panel, with the onboarding Task, files and photos behind it.
   const renderReview = (r: { id: string }, open: boolean, onOpenChange: (next: boolean) => void) => {
@@ -671,10 +644,6 @@ function ReportDownloads() {
   );
 }
 
-function reviewTone(status: string): StatusTone {
-  if (status === "returned") return "waiting";
-  return "review";
-}
 
 type OwnerHome = {
   id: string;
