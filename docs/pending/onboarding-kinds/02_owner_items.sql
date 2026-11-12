@@ -18,7 +18,7 @@ RETURNS SETOF uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
   ),
   assigned AS (SELECT assigned_to AS uid FROM t WHERE assigned_to IS NOT NULL),
   leads AS (
-    SELECT p.project_manager AS uid FROM r JOIN public.onboarding_projects p ON p.property_id = r.property_id AND p.status <> 'cancelled'
+    SELECT p.project_manager AS uid FROM r JOIN public.onboarding_projects p ON p.property_id = r.property_id AND p.status = 'active'
      WHERE NOT EXISTS (SELECT 1 FROM assigned)
     UNION SELECT public.seat_holder('onboarding_director') WHERE NOT EXISTS (SELECT 1 FROM assigned)
   ),

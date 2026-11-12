@@ -53,6 +53,9 @@ import {
   type OffsetUnit,
 } from "@/lib/plan-rules";
 import { HANDOFF_LOCK_NOTE, completeOpportunity, handoffLocked } from "@/lib/template-step-dialog";
+import { StepKindFields, type StepKindValue } from "@/components/onboarding/StepKindFields";
+import { effectiveTaskKind, isTaskKind, type KindSettings } from "@/lib/onboarding-task-kinds";
+import { readStepKindsFn, saveStepKindFn } from "@/lib/onboarding-task-kinds.functions";
 
 type Stage = { id: string; name: string; sort_order: number; active: boolean };
 type Step = Awaited<ReturnType<typeof readTemplateV2>>["steps"][number];
@@ -122,9 +125,21 @@ function StepStageDrop({ stage, children }: { stage: string; children: ReactNode
 
 const emptyOpp: OpportunityContent = { title: "", what: "", why: "", how: "", resources: [], ways_to_document: "", suggested_minutes: null };
 
+type KindOptions = {
+  ready: boolean;
+  byStep: Record<string, { kind: string; settings: KindSettings }>;
+  emailTemplates: { id: string; name: string }[];
+  trades: string[];
+};
+
 type FileSourceOptions = { ready: boolean; selected: string[]; options: { id: string; title: string; stage: string }[] };
 
-function StepDialog({ step, onClose, onSave, onRemove, saving, fileSources, stageNames }: { step: Step; onClose: () => void; onSave: (v: StepInput, showFilesFrom: string[] | null) => void; onRemove: () => void; saving: boolean; fileSources: FileSourceOptions; stageNames: string[] }) {
+function StepDialog({ step, onClose, onSave, onRemove, saving, fileSources, stageNames, kinds }: { step: Step; onClose: () => void; onSave: (v: StepInput, showFilesFrom: string[] | null, kind: StepKindValue | null) => void; onRemove: () => void; saving: boolean; fileSources: FileSourceOptions; stageNames: string[]; kinds: KindOptions }) {
+  const storedKind = kinds.byStep[step.id];
+  const [kind, setKind] = useState<StepKindValue>({
+    kind: storedKind && isTaskKind(storedKind.kind) ? storedKind.kind : effectiveTaskKind(step),
+    settings: storedKind?.settings ?? {},
+  });
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [showFrom, setShowFrom] = useState<string[]>(fileSources.selected);
   const [title, setTitle] = useState(step.title);
@@ -247,6 +262,10 @@ function StepDialog({ step, onClose, onSave, onRemove, saving, fileSources, stag
           ) : null}
         </div>
 
+        {kinds.ready ? (
+          <StepKindFields value={kind} onChange={setKind} emailTemplates={kinds.emailTemplates} trades={kinds.trades} />
+        ) : null}
+
         {fileSources.ready ? (
           <div className="mt-2 space-y-2 rounded-md border border-border p-3">
             <Label>Show files from</Label>
@@ -321,7 +340,7 @@ function StepDialog({ step, onClose, onSave, onRemove, saving, fileSources, stag
                 videoUrl: videoUrl.trim() || null,
                 condition: clauses.length ? { all: clauses } : null,
                 opportunity: eligible ? opp : null,
-              }, fileSources.ready ? showFrom : null)
+              }, fileSources.ready ? showFrom : null, kinds.ready ? kind : null)
             }
           >
             Save
@@ -389,17 +408,21 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
     onSuccess: () => { toast.success("Step removed from the plan."); setEditing(null); refresh(); },
     onError: onErr,
   });
+  const readKinds = useServerFn(readStepKindsFn);
+  const saveKind = useServerFn(saveStepKindFn);
+  const kindsQ = useQuery({ queryKey: ["template-step-kinds", templateId], queryFn: () => readKinds({ data: { templateId } }) });
   const readSources = useServerFn(readTemplateFileSources);
   const saveSources = useServerFn(saveTemplateFileSources);
   const sourcesQ = useQuery({ queryKey: ["template-file-sources", templateId], queryFn: () => readSources({ data: { templateId } }) });
   const stepM = useMutation({
-    mutationFn: async ({ d, showFrom }: { d: StepInput; showFrom: string[] | null }) => {
+    mutationFn: async ({ d, showFrom, kind }: { d: StepInput; showFrom: string[] | null; kind: StepKindValue | null }) => {
       await saveStep({ data: d });
+      if (kind) await saveKind({ data: { stepId: d.stepId, kind: kind.kind, settings: kind.settings } });
       const before = sourcesQ.data?.byStep[d.stepId] ?? [];
       if (showFrom && (showFrom.length !== before.length || showFrom.some((x) => !before.includes(x))))
         await saveSources({ data: { stepId: d.stepId, sourceIds: showFrom } });
     },
-    onSuccess: () => { toast.success("Step saved."); setEditing(null); refresh(); void sourcesQ.refetch(); },
+    onSuccess: () => { toast.success("Step saved."); setEditing(null); refresh(); void sourcesQ.refetch(); void kindsQ.refetch(); },
     onError: onErr,
   });
   const publishM = useMutation({ mutationFn: () => publish({ data: { templateId } }), onSuccess: () => { toast.success("New version published. Homes already started keep their version."); refresh(); }, onError: onErr });
