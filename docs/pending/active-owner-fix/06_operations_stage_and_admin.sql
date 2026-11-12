@@ -406,7 +406,7 @@ BEGIN
        AND NEW.archived_at IS NULL THEN
       FOR h IN SELECT property_id FROM public.owner_program_properties
                 WHERE program_id = NEW.id AND inclusion_status = 'included' AND archived_at IS NULL
-                  AND coalesce((SELECT x.is_demo FROM public.properties x WHERE x.id = property_id), false) = NEW.is_demo
+                  AND coalesce((SELECT x.is_demo FROM public.properties x WHERE x.id = owner_program_properties.property_id), false) = NEW.is_demo
                 ORDER BY property_id LOOP
         PERFORM private.ao_start_on_enrollment(h, auth.uid());
       END LOOP;
