@@ -418,7 +418,8 @@ export function OwnerOpportunityBoard({
         {view.answer.map(card)}
       </Group>
 
-      {!home && tab !== "all" && view.with_arha.length > 0 ? (
+      {/* Fix 25: every tab, a single home and the home page summary, directly under Needs your answer. */}
+      {view.with_arha.length > 0 ? (
         <Group title="With ARHA" count={view.with_arha.length} note="You answered. ARHA replies next." empty="">
           {view.with_arha.map(card)}
         </Group>
