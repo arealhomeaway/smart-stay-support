@@ -37,7 +37,7 @@ export function StageBar({ stepper, className }: { stepper: Stepper; className?:
 }
 
 /** The six stages with each stage's note and bar. */
-export function StageStepper({ stepper, onSelect }: { stepper: Stepper; onSelect?: (index: number) => void }) {
+export function StageStepper({ stepper, onSelect }: { stepper: Stepper; onSelect?: ((index: number) => void) | undefined }) {
   return (
     <ol aria-label="Stages" className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
       {stepper.steps.map((s) => {

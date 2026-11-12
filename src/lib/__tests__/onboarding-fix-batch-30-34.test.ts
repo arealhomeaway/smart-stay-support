@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { searchPlanTasks, OTHER_STAGE_LABEL } from "@/lib/plan-search";
 import { onboardingTaskHref, onboardingTaskVisibility, taskTitleMatches } from "@/lib/onboarding-search";
 import { validateMyWorkSearch } from "@/lib/onboarding-work-views";
