@@ -78,10 +78,8 @@ export function HomeBoardHeader(p: {
   stepper: Stepper;
   /** Item 31: a stage card scrolls the Plan tab to that stage. */
   onSelectStage?: (index: number) => void;
-  /** Item 40: other chips on this page (the header line's status chip), so the line never repeats them. */
-  headerChips?: string[];
 }) {
-  const chipLabels = [p.stage, ...(p.activeOwner ? ["Active Owner"] : []), p.health.line, ...(p.headerChips ?? [])];
+  const chipLabels = [p.stage, ...(p.activeOwner ? ["Active Owner"] : []), p.health.line];
   const facts = headerFactsLine({ ownerType: p.ownerType, status: p.status, chips: chipLabels });
   const chips = (
     <div className="flex flex-wrap gap-2">
