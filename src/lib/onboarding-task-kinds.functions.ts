@@ -81,6 +81,56 @@ export const readTaskKindFn = createServerFn({ method: "POST" })
     return { ready: true as const, kind: String(r.data.task_kind), settings: kindSettings(r.data.kind_settings) };
   });
 
+/** Vendors for one home's market and trade; the home's own active vendors first, with their note. */
+async function vendorsFor(db: Loose, propertyId: string, trade: string) {
+  const { vendorMarketFor } = await import("./vendor-market");
+  const { orderVendors } = await import("./onboarding-task-kinds");
+  const home = await db.from("properties").select("market, is_demo").eq("id", propertyId).maybeSingle();
+  const market = vendorMarketFor(home.data?.market ?? null);
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Chicago" });
+  const [coverage, homeCoverage] = await Promise.all([
+    market
+      ? db.from("vendor_market_coverage").select("org_id").eq("market", market).eq("service_category", trade)
+      : Promise.resolve({ data: [], error: null }),
+    db
+      .from("property_vendor_coverage")
+      .select("org_id, rate_note, effective_from, effective_to, excluded, coverage_priority")
+      .eq("property_id", propertyId)
+      .eq("service_category", trade),
+  ]);
+  const firstChoice = new Map<string, string | null>();
+  for (const r of (homeCoverage.data ?? []) as { org_id: string; rate_note: string | null; effective_from: string | null; effective_to: string | null; excluded: boolean | null }[]) {
+    if (r.excluded) continue;
+    if (r.effective_from && r.effective_from > today) continue;
+    if (r.effective_to && r.effective_to < today) continue;
+    firstChoice.set(r.org_id, r.rate_note);
+  }
+  const ids = [...new Set([...((coverage.data ?? []) as { org_id: string }[]).map((r) => r.org_id), ...firstChoice.keys()])];
+  if (!ids.length) return { market, isDemo: Boolean(home.data?.is_demo), rows: [] as VendorRow[] };
+  const orgs = await db
+    .from("vendor_orgs")
+    .select("id, legal_name, display_name, primary_contact_name, primary_contact_phone, primary_contact_email, work_order_email, breezeway_person_id, is_active, is_demo, status")
+    .in("id", ids);
+  type Org = {
+    id: string; legal_name: string | null; display_name: string | null; primary_contact_name: string | null;
+    primary_contact_phone: string | null; primary_contact_email: string | null; work_order_email: string | null;
+    breezeway_person_id: string | number | null; is_active: boolean | null; is_demo: boolean | null; status: string | null;
+  };
+  const rows: VendorRow[] = ((orgs.data ?? []) as Org[])
+    .filter((o) => o.is_active !== false && o.status !== "candidate" && Boolean(o.is_demo) === Boolean(home.data?.is_demo))
+    .map((o) => ({
+      orgId: String(o.id),
+      name: String(o.display_name || o.legal_name || "Vendor"),
+      contact: o.primary_contact_name ?? null,
+      phone: o.primary_contact_phone ?? null,
+      email: o.primary_contact_email || o.work_order_email || null,
+      usesBreezeway: Boolean(o.breezeway_person_id),
+      homeFirstChoice: firstChoice.has(String(o.id)),
+      note: firstChoice.get(String(o.id)) ?? null,
+    }));
+  return { market, isDemo: Boolean(home.data?.is_demo), rows: orderVendors(rows) };
+}
+
 /**
  * Vendors for this home's market and the step's trade. The home's own first-choice vendors
  * (active today) show first with their note.
@@ -89,91 +139,176 @@ export const taskVendorsFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ propertyId: z.string().uuid(), trade: z.string().trim().min(1).max(80) }).parse(d))
   .handler(async ({ context, data }) => {
-    const db = context.supabase as unknown as Loose;
-    const { vendorMarketFor } = await import("./vendor-market");
-    const { orderVendors } = await import("./onboarding-task-kinds");
-    const home = await db.from("properties").select("market, is_demo").eq("id", data.propertyId).maybeSingle();
-    const market = vendorMarketFor(home.data?.market ?? null);
-    const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Chicago" });
-    const [coverage, homeCoverage] = await Promise.all([
-      market
-        ? db.from("vendor_market_coverage").select("org_id").eq("market", market).eq("service_category", data.trade)
-        : Promise.resolve({ data: [], error: null }),
-      db
-        .from("property_vendor_coverage")
-        .select("org_id, rate_note, effective_from, effective_to, excluded, coverage_priority")
-        .eq("property_id", data.propertyId)
-        .eq("service_category", data.trade),
-    ]);
-    const firstChoice = new Map<string, string | null>();
-    for (const r of (homeCoverage.data ?? []) as { org_id: string; rate_note: string | null; effective_from: string | null; effective_to: string | null; excluded: boolean | null }[]) {
-      if (r.excluded) continue;
-      if (r.effective_from && r.effective_from > today) continue;
-      if (r.effective_to && r.effective_to < today) continue;
-      firstChoice.set(r.org_id, r.rate_note);
-    }
-    const ids = [...new Set([...((coverage.data ?? []) as { org_id: string }[]).map((r) => r.org_id), ...firstChoice.keys()])];
-    if (!ids.length) return { market, rows: [] as VendorRow[] };
-    const orgs = await db
-      .from("vendor_orgs")
-      .select("id, legal_name, display_name, primary_contact_name, primary_contact_phone, primary_contact_email, work_order_email, breezeway_person_id, is_active, is_demo")
-      .in("id", ids);
-    type Org = {
-      id: string; legal_name: string | null; display_name: string | null; primary_contact_name: string | null;
-      primary_contact_phone: string | null; primary_contact_email: string | null; work_order_email: string | null;
-      breezeway_person_id: string | number | null; is_active: boolean | null; is_demo: boolean | null;
-    };
-    const rows: VendorRow[] = ((orgs.data ?? []) as Org[])
-      .filter((o) => o.is_active !== false && Boolean(o.is_demo) === Boolean(home.data?.is_demo))
-      .map((o) => ({
-        orgId: String(o.id),
-        name: String(o.display_name || o.legal_name || "Vendor"),
-        contact: o.primary_contact_name ?? null,
-        phone: o.primary_contact_phone ?? null,
-        email: o.primary_contact_email || o.work_order_email || null,
-        usesBreezeway: Boolean(o.breezeway_person_id),
-        homeFirstChoice: firstChoice.has(String(o.id)),
-        note: firstChoice.get(String(o.id)) ?? null,
-      }));
-    return { market, rows: orderVendors(rows) };
+    const r = await vendorsFor(context.supabase as unknown as Loose, data.propertyId, data.trade);
+    return { market: r.market, rows: r.rows };
   });
+
+const centralToday = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Chicago" });
+
+/** The newest live onboarding project for a home, every column (the staged inspection date included once applied). */
+async function homeProject(db: Loose, propertyId: string) {
+  const r = await db.from("onboarding_projects").select("*").eq("property_id", propertyId).neq("status", "cancelled").order("created_at", { ascending: false }).limit(1).maybeSingle();
+  return (r.data ?? null) as (Record<string, unknown> & { id: string }) | null;
+}
+
+/** The home's live default cleaner (primary Turnover Cleaning coverage), with the vendor's name. */
+async function readDefaultCleaner(db: Loose, propertyId: string) {
+  const { liveDefaultCleaner, DEFAULT_CLEANER_TRADE } = await import("./onboarding-task-kinds");
+  const rows = await db
+    .from("property_vendor_coverage")
+    .select("id, org_id, service_category, coverage_priority, effective_from, effective_to, excluded, created_at")
+    .eq("property_id", propertyId)
+    .eq("service_category", DEFAULT_CLEANER_TRADE)
+    .order("created_at", { ascending: false });
+  const live = liveDefaultCleaner(((rows.data ?? []) as import("./onboarding-task-kinds").CoverageRow[]), centralToday());
+  if (!live) return null;
+  const org = await db.from("vendor_orgs").select("display_name, legal_name").eq("id", live.org_id).maybeSingle();
+  return { orgId: String(live.org_id), name: String(org.data?.display_name || org.data?.legal_name || "Vendor") };
+}
 
 /**
  * Fill in Resolve: which of the step's fields already have a value on the home or project.
- * Read only; the values are edited in the same home panels the home page shows.
+ * Read only; the values are edited in place in the drawer with the same saves as Home info.
  */
 export const fillInValuesFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ propertyId: z.string().uuid(), fields: z.array(z.string().max(40)).max(12) }).parse(d))
   .handler(async ({ context, data }) => {
     const db = context.supabase as unknown as Loose;
-    const [home, project] = await Promise.all([
-      db.from("properties").select("planned_closing_on, access, access_notes, wifi_notes, utilities, address_line1, formatted_address").eq("id", data.propertyId).maybeSingle(),
-      db.from("onboarding_projects").select("id, target_handoff_on, committed_handoff_on, planned_closing_on, project_manager, role_assignments").eq("property_id", data.propertyId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    const [home, projectRow] = await Promise.all([
+      db.from("properties").select("planned_closing_on, access, access_notes, wifi_notes, utilities").eq("id", data.propertyId).maybeSingle(),
+      homeProject(db, data.propertyId),
     ]);
-    const projectId = (project.data as { id?: string } | null)?.id ?? null;
-    const budget = projectId ? await db.from("onboarding_budgets").select("id").eq("project_id", projectId).limit(1) : { data: [] };
-    type Home = { planned_closing_on?: unknown; access?: unknown; access_notes?: unknown; wifi_notes?: unknown; utilities?: unknown; address_line1?: unknown; formatted_address?: unknown };
-    type Project = { planned_closing_on?: unknown; target_handoff_on?: unknown; committed_handoff_on?: unknown; project_manager?: unknown; role_assignments?: unknown };
+    const projectId = projectRow?.id ?? null;
+    const [budget, cleaner] = await Promise.all([
+      projectId ? db.from("onboarding_budgets").select("id").eq("project_id", projectId).limit(1) : Promise.resolve({ data: [] }),
+      data.fields.includes("default_cleaner") ? readDefaultCleaner(db, data.propertyId) : Promise.resolve(null),
+    ]);
+    type Home = { planned_closing_on?: unknown; access?: unknown; access_notes?: unknown; wifi_notes?: unknown; utilities?: unknown };
     const h = (home.data ?? {}) as Home;
-    const p = (project.data ?? {}) as Project;
+    const p = (projectRow ?? {}) as Record<string, unknown>;
+    const refs = (p["external_refs"] ?? {}) as Record<string, unknown>;
     const has = (v: unknown) => v !== null && v !== undefined && String(typeof v === "object" ? JSON.stringify(v) : v).replace(/[{}[\]"]/g, "").trim() !== "";
     const filled: Partial<Record<FillFieldCode, boolean | null>> = {
-      closing_date: has(h.planned_closing_on) || has(p.planned_closing_on),
-      target_handoff: has(p.target_handoff_on) || has(p.committed_handoff_on),
+      closing_date: has(h.planned_closing_on) || has(p["planned_closing_on"]),
+      target_handoff: has(p["target_handoff_on"]) || has(p["committed_handoff_on"]),
       access_plan: has(h.access) || has(h.access_notes),
-      budget: (budget.data ?? []).length > 0,
+      budget: ((budget as { data: unknown[] | null }).data ?? []).length > 0,
       wifi: has(h.wifi_notes),
-      team_roles: has(p.project_manager) || has(p.role_assignments),
-      verified_address: has(h.formatted_address) || has(h.address_line1),
+      team_roles: has(p["project_manager"]) || has(p["role_assignments"]),
+      // Item 1: the verified address is the one typed on Home info (General Info), not the listing address.
+      verified_address: has(refs["verified_address"]),
       utility_accounts: has(h.utilities),
-      // No home or project field holds these yet; they cannot be filled in Resolve.
-      inspection_date: null,
-      default_cleaner: null,
+      // Item 1: inspection date lives on the project (staged file 01); null until that column exists.
+      inspection_date: projectRow && "inspection_on" in projectRow ? has(projectRow["inspection_on"]) : null,
+      default_cleaner: Boolean(cleaner),
     };
     const out: Record<string, boolean | null> = {};
     for (const f of data.fields) out[f] = (filled as Record<string, boolean | null | undefined>)[f] ?? null;
     return { filled: out };
+  });
+
+/** Item 1: the values Fill in Resolve edits in place, with the people allowed to change the cleaner. */
+export const fillInDetailsFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ propertyId: z.string().uuid(), withCleaners: z.boolean().default(false) }).parse(d))
+  .handler(async ({ context, data }) => {
+    const db = context.supabase as unknown as Loose;
+    const { DEFAULT_CLEANER_TRADE } = await import("./onboarding-task-kinds");
+    const [projectRow, cleaner, vendorEditor, options] = await Promise.all([
+      homeProject(db, data.propertyId),
+      readDefaultCleaner(db, data.propertyId),
+      db.rpc("can_edit_vendors", { _user_id: context.userId }),
+      data.withCleaners ? vendorsFor(db, data.propertyId, DEFAULT_CLEANER_TRADE) : Promise.resolve(null),
+    ]);
+    const refs = ((projectRow?.["external_refs"] ?? {}) as Record<string, string>);
+    return {
+      projectId: projectRow?.id ?? null,
+      targetHandoffOn: (projectRow?.["target_handoff_on"] as string | null | undefined) ?? null,
+      inspectionReady: Boolean(projectRow && "inspection_on" in projectRow),
+      inspectionOn: (projectRow?.["inspection_on"] as string | null | undefined) ?? null,
+      externalRefs: refs,
+      verifiedAddress: refs["verified_address"] ?? null,
+      defaultCleaner: cleaner,
+      cleanerOptions: (options?.rows ?? []).map((r) => ({ orgId: r.orgId, name: r.name, homeFirstChoice: r.homeFirstChoice })),
+      market: options?.market ?? null,
+      canSetCleaner: vendorEditor.data === true,
+    };
+  });
+
+/**
+ * Item 1: set a home's default cleaner. Operations keeps a home's cleaner as its primary
+ * Turnover Cleaning vendor coverage row, written under the existing vendor-coverage rule
+ * (can_edit_vendors). A previous default is ended yesterday (Central), never deleted.
+ */
+export const setDefaultCleanerFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ propertyId: z.string().uuid(), orgId: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }) => {
+    const db = context.supabase as unknown as Loose;
+    const { assertVendorEditor } = await import("./vendors.server");
+    await assertVendorEditor(context.supabase as never, context.userId);
+    const { DEFAULT_CLEANER_TRADE } = await import("./onboarding-task-kinds");
+    const [home, org, current] = await Promise.all([
+      db.from("properties").select("is_demo").eq("id", data.propertyId).maybeSingle(),
+      db.from("vendor_orgs").select("id, display_name, legal_name, is_active, is_demo, status").eq("id", data.orgId).maybeSingle(),
+      readDefaultCleaner(db, data.propertyId),
+    ]);
+    if (!home.data) throw new Error("That home could not be found.");
+    const o = org.data as { display_name: string | null; legal_name: string | null; is_active: boolean | null; is_demo: boolean | null; status: string | null } | null;
+    if (!o || o.is_active === false || o.status === "candidate") throw new Error("Choose an active cleaning vendor.");
+    if (Boolean(o.is_demo) !== Boolean(home.data.is_demo)) throw new Error("Choose a cleaning vendor for this home.");
+    if (current?.orgId === data.orgId) return { ok: true as const, unchanged: true };
+    const today = centralToday();
+    const yesterday = new Date(new Date(`${today}T12:00:00Z`).getTime() - 86_400_000).toISOString().slice(0, 10);
+    const ended = await db
+      .from("property_vendor_coverage")
+      .update({ effective_to: yesterday })
+      .eq("property_id", data.propertyId)
+      .eq("service_category", DEFAULT_CLEANER_TRADE)
+      .eq("coverage_priority", "primary")
+      .or(`effective_to.is.null,effective_to.gte.${today}`);
+    if (ended.error) throw new Error("The default cleaner could not be changed.");
+    const added = await db.from("property_vendor_coverage").insert({
+      org_id: data.orgId,
+      property_id: data.propertyId,
+      service_category: DEFAULT_CLEANER_TRADE,
+      coverage_priority: "primary",
+      last_verified_at: new Date().toISOString(),
+      created_by: context.userId,
+    });
+    if (added.error) throw new Error("The default cleaner could not be saved.");
+    const name = o.display_name || o.legal_name || "a cleaning vendor";
+    await db.from("property_activity_log").insert({
+      property_id: data.propertyId,
+      category: "cleaner",
+      what_happened: `Default cleaner set to ${name}`,
+      outcome: current ? `Replaces ${current.name}.` : "Set from an onboarding Task.",
+      is_demo: Boolean(home.data.is_demo),
+    });
+    return { ok: true as const, unchanged: false };
+  });
+
+/** Item 9: who reviews an Approval Task with no step review (staged file 02); ready: false until applied. */
+export const approvalReviewerFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ taskId: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }) => {
+    const rpc = context.supabase.rpc.bind(context.supabase) as unknown as Loose["rpc"];
+    const r = await rpc("approval_task_reviewer", { _task_id: data.taskId });
+    if (r.error) return { ready: false as const, reviewerId: null };
+    return { ready: true as const, reviewerId: (r.data as string | null) ?? null };
+  });
+
+/** Item 9: Send back with a required note (reopens or notifies the Show files from steps). */
+export const approvalSendBackFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ taskId: z.string().uuid(), note: z.string().trim().min(5, "Write what needs to change.").max(2000) }).parse(d))
+  .handler(async ({ context, data }) => {
+    const rpc = context.supabase.rpc.bind(context.supabase) as unknown as Loose["rpc"];
+    const r = await rpc("approval_task_send_back", { _task_id: data.taskId, _note: data.note });
+    if (r.error) throw new Error(r.error.message || "This could not be sent back.");
+    return r.data as { reopened: string[]; notified: number };
   });
 
 /**
