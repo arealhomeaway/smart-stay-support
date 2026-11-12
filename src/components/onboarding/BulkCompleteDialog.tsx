@@ -19,7 +19,7 @@ import { bulkCompleteHomeTasksFn, type BulkCompleteResult } from "@/lib/onboardi
 import { beginUploadFn, completeUploadFn } from "@/lib/attachments.functions";
 import { createAttachmentUploader } from "@/lib/attachment-upload-client";
 import { earliestDoneOn, markDoneProblem, type DoneWhen } from "@/lib/plan-catch-up";
-import { CoveredList, HeldList } from "@/components/onboarding/PlanCatchUp";
+import { CoveredList, HeldList } from "@/components/onboarding/CatchUpLists";
 
 function centralToday() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago" }).format(new Date());
