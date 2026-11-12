@@ -9,9 +9,9 @@ import {
 import { createFileRoute, Link, Navigate, notFound } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { CheckCircle2, CircleAlert, Plus, XCircle } from "lucide-react";
+import { CheckCircle2, ChevronLeft, CircleAlert, Plus, XCircle } from "lucide-react";
 import { Chip, EmptyState, LoadingPage, PageHeader, ProgressRing } from "@/components/ui/page";
 import { PropertyOwnerCompletions } from "@/components/onboarding/PropertyOwnerCompletions";
 import { HomeContextHeader } from "@/components/property/HomeContextHeader";
@@ -111,8 +111,11 @@ import { usePropertyOwnerSummary } from "@/components/onboarding/PropertyOpportu
 import { loadHomePlan } from "@/lib/ao-data";
 import { FURNISHING_SCOPES } from "@/lib/onboarding-scope";
 import {
+  DEFAULT_PAGE_TAB,
   DEFAULT_STATUS_STAGE_MAP,
+  FROM_ATTENTION,
   PAGE_TABS,
+  attentionJumpSearch,
   committedHandoffMissing,
   computedStage,
   effectiveOwner,
@@ -123,7 +126,9 @@ import {
   ownerDecisionsDue,
   pageTabFor,
   scheduleHealth,
+  showBackToAttention,
   stageMismatch,
+  tabClickSearch,
   yoursLate,
   type AddViewer,
   type AttentionChip,
@@ -192,14 +197,20 @@ function InvalidPropertyRoute() {
 
 export const Route = createFileRoute("/_authenticated/onboarding/$propertyId")({
   // Part 1 tabs (Overview, Tasks, Owner, Home details, Vendors and work, Files, Budget, Activity, More);
-  // older tab links open the tab that now holds their content.
+  // the page opens on Overview (Part 1 fix 6); older tab links open the tab that now holds their content.
+  // from=attention marks a Needs attention jump, so one "Back to Needs attention" shows.
   validateSearch: (raw: Parameters<typeof validateWorkspaceSearch>[0]) => {
     const parsed = validateWorkspaceSearch(raw);
     const rawTab = typeof raw.tab === "string" ? raw.tab : undefined;
     const tab =
-      rawTab ?? (typeof raw.opp === "string" && typeof raw.task !== "string" ? "owner" : "tasks");
+      rawTab ?? (typeof raw.opp === "string" && typeof raw.task !== "string" ? "owner" : DEFAULT_PAGE_TAB);
     // Fixes 11, 12: Owner Completions opens the Task drawer at its owner conversation.
-    return { ...parsed, tab, ...((raw as { at?: unknown }).at === "conversation" ? { at: "conversation" as const } : {}) };
+    return {
+      ...parsed,
+      tab,
+      ...((raw as { at?: unknown }).at === "conversation" ? { at: "conversation" as const } : {}),
+      ...((raw as { from?: unknown }).from === FROM_ATTENTION ? { from: FROM_ATTENTION } : {}),
+    };
   },
   // Only a real property id may open a workspace; anything else never
   // reaches the server.
@@ -355,6 +366,18 @@ function PropertyWorkspace() {
   // Ask the owner, the Status to stage map, the owner counts, the homeowner plan switch and labels.
   const [stageSel, setStageSel] = useState<number | null | undefined>(undefined);
   const [tagSel, setTagSel] = useState<OwnerTag | null>(null);
+  // Fix 6: filters a Needs attention chip set are cleared on the way back to Overview,
+  // by the Back button or the browser's Back.
+  const jumpFilters = useRef(false);
+  const tabNow = pageTabFor(search.tab, Boolean(linkedOpp && !linkedTask));
+  useEffect(() => {
+    if (tabNow === "overview" && jumpFilters.current) {
+      jumpFilters.current = false;
+      setStageSel(undefined);
+      setTagSel(null);
+    }
+  }, [tabNow]);
+  const tabBarTop = useShellBarHeight();
   const [compose, setCompose] = useState(0);
   const statusMap = useStatusStageMap();
   const ownerSummary = usePropertyOwnerSummary(propertyId);
@@ -548,8 +571,9 @@ function PropertyWorkspace() {
       today,
     }),
   });
-  const tab = pageTabFor(search.tab, Boolean(linkedOpp && !linkedTask));
-  const goTab = (next: string) => void navigate({ search: { ...search, tab: next } as never, replace: true });
+  const tab = tabNow;
+  // A tab picked directly replaces the address and drops the jump mark (fix 6).
+  const goTab = (next: string) => void navigate({ search: tabClickSearch(search, pageTabFor(next)) as never, replace: true });
   const scrollToId = (id: string) => {
     let tries = 0;
     const go = () => {
@@ -559,13 +583,21 @@ function PropertyWorkspace() {
     };
     window.setTimeout(go, 0);
   };
+  // A Needs attention jump pushes a history entry, so the browser's Back returns to Overview.
   const onJump = (c: AttentionChip) => {
     if (c.jump.tab === "tasks") {
       setStageSel(c.jump.stage);
       setTagSel(c.jump.tag);
+      jumpFilters.current = true;
     }
-    goTab(c.jump.tab);
+    void navigate({ search: attentionJumpSearch(search, c.jump.tab) as never });
     if (c.jump.tab === "details") scrollToId(`home-details-${c.jump.section}`);
+  };
+  const backToAttention = () => {
+    jumpFilters.current = false;
+    setStageSel(undefined);
+    setTagSel(null);
+    void navigate({ search: tabClickSearch(search, "overview") as never, replace: true });
   };
   const selectedStage = stageSel === undefined ? stage - 1 : stageSel;
   const scope2 = FURNISHING_SCOPES.find((f) => f.value === projectRow?.furnishing_scope)?.label ?? null;
@@ -612,7 +644,6 @@ function PropertyWorkspace() {
         goTab("owner");
         setCompose((n) => n + 1);
       }}
-      attention={<NeedsAttentionStrip chips={chips} onJump={onJump} />}
     />
   );
 
@@ -642,20 +673,30 @@ function PropertyWorkspace() {
       {header}
 
       <Tabs value={tab} onValueChange={goTab} className="space-y-5">
-        <TabsList className="flex h-auto w-full justify-start overflow-x-auto">
-          {PAGE_TABS.map((t) => (
-            <TabsTrigger key={t.value} value={t.value} className="min-h-11 shrink-0 gap-1.5">
-              {t.label}
-              {t.value === "owner" && ownerSummary.waitingOnUs > 0 ? (
-                <span className="numeric inline-flex min-w-5 items-center justify-center rounded-full bg-state-blocked px-1.5 text-xs font-semibold text-stage-selected-fg" aria-label={`${ownerSummary.waitingOnUs} waiting on us`}>
-                  {ownerSummary.waitingOnUs}
-                </span>
-              ) : null}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        {/* Fix 4: the tabs in their own bar, pinned under the app's top bar while scrolling. */}
+        <div className="sticky z-20 -mx-1 rounded-lg bg-card px-1 py-1 shadow-sm" style={{ top: tabBarTop }} data-testid="home-tab-bar">
+          <TabsList className="flex h-auto w-full justify-start overflow-x-auto bg-transparent">
+            {PAGE_TABS.map((t) => (
+              <TabsTrigger key={t.value} value={t.value} className="min-h-11 shrink-0 gap-1.5">
+                {t.label}
+                {/* Fix 5: the only count on a tab; owner items the owner answered and staff have not. */}
+                {t.value === "owner" && ownerSummary.waitingOnUs > 0 ? (
+                  <span className="numeric inline-flex min-w-5 items-center justify-center rounded-full bg-state-blocked px-1.5 text-xs font-semibold text-stage-selected-fg" aria-label={`${ownerSummary.waitingOnUs} waiting on us`}>
+                    {ownerSummary.waitingOnUs}
+                  </span>
+                ) : null}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
+        {showBackToAttention(search, tab) ? (
+          <Button variant="outline" className="min-h-11" onClick={backToAttention}>
+            <ChevronLeft className="size-4" aria-hidden="true" /> Back to Needs attention
+          </Button>
+        ) : null}
 
         <TabsContent value="overview" className="space-y-4">
+          <NeedsAttentionStrip chips={chips} onJump={onJump} />
           <OverviewCards
             stepper={stepper}
             stage={stage}
@@ -1427,4 +1468,19 @@ function RequestHandoffDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+/** The app's top bar stays pinned too; the tab bar pins just under it (0 when there is none). */
+function useShellBarHeight() {
+  const [top, setTop] = useState(0);
+  useEffect(() => {
+    const bar = document.querySelector<HTMLElement>("header.sticky");
+    if (!bar) return;
+    const update = () => setTop(bar.offsetHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(bar);
+    return () => ro.disconnect();
+  }, []);
+  return top;
 }
