@@ -337,13 +337,13 @@ export function planPidRefresh(pages: PidPage[], snap: PidSnapshot, opts: PlanOp
           break;
         }
         case "Security Camera Feed":
-          for (const u of urlsIn(String(v))) addLink(u, m.name, { kind: "camera_portal", staff_only: true, label: "Camera portal", note: "Portal reference only — no credentials stored." });
+          for (const u of urlsIn(String(v))) addLink(u, m.name, { kind: "camera_portal", staff_only: true, label: "Camera portal", note: "Portal reference only. No credentials stored." });
           break;
         case "Pool & Hot Tub Technician Form":
-          for (const u of urlsIn(String(v))) addLink(u, m.name, { kind: "fillout_form", needs_replacement: true, label: "Pool & hot tub technician form", note: "Temporary external form — to be replaced by a Resolve workflow." });
+          for (const u of urlsIn(String(v))) addLink(u, m.name, { kind: "fillout_form", needs_replacement: true, label: "Pool & hot tub technician form", note: "Temporary external form, to be replaced by a Resolve workflow." });
           break;
         case "Furniture Pick List Link":
-          for (const u of urlsIn(String(v))) addLink(u, m.name, { kind: "legacy_onedrive", canonical: false, label: "Furniture pick list (legacy OneDrive)", note: "Legacy OneDrive link — not a Resolve document. Pending SharePoint migration." });
+          for (const u of urlsIn(String(v))) addLink(u, m.name, { kind: "legacy_onedrive", canonical: false, label: "Furniture pick list (legacy OneDrive)", note: "Legacy OneDrive link, not a Resolve document. Pending SharePoint migration." });
           break;
         case "Listing Photos":
           break; // excluded: OwnerRez photos remain authoritative

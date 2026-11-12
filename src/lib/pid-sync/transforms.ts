@@ -56,7 +56,7 @@ export function yesNo(v: any): boolean | string | null {
 }
 
 /** Sep 1 free-text safety net: a typed code is replaced before the value is planned. */
-export const REDACTION_TEXT = "[removed — credentials are not stored in Resolve]";
+export const REDACTION_TEXT = "[removed: credentials are not stored in Resolve]";
 const SECRET_PATTERN =
   /\b(passwords?|passcodes?|pass\s?code|pwd|wifi\s*pass\w*|login\s*(?:info\w*|details)?|credentials?|access\s*code|gate\s*code|alarm\s*code|keypad\s*code|lockbox\s*code|door\s*code|profile\s*code|pin)\b\s*(?:is|are|:|=|-)?\s*[^\s,;\n]{2,}/gi;
 

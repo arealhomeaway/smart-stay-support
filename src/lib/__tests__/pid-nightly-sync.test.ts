@@ -34,7 +34,7 @@ describe("the mapping is the approved Sep 1 mapping", () => {
     const md = readFileSync("docs/pending/pid-import-mapping-v1.md", "utf8");
     const rows = md.split("\n").filter((l) => l.startsWith("| ")).map((l) => l.split("|").map((s) => s.trim())).filter((c) => c.length >= 13 && /^\d+$/.test(c[1]!));
     expect(rows).toHaveLength(166);
-    expect(PID_MAPPING_V1.map((m) => [m.i, m.name, m.action, m.target, m.authority])).toEqual(rows.map((c) => [Number(c[1]), c[2]!.replace(/\*\*/g, ""), c[7]!, c[6]!, c[8]!]));
+    expect(PID_MAPPING_V1.map((m) => [m.i, m.name, m.action, m.target, m.authority])).toEqual(rows.map((c) => [Number(c[1]), c[2]!.replace(/\*\*/g, ""), c[7]!, c[6]!, c[8]!].map((x) => (typeof x === "string" ? (x === "\u2014" ? "" : x.replace(/\u2014/g, "-")) : x))));
   });
 });
 
