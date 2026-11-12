@@ -788,12 +788,8 @@ function ReviewPanel({
     !readOnly &&
     ["awaiting_owner", "returned"].includes(review.status) &&
     Boolean(review.updated_at);
-  const [responseContext, setResponseContext] = useState<ReturnType<
-    typeof captureReviewedResponse
-  > | null>(null);
-  // The panel opens already open: capture the reviewed version once, as opening did before.
-  const [captured] = useState(() => captureReviewedResponse(review));
-  if (responseContext === null && open) setResponseContext(captured);
+  // The panel mounts when it opens: capture the reviewed version once, as opening did before.
+  const [responseContext] = useState(() => captureReviewedResponse(review));
   const setResponseOpen = (next: boolean) => setOpen(next);
   const answer = useServerFn(answerOwnerReview);
 
