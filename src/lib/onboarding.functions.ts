@@ -349,12 +349,36 @@ export const sendTaskToOwnerFn = createServerFn({ method: "POST" })
         note: z.string().trim().min(5).max(2000),
         version: z.string().trim().max(120).default(""),
         documentIds: z.array(z.string().uuid()).max(25).default([]),
+        /** Optional answer-by date (YYYY-MM-DD); blank keeps today's rule (the Task's own due date). */
+        respondBy: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
       })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
     const { sendTaskToOwner } = await import("./onboarding.server");
     return sendTaskToOwner(context.supabase, context.userId, data);
+  });
+
+/**
+ * Mark as started (Task drawer). One caller-authenticated database action with its own
+ * audit row; status, clocks and completion are unchanged. Until staged file 04 is applied
+ * the drawer does not show the button, and this says plainly that it is not available yet.
+ */
+export const markTaskStartedFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ taskId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }) => {
+    const rpc = context.supabase.rpc.bind(context.supabase) as unknown as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: { started_at: string; changed: boolean } | null; error: { code?: string; message?: string } | null }>;
+    const res = await rpc("mark_onboarding_task_started", { _task_id: data.taskId });
+    if (res.error) {
+      const { isMissingDbObject } = await import("./ao-ui");
+      if (isMissingDbObject(res.error)) throw new Error("Mark as started is not available yet.");
+      throw new Error(res.error.message ?? "This Task could not be marked started.");
+    }
+    return { startedAt: res.data?.started_at ?? null, changed: Boolean(res.data?.changed) };
   });
 
 export const recordOwnerTaskDecisionFn = createServerFn({ method: "POST" })
