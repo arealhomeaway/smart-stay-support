@@ -71,6 +71,8 @@ export const updateOwnerRecordFn = createServerFn({ method: "POST" })
         coOwnerName: z.string().trim().max(160).nullable().default(null),
         coOwnerEmail: z.string().trim().max(200).nullable().default(null),
         coOwnerPhone: z.string().trim().max(60).nullable().default(null),
+        preferredMethod: z.enum(["text", "call", "email", "telegram"]).nullable().optional(),
+        telegram: z.string().trim().max(80).nullable().optional(),
       })
       .parse(data),
   )

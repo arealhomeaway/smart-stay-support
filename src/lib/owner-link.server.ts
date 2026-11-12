@@ -109,6 +109,11 @@ export type OwnerCard = {
   coOwnerEmail: string | null;
   coOwnerPhone: string | null;
   propertyCount: number;
+  /** Property page Part 1: how the owner likes to be reached, and their Telegram (staged columns). */
+  preferredMethod: string | null;
+  telegram: string | null;
+  /** True once the staged preferred_method and telegram columns exist. */
+  contactFieldsReady: boolean;
 };
 
 /** The homeowner shown on a property — one read used by every surface. */
@@ -129,13 +134,14 @@ export async function readPropertyOwner(
 
   const rec = await supabaseAdmin
     .from("property_owners")
-    .select(
-      "id, name, email, phone, city, state, source, co_owner_name, co_owner_email, co_owner_phone",
-    )
+    // Every column, so the staged preferred_method and telegram are read once they exist.
+    .select("*")
     .eq("id", ownerId)
     .maybeSingle();
   if (rec.error) throw rec.error;
   if (!rec.data) return { owner: null, canManage: true };
+  const extra = rec.data as Record<string, unknown>;
+  const contactFieldsReady = "preferred_method" in extra && "telegram" in extra;
 
   const { count } = await supabaseAdmin
     .from("properties")
@@ -156,6 +162,9 @@ export async function readPropertyOwner(
       coOwnerEmail: rec.data.co_owner_email,
       coOwnerPhone: rec.data.co_owner_phone,
       propertyCount: count ?? 1,
+      preferredMethod: typeof extra["preferred_method"] === "string" ? (extra["preferred_method"] as string) : null,
+      telegram: typeof extra["telegram"] === "string" ? (extra["telegram"] as string) : null,
+      contactFieldsReady,
     },
     canManage: true,
   };
@@ -172,6 +181,9 @@ export async function updateOwnerRecord(
     coOwnerName?: string | null;
     coOwnerEmail?: string | null;
     coOwnerPhone?: string | null;
+    /** Sent only once the staged columns exist (the form shows them only then). */
+    preferredMethod?: string | null;
+    telegram?: string | null;
   },
 ) {
   if (!isStaff(viewer)) throw new Error(DENY);
@@ -193,10 +205,12 @@ export async function updateOwnerRecord(
     co_owner_name: input.coOwnerName?.trim() || null,
     co_owner_email: input.coOwnerEmail?.trim() || null,
     co_owner_phone: input.coOwnerPhone?.trim() || null,
+    ...(input.preferredMethod !== undefined ? { preferred_method: input.preferredMethod || null } : {}),
+    ...(input.telegram !== undefined ? { telegram: input.telegram?.trim() || null } : {}),
   };
   const upd = await supabaseAdmin
     .from("property_owners")
-    .update(patch)
+    .update(patch as never)
     .eq("id", input.ownerId);
   if (upd.error) throw upd.error;
 
