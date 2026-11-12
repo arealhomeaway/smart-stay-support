@@ -1,6 +1,6 @@
 # Onboarding kinds 3 (Nov 12 small fix batch): staged, NOT APPLIED
 
-Apply only when approved. Practice runs of the file and its undo pass on an isolated copy:
+Apply only when approved. Practice runs of each file and its undo pass on an isolated copy:
 `src/lib/__tests__/onboarding-kinds-3-sql.test.ts`.
 
 | File | Item | What it does | Undo |
