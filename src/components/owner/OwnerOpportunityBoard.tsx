@@ -15,7 +15,7 @@ import { useRouteContext } from "@tanstack/react-router";
 import { ChevronDown, Clock, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { OpportunityDetail, StartDialog, arhaStatus, useOwnerOpportunityData, type Live, type OpportunityHome } from "@/components/owner/OwnerOpportunities";
 import { OwnerSidePanel, PanelSection } from "@/components/owner/OwnerSidePanel";
 import { PlanCardForm } from "@/components/owner/OwnerPlanCards";
@@ -372,7 +372,6 @@ export function OwnerOpportunityBoard({
     <section aria-labelledby="owner-opps-heading" className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <h2 id="owner-opps-heading" className="text-lg font-semibold">Opportunities</h2>
-        {home && onViewAll ? null : null}
       </div>
 
       {!home && multi ? (
@@ -480,7 +479,6 @@ export function OwnerOpportunityBoard({
           reviews={reviews}
           live={[...opp.arha, ...opp.optional]}
           templates={opp.templates}
-          action={opened.source === "review" ? actionByReview.get(opened.id) ?? null : null}
           renderReview={renderReview}
           onClose={close}
           onStart={beginStart}
@@ -631,7 +629,7 @@ function cornerText(i: Item): string {
 
 /** Opens the item's own panel: each source keeps its own record and actions. */
 function ItemPanel({
-  item, programId, homes, homeName, multi, readOnly, preview, reviews, live, templates, action, renderReview, onClose, onStart, starting, blockedReason, onLogHours,
+  item, programId, homes, homeName, multi, readOnly, preview, reviews, live, templates, renderReview, onClose, onStart, starting, blockedReason, onLogHours,
 }: {
   item: Item;
   programId: string;
@@ -643,7 +641,6 @@ function ItemPanel({
   reviews: BoardReview[];
   live: Live[];
   templates: LibraryTemplate[];
-  action: OwnerOnboardingAction | null;
   renderReview: (review: BoardReview, open: boolean, onOpenChange: (next: boolean) => void) => ReactNode;
   onClose: () => void;
   onStart: (t: LibraryTemplate) => void;
@@ -659,8 +656,6 @@ function ItemPanel({
         <Clock className="size-4" aria-hidden="true" /> Log hours for this
       </Button>
     ) : null;
-  void action;
-
   if (item.source === "review") {
     const r = reviews.find((x) => x.id === item.id);
     return r ? <>{renderReview(r, true, onOpenChange)}</> : null;
@@ -779,23 +774,5 @@ function TemplatePanel({
         </PanelSection>
       ) : null}
     </OwnerSidePanel>
-  );
-}
-
-/** Kept for staff previews that open a library video without starting it. */
-export function LibraryVideoDialog({ template, onClose }: { template: LibraryTemplate | null; onClose: () => void }) {
-  const videos = useLibraryVideoIndex();
-  return (
-    <Dialog open={template !== null} onOpenChange={(v) => !v && onClose()}>
-      {template ? (
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{template.title}</DialogTitle>
-            <DialogDescription>{videos.get(template.id)?.label ?? template.summary}</DialogDescription>
-          </DialogHeader>
-          <LibraryVideoPlayer libraryId={template.id} poster={imageFor(template.image_key)} label={videos.get(template.id)?.label ?? template.title} />
-        </DialogContent>
-      ) : null}
-    </Dialog>
   );
 }
