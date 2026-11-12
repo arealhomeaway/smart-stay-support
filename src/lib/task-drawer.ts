@@ -13,11 +13,11 @@ export type DrawerKind = "ordinary" | "work_order" | "homeowner";
 /** Work order first (by title), then anything that goes to the homeowner, else ordinary. */
 export function drawerKind(t: {
   title: string | null | undefined;
-  requires_owner_approval?: boolean | null;
-  owner_dependency?: string | null;
-  tags?: readonly string[] | null;
-  hasOwnerItem?: boolean;
-  hasPlanCard?: boolean;
+  requires_owner_approval?: boolean | null | undefined;
+  owner_dependency?: string | null | undefined;
+  tags?: readonly string[] | null | undefined;
+  hasOwnerItem?: boolean | undefined;
+  hasPlanCard?: boolean | undefined;
 }): DrawerKind {
   if (isBreezewayWorkOrderStep(t.title)) return "work_order";
   const dep = t.owner_dependency;
