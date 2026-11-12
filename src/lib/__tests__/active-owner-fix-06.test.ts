@@ -23,6 +23,14 @@ const reviewer = U(40);
 const owner3 = U(9), or3 = U(10), h6 = U(16), h7 = U(17), h8 = U(18), prog3 = U(23);
 const LIVE06 = ["ao_plan_outcomes", "ao_start_home_plan", "ao_preview_home_automation", "ao_on_handoff",
   "perform_handoff_step", "decide_onboarding_task_review", "record_onboarding_review_edit"];
+const ITEM6 = ["ao_home_program", "ao_label_sync", "ao_start_on_enrollment", "ao_enrollment_changed", "ao_plan_ready_notice",
+  "ao_owner_email_now", "notify_owner_of_review", "my_owner_item_needs"];
+const ITEM6_SIGS: Record<string, string> = {
+  ao_home_program: "private.ao_home_program(uuid)", ao_label_sync: "private.ao_label_sync(uuid,uuid)",
+  ao_start_on_enrollment: "private.ao_start_on_enrollment(uuid,uuid)", ao_enrollment_changed: "private.ao_enrollment_changed()",
+  ao_plan_ready_notice: "private.ao_plan_ready_notice(uuid,uuid[],integer)", ao_owner_email_now: "private.ao_owner_email_now(uuid,text,text,text)",
+  notify_owner_of_review: "public.notify_owner_of_review()", my_owner_item_needs: "public.my_owner_item_needs()",
+};
 const SIGS: Record<string, string> = {
   ao_plan_outcomes: "private.ao_plan_outcomes(uuid,uuid[])", ao_start_home_plan: "private.ao_start_home_plan(uuid,uuid,uuid[])",
   ao_preview_home_automation: "public.ao_preview_home_automation(uuid,uuid[])", ao_on_handoff: "private.ao_on_handoff(uuid,uuid)",
@@ -339,10 +347,158 @@ describe("Active Owner fix file 06, staged SQL on an isolated database", () => {
     }
   });
 
+  // ------------------------------------------------------------------ Item 6: demo programs and demo homes
+  const ownerNotes = (prog: string) => db.query<{ kind: string; email_status: string; sms_status: string; is_demo: boolean; review_id: string | null }>(
+    "SELECT kind, email_status, sms_status, is_demo, review_id FROM public.owner_notifications WHERE program_id=$1 ORDER BY created_at, id", [prog]);
+  const hasLabel = async (home: string) => (await n(`SELECT count(*)::int n FROM public.property_label_assignments a JOIN public.property_labels l ON l.id=a.label_id
+    WHERE l.system_key='active_owner' AND a.property_id=$1 AND a.removed_at IS NULL`, [home])) === 1;
+
+  it("item 6: before 06 a demo home was refused; after 06 it gets the label and its plan starts like a real home", async () => {
+    expect(demoBefore).toEqual({ ready: false, reason: "This home has no active Active Owner program" });
+    // The demo home already in the demo program got the label when 06 was applied, with a receipt.
+    expect(await hasLabel(h6)).toBe(true);
+    expect(await n("SELECT count(*)::int n FROM public.audit_log WHERE action='ao_fix06_demo_label' AND entity_id=$1", [h6])).toBe(1);
+    await as(ADMIN);
+    const p = (await one<{ p: { ready: boolean; outcomes: Record<string, number> } }>("SELECT public.ao_preview_home_automation($1) p", [h6])).p;
+    expect(p.ready).toBe(true);
+    const on = (await one<{ r: { outcomes: Record<string, number> } }>("SELECT public.ao_set_home_automation($1, true) r", [h6])).r;
+    expect(on.outcomes).toEqual(p.outcomes);
+    expect(await outcomes(h6)).toEqual(p.outcomes);
+    expect((await pc_(h6, "L01")).join_outcome).toBe("locked");
+    expect((await pc_(h6, "O01")).join_outcome).toBe("open");
+    expect(await n("SELECT count(*)::int n FROM public.owner_reviews WHERE property_id=$1 AND NOT is_demo", [h6])).toBe(0);
+    // One plan is ready notice in the demo owner's portal, skipped for email and SMS, and no email day used.
+    const notes = (await ownerNotes(prog3)).rows;
+    expect(notes.map((x) => x.kind)).toEqual(["ao_plan_ready"]);
+    expect(notes[0]).toMatchObject({ email_status: "skipped", sms_status: "skipped", is_demo: true });
+    expect(await n("SELECT count(*)::int n FROM public.ao_owner_email_days WHERE owner_key=$1", [owner3])).toBe(0);
+  });
+
+  it("item 6: a demo card unlocks when its step is done; the reminder and takeover run; nothing is emailed", async () => {
+    await as(pm);
+    await db.query("UPDATE public.onboarding_tasks SET status='complete', completed_at=now(), completed_by=$2 WHERE id=$1", [U(261), pm]);
+    const l = await pc_(h6, "L01");
+    expect(l.unlocked_at).not.toBeNull();
+    expect(l.deadline_at).not.toBeNull();
+    expect((await one<{ status: string }>("SELECT status FROM public.owner_reviews WHERE id=$1", [l.owner_review_id])).status).toBe("awaiting_owner");
+    const opened = (await ownerNotes(prog3)).rows.filter((x) => x.review_id === l.owner_review_id);
+    expect(opened).toHaveLength(1);
+    expect(opened[0]).toMatchObject({ kind: "review_ready", email_status: "skipped", sms_status: "skipped", is_demo: true });
+    // The one reminder, then the ARHA takeover, on the demo card.
+    await as(null);
+    await db.query("UPDATE public.ao_home_plan_cards SET reminder_at = now() - interval '1 minute', cutoff_at = now() + interval '1 day' WHERE owner_review_id=$1", [l.owner_review_id]);
+    expect((await one<{ r: { reminders: number } }>("SELECT public.ao_process_clocks() r")).r.reminders).toBe(1);
+    await db.query("UPDATE public.ao_home_plan_cards SET cutoff_at = now() - interval '1 minute' WHERE owner_review_id=$1", [l.owner_review_id]);
+    expect((await one<{ r: { expired: number } }>("SELECT public.ao_process_clocks() r")).r.expired).toBe(1);
+    expect((await one<{ status: string }>("SELECT status FROM public.owner_reviews WHERE id=$1", [l.owner_review_id])).status).toBe("closed");
+    const staffNote = await one<{ user_id: string; email_status: string; is_demo: boolean }>(
+      "SELECT * FROM public.staff_notifications WHERE kind='ao_card_expired' AND entity_id=$1", [U(261)]);
+    expect(staffNote).toMatchObject({ user_id: pm, email_status: "skipped", is_demo: true });
+    // The 9 AM email leaves demo items out: no daily email, no email day, every demo notice skipped for email and SMS.
+    expect((await one<{ r: { daily_sent: number } }>(`SELECT public.ao_owner_email_run(${central(1, "09:05")}) r`)).r.daily_sent).toBe(0);
+    expect(await n("SELECT count(*)::int n FROM public.ao_owner_email_days WHERE owner_key=$1", [owner3])).toBe(0);
+    expect(await n("SELECT count(*)::int n FROM public.owner_notifications WHERE program_id=$1 AND (email_status<>'skipped' OR sms_status<>'skipped' OR NOT is_demo)", [prog3])).toBe(0);
+  });
+
+  it("item 6: Send to the owner and the owner conversation work on a demo home; staff are told in the app only", async () => {
+    const t = U(262); // stepB on the demo home, assigned to the PM
+    await as(pm);
+    const sent = (await one<{ r: { sent: boolean; review_id: string; completed: boolean } }>(
+      "SELECT public.send_task_to_owner_item($1, 'Please look at the design PDF') r", [t])).r;
+    expect(sent.sent && sent.completed).toBe(true);
+    expect((await one<{ status: string }>("SELECT status FROM public.onboarding_tasks WHERE id=$1", [t])).status).toBe("complete");
+    const rid = sent.review_id;
+    expect((await one<{ is_demo: boolean }>("SELECT is_demo FROM public.owner_reviews WHERE id=$1", [rid])).is_demo).toBe(true);
+    const told = (await ownerNotes(prog3)).rows.filter((x) => x.review_id === rid);
+    expect(told).toHaveLength(1);
+    expect(told[0]).toMatchObject({ email_status: "skipped", sms_status: "skipped", is_demo: true });
+    // The demo owner (a real owner account on the demo program) writes back.
+    await as(owner3);
+    await db.query("SELECT public.owner_item_reply($1, 'Can the sofa be blue?')", [rid]);
+    const note = await one<{ user_id: string; email_status: string; is_demo: boolean }>(
+      "SELECT * FROM public.staff_notifications WHERE kind='owner_item_message' AND entity_id=$1", [rid]);
+    expect(note).toMatchObject({ user_id: pm, email_status: "skipped", is_demo: true });
+    // Needs you now: a real account never sees a demo item; a test account does.
+    await as(pm);
+    expect((await db.query<{ review_id: string }>("SELECT * FROM public.my_owner_item_needs()")).rows.filter((r) => r.review_id === rid)).toHaveLength(0);
+    await db.query("SELECT set_config('test.synthetic', 'on', false)");
+    expect((await db.query<{ review_id: string; why: string }>("SELECT * FROM public.my_owner_item_needs()")).rows
+      .filter((r) => r.review_id === rid).map((r) => r.why)).toEqual(["The homeowner wrote back"]);
+    await db.query("SELECT set_config('test.synthetic', '', false)");
+    await db.query("SELECT public.manage_owner_review_conversation($1, 'reply', 'Yes, blue works.')", [rid]);
+    await as(owner3);
+    expect((await db.query<{ author_type: string; body: string }>("SELECT author_type, body FROM public.owner_item_thread($1)", [rid])).rows)
+      .toEqual([{ author_type: "homeowner", body: "Can the sofa be blue?" }, { author_type: "staff", body: "Yes, blue works." }]);
+    await as(pm);
+    await db.query("SELECT public.manage_owner_review_conversation($1, 'resolve')", [rid]);
+    expect((await one<{ status: string }>("SELECT status FROM public.owner_reviews WHERE id=$1", [rid])).status).toBe("closed");
+    await as(owner3);
+    await db.query("SELECT public.owner_item_reply($1, 'One more thing')", [rid]);
+    expect((await one<{ status: string }>("SELECT status FROM public.owner_reviews WHERE id=$1", [rid])).status).toBe("awaiting_owner");
+    expect(await n("SELECT count(*)::int n FROM public.staff_notifications WHERE is_demo AND email_status<>'skipped'")).toBe(0);
+  });
+
+  it("item 6: a new demo enrollment starts its plan and adds the label; mixed demo and real never match", async () => {
+    await as(ADMIN);
+    await db.query("INSERT INTO public.owner_program_properties(program_id, property_id, is_demo) VALUES ($1, $2, true)", [prog3, h7]);
+    expect(await n("SELECT count(*)::int n FROM public.ao_home_plan_settings WHERE property_id=$1 AND automated", [h7])).toBe(1);
+    expect(await hasLabel(h7)).toBe(true);
+    expect((await pc_(h7, "O01")).join_outcome).toBe("open");
+    // A demo home in a real program, and a real home in a demo program: no plan, no label, never matched.
+    await db.query("INSERT INTO public.owner_program_properties(program_id, property_id) VALUES ($1, $2)", [prog1, h8]);
+    await db.query("INSERT INTO public.owner_program_properties(program_id, property_id) VALUES ($1, $2)", [prog3, h4]);
+    for (const home of [h8, h4]) {
+      expect(await n("SELECT count(*)::int n FROM public.ao_home_plan_settings WHERE property_id=$1", [home])).toBe(0);
+      expect(await hasLabel(home)).toBe(false);
+      expect((await one<{ p: { reason: string } }>("SELECT private.ao_home_program($1) p", [home])).p.reason).toBe("This home has no active Active Owner program");
+    }
+    // The real program's homes still answer as before: h2 stays in its one real program.
+    expect((await one<{ p: { program_id: string } }>("SELECT private.ao_home_program($1) p", [h2])).p.program_id).toBe(prog1);
+  });
+
+  it("item 6: real items are unchanged: a real Send to the owner still queues its owner email", async () => {
+    const t = U(970);
+    await task(t, h1, null, "open", { title: "Share the paint colors" });
+    await as(pm);
+    const rid = (await one<{ r: { review_id: string } }>("SELECT public.send_task_to_owner_item($1, 'Pick a paint color') r", [t])).r.review_id;
+    const told = (await ownerNotes(prog1)).rows.filter((x) => x.review_id === rid);
+    expect(told).toHaveLength(1);
+    expect(told[0]).toMatchObject({ email_status: "pending", sms_status: "skipped", is_demo: false });
+    await as(owner1);
+    await db.query("SELECT public.owner_item_reply($1, 'Blue please')", [rid]);
+    expect((await one<{ email_status: string }>("SELECT email_status FROM public.staff_notifications WHERE kind='owner_item_message' AND entity_id=$1", [rid])).email_status).toBe("pending");
+    await as(pm);
+    expect((await db.query<{ review_id: string }>("SELECT * FROM public.my_owner_item_needs()")).rows.filter((r) => r.review_id === rid)).toHaveLength(1);
+  });
+
+  it("item 6: every replaced rule keeps the live text except the named demo lines", () => {
+    // Lines that differ from the live capture, per rule: only the demo conditions named in the file.
+    const expected: Record<string, number> = { ao_home_program: 2, ao_label_sync: 1, ao_start_on_enrollment: 1, ao_plan_ready_notice: 3,
+      ao_owner_email_now: 4, notify_owner_of_review: 6, my_owner_item_needs: 1 };
+    for (const [f, count] of Object.entries(expected)) {
+      const was = live06(f).trimEnd().split("\n");
+      const start = SIX.indexOf(was[0]!, SIX.indexOf("Item 6: demo programs"));
+      const now = SIX.slice(start, SIX.indexOf("\n;\n", start)).split("\n");
+      expect(now.length).toBe(was.length - 1);
+      expect(was.slice(0, -1).filter((l, i) => l !== now[i]).length).toBe(count);
+    }
+  });
+
   it("the undo puts back the exact live text of all seven functions and removes the two new ones", async () => {
     await as(null);
     await db.exec(SIX_UNDO);
     for (const f of LIVE06) expect(staged(await def(SIGS[f]!))).toBe(staged(live06(f)));
+    for (const f of ITEM6) expect(staged(await def(ITEM6_SIGS[f]!))).toBe(staged(live06(f)));
+    expect(await n("SELECT count(*)::int n FROM pg_trigger WHERE tgname='ao_demo_staff_notice'")).toBe(0);
+    expect(await n("SELECT count(*)::int n FROM pg_proc WHERE proname='ao_demo_staff_notice'")).toBe(0);
+    // The label 06 added (receipt) is removed with who and when; the label the enrollment added later stays.
+    expect(await hasLabel(h6)).toBe(false);
+    expect(await n("SELECT count(*)::int n FROM public.property_label_events WHERE property_id=$1 AND action='removed'", [h6])).toBe(1);
+    expect(await hasLabel(h7)).toBe(true);
+    // A demo home is refused again.
+    await as(ADMIN);
+    expect((await one<{ p: { ready: boolean } }>("SELECT public.ao_preview_home_automation($1) p", [h7])).p.ready).toBe(false);
+    await as(null);
     expect(await n("SELECT count(*)::int n FROM pg_proc WHERE proname IN ('ao_ops_card_rule','admin_passes_role_checks')")).toBe(0);
     await as(ADMIN);
     await db.query("UPDATE public.onboarding_projects SET handoff_state='in_progress' WHERE id=$1", [U(52)]);
