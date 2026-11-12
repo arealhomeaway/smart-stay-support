@@ -17,7 +17,7 @@ CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
 CREATE SCHEMA auth; CREATE SCHEMA private;
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('request.jwt.claim.sub', true),'')::uuid $$;
 CREATE FUNCTION private.is_staff(uuid) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT false $$;
-CREATE FUNCTION private.is_program_member(uuid, uuid) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT $2 = '${owner}' $$;
+CREATE FUNCTION private.is_program_member(uuid, uuid) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT $2 = '${owner}' AND $1 = '${prog}' $$;
 CREATE TABLE public.owner_programs(id uuid PRIMARY KEY, property_id uuid, status text, archived_at timestamptz);
 CREATE TABLE public.owner_program_properties(program_id uuid, property_id uuid, archived_at timestamptz);
 CREATE TABLE public.onboarding_template_tasks(id uuid PRIMARY KEY, kind_settings jsonb NOT NULL DEFAULT '{}');
