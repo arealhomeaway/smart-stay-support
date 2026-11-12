@@ -23,6 +23,7 @@ const settingsSchema = z
     fallback: z.enum(["outside_resolve", "email"]).nullable().optional(),
     documentName: z.string().trim().max(OUTSIDE_DOCUMENT_MAX).nullable().optional(),
     ownerMessage: z.string().trim().max(OUTSIDE_MESSAGE_MAX).nullable().optional(),
+    requireFile: z.boolean().optional(),
   })
   .strict();
 
