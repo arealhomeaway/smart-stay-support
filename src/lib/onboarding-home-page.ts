@@ -74,7 +74,7 @@ export function tabClickSearch<S extends TabSearch>(search: S, tab: PageTab): Om
 
 /** One "Back to Needs attention" button, only after a jump and never on Overview itself. */
 export function showBackToAttention(search: TabSearch, tab: PageTab): boolean {
-  return search.from === FROM_ATTENTION && tab !== "overview";
+  return search["from"] === FROM_ATTENTION && tab !== "overview";
 }
 
 /* -------------------------------------------------------------- stages */
