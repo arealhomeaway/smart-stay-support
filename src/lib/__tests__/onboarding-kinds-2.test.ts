@@ -37,7 +37,7 @@ describe("item 1: default cleaner is the home's live primary Turnover Cleaning c
 describe("item 2: Done outside Resolve owner line", () => {
   it("names DocuSign, Houzz Pro and QuickBooks", () => {
     expect(outsideOwnerLine("docusign")).toBe("Check your email for the DocuSign from ARHA");
-    expect(outsideOwnerLine("houzz")).toBe("Check your email for the Houzz Pro from ARHA");
+    expect(outsideOwnerLine("houzz_pro")).toBe("Check your email for the Houzz Pro from ARHA");
     expect(outsideOwnerLine("quickbooks")).toBe("Check your email for the QuickBooks from ARHA");
   });
   it("says document for email, text or other", () => {
