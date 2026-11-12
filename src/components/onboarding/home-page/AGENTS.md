@@ -1,0 +1,2 @@
+# src/components/onboarding/home-page rules
+- One home's Onboarding view (/onboarding/$propertyId) is composed from src/components/onboarding/home-page over pure rules in src/lib/onboarding-home-page.ts (tabs, computed stage, Status to stage map, schedule health, whose Task, Needs attention, Add task permission); Add task goes only through addStageTask with the plan catch-up viewer; selection reuses PlanCatchUpBar. Why: one rule per behavior, the Operations view and Director hub stay separate.

@@ -19,13 +19,38 @@ import { ReleasedActivityDetail } from "./ReleasedActivityDetail";
 import { Link } from "@tanstack/react-router";
 import { readOperationsOwnerRecords } from "@/lib/home-context.functions";
 import { opsRecordStatus } from "@/lib/home-context";
+import { ownerTabItems } from "@/lib/owner-tab-items";
+
+type LoadPrograms=ReturnType<typeof useServerFn<typeof ownerPrograms>>;
+/** The live programs, plus demo ones when this home is in none (same read for the panel and the page counts). */
+async function programsForHome(loadPrograms:LoadPrograms,propertyId:string){const live=await loadPrograms({data:{}});if(live.rows.some(p=>p.properties.some(h=>h.id===propertyId)))return live;const demo=await loadPrograms({data:{demo:true}});return {...live,rows:[...live.rows,...demo.rows]};}
+
+/**
+ * Property page Part 1: the Owner tab's counts (waiting on us, waiting on them) and the program's
+ * hours, from the same reads and the same grouping as the list below, so the badge, Needs
+ * attention and the Overview Owner card always match the Owner tab.
+ */
+export function usePropertyOwnerSummary(propertyId:string){
+  const loadPrograms=useServerFn(ownerPrograms),loadReleased=useServerFn(readReleasedPropertyActivities),loadOps=useServerFn(readOperationsOwnerRecords);
+  const programs=useQuery({queryKey:["owner-programs","property",propertyId],queryFn:()=>programsForHome(loadPrograms,propertyId)});
+  const released=useQuery({queryKey:["released-property-activities",propertyId],queryFn:()=>loadReleased({data:{propertyId}})});
+  const opsRecords=useQuery({queryKey:["operations-owner-records",propertyId],queryFn:()=>loadOps({data:{propertyId}})});
+  const q=useOwnerCollaboration(propertyId);
+  const program=programs.data?.rows.find(p=>p.properties.some(h=>h.id===propertyId))??null;
+  const ready=Boolean(programs.data&&q.data&&released.data&&opsRecords.data);
+  if(!ready||!program)return {ready,program:null as null|{reportedHours:number},waitingOnUs:0,waitingOnThem:0};
+  const items=ownerTabItems({opps:(q.data?.opportunities??[]) as never,messages:(q.data?.messages??[]) as never,files:(q.data?.files??[]) as never,released:(released.data??[]) as never,opsRecords:(opsRecords.data??[]) as never,opsStatus:r=>opsRecordStatus(r as never)});
+  const groups=groupOwnerTab(items);
+  return {ready,program:{reportedHours:program.reportedHours},waitingOnUs:groups.attention.length,waitingOnThem:groups.waiting.length};
+}
 
 function when(value:string|null|undefined) { return value?new Date(value.length===10?`${value}T12:00:00`:value).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}):"Date not recorded"; }
-export function PropertyOpportunitiesPanel({propertyId,openId}:{propertyId:string;openId?:string|null}) {
+/** `compose` (property page Part 1, Ask the owner): each new value opens Create Opportunity. */
+export function PropertyOpportunitiesPanel({propertyId,openId,compose=0}:{propertyId:string;openId?:string|null;compose?:number}) {
   const {readOnly}=useRole(), qc=useQueryClient();
   const loadPrograms=useServerFn(ownerPrograms),loadDetail=useServerFn(ownerProgramDetail),loadReleased=useServerFn(readReleasedPropertyActivities);
   const [editing,setEditing]=useState<CollabOpp|"new"|null>(null),[selected,setSelected]=useState<string|null>(openId??null),[completedOpen,setCompletedOpen]=useState(false),[draftsOpen,setDraftsOpen]=useState(false);
-  const programs=useQuery({queryKey:["owner-programs","property",propertyId],queryFn:async()=>{const live=await loadPrograms({data:{}});if(live.rows.some(p=>p.properties.some(h=>h.id===propertyId)))return live;const demo=await loadPrograms({data:{demo:true}});return {...live,rows:[...live.rows,...demo.rows]};}});
+  const programs=useQuery({queryKey:["owner-programs","property",propertyId],queryFn:()=>programsForHome(loadPrograms,propertyId)});
   const program=programs.data?.rows.find(p=>p.properties.some(h=>h.id===propertyId));
   const detail=useQuery({queryKey:["owner-program-detail",program?.id],enabled:Boolean(program),queryFn:()=>{if(!program)throw new Error("No program.");return loadDetail({data:{programId:program.id}});}});
   const released=useQuery({queryKey:["released-property-activities",propertyId],queryFn:()=>loadReleased({data:{propertyId}})});
@@ -33,24 +58,17 @@ export function PropertyOpportunitiesPanel({propertyId,openId}:{propertyId:strin
   const loadOps=useServerFn(readOperationsOwnerRecords);
   const opsRecords=useQuery({queryKey:["operations-owner-records",propertyId],queryFn:()=>loadOps({data:{propertyId}})});
   useEffect(()=>{if(openId)setSelected(openId);},[openId]);
+  useEffect(()=>{if(compose>0)setEditing("new");},[compose]);
   const reorderFn=useServerFn(reorderArhaOpportunities);
   const reorder=useMutation({mutationFn:(ids:string[])=>reorderFn({data:{propertyId,ids}}),onSuccess:()=>{void qc.invalidateQueries({queryKey:["owner-collaboration"]});toast.success("Order saved.");}});
   if(programs.isPending||q.isPending||released.isPending||opsRecords.isPending)return <p>Loading Active Owner…</p>;
   if(programs.error||q.error||released.error||opsRecords.error)return <p role="alert">Could not load all Active Owner items. Please try again.</p>;
   if(!program)return null;
   const opps=q.data?.opportunities??[], messages=q.data?.messages??[];
-  const requests:OwnerTabItem[]=opps.map(o=>{
-    const thread=messages.filter(m=>m.work_item_id===o.id);
-    const files=(q.data?.files??[]).filter(f=>f.workItemId===o.id);
-    const ownerTimes=[...o.owner_response.map(r=>r.at),...thread.filter(m=>m.author_type==="homeowner").map(m=>m.created_at),...files.map(f=>f.uploadedAt)].filter((x):x is string=>Boolean(x)).sort();
-    const staffTimes=thread.filter(m=>m.author_type==="staff").map(m=>m.created_at).sort();
-    const latest=thread.filter(m=>m.author_type==="homeowner").slice(-1)[0];
-    const c=(o.owner_content??null) as Record<string,unknown>|null;const fromOps=o.source_department==="operations";
-    return {id:o.id,kind:"request",fromOperations:fromOps,ticketId:fromOps&&typeof c?.["ticket_id"]==="string"?c["ticket_id"] as string:null,typeLabel:fromOps?(c?.["send_kind"]==="review"?"For review":"Owner task"):undefined,title:o.title,status:o.status,sentAt:o.sent_at,completedAt:o.completed_at,ownerAt:ownerTimes.at(-1)??null,staffAt:staffTimes.at(-1)??null,activity:latest?`${latest.author_name} replied`:files.length?"Homeowner uploaded a file":"Homeowner responded"};
-  });
-  const reviews:OwnerTabItem[]=(released.data??[]).map(r=>({id:r.id,kind:"review",title:r.title,status:r.status,sentAt:r.notified_at,completedAt:r.closed_at,ownerAt:r.responded_at,staffAt:r.last_staff_at,activity:r.owner_response?"Homeowner replied":"Homeowner responded"}));
-  const opsItems:OwnerTabItem[]=(opsRecords.data??[]).map(r=>({id:r.id,kind:"ops",fromOperations:true,ticketId:r.ticketId,typeLabel:r.type,title:r.type==="Ticket update"?"Ticket update":r.title,status:opsRecordStatus(r),sentAt:r.sentAt,completedAt:r.type==="Ticket update"?r.answeredAt:r.decidedAt,ownerAt:null,staffAt:null,activity:""}));
-  const groups=groupOwnerTab([...requests,...reviews,...opsItems]);
+  // One mapping shared with the page's counts (src/lib/owner-tab-items.ts).
+  const items=ownerTabItems({opps:opps as never,messages:messages as never,files:(q.data?.files??[]) as never,released:(released.data??[]) as never,opsRecords:(opsRecords.data??[]) as never,opsStatus:r=>opsRecordStatus(r as never)});
+  const requests=items.filter(i=>i.kind==="request"),reviews=items.filter(i=>i.kind==="review");
+  const groups=groupOwnerTab(items);
   const o=opps.find(o=>o.id===selected), review=released.data?.find(r=>r.id===selected);
   const current=o?requests.find(x=>x.id===o.id):reviews.find(x=>x.id===review?.id);
   const arhaSaved=sentStaffOrder(opps);

@@ -1,5 +1,18 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 12 Property page rebuild Part 1 of 3 (onboarding view of one home; staged SQL in docs/pending/property-page-part1, no apply, no publish)
+- [x] 1.1 Header: photo row, tags + more, facts line, owner row, buttons row, tabs with ?tab=, temporary More tab
+- [x] 1.2 Needs attention strip with jumps and live counts
+- [x] 1.3 Overview: Progress, Team, Owner cards
+- [x] 1.4 Computed stage, status to stage map (seeded), mismatch chip, schedule health
+- [x] 1.5 Tasks tab: rail (search, stages, whose task), Do now / Up next / Done, rows, role colors, PM owns unassigned
+- [x] 1.6 Plan catch-up bar reused
+- [x] 1.7 Add task to this stage (one-off, logged; is_one_off staged)
+- [x] 1.8 Handoff checklist on stage 6
+- [x] 1.9 No plan yet card
+- [x] Phone layout; permissions on the server with tests; suite, type check, build; browser check
+- [ ] Apply docs/pending/property-page-part1 (built, staged, practiced on isolated copy) - blocked: waits on the Admin's approval
+
 ## Nov 12 Plan catch-up: update many Tasks at once (onboarding home Plan tab, staged SQL, no apply, no publish)
 - [x] 1 Selection: 52 px rows, 26 px box in 44 px tap area, stage header box, shift range, Select all open, finished selectable
 - [x] 2 Pinned action bar

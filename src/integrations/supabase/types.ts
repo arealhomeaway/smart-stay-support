@@ -9407,6 +9407,72 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_task_batches: {
+        Row: {
+          action: string
+          actor: string
+          cards: Json
+          created_at: string
+          detail: Json
+          id: string
+          is_demo: boolean
+          project_id: string
+          property_id: string
+          task_rows: Json
+          undo_result: Json | null
+          undo_until: string
+          undone_at: string | null
+          undone_by: string | null
+        }
+        Insert: {
+          action: string
+          actor: string
+          cards?: Json
+          created_at?: string
+          detail?: Json
+          id?: string
+          is_demo?: boolean
+          project_id: string
+          property_id: string
+          task_rows?: Json
+          undo_result?: Json | null
+          undo_until?: string
+          undone_at?: string | null
+          undone_by?: string | null
+        }
+        Update: {
+          action?: string
+          actor?: string
+          cards?: Json
+          created_at?: string
+          detail?: Json
+          id?: string
+          is_demo?: boolean
+          project_id?: string
+          property_id?: string
+          task_rows?: Json
+          undo_result?: Json | null
+          undo_until?: string
+          undone_at?: string | null
+          undone_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_task_batches_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "onboarding_task_batches_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       onboarding_task_breezeway_events: {
         Row: {
           actor: string
@@ -12009,6 +12075,70 @@ export type Database = {
           },
         ]
       }
+      pid_sync_review_items: {
+        Row: {
+          created_at: string
+          field_key: string
+          home: string | null
+          id: string
+          kind: string
+          notion_value: string | null
+          ownerrez_id: string | null
+          property_id: string | null
+          reason: string | null
+          resolve_value: string | null
+          run_id: string
+        }
+        Insert: {
+          created_at?: string
+          field_key: string
+          home?: string | null
+          id?: string
+          kind: string
+          notion_value?: string | null
+          ownerrez_id?: string | null
+          property_id?: string | null
+          reason?: string | null
+          resolve_value?: string | null
+          run_id: string
+        }
+        Update: {
+          created_at?: string
+          field_key?: string
+          home?: string | null
+          id?: string
+          kind?: string
+          notion_value?: string | null
+          ownerrez_id?: string | null
+          property_id?: string | null
+          reason?: string | null
+          resolve_value?: string | null
+          run_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pid_sync_review_items_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "pid_sync_review_items_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pid_sync_review_items_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "integration_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       playbook_approvals: {
         Row: {
           actor_id: string | null
@@ -13419,6 +13549,54 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      property_pid_extra_fields: {
+        Row: {
+          as_of: string
+          field_name: string
+          field_type: string
+          property_id: string
+          source_page_id: string
+          synced_on: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          as_of: string
+          field_name: string
+          field_type: string
+          property_id: string
+          source_page_id: string
+          synced_on: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          as_of?: string
+          field_name?: string
+          field_type?: string
+          property_id?: string
+          source_page_id?: string
+          synced_on?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_pid_extra_fields_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "property_pid_extra_fields_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       property_profile_edits: {
         Row: {
@@ -19756,7 +19934,51 @@ export type Database = {
         }
         Returns: undefined
       }
+      pid_sync_apply_home: {
+        Args: {
+          _as_of: string
+          _credentials: Json
+          _extras: Json
+          _intake: Json
+          _links: Json
+          _page_id: string
+          _property_id: string
+          _review: Json
+          _run_id: string
+          _snapshot_at: string
+          _writes: Json
+        }
+        Returns: Json
+      }
+      pid_sync_changed_since_copy: {
+        Args: never
+        Returns: {
+          field_key: string
+          property_id: string
+        }[]
+      }
+      pid_sync_credential_links_read: {
+        Args: never
+        Returns: {
+          credential_id: string
+          pid_field: string
+          property_id: string
+        }[]
+      }
       pilot_dispatch_ready: { Args: never; Returns: boolean }
+      plan_catch_up_tasks: {
+        Args: {
+          _action: string
+          _dry_run?: boolean
+          _due_on?: string
+          _person?: string
+          _property_id: string
+          _reason?: string
+          _role?: string
+          _task_ids: string[]
+        }
+        Returns: Json
+      }
       plan_due_from_rule: {
         Args: { _anchor: string; _offset: number; _unit: string }
         Returns: string
@@ -20787,6 +21009,7 @@ export type Database = {
         }[]
       }
       trackers_waiting: { Args: never; Returns: Json }
+      undo_onboarding_task_batch: { Args: { _batch_id: string }; Returns: Json }
       unlink_demo_owner_account: {
         Args: { _program_id: string; _reason: string }
         Returns: string

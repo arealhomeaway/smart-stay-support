@@ -82,11 +82,10 @@ import {
   type ProjectProperty,
 } from "@/lib/onboarding-lifecycle";
 import {
-  HOME_TABS,
   centralToday,
   handoffDate,
-  healthFor,
-  homeTabFor,
+  isFinished,
+  shortDate,
   stepperFor,
   type BoardTask,
   type ProjectDetails,
@@ -96,12 +95,41 @@ import {
   BudgetFigures,
   DesignTab,
   GeneralInfoFields,
-  HomeBoardHeader,
-  PlanStages,
   ProjectDetailsSection,
-  scrollToPlanStage,
+  notNeededLabel,
 } from "@/components/onboarding/board/HomeBoard";
-import { ShellInlineTrail } from "@/components/nav/ShellNav";
+import { OnboardingHomeHeader } from "@/components/onboarding/home-page/OnboardingHomeHeader";
+import { TasksTab } from "@/components/onboarding/home-page/TasksTab";
+import {
+  NeedsAttentionStrip,
+  NoPlanCard,
+  OverviewCards,
+  StatusStageMapEditor,
+  useStatusStageMap,
+} from "@/components/onboarding/home-page/OverviewParts";
+import { usePropertyOwnerSummary } from "@/components/onboarding/PropertyOpportunitiesPanel";
+import { loadHomePlan } from "@/lib/ao-data";
+import { FURNISHING_SCOPES } from "@/lib/onboarding-scope";
+import {
+  DEFAULT_STATUS_STAGE_MAP,
+  PAGE_TABS,
+  committedHandoffMissing,
+  computedStage,
+  effectiveOwner,
+  factsLine,
+  mayAddAny,
+  moreTags,
+  needsAttention,
+  ownerDecisionsDue,
+  pageTabFor,
+  scheduleHealth,
+  stageMismatch,
+  yoursLate,
+  type AddViewer,
+  type AttentionChip,
+  type OwnerTag,
+  type PageTask,
+} from "@/lib/onboarding-home-page";
 import { listAttachmentsFn } from "@/lib/attachments.functions";
 import { documentCategoryLabel } from "@/lib/attachments";
 import { TaskDrawer, type SaveTaskInput } from "@/components/onboarding/TaskDrawer";
@@ -163,12 +191,13 @@ function InvalidPropertyRoute() {
 }
 
 export const Route = createFileRoute("/_authenticated/onboarding/$propertyId")({
-  // The board's seven tabs; older tab links open the tab that now holds their content.
+  // Part 1 tabs (Overview, Tasks, Owner, Home details, Vendors and work, Files, Budget, Activity, More);
+  // older tab links open the tab that now holds their content.
   validateSearch: (raw: Parameters<typeof validateWorkspaceSearch>[0]) => {
     const parsed = validateWorkspaceSearch(raw);
     const rawTab = typeof raw.tab === "string" ? raw.tab : undefined;
     const tab =
-      rawTab ?? (typeof raw.opp === "string" && typeof raw.task !== "string" ? "info" : "plan");
+      rawTab ?? (typeof raw.opp === "string" && typeof raw.task !== "string" ? "owner" : "tasks");
     // Fixes 11, 12: Owner Completions opens the Task drawer at its owner conversation.
     return { ...parsed, tab, ...((raw as { at?: unknown }).at === "conversation" ? { at: "conversation" as const } : {}) };
   },
@@ -237,9 +266,6 @@ function PropertyWorkspace() {
   useEffect(() => {
     if (linkedTask) setOpenTaskId(linkedTask);
   }, [linkedTask, propertyId]);
-  const [queueFilter, setQueueFilter] = useState<PropertyQueueFilter>(() =>
-    search.workFilter === "blocked" ? "waiting" : "open",
-  );
   // Where the Director hub was left — filters, search and lens intact — so
   // Back restores that exact view rather than a bare "/onboarding".
   const { origin } = useRecordOrigin("onboarding");
@@ -312,7 +338,7 @@ function PropertyWorkspace() {
     [allTasks, scope],
   );
 
-  // Plan catch-up (Admin approval Nov 12): one selection across the stage lists and Every task.
+  // Plan catch-up (Admin approval Nov 12): one selection across the stage lists.
   const catchUpViewerFn = useServerFn(planCatchUpViewerFn);
   const catchUpViewerQuery = useQuery({
     queryKey: ["plan-catch-up-viewer", propertyId, userId],
@@ -325,6 +351,29 @@ function PropertyWorkspace() {
     [catchUpViewerQuery.data, userId],
   );
   const catchUp = usePlanCatchUp(tasks as unknown as CatchUpTask[], catchUpViewer);
+  // Property page Part 1: the Tasks tab's stage and whose-Task filter (Needs attention jumps set them),
+  // Ask the owner, the Status to stage map, the owner counts, the homeowner plan switch and labels.
+  const [stageSel, setStageSel] = useState<number | null | undefined>(undefined);
+  const [tagSel, setTagSel] = useState<OwnerTag | null>(null);
+  const [compose, setCompose] = useState(0);
+  const statusMap = useStatusStageMap();
+  const ownerSummary = usePropertyOwnerSummary(propertyId);
+  const homePlan = useQuery({ queryKey: ["ao-home-plan", propertyId], queryFn: () => loadHomePlan(propertyId), retry: false, enabled: Boolean(userId) });
+  const homeLabels = useQuery({
+    queryKey: ["home-labels", propertyId],
+    enabled: Boolean(userId) && PROPERTY_ID_RE.test(propertyId),
+    queryFn: async () => {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data: rows, error } = await supabase
+        .from("property_label_assignments")
+        .select("property_labels(name)")
+        .eq("property_id", propertyId);
+      if (error) return [] as string[];
+      return (rows ?? [])
+        .map((r) => (r.property_labels as unknown as { name?: string } | null)?.name ?? "")
+        .filter(Boolean);
+    },
+  });
 
   if (isLoading || !data) return <LoadingPage />;
   if (
@@ -436,92 +485,7 @@ function PropertyWorkspace() {
       )
     : [];
 
-  // Before onboarding is actually started there is no plan to act on. Showing
-  // scope pickers, Add task or template actions here would imply a project
-  // exists, so this home gets a pre-start screen instead.
-  if (life.notStarted) {
-    return (
-      <div className="space-y-5">
-          <PageHeader
-          eyebrow="Onboarding"
-          title={formatPropertyLabel(current).primary}
-          description="Onboarding has not been started for this home yet."
-        />
-        <section className="surface p-4">
-          <p className="font-medium">What Resolve knows about this home</p>
-          <dl className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Summary label="Address">
-              {[current.address_line1, current.city, current.state].filter(Boolean).join(", ") ||
-                "Not recorded"}
-            </Summary>
-            <Summary label="Lifecycle">{lifecycleMeta(current.lifecycle_status).label}</Summary>
-            <Summary label="Planned closing">{current.planned_closing_on ?? "Not set"}</Summary>
-            <Summary label="Access confirmed">{current.actual_access_on ?? "Not yet"}</Summary>
-            <Summary label="Project manager">{pm?.full_name ?? pm?.email ?? "Unassigned"}</Summary>
-            <Summary label="Program">
-              {activeOwner ? "Active Owner Program" : "Standard owner"}
-            </Summary>
-          </dl>
-        </section>
-
-        <HomeownerCard propertyId={current.id} canManage={canEdit} />
-
-        <ProjectScopePanel
-          propertyId={current.id}
-          propertyName={formatPropertyLabel(current).primary}
-          people={data.people}
-          canEdit={canEdit}
-          hints={{ planned_closing_on: current.planned_closing_on ?? null }}
-        />
-
-        <p className="text-sm text-muted-foreground">
-          Templates, tasks and handoff become available once an Onboarding Project is started. Until
-          then nothing here is actionable.
-        </p>
-      </div>
-    );
-  }
-
   const target = targetHandoff(project);
-  const views = orderPropertyWorkQueue(tasks.map((t) => viewTask(t, tasks, release)));
-  const attention = views.filter((v) => matchesPropertyQueueFilter(v, "attention", userId));
-  const focus = attention.length > 0 ? attention : views.filter((v) => matchesPropertyQueueFilter(v, "mine", userId));
-  const blocked = views.filter((v) => matchesPropertyQueueFilter(v, "waiting", userId));
-  const handoffLeft = tasks.filter(
-    (t) =>
-      (t as { blocks_handoff?: boolean }).blocks_handoff &&
-      (t as { is_required?: boolean }).is_required !== false &&
-      t.status !== "complete",
-  ).length;
-  const overdue = views.filter((v) => v.overdue && v.status !== "complete").length;
-  // Health is only claimed when the schedule can support it.
-  const scheduleIncomplete =
-    !current.actual_access_on || !tasks.some((t) => t.due_on && t.status !== "complete");
-  const onTrack = life.accepted
-    ? "Accepted by Operations"
-    : overdue > 0
-      ? `${overdue} overdue Tasks. Outstanding work carries over at handoff.`
-      : "Outstanding work carries over at handoff.";
-  const actualClosing =
-    (current as { actual_closing_on?: string | null }).actual_closing_on ?? null;
-  const taskRow = (v: (typeof views)[number]) => (
-    <li key={v.task.id}>
-      <button
-        type="button"
-        onClick={() => setOpenTaskId(v.task.id)}
-        className="flex w-full flex-wrap items-center gap-2 rounded-md border border-border px-3 py-2 text-left text-sm hover:bg-muted/50"
-      >
-        <span className="min-w-0 flex-1 truncate font-medium">{v.task.title}</span>
-        {v.overdue && <Chip className={stateChip("blocked")}>Overdue</Chip>}
-        <span className="text-xs text-muted-foreground">
-          {assigneeLabel(v.task, data.people)}
-          {v.task.due_on ? ` · ${usDate(v.task.due_on)}` : ""}
-        </span>
-      </button>
-    </li>
-  );
-
-  // The board header and stepper (register O1): six stages, health with its reason.
   const boardTasks = tasks as unknown as BoardTask[];
   const stepper = stepperFor(boardTasks);
   const today = centralToday();
@@ -531,20 +495,11 @@ function PropertyWorkspace() {
     staging_provider?: string | null;
     external_refs?: Record<string, string> | null;
   };
-  const summary = summarizeProject(project, pm?.full_name ?? pm?.email ?? null);
-  const handoffOn = handoffDate(details.committed_handoff_on, target);
-  const health = healthFor({ risk: summary.risk, handoffOn, accepted: life.accepted, today });
   const personName = (id: string | null | undefined) => {
     if (!id) return null;
     const x = data.people.find((q) => q.id === id);
     return x?.full_name || x?.email || null;
   };
-  const team = [
-    { role: "Project Manager", name: personName(pmId) },
-    { role: "Designer", name: personName(details.role_assignments?.["design_staging"]) },
-    { role: "Utilities", name: personName(projectRow?.utility_manager) },
-    { role: "Staging Team", name: details.staging_provider ?? null },
-  ];
   const place = [
     [current.city, current.state].filter(Boolean).join(", "),
     (current as { market?: string | null }).market ?? null,
@@ -558,72 +513,180 @@ function PropertyWorkspace() {
   // Project Manager edit; everyone else who can open the page reads them.
   const canEditBoard =
     canEdit && (isAdminViewer || isOnboardingDirector || projectRow?.project_manager === userId);
-  const planTasks = tasks.map((t) => ({ ...(t as unknown as BoardTask), roleLabel: taskRoleLabel(t) }));
+  const planTasks = tasks.map((t) => ({ ...(t as unknown as BoardTask), roleLabel: taskRoleLabel(t) })) as unknown as PageTask[];
   // Item 7: Director of Onboarding and Admin on every home, the home's Project Manager, Utilities
   // and Design on their own Tasks; never Operations. The database enforces the same rule.
   const catchUpOn = !readOnly && !life.locked && Boolean(catchUpViewer && canUseCatchUp(catchUpViewer));
   const catchUpStages = [...new Set(tasks.map((t) => t.stage))];
   const refs = (details.external_refs ?? {}) as Record<string, string>;
-  const tab = homeTabFor(search.tab);
+  const actualClosing = (current as { actual_closing_on?: string | null }).actual_closing_on ?? null;
+  const homeName = formatPropertyLabel(current).primary;
+  const designerId =
+    details.role_assignments?.["design_staging"] ?? details.role_assignments?.["lead_designer"] ?? details.role_assignments?.["designer"] ?? null;
+  const isActiveOwnerHome = Boolean(activeOwner) || details.owner_type === "Active Owner";
+
+  // 1.4: the stage comes from the Tasks; Status stays the PM's choice.
+  const stage = computedStage(planTasks);
+  const health = scheduleHealth({ tasks: planTasks, today, estimateOn: target, committedOn: details.committed_handoff_on });
+  const mismatch = stageMismatch(details.project_status, stage, statusMap.data?.map ?? DEFAULT_STATUS_STAGE_MAP);
+  const handoffOn = handoffDate(details.committed_handoff_on, target);
+  const missingRoles = [
+    !pmId ? "Project Manager" : null,
+    !designerId ? "Designer" : null,
+    !projectRow?.utility_manager ? "Utilities" : null,
+  ].filter((x): x is string => Boolean(x));
+  const chips = needsAttention({
+    ownerWaitingOnUs: ownerSummary.waitingOnUs,
+    ownerDecisionsDue: ownerDecisionsDue(planTasks, today).length,
+    yoursLate: yoursLate(planTasks, userId, pmId, today).length,
+    mismatch,
+    missingRoles,
+    committedMissing: committedHandoffMissing({
+      committedOn: details.committed_handoff_on,
+      actualClosingOn: actualClosing,
+      plannedClosingOn: current.planned_closing_on ?? null,
+      today,
+    }),
+  });
+  const tab = pageTabFor(search.tab, Boolean(linkedOpp && !linkedTask));
+  const goTab = (next: string) => void navigate({ search: { ...search, tab: next } as never, replace: true });
+  const scrollToId = (id: string) => {
+    let tries = 0;
+    const go = () => {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      else if (tries++ < 10) window.setTimeout(go, 60);
+    };
+    window.setTimeout(go, 0);
+  };
+  const onJump = (c: AttentionChip) => {
+    if (c.jump.tab === "tasks") {
+      setStageSel(c.jump.stage);
+      setTagSel(c.jump.tag);
+    }
+    goTab(c.jump.tab);
+    if (c.jump.tab === "details") scrollToId(`home-details-${c.jump.section}`);
+  };
+  const selectedStage = stageSel === undefined ? stage - 1 : stageSel;
+  const scope2 = FURNISHING_SCOPES.find((f) => f.value === projectRow?.furnishing_scope)?.label ?? null;
+  const more = moreTags({
+    market: (current as { market?: string | null }).market ?? null,
+    scope: scope2,
+    utilityOption: scope.modules.includes("utilities") ? "Utility setup" : null,
+    hoa: Boolean((current as { hoa?: { present?: unknown } | null }).hoa?.present === true || (current as { hoa?: { present?: unknown } | null }).hoa?.present === "Yes"),
+    breezeway: Boolean((current as { breezeway_property_id?: string | null }).breezeway_property_id),
+    labels: homeLabels.data ?? [],
+  });
+  const facts = factsLine({
+    actualClosingOn: actualClosing,
+    plannedClosingOn: current.planned_closing_on ?? null,
+    committedOn: details.committed_handoff_on,
+    estimateOn: target,
+    stage,
+    pmName: personName(pmId),
+    today,
+  });
+  const addViewer: AddViewer | null =
+    !readOnly && !life.locked && catchUpViewer && mayAddAny(catchUpViewer) ? catchUpViewer : null;
+  const nextThree = planTasks
+    .filter((t) => !isFinished(t) && !t.parent_task_id && effectiveOwner(t, pmId) === userId)
+    .sort((x, y) => (x.due_on ?? "9999").localeCompare(y.due_on ?? "9999"))
+    .slice(0, 3);
+  const teamTag = (id: string | null | undefined, fallback: OwnerTag): OwnerTag => (id && id === userId ? "you" : fallback);
+  const canStartPlan = !readOnly && (isAdminViewer || isOnboardingDirector);
+  const noPlan = life.notStarted || tasks.length === 0;
+
+  const header = (
+    <OnboardingHomeHeader
+      propertyId={current.id}
+      name={homeName}
+      place={place}
+      photo={current.primary_photo_url ?? null}
+      status={details.project_status ?? null}
+      activeOwner={isActiveOwnerHome}
+      health={health}
+      more={more}
+      facts={facts}
+      canAddOwner={!readOnly && (isAdminViewer || isOnboardingDirector)}
+      onAskOwner={() => {
+        goTab("owner");
+        setCompose((n) => n + 1);
+      }}
+      attention={<NeedsAttentionStrip chips={chips} onJump={onJump} />}
+    />
+  );
+
+  // 1.9: a home with no onboarding project or no Tasks shows the header and one card.
+  if (noPlan) {
+    return (
+      <div className="space-y-5">
+        {header}
+        <NoPlanCard
+          canStart={canStartPlan}
+          start={
+            <ProjectScopePanel
+              propertyId={current.id}
+              propertyName={homeName}
+              people={data.people}
+              canEdit={canStartPlan}
+              hints={{ planned_closing_on: current.planned_closing_on ?? null }}
+            />
+          }
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
-      {/* Item 31: one header line: breadcrumb, name, status, Follow this home, view toggle. */}
-      <HomeContextHeader
-        propertyId={current.id}
-        current="onboarding"
-        line={{ before: <ShellInlineTrail />, after: <FollowHomeButton propertyId={current.id} /> }}
-      />
+      {header}
 
-      <HomeBoardHeader
-        onSelectStage={(i) => {
-          if (tab !== "plan") void navigate({ search: { ...search, tab: "plan" } as never, replace: true });
-          // The Plan tab may be mounting; try again briefly until the stage block exists.
-          let tries = 0;
-          const go = () => {
-            if (!scrollToPlanStage(i) && tries++ < 10) window.setTimeout(go, 60);
-          };
-          window.setTimeout(go, 0);
-        }}
-        photo={current.primary_photo_url ?? null}
-        address={formatPropertyLabel(current).primary}
-        place={place}
-        activeOwner={Boolean(activeOwner)}
-        health={health}
-        ownerType={details.owner_type ?? null}
-        status={details.project_status ?? null}
-        team={team}
-        closingOn={actualClosing ?? current.planned_closing_on ?? null}
-        committedOn={details.committed_handoff_on ?? null}
-        estimateOn={target}
-        weeklyStatus={details.weekly_status ?? null}
-        stepper={stepper}
-      />
-
-      <Tabs
-        value={tab}
-        onValueChange={(next) => void navigate({ search: { ...search, tab: next } as never, replace: true })}
-        className="space-y-5"
-      >
+      <Tabs value={tab} onValueChange={goTab} className="space-y-5">
         <TabsList className="flex h-auto w-full justify-start overflow-x-auto">
-          {HOME_TABS.map((t) => (
-            <TabsTrigger key={t.value} value={t.value} className="min-h-11 shrink-0">
+          {PAGE_TABS.map((t) => (
+            <TabsTrigger key={t.value} value={t.value} className="min-h-11 shrink-0 gap-1.5">
               {t.label}
+              {t.value === "owner" && ownerSummary.waitingOnUs > 0 ? (
+                <span className="numeric inline-flex min-w-5 items-center justify-center rounded-full bg-state-blocked px-1.5 text-xs font-semibold text-stage-selected-fg" aria-label={`${ownerSummary.waitingOnUs} waiting on us`}>
+                  {ownerSummary.waitingOnUs}
+                </span>
+              ) : null}
             </TabsTrigger>
           ))}
         </TabsList>
 
-        <TabsContent value="plan" className="space-y-5">
-          <PlanStages
-            tasks={planTasks}
+        <TabsContent value="overview" className="space-y-4">
+          <OverviewCards
             stepper={stepper}
-            userId={userId}
+            stage={stage}
+            handoffOn={handoffOn}
+            nextThree={nextThree}
             today={today}
-            onOpen={setOpenTaskId}
-            catchUp={catchUpOn ? catchUp : undefined}
-            notNeeded={(data.retiredTasks ?? []).filter((t) => (t.exception_reason ?? "").startsWith("Voided"))}
+            team={[
+              { role: "Project Manager", tag: teamTag(pmId, "director"), name: personName(pmId) },
+              { role: "Designer", tag: teamTag(designerId, "designer"), name: personName(designerId) },
+              { role: "Utilities", tag: teamTag(projectRow?.utility_manager, "utilities"), name: personName(projectRow?.utility_manager) },
+              { role: "Staging Team", tag: "director", name: details.staging_provider ?? null, outside: true },
+            ]}
+            owner={{
+              waitingOnUs: ownerSummary.waitingOnUs,
+              waitingOnThem: ownerSummary.waitingOnThem,
+              hours: ownerSummary.program ? ownerSummary.program.reportedHours : null,
+              plan: homePlan.data && homePlan.data.available ? homePlan.data.automated : null,
+              activeOwner: isActiveOwnerHome,
+            }}
+            onOpenTasks={() => goTab("tasks")}
+            onOpenTask={setOpenTaskId}
+            onOpenDetails={() => {
+              goTab("details");
+              scrollToId("home-details-team");
+            }}
+            onOpenOwner={() => goTab("owner")}
+            shortDate={shortDate}
           />
-          <PropertyOwnerCompletions propertyId={current.id} isDemo={Boolean((current as { is_demo?: boolean }).is_demo)} />
+        </TabsContent>
+
+        <TabsContent value="tasks" className="space-y-5">
           {life.locked && (
             <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
               This onboarding plan is locked
@@ -640,54 +703,30 @@ function PropertyWorkspace() {
               </p>
             </section>
           )}
-          <details className="surface overflow-hidden" open={search.tab === "work"}>
-            <summary className="flex min-h-11 cursor-pointer items-center px-4 py-2 font-semibold">
-              Every task
-            </summary>
-            <div className="space-y-4 border-t border-border p-4">
-              <div className="flex flex-wrap items-center justify-end gap-3">
-                <PlanCsvButton propertyId={current.id} />
-                <NewTaskDialog
-                  propertyId={current.id}
-                  people={data.people}
-                  tasks={tasks}
-                  // Only directors add work to a plan; project managers work the plan.
-                  disabled={!canEdit || !can("handoff_review")}
-                  onSave={(values) => saveTask.mutate({ data: values } as never)}
-                />
-              </div>
-              <PropertyWorkQueue
-                tasks={tasks}
-                people={data.people}
-                viewerId={userId}
-                filter={queueFilter}
-                onFilterChange={setQueueFilter}
-                onSelect={(task) => setOpenTaskId(task.id)}
-                release={release}
-                voided={data.retiredTasks ?? []}
-                catchUp={catchUpOn ? catchUp : undefined}
-              />
-            </div>
-          </details>
-          <details className="surface overflow-hidden" open={search.tab === "handoff"} id="handoff">
-            <summary className="flex min-h-11 cursor-pointer items-center px-4 py-2 font-semibold">
-              Handoff
-            </summary>
-            <div className="space-y-4 border-t border-border p-4">
-              <CarryoverSummary propertyId={current.id} />
-              <TwoStepHandoff
-                propertyId={current.id}
-                readOnly={readOnly}
-                onOpenTask={(id) => setOpenTaskId(id)}
-              />
-            </div>
-          </details>
-        {catchUpOn ? (
+          <TasksTab
+            propertyId={current.id}
+            tasks={planTasks}
+            people={data.people}
+            viewerId={userId}
+            pmId={pmId ?? null}
+            today={today}
+            stage={selectedStage}
+            onStage={setStageSel}
+            tag={tagSel}
+            onTag={setTagSel}
+            catchUp={catchUpOn ? catchUp : undefined}
+            onOpen={setOpenTaskId}
+            addViewer={addViewer}
+            handoff={<TwoStepHandoff propertyId={current.id} readOnly={readOnly} onOpenTask={(id) => setOpenTaskId(id)} variant="checklist" />}
+            notNeeded={(data.retiredTasks ?? []).filter((t) => (t.exception_reason ?? "").startsWith("Voided"))}
+            notNeededLabel={notNeededLabel}
+          />
+          {catchUpOn ? (
             <>
               {catchUp.selected.size > 0 ? <div className="h-28" aria-hidden="true" /> : null}
               <PlanCatchUpBar
                 propertyId={current.id}
-                homeName={formatPropertyLabel(current).primary}
+                homeName={homeName}
                 tasks={tasks as never}
                 people={data.people}
                 selection={catchUp}
@@ -699,138 +738,54 @@ function PropertyWorkspace() {
           ) : null}
         </TabsContent>
 
-        <TabsContent value="design" className="space-y-4">
-          <DesignTab propertyId={current.id} />
-        </TabsContent>
-
-        <TabsContent value="budget" className="space-y-4">
-          <BudgetFigures
-            projectId={projectRow?.id ?? null}
-            invoiceStatus={details.invoice_status ?? null}
-            canEdit={canEditBoard}
-          />
-          <BudgetPanel propertyId={current.id} canEdit={canEdit} />
-          <FinancialPanel
-            propertyId={current.id}
-            canEdit={canEdit}
-            isAdmin={roles.includes("admin")}
-          />
-        </TabsContent>
-
-        <TabsContent value="agreements" className="space-y-4">
-          <AgreementsTab
-            projectId={projectRow?.id ?? null}
-            pmaStatus={details.pma_status ?? null}
-            canEdit={canEditBoard}
-          />
-        </TabsContent>
-
-        <TabsContent value="info" className="space-y-4">
-          <GeneralInfoFields
-            refs={refs}
-            ownerRezId={(current as { ownerrez_property_id?: string | number | null }).ownerrez_property_id != null
-              ? String((current as { ownerrez_property_id?: string | number | null }).ownerrez_property_id)
-              : null}
-            owner={<HomeownerCard propertyId={current.id} canManage={canEdit} />}
-            canEdit={canEditBoard}
-            pending={saveRefs.isPending}
-            onSaveRef={(key, value) => {
-              if (!projectRow) return;
-              const next = { ...refs };
-              if (value) next[key] = value;
-              else delete next[key];
-              saveRefs.mutate({ data: { projectId: projectRow.id, externalRefs: next } } as never);
-            }}
-          />
-          <ProjectDetailsSection
-            projectId={projectRow?.id ?? null}
-            details={details}
-            canEdit={canEditBoard}
-            canSetStatus={canSetStatus}
-            canCorrect={canCorrect}
-          />
-          <section className="surface space-y-3 p-4" aria-label="Project dates">
-            <h2 className="font-semibold">Dates</h2>
-            <SchedulePanel
-              propertyId={current.id}
-              plannedClosingOn={current.planned_closing_on ?? null}
-              actualClosingOn={actualClosing}
-              actualAccessOn={current.actual_access_on ?? null}
-              canEdit={canEdit}
-              onChange={() => void refresh()}
-            />
-          </section>
-          {/* Item 1 (Nov 12): the same fields a Fill in Resolve Task edits in place. */}
-          <section className="surface space-y-3 p-4" aria-label="Inspection and cleaner">
-            <h2 className="font-semibold">Inspection and cleaner</h2>
-            <FillInEditors propertyId={current.id} fields={["inspection_date", "default_cleaner"]} canEdit={canEdit} />
-          </section>
-          <ProjectTeamPanel propertyId={current.id} />
-          {activeOwner ? (
+        <TabsContent value="owner" className="space-y-4">
+          {isActiveOwnerHome ? (
             <section className="space-y-4" aria-label="Active Owner">
               <HomeAutomation propertyId={current.id} />
-              <PropertyOpportunitiesPanel propertyId={current.id} openId={linkedOpp} />
+              <PropertyOpportunitiesPanel propertyId={current.id} openId={linkedOpp} compose={compose} />
             </section>
           ) : null}
-          <PropertyFactsPanel propertyId={current.id} canEdit={canEdit} />
-          <ProjectScopePanel
-            propertyId={current.id}
-            propertyName={formatPropertyLabel(current).primary}
-            people={data.people}
-            canEdit={canEdit}
-            hints={{ planned_closing_on: current.planned_closing_on ?? null }}
-          />
-          <section className="surface flex flex-wrap items-end gap-3 p-4">
-            <div className="flex flex-col gap-1">
-              <Label className="eyebrow">Lifecycle</Label>
-              <Select
-                value={current.lifecycle_status ?? "onboarding"}
-                onValueChange={(v) =>
-                  setLifecycle.mutate({
-                    data: {
-                      propertyId: current.id,
-                      status: v as never,
-                      reason: "Changed from the onboarding workspace",
-                    },
-                  } as never)
-                }
-                disabled={
-                  readOnly ||
-                  Boolean(current.handoff_accepted_at) ||
-                  !["onboarding", "paused"].includes(current.lifecycle_status ?? "")
-                }
-              >
-                <SelectTrigger className="h-11 w-56">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {LIFECYCLE.filter((l) =>
-                    ["onboarding", "paused", "offboarded", current.lifecycle_status].includes(
-                      l.value,
-                    ),
-                  ).map((l) => (
-                    <SelectItem key={l.value} value={l.value}>
-                      {l.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <p className="text-xs text-muted-foreground">Scope · {scopeSummary(scope)}</p>
-          </section>
+          <PropertyOwnerCompletions propertyId={current.id} isDemo={Boolean((current as { is_demo?: boolean }).is_demo)} />
+          <HomeownerCard propertyId={current.id} canManage={canEdit} />
+        </TabsContent>
+
+        <TabsContent value="details" className="space-y-4">
+          <div id="home-details-dates" className="scroll-mt-4 space-y-4">
+            <ProjectDetailsSection
+              projectId={projectRow?.id ?? null}
+              details={details}
+              canEdit={canEditBoard}
+              canSetStatus={canSetStatus}
+              canCorrect={canCorrect}
+            />
+            <section className="surface space-y-3 p-4" aria-label="Project dates">
+              <h2 className="font-semibold">Dates</h2>
+              <SchedulePanel
+                propertyId={current.id}
+                plannedClosingOn={current.planned_closing_on ?? null}
+                actualClosingOn={actualClosing}
+                actualAccessOn={current.actual_access_on ?? null}
+                canEdit={canEdit}
+                onChange={() => void refresh()}
+              />
+            </section>
+            <StatusStageMapEditor isAdmin={isAdminViewer && !readOnly} />
+          </div>
+          <div id="home-details-team" className="scroll-mt-4 space-y-4">
+            <ProjectTeamPanel propertyId={current.id} />
+            <ProjectScopePanel
+              propertyId={current.id}
+              propertyName={homeName}
+              people={data.people}
+              canEdit={canEdit}
+              hints={{ planned_closing_on: current.planned_closing_on ?? null }}
+            />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="vendors" className="space-y-4">
           <VendorCoveragePanel propertyId={current.id} />
           <OnboardingWorkOrdersPanel propertyId={current.id} />
-          <AssessmentsFormsPanel
-            tasks={tasks as never}
-            people={data.people}
-            onOpenTask={setOpenTaskId}
-          />
-          <OwnerViewPreview propertyId={current.id} />
-          <AssessmentFindingsPanel
-            propertyId={current.id}
-            canEdit={canEdit}
-            onOpenTask={setOpenTaskId}
-          />
         </TabsContent>
 
         <TabsContent value="files" className="space-y-4">
@@ -874,6 +829,20 @@ function PropertyWorkspace() {
               </ul>
             </details>
           )}
+        </TabsContent>
+
+        <TabsContent value="budget" className="space-y-4">
+          <BudgetFigures
+            projectId={projectRow?.id ?? null}
+            invoiceStatus={details.invoice_status ?? null}
+            canEdit={canEditBoard}
+          />
+          <BudgetPanel propertyId={current.id} canEdit={canEdit} />
+          <FinancialPanel
+            propertyId={current.id}
+            canEdit={canEdit}
+            isAdmin={roles.includes("admin")}
+          />
         </TabsContent>
 
         <TabsContent value="activity" className="space-y-4">
@@ -920,13 +889,132 @@ function PropertyWorkspace() {
             }
           />
         </TabsContent>
+
+        {/* Temporary (Part 1): General Info, Design, Agreements and the rest stay reachable until Parts 2 and 3. */}
+        <TabsContent value="more" className="space-y-6">
+          <section className="space-y-3" aria-label="General Info">
+            <h2 className="font-display text-xl">General Info</h2>
+            <GeneralInfoFields
+              refs={refs}
+              ownerRezId={(current as { ownerrez_property_id?: string | number | null }).ownerrez_property_id != null
+                ? String((current as { ownerrez_property_id?: string | number | null }).ownerrez_property_id)
+                : null}
+              owner={
+                <Button variant="link" className="h-11 px-0" onClick={() => goTab("owner")}>
+                  Open Owner
+                </Button>
+              }
+              canEdit={canEditBoard}
+              pending={saveRefs.isPending}
+              onSaveRef={(key, value) => {
+                if (!projectRow) return;
+                const next = { ...refs };
+                if (value) next[key] = value;
+                else delete next[key];
+                saveRefs.mutate({ data: { projectId: projectRow.id, externalRefs: next } } as never);
+              }}
+            />
+            {/* Item 1 (Nov 12): the same fields a Fill in Resolve Task edits in place. */}
+            <section className="surface space-y-3 p-4" aria-label="Inspection and cleaner">
+              <h3 className="font-semibold">Inspection and cleaner</h3>
+              <FillInEditors propertyId={current.id} fields={["inspection_date", "default_cleaner"]} canEdit={canEdit} />
+            </section>
+            <PropertyFactsPanel propertyId={current.id} canEdit={canEdit} />
+            <section className="surface flex flex-wrap items-end gap-3 p-4">
+              <div className="flex flex-col gap-1">
+                <Label className="eyebrow">Lifecycle</Label>
+                <Select
+                  value={current.lifecycle_status ?? "onboarding"}
+                  onValueChange={(v) =>
+                    setLifecycle.mutate({
+                      data: {
+                        propertyId: current.id,
+                        status: v as never,
+                        reason: "Changed from the onboarding workspace",
+                      },
+                    } as never)
+                  }
+                  disabled={
+                    readOnly ||
+                    Boolean(current.handoff_accepted_at) ||
+                    !["onboarding", "paused"].includes(current.lifecycle_status ?? "")
+                  }
+                >
+                  <SelectTrigger className="h-11 w-56">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LIFECYCLE.filter((l) =>
+                      ["onboarding", "paused", "offboarded", current.lifecycle_status].includes(
+                        l.value,
+                      ),
+                    ).map((l) => (
+                      <SelectItem key={l.value} value={l.value}>
+                        {l.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-xs text-muted-foreground">Scope · {scopeSummary(scope)}</p>
+            </section>
+            <AssessmentsFormsPanel
+              tasks={tasks as never}
+              people={data.people}
+              onOpenTask={setOpenTaskId}
+            />
+            <OwnerViewPreview propertyId={current.id} />
+            <AssessmentFindingsPanel
+              propertyId={current.id}
+              canEdit={canEdit}
+              onOpenTask={setOpenTaskId}
+            />
+          </section>
+          <section className="space-y-3" aria-label="Design">
+            <h2 className="font-display text-xl">Design</h2>
+            <DesignTab propertyId={current.id} />
+          </section>
+          <section className="space-y-3" aria-label="Agreements">
+            <h2 className="font-display text-xl">Agreements</h2>
+            <AgreementsTab
+              projectId={projectRow?.id ?? null}
+              pmaStatus={details.pma_status ?? null}
+              canEdit={canEditBoard}
+            />
+          </section>
+          <details className="surface overflow-hidden" open={search.tab === "handoff"} id="handoff">
+            <summary className="flex min-h-11 cursor-pointer items-center px-4 py-2 font-semibold">
+              Handoff details
+            </summary>
+            <div className="space-y-4 border-t border-border p-4">
+              <CarryoverSummary propertyId={current.id} />
+              <TwoStepHandoff
+                propertyId={current.id}
+                readOnly={readOnly}
+                onOpenTask={(id) => setOpenTaskId(id)}
+              />
+            </div>
+          </details>
+          <section className="surface flex flex-wrap items-center gap-3 p-4" aria-label="Plan tools">
+            <h2 className="min-w-0 flex-1 font-semibold">Plan tools</h2>
+            <PlanCsvButton propertyId={current.id} />
+            <NewTaskDialog
+              propertyId={current.id}
+              people={data.people}
+              tasks={tasks}
+              // Only directors add work to a plan; project managers work the plan.
+              disabled={!canEdit || !can("handoff_review")}
+              onSave={(values) => saveTask.mutate({ data: values } as never)}
+            />
+          </section>
+        </TabsContent>
       </Tabs>
 
       <TaskDrawer
         task={openTask}
         tasks={tasks}
         people={data.people}
-        propertyName={formatPropertyLabel(current).primary}
+        propertyName={homeName}
         disabled={!canEdit}
         release={release}
         approvals={approvals as never}
