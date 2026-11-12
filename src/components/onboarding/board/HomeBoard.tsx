@@ -667,6 +667,7 @@ export const INFO_REFS = [
   { key: "zillow_url", label: "Zillow link", kind: "link" },
   { key: "property_folder", label: "Property folder in SharePoint", kind: "link" },
   { key: "purchase_agreement", label: "Purchase agreement", kind: "link" },
+  { key: "verified_address", label: "Verified address", kind: "text" },
   { key: "builder", label: "Builder", kind: "text" },
   { key: "ccrs_reviewed_on", label: "CC&Rs reviewed", kind: "date" },
   { key: "ccrs_note", label: "CC&Rs note", kind: "text" },
