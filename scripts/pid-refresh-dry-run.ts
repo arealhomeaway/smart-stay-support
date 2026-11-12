@@ -348,8 +348,10 @@ const linkSet = new Set(linkRows.map((l) => `${l.property_id}|${l.kind}|${l.url}
 const notionFields = new Set<string>();
 for (const pg of pages) for (const k of Object.keys(pg.properties ?? {})) notionFields.add(k);
 const mapped = new Set(mapping.map((m) => m.name));
-const unmappedNotionFields = [...notionFields].filter((f) => !mapped.has(f)).sort();
-const missingMappedFields = mapping.filter((m) => m.action === "Import" && !notionFields.has(m.name)).map((m) => `${m.i} ${m.name}`);
+const unmappedNotionFields = [...notionFields].filter((f) => !mapped.has(f) && !mapped.has(f.trim())).sort();
+const trimmedFields = new Set([...notionFields].map((f) => (!mapped.has(f) && mapped.has(f.trim()) ? f.trim() : f)));
+const missingMappedFields = mapping.filter((m) => m.action === "Import" && !trimmedFields.has(m.name)).map((m) => `${m.i} ${m.name}`);
+const trimMatched = [...notionFields].filter((f) => !mapped.has(f) && mapped.has(f.trim()));
 
 type Candidate = { page: any; values: Json; orId: string; prop: any | null; asOf: string };
 const candidates: Candidate[] = [];
@@ -357,8 +359,10 @@ const unmatched: any[] = [];
 const pidPages: any[] = [];
 for (const page of pages) {
   const values: Json = {};
-  for (const [k, v] of Object.entries<any>(page.properties)) {
-    if (CREDENTIAL_FIELDS.has(k)) continue; // never read
+  for (const [raw, v] of Object.entries<any>(page.properties)) {
+    // Mapping row 41's transform says "trim field name": Notion's name has a trailing space.
+    const k = !mapped.has(raw) && mapped.has(raw.trim()) ? raw.trim() : raw;
+    if (CREDENTIAL_FIELDS.has(k) || CREDENTIAL_FIELDS.has(raw)) continue; // never read
     values[k] = plain(v);
   }
   const orId = digits(values["OwnerRez Internal ID"]);
@@ -371,8 +375,30 @@ for (const page of pages) {
   if (!prop) { unmatched.push({ label, address, ownerrez: orId, reason: "no Resolve home with this OwnerRez ID", page: page.id }); continue; }
   candidates.push({ page, values, orId, prop, asOf: page.last_edited_time ?? new Date().toISOString() });
 }
-const dupes = new Map<string, number>();
-for (const c of candidates) dupes.set(c.prop.id, (dupes.get(c.prop.id) ?? 0) + 1);
+// Two PID pages on one OwnerRez ID: merge them. A field both pages fill differently is held as a conflict.
+const dupeConflicts: { c: Candidate; field: string; values: string[] }[] = [];
+const dupes: { home: string; orId: string; pages: string[] }[] = [];
+{
+  const groups = new Map<string, Candidate[]>();
+  for (const c of candidates) groups.set(c.prop.id, [...(groups.get(c.prop.id) ?? []), c]);
+  candidates.length = 0;
+  for (const list of groups.values()) {
+    if (list.length === 1) { candidates.push(list[0]!); continue; }
+    list.sort((a, b) => String(b.page.last_edited_time).localeCompare(String(a.page.last_edited_time)));
+    const keep = list[0]!;
+    dupes.push({ home: keep.prop.name, orId: keep.orId, pages: list.map((c) => `${c.values["Property"]} (${c.page.id})`) });
+    const merged: Json = { ...keep.values };
+    for (const k of new Set(list.flatMap((c) => Object.keys(c.values)))) {
+      const vals = list.map((c) => c.values[k]).filter((v) => !(v === null || v === undefined || v === "" || (Array.isArray(v) && v.length === 0)));
+      const distinct = [...new Set(vals.map((v) => JSON.stringify(v)))];
+      if (distinct.length === 0) merged[k] = keep.values[k] ?? null;
+      else if (distinct.length === 1) merged[k] = vals[0];
+      else if (k === "Property") merged[k] = keep.values[k];
+      else { merged[k] = null; if (mapping.some((m) => m.name === k && (m.action === "Import" || m.action === "External Link"))) dupeConflicts.push({ c: keep, field: k, values: distinct }); }
+    }
+    candidates.push({ ...keep, values: merged });
+  }
+}
 
 // ---------------------------------------------------------------- Sep 1 planning loop (unchanged)
 type Write = { path: string[]; value: any; sourceField: string };
@@ -671,12 +697,15 @@ for (const c of candidates) {
 
 // ---------------------------------------------------------------- refresh classification
 
-const OWNERREZ_COLUMNS = new Set(["bedrooms", "bathrooms", "max_guests", "living_area_sqft", "latitude", "longitude"]);
+const OWNERREZ_COLUMNS = new Set(["bedrooms", "bathrooms", "max_guests", "living_area_sqft", "latitude", "longitude", "instant_book"]);
+// Mapping rows whose Authority is OwnerRez (GPS 8, OR Property Link 13, Bedrooms 21, Bathrooms 22, Occupancy 23, Instant Book 27).
+const OWNERREZ_KEYS = new Set<string>(["link:OR Property Link"]);
+for (const m of mapping) if (m.authority === "OwnerRez") { const t = targetPath(m.target); if (t) OWNERREZ_KEYS.add(t.join(".")); }
 const getPath = (obj: any, path: string[]) => path.reduce((o, k) => (o == null ? undefined : o[k]), obj);
 const isBlank = (v: any) => v === null || v === undefined || (typeof v === "string" && v.trim() === "") || (Array.isArray(v) && v.length === 0) || (typeof v === "object" && !Array.isArray(v) && v !== null && Object.keys(v).length === 0);
 function norm(v: any): any {
   if (isBlank(v)) return null;
-  if (typeof v === "string") { const s = v.trim(); return s !== "" && !Number.isNaN(Number(s)) && /^-?\d+(\.\d+)?$/.test(s) ? Number(s) : s; }
+  if (typeof v === "string") { const s = v.replace(/\s+/g, " ").trim(); return s !== "" && !Number.isNaN(Number(s)) && /^-?\d+(\.\d+)?$/.test(s) ? Number(s) : s; }
   if (Array.isArray(v)) return v.map(norm);
   if (typeof v === "object") {
     const o: Json = {};
@@ -709,7 +738,7 @@ for (const p of plans) {
     const base = { orId: p.c.orId, home: prop.name, propertyId: prop.id, pageId: p.c.page.id, field: pr.field_key, path, current, notion };
     if (same(current, notion)) { unchanged += 1; continue; }
     const prov = provBy.get(`${prop.id}|${pr.field_key}`);
-    const ownerRezOwned = OWNERREZ_COLUMNS.has(path[0]!) || String(prov?.value_source ?? "").startsWith("ownerrez");
+    const ownerRezOwned = OWNERREZ_COLUMNS.has(path[0]!) || OWNERREZ_KEYS.has(pr.field_key) || String(prov?.value_source ?? "").startsWith("ownerrez");
     const since = prov?.updated_at ?? prov?.as_of ?? "1970-01-01";
     const edited = (editsBy.get(`${prop.id}|${pr.field_key}`) ?? []).some((at) => !imported || at > since);
     if (ownerRezOwned) { changes.push({ ...base, kind: "conflict", conflictWith: "OwnerRez", reason: "OwnerRez-owned field; never written" }); continue; }
@@ -729,8 +758,10 @@ for (const p of plans) {
     const k = `${prop.id}|${l.kind}|${l.url}`;
     if (linkSet.has(k) || seenLink.has(k)) continue;
     seenLink.add(k);
+    const lbase = { orId: p.c.orId, home: prop.name, propertyId: prop.id, pageId: p.c.page.id, field: `link:${l.source_field}`, path: [] as string[], current: null, notion: l.url };
+    if (OWNERREZ_KEYS.has(`link:${l.source_field}`)) { changes.push({ ...lbase, kind: "conflict", conflictWith: "OwnerRez", reason: "OwnerRez-owned link; never written" }); continue; }
     linkFills.push({ c: p.c, link: l });
-    changes.push({ orId: p.c.orId, home: prop.name, propertyId: prop.id, pageId: p.c.page.id, field: `link:${l.source_field}`, path: [], current: null, notion: l.url, kind: "fill", conflictWith: "", reason: `new ${l.kind} link` });
+    changes.push({ ...lbase, kind: "fill", conflictWith: "", reason: `new ${l.kind} link` });
   }
 }
 // The loop's own conflicts (Resolve market or an OwnerRez value already present and different).
@@ -742,6 +773,9 @@ for (const x of report.conflicts) {
     conflictWith: x.field === "market" ? "Resolve" : "OwnerRez",
     reason: x.field === "market" ? "Resolve market differs" : "OwnerRez value differs; OwnerRez wins",
   });
+}
+for (const d of dupeConflicts) {
+  changes.push({ orId: d.c.orId, home: d.c.prop.name, propertyId: d.c.prop.id, pageId: d.c.page.id, field: `notion:${d.field}`, path: [], current: null, notion: d.values.join(" | "), kind: "conflict", conflictWith: "Resolve", reason: "two PID pages on this OwnerRez ID disagree; nothing proposed" });
 }
 for (const g of report.gpsDiffOwnerRezWins) {
   const c = candidates.find((k) => (k.values["Property"] ?? k.orId) === g.property)!;
@@ -833,7 +867,7 @@ await Bun.write(`/tmp/pidr/summary.json`, JSON.stringify({
   unmatched, unchanged, fills: count("fill"), linkFills: linkFills.length, updates: count("update"),
   resolveConflicts: count("conflict", "Resolve"), ownerRezConflicts: count("conflict", "OwnerRez"),
   invalid: { manualReview: report.manualReview, unmappableMarket: report.unmappableMarket, failures: report.failures },
-  blanksSkipped: report.blanksSkipped, secretsRedacted, resolveIdFormat, unmappedNotionFields, missingMappedFields,
+  blanksSkipped: report.blanksSkipped, secretsRedacted, trimMatched, dupeConflicts: dupeConflicts.map((d) => d.field), resolveIdFormat, unmappedNotionFields, missingMappedFields,
   perHome: [...perHome.values()], pidPages, profileEdits: editRows.length, factEdits: factRows.length, writeHomes: byProp.size, writes: writes.length,
   mappingRows: mapping.length, importRows: mapping.filter((m) => m.action === "Import").length,
 }, null, 1));
