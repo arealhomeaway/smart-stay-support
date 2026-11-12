@@ -413,6 +413,27 @@ function OwnerHubBody({
     (a) => !selectedHomeId || !a.propertyId || a.propertyId === selectedHomeId,
   ).length;
   const search = Route.useSearch();
+  // Every owner item opens in its own side panel, with the onboarding Task, files and photos behind it.
+  const renderReview = (r: { id: string }, open: boolean, onOpenChange: (next: boolean) => void) => {
+    const review = (reviews as Review[]).find((x) => x.id === r.id);
+    if (!review) return null;
+    return (
+      <ReviewPanel
+        open={open}
+        onOpenChange={onOpenChange}
+        review={review}
+        properties={properties}
+        programId={program.id}
+        onDone={invalidate}
+        readOnly={preview}
+        action={actionByReview.get(review.id) ?? null}
+        sharedFiles={onboardingQuery.data?.cardFiles?.[review.id] ?? []}
+        photoPropertyId={onboardingQuery.data?.photoCards?.[review.id] ?? null}
+        canLogHours={canLogHours}
+        logHoursBlockedReason={logHoursBlockedReason}
+      />
+    );
+  };
   // Build 17 finding 7: a notification link names the item (?opportunity=), new and old alike; it
   // opens the Opportunities view with that item open, never the dashboard plan.
   const view = search.view ?? (search.opportunity ? "opportunities" : "home");
@@ -511,7 +532,7 @@ function OwnerHubBody({
       ) : null}
 
       <div className="flex flex-wrap items-center justify-end gap-4">
-        {properties.length > 1 ? (
+        {properties.length > 1 && view !== "opportunities" ? (
           <div className="flex items-center gap-2">
             <Label htmlFor="owner-home-filter" className="text-sm text-muted-foreground">Viewing:</Label>
             <Select
@@ -537,16 +558,18 @@ function OwnerHubBody({
       {view === "documents" ? (
         <OwnerFilesPanel homes={ownerHomes} selectedHomeId={selectedHomeId} readOnly={preview} />
       ) : view === "opportunities" ? (
-        <OwnerOpportunities
+        <OwnerOpportunityBoard
           variant="full"
-          queue={search.queue ?? null}
-          onQueueChange={(q) => void navigate({ search: (prev) => { const { queue: _q, ...rest } = prev; return q ? { ...rest, queue: q } : rest; } })}
-          onBackToDashboard={() => void navigate({ search: (prev) => { const { queue: _q, view: _v, opportunity: _o, ...rest } = prev; return rest; } })}
+          programId={program.id}
+          homes={ownerHomes}
+          reviews={reviews as Review[]}
+          readOnly={preview}
+          preview={preview}
+          homeTab={homeParam ?? null}
+          onHomeTab={(tab) => void navigate({ search: (prev) => { const { opportunity: _o, ...rest } = prev; return { ...rest, home: tab }; } })}
           focusId={search.opportunity ?? null}
           onCloseDetail={() => void navigate({ search: (prev) => { const { opportunity: _o, ...rest } = prev; return rest; }, replace: true })}
-          homes={ownerHomes}
-          selectedHomeId={selectedHomeId}
-          readOnly={preview}
+          renderReview={renderReview}
           blockedReason={preview ? null : logHoursBlockedReason}
           {...(preview || logHoursBlockedReason ? {} : { onLogHours: openManualLog })}
         />
@@ -557,85 +580,22 @@ function OwnerHubBody({
         />
       ) : (
         <>
-      <OwnerQueueCards
-        homes={ownerHomes}
-        selectedHomeId={selectedHomeId}
-        onOpen={(q) => void navigate({ search: (prev) => { const { opportunity: _o, ...rest } = prev; return { ...rest, view: "opportunities" as const, queue: q }; } })}
-      />
-
       <div id="owner-decisions" className="scroll-mt-24">
-      <SectionCard
-        title="Your approvals"
-        description="Approvals and property decisions your ARHA team has sent you."
-      >
-        <div className="space-y-5">
-        {openReviews.length > 0 && (
-          <div className="space-y-5">
-            {attentionGroups.map((group) => (
-              <div key={group.key} className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold">{group.name}</h3>
-                  <span className="numeric rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                    {group.reviews.length}
-                  </span>
-                </div>
-                {group.reviews.map((r) => (
-                  <ReviewRow
-                    key={r.id}
-                    review={r}
-                    properties={properties}
-                    programId={program.id}
-                    onDone={invalidate}
-                    readOnly={preview}
-                    action={actionByReview.get(r.id) ?? null}
-                    sharedFiles={onboardingQuery.data?.cardFiles?.[r.id] ?? []}
-                    photoPropertyId={onboardingQuery.data?.photoCards?.[r.id] ?? null}
-                    canLogHours={canLogHours}
-                    logHoursBlockedReason={logHoursBlockedReason}
-                  />
-                ))}
-              </div>
-            ))}
-          </div>
-        )}
-        <OnboardingActions readOnly={preview} programId={preview ? program.id : null} homeId={selectedHomeId} />
-        <OwnerPlanCards programId={program.id} readOnly={preview} homes={ownerHomes.map((h) => ({ propertyId: h.propertyId, name: h.address ?? h.name }))} />
-        <OwnerApprovalPanel readOnly={preview} embedded hasOtherItems={openReviews.length > 0 || onboardingPending > 0} />
-        </div>
-      </SectionCard>
+        <OwnerOpportunityBoard
+          variant="home"
+          programId={program.id}
+          homes={ownerHomes}
+          reviews={reviews as Review[]}
+          readOnly={preview}
+          preview={preview}
+          homeTab={selectedHomeId}
+          focusId={search.opportunity ?? null}
+          onViewAll={() => void navigate({ search: (prev) => { const { queue: _q, ...rest } = prev; return { ...rest, view: "opportunities" as const }; } })}
+          renderReview={renderReview}
+          blockedReason={preview ? null : logHoursBlockedReason}
+          {...(preview || logHoursBlockedReason ? {} : { onLogHours: openManualLog })}
+        />
       </div>
-
-      <OwnerOpportunities
-        variant="preview"
-        onViewAll={() => void navigate({ search: (prev) => { const { queue: _q, ...rest } = prev; return { ...rest, view: "opportunities" as const }; } })}
-        focusId={search.opportunity ?? null}
-        homes={ownerHomes}
-        selectedHomeId={selectedHomeId}
-        readOnly={preview}
-        blockedReason={preview ? null : logHoursBlockedReason}
-        {...(preview || logHoursBlockedReason ? {} : { onLogHours: openManualLog })}
-        arhaExtra={
-          availableReviews.length ? (
-            <div className="space-y-3">
-              {availableReviews.map((r) => (
-                <ReviewRow
-                  key={r.id}
-                  review={r}
-                  properties={properties}
-                  programId={program.id}
-                  onDone={invalidate}
-                  readOnly={preview}
-                  action={actionByReview.get(r.id) ?? null}
-                    sharedFiles={onboardingQuery.data?.cardFiles?.[r.id] ?? []}
-                    photoPropertyId={onboardingQuery.data?.photoCards?.[r.id] ?? null}
-                  canLogHours={canLogHours}
-                  logHoursBlockedReason={logHoursBlockedReason}
-                />
-              ))}
-            </div>
-          ) : undefined
-        }
-      />
 
       <OnboardingProgress
         readOnly={preview}
