@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Bell, BellOff } from "lucide-react";
+import { Bell, BellOff, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/ui/page";
@@ -101,7 +101,13 @@ export function FollowHomeButton({ propertyId, myHomes = false }: { propertyId: 
   return (
     myHomes ? (
       <Button variant="outline" className="min-h-11" onClick={toggle} disabled={q.isLoading} aria-pressed={Boolean(q.data)}>
-        {q.data ? "In my homes ✓" : "Add to my homes"}
+        {q.data ? (
+          <>
+            In my homes <Check className="size-4" aria-hidden="true" />
+          </>
+        ) : (
+          "Add to my homes"
+        )}
       </Button>
     ) : (
       <Button size="sm" variant="outline" onClick={toggle} disabled={q.isLoading}>

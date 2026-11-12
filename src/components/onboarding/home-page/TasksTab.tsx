@@ -168,7 +168,7 @@ export function TasksTab(p: {
           >
             {rail.map((s) => (
               <option key={s.index} value={s.index}>
-                {s.name} ({s.done}/{s.total}){s.complete ? " ✓" : ""}
+                {s.name} ({s.done}/{s.total}){s.complete ? ", done" : ""}
               </option>
             ))}
             <option value="all">All stages</option>
