@@ -27,18 +27,33 @@ import {
   parseBreezewayRef,
   sendToBreezewayRefusal,
 } from "@/lib/onboarding-breezeway";
+import { Textarea } from "@/components/ui/textarea";
 import {
   breezewayHomeLinkFn,
   onboardingBreezewayStateFn,
+  onboardingBreezewayTemplatesFn,
   saveOnboardingBreezewayFn,
   sendOnboardingWorkOrderFn,
 } from "@/lib/onboarding-kati.functions";
 
+const PRIORITIES = [
+  { code: "low", label: "Low" },
+  { code: "normal", label: "Normal" },
+  { code: "high", label: "High" },
+  { code: "urgent", label: "Urgent" },
+  { code: "watch", label: "Watch" },
+] as const;
+
 export function OnboardingBreezewaySection({
   taskId,
   disabled,
+  defaultTitle,
+  defaultDescription,
 }: {
   taskId: string;
+  /** B2: prefilled from the Task, editable before sending. */
+  defaultTitle?: string;
+  defaultDescription?: string | null;
   /** The home, kept for callers; the server reads the task's own home. */
   propertyId?: string;
   disabled: boolean;
@@ -53,6 +68,12 @@ export function OnboardingBreezewaySection({
   const [date, setDate] = useState("");
   const [assignee, setAssignee] = useState<string>("choose");
   const [ref, setRef] = useState("");
+  const [templateId, setTemplateId] = useState("none");
+  const [priority, setPriority] = useState("normal");
+  const [title, setTitle] = useState((defaultTitle ?? "").replace(/^\s*(draft\s+)?work order\s*:\s*/i, ""));
+  const [description, setDescription] = useState(defaultDescription ?? "");
+  const templatesFn = useServerFn(onboardingBreezewayTemplatesFn);
+  const templates = useQuery({ queryKey: ["onboarding-breezeway-templates"], queryFn: () => templatesFn(), staleTime: 10 * 60_000 });
   useEffect(() => {
     const link = state.data?.link;
     setDate(link?.tentative_date ?? "");
@@ -85,7 +106,16 @@ export function OnboardingBreezewaySection({
     onError: (e: Error) => toast.error(e.message),
   });
   const send = useMutation({
-    mutationFn: () => sendFn({ data: { taskId } }),
+    mutationFn: () =>
+      sendFn({
+        data: {
+          taskId,
+          templateId: Number(templateId),
+          priority: priority as (typeof PRIORITIES)[number]["code"],
+          title: title.trim(),
+          description: description.trim() || null,
+        },
+      }),
     onSuccess: (r) => {
       if (r && "ok" in r && r.ok === false) toast.error(r.message);
       else toast.success("Sent to Breezeway.");
@@ -101,13 +131,17 @@ export function OnboardingBreezewaySection({
   const data = state.data!;
   const linkedId = data.link?.breezeway_task_id ?? data.sentTaskId ?? null;
   const connection = breezewayConnection({ breezewayTaskId: linkedId, mirrored: Boolean(data.mirror) });
-  const sendRefusal = sendToBreezewayRefusal({
-    switchOn: data.sendSwitchOn,
-    homeEligible: data.home?.eligible ?? false,
-    homeReason: data.home?.reason ?? null,
-    tentativeDate: data.link?.tentative_date ?? null,
-    alreadyLinked: Boolean(linkedId),
-  });
+  const sendRefusal =
+    sendToBreezewayRefusal({
+      switchOn: data.sendSwitchOn,
+      homeEligible: data.home?.eligible ?? false,
+      homeReason: data.home?.reason ?? null,
+      tentativeDate: data.link?.tentative_date ?? null,
+      alreadyLinked: Boolean(linkedId),
+    }) ??
+    (!data.link?.assignee_choice ? "Choose a Breezeway person, or Leave unassigned, and save first." : null) ??
+    (templateId === "none" ? "Choose a Breezeway template." : null) ??
+    (title.trim().length < 3 ? "Give the work order a title." : null);
   const dirty =
     (date || "") !== (data.link?.tentative_date ?? "") ||
     assignee !==
@@ -148,7 +182,7 @@ export function OnboardingBreezewaySection({
         </div>
       </div>
       <div className="grid gap-1.5">
-        <Label htmlFor={`bz-ref-${taskId}`}>Paste the work order number</Label>
+        <Label htmlFor={`bz-ref-${taskId}`}>Paste a Breezeway number or link</Label>
         <Input id={`bz-ref-${taskId}`} className="min-h-11" value={ref} disabled={disabled}
           placeholder="Paste it after you create the work order in Breezeway"
           onChange={(e) => setRef(e.target.value)} />
@@ -170,7 +204,7 @@ export function OnboardingBreezewaySection({
           </p>
           {data.mirror ? (
             <>
-              <p className="text-muted-foreground">Status: {data.mirror.stage || data.mirror.status || "Not reported"}</p>
+              <p className="text-muted-foreground">Breezeway number {linkedId} · Status: {data.mirror.stage || data.mirror.status || "Not reported"}</p>
               <p className="flex items-center gap-2 text-muted-foreground">
                 <UserCheck className="size-4 shrink-0" /> {data.mirror.assignee_names || "Not assigned in Breezeway"}
               </p>
@@ -204,6 +238,44 @@ export function OnboardingBreezewaySection({
           ) : (
             <p className="text-muted-foreground">Not seen in the Breezeway sync yet. Status, comments and photos show here once it is.</p>
           )}
+        </div>
+      ) : null}
+
+      {!linkedId ? (
+        <div className="space-y-3 border-t border-border pt-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-1.5">
+              <Label>Breezeway template</Label>
+              <Select value={templateId} onValueChange={setTemplateId} disabled={disabled}>
+                <SelectTrigger className="min-h-11" aria-label="Breezeway template"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{templates.isLoading ? "Loading templates…" : "Choose a template"}</SelectItem>
+                  {(templates.data?.templates ?? []).map((t) => (
+                    <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Priority</Label>
+              <Select value={priority} onValueChange={setPriority} disabled={disabled}>
+                <SelectTrigger className="min-h-11" aria-label="Priority"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {PRIORITIES.map((p) => <SelectItem key={p.code} value={p.code}>{p.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor={`bz-title-${taskId}`}>Title</Label>
+            <Input id={`bz-title-${taskId}`} className="min-h-11" value={title} disabled={disabled} maxLength={200}
+              onChange={(e) => setTitle(e.target.value)} />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor={`bz-desc-${taskId}`}>Description</Label>
+            <Textarea id={`bz-desc-${taskId}`} rows={3} value={description} disabled={disabled} maxLength={4000}
+              onChange={(e) => setDescription(e.target.value)} />
+          </div>
         </div>
       ) : null}
 

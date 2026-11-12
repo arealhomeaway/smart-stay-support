@@ -257,3 +257,14 @@ export const breezewayHomeLinkFn = createServerFn({ method: "POST" })
       verifiedAt: (r.data?.breezeway_mapping_verified_at as string | null) ?? null,
     };
   });
+
+/** B2: Breezeway's own active templates for the Work order section (onboarding staff, read only). */
+export const onboardingBreezewayTemplatesFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const staff = await context.supabase.rpc("is_onboarding_staff", { _user_id: context.userId });
+    if (staff.error || !staff.data) throw new Error("Onboarding staff access is required.");
+    const { listBreezewayTemplates } = await import("@/lib/breezeway-directory.server");
+    const templates = await listBreezewayTemplates().catch(() => []);
+    return { templates: templates.map((t) => ({ id: t.id, name: t.name })) };
+  });
