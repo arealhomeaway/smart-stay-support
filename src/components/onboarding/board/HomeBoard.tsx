@@ -36,7 +36,8 @@ import {
   pmaSteps,
   shortDate,
   shown,
-  headerFactsLine,
+  summaryChips,
+  planStageOpenByDefault,
   sixStageFor,
   type BoardTask,
   type HealthLevel,
@@ -45,7 +46,7 @@ import {
   type Stepper,
 } from "@/lib/onboarding-board";
 import { correctCommittedHandoffFn, saveOnboardingDetailsFn } from "@/lib/onboarding-details.functions";
-import { HealthDot, StageStepper } from "./BoardParts";
+import { HealthDot, StageProgress } from "./BoardParts";
 import { planStageElementId, searchPlanTasks } from "@/lib/plan-search";
 
 const HEALTH_CHIP: Record<HealthLevel, string> = {
@@ -65,7 +66,6 @@ export function HomeBoardHeader(p: {
   photo: string | null;
   address: string;
   place: string;
-  stage: string;
   activeOwner: boolean;
   health: { level: HealthLevel; line: string };
   ownerType: string | null;
@@ -79,77 +79,63 @@ export function HomeBoardHeader(p: {
   /** Item 31: a stage card scrolls the Plan tab to that stage. */
   onSelectStage?: (index: number) => void;
 }) {
-  const chipLabels = [p.stage, ...(p.activeOwner ? ["Active Owner"] : []), p.health.line];
-  const facts = headerFactsLine({ ownerType: p.ownerType, status: p.status, chips: chipLabels });
-  const chips = (
-    <div className="flex flex-wrap gap-2">
-      <Chip className="bg-background/90 text-foreground">{p.stage}</Chip>
-      {p.activeOwner ? <Chip className="bg-background/90 text-foreground">Active Owner</Chip> : null}
-      <span className="rounded-full bg-background/95">
-        <Chip className={HEALTH_CHIP[p.health.level]}>
-          <HealthDot level={p.health.level} className="mr-1.5" />
-          {p.health.line}
-        </Chip>
-      </span>
+  // Fix 41: chips are owner type, risk and project status; the stage shows in Progress.
+  const chip = summaryChips({ ownerType: p.ownerType, activeOwner: p.activeOwner, projectStatus: p.status });
+  const cell = (label: string, value: ReactNode, key?: string) => (
+    <div key={key ?? label} className="min-w-0">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="font-medium">{value}</dd>
     </div>
   );
   return (
     <div className="space-y-4">
-      <section className="overflow-hidden rounded-2xl border border-border bg-card">
-        {/* Fix 9: a 160 px banner so the Tasks show without scrolling. Item 40: no photo, no banner. */}
-        {p.photo ? (
-          <div className="relative h-40 w-full bg-sunken">
-            <PropertyPhoto url={p.photo} name={p.address} rounded="rounded-none" className="size-full object-cover" />
-            <div className="absolute left-3 top-3">{chips}</div>
-          </div>
-        ) : (
-          <div className="px-4 pt-4 sm:px-5">{chips}</div>
-        )}
-        <div className="space-y-4 p-4 sm:p-5">
-          {/* Item 31: the home's name sits once, in the header line above. */}
-          {p.place || facts ? (
-            <div>
-              {p.place ? <p className="text-sm text-muted-foreground">{p.place}</p> : null}
-              {facts ? <p className="mt-1 text-sm text-muted-foreground">{facts}</p> : null}
+      <section className="overflow-hidden rounded-2xl border border-border bg-card" aria-label="Home summary">
+        <div className="flex flex-col md:flex-row">
+          {/* Fix 41: a fixed-size photo on the left; under 768 px it sits above the details. Item 40: no photo, no block. */}
+          {p.photo ? (
+            <div className="h-60 w-full shrink-0 bg-sunken md:w-[360px]">
+              <PropertyPhoto url={p.photo} name={p.address} rounded="rounded-none" className="size-full object-cover" />
             </div>
           ) : null}
-          <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2 lg:grid-cols-4" aria-label="Team">
-            {p.team.map((t) => (
-              <div key={t.role}>
-                <dt className="text-xs text-muted-foreground">{t.role}</dt>
-                <dd className="font-medium">{t.name ?? NOT_SET}</dd>
-              </div>
-            ))}
-          </dl>
-          <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-3" aria-label="Key dates">
-            <div>
-              <dt className="text-xs text-muted-foreground">Closing date</dt>
-              <dd className="numeric font-medium">{dateOrNotSet(p.closingOn)}</dd>
+          <div className="min-w-0 flex-1 space-y-3 p-4 sm:p-5">
+            <div className="flex flex-wrap gap-2">
+              {chip.ownerType ? <Chip>{chip.ownerType}</Chip> : null}
+              <Chip className={HEALTH_CHIP[p.health.level]}>
+                <HealthDot level={p.health.level} className="mr-1.5" />
+                {p.health.line}
+              </Chip>
+              {chip.projectStatus ? <Chip>{chip.projectStatus}</Chip> : null}
             </div>
-            <div>
-              <dt className="text-xs text-muted-foreground">Committed Handoff Date</dt>
-              <dd className="numeric flex items-center gap-1 font-medium">
-                {p.committedOn ? <Lock className="size-3.5 text-muted-foreground" aria-label="Locked" /> : null}
-                {dateOrNotSet(p.committedOn)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted-foreground">Est. Hand Off Date</dt>
-              <dd className="numeric font-medium">{dateOrNotSet(p.estimateOn)}</dd>
-            </div>
-          </dl>
-          <div className="text-sm">
-            <p className="text-xs text-muted-foreground">Weekly status</p>
-            <p className="whitespace-pre-line">{shown(p.weeklyStatus)}</p>
-          </div>
-          <div className="space-y-2">
-            <p className="text-sm">
-              <span className="text-xs text-muted-foreground">Progress </span>
-              <span className="numeric font-medium">{p.stepper.progressLine}</span>
-            </p>
-            <StageStepper stepper={p.stepper} onSelect={p.onSelectStage} />
+            {/* Item 31: the home's name sits once, in the header line above. */}
+            {p.place ? <p className="text-sm text-muted-foreground">{p.place}</p> : null}
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm lg:grid-cols-4" aria-label="Home details">
+              {p.team.map((t) => cell(t.role, t.name ?? NOT_SET))}
+              {cell("Closing date", <span className="numeric">{dateOrNotSet(p.closingOn)}</span>)}
+              {cell(
+                "Committed Handoff Date",
+                <span className="numeric flex items-center gap-1">
+                  {p.committedOn ? <Lock className="size-3.5 text-muted-foreground" aria-label="Locked" /> : null}
+                  {dateOrNotSet(p.committedOn)}
+                </span>,
+              )}
+              {cell("Est. Hand Off Date", <span className="numeric">{dateOrNotSet(p.estimateOn)}</span>)}
+              {cell(
+                "Weekly status",
+                <span className="line-clamp-3 whitespace-pre-line" title={p.weeklyStatus ?? undefined}>
+                  {shown(p.weeklyStatus)}
+                </span>,
+              )}
+            </dl>
           </div>
         </div>
+      </section>
+      {/* Fix 41: Progress is its own card under the summary. */}
+      <section className="surface space-y-3 p-4 sm:p-5" aria-label="Progress">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-semibold">Progress</h2>
+          <p className="numeric text-sm text-muted-foreground">{p.stepper.progressLine}</p>
+        </div>
+        <StageProgress stepper={p.stepper} onSelect={p.onSelectStage} />
       </section>
     </div>
   );
@@ -182,7 +168,6 @@ export function PlanStages({
       .filter((t) => sixStageFor(t.stage) === stage && !t.parent_task_id)
       .sort((a, b) => Number(isFinished(a)) - Number(isFinished(b)) || (a.due_on ?? "9").localeCompare(b.due_on ?? "9"));
   const unmapped = shownTasks.filter((t) => !sixStageFor(t.stage) && !t.parent_task_id);
-  const currentIndex = stepper.current - 1;
   const row = (t: PlanTask, stageName?: string) => {
     const label = dueLabel(t, today);
     return (
@@ -233,13 +218,9 @@ export function PlanStages({
         <span className="text-xs text-muted-foreground">{step.note}</span>
       </span>
     );
-    return open ? (
-      <section key={stage} id={planStageElementId(i)} aria-label={stage} className="surface scroll-mt-4 overflow-hidden">
-        <div className="border-b border-border bg-muted/40 px-3 py-2">{head}</div>
-        {body}
-      </section>
-    ) : (
-      <details key={stage} id={planStageElementId(i)} className="surface scroll-mt-4 overflow-hidden">
+    // Fix 41: every stage folds; the current one starts open, a finished one reads Done.
+    return (
+      <details key={stage} id={planStageElementId(i)} open={open} className="surface scroll-mt-4 overflow-hidden">
         <summary className="flex min-h-11 cursor-pointer items-center border-b border-border bg-muted/20 px-3 py-2">{head}</summary>
         {body}
       </details>
@@ -299,16 +280,7 @@ export function PlanStages({
           </button>
         ))}
       </div>
-      {stageBlock(SIX_STAGES[currentIndex]!, currentIndex, true)}
-      {currentIndex > 0 ? (
-        <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">
-            Earlier stages are collapsed. Open any stage to see its finished tasks.
-          </p>
-          {SIX_STAGES.slice(0, currentIndex).map((s, i) => stageBlock(s, i, false))}
-        </div>
-      ) : null}
-      {SIX_STAGES.slice(currentIndex + 1).map((s, i) => stageBlock(s, currentIndex + 1 + i, false))}
+      {SIX_STAGES.map((s, i) => stageBlock(s, i, planStageOpenByDefault(i, stepper)))}
       {unmapped.length > 0 ? (
         <details className="surface overflow-hidden">
           <summary className="flex min-h-11 cursor-pointer items-center bg-muted/20 px-3 py-2 font-semibold">
