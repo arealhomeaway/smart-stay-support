@@ -5,7 +5,7 @@
  * about are offered as recipients, the shared templates fill the words, and
  * everything sent from that record stays visible underneath.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode, type UIEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -1203,7 +1203,7 @@ function TemplateManager({
 
 
 /** Keeps the highlight layer lined up with the text box as it scrolls. */
-function syncScroll(e: React.UIEvent<HTMLInputElement | HTMLTextAreaElement>) {
+function syncScroll(e: UIEvent<HTMLInputElement | HTMLTextAreaElement>) {
   const el = e.currentTarget;
   const layer = el.parentElement?.querySelector<HTMLElement>("[data-bracket-layer]");
   if (layer) {
@@ -1216,7 +1216,7 @@ function syncScroll(e: React.UIEvent<HTMLInputElement | HTMLTextAreaElement>) {
  * Item 3 (Nov 12): empty [bracketed] fill-ins are highlighted inside the subject and message
  * themselves. A layer with the same text sits behind the transparent text box and marks each one.
  */
-function BracketHighlight({ text, on, single = false, children }: { text: string; on: boolean; single?: boolean; children: React.ReactNode }) {
+function BracketHighlight({ text, on, single = false, children }: { text: string; on: boolean; single?: boolean; children: ReactNode }) {
   if (!on) return <>{children}</>;
   const parts = bracketSegments(text);
   return (
