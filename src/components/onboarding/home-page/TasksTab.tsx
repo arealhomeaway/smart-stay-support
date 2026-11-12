@@ -91,8 +91,9 @@ export function TasksTab(p: {
     return x?.full_name || x?.email || null;
   };
   const rail = useMemo(() => stageRail(p.tasks), [p.tasks]);
-  const inScope = p.stage === null ? p.tasks : p.tasks.filter((t) => stageIndexOf(t.stage) === p.stage);
-  const counts = tagCounts(inScope, p.viewerId, p.pmId);
+  // WHOSE TASK counts match the open rows shown (this stage plus late Tasks from other stages).
+  const shown = stageLists(p.tasks, { stage: p.stage, today: p.today, tag: null, viewerId: p.viewerId, pmId: p.pmId });
+  const counts = tagCounts([...shown.doNow.map((x) => x.task), ...shown.upNext], p.viewerId, p.pmId);
   const lists = stageLists(p.tasks, { stage: p.stage, today: p.today, tag: p.tag, viewerId: p.viewerId, pmId: p.pmId });
   const hits = searchPlanTasks(p.tasks, term);
   const order = [...lists.doNow.map((x) => x.task.id), ...lists.upNext.map((t) => t.id), ...lists.done.map((t) => t.id)];

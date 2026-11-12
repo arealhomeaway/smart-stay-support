@@ -192,6 +192,7 @@ export const OWNER_TAG_LABEL: Record<OwnerTag, string> = {
 };
 
 const DESIGN_SEATS = new Set(["designer", "lead_designer", "design_staging"]);
+const PM_SEATS = new Set(["onboarding_project_manager", "project_manager", "onboarding_manager"]);
 
 /** The ownership rule: a Task with no person counts as the home's PM's until a person is assigned. */
 export function effectiveOwner(t: Pick<PageTask, "assigned_to">, pmId: string | null | undefined): string | null {
@@ -205,7 +206,8 @@ export function ownerTagFor(t: PageTask, viewerId: string | null | undefined, pm
   const seat = t.assigned_seat ?? null;
   if (seat && DESIGN_SEATS.has(seat)) return "designer";
   if (seat === "utilities") return "utilities";
-  if (!t.assigned_to && !seat) return "unassigned";
+  // A Task with no person in the PM's own role (or no role) is the PM's until handed off.
+  if (!t.assigned_to && (!seat || PM_SEATS.has(seat))) return "unassigned";
   return "director";
 }
 
