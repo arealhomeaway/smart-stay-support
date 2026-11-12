@@ -1,9 +1,15 @@
 /** A2: "Kind of Task" on a plan step, with the per-kind pickers. Saved with the step. */
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   FILL_FIELDS,
+  OUTSIDE_DEFAULT_MESSAGE,
+  OUTSIDE_DOCUMENT_MAX,
+  OUTSIDE_LOG_TIME_SENTENCE,
+  OUTSIDE_MESSAGE_MAX,
   OUTSIDE_PLACES,
   TASK_KINDS,
   TASK_KIND_LABEL,
@@ -90,6 +96,25 @@ export function StepKindFields({
               {OUTSIDE_PLACES.map((p) => <SelectItem key={p.code} value={p.code}>{p.label}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Label htmlFor="step-document-name" className="block pt-2">Document name</Label>
+          <Input
+            id="step-document-name"
+            className="min-h-11"
+            maxLength={OUTSIDE_DOCUMENT_MAX}
+            placeholder="document"
+            value={value.settings.documentName ?? ""}
+            onChange={(e) => set({ documentName: e.target.value || null })}
+          />
+          <Label htmlFor="step-owner-message" className="block pt-2">Owner message</Label>
+          <Textarea
+            id="step-owner-message"
+            rows={3}
+            maxLength={OUTSIDE_MESSAGE_MAX}
+            placeholder={`${OUTSIDE_DEFAULT_MESSAGE} ${OUTSIDE_LOG_TIME_SENTENCE}`}
+            value={value.settings.ownerMessage ?? ""}
+            onChange={(e) => set({ ownerMessage: e.target.value || null })}
+          />
+          <p className="text-xs text-muted-foreground">[document] and {"{where}"} fill in.</p>
         </div>
       )}
       {value.kind === "send_to_owner" && (
