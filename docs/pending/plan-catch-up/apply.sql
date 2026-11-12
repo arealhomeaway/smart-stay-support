@@ -33,23 +33,24 @@ CREATE POLICY "Onboarding staff read task batches" ON public.onboarding_task_bat
 -- 2. Who may use it (item 7). Operations roles never; the database decides, not the screen.
 CREATE OR REPLACE FUNCTION private.plan_catch_up_gate(_actor uuid)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', 'private' AS $$
-  SELECT _actor IS NOT NULL AND (
+  SELECT coalesce(_actor IS NOT NULL AND (
     public.has_role(_actor, 'admin') OR public.has_role(_actor, 'onboarding')
-    OR coalesce(public.is_onboarding_director(_actor), false))
+    OR coalesce(public.is_onboarding_director(_actor), false)), false)
 $$;
 
 -- Director of Onboarding and Admin: every home. Project Manager: their own homes.
 -- Utilities and Design (and anyone else in onboarding): only Tasks assigned to them or their role.
 CREATE OR REPLACE FUNCTION private.plan_catch_up_can(_actor uuid, _project_manager uuid, _assigned_to uuid, _assigned_seat text)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', 'private' AS $$
-  SELECT _actor IS NOT NULL AND (
+  -- coalesce: an unassigned Task (NULL) must read as "not yours", never as unknown.
+  SELECT coalesce(_actor IS NOT NULL AND (
     public.has_role(_actor, 'admin')
     OR coalesce(public.is_onboarding_director(_actor), false)
     OR (public.has_role(_actor, 'onboarding') AND (
-          _project_manager = _actor
-          OR _assigned_to = _actor
-          OR (_assigned_seat = ANY (ARRAY['utilities', 'designer', 'lead_designer', 'design_staging', 'staging_team'])
-              AND public.holds_functional_role(_actor, _assigned_seat)))))
+          coalesce(_project_manager = _actor, false)
+          OR coalesce(_assigned_to = _actor, false)
+          OR (coalesce(_assigned_seat = ANY (ARRAY['utilities', 'designer', 'lead_designer', 'design_staging', 'staging_team']), false)
+              AND public.holds_functional_role(_actor, _assigned_seat)))), false)
 $$;
 
 -- A Breezeway work order already went out for this Task.
