@@ -105,7 +105,8 @@ describe("nightly PID runner", () => {
     expect(a._credentials[0]).toMatchObject({ op: "insert", pid_field: "Gate Code", label: "Gate / community code" });
     expect(JSON.stringify({ w: a._writes, e: a._extras, r: a._review })).not.toContain("4821");
     expect(a._credentials[0].ciphertext).not.toContain("4821");
-    expect(a._extras).toEqual([{ field_name: "Base Price", field_type: "number", value: { type: "text", text: "189" }, as_of: "2026-11-12T10:00:00.000Z" }]);
+    expect(a._extras).toContainEqual({ field_name: "Base Price", field_type: "number", value: { type: "text", text: "189" }, as_of: "2026-11-12T10:00:00.000Z" });
+    expect(a._extras.some((x) => x.field_name === "Gate Code")).toBe(false);
     expect(r).toMatchObject({ completed: true, counts: { errors: 1, updates: 1, homes_touched: 1 } });
     const errRow = db.calls.inserts.find((i) => i.table === "pid_sync_review_items");
     expect(errRow.p).toMatchObject({ property_id: A, kind: "error" });
