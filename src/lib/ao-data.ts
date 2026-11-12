@@ -267,8 +267,8 @@ export async function loadOwnerItemLastSpeakers(reviewIds: string[]): Promise<Ma
     (ids) => db.from("owner_request_messages").select("review_id, author_type, event, created_at").in("review_id", ids).order("created_at"),
   );
   for (const r of rows.data) {
-    if (r.event) continue;
-    out.set(r.review_id, r.author_type === "homeowner" || r.author_type === "owner" ? "homeowner" : "staff");
+    if (r.event || r.author_type === "system") continue;
+    out.set(r.review_id, r.author_type === "homeowner" ? "homeowner" : "staff");
   }
   return out;
 }
