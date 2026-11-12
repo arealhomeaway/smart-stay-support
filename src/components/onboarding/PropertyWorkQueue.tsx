@@ -1,11 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { CalendarDays, CircleAlert, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { HomeTaskBulkEditDialog } from "@/components/onboarding/HomeTaskBulkEditDialog";
-import { BulkCompleteDialog } from "@/components/onboarding/BulkCompleteDialog";
-import { homeTaskSelectable, type HomeBulkTask } from "@/lib/home-task-bulk-edit";
+import { CatchUpBox, openSelectable, type CatchUpSelection } from "@/components/onboarding/PlanCatchUp";
 import { stageLabel } from "@/lib/onboarding";
 import { Chip } from "@/components/ui/page";
 import type { Person } from "@/components/onboarding/WorkflowTable";
@@ -37,7 +34,7 @@ export function PropertyWorkQueue({
   onSelect,
   release,
   voided = [],
-  bulk,
+  catchUp,
 }: {
   tasks: WorkflowTask[];
   people: Person[];
@@ -50,42 +47,22 @@ export function PropertyWorkQueue({
   release?: ReleaseContext;
   /** Voided Tasks — kept on record, never counted as work. */
   voided?: { id: string; title: string; archived_at: string; exception_reason: string | null }[];
-  /** Present only for people who can edit this home's Tasks; the server re-checks. */
-  bulk?: { propertyId: string; homeName: string; canEditSelected?: boolean; onSaved: () => void } | undefined;
+  /** Plan catch-up selection shared with the stage lists; present only for people who may use it. The server re-checks. */
+  catchUp?: CatchUpSelection | undefined;
 }) {
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [bulkOpen, setBulkOpen] = useState(false);
-  const [completeOpen, setCompleteOpen] = useState(false);
-  const bulkTasks = tasks as unknown as HomeBulkTask[];
-  const selectableIds = useMemo(
-    () => new Set(bulkTasks.filter(homeTaskSelectable).map((t) => t.id)),
-    [bulkTasks],
-  );
   const stages = useMemo(
-    () => [...new Set(bulkTasks.filter((t) => !t.archived_at).map((t) => t.stage))],
-    [bulkTasks],
+    () => [...new Set(tasks.filter((t) => !(t as { archived_at?: string | null }).archived_at).map((t) => t.stage))],
+    [tasks],
   );
-  // Drop anything that completed or disappeared since it was ticked.
-  useEffect(() => {
-    setSelected((prev) => {
-      const next = new Set([...prev].filter((id) => selectableIds.has(id)));
-      return next.size === prev.size ? prev : next;
-    });
-  }, [selectableIds]);
-  const toggle = (id: string, on: boolean) =>
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (on) next.add(id);
-      else next.delete(id);
-      return next;
-    });
-  const selectIds = (ids: string[]) => setSelected((prev) => new Set([...prev, ...ids]));
-  const allOpenSelected = selectableIds.size > 0 && [...selectableIds].every((id) => selected.has(id));
+  const openIds = catchUp ? openSelectable(tasks, catchUp) : [];
+  const allOpenSelected = Boolean(catchUp) && openIds.length > 0 && openIds.every((id) => catchUp!.selected.has(id));
+  const selectIds = (ids: string[]) => catchUp?.replace(new Set([...(catchUp?.selected ?? []), ...ids]));
   const views = useMemo(
     () => orderPropertyWorkQueue(tasks.map((task) => viewTask(task, tasks, release))),
     [tasks, release],
   );
   const shown = views.filter((view) => matchesPropertyQueueFilter(view, filter, viewerId));
+  const shownIds = shown.map((view) => view.task.id);
   const voidedRows = voided.filter((v) => (v.exception_reason ?? "").startsWith("Voided"));
   const open = views.filter((view) => !["complete", "carryover"].includes(view.status)).length;
   const waiting = views.filter(
@@ -131,23 +108,27 @@ export function PropertyWorkQueue({
             ),
           )}
         </div>
-        {bulk && selectableIds.size > 0 ? (
+        {catchUp && openIds.length > 0 ? (
           <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
-            <label className="inline-flex items-center gap-2">
-              <Checkbox
-                checked={allOpenSelected}
-                onCheckedChange={(v) => (v ? selectIds([...selectableIds]) : setSelected(new Set()))}
-                aria-label="Select all open"
+            <span className="inline-flex items-center">
+              <CatchUpBox
+                state={allOpenSelected}
+                label="Select all open"
+                onToggle={() =>
+                  allOpenSelected
+                    ? catchUp.replace(new Set([...catchUp.selected].filter((id) => !openIds.includes(id))))
+                    : selectIds(openIds)
+                }
               />
               Select all open
-            </label>
+            </span>
             <Select
               value=""
               onValueChange={(stage) =>
-                selectIds(bulkTasks.filter((t) => t.stage === stage && selectableIds.has(t.id)).map((t) => t.id))
+                selectIds(openSelectable(tasks.filter((t) => t.stage === stage), catchUp))
               }
             >
-              <SelectTrigger className="h-8 w-56" aria-label="Select all in this stage">
+              <SelectTrigger className="min-h-11 w-56" aria-label="Select all in this stage">
                 <SelectValue placeholder="Select all in this stage" />
               </SelectTrigger>
               <SelectContent>
@@ -181,16 +162,16 @@ export function PropertyWorkQueue({
           shown.map((view) => {
             const task = view.task;
             const track = workstreamMeta(trackForTask(task));
-            const canTick = Boolean(bulk) && selectableIds.has(task.id);
+            const canTick = Boolean(catchUp?.selectable.has(task.id));
             return (
-              <div key={task.id} className="flex items-stretch border-b border-border/60 last:border-b-0">
-              {bulk ? (
-                <span className="flex w-10 shrink-0 items-center justify-center">
+              <div key={task.id} className="flex min-h-[52px] items-stretch border-b border-border/60 last:border-b-0">
+              {catchUp ? (
+                <span className="flex w-12 shrink-0 items-center justify-center">
                   {canTick ? (
-                    <Checkbox
-                      checked={selected.has(task.id)}
-                      onCheckedChange={(v) => toggle(task.id, v === true)}
-                      aria-label={`Select ${task.title}`}
+                    <CatchUpBox
+                      state={catchUp.selected.has(task.id)}
+                      label={`Select ${task.title}`}
+                      onToggle={(shift) => catchUp.toggle(task.id, shift, shownIds)}
                     />
                   ) : null}
                 </span>
@@ -198,7 +179,7 @@ export function PropertyWorkQueue({
               <button
                 type="button"
                 onClick={() => onSelect(task)}
-                className="grid w-full min-w-0 gap-2 px-4 py-3 text-left last:border-b-0 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                className="grid min-h-[52px] w-full min-w-0 gap-2 px-4 py-3 text-left last:border-b-0 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
               >
                 <span className="min-w-0">
                   <span className="flex flex-wrap items-center gap-2">
@@ -229,49 +210,6 @@ export function PropertyWorkQueue({
           })
         )}
       </div>
-      {bulk && selected.size > 0 ? (
-        <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-2 border-t border-border bg-card px-4 py-3">
-          <span className="text-sm font-medium">
-            {selected.size} Task{selected.size === 1 ? "" : "s"} selected
-          </span>
-          <span className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => setSelected(new Set())}>Clear</Button>
-            {bulk.canEditSelected ? (
-              <Button size="sm" variant="outline" onClick={() => setBulkOpen(true)}>Edit selected</Button>
-            ) : null}
-            <Button size="sm" onClick={() => setCompleteOpen(true)}>Mark complete</Button>
-          </span>
-        </div>
-      ) : null}
-      {bulk && bulk.canEditSelected && bulkOpen ? (
-        <HomeTaskBulkEditDialog
-          propertyId={bulk.propertyId}
-          homeName={bulk.homeName}
-          tasks={bulkTasks}
-          stages={stages}
-          selectedIds={[...selected]}
-          onClose={() => setBulkOpen(false)}
-          onSaved={() => {
-            setBulkOpen(false);
-            setSelected(new Set());
-            bulk.onSaved();
-          }}
-        />
-      ) : null}
-      {bulk && completeOpen ? (
-        <BulkCompleteDialog
-          propertyId={bulk.propertyId}
-          homeName={bulk.homeName}
-          selectedIds={[...selected]}
-          onClose={() => setCompleteOpen(false)}
-          onSaved={() => {
-            setCompleteOpen(false);
-            setSelected(new Set());
-            bulk.onSaved();
-          }}
-        />
-      ) : null}
-
     </section>
   );
 }
