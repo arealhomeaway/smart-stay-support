@@ -1,0 +1,1021 @@
+ownerrez_id,home,field_key,current_resolve_value,notion_value,kind,conflict_with,reason
+461754,1016 NW 191st St,max_guests,7,8,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+446094,10302 S. 230th East Ave,waste.valet,,No,fill,,new Notion value
+401685,10320 Lightning Creek Dr. (30D FIRM),facts.tv_specs,ROKU Pin: See Guest Access & Credentials,ROKU Pin: [removed — credentials are not stored in Resolve],update,,"still notion_pid, not edited since"
+401685,10320 Lightning Creek Dr. (30D FIRM),parking.summary,3 Car Garage,3 Car Garage. Per the HOA cars can only be parked in the garage and driveway. Max of 3 cars in driveway. NO street parking.,update,,"still notion_pid, not edited since"
+475429,1039 Swinton Way,max_guests,6,8,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+492044,11249 Pegasus Dr.,access.emergency_key_access,,Yes,fill,,new Notion value
+492044,11249 Pegasus Dr.,access.garage_remote,,Genie https://www.amazon.com/dp/B0DH81245P?ref=fed_asin_title&th=1,fill,,new Notion value
+492044,11249 Pegasus Dr.,access.key_storage,,"[""Garage Door"",""Front Door/Smartlock"",""Front Door - Storm Door""]",fill,,new Notion value
+492044,11249 Pegasus Dr.,access.lock_brand,,Yale,fill,,new Notion value
+492044,11249 Pegasus Dr.,access.yale_module,,Connected & Setup,fill,,new Notion value
+492044,11249 Pegasus Dr.,amenities.access_notes,,No key necessary,fill,,new Notion value
+492044,11249 Pegasus Dr.,amenities.list,,"[""Basketball Court"",""Pond""]",fill,,new Notion value
+492044,11249 Pegasus Dr.,facts.grill,,No Grill,fill,,new Notion value
+492044,11249 Pegasus Dr.,facts.interior_paint,,Yes (Top shelf in the garage),fill,,new Notion value
+492044,11249 Pegasus Dr.,facts.tv_locations,,"[""Living Room"",""Primary Bedroom""]",fill,,new Notion value
+492044,11249 Pegasus Dr.,facts.tv_specs,,"65"" Roku in Living Room, logged into Roku / 55"" Roku in Primary Bedroom, logged into Roku (Roku is also the TV brand)",fill,,new Notion value
+492044,11249 Pegasus Dr.,facts.workstation,,Yes,fill,,new Notion value
+492044,11249 Pegasus Dr.,fireplace.fuel_type,,N/A,fill,,new Notion value
+492044,11249 Pegasus Dr.,fireplace.gas_switch,,N/A,fill,,new Notion value
+492044,11249 Pegasus Dr.,fireplace.gas_switch_location,,N/A,fill,,new Notion value
+492044,11249 Pegasus Dr.,fireplace.instructions,,N/A,fill,,new Notion value
+492044,11249 Pegasus Dr.,fireplace.model,,N/A,fill,,new Notion value
+492044,11249 Pegasus Dr.,fireplace.present,,false,fill,,new Notion value
+492044,11249 Pegasus Dr.,grounds.mowing_cadence,,ARHA Responsible,fill,,new Notion value
+492044,11249 Pegasus Dr.,grounds.mowing_days,,"[""Tuesday""]",fill,,new Notion value
+492044,11249 Pegasus Dr.,hoa.notes + external_links,,"Waterman Farms HOA: no RVs/commercial vehicles parked on the street, garage must remain usable for parking, no above-ground pools.",fill,,new Notion value
+492044,11249 Pegasus Dr.,hoa.present,,true,fill,,new Notion value
+492044,11249 Pegasus Dr.,hvac.filter_notes,,"14x24x1
+This air filter is not a paper filter, the filter is metal and must be rinsed and dried fully when cleaning.
+Rinse the metal air filter every 90 days (more often with pets or heavy dust); no need to replace it unless damaged.",fill,,new Notion value
+492044,11249 Pegasus Dr.,hvac.filter_sizes,,"[""14x24x1""]",fill,,new Notion value
+492044,11249 Pegasus Dr.,legacy_handoff_date,,2026-10-02,fill,,new Notion value
+492044,11249 Pegasus Dr.,link:Furniture Pick List Link,,https://arealhomeaway-my.sharepoint.com/:x:/p/info/IQDpZulpB62MRLNgXXDly5fGAWNfkJ-jKmAdfzxS2JgdcfE?e=kcgyHi,fill,,new legacy_onedrive link
+492044,11249 Pegasus Dr.,link:Garage Remote Brand & Model,,https://www.amazon.com/dp/B0DH81245P?ref=fed_asin_title&th=1,fill,,new reference link
+492044,11249 Pegasus Dr.,link:Security Camera Feed,,https://account.ring.com/account/dashboard?l=48cc62ba-579f-48e8-9a3f-ec61247146a1,fill,,new camera_portal link
+492044,11249 Pegasus Dr.,listing_alias,,"3BR Home, Noblesville | Extended & Monthly Stays",fill,,new Notion value
+492044,11249 Pegasus Dr.,neighborhood,,Waterman Farms,fill,,new Notion value
+492044,11249 Pegasus Dr.,operating_notes,,"This air filter is not a paper filter, the filter is metal and must be rinsed and dried fully when cleaning.
+
+Water spicket in the backyard was repaired, however it could leak in the future over time.",fill,,new Notion value
+492044,11249 Pegasus Dr.,parking.cluster_mailbox,,false,fill,,new Notion value
+492044,11249 Pegasus Dr.,parking.mailbox_location,,N/A,fill,,new Notion value
+492044,11249 Pegasus Dr.,parking.mailbox_number,,N/A,fill,,new Notion value
+492044,11249 Pegasus Dr.,pool_spa.present,,None,fill,,new Notion value
+492044,11249 Pegasus Dr.,security.alarm,,No,fill,,new Notion value
+492044,11249 Pegasus Dr.,security.battery_type,,"[""Hardwired - No Battery""]",fill,,new Notion value
+492044,11249 Pegasus Dr.,security.devices,,"[""Driveway"",""Front Door""]",fill,,new Notion value
+492044,11249 Pegasus Dr.,security.monitoring_expires_on,,2027-10-08,fill,,new Notion value
+492044,11249 Pegasus Dr.,security.monitoring_plan,,"[""Active""]",fill,,new Notion value
+492044,11249 Pegasus Dr.,sprinklers.brand,,N/A,fill,,new Notion value
+492044,11249 Pegasus Dr.,sprinklers.controller_location,,N/A,fill,,new Notion value
+492044,11249 Pegasus Dr.,sprinklers.set_for_season,,"{""value"":""N/A"",""as_of"":""2026-11-03T22:19:00.000Z"",""source"":""notion_pid""}",fill,,new Notion value
+492044,11249 Pegasus Dr.,sprinklers.status,,Property Does Not Have Sprinkler System,fill,,new Notion value
+492044,11249 Pegasus Dr.,storm_shelter.location_access,,N/A,fill,,new Notion value
+492044,11249 Pegasus Dr.,systems.breaker_panel_location,,Garage,fill,,new Notion value
+492044,11249 Pegasus Dr.,systems.co.installed,,true,fill,,new Notion value
+492044,11249 Pegasus Dr.,systems.co.location,,Kitchen,fill,,new Notion value
+492044,11249 Pegasus Dr.,systems.fridge_filter,,EveryDrop Filter 1 (EDR1RXD1),fill,,new Notion value
+492044,11249 Pegasus Dr.,systems.fridge_filter_5yr,,false,fill,,new Notion value
+492044,11249 Pegasus Dr.,systems.smoke.batteries_changed_on,,2026-09-21,fill,,new Notion value
+492044,11249 Pegasus Dr.,systems.smoke.battery_type,,9-Volt (Lithium),fill,,new Notion value
+492044,11249 Pegasus Dr.,systems.smoke.brand,,First Alert (7 units),fill,,new Notion value
+492044,11249 Pegasus Dr.,systems.smoke.expires_on,,2036-12-31,fill,,new Notion value
+492044,11249 Pegasus Dr.,systems.smoke.expires_precision,,year,fill,,new Notion value
+492044,11249 Pegasus Dr.,systems.smoke.expires_source_text,,2036,fill,,new Notion value
+492044,11249 Pegasus Dr.,systems.smoke.notes,,N/A,fill,,new Notion value
+492044,11249 Pegasus Dr.,systems.smoke.power_type,,Hardwired,fill,,new Notion value
+492044,11249 Pegasus Dr.,systems.supply_box_location,,Top shelf of master closet,fill,,new Notion value
+492044,11249 Pegasus Dr.,systems.supply_storage,,Closet,fill,,new Notion value
+492044,11249 Pegasus Dr.,systems.water_shutoff_indoor,,Laundry room,fill,,new Notion value
+492044,11249 Pegasus Dr.,systems.water_shutoff_outdoor,,Front yard,fill,,new Notion value
+492044,11249 Pegasus Dr.,tier,,B,fill,,new Notion value
+492044,11249 Pegasus Dr.,utilities.router_location,,In the living room,fill,,new Notion value
+492044,11249 Pegasus Dr.,utilities.wifi_ssid,,ARHA,fill,,new Notion value
+492044,11249 Pegasus Dr.,warranty.builder_present,,false,fill,,new Notion value
+492044,11249 Pegasus Dr.,warranty.claim_process + external_links,,N/A,fill,,new Notion value
+492044,11249 Pegasus Dr.,warranty.furniture_expires_on,,2029-10-02,fill,,new Notion value
+492044,11249 Pegasus Dr.,waste.cart_count,,2,fill,,new Notion value
+492044,11249 Pegasus Dr.,waste.cart_notes,,2,fill,,new Notion value
+492044,11249 Pegasus Dr.,waste.holiday_notes,,Service is delayed one day on: New Year's Day • Memorial Day • July 4th • Labor Day • Thanksgiving Day • Christmas Day,fill,,new Notion value
+492044,11249 Pegasus Dr.,waste.recycling,,true,fill,,new Notion value
+492044,11249 Pegasus Dr.,waste.recycling_days,,Every other Monday,fill,,new Notion value
+492044,11249 Pegasus Dr.,waste.strict_rules,,N/A,fill,,new Notion value
+492044,11249 Pegasus Dr.,waste.trash_days,,"[""Monday""]",fill,,new Notion value
+492044,11249 Pegasus Dr.,waste.valet,,No,fill,,new Notion value
+492044,11249 Pegasus Dr.,instant_book,false,true,update,,"still notion_pid, not edited since"
+454815,11508 E 94th Pl N,waste.valet,,No,fill,,new Notion value
+425054,11514 S. Locust Ave,waste.valet,,No,fill,,new Notion value
+425054,11514 S. Locust Ave,operating_notes,"The owner has a membership with 
+American Home Pros
+ for annual tune ups (HVAC). For general maintenance you can try them, but from past experience, their pricing is high.","The owner has a membership with 
+American Home Pros for annual tune ups (HVAC). For general maintenance you can try them, but from past experience, their pricing is high. 
+Update: We have free service calls from them until July 2027 please make sure they are the first point of contact for any HVAC related issues.",update,,"still notion_pid, not edited since"
+419166,1152 Western Yarrow Ave,hvac.filter_sizes,,"[""20x25x4""]",fill,,new Notion value
+419166,1152 Western Yarrow Ave,sprinklers.brand,,Rain bird,fill,,new Notion value
+419166,1152 Western Yarrow Ave,sprinklers.controller_location,,Garage,fill,,new Notion value
+419166,1152 Western Yarrow Ave,sprinklers.set_for_season,,"{""value"":""N/A"",""as_of"":""2026-11-03T22:21:00.000Z"",""source"":""notion_pid""}",fill,,new Notion value
+419166,1152 Western Yarrow Ave,hvac.filter_notes,Not Mentioned,20x25x4,update,,"still notion_pid, not edited since"
+419166,1152 Western Yarrow Ave,sprinklers.status,Property Does Not Have Sprinkler System,Property Has Sprinkler System and It's On,update,,"still notion_pid, not edited since"
+419166,1152 Western Yarrow Ave,systems.smoke.batteries_changed_on,2026-02-02,2026-09-16,update,,"still notion_pid, not edited since"
+418726,1169 Blue Sky Lane,systems.smoke.batteries_changed_on,2025-10-29,2026-09-17,update,,"still notion_pid, not edited since"
+409727,1215 N Elder Ave,waste.valet,,No,fill,,new Notion value
+428972,13325 E 43rd Pl S,waste.valet,,No,fill,,new Notion value
+428972,13325 E 43rd Pl S,"latitude,longitude","36.1004495, -95.7732076","36.1007283, -95.8274618",conflict,OwnerRez,PID pin more than 0.001 from the Resolve pin
+433281,136 Magnolia Estates St,systems.smoke.batteries_changed_on,2025-08-13,2026-09-04,update,,"still notion_pid, not edited since"
+494863,1399 Foxtail Ln.,access.emergency_key_access,,Yes,fill,,home not imported before
+494863,1399 Foxtail Ln.,access.garage_remote,,LiftMaster,fill,,home not imported before
+494863,1399 Foxtail Ln.,access.key_storage,,"[""Mailbox"",""Front Door/Smartlock"",""Backdoor"",""Storage Closet"",""Back Door - Storm Door""]",fill,,home not imported before
+494863,1399 Foxtail Ln.,access.lock_brand,,Yale,fill,,home not imported before
+494863,1399 Foxtail Ln.,access.yale_integration_live,,false,fill,,home not imported before
+494863,1399 Foxtail Ln.,access.yale_module,,Connected & Setup,fill,,home not imported before
+494863,1399 Foxtail Ln.,amenities.access_notes,,"The CC&Rs do not list specific amenities, access instructions, or fees. The neighborhood ponds are for drainage and views only; swimming, ice skating, and boating are not permitted.",fill,,home not imported before
+494863,1399 Foxtail Ln.,amenities.list,,"[""Pond""]",fill,,home not imported before
+494863,1399 Foxtail Ln.,compliance.permit_status,,"{""text"":""No permit required for Greenwood, IN"",""as_of"":""2026-11-05T17:51:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
+494863,1399 Foxtail Ln.,compliance.rental_restrictions,,"{""text"":""No STR rental restrictions"",""as_of"":""2026-11-05T17:51:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
+494863,1399 Foxtail Ln.,external_refs.breezeway_url,,https://app.breezeway.io/property/1494604/profile,fill,,home not imported before
+494863,1399 Foxtail Ln.,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/494863/info,fill,,home not imported before
+494863,1399 Foxtail Ln.,facts.grill,,No Grill,fill,,home not imported before
+494863,1399 Foxtail Ln.,facts.interior_paint,,Unknown. No extra paint left,fill,,home not imported before
+494863,1399 Foxtail Ln.,facts.tv_locations,,"[""Living Room"",""Primary Bedroom""]",fill,,home not imported before
+494863,1399 Foxtail Ln.,facts.tv_specs,,"55"" Roku QLED TV in Primary Bedroom, logged into Roku. 65"" Roku QLED TV in Living Room, logged into Roku.",fill,,home not imported before
+494863,1399 Foxtail Ln.,facts.workstation,,No,fill,,home not imported before
+494863,1399 Foxtail Ln.,fireplace.fuel_type,,N/A,fill,,home not imported before
+494863,1399 Foxtail Ln.,fireplace.gas_switch,,N/A,fill,,home not imported before
+494863,1399 Foxtail Ln.,fireplace.gas_switch_location,,N/A,fill,,home not imported before
+494863,1399 Foxtail Ln.,fireplace.instructions,,N/A,fill,,home not imported before
+494863,1399 Foxtail Ln.,fireplace.model,,N/A,fill,,home not imported before
+494863,1399 Foxtail Ln.,fireplace.present,,false,fill,,home not imported before
+494863,1399 Foxtail Ln.,furniture_package,,Signature (Gold),fill,,home not imported before
+494863,1399 Foxtail Ln.,grounds.mowing_cadence,,ARHA Responsible,fill,,home not imported before
+494863,1399 Foxtail Ln.,grounds.mowing_days,,"[""Monday""]",fill,,home not imported before
+494863,1399 Foxtail Ln.,hoa.notes + external_links,,"The HOA for Lone Pine Farms is administered by Ardsley Management, which can be reached at (317) 253-1401 or via email at indianapolisinfo@drhorton.com.",fill,,home not imported before
+494863,1399 Foxtail Ln.,hoa.present,,true,fill,,home not imported before
+494863,1399 Foxtail Ln.,hvac.filter_notes,,1 -16×25×4,fill,,home not imported before
+494863,1399 Foxtail Ln.,hvac.filter_sizes,,"[""16x25x4""]",fill,,home not imported before
+494863,1399 Foxtail Ln.,instant_book,,true,fill,,home not imported before
+494863,1399 Foxtail Ln.,link:BW Property Link,,https://app.breezeway.io/property/1494604/profile,fill,,new system link
+494863,1399 Foxtail Ln.,link:Furniture Pick List Link,,https://arealhomeaway-my.sharepoint.com/:f:/p/info/IgD4qXqglNXTQ7RM_sBVC-CRAZaMEv3I930Qy3fwIvZf6CI?e=s2DOXo,fill,,new legacy_onedrive link
+494863,1399 Foxtail Ln.,link:OR Property Link,,https://app.ownerrez.com/properties/494863/info,fill,,new system link
+494863,1399 Foxtail Ln.,link:Security Camera Feed,,https://account.ring.com/account/dashboard?l=38ab7465-5308-4bc6-b18f-86c31d46b9c8,fill,,new camera_portal link
+494863,1399 Foxtail Ln.,listing_alias,,Cozy 4BR Home | Greenwood | Pet Friendly,fill,,home not imported before
+494863,1399 Foxtail Ln.,market,,Indy,fill,,home not imported before
+494863,1399 Foxtail Ln.,neighborhood,,Lone Pine Farms,fill,,home not imported before
+494863,1399 Foxtail Ln.,nickname,,Foxtail Hollow (1399),fill,,home not imported before
+494863,1399 Foxtail Ln.,operating_notes,,No,fill,,home not imported before
+494863,1399 Foxtail Ln.,parking.cluster_mailbox,,true,fill,,home not imported before
+494863,1399 Foxtail Ln.,parking.mailbox_location,,"The cluster mailbox #1399 is at the corner of Foxtail Ln and Sumatran Ln, a short walk east of the house. Key is located inside the lock box on the garage trim.",fill,,home not imported before
+494863,1399 Foxtail Ln.,parking.mailbox_number,,1399,fill,,home not imported before
+494863,1399 Foxtail Ln.,parking.summary,,"2 Car Garage
+Free Parking on Premises",fill,,home not imported before
+494863,1399 Foxtail Ln.,pool_spa.present,,None,fill,,home not imported before
+494863,1399 Foxtail Ln.,security.alarm,,No,fill,,home not imported before
+494863,1399 Foxtail Ln.,security.battery_type,,"[""Hardwired - No Battery""]",fill,,home not imported before
+494863,1399 Foxtail Ln.,security.devices,,"[""Front Door"",""Driveway""]",fill,,home not imported before
+494863,1399 Foxtail Ln.,security.monitoring_expires_on,,2027-11-15,fill,,home not imported before
+494863,1399 Foxtail Ln.,security.monitoring_plan,,"[""Active""]",fill,,home not imported before
+494863,1399 Foxtail Ln.,sprinklers.brand,,N/A,fill,,home not imported before
+494863,1399 Foxtail Ln.,sprinklers.controller_location,,N/A,fill,,home not imported before
+494863,1399 Foxtail Ln.,sprinklers.set_for_season,,"{""value"":""N/A"",""as_of"":""2026-11-05T17:51:00.000Z"",""source"":""notion_pid""}",fill,,home not imported before
+494863,1399 Foxtail Ln.,sprinklers.status,,Property Does Not Have Sprinkler System,fill,,home not imported before
+494863,1399 Foxtail Ln.,storm_shelter.location_access,,N/A,fill,,home not imported before
+494863,1399 Foxtail Ln.,systems.breaker_panel_location,,Garage,fill,,home not imported before
+494863,1399 Foxtail Ln.,systems.co.installed,,true,fill,,home not imported before
+494863,1399 Foxtail Ln.,systems.co.location,,Kitchen,fill,,home not imported before
+494863,1399 Foxtail Ln.,systems.fridge_filter,,EDR1RXD1 (Everydrop Filter 1 / Whirlpool W10295370A compatible),fill,,home not imported before
+494863,1399 Foxtail Ln.,systems.fridge_filter_5yr,,false,fill,,home not imported before
+494863,1399 Foxtail Ln.,systems.smoke.batteries_changed_on,,2026-10-22,fill,,home not imported before
+494863,1399 Foxtail Ln.,systems.smoke.battery_type,,9-Volt (Lithium),fill,,home not imported before
+494863,1399 Foxtail Ln.,systems.smoke.brand,,First alert,fill,,home not imported before
+494863,1399 Foxtail Ln.,systems.smoke.expires_on,,2034-12-31,fill,,home not imported before
+494863,1399 Foxtail Ln.,systems.smoke.expires_precision,,year,fill,,home not imported before
+494863,1399 Foxtail Ln.,systems.smoke.expires_source_text,,2034,fill,,home not imported before
+494863,1399 Foxtail Ln.,systems.smoke.notes,,N/A,fill,,home not imported before
+494863,1399 Foxtail Ln.,systems.smoke.power_type,,Hardwired,fill,,home not imported before
+494863,1399 Foxtail Ln.,systems.supply_box_location,,Top shelf of Master closet,fill,,home not imported before
+494863,1399 Foxtail Ln.,systems.supply_storage,,Closet,fill,,home not imported before
+494863,1399 Foxtail Ln.,systems.water_shutoff_indoor,,Closet with furnace,fill,,home not imported before
+494863,1399 Foxtail Ln.,systems.water_shutoff_outdoor,,Near sidewalk,fill,,home not imported before
+494863,1399 Foxtail Ln.,tier,,B,fill,,home not imported before
+494863,1399 Foxtail Ln.,utilities.router_location,,Living room,fill,,home not imported before
+494863,1399 Foxtail Ln.,utilities.wifi_split_confirmed,,false,fill,,home not imported before
+494863,1399 Foxtail Ln.,utilities.wifi_ssid,,ARHA,fill,,home not imported before
+494863,1399 Foxtail Ln.,warranty.builder_present,,false,fill,,home not imported before
+494863,1399 Foxtail Ln.,warranty.claim_process + external_links,,N/A,fill,,home not imported before
+494863,1399 Foxtail Ln.,warranty.furniture_expires_on,,2029-11-04,fill,,home not imported before
+494863,1399 Foxtail Ln.,waste.cart_count,,2,fill,,home not imported before
+494863,1399 Foxtail Ln.,waste.cart_notes,,2 trash cans and 1 recycling,fill,,home not imported before
+494863,1399 Foxtail Ln.,waste.holiday_notes,,"If one of the following holidays falls on a Monday through Thursday, trash pickup will be delayed by one day one day: New Year's Day • Memorial Day • July 4th • Labor Day • Thanksgiving Day • Christmas Day",fill,,home not imported before
+494863,1399 Foxtail Ln.,waste.recycling,,true,fill,,home not imported before
+494863,1399 Foxtail Ln.,waste.recycling_days,,Every other Thursday.,fill,,home not imported before
+494863,1399 Foxtail Ln.,waste.strict_rules,,N/A,fill,,home not imported before
+494863,1399 Foxtail Ln.,waste.trash_days,,"[""Thursday""]",fill,,home not imported before
+494863,1399 Foxtail Ln.,waste.valet,,No,fill,,home not imported before
+494863,1399 Foxtail Ln.,year_built,,2024,fill,,home not imported before
+423193,14553 Serrano Ridge Rd,access.garage_remote,LiftMaster 38OUT,LiftMaster 380 UT,update,,"still notion_pid, not edited since"
+423193,14553 Serrano Ridge Rd,systems.smoke.batteries_changed_on,2025-10-16,2026-09-08,update,,"still notion_pid, not edited since"
+496703,1464 Buckland Ct.,access.yale_integration_live,,false,fill,,home not imported before
+496703,1464 Buckland Ct.,compliance.permit_status,,"{""text"":""No permit required for Avon, IN"",""as_of"":""2026-11-03T22:19:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
+496703,1464 Buckland Ct.,compliance.rental_restrictions,,"{""text"":""No STR rental restrictions"",""as_of"":""2026-11-03T22:19:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
+496703,1464 Buckland Ct.,external_refs.breezeway_url,,https://app.breezeway.io/property/1509882/profile,fill,,home not imported before
+496703,1464 Buckland Ct.,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/496703/info,fill,,home not imported before
+496703,1464 Buckland Ct.,furniture_package,,Signature (Gold),fill,,home not imported before
+496703,1464 Buckland Ct.,instant_book,,false,fill,,home not imported before
+496703,1464 Buckland Ct.,link:BW Property Link,,https://app.breezeway.io/property/1509882/profile,fill,,new system link
+496703,1464 Buckland Ct.,link:OR Property Link,,https://app.ownerrez.com/properties/496703/info,fill,,new system link
+496703,1464 Buckland Ct.,market,,Indy,fill,,home not imported before
+496703,1464 Buckland Ct.,nickname,,The Buckland Blue (1464),fill,,home not imported before
+496703,1464 Buckland Ct.,parking.summary,,"2 Car Garage
+Free Parking on Premises",fill,,home not imported before
+496703,1464 Buckland Ct.,tier,,B,fill,,home not imported before
+496703,1464 Buckland Ct.,utilities.wifi_split_confirmed,,false,fill,,home not imported before
+496703,1464 Buckland Ct.,year_built,,2021,fill,,home not imported before
+496703,1464 Buckland Ct.,max_guests,6,8,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+463600,15226 High Timber Ln,max_guests,8,6,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+418086,15701 E 75th Pl N,waste.valet,,No,fill,,new Notion value
+418086,15701 E 75th Pl N,access.yale_module,Not Connected,Connected & Setup,update,,"still notion_pid, not edited since"
+407261,1600 E Quantico St,waste.valet,,No,fill,,new Notion value
+407261,1600 E Quantico St,facts.tv_specs,Smart TV ROKU Pin: See Guest Access & Credentials,Smart TV ROKU Pin: [removed — credentials are not stored in Resolve],update,,"still notion_pid, not edited since"
+443111,16401 Villa Valeria Way (30D FIRM),max_guests,8,6,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+348274,1700 Whispering Creek Dr,operating_notes,,Casey sometimes prefers to handle minor maintenance repairs himself. Always reach out to him first before scheduling a handyman.,fill,,new Notion value
+348274,1700 Whispering Creek Dr,facts.tv_specs,"ROKU Pin: See Guest Access & Credentials
+ROKU Email: 
+cdunham1119@gmail.com","ROKU Pin: [removed — credentials are not stored in Resolve]
+ROKU Email: 
+cdunham1119@gmail.com",update,,"still notion_pid, not edited since"
+480829,1722 Westchester Dr,operating_notes,"For REPAIR ISSUES AND APPROVAL - only reach out to Delilah: 
+delilah@quintessamarketing.com
+. Do not reach out to Lauren or Leo. Delilah is Operations contact.","For REPAIR ISSUES AND APPROVAL - only reach out to Tereance: tereance.james@quintessamarketing.com and CC Delilah: 
+delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & Delilah are our Operations contact.",update,,"still notion_pid, not edited since"
+393830,18104 Calle Way (12M),bedrooms,4,3,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+349767,18200 Bodegon Rd. (12M),max_guests,5,6,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+349774,18205 Allora Dr. (12M),living_area_sqft,2400,2406,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+460239,1908 E Urbana St,waste.valet,,No,fill,,new Notion value
+460239,1908 E Urbana St,bedrooms,4,5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+340884,19104 Meadows Crossings,operating_notes,,Casey sometimes prefers to handle minor maintenance repairs himself. Always reach out to him first before scheduling a handyman.,fill,,new Notion value
+348614,19117 Meadows Crossing (30D FIRM),operating_notes,,Casey sometimes prefers to handle minor maintenance repairs himself. Always reach out to him first before scheduling a handyman.,fill,,new Notion value
+347789,19120 Meadows Crossing,operating_notes,,Casey sometimes prefers to handle minor maintenance repairs himself. Always reach out to him first before scheduling a handyman.,fill,,new Notion value
+480827,2004 Cedar Ridge Rd.,operating_notes,"For REPAIR ISSUES AND APPROVAL - only reach out to Delilah: 
+delilah@quintessamarketing.com
+. Do not reach out to Lauren or Leo. Delilah is Operations contact.","For REPAIR ISSUES AND APPROVAL - only reach out to Tereance: tereance.james@quintessamarketing.com and CC Delilah: 
+delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & Delilah are our Operations contact.",update,,"still notion_pid, not edited since"
+480827,2004 Cedar Ridge Rd.,bathrooms,3,2.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+480827,2004 Cedar Ridge Rd.,max_guests,7,8,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+409665,2014 E 52nd St,waste.valet,,No,fill,,new Notion value
+446400,2017 W. Flintlock Way,"latitude,longitude","35.3967353, -97.7675029","35.39652350, -97.76433580",conflict,OwnerRez,PID pin more than 0.001 from the Resolve pin
+483306,2208 E. Toledo St.,"latitude,longitude","36.035157, -95.764617","36.03479830, -95.77131550",conflict,OwnerRez,PID pin more than 0.001 from the Resolve pin
+483140,236 N. Starnes St. (30D FIRM),access.key_storage,"[""N/A""]","[""N/A"",""Front Door/Smartlock"",""Backdoor""]",update,,"still notion_pid, not edited since"
+467225,2414 W. Kingsport Ct. S,max_guests,8,6,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+497213,250 Springfield Xing,access.yale_integration_live,,false,fill,,home not imported before
+497213,250 Springfield Xing,compliance.permit_status,,"{""text"":""No permit required for Greenfield, IN"",""as_of"":""2026-11-03T22:19:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
+497213,250 Springfield Xing,compliance.rental_restrictions,,"{""text"":""No STR rental restrictions"",""as_of"":""2026-11-03T22:19:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
+497213,250 Springfield Xing,external_refs.breezeway_url,,https://app.breezeway.io/property/1514895/profile,fill,,home not imported before
+497213,250 Springfield Xing,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/497213/info,fill,,home not imported before
+497213,250 Springfield Xing,furniture_package,,Signature (Gold),fill,,home not imported before
+497213,250 Springfield Xing,instant_book,,false,fill,,home not imported before
+497213,250 Springfield Xing,link:BW Property Link,,https://app.breezeway.io/property/1514895/profile,fill,,new system link
+497213,250 Springfield Xing,link:OR Property Link,,https://app.ownerrez.com/properties/497213/info,fill,,new system link
+497213,250 Springfield Xing,market,,Indy,fill,,home not imported before
+497213,250 Springfield Xing,nickname,,Springfield Sanctuary (250),fill,,home not imported before
+497213,250 Springfield Xing,parking.summary,,"3 Car Garage
+Free Parking on Premises",fill,,home not imported before
+497213,250 Springfield Xing,tier,,B,fill,,home not imported before
+497213,250 Springfield Xing,utilities.wifi_split_confirmed,,false,fill,,home not imported before
+497213,250 Springfield Xing,year_built,,2026,fill,,home not imported before
+497213,250 Springfield Xing,latitude,,39.782429,conflict,OwnerRez,OwnerRez-owned field; never written
+497213,250 Springfield Xing,longitude,,-85.929803,conflict,OwnerRez,OwnerRez-owned field; never written
+497213,250 Springfield Xing,max_guests,,8,conflict,OwnerRez,OwnerRez-owned field; never written
+410055,2522 S Irvington Ave,waste.valet,,No,fill,,new Notion value
+453185,2527 NE 15th St,utilities.wifi_ssid,Arealhomeaway,ARHA,update,,"still notion_pid, not edited since"
+349768,2536 NW 116th (12M),access.emergency_key_access,,Yes,fill,,new Notion value
+349768,2536 NW 116th (12M),access.garage_remote,,Unknown,fill,,new Notion value
+349768,2536 NW 116th (12M),access.yale_module,,Not Applicable (Not Yale),fill,,new Notion value
+349768,2536 NW 116th (12M),facts.grill,,No Grill,fill,,new Notion value
+349768,2536 NW 116th (12M),facts.interior_paint,,Unsure,fill,,new Notion value
+349768,2536 NW 116th (12M),fireplace.present,,false,fill,,new Notion value
+349768,2536 NW 116th (12M),hvac.filter_sizes,,"[""16x30x1"",""14x20x1""]",fill,,new Notion value
+349768,2536 NW 116th (12M),neighborhood,,Unsure,fill,,new Notion value
+349768,2536 NW 116th (12M),sprinklers.status,,Property Does Not Have Sprinkler System,fill,,new Notion value
+349768,2536 NW 116th (12M),systems.breaker_panel_location,,Garage,fill,,new Notion value
+349768,2536 NW 116th (12M),systems.co.installed,,false,fill,,new Notion value
+349768,2536 NW 116th (12M),systems.co.location,,Kitchen,fill,,new Notion value
+349768,2536 NW 116th (12M),systems.fridge_filter_5yr,,false,fill,,new Notion value
+349768,2536 NW 116th (12M),systems.smoke.batteries_changed_on,,2026-09-22,fill,,new Notion value
+349768,2536 NW 116th (12M),systems.smoke.battery_type,,9-Volt (Alkaline),fill,,new Notion value
+349768,2536 NW 116th (12M),systems.smoke.brand,,First Alert,fill,,new Notion value
+349768,2536 NW 116th (12M),systems.smoke.expires_on,,2030-12-31,fill,,new Notion value
+349768,2536 NW 116th (12M),systems.smoke.expires_precision,,year,fill,,new Notion value
+349768,2536 NW 116th (12M),systems.smoke.expires_source_text,,2030,fill,,new Notion value
+349768,2536 NW 116th (12M),systems.smoke.notes,,None,fill,,new Notion value
+349768,2536 NW 116th (12M),systems.smoke.power_type,,Battery Powered,fill,,new Notion value
+349768,2536 NW 116th (12M),systems.supply_box_location,,Na,fill,,new Notion value
+349768,2536 NW 116th (12M),systems.supply_storage,,N/A,fill,,new Notion value
+349768,2536 NW 116th (12M),systems.water_shutoff_outdoor,,At curb,fill,,new Notion value
+349768,2536 NW 116th (12M),facts.workstation,No,Not Mentioned,update,,"still notion_pid, not edited since"
+349768,2536 NW 116th (12M),hvac.filter_notes,Not Mentioned,16x30x1 and 14x20x1,update,,"still notion_pid, not edited since"
+349768,2536 NW 116th (12M),parking.summary,On Property Garage (No more Information),"On Property Garage (
+No more Information
+)",update,,"still notion_pid, not edited since"
+349768,2536 NW 116th (12M),systems.fridge_filter,Not Mentioned,HAF-CIN,update,,"still notion_pid, not edited since"
+349768,2536 NW 116th (12M),living_area_sqft,2100,2095,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+501998,2601 W 65th St S,access.yale_integration_live,,false,fill,,home not imported before
+501998,2601 W 65th St S,external_refs.breezeway_url,,https://app.breezeway.io/property/1564238/profile,fill,,home not imported before
+501998,2601 W 65th St S,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/501998/info,fill,,home not imported before
+501998,2601 W 65th St S,furniture_package,,Signature (Gold),fill,,home not imported before
+501998,2601 W 65th St S,instant_book,,false,fill,,home not imported before
+501998,2601 W 65th St S,link:BW Property Link,,https://app.breezeway.io/property/1564238/profile,fill,,new system link
+501998,2601 W 65th St S,link:OR Property Link,,https://app.ownerrez.com/properties/501998/info,fill,,new system link
+501998,2601 W 65th St S,market,,Tulsa,fill,,home not imported before
+501998,2601 W 65th St S,nickname,,Hillside Hollow (2601),fill,,home not imported before
+501998,2601 W 65th St S,parking.summary,,"2 Car Garage
+Free Parking on Premises",fill,,home not imported before
+501998,2601 W 65th St S,tier,,B,fill,,home not imported before
+501998,2601 W 65th St S,utilities.wifi_split_confirmed,,false,fill,,home not imported before
+501998,2601 W 65th St S,year_built,,2026,fill,,home not imported before
+501998,2601 W 65th St S,latitude,,36.0704603,conflict,OwnerRez,OwnerRez-owned field; never written
+501998,2601 W 65th St S,longitude,,-96.0210016,conflict,OwnerRez,OwnerRez-owned field; never written
+501998,2601 W 65th St S,max_guests,,6,conflict,OwnerRez,OwnerRez-owned field; never written
+406964,2617 W Madison St.,waste.valet,,No,fill,,new Notion value
+474143,2817 Hazel Hollow,hvac.filter_notes,"There are two returns inside the house. However, those are not getting used. There is a big 5 inch filter in the attic that the owner only wants changed.
+Do not install these filters in the house:
+  • 20x30x1 - 1 
+  • 14x14x1 - 1","There are two returns inside the house. However, those are not getting used. There is a big 5 inch filter in the attic that the owner only wants changed.
+Do not install filters in the house.",update,,"still notion_pid, not edited since"
+474143,2817 Hazel Hollow,bathrooms,3,2.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+480826,2901 E. 75th St.,operating_notes,For REPAIR ISSUES AND APPROVAL - only reach out to Delilah: delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Delilah is Operations contact.nown,"For REPAIR ISSUES AND APPROVAL - only reach out to Tereance: tereance.james@quintessamarketing.com and CC Delilah: 
+delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & Delilah are our Operations contact.",update,,"still notion_pid, not edited since"
+351100,3000 Meriweather Rd (30D),living_area_sqft,3000,3095,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+411823,3000 W Charlotte St,waste.valet,,No,fill,,new Notion value
+451638,3012 Piper St,hvac.filter_notes,1: 14x30x1,"1: 14x30x1 & 91-005
+
+There is a 16x25x4 filter inside the unit in the attic. this needs to be changed every 6 months. (it was changed on Sep 2026 by Silver Creek)",update,,"still notion_pid, not edited since"
+451638,3012 Piper St,hvac.filter_sizes,"[""14x30x1""]","[""14x30x1"",""16x25x4""]",update,,"still notion_pid, not edited since"
+347550,3029 NW 181st,operating_notes,,Casey sometimes prefers to handle minor maintenance repairs himself. Always reach out to him first before scheduling a handyman.,fill,,new Notion value
+388604,3040 NW 183rd St. (30D FIRM),systems.fridge_filter,GF-841,GF-841 ( HAF-QIN/EXP),update,,"still notion_pid, not edited since"
+479698,305 W 7th St.,facts.tv_specs,Living Room - 305 W 7th ST - 65,"Living Room - 305 W 7th ST - 65
+Primary bedroom- 65",update,,"still notion_pid, not edited since"
+479698,305 W 7th St.,hvac.filter_notes,"14x14x1 - 2 locations 
+20x25x1","14x14x1 - 2 locations  dining and primary bedroom 
+20x25x1 hallway",update,,"still notion_pid, not edited since"
+479698,305 W 7th St.,systems.fridge_filter,Frigidaire,Frigidaire FPPWFU01,update,,"still notion_pid, not edited since"
+440620,309 Prince John Dr,systems.smoke.batteries_changed_on,2025-12-03,2026-10-15,update,,"still notion_pid, not edited since"
+440216,3117 Scissortail Way (30D FIRM),compliance.permit_status,,"{""text"":""Permit required in OKC. $1,200"",""as_of"":""2026-11-11T18:51:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,new Notion value
+440216,3117 Scissortail Way (30D FIRM),compliance.rental_restrictions,,"{""text"":""No STR rental restrictions"",""as_of"":""2026-11-11T18:51:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,new Notion value
+440216,3117 Scissortail Way (30D FIRM),storm_shelter.location_access,Garage -use provided pin to depress button to slide door open depress button to slide door open,Garage - use provided pin: [removed — credentials are not stored in Resolve] depress button to slide door open,update,,"still notion_pid, not edited since"
+479957,3201 Belmont Circle,bathrooms,2,1.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+480825,33 Center Lane S,access.lock_brand,"Yale at side door, Schlage at front door",Schlage at side door.,update,,"still notion_pid, not edited since"
+480825,33 Center Lane S,access.yale_module,Not Connected,Not Applicable (Not Yale),update,,"still notion_pid, not edited since"
+480825,33 Center Lane S,amenities.access_notes,"Carlton Landing requires all vehicles to be registered through the link found  - here .The passcode: See Guest Access & Credentials will use in the form is 250570. Unregistered cars can be ticketed or towed, so please take care of this ahead of time.
+
+The above information is included in the Breezeway Parking Guidelines.","Carlton Landing requires all vehicles to be registered through the link found  - 
+here 
+. The passcode: [removed — credentials are not stored in Resolve] will use in the form is 
+250570
+. Unregistered cars can be ticketed or towed, so please take care of this ahead of time.
+
+The above information is included in the Breezeway Parking Guidelines.",update,,"still notion_pid, not edited since"
+480825,33 Center Lane S,hoa.notes + external_links,Contact: You can reach Taylor at taylor@carltonlanding.com or 918-707-6138 ext 101.,"Contact: You can reach Taylor at 
+taylor@carltonlanding.com
+ or 918-707-6138 ext 101.",update,,"still notion_pid, not edited since"
+480825,33 Center Lane S,operating_notes,For REPAIR ISSUES AND APPROVAL - only reach out to Delilah: delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Delilah is Operations contact.,"NO PETS ALLOWED
+
+For REPAIR ISSUES AND APPROVAL - only reach out to Tereance: tereance.james@quintessamarketing.com and CC Delilah: 
+delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & Delilah are our Operations contact.",update,,"still notion_pid, not edited since"
+480825,33 Center Lane S,bathrooms,4,3.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+350572,3316 NW 176th,operating_notes,,Casey sometimes prefers to handle minor maintenance repairs himself. Always reach out to him first before scheduling a handyman.,fill,,new Notion value
+502215,3361 E 153rd St S,access.yale_integration_live,,false,fill,,home not imported before
+502215,3361 E 153rd St S,external_refs.breezeway_url,,https://app.breezeway.io/property/1565707/profile,fill,,home not imported before
+502215,3361 E 153rd St S,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/502215/info,fill,,home not imported before
+502215,3361 E 153rd St S,furniture_package,,Signature (Gold),fill,,home not imported before
+502215,3361 E 153rd St S,instant_book,,false,fill,,home not imported before
+502215,3361 E 153rd St S,link:BW Property Link,,https://app.breezeway.io/property/1565707/profile,fill,,new system link
+502215,3361 E 153rd St S,link:OR Property Link,,https://app.ownerrez.com/properties/502215/info,fill,,new system link
+502215,3361 E 153rd St S,market,,Tulsa,fill,,home not imported before
+502215,3361 E 153rd St S,nickname,,The Bixby Bloom (3361),fill,,home not imported before
+502215,3361 E 153rd St S,parking.summary,,"2 Car Garage
+Free Parking on Premises",fill,,home not imported before
+502215,3361 E 153rd St S,tier,,B,fill,,home not imported before
+502215,3361 E 153rd St S,utilities.wifi_split_confirmed,,false,fill,,home not imported before
+502215,3361 E 153rd St S,year_built,,2026,fill,,home not imported before
+502215,3361 E 153rd St S,latitude,,35.942256,conflict,OwnerRez,OwnerRez-owned field; never written
+502215,3361 E 153rd St S,longitude,,-95.939448,conflict,OwnerRez,OwnerRez-owned field; never written
+502215,3361 E 153rd St S,max_guests,,6,conflict,OwnerRez,OwnerRez-owned field; never written
+499899,3400 N Fern Avenue,access.yale_integration_live,,false,fill,,home not imported before
+499899,3400 N Fern Avenue,compliance.permit_status,,"{""text"":""Permit required for Broken Arrow. $600"",""as_of"":""2026-11-06T21:06:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
+499899,3400 N Fern Avenue,compliance.rental_restrictions,,"{""text"":""No STR rental restrictions"",""as_of"":""2026-11-06T21:06:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
+499899,3400 N Fern Avenue,external_refs.breezeway_url,,https://app.breezeway.io/property/1542591/profile,fill,,home not imported before
+499899,3400 N Fern Avenue,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/499899/info,fill,,home not imported before
+499899,3400 N Fern Avenue,furniture_package,,Signature (Gold),fill,,home not imported before
+499899,3400 N Fern Avenue,instant_book,,false,fill,,home not imported before
+499899,3400 N Fern Avenue,link:BW Property Link,,https://app.breezeway.io/property/1542591/profile,fill,,new system link
+499899,3400 N Fern Avenue,link:OR Property Link,,https://app.ownerrez.com/properties/499899/info,fill,,new system link
+499899,3400 N Fern Avenue,market,,Tulsa,fill,,home not imported before
+499899,3400 N Fern Avenue,nickname,,Fernstone House (3400),fill,,home not imported before
+499899,3400 N Fern Avenue,parking.summary,,"2 Car Garage
+Free Parking on Premises",fill,,home not imported before
+499899,3400 N Fern Avenue,tier,,B,fill,,home not imported before
+499899,3400 N Fern Avenue,utilities.wifi_split_confirmed,,false,fill,,home not imported before
+499899,3400 N Fern Avenue,year_built,,2026,fill,,home not imported before
+499899,3400 N Fern Avenue,"latitude,longitude","36.08861821, -95.79896315","36.08006800, -95.79866140",conflict,OwnerRez,PID pin more than 0.001 from the Resolve pin
+462238,341 Thistlewood Dr,waste.valet,,No,fill,,new Notion value
+418090,3712 N 39th St.,waste.valet,,No,fill,,new Notion value
+460190,3715 W 109th St S,amenities.access_notes,"The Pool Code: See Guest Access & Credentials. This neighborhood has no restrictions for who can use the pool, even guest staying less than 30 days can use it.","The Pool Code is: 42909. This neighborhood has no restrictions for who can use the pool, even guest staying less than 30 days can use it.",update,,"still notion_pid, not edited since"
+460190,3715 W 109th St S,facts.tv_specs,"Netflix guest profile code: See Guest Access & Credentials
+HiSense Smart TV's (living room & downstairs game room, no Roku details). 
+Login information: held by the owner — not stored in Resolve the netflix account *Please do not share with guests* email: marc@compasspoints.net Password: held by the owner — not stored in Resolve","Netflix guest profile code: [removed — credentials are not stored in Resolve]
+HiSense Smart TV's (living room & downstairs game room, no Roku details). 
+Login information: [removed — credentials are not stored in Resolve] the netflix account *Please do not share with guests* email: marc@compasspoints.net Password: [removed — credentials are not stored in Resolve]",update,,"still notion_pid, not edited since"
+492465,3915 W 104th St. S.,access.emergency_key_access,,Yes,fill,,new Notion value
+492465,3915 W 104th St. S.,access.garage_remote,,Chamberlain - https://www.amazon.com/dp/B08CNKBTYJ?ref=fed_asin_title&th=1,fill,,new Notion value
+492465,3915 W 104th St. S.,access.key_storage,,"[""Front Door/Smartlock"",""Backdoor"",""Garage Door""]",fill,,new Notion value
+492465,3915 W 104th St. S.,access.lock_brand,,Yale,fill,,new Notion value
+492465,3915 W 104th St. S.,access.yale_module,,Connected & Setup,fill,,new Notion value
+492465,3915 W 104th St. S.,amenities.access_notes,,N/A,fill,,new Notion value
+492465,3915 W 104th St. S.,amenities.list,,"[""Pool"",""Pond"",""Walking Trail""]",fill,,new Notion value
+492465,3915 W 104th St. S.,facts.grill,,No Grill,fill,,new Notion value
+492465,3915 W 104th St. S.,facts.interior_paint,,"1. Location & quantity -laundry room 11 cans of exterior paint  2- 5 gallons of interior wall
+Paint. Sherwin Williams 
+2. Brand - sherwin williams 
+3. Color name & code -NA 
+4. Sheen - satin 
+5. Style/location of paint - exterior",fill,,new Notion value
+492465,3915 W 104th St. S.,facts.tv_locations,,"[""Living Room"",""Primary Bedroom""]",fill,,new Notion value
+492465,3915 W 104th St. S.,facts.tv_specs,,"Living room - 3915 W 104th St - 65, Primary bedroom - 3915 W 104th St - 55",fill,,new Notion value
+492465,3915 W 104th St. S.,facts.workstation,,No,fill,,new Notion value
+492465,3915 W 104th St. S.,fireplace.fuel_type,,N/A,fill,,new Notion value
+492465,3915 W 104th St. S.,fireplace.gas_switch,,N/A,fill,,new Notion value
+492465,3915 W 104th St. S.,fireplace.gas_switch_location,,N/A,fill,,new Notion value
+492465,3915 W 104th St. S.,fireplace.instructions,,N/A,fill,,new Notion value
+492465,3915 W 104th St. S.,fireplace.model,,N/A,fill,,new Notion value
+492465,3915 W 104th St. S.,fireplace.present,,false,fill,,new Notion value
+492465,3915 W 104th St. S.,grounds.mowing_cadence,,ARHA Responsible,fill,,new Notion value
+492465,3915 W 104th St. S.,grounds.mowing_days,,"[""Tuesday""]",fill,,new Notion value
+492465,3915 W 104th St. S.,hoa.notes + external_links,,"HOA Contact: Green Country HOA Email: greencountryhoa@gmail.com
+
+HOA approval for exterior changes, keep RVs/boats/trailers in the garage, wood privacy fences only (6 ft, not past front line), no clotheslines, and keep the yard maintained.",fill,,new Notion value
+492465,3915 W 104th St. S.,hoa.present,,true,fill,,new Notion value
+492465,3915 W 104th St. S.,hvac.filter_notes,,14-30-1,fill,,new Notion value
+492465,3915 W 104th St. S.,link:Furniture Pick List Link,,https://arealhomeaway-my.sharepoint.com/:x:/p/info/IQALtIApLQNnR4gXp9IrdIkOAVdHJqoRLaAXzRG9_DW4LtI?e=AIgFBr,fill,,new legacy_onedrive link
+492465,3915 W 104th St. S.,link:Garage Remote Brand & Model,,https://www.amazon.com/dp/B08CNKBTYJ?ref=fed_asin_title&th=1,fill,,new reference link
+492465,3915 W 104th St. S.,link:Security Camera Feed,,https://account.ring.com/account/dashboard?l=0441de51-a23e-4406-ba4c-9f95ca6c8eaa,fill,,new camera_portal link
+492465,3915 W 104th St. S.,listing_alias,,Maple Manor | Jenks Family Retreat,fill,,new Notion value
+492465,3915 W 104th St. S.,neighborhood,,Southern Reserve,fill,,new Notion value
+492465,3915 W 104th St. S.,operating_notes,,"**Owner does not want to see any diagnostic fees when possible. Owner’s referred handyman vendor - Eleven Eleven lab
+
+HOA needs to be contact on the summer for access to the community pool. No information was given upon request in onboarding.
+
+A cost segregation study will need to be scheduled. The company is planning to call Kati Hand for this. An owner requirement for the active owner program for tax purposes.",fill,,new Notion value
+492465,3915 W 104th St. S.,parking.cluster_mailbox,,false,fill,,new Notion value
+492465,3915 W 104th St. S.,parking.mailbox_location,,N/A,fill,,new Notion value
+492465,3915 W 104th St. S.,parking.mailbox_number,,N/A,fill,,new Notion value
+492465,3915 W 104th St. S.,pool_spa.present,,None,fill,,new Notion value
+492465,3915 W 104th St. S.,security.alarm,,No,fill,,new Notion value
+492465,3915 W 104th St. S.,security.battery_type,,"[""Hardwired - No Battery""]",fill,,new Notion value
+492465,3915 W 104th St. S.,security.devices,,"[""Front Door"",""Garage""]",fill,,new Notion value
+492465,3915 W 104th St. S.,security.monitoring_expires_on,,2027-11-08,fill,,new Notion value
+492465,3915 W 104th St. S.,security.monitoring_plan,,"[""Active""]",fill,,new Notion value
+492465,3915 W 104th St. S.,sprinklers.brand,,N/A,fill,,new Notion value
+492465,3915 W 104th St. S.,sprinklers.controller_location,,N/A,fill,,new Notion value
+492465,3915 W 104th St. S.,sprinklers.set_for_season,,"{""value"":""N/A"",""as_of"":""2026-11-03T22:19:00.000Z"",""source"":""notion_pid""}",fill,,new Notion value
+492465,3915 W 104th St. S.,sprinklers.status,,Property Does Not Have Sprinkler System,fill,,new Notion value
+492465,3915 W 104th St. S.,storm_shelter.location_access,,N/A,fill,,new Notion value
+492465,3915 W 104th St. S.,systems.breaker_panel_location,,Garage,fill,,new Notion value
+492465,3915 W 104th St. S.,systems.co.installed,,true,fill,,new Notion value
+492465,3915 W 104th St. S.,systems.co.location,,Dining room,fill,,new Notion value
+492465,3915 W 104th St. S.,systems.fridge_filter,,Samsung HAF-QIN/EXP DA97-17376B,fill,,new Notion value
+492465,3915 W 104th St. S.,systems.fridge_filter_5yr,,false,fill,,new Notion value
+492465,3915 W 104th St. S.,systems.smoke.batteries_changed_on,,2026-10-04,fill,,new Notion value
+492465,3915 W 104th St. S.,systems.smoke.battery_type,,9-Volt (Alkaline),fill,,new Notion value
+492465,3915 W 104th St. S.,systems.smoke.brand,,siterlink,fill,,new Notion value
+492465,3915 W 104th St. S.,systems.smoke.notes,,"7 brand new smoke detectors were ordered on October 16, 2026 and those were installed,  However, after reviewing the photos the handyman sent upon completing the work, we noticed that the manufacturing date is 2020. According to the handyman, they should have approximately four years of useful life remaining.",fill,,new Notion value
+492465,3915 W 104th St. S.,systems.smoke.power_type,,Hardwired,fill,,new Notion value
+492465,3915 W 104th St. S.,systems.supply_box_location,,Located in the top shelf of primary bedroom closet,fill,,new Notion value
+492465,3915 W 104th St. S.,systems.supply_storage,,Closet,fill,,new Notion value
+492465,3915 W 104th St. S.,systems.water_shutoff_indoor,,N/Ain water heater closet,fill,,new Notion value
+492465,3915 W 104th St. S.,systems.water_shutoff_outdoor,,Water heater closet in garage,fill,,new Notion value
+492465,3915 W 104th St. S.,utilities.router_location,,Living room,fill,,new Notion value
+492465,3915 W 104th St. S.,utilities.wifi_ssid,,ARHA,fill,,new Notion value
+492465,3915 W 104th St. S.,warranty.builder_present,,false,fill,,new Notion value
+492465,3915 W 104th St. S.,warranty.claim_process + external_links,,N/A,fill,,new Notion value
+492465,3915 W 104th St. S.,warranty.furniture_expires_on,,2029-10-28,fill,,new Notion value
+492465,3915 W 104th St. S.,waste.cart_count,,2,fill,,new Notion value
+492465,3915 W 104th St. S.,waste.cart_notes,,2,fill,,new Notion value
+492465,3915 W 104th St. S.,waste.holiday_notes,,Thursday,fill,,new Notion value
+492465,3915 W 104th St. S.,waste.recycling,,true,fill,,new Notion value
+492465,3915 W 104th St. S.,waste.recycling_days,,Wednesday,fill,,new Notion value
+492465,3915 W 104th St. S.,waste.strict_rules,,"Trash cans out of street view, out ≤12 hrs before pickup and in ≤12 hrs after",fill,,new Notion value
+492465,3915 W 104th St. S.,waste.trash_days,,"[""Wednesday""]",fill,,new Notion value
+492465,3915 W 104th St. S.,waste.valet,,No,fill,,new Notion value
+492465,3915 W 104th St. S.,instant_book,false,true,update,,"still notion_pid, not edited since"
+484034,401 E. 10th St.,access.emergency_key_access,,Yes,fill,,new Notion value
+484034,401 E. 10th St.,access.emergency_key_access,,Yes,fill,,new Notion value
+484034,401 E. 10th St.,access.garage_remote,,Genie & Chamberlain,fill,,new Notion value
+484034,401 E. 10th St.,access.garage_remote,,Genie & Chamberlain,fill,,new Notion value
+484034,401 E. 10th St.,access.key_storage,,"[""Backdoor"",""Front Door/Smartlock"",""Garage Door""]",fill,,new Notion value
+484034,401 E. 10th St.,access.key_storage,,"[""Backdoor"",""Front Door/Smartlock"",""Garage Door""]",fill,,new Notion value
+484034,401 E. 10th St.,access.yale_module,,Connected & Setup,fill,,new Notion value
+484034,401 E. 10th St.,access.yale_module,,Connected & Setup,fill,,new Notion value
+484034,401 E. 10th St.,amenities.access_notes,,N/A,fill,,new Notion value
+484034,401 E. 10th St.,amenities.access_notes,,N/A,fill,,new Notion value
+484034,401 E. 10th St.,amenities.list,,"[""None""]",fill,,new Notion value
+484034,401 E. 10th St.,amenities.list,,"[""None""]",fill,,new Notion value
+484034,401 E. 10th St.,facts.grill,,No Grill,fill,,new Notion value
+484034,401 E. 10th St.,facts.grill,,No Grill,fill,,new Notion value
+484034,401 E. 10th St.,facts.interior_paint,,"There are some gallons of paint at the house, but no specific colors listed.",fill,,new Notion value
+484034,401 E. 10th St.,facts.interior_paint,,"There are some gallons of paint at the house, but no specific colors listed.",fill,,new Notion value
+484034,401 E. 10th St.,facts.tv_locations,,"[""Living Room"",""Bonus Room"",""Primary Bedroom""]",fill,,new Notion value
+484034,401 E. 10th St.,facts.tv_locations,,"[""Living Room"",""Bonus Room"",""Primary Bedroom""]",fill,,new Notion value
+484034,401 E. 10th St.,facts.tv_specs,,"Bonus Room - 401 E 10th St - 50″ Insignia, 4K UHD — model NS-50F301NA24
+Living Room - 401 E 10th St - 55″ Insignia, 4K UHD — model NS-55F301NA22
+Primary bedroom - 401 E 10th St -  43″ TCL, 1080p Full HD — model 43S310R",fill,,new Notion value
+484034,401 E. 10th St.,facts.tv_specs,,"Bonus Room - 401 E 10th St - 50″ Insignia, 4K UHD — model NS-50F301NA24
+Living Room - 401 E 10th St - 55″ Insignia, 4K UHD — model NS-55F301NA22
+Primary bedroom - 401 E 10th St -  43″ TCL, 1080p Full HD — model 43S310R",fill,,new Notion value
+484034,401 E. 10th St.,facts.workstation,,No,fill,,new Notion value
+484034,401 E. 10th St.,facts.workstation,,No,fill,,new Notion value
+484034,401 E. 10th St.,fireplace.fuel_type,,N/A,fill,,new Notion value
+484034,401 E. 10th St.,fireplace.fuel_type,,N/A,fill,,new Notion value
+484034,401 E. 10th St.,fireplace.model,,Unknown. Not currently accessible for guests until we confirm operating instructions.,fill,,new Notion value
+484034,401 E. 10th St.,fireplace.model,,Unknown. Not currently accessible for guests until we confirm operating instructions.,fill,,new Notion value
+484034,401 E. 10th St.,fireplace.present,,true,fill,,new Notion value
+484034,401 E. 10th St.,fireplace.present,,true,fill,,new Notion value
+484034,401 E. 10th St.,grounds.mowing_cadence,,Owner Responsible,fill,,new Notion value
+484034,401 E. 10th St.,grounds.mowing_cadence,,Owner Responsible,fill,,new Notion value
+484034,401 E. 10th St.,grounds.mowing_days,,"[""Wednesday""]",fill,,new Notion value
+484034,401 E. 10th St.,hoa.notes + external_links,,No HOA,fill,,new Notion value
+484034,401 E. 10th St.,hoa.notes + external_links,,No HOA,fill,,new Notion value
+484034,401 E. 10th St.,hoa.present,,false,fill,,new Notion value
+484034,401 E. 10th St.,hoa.present,,false,fill,,new Notion value
+484034,401 E. 10th St.,hvac.filter_notes,,14x24x1 x2,fill,,new Notion value
+484034,401 E. 10th St.,hvac.filter_notes,,14x24x1 x2,fill,,new Notion value
+484034,401 E. 10th St.,hvac.filter_sizes,,"[""14x24x1""]",fill,,new Notion value
+484034,401 E. 10th St.,hvac.filter_sizes,,"[""14x24x1""]",fill,,new Notion value
+484034,401 E. 10th St.,legacy_handoff_date,,2026-10-29,fill,,new Notion value
+484034,401 E. 10th St.,legacy_handoff_date,,2026-10-29,fill,,new Notion value
+484034,401 E. 10th St.,link:Pool & Hot Tub Technician Form,,https://arha.fillout.com/pool?id=4144658d5f4f80be8fd8f052375bd74b,fill,,new fillout_form link
+484034,401 E. 10th St.,listing_alias,,Spacious Edmond Home | Pool & Game Room,fill,,new Notion value
+484034,401 E. 10th St.,listing_alias,,Spacious Edmond Home | Pool & Game Room,fill,,new Notion value
+484034,401 E. 10th St.,neighborhood,,This home is not located within a specific neighborhood. The home is located closest to the cross streets of E 9th St & S Rankin St in Edmond,fill,,new Notion value
+484034,401 E. 10th St.,neighborhood,,This home is not located within a specific neighborhood. The home is located closest to the cross streets of E 9th St & S Rankin St in Edmond,fill,,new Notion value
+484034,401 E. 10th St.,parking.cluster_mailbox,,false,fill,,new Notion value
+484034,401 E. 10th St.,parking.cluster_mailbox,,false,fill,,new Notion value
+484034,401 E. 10th St.,parking.mailbox_location,,N/A,fill,,new Notion value
+484034,401 E. 10th St.,parking.mailbox_location,,N/A,fill,,new Notion value
+484034,401 E. 10th St.,parking.mailbox_number,,N/A,fill,,new Notion value
+484034,401 E. 10th St.,parking.mailbox_number,,N/A,fill,,new Notion value
+484034,401 E. 10th St.,pool_spa.control_panel_location,,N/A - No hot tub,fill,,new Notion value
+484034,401 E. 10th St.,pool_spa.control_panel_location,,N/A - No hot tub,fill,,new Notion value
+484034,401 E. 10th St.,pool_spa.heated,,false,fill,,new Notion value
+484034,401 E. 10th St.,pool_spa.heated,,false,fill,,new Notion value
+484034,401 E. 10th St.,pool_spa.heater,,N/A - No pool heater,fill,,new Notion value
+484034,401 E. 10th St.,pool_spa.heater,,N/A - No pool heater,fill,,new Notion value
+484034,401 E. 10th St.,pool_spa.season,,Pool will be opened around may and closed in October,fill,,new Notion value
+484034,401 E. 10th St.,pool_spa.season,,Pool will be opened around may and closed in October,fill,,new Notion value
+484034,401 E. 10th St.,pool_spa.service_schedule,,Pool serviced every Friday no swimming for 2 hours,fill,,new Notion value
+484034,401 E. 10th St.,pool_spa.service_schedule,,Pool serviced every Friday no swimming for 2 hours,fill,,new Notion value
+484034,401 E. 10th St.,security.alarm,,No,fill,,new Notion value
+484034,401 E. 10th St.,security.alarm,,No,fill,,new Notion value
+484034,401 E. 10th St.,security.battery_type,,"[""None""]",fill,,new Notion value
+484034,401 E. 10th St.,security.battery_type,,"[""None""]",fill,,new Notion value
+484034,401 E. 10th St.,security.devices,,"[""None"",""Backyard""]",fill,,new Notion value
+484034,401 E. 10th St.,security.devices,,"[""None"",""Backyard""]",fill,,new Notion value
+484034,401 E. 10th St.,security.monitoring_plan,,"[""None""]",fill,,new Notion value
+484034,401 E. 10th St.,security.monitoring_plan,,"[""None""]",fill,,new Notion value
+484034,401 E. 10th St.,sprinklers.brand,,N/A,fill,,new Notion value
+484034,401 E. 10th St.,sprinklers.brand,,N/A,fill,,new Notion value
+484034,401 E. 10th St.,sprinklers.controller_location,,N/A,fill,,new Notion value
+484034,401 E. 10th St.,sprinklers.controller_location,,N/A,fill,,new Notion value
+484034,401 E. 10th St.,sprinklers.set_for_season,,"{""value"":""N/A"",""as_of"":""2026-11-11T03:25:00.000Z"",""source"":""notion_pid""}",fill,,new Notion value
+484034,401 E. 10th St.,sprinklers.set_for_season,,"{""value"":""N/A"",""as_of"":""2026-11-10T19:18:00.000Z"",""source"":""notion_pid""}",fill,,new Notion value
+484034,401 E. 10th St.,sprinklers.status,,Property Does Not Have Sprinkler System,fill,,new Notion value
+484034,401 E. 10th St.,sprinklers.status,,Property Does Not Have Sprinkler System,fill,,new Notion value
+484034,401 E. 10th St.,storm_shelter.location_access,,N/A,fill,,new Notion value
+484034,401 E. 10th St.,storm_shelter.location_access,,N/A,fill,,new Notion value
+484034,401 E. 10th St.,systems.breaker_panel_location,,Laundry room,fill,,new Notion value
+484034,401 E. 10th St.,systems.breaker_panel_location,,Laundry room,fill,,new Notion value
+484034,401 E. 10th St.,systems.co.installed,,true,fill,,new Notion value
+484034,401 E. 10th St.,systems.co.installed,,true,fill,,new Notion value
+484034,401 E. 10th St.,systems.co.location,,Kitchen,fill,,new Notion value
+484034,401 E. 10th St.,systems.co.location,,Kitchen,fill,,new Notion value
+484034,401 E. 10th St.,systems.fridge_filter,,HAF/CIN,fill,,new Notion value
+484034,401 E. 10th St.,systems.fridge_filter,,HAF/CIN,fill,,new Notion value
+484034,401 E. 10th St.,systems.fridge_filter_5yr,,false,fill,,new Notion value
+484034,401 E. 10th St.,systems.fridge_filter_5yr,,false,fill,,new Notion value
+484034,401 E. 10th St.,systems.smoke.batteries_changed_on,,2022-01-01,fill,,new Notion value
+484034,401 E. 10th St.,systems.smoke.batteries_changed_on,,2022-01-01,fill,,new Notion value
+484034,401 E. 10th St.,systems.smoke.battery_type,,10-Year Sealed Lithium,fill,,new Notion value
+484034,401 E. 10th St.,systems.smoke.battery_type,,10-Year Sealed Lithium,fill,,new Notion value
+484034,401 E. 10th St.,systems.smoke.brand,,First Alert,fill,,new Notion value
+484034,401 E. 10th St.,systems.smoke.brand,,First Alert,fill,,new Notion value
+484034,401 E. 10th St.,systems.smoke.expires_on,,2032-12-31,fill,,new Notion value
+484034,401 E. 10th St.,systems.smoke.expires_on,,2032-12-31,fill,,new Notion value
+484034,401 E. 10th St.,systems.smoke.expires_precision,,year,fill,,new Notion value
+484034,401 E. 10th St.,systems.smoke.expires_precision,,year,fill,,new Notion value
+484034,401 E. 10th St.,systems.smoke.expires_source_text,,2032,fill,,new Notion value
+484034,401 E. 10th St.,systems.smoke.expires_source_text,,2032,fill,,new Notion value
+484034,401 E. 10th St.,systems.smoke.notes,,N/A,fill,,new Notion value
+484034,401 E. 10th St.,systems.smoke.notes,,N/A,fill,,new Notion value
+484034,401 E. 10th St.,systems.smoke.power_type,,Battery Powered,fill,,new Notion value
+484034,401 E. 10th St.,systems.smoke.power_type,,Battery Powered,fill,,new Notion value
+484034,401 E. 10th St.,systems.supply_box_location,,None,fill,,new Notion value
+484034,401 E. 10th St.,systems.supply_box_location,,None,fill,,new Notion value
+484034,401 E. 10th St.,systems.supply_storage,,Closet,fill,,new Notion value
+484034,401 E. 10th St.,systems.supply_storage,,Closet,fill,,new Notion value
+484034,401 E. 10th St.,systems.water_shutoff_indoor,,N/A,fill,,new Notion value
+484034,401 E. 10th St.,systems.water_shutoff_indoor,,N/A,fill,,new Notion value
+484034,401 E. 10th St.,systems.water_shutoff_outdoor,,In the middle of the driveway,fill,,new Notion value
+484034,401 E. 10th St.,systems.water_shutoff_outdoor,,In the middle of the driveway,fill,,new Notion value
+484034,401 E. 10th St.,tier,,B,fill,,new Notion value
+484034,401 E. 10th St.,tier,,B,fill,,new Notion value
+484034,401 E. 10th St.,utilities.router_location,,Living room,fill,,new Notion value
+484034,401 E. 10th St.,utilities.router_location,,Living room,fill,,new Notion value
+484034,401 E. 10th St.,warranty.builder_present,,false,fill,,new Notion value
+484034,401 E. 10th St.,warranty.builder_present,,false,fill,,new Notion value
+484034,401 E. 10th St.,waste.cart_count,,2,fill,,new Notion value
+484034,401 E. 10th St.,waste.cart_count,,2,fill,,new Notion value
+484034,401 E. 10th St.,waste.cart_notes,,2,fill,,new Notion value
+484034,401 E. 10th St.,waste.cart_notes,,2,fill,,new Notion value
+484034,401 E. 10th St.,waste.holiday_notes,,"If pickup falls on a holiday, it’ll be done the next day (Wednesday).",fill,,new Notion value
+484034,401 E. 10th St.,waste.holiday_notes,,"If pickup falls on a holiday, it’ll be done the next day (Wednesday).",fill,,new Notion value
+484034,401 E. 10th St.,waste.recycling,,true,fill,,new Notion value
+484034,401 E. 10th St.,waste.recycling,,true,fill,,new Notion value
+484034,401 E. 10th St.,waste.recycling_days,,Every other Tuesday,fill,,new Notion value
+484034,401 E. 10th St.,waste.recycling_days,,Every other Tuesday,fill,,new Notion value
+484034,401 E. 10th St.,waste.trash_days,,"[""Tuesday""]",fill,,new Notion value
+484034,401 E. 10th St.,waste.trash_days,,"[""Tuesday""]",fill,,new Notion value
+484034,401 E. 10th St.,waste.valet,,Yes,fill,,new Notion value
+484034,401 E. 10th St.,waste.valet,,Yes,fill,,new Notion value
+484034,401 E. 10th St.,year_built,,1968,fill,,new Notion value
+484034,401 E. 10th St.,year_built,,1968,fill,,new Notion value
+484034,401 E. 10th St.,access.lock_brand,Schlage,Yale,update,,"still notion_pid, not edited since"
+484034,401 E. 10th St.,access.lock_brand,Schlage,Yale,update,,"still notion_pid, not edited since"
+484034,401 E. 10th St.,instant_book,false,true,update,,"still notion_pid, not edited since"
+484034,401 E. 10th St.,instant_book,false,true,update,,"still notion_pid, not edited since"
+484034,401 E. 10th St.,operating_notes,"FIRST vendor for all maintenance and repairs: Untitled . Contact them first on all work orders before scheduling any other vendor. Only use an alternate only if Ruben is unavailable or unresponsive.
+
+For REPAIR ISSUES AND APPROVAL - only reach out to Delilah: delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Delilah is Operations contact.","For REPAIR ISSUES AND APPROVAL - only reach out to Tereance: tereance.james@quintessamarketing.com and CC Delilah: 
+delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & Delilah are our Operations contact.
+
+Not needed at hand off (Mingees to handle later):
+  • Confirm instructions for operating the fireplace in the basement 
+• Full siding repair (multiple places)
+• Haul away fence panels in backyard
+• Backyard landscaping and cleanup
+• Remove stumps and trim all trees/bushes
+• Purchase/install new dining room rug
+• Garage door seal
+• Water damage on garage wall (find and repair the leak source)
+• Door or curtain for pantry
+• Gutters",update,,"still notion_pid, not edited since"
+484034,401 E. 10th St.,operating_notes,"FIRST vendor for all maintenance and repairs: Untitled . Contact them first on all work orders before scheduling any other vendor. Only use an alternate only if Ruben is unavailable or unresponsive.
+
+For REPAIR ISSUES AND APPROVAL - only reach out to Delilah: delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Delilah is Operations contact.","For REPAIR ISSUES AND APPROVAL - only reach out to Tereance: tereance.james@quintessamarketing.com and CC Delilah: 
+delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & Delilah are our Operations contact.
+
+Not needed at hand off (Mingees to handle later):
+  • Confirm instructions for operating the fireplace in the basement 
+• Full siding repair (multiple places)
+• Haul away fence panels in backyard
+• Backyard landscaping and cleanup
+• Remove stumps and trim all trees/bushes
+• Purchase/install new dining room rug
+• Garage door seal
+• Water damage on garage wall (find and repair the leak source)
+• Door or curtain for pantry
+• Gutters",update,,"still notion_pid, not edited since"
+484034,401 E. 10th St.,utilities.wifi_ssid,HFE 401,"ARHA 2.4, ARHA 5",update,,"still notion_pid, not edited since"
+484034,401 E. 10th St.,utilities.wifi_ssid,HFE 401,"ARHA 2.4, ARHA 5",update,,"still notion_pid, not edited since"
+484034,401 E. 10th St.,bathrooms,3,2.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+484034,401 E. 10th St.,bathrooms,3,2.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+453794,409 S. 85th St.,waste.valet,,No,fill,,new Notion value
+453794,409 S. 85th St.,"latitude,longitude","36.048113, -95.682091","36.05625670, -95.68303470",conflict,OwnerRez,PID pin more than 0.001 from the Resolve pin
+480828,417 Dauphin Ave.,operating_notes,"For REPAIR ISSUES AND APPROVAL - only reach out to Delilah: 
+delilah@quintessamarketing.com
+. Do not reach out to Lauren or Leo. Delilah is Operations contact.","For REPAIR ISSUES AND APPROVAL - only reach out to Tereance: tereance.james@quintessamarketing.com and CC Delilah: 
+delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & Delilah are our Operations contact.",update,,"still notion_pid, not edited since"
+440423,4308 NW 158th (30D Firm),amenities.access_notes,"Pool Access Code: See Guest Access & Credentials 
+ Pool rules and hours can be found on site on the pool building wall.","Pool Access Code: [removed — credentials are not stored in Resolve] 
+ Pool rules and hours can be found on site on the pool building wall.",update,,"still notion_pid, not edited since"
+410574,4308 S 177th Pl E,waste.valet,,No,fill,,new Notion value
+410574,4308 S 177th Pl E,"latitude,longitude","36.0989138, -95.7750881","36.100718, -95.7792424",conflict,OwnerRez,PID pin more than 0.001 from the Resolve pin
+347786,4317 NW 19th,operating_notes,,Casey sometimes prefers to handle minor maintenance repairs himself. Always reach out to him first before scheduling a handyman.,fill,,new Notion value
+418721,453 Blue Crow Lane,systems.smoke.batteries_changed_on,2025-06-22,2026-09-22,update,,"still notion_pid, not edited since"
+411249,4607 S. Lakewood Ave,waste.valet,,No,fill,,new Notion value
+378665,5020 S.168th E Ave (30D FIRM),waste.valet,,No,fill,,new Notion value
+378665,5020 S.168th E Ave (30D FIRM),hoa.notes + external_links,"https://trinitycreekhoa.com/contact-us/
+Ph: 918-901-9311
+Address: 9246 S Sheridan Rd, Suite 209, Tulsa, OK 74133 - call when you get there and they can bring down the pool card
+
+Portal to make payment for new pool card: https://resident.gozego.com/payments/summary
+Login: See Guest Access & Credentials
+Matrix3161!","https://trinitycreekhoa.com/contact-us/
+Ph: 918-901-9311
+Address: 9246 S Sheridan Rd, Suite 209, Tulsa, OK 74133 - call when you get there and they can bring down the pool card
+
+Portal to make payment for new pool card: https://resident.gozego.com/payments/summary
+Login: [removed — credentials are not stored in Resolve]
+Matrix3161!",update,,"still notion_pid, not edited since"
+432974,5034 N 35th St,waste.valet,,No,fill,,new Notion value
+452367,504 S. 47th St,waste.valet,,No,fill,,new Notion value
+455967,5047 Skipping Stone Dr,waste.valet,,No,fill,,new Notion value
+441628,509 Houndstooth Dr (30D Firm),amenities.access_notes,Not Mentioned,"ARHA can fill out the pool access card form (attached in comments) then send it Christina for approval and next steps to receive the card.
+Contact: Christina Villarreal
+CVillarreal@insightam.com
+ (972) 993-6746",update,,"still notion_pid, not edited since"
+480823,5217 NW 109th St. (30D Firm),operating_notes,"For REPAIR ISSUES AND APPROVAL - only reach out to Delilah: 
+delilah@quintessamarketing.com
+. Do not reach out to Lauren or Leo. Delilah is Operations contact.","For REPAIR ISSUES AND APPROVAL - only reach out to Tereance: tereance.james@quintessamarketing.com and CC Delilah: 
+delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & Delilah are our Operations contact.",update,,"still notion_pid, not edited since"
+470695,5253 Tracey Jo Rd,max_guests,8,6,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+412758,5512 Hidden Trail Ln.,bathrooms,2,22,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+487893,5923 Hollyhock Lane,bathrooms,3,2.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+450120,6017 S. 13th St (30D FIRM),waste.valet,,No,fill,,new Notion value
+498633,624 Daniel Court,access.yale_integration_live,,false,fill,,home not imported before
+498633,624 Daniel Court,compliance.permit_status,,"{""text"":""No permit required for Westfield, IN"",""as_of"":""2026-11-03T22:19:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
+498633,624 Daniel Court,compliance.rental_restrictions,,"{""text"":""No STR rental restrictions"",""as_of"":""2026-11-03T22:19:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
+498633,624 Daniel Court,external_refs.breezeway_url,,https://app.breezeway.io/property/1529710/profile,fill,,home not imported before
+498633,624 Daniel Court,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/498633/info,fill,,home not imported before
+498633,624 Daniel Court,furniture_package,,Signature (Gold),fill,,home not imported before
+498633,624 Daniel Court,instant_book,,false,fill,,home not imported before
+498633,624 Daniel Court,link:BW Property Link,,https://app.breezeway.io/property/1529710/profile,fill,,new system link
+498633,624 Daniel Court,link:OR Property Link,,https://app.ownerrez.com/properties/498633/info,fill,,new system link
+498633,624 Daniel Court,market,,Indy,fill,,home not imported before
+498633,624 Daniel Court,nickname,,Dovetail Court (624),fill,,home not imported before
+498633,624 Daniel Court,parking.summary,,"2 Car Garage
+Free Parking on Premises",fill,,home not imported before
+498633,624 Daniel Court,tier,,B,fill,,home not imported before
+498633,624 Daniel Court,utilities.wifi_split_confirmed,,false,fill,,home not imported before
+498633,624 Daniel Court,year_built,,2002,fill,,home not imported before
+429148,628 Joy Ct,systems.smoke.batteries_changed_on,2025-10-29,2026-09-07,update,,"still notion_pid, not edited since"
+501851,6302 Meadow Path Way,access.yale_integration_live,,false,fill,,home not imported before
+501851,6302 Meadow Path Way,external_refs.breezeway_url,,https://app.breezeway.io/property/1563499/profile,fill,,home not imported before
+501851,6302 Meadow Path Way,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/501851/info,fill,,home not imported before
+501851,6302 Meadow Path Way,furniture_package,,Signature (Gold),fill,,home not imported before
+501851,6302 Meadow Path Way,instant_book,,false,fill,,home not imported before
+501851,6302 Meadow Path Way,link:BW Property Link,,https://app.breezeway.io/property/1563499/profile,fill,,new system link
+501851,6302 Meadow Path Way,link:OR Property Link,,https://app.ownerrez.com/properties/501851/info,fill,,new system link
+501851,6302 Meadow Path Way,market,,Indy,fill,,home not imported before
+501851,6302 Meadow Path Way,nickname,,Meadow Path Hideaway (6302),fill,,home not imported before
+501851,6302 Meadow Path Way,parking.summary,,"2 Car Garage 
+Free Parking on Premises",fill,,home not imported before
+501851,6302 Meadow Path Way,tier,,B,fill,,home not imported before
+501851,6302 Meadow Path Way,utilities.wifi_split_confirmed,,false,fill,,home not imported before
+501851,6302 Meadow Path Way,year_built,,2024,fill,,home not imported before
+501851,6302 Meadow Path Way,latitude,,39.677582,conflict,OwnerRez,OwnerRez-owned field; never written
+501851,6302 Meadow Path Way,longitude,,-85.989508,conflict,OwnerRez,OwnerRez-owned field; never written
+501851,6302 Meadow Path Way,max_guests,,6,conflict,OwnerRez,OwnerRez-owned field; never written
+480831,64 Turtle Loop,operating_notes,"NO PETS ALLOWED
+
+For REPAIR ISSUES AND APPROVAL - only reach out to Delilah: delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Delilah is Operations contact.","NO PETS ALLOWED
+
+For REPAIR ISSUES AND APPROVAL - only reach out to Tereance: tereance.james@quintessamarketing.com and CC Delilah: 
+delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & Delilah are our Operations contact.",update,,"still notion_pid, not edited since"
+480831,64 Turtle Loop,warranty.claim_process + external_links,"Builder Warranty is fluid. Contact Delilah delilah@quintessamarketing.com for any questions
+
+240-463-3236 Kerney Homes - mike@kerneyhomes.com","Builder Warranty is fluid. Contact Delilah 
+delilah@quintessamarketing.com
+ for any questions
+
+240-463-3236 Kerney Homes - mike@kerneyhomes.com",update,,"still notion_pid, not edited since"
+480831,64 Turtle Loop,bathrooms,7,5.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+429480,6629 S 22nd Ct E,waste.valet,,No,fill,,new Notion value
+429480,6629 S 22nd Ct E,amenities.access_notes,There is a community pool (only available for guests 30+ days). A waiver is required to be completed per tenant in order to gain access. It is saved to the property’s one drive folder. It and the rules are also attached to this field as a comment.,There is a community pool (only available for guests 30+ days). A waiver is required to be completed per tenant in order to gain access. It is saved to the property’s one drive folder. It and the rules are also attached to this field as a comment. The owner has to complete the waiver.,update,,"still notion_pid, not edited since"
+429480,6629 S 22nd Ct E,amenities.list,"[""Not Mentioned""]","[""Pool""]",update,,"still notion_pid, not edited since"
+459111,6847 Cardiff Dr,waste.valet,,No,fill,,new Notion value
+403353,7006 E 154th St S,waste.valet,,No,fill,,new Notion value
+376992,721 Dusty Trail,max_guests,7,8,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+481007,730 E 38th St. N.,facts.interior_paint,"1. Location & quantity - garage several
+2. Brand - sherwin Williams 
+3. Color name & code - 7004 , JH70-30
+4. Sheen - flat
+5. Style/location of paint -","Garage
+1 exterior of 5 galon super paint  evening blue
+1 exterior 5 galon super paint tricorn-black
+2 galon interior emerald ligh gray
+2 galon interior snowbound",update,,"still notion_pid, not edited since"
+481007,730 E 38th St. N.,facts.tv_specs,"65"" TCL TV in Living Room, 55” TV in Primary Bedroom","65"" TCL ROKU TV in Living Room 
+55” TCL ROKU TV in Primary Bedroom",update,,"still notion_pid, not edited since"
+481007,730 E 38th St. N.,hvac.filter_notes,"14x24x1 - 1
+14x30x1 - 1","1- 14x24x1 
+1- 14x30x1",update,,"still notion_pid, not edited since"
+481007,730 E 38th St. N.,systems.fridge_filter,Samsung Water Filter,Samsung Water Filter NSF,update,,"still notion_pid, not edited since"
+481007,730 E 38th St. N.,systems.water_shutoff_outdoor,I do not see one on the outside of the house if there is it’s in the water meter box and it’s flooded,aside the mailbox,update,,"still notion_pid, not edited since"
+481007,730 E 38th St. N.,warranty.claim_process + external_links,"918-693-9019, Sean Thompson, email: sean.thompson127@yahoo.com RLS Dream Homes, rlsdreamhomes@gmail.com","918-693-9019, Sean Thompson, email: 
+sean.thompson127@yahoo.com
+ RLS Dream Homes, rlsdreamhomes@gmail.com",update,,"still notion_pid, not edited since"
+491601,7317 NW 159th Ter. (30D FIRM),amenities.access_notes,"Pool rules can be found in the guidebook custom fields, and also save to onedrive - here. The pool is expected to be open seasonally during the summer time.","Pool rules can be found in the guidebook custom fields, and also save to onedrive - here. The pool is open seasonally, estimated from Memorial Day weekend through Labor Day, open from 10am–10pm.",update,,"still notion_pid, not edited since"
+491601,7317 NW 159th Ter. (30D FIRM),bathrooms,4,3.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+480764,7351 Red Rock Rd,"latitude,longitude","39.8889196, -85.9418308","39.88891960, -85.94354741",conflict,OwnerRez,PID pin more than 0.001 from the Resolve pin
+408959,7380 S 69th E Ave,waste.valet,,No,fill,,new Notion value
+480830,7422 S. Granite Ave.,operating_notes,"For REPAIR ISSUES AND APPROVAL - only reach out to Delilah: 
+delilah@quintessamarketing.com
+. Do not reach out to Lauren or Leo. Delilah is Operations contact.","For REPAIR ISSUES AND APPROVAL - only reach out to Tereance: tereance.james@quintessamarketing.com and CC Delilah: 
+delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & Delilah are our Operations contact.",update,,"still notion_pid, not edited since"
+480830,7422 S. Granite Ave.,bathrooms,3,2.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+488148,758 N. Johnson Branch Rd.,instant_book,false,true,update,,"still notion_pid, not edited since"
+414805,815 E Fulton St.,waste.valet,,No,fill,,new Notion value
+471329,816 Lakeview Dr,max_guests,8,6,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+489357,8332 Welder Pl.,bathrooms,3,2.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+409752,8408 NW 162nd (30D FIRM),sprinklers.controller_location,Garahe,Garage,update,,"still notion_pid, not edited since"
+480824,85 Lower Green Way,link:BW Property Link,,https://app.breezeway.io/property/1295307/profile,fill,,new system link
+480824,85 Lower Green Way,amenities.access_notes,"Carlton Landing requires all vehicles to be registered through the link found  - here .The passcode: See Guest Access & Credentials will use in the form is 447732. Unregistered cars can be ticketed or towed, so please take care of this ahead of time.
+
+The above information is included in the Breezeway Parking Guidelines.","Carlton Landing requires all vehicles to be registered through the link found  - 
+here 
+. The passcode: [removed — credentials are not stored in Resolve] will use in the form is 
+447732
+. Unregistered cars can be ticketed or towed, so please take care of this ahead of time.
+
+The above information is included in the Breezeway Parking Guidelines.",update,,"still notion_pid, not edited since"
+480824,85 Lower Green Way,external_refs.breezeway_url,https://app.breezeway.io/property/1295302/profile,https://app.breezeway.io/property/1295307/profile,update,,"still notion_pid, not edited since"
+480824,85 Lower Green Way,hoa.notes + external_links,Contact: You can reach Taylor at taylor@carltonlanding.com or 918-707-6138 ext 101.,"Contact: You can reach Taylor at 
+taylor@carltonlanding.com
+ or 918-707-6138 ext 101.",update,,"still notion_pid, not edited since"
+480824,85 Lower Green Way,operating_notes,For REPAIR ISSUES AND APPROVAL - only reach out to Delilah: delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Delilah is Operations contact.,"NO PETS ALLOWED
+
+For REPAIR ISSUES AND APPROVAL - only reach out to Tereance: tereance.james@quintessamarketing.com and CC Delilah: 
+delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & Delilah are our Operations contact.",update,,"still notion_pid, not edited since"
+480824,85 Lower Green Way,bathrooms,3,2.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+480824,85 Lower Green Way,living_area_sqft,2236,2606,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+480824,85 Lower Green Way,max_guests,12,10,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+490410,852 Inland Dr.,access.emergency_key_access,,Yes,fill,,new Notion value
+490410,852 Inland Dr.,access.garage_remote,,Genie -LiftMaster Chamberlain Craftsman Universal Garage Door Opener Remote - https://www.amazon.com/dp/B08CNKBTYJ?ref_=ppx_hzod_title_dt_b_fed_asin_title_4_10&th=1,fill,,new Notion value
+490410,852 Inland Dr.,access.key_storage,,"[""Front Door/Smartlock"",""Storage Closet"",""Storage Building"",""Garage Door""]",fill,,new Notion value
+490410,852 Inland Dr.,access.lock_brand,,Yale,fill,,new Notion value
+490410,852 Inland Dr.,access.yale_module,,Connected & Setup,fill,,new Notion value
+490410,852 Inland Dr.,amenities.access_notes,,N/A,fill,,new Notion value
+490410,852 Inland Dr.,amenities.list,,"[""None""]",fill,,new Notion value
+490410,852 Inland Dr.,facts.grill,,No Grill,fill,,new Notion value
+490410,852 Inland Dr.,facts.interior_paint,,N/A,fill,,new Notion value
+490410,852 Inland Dr.,facts.tv_locations,,"[""Living Room"",""Primary Bedroom""]",fill,,new Notion value
+490410,852 Inland Dr.,facts.tv_specs,,"852 Inland Dr Living room - 75,  852 INLAND DR - 55 Primary bedroom",fill,,new Notion value
+490410,852 Inland Dr.,facts.workstation,,Yes,fill,,new Notion value
+490410,852 Inland Dr.,fireplace.fuel_type,,N/A,fill,,new Notion value
+490410,852 Inland Dr.,fireplace.gas_switch,,N/A,fill,,new Notion value
+490410,852 Inland Dr.,fireplace.gas_switch_location,,N/A,fill,,new Notion value
+490410,852 Inland Dr.,fireplace.instructions,,N/A,fill,,new Notion value
+490410,852 Inland Dr.,fireplace.model,,N/A,fill,,new Notion value
+490410,852 Inland Dr.,fireplace.present,,false,fill,,new Notion value
+490410,852 Inland Dr.,grounds.mowing_cadence,,ARHA Responsible,fill,,new Notion value
+490410,852 Inland Dr.,grounds.mowing_days,,"[""Wednesday""]",fill,,new Notion value
+490410,852 Inland Dr.,hoa.notes + external_links,,no holiday decor over 30 days; pets/vehicles/RVs in garage only; mailboxes/decks/fences/outbuildings need approval; maintain yards & exterior colors uniformly.,fill,,new Notion value
+490410,852 Inland Dr.,hoa.present,,true,fill,,new Notion value
+490410,852 Inland Dr.,hvac.filter_notes,,14×24×1,fill,,new Notion value
+490410,852 Inland Dr.,hvac.filter_sizes,,"[""14x24x1""]",fill,,new Notion value
+490410,852 Inland Dr.,legacy_handoff_date,,2026-10-06,fill,,new Notion value
+490410,852 Inland Dr.,link:Furniture Pick List Link,,https://arealhomeaway-my.sharepoint.com/:x:/p/info/IQBcg59L-S1CRaLBAoH170T_AdmAwzN1Ae3r_-p1_7chtR4?e=4YPNBa,fill,,new legacy_onedrive link
+490410,852 Inland Dr.,link:Garage Remote Brand & Model,,https://www.amazon.com/dp/B08CNKBTYJ?ref_=ppx_hzod_title_dt_b_fed_asin_title_4_10&th=1,fill,,new reference link
+490410,852 Inland Dr.,link:Security Camera Feed,,https://account.ring.com/account/dashboard?l=4017fdb0-9280-4981-81d5-6f65a058afd8,fill,,new camera_portal link
+490410,852 Inland Dr.,listing_alias,,"3BR Home, Avon IN | Extended & Monthly Stays",fill,,new Notion value
+490410,852 Inland Dr.,neighborhood,,Austin Lakes North,fill,,new Notion value
+490410,852 Inland Dr.,operating_notes,,"Back Storage is locked not available for guest and nothing is inside that room, Key is in the garage trim lockbox.   Spare front door key is the storage closet",fill,,new Notion value
+490410,852 Inland Dr.,parking.cluster_mailbox,,false,fill,,new Notion value
+490410,852 Inland Dr.,parking.mailbox_location,,N/A,fill,,new Notion value
+490410,852 Inland Dr.,parking.mailbox_number,,N/A,fill,,new Notion value
+490410,852 Inland Dr.,pool_spa.present,,None,fill,,new Notion value
+490410,852 Inland Dr.,security.alarm,,No,fill,,new Notion value
+490410,852 Inland Dr.,security.battery_type,,"[""Hardwired - No Battery""]",fill,,new Notion value
+490410,852 Inland Dr.,security.devices,,"[""Front Door"",""Garage""]",fill,,new Notion value
+490410,852 Inland Dr.,security.monitoring_expires_on,,2027-10-09,fill,,new Notion value
+490410,852 Inland Dr.,security.monitoring_plan,,"[""Active""]",fill,,new Notion value
+490410,852 Inland Dr.,sprinklers.brand,,N/A,fill,,new Notion value
+490410,852 Inland Dr.,sprinklers.controller_location,,N/A,fill,,new Notion value
+490410,852 Inland Dr.,sprinklers.set_for_season,,"{""value"":""N/A"",""as_of"":""2026-11-03T22:19:00.000Z"",""source"":""notion_pid""}",fill,,new Notion value
+490410,852 Inland Dr.,sprinklers.status,,Property Does Not Have Sprinkler System,fill,,new Notion value
+490410,852 Inland Dr.,storm_shelter.location_access,,N/A,fill,,new Notion value
+490410,852 Inland Dr.,systems.breaker_panel_location,,Garage,fill,,new Notion value
+490410,852 Inland Dr.,systems.co.installed,,true,fill,,new Notion value
+490410,852 Inland Dr.,systems.co.location,,Kitchen,fill,,new Notion value
+490410,852 Inland Dr.,systems.fridge_filter,,Frigidaire PurePour PWF-1 refrigerator water filter — FPPWFU01,fill,,new Notion value
+490410,852 Inland Dr.,systems.fridge_filter_5yr,,false,fill,,new Notion value
+490410,852 Inland Dr.,systems.smoke.batteries_changed_on,,2026-09-25,fill,,new Notion value
+490410,852 Inland Dr.,systems.smoke.battery_type,,9-Volt (Alkaline),fill,,new Notion value
+490410,852 Inland Dr.,systems.smoke.brand,,Siterwell,fill,,new Notion value
+490410,852 Inland Dr.,systems.smoke.expires_on,,2035-09-30,fill,,new Notion value
+490410,852 Inland Dr.,systems.smoke.expires_precision,,month,fill,,new Notion value
+490410,852 Inland Dr.,systems.smoke.expires_source_text,,September 2035,fill,,new Notion value
+490410,852 Inland Dr.,systems.smoke.notes,,N/A,fill,,new Notion value
+490410,852 Inland Dr.,systems.smoke.power_type,,Hardwired,fill,,new Notion value
+490410,852 Inland Dr.,systems.supply_box_location,,Top shelf in master closet,fill,,new Notion value
+490410,852 Inland Dr.,systems.supply_storage,,Closet,fill,,new Notion value
+490410,852 Inland Dr.,systems.water_shutoff_indoor,,Garage,fill,,new Notion value
+490410,852 Inland Dr.,systems.water_shutoff_outdoor,,Close to the sidewalk,fill,,new Notion value
+490410,852 Inland Dr.,tier,,B,fill,,new Notion value
+490410,852 Inland Dr.,utilities.router_location,,Master bedroom,fill,,new Notion value
+490410,852 Inland Dr.,utilities.wifi_ssid,,ARHA,fill,,new Notion value
+490410,852 Inland Dr.,warranty.builder_present,,false,fill,,new Notion value
+490410,852 Inland Dr.,warranty.claim_process + external_links,,N/A,fill,,new Notion value
+490410,852 Inland Dr.,warranty.furniture_expires_on,,2029-10-06,fill,,new Notion value
+490410,852 Inland Dr.,waste.cart_count,,3,fill,,new Notion value
+490410,852 Inland Dr.,waste.cart_notes,,3,fill,,new Notion value
+490410,852 Inland Dr.,waste.holiday_notes,,service may be delayed by up to 7 days around the following holidays,fill,,new Notion value
+490410,852 Inland Dr.,waste.recycling,,true,fill,,new Notion value
+490410,852 Inland Dr.,waste.recycling_days,,every other Thursday,fill,,new Notion value
+490410,852 Inland Dr.,waste.strict_rules,,Garbage/Trash containers are only permitted to be left outside for trash collection Containers cannot be permanently stored in front of or alongside a home Must be kept in an enclosed garage on non-trash collection days,fill,,new Notion value
+490410,852 Inland Dr.,waste.trash_days,,"[""Thursday""]",fill,,new Notion value
+490410,852 Inland Dr.,waste.valet,,No,fill,,new Notion value
+490410,852 Inland Dr.,instant_book,false,true,update,,"still notion_pid, not edited since"
+490410,852 Inland Dr.,bathrooms,3,2.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+490410,852 Inland Dr.,max_guests,6,8,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+497214,8602 E. Galveston St.,access.yale_integration_live,,false,fill,,home not imported before
+497214,8602 E. Galveston St.,compliance.permit_status,,"{""text"":""Permit required in Broken Arrow. $600"",""as_of"":""2026-11-03T22:19:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
+497214,8602 E. Galveston St.,compliance.rental_restrictions,,"{""text"":""No STR rental restrictions"",""as_of"":""2026-11-03T22:19:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
+497214,8602 E. Galveston St.,external_refs.breezeway_url,,https://app.breezeway.io/property/1514896/profile,fill,,home not imported before
+497214,8602 E. Galveston St.,external_refs.ownerrez_url,,https://app.ownerrez.com/properties/497214/info,fill,,home not imported before
+497214,8602 E. Galveston St.,furniture_package,,Signature (Gold),fill,,home not imported before
+497214,8602 E. Galveston St.,instant_book,,false,fill,,home not imported before
+497214,8602 E. Galveston St.,link:BW Property Link,,https://app.breezeway.io/property/1514896/profile,fill,,new system link
+497214,8602 E. Galveston St.,link:OR Property Link,,https://app.ownerrez.com/properties/497214/info,fill,,new system link
+497214,8602 E. Galveston St.,nickname,,Rosewood on Galveston (8602),fill,,home not imported before
+497214,8602 E. Galveston St.,parking.summary,,"2 Car Garage
+Free Parking on Premises",fill,,home not imported before
+497214,8602 E. Galveston St.,tier,,B,fill,,home not imported before
+497214,8602 E. Galveston St.,utilities.wifi_split_confirmed,,false,fill,,home not imported before
+497214,8602 E. Galveston St.,year_built,,2026,fill,,home not imported before
+497214,8602 E. Galveston St.,latitude,,36.046767,conflict,OwnerRez,OwnerRez-owned field; never written
+497214,8602 E. Galveston St.,longitude,,-95.6845786,conflict,OwnerRez,OwnerRez-owned field; never written
+497214,8602 E. Galveston St.,max_guests,,8,conflict,OwnerRez,OwnerRez-owned field; never written
+492500,9211 Fitzgerald Dr.,access.emergency_key_access,,Yes,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,access.garage_remote,,R27- GDR-27 MLT - https://www.amazon.com/dp/B08CNKBTYJ?ref=fed_asin_title&th=1,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,access.key_storage,,"[""Front Door/Smartlock"",""Backdoor"",""Garage Door""]",fill,,new Notion value
+492500,9211 Fitzgerald Dr.,access.lock_brand,,Yale,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,access.yale_module,,Connected & Setup,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,amenities.access_notes,,N/A,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,amenities.list,,"[""Pond"",""Walking Trail""]",fill,,new Notion value
+492500,9211 Fitzgerald Dr.,facts.grill,,No Grill,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,facts.interior_paint,,"1. Wall color - agreeable gray SW7029
+2. Sheen - matte
+
+No additional paint left at the property.",fill,,new Notion value
+492500,9211 Fitzgerald Dr.,facts.tv_locations,,"[""Living Room"",""Primary Bedroom""]",fill,,new Notion value
+492500,9211 Fitzgerald Dr.,facts.tv_specs,,"Living room -  9211 Fitzgerald Dr - 65” Roku TV, Primary Bedroom -  9211 Fitzgerald Dr - 55” Roku TV, Bonus Room -  9211 Fitzgerald Dr - 55” Roku TV",fill,,new Notion value
+492500,9211 Fitzgerald Dr.,facts.workstation,,Yes,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,fireplace.fuel_type,,N/A,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,fireplace.gas_switch,,N/A,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,fireplace.gas_switch_location,,N/A,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,fireplace.instructions,,N/A,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,fireplace.model,,N/A,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,fireplace.present,,false,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,grounds.mowing_cadence,,ARHA Responsible,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,grounds.mowing_days,,"[""Monday""]",fill,,new Notion value
+492500,9211 Fitzgerald Dr.,hoa.notes + external_links,,"HOA Contact: Tried and True Management Morgan: Morgan@triedandtruemanagement.com Kim: Kim@triedandtruemanagement.com
+
+Get written HOA approval before any exterior change (no reply in 30 days means denied). No sheds, above-ground pools, chain-link or front-yard fences (6 ft max), no boats or RVs outside the garage, and nothing permanent in easements. Dues: $450 at transfer, plus annual dues up to +10%/yr with 8% late interest and liens. Home businesses can’t have customers, and fences, landscaping, and your own changes aren’t covered by the builder warranty.",fill,,new Notion value
+492500,9211 Fitzgerald Dr.,hoa.present,,true,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,hvac.filter_notes,,1: 16×24×4,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,hvac.filter_sizes,,"[""16x24x4""]",fill,,new Notion value
+492500,9211 Fitzgerald Dr.,link:Builder Warranty Claim Info,,https://www.drhorton.com/Warranty,fill,,new builder link
+492500,9211 Fitzgerald Dr.,link:Furniture Pick List Link,,https://arealhomeaway-my.sharepoint.com/:x:/p/info/IQCLb1VbxTfhR5seFx_wVVyYAay_4sHqQqE49PAt_SYfzvI?e=2LBANe,fill,,new legacy_onedrive link
+492500,9211 Fitzgerald Dr.,link:Garage Remote Brand & Model,,https://www.amazon.com/dp/B08CNKBTYJ?ref=fed_asin_title&th=1,fill,,new reference link
+492500,9211 Fitzgerald Dr.,link:Security Camera Feed,,https://account.ring.com/account/dashboard?l=e3cc0088-0a8d-4c1d-b5f0-ab7ab39dc710,fill,,new camera_portal link
+492500,9211 Fitzgerald Dr.,listing_alias,,"4BR | Sleeps 8, Study & Bonus Room",fill,,new Notion value
+492500,9211 Fitzgerald Dr.,neighborhood,,Fields of New Bethel,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,operating_notes,,"Intro meeting notes - 9211 Fitzgerald 
+- Per the intro meeting notes, the designated plumber, HVAC contractor, and electrician must be used for at least 2 years.
+- Per the intro meeting notes, the builder will arrange meetings around 8 months and 10 months after closing.
+
+HVAC Contractor - Chris Chittum Enterprises LLC
+Plumber - R.T. Moore
+Electrical - ARCXIS
+
+**Owner does not want to see any diagnostic fees when possible.",fill,,new Notion value
+492500,9211 Fitzgerald Dr.,parking.cluster_mailbox,,false,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,parking.mailbox_location,,N/A,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,parking.mailbox_number,,N/A,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,pool_spa.present,,None,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,security.alarm,,No,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,security.battery_type,,"[""Hardwired - No Battery""]",fill,,new Notion value
+492500,9211 Fitzgerald Dr.,security.devices,,"[""Front Door"",""Driveway""]",fill,,new Notion value
+492500,9211 Fitzgerald Dr.,security.monitoring_expires_on,,2027-10-27,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,security.monitoring_plan,,"[""Active""]",fill,,new Notion value
+492500,9211 Fitzgerald Dr.,sprinklers.brand,,N/A,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,sprinklers.controller_location,,N/A,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,sprinklers.set_for_season,,"{""value"":""N/A"",""as_of"":""2026-11-05T21:46:00.000Z"",""source"":""notion_pid""}",fill,,new Notion value
+492500,9211 Fitzgerald Dr.,sprinklers.status,,Property Does Not Have Sprinkler System,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,storm_shelter.location_access,,N/A,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,systems.breaker_panel_location,,Garage,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,systems.co.installed,,true,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,systems.co.location,,Kitchen,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,systems.fridge_filter,,Everydrop,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,systems.fridge_filter_5yr,,false,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,systems.smoke.batteries_changed_on,,2026-10-07,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,systems.smoke.battery_type,,9-Volt (Lithium),fill,,new Notion value
+492500,9211 Fitzgerald Dr.,systems.smoke.brand,,First alert,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,systems.smoke.expires_on,,2036-12-31,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,systems.smoke.expires_precision,,year,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,systems.smoke.expires_source_text,,2036,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,systems.smoke.notes,,N/A,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,systems.smoke.power_type,,Hardwired,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,systems.supply_box_location,,Master closet top shelf,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,systems.supply_storage,,Closet,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,systems.water_shutoff_indoor,,Closet under staircase,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,systems.water_shutoff_outdoor,,Near the street,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,utilities.router_location,,Living room,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,utilities.wifi_ssid,,ARHA,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,warranty.builder_expires_on,,2027-09-10,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,warranty.builder_present,,true,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,warranty.claim_process + external_links,,"Dr. Horton- Christopher Bishop CSBishop@drhorton.com - 317-552-9067
+
+- The designated plumber, HVAC contractor, and electrician must be used for at least 2 years.
+
+Warranty request: https://www.drhorton.com/Warranty
+- The builder will arrange meetings around 8 months and 10 months after closing.
+- Fixtures: 1 year of coverage.
+- Mechanicals inside the walls: 2 years of coverage.
+- Roof: 4 years of coverage.
+- Foundation and load-bearing framing: 10 years of coverage.
+- RWC homeowner warranty exclusions: Section II, page 5.
+- RWC contact for matters beyond 2 years: 717-561-4480.",fill,,new Notion value
+492500,9211 Fitzgerald Dr.,warranty.furniture_expires_on,,2029-10-27,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,waste.cart_count,,2,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,waste.cart_notes,,2,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,waste.holiday_notes,,Saturday,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,waste.recycling,,true,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,waste.recycling_days,,Every Other Friday,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,waste.strict_rules,,"Keep trash in enclosed cans out of street and neighbor view, don’t let it pile up, and dumping anywhere in the subdivision costs at least $150 (pickup: City of Indianapolis, 317-917-7300).",fill,,new Notion value
+492500,9211 Fitzgerald Dr.,waste.trash_days,,"[""Friday""]",fill,,new Notion value
+492500,9211 Fitzgerald Dr.,waste.valet,,No,fill,,new Notion value
+492500,9211 Fitzgerald Dr.,instant_book,false,true,update,,"still notion_pid, not edited since"
+492500,9211 Fitzgerald Dr.,bathrooms,3,2.5,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
+439579,9235 E 133rd St S,waste.valet,,No,fill,,new Notion value
