@@ -1,12 +1,12 @@
 # Roadmap — approved build work, NO publish
 
 ## Nov 12 next fix batch 30-34 (onboarding only, no publish, no Operations changes)
-- [ ] 30 Plan search box (all stages incl. finished, stage shown); Ctrl+K finds onboarding Tasks by title/home, opens drawer
-- [ ] 31 One header line on onboarding home (breadcrumb, name, chip, Follow, view toggle); remove repeat home box; stage cards scroll to stage
-- [ ] 32 Work order Tasks: no Files box / Show files; What to do folds into Instructions link
-- [ ] 33 Breezeway section field order, paste link under button, chip "Not sent yet"
-- [ ] 34 Searchable template and Assign to pickers, duplicate names distinguishable
-- [ ] Tests 30, 33, 34; suite, type check, build; final table
+- [x] 30 Plan search box (all stages incl. finished, stage shown); Ctrl+K finds onboarding Tasks by title/home, opens drawer
+- [x] 31 One header line on onboarding home (breadcrumb, name, chip, Follow, view toggle); remove repeat home box; stage cards scroll to stage
+- [x] 32 Work order Tasks: no Files box / Show files; What to do folds into Instructions link
+- [x] 33 Breezeway section field order, paste link under button, chip "Not sent yet"
+- [x] 34 Searchable template and Assign to pickers, duplicate names distinguishable
+- [x] Tests 30, 33, 34; suite, type check, build; final table
 
 ## Nov 12 completion build: finish every Partly/Different item (no publish; stage DB in docs/pending/onboarding-kinds-2/)
 - [x] 1 Fill in Resolve edits handoff, budget, verified address in place; inspection date + default cleaner fields (also on home page)
