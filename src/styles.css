@@ -639,3 +639,8 @@
   --color-stage-selected-fg: #ffffff;
   --color-late: #9a2f22;
 }
+
+/* Onboarding Home: the striped photo placeholder for a home not under contract yet. */
+@utility stripe-placeholder {
+  background-image: repeating-linear-gradient(135deg, var(--muted) 0 6px, var(--sunken) 6px 12px);
+}
