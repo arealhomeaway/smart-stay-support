@@ -204,7 +204,7 @@ describe("plan catch-up: Not needed, Assign, Change due date, Reopen", () => {
     expect(await one("SELECT due_on::text d, due_on_overridden o, due_on_source s FROM public.onboarding_tasks WHERE id=$1", [a])).toEqual({ d: "2026-12-01", o: true, s: "manual" });
     const kinds = (await db.query("SELECT kind, actor, new_value FROM public.onboarding_project_events ORDER BY created_at, kind")).rows.map((r) => [r.kind, r.actor, r.new_value]);
     expect(kinds).toContainEqual(["task_assigned", PM, "Utilities Person"]);
-    expect(kinds).toContainEqual(["task_due_changed", PM, "2026-12-01"]);
+    expect(kinds).toContainEqual(["task_due_changed", PM, "Dec 01, 2026"]);
     expect(await fails(act([a], "assign", { person: OPS }))).toContain("onboarding team");
   });
 
