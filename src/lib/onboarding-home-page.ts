@@ -380,8 +380,8 @@ export type AttentionChip = { key: string; label: string; jump: AttentionJump };
 /** Fix 3: the first 3 chips show; the rest fold behind "+N more". */
 export const ATTENTION_SHOWN = 3;
 export function foldChips<C>(chips: C[], open: boolean): { shown: C[]; more: number } {
-  if (open || chips.length <= ATTENTION_SHOWN) return { shown: chips, more: open ? chips.length - ATTENTION_SHOWN : 0 };
-  return { shown: chips.slice(0, ATTENTION_SHOWN), more: chips.length - ATTENTION_SHOWN };
+  const more = Math.max(0, chips.length - ATTENTION_SHOWN);
+  return { shown: open ? chips : chips.slice(0, ATTENTION_SHOWN), more };
 }
 
 /** 1.2, in order; a chip shows only when true. */
