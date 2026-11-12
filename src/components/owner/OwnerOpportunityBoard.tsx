@@ -137,7 +137,9 @@ export function OwnerOpportunityBoard({
   });
 
   // Fix 3: the street address only.
-  const homeName = (id: string) => streetOnly(homes.find((h) => h.propertyId === id)?.address) || homes.find((h) => h.propertyId === id)?.name || null;
+  // The home's name here is already its street label (formatPropertyLabel primary, unit included);
+  // its address field is the city and state, so it is only a fallback.
+  const homeName = (id: string) => homes.find((h) => h.propertyId === id)?.name || streetOnly(homes.find((h) => h.propertyId === id)?.address) || null;
   const photo = (id: string | null | undefined) => homes.find((h) => h.propertyId === id)?.photoUrl ?? null;
 
   const items = useMemo<Item[]>(() => {
@@ -195,7 +197,8 @@ export function OwnerOpportunityBoard({
         optional: false,
         locked: false,
         finished,
-        status: p.label,
+        // Fix 25: after the owner's reply the item reads With ARHA until staff reply.
+        status: !finished && speaker === "homeowner" ? "With ARHA" : p.label,
       });
     }
 
