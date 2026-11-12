@@ -782,6 +782,32 @@ for (const g of report.gpsDiffOwnerRezWins) {
   changes.push({ orId: c.orId, home: c.prop.name, propertyId: c.prop.id, pageId: c.page.id, field: "latitude,longitude", path: [], current: `${c.prop.latitude}, ${c.prop.longitude}`, notion: c.values["GPS Coordinates"], kind: "conflict", conflictWith: "OwnerRez", reason: "PID pin more than 0.001 from the Resolve pin" });
 }
 
+// ---------------------------------------------------------------- credential safety net (refresh)
+// The Sep 1 scrub misses some forms ("The Pool Code is: 42909", a password typed after a removed login).
+// Any change whose Notion or Resolve text still looks like it holds a code is withheld: never proposed,
+// never written to these files, and listed by home and field only.
+const stripUrls = (t: string) => t.replace(/https?:\/\/\S+/g, " ");
+const SUSPECT = [
+  /\b(codes?|pins?|passcodes?|passwords?|pwd|logins?|combo|combination|fob)\b[^\n]{0,25}?\d{3,}/i,
+  /\[removed[^\]]*\]\s*[^\s\]]*(?=[^\s\]]*\d)(?=[^\s\]]*[A-Za-z])[^\s\]]{5,}/i,
+  /(?<![\w@.])(?=\S*\d)(?=\S*[A-Za-z])(?=\S*[!#$%^&*?])[^\s@]{7,}(?![\w@])/,
+];
+const suspect = (v: any) => { if (v == null) return false; const t = stripUrls(typeof v === "string" ? v : JSON.stringify(v)); return SUSPECT.some((r) => r.test(t)); };
+const withheld: { home: string; orId: string; field: string; kind: string; side: string }[] = [];
+const MASK = "[withheld: may contain a code]";
+for (const ch of changes) {
+  const n = suspect(ch.notion), r = suspect(ch.current);
+  if (!n && !r) continue;
+  if (ch.kind === "fill" || ch.kind === "update") {
+    withheld.push({ home: ch.home, orId: ch.orId, field: ch.field, kind: ch.kind, side: [n ? "Notion" : "", r ? "Resolve" : ""].filter(Boolean).join(" and ") });
+    (ch as any).withheld = true;
+  }
+  if (n) ch.notion = MASK;
+  if (r) ch.current = MASK;
+}
+for (let i = changes.length - 1; i >= 0; i--) if ((changes[i] as any).withheld) changes.splice(i, 1);
+for (let i = linkFills.length - 1; i >= 0; i--) if (suspect(linkFills[i]!.link.url)) linkFills.splice(i, 1);
+
 // ---------------------------------------------------------------- outputs
 
 const csvCell = (v: any) => { const s = show(v); return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
@@ -793,55 +819,60 @@ await Bun.write(`${OUT}/changes.csv`, csv.join("\n") + "\n");
 
 const q = (s: string) => `'${s.replace(/'/g, "''")}'`;
 const jlit = (v: any) => { const s = JSON.stringify(v); if (s.includes("$pid$")) throw new Error("literal clash"); return `$pid$${s}$pid$::jsonb`; };
+const colType = new Map<string, string>(sql<any[]>("select json_agg(json_build_object('n',attname,'t',format_type(atttypid,atttypmod))) from pg_attribute where attrelid='public.properties'::regclass and attnum>0 and not attisdropped")!.map((c) => [c.n, c.t]));
 const writes = changes.filter((c) => (c.kind === "fill" || c.kind === "update") && c.path.length > 0);
 const byProp = new Map<string, Change[]>();
 for (const w of writes) byProp.set(w.propertyId, [...(byProp.get(w.propertyId) ?? []), w]);
 
+const objOr = (e: string) => `CASE WHEN jsonb_typeof(${e}) = 'object' THEN ${e} ELSE '{}'::jsonb END`;
+const pathLit = (segs: string[]) => q(`{${segs.map((x) => `"${x.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",")}}`);
+/** col with value v at path (path[0] is the column), creating missing objects on the way. */
+function setExpr(path: string[], v: any): string {
+  const col = path[0]!;
+  let expr = objOr(col);
+  for (let d = 2; d < path.length; d++) expr = `jsonb_set(${expr}, ${pathLit(path.slice(1, d))}, ${objOr(`${col} #> ${pathLit(path.slice(1, d))}`)}, true)`;
+  return `jsonb_set(${expr}, ${pathLit(path.slice(1))}, ${jlit(v)}, true)`;
+}
+const colSet = (col: string, v: any) => `${col} = (jsonb_populate_record(NULL::public.properties, ${jlit({ [col]: v })})).${col}`;
+const colIs = (col: string, v: any) => `to_jsonb(${col}) IS NOT DISTINCT FROM ${v == null ? "NULL" : jlit(v)}`;
+const pathIs = (path: string[], v: any) => `coalesce(${path[0]} #> ${pathLit(path.slice(1))}, 'null'::jsonb) = ${jlit(v === undefined ? null : v)}`;
+
 const apply: string[] = [
   `-- ${MARK}: DRY RUN OUTPUT. NOT RUN. Apply only with approval.`,
-  "-- Makes exactly the proposed fills and updates in changes.csv, with provenance rows (value_source notion_pid).",
-  "-- Every home's UPDATE checks that the touched columns still hold the values seen in the dry run; any change aborts all.",
+  "-- Makes exactly the proposed fills and updates in changes.csv, with provenance rows (value_source notion_pid, as_of today).",
+  "-- Each value is written only if Resolve still holds the value seen in the dry run; any difference aborts the whole file.",
   "BEGIN;",
 ];
 const undo: string[] = [
-  `-- UNDO for ${MARK} apply.sql. Restores every touched column, provenance row and inserted link.`,
-  "-- Each home's restore checks the columns still hold the applied values; any change aborts all.",
+  `-- UNDO for ${MARK} apply.sql. Restores every touched value, provenance row and inserted link.`,
+  "-- Each restore checks the value is still the applied one; any difference aborts the whole file.",
   "BEGIN;",
 ];
+const step = (sqlText: string, label: string, what: string) =>
+  `DO $do$ BEGIN\n  ${sqlText};\n  IF NOT FOUND THEN RAISE EXCEPTION '${what}: %', ${label}; END IF;\nEND $do$;`;
 for (const [pid, list] of byProp) {
   const prop = propRows.find((p) => p.id === pid)!;
-  const cols = [...new Set(list.map((w) => w.path[0]!))];
-  const next: Json = {};
-  for (const col of cols) {
-    const ws = list.filter((w) => w.path[0] === col);
-    if (ws.some((w) => w.path.length === 1)) next[col] = ws.find((w) => w.path.length === 1)!.notion;
-    else {
-      const g = structuredClone(prop[col] && typeof prop[col] === "object" && !Array.isArray(prop[col]) ? prop[col] : {});
-      for (const w of ws) {
-        let node = g;
-        for (const seg of w.path.slice(1, -1)) node = node[seg] = node[seg] && typeof node[seg] === "object" && !Array.isArray(node[seg]) ? node[seg] : {};
-        node[w.path[w.path.length - 1]!] = w.notion;
-      }
-      next[col] = g;
-    }
-  }
-  if (cols.includes("latitude")) { next["geocode_source"] = "notion_pid_fallback"; next["geocode_status"] = "pid_fallback"; }
-  const allCols = Object.keys(next);
-  const setList = (vals: Json) => allCols.map((c) => `${c} = (jsonb_populate_record(NULL::public.properties, ${jlit({ [c]: vals[c] })})).${c}`).join(",\n      ");
-  const guard = (vals: Json) => allCols.map((c) => `to_jsonb(${c}) IS NOT DISTINCT FROM ${vals[c] == null ? "NULL" : jlit(vals[c])}`).join("\n      AND ");
-  const old: Json = Object.fromEntries(allCols.map((c) => [c, prop[c] ?? null]));
-  const label = q(prop.name);
-  apply.push(`\n-- ${prop.name} (OwnerRez ${digits(prop.ownerrez_property_id)}): ${list.length} value(s)`,
-    `DO $do$ BEGIN\n  UPDATE public.properties SET\n      ${setList(next)},\n      updated_at = now()\n    WHERE id = ${q(pid)}\n      AND ${guard(old)};\n  IF NOT FOUND THEN RAISE EXCEPTION 'Changed since the dry run: %', ${label}; END IF;\nEND $do$;`);
-  undo.push(`\n-- ${prop.name}`,
-    `DO $do$ BEGIN\n  UPDATE public.properties SET\n      ${setList(old)},\n      updated_at = now()\n    WHERE id = ${q(pid)}\n      AND ${guard(next)};\n  IF NOT FOUND THEN RAISE EXCEPTION 'Changed since the refresh: %', ${label}; END IF;\nEND $do$;`);
+  const label = q(`${prop.name} ${list[0]!.field}`.slice(0, 0) + prop.name);
+  apply.push(`\n-- ${prop.name} (OwnerRez ${digits(prop.ownerrez_property_id)}): ${list.length} value(s)`);
+  undo.push(`\n-- ${prop.name}`);
   for (const w of list) {
+    const lbl = q(`${prop.name} / ${w.field}`);
+    if (w.path.length === 1) {
+      apply.push(step(`UPDATE public.properties SET ${colSet(w.field, w.notion)}, updated_at = now() WHERE id = ${q(pid)} AND ${colIs(w.field, w.current)}`, lbl, "Changed since the dry run"));
+      undo.push(step(`UPDATE public.properties SET ${colSet(w.field, w.current ?? null)}, updated_at = now() WHERE id = ${q(pid)} AND ${colIs(w.field, w.notion)}`, lbl, "Changed since the refresh"));
+    } else {
+      if (colType.get(w.path[0]!) !== "jsonb") throw new Error(`${w.path[0]} is not jsonb`);
+      apply.push(step(`UPDATE public.properties SET ${w.path[0]} = ${setExpr(w.path, w.notion)}, updated_at = now() WHERE id = ${q(pid)} AND ${pathIs(w.path, w.current)}`, lbl, "Changed since the dry run"));
+      const restore = w.current === undefined ? `${w.path[0]} #- ${pathLit(w.path.slice(1))}` : setExpr(w.path, w.current);
+      undo.push(step(`UPDATE public.properties SET ${w.path[0]} = ${restore}, updated_at = now() WHERE id = ${q(pid)} AND ${pathIs(w.path, w.notion)}`, lbl, "Changed since the refresh"));
+    }
     const prior = provBy.get(`${pid}|${w.field}`);
     apply.push(`INSERT INTO public.property_field_provenance (property_id, field_key, value_source, source_record_id, as_of, note)\n  VALUES (${q(pid)}, ${q(w.field)}, 'notion_pid', ${q(w.pageId)}, ${q(AS_OF)}, ${q(MARK)})\n  ON CONFLICT (property_id, field_key) DO UPDATE SET value_source = EXCLUDED.value_source, source_record_id = EXCLUDED.source_record_id,\n    as_of = EXCLUDED.as_of, note = EXCLUDED.note, updated_at = now();`);
     undo.push(prior
       ? `UPDATE public.property_field_provenance SET value_source = ${q(prior.value_source)}, source_record_id = ${prior.source_record_id == null ? "NULL" : q(prior.source_record_id)}, as_of = ${q(prior.as_of)}, note = ${prior.note == null ? "NULL" : q(prior.note)}, updated_at = now()\n  WHERE property_id = ${q(pid)} AND field_key = ${q(w.field)} AND note = ${q(MARK)};`
       : `DELETE FROM public.property_field_provenance WHERE property_id = ${q(pid)} AND field_key = ${q(w.field)} AND note = ${q(MARK)};`);
   }
+  void label;
 }
 if (linkFills.length) {
   apply.push("\n-- New reference links (same kinds and flags as the Sep 1 importer).");
@@ -867,7 +898,7 @@ await Bun.write(`/tmp/pidr/summary.json`, JSON.stringify({
   unmatched, unchanged, fills: count("fill"), linkFills: linkFills.length, updates: count("update"),
   resolveConflicts: count("conflict", "Resolve"), ownerRezConflicts: count("conflict", "OwnerRez"),
   invalid: { manualReview: report.manualReview, unmappableMarket: report.unmappableMarket, failures: report.failures },
-  blanksSkipped: report.blanksSkipped, secretsRedacted, trimMatched, dupeConflicts: dupeConflicts.map((d) => d.field), resolveIdFormat, unmappedNotionFields, missingMappedFields,
+  withheld, blanksSkipped: report.blanksSkipped, secretsRedacted, trimMatched, dupeConflicts: dupeConflicts.map((d) => d.field), resolveIdFormat, unmappedNotionFields, missingMappedFields,
   perHome: [...perHome.values()], pidPages, profileEdits: editRows.length, factEdits: factRows.length, writeHomes: byProp.size, writes: writes.length,
   mappingRows: mapping.length, importRows: mapping.filter((m) => m.action === "Import").length,
 }, null, 1));

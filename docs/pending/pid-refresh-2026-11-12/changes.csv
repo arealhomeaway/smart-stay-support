@@ -425,7 +425,6 @@ Primary bedroom- 65",update,,"still notion_pid, not edited since"
 440620,309 Prince John Dr,access.yale_needs_calibration,,false,fill,,new Notion value
 440620,309 Prince John Dr,systems.smoke.batteries_changed_on,2025-12-03,2026-10-15,update,,"still notion_pid, not edited since"
 440216,3117 Scissortail Way (30D FIRM),access.yale_needs_calibration,,false,fill,,new Notion value
-440216,3117 Scissortail Way (30D FIRM),compliance.permit_status,,"{""text"":""Permit required in OKC. $1,200"",""as_of"":""2026-11-11T18:51:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,new Notion value
 440216,3117 Scissortail Way (30D FIRM),compliance.rental_restrictions,,"{""text"":""No STR rental restrictions"",""as_of"":""2026-11-11T18:51:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,new Notion value
 440216,3117 Scissortail Way (30D FIRM),storm_shelter.location_access,Garage -use provided pin to depress button to slide door open depress button to slide door open,Garage - use provided pin: [removed — credentials are not stored in Resolve] depress button to slide door open,update,,"still notion_pid, not edited since"
 487894,31445 Moore Rd.,access.yale_needs_calibration,,false,fill,,new Notion value
@@ -472,7 +471,6 @@ Free Parking on Premises",fill,,home not imported before
 502215,3361 E 153rd St S,max_guests,,6,conflict,OwnerRez,OwnerRez-owned field; never written
 499899,3400 N Fern Avenue,access.yale_integration_live,,false,fill,,home not imported before
 499899,3400 N Fern Avenue,access.yale_needs_calibration,,false,fill,,home not imported before
-499899,3400 N Fern Avenue,compliance.permit_status,,"{""text"":""Permit required for Broken Arrow. $600"",""as_of"":""2026-11-06T21:06:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
 499899,3400 N Fern Avenue,compliance.rental_restrictions,,"{""text"":""No STR rental restrictions"",""as_of"":""2026-11-06T21:06:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
 499899,3400 N Fern Avenue,external_refs.breezeway_url,,https://app.breezeway.io/property/1542591/profile,fill,,home not imported before
 499899,3400 N Fern Avenue,furniture_package,,Signature (Gold),fill,,home not imported before
@@ -495,7 +493,6 @@ Free Parking on Premises",fill,,home not imported before
 418090,3712 N 39th St.,access.yale_needs_calibration,,false,fill,,new Notion value
 418090,3712 N 39th St.,waste.valet,,No,fill,,new Notion value
 460190,3715 W 109th St S,access.yale_needs_calibration,,false,fill,,new Notion value
-460190,3715 W 109th St S,amenities.access_notes,"The Pool Code: See Guest Access & Credentials. This neighborhood has no restrictions for who can use the pool, even guest staying less than 30 days can use it.","The Pool Code is: 42909. This neighborhood has no restrictions for who can use the pool, even guest staying less than 30 days can use it.",update,,"still notion_pid, not edited since"
 460190,3715 W 109th St S,facts.tv_specs,"Netflix guest profile code: See Guest Access & Credentials
 HiSense Smart TV's (living room & downstairs game room, no Roku details). 
 Login information: held by the owner — not stored in Resolve the netflix account *Please do not share with guests* email: marc@compasspoints.net Password: held by the owner — not stored in Resolve","Netflix guest profile code: [removed — credentials are not stored in Resolve]
@@ -706,19 +703,6 @@ delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & De
 437509,4816 Hazy Hollow Ln,access.yale_needs_calibration,,true,fill,,new Notion value
 378665,5020 S.168th E Ave (30D FIRM),access.yale_needs_calibration,,false,fill,,new Notion value
 378665,5020 S.168th E Ave (30D FIRM),waste.valet,,No,fill,,new Notion value
-378665,5020 S.168th E Ave (30D FIRM),hoa.notes + external_links,"https://trinitycreekhoa.com/contact-us/
-Ph: 918-901-9311
-Address: 9246 S Sheridan Rd, Suite 209, Tulsa, OK 74133 - call when you get there and they can bring down the pool card
-
-Portal to make payment for new pool card: https://resident.gozego.com/payments/summary
-Login: See Guest Access & Credentials
-Matrix3161!","https://trinitycreekhoa.com/contact-us/
-Ph: 918-901-9311
-Address: 9246 S Sheridan Rd, Suite 209, Tulsa, OK 74133 - call when you get there and they can bring down the pool card
-
-Portal to make payment for new pool card: https://resident.gozego.com/payments/summary
-Login: [removed — credentials are not stored in Resolve]
-Matrix3161!",update,,"still notion_pid, not edited since"
 432974,5034 N 35th St,access.yale_needs_calibration,,false,fill,,new Notion value
 432974,5034 N 35th St,waste.valet,,No,fill,,new Notion value
 452367,504 S. 47th St,access.yale_needs_calibration,,true,fill,,new Notion value
@@ -806,15 +790,6 @@ delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & De
 419842,721 Vaquero St.,access.yale_needs_calibration,,false,fill,,new Notion value
 398358,724 Abilene Way,access.yale_needs_calibration,,false,fill,,new Notion value
 481007,730 E 38th St. N.,access.yale_needs_calibration,,false,fill,,new Notion value
-481007,730 E 38th St. N.,facts.interior_paint,"1. Location & quantity - garage several
-2. Brand - sherwin Williams 
-3. Color name & code - 7004 , JH70-30
-4. Sheen - flat
-5. Style/location of paint -","Garage
-1 exterior of 5 galon super paint  evening blue
-1 exterior 5 galon super paint tricorn-black
-2 galon interior emerald ligh gray
-2 galon interior snowbound",update,,"still notion_pid, not edited since"
 481007,730 E 38th St. N.,facts.tv_specs,"65"" TCL TV in Living Room, 55” TV in Primary Bedroom","65"" TCL ROKU TV in Living Room 
 55” TCL ROKU TV in Primary Bedroom",update,,"still notion_pid, not edited since"
 481007,730 E 38th St. N.,hvac.filter_notes,"14x24x1 - 1
@@ -950,7 +925,6 @@ delilah@quintessamarketing.com. Do not reach out to Lauren or Leo. Tereance & De
 490410,852 Inland Dr.,max_guests,6,8,conflict,OwnerRez,OwnerRez value differs; OwnerRez wins
 497214,8602 E. Galveston St.,access.yale_integration_live,,false,fill,,home not imported before
 497214,8602 E. Galveston St.,access.yale_needs_calibration,,false,fill,,home not imported before
-497214,8602 E. Galveston St.,compliance.permit_status,,"{""text"":""Permit required in Broken Arrow. $600"",""as_of"":""2026-11-03T22:19:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
 497214,8602 E. Galveston St.,compliance.rental_restrictions,,"{""text"":""No STR rental restrictions"",""as_of"":""2026-11-03T22:19:00.000Z"",""source"":""notion_pid"",""reference_only"":true}",fill,,home not imported before
 497214,8602 E. Galveston St.,external_refs.breezeway_url,,https://app.breezeway.io/property/1514896/profile,fill,,home not imported before
 497214,8602 E. Galveston St.,furniture_package,,Signature (Gold),fill,,home not imported before
@@ -997,9 +971,6 @@ No additional paint left at the property.",fill,,new Notion value
 492500,9211 Fitzgerald Dr.,fireplace.present,,false,fill,,new Notion value
 492500,9211 Fitzgerald Dr.,grounds.mowing_cadence,,ARHA Responsible,fill,,new Notion value
 492500,9211 Fitzgerald Dr.,grounds.mowing_days,,"[""Monday""]",fill,,new Notion value
-492500,9211 Fitzgerald Dr.,hoa.notes + external_links,,"HOA Contact: Tried and True Management Morgan: Morgan@triedandtruemanagement.com Kim: Kim@triedandtruemanagement.com
-
-Get written HOA approval before any exterior change (no reply in 30 days means denied). No sheds, above-ground pools, chain-link or front-yard fences (6 ft max), no boats or RVs outside the garage, and nothing permanent in easements. Dues: $450 at transfer, plus annual dues up to +10%/yr with 8% late interest and liens. Home businesses can’t have customers, and fences, landscaping, and your own changes aren’t covered by the builder warranty.",fill,,new Notion value
 492500,9211 Fitzgerald Dr.,hoa.present,,true,fill,,new Notion value
 492500,9211 Fitzgerald Dr.,hvac.filter_notes,,1: 16×24×4,fill,,new Notion value
 492500,9211 Fitzgerald Dr.,hvac.filter_sizes,,"[""16x24x4""]",fill,,new Notion value
