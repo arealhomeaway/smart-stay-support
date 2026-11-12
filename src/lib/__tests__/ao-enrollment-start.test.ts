@@ -93,7 +93,8 @@ const create = async (home: string) => (await one<{ r: { programId: string } }>(
 const version = async (prog: string) => (await one<{ v: string }>("SELECT report_version v FROM public.owner_programs WHERE id=$1", [prog])).v;
 // What the one-step enrollment does right after creating the program: link the homeowner login.
 const linkOwner = (prog: string) => db.query("UPDATE public.owner_programs SET owner_user_id=$2 WHERE id=$1", [prog, owner1]);
-const defOf = async (sig: string) => (await one<{ d: string }>(`SELECT pg_get_functiondef('${sig}'::regprocedure) d`)).d;
+const defOf = async (name: string) => (await one<{ d: string }>(`SELECT pg_get_functiondef(p.oid) d FROM pg_proc p
+  JOIN pg_namespace s ON s.oid = p.pronamespace WHERE s.nspname || '.' || p.proname = $1`, [name])).d;
 
 describe("Active Owner plan starts at enrollment, staged SQL on an isolated database", () => {
   let before: { cards: number; status: string } = { cards: -1, status: "" };
@@ -194,20 +195,18 @@ describe("Active Owner plan starts at enrollment, staged SQL on an isolated data
   });
 
   it("the file changes only the status checks and the one owner-link notice; undo puts back the exact live text", async () => {
-    const sigs = ["private.ao_enrollment_changed()", "private.ao_home_program(uuid)", "private.ao_enrolled_rows()",
-      "private.lock_owner_time_program(uuid,uuid,boolean,boolean)", "public.owner_hours_eligibility(uuid)", "public.capture_owner_time_update()",
-      "public.can_view_owner_library_video(uuid)", "public.notify_owner_of_review()", "public.record_owner_work_order_response(uuid,uuid,text,text)",
-      "public.owner_release_summary(uuid,integer,uuid[])"];
+    const names = ["private.ao_enrollment_changed", "private.ao_home_program", "private.ao_enrolled_rows",
+      "private.lock_owner_time_program", "public.owner_hours_eligibility", "public.capture_owner_time_update",
+      "public.can_view_owner_library_video", "public.notify_owner_of_review", "public.record_owner_work_order_response",
+      "public.owner_release_summary"];
     expect(APPLY).not.toMatch(/activate_owner_program\(/);
     // Outside function bodies the file changes no rows.
     const outside = APPLY.replace(/\$function\$[\s\S]*?\$function\$/g, "").replace(/--.*$/gm, "");
     expect(outside).not.toMatch(/^\s*(INSERT|UPDATE|DELETE|TRUNCATE)\b/im);
     await db.exec(UNDO);
-    for (const sig of sigs) {
-      const [schema, rest] = sig.split(".");
-      const file = `${schema}.${rest!.split("(")[0]}`;
-      const live = read(`${DIR}/live-capture/${file}.sql`).trim().replace(/;$/, "").trim();
-      expect((await defOf(sig)).trim()).toBe(live);
+    for (const name of names) {
+      const live = read(`${DIR}/live-capture/${name}.sql`).trim().replace(/;$/, "").trim();
+      expect((await defOf(name)).trim()).toBe(live);
     }
     expect(await n("SELECT count(*)::int n FROM pg_proc WHERE proname='owner_program_live'")).toBe(0);
     const trig = await one<{ d: string }>("SELECT pg_get_triggerdef(oid) d FROM pg_trigger WHERE tgname='ao_program_changed'");
