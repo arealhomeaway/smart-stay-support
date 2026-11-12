@@ -25,4 +25,4 @@ Existing Tasks are **not backfilled**: an update would fire the handoff lock, wo
 
 ## Until applied
 
-The page works without it: the owner row reads the columns only when present, the map falls back to the same seeded values in code (`DEFAULT_STATUS_STAGE_MAP`), and Admin's map editor (Overview, Admin only) can already save the row under the existing Admin-only rule; apply then keeps whatever was saved. The owner form offers the two new fields only once the columns exist. Add task works; the one-off flag is set once applied.
+The page works without it: the owner row reads the columns only when present, the map falls back to the same seeded values in code (`DEFAULT_STATUS_STAGE_MAP`), and Admin's map editor (Home details, Admin only) can already save the row under the existing Admin-only rule; apply then keeps whatever was saved. The owner form offers the two new fields only once the columns exist. Add task works; the one-off flag is set once applied.
