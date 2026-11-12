@@ -6,7 +6,8 @@
  * visibility rule, and sending completes the Task when the home has a live
  * Active Owner program (send_task_to_owner_item). Nothing here decides access.
  */
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Send } from "lucide-react";
@@ -33,6 +34,8 @@ export function SendToHomeownerSection({
   alreadyWaiting,
   badge,
   children,
+  footerSend = false,
+  onReady,
 }: {
   taskId: string;
   taskTitle: string;
@@ -43,7 +46,12 @@ export function SendToHomeownerSection({
   badge?: ReactNode;
   /** Older approval path controls (record an answer given by email or phone). */
   children?: ReactNode;
+  /** Fix 20: the drawer's main button sends (form={sendFormId(taskId)}); the inline button hides. */
+  footerSend?: boolean;
+  /** Tells the drawer whether Send can go now. */
+  onReady?: (ready: boolean) => void;
 }) {
+  const router = useRouter();
   const [note, setNote] = useState("");
   const [answerBy, setAnswerBy] = useState("");
   const [picked, setPicked] = useState<string[]>([]);
@@ -76,7 +84,9 @@ export function SendToHomeownerSection({
       setNote("");
       setAnswerBy("");
       setPicked([]);
+      // Fix 22: the drawer's status chip reads Complete straight away.
       void queryClient.invalidateQueries();
+      void router.invalidate();
     },
     onError: (e: Error, input) => {
       if (!isCardExistsError(e.message)) { toast.error(e.message); return; }
@@ -96,6 +106,9 @@ export function SendToHomeownerSection({
 
   const toggle = (id: string) => setPicked((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
   const item = sent.data?.available ? sent.data.data : null;
+  const ready = !disabled && !item && note.trim().length >= 20 && !mutation.isPending;
+  useEffect(() => onReady?.(ready), [ready, onReady]);
+  const submit = () => mutation.mutate({ taskId, note: note.trim(), version: "", documentIds: picked, respondBy: answerBy || null });
 
   return (
     <section className="space-y-3 rounded-lg border border-primary/40 bg-primary/5 p-4" aria-label="Send to the homeowner">
@@ -114,7 +127,14 @@ export function SendToHomeownerSection({
           <OwnerItemConversation reviewId={item.review_id} side="staff" readOnly={disabled} />
         </>
       ) : (
-        <>
+        <form
+          id={sendFormId(taskId)}
+          className="space-y-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (ready) submit();
+          }}
+        >
           {alreadyWaiting && (
             <p className="text-xs text-muted-foreground">Already waiting on the homeowner. Sending again records a fresh request.</p>
           )}
@@ -164,24 +184,23 @@ export function SendToHomeownerSection({
             />
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              className="min-h-11 gap-1.5"
-              disabled={disabled || note.trim().length < 20 || mutation.isPending}
-              onClick={() =>
-                mutation.mutate({ taskId, note: note.trim(), version: "", documentIds: picked, respondBy: answerBy || null })
-              }
-            >
-              <Send className="size-4" aria-hidden />
-              {mutation.isPending ? "Sending…" : "Send to the homeowner"}
-            </Button>
+            {!footerSend && (
+              <Button type="submit" className="min-h-11 gap-1.5" disabled={!ready}>
+                <Send className="size-4" aria-hidden />
+                {mutation.isPending ? "Sending…" : "Send to the homeowner"}
+              </Button>
+            )}
             {/* A standard owner without the portal: the existing email composer. */}
             {!disabled && !hasPortal && program.isFetched && (
               <EmailComposer context="onboarding_task" recordId={taskId} label="Email instead" />
             )}
           </div>
-        </>
+        </form>
       )}
       {children}
     </section>
   );
 }
+
+/** The form the drawer's "Send to the homeowner" button submits. */
+export const sendFormId = (taskId: string) => `send-owner-${taskId}`;
