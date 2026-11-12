@@ -10,6 +10,7 @@ import { EmptyState, LoadingRows } from "@/components/ui/page";
 import { usDate } from "@/lib/dates";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { OpportunityDetail, useOwnerCollaboration } from "@/components/onboarding/OwnerCollaboration";
+import { completionRowOpens } from "@/lib/onboarding-task-kinds";
 
 export type CompletionRow = {
   work_item_id: string;
@@ -92,38 +93,7 @@ export function OwnerCompletionsReview({ demoMode, propertyId }: { demoMode: boo
 }
 
 function CompletionCard({ row: r }: { row: CompletionRow }) {
-  const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
   const [viewing, setViewing] = useState(false);
-  const [note, setNote] = useState("");
-  const [feedback, setFeedback] = useState("");
-  const [taskId, setTaskId] = useState("");
-  const tasks = useQuery({
-    queryKey: ["onb-tasks-lite", r.property_id],
-    enabled: open,
-    queryFn: async () => {
-      const { data } = await supabase.from("onboarding_tasks").select("id, title").eq("property_id", r.property_id).is("archived_at", null).order("title");
-      return data ?? [];
-    },
-  });
-  const save = useMutation({
-    mutationFn: async (status: CompletionRow["review_status"]) => {
-      const { error } = await supabase.rpc("record_owner_completion_review", {
-        _id: r.work_item_id,
-        _status: status,
-        _internal_note: note || undefined,
-        _follow_up_task_id: taskId || undefined,
-        _owner_feedback: feedback || undefined,
-      } as never);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Review recorded.");
-      setNote(""); setFeedback(""); setTaskId(""); setOpen(false);
-      void qc.invalidateQueries({ queryKey: ["owner-completions"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
   return (
     <li className="rounded-lg border border-border p-3 text-sm">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -157,8 +127,9 @@ function CompletionCard({ row: r }: { row: CompletionRow }) {
         </p>
       ) : null}
       <div className="mt-2 flex flex-wrap gap-2">
-        {/* Fixes 11, 12: one place to work it. A row with a Task opens the Task drawer at its owner conversation. */}
-        {r.source_task_id ? (
+        {/* Fixes 11, 12 (Nov 12): one place to work it. A row with a Task opens the Task drawer at
+            its owner conversation, where the review is recorded; any other row opens the evidence view. */}
+        {completionRowOpens(r) === "task" ? (
           <Link
             to="/onboarding/$propertyId"
             params={{ propertyId: r.property_id }}
@@ -168,42 +139,107 @@ function CompletionCard({ row: r }: { row: CompletionRow }) {
             Open the Task
           </Link>
         ) : (
-          <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => setViewing(true)}>
+          <button type="button" className="inline-flex min-h-11 items-center text-xs font-medium text-primary hover:underline" onClick={() => setViewing(true)}>
             Open evidence and thread
           </button>
         )}
-        <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => setOpen((v) => !v)}>
-          {open ? "Cancel" : "Record review"}
-        </button>
       </div>
-      {open ? (
-        <div className="mt-3 space-y-2 border-t border-border pt-3">
-          <div>
-            <Label htmlFor={`note-${r.work_item_id}`}>Internal note (staff only, never shown to the owner)</Label>
-            <Textarea id={`note-${r.work_item_id}`} rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
-          </div>
-          <div>
-            <Label htmlFor={`task-${r.work_item_id}`}>Follow-up Task (only if action is needed)</Label>
-            <select id={`task-${r.work_item_id}`} className="h-9 w-full rounded-md border border-input bg-background px-2" value={taskId} onChange={(e) => setTaskId(e.target.value)}>
-              <option value="">No linked Task</option>
-              {(tasks.data ?? []).map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
-            </select>
-          </div>
-          <div>
-            <Label htmlFor={`fb-${r.work_item_id}`}>Feedback to the owner (optional. The owner will see this)</Label>
-            <Textarea id={`fb-${r.work_item_id}`} rows={2} value={feedback} onChange={(e) => setFeedback(e.target.value)} />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" disabled={save.isPending} onClick={() => save.mutate("reviewed")}>Mark reviewed</Button>
-            <Button size="sm" variant="outline" disabled={save.isPending} onClick={() => save.mutate("follow_up_needed")}>Follow-up needed</Button>
-            {r.review_status !== "needs_review" ? (
-              <Button size="sm" variant="ghost" disabled={save.isPending} onClick={() => save.mutate("needs_review")}>Return to needs review</Button>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
-      <EvidenceDialog open={viewing} onClose={() => setViewing(false)} propertyId={r.property_id} workItemId={r.work_item_id} title={r.title} />
+      <EvidenceDialog open={viewing} onClose={() => setViewing(false)} row={r} />
     </li>
+  );
+}
+
+/** The staff review of one owner completion: internal note, follow-up Task, owner feedback. */
+export function CompletionReviewForm({ row: r }: { row: CompletionRow }) {
+  const qc = useQueryClient();
+  const [note, setNote] = useState("");
+  const [feedback, setFeedback] = useState("");
+  const [taskId, setTaskId] = useState("");
+  const tasks = useQuery({
+    queryKey: ["onb-tasks-lite", r.property_id],
+    queryFn: async () => {
+      const { data } = await supabase.from("onboarding_tasks").select("id, title").eq("property_id", r.property_id).is("archived_at", null).order("title");
+      return data ?? [];
+    },
+  });
+  const save = useMutation({
+    mutationFn: async (status: CompletionRow["review_status"]) => {
+      const { error } = await supabase.rpc("record_owner_completion_review", {
+        _id: r.work_item_id,
+        _status: status,
+        _internal_note: note || undefined,
+        _follow_up_task_id: taskId || undefined,
+        _owner_feedback: feedback || undefined,
+      } as never);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Review recorded.");
+      setNote(""); setFeedback(""); setTaskId("");
+      void qc.invalidateQueries({ queryKey: ["owner-completions"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <div className="space-y-2">
+      <div>
+        <Label htmlFor={`note-${r.work_item_id}`}>Internal note (staff only, never shown to the owner)</Label>
+        <Textarea id={`note-${r.work_item_id}`} rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
+      </div>
+      <div>
+        <Label htmlFor={`task-${r.work_item_id}`}>Follow-up Task (only if action is needed)</Label>
+        <select id={`task-${r.work_item_id}`} className="h-11 w-full rounded-md border border-input bg-background px-2" value={taskId} onChange={(e) => setTaskId(e.target.value)}>
+          <option value="">No linked Task</option>
+          {(tasks.data ?? []).map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
+        </select>
+      </div>
+      <div>
+        <Label htmlFor={`fb-${r.work_item_id}`}>Feedback to the owner (optional. The owner will see this)</Label>
+        <Textarea id={`fb-${r.work_item_id}`} rows={2} value={feedback} onChange={(e) => setFeedback(e.target.value)} />
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" className="min-h-11" disabled={save.isPending} onClick={() => save.mutate("reviewed")}>Mark reviewed</Button>
+        <Button size="sm" className="min-h-11" variant="outline" disabled={save.isPending} onClick={() => save.mutate("follow_up_needed")}>Follow-up needed</Button>
+        {r.review_status !== "needs_review" ? (
+          <Button size="sm" className="min-h-11" variant="ghost" disabled={save.isPending} onClick={() => save.mutate("needs_review")}>Return to needs review</Button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Fixes 11, 12 (Nov 12): inside the Task drawer, next to the owner conversation. Each owner
+ * completion that came from this Task shows its conversation and evidence and its Record review.
+ */
+export function TaskOwnerCompletions({ taskId, propertyId, demoMode }: { taskId: string; propertyId: string; demoMode: boolean }) {
+  const q = useOwnerCompletions(demoMode, propertyId);
+  const collab = useOwnerCollaboration(propertyId);
+  const rows = (q.data ?? []).filter((r) => r.source_task_id === taskId);
+  if (!rows.length) return null;
+  return (
+    <section className="space-y-3 rounded-lg border border-border p-4" aria-label="Homeowner completed this">
+      {rows.map((r) => {
+        const o = collab.data?.opportunities.find((x) => x.id === r.work_item_id) ?? null;
+        return (
+          <div key={r.work_item_id} className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="font-medium">{r.title}</p>
+              <span className="rounded-full border border-border px-2 py-0.5 text-xs font-medium">{REVIEW_LABEL[r.review_status]}</span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {r.owner_name} completed {r.completed_at ? usDate(r.completed_at) : "Not set"}
+              {r.latest_feedback ? ` · “${r.latest_feedback}”` : ""}
+            </p>
+            {o ? <OpportunityDetail o={o} files={collab.data?.files ?? []} /> : null}
+            <div className="space-y-2 border-t border-border pt-3">
+              <p className="eyebrow">Record review</p>
+              <CompletionReviewForm row={r} />
+            </div>
+          </div>
+        );
+      })}
+    </section>
   );
 }
 
@@ -212,7 +248,8 @@ function CompletionCard({ row: r }: { row: CompletionRow }) {
  * Opening it never reopens the Opportunity, changes hours or records a review;
  * closing it leaves the review list exactly where it was.
  */
-function EvidenceDialog({ open, onClose, propertyId, workItemId, title }: { open: boolean; onClose: () => void; propertyId: string; workItemId: string; title: string }) {
+function EvidenceDialog({ open, onClose, row }: { open: boolean; onClose: () => void; row: CompletionRow }) {
+  const { property_id: propertyId, work_item_id: workItemId, title } = row;
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
@@ -221,6 +258,13 @@ function EvidenceDialog({ open, onClose, propertyId, workItemId, title }: { open
           <DialogDescription>Owner conversation and evidence. Viewing does not change the Opportunity or your review.</DialogDescription>
         </DialogHeader>
         {open ? <EvidenceBody propertyId={propertyId} workItemId={workItemId} /> : null}
+        {/* A row with no Task is reviewed here, below its evidence. */}
+        {open ? (
+          <div className="space-y-2 border-t border-border pt-3">
+            <p className="eyebrow">Record review</p>
+            <CompletionReviewForm row={row} />
+          </div>
+        ) : null}
       </DialogContent>
     </Dialog>
   );

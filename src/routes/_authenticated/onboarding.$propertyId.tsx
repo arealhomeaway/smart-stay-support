@@ -51,6 +51,7 @@ import { PlanCsvButton } from "@/components/onboarding/PlanCsvButton";
 import { independentReadinessForTasks } from "@/lib/onboarding-independent-readiness";
 import { FinancialPanel } from "@/components/onboarding/FinancialPanel";
 import { BudgetPanel } from "@/components/onboarding/BudgetPanel";
+import { FillInEditors } from "@/components/onboarding/FillInEditors";
 import { AssessmentFindingsPanel } from "@/components/onboarding/AssessmentFindingsPanel";
 import { AssessmentsFormsPanel } from "@/components/onboarding/AssessmentsFormsPanel";
 import { FollowHomeButton } from "@/components/onboarding/OnboardingActivityFeed";
@@ -711,6 +712,11 @@ function PropertyWorkspace() {
               canEdit={canEdit}
               onChange={() => void refresh()}
             />
+          </section>
+          {/* Item 1 (Nov 12): the same fields a Fill in Resolve Task edits in place. */}
+          <section className="surface space-y-3 p-4" aria-label="Inspection and cleaner">
+            <h2 className="font-semibold">Inspection and cleaner</h2>
+            <FillInEditors propertyId={current.id} fields={["inspection_date", "default_cleaner"]} canEdit={canEdit} />
           </section>
           <ProjectTeamPanel propertyId={current.id} />
           {activeOwner ? (

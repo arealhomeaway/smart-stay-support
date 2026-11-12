@@ -59,6 +59,8 @@ export const saveOnboardingTaskFn = createServerFn({ method: "POST" })
         dependsOn: z.array(z.string().uuid()).max(20).optional(),
         sortOrder: z.number().int().min(0).max(999).optional(),
         linkedTicketId: z.string().uuid().nullable().optional(),
+        /** Fix 19 (Nov 12): a new follow-up Task stores the Task it came from. */
+        followUpOf: z.string().uuid().nullable().optional(),
       })
       .parse(data),
   )
@@ -485,6 +487,8 @@ export const updateOnboardingProjectFn = createServerFn({ method: "POST" })
         plannedClosingOn: z.string().date().nullable().optional(),
         possessionOn: z.string().date().nullable().optional(),
         targetHandoffOn: z.string().date().nullable().optional(),
+        /** Item 1 (Nov 12): the home inspection date (staged column onboarding_projects.inspection_on). */
+        inspectionOn: z.string().date().nullable().optional(),
         furnishingScope: z
           .enum(["full_furnishing", "owner_furnished", "no_furnishing"])
           .optional(),

@@ -9807,6 +9807,7 @@ export type Database = {
           id: string
           is_demo: boolean
           is_required: boolean
+          kind_settings: Json
           legacy_stage: string | null
           linked_ticket_id: string | null
           owner_approval_status: string
@@ -9823,6 +9824,7 @@ export type Database = {
           started_by: string | null
           status: string
           tags: string[]
+          task_kind: string
           template_task_id: string | null
           title: string
           updated_at: string
@@ -9856,6 +9858,7 @@ export type Database = {
           id?: string
           is_demo?: boolean
           is_required?: boolean
+          kind_settings?: Json
           legacy_stage?: string | null
           linked_ticket_id?: string | null
           owner_approval_status?: string
@@ -9872,6 +9875,7 @@ export type Database = {
           started_by?: string | null
           status?: string
           tags?: string[]
+          task_kind?: string
           template_task_id?: string | null
           title: string
           updated_at?: string
@@ -9905,6 +9909,7 @@ export type Database = {
           id?: string
           is_demo?: boolean
           is_required?: boolean
+          kind_settings?: Json
           legacy_stage?: string | null
           linked_ticket_id?: string | null
           owner_approval_status?: string
@@ -9921,6 +9926,7 @@ export type Database = {
           started_by?: string | null
           status?: string
           tags?: string[]
+          task_kind?: string
           template_task_id?: string | null
           title?: string
           updated_at?: string
@@ -10020,6 +10026,7 @@ export type Database = {
           id: string
           is_active: boolean
           is_required: boolean
+          kind_settings: Json
           module: string | null
           offset_days: number | null
           offset_unit: string
@@ -10034,6 +10041,7 @@ export type Database = {
           stage: string
           subtasks: string[]
           tags: string[]
+          task_kind: string
           template_id: string
           title: string
           updated_at: string
@@ -10052,6 +10060,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_required?: boolean
+          kind_settings?: Json
           module?: string | null
           offset_days?: number | null
           offset_unit?: string
@@ -10066,6 +10075,7 @@ export type Database = {
           stage: string
           subtasks?: string[]
           tags?: string[]
+          task_kind?: string
           template_id: string
           title: string
           updated_at?: string
@@ -10084,6 +10094,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_required?: boolean
+          kind_settings?: Json
           module?: string | null
           offset_days?: number | null
           offset_unit?: string
@@ -10098,6 +10109,7 @@ export type Database = {
           stage?: string
           subtasks?: string[]
           tags?: string[]
+          task_kind?: string
           template_id?: string
           title?: string
           updated_at?: string
@@ -19640,7 +19652,9 @@ export type Database = {
         Returns: boolean
       }
       owner_hours_eligibility: { Args: { _program_id: string }; Returns: Json }
+      owner_item_approve: { Args: { _review_id: string }; Returns: Json }
       owner_item_detail: { Args: { _review_id: string }; Returns: Json }
+      owner_item_is_approval: { Args: { _review_id: string }; Returns: boolean }
       owner_item_reply: {
         Args: { _body: string; _review_id: string }
         Returns: string

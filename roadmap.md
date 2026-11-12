@@ -1,5 +1,18 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 12 completion build: finish every Partly/Different item (no publish; stage DB in docs/pending/onboarding-kinds-2/)
+- [x] 1 Fill in Resolve edits handoff, budget, verified address in place; inspection date + default cleaner fields (also on home page)
+- [x] 2 Done outside Resolve owner card line "Check your email for the {where} from ARHA"
+- [x] 3 Email: empty [brackets] highlighted inside subject and message; Send blocked
+- [x] 4 Vendor request: step template, vendor To, [vendor name]/[market] filled, history logs vendor request
+- [x] 5 Approve on staff Opportunity marks linked Task approved
+- [x] 6 Record review in Task drawer; row without Task opens evidence view
+- [x] 7 Reopen server rule Admin/Director of Onboarding/completer, logged
+- [x] 8 Follow-up linked by database field, both directions shown
+- [x] 9 Approval kind with no configured review: assignee reviews, Approve / Send back with note
+- [ ] 10 Browser check as the test owner: Approve/Ask a question and the reply move still unchecked (blocked: signing in as the test owner needs your approval); layout checked in staff preview
+- [x] Tests 1-9, suite, type check, build, final table
+
 ## Nov 12 build: onboarding Task kinds, Breezeway and test fixes (no publish; stage DB in docs/pending/onboarding-kinds/)
 - [x] A1 task_kind field (template step + onboarding_tasks, backfill rule); A2 template editor pickers; A3 drawer by kind; A4 Notion/form steps
 - [x] B1 onboarding send needs only its own switch; B2 pickers on Work order Tasks; B3 Breezeway match screen + report; B4 no switch change

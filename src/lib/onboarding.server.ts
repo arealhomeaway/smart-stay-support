@@ -415,9 +415,11 @@ export async function saveOnboardingTask(
     dependsOn?: string[] | undefined;
     sortOrder?: number | undefined;
     linkedTicketId?: string | null | undefined;
+    followUpOf?: string | null | undefined;
   },
 ) {
   await assertCap(supabase, userId, "is_onboarding_staff");
+  if (input.followUpOf && input.id) throw new Error("A follow-up link is set when the follow-up Task is added.");
   // Evidence is a stored file OR a note of at least 5 characters. When a file
   // alone is the proof, the saved note names it so the record still says what
   // proves the step (src/lib/onboarding-evidence.ts).
@@ -492,6 +494,17 @@ export async function saveOnboardingTask(
     throw new Error("Return or reopen the original stage before moving its work.");
   if (prior?.data.status === "complete")
     throw new Error("Reopen the completed step with a reason before editing it.");
+  // Item 9 (Nov 12): an Approval Task with no step review is approved only by its reviewer, the
+  // Task's assigned person (staged approval_task_reviewer; a configured review returns null and
+  // keeps today's review rules; before the function exists nothing changes).
+  if (input.id && input.status === "complete" && (prior?.data as { task_kind?: string } | undefined)?.task_kind === "approval") {
+    const reviewer = await (supabase.rpc as unknown as (n: string, a: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>)(
+      "approval_task_reviewer",
+      { _task_id: input.id },
+    );
+    if (!reviewer.error && typeof reviewer.data === "string" && reviewer.data !== userId)
+      throw new Error("Only the person reviewing this Task can approve it.");
+  }
   // Locked handoff: once Operations accepts the home, the onboarding plan is
   // history. Anything found afterwards is a correction (reopen with a reason)
   // or an Operations ticket — never a silent edit to a finished project.
@@ -632,17 +645,35 @@ export async function saveOnboardingTask(
     .eq("id", input.propertyId)
     .maybeSingle();
 
-  const { data, error } = await supabase
+  // Fix 19: a follow-up stores its source Task (same home only; staged column follow_up_of).
+  if (input.followUpOf) {
+    const source = await supabase
+      .from("onboarding_tasks")
+      .select("id")
+      .eq("id", input.followUpOf)
+      .eq("property_id", input.propertyId)
+      .is("archived_at", null)
+      .maybeSingle();
+    if (source.error) throw source.error;
+    if (!source.data) throw new Error("A follow-up must be on the same home as its Task.");
+  }
+  const insertRow = {
+    ...row,
+    ...(input.assignedSeat ? { assigned_seat: input.assignedSeat } : {}),
+    created_by: userId,
+    is_demo: parent.data?.is_demo ?? false,
+  };
+  let { data, error } = await supabase
     .from("onboarding_tasks")
-    .insert({
-      ...row,
-      ...(input.assignedSeat ? { assigned_seat: input.assignedSeat } : {}),
-      created_by: userId,
-      is_demo: parent.data?.is_demo ?? false,
-    })
+    .insert({ ...insertRow, ...(input.followUpOf ? { follow_up_of: input.followUpOf } : {}) } as never)
     .select("id")
     .single();
+  // Until the follow-up column is applied, the Task is still added, linked by its text line only.
+  if (error && input.followUpOf && /follow_up_of/.test(error.message ?? "")) {
+    ({ data, error } = await supabase.from("onboarding_tasks").insert(insertRow).select("id").single());
+  }
   if (error) throw error;
+  if (!data) throw new Error("The Task could not be added.");
   await writeAudit({
     actorId: userId,
     action: "onboarding_task_created",
@@ -1280,11 +1311,25 @@ export async function reopenOnboardingTask(
   await assertCap(supabase, userId, "is_onboarding_staff");
   const { data: task, error: readError } = await supabase
     .from("onboarding_tasks")
-    .select("id, property_id, title, completed_at, status, stage, assigned_to")
+    .select("id, property_id, title, completed_at, completed_by, status, stage, assigned_to")
     .eq("id", input.taskId)
     .single();
   if (readError) throw readError;
-  const access = await onboardingTaskAccess(supabase, userId, task.property_id, task.assigned_to);
+  // Fix 17 (Nov 12): Admin, the Director of Onboarding, or the person who completed the Task
+  // reopens it; the same rule the drawer's Reopen button uses (canReopenCompletedTask).
+  const [admin, director] = await Promise.all([
+    supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
+    supabase.rpc("is_onboarding_director", { _user_id: userId }),
+  ]);
+  if (admin.error || director.error) throw new Error("Could not verify who can reopen this Task.");
+  const { canReopenCompletedTask } = await import("./onboarding-task-kinds");
+  if (
+    !canReopenCompletedTask(
+      { userId, isAdmin: admin.data === true, isOnboardingDirector: director.data === true },
+      (task as { completed_by?: string | null }).completed_by ?? null,
+    )
+  )
+    throw new Error("Only an Admin, the Director of Onboarding or the person who completed this Task can reopen it.");
   if (task.status !== "complete") throw new Error("Only a completed step can be reopened.");
   if (input.reason.trim().length < 3) throw new Error("Record why this step needs a correction.");
   await assertTaskRequirementEditable(supabase, input.taskId);
@@ -1294,7 +1339,6 @@ export async function reopenOnboardingTask(
     .update({ status: "open" })
     .eq("id", input.taskId)
     .eq("status", "complete");
-  if (!access.canManage) update.eq("assigned_to", userId);
   const unchanged = task.completed_at
     ? update.eq("completed_at", task.completed_at)
     : update.is("completed_at", null);
@@ -1311,6 +1355,7 @@ export async function reopenOnboardingTask(
       propertyId: task.property_id,
       kind: "task_reopened",
       summary: `Reopened "${task.title}"`,
+      // Who and when are kept on the event itself (actor, created_at) and in the audit row.
       detail: input.reason,
       priorValue: task.completed_at ? `Completed ${task.completed_at.slice(0, 10)}` : "Complete",
       newValue: "Open",
@@ -1324,7 +1369,9 @@ export async function reopenOnboardingTask(
     action: "onboarding_task_reopened",
     entityType: "onboarding_task",
     entityId: input.taskId,
+    entityLabel: task.title,
     reason: input.reason,
+    after: { status: "open", reopened_at: new Date().toISOString(), reopened_by: userId, completed_by: (task as { completed_by?: string | null }).completed_by ?? null },
   });
   return { ok: true as const };
 }

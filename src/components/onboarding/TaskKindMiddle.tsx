@@ -5,7 +5,7 @@
  * Presentation only: saves go through the existing home panels, email composer, step review
  * and the Task's own save.
  */
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { ExternalLink, Phone, MessageSquare } from "lucide-react";
@@ -19,12 +19,18 @@ import { EmailComposer } from "@/components/EmailComposer";
 import { SchedulePanel } from "@/components/SchedulePanel";
 import { ProjectTeamPanel } from "@/components/onboarding/ProjectTeamPanel";
 import { PropertyFactsPanel } from "@/components/onboarding/PropertyFactsPanel";
-import { TaskReviewPanel } from "@/components/onboarding/TaskReviewPanel";
-import { fillInValuesFn, taskVendorsFn } from "@/lib/onboarding-task-kinds.functions";
+import { ReviewAwareComplete, TaskReviewPanel, useTaskReview } from "@/components/onboarding/TaskReviewPanel";
+import { FillInEditors } from "@/components/onboarding/FillInEditors";
+import { approvalReviewerFn, approvalSendBackFn, fillInValuesFn, taskVendorsFn } from "@/lib/onboarding-task-kinds.functions";
+import { useState } from "react";
+import { toast } from "sonner";
+import { useRole } from "@/hooks/useRole";
 import {
   FILL_FIELDS,
   WHERE_IT_WENT,
+  approvalMode,
   noVendorLine,
+  vendorMergeValues,
   type KindSettings,
   type TaskKindCode,
   type WhereCode,
@@ -68,6 +74,7 @@ export function TaskKindMiddle({
   onOutside,
   onEmailSent,
   onVendorRequested,
+  assignedTo,
 }: {
   kind: TaskKindCode;
   settings: KindSettings;
@@ -80,6 +87,7 @@ export function TaskKindMiddle({
   onOutside: (d: OutsideDraft) => void;
   onEmailSent: (info: { subject: string; to: string }) => void;
   onVendorRequested: (vendor: string, info: { subject: string; to: string }) => void;
+  assignedTo?: string | null;
 }) {
   if (kind === "fill_in") {
     return <FillIn settings={settings} propertyId={propertyId} canEdit={canEdit && !disabled} plannedClosingOn={plannedClosingOn} />;
@@ -140,13 +148,7 @@ export function TaskKindMiddle({
     return <VendorRequest settings={settings} taskId={taskId} propertyId={propertyId} disabled={disabled} onRequested={onVendorRequested} />;
   }
   if (kind === "approval") {
-    return (
-      <section className="space-y-2 rounded-lg border border-border p-4" aria-label="Approval">
-        <p className="font-medium">What to review</p>
-        <p className="text-sm text-muted-foreground">The files above and the step text. Approve, or send it back with a note.</p>
-        <TaskReviewPanel taskId={taskId} />
-      </section>
-    );
+    return <ApprovalMiddle taskId={taskId} disabled={disabled} assignedTo={assignedTo ?? null} />;
   }
   return null;
 }
@@ -172,11 +174,8 @@ function FillIn({ settings, propertyId, canEdit, plannedClosingOn }: { settings:
       )}
       {has("team_roles") && <ProjectTeamPanel propertyId={propertyId} />}
       {(has("wifi") || has("access_plan") || has("utility_accounts")) && <PropertyFactsPanel propertyId={propertyId} canEdit={canEdit} />}
-      {(has("target_handoff") || has("budget") || has("verified_address")) && (
-        <Link to="/onboarding/$propertyId" params={{ propertyId }} search={{ tab: "info" } as never} className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
-          Fill the rest in Home info
-        </Link>
-      )}
+      {/* Item 1: edited here, with the same saves as Home info. */}
+      <FillInEditors propertyId={propertyId} fields={fields} canEdit={canEdit} />
     </section>
   );
 }
@@ -223,6 +222,9 @@ function VendorRequest({ settings, taskId, propertyId, disabled, onRequested }: 
                   presetTemplateId={settings.emailTemplateId ?? null}
                   bracketFillIns
                   disabled={disabled}
+                  // Item 4: [vendor name] and [market] come from this vendor and the home.
+                  extraMergeValues={vendorMergeValues(v.name, q.data?.market ?? null)}
+                  vendorOrgId={v.orgId}
                   onSent={(info) => onRequested(v.name, info)}
                 />
               )}
@@ -242,5 +244,100 @@ export function OpenFormButton({ href }: { href: string }) {
         Open the form <ExternalLink className="size-4" aria-hidden />
       </a>
     </Button>
+  );
+}
+
+
+/** Item 9: who reviews an Approval Task, and whether the signed-in person is that reviewer. */
+export function useApprovalMode(taskId: string, assignedTo: string | null) {
+  const review = useTaskReview(taskId);
+  const read = useServerFn(approvalReviewerFn);
+  const reviewer = useQuery({ queryKey: ["approval-reviewer", taskId], queryFn: () => read({ data: { taskId } }), retry: false });
+  const { userId } = useRole();
+  const s = review.data as { enabled?: boolean; review?: unknown } | undefined;
+  const reviewConfigured = Boolean(s && (s.enabled || s.review));
+  // Until the reviewer rule is applied, the assigned person is the reviewer, as written.
+  const reviewerId = reviewer.data?.ready ? reviewer.data.reviewerId : assignedTo;
+  return {
+    loading: review.isLoading || reviewer.isLoading,
+    ready: Boolean(reviewer.data?.ready),
+    mode: approvalMode({ reviewConfigured, reviewerId, userId }),
+  };
+}
+
+/**
+ * Item 9: an Approval step with a configured step review keeps today's review panel. Without
+ * one, the Task's assigned person reviews the files above and the step text, then presses
+ * Approve below (completes the Task) or sends it back here with a required note.
+ */
+function ApprovalMiddle({ taskId, disabled, assignedTo }: { taskId: string; disabled: boolean; assignedTo: string | null }) {
+  const a = useApprovalMode(taskId, assignedTo);
+  const [open, setOpen] = useState(false);
+  const [note, setNote] = useState("");
+  const qc = useQueryClient();
+  const sendBack = useServerFn(approvalSendBackFn);
+  const m = useMutation({
+    mutationFn: () => sendBack({ data: { taskId, note: note.trim() } }),
+    onSuccess: (r) => {
+      toast.success(r.reopened.length ? "Sent back. The earlier step is open again." : "Sent back.");
+      setOpen(false);
+      setNote("");
+      void qc.invalidateQueries();
+    },
+    onError: (e: Error) => toast.error(e.message || "This could not be sent back."),
+  });
+  if (a.loading) return null;
+  if (a.mode === "step_review") {
+    return (
+      <section className="space-y-2 rounded-lg border border-border p-4" aria-label="Approval">
+        <p className="font-medium">What to review</p>
+        <p className="text-sm text-muted-foreground">The files above and the step text. Approve, or send it back with a note.</p>
+        <TaskReviewPanel taskId={taskId} />
+      </section>
+    );
+  }
+  return (
+    <section className="space-y-2 rounded-lg border border-border p-4" aria-label="Approval">
+      <p className="font-medium">What to review</p>
+      <p className="text-sm text-muted-foreground">The files above and the step text.</p>
+      {a.mode === "waiting" && <p className="text-sm">Waiting on the assigned person to review.</p>}
+      {a.mode === "no_reviewer" && <p className="text-sm">Assign this Task to a person to review it.</p>}
+      {a.mode === "decide" && a.ready && !disabled && (
+        open ? (
+          <div className="space-y-2">
+            <Label htmlFor={`send-back-${taskId}`}>What needs to change?</Label>
+            <Textarea id={`send-back-${taskId}`} rows={3} maxLength={2000} value={note} onChange={(e) => setNote(e.target.value)} />
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" className="min-h-11" disabled={note.trim().length < 5 || m.isPending} onClick={() => m.mutate()}>
+                Send back
+              </Button>
+              <Button variant="ghost" className="min-h-11" onClick={() => setOpen(false)}>Cancel</Button>
+            </div>
+          </div>
+        ) : (
+          <Button variant="outline" className="min-h-11" onClick={() => setOpen(true)}>Send back</Button>
+        )
+      )}
+    </section>
+  );
+}
+
+/**
+ * Item 9: the bottom Approve button on an Approval Task. With a configured step review it is
+ * today's review-aware Complete; without one only the reviewer may press it, and it completes the Task.
+ */
+export function ApprovalComplete({ taskId, assignedTo, disabled, blockedReason, onApprove }: { taskId: string; assignedTo: string | null; disabled: boolean; blockedReason: string | null; onApprove: () => void }) {
+  const a = useApprovalMode(taskId, assignedTo);
+  const hint = blockedReason ?? (a.mode === "decide" || a.mode === "step_review" || a.loading ? null : a.mode === "waiting" ? "Only the person reviewing this Task can approve it." : "Assign this Task to a person to review it.");
+  const button = (
+    <Button className="min-h-11 w-full" disabled={disabled || Boolean(hint) || a.loading} onClick={onApprove}>
+      Approve
+    </Button>
+  );
+  return (
+    <>
+      {a.mode === "step_review" ? <ReviewAwareComplete taskId={taskId} disabled={disabled || Boolean(hint)}>{button}</ReviewAwareComplete> : button}
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+    </>
   );
 }
