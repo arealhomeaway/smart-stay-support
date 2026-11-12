@@ -230,3 +230,45 @@ export async function loadMyOwnerItemNeeds(): Promise<OwnerItemNeed[]> {
   const r = unwrap<OwnerItemNeed[]>(await db.rpc("my_owner_item_needs"));
   return r.available ? r.data ?? [] : [];
 }
+
+/** One plan card as the homeowner's Opportunities page reads it. */
+export type OwnerPortalPlanRow = import("@/lib/ao-ui").PortalPlanCard & {
+  code?: string | null; lane?: string | null; stage_window?: string | null; deadline_at?: string | null;
+  owner_review_id?: string | null; once_per_owner?: boolean | null;
+};
+
+/**
+ * The homeowner's plan cards for the Opportunities page. Reads the staged
+ * ao_owner_portal_plan (stage window, owner item link, once per owner); until it
+ * is applied, falls back to ao_owner_plan plus the owner item link the owner can
+ * already read, so plan cards and their owner items never show twice.
+ */
+export async function loadOwnerPortalPlan(programId: string): Promise<import("@/lib/ao-ui").Available<OwnerPortalPlanRow[]>> {
+  const staged = await db.rpc("ao_owner_portal_plan", { _program: programId });
+  if (!staged.error) return { available: true, data: (staged.data ?? []) as OwnerPortalPlanRow[] };
+  const { isMissingDbObject } = await import("@/lib/ao-ui");
+  if (!isMissingDbObject(staged.error)) throw new Error((staged.error as { message?: string }).message ?? "Could not load");
+  const base = unwrap<OwnerPortalPlanRow[]>(await db.rpc("ao_owner_plan", { _program: programId }));
+  if (!base.available || base.data.length === 0) return base;
+  const links = await inChunks<{ id: string; owner_review_id: string | null }>(
+    base.data.map((c) => c.plan_card_id),
+    (ids) => db.from("ao_home_plan_cards").select("id, owner_review_id").in("id", ids),
+  );
+  const byId = new Map(links.data.map((l) => [l.id, l.owner_review_id]));
+  return { available: true, data: base.data.map((c) => ({ ...c, owner_review_id: byId.get(c.plan_card_id) ?? null })) };
+}
+
+/** Who wrote last on each owner item, read from the append-only conversation the owner can already see. */
+export async function loadOwnerItemLastSpeakers(reviewIds: string[]): Promise<Map<string, "homeowner" | "staff">> {
+  const out = new Map<string, "homeowner" | "staff">();
+  if (reviewIds.length === 0) return out;
+  const rows = await inChunks<{ review_id: string; author_type: string; event: string | null; created_at: string }>(
+    reviewIds,
+    (ids) => db.from("owner_request_messages").select("review_id, author_type, event, created_at").in("review_id", ids).order("created_at"),
+  );
+  for (const r of rows.data) {
+    if (r.event) continue;
+    out.set(r.review_id, r.author_type === "homeowner" || r.author_type === "owner" ? "homeowner" : "staff");
+  }
+  return out;
+}
