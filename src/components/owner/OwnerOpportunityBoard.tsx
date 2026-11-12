@@ -255,7 +255,7 @@ export function OwnerOpportunityBoard({
         title: o.title,
         propertyIds: o.propertyId ? [o.propertyId] : [],
         from: arha ? (o.team?.includes("Operations") ? "Operations Team" : "Onboarding Team") : "Optional",
-        summary: o.summary,
+        summary: oneLine(o.summary),
         cover: o.cover,
         sentAt: o.createdAt,
         answerBy: o.dueOn ?? null,
