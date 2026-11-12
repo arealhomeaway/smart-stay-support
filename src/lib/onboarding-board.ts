@@ -232,6 +232,22 @@ export const DETAIL_LABELS: Record<DetailField, string> = {
 };
 
 /** A stored value, or Not set. Never a guess. */
+/**
+ * Item 40: the Owner Type and Status line under the home header. A value already shown as a
+ * chip, or not set, is left out; with nothing left the line is not shown (null).
+ */
+export function headerFactsLine(input: { ownerType: string | null | undefined; status: string | null | undefined; chips: string[] }): string | null {
+  const onChip = new Set(input.chips.map((c) => c.trim().toLowerCase()).filter(Boolean));
+  const parts: string[] = [];
+  const add = (label: string, v: string | null | undefined) => {
+    const t = (v ?? "").trim();
+    if (t && !onChip.has(t.toLowerCase())) parts.push(`${label}: ${t}`);
+  };
+  add("Owner Type", input.ownerType);
+  add("Status", input.status);
+  return parts.length ? parts.join(" · ") : null;
+}
+
 export function shown(value: string | null | undefined): string {
   const v = (value ?? "").trim();
   return v ? v : NOT_SET;
