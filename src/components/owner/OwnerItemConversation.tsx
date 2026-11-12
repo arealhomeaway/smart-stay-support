@@ -50,7 +50,8 @@ export function OwnerItemConversation({
     },
     onError: (e: Error) => toast.error(e.message),
   });
-  const done = () => { setText(""); void qc.invalidateQueries({ queryKey: key }); onChanged?.(); };
+  // Fix 25: after a reply or approval the page regroups (With ARHA until staff reply).
+  const done = () => { setText(""); void qc.invalidateQueries({ queryKey: key }); void qc.invalidateQueries({ queryKey: ["owner-item-speakers"] }); onChanged?.(); };
   const send = useMutation({
     mutationFn: async () => { if (side === "owner") await replyToOwnerItem(reviewId, text.trim()); else await manageOwnerItem(reviewId, "reply", text.trim()); },
     onSuccess: () => { toast.success(side === "owner" ? "Sent to your ARHA team" : "Reply sent"); done(); },

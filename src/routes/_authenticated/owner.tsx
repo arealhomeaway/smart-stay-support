@@ -35,6 +35,7 @@ import { answerOwnerReview, ownerHome, ownerHomePreview } from "@/lib/owner-port
 import { OWNER_GOAL_LABEL } from "@/lib/owner-participation";
 import { LogTimeContext, LogTimeDialog, useOpenLogTime, type LogTimeAnchor } from "@/components/owner/LogTimeDialog";
 import { OwnerOpportunityBoard, useOutsideLines } from "@/components/owner/OwnerOpportunityBoard";
+import { canSendToActiveOwner } from "@/lib/ao-engine";
 import { OwnerPaceCard } from "@/components/owner/OwnerPlanCards";
 import { isOwnerQueue, type OwnerQueue } from "@/lib/owner-opportunity-filters";
 import { captureReviewedOpportunity, captureReviewedResponse } from "@/lib/owner-reviewed-update";
