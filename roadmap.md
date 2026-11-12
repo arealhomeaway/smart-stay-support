@@ -1,5 +1,9 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 12 PID refresh dry run (no writes, no publish)
+- [x] Dry run output in docs/pending/pid-refresh-2026-11-12 (README, changes.csv, apply.sql, apply.undo.sql)
+- [ ] Apply apply.sql — waits on approval
+
 ## Nov 12 follow-up fixes (Task drawer only, no publish)
 - [x] 18b Done button in drawer footer, closes only
 - [x] 35 Drawer closes after successful send (Breezeway, homeowner, email); toast stays
