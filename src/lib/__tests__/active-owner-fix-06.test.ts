@@ -318,7 +318,7 @@ describe("Active Owner fix file 06, staged SQL on an isolated database", () => {
       for (const l of kept) {
         const i = part.indexOf(l, at);
         if (l.includes("IF NOT EXISTS (SELECT 1 FROM unnest(rv.reviewer_roles)")) { expect(part.some((x) => x.includes("AND NOT EXISTS (SELECT 1 FROM unnest(rv.reviewer_roles)"))).toBe(true); continue; }
-        expect(i).toBeGreaterThanOrEqual(at);
+        expect(i >= at).toBe(true);
         at = i + 1;
       }
     }
