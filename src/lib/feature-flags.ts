@@ -53,6 +53,8 @@ export const FLAG_KEYS = [
   // Build 16 B1, B2: retired Home buttons, kept behind switches that stay OFF.
   "arrival_ready_button",
   "finance_packet_button",
+  // Nightly copy from the Notion PID (src/lib/pid-sync). Off until the Admin approves the first refresh.
+  "pid_nightly_sync",
 ] as const;
 
 export type FlagKey = (typeof FLAG_KEYS)[number];

@@ -32,6 +32,8 @@ export const WRITE_PROTECTED = new Set([
   "latitude", "longitude", "formatted_address", "handoff_accepted_at",
 ]);
 export const OWNERREZ_COLUMNS = new Set(["bedrooms", "bathrooms", "max_guests", "living_area_sqft", "latitude", "longitude", "instant_book"]);
+/** Resolve workflow fields (ownership model: workflow and status belong to Resolve). */
+export const RESOLVE_WORKFLOW = new Set(["lifecycle_status"]);
 const MARKETS = ["OKC", "Tulsa", "Fort Worth", "Indy", "Carlton Landing", "Houston"];
 
 export type PidPage = { id: string; last_edited_time?: string | null; properties: Record<string, any> };
@@ -387,6 +389,8 @@ export function planPidRefresh(pages: PidPage[], snap: PidSnapshot, opts: PlanOp
       const changedSinceCopy = snap.changedSinceCopy?.has(`${prop["id"]}|${fieldKey}`) ?? false;
       const edited = changedSinceCopy || (editsBy.get(`${prop["id"]}|${fieldKey}`) ?? []).some((at) => !imported || at > since);
       if (ownerRezOwned) { changes.push({ ...base, kind: "conflict", conflictWith: "OwnerRez", reason: "OwnerRez-owned field; never written" }); continue; }
+      // The home's status is Resolve workflow: the PID may only fill it, never change it.
+      if (RESOLVE_WORKFLOW.has(path[0]!) && !isBlankValue(current)) { changes.push({ ...base, kind: "conflict", conflictWith: "Resolve", reason: "Resolve sets the home's status" }); continue; }
       if (isBlankValue(current)) {
         if (!imported) changes.push({ ...base, kind: "fill", conflictWith: "", reason: "home not imported before" });
         else if (prov && prov.value_source !== "notion_pid") changes.push({ ...base, kind: "conflict", conflictWith: "Resolve", reason: `set by ${prov.value_source} since the import` });
