@@ -878,6 +878,45 @@ export type Database = {
         }
         Relationships: []
       }
+      ao_plan_move_receipts: {
+        Row: {
+          actor_id: string
+          archived_at: string | null
+          created_at: string
+          id: number
+          kind: string
+          prior_version_id: string | null
+          project_id: string
+          property_id: string
+          step_id: string | null
+          task_id: string | null
+        }
+        Insert: {
+          actor_id: string
+          archived_at?: string | null
+          created_at?: string
+          id?: number
+          kind: string
+          prior_version_id?: string | null
+          project_id: string
+          property_id: string
+          step_id?: string | null
+          task_id?: string | null
+        }
+        Update: {
+          actor_id?: string
+          archived_at?: string | null
+          created_at?: string
+          id?: number
+          kind?: string
+          prior_version_id?: string | null
+          project_id?: string
+          property_id?: string
+          step_id?: string | null
+          task_id?: string | null
+        }
+        Relationships: []
+      }
       ao_plan_ready_notices: {
         Row: {
           created_at: string
