@@ -610,3 +610,32 @@
     opacity: 0;
   }
 }
+
+/*
+ * Onboarding home page, Part 1 (approved Nov 12): the role colors on Task rows and tags, the
+ * selected stage, late text and the Needs attention strip. Exact values from the approved spec.
+ */
+@theme inline {
+  --color-role-you-bg: #e3f4ea;
+  --color-role-you-fg: #1e6b3e;
+  --color-role-you-bar: #2e9e5b;
+  --color-role-designer-bg: #efe6fb;
+  --color-role-designer-fg: #5e3399;
+  --color-role-designer-bar: #8a5cd1;
+  --color-role-utilities-bg: #e3eefb;
+  --color-role-utilities-fg: #1d5596;
+  --color-role-utilities-bar: #3b7fd1;
+  --color-role-homeowner-bg: #fdf0dc;
+  --color-role-homeowner-fg: #8a5200;
+  --color-role-homeowner-bar: #d08a1e;
+  --color-role-director-bg: #e9ecee;
+  --color-role-director-fg: #3d4a52;
+  --color-role-director-bar: #6b7a84;
+  --color-role-unassigned-bg: #f3f1ec;
+  --color-role-unassigned-fg: #5f5f5f;
+  --color-role-unassigned-bar: #b8b1a4;
+  --color-role-unassigned-border: #a8a194;
+  --color-stage-selected: #145a5e;
+  --color-stage-selected-fg: #ffffff;
+  --color-late: #9a2f22;
+}
