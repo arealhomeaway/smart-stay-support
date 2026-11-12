@@ -9,7 +9,8 @@
  * goes through the review record.
  */
 import { OwnerItemConversation } from "@/components/owner/OwnerItemConversation";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { OwnerSidePanel, PanelSection } from "@/components/owner/OwnerSidePanel";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { CheckCircle2, Clock, Download, FileText, ImageIcon, RotateCcw } from "lucide-react";
@@ -17,14 +18,6 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { usCalendarDate, usDateTime } from "@/lib/dates";
 import { SILENCE_IS_NOT_APPROVAL, deadlineState } from "@/lib/owner-deadline";
 import { formatBytes } from "@/lib/attachments";
@@ -122,6 +115,7 @@ export function OwnerTaskDialog({
   sharedFiles,
   reviewId,
   readOnly = false,
+  extra = null,
 }: {
   open: boolean;
   onOpenChange: (next: boolean) => void;
@@ -140,6 +134,8 @@ export function OwnerTaskDialog({
   /** The owner item; a Task sent as a conversation shows it here instead of the one-time reply. */
   reviewId?: string;
   readOnly?: boolean;
+  /** Extra sections for this item, such as a photo download. */
+  extra?: ReactNode;
 }) {
   const [response, setResponse] = useState("");
   const [note, setNote] = useState("");
@@ -172,187 +168,124 @@ export function OwnerTaskDialog({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const reply = canRespond ? (
+    <div className="space-y-2">
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Your reply</p>
+      <Textarea
+        rows={4}
+        placeholder="Write your answer, question or decision"
+        aria-label="Your reply"
+        value={response}
+        onChange={(e) => setResponse(e.target.value)}
+        disabled={responding}
+      />
+      <Button className="min-h-11" size="sm" disabled={responding} onClick={() => onRespond(response.trim())}>
+        Send to ARHA
+      </Button>
+    </div>
+  ) : null;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>{details.title}</DialogTitle>
-          <DialogDescription>
-            Everything your ARHA team sent with this item, and what they need back from you.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">{details.source}</Badge>
-          <Badge variant="outline">{details.statusLabel}</Badge>
-          {details.homes ? (
-            <span className="text-xs text-muted-foreground">{details.homes}</span>
-          ) : null}
-          {deadline ? (
-            <span
-              className={[
-                "numeric text-xs",
-                deadline.overdue ? "font-semibold text-destructive" : "text-muted-foreground",
-              ].join(" ")}
-            >
-              {deadline.label}
-              {deadline.note ? ` · ${deadline.note}` : ""}
-            </span>
-          ) : null}
-        </div>
-
-        <div className="space-y-4">
-          {details.question ? (
-            <Block label="What we need from you">{linkifyText(details.question)}</Block>
-          ) : null}
-          {action?.detail ? (
-            <Block label="Details and instructions">{linkifyText(action.detail)}</Block>
-          ) : null}
-          {details.recommendation ? (
-            <Block label="Our recommendation">{linkifyText(details.recommendation)}</Block>
-          ) : null}
-          {details.guidance ? (
-            <p className="text-sm text-muted-foreground">{details.guidance}</p>
-          ) : null}
-
-          {files.length > 0 ? (
-            <div className="space-y-2">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Documents and photos shared with you
-              </p>
-              {files.map((file) => (
-                <SharedFile key={file.id} file={file} disabled={submitDecision.isPending} />
-              ))}
-            </div>
-          ) : null}
-
-          {action?.blockedReason ? (
-            <p className="text-sm" role="status">
-              {action.blockedReason}
-            </p>
-          ) : null}
-
-          {details.priorResponse ? (
-            <Block label="Your recorded response">{details.priorResponse}</Block>
-          ) : null}
-
-          {action?.decidedAt ? (
+    <OwnerSidePanel
+      open={open}
+      onOpenChange={onOpenChange}
+      status={details.statusLabel}
+      title={details.title}
+      home={[details.homes, details.source].filter(Boolean).join(" · ")}
+      sentAt={details.sentAt ?? null}
+      answerBy={details.respondBy ?? action?.dueOn ?? null}
+      footer={
+        <>
+          {canLogTime ? (
+            <Button className="min-h-11" size="sm" variant="outline" onClick={onLogTime}>
+              <Clock className="mr-1 size-4" aria-hidden="true" /> Log hours for this
+            </Button>
+          ) : (
             <p className="text-xs text-muted-foreground">
-              Decision recorded {usDateTime(action.decidedAt)}.
+              {logTimeBlockedReason ?? "Logging time is not available for this item."}
             </p>
-          ) : null}
-
-          {decidable ? (
-            <div className="rounded-xl border border-border p-3">
-              <p className="text-sm font-medium">Your decision</p>
-              <p className="mt-1 text-xs text-muted-foreground">{SILENCE_IS_NOT_APPROVAL}</p>
-              <Textarea
-                className="mt-2"
-                rows={3}
-                placeholder="Add a note (required if you request changes)"
-                aria-label="Note with your decision"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                disabled={submitDecision.isPending}
-              />
-              <div className="mt-2 flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  disabled={submitDecision.isPending}
-                  onClick={() => submitDecision.mutate("approved")}
-                >
-                  <CheckCircle2 className="mr-1 size-4" aria-hidden="true" /> Approve
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={submitDecision.isPending}
-                  onClick={() => submitDecision.mutate("declined")}
-                >
-                  <RotateCcw className="mr-1 size-4" aria-hidden="true" /> Request changes
-                </Button>
-              </div>
-            </div>
-          ) : null}
-
-          {reviewId && open ? (
-            <OwnerItemConversation
-              reviewId={reviewId}
-              side="owner"
-              readOnly={readOnly}
-              onChanged={onDecided}
-              fallback={canRespond ? (
-            <div className="rounded-xl border border-border p-3">
-              <p className="text-sm font-medium">Your reply</p>
-              <Textarea
-                className="mt-2"
-                rows={4}
-                placeholder="Write your answer, question or decision"
-                aria-label="Your reply"
-                value={response}
-                onChange={(e) => setResponse(e.target.value)}
-                disabled={responding}
-              />
-              <Button
-                className="mt-2"
-                size="sm"
-                disabled={responding}
-                onClick={() => onRespond(response.trim())}
-              >
-                Send response
-              </Button>
-            </div>
-              ) : null}
-            />
-          ) : canRespond ? (
-            <div className="rounded-xl border border-border p-3">
-              <p className="text-sm font-medium">Your reply</p>
-              <Textarea
-                className="mt-2"
-                rows={4}
-                placeholder="Write your answer, question or decision"
-                aria-label="Your reply"
-                value={response}
-                onChange={(e) => setResponse(e.target.value)}
-                disabled={responding}
-              />
-              <Button
-                className="mt-2"
-                size="sm"
-                disabled={responding}
-                onClick={() => onRespond(response.trim())}
-              >
-                Send response
-              </Button>
-            </div>
-          ) : null}
-
-          <div className="rounded-xl border border-dashed border-border p-3">
-            <p className="text-sm font-medium">Time you spent on this</p>
-            {canLogTime ? (
-              <>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Enter the minutes you actually spent. We never fill that in for you.
-                </p>
-                <Button className="mt-2" size="sm" variant="outline" onClick={onLogTime}>
-                  <Clock className="mr-1 size-4" aria-hidden="true" /> Log my time
-                </Button>
-              </>
-            ) : (
-              <p className="mt-1 text-xs text-muted-foreground">
-                {logTimeBlockedReason ?? "Logging time is not available for this item."}
-              </p>
-            )}
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+          )}
+          <Button className="min-h-11 sm:ml-auto" size="sm" variant="ghost" onClick={() => onOpenChange(false)}>
             Close
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </>
+      }
+    >
+      {deadline?.overdue ? (
+        <p className="numeric text-sm font-semibold text-destructive">
+          {deadline.label}
+          {deadline.note ? ` · ${deadline.note}` : ""}
+        </p>
+      ) : null}
+
+      {details.question || action?.detail ? (
+        <PanelSection label="What we're asking">
+          <div className="space-y-2">
+            {details.question ? <p className="whitespace-pre-wrap">{linkifyText(details.question)}</p> : null}
+            {action?.detail ? <p className="whitespace-pre-wrap text-muted-foreground">{linkifyText(action.detail)}</p> : null}
+          </div>
+        </PanelSection>
+      ) : null}
+      {details.recommendation ? (
+        <PanelSection label="Our recommendation"><p className="whitespace-pre-wrap">{linkifyText(details.recommendation)}</p></PanelSection>
+      ) : null}
+      {details.guidance ? <p className="text-sm text-muted-foreground">{details.guidance}</p> : null}
+      {extra}
+
+      {files.length > 0 ? (
+        <PanelSection label="Files">
+          <div className="space-y-2">
+            {files.map((file) => (
+              <SharedFile key={file.id} file={file} disabled={submitDecision.isPending} />
+            ))}
+          </div>
+        </PanelSection>
+      ) : null}
+
+      {action?.blockedReason ? (
+        <p className="text-sm" role="status">
+          {action.blockedReason}
+        </p>
+      ) : null}
+
+      {details.priorResponse ? (
+        <PanelSection label="Your recorded response"><p className="whitespace-pre-wrap">{details.priorResponse}</p></PanelSection>
+      ) : null}
+
+      {action?.decidedAt ? (
+        <p className="text-xs text-muted-foreground">Decision recorded {usDateTime(action.decidedAt)}.</p>
+      ) : null}
+
+      {decidable ? (
+        <div className="rounded-xl border border-border p-3">
+          <p className="text-sm font-medium">Your decision</p>
+          <p className="mt-1 text-xs text-muted-foreground">{SILENCE_IS_NOT_APPROVAL}</p>
+          <Textarea
+            className="mt-2"
+            rows={3}
+            placeholder="Add a note (required if you request changes)"
+            aria-label="Note with your decision"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            disabled={submitDecision.isPending}
+          />
+          <div className="mt-2 flex flex-wrap gap-2">
+            <Button className="min-h-11" size="sm" disabled={submitDecision.isPending} onClick={() => submitDecision.mutate("approved")}>
+              <CheckCircle2 className="mr-1 size-4" aria-hidden="true" /> Approve
+            </Button>
+            <Button className="min-h-11" size="sm" variant="outline" disabled={submitDecision.isPending} onClick={() => submitDecision.mutate("declined")}>
+              <RotateCcw className="mr-1 size-4" aria-hidden="true" /> Request changes
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      {reviewId && open ? (
+        <OwnerItemConversation reviewId={reviewId} side="owner" readOnly={readOnly} onChanged={onDecided} fallback={reply} />
+      ) : (
+        reply
+      )}
+    </OwnerSidePanel>
   );
 }
 
