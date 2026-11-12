@@ -7,7 +7,7 @@
  */
 
 export type BoardSource = "work" | "review" | "plan" | "approval" | "action" | "template";
-export type BoardGroup = "answer" | "ready" | "optional" | "soon" | "done";
+export type BoardGroup = "answer" | "with_arha" | "ready" | "optional" | "soon" | "done";
 
 export type BoardItem = {
   /** Unique across sources, e.g. "plan:<id>". */

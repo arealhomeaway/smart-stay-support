@@ -37,7 +37,10 @@ import {
   answerChip,
   boardGroup,
   boardView,
+  cardLine,
   centralToday,
+  isArhaSetupStep,
+  streetOnly,
   mergeOncePerOwner,
   mostUrgentHome,
   needYouCount,
@@ -131,7 +134,8 @@ export function OwnerOpportunityBoard({
     retry: false,
   });
 
-  const homeName = (id: string) => homes.find((h) => h.propertyId === id)?.address || homes.find((h) => h.propertyId === id)?.name || null;
+  // Fix 3: the street address only.
+  const homeName = (id: string) => streetOnly(homes.find((h) => h.propertyId === id)?.address) || homes.find((h) => h.propertyId === id)?.name || null;
   const photo = (id: string | null | undefined) => homes.find((h) => h.propertyId === id)?.photoUrl ?? null;
 
   const items = useMemo<Item[]>(() => {
@@ -185,6 +189,7 @@ export function OwnerOpportunityBoard({
         deadline: r.respond_by,
         needsAnswer: p.attention && speaker !== "homeowner",
         newReply,
+        withArha: !finished && speaker === "homeowner",
         optional: false,
         locked: false,
         finished,
@@ -257,6 +262,7 @@ export function OwnerOpportunityBoard({
         deadline: o.dueOn ?? null,
         needsAnswer: inQueue(o.queue, "awaiting"),
         newReply: !o.finished && o.queue.lastSpeaker === "staff",
+        withArha: !o.finished && o.queue.lastSpeaker === "homeowner",
         optional: !arha,
         locked: false,
         finished: o.finished,
@@ -286,7 +292,8 @@ export function OwnerOpportunityBoard({
         status: "Optional",
       });
     }
-    return mergeOncePerOwner(out);
+    // Fix 5: ARHA's setup step never shows as owner work.
+    return mergeOncePerOwner(out.filter((i) => !isArhaSetupStep(i.title)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [planRows, reviews, onboarding.data, approvals.data, opp, speakers.data, homes]);
 
@@ -406,6 +413,12 @@ export function OwnerOpportunityBoard({
         {view.answer.map(card)}
       </Group>
 
+      {!home && tab !== "all" && view.with_arha.length > 0 ? (
+        <Group title="With ARHA" count={view.with_arha.length} note="You answered. ARHA replies next." empty="">
+          {view.with_arha.map(card)}
+        </Group>
+      ) : null}
+
       {tab === "all" ? null : (
         <Group
           title="Ready for you"
@@ -415,7 +428,7 @@ export function OwnerOpportunityBoard({
         >
           {readyShown.map(card)}
           {!home && readyHidden > 0 ? (
-            <li>
+            <li className="min-[900px]:col-span-2">
               <Button variant="outline" className="min-h-11 w-full" onClick={() => setMoreReady(true)}>
                 Show {readyHidden} more here
               </Button>
@@ -494,10 +507,8 @@ export function OwnerOpportunityBoard({
   );
 }
 
-function oneLine(text: string | null | undefined) {
-  const t = (text ?? "").replace(/\s+/g, " ").trim();
-  return t.length > 140 ? `${t.slice(0, 137)}…` : t;
-}
+// Fix 2: the first sentence, cut at 90 characters.
+const oneLine = cardLine;
 
 function Group({
   title, count, countTone = "plain", note, empty, children,
@@ -526,7 +537,7 @@ function Group({
         </div>
         <p className="text-sm text-muted-foreground">{note}</p>
       </div>
-      {count === 0 ? <p className="text-sm text-muted-foreground">{empty}</p> : <ul className="space-y-3">{children}</ul>}
+      {count === 0 ? <p className="text-sm text-muted-foreground">{empty}</p> : <ul className="grid gap-3 min-[900px]:grid-cols-2">{children}</ul>}
     </section>
   );
 }
@@ -543,7 +554,7 @@ function Folded({ label, open, onToggle, children }: { label: string; open: bool
         <span>{label}</span>
         <ChevronDown className={`size-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
       </button>
-      {open ? <ul className="space-y-3">{children}</ul> : null}
+      {open ? <ul className="grid gap-3 min-[900px]:grid-cols-2">{children}</ul> : null}
     </section>
   );
 }
@@ -614,6 +625,8 @@ function opensLine(text: string | null | undefined) {
 
 function cornerText(i: Item): string {
   if (i.finished) return "Completed";
+  // Fix 4: optional (anytime) cards show no due date.
+  if (i.optional) return "Optional";
   if (i.source === "plan") return i.deadline ? `Due ${shortDate(i.deadline)}` : "Open";
   if (i.source === "template") return "Optional";
   return i.status;
@@ -701,11 +714,11 @@ function PlanCardPanel({
       open
       onOpenChange={onOpenChange}
       cover={item.cover}
-      status={item.allHomes ? "All your homes" : view.kind === "done" ? "Completed" : view.kind === "closed" ? "Closed" : row.deadline_at ? `Due ${shortDate(row.deadline_at)}` : "Open"}
+      status={item.allHomes ? "All your homes" : view.kind === "done" ? "Completed" : view.kind === "closed" ? "Closed" : !item.optional && row.deadline_at ? `Due ${shortDate(row.deadline_at)}` : item.optional ? "Optional" : "Open"}
       title={row.title}
       home={[home, "Your homeowner plan"].filter(Boolean).join(" · ")}
       sentAt={row.unlocked_at}
-      answerBy={row.deadline_at ?? null}
+      answerBy={item.optional ? null : row.deadline_at ?? null}
       footer={footer}
     >
       {row.what_text ? <PanelSection label="What we're asking"><p className="whitespace-pre-wrap text-muted-foreground">{row.what_text}</p></PanelSection> : null}
