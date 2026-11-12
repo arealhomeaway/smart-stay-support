@@ -1,11 +1,26 @@
 /**
  * "Send to the homeowner" end to end through the code path the Task drawer button uses:
  * the button's exact payload, the server function's input schema, sendTaskToOwner, and a
- * REAL supabase-js client (so its rpc() runs with its own `this`). Only the network is faked;
- * the fake answers send_task_to_owner_item the way the live database function does.
+ * client shaped exactly like supabase-js SupabaseClient: real PostgrestClient underneath, and
+ * from()/rpc() methods that read `this.rest` as SupabaseClient does. (Another test file
+ * replaces the @supabase/supabase-js module for the whole run, so it is not imported here.)
+ * Only the network is faked; it answers send_task_to_owner_item the way the live function does.
  */
 import { expect, it } from "bun:test";
-import { createClient } from "@supabase/supabase-js";
+import { PostgrestClient } from "@supabase/postgrest-js";
+
+class SupabaseShapedClient {
+  rest: PostgrestClient;
+  constructor(url: string, fetchImpl: typeof fetch) {
+    this.rest = new PostgrestClient(`${url}/rest/v1`, { fetch: fetchImpl });
+  }
+  from(table: string) {
+    return this.rest.from(table);
+  }
+  rpc(fn: string, args: Record<string, unknown> = {}, options = {}) {
+    return this.rest.rpc(fn, args, options);
+  }
+}
 import { sendTaskToOwner } from "../onboarding.server";
 import { sendTaskToOwnerInput } from "../onboarding.functions";
 
@@ -41,10 +56,7 @@ function fakeBackend() {
     }
     return json({ message: `unexpected request ${path}` }, 500);
   };
-  const client = createClient("https://example.test", "sb_publishable_test", {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: { fetch: fetchImpl as typeof fetch },
-  });
+  const client = new SupabaseShapedClient("https://example.test", fetchImpl as typeof fetch);
   return { db, client };
 }
 
