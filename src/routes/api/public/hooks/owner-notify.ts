@@ -29,6 +29,7 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
         const { runNightlyReviewSync } = await import("@/lib/review-sync.server");
         const { runGuestTouchBaseSync } = await import("@/lib/guest-touch-base.server");
         const { runNightlyPropertyRefresh } = await import("@/lib/property-enrichment-run.server");
+        const { runNightlyPidSync } = await import("@/lib/pid-sync/run.server");
 
         try {
           const result = await runEmailJob(supabaseAdmin, [
@@ -52,6 +53,9 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
             { name: "guest_touch_base", run: () => runGuestTouchBaseSync(supabaseAdmin) },
             // Nightly (3 a.m. Central): property info and photos from OwnerRez. Read-only toward OwnerRez.
             { name: "property_info_nightly", run: () => runNightlyPropertyRefresh(supabaseAdmin) },
+            // Nightly (2 a.m. Central) copy from the Notion PID, only while pid_nightly_sync is on. Read-only
+            // toward Notion; last, and it never reports a failure here, so it can never hold up other work.
+            { name: "pid_nightly_sync", run: () => runNightlyPidSync(supabaseAdmin) },
           ]);
           return Response.json(result, { status: result.ok ? 200 : 500 });
         } catch (err) {

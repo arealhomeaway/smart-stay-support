@@ -27,6 +27,7 @@ import { codeCheckedText, pendingCodesLine, showPendingCodes } from "@/lib/pendi
 import { attachmentUrlFn, beginUploadFn, completeUploadFn } from "@/lib/attachments.functions";
 import { createAttachmentUploader } from "@/lib/attachment-upload-client";
 import { usDateTime } from "@/lib/dates";
+import { PidExtraFieldsCard } from "@/components/property/PidExtraFieldsCard";
 import {
   EDITING_NOTE,
   HOME_PROFILE_SECTIONS,
@@ -277,6 +278,7 @@ export function HomeProfileTab({
                 {s.title}
               </SelectItem>
             ))}
+            <SelectItem value="pid">From the PID</SelectItem>
           </SelectContent>
         </Select>
         <label className="flex min-h-11 items-center gap-2 text-sm">
@@ -331,6 +333,7 @@ export function HomeProfileTab({
           extra={section.id === "entry" ? pendingCodes : null}
         />
       ))}
+      <PidExtraFieldsCard propertyId={propertyId} />
     </div>
   );
 }

@@ -85,6 +85,8 @@ const FROZEN: Record<string, Record<string, number>> = {
   // The OpenStreetMap credit line. The map's licence requires the copyright sign.
   "src/lib/search-map.ts": { symbol: 1 },
   "src/components/direct-bookings/SearchMap.tsx": { symbol: 1 },
+  // A Notion PID field name the nightly copy reads by its exact name; it cannot be reworded here.
+  "src/lib/pid-sync/mapping-v1.ts": { hyphenDash: 1 },
 };
 
 function files(dir: string, out: string[] = []) {
