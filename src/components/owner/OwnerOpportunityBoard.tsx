@@ -87,6 +87,7 @@ export function OwnerOpportunityBoard({
   renderReview,
   onLogHours,
   blockedReason = null,
+  programLive = false,
 }: {
   /** "full" = the Opportunities page; "home" = the portal home page preview. */
   variant: "full" | "home";
@@ -105,6 +106,8 @@ export function OwnerOpportunityBoard({
   renderReview: (review: BoardReview, open: boolean, onOpenChange: (next: boolean) => void) => ReactNode;
   onLogHours?: (activity: string, propertyId: string | null) => void;
   blockedReason?: string | null;
+  /** The viewed program is live (not closed or archived): the outside wording's log time sentence. */
+  programLive?: boolean;
 }) {
   const { user } = useRouteContext({ from: "/_authenticated" });
   const today = centralToday();
@@ -114,7 +117,7 @@ export function OwnerOpportunityBoard({
   const plan = useQuery({ queryKey: ["ao-owner-plan", programId, "portal"], queryFn: () => loadOwnerPortalPlan(programId), retry: false });
   const planRows: OwnerPortalPlanRow[] = plan.data?.available ? plan.data.data : [];
   // Item 2: cards for work done outside Resolve say where to look instead of asking for an upload.
-  const outside = useOutsideLines(programId);
+  const outside = useOutsideLines(programId, programLive);
   const planTitles = useMemo(() => {
     const m = new Map<string, string[]>();
     for (const c of planRows) if (c.property_id) m.set(c.property_id, [...(m.get(c.property_id) ?? []), c.title]);
@@ -131,8 +134,8 @@ export function OwnerOpportunityBoard({
   });
   const reviewIds = useMemo(() => reviews.map((r) => r.id).sort(), [reviews]);
   const speakers = useQuery({
-    queryKey: ["owner-item-speakers", reviewIds],
-    queryFn: () => loadOwnerItemLastSpeakers(reviewIds),
+    queryKey: ["owner-item-speakers", reviewIds, !preview],
+    queryFn: () => loadOwnerItemLastSpeakers(reviewIds, !preview),
     retry: false,
   });
 
@@ -495,6 +498,7 @@ export function OwnerOpportunityBoard({
           onStart={beginStart}
           starting={starting.isPending}
           blockedReason={blockedReason}
+          programLive={programLive}
           {...(onLogHours ? { onLogHours } : {})}
         />
       ) : null}
@@ -640,7 +644,7 @@ function cornerText(i: Item): string {
 
 /** Opens the item's own panel: each source keeps its own record and actions. */
 function ItemPanel({
-  item, programId, homes, homeName, multi, readOnly, preview, reviews, live, templates, renderReview, onClose, onStart, starting, blockedReason, onLogHours,
+  item, programId, homes, homeName, multi, readOnly, preview, reviews, live, templates, renderReview, onClose, onStart, starting, blockedReason, onLogHours, programLive,
 }: {
   item: Item;
   programId: string;
@@ -658,9 +662,10 @@ function ItemPanel({
   starting: boolean;
   blockedReason: string | null;
   onLogHours?: (activity: string, propertyId: string | null) => void;
+  programLive: boolean;
 }) {
   const home = sourceLine({ ...item, from: "" }, homeName, multi);
-  const outsideLines = useOutsideLines(programId);
+  const outsideLines = useOutsideLines(programId, programLive);
   const onOpenChange = (next: boolean) => { if (!next) onClose(); };
   const logFooter =
     onLogHours && !blockedReason && !readOnly ? (
@@ -687,7 +692,7 @@ function ItemPanel({
       />
     );
   }
-  if (item.source === "plan") return <PlanCardPanel item={item} programId={programId} home={home} readOnly={readOnly} onOpenChange={onOpenChange} footer={logFooter} />;
+  if (item.source === "plan") return <PlanCardPanel item={item} programId={programId} programLive={programLive} home={home} readOnly={readOnly} onOpenChange={onOpenChange} footer={logFooter} />;
   if (item.source === "approval" || item.source === "action") {
     return (
       <OwnerSidePanel open onOpenChange={onOpenChange} status={item.status} title={item.title} home={[home, item.from].filter(Boolean).join(" · ")} sentAt={item.sentAt} answerBy={item.answerBy} footer={logFooter}>
@@ -704,10 +709,11 @@ function ItemPanel({
 }
 
 function PlanCardPanel({
-  item, programId, home, readOnly, onOpenChange, footer,
+  item, programId, programLive, home, readOnly, onOpenChange, footer,
 }: {
   item: Item;
   programId: string;
+  programLive: boolean;
   home: string;
   readOnly: boolean;
   onOpenChange: (next: boolean) => void;
@@ -715,7 +721,7 @@ function PlanCardPanel({
 }) {
   const q = useQuery({ queryKey: ["ao-owner-plan", programId, "portal"], queryFn: () => loadOwnerPortalPlan(programId), retry: false });
   const row = q.data?.available ? q.data.data.find((c) => c.plan_card_id === item.id) : undefined;
-  const outsideLine = useOutsideLines(programId).get(`plan:${item.id}`) ?? null;
+  const outsideLine = useOutsideLines(programId, programLive).get(`plan:${item.id}`) ?? null;
   if (!row) return null;
   const view = portalCardView(row);
   return (
@@ -792,9 +798,9 @@ function TemplatePanel({
 }
 
 
-/** Item 2: the outside-Resolve owner lines for this program (shared cache). */
-export function useOutsideLines(programId: string): Map<string, string> {
-  const q = useQuery({ queryKey: ["owner-outside-lines", programId], queryFn: () => loadOwnerOutsideLines(programId), retry: false, staleTime: 60_000 });
+/** The Done outside Resolve owner wording for this program (shared cache). */
+export function useOutsideLines(programId: string, programLive: boolean): Map<string, string> {
+  const q = useQuery({ queryKey: ["owner-outside-lines", programId, programLive], queryFn: () => loadOwnerOutsideLines(programId, programLive), retry: false, staleTime: 60_000 });
   return q.data ?? EMPTY_LINES;
 }
 const EMPTY_LINES = new Map<string, string>();
