@@ -33,7 +33,7 @@ import { TaskStageTrail } from "@/components/onboarding/TaskStageTrail";
 import { TaskTeamComments } from "@/components/onboarding/TaskTeamComments";
 import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
 import { BreezewayHomeLink, OnboardingBreezewaySection } from "@/components/onboarding/OnboardingBreezewaySection";
-import { showsBreezewayHomeLink } from "@/lib/onboarding-breezeway";
+import { breezewayStepSummary, showsBreezewayHomeLink } from "@/lib/onboarding-breezeway";
 import { evidenceSatisfied } from "@/lib/onboarding-evidence";
 import { listAttachmentsFn } from "@/lib/attachments.functions";
 import { bulkUpdateHomeTasksFn, markTaskStartedFn } from "@/lib/onboarding.functions";
@@ -596,45 +596,55 @@ export function TaskDrawer({
         </div>
       }
       footer={
-        finished || (middle === "send_to_owner" && sentToOwner) ? undefined : (
-          <div className="flex flex-1 flex-col gap-1">
-            {middle === "work_order" ? null : middle === "send_to_owner" ? (
-              <Button type="submit" form={sendFormId(task.id)} className="min-h-11 w-full" disabled={disabled || !ownerReady}>
-                Send to the homeowner
-              </Button>
-            ) : middle === "email" ? (
-              <EmailComposer
-                context="onboarding_task"
-                recordId={task.id}
-                label="Send email"
-                variant="primary"
-                presetTemplateId={settings.emailTemplateId ?? null}
-                bracketFillIns
-                disabled={disabled || Boolean(releaseHint)}
-                onSent={(info) => complete(`Email sent to ${info.to}: ${info.subject}`.slice(0, 1000))}
-              />
-            ) : middle === "approval" ? (
-              <ApprovalComplete
-                taskId={task.id}
-                assignedTo={task.assigned_to}
-                disabled={disabled}
-                blockedReason={releaseHint}
-                onApprove={() => complete(evidence.trim() || "Approved")}
-              />
-            ) : (
-              <ReviewAwareComplete taskId={task.id} disabled={disabled || Boolean(hint)}>
-                <Button
-                  className="min-h-11 w-full"
-                  disabled={disabled || Boolean(hint)}
-                  onClick={() => complete(middle === "outside_resolve" ? outsideEvidence(outside) : undefined)}
-                >
-                  {mainButtonLabel(middle)}
-                </Button>
-              </ReviewAwareComplete>
+        // Item 18b: Done only closes the drawer; it never saves or sends.
+        <div className="flex w-full flex-col gap-1">
+          <div className="flex w-full flex-wrap items-start justify-end gap-2">
+            {finished || (middle === "send_to_owner" && sentToOwner) || middle === "work_order" ? null : (
+              <div className="min-w-0 flex-1">
+                {middle === "send_to_owner" ? (
+                  <Button type="submit" form={sendFormId(task.id)} className="min-h-11 w-full" disabled={disabled || !ownerReady}>
+                    Send to the homeowner
+                  </Button>
+                ) : middle === "email" ? (
+                  <EmailComposer
+                    context="onboarding_task"
+                    recordId={task.id}
+                    label="Send email"
+                    variant="primary"
+                    presetTemplateId={settings.emailTemplateId ?? null}
+                    bracketFillIns
+                    disabled={disabled || Boolean(releaseHint)}
+                    onSent={(info) => { complete(`Email sent to ${info.to}: ${info.subject}`.slice(0, 1000)); onClose(); }}
+                  />
+                ) : middle === "approval" ? (
+                  <ApprovalComplete
+                    taskId={task.id}
+                    assignedTo={task.assigned_to}
+                    disabled={disabled}
+                    blockedReason={releaseHint}
+                    onApprove={() => complete(evidence.trim() || "Approved")}
+                  />
+                ) : (
+                  <ReviewAwareComplete taskId={task.id} disabled={disabled || Boolean(hint)}>
+                    <Button
+                      className="min-h-11 w-full"
+                      disabled={disabled || Boolean(hint)}
+                      onClick={() => complete(middle === "outside_resolve" ? outsideEvidence(outside) : undefined)}
+                    >
+                      {mainButtonLabel(middle)}
+                    </Button>
+                  </ReviewAwareComplete>
+                )}
+              </div>
             )}
-            {hint && middle !== "approval" && <p className="text-xs text-muted-foreground">{hint}</p>}
+            <Button type="button" variant="outline" className="min-h-11 min-w-24" onClick={onClose}>
+              Done
+            </Button>
           </div>
-        )
+          {!finished && !(middle === "send_to_owner" && sentToOwner) && hint && middle !== "approval" && (
+            <p className="text-xs text-muted-foreground">{hint}</p>
+          )}
+        </div>
       }
     >
       <div className="space-y-5">
@@ -655,7 +665,7 @@ export function TaskDrawer({
 
         {middle === "work_order" && (
           <section className="space-y-2" aria-label="Breezeway work order">
-            <OnboardingBreezewaySection taskId={task.id} propertyId={task.property_id} disabled={disabled} defaultTitle={task.title} defaultDescription={task.detail ?? null} />
+            <OnboardingBreezewaySection taskId={task.id} propertyId={task.property_id} disabled={disabled} defaultTitle={task.title} defaultDescription={breezewayStepSummary(detailText, task.description)} onSent={onClose} />
           </section>
         )}
 
@@ -744,7 +754,7 @@ export function TaskDrawer({
             plannedClosingOn={null}
             outside={outside}
             onOutside={setOutside}
-            onEmailSent={(info) => complete(`Email sent to ${info.to}: ${info.subject}`.slice(0, 1000))}
+            onEmailSent={(info) => { complete(`Email sent to ${info.to}: ${info.subject}`.slice(0, 1000)); onClose(); }}
             // Item 4: the send itself logs a vendor request in the Task history.
             onVendorRequested={() => {
               void qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
@@ -759,6 +769,7 @@ export function TaskDrawer({
           <SendToHomeownerSection
             footerSend
             onReady={setOwnerReady}
+            onSent={onClose}
             taskId={task.id}
             taskTitle={task.title}
             propertyId={task.property_id}

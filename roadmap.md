@@ -1,5 +1,13 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 12 follow-up fixes (Task drawer only, no publish)
+- [x] 18b Done button in drawer footer, closes only
+- [x] 35 Drawer closes after successful send (Breezeway, homeowner, email); toast stays
+- [x] 36 Breezeway Description defaults to the short summary
+- [x] 37 Breezeway Title defaults to template name until edited
+- [x] Guard test (onboarding send with internal_work_orders off) + live refuse_internal_work_orders saved under docs/applied/
+- [ ] Staged guard fix docs/pending/breezeway-guard-fix (work_orders insert fails on NEW.source_type) — waits on approval to apply
+
 ## Nov 12 next fix batch 30-34 (onboarding only, no publish, no Operations changes)
 - [x] 30 Plan search box (all stages incl. finished, stage shown); Ctrl+K finds onboarding Tasks by title/home, opens drawer
 - [x] 31 One header line on onboarding home (breadcrumb, name, chip, Follow, view toggle); remove repeat home box; stage cards scroll to stage
