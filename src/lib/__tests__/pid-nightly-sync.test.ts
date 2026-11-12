@@ -122,8 +122,8 @@ describe("credential rule: codes go only to the protected vault", () => {
   });
 
   it("withholds text that may hold a code and keeps it out of the review list", () => {
-    const h = plan(page({ "Amenities Access Notes": rt("Clubhouse. The Pool Code is: 42909") }), snapshot({}));
-    const notes = PID_MAPPING_V1.find((m) => m.name === "Amenities Access Notes");
+    const h = plan(page({ "Neighborhood Amenities Access Information": rt("Clubhouse. The Pool Code is: 42909") }), snapshot({}));
+    const notes = PID_MAPPING_V1.find((m) => m.name === "Neighborhood Amenities Access Information");
     if (!notes) throw new Error("mapping row missing");
     expect(homeWrites(h)).toHaveLength(0);
     expect(h.withheld).toHaveLength(1);
@@ -132,7 +132,7 @@ describe("credential rule: codes go only to the protected vault", () => {
   });
 
   it("withholds text the Sep 1 scrub had to redact instead of copying the marker", () => {
-    const h = plan(page({ "Amenities Access Notes": rt("Front door passcode 7781 then push") }), snapshot({}));
+    const h = plan(page({ "Neighborhood Amenities Access Information": rt("Front door passcode 7781 then push") }), snapshot({}));
     expect(homeWrites(h)).toHaveLength(0);
     expect(h.withheld[0]?.side).toBe("Notion");
   });
