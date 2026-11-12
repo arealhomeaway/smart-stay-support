@@ -18,7 +18,7 @@ Apply only with the Admin's go. Nothing here has been run on the real database.
 | trigger ao_program_changed | status, archived_at | status, archived_at, owner_user_id | runs the notice step above |
 | private.ao_home_program | `active` only | live | the home's program for every card, Send to the homeowner and the handoff step |
 | private.ao_enrolled_rows | `active` only | live | Start plans for enrolled homes |
-| private.lock_owner_time_program | owner new hours: draft/active/target_reached; staff without a started clock: draft only | live (edits: live or paused) ; staff: draft, waiting_for_closing, ready_for_onboarding | Log hours |
+| private.lock_owner_time_program | owner new hours: draft/active/target_reached; staff without a started clock: draft only | live (edits: live or paused); staff: draft, waiting_for_closing, ready_for_onboarding | Log hours |
 | public.owner_hours_eligibility | draft/active/target_reached | live | Log hours button |
 | public.capture_owner_time_update | active/target_reached | live | hours logged from a reviewed update |
 | public.can_view_owner_library_video | `active` | live | Opportunity videos |
