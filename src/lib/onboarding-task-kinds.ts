@@ -67,12 +67,12 @@ export const WHERE_IT_WENT = [
 export type WhereCode = (typeof WHERE_IT_WENT)[number]["code"];
 
 export type KindSettings = {
-  emailTemplateId?: string | null;
-  trade?: string | null;
-  fields?: FillFieldCode[];
-  where?: WhereCode | null;
+  emailTemplateId?: string | null | undefined;
+  trade?: string | null | undefined;
+  fields?: FillFieldCode[] | undefined;
+  where?: WhereCode | null | undefined;
   /** Send to the homeowner steps on a standard owner's home (no live program). */
-  fallback?: "outside_resolve" | "email" | null;
+  fallback?: "outside_resolve" | "email" | null | undefined;
 };
 
 export function isTaskKind(v: unknown): v is TaskKindCode {
@@ -98,7 +98,7 @@ export function effectiveTaskKind(t: {
 
 export function kindSettings(raw: unknown): KindSettings {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
-  const r = raw as Record<string, unknown>;
+  const r = raw as { emailTemplateId?: unknown; trade?: unknown; fields?: unknown; where?: unknown; fallback?: unknown };
   const out: KindSettings = {};
   if (typeof r.emailTemplateId === "string" && r.emailTemplateId) out.emailTemplateId = r.emailTemplateId;
   if (typeof r.trade === "string" && r.trade) out.trade = r.trade;

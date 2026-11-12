@@ -423,8 +423,9 @@ export function TaskDrawer({
         ...(note ? { evidenceNote: note } : evidence.trim() ? { evidenceNote: evidence.trim() } : {}),
       }),
     );
-  const completedBy = task.completed_by ? people.find((p) => p.id === task.completed_by) : null;
-  const canReopenTop = Boolean(isAdmin || isOnboardingDirector || (userId && task.completed_by === userId));
+  const completerId = (task as WorkflowTask & { completed_by?: string | null }).completed_by ?? null;
+  const completedBy = completerId ? people.find((p) => p.id === completerId) : null;
+  const canReopenTop = Boolean(isAdmin || isOnboardingDirector || (userId && completerId === userId));
   const scrollToFiles = () =>
     document.getElementById(`task-files-${task.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
 

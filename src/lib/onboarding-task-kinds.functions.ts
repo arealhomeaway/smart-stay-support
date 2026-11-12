@@ -118,14 +118,19 @@ export const taskVendorsFn = createServerFn({ method: "POST" })
       .from("vendor_orgs")
       .select("id, legal_name, display_name, primary_contact_name, primary_contact_phone, primary_contact_email, work_order_email, breezeway_person_id, is_active, is_demo")
       .in("id", ids);
-    const rows: VendorRow[] = ((orgs.data ?? []) as Record<string, unknown>[])
+    type Org = {
+      id: string; legal_name: string | null; display_name: string | null; primary_contact_name: string | null;
+      primary_contact_phone: string | null; primary_contact_email: string | null; work_order_email: string | null;
+      breezeway_person_id: string | number | null; is_active: boolean | null; is_demo: boolean | null;
+    };
+    const rows: VendorRow[] = ((orgs.data ?? []) as Org[])
       .filter((o) => o.is_active !== false && Boolean(o.is_demo) === Boolean(home.data?.is_demo))
       .map((o) => ({
         orgId: String(o.id),
         name: String(o.display_name || o.legal_name || "Vendor"),
-        contact: (o.primary_contact_name as string | null) ?? null,
-        phone: (o.primary_contact_phone as string | null) ?? null,
-        email: ((o.primary_contact_email || o.work_order_email) as string | null) ?? null,
+        contact: o.primary_contact_name ?? null,
+        phone: o.primary_contact_phone ?? null,
+        email: o.primary_contact_email || o.work_order_email || null,
         usesBreezeway: Boolean(o.breezeway_person_id),
         homeFirstChoice: firstChoice.has(String(o.id)),
         note: firstChoice.get(String(o.id)) ?? null,
@@ -148,8 +153,10 @@ export const fillInValuesFn = createServerFn({ method: "POST" })
     ]);
     const projectId = (project.data as { id?: string } | null)?.id ?? null;
     const budget = projectId ? await db.from("onboarding_budgets").select("id").eq("project_id", projectId).limit(1) : { data: [] };
-    const h = (home.data ?? {}) as Record<string, unknown>;
-    const p = (project.data ?? {}) as Record<string, unknown>;
+    type Home = { planned_closing_on?: unknown; access?: unknown; access_notes?: unknown; wifi_notes?: unknown; utilities?: unknown; address_line1?: unknown; formatted_address?: unknown };
+    type Project = { planned_closing_on?: unknown; target_handoff_on?: unknown; committed_handoff_on?: unknown; project_manager?: unknown; role_assignments?: unknown };
+    const h = (home.data ?? {}) as Home;
+    const p = (project.data ?? {}) as Project;
     const has = (v: unknown) => v !== null && v !== undefined && String(typeof v === "object" ? JSON.stringify(v) : v).replace(/[{}[\]"]/g, "").trim() !== "";
     const filled: Partial<Record<FillFieldCode, boolean | null>> = {
       closing_date: has(h.planned_closing_on) || has(p.planned_closing_on),
