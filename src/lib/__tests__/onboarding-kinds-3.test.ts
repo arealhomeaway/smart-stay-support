@@ -69,7 +69,7 @@ describe("item 2: With ARHA shows in every tab", () => {
     expect(boardView(items, "h2").with_arha).toEqual([]);
   });
   it("who wrote last ignores events and system lines (the homeowner's own conversation read)", async () => {
-    const { lastSpeaker } = await import("../ao-data-speakers");
+    const { lastSpeaker } = await import("../owner-item-speakers");
     expect(lastSpeaker([{ author_type: "staff" }, { author_type: "homeowner" }, { author_type: "system" }, { author_type: "staff", event: "resolved" }])).toBe("homeowner");
     expect(lastSpeaker([{ author_type: "homeowner" }, { author_type: "staff" }])).toBe("staff");
     expect(lastSpeaker([])).toBeNull();

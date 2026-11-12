@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchAllPages, unwrap, type Available } from "@/lib/ao-ui";
 import type { LinkSuggestionRow, MapRow } from "@/lib/ao-dedupe";
 import { ownerItemApproval } from "@/lib/owner-item-approval";
+import { lastSpeaker } from "@/lib/owner-item-speakers";
 
 // The engine tables are staged and not in generated types yet.
 const db = supabase as unknown as {
@@ -340,12 +341,3 @@ export async function loadOwnerItemLastSpeakers(reviewIds: string[], ownerSide =
   return out;
 }
 
-/** Who wrote last in a conversation: events and system lines are ignored. */
-export function lastSpeaker(messages: { author_type: string; event?: string | null }[]): "homeowner" | "staff" | null {
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const m = messages[i]!;
-    if (m.event || m.author_type === "system") continue;
-    return m.author_type === "homeowner" ? "homeowner" : "staff";
-  }
-  return null;
-}
