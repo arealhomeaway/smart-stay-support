@@ -1338,9 +1338,10 @@ export async function reopenOnboardingTask(
     action: "onboarding_task_reopened",
     entityType: "onboarding_task",
     entityId: input.taskId,
+    entityLabel: task.title,
     reason: input.reason,
-    afterValue: { reopened_at: new Date().toISOString(), reopened_by: userId, completed_by: (task as { completed_by?: string | null }).completed_by ?? null },
-  } as never);
+    after: { status: "open", reopened_at: new Date().toISOString(), reopened_by: userId, completed_by: (task as { completed_by?: string | null }).completed_by ?? null },
+  });
   return { ok: true as const };
 }
 
