@@ -218,7 +218,7 @@ export function TaskDrawer({
   const [outside, setOutside] = useState<OutsideDraft>({ where: null, proof: "", note: "" });
   const [ownerReady, setOwnerReady] = useState(false);
   const [topReopen, setTopReopen] = useState(false);
-  const { userId, isAdmin, isOnboardingDirector } = useRole() as ReturnType<typeof useRole> & { isAdmin?: boolean; isOnboardingDirector?: boolean };
+  const { userId, isAdmin, isOnboardingDirector } = useRole();
   const qc = useQueryClient();
   const router = useRouter();
   // Same list (and cache key) the Task's file panel reads: a stored file is proof.
@@ -354,7 +354,7 @@ export function TaskDrawer({
   const middle = drawerMiddle(code, settings, hasPortal);
   const dispatchable = showsBreezeway({ title: task.title, detail: task.detail });
   const finished = task.status === "complete" || task.status === "carryover";
-  const sentToOwner = kind === "homeowner" && (Boolean(ownerItem) || task.owner_approval_status === "awaiting_owner");
+  const sentToOwner = middle === "send_to_owner" && (Boolean(ownerItem) || task.owner_approval_status === "awaiting_owner");
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Chicago" });
   const dueText = dueChip(task.due_on, task.status, today);
   const hasStartedColumn = "started_at" in task;
