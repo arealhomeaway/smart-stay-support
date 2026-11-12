@@ -3,7 +3,7 @@
  * shared by the stage lists and Every task, a bar pinned to the bottom of the screen, the forms,
  * the result line and Undo. Rules live in src/lib/plan-catch-up.ts; the database re-checks.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
 import { Check, Minus, X } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
@@ -150,6 +150,24 @@ export function PlanCatchUpBar({
   const [undoing, setUndoing] = useState(false);
   const [, tick] = useState(0);
   const undo = useServerFn(undoPlanCatchUpFn);
+  // Pinned beside the side menu, never over it: follow the page's main column.
+  const [span, setSpan] = useState<{ left: number; width: number } | null>(null);
+  useLayoutEffect(() => {
+    const main = document.querySelector("main");
+    if (!main) return;
+    const measure = () => {
+      const r = main.getBoundingClientRect();
+      setSpan({ left: r.left, width: r.width });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(main);
+    window.addEventListener("resize", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, []);
   const selectedTasks = useMemo(() => tasks.filter((t) => selection.selected.has(t.id)), [tasks, selection.selected]);
   const ids = selectedTasks.map((t) => t.id);
   const actions = barActions(selectedTasks);
@@ -193,7 +211,8 @@ export function PlanCatchUpBar({
       <div
         role="region"
         aria-label="Selected Tasks"
-        className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card shadow-lg print:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card shadow-lg print:hidden"
+        style={span ? { left: span.left, width: span.width, right: "auto" } : undefined}
       >
         <div className="mx-auto max-w-6xl space-y-2 px-3 py-3 pr-16 sm:px-4">
           {showLast && last ? (
