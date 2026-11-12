@@ -1,5 +1,10 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 12 small fix batch 38-40 (no DB change, no publish)
+- [x] 38 Files below the main section for send/email/approval/outside/vendor/fill in
+- [x] 39 Needs a file before sending (template checkbox, drawer, server)
+- [x] 40 Onboarding home header: no empty photo block, no repeated Owner Type / Status
+
 ## Nov 12 PID refresh dry run (no writes, no publish)
 - [x] Dry run output in docs/pending/pid-refresh-2026-11-12 (README, changes.csv, apply.sql, apply.undo.sql)
 - [ ] Apply apply.sql — waits on approval
