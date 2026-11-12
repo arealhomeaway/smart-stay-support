@@ -132,3 +132,19 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.owner_item_approve(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.owner_item_approve(uuid) TO authenticated;
+
+-- Fix 24: whether an owner item asks for an approval (the owner sees Approve and Ask a question).
+CREATE OR REPLACE FUNCTION public.owner_item_is_approval(_review_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, private AS $$
+  SELECT coalesce((
+    SELECT (coalesce(t.requires_owner_approval, false) OR t.owner_dependency = 'business_decision')
+           AND t.owner_approval_status IS DISTINCT FROM 'approved'
+      FROM public.owner_reviews r
+      LEFT JOIN public.owner_item_task_sends s ON s.review_id = r.id
+      JOIN public.onboarding_tasks t ON t.id = coalesce(s.task_id, r.onboarding_task_id)
+     WHERE r.id = _review_id AND r.archived_at IS NULL
+       AND (coalesce(private.is_program_member(r.program_id, auth.uid()), false) OR coalesce(private.is_staff(auth.uid()), false))
+  ), false)
+$$;
+REVOKE ALL ON FUNCTION public.owner_item_is_approval(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.owner_item_is_approval(uuid) TO authenticated;

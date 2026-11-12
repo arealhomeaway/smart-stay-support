@@ -1,6 +1,7 @@
 -- Undo 02: owner_item_reply back to the live text read Nov 12 (live-capture/owner_item_reply.sql);
 -- drops the approve action, the status trigger and the two helpers. Messages, approvals and history stay.
 DROP FUNCTION IF EXISTS public.owner_item_approve(uuid);
+DROP FUNCTION IF EXISTS public.owner_item_is_approval(uuid);
 DROP TRIGGER IF EXISTS owner_item_status_follow ON public.owner_request_messages;
 DROP FUNCTION IF EXISTS private.owner_item_status_follow();
 CREATE OR REPLACE FUNCTION public.owner_item_reply(_review_id uuid, _body text)
