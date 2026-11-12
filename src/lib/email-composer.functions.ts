@@ -192,6 +192,9 @@ export const sendComposedEmail = createServerFn({ method: "POST" })
     const { gatherComposerContext } = await import("./email-composer.server");
     const name = (await senderProfile(context as never as Ctx)).full_name;
     await gatherComposerContext(context.supabase as never, data.context, data.recordId, name);
+    // Item 39: an onboarding Task that needs a file before sending refuses the email until it has one.
+    const { taskEmailFileGate } = await import("./task-file-gate.server");
+    await taskEmailFileGate(context.supabase as never, data);
 
     const { sendEmail, emailShell } = await import("./email.server");
     const audience = data.audience === "guest" ? "owner" : data.audience;

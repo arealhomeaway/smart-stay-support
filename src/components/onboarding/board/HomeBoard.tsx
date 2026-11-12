@@ -36,6 +36,7 @@ import {
   pmaSteps,
   shortDate,
   shown,
+  headerFactsLine,
   sixStageFor,
   type BoardTask,
   type HealthLevel,
@@ -78,31 +79,40 @@ export function HomeBoardHeader(p: {
   /** Item 31: a stage card scrolls the Plan tab to that stage. */
   onSelectStage?: (index: number) => void;
 }) {
+  const chipLabels = [p.stage, ...(p.activeOwner ? ["Active Owner"] : []), p.health.line];
+  const facts = headerFactsLine({ ownerType: p.ownerType, status: p.status, chips: chipLabels });
+  const chips = (
+    <div className="flex flex-wrap gap-2">
+      <Chip className="bg-background/90 text-foreground">{p.stage}</Chip>
+      {p.activeOwner ? <Chip className="bg-background/90 text-foreground">Active Owner</Chip> : null}
+      <span className="rounded-full bg-background/95">
+        <Chip className={HEALTH_CHIP[p.health.level]}>
+          <HealthDot level={p.health.level} className="mr-1.5" />
+          {p.health.line}
+        </Chip>
+      </span>
+    </div>
+  );
   return (
     <div className="space-y-4">
       <section className="overflow-hidden rounded-2xl border border-border bg-card">
-        {/* Fix 9: a 160 px banner so the Tasks show without scrolling. */}
-        <div className="relative h-40 w-full bg-sunken">
-          <PropertyPhoto url={p.photo} name={p.address} rounded="rounded-none" className="size-full object-cover" />
-          <div className="absolute left-3 top-3 flex flex-wrap gap-2">
-            <Chip className="bg-background/90 text-foreground">{p.stage}</Chip>
-            {p.activeOwner ? <Chip className="bg-background/90 text-foreground">Active Owner</Chip> : null}
-            <span className="rounded-full bg-background/95">
-              <Chip className={HEALTH_CHIP[p.health.level]}>
-                <HealthDot level={p.health.level} className="mr-1.5" />
-                {p.health.line}
-              </Chip>
-            </span>
+        {/* Fix 9: a 160 px banner so the Tasks show without scrolling. Item 40: no photo, no banner. */}
+        {p.photo ? (
+          <div className="relative h-40 w-full bg-sunken">
+            <PropertyPhoto url={p.photo} name={p.address} rounded="rounded-none" className="size-full object-cover" />
+            <div className="absolute left-3 top-3">{chips}</div>
           </div>
-        </div>
+        ) : (
+          <div className="px-4 pt-4 sm:px-5">{chips}</div>
+        )}
         <div className="space-y-4 p-4 sm:p-5">
           {/* Item 31: the home's name sits once, in the header line above. */}
-          <div>
-            {p.place ? <p className="text-sm text-muted-foreground">{p.place}</p> : null}
-            <p className="mt-1 text-sm text-muted-foreground">
-              Owner Type: {shown(p.ownerType)} · Status: {shown(p.status)}
-            </p>
-          </div>
+          {p.place || facts ? (
+            <div>
+              {p.place ? <p className="text-sm text-muted-foreground">{p.place}</p> : null}
+              {facts ? <p className="mt-1 text-sm text-muted-foreground">{facts}</p> : null}
+            </div>
+          ) : null}
           <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2 lg:grid-cols-4" aria-label="Team">
             {p.team.map((t) => (
               <div key={t.role}>

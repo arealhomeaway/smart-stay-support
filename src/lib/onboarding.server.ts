@@ -886,6 +886,10 @@ export async function sendTaskToOwner(
     );
   }
 
+  // Item 39: a step marked "Needs a file before sending" waits for a file on the Task.
+  const { assertTaskFileForSend } = await import("./task-file-gate.server");
+  await assertTaskFileForSend(supabase as never, task.data.id);
+
   // Active Owner fix (Fix 7): for a home in a live Active Owner program, the send becomes one owner
   // item the homeowner can talk through, and the Task completes with the send as its evidence.
   // Until that staged database change is applied, or for a home with no live program, the

@@ -37,6 +37,7 @@ export function SendToHomeownerSection({
   footerSend = false,
   onReady,
   onSent,
+  sendBlocked = null,
 }: {
   taskId: string;
   taskTitle: string;
@@ -53,6 +54,8 @@ export function SendToHomeownerSection({
   onReady?: (ready: boolean) => void;
   /** Item 35: called after a successful send, so the drawer can close. */
   onSent?: () => void;
+  /** Item 39: why Send must wait (the step needs a file and the Task has none). */
+  sendBlocked?: string | null;
 }) {
   const router = useRouter();
   const [note, setNote] = useState("");
@@ -110,7 +113,7 @@ export function SendToHomeownerSection({
 
   const toggle = (id: string) => setPicked((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
   const item = sent.data?.available ? sent.data.data : null;
-  const ready = !disabled && !item && note.trim().length >= 20 && !mutation.isPending;
+  const ready = !disabled && !item && !sendBlocked && note.trim().length >= 20 && !mutation.isPending;
   useEffect(() => onReady?.(ready), [ready, onReady]);
   const submit = () => mutation.mutate({ taskId, note: note.trim(), version: "", documentIds: picked, respondBy: answerBy || null });
 
@@ -196,9 +199,12 @@ export function SendToHomeownerSection({
             )}
             {/* A standard owner without the portal: the existing email composer. */}
             {!disabled && !hasPortal && program.isFetched && (
-              <EmailComposer context="onboarding_task" recordId={taskId} label="Email instead" />
+              <EmailComposer context="onboarding_task" recordId={taskId} label="Email instead" disabled={Boolean(sendBlocked)} />
             )}
           </div>
+          {sendBlocked && (!footerSend || (!disabled && !hasPortal && program.isFetched)) && (
+            <p className="text-xs text-muted-foreground">{sendBlocked}</p>
+          )}
         </form>
       )}
       {children}

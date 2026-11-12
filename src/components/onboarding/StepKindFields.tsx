@@ -139,6 +139,13 @@ export function StepKindFields({
           )}
         </div>
       )}
+      <label className="flex min-h-11 items-center gap-2 text-sm">
+        <Checkbox
+          checked={value.settings.requireFile === true}
+          onCheckedChange={(on) => set({ requireFile: on === true ? true : undefined })}
+        />
+        Needs a file before sending
+      </label>
     </div>
   );
 }

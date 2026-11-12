@@ -77,6 +77,8 @@ export type KindSettings = {
   documentName?: string | null | undefined;
   /** Done outside Resolve: replaces the default owner wording; [document] and {where} fill in. */
   ownerMessage?: string | null | undefined;
+  /** Item 39: Send (to the homeowner, or the email) waits until the Task has a file. */
+  requireFile?: boolean | undefined;
 };
 
 export function isTaskKind(v: unknown): v is TaskKindCode {
@@ -102,7 +104,7 @@ export function effectiveTaskKind(t: {
 
 export function kindSettings(raw: unknown): KindSettings {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
-  const r = raw as { emailTemplateId?: unknown; trade?: unknown; fields?: unknown; where?: unknown; fallback?: unknown; documentName?: unknown; ownerMessage?: unknown };
+  const r = raw as { emailTemplateId?: unknown; trade?: unknown; fields?: unknown; where?: unknown; fallback?: unknown; documentName?: unknown; ownerMessage?: unknown; requireFile?: unknown };
   const out: KindSettings = {};
   if (typeof r.emailTemplateId === "string" && r.emailTemplateId) out.emailTemplateId = r.emailTemplateId;
   if (typeof r.trade === "string" && r.trade) out.trade = r.trade;
@@ -114,7 +116,27 @@ export function kindSettings(raw: unknown): KindSettings {
   if (r.fallback === "outside_resolve" || r.fallback === "email") out.fallback = r.fallback;
   if (typeof r.documentName === "string" && r.documentName.trim()) out.documentName = r.documentName.trim().slice(0, OUTSIDE_DOCUMENT_MAX);
   if (typeof r.ownerMessage === "string" && r.ownerMessage.trim()) out.ownerMessage = r.ownerMessage.trim().slice(0, OUTSIDE_MESSAGE_MAX);
+  if (r.requireFile === true) out.requireFile = true;
   return out;
+}
+
+/* ---------------------------------------------------------- Files (items 38, 39) */
+
+/**
+ * Item 38: where the Files box sits in the drawer. Do it and Upload files keep it near the top;
+ * a work order has none; every other kind shows it after the main section, just above Team comments.
+ */
+export function filesPlacement(kind: TaskKindCode): "top" | "bottom" | "none" {
+  if (kind === "work_order") return "none";
+  if (kind === "do_it" || kind === "upload_files") return "top";
+  return "bottom";
+}
+
+export const ATTACH_FILE_FIRST = "Attach the file first.";
+
+/** Item 39: the line under Send while the step needs a file and the Task has none, else null. */
+export function sendNeedsFile(settings: KindSettings, fileCount: number): string | null {
+  return settings.requireFile && fileCount <= 0 ? ATTACH_FILE_FIRST : null;
 }
 
 /**
