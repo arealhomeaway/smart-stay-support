@@ -28,6 +28,7 @@ import { ArchivedTicketsPanel } from "@/components/scorecard/ArchivedTicketsPane
 import { useRole } from "@/hooks/useRole";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { PropertyRefreshPanel } from "@/components/property/PropertyRefreshPanel";
+import { PidSyncPanel } from "@/components/PidSyncPanel";
 import { priorityMeta } from "@/lib/tickets";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
@@ -107,6 +108,7 @@ function IntegrationsPage() {
       </SectionCard>
 
       {isAdmin ? <PropertyRefreshPanel /> : null}
+      {isAdmin ? <PidSyncPanel /> : null}
 
       <SharePointConnectionPanel />
       <FullBackupPanel />
