@@ -11,14 +11,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { OwnerConversation } from "@/components/OwnerConversation";
-import { AlertCircle, CheckCircle2, Clock, FileText, Link2, PlayCircle } from "lucide-react";
-import { OWNER_QUEUES, inQueue, queueCounts, type OwnerQueue, type QueueInput } from "@/lib/owner-opportunity-filters";
+import { Clock, FileText, Link2 } from "lucide-react";
+import { inQueue, queueCounts, type QueueInput } from "@/lib/owner-opportunity-filters";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
-  Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -36,7 +35,7 @@ import {
   type OwnerResponse,
   type ResponseType,
 } from "@/lib/v2-workflow.functions";
-import { listOptionalLibrary, startOptionalOpportunity, type LibraryTemplate } from "@/lib/opportunity-library.functions";
+import { listOptionalLibrary, type LibraryTemplate } from "@/lib/opportunity-library.functions";
 import { arhaCover, duplicatesArha, imageFor } from "@/lib/opportunity-images";
 import { OwnerUploadDialog } from "@/components/owner/OwnerUploadDialog";
 import { LibraryVideoPlayer, useLibraryVideoIndex } from "@/components/owner/LibraryVideoPlayer";
