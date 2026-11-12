@@ -154,7 +154,7 @@ export async function loadOnboardingHome(supabase: Client, userId: string, now =
     inIds(db.from("owner_request_messages").select("property_id, work_item_id, review_id, author_type, event, created_at").order("created_at"), "property_id"),
     supabase.rpc("my_owner_item_needs"),
     inIds(db.from("property_label_assignments").select("property_id, property_labels(name)"), "property_id"),
-    db.from("property_owners").select("id, name, display_name"),
+    db.from("property_owners").select("id, name"),
     db.from("onboarding_project_stagers").select("project_id, vendor_org_id, vendor_orgs(display_name, legal_name)").is("removed_at", null),
     import("./active-owner.server").then((m) => m.activeOwnerLinks(supabase, ids)).catch(() => new Map()),
     db.from("functional_role_members").select("role_code, user_id"),
@@ -170,7 +170,7 @@ export async function loadOnboardingHome(supabase: Client, userId: string, now =
     const n = l.property_labels?.name;
     if (n) labelMap.set(l.property_id, [...(labelMap.get(l.property_id) ?? []), n]);
   }
-  const ownerName = new Map(((owners.data ?? []) as { id: string; name: string | null; display_name: string | null }[]).map((o) => [o.id, o.display_name || o.name || null] as const));
+  const ownerName = new Map(((owners.data ?? []) as { id: string; name: string | null }[]).map((o) => [o.id, o.name || null] as const));
   const stagersReady = !stagers.error;
   const stagerMap = new Map<string, Person[]>();
   for (const s of (stagers.data ?? []) as { project_id: string; vendor_org_id: string; vendor_orgs: { display_name: string | null; legal_name: string | null } | null }[]) {
