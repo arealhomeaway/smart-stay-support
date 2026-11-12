@@ -5,7 +5,7 @@
  * Presentation only: saves go through the existing home panels, email composer, step review
  * and the Task's own save.
  */
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { ExternalLink, Phone, MessageSquare } from "lucide-react";
@@ -19,10 +19,9 @@ import { EmailComposer } from "@/components/EmailComposer";
 import { SchedulePanel } from "@/components/SchedulePanel";
 import { ProjectTeamPanel } from "@/components/onboarding/ProjectTeamPanel";
 import { PropertyFactsPanel } from "@/components/onboarding/PropertyFactsPanel";
-import { TaskReviewPanel, useTaskReview } from "@/components/onboarding/TaskReviewPanel";
+import { ReviewAwareComplete, TaskReviewPanel, useTaskReview } from "@/components/onboarding/TaskReviewPanel";
 import { FillInEditors } from "@/components/onboarding/FillInEditors";
 import { approvalReviewerFn, approvalSendBackFn, fillInValuesFn, taskVendorsFn } from "@/lib/onboarding-task-kinds.functions";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useRole } from "@/hooks/useRole";
@@ -320,5 +319,25 @@ function ApprovalMiddle({ taskId, disabled, assignedTo }: { taskId: string; disa
         )
       )}
     </section>
+  );
+}
+
+/**
+ * Item 9: the bottom Approve button on an Approval Task. With a configured step review it is
+ * today's review-aware Complete; without one only the reviewer may press it, and it completes the Task.
+ */
+export function ApprovalComplete({ taskId, assignedTo, disabled, blockedReason, onApprove }: { taskId: string; assignedTo: string | null; disabled: boolean; blockedReason: string | null; onApprove: () => void }) {
+  const a = useApprovalMode(taskId, assignedTo);
+  const hint = blockedReason ?? (a.mode === "decide" || a.mode === "step_review" || a.loading ? null : a.mode === "waiting" ? "Only the person reviewing this Task can approve it." : "Assign this Task to a person to review it.");
+  const button = (
+    <Button className="min-h-11 w-full" disabled={disabled || Boolean(hint) || a.loading} onClick={onApprove}>
+      Approve
+    </Button>
+  );
+  return (
+    <>
+      {a.mode === "step_review" ? <ReviewAwareComplete taskId={taskId} disabled={disabled || Boolean(hint)}>{button}</ReviewAwareComplete> : button}
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+    </>
   );
 }
