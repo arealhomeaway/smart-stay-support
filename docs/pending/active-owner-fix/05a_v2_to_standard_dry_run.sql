@@ -38,7 +38,7 @@ WITH input AS (SELECT
 ), steps AS (
   SELECT hm.project_id, (s ->> 'id')::uuid AS step_id, s ->> 'title' AS title,
          jsonb_array_length(coalesce(s -> 'subtasks', '[]'::jsonb)) AS subs,
-         coalesce((s ->> 'requires_owner_approval')::boolean, false) OR s ->> 'owner_dependency' = 'business_decision' AS needs_owner,
+         coalesce((s ->> 'requires_owner_approval')::boolean, false) OR coalesce(s ->> 'owner_dependency' = 'business_decision', false) AS needs_owner,
          coalesce(s -> 'tags', '[]'::jsonb) ?| ARRAY['handoff_step:ready', 'handoff_step:accepted']
            OR pg_get_functiondef('public.handoff_step_for_task(uuid)'::regprocedure) LIKE '%' || (s ->> 'id') || '%' AS handoff
   FROM homes hm, std_version sv, jsonb_array_elements(sv.snapshot -> 'steps') s
