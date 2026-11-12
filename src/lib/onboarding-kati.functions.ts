@@ -182,7 +182,18 @@ export const saveOnboardingBreezewayFn = createServerFn({ method: "POST" })
 /** Send to Breezeway: built, behind onboarding_breezeway_send (OFF). Refuses before any write while off. */
 export const sendOnboardingWorkOrderFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ taskId: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        taskId: z.string().uuid(),
+        /** B2: the Breezeway template is required; title and description come prefilled from the Task. */
+        templateId: z.number().int().positive(),
+        priority: z.enum(["low", "normal", "high", "urgent", "watch"]).default("normal"),
+        title: z.string().trim().min(3).max(200).optional(),
+        description: z.string().trim().max(4000).nullable().optional(),
+      })
+      .parse(d),
+  )
   .handler(async ({ context, data }) => {
     const db = context.supabase as unknown as Loose;
     const { sendToBreezewayRefusal, onboardingSendRequestKey } = await import("@/lib/onboarding-breezeway");
@@ -216,13 +227,13 @@ export const sendOnboardingWorkOrderFn = createServerFn({ method: "POST" })
         sourceType: "onboarding_task",
         sourceId: data.taskId,
         requestKey: onboardingSendRequestKey(data.taskId),
-        title: String(task.data.title).replace(/^\s*(draft\s+)?work order\s*:\s*/i, "").slice(0, 200),
-        description: task.data.detail ? String(task.data.detail).slice(0, 4000) : null,
+        title: data.title ?? String(task.data.title).replace(/^\s*(draft\s+)?work order\s*:\s*/i, "").slice(0, 200),
+        description: data.description !== undefined ? data.description : task.data.detail ? String(task.data.detail).slice(0, 4000) : null,
         department: "maintenance",
-        priority: "normal",
+        priority: data.priority,
         scheduledDate: link.data.tentative_date,
         scheduledTime: null,
-        templateId: null,
+        templateId: data.templateId,
         assigneeIds: link.data.assignee_choice === "person" && link.data.breezeway_person_id ? [Number(link.data.breezeway_person_id)] : [],
         resolveEvidenceNote: null,
       },

@@ -1,5 +1,5 @@
 import { BRIDGE_COPY } from "./breezeway-bridge";
-import { ONBOARDING_BREEZEWAY_SEND_FLAG, isBreezewayWorkOrderStep } from "@/lib/onboarding-breezeway";
+import { ONBOARDING_BREEZEWAY_SEND_FLAG } from "@/lib/onboarding-breezeway";
 import { formatPropertyLabel } from "@/lib/property-label";
 import { MAINTENANCE_POLICY_VERSION } from "@/lib/maintenance-policy";
 /**
