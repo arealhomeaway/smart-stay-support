@@ -1,0 +1,4 @@
+-- Undo for 02_stager_links_from_notion.sql: mark the links it added as removed (kept, never deleted).
+-- Fill in with the same project and vendor ids once 02 is filled:
+--   UPDATE public.onboarding_project_stagers SET removed_at = now(), removed_by = '<Admin user id>'
+--   WHERE (project_id, vendor_org_id) IN (('<project id>', '<vendor id>')) AND removed_at IS NULL;

@@ -1,0 +1,6 @@
+-- Stager links from the Notion "Staging Team" names (spec 3.2). Intentionally empty.
+-- Claude maps each Notion Staging Team name to a vendor record and fills this file with rows like:
+--   INSERT INTO public.onboarding_project_stagers(project_id, vendor_org_id, added_by)
+--   VALUES ('<project id>', '<vendor_orgs id with the Staging category>', '<Admin user id>')
+--   ON CONFLICT DO NOTHING;
+-- Run only after apply.sql, and only with approval.
