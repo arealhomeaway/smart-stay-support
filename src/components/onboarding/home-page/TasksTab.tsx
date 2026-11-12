@@ -151,9 +151,9 @@ export function TasksTab(p: {
   })();
 
   return (
-    <div className="grid gap-5 md:grid-cols-[15rem_minmax(0,1fr)]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5 md:grid-cols-[15rem_minmax(0,1fr)]">
       {/* Left rail. */}
-      <aside className="space-y-4" aria-label="Find Tasks">
+      <aside className="min-w-0 space-y-4" aria-label="Find Tasks">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <Input type="search" value={term} onChange={(e) => setTerm(e.target.value)} placeholder="Search all Tasks" aria-label="Search all Tasks" className="h-11 pl-9" maxLength={120} />
