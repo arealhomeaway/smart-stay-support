@@ -52,6 +52,7 @@ CREATE FUNCTION private.owner_program_readable(uuid, uuid, boolean) RETURNS bool
 CREATE FUNCTION public.format_property_label(jsonb) RETURNS jsonb LANGUAGE sql STABLE AS $$ SELECT jsonb_build_object('primary', $1->>'name') $$;
 CREATE FUNCTION private.owner_lifecycle_program(uuid, uuid, boolean) RETURNS public.owner_programs LANGUAGE sql AS $$
   SELECT * FROM public.owner_programs WHERE id=$1 AND report_version=$2 $$;
+GRANT SELECT ON public.staff, private.members, public.owner_programs TO authenticated;
 CREATE TABLE public.tickets(id uuid PRIMARY KEY, property_id uuid, is_demo boolean DEFAULT false);
 CREATE TABLE public.owner_program_events(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), program_id uuid, property_id uuid, kind text, summary text,
   actor_id uuid, previous_value text, new_value text, reason text, detail jsonb, created_at timestamptz DEFAULT now());
@@ -171,9 +172,10 @@ describe("Active Owner plan starts at enrollment, staged SQL on an isolated data
     await db.query("UPDATE public.owner_programs SET status='draft' WHERE id=$1", [prog]);
     await as(owner1);
     // Cards: the owner reads the home's plan under the live read policy; both homes' open items wait on the owner.
+    let seen = 0;
     await db.exec("SET ROLE authenticated");
-    const seen = await n("SELECT count(*)::int n FROM public.ao_home_plan_cards WHERE program_id=$1", [prog]);
-    await db.exec("RESET ROLE");
+    try { seen = await n("SELECT count(*)::int n FROM public.ao_home_plan_cards WHERE program_id=$1", [prog]); }
+    finally { await db.exec("RESET ROLE"); }
     expect(seen).toBeGreaterThan(0);
     expect(await n("SELECT count(*)::int n FROM public.owner_reviews WHERE program_id=$1 AND status='awaiting_owner'", [prog])).toBe(4);
     expect((await one<{ e: { eligible: boolean } }>("SELECT public.owner_hours_eligibility($1) e", [prog])).e).toEqual({ eligible: true });
