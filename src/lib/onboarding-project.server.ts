@@ -354,7 +354,7 @@ export async function updateProject(
     // The inspection date column is staged (docs/pending/onboarding-kinds-2/01); until it is
     // applied the save says so plainly instead of failing on an unknown column.
     if (!("inspection_on" in current.data)) throw new Error("The inspection date can be saved once the database update is applied.");
-    (patch as Record<string, unknown>).inspection_on = input.inspectionOn;
+    (patch as Record<string, unknown>)["inspection_on"] = input.inspectionOn;
   }
   if (input.furnishingScope !== undefined) patch.furnishing_scope = input.furnishingScope;
   if (input.modules !== undefined) patch.modules = input.modules;
