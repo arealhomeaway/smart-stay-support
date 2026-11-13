@@ -333,37 +333,54 @@ export async function loadNotInResolveYet(supabase: Client, userId: string): Pro
     if (hidden.has(listingId)) continue;
     const home = byListing.get(listingId);
     if (home && (withProject.has(home.id) || (home.lifecycle_status ?? "active_operations") === "active_operations" || home.lifecycle_status === "offboarded")) continue;
-    const created = (l as { created_utc?: string; created?: string }).created_utc ?? (l as { created?: string }).created ?? null;
     rows.push({
       listingId,
       name: String(l.name ?? "").trim() || `OwnerRez ${listingId}`,
       place: [l.address?.city, l.address?.state].filter(Boolean).join(", "),
-      addedOn: added.get(listingId) ?? (created ? String(created).slice(0, 10) : null),
+      addedOn: added.get(listingId) ?? null,
       propertyId: home?.id ?? null,
     });
   }
   return { ok: true, rows: rows.sort((a, b) => (b.addedOn ?? "").localeCompare(a.addedOn ?? "") || a.name.localeCompare(b.name)) };
 }
 
-/** Hourly on the existing five-minute job: refresh the staged OwnerRez cache. Skips quietly until it is applied. */
+/**
+ * Hourly on the existing five-minute job: refresh the staged OwnerRez cache (id, name, place and
+ * the date Resolve first saw it in OwnerRez). Read only toward OwnerRez. Skips quietly until the
+ * cache table is applied, and reports a problem instead of throwing so it never holds up other work.
+ */
 export async function runOwnerRezListingCache(admin: Client, now = new Date()) {
-  const db = loose(admin);
-  const last = await db.from("ownerrez_listing_cache").select("checked_at").order("checked_at", { ascending: false }).limit(1);
-  if (last.error) return { skipped: true, reason: isMissingObject(last.error) ? "not_applied" : "read_failed" };
-  const at = (last.data?.[0] as { checked_at?: string } | undefined)?.checked_at;
-  if (at && now.getTime() - Date.parse(at) < 55 * 60_000) return { skipped: true, reason: "hourly" };
-  const { listListings } = await import("./ownerrez.server");
-  const listings = await listListings();
-  const stamp = now.toISOString();
-  const rows = listings.map((l) => {
-    const created = (l as { created_utc?: string }).created_utc ?? null;
-    return { listing_id: String(l.id), name: String(l.name ?? ""), city: l.address?.city ?? null, state: l.address?.state ?? null, added_on: created ? String(created).slice(0, 10) : null, checked_at: stamp };
-  });
-  for (let i = 0; i < rows.length; i += 200) {
-    const { error } = await db.from("ownerrez_listing_cache").upsert(rows.slice(i, i + 200), { onConflict: "listing_id", ignoreDuplicates: false });
-    if (error) throw new Error(error.message);
+  try {
+    const db = loose(admin);
+    const last = await db.from("ownerrez_listing_cache").select("checked_at").order("checked_at", { ascending: false }).limit(1);
+    if (last.error) return { skipped: true, reason: isMissingObject(last.error) ? "not_applied" : "read_failed" };
+    const at = (last.data?.[0] as { checked_at?: string } | undefined)?.checked_at;
+    if (at && now.getTime() - Date.parse(at) < 55 * 60_000) return { skipped: true, reason: "hourly" };
+    const { listListings } = await import("./ownerrez.server");
+    const listings = await listListings();
+    const stamp = now.toISOString();
+    const today = centralToday(now);
+    const rows = listings.map((l) => ({
+      listing_id: String(l.id),
+      name: String(l.name ?? ""),
+      city: l.address?.city ?? null,
+      state: l.address?.state ?? null,
+      added_on: today,
+      checked_at: stamp,
+    }));
+    // New listings keep the day they first appeared; known ones only get their name and check time refreshed.
+    for (let i = 0; i < rows.length; i += 200) {
+      const { error } = await db.from("ownerrez_listing_cache").upsert(rows.slice(i, i + 200), { onConflict: "listing_id", ignoreDuplicates: true });
+      if (error) return { ok: false, error: error.message };
+    }
+    for (const r of rows) {
+      const { error } = await db.from("ownerrez_listing_cache").update({ name: r.name, city: r.city, state: r.state, checked_at: stamp }).eq("listing_id", r.listing_id);
+      if (error) return { ok: false, error: error.message };
+    }
+    return { ok: true, listings: rows.length };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "OwnerRez check failed." };
   }
-  return { ok: true, listings: rows.length };
 }
 
 /* ---------------------------------------------------------------- writes */
