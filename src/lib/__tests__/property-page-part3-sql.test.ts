@@ -16,7 +16,6 @@ const OTHER_PM = "00000000-0000-4000-8000-0000000000a4";
 const OPS_DIRECTOR = "00000000-0000-4000-8000-0000000000a5";
 const HOME = "00000000-0000-4000-8000-0000000000b1";
 const PROJECT = "00000000-0000-4000-8000-0000000000e1";
-const STAGER = "00000000-0000-4000-8000-0000000000f1";
 const PLUMBER = "00000000-0000-4000-8000-0000000000f2";
 const DOC = "00000000-0000-4000-8000-0000000000d1";
 const TASK_DOC = "00000000-0000-4000-8000-0000000000d2";
@@ -36,13 +35,12 @@ beforeEach(async () => {
   db = new PGlite();
   await db.exec(readFileSync("src/lib/__tests__/fixtures/property-page-part3-schema.sql", "utf8"));
   await db.exec(readFileSync(`${DIR}/live-capture/documents_category_chk.sql`, "utf8"));
-  await db.exec(readFileSync(`${DIR}/live-capture/set_onboarding_project_stagers.sql`, "utf8"));
   await db.exec(`
     INSERT INTO public.user_roles VALUES ('${ADMIN}','admin'), ('${DIRECTOR}','onboarding'), ('${PM}','onboarding'), ('${DESIGNER}','onboarding'), ('${OTHER_PM}','onboarding');
     INSERT INTO public.directors VALUES ('${DIRECTOR}');
     INSERT INTO public.functional_role_members VALUES ('director_ops', '${OPS_DIRECTOR}');
     INSERT INTO public.onboarding_projects(id, property_id, project_manager, role_assignments) VALUES ('${PROJECT}', '${HOME}', '${PM}', '{"designer":"${DESIGNER}"}');
-    INSERT INTO public.vendor_orgs(id, display_name, service_categories) VALUES ('${STAGER}', 'Stage Co', '{Staging}'), ('${PLUMBER}', 'Pipes', '{Plumbing}');
+    INSERT INTO public.vendor_orgs(id, display_name, service_categories) VALUES ('${PLUMBER}', 'Pipes', '{Plumbing}');
     INSERT INTO public.documents(id, entity_type, entity_id, property_id, original_filename) VALUES
       ('${DOC}', 'property', '${HOME}', '${HOME}', 'plan.pdf'), ('${TASK_DOC}', 'onboarding_task', '${HOME}', '${HOME}', 'invoice.pdf');
   `);
@@ -103,20 +101,6 @@ describe("Files folders (3.2)", () => {
   });
 });
 
-describe("Stagers (3.1 Team)", () => {
-  it("the home's PM may now set the stager; another PM may not", async () => {
-    await as(PM);
-    await one("SELECT public.set_onboarding_project_stagers($1, $2::uuid[])", [PROJECT, [STAGER]]);
-    expect((await one("SELECT count(*)::int n FROM public.onboarding_project_stagers WHERE removed_at IS NULL")).n).toBe(1);
-    await as(OTHER_PM);
-    expect(await fails(db.query("SELECT public.set_onboarding_project_stagers($1, '{}'::uuid[])", [PROJECT]))).toContain("Project Manager");
-  });
-  it("still only staging vendors", async () => {
-    await as(PM);
-    expect(await fails(db.query("SELECT public.set_onboarding_project_stagers($1, $2::uuid[])", [PROJECT, [PLUMBER]]))).toContain("staging vendors");
-  });
-});
-
 describe("vendor preferred contact (3.3)", () => {
   it("only call, text or email", async () => {
     await db.query("UPDATE public.vendor_orgs SET preferred_contact = 'text' WHERE id = $1", [PLUMBER]);
@@ -130,7 +114,6 @@ describe("undo", () => {
     expect((await one("SELECT to_regprocedure('public.move_home_file(uuid,text)') r")).r).toBeNull();
     expect((await one("SELECT count(*)::int n FROM information_schema.columns WHERE table_name = 'onboarding_projects' AND column_name IN ('telegram_url','loa_status')")).n).toBe(0);
     expect(await fails(db.query("UPDATE public.documents SET category = 'agreement' WHERE id = $1", [DOC]))).toContain("check");
-    await as(PM);
-    expect(await fails(db.query("SELECT public.set_onboarding_project_stagers($1, '{}'::uuid[])", [PROJECT]))).toContain("Director of Onboarding");
+    expect((await one("SELECT to_regprocedure('public.save_home_detail_field(uuid,text,text)') r")).r).toBeNull();
   });
 });

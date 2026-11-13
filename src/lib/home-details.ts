@@ -39,6 +39,8 @@ export type DetailsViewer = {
   isHomePm: boolean;
   isHomeDesigner: boolean;
   isHomeUtilities: boolean;
+  /** Today's Project Team rule (can_manage_project_team): Admin, Supervisor, the current Director of Onboarding. */
+  canManageTeam: boolean;
 };
 
 export function onHomeTeam(v: DetailsViewer): boolean {
@@ -67,7 +69,8 @@ export type DetailEditKind =
  * Project fields, Telegram, LOA: PM, Director, Admin. Dates: PM, Director, Admin, and the
  * committed date is set once by PM, Director or Admin, corrected only by Admin or Director of
  * Operations. Utilities: Utilities, PM, Director, Admin. HOA: PM, Utilities, Director, Admin.
- * Team and stagers: Admin and Director (the PM may set Designer, Utilities and Stager on own homes).
+ * Team and stagers: today's Project Team rule, unchanged (it gives the PM no team edits); stagers
+ * stay with the Director of Onboarding and Admin (set_onboarding_project_stagers).
  * Owner record: Director and Admin (Change owner of record).
  */
 export function canEditDetail(v: DetailsViewer, kind: DetailEditKind, role?: string | null): boolean {
@@ -85,17 +88,13 @@ export function canEditDetail(v: DetailsViewer, kind: DetailEditKind, role?: str
     case "hoa":
       return lead || v.isHomePm || v.isHomeUtilities;
     case "team_role":
-      if (lead) return true;
-      return v.isHomePm && PM_SETTABLE_ROLES.includes(String(role ?? ""));
+      return v.canManageTeam && role !== "onboarding_director";
     case "stagers":
-      return lead || v.isHomePm;
+      return lead;
     case "owner_record":
       return lead;
   }
 }
-
-/** Roles a home's PM may set on their own homes. */
-export const PM_SETTABLE_ROLES = ["designer", "lead_designer", "design_staging", "utilities", "onboarding_utilities"];
 
 /** Files: move a file between folders (same people who can edit Project, plus the home's Designer and Utilities). */
 export function canMoveFiles(v: DetailsViewer): boolean {

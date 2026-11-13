@@ -1,11 +1,7 @@
 -- Property page Part 3 preflight (read only). Run first, in the same transaction as apply.sql.
 DO $$
-DECLARE live_stagers text; live_chk text;
+DECLARE live_chk text;
 BEGIN
-  SELECT md5(pg_get_functiondef('public.set_onboarding_project_stagers(uuid,uuid[])'::regprocedure)) INTO live_stagers;
-  IF live_stagers <> '36eab28cd079a5ea1da26b99edfce5ec' THEN
-    RAISE EXCEPTION 'Changed since staging: set_onboarding_project_stagers (md5 %).', live_stagers;
-  END IF;
   SELECT md5(pg_get_constraintdef(oid)) INTO live_chk FROM pg_constraint WHERE conname = 'documents_category_chk' AND conrelid = 'public.documents'::regclass;
   IF live_chk IS DISTINCT FROM '7bf1e5ee54dc31a41ade142207766690' THEN
     RAISE EXCEPTION 'Changed since staging: documents_category_chk (md5 %).', live_chk;
