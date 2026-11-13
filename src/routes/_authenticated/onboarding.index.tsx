@@ -192,7 +192,16 @@ function OnboardingHome() {
   const others = otherTabMatches(rows, tab, q);
   const tilesOn = enabled("onboarding_home_tiles");
   const ownerRezRows = ownerRez.data?.ok ? ownerRez.data.rows : [];
-  const tiles = tilesFor(viewer).map((t) => ({ ...t, value: tileValue(t.key, rows.filter((r) => scope === "all" || lead || r.onTeam || r.followed), ownerRezRows, today) }));
+  const tiles = tilesFor(viewer).map((t) => ({
+    ...t,
+    value:
+      // Never "All clear" before OwnerRez has answered.
+      t.key === "not_in_resolve" && ownerRez.isPending
+        ? { key: t.key, count: 0, value: "…", line: "Checking OwnerRez", clear: false }
+        : t.key === "not_in_resolve" && !ownerRez.data?.ok
+          ? { key: t.key, count: 0, value: "?", line: "Could not check OwnerRez", clear: false }
+          : tileValue(t.key, rows.filter((r) => scope === "all" || lead || r.onTeam || r.followed), ownerRezRows, today),
+  }));
   const isViewOnly = (r: HomeRow) => viewOnlyFor(viewer, r.onTeam);
 
   const rowSearch = (r: HomeRow) => ({ ...(originToken ? { from: originToken } : {}), ...openAtFor(tile) }) as never;
