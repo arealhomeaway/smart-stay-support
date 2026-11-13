@@ -10,5 +10,5 @@ UNION ALL SELECT 'helpers present', to_regprocedure('private.is_program_member(u
   AND to_regprocedure('public.is_onboarding_director(uuid)') IS NOT NULL AND to_regprocedure('public.seat_holder(text)') IS NOT NULL
   AND to_regprocedure('private.ao_digest_time()') IS NOT NULL AND to_regprocedure('public.format_property_label(jsonb)') IS NOT NULL
 UNION ALL SELECT 'daily owner email unchanged since capture',
-  md5(pg_get_functiondef('public.ao_owner_email_run(timestamptz)'::regprocedure)) = :'ao_email_md5';
--- Set ao_email_md5 to the md5 printed in README.md (taken from live-capture/ao_owner_email_run.sql).
+  md5(pg_get_functiondef('public.ao_owner_email_run(timestamptz)'::regprocedure)) = '5d8495f7bf20b40be07d8a3949f04759';
+-- md5 taken from the live database on Nov 13, 2026, when live-capture/ao_owner_email_run.sql was saved.
