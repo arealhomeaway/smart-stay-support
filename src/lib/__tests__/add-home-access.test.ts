@@ -53,12 +53,38 @@ describe("Add a home on the server", () => {
     }
   });
 
-  // Onboarding Home as the project database (Admin approval Nov 12, spec 3.3): on Onboarding Home,
-  // Add a home is the Admin's and the Director of Onboarding's only (was the canAddHome rule).
-  it("Onboarding Home shows Add a home only to the Admin and the Director of Onboarding", () => {
+  // Fix Nov 12 (Admin approval): everyone on the onboarding team may add a home on Onboarding Home,
+  // including as Upcoming; the other list actions stay the Admin's and the Director of Onboarding's.
+  it("Onboarding Home shows Add a home to the onboarding team by the shared rule", () => {
     const src = readFileSync("src/routes/_authenticated/onboarding.index.tsx", "utf8");
-    expect(src).toContain("const manage = mayManageHomes(viewer, readOnly);");
-    const gate = src.indexOf("const addHomeButton = manage ? (");
+    expect(src).toContain("const addHome = canAddHome({ roles, onboardingDirector: isOnboardingDirector, readOnly });");
+    const gate = src.indexOf("const addHomeButton = addHome ? (");
     expect(gate > -1 && gate < src.indexOf("<Plus className=\"size-4\" /> Add a home")).toBe(true);
+    expect(src).toContain("lead={manage}");
+  });
+
+  it("an onboarding account may add an Upcoming home; Operations roles are still refused", async () => {
+    const allowed = async (roles: string[], director = false) =>
+      assertCanAddHome(client(roles, director), "u1").then(() => true, () => false);
+    expect(await allowed(["onboarding"])).toBe(true);
+    expect(await allowed(["manager"])).toBe(false);
+    expect(await allowed(["tech"])).toBe(false);
+    const src = readFileSync("src/lib/onboarding-home.functions.ts", "utf8");
+    const body = src.slice(src.indexOf("export const addUpcomingHomeFn"), src.indexOf("export const startUpcomingHomeFn"));
+    expect(body).toContain("await assertCanAddHome(context.supabase, context.userId)");
+    expect(body).not.toContain("assertLead");
+  });
+
+  it("Contract fell through, Under contract, Not an onboarding home, list assignment and stagers stay lead only", () => {
+    const src = readFileSync("src/lib/onboarding-home.functions.ts", "utf8");
+    const names = ["dismissOwnerRezListingFn", "startUpcomingHomeFn", "contractFellThroughFn", "assignFromListFn", "setProjectStagersFn"];
+    for (const fn of names) {
+      const from = src.indexOf(`export const ${fn}`);
+      const next = src.indexOf("export const ", from + 10);
+      expect(src.slice(from, next === -1 ? undefined : next)).toContain("await assertLead(context.supabase, context.userId)");
+    }
+    const page = readFileSync("src/routes/_authenticated/onboarding.index.tsx", "utf8");
+    expect(page).toContain("const manage = mayManageHomes(viewer, readOnly);");
+    expect(page).toContain("pickers={manage ? data.pickers : null}");
   });
 });
