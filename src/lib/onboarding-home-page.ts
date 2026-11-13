@@ -499,8 +499,37 @@ export function telegramLink(handle: string | null | undefined): string | null {
 export type ContactButton = { method: ContactMethod; label: string; href: string; preferred: boolean; detail: string | null };
 
 /**
+ * An owner record named "Adriel Properties, LLC (Niles & Dana Syska)": the text in the closing
+ * parentheses is the people, the text before it is the legal owner. `covered` lists each person
+ * as first and last name ("Niles & Dana Syska" covers Niles Syska and Dana Syska). No closing
+ * parentheses: people is null and the name is left alone.
+ */
+export function splitOwnerName(name: string | null | undefined): {
+  people: string | null;
+  legal: string | null;
+  covered: { first: string; last: string }[];
+} {
+  const m = /^(.*?)\s*\(([^()]*)\)\s*$/.exec((name ?? "").trim());
+  const inner = (m?.[2] ?? "").trim();
+  if (!m || !inner) return { people: null, legal: null, covered: [] };
+  const parts = inner.split(/\s*(?:&|,|\band\b)\s*/i).map((x) => x.trim().split(/\s+/).filter(Boolean)).filter((x) => x.length);
+  const shared = [...parts].reverse().find((x) => x.length > 1)?.slice(-1)[0] ?? "";
+  const covered = parts.map((x) => ({ first: x[0]!.toLowerCase(), last: (x.length > 1 ? x[x.length - 1]! : shared).toLowerCase() }));
+  return { people: inner, legal: m[1]!.trim() || null, covered };
+}
+
+/** Same first and last name, ignoring case; a one-word name matches on the first name. */
+function coversPerson(c: { first: string; last: string }, person: string): boolean {
+  const w = person.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!w.length || w[0] !== c.first) return false;
+  return w.length === 1 || w[w.length - 1] === c.last;
+}
+
+/**
  * Fix 2: the owner row on one line. Names = the owner contacts (people); legal = the owner record's
  * name, shown in gray after them (omitted when there are no separate people, so it is not repeated).
+ * A record name ending in "(…)" is split by splitOwnerName: the parentheses lead the people, logins
+ * and the co-owner they already cover are dropped, and the text before them is the legal owner.
  * One button for the preferred method, marked "(preferred)"; with none set (or the preferred one
  * not on file) the first button is Text, else the first method on file. "Call or email" opens the rest.
  */
@@ -512,11 +541,14 @@ export function ownerRow(input: {
   telegram: string | null | undefined;
   preferred: string | null | undefined;
 }): { names: string; legal: string | null; primary: ContactButton | null; others: ContactButton[] } {
+  const split = splitOwnerName(input.legal);
   const seen = new Set<string>();
   const people = input.people
     .map((p) => p.trim())
-    .filter((p) => p && !seen.has(p.toLowerCase()) && seen.add(p.toLowerCase()));
-  const legal = (input.legal ?? "").trim() || null;
+    .filter((p) => p && !seen.has(p.toLowerCase()) && seen.add(p.toLowerCase()))
+    .filter((p) => !split.covered.some((c) => coversPerson(c, p)));
+  if (split.people) people.unshift(split.people);
+  const legal = split.people ? split.legal : (input.legal ?? "").trim() || null;
   const first = firstName(people[0] ?? legal);
   const phone = (input.phone ?? "").trim();
   const dial = dialable(phone);
