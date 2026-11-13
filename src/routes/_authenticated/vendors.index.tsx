@@ -37,7 +37,13 @@ const TABS = ["directory", "database", "gold", "coverage", "review"] as const;
 type Tab = (typeof TABS)[number];
 
 export const Route = createFileRoute("/_authenticated/vendors/")({
-  validateSearch: z.object({ tab: z.enum(TABS).optional() }),
+  // Part 3 (3.3): "Find a vendor" from a home opens here filtered, with one way back to the exact place.
+  validateSearch: z.object({
+    tab: z.enum(TABS).optional(),
+    market: z.string().trim().max(60).optional().catch(undefined),
+    trade: z.string().trim().max(80).optional().catch(undefined),
+    back: z.string().max(600).optional().catch(undefined),
+  }),
   head: () => ({
     meta: [
       { title: "Vendors: Resolve Operations" },
@@ -56,7 +62,8 @@ export const Route = createFileRoute("/_authenticated/vendors/")({
 });
 
 function VendorsWorkspace() {
-  const { tab = "directory" } = Route.useSearch();
+  const { tab = "directory", market, trade, back } = Route.useSearch();
+  const returnTo = safeReturnPath(back);
   const navigate = useNavigate({ from: "/vendors/" });
   const { can, roles, readOnly } = useRole();
   const access = vendorPageAccess(can, readOnly);
@@ -75,7 +82,12 @@ function VendorsWorkspace() {
         description="One record per vendor. Every tab below is a different view of the same records."
         actions={canManage ? <CreateVendorDialog /> : undefined}
       />
-      <Tabs value={current} onValueChange={(v) => void navigate({ search: { tab: v as Tab } })}>
+      {returnTo ? (
+        <Button asChild variant="outline" className="min-h-11">
+          <a href={returnTo}>Back to the home</a>
+        </Button>
+      ) : null}
+      <Tabs value={current} onValueChange={(v) => void navigate({ search: { tab: v as Tab, ...(market ? { market } : {}), ...(trade ? { trade } : {}), ...(back ? { back } : {}) } })}>
         <TabsList className="flex-wrap">
           <TabsTrigger value="directory">Directory</TabsTrigger>
           {showDatabase && <TabsTrigger value="database">Database</TabsTrigger>}
@@ -83,7 +95,7 @@ function VendorsWorkspace() {
           <TabsTrigger value="coverage">Market Coverage</TabsTrigger>
           <TabsTrigger value="review">Needs Review</TabsTrigger>
         </TabsList>
-        <TabsContent value="directory" className="space-y-6 pt-4"><VendorDirectory /><AccountArchiveList kind="vendor" /></TabsContent>
+        <TabsContent value="directory" className="space-y-6 pt-4"><VendorDirectory initialMarket={market ?? null} initialCategory={trade ?? null} /><AccountArchiveList kind="vendor" /></TabsContent>
         {showDatabase && (
           <TabsContent value="database" className="pt-4"><VendorDatabase canManage={canManage} canLead={canLead} isLead={isLead} /></TabsContent>
         )}
@@ -176,4 +188,10 @@ function CreateVendorDialog() {
       </DialogContent>
     </Dialog>
   );
+}
+
+/** Only a path back into a home's Onboarding view is followed (never another site). */
+export function safeReturnPath(back: string | undefined): string | null {
+  if (!back) return null;
+  return /^\/onboarding\/[0-9a-f-]{36}(\?[^#\s]*)?$/i.test(back) ? back : null;
 }
