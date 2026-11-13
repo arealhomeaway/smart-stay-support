@@ -80,7 +80,7 @@ export async function readOwnerTab(sb: Db, uid: string, propertyId: string) {
     sb.from("home_chats" as never).select("id, kind").eq("property_id", propertyId),
     sb.from("onboarding_notes").select("id, body, author_id, created_at, kind" as never).eq("property_id", propertyId).in("kind" as never, ["call", "text"] as never).is("archived_at", null).order("created_at", { ascending: false }).limit(200),
     sb.from("owner_weekly_updates" as never).select("id, week_start, draft_text, edited_text, status, sent_at, sent_by, sent_text, sent_automatically, created_at").eq("property_id", propertyId).order("week_start", { ascending: false }).limit(30),
-    sb.from("owner_decision_reminders" as never).select("work_item_id, sent_at, due_on"),
+    sb.from("owner_decision_reminders" as never).select("work_item_id, sent_at, due_on").order("sent_at", { ascending: false }).limit(500),
     sb.from("owner_weekly_update_settings" as never).select("auto_send, paused, updated_at, updated_by").eq("property_id", propertyId).maybeSingle(),
     ownerId ? sb.from("properties").select("id, nickname, name, address_line1, unit, city, state, postal_code, ownerrez_property_id").eq("owner_record_id", ownerId).neq("id", propertyId).limit(20) : Promise.resolve({ data: [], error: null }),
   ]);
@@ -126,8 +126,29 @@ export async function readOwnerTab(sb: Db, uid: string, propertyId: string) {
     ...weeklyRows.filter((w) => w.status === "sent" && w.sent_at).map((w) => ({ id: `weekly-${w.id}`, kind: "weekly" as const, text: w.sent_text ?? w.draft_text, who: w.sent_automatically ? "Resolve" : (w.sent_by && who.get(w.sent_by)) || "A teammate", at: w.sent_at! })),
   ];
 
+  // 2.1 item 2: owner decisions holding up an open Task, with their due dates.
+  const decisionItems = await sb
+    .from("work_items")
+    .select("id, title, due_on, source_task_id, linked_task_id, response_types, responded_at, completed_at, status")
+    .eq("property_id", propertyId)
+    .eq("kind", "opportunity")
+    .not("status", "in", "(archived,draft,completed,done)")
+    .is("responded_at", null);
+  const decRows = ((decisionItems.data ?? []) as { id: string; title: string; due_on: string | null; source_task_id: string | null; linked_task_id: string | null; response_types: string[] | null; completed_at: string | null }[])
+    .filter((d) => (d.response_types ?? []).includes("decision") && !d.completed_at && (d.source_task_id || d.linked_task_id));
+  const taskIds = [...new Set(decRows.map((d) => (d.source_task_id ?? d.linked_task_id)!))];
+  const openTasks = taskIds.length
+    ? (((await sb.from("onboarding_tasks").select("id, title, status").in("id", taskIds).is("archived_at", null)).data ?? []) as { id: string; title: string; status: string }[])
+        .filter((t) => !["complete", "completed", "done", "void", "not_needed", "cancelled"].includes((t.status ?? "").toLowerCase()))
+    : [];
+  const taskTitle = new Map(openTasks.map((t) => [t.id, t.title]));
+  const decisions = decRows
+    .map((d) => ({ id: d.id, title: d.title, dueOn: d.due_on, taskTitle: taskTitle.get((d.source_task_id ?? d.linked_task_id)!) ?? null }))
+    .filter((d): d is { id: string; title: string; dueOn: string | null; taskTitle: string } => !!d.taskTitle);
+
   const draft = weeklyRows.find((w) => w.status === "draft") ?? null;
   return {
+    decisions,
     staged,
     rights,
     viewer,
