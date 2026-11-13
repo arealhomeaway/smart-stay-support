@@ -151,7 +151,8 @@ export function composerModes(input: { activeOwner: boolean; ownerHasPortal: boo
 
 export const COMPOSER_LABEL: Record<ComposerMode, string> = { message: "Message", email: "Email", log: "Log a call or text" };
 export function composerHint(mode: ComposerMode, ownerName: string): string {
-  if (mode === "message") return `Posts in the owner chat. ${ownerName || "The owner"} sees it in their portal.`;
+  const many = /\band\b|&|,/.test(ownerName);
+  if (mode === "message") return `Posts in the owner chat. ${ownerName || "The owner"} ${many ? "see" : "sees"} it in their portal.`;
   if (mode === "email") return "Sends from your mailbox and is saved on this home.";
   return "Writes down a call or text that happened outside Resolve. The owner does not see it.";
 }

@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { EmailComposer } from "@/components/EmailComposer";
 import { HomeAutomation } from "@/components/ao/HomeAutomation";
+import { loadHomePlan } from "@/lib/ao-data";
 import { OpportunityDetail } from "@/components/onboarding/OwnerCollaboration";
 import { ReleasedActivityDetail } from "@/components/onboarding/ReleasedActivityDetail";
 import { needsAttention as completionNeedsAttention, useOwnerCompletions } from "@/components/onboarding/OwnerCompletionsReview";
@@ -389,7 +390,7 @@ export function OwnerTab(p: {
           <section className="surface space-y-3 p-4" aria-label="Active Owner program">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Active Owner program</h2>
             <ProgramHours hours={p.summary.program.reportedHours} startOn={p.summary.program.startedOn} today={p.today} />
-            <HomeAutomation propertyId={p.propertyId} />
+            <OwnerPlanLine propertyId={p.propertyId} />
             <p className="text-sm">
               Their cards: {p.summary.cards.open} open · {p.summary.cards.done} done
             </p>
@@ -404,6 +405,25 @@ export function OwnerTab(p: {
         )}
       </aside>
     </div>
+  );
+}
+
+/** Owner plan On / Off; Turn on / Turn off and the preview live in the existing switch, folded. */
+function OwnerPlanLine({ propertyId }: { propertyId: string }) {
+  const q = useQuery({ queryKey: ["ao-home-plan", propertyId], queryFn: () => loadHomePlan(propertyId), retry: false });
+  const on = q.data && q.data.available ? q.data.automated : null;
+  return (
+    <details className="group rounded-md border border-border">
+      <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-2 px-3 text-sm">
+        <span>
+          Owner plan: <span className="font-medium">{on === null ? "Not set up" : on ? "On" : "Off"}</span>
+        </span>
+        <span className="text-xs text-primary group-open:hidden">Turn on or off</span>
+      </summary>
+      <div className="border-t border-border p-2">
+        <HomeAutomation propertyId={propertyId} />
+      </div>
+    </details>
   );
 }
 
