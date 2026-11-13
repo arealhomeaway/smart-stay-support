@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { RequireAnyCapability } from "@/components/RequireCapability";
 import { financeViewOnly } from "@/lib/finance-view";
-import { EmptyState, LoadingRows, PageHeader, SectionCard, SegmentedControl } from "@/components/ui/page";
+import { EmptyState, LoadError, LoadingRows, PageHeader, SectionCard, SegmentedControl } from "@/components/ui/page";
 import { Button } from "@/components/ui/button";
 import { useDemo } from "@/components/DemoProvider";
 import { useRole } from "@/hooks/useRole";
@@ -81,7 +81,7 @@ function FinancePage() {
         description="Operations records facts and documents; Finance reviews and sets treatment. QuickBooks stays the accounting record and OwnerRez the statement record. No cutoff or review deadline is applied."
         actions={!role.readOnly && !viewOnly && <Button onClick={() => setCreating(true)}>Enter invoice</Button>}
       />
-      <SegmentedControl ariaLabel="Finance queues" value={tab} onChange={setTab} options={TABS.map((t) => (t.value === "period" || t.value === "statement" || t.value === "claims" ? t : { ...t, count: grouped.get(t.value)?.length ?? 0 }))} />
+      <SegmentedControl ariaLabel="Finance queues" value={tab} onChange={setTab} options={TABS.map((t) => (t.value === "period" || t.value === "statement" || t.value === "claims" || q.isError ? t : { ...t, count: grouped.get(t.value)?.length ?? 0 }))} />
       <SectionCard>
         {tab === "claims" ? (
           <UnsettledClaims demoMode={demoMode} viewOnly={viewOnly} />
@@ -89,6 +89,8 @@ function FinancePage() {
           <StatementReadiness demoMode={demoMode} onOpenExpense={setOpen} viewOnly={viewOnly} />
         ) : q.isLoading ? (
           <LoadingRows />
+        ) : q.isError ? (
+          <LoadError what="Expenses" onRetry={() => void q.refetch()} />
         ) : rows.length === 0 ? (
           <EmptyState title="Nothing here" hint="Expenses appear here as Operations and Finance record them." />
         ) : tab === "period" ? (

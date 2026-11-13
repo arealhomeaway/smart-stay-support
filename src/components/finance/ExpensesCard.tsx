@@ -26,7 +26,8 @@ export function ExpensesCard({ propertyId, linkType, targetId }: { propertyId: s
     queryFn: async () => {
       let ids: string[] | null = null;
       if (linkType && targetId) {
-        const { data } = await supabase.from("expense_links").select("expense_id").eq("link_type", linkType).eq("target_id", targetId);
+        const { data, error: linkError } = await supabase.from("expense_links").select("expense_id").eq("link_type", linkType).eq("target_id", targetId);
+        if (linkError) throw linkError;
         ids = (data ?? []).map((r) => r.expense_id);
         if (ids.length === 0) return { rows: [] as ExpenseRow[] };
       }
@@ -52,7 +53,11 @@ export function ExpensesCard({ propertyId, linkType, targetId }: { propertyId: s
       actions={!role.readOnly && <Button size="sm" variant="outline" onClick={() => setCreating(true)}>Add expense</Button>}
     >
       <div className="space-y-3">
-        {rows.length === 0 ? (
+        {q.isError ? (
+          <LoadError what="Expenses" onRetry={() => void q.refetch()} />
+        ) : q.isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        ) : rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">No expenses yet.</p>
         ) : (
           <>

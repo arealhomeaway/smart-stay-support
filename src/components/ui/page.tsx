@@ -268,6 +268,41 @@ export function EmptyState({
   );
 }
 
+/**
+ * What staff see when a list or panel failed to load. Never an empty state:
+ * an empty list and a failed load must not look the same.
+ */
+export function LoadError({
+  what = "This list",
+  onRetry,
+  className,
+}: {
+  what?: string;
+  onRetry?: () => void;
+  className?: string;
+}) {
+  return (
+    <div
+      role="alert"
+      className={cn(
+        "flex flex-wrap items-center gap-3 rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm",
+        className,
+      )}
+    >
+      <span>{what} could not load.</span>
+      {onRetry ? (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="inline-flex min-h-11 items-center rounded-md border border-border bg-background px-3 font-medium hover:bg-muted"
+        >
+          Try again
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 /** Skeleton shape used while a list or panel is still loading. */
 export function LoadingRows({ rows = 4, className }: { rows?: number; className?: string }) {
   return (

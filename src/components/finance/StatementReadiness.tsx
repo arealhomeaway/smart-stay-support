@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Chip } from "@/components/ui/page";
+import { Chip, LoadError } from "@/components/ui/page";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { stateChip } from "@/lib/semantic";
 import { useRole } from "@/hooks/useRole";
@@ -85,6 +85,8 @@ export function StatementReadiness({ demoMode, onOpenExpense, viewOnly = false }
         ids.length ? supabase.from("work_items").select("id,source_id,status").eq("source_table", "expenses").in("source_id", ids) : Promise.resolve({ data: [] as never[] }),
         claimIds.length ? supabase.from("claims").select("id,title,stage").in("id", claimIds) : Promise.resolve({ data: [] as never[] }),
       ]);
+      // Missing recoveries, questions or claims must never count as zero.
+      for (const part of [recov, tasks, claims] as { error?: unknown }[]) if (part.error) throw part.error;
       const items: (StatementItem & { raw: (typeof rows)[number] })[] = rows.map((e) => {
         const r = (recov.data ?? []).filter((x) => x.expense_id === e.id);
         const myClaims = (claims.data ?? []).filter(
@@ -139,7 +141,9 @@ export function StatementReadiness({ demoMode, onOpenExpense, viewOnly = false }
         Finance decides the statement period. This tracks expense review only, not reservation revenue, management fees, taxes, payouts or the full owner statement, and posts nothing to OwnerRez or QuickBooks.
       </p>
 
-      {!propertyId ? null : data.isLoading ? <p className="text-sm">Loading…</p> : (
+      {!propertyId ? null : data.isLoading ? <p className="text-sm">Loading…</p> : data.isError ? (
+        <LoadError what="Statement readiness for this home" onRetry={() => void data.refetch()} />
+      ) : (
         <>
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-base font-semibold">{monthLabel(period)}</h3>

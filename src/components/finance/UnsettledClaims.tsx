@@ -3,7 +3,7 @@ import { useClaims, usePropertyNames } from "@/components/claims/ClaimList";
 import { ClaimDrawer } from "@/components/claims/ClaimDrawer";
 import { useStaffDirectory } from "@/hooks/useTeam";
 import { useRole } from "@/hooks/useRole";
-import { EmptyState, LoadingRows } from "@/components/ui/page";
+import { EmptyState, LoadError, LoadingRows } from "@/components/ui/page";
 import { awaitingReceipt, financeTreatmentPending, financiallySettled, formatMoney } from "@/lib/claims";
 
 /**
@@ -23,6 +23,7 @@ export function UnsettledClaims({ demoMode, viewOnly = false }: { demoMode: bool
     return !financiallySettled(c as never);
   });
   if (claims.isLoading) return <LoadingRows />;
+  if (claims.isError) return <LoadError what="Unsettled claims" onRetry={() => void claims.refetch()} />;
   if (rows.length === 0) return <EmptyState title="No unsettled claims" hint="Claims with money still to receive or treat appear here, even after they close." />;
   return (
     <>
