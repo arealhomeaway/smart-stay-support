@@ -116,7 +116,7 @@ export const postHomeChatFn = createServerFn({ method: "POST" })
       propertyId: uuid,
       kind: z.enum(["owner", "team"]),
       body: z.string().max(4000),
-      attachments: z.array(z.object({ document_id: uuid, name: z.string().max(300), folder: z.enum(["property_ownership", "hoa_compliance", "systems_manuals", "onboarding", "operations", "media"]) })).max(10).default([]),
+      attachments: z.array(z.object({ document_id: uuid, name: z.string().max(300), folder: z.enum(["design", "agreements", "estimates", "photos", "inspections"]) })).max(10).default([]),
       mentions: z.array(uuid).max(20).default([]),
     }).parse(d),
   )
