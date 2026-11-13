@@ -1076,6 +1076,15 @@ function PropertyWorkspace() {
 
         {/* Temporary (Part 1): General Info, Design, Agreements and the rest stay reachable until Parts 2 and 3. */}
         <TabsContent value="more" className="space-y-6">
+          {/* Part 2: the earlier Owner tab lists stay reachable here (nothing removed) while the Owner tab shows only what needs someone. */}
+          <details className="surface overflow-hidden" open={Boolean(linkedOpp)}>
+            <summary className="flex min-h-11 cursor-pointer items-center px-4 font-medium">Every owner item and owner contact details</summary>
+            <div className="space-y-4 border-t border-border p-4">
+              {isActiveOwnerHome ? <PropertyOpportunitiesPanel propertyId={current.id} openId={linkedOpp} compose={compose} /> : null}
+              <PropertyOwnerCompletions propertyId={current.id} isDemo={Boolean((current as { is_demo?: boolean }).is_demo)} />
+              <HomeownerCard propertyId={current.id} canManage={canEdit} />
+            </div>
+          </details>
           <section className="space-y-3" aria-label="General Info">
             <h2 className="font-display text-xl">General Info</h2>
             <GeneralInfoFields
