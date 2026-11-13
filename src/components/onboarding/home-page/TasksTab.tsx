@@ -360,10 +360,23 @@ export function TasksTab(p: {
   );
 }
 
-/** 1.7: one inline row. What needs doing, Whose, Due (optional), Add. */
-function AddTaskRow(p: { propertyId: string; stageKey: string; stageName: string; people: Person[]; viewer: AddViewer }) {
-  const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
+/**
+ * 1.7: one inline row. What needs doing, Whose, Due (optional), Add. Part 2 (Make a Task from a chat
+ * message) opens it already filled in and hears the new Task's id to link it back to the message.
+ */
+export function AddTaskRow(p: {
+  propertyId: string;
+  stageKey: string;
+  stageName: string;
+  people: Person[];
+  viewer: AddViewer;
+  initialTitle?: string;
+  startOpen?: boolean;
+  onAdded?: (taskId: string) => void;
+  onCancel?: () => void;
+}) {
+  const [open, setOpen] = useState(p.startOpen ?? false);
+  const [title, setTitle] = useState((p.initialTitle ?? "").slice(0, 200));
   const [whoseKey, setWhoseKey] = useState("you");
   const [dueOn, setDueOn] = useState("");
   const qc = useQueryClient();
@@ -382,12 +395,13 @@ function AddTaskRow(p: { propertyId: string; stageKey: string; stageName: string
   const m = useMutation({
     mutationFn: () =>
       add({ data: { propertyId: p.propertyId, stage: p.stageKey, title: title.trim(), whose: picked!.whose as never, dueOn: dueOn || null } }),
-    onSuccess: () => {
+    onSuccess: (r) => {
       toast.success("Task added.");
       setTitle("");
       setDueOn("");
       setOpen(false);
       void qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
+      p.onAdded?.(r.id);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -431,7 +445,15 @@ function AddTaskRow(p: { propertyId: string; stageKey: string; stageName: string
         <Button type="submit" className="min-h-11" disabled={m.isPending || title.trim().length < 3}>
           Add
         </Button>
-        <Button type="button" variant="ghost" className="min-h-11" onClick={() => setOpen(false)}>
+        <Button
+          type="button"
+          variant="ghost"
+          className="min-h-11"
+          onClick={() => {
+            setOpen(false);
+            p.onCancel?.();
+          }}
+        >
           Cancel
         </Button>
       </div>
