@@ -64,8 +64,8 @@ describe("who sees what", () => {
     expect(menu[0]?.label).toBe("Onboarding");
     expect(menu[0]?.items.map((i) => i.label)).toEqual([
       "Onboarding Home",
-      // Build 9 F5 (Emily, Nov 10): the onboarding menu link reads All properties.
-      "All properties",
+      // Onboarding Home as the project database (Admin approval Nov 12) removes the separate
+      // All properties item; its All projects tab replaces it (was Build 9 F5).
       "My Tasks",
       "Owner Completions",
       "Team",
