@@ -3,6 +3,8 @@ import { createFileRoute } from "@tanstack/react-router";
 /**
  * Drains queued owner alerts to email and (for urgent tickets) text.
  * Called on a schedule; the in-app inbox is already updated by the database.
+ * Each email part sends at most 50 and stops after 60 seconds; a failed part is recorded and the
+ * run continues (Part 2, 2.7). Only a failure of the run's own audit stops it.
  */
 export const Route = createFileRoute("/api/public/hooks/owner-notify")({
   server: {
@@ -31,6 +33,7 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
         const { runNightlyPropertyRefresh } = await import("@/lib/property-enrichment-run.server");
         const { runNightlyPidSync } = await import("@/lib/pid-sync/run.server");
         const { runOwnerRezListingCache } = await import("@/lib/onboarding-home.server");
+        const { runOwnerCommsJobs } = await import("@/lib/owner-tab.server");
 
         try {
           const result = await runEmailJob(supabaseAdmin, [
@@ -39,6 +42,9 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
             // Active Owner email: plan is ready, then one daily email at the set time (default 9 AM Central),
             // never more than one a day per owner. Before delivery so they go out in this pass.
             // Skipped silently until the staged function exists.
+            // Property page Part 2: unread chat alerts, owner reminders (the business day before, held for
+            // the daily email below), Friday weekly drafts and auto-send. Skipped until staged; never fails.
+            { name: "owner_comms", run: () => runOwnerCommsJobs(supabaseAdmin) },
             { name: "ao_owner_email", run: () => runAoOwnerEmailGuarded(supabaseAdmin) },
             { name: "owner", run: (id) => drainOwnerAlerts(supabaseAdmin, 50, undefined, id) },
             { name: "staff", run: (id) => drainStaffNotifications(supabaseAdmin, 50, undefined, id) },
