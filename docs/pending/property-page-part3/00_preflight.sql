@@ -15,4 +15,7 @@ BEGIN
   IF to_regprocedure('public.save_home_detail_field(uuid,text,text)') IS NOT NULL OR to_regprocedure('public.move_home_file(uuid,text)') IS NOT NULL THEN
     RAISE EXCEPTION 'A function this adds already exists.';
   END IF;
+  IF EXISTS (SELECT 1 FROM pg_trigger WHERE tgname IN ('followed_home_stage_notice','followed_home_handoff_notice','followed_home_owner_notice')) THEN
+    RAISE EXCEPTION 'A follow notice trigger already exists.';
+  END IF;
 END $$;

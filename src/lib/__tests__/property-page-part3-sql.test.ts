@@ -41,6 +41,7 @@ beforeEach(async () => {
     INSERT INTO public.functional_role_members VALUES ('director_ops', '${OPS_DIRECTOR}');
     INSERT INTO public.onboarding_projects(id, property_id, project_manager, role_assignments) VALUES ('${PROJECT}', '${HOME}', '${PM}', '{"designer":"${DESIGNER}"}');
     INSERT INTO public.vendor_orgs(id, display_name, service_categories) VALUES ('${PLUMBER}', 'Pipes', '{Plumbing}');
+    INSERT INTO public.properties VALUES ('${HOME}', '1464 Test Ct');
     INSERT INTO public.documents(id, entity_type, entity_id, property_id, original_filename) VALUES
       ('${DOC}', 'property', '${HOME}', '${HOME}', 'plan.pdf'), ('${TASK_DOC}', 'onboarding_task', '${HOME}', '${HOME}', 'invoice.pdf');
   `);
@@ -108,6 +109,23 @@ describe("vendor preferred contact (3.3)", () => {
   });
 });
 
+describe("followed homes (3.5)", () => {
+  it("stage, handoff and owner waiting reach followers in the app only, never the person who acted", async () => {
+    await db.exec(`INSERT INTO public.onboarding_follows(user_id, property_id) VALUES ('${OTHER_PM}', '${HOME}'), ('${PM}', '${HOME}')`);
+    await db.query("INSERT INTO public.onboarding_project_events(project_id, property_id, kind, summary, new_value, actor) VALUES ($1, $2, 'project_detail_changed', 'Status changed', 'Repairs', $3)", [PROJECT, HOME, PM]);
+    await db.query("UPDATE public.onboarding_projects SET handoff_state = 'ready' WHERE id = $1", [PROJECT]);
+    await db.query("INSERT INTO public.owner_request_messages(property_id, author_id, author_type, body) VALUES ($1, $2, 'owner', 'Any news?')", [HOME, "00000000-0000-4000-8000-0000000000c1"]);
+    await db.query("INSERT INTO public.onboarding_project_events(project_id, property_id, kind, summary, new_value, actor) VALUES ($1, $2, 'project_detail_changed', 'Owner Type changed', 'Standard', $3)", [PROJECT, HOME, PM]);
+    const rows = (await db.query("SELECT user_id, kind, title, email_status FROM public.staff_notifications ORDER BY created_at, kind, user_id")).rows;
+    expect(rows.filter((r) => r.kind === "followed_home_stage").map((r) => r.user_id)).toEqual([OTHER_PM]);
+    expect(rows.filter((r) => r.kind === "followed_home_handoff")).toHaveLength(2);
+    expect(rows.filter((r) => r.kind === "followed_home_owner_waiting")).toHaveLength(2);
+    expect(rows.every((r) => r.email_status === "none")).toBe(true);
+    expect(rows.find((r) => r.kind === "followed_home_stage").title).toBe("1464 Test Ct: stage moved");
+    expect(rows).toHaveLength(5);
+  });
+});
+
 describe("undo", () => {
   it("puts the captured live objects back", async () => {
     await db.exec(readFileSync(`${DIR}/apply.undo.sql`, "utf8"));
@@ -115,5 +133,6 @@ describe("undo", () => {
     expect((await one("SELECT count(*)::int n FROM information_schema.columns WHERE table_name = 'onboarding_projects' AND column_name IN ('telegram_url','loa_status')")).n).toBe(0);
     expect(await fails(db.query("UPDATE public.documents SET category = 'agreement' WHERE id = $1", [DOC]))).toContain("check");
     expect((await one("SELECT to_regprocedure('public.save_home_detail_field(uuid,text,text)') r")).r).toBeNull();
+    expect((await one("SELECT count(*)::int n FROM pg_trigger WHERE tgname LIKE 'followed_home_%'")).n).toBe(0);
   });
 });

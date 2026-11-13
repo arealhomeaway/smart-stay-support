@@ -91,3 +91,56 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.move_home_file(uuid, text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.move_home_file(uuid, text) TO authenticated;
+
+-- 3.5 A followed home sends the person its key notices, in the app only (never email):
+-- the stage (Status) moves, the handoff moves, and the owner writes and is waiting on us.
+-- The person who made the change is not told about their own change.
+CREATE OR REPLACE FUNCTION private.notify_home_followers(_property_id uuid, _kind text, _title text, _body text, _actor uuid, _demo boolean)
+RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path TO 'public' AS $$
+  INSERT INTO public.staff_notifications(user_id, kind, title, body, entity_type, entity_id, link_path, priority, actor_id, is_demo, email_status)
+  SELECT f.user_id, _kind, _title, coalesce(_body, ''), 'property', _property_id, '/onboarding/' || _property_id::text, 'normal', _actor, coalesce(_demo, false), 'none'
+    FROM public.onboarding_follows f
+   WHERE f.property_id = _property_id AND f.user_id IS DISTINCT FROM _actor
+$$;
+REVOKE ALL ON FUNCTION private.notify_home_followers(uuid, text, text, text, uuid, boolean) FROM PUBLIC;
+
+CREATE OR REPLACE FUNCTION private.follow_notice_from_project_event()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$
+DECLARE home text;
+BEGIN
+  SELECT public.format_property_label(to_jsonb(p))->>'primary' INTO home FROM public.properties p WHERE p.id = NEW.property_id;
+  PERFORM private.notify_home_followers(NEW.property_id, 'followed_home_stage', coalesce(home, 'A home you follow') || ': stage moved',
+    coalesce(NEW.new_value, ''), NEW.actor, NEW.is_demo);
+  RETURN NULL;
+END $$;
+CREATE TRIGGER followed_home_stage_notice AFTER INSERT ON public.onboarding_project_events
+  FOR EACH ROW WHEN (NEW.kind = 'project_detail_changed' AND NEW.summary = 'Status changed' AND NEW.property_id IS NOT NULL)
+  EXECUTE FUNCTION private.follow_notice_from_project_event();
+
+CREATE OR REPLACE FUNCTION private.follow_notice_from_handoff()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$
+DECLARE home text;
+BEGIN
+  SELECT public.format_property_label(to_jsonb(p))->>'primary' INTO home FROM public.properties p WHERE p.id = NEW.property_id;
+  PERFORM private.notify_home_followers(NEW.property_id, 'followed_home_handoff', coalesce(home, 'A home you follow') || ': handoff moved',
+    CASE NEW.handoff_state WHEN 'ready' THEN 'Ready for Operations' WHEN 'accepted' THEN 'Accepted by Operations' ELSE 'In progress' END,
+    auth.uid(), NEW.is_demo);
+  RETURN NULL;
+END $$;
+CREATE TRIGGER followed_home_handoff_notice AFTER UPDATE OF handoff_state ON public.onboarding_projects
+  FOR EACH ROW WHEN (OLD.handoff_state IS DISTINCT FROM NEW.handoff_state)
+  EXECUTE FUNCTION private.follow_notice_from_handoff();
+
+CREATE OR REPLACE FUNCTION private.follow_notice_from_owner_message()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$
+DECLARE home text;
+BEGIN
+  IF NEW.property_id IS NULL THEN RETURN NULL; END IF;
+  SELECT public.format_property_label(to_jsonb(p))->>'primary' INTO home FROM public.properties p WHERE p.id = NEW.property_id;
+  PERFORM private.notify_home_followers(NEW.property_id, 'followed_home_owner_waiting', coalesce(home, 'A home you follow') || ': the owner is waiting on us',
+    left(coalesce(NEW.body, ''), 200), NEW.author_id, NEW.is_demo);
+  RETURN NULL;
+END $$;
+CREATE TRIGGER followed_home_owner_notice AFTER INSERT ON public.owner_request_messages
+  FOR EACH ROW WHEN (NEW.author_type = 'owner')
+  EXECUTE FUNCTION private.follow_notice_from_owner_message();

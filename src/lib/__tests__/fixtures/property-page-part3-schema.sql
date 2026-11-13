@@ -20,7 +20,8 @@ CREATE TABLE public.audit_log(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), act
   entity_type text NOT NULL, entity_id uuid, entity_label text, reason text, before_value jsonb, after_value jsonb, created_at timestamptz NOT NULL DEFAULT now());
 CREATE TABLE public.onboarding_projects(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), property_id uuid NOT NULL,
   status text NOT NULL DEFAULT 'planning', project_manager uuid, utility_manager uuid, role_assignments jsonb NOT NULL DEFAULT '{}'::jsonb,
-  is_demo boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());
+  is_demo boolean NOT NULL DEFAULT false, handoff_state text DEFAULT 'in_progress',
+  created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());
 CREATE TABLE public.onboarding_project_events(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), project_id uuid, property_id uuid, kind text,
   summary text, detail text, prior_value text, new_value text, actor uuid, is_demo boolean, created_at timestamptz NOT NULL DEFAULT now());
 CREATE TABLE public.vendor_orgs(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), display_name text, service_categories text[] NOT NULL DEFAULT '{}');
@@ -29,3 +30,11 @@ CREATE TABLE public.onboarding_project_stagers(id uuid PRIMARY KEY DEFAULT gen_r
 CREATE TABLE public.documents(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), entity_type text NOT NULL, entity_id uuid NOT NULL, title text,
   original_filename text, property_id uuid, category text, visibility text NOT NULL DEFAULT 'internal', is_demo boolean NOT NULL DEFAULT false,
   archived_at timestamptz, deleted_at timestamptz, updated_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE public.properties(id uuid PRIMARY KEY, name text);
+CREATE FUNCTION public.format_property_label(p jsonb) RETURNS jsonb LANGUAGE sql IMMUTABLE AS $$ SELECT jsonb_build_object('primary', p->>'name') $$;
+CREATE TABLE public.onboarding_follows(user_id uuid NOT NULL, property_id uuid NOT NULL, created_at timestamptz DEFAULT now(), PRIMARY KEY (user_id, property_id));
+CREATE TABLE public.staff_notifications(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL, kind text NOT NULL, title text NOT NULL,
+  body text NOT NULL DEFAULT '', entity_type text, entity_id uuid, link_path text, priority text NOT NULL DEFAULT 'normal', actor_id uuid,
+  read_at timestamptz, email_status text NOT NULL DEFAULT 'none', is_demo boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE public.owner_request_messages(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), property_id uuid, author_id uuid, author_type text,
+  body text, is_demo boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now());
