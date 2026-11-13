@@ -308,3 +308,22 @@ export const homeBreezewayWorkFn = createServerFn({ method: "POST" })
         };
       });
   });
+
+/** 3.5 Add to my homes: whether the home is the viewer's own (on its team) or followed. */
+export const homeFollowStateFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ propertyId: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }) => {
+    const db = context.supabase as unknown as Loose;
+    const [project, follow] = await Promise.all([
+      db.from("onboarding_projects").select("project_manager, utility_manager, role_assignments")
+        .eq("property_id", data.propertyId).neq("status", "cancelled").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      db.from("onboarding_follows").select("property_id").eq("user_id", context.userId).eq("property_id", data.propertyId).maybeSingle(),
+    ]);
+    if (project.error) throw new Error(project.error.message);
+    const p = project.data as { project_manager: string | null; utility_manager: string | null; role_assignments: Record<string, unknown> | null } | null;
+    const assigned = Boolean(
+      p && (p.project_manager === context.userId || p.utility_manager === context.userId || Object.values(p.role_assignments ?? {}).includes(context.userId)),
+    );
+    return { assigned, following: Boolean(follow.data) };
+  });
