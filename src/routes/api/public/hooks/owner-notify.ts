@@ -30,6 +30,7 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
         const { runGuestTouchBaseSync } = await import("@/lib/guest-touch-base.server");
         const { runNightlyPropertyRefresh } = await import("@/lib/property-enrichment-run.server");
         const { runNightlyPidSync } = await import("@/lib/pid-sync/run.server");
+        const { runOwnerRezListingCache } = await import("@/lib/onboarding-home.server");
 
         try {
           const result = await runEmailJob(supabaseAdmin, [
@@ -56,6 +57,9 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
             // Nightly (2 a.m. Central) copy from the Notion PID, only while pid_nightly_sync is on. Read-only
             // toward Notion; last, and it never reports a failure here, so it can never hold up other work.
             { name: "pid_nightly_sync", run: () => runNightlyPidSync(supabaseAdmin) },
+            // Hourly: the Onboarding Home "Not in Resolve yet" OwnerRez list. Read-only toward OwnerRez;
+            // skipped until its staged table exists, and it never reports a failure here.
+            { name: "ownerrez_listing_cache", run: () => runOwnerRezListingCache(supabaseAdmin) },
           ]);
           return Response.json(result, { status: result.ok ? 200 : 500 });
         } catch (err) {

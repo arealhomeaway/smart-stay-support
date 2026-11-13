@@ -1,5 +1,13 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 12 Onboarding Home as the project database (/onboarding; staged SQL in docs/pending/onboarding-home, no apply, no publish)
+- [x] 1.1 Banner, 1.2 tiles (switch off), 1.3 My/All homes, 1.4 walkthrough (row landing, Back, view only line, list assign with Undo)
+- [x] 2.1 tabs, 2.2 filter bar, 2.3 table, 2.4 views, 2.5 Upcoming, 2.6 Not in Resolve yet
+- [x] 3.1 Add a home side panel, 3.2 stagers, 3.3 access, 3.4 staged SQL with undo, README, checksums, practice run
+- [x] Tests, suite, type check, browser check as Admin desktop and phone
+- [ ] Browser check as a PM - blocked: signing in as a PM account needs your approval in this chat
+- [ ] Apply docs/pending/onboarding-home - blocked: waits on the Admin's approval
+
 ## Nov 12 Property page Part 1 fix (onboarding view of one home, no DB change expected, no publish)
 - [x] 1 Do now selected stage only; late line and all-late view with clear chip; rail note
 - [x] 2 Owner row one line with legal owner; preferred button and "Call or email"; note removed

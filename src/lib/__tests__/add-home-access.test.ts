@@ -53,10 +53,12 @@ describe("Add a home on the server", () => {
     }
   });
 
-  it("the Onboarding page shows Add property only by the same rule", () => {
+  // Onboarding Home as the project database (Admin approval Nov 12, spec 3.3): on Onboarding Home,
+  // Add a home is the Admin's and the Director of Onboarding's only (was the canAddHome rule).
+  it("Onboarding Home shows Add a home only to the Admin and the Director of Onboarding", () => {
     const src = readFileSync("src/routes/_authenticated/onboarding.index.tsx", "utf8");
-    expect(src).toContain("const mayAddHome = canAddHome(");
-    const gate = src.indexOf("{mayAddHome ? (");
-    expect(gate > -1 && gate < src.indexOf("<AddPropertyDialog")).toBe(true);
+    expect(src).toContain("const manage = mayManageHomes(viewer, readOnly);");
+    const gate = src.indexOf("const addHomeButton = manage ? (");
+    expect(gate > -1 && gate < src.indexOf("<Plus className=\"size-4\" /> Add a home")).toBe(true);
   });
 });

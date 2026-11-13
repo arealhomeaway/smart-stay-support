@@ -1,3 +1,4 @@
+import { createContext, useContext } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
@@ -78,7 +79,15 @@ export function useMyRoles() {
  * `roles` are the effective roles the UI should honour (they follow a Platform
  * Owner's read-only "View As" preview). `actualRoles` are always the real ones.
  */
+/**
+ * Onboarding Home 3.3: a screen region that reads as view only (a home the viewer is not on).
+ * Everything inside honours it through `readOnly`, so no edit control shows; the server keeps
+ * its own write rules regardless.
+ */
+export const ViewOnlyScope = createContext(false);
+
 export function useRole() {
+  const scopedViewOnly = useContext(ViewOnlyScope);
   const { viewAs } = useViewAs();
   const demoFlag = useDemoFlag();
   const previewSeat = usePreviewSeat();
@@ -113,7 +122,7 @@ export function useRole() {
   // Homeowners are program participants, never internal staff.
   const isOwner = roles.includes("owner") && !roles.some((r) => r === "admin" || r === "manager");
 
-  return {
+  const role = {
     userId,
     roles,
     actualRoles,
@@ -162,4 +171,6 @@ export function useRole() {
     isOwner,
     isStaff: !isVendor && !isOwner,
   };
+  // Onboarding Home 3.3: inside a ViewOnlyScope region (a home the viewer is not on) nothing can be changed.
+  return scopedViewOnly ? { ...role, readOnly: true } : role;
 }

@@ -258,9 +258,10 @@ describe("Onboarding Home", () => {
       expect(home).toContain(`"${c}"`);
     const route = readFileSync("src/routes/_authenticated/onboarding.index.tsx", "utf8");
     expect(route).toContain("Add a home");
-    // The banner is a home in onboarding, captioned with its address only.
+    // Onboarding Home as the project database (Admin approval Nov 12, spec 1.1): the banner is a
+    // home from the Operations Home pool, captioned "<home> · <city>" (was an onboarding home, address only).
     expect(route).toContain("dailyHomePhoto(");
-    expect(route).toContain("name: h.address, city: null");
+    expect(route).toContain("useHomeBannerPhotos()");
   });
 });
 

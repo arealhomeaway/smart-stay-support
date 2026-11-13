@@ -138,7 +138,8 @@ import {
 import { listAttachmentsFn } from "@/lib/attachments.functions";
 import { documentCategoryLabel } from "@/lib/attachments";
 import { TaskDrawer, type SaveTaskInput } from "@/components/onboarding/TaskDrawer";
-import { useRole } from "@/hooks/useRole";
+import { useRole, ViewOnlyScope } from "@/hooks/useRole";
+import { ProjectStagersCard } from "@/components/onboarding/project-db/ProjectStagersCard";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { stateChip } from "@/lib/semantic";
 import { usDate, usDateTime } from "@/lib/dates";
@@ -184,7 +185,7 @@ function InvalidPropertyRoute() {
     <div className="space-y-3 py-10 text-center">
       <p className="text-muted-foreground">This home could not be found.</p>
       <div className="flex justify-center gap-4 text-sm">
-        <Link to="/onboarding" search={{ lens: "all" } as never} className="underline">
+        <Link to="/onboarding" search={{ tab: "all" } as never} className="underline">
           Back to Properties
         </Link>
         <Link to="/onboarding" className="underline">
@@ -209,6 +210,11 @@ export const Route = createFileRoute("/_authenticated/onboarding/$propertyId")({
       ...parsed,
       tab,
       ...((raw as { at?: unknown }).at === "conversation" ? { at: "conversation" as const } : {}),
+      // Onboarding Home 1.4: a row opens at its tile's place (late Tasks, Owner Needs action, the
+      // Handoff checklist on stage 6).
+      ...((raw as { at?: unknown }).at === "needs" ? { at: "needs" as const } : {}),
+      ...((raw as { show?: unknown }).show === "late" ? { show: "late" as const } : {}),
+      ...((raw as { stage?: unknown }).stage === "6" || (raw as { stage?: unknown }).stage === 6 ? { stage: "6" as const } : {}),
       ...((raw as { from?: unknown }).from === FROM_ATTENTION ? { from: FROM_ATTENTION } : {}),
     };
   },
@@ -245,7 +251,7 @@ function PropertyWorkspace() {
   const navigate = Route.useNavigate();
   const load = useServerFn(getOnboardingWorkspace);
   const qc = useQueryClient();
-  const { can, readOnly, userId, roles } = useRole();
+  const { can, readOnly: roleReadOnly, userId, roles } = useRole();
   const { enabled } = useFeatureFlags();
   const directorQuery = useQuery({
     queryKey: ["is-onboarding-director", userId],
@@ -288,6 +294,9 @@ function PropertyWorkspace() {
     enabled: Boolean(userId),
   });
   const refresh = () => qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
+  // Onboarding Home 3.3: a home the viewer is not on opens view only; Admin and the Director never do.
+  const viewOnlyHome = data?.homeAccess === "view";
+  const readOnly = roleReadOnly || viewOnlyHome;
 
   const mut = <T,>(fn: T, message: string) =>
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -377,6 +386,29 @@ function PropertyWorkspace() {
       setTagSel(null);
     }
   }, [tabNow]);
+  // Onboarding Home 1.4: opened from a tile, land on its place once.
+  const landing = useRef(false);
+  const landStage = "stage" in search && search.stage === "6";
+  const landLate = "show" in search && search.show === "late";
+  const landNeeds = "at" in search && search.at === "needs";
+  useEffect(() => {
+    if (landing.current || !data) return;
+    landing.current = true;
+    if (landStage) setStageSel(5);
+    if (landNeeds) {
+      let tries = 0;
+      const id = window.setInterval(() => {
+        const el = document.getElementById("owner-needs-action");
+        tries += 1;
+        if (el || tries > 40) {
+          window.clearInterval(id);
+          el?.scrollIntoView({ block: "start" });
+        }
+      }, 150);
+      return () => window.clearInterval(id);
+    }
+    return undefined;
+  }, [data, landStage, landNeeds]);
   const tabBarTop = useShellBarHeight();
   const [compose, setCompose] = useState(0);
   const statusMap = useStatusStageMap();
@@ -400,8 +432,9 @@ function PropertyWorkspace() {
 
   if (isLoading || !data) return <LoadingPage />;
   if (
-    data.workspaceMode === "assigned" ||
-    data.assignedWorkContexts.some((context) => context.propertyId === propertyId)
+    data.homeAccess === "full" &&
+    (data.workspaceMode === "assigned" ||
+      data.assignedWorkContexts.some((context) => context.propertyId === propertyId))
   )
     return <Navigate to="/onboarding/my-work" search={{ who: "me" }} replace />;
   if (!current)
@@ -628,6 +661,11 @@ function PropertyWorkspace() {
   const canStartPlan = !readOnly && (isAdminViewer || isOnboardingDirector);
   const noPlan = life.notStarted || tasks.length === 0;
 
+  const viewOnlyLine = viewOnlyHome ? (
+    <p className="-mt-3 rounded-md bg-muted px-3 py-1.5 text-sm text-muted-foreground" data-testid="view-only-line">
+      View only: you're not on this home's team
+    </p>
+  ) : null;
   const header = (
     <OnboardingHomeHeader
       propertyId={current.id}
@@ -650,8 +688,10 @@ function PropertyWorkspace() {
   // 1.9: a home with no onboarding project or no Tasks shows the header and one card.
   if (noPlan) {
     return (
+      <ViewOnlyScope.Provider value={viewOnlyHome}>
       <div className="space-y-5">
         {header}
+        {viewOnlyLine}
         <NoPlanCard
           canStart={canStartPlan}
           start={
@@ -665,12 +705,15 @@ function PropertyWorkspace() {
           }
         />
       </div>
+      </ViewOnlyScope.Provider>
     );
   }
 
   return (
+    <ViewOnlyScope.Provider value={viewOnlyHome}>
     <div className="space-y-5">
       {header}
+      {viewOnlyLine}
 
       <Tabs value={tab} onValueChange={goTab} className="space-y-5">
         {/* Fix 4: the tabs in their own bar, pinned under the app's top bar while scrolling. */}
@@ -758,6 +801,7 @@ function PropertyWorkspace() {
             catchUp={catchUpOn ? catchUp : undefined}
             onOpen={setOpenTaskId}
             addViewer={addViewer}
+            initialAllLate={landLate}
             handoff={<TwoStepHandoff propertyId={current.id} readOnly={readOnly} onOpenTask={(id) => setOpenTaskId(id)} variant="checklist" />}
             notNeeded={(data.retiredTasks ?? []).filter((t) => (t.exception_reason ?? "").startsWith("Voided"))}
             notNeededLabel={notNeededLabel}
@@ -825,6 +869,7 @@ function PropertyWorkspace() {
         </TabsContent>
 
         <TabsContent value="vendors" className="space-y-4">
+          <ProjectStagersCard projectId={projectRow?.id ?? null} />
           <VendorCoveragePanel propertyId={current.id} />
           <OnboardingWorkOrdersPanel propertyId={current.id} />
         </TabsContent>
@@ -1094,6 +1139,7 @@ function PropertyWorkspace() {
         }
       />
     </div>
+    </ViewOnlyScope.Provider>
   );
 }
 
