@@ -11,6 +11,8 @@ import { createEvidenceSlotsFn } from "@/lib/evidence-slots.functions";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { writeHistoryLine } from "@/lib/history-line";
+import { showSaved } from "@/components/history-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -208,7 +210,7 @@ export function LogRecoveryDialog() {
         });
       }
 
-      await supabase.from("guest_recovery_activity").insert({
+      const historySaved = await writeHistoryLine(() => supabase.from("guest_recovery_activity").insert({
         recovery_id: recoveryId,
         author_id: userId,
         event_type: "created",
@@ -222,14 +224,14 @@ export function LogRecoveryDialog() {
           policy_version: POLICY_VERSION,
         },
         is_demo: ticket.is_demo ?? false,
-      } as never);
-      return recoveryId;
+      } as never));
+      return { recoveryId, historySaved };
     },
-    onSuccess: () => {
+    onSuccess: ({ historySaved }) => {
       setOpen(false);
       reset();
       qc.invalidateQueries({ queryKey: ["guest-recovery"] });
-      toast.success("Refund or credit logged");
+      showSaved("Refund or credit logged", historySaved);
     },
     onError: (error: Error) => toast.error(error.message),
   });
