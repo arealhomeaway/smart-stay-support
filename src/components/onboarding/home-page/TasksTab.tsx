@@ -87,10 +87,12 @@ export function TasksTab(p: {
   handoff?: ReactNode;
   notNeeded?: { id: string; title: string; stage: string; exception_reason: string | null }[];
   notNeededLabel: (reason: string | null) => string;
+  /** Onboarding Home 1.4: opened from Late on your homes, the page starts on the all-late view. */
+  initialAllLate?: boolean | undefined;
 }) {
   const [term, setTerm] = useState("");
   // The all-late view; × or picking any stage returns to the stage list.
-  const [allLate, setAllLate] = useState(false);
+  const [allLate, setAllLate] = useState(Boolean(p.initialAllLate));
   const pickStage = (stage: number | null) => {
     setAllLate(false);
     p.onStage(stage);

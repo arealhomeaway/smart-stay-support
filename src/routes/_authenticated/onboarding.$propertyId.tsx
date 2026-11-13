@@ -138,7 +138,7 @@ import {
 import { listAttachmentsFn } from "@/lib/attachments.functions";
 import { documentCategoryLabel } from "@/lib/attachments";
 import { TaskDrawer, type SaveTaskInput } from "@/components/onboarding/TaskDrawer";
-import { useRole } from "@/hooks/useRole";
+import { useRole, ViewOnlyScope } from "@/hooks/useRole";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { stateChip } from "@/lib/semantic";
 import { usDate, usDateTime } from "@/lib/dates";
@@ -1136,6 +1136,7 @@ function PropertyWorkspace() {
         }
       />
     </div>
+    </ViewOnlyScope.Provider>
   );
 }
 
