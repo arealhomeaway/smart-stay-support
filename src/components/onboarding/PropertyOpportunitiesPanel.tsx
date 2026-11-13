@@ -38,10 +38,14 @@ export function usePropertyOwnerSummary(propertyId:string){
   const q=useOwnerCollaboration(propertyId);
   const program=programs.data?.rows.find(p=>p.properties.some(h=>h.id===propertyId))??null;
   const ready=Boolean(programs.data&&q.data&&released.data&&opsRecords.data);
-  if(!ready||!program)return {ready,program:null as null|{reportedHours:number},waitingOnUs:0,waitingOnThem:0};
+  const none={ready,program:null as null|{id:string;reportedHours:number;startedOn:string|null;ownerName:string},waitingOnUs:0,waitingOnThem:0,attention:[] as OwnerTabItem[],cards:{open:0,done:0},collab:q.data,released:released.data??[]};
+  if(!ready||!program)return none;
   const items=ownerTabItems({opps:(q.data?.opportunities??[]) as never,messages:(q.data?.messages??[]) as never,files:(q.data?.files??[]) as never,released:(released.data??[]) as never,opsRecords:(opsRecords.data??[]) as never,opsStatus:r=>opsRecordStatus(r as never)});
   const groups=groupOwnerTab(items);
-  return {ready,program:{reportedHours:program.reportedHours},waitingOnUs:groups.attention.length,waitingOnThem:groups.waiting.length};
+  // Part 2 (2.1): the Owner tab lists only what needs someone; the owner's plan cards are only counted.
+  const cards=items.filter(i=>i.kind==="review"&&!["draft","prepared"].includes(i.status));
+  const done=cards.filter(i=>["complete","completed","closed"].includes(i.status)).length;
+  return {...none,program:{id:program.id,reportedHours:program.reportedHours,startedOn:program.startedOn??null,ownerName:program.ownerName},waitingOnUs:groups.attention.length,waitingOnThem:groups.waiting.length,attention:groups.attention,cards:{open:cards.length-done,done}};
 }
 
 function when(value:string|null|undefined) { return value?new Date(value.length===10?`${value}T12:00:00`:value).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}):"Date not recorded"; }
