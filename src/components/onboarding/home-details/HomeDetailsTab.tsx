@@ -23,6 +23,8 @@ import { readProjectTeam, setProjectRoleAssignee, setProjectStagingProvider } fr
 import { setProjectStagersFn } from "@/lib/onboarding-home.functions";
 import { saveCredentialFn } from "@/lib/credentials.functions";
 import { homeDetailsHistoryFn, saveHomeDetailFn } from "@/lib/home-details.functions";
+import { readPropertyOwnerFn } from "@/lib/owner-link.functions";
+import { ownerRow } from "@/lib/onboarding-home-page";
 import {
   HOME_PROFILE_SECTIONS,
   buildChanges,
@@ -97,7 +99,7 @@ export type HomeDetailsProps = {
     scopeLabel: string;
   };
   dates: { plannedClosingOn: string | null; actualClosingOn: string | null; actualAccessOn: string | null };
-  owner: { legal: string | null; people: string | null; ownerRezId: string | null; activeOwner: boolean };
+  owner: { ownerRezId: string | null; activeOwner: boolean };
   lifecycle: { value: string; label: string; options: Option[]; canEdit: boolean; save: (v: string) => void };
   /** Existing tools that stay with their section, shown under its rows. */
   extras: Partial<Record<DetailSection, ReactNode>>;
@@ -127,6 +129,13 @@ export function HomeDetailsTab(p: HomeDetailsProps) {
   const hub = useQuery({ queryKey: ["property-hub", propertyId], queryFn: () => hubFn({ data: { propertyId } }), retry: false });
   const profile = ((hub.data as { profile?: HomeProfileData } | undefined)?.profile ?? null) as HomeProfileData | null;
   const { ctx, canManageCodes } = useProfileContext(propertyId, profile);
+  // The owner of record, read the same way as the header (people split from the legal owner).
+  const ownerFn = useServerFn(readPropertyOwnerFn);
+  const ownerQ = useQuery({ queryKey: ["property-owner", propertyId], queryFn: () => ownerFn({ data: { propertyId } }) });
+  const ownerRec = ownerQ.data?.owner ?? null;
+  const ownerLine = ownerRec
+    ? ownerRow({ people: ownerRec.people ?? [], legal: ownerRec.name, phone: ownerRec.phone, email: ownerRec.email, telegram: ownerRec.telegram, preferred: ownerRec.preferredMethod })
+    : null;
   const historyFn = useServerFn(homeDetailsHistoryFn);
   const history = useQuery({ queryKey: ["home-details-history", propertyId], queryFn: () => historyFn({ data: { propertyId } }), retry: false });
   const teamFn = useServerFn(readProjectTeam);
@@ -264,8 +273,10 @@ export function HomeDetailsTab(p: HomeDetailsProps) {
     }
 
     // Owner record
-    out.push({ id: "legal_owner", section: "owner", label: "Legal owner", value: p.owner.legal });
-    out.push({ id: "owner_people", section: "owner", label: "People", value: p.owner.people, person: true });
+    out.push({ id: "legal_owner", section: "owner", label: "Legal owner", value: ownerLine?.legal || ownerRec?.name || null });
+    out.push({ id: "owner_people", section: "owner", label: "People", value: ownerLine?.names || null, person: true });
+    out.push({ id: "owner_phone", section: "owner", label: "Phone", value: ownerRec?.phone ?? null });
+    out.push({ id: "owner_email", section: "owner", label: "Email", value: ownerRec?.email ?? null });
     out.push({ id: "owner_program", section: "owner", label: "Program", value: p.owner.activeOwner ? "Active Owner" : "Standard" });
     out.push({ id: "ownerrez_id", section: "owner", label: "OwnerRez property", value: p.owner.ownerRezId });
 
@@ -329,7 +340,7 @@ export function HomeDetailsTab(p: HomeDetailsProps) {
       };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [p.project, p.dates, p.owner, p.lifecycle, p.canSetStatus, team.data, stagers.data, pid.data, ctx, canManageCodes, history.data, viewer, viewOnly]);
+  }, [p.project, p.dates, p.owner, ownerRec, ownerLine?.names, ownerLine?.legal, p.lifecycle, p.canSetStatus, team.data, stagers.data, pid.data, ctx, canManageCodes, history.data, viewer, viewOnly]);
 
   const [query, setQuery] = useState("");
   const [focus, setFocus] = useState<string | null>(null);
