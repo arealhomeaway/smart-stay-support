@@ -272,9 +272,9 @@ export function previewKind(mime: string | null | undefined, name?: string | nul
 
 /* ------------------------------------------------------------- vendors */
 
-/** Option 1, 2, 3 from the market ranking; nothing recorded reads Not ranked. */
+/** Option N from the vendor's recorded ranking; nothing recorded reads Not ranked. */
 export function optionLabel(priority: number | null | undefined): string {
-  return priority === 1 || priority === 2 || priority === 3 ? `Option ${priority}` : "Not ranked";
+  return typeof priority === "number" && Number.isInteger(priority) && priority > 0 ? `Option ${priority}` : "Not ranked";
 }
 
 export type ContactMethod = "call" | "text" | "email";
