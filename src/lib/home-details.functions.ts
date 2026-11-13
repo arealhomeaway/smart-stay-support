@@ -106,6 +106,7 @@ export const homeDetailsHistoryFn = createServerFn({ method: "POST" })
 
 const saveInput = z.discriminatedUnion("target", [
   z.object({ target: z.literal("choice"), propertyId: uuid, field: z.enum(["owner_type", "project_status", "pma_status", "invoice_status", "greater_area"]), value: z.string().trim().max(200).nullable() }),
+  z.object({ target: z.literal("committed"), propertyId: uuid, value: z.string().date() }),
   z.object({ target: z.literal("staged"), propertyId: uuid, field: z.enum(["telegram_url", "loa_status"]), value: z.string().trim().max(300).nullable() }),
   z.object({ target: z.literal("ref"), propertyId: uuid, key: z.enum(["zillow_url", "property_folder", "purchase_agreement", "verified_address", "builder", "ccrs_reviewed_on", "ccrs_note"]), label: z.string().max(80), section: z.enum(["project", "hoa"]), value: z.string().trim().max(300).nullable() }),
   z.object({ target: z.literal("date"), propertyId: uuid, field: z.enum(["possessionOn", "targetHandoffOn", "inspectionOn"]), label: z.string().max(80), value: z.string().date().nullable() }),
@@ -119,7 +120,7 @@ export const saveHomeDetailFn = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const viewer = await loadDetailsViewer(context.supabase, context.userId, data.propertyId);
     const kind: DetailEditKind =
-      data.target === "profile" ? data.section : data.target === "ref" ? data.section : data.target === "date" ? "dates" : "project";
+      data.target === "profile" ? data.section : data.target === "ref" ? data.section : data.target === "date" ? "dates" : data.target === "committed" ? "committed_set" : "project";
     if (!canEditDetail(viewer, kind)) throw refuse(kind);
     const db = loose(context.supabase);
     if (data.target === "profile") {
@@ -130,6 +131,12 @@ export const saveHomeDetailFn = createServerFn({ method: "POST" })
     if (!viewer.projectId) throw new Error("This home has no onboarding project yet.");
     if (data.target === "choice") {
       const { error } = await db.rpc("save_onboarding_project_details", { _project_id: viewer.projectId, _patch: { [data.field]: data.value } });
+      if (error) throw new Error(error.message);
+      return { ok: true as const };
+    }
+    if (data.target === "committed") {
+      // Set once; a correction goes through correct_committed_handoff_date (Supervisor or Admin, register O3).
+      const { error } = await db.rpc("save_onboarding_project_details", { _project_id: viewer.projectId, _patch: { committed_handoff_on: data.value } });
       if (error) throw new Error(error.message);
       return { ok: true as const };
     }

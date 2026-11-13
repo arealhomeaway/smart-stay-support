@@ -35,7 +35,7 @@ import {
   type CodeCategory,
   type ProfileItem,
 } from "@/lib/home-profile";
-import { INVOICE_STATUSES, NOTION_STATUSES, OWNER_TYPES, PMA_STATUSES, pmaSteps, shortDate } from "@/lib/onboarding-board";
+import { NOTION_STATUSES, OWNER_TYPES, PMA_STATUSES, pmaSteps, shortDate } from "@/lib/onboarding-board";
 import { stateChip } from "@/lib/semantic";
 import { Chip } from "@/components/ui/page";
 import { cn } from "@/lib/utils";
@@ -56,7 +56,6 @@ import {
   type DetailsViewer,
 } from "@/lib/home-details";
 
-void INVOICE_STATUSES;
 
 type Option = { value: string; label: string };
 type Editor =
@@ -236,7 +235,7 @@ export function HomeDetailsTab(p: HomeDetailsProps) {
       ) : undefined,
       editor: pr.committed_handoff_on
         ? can("committed_correct") ? { kind: "custom", render: () => <CorrectCommittedDate projectId={pr.id} current={pr.committed_handoff_on!} /> } : null
-        : can("committed_set") ? { kind: "custom", render: (close) => <CommittedSetOnce onSet={async (d) => { await save({ data: { target: "choice", propertyId, field: "owner_type", value: pr.owner_type } }).catch(() => null); await setCommitted(pr.id, d); close(); refreshAll(); }} /> } : null,
+        : can("committed_set") ? { kind: "custom", render: (close) => <CommittedSetOnce onSet={async (d) => { await save({ data: { target: "committed", propertyId, value: d } }); close(); refreshAll(); }} /> } : null,
     });
 
     // Team
@@ -331,12 +330,6 @@ export function HomeDetailsTab(p: HomeDetailsProps) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [p.project, p.dates, p.owner, p.lifecycle, p.canSetStatus, team.data, stagers.data, pid.data, ctx, canManageCodes, history.data, viewer, viewOnly]);
-
-  async function setCommitted(projectId: string | null, d: string) {
-    if (!projectId) throw new Error("This home has no onboarding project yet.");
-    const { saveOnboardingDetailsFn } = await import("@/lib/onboarding-details.functions");
-    await saveOnboardingDetailsFn({ data: { projectId, patch: { committed_handoff_on: d } } });
-  }
 
   const [query, setQuery] = useState("");
   const [focus, setFocus] = useState<string | null>(null);
