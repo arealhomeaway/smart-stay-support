@@ -324,7 +324,9 @@ export async function loadNotInResolveYet(supabase: Client, userId: string): Pro
     db.from("ownerrez_listing_cache").select("listing_id, added_on"),
   ]);
   if (props.error || projects.error) return { ok: false, error: "Could not read the homes in Resolve." };
-  const byListing = new Map(((props.data ?? []) as { id: string; ownerrez_property_id: string; lifecycle_status: string | null }[]).map((p) => [String(p.ownerrez_property_id), p] as const));
+  // Some homes store the OwnerRez number with an "ORP" prefix (the PID import); both forms are the same home.
+  const orKey = (v: unknown) => String(v ?? "").trim().replace(/^ORP/i, "");
+  const byListing = new Map(((props.data ?? []) as { id: string; ownerrez_property_id: string; lifecycle_status: string | null }[]).map((p) => [orKey(p.ownerrez_property_id), p] as const));
   const withProject = new Set(((projects.data ?? []) as { property_id: string }[]).map((p) => p.property_id));
   const hidden = new Set(((dismissed.data ?? []) as { listing_id: string }[]).map((d) => d.listing_id));
   const added = new Map(((cache.data ?? []) as { listing_id: string; added_on: string | null }[]).map((c) => [c.listing_id, c.added_on] as const));
@@ -332,7 +334,7 @@ export async function loadNotInResolveYet(supabase: Client, userId: string): Pro
   for (const l of listings) {
     const listingId = String(l.id);
     if (hidden.has(listingId)) continue;
-    const home = byListing.get(listingId);
+    const home = byListing.get(orKey(listingId));
     if (home && (withProject.has(home.id) || (home.lifecycle_status ?? "active_operations") === "active_operations" || home.lifecycle_status === "offboarded")) continue;
     rows.push({
       listingId,

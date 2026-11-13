@@ -266,7 +266,7 @@ export function AddHomePanel(p: {
                                 <Button asChild size="sm" variant="outline" className="min-h-11">
                                   <Link to="/onboarding/$propertyId" params={{ propertyId: c.existing.id }}>Open it</Link>
                                 </Button>
-                                {!there?.hasPlan ? (
+                                {there && !there.hasPlan && there.lifecycle !== "handed_off" && there.lifecycle !== "fell_through" ? (
                                   <Button size="sm" className="min-h-11" onClick={() => { setChoice({ kind: "existing", propertyId: c.existing!.id, projectId: there?.projectId ?? null, label, upcoming: there?.lifecycle === "upcoming" }); setStep(2); }}>
                                     Start its plan
                                   </Button>
