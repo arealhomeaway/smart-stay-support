@@ -126,3 +126,11 @@ describe("reminders, weekly update and email limits", () => {
     expect(partTimeLeft(0, 60_000)).toBe(false);
   });
 });
+
+describe("About the owner names", () => {
+  it("splits the people from the legal owner and leaves out a covered login", async () => {
+    const { ownerParties } = await import("@/lib/onboarding-home-page");
+    expect(ownerParties(["Dana Syska"], "Adriel Properties, LLC (Niles & Dana Syska)")).toEqual({ people: ["Niles & Dana Syska"], legal: "Adriel Properties, LLC" });
+    expect(ownerParties(["Ryan Lee"], "Ryan Lee")).toEqual({ people: ["Ryan Lee"], legal: "Ryan Lee" });
+  });
+});
