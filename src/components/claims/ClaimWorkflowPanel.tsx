@@ -6,6 +6,8 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { writeHistoryLine } from "@/lib/history-line";
+import { showSaved } from "@/components/history-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -129,18 +131,20 @@ export function ClaimWorkflowPanel({
     mutationFn: async ({ patch, body }: { patch: Record<string, unknown>; body: string }) => {
       const { error } = await supabase.from("claims").update(patch as never).eq("id", claim.id);
       if (error) throw error;
-      await supabase.from("claim_activity").insert({
-        claim_id: claim.id,
-        author_id: userId,
-        event_type: "workflow",
-        body,
-        detail: patch as never,
-        is_demo: claim.is_demo,
-      });
+      return writeHistoryLine(() =>
+        supabase.from("claim_activity").insert({
+          claim_id: claim.id,
+          author_id: userId,
+          event_type: "workflow",
+          body,
+          detail: patch as never,
+          is_demo: claim.is_demo,
+        }),
+      );
     },
-    onSuccess: () => {
+    onSuccess: (historySaved) => {
       refreshAll();
-      toast.success("Claim updated");
+      showSaved("Claim updated", historySaved);
     },
     onError: (e: Error) => toast.error(e.message),
   });

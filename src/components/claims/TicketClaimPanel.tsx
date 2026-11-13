@@ -11,6 +11,8 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { writeHistoryLine } from "@/lib/history-line";
+import { showSaved } from "@/components/history-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -200,23 +202,25 @@ export function TicketClaimPanel({
         });
       }
 
-      await supabase.from("claim_activity").insert({
-        claim_id: claimId,
-        author_id: userId,
-        event_type: "created",
-        body: `Claim opened from ticket. Recovering from ${RECOVERY_SOURCE[type]}`,
-        is_demo: ticket.is_demo ?? false,
-      });
-      return claimId;
+      const historySaved = await writeHistoryLine(() =>
+        supabase.from("claim_activity").insert({
+          claim_id: claimId,
+          author_id: userId,
+          event_type: "created",
+          body: `Claim opened from ticket. Recovering from ${RECOVERY_SOURCE[type]}`,
+          is_demo: ticket.is_demo ?? false,
+        }),
+      );
+      return { claimId, historySaved };
     },
-    onSuccess: () => {
+    onSuccess: ({ historySaved }) => {
       setOpen(false);
       setAcknowledgedDuplicate(false);
       qc.invalidateQueries({ queryKey: ["claims-for-ticket", ticket.id] });
       qc.invalidateQueries({ queryKey: ["ticket-branches", ticket.id] });
       qc.invalidateQueries({ queryKey: ["claims"] });
       qc.invalidateQueries({ queryKey: ["claim-requirements"] });
-      toast.success("Claim opened");
+      showSaved("Claim opened", historySaved);
     },
     onError: (e: Error) => toast.error(e.message),
   });
