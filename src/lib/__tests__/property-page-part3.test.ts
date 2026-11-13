@@ -145,7 +145,7 @@ describe("3.5 Add to my homes", () => {
     expect(myHomesState({ assigned: false, following: false })).toBe("add");
   });
   it("My Tasks can show the homes you follow", () => {
-    expect(validateMyWorkSearch({ home: FOLLOWED_HOMES }).home).toBe(FOLLOWED_HOMES);
+    expect(validateMyWorkSearch({ home: FOLLOWED_HOMES } as never).home).toBe(FOLLOWED_HOMES);
     const tasks = [
       { id: "1", property_id: "h1", assigned_to: "x" },
       { id: "2", property_id: "h2", assigned_to: "me" },
