@@ -330,7 +330,7 @@ export function HomeDetailsTab(p: HomeDetailsProps) {
         editor: isEditable(item) && can(kind)
           ? {
               kind: item.src.kind === "link" ? "link" : "text",
-              save: async (v) => {
+              save: async (v: string | null) => {
                 const changes = buildChanges({ id: "one", title: card, items: [item] }, { [item.key]: v ?? "" }, ctx);
                 if (!changes.length) return;
                 await save({ data: { target: "profile", propertyId, section: kind, card, changes: changes as never } });

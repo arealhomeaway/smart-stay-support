@@ -62,17 +62,20 @@ const t = (o: Partial<PageTask> = {}): PageTask => ({
 });
 
 describe("1.1 tabs and ?tab=", () => {
-  it("are in the approved order, ending with the temporary More", () => {
-    expect(PAGE_TABS.map((x) => x.label)).toEqual(["Overview", "Tasks", "Owner", "Home details", "Vendors and work", "Files", "Budget", "Activity", "More"]);
+  it("are in the approved order; Part 3 removed the temporary More", () => {
+    expect(PAGE_TABS.map((x) => x.label)).toEqual(["Overview", "Tasks", "Owner", "Home details", "Vendors and work", "Files", "Budget", "Activity"]);
   });
   it("the page opens on Overview; old links open the tab that holds their content now", () => {
     expect(pageTabFor(undefined)).toBe("overview");
     expect(pageTabFor("tasks")).toBe("tasks");
     expect(pageTabFor("plan")).toBe("tasks");
     expect(pageTabFor("work")).toBe("tasks");
-    expect(pageTabFor("design")).toBe("more");
-    expect(pageTabFor("agreements")).toBe("more");
-    expect(pageTabFor("info")).toBe("more");
+    // Part 3: the More tab's old links open the tab that holds that content now.
+    expect(pageTabFor("design")).toBe("files");
+    expect(pageTabFor("agreements")).toBe("details");
+    expect(pageTabFor("info")).toBe("details");
+    expect(pageTabFor("more")).toBe("details");
+    expect(pageTabFor("handoff")).toBe("tasks");
     expect(pageTabFor("active-owner")).toBe("owner");
     expect(pageTabFor(undefined, true)).toBe("owner");
     expect(pageTabFor("budget")).toBe("budget");

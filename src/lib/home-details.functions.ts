@@ -243,7 +243,7 @@ export const homeVendorsFn = createServerFn({ method: "POST" })
     const { vendorMarketFor } = await import("./vendor-market");
     const home = await db.from("properties").select("market, is_demo").eq("id", data.propertyId).maybeSingle();
     const project = await homeProject(db, data.propertyId);
-    const market = vendorMarketFor((project?.greater_area as string | null) ?? home.data?.market ?? null);
+    const market = vendorMarketFor(home.data?.market ?? (project?.["greater_area"] as string | null) ?? null);
     const [coverage, homeCoverage, stagers] = await Promise.all([
       market ? db.from("vendor_market_coverage").select("org_id, service_category").eq("market", market) : Promise.resolve({ data: [] }),
       db.from("property_vendor_coverage").select("org_id, service_category, excluded").eq("property_id", data.propertyId),

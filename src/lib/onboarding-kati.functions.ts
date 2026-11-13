@@ -268,8 +268,8 @@ export const sendOnboardingWorkOrderFn = createServerFn({ method: "POST" })
         sourceId: data.taskId,
         requestKey: onboardingSendRequestKey(data.taskId),
         title: data.title ?? stripWorkOrderPrefix(String(task.data.title)).slice(0, 200),
-        // Item 36: without a typed description, only the step's short summary goes.
-        description: data.description !== undefined ? data.description : breezewayStepSummary(task.data.detail ? String(task.data.detail) : null).slice(0, 4000) || null,
+        // Part 3 (3.8): the full step text, the sender's note and any file links.
+        description: description.slice(0, 4000) || null,
         department: "maintenance",
         priority: data.priority,
         scheduledDate: link.data.tentative_date,

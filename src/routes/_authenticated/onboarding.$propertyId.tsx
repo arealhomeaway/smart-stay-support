@@ -192,6 +192,12 @@ import {
   updateOnboardingProjectFn,
 } from "@/lib/onboarding.functions";
 
+/** Part 3: ?section= and ?folder= pass through only as short plain words. */
+function placeParams(raw: Record<string, unknown>): { section?: string; folder?: string } {
+  const ok = (v: unknown): v is string => typeof v === "string" && /^[a-z]{2,20}$/.test(v);
+  return { ...(ok(raw["section"]) ? { section: raw["section"] } : {}), ...(ok(raw["folder"]) ? { folder: raw["folder"] } : {}) };
+}
+
 /** Until the viewer loads, Home details shows no Edit buttons. */
 const VIEW_ONLY_VIEWER: DetailsViewer = {
   userId: null,
@@ -244,12 +250,7 @@ export const Route = createFileRoute("/_authenticated/onboarding/$propertyId")({
       ...((raw as { stage?: unknown }).stage === "6" || (raw as { stage?: unknown }).stage === 6 ? { stage: "6" as const } : {}),
       ...((raw as { from?: unknown }).from === FROM_ATTENTION ? { from: FROM_ATTENTION } : {}),
       // Part 3: ?section= opens a Home details section; ?folder= opens a Files folder.
-      ...(typeof (raw as { section?: unknown }).section === "string" && /^[a-z]{2,20}$/.test((raw as { section: string }).section)
-        ? { section: (raw as { section: string }).section }
-        : {}),
-      ...(typeof (raw as { folder?: unknown }).folder === "string" && /^[a-z]{2,20}$/.test((raw as { folder: string }).folder)
-        ? { folder: (raw as { folder: string }).folder }
-        : {}),
+      ...placeParams(raw as Record<string, unknown>),
       // Part 2 (2.2): the Chats inbox opens a home with its chat panel on one tab.
       ...((raw as { chat?: unknown }).chat === "owner" || (raw as { chat?: unknown }).chat === "team"
         ? { chat: (raw as unknown as { chat: "owner" | "team" }).chat }
