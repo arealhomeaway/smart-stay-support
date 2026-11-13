@@ -29,6 +29,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { OwnerParticipationOffer } from "@/components/OwnerParticipationOffer";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { LinkedStepFiles } from "@/components/onboarding/LinkedStepFiles";
+import { taskDefaultFolder } from "@/lib/home-details";
 import { TaskStageTrail } from "@/components/onboarding/TaskStageTrail";
 import { TaskTeamComments } from "@/components/onboarding/TaskTeamComments";
 import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
@@ -447,6 +448,7 @@ export function TaskDrawer({
         entityId={task.id}
         title="Files"
         description={middle === "upload_files" && task.done_when ? task.done_when : uploadHint(taskKind({ title: task.title, detail: task.detail }))}
+        folderPick={{ defaultFolder: taskDefaultFolder({ title: task.title, role: task.assigned_seat ?? null }) }}
       />
       <LinkedStepFiles taskId={task.id} canManage={canManageTask && !disabled} />
       {isPhotoStep(task.title) && <OpenPhotosFolderButton propertyId={task.property_id} />}
