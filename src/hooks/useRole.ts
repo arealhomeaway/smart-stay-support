@@ -78,7 +78,15 @@ export function useMyRoles() {
  * `roles` are the effective roles the UI should honour (they follow a Platform
  * Owner's read-only "View As" preview). `actualRoles` are always the real ones.
  */
+/**
+ * Onboarding Home 3.3: a screen region that reads as view only (a home the viewer is not on).
+ * Everything inside honours it through `readOnly`, so no edit control shows; the server keeps
+ * its own write rules regardless.
+ */
+export const ViewOnlyScope = createContext(false);
+
 export function useRole() {
+  const scopedViewOnly = useContext(ViewOnlyScope);
   const { viewAs } = useViewAs();
   const demoFlag = useDemoFlag();
   const previewSeat = usePreviewSeat();
@@ -124,7 +132,7 @@ export function useRole() {
      * the safe demo environment may change demo records only, which the
      * queries and writes on each surface already scope by `is_demo`.
      */
-    readOnly: (previewing && !demoMode) || viewOnlyHere,
+    readOnly: (previewing && !demoMode) || viewOnlyHere || scopedViewOnly,
     /** True while previewing the isolated demo environment. */
     demoMode,
     /** The operational seat being previewed, when one was chosen. */
