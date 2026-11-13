@@ -53,7 +53,6 @@ import { BudgetPanel } from "@/components/onboarding/BudgetPanel";
 import { FillInEditors } from "@/components/onboarding/FillInEditors";
 import { AssessmentFindingsPanel } from "@/components/onboarding/AssessmentFindingsPanel";
 import { AssessmentsFormsPanel } from "@/components/onboarding/AssessmentsFormsPanel";
-import { FollowHomeButton } from "@/components/onboarding/OnboardingActivityFeed";
 import { OwnerViewPreview } from "@/components/onboarding/OwnerViewPreview";
 import { VendorCoveragePanel } from "@/components/onboarding/VendorCoveragePanel";
 import { OnboardingWorkOrdersPanel } from "@/components/onboarding/OnboardingWorkOrdersPanel";
@@ -66,12 +65,10 @@ import {
   orderPropertyWorkQueue,
   validateWorkspaceSearch,
 } from "@/lib/onboarding-work-views";
-import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { PropertyWorkQueue } from "@/components/onboarding/PropertyWorkQueue";
 import { PlanCatchUpBar, usePlanCatchUp } from "@/components/onboarding/PlanCatchUp";
 import { planCatchUpViewerFn } from "@/lib/plan-catch-up.functions";
 import { canUseCatchUp, type CatchUpTask, type CatchUpViewer } from "@/lib/plan-catch-up";
-import { PhotoStrip } from "@/components/onboarding/PhotoStrip";
 import { ProjectHistory } from "@/components/onboarding/ProjectHistory";
 import { buildReleaseContext, deriveLifecycle, handoffReadiness } from "@/lib/onboarding-state";
 import {
@@ -89,14 +86,7 @@ import {
   type BoardTask,
   type ProjectDetails,
 } from "@/lib/onboarding-board";
-import {
-  AgreementsTab,
-  BudgetFigures,
-  DesignTab,
-  GeneralInfoFields,
-  ProjectDetailsSection,
-  notNeededLabel,
-} from "@/components/onboarding/board/HomeBoard";
+import { BudgetFigures, notNeededLabel } from "@/components/onboarding/board/HomeBoard";
 import { OnboardingHomeHeader } from "@/components/onboarding/home-page/OnboardingHomeHeader";
 import { HomeDetailsTab } from "@/components/onboarding/home-details/HomeDetailsTab";
 import { HomeFilesTab } from "@/components/onboarding/home-files/HomeFilesTab";
@@ -366,7 +356,6 @@ function PropertyWorkspace() {
   );
   const voidTask = mut(useServerFn(archiveOnboardingTaskFn), "Step voided.");
   const confirmRequirement = mut(useServerFn(confirmApprovalRequirementFn), "Requirement updated.");
-  const saveRefs = mut(useServerFn(updateOnboardingProjectFn), "Saved.");
   // The home's files, shared with the Design and Files tabs (same cache key).
   const listFiles = useServerFn(listAttachmentsFn);
   const homeFiles = useQuery({
@@ -633,7 +622,6 @@ function PropertyWorkspace() {
     .join(" · ");
   const isAdminViewer = roles.includes("admin");
   const canSetStatus = projectRow?.project_manager === userId || isOnboardingDirector || isAdminViewer;
-  const canCorrect = !readOnly && (isAdminViewer || roles.includes("manager"));
   // The board fields (register A16): the Director of Onboarding, Admin and this home's
   // Project Manager edit; everyone else who can open the page reads them.
   const canEditBoard =
@@ -682,13 +670,6 @@ function PropertyWorkspace() {
   const setFolder = (folder: HomeFolder) => void navigate({ search: { ...search, tab: "files", folder } as never, replace: true });
   // A tab picked directly replaces the address and drops the jump mark (fix 6).
   const goTab = (next: string) => void navigate({ search: tabClickSearch(search, pageTabFor(next)) as never, replace: true });
-  const scrollToId = (id: string) => {
-    let tries = 0;
-    const go = () => {
-      const el = document.getElementById(id);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-      else if (tries++ < 10) window.setTimeout(go, 60);
-    };
     window.setTimeout(go, 0);
   };
   // A Needs attention jump pushes a history entry, so the browser's Back returns to Overview.
