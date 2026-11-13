@@ -826,7 +826,7 @@ function PropertyWorkspace() {
       {overlays}
       {/* Part 3 (3.7): on a phone Chat floats at the bottom; the panel opens full screen. */}
       {!chatOpen ? (
-        <div className="fixed bottom-4 right-4 z-30 md:hidden [&_button]:min-h-12 [&_button]:shadow-lg" data-testid="floating-chat">
+        <div className="fixed bottom-20 right-4 z-30 md:hidden [&_button]:min-h-12 [&_button]:shadow-lg" data-testid="floating-chat">
           <ChatButton propertyId={current.id} onOpen={() => setChatOpen(true)} />
         </div>
       ) : null}
