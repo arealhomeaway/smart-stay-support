@@ -275,3 +275,33 @@ export const retryFailedEmailFn = createServerFn({ method: "POST" })
     await writeAudit({ actorId: context.userId, action: one ? "failed_email_retry" : "failed_email_retry_all", entityType: data.audience ? `${data.audience}_notification` : "email", entityId: data.id ?? null, after: { count } } as never);
     return { count };
   });
+
+/** About the owner: the preferred method, changed by the PM, the Director of Onboarding or an Admin. */
+export const setOwnerPreferredFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ propertyId: uuid, method: z.enum(["text", "call", "email", "telegram"]).nullable() }).parse(d))
+  .handler(async ({ context, data }) => {
+    const { loadOwnerTabViewer } = await import("@/lib/owner-tab.server");
+    const { ownerTabRights } = await import("@/lib/owner-tab");
+    const rights = ownerTabRights(await loadOwnerTabViewer(context.supabase as never, context.userId, data.propertyId));
+    if (!rights.editPreferred) throw new Error("Only the Project Manager, the Director of Onboarding or an Admin can change this.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const home = await supabaseAdmin.from("properties").select("owner_record_id").eq("id", data.propertyId).maybeSingle();
+    const ownerId = home.data?.owner_record_id;
+    if (!ownerId) throw new Error("No owner is on file for this home.");
+    const rec = await supabaseAdmin.from("property_owners").select("name, email, phone, co_owner_name, co_owner_email, co_owner_phone").eq("id", ownerId).maybeSingle();
+    if (!rec.data) throw new Error("That owner record could not be found.");
+    const hub = await import("@/lib/property-hub.server");
+    const m = await import("@/lib/owner-link.server");
+    const viewer = await hub.loadViewer(context.supabase, context.userId);
+    return m.updateOwnerRecord(viewer, {
+      ownerId,
+      name: rec.data.name,
+      email: rec.data.email,
+      phone: rec.data.phone,
+      coOwnerName: rec.data.co_owner_name,
+      coOwnerEmail: rec.data.co_owner_email,
+      coOwnerPhone: rec.data.co_owner_phone,
+      preferredMethod: data.method,
+    });
+  });
