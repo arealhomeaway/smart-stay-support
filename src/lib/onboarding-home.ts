@@ -565,6 +565,8 @@ export type HomeSearch = {
   tile?: TileKey | undefined;
   view?: HomeView | undefined;
   q?: string | undefined;
+  /** Test and demo homes are hidden unless asked for, as before. */
+  showTest?: boolean | undefined;
 } & { [K in FilterKey]?: string | undefined };
 
 /** Reads the address. Older links keep working: ?lens=all opens past projects, ?view=active the table. */
@@ -583,6 +585,7 @@ export function parseHomeSearch(raw: Record<string, unknown>): HomeSearch {
   else if (view === "active") out.view = "table";
   const q = str("q") ?? str("find");
   if (q) out.q = q.slice(0, 120);
+  if (raw["showTest"] === true || raw["showTest"] === "true") out.showTest = true;
   for (const k of FILTER_KEYS) {
     const v = str(k);
     if (v) out[k] = v.slice(0, 120);
@@ -604,7 +607,7 @@ export function tileClick(s: HomeSearch, key: TileKey): HomeSearch {
 
 /** Clear filters: tile, search and every filter go; tab, switch and view stay. */
 export function clearAll(s: HomeSearch): HomeSearch {
-  return { tab: s.tab, scope: s.scope, view: s.view };
+  return { tab: s.tab, scope: s.scope, view: s.view, showTest: s.showTest };
 }
 
 /* ------------------------------------------------------- saved views */

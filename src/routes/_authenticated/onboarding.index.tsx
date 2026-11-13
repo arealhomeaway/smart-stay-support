@@ -24,7 +24,7 @@ import { centralHour, firstNameOf } from "@/lib/onboarding-board";
 import { useRole } from "@/hooks/useRole";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 import { useFeatureFlags } from "@/lib/feature-flags";
-import { applyTestDataFilter } from "@/lib/test-data";
+import { applyTestDataFilter, countTestRecords } from "@/lib/test-data";
 import {
   anyFilter,
   clearAll,
@@ -175,7 +175,8 @@ function OnboardingHome() {
   const [asking, setAsking] = useState<{ kind: "fell"; row: HomeRow } | { kind: "dismiss"; listing: OwnerRezRow } | null>(null);
   const [reason, setReason] = useState("");
 
-  const rows = useMemo(() => applyTestDataFilter(data?.rows ?? [], false, (r) => ({ is_demo: r.isDemo, name: r.name })), [data]);
+  const rows = useMemo(() => applyTestDataFilter(data?.rows ?? [], search.showTest === true, (r) => ({ is_demo: r.isDemo, name: r.name })), [data, search.showTest]);
+  const testCount = useMemo(() => countTestRecords(data?.rows ?? [], (r) => ({ is_demo: r.isDemo, name: r.name })), [data]);
 
   if (isLoading || !data) return error ? <p role="alert" className="text-muted-foreground">{(error as Error).message}</p> : <LoadingPage />;
 
@@ -318,6 +319,11 @@ function OnboardingHome() {
             {t === "active" ? `Active projects (${counts.all})` : "All projects, including past"}
           </button>
         ))}
+        {testCount > 0 ? (
+          <button type="button" className="numeric ml-auto min-h-11 px-2 text-xs text-muted-foreground hover:text-foreground" onClick={() => setSearch({ showTest: search.showTest ? undefined : true })}>
+            {search.showTest ? "Hide test homes" : `Show test homes (${testCount})`}
+          </button>
+        ) : null}
         {isAdmin ? <SourceRecords disabled={readOnly || !can("handoff_request")} /> : null}
       </div>
 
