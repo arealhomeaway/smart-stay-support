@@ -139,7 +139,7 @@ export async function readOwnerTab(sb: Db, uid: string, propertyId: string) {
   const taskIds = [...new Set(decRows.map((d) => (d.source_task_id ?? d.linked_task_id)!))];
   const openTasks = taskIds.length
     ? (((await sb.from("onboarding_tasks").select("id, title, status").in("id", taskIds).is("archived_at", null)).data ?? []) as { id: string; title: string; status: string }[])
-        .filter((t) => !["complete", "completed", "done", "void", "not_needed", "cancelled"].includes((t.status ?? "").toLowerCase()))
+        .filter((t) => !["complete", "carryover", "not_required", "void"].includes((t.status ?? "").toLowerCase()))
     : [];
   const taskTitle = new Map(openTasks.map((t) => [t.id, t.title]));
   const decisions = decRows
