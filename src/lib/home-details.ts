@@ -370,13 +370,13 @@ export function fieldTags(f: TagFields): { key: string; label: string }[] {
 
 /** 3.4: the one summary line above Budget and Invoices. */
 export function budgetSummaryLine(
-  t: { approved: number | null; actual: number | null; remaining: number | null; over: boolean },
+  t: { approved: number | null; spent: number; remaining: number | null; over: boolean },
   invoiceStatus: string | null,
   money: (v: number | null | undefined) => string,
 ): string {
   const parts: string[] = [];
   parts.push(t.approved == null ? "No approved budget yet" : `Approved ${money(t.approved)}`);
-  parts.push(`Spent ${money(t.actual ?? 0)}`);
+  parts.push(`Spent ${money(t.spent)}`);
   if (t.remaining != null) parts.push(t.over ? `Over by ${money(Math.abs(t.remaining))}` : `${money(t.remaining)} left`);
   parts.push(`Invoice ${invoiceStatus?.trim() || "Not set"}`);
   return parts.join(" · ");
