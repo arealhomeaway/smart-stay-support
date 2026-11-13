@@ -146,9 +146,13 @@ export async function readOwnerTab(sb: Db, uid: string, propertyId: string) {
     .map((d) => ({ id: d.id, title: d.title, dueOn: d.due_on, taskTitle: taskTitle.get((d.source_task_id ?? d.linked_task_id)!) ?? null }))
     .filter((d): d is { id: string; title: string; dueOn: string | null; taskTitle: string } => !!d.taskTitle);
 
+  const hol = await sb.from("ao_business_holidays").select("day").gte("day", new Date(Date.now() - 86400000 * 30).toISOString().slice(0, 10)).limit(200);
+  const holidays = ((hol.data ?? []) as { day: string }[]).map((h) => h.day);
+
   const draft = weeklyRows.find((w) => w.status === "draft") ?? null;
   return {
     decisions,
+    holidays,
     staged,
     rights,
     viewer,
