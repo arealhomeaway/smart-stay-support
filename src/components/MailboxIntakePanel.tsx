@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { LoadError } from "@/components/ui/page";
 import { CONNECTION_LABEL, connectionState } from "@/lib/load-state";
 import { useServerFn } from "@tanstack/react-start";
 import { Inbox, MailCheck, RefreshCw, Eye, Radio, Eraser } from "lucide-react";
@@ -145,6 +146,8 @@ export function MailboxIntakePanel() {
       <CardContent className="space-y-4">
         {status.isLoading ? (
           <Skeleton className="h-16 w-full" />
+        ) : status.isError ? (
+          <LoadError what="The mailbox status" onRetry={() => void status.refetch()} />
         ) : (
           <p className="text-sm text-muted-foreground">
             Mailbox: <span className="font-medium text-foreground">{status.data?.mailbox}</span> ·
