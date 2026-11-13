@@ -8,6 +8,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
+import { FindVendorLink } from "@/components/onboarding/home-vendors/HomeVendorsTab";
 import { ExternalLink, Phone, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -197,9 +198,10 @@ function VendorRequest({ settings, taskId, propertyId, disabled, onRequested }: 
       {q.data && rows.length === 0 ? (
         <div className="space-y-1 text-sm">
           <p>{noVendorLine(trade, q.data.market)}</p>
-          <Link to="/vendors" className="inline-flex min-h-11 items-center text-primary underline-offset-4 hover:underline">Add a vendor</Link>
+          <FindVendorLink market={q.data.market ?? null} trade={trade} taskId={taskId} />
         </div>
       ) : null}
+      {q.data && rows.length > 0 ? <FindVendorLink market={q.data.market ?? null} trade={trade} taskId={taskId} /> : null}
       <ul className="divide-y divide-border">
         {rows.map((v) => (
           <li key={v.orgId} className="space-y-1 py-3 text-sm">

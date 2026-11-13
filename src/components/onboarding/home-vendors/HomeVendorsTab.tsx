@@ -19,13 +19,23 @@ import { findVendorSearch, optionLabel, sortVendors, vendorContactLinks } from "
 
 const ALL = "__all";
 
-export function FindVendorLink({ market, trade, label = "Find a vendor" }: { market: string | null; trade: string | null; label?: string }) {
-  const here = useRouterState({ select: (s) => s.location.href });
+/** Find a vendor: opens the vendor list filtered; coming back reopens this place (and Task drawer). */
+export function FindVendorLink({ market, trade, taskId, label = "Find a vendor" }: { market: string | null; trade: string | null; taskId?: string; label?: string }) {
+  const href = useRouterState({ select: (s) => s.location.href });
+  const here = withTask(href, taskId);
   return (
     <Button asChild variant="outline" className="min-h-11">
       <Link to="/vendors" search={findVendorSearch({ market, trade, back: here }) as never}>{label}</Link>
     </Button>
   );
+}
+
+function withTask(href: string, taskId: string | undefined): string {
+  if (!taskId) return href;
+  const [path, query = ""] = href.split("?");
+  const q = new URLSearchParams(query);
+  q.set("task", taskId);
+  return `${path}?${q.toString()}`;
 }
 
 export function HomeVendorsTab({ propertyId, extra }: { propertyId: string; extra?: ReactNode }) {
