@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { LoadError } from "@/components/ui/page";
 import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, CheckCircle2, Mail, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
@@ -44,7 +45,7 @@ export function EmailDeliveryPanel() {
         <CardTitle className="flex flex-wrap items-center gap-2 text-base">
           <Mail className="size-4" /> Email delivery
           <Badge variant={data && data.failed > 0 ? "destructive" : "default"}>
-            {data ? `${data.failed} failed` : "Checking…"}
+            {data ? `${data.failed} failed` : delivery.isError ? "Could not check" : "Checking…"}
           </Badge>
         </CardTitle>
         <CardDescription>
@@ -58,6 +59,12 @@ export function EmailDeliveryPanel() {
         {delivery.isLoading ? (
           <p className="text-muted-foreground">Loading recent messages…</p>
         ) : null}
+        {delivery.isError ? (
+          <LoadError
+            what={delivery.error instanceof Error && /^Only /.test(delivery.error.message) ? delivery.error.message.replace(/\.$/, "") + ". Email delivery" : "Email delivery"}
+            onRetry={() => void delivery.refetch()}
+          />
+        ) : null}
 
         {data ? (
           <div className="grid gap-2 sm:grid-cols-3">
@@ -67,7 +74,7 @@ export function EmailDeliveryPanel() {
           </div>
         ) : null}
 
-        {rows.length === 0 && !delivery.isLoading ? (
+        {rows.length === 0 && !delivery.isLoading && !delivery.isError ? (
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <CheckCircle2 className="size-3.5" /> Nothing sent yet.
           </p>
