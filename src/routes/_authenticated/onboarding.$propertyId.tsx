@@ -669,8 +669,6 @@ function PropertyWorkspace() {
   const setFolder = (folder: HomeFolder) => void navigate({ search: { ...search, tab: "files", folder } as never, replace: true });
   // A tab picked directly replaces the address and drops the jump mark (fix 6).
   const goTab = (next: string) => void navigate({ search: tabClickSearch(search, pageTabFor(next)) as never, replace: true });
-    window.setTimeout(go, 0);
-  };
   // A Needs attention jump pushes a history entry, so the browser's Back returns to Overview.
   const onJump = (c: AttentionChip) => {
     if (c.jump.tab === "tasks") {
