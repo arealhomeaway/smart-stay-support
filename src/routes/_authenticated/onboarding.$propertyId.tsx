@@ -676,8 +676,9 @@ function PropertyWorkspace() {
       setTagSel(c.jump.tag);
       jumpFilters.current = true;
     }
-    const jumped = attentionJumpSearch(search, c.jump.tab);
-    void navigate({ search: (c.jump.tab === "details" && c.jump.section ? { ...jumped, section: c.jump.section } : jumped) as never });
+    // Part 3: a details jump also opens its section (still a push, so Back returns).
+    if (c.jump.tab === "details" && c.jump.section) void navigate({ search: { ...attentionJumpSearch(search, c.jump.tab), section: c.jump.section } as never });
+    else void navigate({ search: attentionJumpSearch(search, c.jump.tab) as never });
   };
   const backToAttention = () => {
     jumpFilters.current = false;
