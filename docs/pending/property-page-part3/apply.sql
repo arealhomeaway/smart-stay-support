@@ -74,7 +74,6 @@ BEGIN
   home := coalesce(d.property_id, CASE WHEN d.entity_type = 'property' THEN d.entity_id END);
   IF home IS NULL THEN RAISE EXCEPTION 'That file is not on a home.'; END IF;
   IF d.entity_type NOT IN ('property', 'onboarding_task') THEN RAISE EXCEPTION 'Only a home''s files and Task files can be filed here.'; END IF;
-  IF d.visibility = 'internal' AND d.entity_type = 'expense' THEN RAISE EXCEPTION 'Finance files stay with Finance.'; END IF;
   SELECT * INTO pr FROM public.onboarding_projects WHERE property_id = home AND status <> 'cancelled' ORDER BY created_at DESC LIMIT 1;
   IF NOT (private.onboarding_home_lead(me) OR public.holds_functional_role(me, 'director_ops')
           OR (pr.id IS NOT NULL AND private.onboarding_home_team_member(pr.id, me))) THEN
