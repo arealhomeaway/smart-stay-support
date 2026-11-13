@@ -337,6 +337,8 @@ export async function sourceFor(msg: GraphMessage, trigger: TriggerKind): Promis
  * second record, because the row itself is what suppresses re-creation.
  */
 export const CATEGORY_PENDING = "recategorise_pending";
+/** Shown on Integrations when a ticket was made but its first history line did not save. */
+export const INTAKE_HISTORY_MISSED = "Ticket made, but its first history line did not save.";
 
 /** A claim older than this is assumed abandoned (crashed pass) and reclaimable. */
 export const CLAIM_STALE_MS = 10 * 60 * 1000;
@@ -733,11 +735,14 @@ export async function processMessage(
       isDemo: isTest,
     });
     const tagged = await setCategories(msg.id, categoriesAfterCreate(msg.categories));
+    if (result.historyMissed) console.error(`Ticket ${result.ref}: ${INTAKE_HISTORY_MISSED}`);
     await settleClaim(db, messageIds, {
       status: result.threaded ? "linked" : "created",
       entityType: "ticket",
       entityId: result.ticketId,
-      error: tagged ? null : CATEGORY_PENDING,
+      // The category marker must stay exact (the retry reads it); otherwise a
+      // missed first history line is shown on Integrations.
+      error: !tagged ? CATEGORY_PENDING : result.historyMissed ? INTAKE_HISTORY_MISSED : null,
       conversationId: msg.conversationId ?? null,
       source,
     });
