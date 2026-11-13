@@ -297,6 +297,22 @@ export function sortVendors<V extends { priority: number | null; name: string }>
   return [...rows].sort((a, b) => (a.priority ?? 99) - (b.priority ?? 99) || a.name.localeCompare(b.name));
 }
 
+/** Find a vendor returns only to a home's Onboarding view, never anywhere else. */
+export function safeReturnPath(back: string | null | undefined): string | null {
+  if (!back) return null;
+  return /^\/onboarding\/[0-9a-f-]{36}(\?[^#\s]*)?$/i.test(back) ? back : null;
+}
+
+/** The vendor list address for Find a vendor: the home's market, the trade, and the way back. */
+export function findVendorSearch(input: { market: string | null; trade: string | null; back: string }) {
+  return {
+    tab: "directory" as const,
+    ...(input.market ? { market: input.market } : {}),
+    ...(input.trade ? { trade: input.trade } : {}),
+    back: input.back,
+  };
+}
+
 /* ------------------------------------------------------------ breezeway */
 
 /** 3.8: the full template step description, then the person's note on its own line. */

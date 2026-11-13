@@ -1,5 +1,6 @@
 import { AccountArchiveList } from "@/components/team/AccountArchiveList";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { safeReturnPath } from "@/lib/home-details";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -64,6 +65,7 @@ export const Route = createFileRoute("/_authenticated/vendors/")({
 function VendorsWorkspace() {
   const { tab = "directory", market, trade, back } = Route.useSearch();
   const returnTo = safeReturnPath(back);
+  const router = useRouter();
   const navigate = useNavigate({ from: "/vendors/" });
   const { can, roles, readOnly } = useRole();
   const access = vendorPageAccess(can, readOnly);
@@ -83,8 +85,8 @@ function VendorsWorkspace() {
         actions={canManage ? <CreateVendorDialog /> : undefined}
       />
       {returnTo ? (
-        <Button asChild variant="outline" className="min-h-11">
-          <a href={returnTo}>Back to the home</a>
+        <Button variant="outline" className="min-h-11" onClick={() => router.history.push(returnTo)}>
+          Back to the home
         </Button>
       ) : null}
       <Tabs value={current} onValueChange={(v) => void navigate({ search: { tab: v as Tab, ...(market ? { market } : {}), ...(trade ? { trade } : {}), ...(back ? { back } : {}) } })}>
@@ -190,8 +192,3 @@ function CreateVendorDialog() {
   );
 }
 
-/** Only a path back into a home's Onboarding view is followed (never another site). */
-export function safeReturnPath(back: string | undefined): string | null {
-  if (!back) return null;
-  return /^\/onboarding\/[0-9a-f-]{36}(\?[^#\s]*)?$/i.test(back) ? back : null;
-}
