@@ -4,6 +4,7 @@
  * wording approved; demo programs never send. Each row is claimed before
  * sending so a second pass can never double up.
  */
+import { partTimeLeft } from "@/lib/owner-tab";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { formatPropertyLabel, type PropertyLabelFields } from "./property-label";
 import { OWNER_WELCOME_KEY, readWelcomeTemplate, renderWelcome } from "./owner-welcome";
@@ -55,7 +56,10 @@ export async function drainOwnerWelcomes(db: SupabaseClient, limit = 20, jobRunI
   const { sendEmail, emailShell } = await import("./email.server");
   let sent = 0;
   const notes: string[] = [];
+  const partStarted = Date.now();
   for (const row of (due ?? []) as { id: string; program_id: string; owner_user_id: string; recipient: string; attempts: number }[]) {
+    // Part 2 (2.7): stop after 60 seconds; the rest waits for the next run.
+    if (!partTimeLeft(partStarted)) break;
     const { data: claimed } = await db
       .from("owner_welcome_messages")
       .update({ status: "sending", attempts: row.attempts + 1 } as never)
