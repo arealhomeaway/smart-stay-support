@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { OwnerMessagesWithArha } from "@/components/owner/OwnerMessagesWithArha";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -590,6 +591,11 @@ function OwnerHubBody({
           primaryContact={contacts.primary ?? JAMES}
         />
       )}
+
+      <OwnerMessagesWithArha
+        homes={scopedProperties.map((p) => ({ propertyId: p.propertyId, name: p.name }))}
+        preview={preview}
+      />
 
       <SectionCard title="Recent activity">
         {activity.length === 0 ? (

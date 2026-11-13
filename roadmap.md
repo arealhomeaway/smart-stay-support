@@ -1,5 +1,16 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 13 Property page Part 2 of 3: Owner tab, chat, owner communication (/onboarding/$propertyId; staged SQL in docs/pending/property-page-part2, no apply, no publish)
+- [x] 2.1 Owner tab: Needs action (4 kinds), timeline with search/filters, composer 3 modes, About the owner, Good to know, program card, Standard version
+- [x] 2.2 Project chat: button with count, panel, owner/team chats, portal Messages with ARHA, 15 min owner email, attachments to folder, @mention, Make a Task, live, unread, Chats inbox, view-only rule, RLS test
+- [x] 2.3 Ask the owner (holds-up picker), Email owner
+- [x] 2.4 Automatic reminders (business day before, 9 AM, once, bundled)
+- [x] 2.5 Weekly owner update drafts (Fri 7 AM, Review and send, 3 PM rule, auto-send switch off)
+- [x] 2.6 Updates feed on Overview (team notes only)
+- [x] 2.7 Email safety: no per-Task emails from bulk, failures never stop job, 50 / 60 s limits, Retry on Integrations
+- [x] Staged SQL with undo, README, checksums, isolated practice; suite, type check, build; browser walkthrough as Admin
+- [ ] Apply docs/pending/property-page-part2 - blocked: waits on the Admin's approval
+
 ## Nov 12 Onboarding Home as the project database (/onboarding; staged SQL in docs/pending/onboarding-home, no apply, no publish)
 - [x] 1.1 Banner, 1.2 tiles (switch off), 1.3 My/All homes, 1.4 walkthrough (row landing, Back, view only line, list assign with Undo)
 - [x] 2.1 tabs, 2.2 filter bar, 2.3 table, 2.4 views, 2.5 Upcoming, 2.6 Not in Resolve yet

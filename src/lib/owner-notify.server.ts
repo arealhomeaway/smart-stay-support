@@ -1,3 +1,4 @@
+import { partTimeLeft } from "@/lib/owner-tab";
 import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Delivery of owner alerts (server-only).
@@ -108,6 +109,8 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50, onlyId?: st
   const { data, error } = await query.order("created_at").limit(limit);
   if (error) throw error;
 
+  const partStarted = Date.now();
+  let deferred = 0;
   // One read for the whole drain: the director's wording for every alert sent.
   const { loadOwnerEmailCopy } = await import("./owner-email-copy.server");
   const copyConfig = await loadOwnerEmailCopy(supabase);
@@ -117,6 +120,9 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50, onlyId?: st
   const notes: string[] = [];
 
   for (const row of data ?? []) {
+    // Part 2 (2.7): stop after 60 seconds; the rest waits for the next run.
+    if (!partTimeLeft(partStarted)) { deferred++; continue; }
+
     const safeText = ownerNotificationText(row);
     // Hard safety guard: demo notifications must never reach a real channel.
     if (row.is_demo) {
@@ -250,6 +256,7 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50, onlyId?: st
   return {
     ok: true as const,
     considered: (data ?? []).length,
+    deferred,
     emailed,
     escalated,
     notes: Array.from(new Set(notes)).slice(0, 5),

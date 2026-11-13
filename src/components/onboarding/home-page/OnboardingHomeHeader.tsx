@@ -4,7 +4,7 @@
  * row (people, the legal owner in gray, the preferred button and "Call or email"), and the
  * buttons row. Needs attention lives on Overview, not here.
  */
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,8 @@ export function OnboardingHomeHeader(p: {
   /** Admin and Director of Onboarding: "Add owner" when no owner is on file. */
   canAddOwner: boolean;
   onAskOwner: () => void;
+  /** Part 2 (2.2): the Chat button with its unread count, after Ask the owner. */
+  chat?: ReactNode;
 }) {
   const [showMore, setShowMore] = useState(false);
   const [showWays, setShowWays] = useState(false);
@@ -150,6 +152,7 @@ export function OnboardingHomeHeader(p: {
             <EmailComposer context="property" recordId={p.propertyId} label="Email owner" variant="primary" />
           </div>
         )}
+        {p.chat}
         <FollowHomeButton propertyId={p.propertyId} myHomes />
       </div>
     </header>

@@ -121,12 +121,7 @@ export function HomeBoardHeader(p: {
                 </span>,
               )}
               {cell("Est. Hand Off Date", <span className="numeric">{dateOrNotSet(p.estimateOn)}</span>)}
-              {cell(
-                "Weekly status",
-                <span className="line-clamp-3 whitespace-pre-line" title={p.weeklyStatus ?? undefined}>
-                  {shown(p.weeklyStatus)}
-                </span>,
-              )}
+              {/* Part 2 (2.5): Weekly status retired from screens; data kept. */}
             </dl>
           </div>
         </div>
@@ -573,16 +568,7 @@ export function ProjectDetailsSection({
           )}
         </div>
       </div>
-      <TextField
-        key={`weekly-${details.weekly_status ?? ""}`}
-        label="Weekly status"
-        value={details.weekly_status ?? null}
-        canEdit={canEdit}
-        multiline
-        max={2000}
-        pending={save.isPending}
-        onSave={(v) => save.mutate({ weekly_status: v })}
-      />
+      {/* Property page Part 2 (2.5): the internal Weekly status is retired from screens; its data is kept. */}
     </section>
   );
 }

@@ -60,6 +60,7 @@ import { ShellNav, ShellNavProvider } from "@/components/nav/ShellNav";
 import { GroupTabs } from "@/components/nav/GroupTabs";
 import { readOrigin } from "@/lib/nav-context";
 import { NotificationBell } from "@/components/NotificationBell";
+import { ChatsInbox } from "@/components/chat/HomeChatPanel";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PortalSwitcher, ViewAsBanner } from "@/components/PortalSwitcher";
 import { AccountSidebarItem } from "@/components/AccountSidebarItem";
@@ -437,6 +438,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <ShieldAlert className="size-4" aria-hidden="true" />
                   </IconAction>
                 )}
+                {/* Property page Part 2 (2.2): homes with unread chat messages, staff only. */}
+                {!vendorMode && !ownerMode ? <ChatsInbox /> : null}
                 {ownerMode ? (
                   <OwnerNotificationBell />
                 ) : vendorMode ? null : (

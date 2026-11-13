@@ -464,7 +464,12 @@ describe("tab bar (fix 4) and badges (fix 5)", () => {
   it("only the Owner tab carries a count", () => {
     const bar = page.slice(page.indexOf("PAGE_TABS.map("), page.indexOf("</TabsList>"));
     expect(bar.match(/t\.value === "/g)).toEqual(['t.value === "']);
-    expect(bar).toContain('t.value === "owner" && ownerSummary.waitingOnUs > 0');
+    // Part 2 (Nov 12) widened the Owner count: owner answers staff have not replied to, an owner chat
+    // waiting on us, and a weekly update ready. It is still the only count on a tab.
+    expect(bar).toContain('t.value === "owner" && ownerBadge > 0');
+    expect(page).toContain("const ownerBadge = ownerTabBadge(ownerSummary, ownerTab.data);");
+    const tab = readFileSync("src/components/onboarding/owner-tab/OwnerTab.tsx", "utf8");
+    expect(tab).toContain("return summary.waitingOnUs + chat + weekly;");
   });
 });
 
