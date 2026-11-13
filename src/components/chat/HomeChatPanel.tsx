@@ -3,7 +3,7 @@
  * full screen on a phone). Two chats: With the owner (amber) and Team only (gray). Esc or Close hides it;
  * the page and its tab stay where they were.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { MessageSquare, X } from "lucide-react";
@@ -66,7 +66,7 @@ export function HomeChatPanel(p: {
   canPostTeam: boolean;
   people: { id: string; name: string }[];
   /** Renders Add task (1.7) filled in with the message; calls back with the new Task id. */
-  makeTask?: (input: { body: string; onAdded: (taskId: string) => void; onCancel: () => void }) => React.ReactNode;
+  makeTask?: (input: { body: string; onAdded: (taskId: string) => void; onCancel: () => void }) => ReactNode;
 }) {
   const unread = useHomeUnread(p.propertyId);
   const link = useServerFn(linkChatTaskFn);
