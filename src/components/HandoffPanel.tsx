@@ -29,6 +29,8 @@ import { centralDateTime, centralInputToIso } from "@/lib/dates";
 import { resolveHandoffReceiver } from "@/lib/handoff-receiver";
 import { useCurrentUserId } from "@/hooks/useTeam";
 import { handoffAcceptPatch, handoffSelfAcceptCheck, settleHandoff } from "@/lib/handoff-accept";
+import { writeHistoryLine } from "@/lib/history-line";
+import { showSaved } from "@/components/history-toast";
 
 type Ticket = {
   id: string;
@@ -110,16 +112,20 @@ export function HandoffPanel({
   const pending = (handoffs ?? []).filter((h) => h.status === "pending");
   const settled = (handoffs ?? []).filter((h) => h.status !== "pending");
 
-  async function log(body: string, eventType: string) {
+  /** Writes the ticket history line. False when it did not save. */
+  async function log(body: string, eventType: string): Promise<boolean> {
     const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) return;
-    await supabase.from("ticket_activity").insert({
-      ticket_id: ticket.id,
-      author_id: userData.user.id,
-      kind: "handoff",
-      event_type: eventType,
-      body,
-    });
+    const authorId = userData.user?.id;
+    if (!authorId) return false;
+    return writeHistoryLine(() =>
+      supabase.from("ticket_activity").insert({
+        ticket_id: ticket.id,
+        author_id: authorId,
+        kind: "handoff",
+        event_type: eventType,
+        body,
+      }),
+    );
   }
 
   async function submit() {
@@ -159,40 +165,60 @@ export function HandoffPanel({
         }
         toUser = pick.toUser;
       }
-      const { error } = await supabase.from("handoffs").insert({
-        ticket_id: ticket.id,
-        from_user: userData.user?.id ?? null,
-        to_user: toUser,
-        to_role_code: form.to_role_code,
-        handoff_type: form.handoff_type,
-        summary: form.summary.trim(),
-        priority: ticket.priority,
-        actions_completed: form.actions_completed.trim(),
-        current_status: form.current_status.trim(),
-        next_action: form.next_action.trim(),
-        due_at: form.due_at ? centralInputToIso(form.due_at) : null,
-        guest_comm_status: form.guest_comm_status,
-        risks: form.risks.trim() || null,
+      // The ticket moves first; the handoff (and its notice) is recorded only
+      // once it really did. A failed handoff record puts the ticket back.
+      const before = await ticketHandoffState(true);
+      const result = await settleHandoff("send", {
+        saveTicket: async () => {
+          const { data, error } = await supabase
+            .from("tickets")
+            .update({
+              handoff_status: "pending",
+              pending_handoff_to: toUser,
+              handoff_type: form.handoff_type,
+              handoff_note: form.summary.trim(),
+              next_action: form.next_action.trim(),
+            })
+            .eq("id", ticket.id)
+            .select("id");
+          return { error, rows: data?.length ?? 0 };
+        },
+        saveHandoff: async () => {
+          const { data, error } = await supabase
+            .from("handoffs")
+            .insert({
+              ticket_id: ticket.id,
+              from_user: userData.user?.id ?? null,
+              to_user: toUser,
+              to_role_code: form.to_role_code,
+              handoff_type: form.handoff_type,
+              summary: form.summary.trim(),
+              priority: ticket.priority,
+              actions_completed: form.actions_completed.trim(),
+              current_status: form.current_status.trim(),
+              next_action: form.next_action.trim(),
+              due_at: form.due_at ? centralInputToIso(form.due_at) : null,
+              guest_comm_status: form.guest_comm_status,
+              risks: form.risks.trim() || null,
+            })
+            .select("id");
+          return { error, rows: data?.length ?? 0 };
+        },
+        undoTicket: () => putTicketBack(before),
       });
-      if (error) throw error;
-      await supabase
-        .from("tickets")
-        .update({
-          handoff_status: "pending",
-          pending_handoff_to: toUser,
-          handoff_type: form.handoff_type,
-          handoff_note: form.summary.trim(),
-          next_action: form.next_action.trim(),
-        })
-        .eq("id", ticket.id);
-      await log(
+      if (!result.ok) {
+        toast.error(result.message);
+        await onChanged();
+        return;
+      }
+      const logged = await log(
         `Handoff sent to ${labelFor(
           (roles ?? []).map((r) => ({ value: r.code, label: r.name })),
           form.to_role_code,
         )}${personName(toUser) ? ` (${personName(toUser)})` : ""}. Not complete until accepted. You stay responsible.`,
         "handoff_requested",
       );
-      toast.success("Handoff sent. You stay responsible until it is accepted.");
+      showSaved("Handoff sent. You stay responsible until it is accepted", logged);
       setOpen(false);
       setForm({ ...form, summary: "", actions_completed: "", current_status: "", risks: "" });
       await refetch();
@@ -205,13 +231,24 @@ export function HandoffPanel({
   }
 
   /** The ticket's handoff fields as saved now, so a failed handoff record can put them back. */
-  async function ticketHandoffState() {
+  async function ticketHandoffState(forSend = false) {
     const { data } = await supabase
       .from("tickets")
-      .select("handoff_status, pending_handoff_to, current_action_owner, assignment_source, assignment_note")
+      .select(
+        forSend
+          ? "handoff_status, pending_handoff_to, handoff_type, handoff_note, next_action"
+          : "handoff_status, pending_handoff_to, current_action_owner, assignment_source, assignment_note",
+      )
       .eq("id", ticket.id)
       .maybeSingle();
-    return data ?? null;
+    return (data as Record<string, unknown> | null) ?? null;
+  }
+
+  /** Puts the ticket's handoff fields back; reports whether it saved. */
+  async function putTicketBack(before: Record<string, unknown> | null) {
+    if (!before) return { error: { message: "No earlier state was read." }, rows: 0 };
+    const { data, error } = await supabase.from("tickets").update(before as never).eq("id", ticket.id).select("id");
+    return { error, rows: data?.length ?? 0 };
   }
 
   async function accept(handoffId: string, requestedFrom: string | null) {
@@ -249,9 +286,7 @@ export function HandoffPanel({
           .select("id");
         return { error, rows: data?.length ?? 0 };
       },
-      undoTicket: async () => {
-        if (before) await supabase.from("tickets").update(before).eq("id", ticket.id);
-      },
+      undoTicket: () => putTicketBack(before),
     });
     if (!result.ok) {
       toast.error(result.message);
@@ -259,10 +294,10 @@ export function HandoffPanel({
       await onChanged();
       return;
     }
-    await log("Handoff accepted. The next step moved to the receiver.", "handoff_accepted");
+    const logged = await log("Handoff accepted. The next step moved to the receiver.", "handoff_accepted");
     await refetch();
     await onChanged();
-    toast.success("Handoff accepted.");
+    showSaved("Handoff accepted", logged);
   }
 
   async function reject(handoffId: string) {
@@ -292,9 +327,7 @@ export function HandoffPanel({
           .select("id");
         return { error, rows: data?.length ?? 0 };
       },
-      undoTicket: async () => {
-        if (before) await supabase.from("tickets").update(before).eq("id", ticket.id);
-      },
+      undoTicket: () => putTicketBack(before),
     });
     if (!result.ok) {
       toast.error(result.message);
@@ -302,7 +335,7 @@ export function HandoffPanel({
       await onChanged();
       return;
     }
-    await log(
+    const logged = await log(
       `Handoff declined: ${rejectReason.trim()}. Returned to the original owner.`,
       "handoff_rejected",
     );
@@ -310,7 +343,7 @@ export function HandoffPanel({
     setRejectReason("");
     await refetch();
     await onChanged();
-    toast.success("Handoff declined and returned.");
+    showSaved("Handoff declined and returned", logged);
   }
 
   const roleName = (code: string | null) =>
