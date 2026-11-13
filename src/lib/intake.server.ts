@@ -10,6 +10,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { writeHistoryLine } from "@/lib/history-line";
 
 type Db = SupabaseClient<Database>;
 
@@ -37,6 +38,8 @@ export type IntakeResult = {
   priority: "p1" | "p2" | "p3";
   /** True when the message was filed as a reply on an existing ticket. */
   threaded?: boolean;
+  /** True when the ticket was made but its first history line did not save. */
+  historyMissed?: boolean;
 };
 
 /** Every outbound ticket email carries [ARHA-123] so replies come back here. */
@@ -191,7 +194,7 @@ export async function createIntakeMatter(db: Db, payload: IntakePayload): Promis
     /* ignore */
   }
 
-  await db.from("ticket_activity").insert({
+  const historySaved = await writeHistoryLine(() => db.from("ticket_activity").insert({
     ticket_id: inserted.id,
     kind: "created",
     event_type: "created",
@@ -204,7 +207,7 @@ export async function createIntakeMatter(db: Db, payload: IntakePayload): Promis
           propertyId ? "" : " No home was recognised. Link the property to complete the record."
         }`,
     ...(isDemo ? { is_demo: true } : {}),
-  });
+  }));
 
   return {
     ok: true,
@@ -212,5 +215,6 @@ export async function createIntakeMatter(db: Db, payload: IntakePayload): Promis
     ref: inserted.ref,
     propertyMatched: Boolean(propertyId),
     priority,
+    ...(historySaved ? {} : { historyMissed: true }),
   };
 }
