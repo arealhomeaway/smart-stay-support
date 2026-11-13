@@ -38,7 +38,7 @@ export function usePropertyOwnerSummary(propertyId:string){
   const q=useOwnerCollaboration(propertyId);
   const program=programs.data?.rows.find(p=>p.properties.some(h=>h.id===propertyId))??null;
   const ready=Boolean(programs.data&&q.data&&released.data&&opsRecords.data);
-  const none={ready,program:null as null|{id:string;reportedHours:number;startedOn:string|null;ownerName:string},waitingOnUs:0,waitingOnThem:0,attention:[] as OwnerTabItem[],cards:{open:0,done:0},collab:q.data,released:released.data??[]};
+  const none={ready,program:null as null|{id:string;reportedHours:number;startedOn:string|null;ownerName:string|null},waitingOnUs:0,waitingOnThem:0,attention:[] as OwnerTabItem[],cards:{open:0,done:0},collab:q.data,released:released.data??[]};
   if(!ready||!program)return none;
   const items=ownerTabItems({opps:(q.data?.opportunities??[]) as never,messages:(q.data?.messages??[]) as never,files:(q.data?.files??[]) as never,released:(released.data??[]) as never,opsRecords:(opsRecords.data??[]) as never,opsStatus:r=>opsRecordStatus(r as never)});
   const groups=groupOwnerTab(items);
