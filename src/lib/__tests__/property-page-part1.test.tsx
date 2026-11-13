@@ -356,6 +356,24 @@ describe("1.1 header lines", () => {
     const solo = ownerRow({ people: [], legal: "Mike & Rachel Ramsey", phone: null, email: null, telegram: null, preferred: null });
     expect([solo.names, solo.legal, solo.primary, solo.others]).toEqual(["Mike & Rachel Ramsey", null, null, []]);
   });
+  it("owner record with people in parentheses: 1464 Buckland Ct reads the people once, then the legal owner", () => {
+    const r = ownerRow({ people: ["Dana Syska"], legal: "Adriel Properties, LLC (Niles & Dana Syska)", ...contact, preferred: null });
+    expect([r.names, r.legal]).toEqual(["Niles & Dana Syska", "Adriel Properties, LLC"]);
+    expect(r.primary?.label).toBe("Text Niles");
+    expect(ownerRow({ people: ["Dana Syska"], legal: "Adriel Properties, LLC (Niles & Dana Syska)", ...contact, preferred: "call" }).primary?.label).toBe("Call Niles (preferred)");
+  });
+  it("a login already covered by the parentheses is not repeated; match ignores case; others still show", () => {
+    const r = ownerRow({ people: ["dana SYSKA", "Niles Syska", "Pat Reed"], legal: "Adriel Properties, LLC (Niles & Dana Syska)", ...contact, preferred: null });
+    expect([r.names, r.legal]).toEqual(["Niles & Dana Syska and Pat Reed", "Adriel Properties, LLC"]);
+    // Same first name, different last name is a different person.
+    expect(ownerRow({ people: ["Dana Smith"], legal: "Adriel Properties, LLC (Niles & Dana Syska)", ...contact, preferred: null }).names).toBe("Niles & Dana Syska and Dana Smith");
+  });
+  it("an owner name without parentheses is unchanged", () => {
+    const r = ownerRow({ people: ["Ryan Lee"], legal: "Adriel Properties, LLC", ...contact, preferred: null });
+    expect([r.names, r.legal, r.primary?.label]).toEqual(["Ryan Lee", "Adriel Properties, LLC", "Text Ryan"]);
+    const solo = ownerRow({ people: [], legal: "Mike & Rachel Ramsey", phone: null, email: null, telegram: null, preferred: null });
+    expect([solo.names, solo.legal]).toEqual(["Mike & Rachel Ramsey", null]);
+  });
   it("the header has one owner line and no Grasshopper or Outlook note", () => {
     const header = readFileSync("src/components/onboarding/home-page/OnboardingHomeHeader.tsx", "utf8");
     expect(header).not.toMatch(/Grasshopper|Outlook/);
