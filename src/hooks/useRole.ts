@@ -116,7 +116,8 @@ export function useRole() {
   const access = { roles, seats };
   // Finance looks at some pages without changing them (register A4 to A12).
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const viewOnlyHere = viewOnlyPath(pathname, access);
+  // Onboarding Home 3.3: a ViewOnlyScope region (a home the viewer is not on) is view only too.
+  const viewOnlyHere = viewOnlyPath(pathname, access) || scopedViewOnly;
 
   const isVendor = roles.includes("vendor") && !roles.some((r) => r !== "vendor");
   // Homeowners are program participants, never internal staff.
@@ -133,7 +134,7 @@ export function useRole() {
      * the safe demo environment may change demo records only, which the
      * queries and writes on each surface already scope by `is_demo`.
      */
-    readOnly: (previewing && !demoMode) || viewOnlyHere || scopedViewOnly,
+    readOnly: (previewing && !demoMode) || viewOnlyHere,
     /** True while previewing the isolated demo environment. */
     demoMode,
     /** The operational seat being previewed, when one was chosen. */
