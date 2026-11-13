@@ -61,6 +61,8 @@ export function AddHomePanel(p: {
   onOpenChange: (v: boolean) => void;
   start: AddStart;
   pickers: Pickers;
+  /** The Admin and the Director of Onboarding: Designer, Stager and Under contract stay theirs. */
+  lead: boolean;
   directorDefault: Person | null;
   existing: HomeRow[];
   onDone: (r: AddResult) => void;
@@ -266,7 +268,7 @@ export function AddHomePanel(p: {
                                 <Button asChild size="sm" variant="outline" className="min-h-11">
                                   <Link to="/onboarding/$propertyId" params={{ propertyId: c.existing.id }}>Open it</Link>
                                 </Button>
-                                {there && !there.hasPlan && there.lifecycle !== "handed_off" && there.lifecycle !== "fell_through" ? (
+                                {there && !there.hasPlan && there.lifecycle !== "handed_off" && there.lifecycle !== "fell_through" && (p.lead || there.lifecycle !== "upcoming") ? (
                                   <Button size="sm" className="min-h-11" onClick={() => { setChoice({ kind: "existing", propertyId: c.existing!.id, projectId: there?.projectId ?? null, label, upcoming: there?.lifecycle === "upcoming" }); setStep(2); }}>
                                     Start its plan
                                   </Button>
@@ -334,10 +336,11 @@ export function AddHomePanel(p: {
               <div className="grid gap-3 sm:grid-cols-2">
                 <PersonSelect id="t-pm" label="PM" value={team.pm} options={p.pickers.pm} onChange={(v) => setTeam((t) => ({ ...t, pm: v }))} />
                 <PersonSelect id="t-dir" label="Director" value={team.director} options={p.pickers.director.length ? p.pickers.director : p.directorDefault ? [p.directorDefault] : []} onChange={(v) => setTeam((t) => ({ ...t, director: v }))} />
-                <PersonSelect id="t-des" label="Designer" value={team.designer} options={p.pickers.designer} onChange={(v) => setTeam((t) => ({ ...t, designer: v }))} />
+                {p.lead ? <PersonSelect id="t-des" label="Designer" value={team.designer} options={p.pickers.designer} onChange={(v) => setTeam((t) => ({ ...t, designer: v }))} /> : null}
                 <PersonSelect id="t-util" label="Utilities" value={team.utilities} options={p.pickers.utilities} onChange={(v) => setTeam((t) => ({ ...t, utilities: v }))} />
               </div>
-              <fieldset className="space-y-1">
+              {!p.lead ? <p className="text-sm text-muted-foreground">The Director of Onboarding sets the Designer and Stager.</p> : null}
+              {p.lead ? <fieldset className="space-y-1">
                 <legend className="text-sm font-medium">Stager</legend>
                 {p.pickers.stager.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No staging vendors yet.</p>
@@ -353,7 +356,7 @@ export function AddHomePanel(p: {
                     ))}
                   </ul>
                 )}
-              </fieldset>
+              </fieldset> : null}
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field id="d-close" label="Planned closing" type="date" value={dates.closing} onChange={(v) => setDates((d) => ({ ...d, closing: v }))} />
                 <Field id="d-handoff" label="Target handoff" type="date" value={dates.handoff} onChange={(v) => setDates((d) => ({ ...d, handoff: v }))} />

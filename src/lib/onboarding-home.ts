@@ -646,7 +646,10 @@ export function searchFromSaved(v: Pick<SavedView, "filters" | "view">): HomeSea
 
 /* --------------------------------------------------------------- access */
 
-/** 3.3: Add a home, Upcoming, Contract fell through, Not an onboarding home and list assignment. */
+/**
+ * 3.3: Contract fell through, Under contract, Not an onboarding home, the Designer and Stager pickers
+ * and list assignment. Add a home (including Upcoming) is the onboarding team's: canAddHome.
+ */
 export const LEAD_ONLY_REFUSAL = "Only the Director of Onboarding or an Admin can do this.";
 export function mayManageHomes(v: Pick<Viewer, "isAdmin" | "isDirector">, readOnly = false): boolean {
   return !readOnly && isLead(v);

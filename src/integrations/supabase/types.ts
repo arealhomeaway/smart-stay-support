@@ -7946,6 +7946,190 @@ export type Database = {
         }
         Relationships: []
       }
+      home_chat_alerts: {
+        Row: {
+          audience: string
+          chat_id: string
+          created_at: string
+          id: string
+          message_id: string
+          notification_ids: string[]
+        }
+        Insert: {
+          audience: string
+          chat_id: string
+          created_at?: string
+          id?: string
+          message_id: string
+          notification_ids?: string[]
+        }
+        Update: {
+          audience?: string
+          chat_id?: string
+          created_at?: string
+          id?: string
+          message_id?: string
+          notification_ids?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_chat_alerts_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "home_chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_chat_alerts_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "home_chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      home_chat_message_tasks: {
+        Row: {
+          created_at: string
+          created_by: string
+          message_id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          message_id: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          message_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_chat_message_tasks_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "home_chat_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_chat_message_tasks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      home_chat_messages: {
+        Row: {
+          attachments: Json
+          author_id: string
+          author_type: string
+          body: string
+          chat_id: string
+          created_at: string
+          id: string
+          is_demo: boolean
+          mentions: string[]
+        }
+        Insert: {
+          attachments?: Json
+          author_id: string
+          author_type: string
+          body?: string
+          chat_id: string
+          created_at?: string
+          id?: string
+          is_demo?: boolean
+          mentions?: string[]
+        }
+        Update: {
+          attachments?: Json
+          author_id?: string
+          author_type?: string
+          body?: string
+          chat_id?: string
+          created_at?: string
+          id?: string
+          is_demo?: boolean
+          mentions?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_chat_messages_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "home_chats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      home_chat_reads: {
+        Row: {
+          chat_id: string
+          last_read_at: string
+          user_id: string
+        }
+        Insert: {
+          chat_id: string
+          last_read_at?: string
+          user_id: string
+        }
+        Update: {
+          chat_id?: string
+          last_read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_chat_reads_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "home_chats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      home_chats: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          property_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          property_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          property_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_chats_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "home_chats_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       home_handoff_decisions: {
         Row: {
           actor_id: string
@@ -9066,6 +9250,7 @@ export type Database = {
           id: string
           internal: boolean
           is_demo: boolean
+          kind: string
           mentions: string[]
           property_id: string
           task_id: string | null
@@ -9079,6 +9264,7 @@ export type Database = {
           id?: string
           internal?: boolean
           is_demo?: boolean
+          kind?: string
           mentions?: string[]
           property_id: string
           task_id?: string | null
@@ -9092,6 +9278,7 @@ export type Database = {
           id?: string
           internal?: boolean
           is_demo?: boolean
+          kind?: string
           mentions?: string[]
           property_id?: string
           task_id?: string | null
@@ -10734,6 +10921,35 @@ export type Database = {
           },
         ]
       }
+      owner_decision_reminders: {
+        Row: {
+          due_on: string
+          notification_id: string | null
+          sent_at: string
+          work_item_id: string
+        }
+        Insert: {
+          due_on: string
+          notification_id?: string | null
+          sent_at?: string
+          work_item_id: string
+        }
+        Update: {
+          due_on?: string
+          notification_id?: string | null
+          sent_at?: string
+          work_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_decision_reminders_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: true
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       owner_followup_tasks: {
         Row: {
           assigned_to: string
@@ -12046,6 +12262,175 @@ export type Database = {
           },
           {
             foreignKeyName: "owner_time_entry_properties_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_weekly_update_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          detail: Json
+          id: string
+          property_id: string
+          update_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          property_id: string
+          update_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          property_id?: string
+          update_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_weekly_update_events_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "owner_weekly_update_events_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_weekly_update_events_update_id_fkey"
+            columns: ["update_id"]
+            isOneToOne: false
+            referencedRelation: "owner_weekly_updates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_weekly_update_settings: {
+        Row: {
+          auto_send: boolean
+          paused: boolean
+          property_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          auto_send?: boolean
+          paused?: boolean
+          property_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          auto_send?: boolean
+          paused?: boolean
+          property_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_weekly_update_settings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "owner_weekly_update_settings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_weekly_updates: {
+        Row: {
+          created_at: string
+          draft_text: string
+          edited_at: string | null
+          edited_by: string | null
+          edited_text: string | null
+          email_log_id: string | null
+          id: string
+          is_demo: boolean
+          owner_notification_id: string | null
+          property_id: string
+          sent_at: string | null
+          sent_automatically: boolean
+          sent_by: string | null
+          sent_text: string | null
+          skip_reason: string | null
+          skipped_at: string | null
+          status: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          draft_text: string
+          edited_at?: string | null
+          edited_by?: string | null
+          edited_text?: string | null
+          email_log_id?: string | null
+          id?: string
+          is_demo?: boolean
+          owner_notification_id?: string | null
+          property_id: string
+          sent_at?: string | null
+          sent_automatically?: boolean
+          sent_by?: string | null
+          sent_text?: string | null
+          skip_reason?: string | null
+          skipped_at?: string | null
+          status?: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string
+          draft_text?: string
+          edited_at?: string | null
+          edited_by?: string | null
+          edited_text?: string | null
+          email_log_id?: string | null
+          id?: string
+          is_demo?: boolean
+          owner_notification_id?: string | null
+          property_id?: string
+          sent_at?: string | null
+          sent_automatically?: boolean
+          sent_by?: string | null
+          sent_text?: string | null
+          skip_reason?: string | null
+          skipped_at?: string | null
+          status?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_weekly_updates_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "owner_weekly_updates_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
@@ -13607,6 +13992,41 @@ export type Database = {
           },
         ]
       }
+      property_owner_team_note_events: {
+        Row: {
+          actor_id: string
+          after_text: string | null
+          before_text: string | null
+          created_at: string
+          id: string
+          owner_id: string
+        }
+        Insert: {
+          actor_id: string
+          after_text?: string | null
+          before_text?: string | null
+          created_at?: string
+          id?: string
+          owner_id: string
+        }
+        Update: {
+          actor_id?: string
+          after_text?: string | null
+          before_text?: string | null
+          created_at?: string
+          id?: string
+          owner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_owner_team_note_events_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "property_owners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       property_owners: {
         Row: {
           active: boolean
@@ -13626,6 +14046,9 @@ export type Database = {
           source_owner_id: string
           state: string | null
           synced_at: string
+          team_notes: string | null
+          team_notes_updated_at: string | null
+          team_notes_updated_by: string | null
           telegram: string | null
           updated_at: string
         }
@@ -13647,6 +14070,9 @@ export type Database = {
           source_owner_id: string
           state?: string | null
           synced_at?: string
+          team_notes?: string | null
+          team_notes_updated_at?: string | null
+          team_notes_updated_by?: string | null
           telegram?: string | null
           updated_at?: string
         }
@@ -13668,6 +14094,9 @@ export type Database = {
           source_owner_id?: string
           state?: string | null
           synced_at?: string
+          team_notes?: string | null
+          team_notes_updated_at?: string | null
+          team_notes_updated_by?: string | null
           telegram?: string | null
           updated_at?: string
         }
@@ -19804,6 +20233,29 @@ export type Database = {
         Args: { _code: string; _user_id: string }
         Returns: boolean
       }
+      home_chat_can_read: {
+        Args: { _chat: string; _uid: string }
+        Returns: boolean
+      }
+      home_chat_notify: {
+        Args: {
+          _actor: string
+          _body: string
+          _demo: boolean
+          _entity: string
+          _kind: string
+          _link: string
+          _title: string
+          _to: string[]
+        }
+        Returns: string[]
+      }
+      home_chat_staff: { Args: { _uid: string }; Returns: boolean }
+      home_chat_team_recipients: {
+        Args: { _property: string }
+        Returns: string[]
+      }
+      home_chat_unread_alert_run: { Args: { _now?: string }; Returns: Json }
       home_handoff_requirement_states: {
         Args: { _property_id: string }
         Returns: {
@@ -19812,6 +20264,16 @@ export type Database = {
           task_ids: string[]
         }[]
       }
+      home_lead: { Args: { _uid: string }; Returns: boolean }
+      home_owner_contact_writer: {
+        Args: { _property: string; _uid: string }
+        Returns: boolean
+      }
+      home_owner_member: {
+        Args: { _property: string; _uid: string }
+        Returns: boolean
+      }
+      home_pm: { Args: { _property: string; _uid: string }; Returns: boolean }
       home_problem_repeat: {
         Args: { _property_id: string; _work_type_id: string }
         Returns: {
@@ -19832,6 +20294,10 @@ export type Database = {
           window_days: number
           work_type_id: string
         }[]
+      }
+      home_team_member: {
+        Args: { _property: string; _uid: string }
+        Returns: boolean
       }
       import_notion_ticket: { Args: { p: Json }; Returns: Json }
       import_notion_ticket_comments: {
@@ -19855,6 +20321,10 @@ export type Database = {
       is_onboarding_staff: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       is_supervisor: { Args: { _user_id: string }; Returns: boolean }
+      link_chat_message_task: {
+        Args: { _message_id: string; _task_id: string }
+        Returns: undefined
+      }
       link_demo_owner_account: {
         Args: { _program_id: string; _reason: string; _user_id: string }
         Returns: string
@@ -19866,6 +20336,10 @@ export type Database = {
           _role: string
           _title: string
         }
+        Returns: string
+      }
+      log_owner_contact: {
+        Args: { _body: string; _kind: string; _property_id: string }
         Returns: string
       }
       log_owner_time_entry: {
@@ -19912,6 +20386,7 @@ export type Database = {
         Args: { _lead_id: string; _note?: string }
         Returns: string
       }
+      mark_home_chat_read: { Args: { _chat_id: string }; Returns: string }
       mark_onboarding_task_started: {
         Args: { _task_id: string }
         Returns: Json
@@ -19922,6 +20397,16 @@ export type Database = {
         Returns: undefined
       }
       my_demo_access: { Args: never; Returns: Json }
+      my_home_chat_inbox: {
+        Args: never
+        Returns: {
+          home: string
+          kind: string
+          last_at: string
+          property_id: string
+          unread: number
+        }[]
+      }
       my_home_profile_access: { Args: never; Returns: Json }
       my_onboarding_reviews: {
         Args: never
@@ -20034,6 +20519,7 @@ export type Database = {
           work_item_id: string
         }[]
       }
+      owner_decision_reminder_run: { Args: { _now?: string }; Returns: Json }
       owner_document_access: {
         Args: { _actor_id?: string; _document_id: string }
         Returns: boolean
@@ -20178,6 +20664,16 @@ export type Database = {
         Args: { _condition: Json; _furnishing: string; _modules: string[] }
         Returns: boolean
       }
+      post_home_chat_message: {
+        Args: {
+          _attachments?: Json
+          _body: string
+          _kind: string
+          _mentions?: string[]
+          _property_id: string
+        }
+        Returns: string
+      }
       post_owner_request_message: {
         Args: { _body: string; _id: string }
         Returns: string
@@ -20202,6 +20698,7 @@ export type Database = {
         }
         Returns: string
       }
+      prev_business_day: { Args: { _d: string }; Returns: string }
       project_role_assignee: {
         Args: { _project_id: string; _role: string }
         Returns: string
@@ -20988,6 +21485,10 @@ export type Database = {
         }
         Returns: string
       }
+      save_weekly_update_text: {
+        Args: { _id: string; _text: string }
+        Returns: string
+      }
       save_work_order_costs: {
         Args: {
           _expected_updated_at: string
@@ -21032,6 +21533,10 @@ export type Database = {
       }
       send_task_to_owner_item: {
         Args: { _note: string; _respond_by?: string; _task_id: string }
+        Returns: Json
+      }
+      send_weekly_update: {
+        Args: { _email_log_id?: string; _id: string; _text: string }
         Returns: Json
       }
       set_account_archived: {
@@ -21100,6 +21605,10 @@ export type Database = {
         Returns: undefined
       }
       set_owner_digest_time: { Args: { _time: string }; Returns: string }
+      set_owner_item_due: {
+        Args: { _due_on: string; _id: string }
+        Returns: undefined
+      }
       set_owner_library_video: {
         Args: {
           _label: string
@@ -21110,8 +21619,16 @@ export type Database = {
         }
         Returns: string
       }
+      set_owner_team_notes: {
+        Args: { _notes: string; _owner_id: string }
+        Returns: string
+      }
       set_staff_no_second_look: {
         Args: { _on: boolean; _user_id: string }
+        Returns: undefined
+      }
+      set_weekly_update_switch: {
+        Args: { _auto_send?: boolean; _paused?: boolean; _property_id: string }
         Returns: undefined
       }
       shift_handoff_defaults: {
@@ -21249,6 +21766,21 @@ export type Database = {
         Returns: Json
       }
       weekly_scorecard_weeks: { Args: never; Returns: Json }
+      weekly_update_may_send: {
+        Args: { _property: string; _uid: string }
+        Returns: boolean
+      }
+      weekly_update_send_closed: { Args: { _now: string }; Returns: boolean }
+      weekly_update_send_internal: {
+        Args: {
+          _actor: string
+          _auto: boolean
+          _email_log_id: string
+          _id: string
+          _text: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "manager" | "tech" | "vendor" | "owner" | "onboarding"

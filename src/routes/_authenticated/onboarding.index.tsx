@@ -4,6 +4,7 @@
  * with My homes / All homes, two tabs, filters, saved views, CSV and five views. Everything the
  * page shows lives in the address, so Back and the breadcrumb restore it exactly.
  */
+import { canAddHome } from "@/lib/property-page";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -98,7 +99,7 @@ function OnboardingHome() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const qc = useQueryClient();
-  const { userId, readOnly, isAdmin, can } = useRole();
+  const { userId, readOnly, isAdmin, can, roles, isOnboardingDirector } = useRole();
   const { enabled } = useFeatureFlags();
   const { token: originToken } = useWorkspaceOrigin("Onboarding Home");
   const load = useServerFn(getOnboardingHomeFn);
@@ -119,6 +120,8 @@ function OnboardingHome() {
   const viewer = data?.viewer ?? { userId, isAdmin: false, isDirector: false };
   const lead = isLead(viewer);
   const manage = mayManageHomes(viewer, readOnly);
+  // Fix Nov 12: everyone on the onboarding team may add a home (the Properties rule).
+  const addHome = canAddHome({ roles, onboardingDirector: isOnboardingDirector, readOnly });
   // 2.6: the live OwnerRez check runs on page open for the Director and Admin.
   const ownerRez = useQuery({ queryKey: ["onboarding-home-ownerrez", userId], enabled: Boolean(data && lead), queryFn: () => loadOwnerRez(), retry: false, staleTime: 5 * 60_000 });
 
@@ -296,7 +299,7 @@ function OnboardingHome() {
 
   const firstName = firstNameOf(me);
   const banner = photoFailed ? null : dailyHomePhoto(photos.data ?? [], new Date());
-  const addHomeButton = manage ? (
+  const addHomeButton = addHome ? (
     <Button onClick={() => setAdding({ mode: "new" })} className="min-h-11 gap-2 bg-card text-foreground hover:bg-card/90">
       <Plus className="size-4" /> Add a home
     </Button>
@@ -436,6 +439,7 @@ function OnboardingHome() {
           onOpenChange={(v) => !v && setAdding(null)}
           start={adding}
           pickers={data.pickers}
+          lead={manage}
           directorDefault={data.directorDefault}
           existing={rows}
           onDone={onAdded}
