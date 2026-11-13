@@ -406,6 +406,7 @@ function PropertyWorkspace() {
       }, 150);
       return () => window.clearInterval(id);
     }
+    return undefined;
   }, [data, landStage, landNeeds]);
   const tabBarTop = useShellBarHeight();
   const [compose, setCompose] = useState(0);
