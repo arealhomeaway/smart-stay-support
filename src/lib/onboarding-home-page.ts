@@ -533,6 +533,22 @@ function coversPerson(c: { first: string; last: string }, person: string): boole
  * One button for the preferred method, marked "(preferred)"; with none set (or the preferred one
  * not on file) the first button is Text, else the first method on file. "Call or email" opens the rest.
  */
+/**
+ * Part 2 (About the owner): the people and the legal owner, by the same rule as the owner row.
+ * "Adriel Properties, LLC (Niles & Dana Syska)" gives people ["Niles & Dana Syska"] and legal
+ * "Adriel Properties, LLC"; logins already covered by the parentheses are left out.
+ */
+export function ownerParties(peopleIn: string[], legalIn: string | null | undefined): { people: string[]; legal: string | null } {
+  const split = splitOwnerName(legalIn);
+  const seen = new Set<string>();
+  const people = peopleIn
+    .map((p) => p.trim())
+    .filter((p) => p && !seen.has(p.toLowerCase()) && seen.add(p.toLowerCase()))
+    .filter((p) => !split.covered.some((c) => coversPerson(c, p)));
+  if (split.people) people.unshift(split.people);
+  return { people, legal: split.people ? split.legal : (legalIn ?? "").trim() || null };
+}
+
 export function ownerRow(input: {
   people: string[];
   legal: string | null | undefined;

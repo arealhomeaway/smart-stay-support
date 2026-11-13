@@ -50,6 +50,7 @@ import {
   type TimelineKind,
 } from "@/lib/owner-tab";
 import { formatPropertyLabel } from "@/lib/property-label";
+import { ownerParties } from "@/lib/onboarding-home-page";
 import { cn } from "@/lib/utils";
 
 type Summary = ReturnType<typeof usePropertyOwnerSummary>;
@@ -109,8 +110,9 @@ export function OwnerTab(p: {
   const readOwner = useServerFn(readPropertyOwnerFn);
   const ownerQ = useQuery({ queryKey: ["property-owner", p.propertyId], queryFn: () => readOwner({ data: { propertyId: p.propertyId } }) });
   const owner = ownerQ.data?.owner ?? null;
-  const people = (owner?.people ?? []) as string[];
-  const ownerFirst = firstNames(people) || "the owner";
+  const parties = ownerParties((owner?.people ?? []) as string[], owner?.name ?? null);
+  const people = parties.people;
+  const ownerFirst = firstNames(people.flatMap((n) => n.split(/\s*(?:&|\band\b|,)\s*/))) || "the owner";
   const completions = useOwnerCompletions(p.isDemo, p.propertyId);
   const [replying, setReplying] = useState<{ id: string; source: "item" | "chat" } | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
@@ -371,7 +373,7 @@ export function OwnerTab(p: {
         <AboutOwner
           propertyId={p.propertyId}
           people={people}
-          legal={owner?.name ?? data.owner?.name ?? null}
+          legal={parties.legal ?? data.owner?.name ?? null}
           since={p.summary.program?.startedOn ?? null}
           preferred={owner?.preferredMethod ?? data.owner?.preferredMethod ?? null}
           canEditPreferred={data.rights.editPreferred}
