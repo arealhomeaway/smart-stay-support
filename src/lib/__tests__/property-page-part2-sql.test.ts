@@ -105,13 +105,13 @@ describe("project chat", () => {
     expect(m).toEqual([{ user_id: DESIGNER, title: "Pat PM mentioned you" }]);
   });
 
-  it("attachments must name one of the six folders and be in the home's Files", async () => {
+  it("attachments must name one of the home's Files folders (never Other) and be in the home's Files", async () => {
     const doc = (await one(`INSERT INTO public.documents(property_id) VALUES ('${HOME}') RETURNING id`)).id;
     const otherDoc = (await one(`INSERT INTO public.documents(property_id) VALUES ('${OTHER_HOME}') RETURNING id`)).id;
     await as(PM);
     expect(await fails(post(HOME, "team", "", [{ document_id: doc, folder: "other" }]))).toContain("folder");
-    expect(await fails(post(HOME, "team", "", [{ document_id: otherDoc, folder: "media" }]))).toContain("Files");
-    expect(await post(HOME, "team", "", [{ document_id: doc, folder: "media", name: "a.jpg" }])).toBeTruthy();
+    expect(await fails(post(HOME, "team", "", [{ document_id: otherDoc, folder: "photos" }]))).toContain("Files");
+    expect(await post(HOME, "team", "", [{ document_id: doc, folder: "photos", name: "a.jpg" }])).toBeTruthy();
   });
 
   it("emails the owner once after 15 minutes unread, at most once per 15 minutes per home", async () => {

@@ -177,7 +177,7 @@ BEGIN
   END IF;
   FOR a IN SELECT * FROM jsonb_array_elements(att) LOOP
     IF NOT staff THEN RAISE EXCEPTION 'Attach files from the team side only for now.'; END IF;
-    IF coalesce(a->>'folder','') NOT IN ('property_ownership','hoa_compliance','systems_manuals','onboarding','operations','media') THEN
+    IF coalesce(a->>'folder','') NOT IN ('design','agreements','estimates','photos','inspections') THEN
       RAISE EXCEPTION 'Choose a folder for each file.';
     END IF;
     IF NOT EXISTS (SELECT 1 FROM public.documents d WHERE d.id = (a->>'document_id')::uuid

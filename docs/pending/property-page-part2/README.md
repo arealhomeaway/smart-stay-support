@@ -17,7 +17,7 @@ One transaction: `BEGIN; \i 00_preflight.sql \i apply.sql COMMIT;`
 
 ## Rules it enforces (database side)
 - Owner chat: read by every staff account that can open onboarding homes and by the home's owners (program members); written by Admin, Director of Onboarding, the home's PM, Designer and Utilities, and the owner. Team chat: staff only for reading and writing; it is never returned to an owner by any query (row level security).
-- Files in chat: one of six folders (Property & Ownership, HOA & Compliance, Property Systems & Manuals, Onboarding, Operations, Media), already in the home's Files. Access & Security is left out on purpose: codes stay behind the logged Show.
+- Files in chat: one of the home's Files folders (Design, Agreements, Estimates and invoices, Photos, Inspections; never Other), already in the home's Files. Changed Nov 13 by Property page Part 3 (3.2), before this was applied; codes never go in chat files.
 - Unread owner chat: one email to the owner when a staff message is unread for 15 minutes, at most one per 15 minutes per home; one staff alert when an owner message waits 15 minutes.
 - Good to know: PM, Director and Admin; every change writes who and when, a history row and audit_log; direct writes are refused.
 - Logged calls and texts: written only by the home's team, the Director or Admin, through log_owner_contact; never counted as owner hours (they are notes, not owner time).
