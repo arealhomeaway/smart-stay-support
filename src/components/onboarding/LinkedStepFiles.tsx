@@ -1,32 +1,24 @@
 /**
  * "Files from {source step}" on a receiving Task, plus the "Show files from"
  * picker for linking two Tasks on the same home by hand. Read-only view of the
- * source's live files: no copies, no delete. Staff-only (drawer is internal).
+ * source's live files as cards with a preview (Part 3, 3.2): no copies, no delete. Staff-only.
  */
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Download, Eye, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { attachmentUrlFn } from "@/lib/attachments.functions";
 import { readTaskFileLinks, setTaskFileSources } from "@/lib/step-file-links.functions";
-import { usDate } from "@/lib/dates";
+import { FileCard } from "@/components/onboarding/home-files/FileCard";
 
 export function LinkedStepFiles({ taskId, canManage }: { taskId: string; canManage: boolean }) {
   const read = useServerFn(readTaskFileLinks);
   const save = useServerFn(setTaskFileSources);
-  const urlFor = useServerFn(attachmentUrlFn);
   const qc = useQueryClient();
   const key = ["task-file-links", taskId];
   const q = useQuery({ queryKey: key, queryFn: () => read({ data: { taskId } }) });
   const [picking, setPicking] = useState<string[] | null>(null);
-  const open = useMutation({
-    mutationFn: (v: { documentId: string; download: boolean }) => urlFor({ data: v }),
-    onSuccess: (r) => window.open(r.url, "_blank", "noopener,noreferrer"),
-    onError: (e: Error) => toast.error(e.message || "That file could not be opened."),
-  });
   const saveM = useMutation({
     mutationFn: (ids: string[]) => save({ data: { taskId, sourceIds: ids } }),
     onSuccess: () => {
@@ -50,23 +42,11 @@ export function LinkedStepFiles({ taskId, canManage }: { taskId: string; canMana
           ) : s.files.length === 0 ? (
             <p className="text-sm text-muted-foreground">No files on that step yet. They appear here as soon as they are added.</p>
           ) : (
-            <ul className="space-y-1">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {s.files.map((f) => (
-                <li key={f.id} className="flex items-center gap-2 text-sm">
-                  <FileText className="size-4 text-muted-foreground" />
-                  <span className="min-w-0 flex-1 truncate">
-                    {f.original_filename ?? f.title}
-                    <span className="text-muted-foreground"> · {f.uploaded_by_name ?? "Unknown"} · {usDate(f.uploaded_at ?? f.created_at)}</span>
-                  </span>
-                  <Button size="icon" variant="ghost" aria-label={`View ${f.original_filename ?? f.title}`} onClick={() => open.mutate({ documentId: f.id, download: false })}>
-                    <Eye className="size-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost" aria-label={`Download ${f.original_filename ?? f.title}`} onClick={() => open.mutate({ documentId: f.id, download: true })}>
-                    <Download className="size-4" />
-                  </Button>
-                </li>
+                <FileCard key={f.id} file={f as never} />
               ))}
-            </ul>
+            </div>
           )}
           <p className="text-xs text-muted-foreground">Shown from the other step. To change or remove a file, open that step.</p>
         </div>
