@@ -9,6 +9,7 @@ import {
   openAtFor,
   otherTabMatches,
   parseHomeSearch,
+  placeLine,
   tileClick,
   tileValue,
   tilesFor,
@@ -157,5 +158,13 @@ describe("Download CSV", () => {
     const [head, line] = csv.split("\n");
     expect(head?.split(",").at(-1)).toBe("Market");
     expect(line?.startsWith('"The ""Lake"" House, A"')).toBe(true);
+  });
+});
+
+describe("2.3 place line", () => {
+  it("reads City, ST", () => {
+    expect(placeLine("Avon", "Indiana")).toBe("Avon, IN");
+    expect(placeLine("Broken Arrow", "OK")).toBe("Broken Arrow, OK");
+    expect(placeLine(null, "Texas")).toBe("TX");
   });
 });

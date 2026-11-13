@@ -17,6 +17,7 @@ import { FURNISHING_SCOPES, projectScope, splitByScope } from "@/lib/onboarding-
 import {
   LEAD_ONLY_REFUSAL,
   lifecycleFor,
+  placeLine,
   viewerRoles,
   type HomeRow,
   type OwnerRezRow,
@@ -234,7 +235,7 @@ export async function loadOnboardingHome(supabase: Client, userId: string, now =
       propertyId: id,
       projectId: project?.id ?? null,
       name: label.primary,
-      place: [p["city"], p["state"]].filter(Boolean).join(", "),
+      place: placeLine(p["city"] as string | null, p["state"] as string | null),
       photo: ((p["primary_photo_medium_url"] || p["primary_photo_url"]) as string | null) ?? null,
       activeOwner: aoLinks.has(id) || project?.owner_type === "Active Owner",
       ownerType: project?.owner_type ?? null,
@@ -336,7 +337,7 @@ export async function loadNotInResolveYet(supabase: Client, userId: string): Pro
     rows.push({
       listingId,
       name: String(l.name ?? "").trim() || `OwnerRez ${listingId}`,
-      place: [l.address?.city, l.address?.state].filter(Boolean).join(", "),
+      place: placeLine(l.address?.city, l.address?.state),
       addedOn: added.get(listingId) ?? null,
       propertyId: home?.id ?? null,
     });
