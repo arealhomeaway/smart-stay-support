@@ -1,0 +1,5 @@
+44d89534abfcde657e7891de9873d6eaab6fa20ade265f17f2b1b0bf4c1e6d67  ./00_preflight.sql
+3f692379ca259e0d26dfbdd3f6a49e6fdc1d4e3b8ff488bb8b8130c95d4336f1  ./README.md
+b52dbef70fdf9ac01d7eb809f7832b191ba2610fa66a68eb91e8b99751a17299  ./apply.sql
+7189ce1ae766ec3e235b86829f8f4e1c458e43a0ca894f4509b299b90365b8fa  ./apply.undo.sql
+3389656bffe8570eb43beca8bf49fb965d9d365c49b6b6c5e0d2296170d15e80  ./live-capture/add_upcoming_onboarding_home.sql

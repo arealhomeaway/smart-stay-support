@@ -1,0 +1,5 @@
+7496f6278cb4492331549c6f3d3ac1cc2aae788efdba675506d764dda181da7f  ./00_preflight.sql
+bfa2efe6933c1d54327e1ddb40c97522aa8114688cff0dc0d37ebb2815935c46  ./README.md
+0300d6bc55b8aabc8146f58665027391395ae1b55934f64e11ea729032fa6cfb  ./apply.sql
+cfeb17b22cd992d6fe828df680609ce5bb9fd55723832f32ebc2e6dd75d18882  ./apply.undo.sql
+7fe25db74f8bbbff99d1e489f0b0904b9e0e32391a83db1cd7949305470694b7  ./live-capture/temp_close_stalled_email_run.sql
