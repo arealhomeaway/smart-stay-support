@@ -9185,9 +9185,57 @@ export type Database = {
           },
         ]
       }
+      onboarding_project_stagers: {
+        Row: {
+          added_at: string
+          added_by: string
+          id: string
+          project_id: string
+          removed_at: string | null
+          removed_by: string | null
+          vendor_org_id: string
+        }
+        Insert: {
+          added_at?: string
+          added_by: string
+          id?: string
+          project_id: string
+          removed_at?: string | null
+          removed_by?: string | null
+          vendor_org_id: string
+        }
+        Update: {
+          added_at?: string
+          added_by?: string
+          id?: string
+          project_id?: string
+          removed_at?: string | null
+          removed_by?: string | null
+          vendor_org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_project_stagers_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_project_stagers_vendor_org_id_fkey"
+            columns: ["vendor_org_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       onboarding_projects: {
         Row: {
           branch: string | null
+          closed_at: string | null
+          closed_by: string | null
+          closed_reason: string | null
           committed_handoff_on: string | null
           committed_handoff_set_at: string | null
           committed_handoff_set_by: string | null
@@ -9230,6 +9278,9 @@ export type Database = {
         }
         Insert: {
           branch?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          closed_reason?: string | null
           committed_handoff_on?: string | null
           committed_handoff_set_at?: string | null
           committed_handoff_set_by?: string | null
@@ -9272,6 +9323,9 @@ export type Database = {
         }
         Update: {
           branch?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          closed_reason?: string | null
           committed_handoff_on?: string | null
           committed_handoff_set_at?: string | null
           committed_handoff_set_by?: string | null
@@ -12078,6 +12132,66 @@ export type Database = {
           },
         ]
       }
+      ownerrez_listing_cache: {
+        Row: {
+          added_on: string | null
+          checked_at: string
+          city: string | null
+          listing_id: string
+          name: string | null
+          state: string | null
+        }
+        Insert: {
+          added_on?: string | null
+          checked_at?: string
+          city?: string | null
+          listing_id: string
+          name?: string | null
+          state?: string | null
+        }
+        Update: {
+          added_on?: string | null
+          checked_at?: string
+          city?: string | null
+          listing_id?: string
+          name?: string | null
+          state?: string | null
+        }
+        Relationships: []
+      }
+      ownerrez_listing_dismissals: {
+        Row: {
+          dismissed_at: string
+          dismissed_by: string
+          id: string
+          listing_id: string
+          listing_name: string | null
+          reason: string
+          restored_at: string | null
+          restored_by: string | null
+        }
+        Insert: {
+          dismissed_at?: string
+          dismissed_by: string
+          id?: string
+          listing_id: string
+          listing_name?: string | null
+          reason: string
+          restored_at?: string | null
+          restored_by?: string | null
+        }
+        Update: {
+          dismissed_at?: string
+          dismissed_by?: string
+          id?: string
+          listing_id?: string
+          listing_name?: string | null
+          reason?: string
+          restored_at?: string | null
+          restored_by?: string | null
+        }
+        Relationships: []
+      }
       pid_sync_review_items: {
         Row: {
           created_at: string
@@ -14203,6 +14317,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      saved_views: {
+        Row: {
+          archived_at: string | null
+          columns: string[]
+          created_at: string
+          filters: Json
+          id: string
+          kind: string
+          name: string
+          page: string
+          sort: string | null
+          updated_at: string
+          user_id: string
+          view: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          columns?: string[]
+          created_at?: string
+          filters?: Json
+          id?: string
+          kind?: string
+          name?: string
+          page: string
+          sort?: string | null
+          updated_at?: string
+          user_id: string
+          view?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          columns?: string[]
+          created_at?: string
+          filters?: Json
+          id?: string
+          kind?: string
+          name?: string
+          page?: string
+          sort?: string | null
+          updated_at?: string
+          user_id?: string
+          view?: string | null
+        }
+        Relationships: []
       }
       scorecard_records: {
         Row: {
@@ -18680,6 +18839,20 @@ export type Database = {
         Args: { _note: string; _routine_id: string }
         Returns: Json
       }
+      add_upcoming_onboarding_home: {
+        Args: {
+          _address_line1: string
+          _city: string
+          _contact: string
+          _expected_closing: string
+          _note: string
+          _postal_code: string
+          _request_id: string
+          _state: string
+          _unit: string
+        }
+        Returns: Json
+      }
       admin_passes_role_checks: { Args: never; Returns: boolean }
       after_handoff_access: {
         Args: never
@@ -18857,6 +19030,7 @@ export type Database = {
         Args: { _expense: string; _reason: string }
         Returns: undefined
       }
+      archive_onboarding_home_view: { Args: { _id: string }; Returns: Json }
       archive_qa_work_order_fixture: {
         Args: { _actor?: string }
         Returns: undefined
@@ -19573,6 +19747,10 @@ export type Database = {
         Returns: string
       }
       direct_booking_settings: { Args: never; Returns: Json }
+      dismiss_ownerrez_listing: {
+        Args: { _listing_id: string; _name: string; _reason: string }
+        Returns: Json
+      }
       email_delivery_allowed: {
         Args: {
           _actor_id?: string
@@ -19713,6 +19891,10 @@ export type Database = {
       }
       manual_tracker_save_settings: {
         Args: { _key: string; _value: Json }
+        Returns: Json
+      }
+      mark_contract_fell_through: {
+        Args: { _project_id: string; _reason: string }
         Returns: Json
       }
       mark_direct_booking_outcome: {
@@ -20744,6 +20926,14 @@ export type Database = {
         Args: { _card: string; _changes: Json; _property_id: string }
         Returns: Json
       }
+      save_onboarding_home_columns: {
+        Args: { _columns: string[] }
+        Returns: Json
+      }
+      save_onboarding_home_view: {
+        Args: { _filters: Json; _name: string; _sort: string; _view: string }
+        Returns: Json
+      }
       save_onboarding_project_details: {
         Args: { _patch: Json; _project_id: string }
         Returns: Json
@@ -20885,6 +21075,10 @@ export type Database = {
         }
         Returns: Json
       }
+      set_onboarding_project_stagers: {
+        Args: { _project_id: string; _vendor_ids: string[] }
+        Returns: Json
+      }
       set_onboarding_step_review_settings: {
         Args: {
           _alerts_enabled: boolean
@@ -20948,6 +21142,10 @@ export type Database = {
       start_optional_opportunity: {
         Args: { _property_id: string; _template_id: string }
         Returns: string
+      }
+      start_upcoming_onboarding_home: {
+        Args: { _project_id: string }
+        Returns: Json
       }
       str_report_context: { Args: { _property: string }; Returns: Json }
       str_report_preview: {
