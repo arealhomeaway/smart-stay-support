@@ -139,6 +139,7 @@ import { listAttachmentsFn } from "@/lib/attachments.functions";
 import { documentCategoryLabel } from "@/lib/attachments";
 import { TaskDrawer, type SaveTaskInput } from "@/components/onboarding/TaskDrawer";
 import { useRole, ViewOnlyScope } from "@/hooks/useRole";
+import { ProjectStagersCard } from "@/components/onboarding/project-db/ProjectStagersCard";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { stateChip } from "@/lib/semantic";
 import { usDate, usDateTime } from "@/lib/dates";
@@ -868,6 +869,7 @@ function PropertyWorkspace() {
         </TabsContent>
 
         <TabsContent value="vendors" className="space-y-4">
+          <ProjectStagersCard projectId={projectRow?.id ?? null} />
           <VendorCoveragePanel propertyId={current.id} />
           <OnboardingWorkOrdersPanel propertyId={current.id} />
         </TabsContent>
