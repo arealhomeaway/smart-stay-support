@@ -198,7 +198,7 @@ export function AddHomePanel(p: {
       };
       if (choice.kind === "existing" && choice.upcoming && choice.projectId) {
         await startUpcoming({ data: { projectId: choice.projectId } });
-        await updateProject({ data: { projectId: choice.projectId, ...fields } });
+        await updateProject({ data: { projectId: choice.projectId, ...fields, reason: "Set when the home went under contract" } });
       }
       const project = (await startPlan({ data: { propertyId: propertyId!, branch: null, templateId: null, possessionOn: null, poolLocation: "none", notes: null, externalRefs: {}, ...fields } })) as { id?: string } | null;
       planBuilt = true;
