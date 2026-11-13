@@ -166,7 +166,10 @@ export async function readOwnerTab(sb: Db, uid: string, propertyId: string) {
           teamNotesBy: owner.team_notes_updated_by ? who.get(owner.team_notes_updated_by) ?? "A teammate" : null,
         }
       : null,
-    otherHomes: ((otherHomes.data ?? []) as Record<string, unknown>[]).map((h) => ({ id: String(h["id"]), home: h })),
+    otherHomes: ((otherHomes.data ?? []) as { id: string; nickname: string | null; name: string | null; address_line1: string | null; unit: string | null; city: string | null; state: string | null; postal_code: string | null; ownerrez_property_id: string | null }[]).map((h) => ({
+      id: h.id,
+      home: { id: h.id, nickname: h.nickname, name: h.name, address_line1: h.address_line1, unit: h.unit, city: h.city, state: h.state, postal_code: h.postal_code, ownerrez_property_id: h.ownerrez_property_id == null ? null : String(h.ownerrez_property_id) },
+    })),
     timeline,
     ownerChatId: ownerChat?.id ?? null,
     ownerChatWaiting: ownerChatWaiting(chatMsgs),

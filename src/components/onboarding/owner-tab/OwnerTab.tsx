@@ -471,7 +471,7 @@ function AboutOwner(p: {
   goodToKnowAt: string | null;
   goodToKnowReady: boolean;
   canEditGoodToKnow: boolean;
-  otherHomes: { id: string; home: Record<string, unknown> }[];
+  otherHomes: { id: string; home: Record<string, string | null> }[];
 }) {
   const qc = useQueryClient();
   const setPref = useServerFn(setOwnerPreferredFn);
@@ -576,7 +576,7 @@ function AboutOwner(p: {
             {p.otherHomes.map((h) => (
               <li key={h.id}>
                 <Link to="/onboarding/$propertyId" params={{ propertyId: h.id }} className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline">
-                  {formatPropertyLabel(h.home as never)}
+                  {formatPropertyLabel(h.home as never).primary}
                 </Link>
               </li>
             ))}

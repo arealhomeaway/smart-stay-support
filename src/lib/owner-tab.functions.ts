@@ -296,7 +296,7 @@ export const setOwnerPreferredFn = createServerFn({ method: "POST" })
     const viewer = await hub.loadViewer(context.supabase, context.userId);
     return m.updateOwnerRecord(viewer, {
       ownerId,
-      name: rec.data.name,
+      name: rec.data.name ?? "Owner",
       email: rec.data.email,
       phone: rec.data.phone,
       coOwnerName: rec.data.co_owner_name,

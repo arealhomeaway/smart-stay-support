@@ -224,7 +224,7 @@ export const Route = createFileRoute("/_authenticated/onboarding/$propertyId")({
       ...((raw as { from?: unknown }).from === FROM_ATTENTION ? { from: FROM_ATTENTION } : {}),
       // Part 2 (2.2): the Chats inbox opens a home with its chat panel on one tab.
       ...((raw as { chat?: unknown }).chat === "owner" || (raw as { chat?: unknown }).chat === "team"
-        ? { chat: (raw as { chat: "owner" | "team" }).chat }
+        ? { chat: (raw as unknown as { chat: "owner" | "team" }).chat }
         : {}),
     };
   },
