@@ -48,8 +48,8 @@ DROP TABLE IF EXISTS public.home_chat_alerts;
 DROP TABLE IF EXISTS public.home_chat_message_tasks;
 DROP TABLE IF EXISTS public.home_chat_reads;
 DROP TABLE IF EXISTS public.home_chat_messages;
-DROP FUNCTION IF EXISTS public.home_chat_can_read(uuid, uuid);
 DROP TABLE IF EXISTS public.home_chats;
+DROP FUNCTION IF EXISTS public.home_chat_can_read(uuid, uuid);
 
 DROP FUNCTION IF EXISTS public.home_owner_contact_writer(uuid, uuid);
 DROP FUNCTION IF EXISTS public.home_owner_member(uuid, uuid);
