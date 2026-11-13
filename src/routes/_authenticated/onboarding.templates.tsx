@@ -74,6 +74,7 @@ function TemplatesPage() {
 
   const [selected, setSelected] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
