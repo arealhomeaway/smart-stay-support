@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { PlugZap, ExternalLink } from "lucide-react";
-import { PageHeader, SectionCard, EmptyState } from "@/components/ui/page";
+import { PageHeader, SectionCard, EmptyState, LoadError } from "@/components/ui/page";
+import { CONNECTION_LABEL, connectionState } from "@/lib/load-state";
 import { StatusBadge } from "@/components/ui/status";
 import { getInboundStatus, listImportedMatters } from "@/lib/inbound.functions";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
@@ -79,6 +80,7 @@ function IntegrationsPage() {
 
   const rows = imported.data?.data ?? [];
   const isAdmin = useRole().isAdmin;
+  const ownerRez = connectionState({ isLoading: status.isLoading, isError: status.isError, connected: status.data?.ownerrez });
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -95,8 +97,8 @@ function IntegrationsPage() {
           </span>
         }
         actions={
-          <StatusBadge tone={status.data?.ownerrez ? "resolved" : "closed"}>
-            {status.data?.ownerrez ? "Connected" : "Not connected"}
+          <StatusBadge tone={ownerRez === "connected" ? "resolved" : ownerRez === "unknown" ? "waiting" : "closed"}>
+            {CONNECTION_LABEL[ownerRez]}
           </StatusBadge>
         }
         description="Homes and live occupancy sync both ways. Occupancy still sets the starting priority when a ticket opens."
@@ -168,7 +170,11 @@ function IntegrationsPage() {
         title="Imported tickets"
         description="The most recent work pulled in from an outside system."
       >
-        {rows.length === 0 ? (
+        {imported.isError ? (
+          <LoadError what="Imported tickets" onRetry={() => void imported.refetch()} />
+        ) : imported.isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        ) : rows.length === 0 ? (
           <EmptyState
             title="Nothing imported yet"
             hint="Run a sync above once a source system is connected."

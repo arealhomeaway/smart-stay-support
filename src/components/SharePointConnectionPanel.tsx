@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CONNECTION_LABEL, connectionState } from "@/lib/load-state";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ShieldCheck, PlugZap, Search } from "lucide-react";
@@ -138,14 +139,15 @@ export function SharePointConnectionPanel() {
   if (isLoading || !isPlatformOwner) return null;
 
   const connected = status.data?.connected ?? false;
+  const connection = connectionState({ isLoading: status.isLoading, isError: status.isError, connected: status.data?.connected });
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <PlugZap className="size-4" /> SharePoint: ARHA Resolve site
-          <Badge variant={connected ? "default" : "secondary"}>
-            {connected ? "Connected" : "Not connected"}
+          <Badge variant={connection === "connected" ? "default" : connection === "unknown" ? "destructive" : "secondary"}>
+            {CONNECTION_LABEL[connection]}
           </Badge>
           <Badge variant="outline" className="gap-1">
             <ShieldCheck className="size-3" /> Administrators only

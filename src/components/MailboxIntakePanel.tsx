@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { CONNECTION_LABEL, connectionState } from "@/lib/load-state";
 import { useServerFn } from "@tanstack/react-start";
 import { Inbox, MailCheck, RefreshCw, Eye, Radio, Eraser } from "lucide-react";
 import { toast } from "sonner";
@@ -89,6 +90,7 @@ export function MailboxIntakePanel() {
   });
 
   const connected = status.data?.connected ?? false;
+  const connection = connectionState({ isLoading: status.isLoading, isError: status.isError, connected: status.data?.connected });
   const subscription = status.data?.subscription ?? null;
   const intake = status.data?.intake ?? null;
   const switchOn = intake?.switchOn ?? false;
@@ -135,8 +137,8 @@ export function MailboxIntakePanel() {
               record is settled.
             </CardDescription>
           </div>
-          <Badge variant={connected ? "default" : "secondary"}>
-            {connected ? "Connected" : "Not connected"}
+          <Badge variant={connection === "connected" ? "default" : connection === "unknown" ? "destructive" : "secondary"}>
+            {CONNECTION_LABEL[connection]}
           </Badge>
         </div>
       </CardHeader>
