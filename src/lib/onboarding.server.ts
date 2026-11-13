@@ -278,6 +278,8 @@ export async function loadOnboardingWorkspace(
       exception_reason: string | null;
     }[],
     workspaceMode,
+    /** Onboarding Home 3.3: "team" or "view" only on one home opened by staff who do not run it. */
+    homeAccess: "full" as "full" | "team" | "view",
     reviewCapabilities,
     independentReadiness,
     assignedWorkContexts: [] as AssignedWorkContext[],
@@ -298,6 +300,32 @@ export async function loadOnboardingWorkspace(
     ownerApprovals: ownerApprovals.data ?? [],
   };
   if (workspaceMode === "portfolio") return workspace;
+  // Onboarding Home 3.3 (Admin approval Nov 12): one home opened by onboarding staff who do not
+  // run it. Its Designer or Utilities reads the home in full; anyone else reads it view only.
+  // Access and wifi notes and the project notes stay withheld from both, as before for anyone
+  // who does not run the home; every write keeps its existing server rule.
+  if (propertyId) {
+    const project = projects.find((p) => p.property_id === propertyId && p.status !== "cancelled") as
+      | ((typeof projects)[number] & { utility_manager?: string | null; role_assignments?: Record<string, string> | null })
+      | undefined;
+    const runsIt = Boolean(project && (project.project_manager === userId || project.director === userId));
+    if (!runsIt && workspace.properties.some((p) => p.id === propertyId)) {
+      const seats = project?.role_assignments ?? {};
+      const onTeam = Boolean(
+        project &&
+          (project.utility_manager === userId ||
+            ["design_staging", "lead_designer", "designer", "utilities"].some((k) => seats[k] === userId)),
+      );
+      return {
+        ...workspace,
+        homeAccess: (onTeam ? "team" : "view") as "team" | "view",
+        properties: workspace.properties.map((p) => ({ ...p, access_notes: null, wifi_notes: null })),
+        notes: [],
+        externalDatabases: [],
+        externalRecords: [],
+      };
+    }
+  }
   const managed = new Set(
     projects
       .filter(

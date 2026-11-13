@@ -245,7 +245,7 @@ function PropertyWorkspace() {
   const navigate = Route.useNavigate();
   const load = useServerFn(getOnboardingWorkspace);
   const qc = useQueryClient();
-  const { can, readOnly, userId, roles } = useRole();
+  const { can, readOnly: roleReadOnly, userId, roles } = useRole();
   const { enabled } = useFeatureFlags();
   const directorQuery = useQuery({
     queryKey: ["is-onboarding-director", userId],
@@ -288,6 +288,9 @@ function PropertyWorkspace() {
     enabled: Boolean(userId),
   });
   const refresh = () => qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
+  // Onboarding Home 3.3: a home the viewer is not on opens view only; Admin and the Director never do.
+  const viewOnlyHome = data?.homeAccess === "view";
+  const readOnly = roleReadOnly || viewOnlyHome;
 
   const mut = <T,>(fn: T, message: string) =>
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -400,8 +403,9 @@ function PropertyWorkspace() {
 
   if (isLoading || !data) return <LoadingPage />;
   if (
-    data.workspaceMode === "assigned" ||
-    data.assignedWorkContexts.some((context) => context.propertyId === propertyId)
+    data.homeAccess === "full" &&
+    (data.workspaceMode === "assigned" ||
+      data.assignedWorkContexts.some((context) => context.propertyId === propertyId))
   )
     return <Navigate to="/onboarding/my-work" search={{ who: "me" }} replace />;
   if (!current)
