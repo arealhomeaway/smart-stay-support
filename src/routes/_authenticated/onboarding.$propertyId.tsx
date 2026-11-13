@@ -732,6 +732,7 @@ function PropertyWorkspace() {
       facts={facts}
       canAddOwner={!readOnly && (isAdminViewer || isOnboardingDirector)}
       onAskOwner={() => setAskOpen(true)}
+      onTag={(section) => setSection(section)}
       chat={
         <ChatButton
           propertyId={current.id}
@@ -822,6 +823,12 @@ function PropertyWorkspace() {
       {header}
       {viewOnlyLine}
       {overlays}
+      {/* Part 3 (3.7): on a phone Chat floats at the bottom; the panel opens full screen. */}
+      {!chatOpen ? (
+        <div className="fixed bottom-4 right-4 z-30 md:hidden [&_button]:min-h-12 [&_button]:shadow-lg" data-testid="floating-chat">
+          <ChatButton propertyId={current.id} onOpen={() => setChatOpen(true)} />
+        </div>
+      ) : null}
 
       <Tabs value={tab} onValueChange={goTab} className="space-y-5">
         {/* Fix 4: the tabs in their own bar, pinned under the app's top bar while scrolling. */}

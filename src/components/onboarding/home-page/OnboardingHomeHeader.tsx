@@ -33,6 +33,8 @@ export function OnboardingHomeHeader(p: {
   onAskOwner: () => void;
   /** Part 2 (2.2): the Chat button with its unread count, after Ask the owner. */
   chat?: ReactNode;
+  /** Part 3 (3.6): each tag is a real field; tapping it opens that field in Home details. */
+  onTag?: (section: "project" | "owner" | "dates") => void;
 }) {
   const [showMore, setShowMore] = useState(false);
   const [showWays, setShowWays] = useState(false);
@@ -56,7 +58,7 @@ export function OnboardingHomeHeader(p: {
       {/* 1) Photo and name row; the breadcrumb sits above the name. */}
       <div className="flex items-start gap-3">
         {p.photo ? (
-          <div className="h-[84px] w-[112px] shrink-0 overflow-hidden rounded-lg bg-sunken">
+          <div className="h-12 w-16 shrink-0 overflow-hidden rounded-lg bg-sunken md:h-[84px] md:w-[112px]">
             <PropertyPhoto url={p.photo} name={p.name} rounded="rounded-none" className="size-full object-cover" />
           </div>
         ) : null}
@@ -66,20 +68,20 @@ export function OnboardingHomeHeader(p: {
             <HomeContextHeader propertyId={p.propertyId} current="onboarding" toggleOnly />
           </div>
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <h1 className="min-w-0 font-display text-2xl leading-tight sm:text-3xl">{p.name}</h1>
-            {p.place ? <span className="text-sm text-muted-foreground">{p.place}</span> : null}
+            <h1 className="min-w-0 font-display text-xl leading-tight md:text-3xl">{p.name}</h1>
+            {p.place ? <span className="hidden text-sm text-muted-foreground md:inline">{p.place}</span> : null}
           </div>
         </div>
       </div>
 
       {/* 2) Tags row. */}
       <div className="flex flex-wrap items-center gap-2" aria-label="Tags">
-        {p.status ? <span className={cn(tag, "bg-role-you-bg text-role-you-fg")}>{p.status}</span> : null}
-        <span className={cn(tag, p.activeOwner ? "bg-role-homeowner-bg text-role-homeowner-fg" : "bg-role-director-bg text-role-director-fg")}>
+        {p.status ? <FieldTag className={cn(tag, "bg-role-you-bg text-role-you-fg")} field="Status" onOpen={p.onTag && (() => p.onTag!("project"))}>{p.status}</FieldTag> : null}
+        <FieldTag className={cn(tag, p.activeOwner ? "bg-role-homeowner-bg text-role-homeowner-fg" : "bg-role-director-bg text-role-director-fg")} field="Program" onOpen={p.onTag && (() => p.onTag!("owner"))}>
           {p.activeOwner ? "Active Owner" : "Standard"}
-        </span>
-        <span className={cn(tag, p.health.behind ? "bg-state-blocked/15 text-late" : "bg-role-you-bg text-role-you-fg")}>{p.health.label}</span>
-        {showMore ? p.more.map((m) => <span key={m} className={cn(tag, "bg-muted text-foreground")}>{m}</span>) : null}
+        </FieldTag>
+        <FieldTag className={cn(tag, p.health.behind ? "bg-state-blocked/15 text-late" : "bg-role-you-bg text-role-you-fg")} field="Schedule" onOpen={p.onTag && (() => p.onTag!("dates"))}>{p.health.label}</FieldTag>
+        {showMore ? p.more.map((m) => <FieldTag key={m} className={cn(tag, "bg-muted text-foreground")} field={m} onOpen={p.onTag && (() => p.onTag!("project"))}>{m}</FieldTag>) : null}
         {p.more.length > 0 ? (
           <button
             type="button"
@@ -93,7 +95,7 @@ export function OnboardingHomeHeader(p: {
       </div>
 
       {/* 3) Facts line. */}
-      <p className="numeric text-sm text-muted-foreground">{p.facts}</p>
+      <p className="numeric hidden text-sm text-muted-foreground md:block">{p.facts}</p>
 
       {/* 4) Owner row, one line. */}
       <section className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg bg-muted/50 px-3 py-2" aria-label="Owner">
@@ -152,7 +154,8 @@ export function OnboardingHomeHeader(p: {
             <EmailComposer context="property" recordId={p.propertyId} label="Email owner" variant="primary" />
           </div>
         )}
-        {p.chat}
+        {/* Part 3 (3.7): on a phone Chat floats at the bottom instead. */}
+        <div className="hidden md:contents">{p.chat}</div>
         <FollowHomeButton propertyId={p.propertyId} myHomes />
       </div>
     </header>
@@ -173,5 +176,15 @@ function ContactLink({ b }: { b: ContactButton }) {
     >
       {b.label}
     </a>
+  );
+}
+
+/** Part 3 (3.6): a header tag reads a real field; with onOpen it opens that field. */
+function FieldTag({ className, field, onOpen, children }: { className: string; field: string; onOpen?: (() => void) | undefined; children: ReactNode }) {
+  if (!onOpen) return <span className={className}>{children}</span>;
+  return (
+    <button type="button" onClick={onOpen} aria-label={`${field}: open in Home details`} className={cn(className, "min-h-11 hover:opacity-90 sm:min-h-8")}>
+      {children}
+    </button>
   );
 }
