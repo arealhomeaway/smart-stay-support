@@ -179,7 +179,6 @@ import {
   setPropertyLifecycleFn,
   submitOwnerApprovalFn,
   recordOwnerTaskDecisionFn,
-  updateOnboardingProjectFn,
 } from "@/lib/onboarding.functions";
 
 /** Part 3: ?section= and ?folder= pass through only as short plain words. */
