@@ -143,7 +143,7 @@ export type ComposerMode = "message" | "email" | "log";
  */
 export function composerModes(input: { activeOwner: boolean; ownerHasPortal: boolean; rights: OwnerTabRights }): ComposerMode[] {
   const out: ComposerMode[] = [];
-  if ((input.activeOwner || input.ownerHasPortal) && input.ownerHasPortal && input.rights.postOwnerChat) out.push("message");
+  if ((input.activeOwner || input.ownerHasPortal) && input.rights.postOwnerChat) out.push("message");
   if (input.rights.emailOwner) out.push("email");
   if (input.rights.logContact) out.push("log");
   return out;

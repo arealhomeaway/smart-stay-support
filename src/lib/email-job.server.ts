@@ -2,7 +2,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 type Part = { name: string; run: (runId: string) => Promise<unknown> };
 
-/** Synchronous, audited execution. No untracked background work or automatic retry. */
+/**
+ * Synchronous, audited execution. No untracked background work or automatic retry.
+ * Property page Part 2 (2.7): a part that throws or reports failed sends is recorded and the run
+ * CONTINUES to the next part, so the nightly PID copy, OwnerRez reviews and the property refresh
+ * never depend on an email part. Only a failure of the audit steps themselves stops a run.
+ */
 export async function runEmailJob(db: SupabaseClient, parts: Part[]) {
   const started = await db.rpc("begin_email_job_run" as never);
   if (started.error || typeof started.data !== "string")
@@ -28,7 +33,6 @@ export async function runEmailJob(db: SupabaseClient, parts: Part[]) {
     if (saved.error) {
       throw new Error("Run audit failed; unfinished run retained and remaining work stopped. Do not retry automatically.");
     }
-    if (errors.length) break;
   }
   const finished = await db.rpc("finish_email_job_run" as never, { _run_id: runId, _errors: errors } as never);
   if (finished.error) throw new Error("Run finish could not be recorded; do not retry automatically.");

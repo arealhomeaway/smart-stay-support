@@ -18,13 +18,19 @@ it("stops work when audit start fails", async () => {
   await expect(runEmailJob(database(true) as never, [{ name: "staff", run: async () => { executed++; } }])).rejects.toThrow("no work started");
   expect(executed).toBe(0);
 });
-it("records errors and never runs subsequent parts after failure", async () => {
+it("records a failed part and continues to the next parts (Part 2, 2.7)", async () => {
   let subsequent = 0;
-  const result = await runEmailJob(database() as never, [
+  const db = database();
+  const result = await runEmailJob(db as never, [
     { name: "owner", run: async () => { throw new Error("provider failed"); } },
-    { name: "staff", run: async () => { subsequent++; } },
+    { name: "staff", run: async () => ({ ok: false, notes: ["2 sends failed"] }) },
+    { name: "pid_nightly_sync", run: async () => { subsequent++; return { ok: true }; } },
   ]);
-  expect(result.ok).toBe(false); expect(result.errors).toEqual(["owner: provider failed"]); expect(subsequent).toBe(0);
+  expect(result.ok).toBe(false);
+  expect(result.errors).toEqual(["owner: provider failed", "staff: reported an unsuccessful result", "staff: 2 sends failed"]);
+  expect(subsequent).toBe(1);
+  expect(db.calls.filter((c) => c.name === "record_email_job_part").length).toBe(3);
+  expect(db.calls.at(-1)?.name).toBe("finish_email_job_run");
 });
 it("does not finish a run whose part audit failed", async () => {
   const calls: string[] = [];
