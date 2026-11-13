@@ -50,16 +50,16 @@ beforeEach(async () => {
     INSERT INTO public.vendor_orgs VALUES ('${STAGER}', 'Stage Co', '{Staging}'), ('${STAGER_2}', 'Second Stage', '{Staging,Cleaning}'), ('${PLUMBER}', 'Pipes', '{Plumbing}');
   `);
   project = (await one(`INSERT INTO public.onboarding_projects(property_id, status, project_manager) VALUES ('${HOME}', 'active', '${PM}') RETURNING id`)).id;
-  await db.exec(readFileSync(`${DIR}/00_preflight.sql`, "utf8").replace(/^SELECT[\s\S]*$/m, ""));
+  await db.exec(readFileSync(`${DIR}/00_preflight.sql`, "utf8"));
   await db.exec(readFileSync(`${DIR}/apply.sql`, "utf8"));
 });
 
 describe("the tiles switch", () => {
-  it("is added off and never turned on", async () => {
+  it("is added off", async () => {
     expect((await one("SELECT enabled FROM public.feature_flags WHERE key = 'onboarding_home_tiles'")).enabled).toBe(false);
-    await db.exec("UPDATE public.feature_flags SET enabled = true WHERE key = 'onboarding_home_tiles'");
-    await db.exec(readFileSync(`${DIR}/apply.sql`, "utf8").replace(/CREATE TABLE[\s\S]*?\);/g, "").replace(/CREATE (UNIQUE )?INDEX[^;]*;/g, "").replace(/ALTER TABLE public\.\w+ ENABLE ROW LEVEL SECURITY;/g, "").replace(/CREATE POLICY[^;]*;/g, ""));
-    expect((await one("SELECT enabled FROM public.feature_flags WHERE key = 'onboarding_home_tiles'")).enabled).toBe(true);
+  });
+  it("the preflight stops a second run before anything is written", async () => {
+    expect(await fails(db.exec(readFileSync(`${DIR}/00_preflight.sql`, "utf8")))).toContain("already exists");
   });
 });
 

@@ -35,3 +35,6 @@ CREATE TABLE public.onboarding_project_events(id uuid PRIMARY KEY DEFAULT gen_ra
   kind text NOT NULL, summary text NOT NULL, detail text, prior_value text, new_value text, actor uuid, is_demo boolean NOT NULL DEFAULT false,
   created_at timestamptz NOT NULL DEFAULT now());
 CREATE TABLE public.vendor_orgs(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), display_name text, service_categories text[] NOT NULL DEFAULT '{}');
+CREATE TABLE public.vendor_service_categories(label text, active boolean DEFAULT true, tier text);
+INSERT INTO public.vendor_service_categories VALUES ('Staging', true, 'specialty');
+CREATE FUNCTION public.set_onboarding_project_role(_project_id uuid, _role text, _user_id uuid, _move boolean) RETURNS jsonb LANGUAGE sql AS $$ SELECT '{}'::jsonb $$;
