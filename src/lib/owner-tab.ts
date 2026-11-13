@@ -4,6 +4,7 @@
  * five-minute job and the tests. The database mirrors the permission and timing rules
  * (docs/pending/property-page-part2/apply.sql) and is the authority once applied.
  */
+import { UPLOAD_FOLDERS, type HomeFolder } from "@/lib/home-details";
 
 /* ------------------------------------------------------------------ who can do what */
 
@@ -159,15 +160,9 @@ export function composerHint(mode: ComposerMode, ownerName: string): string {
 
 /* ------------------------------------------------------------------ chat */
 
-export const CHAT_FOLDERS = [
-  { id: "property_ownership", label: "Property & Ownership", category: "ownership" },
-  { id: "hoa_compliance", label: "HOA & Compliance", category: "hoa" },
-  { id: "systems_manuals", label: "Property Systems & Manuals", category: "manual" },
-  { id: "onboarding", label: "Onboarding", category: "onboarding_evidence" },
-  { id: "operations", label: "Operations", category: "operations" },
-  { id: "media", label: "Media", category: "media" },
-] as const;
-export type ChatFolder = (typeof CHAT_FOLDERS)[number]["id"];
+/** Part 3 (3.2): chat files go into the home's Files folders, never Other. */
+export const CHAT_FOLDERS = UPLOAD_FOLDERS.map((f) => ({ id: f.id as ChatFolder, label: f.label, category: f.upload as string }));
+export type ChatFolder = Exclude<HomeFolder, "other">;
 
 export const CHAT_STYLE = {
   owner: { label: "With the owner", banner: "The owner sees everything in this chat." },

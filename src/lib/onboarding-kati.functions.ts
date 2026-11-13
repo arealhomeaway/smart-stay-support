@@ -195,12 +195,17 @@ export const sendOnboardingWorkOrderFn = createServerFn({ method: "POST" })
         priority: z.enum(["low", "normal", "high", "urgent", "watch"]).default("normal"),
         title: z.string().trim().min(3).max(200).optional(),
         description: z.string().trim().max(4000).nullable().optional(),
+        /** Part 3 (3.8): a note added under the description as "Note from <name>: ...". */
+        note: z.string().trim().max(1000).optional(),
+        /** Part 3 (3.8): the Task's own files to go with it (photos uploaded, others linked). */
+        fileIds: z.array(z.string().uuid()).max(20).optional(),
       })
       .parse(d),
   )
   .handler(async ({ context, data }) => {
     const db = context.supabase as unknown as Loose;
-    const { sendToBreezewayRefusal, onboardingSendRequestKey, stripWorkOrderPrefix, breezewayStepSummary } = await import("@/lib/onboarding-breezeway");
+    const { sendToBreezewayRefusal, onboardingSendRequestKey, stripWorkOrderPrefix } = await import("@/lib/onboarding-breezeway");
+    const { breezewayDescription, breezewayFileRoute } = await import("@/lib/home-details");
     const flag = await db.from("feature_flags").select("enabled").eq("key", "onboarding_breezeway_send").maybeSingle();
     if (flag.error) throw new Error(flag.error.message);
     const switchOn = flag.data?.enabled === true;
@@ -227,14 +232,44 @@ export const sendOnboardingWorkOrderFn = createServerFn({ method: "POST" })
     });
     if (refusal) return { ok: false as const, message: refusal };
     if (!link.data?.assignee_choice) return { ok: false as const, message: "Choose a Breezeway person, or Leave unassigned, and save first." };
-    return createOutboundTask(
+    // 3.8: the full step text (or what was typed), then the note with the sender's name.
+    const me = await db.from("profiles").select("full_name").eq("id", context.userId).maybeSingle();
+    const author = (me.data?.full_name as string | null | undefined) ?? null;
+    const base = data.description !== undefined ? data.description : task.data.detail ? String(task.data.detail) : null;
+    let description = breezewayDescription(base, data.note ?? null, author);
+    // Only this Task's own stored files, read as the caller (RLS applies).
+    type Doc = { id: string; title: string | null; original_filename: string | null; mime_type: string | null; size_bytes: number | null; storage_path: string | null };
+    let files: Doc[] = [];
+    if (data.fileIds?.length) {
+      const r = await db.from("documents").select("id, title, original_filename, mime_type, size_bytes, storage_path")
+        .eq("entity_type", "onboarding_task").eq("entity_id", data.taskId).eq("upload_status", "stored")
+        .is("archived_at", null).is("deleted_at", null).in("id", data.fileIds);
+      if (r.error) throw new Error(r.error.message);
+      files = ((r.data ?? []) as Doc[]).filter((f) => f.storage_path);
+      if (files.length !== data.fileIds.length) return { ok: false as const, message: "One of those files is no longer on this Task. Refresh and choose again." };
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { ATTACHMENT_BUCKET } = await import("@/lib/attachments");
+    const name = (f: Doc) => f.original_filename || f.title || "File";
+    const toLink = files.filter((f) => breezewayFileRoute(f) === "link");
+    const toUpload = files.filter((f) => breezewayFileRoute(f) === "upload");
+    if (toLink.length) {
+      const lines: string[] = [];
+      for (const f of toLink) {
+        const u = await supabaseAdmin.storage.from(ATTACHMENT_BUCKET).createSignedUrl(f.storage_path!, 7 * 24 * 3600);
+        if (u.error || !u.data?.signedUrl) return { ok: false as const, message: `The link for ${name(f)} could not be made. Nothing was sent.` };
+        lines.push(`${name(f)}: ${u.data.signedUrl}`);
+      }
+      description = `${description ? `${description}\n\n` : ""}Files (links open for 7 days):\n${lines.join("\n")}`;
+    }
+    const result = await createOutboundTask(
       {
         sourceType: "onboarding_task",
         sourceId: data.taskId,
         requestKey: onboardingSendRequestKey(data.taskId),
         title: data.title ?? stripWorkOrderPrefix(String(task.data.title)).slice(0, 200),
-        // Item 36: without a typed description, only the step's short summary goes.
-        description: data.description !== undefined ? data.description : breezewayStepSummary(task.data.detail ? String(task.data.detail) : null).slice(0, 4000) || null,
+        // Part 3 (3.8): the full step text, the sender's note and any file links.
+        description: description.slice(0, 4000) || null,
         department: "maintenance",
         priority: data.priority,
         scheduledDate: link.data.tentative_date,
@@ -245,6 +280,26 @@ export const sendOnboardingWorkOrderFn = createServerFn({ method: "POST" })
       },
       context.userId,
     );
+    // Photos go up after the work order exists; one refused photo never undoes the send.
+    const notAdded: string[] = [];
+    const bzTaskId = result.ok ? (result.link as { breezewayTaskId?: number | null } | undefined)?.breezewayTaskId ?? null : null;
+    if (result.ok && toUpload.length) {
+      const { breezewayRequest } = await import("@/lib/breezeway.server");
+      for (const f of toUpload) {
+        try {
+          if (!bzTaskId) throw new Error("no task");
+          const blob = await supabaseAdmin.storage.from(ATTACHMENT_BUCKET).download(f.storage_path!);
+          if (blob.error || !blob.data) throw new Error("read");
+          const form = new FormData();
+          form.append("file", new Blob([await blob.data.arrayBuffer()], { type: f.mime_type ?? "image/jpeg" }), name(f));
+          form.append("include_in_task_report", "false");
+          await breezewayRequest(`/task/${bzTaskId}/photos`, { method: "POST", allowWrite: true, retry: false, form });
+        } catch {
+          notAdded.push(name(f));
+        }
+      }
+    }
+    return result.ok && notAdded.length ? { ...result, filesNotAdded: notAdded } : result;
   });
 
 export const breezewayHomeLinkFn = createServerFn({ method: "POST" })

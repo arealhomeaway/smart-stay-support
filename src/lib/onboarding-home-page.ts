@@ -19,8 +19,7 @@ export const PAGE_TABS = [
   { value: "files", label: "Files" },
   { value: "budget", label: "Budget" },
   { value: "activity", label: "Activity" },
-  // Temporary until Parts 2 and 3 give General Info, Design and Agreements their new homes.
-  { value: "more", label: "More" },
+  // Part 3: the temporary More tab is gone; each piece of it now lives in one tab below.
 ] as const;
 export type PageTab = (typeof PAGE_TABS)[number]["value"];
 
@@ -38,13 +37,26 @@ const OLD_PAGE_TAB: Record<string, PageTab> = {
   workorders: "vendors",
   financial: "budget",
   history: "activity",
-  info: "more",
-  property: "more",
-  findings: "more",
-  design: "more",
-  agreements: "more",
-  handoff: "more",
+  // Part 3: the More tab's content moved; its old links open the new place.
+  more: "details",
+  info: "details",
+  property: "details",
+  findings: "details",
+  design: "files",
+  agreements: "details",
+  handoff: "tasks",
 };
+
+/** Part 3: an old tab link also opens the right Home details section or Files folder. */
+export function oldTabPlace(raw: unknown): { section?: string; folder?: string } {
+  if (raw === "design") return { folder: "design" };
+  if (raw === "findings") return { section: "inspections" };
+  if (raw === "agreements" || raw === "info" || raw === "more") return { section: "project" };
+  if (raw === "property") return { section: "utilities" };
+  if (raw === "team") return { section: "team" };
+  if (raw === "dates") return { section: "dates" };
+  return {};
+}
 
 /** Part 1 fix 6: the page opens on Overview; an Opportunity link opens the Owner tab. */
 export const DEFAULT_PAGE_TAB: PageTab = "overview";

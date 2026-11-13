@@ -1,5 +1,18 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 13 Property page Part 3 of 3: Home details, Files, Vendors and work, Budget, Kati items (/onboarding/$propertyId; staged SQL in docs/pending/property-page-part3, no apply, no publish)
+- [x] 3.1 Home details: nine sections, search and jump, section links with Back, inline Edit with who/when, red empties, view-only, Stager picker
+- [x] 3.2 Files: six folders with counts, search, previews, drag and drop, folder required with Task defaults, Move to, Design sub-groups, Show files from cards
+- [x] 3.3 Vendors and work: Option 1/2/3, preferred contact, Not ranked, Find a vendor returns, Breezeway list
+- [x] 3.4 Budget summary line; Activity unchanged
+- [x] 3.5 Add to my homes / In my homes / Yours
+- [x] 3.6 Tags are fields; custom labels
+- [x] 3.7 Phone layout
+- [x] 3.8 Kati items 1 to 7
+- [x] Remove More tab, nothing lost; staged SQL with undo, README, checksums, practice; suite, type check, build; browser walkthrough
+- [ ] Apply docs/pending/property-page-part3 - blocked: waits on the Admin's approval
+- [ ] Vendor preferred contact edit screen - blocked: needs the staged column applied and a decision on who records it
+
 ## Nov 13 Property page Part 2 of 3: Owner tab, chat, owner communication (/onboarding/$propertyId; staged SQL in docs/pending/property-page-part2, no apply, no publish)
 - [x] 2.1 Owner tab: Needs action (4 kinds), timeline with search/filters, composer 3 modes, About the owner, Good to know, program card, Standard version
 - [x] 2.2 Project chat: button with count, panel, owner/team chats, portal Messages with ARHA, 15 min owner email, attachments to folder, @mention, Make a Task, live, unread, Chats inbox, view-only rule, RLS test

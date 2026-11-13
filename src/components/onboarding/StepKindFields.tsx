@@ -1,4 +1,5 @@
 /** A2: "Kind of Task" on a plan step, with the per-kind pickers. Saved with the step. */
+import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -47,13 +48,7 @@ export function StepKindFields({
       {value.kind === "email" && (
         <div className="space-y-1">
           <Label>Email template</Label>
-          <Select value={value.settings.emailTemplateId ?? "none"} onValueChange={(v) => set({ emailTemplateId: v === "none" ? null : v })}>
-            <SelectTrigger className="min-h-11" aria-label="Email template"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">Choose a template</SelectItem>
-              {emailTemplates.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <TemplatePicker templates={emailTemplates} value={value.settings.emailTemplateId ?? null} onChange={(id) => set({ emailTemplateId: id })} />
         </div>
       )}
       {value.kind === "vendor_request" && (
@@ -129,13 +124,7 @@ export function StepKindFields({
             </SelectContent>
           </Select>
           {value.settings.fallback === "email" && (
-            <Select value={value.settings.emailTemplateId ?? "none"} onValueChange={(v) => set({ emailTemplateId: v === "none" ? null : v })}>
-              <SelectTrigger className="min-h-11" aria-label="Email template"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Choose a template</SelectItem>
-                {emailTemplates.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <TemplatePicker templates={emailTemplates} value={value.settings.emailTemplateId ?? null} onChange={(id) => set({ emailTemplateId: id })} />
           )}
         </div>
       )}
@@ -146,6 +135,26 @@ export function StepKindFields({
         />
         Needs a file before sending
       </label>
+    </div>
+  );
+}
+
+/** Part 3 (3.8): homeowner email templates by name, with a search box over the names. */
+export function TemplatePicker({ templates, value, onChange }: { templates: { id: string; name: string }[]; value: string | null; onChange: (id: string | null) => void }) {
+  const [q, setQ] = useState("");
+  const needle = q.trim().toLowerCase();
+  const shown = needle ? templates.filter((t) => t.name.toLowerCase().includes(needle) || t.id === value) : templates;
+  return (
+    <div className="space-y-1">
+      <Input className="min-h-11" aria-label="Search email templates" placeholder="Search templates by name" value={q} onChange={(e) => setQ(e.target.value)} />
+      <Select value={value ?? "none"} onValueChange={(v) => onChange(v === "none" ? null : v)}>
+        <SelectTrigger className="min-h-11" aria-label="Email template"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="none">Choose a template</SelectItem>
+          {shown.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+        </SelectContent>
+      </Select>
+      {needle && shown.length === 0 ? <p className="text-xs text-muted-foreground">No template has that name.</p> : null}
     </div>
   );
 }

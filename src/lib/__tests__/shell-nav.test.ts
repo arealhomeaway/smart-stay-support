@@ -3,8 +3,9 @@ import { buildTrail, departmentFor, parentOf } from "../shell-nav";
 
 describe("shared shell navigation", () => {
   it("property tab trail links back to the same property", () => {
-    const t = buildTrail({ pathname: "/onboarding/abc", search: { tab: "handoff" }, propertyName: "3915 W 104th" });
-    expect(t.map((c) => c.label)).toEqual(["Onboarding", "Homes", "3915 W 104th", "More"]);
+    const t = buildTrail({ pathname: "/onboarding/abc", search: { tab: "design" }, propertyName: "3915 W 104th" });
+    // Part 3: the More tab is gone; an old Design link reads as Files, where its files live now.
+    expect(t.map((c) => c.label)).toEqual(["Onboarding", "Homes", "3915 W 104th", "Files"]);
     expect(parentOf(t)?.to).toBe("/onboarding/abc");
   });
   it("department sub-pages get Onboarding > Team", () => {

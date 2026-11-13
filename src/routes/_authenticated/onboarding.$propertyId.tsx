@@ -53,7 +53,6 @@ import { BudgetPanel } from "@/components/onboarding/BudgetPanel";
 import { FillInEditors } from "@/components/onboarding/FillInEditors";
 import { AssessmentFindingsPanel } from "@/components/onboarding/AssessmentFindingsPanel";
 import { AssessmentsFormsPanel } from "@/components/onboarding/AssessmentsFormsPanel";
-import { FollowHomeButton } from "@/components/onboarding/OnboardingActivityFeed";
 import { OwnerViewPreview } from "@/components/onboarding/OwnerViewPreview";
 import { VendorCoveragePanel } from "@/components/onboarding/VendorCoveragePanel";
 import { OnboardingWorkOrdersPanel } from "@/components/onboarding/OnboardingWorkOrdersPanel";
@@ -66,12 +65,10 @@ import {
   orderPropertyWorkQueue,
   validateWorkspaceSearch,
 } from "@/lib/onboarding-work-views";
-import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { PropertyWorkQueue } from "@/components/onboarding/PropertyWorkQueue";
 import { PlanCatchUpBar, usePlanCatchUp } from "@/components/onboarding/PlanCatchUp";
 import { planCatchUpViewerFn } from "@/lib/plan-catch-up.functions";
 import { canUseCatchUp, type CatchUpTask, type CatchUpViewer } from "@/lib/plan-catch-up";
-import { PhotoStrip } from "@/components/onboarding/PhotoStrip";
 import { ProjectHistory } from "@/components/onboarding/ProjectHistory";
 import { buildReleaseContext, deriveLifecycle, handoffReadiness } from "@/lib/onboarding-state";
 import {
@@ -89,15 +86,15 @@ import {
   type BoardTask,
   type ProjectDetails,
 } from "@/lib/onboarding-board";
-import {
-  AgreementsTab,
-  BudgetFigures,
-  DesignTab,
-  GeneralInfoFields,
-  ProjectDetailsSection,
-  notNeededLabel,
-} from "@/components/onboarding/board/HomeBoard";
+import { BudgetFigures, notNeededLabel } from "@/components/onboarding/board/HomeBoard";
 import { OnboardingHomeHeader } from "@/components/onboarding/home-page/OnboardingHomeHeader";
+import { HomeDetailsTab } from "@/components/onboarding/home-details/HomeDetailsTab";
+import { HomeFilesTab } from "@/components/onboarding/home-files/HomeFilesTab";
+import { HomeVendorsTab } from "@/components/onboarding/home-vendors/HomeVendorsTab";
+import { BudgetSummaryLine } from "@/components/onboarding/home-page/BudgetSummaryLine";
+import { PropertyLabelsSection } from "@/components/property/PropertyLabels";
+import { homeDetailsViewerFn } from "@/lib/home-details.functions";
+import { HOME_FOLDERS, detailSectionFor, type DetailSection, type DetailsViewer, type HomeFolder } from "@/lib/home-details";
 import { TasksTab } from "@/components/onboarding/home-page/TasksTab";
 import {
   NeedsAttentionStrip,
@@ -129,6 +126,7 @@ import {
   mayAddAny,
   moreTags,
   needsAttention,
+  oldTabPlace,
   ownerDecisionsDue,
   pageTabFor,
   scheduleHealth,
@@ -181,8 +179,26 @@ import {
   setPropertyLifecycleFn,
   submitOwnerApprovalFn,
   recordOwnerTaskDecisionFn,
-  updateOnboardingProjectFn,
 } from "@/lib/onboarding.functions";
+
+/** Part 3: ?section= and ?folder= pass through only as short plain words. */
+function placeParams(raw: Record<string, unknown>): { section?: string; folder?: string } {
+  const ok = (v: unknown): v is string => typeof v === "string" && /^[a-z]{2,20}$/.test(v);
+  return { ...(ok(raw["section"]) ? { section: raw["section"] } : {}), ...(ok(raw["folder"]) ? { folder: raw["folder"] } : {}) };
+}
+
+/** Until the viewer loads, Home details shows no Edit buttons. */
+const VIEW_ONLY_VIEWER: DetailsViewer = {
+  userId: null,
+  isAdmin: false,
+  isOnboardingDirector: false,
+  isOperationsDirector: false,
+  isSupervisor: false,
+  isHomePm: false,
+  isHomeDesigner: false,
+  isHomeUtilities: false,
+  canManageTeam: false,
+};
 
 const PROPERTY_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -222,6 +238,8 @@ export const Route = createFileRoute("/_authenticated/onboarding/$propertyId")({
       ...((raw as { show?: unknown }).show === "late" ? { show: "late" as const } : {}),
       ...((raw as { stage?: unknown }).stage === "6" || (raw as { stage?: unknown }).stage === 6 ? { stage: "6" as const } : {}),
       ...((raw as { from?: unknown }).from === FROM_ATTENTION ? { from: FROM_ATTENTION } : {}),
+      // Part 3: ?section= opens a Home details section; ?folder= opens a Files folder.
+      ...placeParams(raw as Record<string, unknown>),
       // Part 2 (2.2): the Chats inbox opens a home with its chat panel on one tab.
       ...((raw as { chat?: unknown }).chat === "owner" || (raw as { chat?: unknown }).chat === "team"
         ? { chat: (raw as unknown as { chat: "owner" | "team" }).chat }
@@ -337,7 +355,6 @@ function PropertyWorkspace() {
   );
   const voidTask = mut(useServerFn(archiveOnboardingTaskFn), "Step voided.");
   const confirmRequirement = mut(useServerFn(confirmApprovalRequirementFn), "Requirement updated.");
-  const saveRefs = mut(useServerFn(updateOnboardingProjectFn), "Saved.");
   // The home's files, shared with the Design and Files tabs (same cache key).
   const listFiles = useServerFn(listAttachmentsFn);
   const homeFiles = useQuery({
@@ -457,6 +474,14 @@ function PropertyWorkspace() {
         .map((r) => (r.property_labels as unknown as { name?: string } | null)?.name ?? "")
         .filter(Boolean);
     },
+  });
+
+  // Part 3 (3.1): who may edit which Home details field (the server re-checks every save).
+  const detailsViewerFn = useServerFn(homeDetailsViewerFn);
+  const detailsViewer = useQuery({
+    queryKey: ["home-details-viewer", propertyId, userId],
+    enabled: Boolean(userId) && PROPERTY_ID_RE.test(propertyId),
+    queryFn: () => detailsViewerFn({ data: { propertyId } }),
   });
 
   if (isLoading || !data) return <LoadingPage />;
@@ -596,7 +621,6 @@ function PropertyWorkspace() {
     .join(" · ");
   const isAdminViewer = roles.includes("admin");
   const canSetStatus = projectRow?.project_manager === userId || isOnboardingDirector || isAdminViewer;
-  const canCorrect = !readOnly && (isAdminViewer || roles.includes("manager"));
   // The board fields (register A16): the Director of Onboarding, Admin and this home's
   // Project Manager edit; everyone else who can open the page reads them.
   const canEditBoard =
@@ -637,17 +661,14 @@ function PropertyWorkspace() {
     }),
   });
   const tab = tabNow;
+  const place3 = oldTabPlace((search as { tab?: unknown }).tab);
+  const detailSection = detailSectionFor((search as { section?: string }).section ?? place3.section);
+  const rawFolder = (search as { folder?: string }).folder ?? place3.folder;
+  const filesFolder: HomeFolder = HOME_FOLDERS.some((f) => f.id === rawFolder) ? (rawFolder as HomeFolder) : "design";
+  const setSection = (section: DetailSection) => void navigate({ search: { ...search, tab: "details", section } as never, replace: true });
+  const setFolder = (folder: HomeFolder) => void navigate({ search: { ...search, tab: "files", folder } as never, replace: true });
   // A tab picked directly replaces the address and drops the jump mark (fix 6).
   const goTab = (next: string) => void navigate({ search: tabClickSearch(search, pageTabFor(next)) as never, replace: true });
-  const scrollToId = (id: string) => {
-    let tries = 0;
-    const go = () => {
-      const el = document.getElementById(id);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-      else if (tries++ < 10) window.setTimeout(go, 60);
-    };
-    window.setTimeout(go, 0);
-  };
   // A Needs attention jump pushes a history entry, so the browser's Back returns to Overview.
   const onJump = (c: AttentionChip) => {
     if (c.jump.tab === "tasks") {
@@ -655,8 +676,9 @@ function PropertyWorkspace() {
       setTagSel(c.jump.tag);
       jumpFilters.current = true;
     }
-    void navigate({ search: attentionJumpSearch(search, c.jump.tab) as never });
-    if (c.jump.tab === "details") scrollToId(`home-details-${c.jump.section}`);
+    // Part 3: a details jump also opens its section (still a push, so Back returns).
+    if (c.jump.tab === "details" && c.jump.section) void navigate({ search: { ...attentionJumpSearch(search, c.jump.tab), section: c.jump.section } as never });
+    else void navigate({ search: attentionJumpSearch(search, c.jump.tab) as never });
   };
   const backToAttention = () => {
     jumpFilters.current = false;
@@ -711,6 +733,7 @@ function PropertyWorkspace() {
       facts={facts}
       canAddOwner={!readOnly && (isAdminViewer || isOnboardingDirector)}
       onAskOwner={() => setAskOpen(true)}
+      onTag={(section) => setSection(section)}
       chat={
         <ChatButton
           propertyId={current.id}
@@ -801,6 +824,12 @@ function PropertyWorkspace() {
       {header}
       {viewOnlyLine}
       {overlays}
+      {/* Part 3 (3.7): on a phone Chat floats at the bottom; the panel opens full screen. */}
+      {!chatOpen ? (
+        <div className="fixed bottom-20 right-4 z-30 md:hidden [&_button]:min-h-12 [&_button]:shadow-lg" data-testid="floating-chat">
+          <ChatButton propertyId={current.id} onOpen={() => setChatOpen(true)} />
+        </div>
+      ) : null}
 
       <Tabs value={tab} onValueChange={goTab} className="space-y-5">
         {/* Fix 4: the tabs in their own bar, pinned under the app's top bar while scrolling. */}
@@ -848,10 +877,7 @@ function PropertyWorkspace() {
             }}
             onOpenTasks={() => goTab("tasks")}
             onOpenTask={setOpenTaskId}
-            onOpenDetails={() => {
-              goTab("details");
-              scrollToId("home-details-team");
-            }}
+            onOpenDetails={() => setSection("team")}
             onOpenOwner={() => goTab("owner")}
             shortDate={shortDate}
           />
@@ -916,6 +942,26 @@ function PropertyWorkspace() {
               />
             </>
           ) : null}
+          {/* Part 3: from the old More tab. Handoff details and the plan tools. */}
+          <details className="surface overflow-hidden" open={(search as { tab?: unknown }).tab === "handoff"} id="handoff">
+            <summary className="flex min-h-11 cursor-pointer items-center px-4 py-2 font-semibold">Handoff details</summary>
+            <div className="space-y-4 border-t border-border p-4">
+              <CarryoverSummary propertyId={current.id} />
+              <TwoStepHandoff propertyId={current.id} readOnly={readOnly} onOpenTask={(id) => setOpenTaskId(id)} />
+            </div>
+          </details>
+          <section className="surface flex flex-wrap items-center gap-3 p-4" aria-label="Plan tools">
+            <h2 className="min-w-0 flex-1 font-semibold">Plan tools</h2>
+            <PlanCsvButton propertyId={current.id} />
+            <NewTaskDialog
+              propertyId={current.id}
+              people={data.people}
+              tasks={tasks}
+              // Only directors add work to a plan; project managers work the plan.
+              disabled={!canEdit || !can("handoff_review")}
+              onSave={(values) => saveTask.mutate({ data: values } as never)}
+            />
+          </section>
         </TabsContent>
 
         <TabsContent value="owner" className="space-y-4">
@@ -930,19 +976,58 @@ function PropertyWorkspace() {
             teammates={teammates}
             openId={linkedOpp}
           />
+          {/* Part 3: from the old More tab. Every owner item, contact details and the owner's own view. */}
+          <details className="surface overflow-hidden" open={Boolean(linkedOpp)}>
+            <summary className="flex min-h-11 cursor-pointer items-center px-4 font-medium">Every owner item and owner contact details</summary>
+            <div className="space-y-4 border-t border-border p-4">
+              {isActiveOwnerHome ? <PropertyOpportunitiesPanel propertyId={current.id} openId={linkedOpp} compose={compose} /> : null}
+              <PropertyOwnerCompletions propertyId={current.id} isDemo={Boolean((current as { is_demo?: boolean }).is_demo)} />
+              <HomeownerCard propertyId={current.id} canManage={canEdit} />
+            </div>
+          </details>
+          <OwnerViewPreview propertyId={current.id} />
         </TabsContent>
 
         <TabsContent value="details" className="space-y-4">
-          <div id="home-details-dates" className="scroll-mt-4 space-y-4">
-            <ProjectDetailsSection
-              projectId={projectRow?.id ?? null}
-              details={details}
-              canEdit={canEditBoard}
-              canSetStatus={canSetStatus}
-              canCorrect={canCorrect}
-            />
-            <section className="surface space-y-3 p-4" aria-label="Project dates">
-              <h2 className="font-semibold">Dates</h2>
+          {/* Part 3 (3.1): sections on the left, one shown on the right, every field one row. */}
+          <HomeDetailsTab
+            propertyId={current.id}
+            section={detailSection}
+            onSection={setSection}
+            viewer={detailsViewer.data ?? VIEW_ONLY_VIEWER}
+            canSetStatus={canSetStatus}
+            project={{
+              id: projectRow?.id ?? null,
+              owner_type: details.owner_type ?? null,
+              project_status: details.project_status ?? null,
+              greater_area: details.greater_area ?? null,
+              pma_status: details.pma_status ?? null,
+              furnishing_scope: (projectRow as { furnishing_scope?: string | null } | null)?.furnishing_scope ?? null,
+              possession_on: (projectRow as { possession_on?: string | null } | null)?.possession_on ?? null,
+              target_handoff_on: (projectRow as { target_handoff_on?: string | null } | null)?.target_handoff_on ?? null,
+              committed_handoff_on: details.committed_handoff_on ?? null,
+              inspection_on: (projectRow as { inspection_on?: string | null } | null)?.inspection_on ?? null,
+              telegram_url: (projectRow as { telegram_url?: string | null } | null)?.telegram_url ?? null,
+              loa_status: (projectRow as { loa_status?: string | null } | null)?.loa_status ?? null,
+              external_refs: refs,
+              scopeLabel: scopeSummary(scope),
+            }}
+            dates={{ plannedClosingOn: current.planned_closing_on ?? null, actualClosingOn: actualClosing, actualAccessOn: current.actual_access_on ?? null }}
+            owner={{
+              ownerRezId: (current as { ownerrez_property_id?: string | number | null }).ownerrez_property_id != null
+                ? String((current as { ownerrez_property_id?: string | number | null }).ownerrez_property_id)
+                : null,
+              activeOwner: isActiveOwnerHome,
+            }}
+            lifecycle={{
+              value: current.lifecycle_status ?? "onboarding",
+              label: LIFECYCLE.find((l) => l.value === (current.lifecycle_status ?? "onboarding"))?.label ?? "Onboarding",
+              options: LIFECYCLE.filter((l) => ["onboarding", "paused", "offboarded", current.lifecycle_status].includes(l.value)).map((l) => ({ value: l.value, label: l.label })),
+              canEdit: !readOnly && !current.handoff_accepted_at && ["onboarding", "paused"].includes(current.lifecycle_status ?? ""),
+              save: (v) =>
+                setLifecycle.mutate({ data: { propertyId: current.id, status: v as never, reason: "Changed from the onboarding workspace" } } as never),
+            }}
+            schedule={
               <SchedulePanel
                 propertyId={current.id}
                 plannedClosingOn={current.planned_closing_on ?? null}
@@ -951,50 +1036,73 @@ function PropertyWorkspace() {
                 canEdit={canEdit}
                 onChange={() => void refresh()}
               />
-            </section>
-            <StatusStageMapEditor isAdmin={isAdminViewer && !readOnly} />
-          </div>
-          <div id="home-details-team" className="scroll-mt-4 space-y-4">
-            <ProjectTeamPanel propertyId={current.id} />
-            <ProjectScopePanel
-              propertyId={current.id}
-              propertyName={homeName}
-              people={data.people}
-              canEdit={canEdit}
-              hints={{ planned_closing_on: current.planned_closing_on ?? null }}
-            />
-          </div>
+            }
+            extras={{
+              project: (
+                <div className="space-y-4">
+                  <section className="surface space-y-2 p-4" aria-label="Labels">
+                    <h3 className="font-semibold">Labels</h3>
+                    <PropertyLabelsSection propertyId={current.id} canEdit={canEdit} isAdmin={isAdminViewer && !readOnly} userId={userId} />
+                  </section>
+                  <ProjectScopePanel
+                    propertyId={current.id}
+                    propertyName={homeName}
+                    people={data.people}
+                    canEdit={canEdit}
+                    hints={{ planned_closing_on: current.planned_closing_on ?? null }}
+                  />
+                  <StatusStageMapEditor isAdmin={isAdminViewer && !readOnly} />
+                </div>
+              ),
+              team: (
+                <details className="surface overflow-hidden">
+                  <summary className="flex min-h-11 cursor-pointer items-center px-4 font-medium">Team with open Tasks</summary>
+                  <div className="border-t border-border p-4">
+                    <ProjectTeamPanel propertyId={current.id} />
+                  </div>
+                </details>
+              ),
+              utilities: <PropertyFactsPanel propertyId={current.id} canEdit={canEdit} />,
+              inspections: (
+                <div className="space-y-4">
+                  <section className="surface space-y-3 p-4" aria-label="Cleaner">
+                    <h3 className="font-semibold">Default cleaner</h3>
+                    <FillInEditors propertyId={current.id} fields={["default_cleaner"]} canEdit={canEdit} />
+                  </section>
+                  <AssessmentsFormsPanel tasks={tasks as never} people={data.people} onOpenTask={setOpenTaskId} />
+                  <AssessmentFindingsPanel propertyId={current.id} canEdit={canEdit} onOpenTask={setOpenTaskId} />
+                </div>
+              ),
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="vendors" className="space-y-4">
-          <ProjectStagersCard projectId={projectRow?.id ?? null} />
-          <VendorCoveragePanel propertyId={current.id} />
-          <OnboardingWorkOrdersPanel propertyId={current.id} />
+          {/* Part 3 (3.3): vendors and stagers, Find a vendor, and Breezeway work. */}
+          <HomeVendorsTab
+            propertyId={current.id}
+            extra={
+              <details className="surface overflow-hidden">
+                <summary className="flex min-h-11 cursor-pointer items-center px-4 font-medium">Stagers, coverage and work sent from Tasks</summary>
+                <div className="space-y-4 border-t border-border p-4">
+                  <ProjectStagersCard projectId={projectRow?.id ?? null} />
+                  <VendorCoveragePanel propertyId={current.id} />
+                  <OnboardingWorkOrdersPanel propertyId={current.id} />
+                </div>
+              </details>
+            }
+          />
         </TabsContent>
 
         <TabsContent value="files" className="space-y-4">
-          {refs["property_folder"] && /^https?:\/\//i.test(refs["property_folder"]) ? (
-            <a
-              href={refs["property_folder"]}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline-offset-4 hover:underline"
-            >
-              Open the home folder in SharePoint
-            </a>
-          ) : null}
-          <AttachmentsPanel
-            entityType="property"
-            entityId={current.id}
-            title="Files"
-            description="Grouped by type."
-            groupByCategory
-          />
-          <PhotoStrip
-            entityType="property"
-            entityId={current.id}
-            title="Photos"
-            limit={16}
+          {/* Part 3 (3.2): six folders, search, previews; every upload picks a folder. */}
+          <HomeFilesTab
+            propertyId={current.id}
+            folder={filesFolder}
+            onFolder={setFolder}
+            canUpload={!readOnly}
+            canMove={canEdit}
+            sharepointUrl={refs["property_folder"] ?? null}
           />
           {(data.retiredTasks ?? []).length > 0 && (
             <details className="surface p-4">
@@ -1016,6 +1124,7 @@ function PropertyWorkspace() {
         </TabsContent>
 
         <TabsContent value="budget" className="space-y-4">
+          <BudgetSummaryLine propertyId={current.id} invoiceStatus={details.invoice_status ?? null} />
           <BudgetFigures
             projectId={projectRow?.id ?? null}
             invoiceStatus={details.invoice_status ?? null}
@@ -1074,133 +1183,6 @@ function PropertyWorkspace() {
           />
         </TabsContent>
 
-        {/* Temporary (Part 1): General Info, Design, Agreements and the rest stay reachable until Parts 2 and 3. */}
-        <TabsContent value="more" className="space-y-6">
-          {/* Part 2: the earlier Owner tab lists stay reachable here (nothing removed) while the Owner tab shows only what needs someone. */}
-          <details className="surface overflow-hidden" open={Boolean(linkedOpp)}>
-            <summary className="flex min-h-11 cursor-pointer items-center px-4 font-medium">Every owner item and owner contact details</summary>
-            <div className="space-y-4 border-t border-border p-4">
-              {isActiveOwnerHome ? <PropertyOpportunitiesPanel propertyId={current.id} openId={linkedOpp} compose={compose} /> : null}
-              <PropertyOwnerCompletions propertyId={current.id} isDemo={Boolean((current as { is_demo?: boolean }).is_demo)} />
-              <HomeownerCard propertyId={current.id} canManage={canEdit} />
-            </div>
-          </details>
-          <section className="space-y-3" aria-label="General Info">
-            <h2 className="font-display text-xl">General Info</h2>
-            <GeneralInfoFields
-              refs={refs}
-              ownerRezId={(current as { ownerrez_property_id?: string | number | null }).ownerrez_property_id != null
-                ? String((current as { ownerrez_property_id?: string | number | null }).ownerrez_property_id)
-                : null}
-              owner={
-                <Button variant="link" className="h-11 px-0" onClick={() => goTab("owner")}>
-                  Open Owner
-                </Button>
-              }
-              canEdit={canEditBoard}
-              pending={saveRefs.isPending}
-              onSaveRef={(key, value) => {
-                if (!projectRow) return;
-                const next = { ...refs };
-                if (value) next[key] = value;
-                else delete next[key];
-                saveRefs.mutate({ data: { projectId: projectRow.id, externalRefs: next } } as never);
-              }}
-            />
-            {/* Item 1 (Nov 12): the same fields a Fill in Resolve Task edits in place. */}
-            <section className="surface space-y-3 p-4" aria-label="Inspection and cleaner">
-              <h3 className="font-semibold">Inspection and cleaner</h3>
-              <FillInEditors propertyId={current.id} fields={["inspection_date", "default_cleaner"]} canEdit={canEdit} />
-            </section>
-            <PropertyFactsPanel propertyId={current.id} canEdit={canEdit} />
-            <section className="surface flex flex-wrap items-end gap-3 p-4">
-              <div className="flex flex-col gap-1">
-                <Label className="eyebrow">Lifecycle</Label>
-                <Select
-                  value={current.lifecycle_status ?? "onboarding"}
-                  onValueChange={(v) =>
-                    setLifecycle.mutate({
-                      data: {
-                        propertyId: current.id,
-                        status: v as never,
-                        reason: "Changed from the onboarding workspace",
-                      },
-                    } as never)
-                  }
-                  disabled={
-                    readOnly ||
-                    Boolean(current.handoff_accepted_at) ||
-                    !["onboarding", "paused"].includes(current.lifecycle_status ?? "")
-                  }
-                >
-                  <SelectTrigger className="h-11 w-56">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LIFECYCLE.filter((l) =>
-                      ["onboarding", "paused", "offboarded", current.lifecycle_status].includes(
-                        l.value,
-                      ),
-                    ).map((l) => (
-                      <SelectItem key={l.value} value={l.value}>
-                        {l.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <p className="text-xs text-muted-foreground">Scope · {scopeSummary(scope)}</p>
-            </section>
-            <AssessmentsFormsPanel
-              tasks={tasks as never}
-              people={data.people}
-              onOpenTask={setOpenTaskId}
-            />
-            <OwnerViewPreview propertyId={current.id} />
-            <AssessmentFindingsPanel
-              propertyId={current.id}
-              canEdit={canEdit}
-              onOpenTask={setOpenTaskId}
-            />
-          </section>
-          <section className="space-y-3" aria-label="Design">
-            <h2 className="font-display text-xl">Design</h2>
-            <DesignTab propertyId={current.id} />
-          </section>
-          <section className="space-y-3" aria-label="Agreements">
-            <h2 className="font-display text-xl">Agreements</h2>
-            <AgreementsTab
-              projectId={projectRow?.id ?? null}
-              pmaStatus={details.pma_status ?? null}
-              canEdit={canEditBoard}
-            />
-          </section>
-          <details className="surface overflow-hidden" open={search.tab === "handoff"} id="handoff">
-            <summary className="flex min-h-11 cursor-pointer items-center px-4 py-2 font-semibold">
-              Handoff details
-            </summary>
-            <div className="space-y-4 border-t border-border p-4">
-              <CarryoverSummary propertyId={current.id} />
-              <TwoStepHandoff
-                propertyId={current.id}
-                readOnly={readOnly}
-                onOpenTask={(id) => setOpenTaskId(id)}
-              />
-            </div>
-          </details>
-          <section className="surface flex flex-wrap items-center gap-3 p-4" aria-label="Plan tools">
-            <h2 className="min-w-0 flex-1 font-semibold">Plan tools</h2>
-            <PlanCsvButton propertyId={current.id} />
-            <NewTaskDialog
-              propertyId={current.id}
-              people={data.people}
-              tasks={tasks}
-              // Only directors add work to a plan; project managers work the plan.
-              disabled={!canEdit || !can("handoff_review")}
-              onSave={(values) => saveTask.mutate({ data: values } as never)}
-            />
-          </section>
-        </TabsContent>
       </Tabs>
 
       <TaskDrawer

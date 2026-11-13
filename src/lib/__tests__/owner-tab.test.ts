@@ -95,8 +95,8 @@ describe("timeline and composer", () => {
 });
 
 describe("chat", () => {
-  it("files go in one of six folders, never Other", () => {
-    expect(CHAT_FOLDERS).toHaveLength(6);
+  it("files go in one of the home's Files folders, never Other", () => {
+    expect(CHAT_FOLDERS.map((f) => f.id)).toEqual(["design", "agreements", "estimates", "photos", "inspections"]);
     expect(CHAT_FOLDERS.some((f) => /other|unfiled/i.test(f.id))).toBe(false);
   });
   it("@mentions find a teammate by full or first name", () => {

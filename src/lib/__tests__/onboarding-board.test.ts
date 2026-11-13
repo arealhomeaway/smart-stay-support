@@ -226,11 +226,12 @@ describe("the home's tabs", () => {
       .slice(0, 7)
       .map((m) => m[1]);
     expect(labels).toEqual(["Plan", "Design", "Budget & Invoices", "Agreements", "General Info", "Files", "Activity"]);
-    // Property page Part 1 (Nov 12) replaced the page's tab row with PAGE_TABS; the old tabs'
-    // content stays reachable under the temporary More tab (see property-page-part1.test.tsx).
+    // Property page Part 1 (Nov 12) replaced the page's tab row with PAGE_TABS. Part 3 removed the
+    // temporary More tab: General Info and Agreements are Home details rows, Design is a Files folder.
     const page = readFileSync("src/routes/_authenticated/onboarding.$propertyId.tsx", "utf8");
     expect(page).toContain("PAGE_TABS.map(");
-    for (const old of ["<DesignTab", "<AgreementsTab", "<GeneralInfoFields"]) expect(page).toContain(old);
+    for (const now of ["<HomeDetailsTab", "<HomeFilesTab", "<HomeVendorsTab"]) expect(page).toContain(now);
+    expect(page).not.toContain('value="more"');
     expect(page).not.toContain("OperationsContextPanel");
   });
 
@@ -240,7 +241,7 @@ describe("the home's tabs", () => {
       search: { tab: "agreements" },
       propertyName: "1399 Foxtail Ln",
     });
-    expect(trail.map((c) => c.label)).toEqual(["Onboarding", "Homes", "1399 Foxtail Ln", "More"]);
+    expect(trail.map((c) => c.label)).toEqual(["Onboarding", "Homes", "1399 Foxtail Ln", "Home details"]);
     const owner = buildTrail({ pathname: "/onboarding/0b1f8a52-5c1e-4a3c-9d0e-2f6b8c7a1d11", search: { tab: "owner" }, propertyName: "1399 Foxtail Ln" });
     expect(owner.map((c) => c.label)).toEqual(["Onboarding", "Homes", "1399 Foxtail Ln", "Owner"]);
     const tasks = buildTrail({ pathname: "/onboarding/0b1f8a52-5c1e-4a3c-9d0e-2f6b8c7a1d11", search: { tab: "tasks" }, propertyName: "1399 Foxtail Ln" });

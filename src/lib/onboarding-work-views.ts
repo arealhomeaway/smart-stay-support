@@ -466,6 +466,27 @@ export function myWorkSelection<T extends { assigned_to: string | null; property
   };
 }
 
+export const FOLLOWED_HOMES = "followed";
+
+/**
+ * Part 3 (3.5): Tasks on the homes a person added to My homes. Every Task on those homes, or only
+ * one person's (or Unassigned) when chosen; never homes outside the list.
+ */
+export function followedHomeTasks<T extends { assigned_to: string | null; property_id: string }>(
+  tasks: T[],
+  followed: ReadonlySet<string>,
+  who: string,
+  viewerId: string | null,
+): T[] {
+  return tasks.filter((t) => {
+    if (!followed.has(t.property_id)) return false;
+    if (who === "all") return true;
+    if (who === "unassigned") return t.assigned_to === null;
+    if (who === "me") return true;
+    return t.assigned_to === who || (who === viewerId && t.assigned_to === viewerId);
+  });
+}
+
 export function validateMyWorkSearch(
   search: { who?: unknown; program?: unknown; home?: unknown; state?: unknown; task?: unknown } & SearchSchemaInput,
 ) {
@@ -479,7 +500,8 @@ export function validateMyWorkSearch(
     ...(/^[0-9a-f-]{36}$/i.test(task) ? { task } : {}),
     who: who === "unassigned" || who === "all" || /^[0-9a-f-]{36}$/i.test(who) ? who : "me",
     program: ["all", "active_owner", "standard"].includes(program) ? program : "all",
-    home: /^[0-9a-f-]{36}$/i.test(text(search.home, "")) ? text(search.home, "all") : "all",
+    // Part 3 (3.5): "followed" is the homes in the viewer's My homes list.
+    home: /^[0-9a-f-]{36}$/i.test(text(search.home, "")) || text(search.home, "") === FOLLOWED_HOMES ? text(search.home, "all") : "all",
     state: Object.hasOwn(WORK_FILTER_LABELS, state) ? state : "all",
   };
 }
