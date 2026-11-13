@@ -11,6 +11,7 @@ import { Paperclip } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { LoadError } from "@/components/ui/page";
 import { MultiFileUpload } from "@/components/MultiFileUpload";
 import { createAttachmentUploader } from "@/lib/attachment-upload-client";
 import { beginUploadFn, completeUploadFn } from "@/lib/attachments.functions";
