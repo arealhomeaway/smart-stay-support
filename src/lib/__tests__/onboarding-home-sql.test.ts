@@ -67,7 +67,6 @@ describe("3.3 who may change homes from the list", () => {
   it("a PM, a Designer and other staff are refused every lead action; nothing is written", async () => {
     for (const who of [PM, DESIGNER, OPS]) {
       await as(who);
-      expect(await fails(addUpcoming())).toContain(LEAD_ONLY);
       expect(await fails(stagers(project, [STAGER]))).toContain(LEAD_ONLY);
       expect(await fails(one("SELECT public.mark_contract_fell_through($1, 'Buyer walked away')", [project]))).toContain(LEAD_ONLY);
       expect(await fails(one("SELECT public.start_upcoming_onboarding_home($1)", [project]))).toContain(LEAD_ONLY);
@@ -77,6 +76,25 @@ describe("3.3 who may change homes from the list", () => {
     expect(await fails(addUpcoming())).toContain(LEAD_ONLY);
     expect(await count("SELECT count(*) n FROM public.audit_log")).toBe(0);
     expect(await count("SELECT count(*) n FROM public.onboarding_project_stagers")).toBe(0);
+  });
+
+  // Add a home as Upcoming is no longer lead only: changed live Nov 12 for the onboarding team, and the
+  // staged docs/pending/add-upcoming-access-fix keeps Operations roles out (the app rule canAddHome).
+  it("Add a home as Upcoming: the onboarding team and Admin may; Operations roles and nobody signed in may not", async () => {
+    await db.exec(readFileSync("docs/pending/add-upcoming-access-fix/live-capture/add_upcoming_onboarding_home.sql", "utf8"));
+    await db.exec(readFileSync("docs/pending/add-upcoming-access-fix/apply.sql", "utf8"));
+    const people = [ADMIN, DIRECTOR, PM, DESIGNER];
+    for (const [i, who] of people.entries()) {
+      await as(who);
+      const r = await addUpcoming({ req: `00000000-0000-4000-8000-0000000000e${i}`, street: `${100 + i} Elm St` });
+      expect(r.ok).toBe(true);
+    }
+    expect(await count("SELECT count(*) n FROM public.onboarding_projects WHERE project_status = 'Upcoming Property'")).toBe(4);
+    for (const who of [OPS, null]) {
+      await as(who);
+      expect(await fails(addUpcoming({ req: "00000000-0000-4000-8000-0000000000e9", street: "200 Elm St" }))).toContain("Only the onboarding team can add a home.");
+    }
+    expect(await count("SELECT count(*) n FROM public.onboarding_projects WHERE project_status = 'Upcoming Property'")).toBe(4);
   });
 });
 
