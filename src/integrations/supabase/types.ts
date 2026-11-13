@@ -9437,6 +9437,7 @@ export type Database = {
           inspection_on: string | null
           invoice_status: string | null
           is_demo: boolean
+          loa_status: string | null
           modules: string[]
           notes: string | null
           ops_accepted_at: string | null
@@ -9458,6 +9459,7 @@ export type Database = {
           status: string
           target_handoff_on: string | null
           target_handoff_source: string
+          telegram_url: string | null
           template_version_id: string | null
           updated_at: string
           utility_manager: string | null
@@ -9482,6 +9484,7 @@ export type Database = {
           inspection_on?: string | null
           invoice_status?: string | null
           is_demo?: boolean
+          loa_status?: string | null
           modules?: string[]
           notes?: string | null
           ops_accepted_at?: string | null
@@ -9503,6 +9506,7 @@ export type Database = {
           status?: string
           target_handoff_on?: string | null
           target_handoff_source?: string
+          telegram_url?: string | null
           template_version_id?: string | null
           updated_at?: string
           utility_manager?: string | null
@@ -9527,6 +9531,7 @@ export type Database = {
           inspection_on?: string | null
           invoice_status?: string | null
           is_demo?: boolean
+          loa_status?: string | null
           modules?: string[]
           notes?: string | null
           ops_accepted_at?: string | null
@@ -9548,6 +9553,7 @@ export type Database = {
           status?: string
           target_handoff_on?: string | null
           target_handoff_source?: string
+          telegram_url?: string | null
           template_version_id?: string | null
           updated_at?: string
           utility_manager?: string | null
@@ -17624,6 +17630,7 @@ export type Database = {
           open_corrective_action: string | null
           payment_terms: string | null
           performance_score: number | null
+          preferred_contact: string | null
           pricing_note: string | null
           primary_contact_email: string | null
           primary_contact_name: string | null
@@ -17701,6 +17708,7 @@ export type Database = {
           open_corrective_action?: string | null
           payment_terms?: string | null
           performance_score?: number | null
+          preferred_contact?: string | null
           pricing_note?: string | null
           primary_contact_email?: string | null
           primary_contact_name?: string | null
@@ -17778,6 +17786,7 @@ export type Database = {
           open_corrective_action?: string | null
           payment_terms?: string | null
           performance_score?: number | null
+          preferred_contact?: string | null
           pricing_note?: string | null
           primary_contact_email?: string | null
           primary_contact_name?: string | null
@@ -20396,6 +20405,10 @@ export type Database = {
         Args: { _id: string }
         Returns: undefined
       }
+      move_home_file: {
+        Args: { _category: string; _document_id: string }
+        Returns: Json
+      }
       my_demo_access: { Args: never; Returns: Json }
       my_home_chat_inbox: {
         Args: never
@@ -21419,6 +21432,10 @@ export type Database = {
       }
       save_direct_booking_settings: { Args: { _value: Json }; Returns: Json }
       save_handoff_requirement: { Args: { _value: Json }; Returns: string }
+      save_home_detail_field: {
+        Args: { _field: string; _project_id: string; _value: string }
+        Returns: Json
+      }
       save_home_profile_card: {
         Args: { _card: string; _changes: Json; _property_id: string }
         Returns: Json
