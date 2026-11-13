@@ -115,6 +115,8 @@ describe("2.5 Upcoming and Contract fell through", () => {
     expect(p).toEqual({ status: "cancelled", project_status: "Contract Fell Through", closed_reason: "Buyer financing fell through", closed_by: DIRECTOR, closed: true });
     expect((await one("SELECT reason FROM public.audit_log WHERE action = 'onboarding.contract_fell_through'")).reason).toBe("Buyer financing fell through");
     expect((await one("SELECT detail FROM public.onboarding_project_events WHERE kind = 'contract_fell_through'")).detail).toBe("Buyer financing fell through");
+    await db.query("INSERT INTO public.onboarding_projects(property_id, status) VALUES ($1, 'active')", [r.property_id]);
+    expect(await count("SELECT count(*) n FROM public.onboarding_projects WHERE property_id = $1", [r.property_id])).toBe(2);
   });
 
   it("a home with a plan can never be closed as Contract fell through", async () => {
