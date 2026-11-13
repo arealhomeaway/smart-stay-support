@@ -4,6 +4,7 @@
  * with My homes / All homes, two tabs, filters, saved views, CSV and five views. Everything the
  * page shows lives in the address, so Back and the breadcrumb restore it exactly.
  */
+import { canAddHome } from "@/lib/property-page";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
