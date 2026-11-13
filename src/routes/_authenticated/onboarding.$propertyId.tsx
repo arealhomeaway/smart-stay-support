@@ -222,6 +222,13 @@ export const Route = createFileRoute("/_authenticated/onboarding/$propertyId")({
       ...((raw as { show?: unknown }).show === "late" ? { show: "late" as const } : {}),
       ...((raw as { stage?: unknown }).stage === "6" || (raw as { stage?: unknown }).stage === 6 ? { stage: "6" as const } : {}),
       ...((raw as { from?: unknown }).from === FROM_ATTENTION ? { from: FROM_ATTENTION } : {}),
+      // Part 3: ?section= opens a Home details section; ?folder= opens a Files folder.
+      ...(typeof (raw as { section?: unknown }).section === "string" && /^[a-z]{2,20}$/.test((raw as { section: string }).section)
+        ? { section: (raw as { section: string }).section }
+        : {}),
+      ...(typeof (raw as { folder?: unknown }).folder === "string" && /^[a-z]{2,20}$/.test((raw as { folder: string }).folder)
+        ? { folder: (raw as { folder: string }).folder }
+        : {}),
       // Part 2 (2.2): the Chats inbox opens a home with its chat panel on one tab.
       ...((raw as { chat?: unknown }).chat === "owner" || (raw as { chat?: unknown }).chat === "team"
         ? { chat: (raw as unknown as { chat: "owner" | "team" }).chat }
@@ -459,6 +466,14 @@ function PropertyWorkspace() {
     },
   });
 
+  // Part 3 (3.1): who may edit which Home details field (the server re-checks every save).
+  const detailsViewerFn = useServerFn(homeDetailsViewerFn);
+  const detailsViewer = useQuery({
+    queryKey: ["home-details-viewer", propertyId, userId],
+    enabled: Boolean(userId) && PROPERTY_ID_RE.test(propertyId),
+    queryFn: () => detailsViewerFn({ data: { propertyId } }),
+  });
+
   if (isLoading || !data) return <LoadingPage />;
   if (
     data.homeAccess === "full" &&
@@ -637,6 +652,12 @@ function PropertyWorkspace() {
     }),
   });
   const tab = tabNow;
+  const place3 = oldTabPlace((search as { tab?: unknown }).tab);
+  const detailSection = detailSectionFor((search as { section?: string }).section ?? place3.section);
+  const rawFolder = (search as { folder?: string }).folder ?? place3.folder;
+  const filesFolder: HomeFolder = HOME_FOLDERS.some((f) => f.id === rawFolder) ? (rawFolder as HomeFolder) : "design";
+  const setSection = (section: DetailSection) => void navigate({ search: { ...search, tab: "details", section } as never, replace: true });
+  const setFolder = (folder: HomeFolder) => void navigate({ search: { ...search, tab: "files", folder } as never, replace: true });
   // A tab picked directly replaces the address and drops the jump mark (fix 6).
   const goTab = (next: string) => void navigate({ search: tabClickSearch(search, pageTabFor(next)) as never, replace: true });
   const scrollToId = (id: string) => {
@@ -655,8 +676,8 @@ function PropertyWorkspace() {
       setTagSel(c.jump.tag);
       jumpFilters.current = true;
     }
-    void navigate({ search: attentionJumpSearch(search, c.jump.tab) as never });
-    if (c.jump.tab === "details") scrollToId(`home-details-${c.jump.section}`);
+    const jumped = attentionJumpSearch(search, c.jump.tab);
+    void navigate({ search: (c.jump.tab === "details" && c.jump.section ? { ...jumped, section: c.jump.section } : jumped) as never });
   };
   const backToAttention = () => {
     jumpFilters.current = false;
@@ -848,10 +869,7 @@ function PropertyWorkspace() {
             }}
             onOpenTasks={() => goTab("tasks")}
             onOpenTask={setOpenTaskId}
-            onOpenDetails={() => {
-              goTab("details");
-              scrollToId("home-details-team");
-            }}
+            onOpenDetails={() => setSection("team")}
             onOpenOwner={() => goTab("owner")}
             shortDate={shortDate}
           />
