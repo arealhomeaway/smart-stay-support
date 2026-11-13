@@ -35,6 +35,8 @@ export type DetailsViewer = {
   isOnboardingDirector: boolean;
   /** Director of Operations. */
   isOperationsDirector: boolean;
+  /** Supervisor (manager app role), who corrects the committed date today (register O3). */
+  isSupervisor: boolean;
   /** On this home's team. */
   isHomePm: boolean;
   isHomeDesigner: boolean;
@@ -67,8 +69,8 @@ export type DetailEditKind =
 /**
  * 3.1 Who edits (server checked):
  * Project fields, Telegram, LOA: PM, Director, Admin. Dates: PM, Director, Admin, and the
- * committed date is set once by PM, Director or Admin, corrected only by Admin or Director of
- * Operations. Utilities: Utilities, PM, Director, Admin. HOA: PM, Utilities, Director, Admin.
+ * committed date is set once by PM, Director or Admin. Correcting it stays with the Supervisor
+ * and Admin (register O3 wins over the request's "Admin or Director of Operations"). Utilities: Utilities, PM, Director, Admin. HOA: PM, Utilities, Director, Admin.
  * Team and stagers: today's Project Team rule, unchanged (it gives the PM no team edits); stagers
  * stay with the Director of Onboarding and Admin (set_onboarding_project_stagers).
  * Owner record: Director and Admin (Change owner of record).
@@ -82,7 +84,7 @@ export function canEditDetail(v: DetailsViewer, kind: DetailEditKind, role?: str
     case "committed_set":
       return lead || v.isHomePm;
     case "committed_correct":
-      return v.isAdmin || v.isOperationsDirector;
+      return v.isAdmin || v.isSupervisor;
     case "utilities":
       return lead || v.isHomePm || v.isHomeUtilities;
     case "hoa":

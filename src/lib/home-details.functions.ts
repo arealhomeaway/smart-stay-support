@@ -29,12 +29,13 @@ async function homeProject(db: ReturnType<typeof loose>, propertyId: string) {
 /** Who the signed-in person is on this home (3.1 edit rule). */
 export async function loadDetailsViewer(sb: unknown, uid: string, propertyId: string): Promise<DetailsViewer & { projectId: string | null }> {
   const db = loose(sb);
-  const [admin, director, opsDirector, team, project] = await Promise.all([
+  const [admin, director, opsDirector, team, project, supervisor] = await Promise.all([
     db.rpc("has_role", { _user_id: uid, _role: "admin" }),
     db.rpc("is_onboarding_director", { _user_id: uid }),
     db.rpc("holds_functional_role", { _user_id: uid, _code: "director_ops" }),
     db.rpc("can_manage_project_team", { _user_id: uid }),
     homeProject(db, propertyId),
+    db.rpc("is_supervisor", { _user_id: uid }),
   ]);
   const roles = (project?.role_assignments ?? {}) as Record<string, string>;
   return {
@@ -43,6 +44,7 @@ export async function loadDetailsViewer(sb: unknown, uid: string, propertyId: st
     isAdmin: admin.data === true,
     isOnboardingDirector: director.data === true,
     isOperationsDirector: opsDirector.data === true,
+    isSupervisor: supervisor.data === true,
     isHomePm: project?.project_manager === uid,
     isHomeDesigner: ["designer", "lead_designer", "design_staging"].some((k) => roles[k] === uid),
     isHomeUtilities: project?.utility_manager === uid || roles["utilities"] === uid,
@@ -55,7 +57,7 @@ function refuse(kind: DetailEditKind) {
     project: "this home's Project Manager, the Director or an Admin",
     dates: "this home's Project Manager, the Director or an Admin",
     committed_set: "this home's Project Manager, the Director or an Admin",
-    committed_correct: "an Admin or the Director of Operations",
+    committed_correct: "the Supervisor or an Admin",
     utilities: "this home's Utilities or Project Manager, the Director or an Admin",
     hoa: "this home's Project Manager or Utilities, the Director or an Admin",
     team_role: "the Director of Onboarding or leadership",
