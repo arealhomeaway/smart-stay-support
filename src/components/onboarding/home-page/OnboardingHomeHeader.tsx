@@ -31,6 +31,8 @@ export function OnboardingHomeHeader(p: {
   /** Admin and Director of Onboarding: "Add owner" when no owner is on file. */
   canAddOwner: boolean;
   onAskOwner: () => void;
+  /** Part 2 (2.2): the Chat button with its unread count, after Ask the owner. */
+  chat?: React.ReactNode;
 }) {
   const [showMore, setShowMore] = useState(false);
   const [showWays, setShowWays] = useState(false);
@@ -150,6 +152,7 @@ export function OnboardingHomeHeader(p: {
             <EmailComposer context="property" recordId={p.propertyId} label="Email owner" variant="primary" />
           </div>
         )}
+        {p.chat}
         <FollowHomeButton propertyId={p.propertyId} myHomes />
       </div>
     </header>

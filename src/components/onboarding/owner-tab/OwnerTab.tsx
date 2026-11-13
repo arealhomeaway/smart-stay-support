@@ -99,9 +99,13 @@ export function OwnerTab(p: {
   summary: Summary;
   tab: ReturnType<typeof useOwnerTabData>;
   teammates: { id: string; name: string }[];
+  /** An owner item opened by link (?opp=). */
+  openId?: string | null;
 }) {
   const qc = useQueryClient();
   const data = p.tab.data;
+  const [openItem, setOpenItem] = useState<string | null>(p.openId ?? null);
+  useEffect(() => setOpenItem(p.openId ?? null), [p.openId]);
   const readOwner = useServerFn(readPropertyOwnerFn);
   const ownerQ = useQuery({ queryKey: ["property-owner", p.propertyId], queryFn: () => readOwner({ data: { propertyId: p.propertyId } }) });
   const owner = ownerQ.data?.owner ?? null;
@@ -184,6 +188,17 @@ export function OwnerTab(p: {
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]">
       <div className="min-w-0 space-y-6">
+        {openItem && opps.find((x) => x.id === openItem) ? (
+          <section className="surface space-y-3 p-4" aria-label="Owner item">
+            <div className="flex items-start justify-between gap-2">
+              <h2 className="text-lg font-semibold">{opps.find((x) => x.id === openItem)!.title}</h2>
+              <Button variant="ghost" size="icon" className="size-11" aria-label="Close" onClick={() => setOpenItem(null)}>
+                <X className="size-4" />
+              </Button>
+            </div>
+            <OpportunityDetail o={opps.find((x) => x.id === openItem)!} files={files} readOnly={!data.rights.askOwner} />
+          </section>
+        ) : null}
         {/* NEEDS ACTION */}
         <section id="owner-needs-action" className="scroll-mt-28 space-y-3" aria-label="Needs action">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Needs action</h2>

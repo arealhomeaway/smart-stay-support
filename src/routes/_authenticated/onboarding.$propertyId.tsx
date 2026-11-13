@@ -42,7 +42,6 @@ import { TwoStepHandoff } from "@/components/onboarding/TwoStepHandoff";
 import { OnboardingNotes } from "@/components/onboarding/OnboardingNotes";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { HomeownerCard } from "@/components/property/HomeownerCard";
-import { HomeAutomation } from "@/components/ao/HomeAutomation";
 
 import { ProjectScopePanel } from "@/components/onboarding/ProjectScopePanel";
 import { ProjectTeamPanel } from "@/components/onboarding/ProjectTeamPanel";
@@ -421,7 +420,7 @@ function PropertyWorkspace() {
     return undefined;
   }, [data, landStage, landNeeds]);
   const tabBarTop = useShellBarHeight();
-  const [compose, setCompose] = useState(0);
+  const [compose] = useState(0);
   const statusMap = useStatusStageMap();
   const ownerSummary = usePropertyOwnerSummary(propertyId);
   // Part 2: the Owner tab, the chat panel and Ask the owner.
@@ -929,6 +928,7 @@ function PropertyWorkspace() {
             summary={ownerSummary}
             tab={ownerTab}
             teammates={teammates}
+            openId={linkedOpp}
           />
         </TabsContent>
 
