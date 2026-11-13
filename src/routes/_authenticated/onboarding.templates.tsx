@@ -181,8 +181,17 @@ function TemplatesPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
+          {/* Part 3 (3.8): archived plans are hidden unless the Archived filter is on. */}
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Show plans">
+            <Button size="sm" className="min-h-11" variant={showArchived ? "outline" : "default"} aria-pressed={!showArchived} onClick={() => setShowArchived(false)}>
+              In use
+            </Button>
+            <Button size="sm" className="min-h-11" variant={showArchived ? "default" : "outline"} aria-pressed={showArchived} onClick={() => setShowArchived(true)}>
+              Archived ({(data ?? []).filter((t) => t.isArchived).length})
+            </Button>
+          </div>
           {isLoading ? <p className="text-muted-foreground text-sm">Loading…</p> : null}
-          {(data ?? []).map((t) => (
+          {(data ?? []).filter((t) => Boolean(t.isArchived) === showArchived).map((t) => (
             <div
               key={t.key}
               className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3"
