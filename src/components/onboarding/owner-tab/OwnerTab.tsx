@@ -648,7 +648,7 @@ function ConversationTimeline(p: {
             {current === "email" ? (
               <div className="[&_button]:min-h-11">
                 <EmailComposer
-                  key={text.length > 0 ? "typed" : "empty"}
+                  key={`email-${text}`}
                   context="property"
                   recordId={p.propertyId}
                   label="Write the email"
