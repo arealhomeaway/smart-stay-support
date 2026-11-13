@@ -7,6 +7,7 @@
  * that shows them with every other owner item is OwnerOpportunityBoard.
  * Owner-facing language only: "Opportunity", never task, ticket or requirement.
  */
+import { LoadError } from "@/components/ui/page";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";

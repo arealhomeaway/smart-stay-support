@@ -6,6 +6,7 @@
  * visibility rule, and sending completes the Task when the home has a live
  * Active Owner program (send_task_to_owner_item). Nothing here decides access.
  */
+import { LoadError } from "@/components/ui/page";
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

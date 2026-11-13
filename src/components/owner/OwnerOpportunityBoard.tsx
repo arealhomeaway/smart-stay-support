@@ -8,6 +8,7 @@
  * Each source keeps its own canonical record and actions; opening a card opens
  * that source's own side panel. Instructions and form fields live only in the panel.
  */
+import { LoadError } from "@/components/ui/page";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
