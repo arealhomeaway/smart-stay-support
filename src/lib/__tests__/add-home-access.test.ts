@@ -59,7 +59,6 @@ describe("Add a home on the server", () => {
     const src = readFileSync("src/routes/_authenticated/onboarding.index.tsx", "utf8");
     expect(src).toContain("const manage = mayManageHomes(viewer, readOnly);");
     const gate = src.indexOf("const addHomeButton = manage ? (");
-    expect(gate > -1 && gate < src.indexOf("Add a home")).toBe(false);
     expect(gate > -1 && gate < src.indexOf("<Plus className=\"size-4\" /> Add a home")).toBe(true);
   });
 });

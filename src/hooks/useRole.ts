@@ -116,14 +116,13 @@ export function useRole() {
   const access = { roles, seats };
   // Finance looks at some pages without changing them (register A4 to A12).
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  // Onboarding Home 3.3: a ViewOnlyScope region (a home the viewer is not on) is view only too.
-  const viewOnlyHere = viewOnlyPath(pathname, access) || scopedViewOnly;
+  const viewOnlyHere = viewOnlyPath(pathname, access);
 
   const isVendor = roles.includes("vendor") && !roles.some((r) => r !== "vendor");
   // Homeowners are program participants, never internal staff.
   const isOwner = roles.includes("owner") && !roles.some((r) => r === "admin" || r === "manager");
 
-  return {
+  const role = {
     userId,
     roles,
     actualRoles,
@@ -172,4 +171,6 @@ export function useRole() {
     isOwner,
     isStaff: !isVendor && !isOwner,
   };
+  // Onboarding Home 3.3: inside a ViewOnlyScope region (a home the viewer is not on) nothing can be changed.
+  return scopedViewOnly ? { ...role, readOnly: true } : role;
 }
