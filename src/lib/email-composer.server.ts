@@ -1,3 +1,4 @@
+import { partTimeLeft } from "@/lib/owner-tab";
 import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Server-only context gathering for the Contextual Email Composer.
@@ -302,9 +303,14 @@ export async function drainScheduledEmails(now = new Date(), jobRunId?: string) 
     .lte("scheduled_for", now.toISOString())
     .limit(25);
 
+  const partStarted = Date.now();
+  let deferred = 0;
   let sent = 0;
   const notes: string[] = [];
   for (const row of (due ?? []) as unknown as Record<string, unknown>[]) {
+    // Part 2 (2.7): stop after 60 seconds; the rest waits for the next run.
+    if (!partTimeLeft(partStarted)) { deferred++; continue; }
+
     // Claim it first: only the pass that flips it off "scheduled" may send it.
     const { data: claimed } = await supabaseAdmin
       .from("email_log")
@@ -346,5 +352,5 @@ export async function drainScheduledEmails(now = new Date(), jobRunId?: string) 
     if (result.status === "sent") sent += 1;
     if (result.status === "failed") notes.push(result.error);
   }
-  return { considered: (due ?? []).length, sent, notes };
+  return { considered: (due ?? []).length, deferred, sent, notes };
 }

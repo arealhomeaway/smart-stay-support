@@ -14,6 +14,7 @@
  *    marked failed so it is visible instead of silent.
  */
 
+import { partTimeLeft } from "@/lib/owner-tab";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { DEFAULT_PREFERENCES, allowsEmail, readPreferences } from "./notification-preferences";
@@ -114,8 +115,13 @@ export async function drainStaffNotifications(
 
   let emailed = 0;
   const notes: string[] = [];
+  const partStarted = Date.now();
+  let deferred = 0;
 
   for (const row of rows) {
+    // Part 2 (2.7): stop after 60 seconds; the rest waits for the next run.
+    if (!partTimeLeft(partStarted)) { deferred++; continue; }
+
     const prefs = prefsFor.get(row.user_id) ?? DEFAULT_PREFERENCES;
     if (!allowsEmail(prefs, row.kind)) {
       await supabase
@@ -209,5 +215,5 @@ export async function drainStaffNotifications(
     if (updateError) notes.push(updateError.message);
   }
 
-  return { ok: true as const, considered: rows.length, emailed, notes };
+  return { ok: true as const, considered: rows.length, deferred, emailed, notes };
 }
