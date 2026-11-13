@@ -365,3 +365,19 @@ export function fieldTags(f: TagFields): { key: string; label: string }[] {
   for (const l of f.labels) add(`label:${l}`, l);
   return out;
 }
+
+/* -------------------------------------------------------------- budget */
+
+/** 3.4: the one summary line above Budget and Invoices. */
+export function budgetSummaryLine(
+  t: { approved: number | null; actual: number | null; remaining: number | null; over: boolean },
+  invoiceStatus: string | null,
+  money: (v: number | null | undefined) => string,
+): string {
+  const parts: string[] = [];
+  parts.push(t.approved == null ? "No approved budget yet" : `Approved ${money(t.approved)}`);
+  parts.push(`Spent ${money(t.actual ?? 0)}`);
+  if (t.remaining != null) parts.push(t.over ? `Over by ${money(Math.abs(t.remaining))}` : `${money(t.remaining)} left`);
+  parts.push(`Invoice ${invoiceStatus?.trim() || "Not set"}`);
+  return parts.join(" · ");
+}
