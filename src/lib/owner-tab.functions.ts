@@ -71,7 +71,7 @@ export const askOwnerFn = createServerFn({ method: "POST" })
       _property_id: data.propertyId,
       _source_task_id: data.taskId as string,
       _title: title,
-      _content: { title, what: data.question, why: "", how: "", resources: [], ways_to_document: "", suggested_minutes: null, asked_from: "owner_tab" },
+      _content: { title, what: data.question, why: "", how: "", resources: [], ways_to_document: "", suggested_minutes: null },
       _response_types: data.needsApproval ? ["decision"] : ["feedback"],
       _resources: data.documentIds.map((document_id) => ({ kind: "file", document_id })),
       _send: true,
