@@ -209,6 +209,11 @@ export const Route = createFileRoute("/_authenticated/onboarding/$propertyId")({
       ...parsed,
       tab,
       ...((raw as { at?: unknown }).at === "conversation" ? { at: "conversation" as const } : {}),
+      // Onboarding Home 1.4: a row opens at its tile's place (late Tasks, Owner Needs action, the
+      // Handoff checklist on stage 6).
+      ...((raw as { at?: unknown }).at === "needs" ? { at: "needs" as const } : {}),
+      ...((raw as { show?: unknown }).show === "late" ? { show: "late" as const } : {}),
+      ...((raw as { stage?: unknown }).stage === "6" || (raw as { stage?: unknown }).stage === 6 ? { stage: "6" as const } : {}),
       ...((raw as { from?: unknown }).from === FROM_ATTENTION ? { from: FROM_ATTENTION } : {}),
     };
   },
@@ -380,6 +385,28 @@ function PropertyWorkspace() {
       setTagSel(null);
     }
   }, [tabNow]);
+  // Onboarding Home 1.4: opened from a tile, land on its place once.
+  const landing = useRef(false);
+  const landStage = "stage" in search && search.stage === "6";
+  const landLate = "show" in search && search.show === "late";
+  const landNeeds = "at" in search && search.at === "needs";
+  useEffect(() => {
+    if (landing.current || !data) return;
+    landing.current = true;
+    if (landStage) setStageSel(5);
+    if (landNeeds) {
+      let tries = 0;
+      const id = window.setInterval(() => {
+        const el = document.getElementById("owner-needs-action");
+        tries += 1;
+        if (el || tries > 40) {
+          window.clearInterval(id);
+          el?.scrollIntoView({ block: "start" });
+        }
+      }, 150);
+      return () => window.clearInterval(id);
+    }
+  }, [data, landStage, landNeeds]);
   const tabBarTop = useShellBarHeight();
   const [compose, setCompose] = useState(0);
   const statusMap = useStatusStageMap();
@@ -632,6 +659,11 @@ function PropertyWorkspace() {
   const canStartPlan = !readOnly && (isAdminViewer || isOnboardingDirector);
   const noPlan = life.notStarted || tasks.length === 0;
 
+  const viewOnlyLine = viewOnlyHome ? (
+    <p className="-mt-3 rounded-md bg-muted px-3 py-1.5 text-sm text-muted-foreground" data-testid="view-only-line">
+      View only: you're not on this home's team
+    </p>
+  ) : null;
   const header = (
     <OnboardingHomeHeader
       propertyId={current.id}
@@ -654,8 +686,10 @@ function PropertyWorkspace() {
   // 1.9: a home with no onboarding project or no Tasks shows the header and one card.
   if (noPlan) {
     return (
+      <ViewOnlyScope.Provider value={viewOnlyHome}>
       <div className="space-y-5">
         {header}
+        {viewOnlyLine}
         <NoPlanCard
           canStart={canStartPlan}
           start={
@@ -669,12 +703,15 @@ function PropertyWorkspace() {
           }
         />
       </div>
+      </ViewOnlyScope.Provider>
     );
   }
 
   return (
+    <ViewOnlyScope.Provider value={viewOnlyHome}>
     <div className="space-y-5">
       {header}
+      {viewOnlyLine}
 
       <Tabs value={tab} onValueChange={goTab} className="space-y-5">
         {/* Fix 4: the tabs in their own bar, pinned under the app's top bar while scrolling. */}
@@ -762,6 +799,7 @@ function PropertyWorkspace() {
             catchUp={catchUpOn ? catchUp : undefined}
             onOpen={setOpenTaskId}
             addViewer={addViewer}
+            initialAllLate={landLate}
             handoff={<TwoStepHandoff propertyId={current.id} readOnly={readOnly} onOpenTask={(id) => setOpenTaskId(id)} variant="checklist" />}
             notNeeded={(data.retiredTasks ?? []).filter((t) => (t.exception_reason ?? "").startsWith("Voided"))}
             notNeededLabel={notNeededLabel}
