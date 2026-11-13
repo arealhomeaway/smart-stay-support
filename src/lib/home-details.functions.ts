@@ -105,7 +105,7 @@ export const homeDetailsHistoryFn = createServerFn({ method: "POST" })
 const saveInput = z.discriminatedUnion("target", [
   z.object({ target: z.literal("choice"), propertyId: uuid, field: z.enum(["owner_type", "project_status", "pma_status", "invoice_status", "greater_area"]), value: z.string().trim().max(200).nullable() }),
   z.object({ target: z.literal("staged"), propertyId: uuid, field: z.enum(["telegram_url", "loa_status"]), value: z.string().trim().max(300).nullable() }),
-  z.object({ target: z.literal("ref"), propertyId: uuid, key: z.enum(["zillow_url", "property_folder", "purchase_agreement_url", "verified_address", "builder", "ccrs_reviewed_on", "ccrs_note"]), label: z.string().max(80), section: z.enum(["project", "hoa"]), value: z.string().trim().max(300).nullable() }),
+  z.object({ target: z.literal("ref"), propertyId: uuid, key: z.enum(["zillow_url", "property_folder", "purchase_agreement", "verified_address", "builder", "ccrs_reviewed_on", "ccrs_note"]), label: z.string().max(80), section: z.enum(["project", "hoa"]), value: z.string().trim().max(300).nullable() }),
   z.object({ target: z.literal("date"), propertyId: uuid, field: z.enum(["possessionOn", "targetHandoffOn", "inspectionOn"]), label: z.string().max(80), value: z.string().date().nullable() }),
   z.object({ target: z.literal("profile"), propertyId: uuid, section: z.enum(["utilities", "hoa"]), card: z.string().max(120), changes: z.array(z.record(z.string(), z.unknown())).min(1).max(1) }),
 ]);
