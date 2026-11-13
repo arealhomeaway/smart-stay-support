@@ -15,6 +15,7 @@ import {
 } from "@/lib/library-video.functions";
 import { LIBRARY_VIDEO_DEFAULT_LABEL, formatBytes, validateVideoFile } from "@/lib/library-video";
 import { LibraryVideoPlayer } from "./LibraryVideoPlayer";
+import { LoadError } from "@/components/ui/page";
 
 /** Sends the file straight to private storage with a one-time ticket, reporting progress. */
 function putWithProgress(url: string, file: File, mime: string, onProgress: (pct: number) => void) {
@@ -79,6 +80,8 @@ export function LibraryVideoSection({ libraryId, poster }: { libraryId: string; 
   });
 
   if (q.isLoading) return <p className="text-sm text-muted-foreground">Loading video…</p>;
+  // A failed load must not offer Upload as if there were no video.
+  if (q.isError) return <LoadError what="The video" onRetry={() => void q.refetch()} />;
   if (q.data && !q.data.ready) {
     return <section className="space-y-1 rounded-lg border border-dashed border-border p-3"><p className="font-medium">Video</p><p className="text-sm text-muted-foreground">Library videos are not switched on yet.</p></section>;
   }

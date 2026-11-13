@@ -22,7 +22,7 @@ import { PlanCardForm } from "@/components/owner/OwnerPlanCards";
 import { OwnerItemConversation } from "@/components/owner/OwnerItemConversation";
 import { OwnerApprovalPanel } from "@/components/OwnerApprovalPanel";
 import { OnboardingActions } from "@/components/owner/OnboardingActions";
-import { LibraryVideoPlayer, useLibraryVideoIndex } from "@/components/owner/LibraryVideoPlayer";
+import { LibraryVideoIndexError, LibraryVideoPlayer, useLibraryVideoIndex } from "@/components/owner/LibraryVideoPlayer";
 import { loadOwnerItemLastSpeakers, loadOwnerPortalPlan, loadOwnerOutsideLines, type OwnerPortalPlanRow } from "@/lib/ao-data";
 import { portalCardView } from "@/lib/ao-ui";
 import { inQueue } from "@/lib/owner-opportunity-filters";
@@ -782,7 +782,7 @@ function TemplatePanel({
         )
       }
     >
-      {video ? <LibraryVideoPlayer libraryId={template.id} poster={imageFor(template.image_key)} label={video.label} /> : null}
+      {video ? <LibraryVideoPlayer libraryId={template.id} poster={imageFor(template.image_key)} label={video.label} /> : <LibraryVideoIndexError />}
       {template.what || template.summary ? (
         <PanelSection label="What we're asking"><p className="whitespace-pre-wrap text-muted-foreground">{template.what || template.summary}</p></PanelSection>
       ) : null}

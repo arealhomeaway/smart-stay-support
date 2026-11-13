@@ -38,7 +38,7 @@ import {
 import { listOptionalLibrary, type LibraryTemplate } from "@/lib/opportunity-library.functions";
 import { arhaCover, duplicatesArha, imageFor } from "@/lib/opportunity-images";
 import { OwnerUploadDialog } from "@/components/owner/OwnerUploadDialog";
-import { LibraryVideoPlayer, useLibraryVideoIndex } from "@/components/owner/LibraryVideoPlayer";
+import { LibraryVideoIndexError, LibraryVideoPlayer, useLibraryVideoIndex } from "@/components/owner/LibraryVideoPlayer";
 import { videoForOpportunity } from "@/lib/library-video";
 import { OwnerFileRow, useOwnerDocuments } from "@/components/OwnerFilesPanel";
 import { OwnerSidePanel, PanelSection } from "@/components/owner/OwnerSidePanel";
@@ -332,7 +332,7 @@ export function OpportunityDetail({
         )
       }
     >
-      {video && item.templateId ? <LibraryVideoPlayer libraryId={item.templateId} poster={item.cover} label={video.label} /> : null}
+      {video && item.templateId ? <LibraryVideoPlayer libraryId={item.templateId} poster={item.cover} label={video.label} /> : item.templateId ? <LibraryVideoIndexError /> : null}
       {outsideLine || item.what ? <PanelSection label="What we're asking"><p className="whitespace-pre-wrap text-muted-foreground">{outsideLine ?? item.what}</p></PanelSection> : null}
       {item.why ? <PanelSection label={arha ? "Why this matters" : "Why it matters"}><p className="whitespace-pre-wrap text-muted-foreground">{item.why}</p></PanelSection> : null}
       {item.how ? <PanelSection label={arha ? "How to complete it" : "How to complete it remotely"}><p className="whitespace-pre-wrap text-muted-foreground">{item.how}</p></PanelSection> : null}
