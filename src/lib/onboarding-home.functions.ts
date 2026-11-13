@@ -55,8 +55,10 @@ export const addUpcomingHomeFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ context, data }) => {
-    const { assertLead, callStaged } = await import("./onboarding-home.server");
-    await assertLead(context.supabase, context.userId);
+    // Fix Nov 12: everyone on the onboarding team may add a home, the same rule as every other Add a home.
+    const { assertCanAddHome } = await import("./property-intake.server");
+    await assertCanAddHome(context.supabase, context.userId);
+    const { callStaged } = await import("./onboarding-home.server");
     return callStaged<{ ok: true; property_id: string; project_id: string }>(context.supabase, "add_upcoming_onboarding_home", {
       _request_id: data.requestId,
       _address_line1: data.addressLine1,
