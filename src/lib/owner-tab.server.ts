@@ -132,7 +132,7 @@ export async function readOwnerTab(sb: Db, uid: string, propertyId: string) {
     .select("id, title, due_on, source_task_id, linked_task_id, response_types, responded_at, completed_at, status")
     .eq("property_id", propertyId)
     .eq("kind", "opportunity")
-    .not("status", "in", "(archived,draft,completed,done)")
+    .not("status", "in", "(archived,draft,complete,completed)")
     .is("responded_at", null);
   const decRows = ((decisionItems.data ?? []) as { id: string; title: string; due_on: string | null; source_task_id: string | null; linked_task_id: string | null; response_types: string[] | null; completed_at: string | null }[])
     .filter((d) => (d.response_types ?? []).includes("decision") && !d.completed_at && (d.source_task_id || d.linked_task_id));
