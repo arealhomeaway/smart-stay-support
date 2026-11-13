@@ -111,7 +111,7 @@ describe("1.2 tiles", () => {
   it("a tile click switches to Active projects and the Table; the same tile again clears it", () => {
     const on = tileClick({ tab: "all", view: "gantt" }, "behind");
     expect(on).toEqual({ tab: "active", view: "table", tile: "behind" });
-    expect(tileClick(on, "behind").tile).toBeUndefined();
+    expect(tileClick(on, "behind").tile).toBe(undefined);
   });
   it("Missing setup names the missing team members and a closed home's missing committed date", () => {
     expect(missingSetup(row({ team: { pm: null, designer: null, utilities: null, director: null, stagers: [] } }))).toEqual(["PM", "Designer", "Utilities", "committed handoff date"]);
@@ -131,7 +131,7 @@ describe("1.4 walkthrough", () => {
   it("everything lives in the address, and the old All properties link opens past projects", () => {
     expect(parseHomeSearch({ tab: "all", scope: "my", tile: "behind", view: "gantt", q: "fox", sched: "behind" })).toEqual({ tab: "all", scope: "my", tile: "behind", view: "gantt", q: "fox", sched: "behind" });
     expect(parseHomeSearch({ lens: "all" }).tab).toBe("all");
-    expect(parseHomeSearch({ tile: "made_up" }).tile).toBeUndefined();
+    expect(parseHomeSearch({ tile: "made_up" }).tile).toBe(undefined);
   });
   it("Clear filters keeps the tab, the switch and the view", () => {
     expect(clearAll({ tab: "active", scope: "all", view: "gallery", tile: "behind", q: "x", sched: "behind" })).toEqual({ tab: "active", scope: "all", view: "gallery", showTest: undefined });
