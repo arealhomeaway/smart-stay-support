@@ -36,6 +36,9 @@ export type DocumentCategory =
   | "pma"
   | "insurance"
   | "ownership"
+  // Onboarding Files folders (Part 3): Agreements and Estimates and invoices
+  | "agreement"
+  | "estimate_invoice"
   // HOA & Compliance
   | "hoa"
   | "covenants"
@@ -126,6 +129,8 @@ export const DOCUMENT_CATEGORIES: {
   { value: "pma", label: "Property management agreement (PMA)", group: "property_ownership" },
   { value: "insurance", label: "Insurance", group: "property_ownership" },
   { value: "ownership", label: "Ownership / property document", group: "property_ownership" },
+  { value: "agreement", label: "Agreement", group: "property_ownership" },
+  { value: "estimate_invoice", label: "Estimate or invoice", group: "onboarding" },
   { value: "hoa", label: "HOA document", group: "hoa_compliance" },
   { value: "covenants", label: "Covenants / CC&Rs", group: "hoa_compliance" },
   { value: "permit_license", label: "Permit or licence", group: "hoa_compliance" },
