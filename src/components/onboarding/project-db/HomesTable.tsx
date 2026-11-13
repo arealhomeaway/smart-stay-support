@@ -1,6 +1,6 @@
 /** 2.3 Table view (default): grouped by phase; phone cards; Columns chooser; Upcoming and OwnerRez rows. */
 import { Link } from "@tanstack/react-router";
-import { ChevronRight, Columns3 } from "lucide-react";
+import { ArrowRight, ChevronRight, Columns3 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -121,7 +121,11 @@ export function HomesTable(p: TableProps) {
             <tr>
               <th scope="col" className="px-3 py-2 font-medium">Home</th>
               <th scope="col" className="px-3 py-2 font-medium">Status</th>
-              <th scope="col" className="px-3 py-2 font-medium">Closing → Handoff</th>
+              <th scope="col" className="px-3 py-2 font-medium">
+                <span className="inline-flex items-center gap-1">
+                  Closing <ArrowRight className="size-3" aria-label="to" /> Handoff
+                </span>
+              </th>
               <th scope="col" className="px-3 py-2 font-medium">Team</th>
               <th scope="col" className="px-3 py-2 font-medium">Schedule</th>
               {extra.map((c) => (
