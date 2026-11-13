@@ -101,7 +101,7 @@ function DatabasesHub() {
   const openCard = (key: DatabaseKey) => {
     if (key === "properties") {
       if (canOpen("/properties")) void navigate({ to: "/properties", search: {} });
-      else void navigate({ to: "/onboarding", search: { lens: "all" } });
+      else void navigate({ to: "/onboarding", search: { tab: "all" } });
     } else if (key === "vendors") void navigate({ to: "/vendors", search: {} });
     else if (key === "onboarding-projects") void navigate({ to: "/onboarding", search: {} });
     else void navigate({ to: "/databases/$key", params: { key }, search: {} });

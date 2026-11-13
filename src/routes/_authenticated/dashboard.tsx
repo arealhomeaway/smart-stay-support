@@ -167,6 +167,7 @@ function Dashboard() {
   // Register T1: a real home's photo that changes daily, the same for everyone.
   const bannerHomes = useHomeBannerPhotos();
 
+  const [bannerFailed, setBannerFailed] = useState(false);
   const bannerHome = bannerFailed ? null : dailyHomePhoto(bannerHomes.data ?? [], new Date());
 
   const rows = mine.data ?? [];

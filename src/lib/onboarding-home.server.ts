@@ -174,7 +174,7 @@ export async function loadOnboardingHome(supabase: Client, userId: string, now =
   const ownerName = new Map(((owners.data ?? []) as { id: string; name: string | null }[]).map((o) => [o.id, o.name || null] as const));
   const stagersReady = !stagers.error;
   const stagerMap = new Map<string, Person[]>();
-  for (const s of (stagers.data ?? []) as { project_id: string; vendor_org_id: string; vendor_orgs: { display_name: string | null; legal_name: string | null } | null }[]) {
+  for (const s of (stagers.data ?? []) as unknown as { project_id: string; vendor_org_id: string; vendor_orgs: { display_name: string | null; legal_name: string | null } | null }[]) {
     stagerMap.set(s.project_id, [...(stagerMap.get(s.project_id) ?? []), { id: s.vendor_org_id, name: s.vendor_orgs?.display_name || s.vendor_orgs?.legal_name || "Stager" }]);
   }
 
