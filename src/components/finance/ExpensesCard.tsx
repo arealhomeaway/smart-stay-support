@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { SectionCard } from "@/components/ui/page";
+import { LoadError, SectionCard } from "@/components/ui/page";
 import { useDemo } from "@/components/DemoProvider";
 import { useRole } from "@/hooks/useRole";
 import { LINK_LABEL, estimateTotal, money, totalsByPeriod, type LinkType } from "@/lib/expenses";
