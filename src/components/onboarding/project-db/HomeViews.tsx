@@ -156,7 +156,6 @@ export function WorkloadView({ rows }: { rows: HomeRow[] }) {
   const w = workloadLists(rows);
   return (
     <div className="space-y-5" aria-label="Workload">
-      <p className="text-sm text-muted-foreground">Use it before assigning a new home: who has room, and which stager is already booked.</p>
       <div className="grid gap-6 lg:grid-cols-2">
         <Bars title="Project Managers" rows={w.pms} />
         <Bars title="Stagers" rows={w.stagers} />
