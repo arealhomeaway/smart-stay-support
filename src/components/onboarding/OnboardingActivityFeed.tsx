@@ -1,3 +1,6 @@
+import { useServerFn } from "@tanstack/react-start";
+import { homeFollowStateFn } from "@/lib/home-details.functions";
+import { myHomesState } from "@/lib/home-details";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Bell, BellOff, Check } from "lucide-react";
@@ -83,7 +86,7 @@ export function OnboardingActivityFeed() {
 }
 
 /** Follow a home to get its owner replies, completions and comments in your bell. */
-/** `myHomes` (property page Part 1): the same follow, worded "Add to my homes" / "In my homes ✓". */
+/** `myHomes` (Part 3, 3.5): "Add to my homes" / "Remove from my homes"; a home on your team reads "Yours". */
 export function FollowHomeButton({ propertyId, myHomes = false }: { propertyId: string; myHomes?: boolean }) {
   const qc = useQueryClient();
   const q = useQuery({
@@ -93,22 +96,26 @@ export function FollowHomeButton({ propertyId, myHomes = false }: { propertyId: 
       return Boolean(data);
     },
   });
+  // Part 3 (3.5): a home you are on the team of is already Yours.
+  const stateFn = useServerFn(homeFollowStateFn);
+  const mine = useQuery({ queryKey: ["home-follow-state", propertyId], queryFn: () => stateFn({ data: { propertyId } }), enabled: myHomes });
   const toggle = async () => {
     if (q.data) await supabase.from("onboarding_follows").delete().eq("property_id", propertyId);
     else await supabase.from("onboarding_follows").insert({ property_id: propertyId });
-    void qc.invalidateQueries({ queryKey: ["onboarding-follow", propertyId] });
+    for (const k of [["onboarding-follow", propertyId], ["home-follow-state", propertyId], ["onboarding-home"], ["onboarding-my-work"]]) void qc.invalidateQueries({ queryKey: k });
   };
+  const state = myHomesState({ assigned: Boolean(mine.data?.assigned), following: Boolean(q.data) });
   return (
     myHomes ? (
-      <Button variant="outline" className="min-h-11" onClick={toggle} disabled={q.isLoading} aria-pressed={Boolean(q.data)}>
-        {q.data ? (
-          <>
-            In my homes <Check className="size-4" aria-hidden="true" />
-          </>
-        ) : (
-          "Add to my homes"
-        )}
-      </Button>
+      state === "yours" ? (
+        <Button variant="outline" className="min-h-11" disabled aria-label="Yours: you are on this home's team">
+          Yours <Check className="size-4" aria-hidden="true" />
+        </Button>
+      ) : (
+        <Button variant="outline" className="min-h-11" onClick={toggle} disabled={q.isLoading || mine.isLoading} aria-pressed={state === "following"}>
+          {state === "following" ? "Remove from my homes" : "Add to my homes"}
+        </Button>
+      )
     ) : (
       <Button size="sm" variant="outline" onClick={toggle} disabled={q.isLoading}>
         {q.data ? <BellOff className="size-4" /> : <Bell className="size-4" />}
