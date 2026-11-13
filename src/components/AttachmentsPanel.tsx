@@ -51,6 +51,8 @@ import {
 import { usDate } from "@/lib/dates";
 import { MultiFileUpload } from "@/components/MultiFileUpload";
 import { createAttachmentUploader } from "@/lib/attachment-upload-client";
+import { moveHomeFileFn } from "@/lib/home-details.functions";
+import { UPLOAD_FOLDERS, uploadCategory, type HomeFolder } from "@/lib/home-details";
 
 type Props = {
   entityType: AttachmentEntity;
@@ -73,6 +75,12 @@ type Props = {
   onlyCategories?: readonly string[] | undefined;
   /** List files under a heading per folder. */
   groupByCategory?: boolean | undefined;
+  /**
+   * Property page Part 3 (3.2): every upload on a home's page picks one of the home's Files
+   * folders (never Other); a Task starts on the folder of its kind. Task files are filed after
+   * upload through move_home_file.
+   */
+  folderPick?: { defaultFolder: HomeFolder | null } | undefined;
 };
 
 function iconFor(kind: string) {
@@ -95,6 +103,7 @@ export function AttachmentsPanel({
   dropLabel,
   onlyCategories,
   groupByCategory = false,
+  folderPick,
 }: Props) {
   const propertyLevel = entityType === "property";
   const pickable = categories ?? DOCUMENT_CATEGORIES;
@@ -106,6 +115,12 @@ export function AttachmentsPanel({
   const urlFor = useServerFn(attachmentUrlFn);
   const remove = useServerFn(removeAttachmentFn);
   const share = useServerFn(setAttachmentVisibilityFn);
+  const fileInto = useServerFn(moveHomeFileFn);
+  const [folder, setFolder] = useState<HomeFolder | "">(folderPick?.defaultFolder ?? "");
+  const folderRef = useRef(folder);
+  folderRef.current = folder;
+  const intentCategory = () =>
+    propertyLevel ? (folderPick ? (folderRef.current ? uploadCategory(folderRef.current) : null) : category) : null;
 
   const key = ["attachments", entityType, entityId];
   const files = useQuery({
@@ -113,8 +128,8 @@ export function AttachmentsPanel({
     queryFn: () => list({ data: { entityType, entityId } }),
   });
 
-  const uploadIntent = useRef((file: File, key: string) => ({ entityType, entityId, uploadKey: key, filename: file.name, mimeType: file.type, sizeBytes: file.size, category: propertyLevel ? category : null, fulfilsRequestId }));
-  uploadIntent.current = (file: File, key: string) => ({ entityType, entityId, uploadKey: key, filename: file.name, mimeType: file.type, sizeBytes: file.size, category: propertyLevel ? category : null, fulfilsRequestId });
+  const uploadIntent = useRef((file: File, key: string) => ({ entityType, entityId, uploadKey: key, filename: file.name, mimeType: file.type, sizeBytes: file.size, category: intentCategory(), fulfilsRequestId }));
+  uploadIntent.current = (file: File, key: string) => ({ entityType, entityId, uploadKey: key, filename: file.name, mimeType: file.type, sizeBytes: file.size, category: intentCategory(), fulfilsRequestId });
   const [upload] = useState(() => createAttachmentUploader(begin, complete, (file, key) => uploadIntent.current(file, key)));
 
   const open = useMutation({
@@ -150,7 +165,7 @@ export function AttachmentsPanel({
   });
 
   const data = files.data;
-  const canDrop = Boolean(data?.canUpload) && !readOnly;
+  const canDrop = Boolean(data?.canUpload) && !readOnly && (!folderPick || Boolean(folder));
   type FileRow = NonNullable<typeof data>["files"][number];
   const shownFiles: FileRow[] = (data?.files ?? []).filter(
     (f) => !onlyCategories || onlyCategories.includes(String((f as { category?: string | null }).category ?? "")),
@@ -269,7 +284,7 @@ export function AttachmentsPanel({
               Each file can be up to {formatBytes(MAX_FILE_BYTES)}.
             </CardDescription>
           </div>
-          {data?.canUpload && propertyLevel ? (
+          {data?.canUpload && propertyLevel && !folderPick ? (
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger className="h-11 w-56" aria-label={categories ? "Folder" : "Document type"}>
                 <SelectValue placeholder={categories ? "Folder" : "Document type"} />
@@ -283,11 +298,34 @@ export function AttachmentsPanel({
               </SelectContent>
             </Select>
           ) : null}
+          {data?.canUpload && !readOnly && folderPick ? (
+            <Select value={folder} onValueChange={(v) => setFolder(v as HomeFolder)}>
+              <SelectTrigger className="h-11 w-56" aria-label="Folder">
+                <SelectValue placeholder="Pick a folder first" />
+              </SelectTrigger>
+              <SelectContent>
+                {UPLOAD_FOLDERS.map((f) => (
+                  <SelectItem key={f.id} value={f.id}>
+                    {f.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null}
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
+        {folderPick && !folder && data?.canUpload && !readOnly ? (
+          <p className="text-sm text-muted-foreground">Pick a folder, then add the files.</p>
+        ) : null}
         {canDrop ? <MultiFileUpload key={`${entityType}-${entityId}`} upload={upload} multiple={!fulfilsRequestId} label={dropLabel} onBusyChange={onUploadBusyChange} onResults={ids => {
           onUploaded?.(ids);
+          const into = folderPick && !propertyLevel && folderRef.current ? uploadCategory(folderRef.current) : null;
+          if (into && ids.length) {
+            void Promise.all(ids.map((id) => fileInto({ data: { documentId: id, category: into } })))
+              .catch((e: Error) => toast.message(`File saved. Its folder could not be set: ${e.message}`))
+              .finally(() => void qc.invalidateQueries({ queryKey: ["home-files"] }));
+          }
           for (const queryKey of attachmentUploadInvalidationKeys(entityType, entityId)) void qc.invalidateQueries({ queryKey });
         }}/> : null}
 
