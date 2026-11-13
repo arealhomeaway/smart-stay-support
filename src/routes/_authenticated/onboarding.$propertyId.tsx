@@ -184,7 +184,7 @@ function InvalidPropertyRoute() {
     <div className="space-y-3 py-10 text-center">
       <p className="text-muted-foreground">This home could not be found.</p>
       <div className="flex justify-center gap-4 text-sm">
-        <Link to="/onboarding" search={{ lens: "all" } as never} className="underline">
+        <Link to="/onboarding" search={{ tab: "all" } as never} className="underline">
           Back to Properties
         </Link>
         <Link to="/onboarding" className="underline">
