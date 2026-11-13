@@ -7,6 +7,7 @@ import {
 } from "@/lib/onboarding-workspace-view";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -30,6 +31,8 @@ import { buildReleaseContext } from "@/lib/onboarding-state";
 import {
   canQuickComplete,
   myWorkSelection,
+  followedHomeTasks,
+  FOLLOWED_HOMES,
   matchesWorkFilter,
   validateMyWorkSearch,
   WORK_FILTER_LABELS,
@@ -172,8 +175,19 @@ function MyWork() {
     data?.projects ?? [],
   );
   const who = selection.who;
+  // Part 3 (3.5): the homes this person added to My homes.
+  const follows = useQuery({
+    queryKey: ["onboarding-follows-mine", userId],
+    enabled: Boolean(userId),
+    queryFn: async () => {
+      const { data: rows, error } = await supabase.from("onboarding_follows").select("property_id").eq("user_id", userId!);
+      if (error) throw new Error(error.message);
+      return new Set((rows ?? []).map((r) => r.property_id as string));
+    },
+  });
+  const followedOnly = search.home === FOLLOWED_HOMES;
   // Completed tasks stay in the pool so the Completed quick filter can show them.
-  const mine = selection.tasks;
+  const mine = followedOnly ? followedHomeTasks(allTasks, follows.data ?? new Set<string>(), search.who, userId) : selection.tasks;
 
   // Each person's last view choices, remembered in their own browser.
   const [prefs, setPrefs] = useState<MyTasksPrefs>(MY_TASKS_PREFS_DEFAULTS);
@@ -210,7 +224,7 @@ function MyWork() {
           ? activeOwnerHomes.has(v.task.property_id)
           : !activeOwnerHomes.has(v.task.property_id),
     )
-    .filter((v) => (search.home === "all" ? true : v.task.property_id === search.home))
+    .filter((v) => (search.home === "all" || followedOnly ? true : v.task.property_id === search.home))
     .filter((v) => matchesWorkFilter(v, search.state as WorkFilter))
     .filter((v) => matchesMyTasksQuick(v, prefs.quick, t0))
     .filter((v) => matchesMyTasksDueRange(v, prefs.from, prefs.to));
@@ -308,6 +322,7 @@ function MyWork() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Every home</SelectItem>
+            <SelectItem value={FOLLOWED_HOMES}>Homes I follow ({follows.data?.size ?? 0})</SelectItem>
             {data.properties
               .filter((p) => !isTestRecord(p))
               .map((p) => (
