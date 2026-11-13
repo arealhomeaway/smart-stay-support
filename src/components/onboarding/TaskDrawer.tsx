@@ -686,7 +686,7 @@ export function TaskDrawer({
 
         {middle === "work_order" && (
           <section className="space-y-2" aria-label="Breezeway work order">
-            <OnboardingBreezewaySection taskId={task.id} propertyId={task.property_id} disabled={disabled} defaultTitle={task.title} defaultDescription={breezewayStepSummary(detailText, task.description)} onSent={onClose} />
+            <OnboardingBreezewaySection taskId={task.id} propertyId={task.property_id} disabled={disabled} defaultTitle={task.title} defaultDescription={(detailText ?? "").trim() || task.description || ""} onSent={onClose} />
           </section>
         )}
 

@@ -11,6 +11,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { listAttachmentsFn } from "@/lib/attachments.functions";
+import { breezewayFileRoute } from "@/lib/home-details";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { CalendarClock, ExternalLink, Link2, Send, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -83,6 +86,11 @@ export function OnboardingBreezewaySection({
   // Item 37: the Title follows the chosen template until the user edits it.
   const [title, setTitle] = useState(() => breezewayTitleDefault(defaultTitle));
   const [description, setDescription] = useState(defaultDescription ?? "");
+  // Part 3 (3.8): a note signed with the sender's name, and the Task's files to go with it.
+  const [note, setNote] = useState("");
+  const [fileIds, setFileIds] = useState<string[]>([]);
+  const filesFn = useServerFn(listAttachmentsFn);
+  const taskFiles = useQuery({ queryKey: ["attachments", "onboarding_task", taskId], queryFn: () => filesFn({ data: { entityType: "onboarding_task", entityId: taskId } }) });
   const templatesFn = useServerFn(onboardingBreezewayTemplatesFn);
   const templates = useQuery({ queryKey: ["onboarding-breezeway-templates"], queryFn: () => templatesFn(), staleTime: 10 * 60_000 });
   const savedAssignee = (link: OnboardingBreezewayState["link"] | undefined) =>
@@ -128,13 +136,17 @@ export function OnboardingBreezewaySection({
           priority: priority as (typeof PRIORITIES)[number]["code"],
           title: title.trim(),
           description: description.trim() || null,
+          ...(note.trim() ? { note: note.trim() } : {}),
+          ...(fileIds.length ? { fileIds } : {}),
         },
       });
     },
     onSuccess: (r) => {
       if (r && "ok" in r && r.ok === false) toast.error(r.message);
       else {
-        toast.success("Sent to Breezeway.");
+        const missed = (r as { filesNotAdded?: string[] } | undefined)?.filesNotAdded ?? [];
+        if (missed.length) toast.message(`Sent to Breezeway. Not added: ${missed.join(", ")}. Add them in Breezeway.`);
+        else toast.success("Sent to Breezeway.");
         onSent?.();
       }
       void qc.invalidateQueries({ queryKey: key });
@@ -290,6 +302,28 @@ export function OnboardingBreezewaySection({
               <Textarea id={`bz-desc-${taskId}`} rows={3} value={description} disabled={disabled} maxLength={4000}
                 onChange={(e) => setDescription(e.target.value)} />
             </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor={`bz-note-${taskId}`}>Your note (optional)</Label>
+              <Textarea id={`bz-note-${taskId}`} rows={2} value={note} disabled={disabled} maxLength={1000}
+                placeholder="Added under the description with your name"
+                onChange={(e) => setNote(e.target.value)} />
+            </div>
+            {(taskFiles.data?.files ?? []).length ? (
+              <fieldset className="grid gap-1.5">
+                <legend className="text-sm font-medium">Files to send</legend>
+                {((taskFiles.data?.files ?? []) as { id: string; title: string | null; original_filename: string | null; mime_type: string | null; size_bytes: number | null }[]).map((f) => (
+                  <label key={f.id} className="flex min-h-11 items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={fileIds.includes(f.id)}
+                      disabled={disabled}
+                      onCheckedChange={(v) => setFileIds((cur) => (v ? [...cur, f.id] : cur.filter((x) => x !== f.id)))}
+                    />
+                    <span className="min-w-0 flex-1 truncate">{f.original_filename ?? f.title}</span>
+                    <span className="text-xs text-muted-foreground">{breezewayFileRoute(f) === "upload" ? "Photo" : "Sent as a link"}</span>
+                  </label>
+                ))}
+              </fieldset>
+            ) : null}
           </>
         ) : null}
       </div>
