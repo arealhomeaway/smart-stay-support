@@ -34,7 +34,7 @@ import { TaskStageTrail } from "@/components/onboarding/TaskStageTrail";
 import { TaskTeamComments } from "@/components/onboarding/TaskTeamComments";
 import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
 import { BreezewayHomeLink, OnboardingBreezewaySection } from "@/components/onboarding/OnboardingBreezewaySection";
-import { breezewayStepSummary, showsBreezewayHomeLink } from "@/lib/onboarding-breezeway";
+import { showsBreezewayHomeLink } from "@/lib/onboarding-breezeway";
 import { evidenceSatisfied } from "@/lib/onboarding-evidence";
 import { listAttachmentsFn } from "@/lib/attachments.functions";
 import { bulkUpdateHomeTasksFn, markTaskStartedFn } from "@/lib/onboarding.functions";
