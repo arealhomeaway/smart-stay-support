@@ -108,6 +108,13 @@ import {
   useStatusStageMap,
 } from "@/components/onboarding/home-page/OverviewParts";
 import { usePropertyOwnerSummary } from "@/components/onboarding/PropertyOpportunitiesPanel";
+import { OwnerTab, ownerTabBadge, useOwnerTabData } from "@/components/onboarding/owner-tab/OwnerTab";
+import { AskOwnerDialog } from "@/components/onboarding/owner-tab/AskOwnerDialog";
+import { ChatButton, HomeChatPanel } from "@/components/chat/HomeChatPanel";
+import { AddTaskRow } from "@/components/onboarding/home-page/TasksTab";
+import { UpdatesFeed } from "@/components/onboarding/home-page/UpdatesFeed";
+import { PAGE_STAGE_NAMES as PART2_STAGE_NAMES, stageKeyFor as part2StageKeyFor } from "@/lib/onboarding-home-page";
+import type { ChatKind } from "@/lib/owner-tab";
 import { loadHomePlan } from "@/lib/ao-data";
 import { FURNISHING_SCOPES } from "@/lib/onboarding-scope";
 import {
@@ -216,6 +223,10 @@ export const Route = createFileRoute("/_authenticated/onboarding/$propertyId")({
       ...((raw as { show?: unknown }).show === "late" ? { show: "late" as const } : {}),
       ...((raw as { stage?: unknown }).stage === "6" || (raw as { stage?: unknown }).stage === 6 ? { stage: "6" as const } : {}),
       ...((raw as { from?: unknown }).from === FROM_ATTENTION ? { from: FROM_ATTENTION } : {}),
+      // Part 2 (2.2): the Chats inbox opens a home with its chat panel on one tab.
+      ...((raw as { chat?: unknown }).chat === "owner" || (raw as { chat?: unknown }).chat === "team"
+        ? { chat: (raw as { chat: "owner" | "team" }).chat }
+        : {}),
     };
   },
   // Only a real property id may open a workspace; anything else never
@@ -413,6 +424,25 @@ function PropertyWorkspace() {
   const [compose, setCompose] = useState(0);
   const statusMap = useStatusStageMap();
   const ownerSummary = usePropertyOwnerSummary(propertyId);
+  // Part 2: the Owner tab, the chat panel and Ask the owner.
+  const ownerTab = useOwnerTabData(propertyId, Boolean(userId) && PROPERTY_ID_RE.test(propertyId));
+  const [askOpen, setAskOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatKind, setChatKind] = useState<ChatKind>("owner");
+  const searchChat = (search as { chat?: ChatKind }).chat;
+  useEffect(() => {
+    if (searchChat) {
+      setChatKind(searchChat);
+      setChatOpen(true);
+    }
+  }, [searchChat]);
+  const closeChat = () => {
+    setChatOpen(false);
+    if (searchChat) {
+      const { chat: _chat, ...rest } = search as Record<string, unknown>;
+      void navigate({ search: rest as never, replace: true });
+    }
+  };
   const homePlan = useQuery({ queryKey: ["ao-home-plan", propertyId], queryFn: () => loadHomePlan(propertyId), retry: false, enabled: Boolean(userId) });
   const homeLabels = useQuery({
     queryKey: ["home-labels", propertyId],
@@ -450,7 +480,10 @@ function PropertyWorkspace() {
   const projectRow =
     (data.projects ?? []).find((x) => x.property_id === propertyId && x.status !== "cancelled") ??
     null;
-  const notes = data.notes.filter((n) => n.property_id === current.id);
+  // Part 2: calls and texts with the owner live only on the Owner tab.
+  const notes = data.notes.filter(
+    (n) => n.property_id === current.id && !["call", "text"].includes(String((n as { kind?: string | null }).kind ?? "note")),
+  );
   const approvals = (data.ownerApprovals ?? []).filter((a) => a.property_id === current.id);
   const mismatches = (data.approvalMismatches ?? []).filter((m) => m.propertyId === current.id);
   const activeOwner = (data.activeOwnerProperties ?? []).find((l) => l.propertyId === current.id);
@@ -592,7 +625,7 @@ function PropertyWorkspace() {
     !projectRow?.utility_manager ? "Utilities" : null,
   ].filter((x): x is string => Boolean(x));
   const chips = needsAttention({
-    ownerWaitingOnUs: ownerSummary.waitingOnUs,
+    ownerWaitingOnUs: ownerSummary.waitingOnUs + (ownerTab.data?.ownerChatWaiting ? 1 : 0),
     ownerDecisionsDue: ownerDecisionsDue(planTasks, today).length,
     yoursLate: yoursLate(planTasks, userId, pmId, today).length,
     mismatch,
@@ -678,11 +711,59 @@ function PropertyWorkspace() {
       more={more}
       facts={facts}
       canAddOwner={!readOnly && (isAdminViewer || isOnboardingDirector)}
-      onAskOwner={() => {
-        goTab("owner");
-        setCompose((n) => n + 1);
-      }}
+      onAskOwner={() => setAskOpen(true)}
+      chat={
+        <ChatButton
+          propertyId={current.id}
+          onOpen={() => {
+            setChatOpen(true);
+          }}
+        />
+      }
     />
+  );
+  const teammates = data.people.map((x) => ({ id: x.id, name: x.full_name ?? x.email ?? "" })).filter((x) => x.name);
+  const overlays = (
+    <>
+      <HomeChatPanel
+        propertyId={current.id}
+        homeName={homeName}
+        open={chatOpen}
+        kind={chatKind}
+        onKind={setChatKind}
+        onClose={closeChat}
+        canPostOwner={Boolean(ownerTab.data?.rights.postOwnerChat)}
+        canPostTeam={Boolean(ownerTab.data?.rights.postTeamChat)}
+        people={teammates}
+        {...(addViewer && !noPlan
+          ? {
+              makeTask: ({ body, onAdded, onCancel }: { body: string; onAdded: (id: string) => void; onCancel: () => void }) => (
+                <AddTaskRow
+                  propertyId={current.id}
+                  stageKey={part2StageKeyFor(Math.max(0, stage - 1), planTasks)}
+                  stageName={PART2_STAGE_NAMES[Math.max(0, stage - 1)]!}
+                  people={data.people}
+                  viewer={addViewer}
+                  initialTitle={body.replace(/\s+/g, " ").trim()}
+                  startOpen
+                  onAdded={onAdded}
+                  onCancel={onCancel}
+                />
+              ),
+            }
+          : {})}
+      />
+      {isActiveOwnerHome ? (
+        <AskOwnerDialog
+          open={askOpen}
+          onOpenChange={setAskOpen}
+          propertyId={current.id}
+          ownerFirst="the owner"
+          today={today}
+          tasks={planTasks.filter((t) => !isFinished(t) && !t.parent_task_id).map((t) => ({ id: t.id, title: t.title }))}
+        />
+      ) : null}
+    </>
   );
 
   // 1.9: a home with no onboarding project or no Tasks shows the header and one card.
@@ -692,6 +773,7 @@ function PropertyWorkspace() {
       <div className="space-y-5">
         {header}
         {viewOnlyLine}
+        {overlays}
         <NoPlanCard
           canStart={canStartPlan}
           start={
@@ -709,11 +791,17 @@ function PropertyWorkspace() {
     );
   }
 
+  const ownerBadge = ownerTabBadge(ownerSummary, ownerTab.data);
+  const telegramUrl =
+    ((data as { externalLinks?: { property_id: string; url: string }[] }).externalLinks ?? []).find(
+      (l) => l.property_id === current.id && /^https:\/\/t\.me\//i.test(l.url),
+    )?.url ?? null;
   return (
     <ViewOnlyScope.Provider value={viewOnlyHome}>
     <div className="space-y-5">
       {header}
       {viewOnlyLine}
+      {overlays}
 
       <Tabs value={tab} onValueChange={goTab} className="space-y-5">
         {/* Fix 4: the tabs in their own bar, pinned under the app's top bar while scrolling. */}
@@ -723,9 +811,9 @@ function PropertyWorkspace() {
               <TabsTrigger key={t.value} value={t.value} className="min-h-11 shrink-0 gap-1.5">
                 {t.label}
                 {/* Fix 5: the only count on a tab; owner items the owner answered and staff have not. */}
-                {t.value === "owner" && ownerSummary.waitingOnUs > 0 ? (
-                  <span className="numeric inline-flex min-w-5 items-center justify-center rounded-full bg-state-blocked px-1.5 text-xs font-semibold text-stage-selected-fg" aria-label={`${ownerSummary.waitingOnUs} waiting on us`}>
-                    {ownerSummary.waitingOnUs}
+                {t.value === "owner" && ownerBadge > 0 ? (
+                  <span className="numeric inline-flex min-w-5 items-center justify-center rounded-full bg-state-blocked px-1.5 text-xs font-semibold text-stage-selected-fg" aria-label={`${ownerBadge} need someone`}>
+                    {ownerBadge}
                   </span>
                 ) : null}
               </TabsTrigger>
@@ -767,6 +855,14 @@ function PropertyWorkspace() {
             }}
             onOpenOwner={() => goTab("owner")}
             shortDate={shortDate}
+          />
+          <UpdatesFeed
+            notes={notes as never}
+            nameOf={(id) => personName(id) ?? "A teammate"}
+            telegramUrl={telegramUrl}
+            canAdd={canEdit && !viewOnlyHome}
+            adding={addNote.isPending}
+            onAdd={(body) => addNote.mutate({ data: { propertyId: current.id, taskId: null, body, mentions: [] } } as never)}
           />
         </TabsContent>
 
@@ -824,14 +920,16 @@ function PropertyWorkspace() {
         </TabsContent>
 
         <TabsContent value="owner" className="space-y-4">
-          {isActiveOwnerHome ? (
-            <section className="space-y-4" aria-label="Active Owner">
-              <HomeAutomation propertyId={current.id} />
-              <PropertyOpportunitiesPanel propertyId={current.id} openId={linkedOpp} compose={compose} />
-            </section>
-          ) : null}
-          <PropertyOwnerCompletions propertyId={current.id} isDemo={Boolean((current as { is_demo?: boolean }).is_demo)} />
-          <HomeownerCard propertyId={current.id} canManage={canEdit} />
+          <OwnerTab
+            propertyId={current.id}
+            homeName={homeName}
+            activeOwner={isActiveOwnerHome}
+            isDemo={Boolean((current as { is_demo?: boolean }).is_demo)}
+            today={today}
+            summary={ownerSummary}
+            tab={ownerTab}
+            teammates={teammates}
+          />
         </TabsContent>
 
         <TabsContent value="details" className="space-y-4">
