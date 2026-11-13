@@ -573,7 +573,7 @@ export function ProjectDetailsSection({
   );
 }
 
-function SetOnceButton({ disabled, onConfirm }: { disabled: boolean; onConfirm: () => void }) {
+export function SetOnceButton({ disabled, onConfirm }: { disabled: boolean; onConfirm: () => void }) {
   const [open, setOpen] = useState(false);
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -603,7 +603,7 @@ function SetOnceButton({ disabled, onConfirm }: { disabled: boolean; onConfirm: 
   );
 }
 
-function CorrectCommittedDate({ projectId, current }: { projectId: string | null; current: string }) {
+export function CorrectCommittedDate({ projectId, current }: { projectId: string | null; current: string }) {
   const correct = useServerFn(correctCommittedHandoffFn);
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);

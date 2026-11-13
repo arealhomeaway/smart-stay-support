@@ -611,7 +611,7 @@ function ProfileRow({
   );
 }
 
-function CodeValues({
+export function CodeValues({
   item,
   codes,
   editing,
