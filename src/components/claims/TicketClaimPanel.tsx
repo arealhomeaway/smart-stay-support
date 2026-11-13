@@ -149,7 +149,7 @@ export function TicketClaimPanel({
         .limit(1);
       if (already.error) throw already.error;
       const found = (already.data ?? [])[0] as { id: string } | undefined;
-      if (found) return found.id;
+      if (found) return { claimId: found.id, historySaved: true };
 
       const { data, error } = await supabase
         .from("claims")
@@ -179,7 +179,7 @@ export function TicketClaimPanel({
         // Another click already created this ticket's claim: open that one.
         const again = await supabase.from("claims").select("id").eq("ticket_id", ticket.id).limit(1);
         const id = (again.data ?? [])[0]?.id as string | undefined;
-        if (id) return id;
+        if (id) return { claimId: id, historySaved: true };
       }
       if (error) throw error;
 
