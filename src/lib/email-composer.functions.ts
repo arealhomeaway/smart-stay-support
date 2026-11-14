@@ -28,7 +28,10 @@ async function canManageEmailTemplates(context: Ctx) {
     context.supabase.rpc("is_supervisor", { _user_id: context.userId }),
     context.supabase.rpc("is_onboarding_director", { _user_id: context.userId }),
   ]);
-  return sup.data === true || director.data === true;
+  if (sup.data === true || director.data === true) return true;
+  // Neither answer came back: say so instead of a false refusal.
+  if (sup.error || director.error) throw new Error("Your access could not be checked. Try again.");
+  return false;
 }
 
 async function assertSupervisor(context: Ctx) {
