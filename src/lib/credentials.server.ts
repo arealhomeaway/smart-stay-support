@@ -74,7 +74,9 @@ export async function loadViewer(
   supabase: SupabaseClient<Database>,
   userId: string,
 ): Promise<Viewer> {
-  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  // A failed role read is not "no roles": say so instead of a false refusal.
+  if (error) throw new Error("Your access could not be checked. Try again.");
   return { userId, roles: (data ?? []).map((r) => r.role as string) };
 }
 
