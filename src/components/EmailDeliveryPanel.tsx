@@ -61,7 +61,7 @@ export function EmailDeliveryPanel() {
         ) : null}
         {delivery.isError ? (
           <LoadError
-            what={delivery.error instanceof Error && /^Only /.test(delivery.error.message) ? delivery.error.message.replace(/\.$/, "") + ". Email delivery" : "Email delivery"}
+            what="Email delivery"
             onRetry={() => void delivery.refetch()}
           />
         ) : null}
