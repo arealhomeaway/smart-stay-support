@@ -13,6 +13,8 @@ import { useTicketDrawer } from "@/components/nav/TicketDrawer";
 import { useCurrentUserId } from "@/hooks/useTeam";
 import { useActivityUpload } from "@/components/work-entry/useActivityUpload";
 import { ownerRezBookingUrl } from "@/lib/ownerrez-links";
+import { writeHistoryLine } from "@/lib/history-line";
+import { showSaved } from "@/components/history-toast";
 import { usDate } from "@/lib/dates";
 import {
   DAMAGE_CATEGORIES,
@@ -138,9 +140,12 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
     qc.invalidateQueries({ queryKey: ["departure-reviews"] }),
   ]);
 
-  const logEvent = async (event_type: string, summary: string) => {
-    if (!userId) return;
-    await supabase.from("departure_review_events").insert({ departure_review_id: r.id, property_id: r.property_id, event_type, summary, actor_id: userId });
+  /** Writes the history line. False when it did not save. */
+  const logEvent = async (event_type: string, summary: string): Promise<boolean> => {
+    if (!userId) return false;
+    return writeHistoryLine(() =>
+      supabase.from("departure_review_events").insert({ departure_review_id: r.id, property_id: r.property_id, event_type, summary, actor_id: userId }),
+    );
   };
 
   /** Saves answers; claims the review for the person working it if nobody has. */
@@ -150,7 +155,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
     const { error } = await supabase.from("departure_reviews").update({ ...claim, ...patch } as never).eq("id", r.id);
     setBusy(false);
     if (error) { toast.error(error.message); return; }
-    if (event) await logEvent(event[0], event[1]);
+    if (event && !(await logEvent(event[0], event[1]))) showSaved("Saved", false);
     await refresh();
   };
 
@@ -186,16 +191,32 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
       damage_categories: r.damage_categories,
       evidence_document_ids: r.attachment_document_ids,
     } as never).select("id").single();
+    let claimId = data?.id ?? null;
     if (error) {
+      // A Claim already made for this review (an earlier try whose link did
+      // not save) is linked now instead of being refused.
+      const existing = error.code === "23505"
+        ? await supabase.from("claims").select("id").eq("departure_review_id", r.id).maybeSingle()
+        : null;
+      claimId = existing?.data?.id ?? null;
+      if (!claimId || r.claim_id === claimId) {
+        setBusy(false);
+        toast.error(error.code === "23505" ? "A Claim is already linked to this Departure Review." : error.message);
+        return;
+      }
+    }
+    const linked = await supabase.from("departure_reviews").update({ claim_id: claimId }).eq("id", r.id).select("id");
+    if (linked.error || !linked.data?.length) {
       setBusy(false);
-      toast.error(error.code === "23505" ? "A Claim is already linked to this Departure Review." : error.message);
+      toast.error("The Claim was made, but it is not linked to this review yet. Press Create claim again to link it.");
+      await refresh();
       return;
     }
-    await supabase.from("departure_reviews").update({ claim_id: data.id }).eq("id", r.id);
-    await supabase.from("cleaning_reviews").update({ linked_claim_id: data.id }).eq("departure_review_id", r.id);
-    await logEvent("claim_created", "Claim created and sent to the Claims queue");
+    // The cleaning record is written again when the review is completed.
+    await supabase.from("cleaning_reviews").update({ linked_claim_id: claimId }).eq("departure_review_id", r.id);
+    const logged = await logEvent("claim_created", "Claim created and sent to the Claims queue");
     setBusy(false);
-    toast.success("Claim created in the Claims queue.");
+    showSaved("Claim created in the Claims queue", logged);
     await refresh();
   };
 
@@ -205,7 +226,11 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
     try {
       const ids = await upload(r.property_id, files);
       const all = [...r.attachment_document_ids, ...ids];
-      await supabase.from("departure_reviews").update({ attachment_document_ids: all }).eq("id", r.id);
+      const attached = await supabase.from("departure_reviews").update({ attachment_document_ids: all }).eq("id", r.id).select("id");
+      if (attached.error || !attached.data?.length) {
+        throw new Error("The files uploaded but did not attach to this review. Try again.");
+      }
+      // The cleaning record is written again when the review is completed.
       await supabase.from("cleaning_reviews").update({ photo_document_ids: all }).eq("departure_review_id", r.id);
       setFiles([]);
       toast.success("Files attached.");
@@ -238,8 +263,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
     }).eq("id", r.id);
     setBusy(false);
     if (error) { toast.error(error.message); return; }
-    await logEvent("completed", "Departure Review completed");
-    toast.success("Departure Review completed.");
+    showSaved("Departure Review completed", await logEvent("completed", "Departure Review completed"));
     await refresh();
   };
 

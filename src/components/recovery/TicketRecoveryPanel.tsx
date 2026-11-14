@@ -11,6 +11,8 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { writeHistoryLine } from "@/lib/history-line";
+import { showSaved } from "@/components/history-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -205,7 +207,7 @@ export function TicketRecoveryPanel({ ticket, openSignal = 0 }: { ticket: Ticket
         });
       }
 
-      await supabase.from("guest_recovery_activity").insert({
+      const historySaved = await writeHistoryLine(() => supabase.from("guest_recovery_activity").insert({
         recovery_id: recoveryId,
         author_id: userId,
         event_type: "created",
@@ -219,7 +221,7 @@ export function TicketRecoveryPanel({ ticket, openSignal = 0 }: { ticket: Ticket
           policy_version: POLICY_VERSION,
         },
         is_demo: ticket.is_demo ?? false,
-      } as never);
+      } as never));
 
       // A recovery on a ticket is itself the documentation, so the ticket says so.
       if (!ticket.guest_recovery_needed) {
@@ -232,9 +234,9 @@ export function TicketRecoveryPanel({ ticket, openSignal = 0 }: { ticket: Ticket
           } as never)
           .eq("id", ticket.id);
       }
-      return recoveryId;
+      return { recoveryId, historySaved };
     },
-    onSuccess: () => {
+    onSuccess: ({ historySaved }) => {
       setOpen(false);
       setAcknowledged(false);
       setImpact("");
@@ -244,7 +246,7 @@ export function TicketRecoveryPanel({ ticket, openSignal = 0 }: { ticket: Ticket
       setPolicyFit("unknown");
       qc.invalidateQueries({ queryKey: ["recovery-for-ticket", ticket.id] });
       qc.invalidateQueries({ queryKey: ["guest-recovery"] });
-      toast.success("Refund or credit opened");
+      showSaved("Refund or credit opened", historySaved);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -263,7 +265,7 @@ export function TicketRecoveryPanel({ ticket, openSignal = 0 }: { ticket: Ticket
         } as never)
         .eq("id", ticket.id);
       if (error) throw error;
-      await supabase.from("ticket_activity").insert({
+      const historySaved = await writeHistoryLine(() => supabase.from("ticket_activity").insert({
         ticket_id: ticket.id,
         author_id: userId,
         kind: "status",
@@ -273,12 +275,13 @@ export function TicketRecoveryPanel({ ticket, openSignal = 0 }: { ticket: Ticket
           : "Guest refunds & credits no longer applies to this ticket.",
         internal: true,
         is_demo: ticket.is_demo ?? false,
-      } as never);
-      return next;
+      } as never));
+      return { next, historySaved };
     },
-    onSuccess: (next) => {
+    onSuccess: ({ next, historySaved }) => {
       qc.invalidateQueries({ queryKey: ["ticket", ticket.id] });
       qc.invalidateQueries({ queryKey: ["tickets"] });
+      if (!historySaved) showSaved("Saved on the ticket", false);
       if (next) setOpen(true);
     },
     onError: (e: Error) => toast.error(e.message),

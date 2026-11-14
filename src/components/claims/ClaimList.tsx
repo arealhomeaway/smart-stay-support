@@ -10,6 +10,8 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { writeHistoryLine } from "@/lib/history-line";
+import { showSaved } from "@/components/history-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/page";
@@ -132,19 +134,21 @@ export function ClaimRowCard({
         .update({ assigned_to: userId })
         .eq("id", claim.id);
       if (error) throw error;
-      await supabase.from("claim_activity").insert({
-        claim_id: claim.id,
-        author_id: userId,
-        event_type: "assignment",
-        body: "Assigned to self from the claims queue",
-        detail: { assigned_to: userId } as never,
-        is_demo: claim.is_demo,
-      });
+      return writeHistoryLine(() =>
+        supabase.from("claim_activity").insert({
+          claim_id: claim.id,
+          author_id: userId,
+          event_type: "assignment",
+          body: "Assigned to self from the claims queue",
+          detail: { assigned_to: userId } as never,
+          is_demo: claim.is_demo,
+        }),
+      );
     },
-    onSuccess: () => {
+    onSuccess: (historySaved) => {
       qc.invalidateQueries({ queryKey: ["claims"] });
       qc.invalidateQueries({ queryKey: ["claim-activity", claim.id] });
-      toast.success("Claim assigned to you");
+      showSaved("Claim assigned to you", historySaved);
     },
     onError: (e: Error) => toast.error(e.message),
   });

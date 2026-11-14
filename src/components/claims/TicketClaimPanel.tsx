@@ -11,6 +11,8 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { writeHistoryLine } from "@/lib/history-line";
+import { showSaved } from "@/components/history-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -147,7 +149,7 @@ export function TicketClaimPanel({
         .limit(1);
       if (already.error) throw already.error;
       const found = (already.data ?? [])[0] as { id: string } | undefined;
-      if (found) return found.id;
+      if (found) return { claimId: found.id, historySaved: true };
 
       const { data, error } = await supabase
         .from("claims")
@@ -177,7 +179,7 @@ export function TicketClaimPanel({
         // Another click already created this ticket's claim: open that one.
         const again = await supabase.from("claims").select("id").eq("ticket_id", ticket.id).limit(1);
         const id = (again.data ?? [])[0]?.id as string | undefined;
-        if (id) return id;
+        if (id) return { claimId: id, historySaved: true };
       }
       if (error) throw error;
 
@@ -200,23 +202,25 @@ export function TicketClaimPanel({
         });
       }
 
-      await supabase.from("claim_activity").insert({
-        claim_id: claimId,
-        author_id: userId,
-        event_type: "created",
-        body: `Claim opened from ticket. Recovering from ${RECOVERY_SOURCE[type]}`,
-        is_demo: ticket.is_demo ?? false,
-      });
-      return claimId;
+      const historySaved = await writeHistoryLine(() =>
+        supabase.from("claim_activity").insert({
+          claim_id: claimId,
+          author_id: userId,
+          event_type: "created",
+          body: `Claim opened from ticket. Recovering from ${RECOVERY_SOURCE[type]}`,
+          is_demo: ticket.is_demo ?? false,
+        }),
+      );
+      return { claimId, historySaved };
     },
-    onSuccess: () => {
+    onSuccess: ({ historySaved }) => {
       setOpen(false);
       setAcknowledgedDuplicate(false);
       qc.invalidateQueries({ queryKey: ["claims-for-ticket", ticket.id] });
       qc.invalidateQueries({ queryKey: ["ticket-branches", ticket.id] });
       qc.invalidateQueries({ queryKey: ["claims"] });
       qc.invalidateQueries({ queryKey: ["claim-requirements"] });
-      toast.success("Claim opened");
+      showSaved("Claim opened", historySaved);
     },
     onError: (e: Error) => toast.error(e.message),
   });

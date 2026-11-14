@@ -7,6 +7,7 @@
  * that shows them with every other owner item is OwnerOpportunityBoard.
  * Owner-facing language only: "Opportunity", never task, ticket or requirement.
  */
+import { LoadError } from "@/components/ui/page";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -38,7 +39,7 @@ import {
 import { listOptionalLibrary, type LibraryTemplate } from "@/lib/opportunity-library.functions";
 import { arhaCover, duplicatesArha, imageFor } from "@/lib/opportunity-images";
 import { OwnerUploadDialog } from "@/components/owner/OwnerUploadDialog";
-import { LibraryVideoPlayer, useLibraryVideoIndex } from "@/components/owner/LibraryVideoPlayer";
+import { LibraryVideoIndexError, LibraryVideoPlayer, useLibraryVideoIndex } from "@/components/owner/LibraryVideoPlayer";
 import { videoForOpportunity } from "@/lib/library-video";
 import { OwnerFileRow, useOwnerDocuments } from "@/components/OwnerFilesPanel";
 import { OwnerSidePanel, PanelSection } from "@/components/owner/OwnerSidePanel";
@@ -258,7 +259,7 @@ function ResourceLinks({ items }: { items: Live["resources"] }) {
 
 /** The full Opportunity, in the side panel. Opening an ARHA Opportunity is what records it as viewed. */
 export function OpportunityDetail({
-  item, onClose, readOnly, homes, blockedReason, onLogHours, statusLabel, outsideLine = null,
+  item, onClose, readOnly, homes, blockedReason, onLogHours, statusLabel, outsideLine = null, outsideFailed,
 }: {
   item: Live | null;
   onClose: () => void;
@@ -270,6 +271,8 @@ export function OpportunityDetail({
   statusLabel?: string | null;
   /** Item 2: work done outside Resolve; shown instead of an upload request. */
   outsideLine?: string | null;
+  /** The outside-Resolve instructions failed to load: show that, never the ordinary ones. */
+  outsideFailed?: { retry: () => void };
 }) {
   const qc = useQueryClient();
   const docs = useOwnerDocuments();
@@ -326,14 +329,15 @@ export function OpportunityDetail({
               </Button>
             ) : null}
             {/* Fix 24: an approval item has only Approve and Ask a question. */}
-            {homes.length && !outsideLine && !(arha && t.includes("decision")) ? <Button className="min-h-11" size="sm" variant="outline" onClick={() => setUpload(true)}>Upload documentation</Button> : null}
+            {homes.length && !outsideLine && !outsideFailed && !(arha && t.includes("decision")) ? <Button className="min-h-11" size="sm" variant="outline" onClick={() => setUpload(true)}>Upload documentation</Button> : null}
             {!item.finished && !(arha && t.includes("decision")) ? <Button className="min-h-11" size="sm" disabled={done.isPending} onClick={() => done.mutate()}>Mark complete</Button> : null}
           </>
         )
       }
     >
-      {video && item.templateId ? <LibraryVideoPlayer libraryId={item.templateId} poster={item.cover} label={video.label} /> : null}
-      {outsideLine || item.what ? <PanelSection label="What we're asking"><p className="whitespace-pre-wrap text-muted-foreground">{outsideLine ?? item.what}</p></PanelSection> : null}
+      {video && item.templateId ? <LibraryVideoPlayer libraryId={item.templateId} poster={item.cover} label={video.label} /> : item.templateId ? <LibraryVideoIndexError /> : null}
+      {outsideFailed && !outsideLine ? <LoadError what="The instructions" onRetry={outsideFailed.retry} /> : null}
+      {outsideFailed && !outsideLine ? null : outsideLine || item.what ? <PanelSection label="What we're asking"><p className="whitespace-pre-wrap text-muted-foreground">{outsideLine ?? item.what}</p></PanelSection> : null}
       {item.why ? <PanelSection label={arha ? "Why this matters" : "Why it matters"}><p className="whitespace-pre-wrap text-muted-foreground">{item.why}</p></PanelSection> : null}
       {item.how ? <PanelSection label={arha ? "How to complete it" : "How to complete it remotely"}><p className="whitespace-pre-wrap text-muted-foreground">{item.how}</p></PanelSection> : null}
       {item.resources.length || item.templateLink || linked.length ? (
@@ -347,7 +351,7 @@ export function OpportunityDetail({
           </div>
         </PanelSection>
       ) : null}
-      {item.document && !outsideLine ? <PanelSection label="Ways to document your participation"><p className="whitespace-pre-wrap text-muted-foreground">{item.document}</p></PanelSection> : null}
+      {item.document && !outsideLine && !outsideFailed ? <PanelSection label="Ways to document your participation"><p className="whitespace-pre-wrap text-muted-foreground">{item.document}</p></PanelSection> : null}
 
       {/* Build 17 finding 2: every Opportunity carries the conversation, so a staff message is seen
           and answered from the moment the thread exists, whoever leads the item. */}

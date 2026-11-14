@@ -36,27 +36,39 @@ export type HandoffWrite = { error: { message: string } | null; rows: number };
 
 export const HANDOFF_SETTLE_COPY = {
   ticketNotMoved: {
+    send: "The ticket did not change, so the handoff was not sent. Refresh the page and try again.",
     accept: "The ticket did not change, so the handoff was not accepted. Refresh the page and try again.",
     decline: "The ticket did not change, so the handoff was not declined. Refresh the page and try again.",
   },
   handoffNotSaved: {
+    send: "The handoff could not be saved, so the ticket was put back. Try again.",
     accept: "The handoff could not be saved, so the ticket was put back. Try again.",
     decline: "The handoff could not be saved, so the ticket was put back. Try again.",
   },
+  /** The handoff failed and putting the ticket back failed too. */
+  ticketNotPutBack: {
+    send: "The handoff was not sent, and the ticket could not be put back. Refresh the page and check the ticket.",
+    accept: "The handoff was not accepted, and the ticket could not be put back. Refresh the page and check the ticket.",
+    decline: "The handoff was not declined, and the ticket could not be put back. Refresh the page and check the ticket.",
+  },
 } as const;
+
+export type HandoffSettleKind = "send" | "accept" | "decline";
 
 /**
  * Accept or decline in a safe order: the ticket moves first, and only when
  * that save really changed the ticket is the handoff recorded as accepted or
- * declined. If the handoff record then fails, the ticket is put back, so the
- * screen never says done while the ticket stayed where it was.
+ * declined (or sent). If the handoff record then fails, the ticket is put back,
+ * so the screen never says done while the ticket stayed where it was, and it
+ * never says "put back" unless the put-back really saved.
  */
 export async function settleHandoff(
-  kind: "accept" | "decline",
+  kind: HandoffSettleKind,
   steps: {
     saveTicket: () => Promise<HandoffWrite>;
     saveHandoff: () => Promise<HandoffWrite>;
-    undoTicket: () => Promise<unknown>;
+    /** Puts the ticket back; must report how many rows it changed. */
+    undoTicket: () => Promise<HandoffWrite>;
   },
 ): Promise<{ ok: true } | { ok: false; message: string }> {
   let ticket: HandoffWrite;
@@ -74,12 +86,17 @@ export async function settleHandoff(
     handoff = null;
   }
   if (!handoff || handoff.error || handoff.rows < 1) {
+    let undone = false;
     try {
-      await steps.undoTicket();
+      const u = await steps.undoTicket();
+      undone = !u.error && u.rows > 0;
     } catch {
-      // The message below still tells the person it did not go through.
+      undone = false;
     }
-    return { ok: false, message: HANDOFF_SETTLE_COPY.handoffNotSaved[kind] };
+    return {
+      ok: false,
+      message: undone ? HANDOFF_SETTLE_COPY.handoffNotSaved[kind] : HANDOFF_SETTLE_COPY.ticketNotPutBack[kind],
+    };
   }
   return { ok: true };
 }

@@ -193,7 +193,8 @@ export const addTestReview = createServerFn({ method: "POST" })
 export const syncOwnerRezReviews = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: ok } = await context.supabase.rpc("is_supervisor", { _user_id: context.userId });
+    const { data: ok, error: accessError } = await context.supabase.rpc("is_supervisor", { _user_id: context.userId });
+    if (accessError) throw new Error("Your access could not be checked. Try again.");
     if (!ok) throw new Error("Only supervisors can import reviews.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { fetchOwnerRezReviews, ingestReviews } = await import("./guest-feedback.server");
@@ -205,7 +206,8 @@ export const syncOwnerRezReviews = createServerFn({ method: "POST" })
 export const previewOwnerRezReviews = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: ok } = await context.supabase.rpc("is_supervisor", { _user_id: context.userId });
+    const { data: ok, error: accessError } = await context.supabase.rpc("is_supervisor", { _user_id: context.userId });
+    if (accessError) throw new Error("Your access could not be checked. Try again.");
     if (!ok) throw new Error("Only supervisors can preview the review import.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { fetchOwnerRezReviews, previewReviewImport } = await import("./guest-feedback.server");

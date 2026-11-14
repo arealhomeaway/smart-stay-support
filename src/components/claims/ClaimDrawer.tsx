@@ -12,6 +12,8 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { writeHistoryLine } from "@/lib/history-line";
+import { showSaved } from "@/components/history-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -129,16 +131,19 @@ export function ClaimDrawer({
     qc.invalidateQueries({ queryKey: ["claim-activity", claim?.id] });
   };
 
-  const logEvent = async (event_type: string, body: string, detail?: Record<string, unknown>) => {
-    if (!claim) return;
-    await supabase.from("claim_activity").insert({
-      claim_id: claim.id,
-      author_id: userId,
-      event_type,
-      body,
-      detail: (detail ?? {}) as never,
-      is_demo: claim.is_demo,
-    });
+  /** Writes the claim history line. False when it did not save. */
+  const logEvent = async (event_type: string, body: string, detail?: Record<string, unknown>): Promise<boolean> => {
+    if (!claim) return false;
+    return writeHistoryLine(() =>
+      supabase.from("claim_activity").insert({
+        claim_id: claim.id,
+        author_id: userId,
+        event_type,
+        body,
+        detail: (detail ?? {}) as never,
+        is_demo: claim.is_demo,
+      }),
+    );
   };
 
   const update = useMutation({
@@ -151,14 +156,14 @@ export function ClaimDrawer({
       event: string;
       body: string;
     }) => {
-      if (!claim) return;
+      if (!claim) return true;
       const { error } = await supabase.from("claims").update(patch).eq("id", claim.id);
       if (error) throw error;
-      await logEvent(event, body, patch as Record<string, unknown>);
+      return logEvent(event, body, patch as Record<string, unknown>);
     },
-    onSuccess: () => {
+    onSuccess: (historySaved) => {
       refresh();
-      toast.success("Claim updated");
+      showSaved("Claim updated", historySaved);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -167,12 +172,14 @@ export function ClaimDrawer({
     mutationFn: async () => {
       const text = note.trim();
       if (!claim || !text) return;
-      await logEvent("note", text);
+      // The note is the history line itself, so a failed save keeps the text.
+      if (!(await logEvent("note", text))) throw new Error("The note did not save. Try again.");
     },
     onSuccess: () => {
       setNote("");
       qc.invalidateQueries({ queryKey: ["claim-activity", claim?.id] });
     },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const setRequirementStatus = useMutation({
@@ -182,12 +189,15 @@ export function ClaimDrawer({
         .update({ status })
         .eq("id", id);
       if (error) throw error;
-      await logEvent(
+      return logEvent(
         "evidence",
         status === "verified" ? `${label} received` : `${label} marked ${status.replace("_", " ")}`,
       );
     },
-    onSuccess: () => refresh(),
+    onSuccess: (historySaved) => {
+      refresh();
+      if (!historySaved) showSaved("Evidence updated", false);
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 

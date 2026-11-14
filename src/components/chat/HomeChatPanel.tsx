@@ -7,6 +7,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { MessageSquare, X } from "lucide-react";
+import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
@@ -105,8 +106,12 @@ export function HomeChatPanel(p: {
             {p.makeTask({
               body: making.body,
               onAdded: (taskId) => {
-                void link({ data: { messageId: making.id, taskId } }).catch(() => undefined);
+                const messageId = making.id;
                 setMaking(null);
+                // One more try, then say so: the Task is made either way.
+                void link({ data: { messageId, taskId } })
+                  .catch(() => link({ data: { messageId, taskId } }))
+                  .catch(() => toast.error("The Task was made, but it is not linked to this message."));
               },
               onCancel: () => setMaking(null),
             })}

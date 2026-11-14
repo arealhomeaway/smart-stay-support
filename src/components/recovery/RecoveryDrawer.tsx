@@ -10,6 +10,8 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { writeHistoryLine } from "@/lib/history-line";
+import { showSaved } from "@/components/history-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { TaskWorkspace } from "@/components/ui/workspace";
 import { Button } from "@/components/ui/button";
@@ -127,22 +129,24 @@ export function RecoveryDrawer({
       body: string;
       detail?: Record<string, unknown>;
     }) => {
-      if (!recovery) return;
+      if (!recovery) return true;
       const { error } = await supabase.from("guest_recovery").update(patch).eq("id", recovery.id);
       if (error) throw error;
-      await supabase.from("guest_recovery_activity").insert({
-        recovery_id: recovery.id,
-        author_id: userId,
-        event_type: event,
-        body,
-        detail: { ...(detail ?? {}), policy_version: POLICY_VERSION } as never,
-        is_demo: recovery.is_demo,
-      });
+      return writeHistoryLine(() =>
+        supabase.from("guest_recovery_activity").insert({
+          recovery_id: recovery.id,
+          author_id: userId,
+          event_type: event,
+          body,
+          detail: { ...(detail ?? {}), policy_version: POLICY_VERSION } as never,
+          is_demo: recovery.is_demo,
+        }),
+      );
     },
-    onSuccess: () => {
+    onSuccess: (historySaved) => {
       setNote("");
       refresh();
-      toast.success("Refund or credit updated");
+      showSaved("Refund or credit updated", historySaved);
     },
     onError: (e: Error) => toast.error(e.message),
   });

@@ -6,6 +6,7 @@
  * visibility rule, and sending completes the Task when the home has a live
  * Active Owner program (send_task_to_owner_item). Nothing here decides access.
  */
+import { LoadError } from "@/components/ui/page";
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -113,7 +114,7 @@ export function SendToHomeownerSection({
 
   const toggle = (id: string) => setPicked((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
   const item = sent.data?.available ? sent.data.data : null;
-  const ready = !disabled && !item && !sendBlocked && note.trim().length >= 20 && !mutation.isPending;
+  const ready = !disabled && !item && !sent.isError && !sendBlocked && note.trim().length >= 20 && !mutation.isPending;
   useEffect(() => onReady?.(ready), [ready, onReady]);
   const submit = () => mutation.mutate({ taskId, note: note.trim(), version: "", documentIds: picked, respondBy: answerBy || null });
 
@@ -124,7 +125,10 @@ export function SendToHomeownerSection({
         {badge}
       </div>
 
-      {item ? (
+      {sent.isError ? (
+        // Unknown whether it was already sent: never offer a second send.
+        <LoadError what="What was sent" onRetry={() => void sent.refetch()} />
+      ) : item ? (
         <>
           <p className="text-sm text-muted-foreground">
             Sent {usDate(item.sent_at)}

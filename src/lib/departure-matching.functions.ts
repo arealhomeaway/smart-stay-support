@@ -2,7 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function requireSupervisor(supabase: any, userId: string) {
-  const { data: ok } = await supabase.rpc("is_supervisor", { _user_id: userId });
+  const { data: ok, error } = await supabase.rpc("is_supervisor", { _user_id: userId });
+  if (error) throw new Error("Your access could not be checked. Try again.");
   if (!ok) throw new Error("Only supervisors can work reservation matching.");
 }
 

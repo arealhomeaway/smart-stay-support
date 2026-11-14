@@ -13,7 +13,7 @@ import type { ComposerContext, MessageAudience } from "./email-composer";
 const CONTEXTS = ["ticket", "work_order", "property", "onboarding_task"];
 const AUDIENCES = ["guest", "owner", "vendor", "staff"];
 
-type Ctx = { supabase: { rpc: (name: string, args: unknown) => Promise<{ data: unknown }> } & Record<string, unknown>; userId: string };
+type Ctx = { supabase: { rpc: (name: string, args: unknown) => Promise<{ data: unknown; error?: unknown }> } & Record<string, unknown>; userId: string };
 
 async function assertStaff(context: Ctx) {
   const { data } = await context.supabase.rpc("is_staff", { _user_id: context.userId });
@@ -28,7 +28,10 @@ async function canManageEmailTemplates(context: Ctx) {
     context.supabase.rpc("is_supervisor", { _user_id: context.userId }),
     context.supabase.rpc("is_onboarding_director", { _user_id: context.userId }),
   ]);
-  return sup.data === true || director.data === true;
+  if (sup.data === true || director.data === true) return true;
+  // Neither answer came back: say so instead of a false refusal.
+  if (sup.error || director.error) throw new Error("Your access could not be checked. Try again.");
+  return false;
 }
 
 async function assertSupervisor(context: Ctx) {
@@ -106,7 +109,8 @@ export const getComposerContext = createServerFn({ method: "GET" })
       .eq("active", true)
       .order("name");
 
-    const canManage = await canManageEmailTemplates(context as never as Ctx);
+    // Opening the composer never fails on this check; saving re-checks and says why.
+    const canManage = await canManageEmailTemplates(context as never as Ctx).catch(() => false);
 
     return {
       ...gathered,

@@ -8,6 +8,7 @@
  * Each source keeps its own canonical record and actions; opening a card opens
  * that source's own side panel. Instructions and form fields live only in the panel.
  */
+import { LoadError } from "@/components/ui/page";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -22,7 +23,7 @@ import { PlanCardForm } from "@/components/owner/OwnerPlanCards";
 import { OwnerItemConversation } from "@/components/owner/OwnerItemConversation";
 import { OwnerApprovalPanel } from "@/components/OwnerApprovalPanel";
 import { OnboardingActions } from "@/components/owner/OnboardingActions";
-import { LibraryVideoPlayer, useLibraryVideoIndex } from "@/components/owner/LibraryVideoPlayer";
+import { LibraryVideoIndexError, LibraryVideoPlayer, useLibraryVideoIndex } from "@/components/owner/LibraryVideoPlayer";
 import { loadOwnerItemLastSpeakers, loadOwnerPortalPlan, loadOwnerOutsideLines, type OwnerPortalPlanRow } from "@/lib/ao-data";
 import { portalCardView } from "@/lib/ao-ui";
 import { inQueue } from "@/lib/owner-opportunity-filters";
@@ -666,6 +667,7 @@ function ItemPanel({
 }) {
   const home = sourceLine({ ...item, from: "" }, homeName, multi);
   const outsideLines = useOutsideLines(programId, programLive);
+  const outsideState = useOutsideLinesFailed(programId, programLive);
   const onOpenChange = (next: boolean) => { if (!next) onClose(); };
   const logFooter =
     onLogHours && !blockedReason && !readOnly ? (
@@ -688,6 +690,7 @@ function ItemPanel({
         blockedReason={blockedReason}
         statusLabel={item.status}
         outsideLine={outsideLines.get(`work:${item.id}`) ?? null}
+        {...(outsideState.failed ? { outsideFailed: outsideState } : {})}
         {...(onLogHours ? { onLogHours } : {})}
       />
     );
@@ -722,6 +725,14 @@ function PlanCardPanel({
   const q = useQuery({ queryKey: ["ao-owner-plan", programId, "portal"], queryFn: () => loadOwnerPortalPlan(programId), retry: false });
   const row = q.data?.available ? q.data.data.find((c) => c.plan_card_id === item.id) : undefined;
   const outsideLine = useOutsideLines(programId, programLive).get(`plan:${item.id}`) ?? null;
+  const outsideState = useOutsideLinesFailed(programId, programLive);
+  if (q.isError) {
+    return (
+      <OwnerSidePanel open onOpenChange={onOpenChange} cover={item.cover} status="Open" title={item.title} home={home} footer={null}>
+        <LoadError what="This card" onRetry={() => void q.refetch()} />
+      </OwnerSidePanel>
+    );
+  }
   if (!row) return null;
   const view = portalCardView(row);
   return (
@@ -736,7 +747,9 @@ function PlanCardPanel({
       answerBy={item.optional ? null : row.deadline_at ?? null}
       footer={footer}
     >
-      {outsideLine || row.what_text ? <PanelSection label="What we're asking"><p className="whitespace-pre-wrap text-muted-foreground">{outsideLine ?? row.what_text}</p></PanelSection> : null}
+      {outsideState.failed && !outsideLine ? (
+        <LoadError what="The instructions" onRetry={outsideState.retry} />
+      ) : outsideLine || row.what_text ? <PanelSection label="What we're asking"><p className="whitespace-pre-wrap text-muted-foreground">{outsideLine ?? row.what_text}</p></PanelSection> : null}
       {item.allHomes ? <p className="text-sm text-muted-foreground">Answer once and it counts for every one of your homes.</p> : null}
       {view.kind === "open" ? (
         <PanelSection label="Your answer">
@@ -782,7 +795,7 @@ function TemplatePanel({
         )
       }
     >
-      {video ? <LibraryVideoPlayer libraryId={template.id} poster={imageFor(template.image_key)} label={video.label} /> : null}
+      {video ? <LibraryVideoPlayer libraryId={template.id} poster={imageFor(template.image_key)} label={video.label} /> : <LibraryVideoIndexError />}
       {template.what || template.summary ? (
         <PanelSection label="What we're asking"><p className="whitespace-pre-wrap text-muted-foreground">{template.what || template.summary}</p></PanelSection>
       ) : null}
@@ -804,3 +817,9 @@ export function useOutsideLines(programId: string, programLive: boolean): Map<st
   return q.data ?? EMPTY_LINES;
 }
 const EMPTY_LINES = new Map<string, string>();
+
+/** Whether the outside-Resolve instructions failed to load, with a retry. Same read as useOutsideLines. */
+export function useOutsideLinesFailed(programId: string, programLive: boolean): { failed: boolean; retry: () => void } {
+  const q = useQuery({ queryKey: ["owner-outside-lines", programId, programLive], queryFn: () => loadOwnerOutsideLines(programId, programLive), retry: false, staleTime: 60_000 });
+  return { failed: q.isError, retry: () => void q.refetch() };
+}

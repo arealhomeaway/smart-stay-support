@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { usCalendarDate } from "@/lib/dates";
 import type { ExtraValue } from "@/lib/pid-sync/extras";
 import { useFeatureFlags } from "@/lib/feature-flags";
+import { LoadError } from "@/components/ui/page";
 
 type Row = { field_name: string; value: ExtraValue; synced_on: string; as_of: string };
 
@@ -26,10 +27,23 @@ export function PidExtraFieldsCard({ propertyId }: { propertyId: string }) {
         .select("field_name, value, synced_on, as_of")
         .eq("property_id", propertyId)
         .order("field_name");
-      if (error) return null; // not set up yet: nothing to show
+      if (error) {
+        // Table not there yet: nothing to show. Any other failure is shown.
+        const code = (error as { code?: string }).code;
+        if (code === "42P01" || code === "PGRST205") return null;
+        throw error;
+      }
       return (data ?? []) as Row[];
     },
   });
+  if (q.isError) {
+    return (
+      <section id="hp-pid" className="surface scroll-mt-24 p-4">
+        <p className="mb-2 text-base font-semibold">From the PID</p>
+        <LoadError what="This section" onRetry={() => void q.refetch()} />
+      </section>
+    );
+  }
   if (!q.data || q.data.length === 0) return null;
   const synced = q.data.map((r) => r.synced_on).sort().at(-1) ?? null;
 

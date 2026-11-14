@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { LoadError } from "@/components/ui/page";
+import { CONNECTION_LABEL, connectionState } from "@/lib/load-state";
 import { useServerFn } from "@tanstack/react-start";
 import { Inbox, MailCheck, RefreshCw, Eye, Radio, Eraser } from "lucide-react";
 import { toast } from "sonner";
@@ -89,6 +91,7 @@ export function MailboxIntakePanel() {
   });
 
   const connected = status.data?.connected ?? false;
+  const connection = connectionState({ isLoading: status.isLoading, isError: status.isError, connected: status.data?.connected });
   const subscription = status.data?.subscription ?? null;
   const intake = status.data?.intake ?? null;
   const switchOn = intake?.switchOn ?? false;
@@ -135,14 +138,16 @@ export function MailboxIntakePanel() {
               record is settled.
             </CardDescription>
           </div>
-          <Badge variant={connected ? "default" : "secondary"}>
-            {connected ? "Connected" : "Not connected"}
+          <Badge variant={connection === "connected" ? "default" : connection === "unknown" ? "destructive" : "secondary"}>
+            {CONNECTION_LABEL[connection]}
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {status.isLoading ? (
           <Skeleton className="h-16 w-full" />
+        ) : status.isError ? (
+          <LoadError what="The mailbox status" onRetry={() => void status.refetch()} />
         ) : (
           <p className="text-sm text-muted-foreground">
             Mailbox: <span className="font-medium text-foreground">{status.data?.mailbox}</span> ·

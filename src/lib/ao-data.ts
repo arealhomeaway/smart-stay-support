@@ -235,6 +235,8 @@ export async function loadTaskOwnerSend(taskId: string): Promise<Available<TaskO
   if (!sent.available) return { available: false };
   if (!sent.data) return { available: true, data: null };
   const review = await db.from("owner_reviews").select("respond_by").eq("id", sent.data.review_id).maybeSingle();
+  // A failed read must not look like "no answer-by date".
+  if (review.error) throw new Error("The answer-by date could not load.");
   const respondBy = (review.data as { respond_by?: string | null } | null)?.respond_by ?? null;
   return { available: true, data: { ...sent.data, respond_by: respondBy } };
 }
@@ -289,7 +291,8 @@ export async function loadOwnerOutsideLines(programId: string, programLive: bool
     live = (row) => row.live_program === true;
   } else {
     const r = await db.rpc("owner_outside_resolve_lines", { _program: programId });
-    if (r.error) return out;
+    // Both reads failed: say so, never show the ordinary instructions in their place.
+    if (r.error) throw new Error("The instructions could not load.");
     rows = (r.data ?? []) as Note[];
     // Homeowners cannot read owner_programs directly; the page passes the viewed program's state.
     live = () => programLive;

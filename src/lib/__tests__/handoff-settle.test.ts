@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { HANDOFF_SETTLE_COPY, settleHandoff, type HandoffWrite } from "../handoff-accept";
 
 /** Records the order of every save so the test can see what ran. */
-function steps(ticket: HandoffWrite | Error, handoff: HandoffWrite | Error) {
+function steps(ticket: HandoffWrite | Error, handoff: HandoffWrite | Error, undo: HandoffWrite | Error = { error: null, rows: 1 }) {
   const calls: string[] = [];
   const run = (name: string, r: HandoffWrite | Error) => async () => {
     calls.push(name);
@@ -16,6 +16,8 @@ function steps(ticket: HandoffWrite | Error, handoff: HandoffWrite | Error) {
       saveHandoff: run("handoff", handoff),
       undoTicket: async () => {
         calls.push("undo");
+        if (undo instanceof Error) throw undo;
+        return undo;
       },
     },
   };
@@ -23,7 +25,7 @@ function steps(ticket: HandoffWrite | Error, handoff: HandoffWrite | Error) {
 const OK: HandoffWrite = { error: null, rows: 1 };
 
 describe("settleHandoff: the ticket must move before a handoff counts", () => {
-  for (const kind of ["accept", "decline"] as const) {
+  for (const kind of ["send", "accept", "decline"] as const) {
     it(`${kind}: saves the ticket first, then the handoff`, async () => {
       const { calls, s } = steps(OK, OK);
       expect(await settleHandoff(kind, s)).toEqual({ ok: true });
@@ -56,8 +58,30 @@ describe("settleHandoff: the ticket must move before a handoff counts", () => {
     });
   }
 
+  for (const kind of ["send", "accept", "decline"] as const) {
+    it(`${kind}: never says the ticket was put back when putting it back failed`, async () => {
+      const { calls, s } = steps(OK, { error: { message: "denied" }, rows: 0 }, { error: { message: "denied" }, rows: 0 });
+      expect(await settleHandoff(kind, s)).toEqual({ ok: false, message: HANDOFF_SETTLE_COPY.ticketNotPutBack[kind] });
+      expect(calls).toEqual(["ticket", "handoff", "undo"]);
+    });
+
+    it(`${kind}: a put-back that changed no row also counts as not put back`, async () => {
+      const { s } = steps(OK, new Error("offline"), { error: null, rows: 0 });
+      expect((await settleHandoff(kind, s)) as unknown).toEqual({ ok: false, message: HANDOFF_SETTLE_COPY.ticketNotPutBack[kind] });
+    });
+
+    it(`${kind}: a put-back that throws counts as not put back`, async () => {
+      const { s } = steps(OK, new Error("offline"), new Error("offline"));
+      expect((await settleHandoff(kind, s)) as unknown).toEqual({ ok: false, message: HANDOFF_SETTLE_COPY.ticketNotPutBack[kind] });
+    });
+  }
+
   it("the error words are plain and never claim it was done", () => {
-    for (const m of [...Object.values(HANDOFF_SETTLE_COPY.ticketNotMoved), ...Object.values(HANDOFF_SETTLE_COPY.handoffNotSaved)]) {
+    for (const m of [
+      ...Object.values(HANDOFF_SETTLE_COPY.ticketNotMoved),
+      ...Object.values(HANDOFF_SETTLE_COPY.handoffNotSaved),
+      ...Object.values(HANDOFF_SETTLE_COPY.ticketNotPutBack),
+    ]) {
       expect(m).toMatch(/\bnot\b/);
       expect(m).not.toMatch(/^(Reassignment|Handoff) (accepted|rejected|declined)|row-level|RLS|error code/i);
       expect(m).not.toContain("—");

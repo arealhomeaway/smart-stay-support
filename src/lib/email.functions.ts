@@ -2,9 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function assertSupervisor(context: { supabase: { rpc: Function }; userId: string }) {
-  const { data } = await (context.supabase as any).rpc("is_supervisor", {
+  const { data, error } = await (context.supabase as any).rpc("is_supervisor", {
     _user_id: context.userId,
   });
+  if (error) throw new Error("Your access could not be checked. Try again.");
   if (!data) throw new Error("Only supervisors and platform owners can see email delivery.");
 }
 

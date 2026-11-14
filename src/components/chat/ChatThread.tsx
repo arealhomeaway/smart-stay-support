@@ -11,6 +11,7 @@ import { Paperclip } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { LoadError } from "@/components/ui/page";
 import { MultiFileUpload } from "@/components/MultiFileUpload";
 import { createAttachmentUploader } from "@/lib/attachment-upload-client";
 import { beginUploadFn, completeUploadFn } from "@/lib/attachments.functions";
@@ -145,7 +146,9 @@ export function ChatThread(p: {
       ) : null}
       <ol className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1" style={p.maxHeight ? { maxHeight: p.maxHeight } : undefined} aria-label={`${style.label} messages`}>
         {q.isPending ? <li className="text-sm text-muted-foreground">Loading messages…</li> : null}
-        {!q.isPending && messages.length === 0 ? <li className="text-sm text-muted-foreground">No messages yet.</li> : null}
+        {q.isError ? (
+          <li><LoadError what="Messages" onRetry={() => void q.refetch()} /></li>
+        ) : !q.isPending && messages.length === 0 ? <li className="text-sm text-muted-foreground">No messages yet.</li> : null}
         {messages.map((m) => {
           const seen = m.mine && ownReads.some((r) => r.user_id !== m.author_id && r.last_read_at >= m.created_at);
           return (

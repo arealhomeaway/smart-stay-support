@@ -10,6 +10,8 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { writeHistoryLine } from "@/lib/history-line";
+import { showSaved } from "@/components/history-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/page";
@@ -130,18 +132,20 @@ export function RecoveryRowCard({
         .update({ assigned_to: userId })
         .eq("id", recovery.id);
       if (error) throw error;
-      await supabase.from("guest_recovery_activity").insert({
-        recovery_id: recovery.id,
-        author_id: userId,
-        event_type: "assignment",
-        body: "Assigned to self from the refunds & credits queue",
-        detail: { assigned_to: userId } as never,
-        is_demo: recovery.is_demo,
-      });
+      return writeHistoryLine(() =>
+        supabase.from("guest_recovery_activity").insert({
+          recovery_id: recovery.id,
+          author_id: userId,
+          event_type: "assignment",
+          body: "Assigned to self from the refunds & credits queue",
+          detail: { assigned_to: userId } as never,
+          is_demo: recovery.is_demo,
+        }),
+      );
     },
-    onSuccess: () => {
+    onSuccess: (historySaved) => {
       qc.invalidateQueries({ queryKey: ["guest-recovery"] });
-      toast.success("Refund or credit assigned to you");
+      showSaved("Refund or credit assigned to you", historySaved);
     },
     onError: (e: Error) => toast.error(e.message),
   });

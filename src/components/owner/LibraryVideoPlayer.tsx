@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { libraryVideoPlaybackUrl, listLibraryVideoIndex } from "@/lib/library-video.functions";
 import { msUntilRefresh } from "@/lib/library-video";
+import { LoadError } from "@/components/ui/page";
 
 /** Presentational player: controls, inline on iPhone, metadata only until play, never autoplay. */
 export function VideoElement({
@@ -38,6 +39,14 @@ export function useLibraryVideoIndex() {
   const list = useServerFn(listLibraryVideoIndex);
   const q = useQuery({ queryKey: ["library-video-index"], queryFn: () => list(), staleTime: 60_000 });
   return new Map((q.data ?? []).map((v) => [v.libraryId, v]));
+}
+
+/** Shown where a video would be when the list of videos failed to load; nothing otherwise. */
+export function LibraryVideoIndexError() {
+  const list = useServerFn(listLibraryVideoIndex);
+  const q = useQuery({ queryKey: ["library-video-index"], queryFn: () => list(), staleTime: 60_000 });
+  if (!q.isError) return null;
+  return <LoadError what="The video" onRetry={() => void q.refetch()} />;
 }
 
 /**
