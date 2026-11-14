@@ -13,7 +13,7 @@ import type { ComposerContext, MessageAudience } from "./email-composer";
 const CONTEXTS = ["ticket", "work_order", "property", "onboarding_task"];
 const AUDIENCES = ["guest", "owner", "vendor", "staff"];
 
-type Ctx = { supabase: { rpc: (name: string, args: unknown) => Promise<{ data: unknown }> } & Record<string, unknown>; userId: string };
+type Ctx = { supabase: { rpc: (name: string, args: unknown) => Promise<{ data: unknown; error?: unknown }> } & Record<string, unknown>; userId: string };
 
 async function assertStaff(context: Ctx) {
   const { data } = await context.supabase.rpc("is_staff", { _user_id: context.userId });
