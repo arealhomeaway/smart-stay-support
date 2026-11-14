@@ -109,7 +109,8 @@ export const getComposerContext = createServerFn({ method: "GET" })
       .eq("active", true)
       .order("name");
 
-    const canManage = await canManageEmailTemplates(context as never as Ctx);
+    // Opening the composer never fails on this check; saving re-checks and says why.
+    const canManage = await canManageEmailTemplates(context as never as Ctx).catch(() => false);
 
     return {
       ...gathered,
