@@ -50,9 +50,10 @@ export const runMailboxSync = createServerFn({ method: "POST" })
     limit: Math.min(Math.max(Number(input?.limit ?? 25), 1), 50),
   }))
   .handler(async ({ context, data }) => {
-    const { data: supervisor } = await context.supabase.rpc("is_supervisor", {
+    const { data: supervisor, error: accessError } = await context.supabase.rpc("is_supervisor", {
       _user_id: context.userId,
     });
+    if (accessError) throw new Error("Your access could not be checked. Try again.");
     if (!supervisor) throw new Error("Only supervisors can run the inbox sync.");
     const { syncMailbox } = await import("./mailbox.server");
     return syncMailbox(context.supabase, data);
@@ -62,9 +63,10 @@ export const runMailboxSync = createServerFn({ method: "POST" })
 export const refreshMailboxSubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: supervisor } = await context.supabase.rpc("is_supervisor", {
+    const { data: supervisor, error: accessError } = await context.supabase.rpc("is_supervisor", {
       _user_id: context.userId,
     });
+    if (accessError) throw new Error("Your access could not be checked. Try again.");
     if (!supervisor) throw new Error("Only supervisors can manage the mailbox subscription.");
     const { ensureSubscription } = await import("./outlook-subscription.server");
     return ensureSubscription(context.supabase);
