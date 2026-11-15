@@ -58,7 +58,11 @@ describe("task-upload-folder practice run", () => {
   });
 
   it("preflight passes on the captured version and the apply keeps the Task folder in one step", async () => {
+    await db.exec(readFileSync(`${DIR}/00_preflight.sql`, "utf8"));
     await db.exec(readFileSync(`${DIR}/apply.sql`, "utf8"));
+    let refused = "";
+    try { await db.exec(readFileSync(`${DIR}/00_preflight.sql`, "utf8")); } catch (e) { refused = String(e.message); }
+    expect(refused).toContain("changed since Nov 15");
     for (const c of ["design", "agreement", "estimate_invoice", "media", "assessment"]) {
       const d = await begin("onboarding_task", TASK, c);
       expect(await categoryOf(d.id)).toBe(c);
