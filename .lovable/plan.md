@@ -1,17 +1,24 @@
-# Breezeway sending: answers (read only, nothing changed)
+# Part 3 check against the README (read only, nothing changed)
 
-1. **Is it still built?** Yes, but the ticket screen no longer offers it. The send code with a template picker and a Breezeway person picker is still there: `BreezewayTaskPanel.tsx` (pickers at line 358) calls `createBreezewayOutboundTask` (`breezeway-outbound.functions.ts:101`), then `createOutboundTask`, then `POST /task/` (`breezeway-outbound.server.ts:577`). Only the onboarding Task drawer uses that panel today (`TaskDrawer.tsx:700`). On a ticket, the only send is the Work Order "hand off to Breezeway" step (`vendor-sourcing.functions.ts:57`). It sends the accepted vendor and the agreed appointment, with no template and no person picker, and it sits inside `TicketWorkOrderPanel`, which only shows while internal_work_orders is on.
-2. **The four switches:**
-   - **internal_work_orders:** every Breezeway send from Resolve needs it on (`breezeway-outbound.server.ts:133, 346`). It also shows Work Orders on tickets.
-   - **breezeway_outbound:** the master switch for sending (line 133). It is on, but does nothing while internal_work_orders is off.
-   - **onboarding_breezeway_send:** onboarding "Work order:" Tasks only (`onboarding-kati.functions.ts:189`; `breezeway-outbound.server.ts:363`).
-   - **breezeway_bridge:** turns incoming Breezeway events into tickets and reviews (`breezeway-workorders.server.ts:118`, `breezeway-bridge.server.ts`). It never sends anything.
-3. **Which homes are allowed:** No list of homes is kept today. The `breezeway_sending_settings` table is empty, so the code falls back to "every verified home" (`pilot-dispatch.ts:2`, `pilot-dispatch.server.ts:5-9`). A home qualifies when it has `breezeway_mapping_state = 'verified'`, a Breezeway property id, is not demo, archived or inactive, and the ticket or Task is not demo (`breezeway-mapping.server.ts:189-254`). 158 homes are verified today. The "pilot property only" label does not match this code.
-4. **Onboarding vs Operations:** They share the same final send (`createOutboundTask`). The onboarding "Send to Breezeway" (`sendOnboardingWorkOrderFn`) also needs onboarding_breezeway_send on, a tentative date and no linked work order yet. It sends with no template, "maintenance" and "normal", plus the one person chosen in the section. Other vendor Tasks use the Operations-style panel with the template and person pickers.
-5. **What it would take for the 4 homes:**
-   - Switches: internal_work_orders on (this also brings back Work Orders on tickets, against the Nov 10 decision that they stay off), and onboarding_breezeway_send on.
-   - 1464 Buckland Ct is verified (Breezeway home 1509882) and ready.
-   - 624 Daniel Court, 8602 E. Galveston St. and 3400 N Fern Ave have no Breezeway home and no mapping. Each needs a Breezeway property id and a verified mapping.
-   - Optional: a `breezeway_sending_settings` row (mode `pilot_only`, these 4 home ids) to limit sending to just these homes.
-   - Each Task also needs a tentative date.
-   - Not verified: whether those 3 homes exist in Breezeway yet. I also found no record of the send a month ago: 0 outbound rows and 0 Breezeway audit rows in the last 60 days.
+Checked: the code on main and the live database (triggers and function bodies). Not checked: the published version or a signed-in browser.
+
+| # | Element | Result | Evidence (file:line) |
+|---|---|---|---|
+| 1 | Telegram group saves through save_home_detail_field | Built as written | src/lib/home-details.functions.ts:143-146; src/components/onboarding/home-details/HomeDetailsTab.tsx:218-222 |
+| 1 | PM, Director of Onboarding, Admin edit; others read only | Built as written | src/lib/home-details.ts:80-85 (`lead \|\| isHomePm`); HomeDetailsTab.tsx:180 (`can()` is false when viewOnly, so `editor: null`); server checks again at home-details.functions.ts:123 |
+| 2 | LOA status, same rules | Built as written | HomeDetailsTab.tsx:213-217; same rules as row 1 |
+| 2 | Choices Not started, Sent, Signed, Not needed | Built as written | src/lib/home-details.ts:172-177 |
+| 3 | Agreements and Estimates and invoices folders, upload into each | Built as written | home-details.ts:184 (estimate_invoice), 219-224 `uploadCategory`; HomeFilesTab.tsx:219-228 |
+| 3 | Move to uses move_home_file | Built as written | HomeFilesTab.tsx:83, 96-102; home-details.functions.ts:161-168 |
+| 3 | New files never go into Other | Partly | Files tab picks a folder first (HomeFilesTab.tsx:261, uploadCategory returns null for Other at home-details.ts:220). Task drawer uploads save first and are filed afterwards (src/components/AttachmentsPanel.tsx:322-327); if that second step fails the file stays in Other with a toast |
+| 4 | Preferred button marked when set | Built as written | home-details.functions.ts:264, 277; home-details.ts:284-293 (sorted first); HomeVendorsTab.tsx:134-136 shows "(preferred)" |
+| 4 | Editable where vendors are edited | Not built | No screen writes vendor_orgs.preferred_contact (searched src: only the read at home-details.functions.ts:264). Every vendor stays unmarked until someone sets it in the database |
+| 5 | Notices for stage moves | Different | Live trigger followed_home_stage_notice fires on project event "Status changed" (the project Status field), not on a computed stage change. README says "Status moves", so it matches the README, not the word "stage" |
+| 5 | Notices for handoff moves | Built as written | Live trigger followed_home_handoff_notice on onboarding_projects.handoff_state |
+| 5 | Notice when an owner message is waiting | Built as written | Live trigger followed_home_owner_notice on owner_request_messages where author is the owner |
+| 5 | Nothing emailed; changer not told | Built as written | Live private.notify_home_followers inserts email_status 'none' and skips `user_id = _actor` |
+| 5 | Add to my homes button | Built as written | src/components/onboarding/OnboardingActivityFeed.tsx:89-116; home-details.functions.ts:312-328 |
+| 6 | Text or guard that thinks the change is missing | Partly | src/lib/onboarding-home.server.ts:33 "This waits on a database change that is not applied yet. Nothing was saved." It shows only if the database function is missing (callStaged, line 397). Now that Part 3 is live it should never show for these features. No flag blocks them. Code comments still say "staged" (home-details.functions.ts:5, 161, 263; HomeFilesTab.tsx:6) but these are not on screen |
+| 7 | Developer language on screen | Partly | (a) the same line from onboarding-home.server.ts:33 says "database change". (b) AttachmentsPanel.tsx:326 shows the raw server error: "File saved. Its folder could not be set: <error text>". Nothing else found in the Part 3 screens |
+
+Stopped here. No code, data or switch was changed.
