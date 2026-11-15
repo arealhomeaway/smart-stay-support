@@ -348,3 +348,22 @@ export type ServiceAreaRow = {
   travelNote: string | null;
   propertyCount: number;
 };
+
+/** A vendor's preferred way to be reached; "not_set" is stored as NULL. */
+export const PREFERRED_CONTACT_CHOICES = [
+  { value: "call", label: "Call" },
+  { value: "text", label: "Text" },
+  { value: "email", label: "Email" },
+  { value: "not_set", label: "Not set" },
+] as const;
+export type PreferredContactChoice = (typeof PREFERRED_CONTACT_CHOICES)[number]["value"];
+
+/** The stored value for a choice: call, text, email, or NULL for Not set. */
+export function preferredContactValue(choice: string): "call" | "text" | "email" | null {
+  return choice === "call" || choice === "text" || choice === "email" ? choice : null;
+}
+
+/** The label shown for a stored value. */
+export function preferredContactLabel(value: string | null | undefined): string {
+  return PREFERRED_CONTACT_CHOICES.find((c) => c.value === (value ?? "not_set"))?.label ?? "Not set";
+}
