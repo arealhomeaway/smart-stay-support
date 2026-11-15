@@ -1,5 +1,12 @@
 # Roadmap — approved build work, NO publish
 
+## Nov 15 Active Owner: owner-needed deadlines and locked team-work cards (applied as instructed, migration 0337)
+- [x] 1 owner_needed on 15 cards
+- [x] 2 dates only for owner-needed cards; clock skips cards with no deadline
+- [x] 3 team-work cards locked on every home; A33 and N10 no longer open at handoff
+- [x] 4 switched-on homes fixed with audit row, no notices
+- [ ] Owner-item guard refuses opening a locked card and the ARHA takeover - blocked: needs the Admin's decision on a fix
+
 ## Nov 13 Property page Part 3 of 3: Home details, Files, Vendors and work, Budget, Kati items (/onboarding/$propertyId; staged SQL in docs/pending/property-page-part3, no apply, no publish)
 - [x] 3.1 Home details: nine sections, search and jump, section links with Back, inline Edit with who/when, red empties, view-only, Stager picker
 - [x] 3.2 Files: six folders with counts, search, previews, drag and drop, folder required with Task defaults, Move to, Design sub-groups, Show files from cards
