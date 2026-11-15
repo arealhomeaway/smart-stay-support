@@ -184,11 +184,20 @@ describe("ao-owner-needed practice run", () => {
     await expect(db.query("UPDATE public.onboarding_tasks SET status='complete', completed_by=$2 WHERE id=$1", [U(101), pm])).rejects.toThrow(/immutable/);
   });
 
+  it("finding: the live owner-item guard refuses the ARHA takeover, so the whole clock run fails", async () => {
+    await db.exec(read(`${DIR}/apply.sql`));
+    await switchOnLiveHomes();
+    const far = (await one("SELECT max(cutoff_at) + interval '1 day' t FROM public.ao_home_plan_cards")).t;
+    await expect(db.query("SELECT public.ao_process_clocks($1::timestamptz)", [far])).rejects.toThrow(/immutable/);
+  });
+
   it("item 2: the five-minute clock never reminds or expires a card with no deadline", async () => {
     await db.exec(read(`${DIR}/apply.sql`));
     await switchOnLiveHomes();
     // a card with a cutoff but no deadline (bad data) is still left alone
     await db.query("UPDATE public.ao_home_plan_cards pc SET cutoff_at = now() - interval '1 day', reminder_at = now() - interval '2 days' FROM public.ao_library_cards c WHERE c.id = pc.card_id AND c.code = 'P07' AND pc.property_id = $1", [BUCK]);
+    // the live owner-item guard refuses the ARHA takeover wording; see the README finding
+    await db.exec("ALTER TABLE public.owner_reviews DISABLE TRIGGER owner_opportunity_write_boundary");
     const before = await n("SELECT count(*) n FROM public.owner_notifications");
     const far = (await one("SELECT max(cutoff_at) + interval '1 day' t FROM public.ao_home_plan_cards")).t;
     await db.query("SELECT public.ao_process_clocks($1::timestamptz)", [far]);
@@ -221,7 +230,8 @@ describe("ao-owner-needed practice run", () => {
     expect(r.opened + r.added).toBe(0);
     expect((await pcOf(ONB, "A33")).join_outcome).toBe("locked");
     expect((await pcOf(ONB, "N10")).join_outcome).toBe("locked");
-    expect(await pcOf(ONB, "A14")).toBeUndefined();
+    // A14 was already on this home's plan, locked, from plan start; it keeps waiting as today
+    expect([(await pcOf(ONB, "A14")).join_outcome, (await pcOf(ONB, "A14")).unlocked_at]).toEqual(["locked", null]);
   });
 
   it("item 4: clears dates on open non-owner-needed cards, relocks A33 and N10 on the three homes, no notice; undo is exact", async () => {
@@ -241,7 +251,7 @@ describe("ao-owner-needed practice run", () => {
     }
     expect(dates(await pcOf(FOXTAIL, "N01"))).toEqual([null, null, null, null]);
     expect((await pcOf(FITZ, "N01")).deadline_at).not.toBeNull();
-    expect((await pcOf(FOXTAIL, "A22")).deadline_at).not.toBeNull();
+    expect((await pcOf(BUCK, "A22")).deadline_at).not.toBeNull();
     expect(await n("SELECT count(*) n FROM public.owner_notifications")).toBe(notes0);
     expect(await n("SELECT count(*) n FROM public.staff_notifications")).toBe(staff0);
     const audit = await one("SELECT * FROM public.audit_log WHERE action='ao_owner_needed_applied'");
