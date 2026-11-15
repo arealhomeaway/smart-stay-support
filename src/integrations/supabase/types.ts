@@ -20412,6 +20412,7 @@ export type Database = {
         Args: { _category: string; _document_id: string }
         Returns: Json
       }
+      move_notion_to_queue: { Args: { _ticket_ids: string[] }; Returns: number }
       my_demo_access: { Args: never; Returns: Json }
       my_home_chat_inbox: {
         Args: never
