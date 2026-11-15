@@ -274,7 +274,7 @@ export function movableToQueue(t: TicketFacts, now: number = Date.now()): boolea
 }
 
 /**
- * True once docs/pending/build9/04_move_to_queue.sql is applied. Until then the button stays hidden,
+ * True: docs/pending/build9/04_move_to_queue.sql is applied (migration 0339). Turn off to hide the button,
  * so nobody presses a button that cannot work.
  */
 export const MOVE_TO_QUEUE_LIVE = true;
