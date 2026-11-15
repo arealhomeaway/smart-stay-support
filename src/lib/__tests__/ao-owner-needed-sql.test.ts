@@ -29,6 +29,7 @@ CREATE FUNCTION public.has_role(uuid, public.app_role) RETURNS boolean LANGUAGE 
 CREATE FUNCTION public.is_onboarding_director(uuid) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT false $$;
 CREATE FUNCTION public.is_director(uuid) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT false $$;
 CREATE FUNCTION private.actor_label(uuid) RETURNS text LANGUAGE sql STABLE AS $$ SELECT 'Admin'::text $$;
+CREATE FUNCTION private.owner_current_property_for_actor(uuid, uuid, uuid DEFAULT NULL) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT $1 = '${owner}'::uuid $$;
 CREATE FUNCTION private.is_program_member(uuid, uuid) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT $2 = '${owner}'::uuid $$;
 `;
 const AFTER_SCHEMA = `
@@ -39,7 +40,7 @@ CREATE TABLE public.ao_owner_email_days(owner_key uuid, day date, kind text, not
 CREATE FUNCTION public.change_owner_program(uuid,uuid,text,uuid,date,jsonb,text,text,text) RETURNS void LANGUAGE sql AS $$ SELECT $$;
 `;
 const DEPS = ["owner_program_live", "ao_central", "ao_add_business_days", "ao_home_stage", "ao_title_key", "ao_live_card_match",
-  "ao_card_coverage", "ao_guard_owner_item", "ao_home_program", "owner_current_property_for_actor", "notify_owner_of_review",
+  "ao_card_coverage", "ao_guard_owner_item", "ao_home_program", "notify_owner_of_review",
   "guard_owner_lifecycle_writes", "ao_owner_email_now"];
 const ENGINE = ["ao_unlock", "ao_process_clocks", "ao_ops_card_rule", "ao_plan_outcomes", "ao_on_handoff"];
 const AFTER_ENGINE = ["ao_add_plan_card", "ao_start_home_plan", "ao_task_completed", "ao_unlock_now"];
