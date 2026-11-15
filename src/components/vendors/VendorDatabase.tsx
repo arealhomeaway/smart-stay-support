@@ -20,7 +20,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { VENDOR_STATUS_LABELS, type VendorStatus } from "@/lib/vendors";
+import { PREFERRED_CONTACT_CHOICES, VENDOR_STATUS_LABELS, preferredContactLabel, type VendorStatus } from "@/lib/vendors";
+import { setVendorPreferredContact } from "@/lib/vendors.functions";
+import { useServerFn } from "@tanstack/react-start";
 import { customFieldKey, DISPATCH_METHOD_LABELS, type DispatchMethod } from "@/lib/vendor-gold";
 import {
   errorText,
@@ -36,7 +38,7 @@ type Col = {
   system: boolean;
   /** Who may edit values inline: none, staff-leadership (manager+), or admin/director. */
   edit: "none" | "manager" | "lead";
-  kind: "text" | "bool" | "tags" | "status" | "dispatch" | "custom";
+  kind: "text" | "bool" | "tags" | "status" | "dispatch" | "preferred" | "custom";
   field?: CustomField;
 };
 
@@ -47,6 +49,7 @@ const SYSTEM_COLS: Col[] = [
   { key: "primary_contact_name", label: "Contact", system: false, edit: "manager", kind: "text" },
   { key: "primary_contact_phone", label: "Phone", system: false, edit: "manager", kind: "text" },
   { key: "primary_contact_email", label: "Email", system: false, edit: "manager", kind: "text" },
+  { key: "preferred_contact", label: "Preferred contact", system: false, edit: "manager", kind: "preferred" },
   { key: "website", label: "Website", system: false, edit: "manager", kind: "text" },
   { key: "markets", label: "Markets", system: false, edit: "none", kind: "tags" },
   { key: "service_categories", label: "Categories", system: false, edit: "none", kind: "tags" },
@@ -83,6 +86,7 @@ function valueOf(v: VendorRecord, col: Col): unknown {
   return (v as Record<string, unknown>)[col.key];
 }
 function display(v: unknown, col: Col): string {
+  if (col.kind === "preferred") return preferredContactLabel(v == null || v === "" ? null : String(v));
   if (v === null || v === undefined || v === "") return "";
   if (col.kind === "status") return VENDOR_STATUS_LABELS[v as VendorStatus] ?? String(v);
   if (col.kind === "dispatch") return DISPATCH_METHOD_LABELS[v as DispatchMethod] ?? String(v);
@@ -109,6 +113,7 @@ export function VendorDatabase({
   const [editing, setEditing] = useState<{ id: string; key: string; value: string } | null>(null);
   const [newCol, setNewCol] = useState({ label: "", type: "text", options: "" });
   const [bulkTag, setBulkTag] = useState("");
+  const savePreferred = useServerFn(setVendorPreferredContact);
 
   const cols: Col[] = useMemo(() => {
     const custom: Col[] = (ws.data?.customFields ?? [])
@@ -153,6 +158,18 @@ export function VendorDatabase({
   const canEdit = (c: Col) => canManage && (c.edit === "manager" || (c.edit === "lead" && isLead));
 
   async function saveCell(v: VendorRecord, col: Col, raw: string) {
+    if (col.kind === "preferred") {
+      try {
+        await savePreferred({ data: { orgId: v.id, choice: raw as "call" | "text" | "email" | "not_set" } });
+        setEditing(null);
+        toast.success("Saved");
+        invalidate();
+      } catch (e) {
+        setEditing(null);
+        toast.error(e instanceof Error ? e.message : "This can't be saved right now.");
+      }
+      return;
+    }
     let value: unknown = raw.trim() === "" ? null : raw.trim();
     if (col.kind === "tags") value = raw.split(",").map((t) => t.trim()).filter(Boolean);
     if (col.kind === "bool") value = raw === "true";
@@ -411,6 +428,15 @@ export function VendorDatabase({
                                 <SelectContent>
                                   <SelectItem value="true">Yes</SelectItem>
                                   <SelectItem value="false">No</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            ) : c.kind === "preferred" ? (
+                              <Select defaultValue={String(val ?? "not_set")} onValueChange={(x) => saveCell(v, c, x)}>
+                                <SelectTrigger className="h-7" aria-label="Preferred contact"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  {PREFERRED_CONTACT_CHOICES.map((o) => (
+                                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
                             ) : c.kind === "dispatch" ? (

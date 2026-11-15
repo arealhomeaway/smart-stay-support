@@ -51,7 +51,6 @@ import {
 import { usDate } from "@/lib/dates";
 import { MultiFileUpload } from "@/components/MultiFileUpload";
 import { createAttachmentUploader } from "@/lib/attachment-upload-client";
-import { moveHomeFileFn } from "@/lib/home-details.functions";
 import { UPLOAD_FOLDERS, uploadCategory, type HomeFolder } from "@/lib/home-details";
 
 type Props = {
@@ -77,8 +76,8 @@ type Props = {
   groupByCategory?: boolean | undefined;
   /**
    * Property page Part 3 (3.2): every upload on a home's page picks one of the home's Files
-   * folders (never Other); a Task starts on the folder of its kind. Task files are filed after
-   * upload through move_home_file.
+   * folders (never Other); a Task starts on the folder of its kind. The file is saved straight
+   * into the picked folder in one step.
    */
   folderPick?: { defaultFolder: HomeFolder | null } | undefined;
 };
@@ -115,12 +114,12 @@ export function AttachmentsPanel({
   const urlFor = useServerFn(attachmentUrlFn);
   const remove = useServerFn(removeAttachmentFn);
   const share = useServerFn(setAttachmentVisibilityFn);
-  const fileInto = useServerFn(moveHomeFileFn);
   const [folder, setFolder] = useState<HomeFolder | "">(folderPick?.defaultFolder ?? "");
   const folderRef = useRef(folder);
   folderRef.current = folder;
+  // A folder-picked upload (home Files and Task drawer) is saved straight into that folder in one step.
   const intentCategory = () =>
-    propertyLevel ? (folderPick ? (folderRef.current ? uploadCategory(folderRef.current) : null) : category) : null;
+    folderPick ? (folderRef.current ? uploadCategory(folderRef.current) : null) : propertyLevel ? category : null;
 
   const key = ["attachments", entityType, entityId];
   const files = useQuery({
@@ -320,12 +319,7 @@ export function AttachmentsPanel({
         ) : null}
         {canDrop ? <MultiFileUpload key={`${entityType}-${entityId}`} upload={upload} multiple={!fulfilsRequestId} label={dropLabel} onBusyChange={onUploadBusyChange} onResults={ids => {
           onUploaded?.(ids);
-          const into = folderPick && !propertyLevel && folderRef.current ? uploadCategory(folderRef.current) : null;
-          if (into && ids.length) {
-            void Promise.all(ids.map((id) => fileInto({ data: { documentId: id, category: into } })))
-              .catch((e: Error) => toast.message(`File saved. Its folder could not be set: ${e.message}`))
-              .finally(() => void qc.invalidateQueries({ queryKey: ["home-files"] }));
-          }
+          if (folderPick && ids.length) void qc.invalidateQueries({ queryKey: ["home-files"] });
           for (const queryKey of attachmentUploadInvalidationKeys(entityType, entityId)) void qc.invalidateQueries({ queryKey });
         }}/> : null}
 

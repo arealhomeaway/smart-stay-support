@@ -30,7 +30,7 @@ type Client = SupabaseClient<Database>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const loose = (sb: Client) => sb as unknown as SupabaseClient<any>;
 
-export const PENDING_REFUSAL = "This waits on a database change that is not applied yet. Nothing was saved.";
+export const PENDING_REFUSAL = "This can't be saved right now. Nothing was changed. Tell your Admin.";
 
 export function isMissingObject(err: unknown): boolean {
   if (!err || typeof err !== "object") return false;

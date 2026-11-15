@@ -279,3 +279,38 @@ export const decideNotionVendorRow = createServerFn({ method: "POST" })
     const { decideNotionRow } = await import("./vendor-migration.server");
     return decideNotionRow(context.supabase, context.userId, data);
   });
+
+/**
+ * Vendor preferred contact (call, text, email or Not set = NULL). Saved as the caller, so the
+ * same rules that let that person edit the vendor decide; then one audit_log row with before and after.
+ */
+export const setVendorPreferredContact = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ orgId: z.string().uuid(), choice: z.enum(["call", "text", "email", "not_set"]) }).parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { preferredContactValue } = await import("./vendors");
+    const next = preferredContactValue(data.choice);
+    const current = await context.supabase.from("vendor_orgs").select("id, display_name, preferred_contact").eq("id", data.orgId).maybeSingle();
+    if (current.error || !current.data) throw new Error("That vendor could not be found.");
+    const before = current.data.preferred_contact ?? null;
+    if (before === next) return { ok: true as const, changed: false };
+    const saved = await context.supabase.from("vendor_orgs").update({ preferred_contact: next }).eq("id", data.orgId).select("id");
+    if (saved.error) throw new Error("You can't change this vendor.");
+    if (!saved.data?.length) throw new Error("You can't change this vendor.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const me = await context.supabase.from("profiles").select("full_name, email").eq("id", context.userId).maybeSingle();
+    const audit = await supabaseAdmin.from("audit_log").insert({
+      actor_id: context.userId,
+      actor_label: me.data?.full_name ?? me.data?.email ?? null,
+      action: "vendor.preferred_contact_changed",
+      entity_type: "vendor_org",
+      entity_id: data.orgId,
+      entity_label: current.data.display_name,
+      before_value: { preferred_contact: before },
+      after_value: { preferred_contact: next },
+    });
+    if (audit.error) throw new Error("Saved, but the change record could not be written. Tell your Admin.");
+    return { ok: true as const, changed: true };
+  });
