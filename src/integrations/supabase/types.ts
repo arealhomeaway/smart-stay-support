@@ -744,6 +744,7 @@ export type Database = {
           once_per_owner: boolean
           opens_text: string
           output_fields: Json
+          owner_needed: boolean
           required_output: string
           retired_at: string | null
           stage_window: string
@@ -778,6 +779,7 @@ export type Database = {
           once_per_owner?: boolean
           opens_text?: string
           output_fields?: Json
+          owner_needed?: boolean
           required_output?: string
           retired_at?: string | null
           stage_window: string
@@ -812,6 +814,7 @@ export type Database = {
           once_per_owner?: boolean
           opens_text?: string
           output_fields?: Json
+          owner_needed?: boolean
           required_output?: string
           retired_at?: string | null
           stage_window?: string
