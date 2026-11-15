@@ -5,7 +5,7 @@
 - [x] 2 dates only for owner-needed cards; clock skips cards with no deadline
 - [x] 3 team-work cards locked on every home; A33 and N10 no longer open at handoff
 - [x] 4 switched-on homes fixed with audit row, no notices
-- [ ] Owner-item guard refuses opening a locked card and the ARHA takeover - blocked: needs the Admin's decision on a fix
+- [x] Owner-item guard no longer blocks the card engine (open, Unlock now, ARHA takeover); N02 relocked on three homes (applied live Nov 15, migration 0338)
 
 ## Nov 13 Property page Part 3 of 3: Home details, Files, Vendors and work, Budget, Kati items (/onboarding/$propertyId; staged SQL in docs/pending/property-page-part3, no apply, no publish)
 - [x] 3.1 Home details: nine sections, search and jump, section links with Back, inline Edit with who/when, red empties, view-only, Stager picker
