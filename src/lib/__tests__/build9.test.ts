@@ -241,9 +241,10 @@ describe("B1 Move to queue", () => {
     expect(canMoveToQueue({ onboardingDirector: true } as never, false, true)).toBe(false);
     expect(canMoveToQueue({ opsSupervisor: true }, true, true)).toBe(false);
   });
-  it("stays hidden until its database step is approved", () => {
-    expect(MOVE_TO_QUEUE_LIVE).toBe(false);
-    expect(canMoveToQueue({ opsSupervisor: true }, false)).toBe(false);
+  it("is switched on now that its database step is applied (Admin, Nov 15)", () => {
+    expect(MOVE_TO_QUEUE_LIVE).toBe(true);
+    expect(canMoveToQueue({ opsSupervisor: true }, false)).toBe(true);
+    expect(canMoveToQueue({}, false)).toBe(false);
   });
 });
 
@@ -257,11 +258,13 @@ describe("staged and applied database steps (docs/pending/build9)", () => {
     expect(Object.keys(sums).length).toBeGreaterThan(10);
     for (const [f, sum] of Object.entries(sums)) expect(createHash("sha256").update(readFileSync(`${dir}/${f}`)).digest("hex")).toBe(sum);
   });
-  it("applied the three steps marked APPLY exactly as staged, each with an undo", () => {
+  it("applied the approved steps exactly as staged, each with an undo", () => {
     for (const [m, s] of [
       ["0320_build9_reply_time_guard.sql", "01_reply_time_guard.sql"],
       ["0321_build9_time_off_all_or_nothing.sql", "02_time_off_all_or_nothing.sql"],
       ["0322_build9_handoff_ready_authority.sql", "03_handoff_ready_authority.sql"],
+      ["0339_build9_move_to_queue.sql", "04_move_to_queue.sql"],
+      ["0340_build9_export_fewer_alert.sql", "06_export_fewer_alert.sql"],
     ] as const) {
       expect(norm(read(`drizzle/migrations/${m}`))).toBe(norm(read(`${dir}/${s}`)));
       expect(existsSync(`${dir}/undo/${s}`)).toBe(true);
@@ -269,9 +272,7 @@ describe("staged and applied database steps (docs/pending/build9)", () => {
   });
   it("did not apply the steps that are staged only", () => {
     const markers = {
-      "04_move_to_queue.sql": "CREATE OR REPLACE FUNCTION public.move_notion_to_queue",
       "05_shift_history_full_stop.sql": "Build 9 C5",
-      "06_export_fewer_alert.sql": "nightly_export_fewer_alert",
       "07_task_role_wording.sql": "Build 9 G1",
       "08_database_text.sql": "Build 9 G2",
     };
