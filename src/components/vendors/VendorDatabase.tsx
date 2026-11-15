@@ -86,10 +86,10 @@ function valueOf(v: VendorRecord, col: Col): unknown {
   return (v as Record<string, unknown>)[col.key];
 }
 function display(v: unknown, col: Col): string {
+  if (col.kind === "preferred") return preferredContactLabel(v == null || v === "" ? null : String(v));
   if (v === null || v === undefined || v === "") return "";
   if (col.kind === "status") return VENDOR_STATUS_LABELS[v as VendorStatus] ?? String(v);
   if (col.kind === "dispatch") return DISPATCH_METHOD_LABELS[v as DispatchMethod] ?? String(v);
-  if (col.kind === "preferred") return preferredContactLabel(String(v));
   if (Array.isArray(v)) return v.join(", ");
   if (typeof v === "boolean") return v ? "Yes" : "No";
   return String(v);
