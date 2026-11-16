@@ -116,7 +116,7 @@ const timeoutSignal = (ms: number) => {
 export async function withRetry(
   send: (signal: AbortSignal) => Promise<Response>,
   wait = pause,
-  opts: { timeoutMs?: number; signal?: AbortSignal } = {},
+  opts: { timeoutMs?: number | undefined; signal?: AbortSignal | undefined } = {},
 ): Promise<Response> {
   for (let attempt = 1; ; attempt++) {
     if (opts.signal?.aborted) throw new Error("Stopped: the file ran out of time.");
