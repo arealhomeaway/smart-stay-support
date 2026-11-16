@@ -1,7 +1,8 @@
 /**
  * B3: unmatched onboarding homes with suggested Breezeway homes, and the Admin's Confirm match.
  * Reads Breezeway's own property list; confirming re-checks it, sets the home's Breezeway id and
- * verified state, and records who and when. Nothing is matched automatically.
+ * verified state, and records who and when. Homes whose OwnerRez number matches exactly one Breezeway
+ * home are linked automatically (breezeway-auto-link.ts); this screen handles the rest.
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
