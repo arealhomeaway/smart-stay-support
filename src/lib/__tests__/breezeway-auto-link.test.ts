@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { planAutoLinks, type AutoLinkHome, type AutoLinkProperty } from "@/lib/breezeway-auto-link";
 import { autoLinkBreezewayHomes } from "@/lib/breezeway-auto-link.server";
 
