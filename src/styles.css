@@ -351,23 +351,24 @@
   --overdue: oklch(0.25 0.06 25);
   --overdue-border: #b4312a;
   --overdue-foreground: #ffffff;
-  --portal-bg: oklch(0.21 0.01 70);
-  --portal-border: oklch(0.36 0.015 70);
-  --portal-primary: oklch(0.72 0.07 200);
-  --portal-primary-foreground: oklch(0.18 0.01 220);
-  --portal-ink: oklch(0.93 0.01 80);
-  --portal-muted: oklch(0.75 0.01 200);
+  /* Dark mode reuses the existing dark theme tokens; type labels use darker tints. */
+  --portal-bg: var(--background);
+  --portal-border: var(--border);
+  --portal-primary: var(--primary);
+  --portal-primary-foreground: var(--primary-foreground);
+  --portal-ink: var(--foreground);
+  --portal-muted: var(--muted-foreground);
   --portal-badge: #b42318;
   --portal-badge-foreground: #ffffff;
   --portal-gold: #c89340;
-  --portal-marketing: oklch(0.3 0.04 40);
-  --portal-marketing-ink: oklch(0.86 0.06 40);
-  --portal-research: oklch(0.3 0.03 80);
-  --portal-research-ink: oklch(0.86 0.05 80);
-  --portal-homecare: oklch(0.3 0.03 200);
-  --portal-homecare-ink: oklch(0.86 0.05 200);
-  --portal-guest: oklch(0.3 0.04 140);
-  --portal-guest-ink: oklch(0.86 0.06 140);
+  --portal-marketing: oklch(0.33 0.06 40);
+  --portal-marketing-ink: oklch(0.9 0.05 40);
+  --portal-research: oklch(0.33 0.04 80);
+  --portal-research-ink: oklch(0.9 0.05 80);
+  --portal-homecare: oklch(0.33 0.04 200);
+  --portal-homecare-ink: oklch(0.9 0.04 200);
+  --portal-guest: oklch(0.33 0.05 140);
+  --portal-guest-ink: oklch(0.9 0.05 140);
 }
 
 /**
