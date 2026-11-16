@@ -246,7 +246,7 @@ function TourOverlay({
       style={{ pointerEvents: "auto" }}
       onPointerDown={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
-      onFocusCapture={(e) => e.stopPropagation()}
+      onFocus={(e) => e.stopPropagation()}
       data-guided-tour=""
       data-tour-step={step.id}
       data-tour-centered={centered ? "true" : "false"}

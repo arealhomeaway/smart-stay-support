@@ -235,7 +235,7 @@ const ONBOARDING: TourSection[] = [
       { id: "onb-follow-button", to: "/onboarding/$home", fallbackTo: "/onboarding", page: "A home", element: "Add to my homes button", target: [{ text: "Add to my homes" }, { text: "Remove from my homes" }, "[aria-label^='Yours']"], title: "Add to my homes", body: "Press Add to my homes to follow a home. You then get a notice when the owner replies, a Task is done or someone comments." },
       { id: "onb-bell", to: "/onboarding/$home", fallbackTo: "/onboarding", page: "A home", element: "Notifications bell", target: ["[aria-label^='Notifications']"], title: "Your notices", body: "Notices arrive in the bell at the top. Open one to go straight to the home or Task." },
       { id: "onb-my-tasks", to: "/onboarding/my-work", page: "My Tasks", element: "My Tasks view", target: ["[aria-label='My Tasks view']", "main h1"], title: "My Tasks", body: "My Tasks lists the Tasks given to you or your role, across every home." },
-      { id: "onb-my-filters", to: "/onboarding/my-work", page: "My Tasks", element: "Quick filters", target: ["[aria-label='Quick filters']"], title: "Quick filters", body: "Use the quick filters to see what is late or due soon." },
+      { id: "onb-my-filters", to: "/onboarding/my-work", page: "My Tasks", element: "Quick filters", target: ["[aria-label='Quick filters']", "[aria-label='My Tasks view']"], title: "Quick filters", body: "Use the quick filters to see what is late or due soon." },
     ],
   },
   {
