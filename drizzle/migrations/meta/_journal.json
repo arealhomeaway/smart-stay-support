@@ -2437,6 +2437,13 @@
       "when": 1794856582638,
       "tag": "0347_owner_record_merge",
       "breakpoints": true
+    },
+    {
+      "idx": 348,
+      "version": "7",
+      "when": 1794858344141,
+      "tag": "0348_chat_folder_match",
+      "breakpoints": true
     }
   ]
 }
