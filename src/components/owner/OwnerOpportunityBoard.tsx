@@ -44,6 +44,7 @@ import {
   newestOpenedFirst,
   portalGroupFor,
   portalGroupLabel,
+  portalOpensWhen,
   type HourEntry,
   type PortalGroupId,
 } from "@/lib/owner-portal-look";
@@ -510,7 +511,7 @@ export function OwnerOpportunityBoard({
                 {view.soon.map((i) => (
                   <li key={i.key} className="rounded-[14px] border border-dashed border-portal-border bg-card/60 p-4">
                     <p className="text-[15px] font-bold text-portal-ink">{i.title}</p>
-                    <p className="mt-1 text-sm text-portal-muted">Opens when {opensLine(i.opensText)}</p>
+                    <p className="mt-1 text-sm text-portal-muted">Opens when {portalOpensWhen(i.opensText)}</p>
                   </li>
                 ))}
               </ul>
@@ -675,11 +676,6 @@ function OppCard({
   );
 }
 
-function opensLine(text: string | null | undefined) {
-  const t = (text ?? "").trim().replace(/[.\s]+$/, "");
-  if (!t) return "ARHA finishes the step before it";
-  return /^(arha|we|the|your)\b/i.test(t) ? t.charAt(0).toLowerCase() + t.slice(1) : `ARHA ${t.charAt(0).toLowerCase()}${t.slice(1)}`;
-}
 
 /** Opens the item's own panel: each source keeps its own record and actions. */
 function ItemPanel({

@@ -13,6 +13,7 @@ import {
   newestOpenedFirst,
   portalGroupFor,
   PORTAL_GROUPS,
+  portalOpensWhen,
 } from "@/lib/owner-portal-look";
 import { ownerUnread } from "@/lib/owner-chat-panel";
 
@@ -95,5 +96,15 @@ describe("card photos", () => {
   it("no two cards share a photo", () => {
     const hashes = files.map((f) => createHash("sha256").update(readFileSync(join(dir, f))).digest("hex"));
     expect(new Set(hashes).size).toBe(files.length);
+  });
+});
+
+describe("Coming soon wording", () => {
+  it("reads the existing opens text as Opens when ...", () => {
+    expect(portalOpensWhen("Locked until ARHA uploads the floor plan")).toBe("ARHA uploads the floor plan");
+    expect(portalOpensWhen("Locked until the first booking is confirmed")).toBe("the first booking is confirmed");
+    expect(portalOpensWhen("Draft open on day one; final step unlocks when ARHA shares the live link")).toBe("ARHA shares the live link");
+    expect(portalOpensWhen("Open on day one")).toBe("our team finishes its part");
+    expect(portalOpensWhen(null)).toBe("our team finishes its part");
   });
 });

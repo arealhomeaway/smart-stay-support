@@ -426,7 +426,14 @@ function OwnerHubBody({
   const goOpportunities = () => void navigate({ search: (prev) => { const { queue: _q, ...rest } = prev; return { ...rest, view: "opportunities" as const }; } });
   const seeComing = () => {
     goOpportunities();
-    window.setTimeout(() => document.getElementById("coming-soon")?.scrollIntoView({ behavior: "smooth", block: "start" }), 400);
+    // The Opportunities page renders after its data loads: wait for the section, then scroll to it.
+    let tries = 0;
+    const find = () => {
+      const el = document.getElementById("coming-soon");
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      else if (tries++ < 40) window.setTimeout(find, 150);
+    };
+    window.setTimeout(find, 150);
   };
 
   return (

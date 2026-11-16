@@ -91,3 +91,16 @@ export function completedLine(completedAt: string | null | undefined, minutes: n
   const day = shortDate(completedAt ?? null);
   return `${day ? `Completed ${day}` : "Completed"} · ${hoursFromMinutes(minutes)} hrs logged`;
 }
+
+/**
+ * "Opens when ..." on a Coming soon card, from the card's existing opens text:
+ * "Locked until ARHA uploads the floor plan" reads "ARHA uploads the floor plan".
+ */
+export function portalOpensWhen(text: string | null | undefined): string {
+  let t = (text ?? "").trim().replace(/[.\s]+$/, "");
+  const after = /\bunlocks when\s+(.+)$/i.exec(t);
+  if (after) t = after[1]!;
+  else t = t.replace(/^locked until\s+/i, "");
+  if (!t || /^open on day one/i.test(t)) return "our team finishes its part";
+  return /^(ARHA|I|Owner)\b/.test(t) ? t : t.charAt(0).toLowerCase() + t.slice(1);
+}
