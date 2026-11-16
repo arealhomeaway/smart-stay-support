@@ -275,7 +275,9 @@ export const isTourLead = (v: TourViewer) => isAdmin(v) || Boolean(v.seats.opsSu
 export function toursFor(v: TourViewer): TourTeam[] {
   if (isAdmin(v)) return ["operations", "onboarding"];
   if (v.roles.includes("onboarding") || v.seats.onboardingDirector) return ["onboarding"];
-  if (v.roles.includes("tech") || v.roles.includes("manager") || v.seats.opsSupervisor || v.seats.opsDirector) return ["operations"];
+  // Property Coordinators, the Operations Supervisor and the Director of Operations; other
+  // Supervisor type accounts (Finance, for one) get no tour unless Admin starts one.
+  if (v.roles.includes("tech") || v.seats.opsSupervisor || v.seats.opsDirector) return ["operations"];
   return [];
 }
 
