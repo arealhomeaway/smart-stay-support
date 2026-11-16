@@ -94,6 +94,24 @@
   --color-overdue: var(--overdue);
   --color-overdue-border: var(--overdue-border);
   --color-overdue-foreground: var(--overdue-foreground);
+  /* Homeowner portal look (approved mockup, Nov 16). */
+  --color-portal-bg: var(--portal-bg);
+  --color-portal-border: var(--portal-border);
+  --color-portal-primary: var(--portal-primary);
+  --color-portal-primary-foreground: var(--portal-primary-foreground);
+  --color-portal-ink: var(--portal-ink);
+  --color-portal-muted: var(--portal-muted);
+  --color-portal-badge: var(--portal-badge);
+  --color-portal-badge-foreground: var(--portal-badge-foreground);
+  --color-portal-gold: var(--portal-gold);
+  --color-portal-marketing: var(--portal-marketing);
+  --color-portal-marketing-ink: var(--portal-marketing-ink);
+  --color-portal-research: var(--portal-research);
+  --color-portal-research-ink: var(--portal-research-ink);
+  --color-portal-homecare: var(--portal-homecare);
+  --color-portal-homecare-ink: var(--portal-homecare-ink);
+  --color-portal-guest: var(--portal-guest);
+  --color-portal-guest-ink: var(--portal-guest-ink);
   --color-aqua: var(--aqua);
   --color-sand: var(--sand);
   --color-cool-grey: var(--cool-grey);
@@ -222,6 +240,24 @@
   --overdue: #fdf1ef;
   --overdue-border: #b4312a;
   --overdue-foreground: #ffffff;
+  /* Homeowner portal look (approved mockup, Nov 16). */
+  --portal-bg: #f7f3ee;
+  --portal-border: #e6ded3;
+  --portal-primary: #1f5c63;
+  --portal-primary-foreground: #ffffff;
+  --portal-ink: #1e2a2b;
+  --portal-muted: #4a5656;
+  --portal-badge: #b42318;
+  --portal-badge-foreground: #ffffff;
+  --portal-gold: #b07a2a;
+  --portal-marketing: #f3e6e1;
+  --portal-marketing-ink: #7a3a1c;
+  --portal-research: #efe9df;
+  --portal-research-ink: #5e4a1e;
+  --portal-homecare: #e3edef;
+  --portal-homecare-ink: #1f5c63;
+  --portal-guest: #e6eee3;
+  --portal-guest-ink: #355e2b;
   /* Cross-team triage: cool grey, so it never reads as a team colour. */
   --triage: var(--cool-grey);
 }
@@ -315,6 +351,23 @@
   --overdue: oklch(0.25 0.06 25);
   --overdue-border: #b4312a;
   --overdue-foreground: #ffffff;
+  --portal-bg: oklch(0.21 0.01 70);
+  --portal-border: oklch(0.36 0.015 70);
+  --portal-primary: oklch(0.72 0.07 200);
+  --portal-primary-foreground: oklch(0.18 0.01 220);
+  --portal-ink: oklch(0.93 0.01 80);
+  --portal-muted: oklch(0.75 0.01 200);
+  --portal-badge: #b42318;
+  --portal-badge-foreground: #ffffff;
+  --portal-gold: #c89340;
+  --portal-marketing: oklch(0.3 0.04 40);
+  --portal-marketing-ink: oklch(0.86 0.06 40);
+  --portal-research: oklch(0.3 0.03 80);
+  --portal-research-ink: oklch(0.86 0.05 80);
+  --portal-homecare: oklch(0.3 0.03 200);
+  --portal-homecare-ink: oklch(0.86 0.05 200);
+  --portal-guest: oklch(0.3 0.04 140);
+  --portal-guest-ink: oklch(0.86 0.06 140);
 }
 
 /**
