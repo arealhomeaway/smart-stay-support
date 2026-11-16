@@ -35,7 +35,7 @@ export function OwnerSidePanel({
     .join(" · ");
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="flex w-full max-w-none flex-col gap-0 overflow-y-auto p-0 sm:max-w-xl">
+      <SheetContent side="right" className="flex w-full max-w-none flex-col gap-0 overflow-y-auto p-0 sm:max-w-xl [&_.text-muted-foreground]:text-portal-muted">
         {cover ? <img src={cover} alt="" width={1024} height={640} className="h-36 w-full object-cover" /> : null}
         <SheetHeader className="space-y-1 border-b border-border px-5 pb-4 pt-5 text-left">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">{status}</p>

@@ -577,7 +577,7 @@ function GroupHead({ title, count, right }: { title: string; count?: number; rig
       <div className="flex items-center gap-2">
         <h2 className="font-display text-2xl text-portal-ink">{title}</h2>
         {count !== undefined ? (
-          <span className="numeric rounded-full bg-portal-primary/10 px-2.5 py-0.5 text-xs font-semibold text-portal-primary">{count}</span>
+          <span className="numeric rounded-full bg-portal-homecare px-2.5 py-0.5 text-xs font-semibold text-portal-homecare-ink">{count}</span>
         ) : null}
       </div>
       {right}

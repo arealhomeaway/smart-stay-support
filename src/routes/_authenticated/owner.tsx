@@ -515,7 +515,7 @@ function OwnerHubBody({
       <div className="flex flex-wrap items-center justify-end gap-4">
         {properties.length > 1 && view !== "opportunities" ? (
           <div className="flex items-center gap-2">
-            <Label htmlFor="owner-home-filter" className="text-sm text-muted-foreground">Viewing:</Label>
+            <Label htmlFor="owner-home-filter" className="text-sm text-portal-muted">Viewing:</Label>
             <Select
               value={selectedHomeId ?? "all"}
               onValueChange={(v) =>
