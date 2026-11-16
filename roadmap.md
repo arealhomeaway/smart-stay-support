@@ -709,3 +709,6 @@
 - [x] Fix 24: owner Approve / Ask a question (detached rpc fixed); browser check as the test owner still needs sign-in approval
 - [x] Fix 25: With ARHA in every tab and on the home summary; homeowner last-speaker read fixed (staged 02 optional)
 - [x] Done outside Resolve owner wording, Document name and Owner message (staged 01 for name/message)
+
+## Nov 15 Plan catch-up opens linked cards (applied live)
+- [x] Mark done opens linked homeowner cards like the Task drawer (0341_ao_catch_up_opens)
