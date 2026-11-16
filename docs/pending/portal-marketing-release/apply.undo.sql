@@ -90,7 +90,7 @@ BEGIN
     UPDATE public.ao_home_plan_cards SET join_outcome = 'skipped_passed', owner_review_id = NULL, unlocked_at = NULL, unlocked_by = NULL,
       deadline_at = NULL, reminder_at = NULL, cutoff_at = NULL
      WHERE id = r.pc AND owner_completed_at IS NULL;
-    UPDATE public.owner_reviews SET status = 'archived', updated_at = now() WHERE id = r.rid AND responded_at IS NULL;
+    UPDATE public.owner_reviews SET status = 'closed', updated_at = now() WHERE id = r.rid AND responded_at IS NULL;
     n := n + 1;
   END LOOP;
   PERFORM set_config('resolve.ao_engine_item_update', '', true);

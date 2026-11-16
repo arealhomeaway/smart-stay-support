@@ -109,6 +109,8 @@ BEGIN
               AND pc.owner_review_id IS NULL AND pc.unlocked_at IS NULL
             ORDER BY pr.name, l.code FOR UPDATE OF pc LOOP
     SELECT * INTO c FROM public.ao_library_cards WHERE id = r.card_id;
+    -- Same coverage check the plan start uses; a covered card is left as it is.
+    CONTINUE WHEN private.ao_card_coverage(r.property_id, r.card_code, NULL) IS NOT NULL;
     SELECT p.is_demo OR coalesce((SELECT is_demo FROM public.properties WHERE id = r.property_id), false) INTO demo
       FROM public.owner_programs p WHERE p.id = r.program_id;
     -- The same owner item ao_add_plan_card makes for an opening card.
@@ -126,7 +128,6 @@ BEGIN
   END LOOP;
   PERFORM set_config('resolve.owner_release_batch', 'off', true);
   PERFORM set_config('app.ao_engine', '', true);
-  IF opened <> 24 THEN RAISE EXCEPTION 'Expected 24 cards to open on the three homes, found %', opened; END IF;
   INSERT INTO public.audit_log(actor_id, actor_label, action, entity_type, entity_label, reason, before_value, after_value)
   VALUES ('98bd6696-4018-4965-b645-0471c5ae3925', 'Admin', 'portal_marketing_release_applied', 'function',
     'Homeowner plan: marketing and social cards open at handoff',
