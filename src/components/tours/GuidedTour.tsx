@@ -151,7 +151,7 @@ function useTargetRect(step: TourStep | null, key: string) {
       } else {
         setRect(null);
         // Pages load their data first; give a step a moment before showing it centered.
-        if (performance.now() - began > 3500) setSearching(false);
+        if (performance.now() - began > 6000) setSearching(false);
       }
       raf = requestAnimationFrame(measure);
     };
@@ -239,7 +239,18 @@ function TourOverlay({
   const centered = !rect && !searching;
 
   return (
-    <div className="fixed inset-0 z-[100]" data-guided-tour="" data-tour-step={step.id} data-tour-centered={centered ? "true" : "false"}>
+    <div
+      className="fixed inset-0 z-[100]"
+      // An open drawer turns page clicks off and closes on an outside press; the tour keeps its
+      // own buttons working and never closes the drawer it is pointing at.
+      style={{ pointerEvents: "auto" }}
+      onPointerDown={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+      onFocusCapture={(e) => e.stopPropagation()}
+      data-guided-tour=""
+      data-tour-step={step.id}
+      data-tour-centered={centered ? "true" : "false"}
+    >
       {rect ? (
         <div
           className="pointer-events-none absolute rounded-md ring-2 ring-accent"
