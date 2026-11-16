@@ -308,6 +308,7 @@ export function OwnerOpportunityBoard({
         locked: false,
         finished: o.finished,
         status: arha ? arhaStatus(o) : o.finished ? "Completed" : "In progress",
+        completedAt: o.finished ? o.responses.map((x) => x.at).filter(Boolean).sort().at(-1) ?? null : null,
       });
     }
 
