@@ -144,7 +144,7 @@ const OPERATIONS: TourSection[] = [
     id: "ops-help",
     title: "Text, Call and Help",
     steps: [
-      { id: "ops-text-call", to: "/dashboard", page: "Home", element: "None (centered)", target: null, title: "Text and Call", body: "Wherever you see Text or Call in Resolve, it opens Grasshopper, so guests and owners see the company number. Do not use your personal phone." },
+      { id: "ops-text-call", to: "/dashboard", page: "Home", element: "None (centered)", target: null, title: "Text and Call", body: "Call and text guests and owners from Grasshopper, so they see the company number. Never use your personal number." },
       { id: "ops-help-button", to: "/dashboard", page: "Home", element: "? Help & Feedback button", target: HELP_BUTTON, title: "Help & Feedback", body: "The ? button is on every page. It opens Help & guides and lets you report a problem." },
       { id: "ops-help-report", to: "/dashboard", page: "Home", element: "? Help & Feedback button", target: HELP_BUTTON, title: "Send feedback", body: "Choose Report a problem or suggestion and say what happened. It goes to Help Tickets, not the Team Queue. My reports shows where it stands." },
       { id: "ops-help-replay", to: "/dashboard", page: "Home", element: "Take the tour button", target: TAKE_TOUR, title: "Replay any time", body: "Press Take the tour to see this again. The Help page lets you replay one part." },
@@ -252,7 +252,7 @@ const ONBOARDING: TourSection[] = [
     id: "onb-help",
     title: "Text, Call and Help",
     steps: [
-      { id: "onb-text-call", to: "/onboarding/$home?tab=owner", fallbackTo: "/onboarding", page: "A home, Owner", element: "Text and Call buttons", target: [{ text: "Text", within: "a" }, { text: "Call", within: "a" }], title: "Text and Call", body: "Text and Call open Grasshopper, so the owner sees the company number. Do not use your personal phone." },
+      { id: "onb-text-call", to: "/onboarding/$home?tab=owner", fallbackTo: "/onboarding", page: "A home, Owner", element: "Text and Call buttons", target: [{ text: "Text", within: "a" }, { text: "Call", within: "a" }], title: "Text and Call", body: "Text and Call open the phone app on your device. Set Grasshopper as that app, so the owner sees the company number." },
       { id: "onb-help-button", to: "/onboarding", page: "Onboarding Home", element: "? Help & Feedback button", target: HELP_BUTTON, title: "Help & Feedback", body: "The ? button is on every page. It opens Help & guides and lets you report a problem." },
       { id: "onb-help-report", to: "/onboarding", page: "Onboarding Home", element: "? Help & Feedback button", target: HELP_BUTTON, title: "Send feedback", body: "Choose Report a problem or suggestion and say what happened. My reports shows where it stands." },
       { id: "onb-help-replay", to: "/onboarding", page: "Onboarding Home", element: "Take the tour button", target: TAKE_TOUR, title: "Replay any time", body: "Press Take the tour to see this again. The Help page lets you replay one part." },
