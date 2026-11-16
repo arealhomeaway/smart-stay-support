@@ -112,3 +112,11 @@ describe("Coming soon wording", () => {
     expect(portalOpensWhen(null)).toBe("our team finishes its part");
   });
 });
+
+describe("owner chat files", () => {
+  it("a homeowner's chat photo or video goes to Photos; any other file goes to Other", async () => {
+    const { ownerChatFolder, ownerChatCategory } = await import("@/lib/owner-tab");
+    expect([ownerChatFolder("image/jpeg"), ownerChatFolder("video/mp4"), ownerChatFolder("application/pdf")]).toEqual(["photos", "photos", "other"]);
+    expect([ownerChatCategory("image/png"), ownerChatCategory("application/pdf")]).toEqual(["media", "other"]);
+  });
+});
