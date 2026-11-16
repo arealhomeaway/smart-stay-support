@@ -92,15 +92,19 @@ describe("market cards show once per owner", () => {
 describe("Part A screens", () => {
   const owner = readFileSync("src/routes/_authenticated/owner.tsx", "utf8");
   const board = readFileSync("src/components/owner/OwnerOpportunityBoard.tsx", "utf8");
-  it("A4: the home page no longer has Your approvals or Your homeowner plan, and links to View all opportunities", () => {
+  it("A4: the home page no longer has Your approvals or Your homeowner plan, and links to all opportunities (approved Nov 16 wording)", () => {
     expect(owner).not.toContain("Your approvals");
     expect(owner).not.toContain("Your homeowner plan</");
-    expect(board).toContain("View all opportunities");
+    expect(owner).toContain("See all opportunities");
+    expect(board).toContain("View all {forYou.length}");
   });
-  it("A1: the four group headings and their notes, worded as approved", () => {
-    for (const t of ["Needs your answer", "Ready for you", "Optional ways to participate", "Opens when ARHA finishes the step before it",
-      "Waiting on you.", "Anytime, at your own pace. Market ones show once for all your homes.", "Answer now", "Not open yet", "All homes: just what needs you"])
+  it("A1: the group headings and their notes, worded as approved (Nov 16 mockup)", () => {
+    for (const t of ["Needs your answer", "Things onboarding needs from you, with their due dates.", "Nothing is waiting on you right now.",
+      "Opportunities for you", "All open now. Pick any that interest you, at your own pace. New ones first.",
+      "These open on their own when our team finishes its part. Nothing to do yet.",
+      "Everything you've finished, newest first. Open one to see what you sent, or to change it.", "All homes: just what needs you"])
       expect(board).toContain(t);
+    for (const t of ["Ready for you", "Optional ways to participate"]) expect(board).not.toContain(t);
   });
   it("A3: the conversation reply button reads Send to ARHA", () => {
     expect(readFileSync("src/components/owner/OwnerItemConversation.tsx", "utf8")).toContain("Send to ARHA");

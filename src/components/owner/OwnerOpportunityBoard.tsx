@@ -393,6 +393,8 @@ export function OwnerOpportunityBoard({
   // Approved mockup (Nov 16): every open item that is not waiting on an answer is an Opportunity for you, new ones first.
   const forYou = newestOpenedFirst([...view.with_arha, ...view.ready, ...view.optional]);
   const grouped = PORTAL_GROUPS.map((g) => ({ ...g, items: forYou.filter((i) => portalGroupFor(i.cardCode) === g.id) }));
+  // Open items with no card group (an Opportunity started from the older Library): still shown under All, with no heading,
+  // so open work never disappears. Waiting on the Admin's choice of group.
   const ungrouped = forYou.filter((i) => portalGroupFor(i.cardCode) === null);
   const done = newestCompletedFirst(view.done);
 
@@ -499,7 +501,7 @@ export function OwnerOpportunityBoard({
               </SubGroup>
             ))}
             {filter === "all" && ungrouped.length > 0 ? (
-              <SubGroup title={`Other (${ungrouped.length})`}>{ungrouped.map((i) => card(i))}</SubGroup>
+              <ul className="grid gap-3 min-[900px]:grid-cols-2" aria-label="More opportunities">{ungrouped.map((i) => card(i))}</ul>
             ) : null}
           </section>
 

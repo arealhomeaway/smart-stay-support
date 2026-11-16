@@ -83,6 +83,7 @@ export function OwnerChatPanel() {
               kind="owner"
               canPost={s.canPost}
               ownerSide
+              lockedComposer
               hideBanner
               placeholder="Message"
               className="min-h-0 flex-1"
