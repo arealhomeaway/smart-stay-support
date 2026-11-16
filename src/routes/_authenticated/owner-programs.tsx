@@ -68,6 +68,8 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useDemo } from "@/components/DemoProvider";
+import { HomeownerHasLists } from "@/components/ao/HomeownerHasPanel";
+import { HAS_COPY } from "@/lib/homeowner-has";
 import { useViewAs } from "@/hooks/useViewAs";
 import { setOwnerPreview } from "@/lib/owner-preview";
 import { beginActAs } from "@/lib/act-as";
@@ -499,7 +501,7 @@ function ProgramCard({
           ) : null}
         </div>
       </div>
-      {expanded ? <ProgramDetail row={row} available={available} /> : null}
+      {expanded ? <ProgramDetail row={row} available={available} demo={demo} /> : null}
     </SectionCard>
   );
 }
@@ -507,9 +509,11 @@ function ProgramCard({
 function ProgramDetail({
   row,
   available,
+  demo,
 }: {
   row: ProgramRow;
   available: { id: string; name: string; location: string }[];
+  demo: boolean;
 }) {
   const programId = row.id;
   const qc = useQueryClient();
@@ -864,53 +868,14 @@ function ProgramDetail({
 
       <Separator />
 
+      {/* Nov 16: the same two lists as the home pages (cards per home, then what was sent). */}
       <section className="space-y-3">
-        <h3 className="text-sm font-semibold">Owner activities</h3>
-        {reviews.length === 0 ? (
-          <p className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-            No activities released yet.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {reviews.map((r) => {
-              const path = DECISION_PATHS[r.decision_path as keyof typeof DECISION_PATHS];
-              const names = r.propertyIds
-                .map((id) => properties.find((p) => p.propertyId === id)?.name)
-                .filter(Boolean);
-              return (
-                <div
-                  key={r.id}
-                  className="flex flex-wrap items-start justify-between gap-3 rounded-md border p-3"
-                >
-                  <div className="space-y-1">
-                    <p className="font-medium">{r.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {names.length ? names.join(", ") : "Applies to the whole program"} ·{" "}
-                      {PHASE_LABELS[r.phase as keyof typeof PHASE_LABELS] ?? r.phase}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 text-xs">
-                    {path ? (
-                      <Badge variant="outline" className={path.tone}>
-                        {path.label}
-                      </Badge>
-                    ) : null}
-                    {r.respond_by ? (
-                      <span className="text-muted-foreground">
-                        Respond by {usCalendarDate(r.respond_by)}
-                      </span>
-                    ) : null}
-                    {r.owner_decision ? (
-                      <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700">
-                        {r.owner_decision}
-                      </Badge>
-                    ) : null}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        <h3 className="text-sm font-semibold">{HAS_COPY.title}</h3>
+        <HomeownerHasLists
+          programId={programId}
+          demo={demo}
+          homes={properties.map((p) => ({ id: p.propertyId, name: p.name }))}
+        />
       </section>
 
       <Separator />

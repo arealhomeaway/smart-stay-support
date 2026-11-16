@@ -18,6 +18,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { usDateTime } from "@/lib/dates";
+import { TaskHomeownerLines } from "@/components/ao/HomeownerHasPanel";
 import {
   completedOnboardingFileUrlFn,
   readCompletedOnboardingFn,
@@ -135,6 +136,7 @@ function TaskDetail({
           Completed onboarding Task · read-only
         </SheetDescription>
       </SheetHeader>
+      <TaskHomeownerLines taskId={task.id} done completedAt={task.completedAt} />
       <dl className="grid grid-cols-2 gap-3">
         <div>
           <dt className="eyebrow">Completed</dt>

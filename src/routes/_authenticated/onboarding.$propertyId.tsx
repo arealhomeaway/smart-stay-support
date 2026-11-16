@@ -54,6 +54,7 @@ import { FillInEditors } from "@/components/onboarding/FillInEditors";
 import { AssessmentFindingsPanel } from "@/components/onboarding/AssessmentFindingsPanel";
 import { AssessmentsFormsPanel } from "@/components/onboarding/AssessmentsFormsPanel";
 import { OwnerViewPreview } from "@/components/onboarding/OwnerViewPreview";
+import { HomeownerHasSection } from "@/components/ao/HomeownerHasPanel";
 import { VendorCoveragePanel } from "@/components/onboarding/VendorCoveragePanel";
 import { OnboardingWorkOrdersPanel } from "@/components/onboarding/OnboardingWorkOrdersPanel";
 
@@ -976,6 +977,8 @@ function PropertyWorkspace() {
             teammates={teammates}
             openId={linkedOpp}
           />
+          {/* Nov 16: what has gone to the homeowner, read only (shows only for an Active Owner home). */}
+          <HomeownerHasSection propertyId={current.id} homeName={homeName} origin={`/onboarding/${current.id}`} />
           {/* Part 3: from the old More tab. Every owner item, contact details and the owner's own view. */}
           <details className="surface overflow-hidden" open={Boolean(linkedOpp)}>
             <summary className="flex min-h-11 cursor-pointer items-center px-4 font-medium">Every owner item and owner contact details</summary>
