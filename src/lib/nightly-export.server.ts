@@ -85,7 +85,7 @@ export const REQUEST_TIMEOUT_MS = 30_000;
 /** One stored file gets this long to copy (more for a large file); then it is tried once more, then recorded as failed. */
 export const FILE_TIMEOUT_MS = 45_000;
 export const FILE_TRIES = 2;
-export const fileTimeoutMs = (bytes: number, base = FILE_TIMEOUT_MS) => Math.max(base, 15_000 + Math.ceil(bytes / 1_000_000) * 2_000);
+export const fileTimeoutMs = (bytes: number) => Math.max(FILE_TIMEOUT_MS, 15_000 + Math.ceil(bytes / 1_000_000) * 2_000);
 const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** A signal that fires when any of the given signals fires. */
@@ -682,7 +682,7 @@ export async function runNightlyExportStep(
         await Promise.all(
           batch.map(async (f) => {
             try {
-              const r = await copyWithLimit(db, sp!, driveId, folderId, f, fileTimeoutMs(f.s, opts.fileTimeoutMs), timeLeft);
+              const r = await copyWithLimit(db, sp!, driveId, folderId, f, opts.fileTimeoutMs ?? fileTimeoutMs(f.s), timeLeft);
               if (!r.ok) throw new Error(r.reason);
               const n = r.bytes;
               c.copied++;
