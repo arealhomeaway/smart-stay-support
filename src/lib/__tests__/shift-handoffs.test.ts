@@ -73,7 +73,7 @@ describe("Shift handoffs: missed shift ends", () => {
     expect(v.missed.map((p) => [p.userId, p.covering])).toEqual([[COVER, true]]);
   });
 
-  it("the team filter keeps Team B only", () => {
+  it("the team filter keeps Team A only", () => {
     const v = shiftHandoffsView(base(), { date: DAY, team: "A", demo: true, now: at(1400) });
     expect(v.shifts.map((p) => p.userId)).toEqual([PC_A]);
   });
@@ -121,7 +121,7 @@ describe("Shift handoffs: waiting Right now handoffs", () => {
   });
 
   it("labels are roles, never codes or long dashes", () => {
-    expect(roleLabel("po_day")).toBe("Property operations weekday day coordinator".replace(/^p/, "P"));
+    expect(roleLabel("po_day")).toBe("Property Operations weekday day coordinator");
     expect(roleLabel("ops_supervisor")).toBe("Operations Supervisor");
     expect(roleLabel("finance_lead", [{ code: "finance_lead", name: "Finance \u2014 Lead", current_seat_holder: null }])).toBe("Finance, Lead");
     expect(roleLabel(null)).toBe("Teammate");
@@ -137,5 +137,8 @@ describe("Shift handoffs: who can open it", () => {
     expect(can(["tech"], "shift_handoffs")).toBe(false);
     expect(can(["manager"], "shift_handoffs", { finance: true })).toBe(false);
     expect(can(["onboarding"], "shift_handoffs", { onboardingDirector: true })).toBe(false);
+    expect(canOpenPath("/shift-handoffs", { roles: ["manager"], seats: { opsSupervisor: true } })).toBe(true);
+    expect(canOpenPath("/shift-handoffs", { roles: ["manager"], seats: {} })).toBe(false);
+    expect(canOpenPath("/shift-handoffs", { roles: ["tech"], seats: {} })).toBe(false);
   });
 });
