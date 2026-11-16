@@ -36,7 +36,7 @@ function GroupList({ group, items }: { group: HasGroup; items: HasCardItem[] }) 
           {items.map((i) => (
             <li key={i.id} className="px-3 py-2 text-sm">
               <p className="font-medium">{i.title}</p>
-              <p className={group === "answer" ? "text-xs font-medium text-warning" : "text-xs text-muted-foreground"}>{i.line}</p>
+              <p className={group === "answer" ? "text-xs font-medium text-warning-ink" : "text-xs text-muted-foreground"}>{i.line}</p>
             </li>
           ))}
         </ul>
@@ -62,7 +62,7 @@ function SentList({ items }: { items: HasSentItem[] }) {
         <li key={i.key} className="space-y-1 px-3 py-2 text-sm">
           <p className="font-medium">{i.title}</p>
           <p className="text-xs text-muted-foreground">{i.sentLine}</p>
-          <p className={i.waiting ? "text-xs font-medium text-warning" : "text-xs text-success"}>{i.statusLine}</p>
+          <p className={i.waiting ? "text-xs font-medium text-warning-ink" : "text-xs text-foreground"}>{i.statusLine}</p>
           {i.files.length > 0 ? (
             <div className="flex flex-wrap gap-2 pt-1">
               {i.files.map((f) => (
