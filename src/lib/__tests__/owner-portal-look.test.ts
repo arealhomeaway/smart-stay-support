@@ -21,19 +21,23 @@ describe("portal groups by card code", () => {
   it("Marketing and social is exactly P07 P08 P12 P13 P14 P15 P19 P20", () => {
     expect(PORTAL_GROUPS.find((g) => g.id === "marketing")!.codes).toEqual(["P07", "P08", "P12", "P13", "P14", "P15", "P19", "P20"]);
   });
-  it("Research and relationships is exactly N05 N06 N07 N08 N09 N12 P10 P16 P17 P18", () => {
-    expect(PORTAL_GROUPS.find((g) => g.id === "research")!.codes).toEqual(["N05", "N06", "N07", "N08", "N09", "N12", "P10", "P16", "P17", "P18"]);
+  it("Research and relationships is exactly N05 N06 N07 N08 N09 N12 P10 P16 P17 P18 P09 N16", () => {
+    expect(PORTAL_GROUPS.find((g) => g.id === "research")!.codes).toEqual(["N05", "N06", "N07", "N08", "N09", "N12", "P10", "P16", "P17", "P18", "P09", "N16"]);
   });
   it("Home care is exactly N01 N02 N03 N04 N11 N13 P05", () => {
     expect(PORTAL_GROUPS.find((g) => g.id === "home_care")!.codes).toEqual(["N01", "N02", "N03", "N04", "N11", "N13", "P05"]);
   });
-  it("Guest experience is exactly N14 A33 N10 A52", () => {
-    expect(PORTAL_GROUPS.find((g) => g.id === "guest")!.codes).toEqual(["N14", "A33", "N10", "A52"]);
+  it("Guest experience is exactly N14 A33 N10 A52 N15 N17 P11", () => {
+    expect(PORTAL_GROUPS.find((g) => g.id === "guest")!.codes).toEqual(["N14", "A33", "N10", "A52", "N15", "N17", "P11"]);
+  });
+  it("P09 and N16 sit in Research and relationships; N15, N17 and P11 in Guest experience (Admin, Nov 16)", () => {
+    expect(["P09", "N16"].map((c) => portalGroupFor(c))).toEqual(["research", "research"]);
+    expect(["N15", "N17", "P11"].map((c) => portalGroupFor(c))).toEqual(["guest", "guest", "guest"]);
   });
   it("reads codes case-insensitively and leaves unnamed codes ungrouped", () => {
     expect(portalGroupFor("p07")).toBe("marketing");
     expect(portalGroupFor("A52")).toBe("guest");
-    expect(portalGroupFor("N15")).toBeNull();
+    expect(portalGroupFor("X99")).toBeNull();
     expect(portalGroupFor(null)).toBeNull();
   });
 });
