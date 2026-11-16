@@ -2423,6 +2423,13 @@
       "when": 1794847546438,
       "tag": "0345_portal_card_edit",
       "breakpoints": true
+    },
+    {
+      "idx": 346,
+      "version": "7",
+      "when": 1794853161254,
+      "tag": "0346_owner_chat_attach",
+      "breakpoints": true
     }
   ]
 }
