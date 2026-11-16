@@ -501,7 +501,7 @@ export function OwnerOpportunityBoard({
               </SubGroup>
             ))}
             {filter === "all" && ungrouped.length > 0 ? (
-              <ul className="grid gap-3 md:grid-cols-2">{ungrouped.map((i) => card(i))}</ul>
+              <ul className="grid gap-3 min-[900px]:grid-cols-2" aria-label="More opportunities">{ungrouped.map((i) => card(i))}</ul>
             ) : null}
           </section>
 
