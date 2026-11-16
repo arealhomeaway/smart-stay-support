@@ -194,13 +194,22 @@ function TourOverlay({
     const href = resolveStepHref(step, ids);
     // Navigate once per page change; the page may tidy its own address after it opens.
     if (navigated.current === href) return;
+    const prev = navigated.current;
     navigated.current = href;
+    // Leaving a step that opened a Task drawer or a chat: close it the way Escape does.
+    const opened = (h: string | null) => (h ? /[?&](task|chat)=/.test(h) : false);
+    if (opened(prev) && !opened(href)) {
+      document
+        .querySelector<HTMLElement>("[role='dialog'][data-state='open']:not([data-guided-tour] *)")
+        ?.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    }
     const here = `${router.state.location.pathname}${router.state.location.searchStr ?? ""}`;
     if (here !== href) void router.navigate({ href });
   }, [step, ids, router]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (!e.isTrusted) return;
       if (e.key === "Escape") onClose();
       if (e.key === "ArrowRight") setIndex((i) => Math.min(i + 1, steps.length - 1));
       if (e.key === "ArrowLeft") setIndex((i) => Math.max(i - 1, 0));
