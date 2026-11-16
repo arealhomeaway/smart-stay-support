@@ -1,6 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { OwnerMessagesWithArha } from "@/components/owner/OwnerMessagesWithArha";
-import { useMemo, useState } from "react";
+import { OwnerChatPanel } from "@/components/owner/OwnerChat";
+import { ownerChatPanel } from "@/lib/owner-chat-panel";
+import { HomePhoto } from "@/components/property/HomePhoto";
+import { ownerPace } from "@/lib/ao-engine";
+import { paceSentence } from "@/lib/ao-ui";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -11,7 +15,7 @@ import {
   Paperclip,
 } from "lucide-react";
 import { participationEvidenceUrlFn } from "@/lib/owner-evidence.functions";
-import { EmptyState, LoadingPage, PageHero, ProgressRing, SectionCard } from "@/components/ui/page";
+import { EmptyState, LoadingPage, SectionCard } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status";
 import { Celebrate } from "@/components/ui/feedback";
 import { useRole } from "@/hooks/useRole";
@@ -33,11 +37,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { answerOwnerReview, ownerHome, ownerHomePreview } from "@/lib/owner-portal.functions";
-import { OWNER_GOAL_LABEL } from "@/lib/owner-participation";
+import { OWNER_GOAL_HOURS } from "@/lib/owner-participation";
 import { LogTimeContext, LogTimeDialog, useOpenLogTime, type LogTimeAnchor } from "@/components/owner/LogTimeDialog";
 import { OwnerOpportunityBoard, useOutsideLines } from "@/components/owner/OwnerOpportunityBoard";
 import { canSendToActiveOwner } from "@/lib/ao-engine";
-import { OwnerPaceCard } from "@/components/owner/OwnerPlanCards";
 import { isOwnerQueue, type OwnerQueue } from "@/lib/owner-opportunity-filters";
 import { captureReviewedOpportunity, captureReviewedResponse } from "@/lib/owner-reviewed-update";
 import { ownerTicketResponseGuidance } from "@/lib/owner-ticket-intent";
@@ -233,7 +236,7 @@ function OwnerHubBody({
   const openReviews = (reviews as Review[])
     .filter((r) => ownerReviewPresentation(r).attention)
     .filter(inScope);
-  const heroPhoto = properties.find((p) => p.photoUrl)?.photoUrl ?? undefined;
+  const heroPhoto = (selectedHomeId ? properties.find((p) => p.propertyId === selectedHomeId)?.photoUrl : null) ?? properties.find((p) => p.photoUrl)?.photoUrl ?? null;
 
 
   // The Welcome Packet's six milestones, positioned from signals ARHA already
@@ -413,61 +416,52 @@ function OwnerHubBody({
   // opens the Opportunities view with that item open, never the dashboard plan.
   const view = search.view ?? (search.opportunity ? "opportunities" : "home");
 
+  // Approved mockup item 6: the top bar "Chat with ARHA" opens one conversation per home.
+  const chatHomes = useMemo(() => properties.map((p) => ({ propertyId: p.propertyId, name: p.name })), [properties]);
+  useEffect(() => {
+    ownerChatPanel.register(chatHomes, !preview);
+  }, [chatHomes, preview]);
+  useEffect(() => () => ownerChatPanel.unregister(), []);
+  const hourEntries = useMemo(
+    () => data.entries.map((e) => ({ minutes: e.minutes, activity: e.activity, review_id: (e as { review_id?: string | null }).review_id ?? null, superseded: Boolean(e.superseded), propertyIds: e.propertyIds, entry_date: e.entry_date })),
+    [data.entries],
+  );
+  const goOpportunities = () => void navigate({ search: (prev) => { const { queue: _q, ...rest } = prev; return { ...rest, view: "opportunities" as const }; } });
+  const seeComing = () => {
+    goOpportunities();
+    window.setTimeout(() => document.getElementById("coming-soon")?.scrollIntoView({ behavior: "smooth", block: "start" }), 400);
+  };
+
   return (
     <LogTimeContext.Provider value={preview ? null : openLogTime}>
-    <div className="space-y-6">
+    <div className={view === "home" || view === "opportunities" ? "mx-auto max-w-[1120px] space-y-9 text-portal-ink" : "space-y-6"}>
+      <OwnerChatPanel />
       {preview ? (
         <StatusBadge tone="review">Preview only: staff view, read-only</StatusBadge>
       ) : null}
 
-      <PageHero
-        image={heroPhoto}
-        eyebrow="Active Owner"
-        title={`Welcome back, ${firstName(signedInName, program.ownerName)}`}
-        description="Here is where things stand across your homes, and anything that needs your attention."
-        aside={
-          <div className="rounded-2xl border border-border bg-card/95 p-5 shadow-sm">
-            <p className="eyebrow mb-3">Active Owner Participation</p>
-            <div className="flex items-center gap-4">
-              <ProgressRing value={percent} tone="owner" label="of target" />
-              <div className="min-w-0">
-                <p className="text-2xl font-semibold leading-none">{snapshot.reportedHours} hrs</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  reported toward {OWNER_GOAL_LABEL.toLowerCase()}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {programDisplay.futureStart ? `Your program starts ${usCalendarDate(programDisplay.futureStart)}` : `Program period ends ${snapshot.endsOn ? usDate(snapshot.endsOn) : "December 31"}`}
-                </p>
-                {!programDisplay.futureStart ? (
-                  <div className="mt-2"><OwnerPaceCard loggedHours={Number(snapshot.reportedHours) || 0} endsOn={snapshot.endsOn ?? null} endLabel={snapshot.endsOn ? usDate(snapshot.endsOn) : "December 31"} /></div>
-                ) : null}
-                <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground" aria-label="Participation breakdown">
-                  {yearTotals.length > 1
-                    ? yearTotals.map((y) => (
-                        <li key={y.year}>
-                          {y.year} participation year: {hrs(y.minutes)} hrs
-                        </li>
-                      ))
-                    : null}
-                  <li>Tagged to a home: {hrs(propertySpecificMinutes)} hrs · General: {hrs(generalMinutes)} hrs</li>
-                  {properties.filter((p) => p.inclusionStatus === "included").length > 1 ? (
-                    <li>Your homes for the same year share one total; each activity counts once.</li>
-                  ) : null}
-                  <li>Progress toward more than 100 hours, not a tax qualification result.</li>
-                </ul>
-                {preview ? null : <ReportDownloads />}
-              </div>
-            </div>
-          </div>
-        }
-        actions={
-          preview || !canLogHours ? null : (
-            <Button onClick={() => openManualLog("")}>
-              <Clock className="size-4" aria-hidden="true" /> Log hours
-            </Button>
-          )
-        }
-      />
+      {view === "home" ? (
+        <WelcomeCard
+          photo={heroPhoto}
+          homeLabel={selectedHomeId ? homeName(selectedHomeId) ?? "Your home" : properties[0]?.name ?? "Your home"}
+          firstName={firstName(signedInName, program.ownerName)}
+          canLog={!preview && canLogHours}
+          onLog={() => openManualLog("")}
+          onAll={goOpportunities}
+          onMessage={() => ownerChatPanel.open(selectedHomeId)}
+          hours={Number(snapshot.reportedHours) || 0}
+          percent={percent}
+          futureStart={programDisplay.futureStart ? usCalendarDate(programDisplay.futureStart) : null}
+          endsOn={snapshot.endsOn ?? null}
+          endLabel={snapshot.endsOn ? usDate(snapshot.endsOn) : "December 31"}
+          reports={preview ? null : <ReportDownloads />}
+        />
+      ) : view === "opportunities" ? (
+        <div className="space-y-1">
+          <h1 className="font-display text-[32px] leading-tight text-portal-ink">Opportunities</h1>
+          <p className="text-portal-muted">Everything here is open for you right now. Pick what interests you and log your hours as you go.</p>
+        </div>
+      ) : null}
 
       <LogTimeDialog
         key={logKey}
@@ -547,6 +541,7 @@ function OwnerHubBody({
           renderReview={renderReview}
           programLive={programLive}
           blockedReason={preview ? null : logHoursBlockedReason}
+          hourEntries={hourEntries}
           {...(preview || logHoursBlockedReason ? {} : { onLogHours: openManualLog })}
         />
       ) : view === "team" ? (
@@ -566,9 +561,11 @@ function OwnerHubBody({
           preview={preview}
           homeTab={selectedHomeId}
           focusId={search.opportunity ?? null}
-          onViewAll={() => void navigate({ search: (prev) => { const { queue: _q, ...rest } = prev; return { ...rest, view: "opportunities" as const }; } })}
+          onViewAll={goOpportunities}
+          onSeeComing={seeComing}
           renderReview={renderReview}
           programLive={programLive}
+          hourEntries={hourEntries}
           blockedReason={preview ? null : logHoursBlockedReason}
           {...(preview || logHoursBlockedReason ? {} : { onLogHours: openManualLog })}
         />
@@ -591,11 +588,6 @@ function OwnerHubBody({
           primaryContact={contacts.primary ?? JAMES}
         />
       )}
-
-      <OwnerMessagesWithArha
-        homes={scopedProperties.map((p) => ({ propertyId: p.propertyId, name: p.name }))}
-        preview={preview}
-      />
 
       <SectionCard title="Recent activity">
         {activity.length === 0 ? (
@@ -627,6 +619,68 @@ function OwnerHubBody({
       )}
     </div>
     </LogTimeContext.Provider>
+  );
+}
+
+/**
+ * Approved mockup item 2a: the welcome card with the home photo, greeting, the three actions and the
+ * participation box. Same numbers and on-track sentence as before (ownerPace / paceSentence).
+ */
+function WelcomeCard({
+  photo, homeLabel, firstName: name, canLog, onLog, onAll, onMessage, hours, percent, futureStart, endsOn, endLabel, reports,
+}: {
+  photo: string | null;
+  homeLabel: string;
+  firstName: string;
+  canLog: boolean;
+  onLog: () => void;
+  onAll: () => void;
+  onMessage: () => void;
+  hours: number;
+  percent: number;
+  futureStart: string | null;
+  endsOn: string | null;
+  endLabel: string;
+  reports: React.ReactNode;
+}) {
+  const end = endsOn ? new Date(`${endsOn.slice(0, 10)}T23:59:59`) : null;
+  const pace = end && !Number.isNaN(end.getTime()) && !futureStart ? ownerPace(hours, new Date(), end) : null;
+  const outline = "min-h-11 border-portal-primary text-portal-primary hover:bg-portal-primary/10 hover:text-portal-primary";
+  return (
+    <section className="grid gap-6 rounded-2xl border border-portal-border bg-card p-6 md:grid-cols-[200px_minmax(0,1fr)] lg:grid-cols-[200px_minmax(0,1fr)_300px]" aria-label="Welcome">
+      <HomePhoto url={photo} alt={homeLabel} className="h-[150px] w-[200px] rounded-xl" />
+      <div className="min-w-0 space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-portal-muted">Active Owner</p>
+        <h1 className="font-display text-[34px] leading-tight text-portal-ink">Welcome back, {name}</h1>
+        <p className="text-portal-muted">Pick any opportunity below, log your hours, and we'll take care of the rest.</p>
+        <div className="flex flex-wrap gap-2 pt-2">
+          {canLog ? (
+            <Button className="min-h-11 bg-portal-primary text-portal-primary-foreground hover:bg-portal-primary/90" onClick={onLog}>
+              <Clock className="size-4" aria-hidden="true" /> Log hours
+            </Button>
+          ) : null}
+          <Button variant="outline" className={outline} onClick={onAll}>See all opportunities</Button>
+          <Button variant="outline" className={outline} onClick={onMessage}>Message your team</Button>
+        </div>
+      </div>
+      <div className="rounded-[14px] border border-portal-border p-4 md:col-span-2 lg:col-span-1" aria-label="Your participation">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-portal-muted">Your participation</p>
+        <p className="numeric mt-2 text-2xl font-semibold text-portal-ink">{hours} hrs of {OWNER_GOAL_HOURS}</p>
+        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-portal-border" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(percent)}>
+          <div className="h-full rounded-full bg-portal-gold" style={{ width: `${Math.max(0, Math.min(100, percent))}%` }} />
+        </div>
+        {futureStart ? (
+          <p className="mt-2 text-sm text-portal-muted">Your program starts {futureStart}</p>
+        ) : pace ? (
+          <div className="mt-2 text-sm" data-testid="owner-pace">
+            <p className="text-portal-ink">{paceSentence(pace.weeklyNeeded, endLabel)}</p>
+            <p className="font-medium text-portal-ink">{pace.label}</p>
+          </div>
+        ) : null}
+        {reports}
+        <p className="mt-2 text-xs text-portal-muted">Progress toward more than 100 hours, not a tax qualification result.</p>
+      </div>
+    </section>
   );
 }
 
