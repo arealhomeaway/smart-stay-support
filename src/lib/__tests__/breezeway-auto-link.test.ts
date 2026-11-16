@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { planAutoLinks, type AutoLinkHome, type AutoLinkProperty } from "@/lib/breezeway-auto-link";
+import { linkNoticeFor, planAutoLinks, type AutoLinkHome, type AutoLinkProperty } from "@/lib/breezeway-auto-link";
 import { autoLinkBreezewayHomes } from "@/lib/breezeway-auto-link.server";
 
 const home = (over: Partial<AutoLinkProperty> = {}): AutoLinkProperty => ({
@@ -83,12 +83,32 @@ describe("automatic Breezeway link rule", () => {
 });
 
 /** Small stand-in for the admin client: properties select/update and audit_log insert. */
-function fakeDb(rows: Record<string, unknown>[]) {
+function fakeDb(rows: Record<string, unknown>[], admins: string[] = ["admin-1", "admin-2"]) {
   const audits: Record<string, unknown>[] = [];
+  const notices: Record<string, unknown>[] = [];
   const db = {
     from(table: string) {
       if (table === "audit_log") {
         return { insert: async (row: Record<string, unknown>) => { audits.push(row); return { error: null }; } };
+      }
+      if (table === "user_roles") {
+        return { select: () => ({ eq: async (_k: string, v: string) => ({ data: v === "admin" ? admins.map((user_id) => ({ user_id })) : [], error: null }) }) };
+      }
+      if (table === "staff_notifications") {
+        return {
+          select: () => {
+            let kind: unknown; let ids: unknown[] = [];
+            const q = {
+              eq(_k: string, v: unknown) { kind = v; return q; },
+              in(_k: string, v: unknown[]) { ids = v; return q; },
+              async is() {
+                return { data: notices.filter((n) => n["kind"] === kind && ids.includes(n["entity_id"]) && !n["retracted_at"]), error: null };
+              },
+            };
+            return q;
+          },
+          insert: async (list: Record<string, unknown>[]) => { notices.push(...list); return { error: null }; },
+        };
       }
       return {
         select: async () => ({ data: rows.map((r) => ({ ...r })), error: null }),
@@ -108,7 +128,7 @@ function fakeDb(rows: Record<string, unknown>[]) {
       };
     },
   };
-  return { db, audits, rows };
+  return { db, audits, rows, notices };
 }
 
 describe("automatic Breezeway link save", () => {
@@ -166,5 +186,56 @@ describe("automatic Breezeway link save", () => {
     expect(res.skipped).toEqual({ several_matches: 1, no_match: 1 });
     expect(f.rows.every((r) => r["breezeway_mapping_state"] === "unmapped" && r["breezeway_property_id"] === null)).toBe(true);
     expect(f.audits).toHaveLength(0);
+  });
+});
+
+describe("telling an Admin when a home cannot link itself", () => {
+  const base = { is_demo: false, archived_at: null, active: true, name: "Home", unit: null, city: "Tulsa", state: "OK", postal_code: "74137", breezeway_property_id: null, breezeway_mapping_state: "unmapped" };
+
+  it("sends every Admin one in-app notice naming the home and the reason", async () => {
+    const f = fakeDb([{ ...base, id: "p1", address_line1: "8738 Comstock Ct", ownerrez_property_id: "411001" }]);
+    const res = await autoLinkBreezewayHomes(f.db, { trigger: "add_home", propertyIds: ["p1"], listHomes: async () => [] });
+    expect(res.notified).toEqual(["p1"]);
+    expect(f.notices.map((n) => n["user_id"])).toEqual(["admin-1", "admin-2"]);
+    expect(f.notices[0]).toMatchObject({
+      kind: "breezeway_link_needed",
+      title: "Breezeway link needed: 8738 Comstock Ct",
+      entity_type: "property",
+      entity_id: "p1",
+      link_path: "/integrations",
+    });
+    expect(String(f.notices[0]!["body"])).toContain("No active Breezeway home has its OwnerRez number yet.");
+    // In-app only: no email is asked for.
+    expect(f.notices[0]!["email_status"]).toBeUndefined();
+  });
+
+  it("names the reason for two matches, no OwnerRez number, and a Breezeway home already in use", () => {
+    expect(linkNoticeFor("several_matches", "1 Main St")!.body).toContain("More than one Breezeway home has its OwnerRez number.");
+    expect(linkNoticeFor("no_ownerrez_number", "1 Main St")!.body).toContain("It has no OwnerRez number");
+    expect(linkNoticeFor("home_taken", "1 Main St")!.body).toContain("already linked to another home in Resolve");
+  });
+
+  it("tells nobody about demo, archived, linked, excluded or review homes", () => {
+    for (const reason of ["not_eligible", "already_linked", "not_unmapped", "changed_meanwhile"]) {
+      expect(linkNoticeFor(reason, "1 Main St")).toBeNull();
+    }
+  });
+
+  it("does not repeat the same notice each night, but sends a new one when the reason changes", async () => {
+    const f = fakeDb([{ ...base, id: "p1", address_line1: "1 Main St", ownerrez_property_id: "411001" }]);
+    await autoLinkBreezewayHomes(f.db, { trigger: "nightly", listHomes: async () => [] });
+    const again = await autoLinkBreezewayHomes(f.db, { trigger: "nightly", listHomes: async () => [] });
+    expect(again.notified).toEqual([]);
+    expect(f.notices).toHaveLength(2);
+    const changed = await autoLinkBreezewayHomes(f.db, { trigger: "nightly", listHomes: async () => [bw(1, "411001"), bw(2, "411001")] });
+    expect(changed.notified).toEqual(["p1"]);
+    expect(f.notices).toHaveLength(4);
+  });
+
+  it("sends no notice when the home links itself", async () => {
+    const f = fakeDb([{ ...base, id: "p1", address_line1: "1 Main St", ownerrez_property_id: "411001" }]);
+    const res = await autoLinkBreezewayHomes(f.db, { trigger: "nightly", listHomes: async () => [bw(900, "411001")] });
+    expect(res.linked).toHaveLength(1);
+    expect(f.notices).toHaveLength(0);
   });
 });
