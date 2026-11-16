@@ -12,6 +12,11 @@ import { backupFolderName, centralHour } from "@/lib/nightly-backup";
 /** The export works from 2 a.m. until 5 a.m. Central; a night not finished by 5 a.m. alerts. */
 export const EXPORT_START_HOUR = 2;
 export const EXPORT_MISSED_HOUR = 5;
+/**
+ * The weekly night (the full copy of every stored file) works until 7 a.m. Central and alerts at
+ * 7 a.m. instead (Admin, Nov 15: the full copy needed about 3.5 hours and the night gave 3).
+ */
+export const EXPORT_WEEKLY_END_HOUR = 7;
 /** Rows per file. A table with more rows is written in numbered parts so each file uploads. */
 export const EXPORT_PART_ROWS = 5000;
 /** Graph takes a simple upload up to 4 MB; anything larger goes through an upload session. */
@@ -50,10 +55,15 @@ export function readExportSettings(value: unknown): ExportSettings {
 /** Tonight's folder: the Central calendar date, the same name the existing nightly backup uses. */
 export const exportFolderName = (now: Date) => backupFolderName(now);
 
-/** Calls between 2 and 5 a.m. Central do the work; any other call does nothing. */
-export function inExportWindow(now: Date): boolean {
+/** The hour the night's work stops and the missed check alerts: 7 a.m. on the weekly night, else 5 a.m. */
+export function exportEndHour(now: Date, settings: ExportSettings = DEFAULT_EXPORT_SETTINGS): number {
+  return isWeeklyNight(exportFolderName(now), settings) ? EXPORT_WEEKLY_END_HOUR : EXPORT_MISSED_HOUR;
+}
+
+/** Calls between 2 a.m. and the night's end hour (Central) do the work; any other call does nothing. */
+export function inExportWindow(now: Date, settings: ExportSettings = DEFAULT_EXPORT_SETTINGS): boolean {
   const h = centralHour(now);
-  return h >= EXPORT_START_HOUR && h < EXPORT_MISSED_HOUR;
+  return h >= EXPORT_START_HOUR && h < exportEndHour(now, settings);
 }
 
 /** The weekly night copies every stored file; other nights copy only new or changed files. */

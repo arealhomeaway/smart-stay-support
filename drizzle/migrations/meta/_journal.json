@@ -2395,6 +2395,13 @@
       "when": 1794798361258,
       "tag": "0341_ao_catch_up_opens",
       "breakpoints": true
+    },
+    {
+      "idx": 342,
+      "version": "7",
+      "when": 1794800851116,
+      "tag": "0342_nightly_export_sunday",
+      "breakpoints": true
     }
   ]
 }

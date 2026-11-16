@@ -712,3 +712,8 @@
 
 ## Nov 15 Plan catch-up opens linked cards (applied live)
 - [x] Mark done opens linked homeowner cards like the Task drawer (0341_ao_catch_up_opens)
+
+## Nov 15 cards and nightly export
+- [ ] Link the 10 unlinked homeowner cards - blocked: every matching Task was voided as Not needed or archived; waits on the Admin's choice
+- [x] Nightly export: time limits, retries, fenced writes, every 5 minutes, weekly night to 7 AM (0342 + schedule)
+- [ ] Publish the export code before Sun Nov 22 2 AM Central - blocked: waits on Emily publishing

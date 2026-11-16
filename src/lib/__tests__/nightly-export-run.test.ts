@@ -357,3 +357,82 @@ describe("nightly export run (stand-ins only)", () => {
     expect(sp.removed.some((id) => id.includes("2026-11-11"))).toBe(false);
   });
 });
+
+describe("hung requests and replaced calls (Admin, Nov 15)", () => {
+  it("a request with no answer is stopped at its time limit and tried again", async () => {
+    let calls = 0;
+    const res = await withRetry(
+      (signal) => {
+        calls++;
+        if (calls === 1) return new Promise<Response>((_, rej) => signal.addEventListener("abort", () => rej(new Error("aborted"))));
+        return Promise.resolve(new Response(null, { status: 200 }));
+      },
+      async () => {},
+      { timeoutMs: 20 },
+    );
+    expect(res.status).toBe(200);
+    expect(calls).toBe(2);
+  });
+
+  it("a request that never answers gives up after four tries with the reason, instead of hanging", async () => {
+    let calls = 0;
+    const err = await withRetry(
+      (signal) => (calls++, new Promise<Response>((_, rej) => signal.addEventListener("abort", () => rej(new Error("aborted"))))),
+      async () => {},
+      { timeoutMs: 10 },
+    ).catch((e) => String(e));
+    expect(calls).toBe(4);
+    expect(err).toContain("No answer after 4 tries");
+  });
+
+  it("a stored file that hangs is tried again, then recorded as failed; the night carries on and the check fails", async () => {
+    const { db, data, rpcCalls } = setup();
+    const sp = fakeSharePoint();
+    let hung = 0;
+    const put = sp.io.put;
+    sp.io.put = (d, folder, rel, bytes, type, signal) => {
+      if (rel.endsWith("ticket/1/b.jpg")) {
+        hung++;
+        return new Promise<number>(() => {}); // never answers and ignores being stopped
+      }
+      return put(d, folder, rel, bytes, type, signal);
+    };
+    const r = await runUntilDone(db, sp.io, { fileTimeoutMs: 30 });
+    expect(r.ok).toBe(true);
+    const run = data["backup_runs"]![0]!;
+    expect(hung).toBe(2);
+    expect(run["phase"]).toBe("done");
+    expect(run["files_copied"]).toBe(1);
+    expect(run["verify_status"]).toBe("failed");
+    expect(run["verify_reasons"]).toContain("1 stored file could not be copied.");
+    const failed = (run["progress"] as any).copy.failed;
+    expect(failed).toHaveLength(1);
+    expect(failed[0].name).toBe("ticket/1/b.jpg");
+    expect(failed[0].reason).toContain("Could not be copied (2 tries)");
+    expect(data["backup_file_copies"]!.map((c) => c["name"])).toEqual(["ticket/1/a.jpg"]);
+    expect(rpcCalls.filter((c) => c.fn === "nightly_export_alert")).toHaveLength(1);
+  });
+
+  it("a call replaced by a newer call stops and never writes its older progress over the newer one", async () => {
+    const { db, data } = setup();
+    const sp = fakeSharePoint();
+    const put = sp.io.put;
+    let taken = false;
+    sp.io.put = async (d, folder, rel, bytes, type, signal) => {
+      if (!taken && rel.endsWith(".json")) {
+        // While this call works, a newer call takes the night over and records its own progress.
+        taken = true;
+        const row = data["backup_runs"]![0]!;
+        row["lease_until"] = "2099-01-01T00:00:00.000Z";
+        row["progress"] = { newer: true };
+      }
+      return put(d, folder, rel, bytes, type, signal);
+    };
+    const r = await runNightlyExportStep(db as never, { now: NIGHT }, sp.io);
+    expect("skipped" in r && r.skipped).toContain("taken over");
+    const row = data["backup_runs"]![0]!;
+    expect(row["progress"]).toEqual({ newer: true });
+    expect(row["lease_until"]).toBe("2099-01-01T00:00:00.000Z");
+    expect(row["error"] ?? null).toBeNull();
+  });
+});
