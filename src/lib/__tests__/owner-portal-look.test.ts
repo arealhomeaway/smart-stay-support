@@ -12,6 +12,7 @@ import {
   newestCompletedFirst,
   newestOpenedFirst,
   portalGroupFor,
+  portalGroupForItem,
   PORTAL_GROUPS,
   portalOpensWhen,
 } from "@/lib/owner-portal-look";
@@ -39,6 +40,14 @@ describe("portal groups by card code", () => {
     expect(portalGroupFor("A52")).toBe("guest");
     expect(portalGroupFor("X99")).toBeNull();
     expect(portalGroupFor(null)).toBeNull();
+  });
+  it("the older Library item Review your property's guest journey sits in Guest experience by its library template (Admin, Nov 16)", () => {
+    expect(portalGroupForItem({ cardCode: null, libraryTemplateId: "6256028b-d625-4f74-8753-a414e72e018d" })).toBe("guest");
+  });
+  it("any other open item with no card code stays ungrouped, and a card code always wins", () => {
+    expect(portalGroupForItem({ cardCode: null, libraryTemplateId: "00000000-0000-4000-8000-000000000000" })).toBeNull();
+    expect(portalGroupForItem({ cardCode: null, libraryTemplateId: null })).toBeNull();
+    expect(portalGroupForItem({ cardCode: "P07", libraryTemplateId: "6256028b-d625-4f74-8753-a414e72e018d" })).toBe("marketing");
   });
 });
 

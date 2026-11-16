@@ -31,6 +31,19 @@ export function portalGroupFor(code: string | null | undefined): PortalGroupId |
   return PORTAL_GROUPS.find((g) => g.codes.includes(c))?.id ?? null;
 }
 
+/**
+ * Older Library Opportunities have no card code; the Admin placed them by their library template (Nov 16).
+ * "Review your property's guest journey" sits in Guest experience.
+ */
+export const PORTAL_GROUP_BY_LIBRARY_TEMPLATE: Readonly<Record<string, PortalGroupId>> = {
+  "6256028b-d625-4f74-8753-a414e72e018d": "guest",
+};
+
+/** An item's group: by card code first, then by its library template; null shows it at the end of All. */
+export function portalGroupForItem(item: { cardCode?: string | null; libraryTemplateId?: string | null }): PortalGroupId | null {
+  return portalGroupFor(item.cardCode) ?? (item.libraryTemplateId ? PORTAL_GROUP_BY_LIBRARY_TEMPLATE[item.libraryTemplateId] ?? null : null);
+}
+
 export function portalGroupLabel(id: PortalGroupId): string {
   return PORTAL_GROUPS.find((g) => g.id === id)?.label ?? "";
 }

@@ -43,6 +43,7 @@ import {
   newestCompletedFirst,
   newestOpenedFirst,
   portalGroupFor,
+  portalGroupForItem,
   portalGroupLabel,
   portalOpensWhen,
   type HourEntry,
@@ -85,6 +86,8 @@ export type BoardReview = {
 
 type Item = BoardItem & {
   cardCode?: string | null; oncePerOwner?: boolean; status: string;
+  /** Older Library Opportunity: its library template (groups it when there is no card code). */
+  libraryTemplateId?: string | null;
   /** When the owner finished it (plan cards: owner_completed_at; owner items: responded_at). */
   completedAt?: string | null;
   /** A plan card's owner item (its conversation and anchored hours). */
@@ -310,6 +313,7 @@ export function OwnerOpportunityBoard({
         finished: o.finished,
         status: arha ? arhaStatus(o) : o.finished ? "Completed" : "In progress",
         completedAt: o.finished ? o.responses.map((x) => x.at).filter(Boolean).sort().at(-1) ?? null : null,
+        libraryTemplateId: o.templateId,
       });
     }
 
@@ -392,10 +396,10 @@ export function OwnerOpportunityBoard({
   const home = variant === "home";
   // Approved mockup (Nov 16): every open item that is not waiting on an answer is an Opportunity for you, new ones first.
   const forYou = newestOpenedFirst([...view.with_arha, ...view.ready, ...view.optional]);
-  const grouped = PORTAL_GROUPS.map((g) => ({ ...g, items: forYou.filter((i) => portalGroupFor(i.cardCode) === g.id) }));
+  const grouped = PORTAL_GROUPS.map((g) => ({ ...g, items: forYou.filter((i) => portalGroupForItem(i) === g.id) }));
   // Open items with no card group (an Opportunity started from the older Library): still shown under All, with no heading,
-  // so open work never disappears. Waiting on the Admin's choice of group.
-  const ungrouped = forYou.filter((i) => portalGroupFor(i.cardCode) === null);
+  // so open work never disappears. Older Library items the Admin placed are grouped by library template.
+  const ungrouped = forYou.filter((i) => portalGroupForItem(i) === null);
   const done = newestCompletedFirst(view.done);
 
   const openItem = (i: Item) => setOpenKey(i.key);
@@ -638,7 +642,7 @@ function Pill({ active, onClick, children }: { active: boolean; onClick: () => v
 function OppCard({
   item, kind, homeLine, today, minutes, onOpen,
 }: { item: Item; kind: "open" | "done"; homeLine: string; today: string; minutes: number; onOpen: () => void }) {
-  const group = portalGroupFor(item.cardCode);
+  const group = portalGroupForItem(item);
   const answer = boardGroup(item) === "answer";
   const chip = answer ? answerChip(item, today) : null;
   return (
