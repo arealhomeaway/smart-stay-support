@@ -31,6 +31,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const KIND_LABELS: Record<string, string> = {
   approval_required: "Approval needed",
   claim_waiver: "Claim waiver",
+  breezeway_link_needed: "Breezeway link needed",
   claim_waiver_decision: "Claim waiver decision",
   cleaner_safeguard_activated: "STR cleaner time",
   cleaner_safeguard_digest: "STR cleaner weekly summary",

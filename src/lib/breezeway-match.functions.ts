@@ -1,5 +1,5 @@
 /**
- * B3: unmatched onboarding homes with suggested Breezeway homes, and the Admin's Confirm match.
+ * B3: unmatched homes with suggested Breezeway homes, and the Admin's Confirm match.
  * Reads Breezeway's own property list; confirming re-checks it, sets the home's Breezeway id and
  * verified state, and records who and when. Homes whose OwnerRez number matches exactly one Breezeway
  * home are linked automatically (breezeway-auto-link.ts); this screen handles the rest.
@@ -37,7 +37,7 @@ export const onboardingBreezewayMatchesFn = createServerFn({ method: "POST" })
     }[];
     const taken = new Set(all.map((p) => (p.breezeway_property_id ?? "").trim()).filter(Boolean));
     const unmatched = all.filter(
-      (p) => p.lifecycle_status === "onboarding" && !p.is_demo && !p.archived_at && p.breezeway_mapping_state !== "verified",
+      (p) => !p.is_demo && !p.archived_at && p.breezeway_mapping_state !== "verified",
     );
     let homes: import("./breezeway-match").BreezewayHome[] = [];
     let listError: string | null = null;

@@ -99,3 +99,34 @@ export function planAutoLinks(
       : d,
   );
 }
+
+/* ------------------------------------------------------------ link notices */
+
+export const LINK_NOTICE_KIND = "breezeway_link_needed";
+export const LINK_NOTICE_PATH = "/integrations#breezeway-match";
+
+/** Why a home could not link itself, in plain words. Only these reasons tell anyone. */
+const NOTICE_REASON: Partial<Record<AutoLinkSkip | "save_failed", string>> = {
+  no_ownerrez_number: "It has no OwnerRez number, so Resolve could not find it in Breezeway.",
+  no_match: "No active Breezeway home has its OwnerRez number yet.",
+  several_matches: "More than one Breezeway home has its OwnerRez number.",
+  home_taken: "Its Breezeway home is already linked to another home in Resolve.",
+  save_failed: "The Breezeway link could not be saved.",
+};
+
+/**
+ * The notice for a home that could not link itself, or null when nobody
+ * needs telling (demo, archived, already linked, excluded by an Admin,
+ * already marked for review, or changed by someone in the meantime).
+ */
+export function linkNoticeFor(
+  reason: string,
+  homeLabel: string,
+): { title: string; body: string } | null {
+  const why = NOTICE_REASON[reason as AutoLinkSkip | "save_failed"];
+  if (!why) return null;
+  return {
+    title: `Breezeway link needed: ${homeLabel}`,
+    body: `${homeLabel} could not link to Breezeway by itself. ${why} Match it before anyone sends a work order.`,
+  };
+}

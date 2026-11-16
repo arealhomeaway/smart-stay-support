@@ -218,11 +218,11 @@ export async function runNightlyPropertyRefresh(admin: Admin, now = new Date()) 
     const result = await runPropertyEnrichment(admin);
     // Then link any still-unlinked home to Breezeway by its OwnerRez number. Its own failure is
     // recorded here but never fails the property refresh.
-    let breezewayAutoLink: { ok: boolean; linked?: number; skipped?: Record<string, number>; error?: string };
+    let breezewayAutoLink: { ok: boolean; linked?: number; skipped?: Record<string, number>; notified?: number; error?: string };
     try {
       const { autoLinkBreezewayHomes } = await import("@/lib/breezeway-auto-link.server");
       const linked = await autoLinkBreezewayHomes(admin, { trigger: "nightly", now });
-      breezewayAutoLink = { ok: true, linked: linked.linked.length, skipped: linked.skipped };
+      breezewayAutoLink = { ok: true, linked: linked.linked.length, skipped: linked.skipped, notified: linked.notified.length };
     } catch (e) {
       breezewayAutoLink = { ok: false, error: e instanceof Error ? e.message : String(e) };
     }
