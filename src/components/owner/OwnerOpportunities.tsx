@@ -315,9 +315,9 @@ export function OpportunityDetail({
       open
       onOpenChange={(v) => !v && onClose()}
       cover={item.cover}
-      status={statusLabel ?? (arha ? arhaStatus(item) : item.finished ? "Completed" : "Optional")}
+      status={statusLabel ?? (arha ? arhaStatus(item) : item.finished ? "Completed" : "In progress")}
       title={item.title}
-      home={[item.propertyName, arha ? item.team ?? "From your ARHA team" : "Optional"].filter(Boolean).join(" · ")}
+      home={[item.propertyName, arha ? item.team ?? "From your ARHA team" : null].filter(Boolean).join(" · ")}
       sentAt={item.createdAt}
       answerBy={item.dueOn ?? null}
       footer={

@@ -735,7 +735,7 @@ function ItemPanel({
   }
   if (item.source === "plan" && item.status === "done") {
     const group = portalGroupFor(item.cardCode);
-    const canLog = onLogHours && !blockedReason && !readOnly;
+    const log = !blockedReason && !readOnly ? onLogHours : undefined;
     return (
       <CompletedCardPanel
         planCardId={item.id}
@@ -751,7 +751,7 @@ function ItemPanel({
         entries={entries}
         readOnly={readOnly}
         onClose={onClose}
-        onChangeHours={canLog ? () => { onClose(); onLogHours(item.title, item.propertyIds[0] ?? null); } : undefined}
+        onChangeHours={log ? () => { onClose(); log(item.title, item.propertyIds[0] ?? null); } : undefined}
       />
     );
   }
