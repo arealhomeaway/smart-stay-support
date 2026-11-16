@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { PlayCircle, Compass, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { STORAGE_KEY } from "@/components/OnboardingTour";
+// The old general tour was replaced by the team guided tours (Admin, Nov 16); this popup stays unused.
+const STORAGE_KEY = "resolve.tour.completed.v1";
 
 export function useWelcomeGate() {
   const [open, setOpen] = useState(false);
