@@ -182,6 +182,19 @@ function TourOverlay({
   const step = steps[index] ?? null;
   const { rect, searching } = useTargetRect(step, `${index}`);
   const tour = GUIDED_TOURS[running.team];
+  // The page listens for outside presses on the document; stop them here, natively, so an
+  // open drawer or chat stays open while the tour moves through it.
+  const shieldRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = shieldRef.current;
+    if (!el) return;
+    const stop = (e: Event) => e.stopPropagation();
+    const kinds = ["pointerdown", "mousedown", "touchstart", "focusin", "focusout"] as const;
+    for (const k of kinds) el.addEventListener(k, stop);
+    return () => {
+      for (const k of kinds) el.removeEventListener(k, stop);
+    };
+  });
 
   useEffect(() => {
     let live = true;
@@ -246,9 +259,7 @@ function TourOverlay({
       // An open drawer turns page clicks off and closes on an outside press; the tour keeps its
       // own buttons working and never closes the drawer it is pointing at.
       style={{ pointerEvents: "auto" }}
-      onPointerDown={(e) => e.stopPropagation()}
-      onMouseDown={(e) => e.stopPropagation()}
-      onFocus={(e) => e.stopPropagation()}
+      ref={shieldRef}
       data-guided-tour=""
       data-tour-step={step.id}
       data-tour-centered={centered ? "true" : "false"}
