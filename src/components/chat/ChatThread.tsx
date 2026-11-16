@@ -16,7 +16,7 @@ import { MultiFileUpload } from "@/components/MultiFileUpload";
 import { createAttachmentUploader } from "@/lib/attachment-upload-client";
 import { beginUploadFn, completeUploadFn } from "@/lib/attachments.functions";
 import { chatAttachmentUrlFn, markHomeChatReadFn, postHomeChatFn, readHomeChatFn } from "@/lib/owner-tab.functions";
-import { CHAT_FOLDERS, CHAT_STYLE, parseMentions, type ChatFolder, type ChatKind } from "@/lib/owner-tab";
+import { CHAT_FOLDERS, CHAT_STYLE, ownerChatCategory, ownerChatFolder, parseMentions, type ChatFolder, type ChatKind } from "@/lib/owner-tab";
 import { cn } from "@/lib/utils";
 
 export const CHAT_TONE: Record<ChatKind, { banner: string; send: string; tab: string }> = {
