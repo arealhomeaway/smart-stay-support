@@ -9,9 +9,11 @@ export type PortalGroupId = "marketing" | "research" | "home_care" | "guest";
 
 export const PORTAL_GROUPS: readonly { id: PortalGroupId; label: string; codes: readonly string[] }[] = [
   { id: "marketing", label: "Marketing and social", codes: ["P07", "P08", "P12", "P13", "P14", "P15", "P19", "P20"] },
-  { id: "research", label: "Research and relationships", codes: ["N05", "N06", "N07", "N08", "N09", "N12", "P10", "P16", "P17", "P18"] },
+  // P09 and N16 added by the Admin, Nov 16.
+  { id: "research", label: "Research and relationships", codes: ["N05", "N06", "N07", "N08", "N09", "N12", "P10", "P16", "P17", "P18", "P09", "N16"] },
   { id: "home_care", label: "Home care", codes: ["N01", "N02", "N03", "N04", "N11", "N13", "P05"] },
-  { id: "guest", label: "Guest experience", codes: ["N14", "A33", "N10", "A52"] },
+  // N15, N17 and P11 added by the Admin, Nov 16.
+  { id: "guest", label: "Guest experience", codes: ["N14", "A33", "N10", "A52", "N15", "N17", "P11"] },
 ];
 
 /** Type label colors, from the mockup. */

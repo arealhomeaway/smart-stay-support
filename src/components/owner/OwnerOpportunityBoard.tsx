@@ -393,7 +393,6 @@ export function OwnerOpportunityBoard({
   // Approved mockup (Nov 16): every open item that is not waiting on an answer is an Opportunity for you, new ones first.
   const forYou = newestOpenedFirst([...view.with_arha, ...view.ready, ...view.optional]);
   const grouped = PORTAL_GROUPS.map((g) => ({ ...g, items: forYou.filter((i) => portalGroupFor(i.cardCode) === g.id) }));
-  const ungrouped = forYou.filter((i) => portalGroupFor(i.cardCode) === null);
   const done = newestCompletedFirst(view.done);
 
   const openItem = (i: Item) => setOpenKey(i.key);
@@ -498,9 +497,6 @@ export function OwnerOpportunityBoard({
                 {g.items.map((i) => card(i))}
               </SubGroup>
             ))}
-            {filter === "all" && ungrouped.length > 0 ? (
-              <SubGroup title={`Other (${ungrouped.length})`}>{ungrouped.map((i) => card(i))}</SubGroup>
-            ) : null}
           </section>
 
           <section id="coming-soon" className="scroll-mt-48 space-y-3" aria-label="Coming soon">
