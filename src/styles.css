@@ -149,6 +149,7 @@
   --plate: oklch(0.268 0.021 215); /* charcoal hero plate */
 
   --foreground: oklch(0.315 0.015 220); /* Charcoal */
+  --tour-scrim: oklch(0.2 0.01 220 / 0.62); /* Guided tour dimming */
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.315 0.015 220);
   --popover: oklch(1 0 0);
@@ -248,6 +249,7 @@
   --plate: oklch(0.235 0.014 215);
 
   --foreground: oklch(0.95 0.006 88.6);
+  --tour-scrim: oklch(0.06 0.01 220 / 0.74);
   --card: oklch(0.27 0.013 222.5); /* Charcoal panel */
   --card-foreground: oklch(0.95 0.006 88.6);
   --popover: oklch(0.27 0.013 222.5);

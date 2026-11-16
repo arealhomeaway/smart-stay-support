@@ -291,11 +291,11 @@ function TourOverlay({
             left: rect.left - pad,
             width: rect.width + pad * 2,
             height: rect.height + pad * 2,
-            boxShadow: "0 0 0 9999px color-mix(in oklab, var(--foreground) 62%, transparent)",
+            boxShadow: "0 0 0 9999px var(--tour-scrim)",
           }}
         />
       ) : (
-        <div className="absolute inset-0 bg-foreground/60" />
+        <div className="absolute inset-0" style={{ background: "var(--tour-scrim)" }} />
       )}
       {/* Catches every click so nothing on the page changes during the tour. */}
       <div className="absolute inset-0" aria-hidden="true" />
