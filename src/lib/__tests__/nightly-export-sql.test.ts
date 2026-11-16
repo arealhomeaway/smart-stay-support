@@ -180,3 +180,65 @@ describe("staged nightly export database step", () => {
     expect((await one(pg, "SELECT to_regprocedure('public.nightly_export_alert(text,text,text)') AS f"))["f"]).toBeNull();
   });
 });
+
+/**
+ * nightly-export-sunday (Admin, Nov 15): calls every 5 minutes, and the weekly full copy night works
+ * and is checked until 7 AM Central. Practice run of docs/pending/nightly-export-sunday on the same copy.
+ */
+const SUNDAY = "docs/pending/nightly-export-sunday";
+async function sundayDb() {
+  const pg = await db();
+  await pg.exec(`
+    CREATE TABLE public.app_settings(key text PRIMARY KEY, value jsonb);
+    INSERT INTO public.app_settings VALUES ('nightly_export_settings', '{"daily_keep": 30, "weekly_day": 0, "weekly_keep": 12}');
+    CREATE TABLE IF NOT EXISTS public.audit_log(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), actor_id uuid, actor_label text, action text,
+      entity_type text, entity_id uuid, entity_label text, reason text, before_value jsonb, after_value jsonb, created_at timestamptz DEFAULT now());
+    CREATE FUNCTION cron.alter_job(job_id bigint, schedule text) RETURNS void LANGUAGE sql AS $$ UPDATE cron.job SET schedule = $2 WHERE jobid = $1 $$;
+  `);
+  await pg.exec(read("drizzle/migrations/0340_build9_export_fewer_alert.sql"));
+  await pg.exec(read(`${SUNDAY}/apply.sql`));
+  return pg;
+}
+
+describe("nightly export: Sunday full copy hours (applied Nov 15)", () => {
+  it("calls every 5 minutes and checks at 7 AM on the weekly night; the call itself is unchanged", async () => {
+    const pg = await sundayDb();
+    const jobs = (await pg.query<{ jobname: string; schedule: string; command: string }>("SELECT jobname, schedule, command FROM cron.job ORDER BY jobname")).rows;
+    expect(jobs.map((j) => [j.jobname, j.schedule])).toEqual([
+      ["nightly-backup-0700utc", "0 7 * * *"],
+      ["nightly-backup-0800utc", "0 8 * * *"],
+      ["nightly-export-continue", "5-55/5 7-12 * * *"],
+      ["nightly-export-missed-check", "15 10-13 * * *"],
+    ]);
+    expect(jobs.find((j) => j.jobname === "nightly-export-continue")!.command).toContain("backup_cron_token");
+    expect((await one(pg, "SELECT action FROM public.audit_log"))["action"]).toBe("nightly_export_sunday_applied");
+  });
+
+  it("Sunday: no alert at 5 AM, the alert at 7 AM says 7 AM", async () => {
+    const pg = await sundayDb();
+    await pg.exec(`INSERT INTO public.backup_runs(folder_name, status, phase, weekly) VALUES ('2026-11-22', 'running', 'files', true);`);
+    expect((await one(pg, "SELECT private.nightly_export_missed_check('2026-11-22T11:15:00Z') AS n"))["n"]).toBe(0); // 5:15 AM CST
+    expect((await one(pg, "SELECT private.nightly_export_missed_check('2026-11-22T12:15:00Z') AS n"))["n"]).toBe(0); // 6:15 AM CST
+    expect((await one(pg, "SELECT private.nightly_export_missed_check('2026-11-22T13:15:00Z') AS n"))["n"]).toBe(3); // 7:15 AM CST
+    expect((await one(pg, "SELECT message FROM public.backup_export_alerts WHERE folder_name = '2026-11-22'"))["message"]).toContain("had not finished by 7 AM Central");
+  });
+
+  it("other nights keep the 5 AM check, worded as before", async () => {
+    const pg = await sundayDb();
+    expect((await one(pg, "SELECT private.nightly_export_missed_check('2026-11-16T10:15:00Z') AS n"))["n"]).toBe(0); // Mon 4:15 AM CST
+    expect((await one(pg, "SELECT private.nightly_export_missed_check('2026-11-16T11:15:00Z') AS n"))["n"]).toBe(3); // Mon 5:15 AM CST
+    expect((await one(pg, "SELECT message FROM public.backup_export_alerts WHERE folder_name = '2026-11-16'"))["message"]).toContain("No nightly export ran for 2026-11-16 by 5 AM Central");
+    expect((await one(pg, "SELECT private.nightly_export_missed_check('2026-11-16T13:15:00Z') AS n"))["n"]).toBe(0); // Mon 7:15 AM CST
+  });
+
+  it("the undo puts back every 10 minutes and the 5 AM check every night", async () => {
+    const pg = await sundayDb();
+    await pg.exec(read(`${SUNDAY}/apply.undo.sql`));
+    const jobs = (await pg.query<{ jobname: string; schedule: string }>("SELECT jobname, schedule FROM cron.job WHERE jobname LIKE 'nightly-export%' ORDER BY jobname")).rows;
+    expect(jobs.map((j) => j.schedule)).toEqual(["5-55/10 7-10 * * *", "15 10,11 * * *"]);
+    await pg.exec(`INSERT INTO public.backup_runs(folder_name, status, phase, weekly) VALUES ('2026-11-22', 'running', 'files', true);`);
+    expect((await one(pg, "SELECT private.nightly_export_missed_check('2026-11-22T11:15:00Z') AS n"))["n"]).toBe(3);
+    const src = (await one(pg, "SELECT md5(prosrc) AS h FROM pg_proc WHERE proname = 'nightly_export_missed_check'"))["h"];
+    expect(src).toBe("3e27b9167c3e103634ce645ef56f80a3");
+  });
+});
