@@ -22,6 +22,7 @@ import {
   type TourStep,
   type TourTarget,
   type TourTeam,
+  type TourViewer,
 } from "@/lib/guided-tours";
 import { OPEN_STATUSES } from "@/lib/tickets";
 
@@ -43,38 +44,59 @@ export function findTourTarget(targets: readonly TourTarget[] | null): HTMLEleme
             const want = t.text.toLowerCase();
             return t.exact ? txt === want : txt.startsWith(want);
           });
-    const el = nodes.find((n) => {
+    const found = nodes.find((n) => {
       if (n.closest("[data-guided-tour]")) return false;
       const r = n.getBoundingClientRect();
       return r.width > 0 && r.height > 0 && getComputedStyle(n).visibility !== "hidden";
     });
+    const el = found && typeof t !== "string" && t.closest ? (found.closest<HTMLElement>(t.closest) ?? found) : found;
     if (el) return el;
   }
   return null;
 }
 
 /** Read-only lookups for steps that need a real record to show (a ticket, a home). */
-async function loadPlaceIds(demo: boolean): Promise<TourPlaceIds> {
-  const open = [...OPEN_STATUSES] as string[];
-  const ticket = supabase.from("tickets").select("id").eq("is_demo", demo).in("status", open as never).order("created_at", { ascending: false }).limit(1);
-  const email = supabase.from("tickets").select("id").eq("is_demo", demo).eq("source", "email" as never).order("created_at", { ascending: false }).limit(1);
-  const home = supabase.from("onboarding_projects").select("property_id").eq("is_demo", demo).order("created_at", { ascending: false }).limit(1);
-  const [t, e, h] = await Promise.all([ticket, email, home]);
+async function loadPlaceIds(demo: boolean, team: TourTeam): Promise<TourPlaceIds> {
   const first = (r: { data: unknown }, key: string) => {
     const row = Array.isArray(r.data) ? (r.data[0] as Record<string, unknown> | undefined) : undefined;
     return typeof row?.[key] === "string" ? (row[key] as string) : null;
   };
-  return { ticket: first(t, "id"), emailTicket: first(e, "id"), home: first(h, "property_id") };
+  if (team === "operations") {
+    const t = await supabase
+      .from("tickets")
+      .select("id")
+      .eq("is_demo", demo)
+      .in("status", [...OPEN_STATUSES] as never)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    return { ticket: first(t, "id"), home: null, task: null };
+  }
+  const h = await supabase
+    .from("onboarding_projects")
+    .select("property_id")
+    .eq("is_demo", demo)
+    .is("closed_at", null)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  const home = first(h, "property_id");
+  if (!home) return { ticket: null, home: null, task: null };
+  const k = await supabase
+    .from("onboarding_tasks")
+    .select("id")
+    .eq("property_id", home)
+    .is("archived_at", null)
+    .neq("status", "complete")
+    .order("created_at", { ascending: true })
+    .limit(1);
+  return { ticket: null, home, task: first(k, "id") };
 }
 
 export function GuidedTourProvider({ children, disabled }: { children: ReactNode; disabled?: boolean }) {
   const role = useRole();
   const { demoMode, demoReady } = useDemo();
   const [running, setRunning] = useState<Running | null>(null);
-  const teams = useMemo(
-    () => (disabled || role.isLoading ? [] : toursFor({ roles: role.roles, seats: role.seats })),
-    [disabled, role.isLoading, role.roles, role.seats],
-  );
+  const viewer = useMemo(() => ({ roles: role.roles, seats: role.seats }), [role.roles, role.seats]);
+  const teams = useMemo(() => (disabled || role.isLoading ? [] : toursFor(viewer)), [disabled, role.isLoading, viewer]);
 
   const start = useCallback((team: TourTeam, sectionId: string | null = null) => setRunning({ team, sectionId }), []);
 
@@ -82,7 +104,7 @@ export function GuidedTourProvider({ children, disabled }: { children: ReactNode
   const auto = useRef(false);
   useEffect(() => {
     if (auto.current || disabled || role.isLoading || role.previewing || !role.userId || !demoReady) return;
-    const team = autostartTeam({ roles: role.roles, seats: role.seats });
+    const team = autostartTeam(viewer);
     if (!team) return;
     auto.current = true;
     try {
@@ -94,13 +116,13 @@ export function GuidedTourProvider({ children, disabled }: { children: ReactNode
     }
     const t = window.setTimeout(() => setRunning({ team, sectionId: null }), 1200);
     return () => window.clearTimeout(t);
-  }, [disabled, role.isLoading, role.previewing, role.userId, role.roles, role.seats, demoReady]);
+  }, [disabled, role.isLoading, role.previewing, role.userId, viewer, demoReady]);
 
   const value = useMemo(() => ({ teams, start, running }), [teams, start, running]);
   return (
     <GuidedTourContext.Provider value={value}>
       {children}
-      {running ? <TourOverlay running={running} demo={demoMode} onClose={() => setRunning(null)} /> : null}
+      {running ? <TourOverlay running={running} viewer={viewer} demo={demoMode} onClose={() => setRunning(null)} /> : null}
     </GuidedTourContext.Provider>
   );
 }
@@ -137,9 +159,20 @@ function useTargetRect(step: TourStep | null, key: string) {
   return { rect, searching };
 }
 
-function TourOverlay({ running, demo, onClose }: { running: Running; demo: boolean; onClose: () => void }) {
+function TourOverlay({
+  running,
+  viewer,
+  demo,
+  onClose,
+}: {
+  running: Running;
+  viewer: TourViewer;
+  demo: boolean;
+  onClose: () => void;
+}) {
   const router = useRouter();
-  const steps = useMemo(() => stepsFor(running.team, running.sectionId), [running]);
+  const steps = useMemo(() => stepsFor(running.team, running.sectionId, viewer), [running, viewer]);
+  const navigated = useRef<string | null>(null);
   const [index, setIndex] = useState(0);
   const [ids, setIds] = useState<TourPlaceIds | null>(null);
   const step = steps[index] ?? null;
@@ -148,17 +181,20 @@ function TourOverlay({ running, demo, onClose }: { running: Running; demo: boole
 
   useEffect(() => {
     let live = true;
-    loadPlaceIds(demo)
+    loadPlaceIds(demo, running.team)
       .then((r) => live && setIds(r))
-      .catch(() => live && setIds({ ticket: null, emailTicket: null, home: null }));
+      .catch(() => live && setIds({ ticket: null, home: null, task: null }));
     return () => {
       live = false;
     };
-  }, [demo]);
+  }, [demo, running.team]);
 
   useEffect(() => {
     if (!step || !ids) return;
     const href = resolveStepHref(step, ids);
+    // Navigate once per page change; the page may tidy its own address after it opens.
+    if (navigated.current === href) return;
+    navigated.current = href;
     const here = `${router.state.location.pathname}${router.state.location.searchStr ?? ""}`;
     if (here !== href) void router.navigate({ href });
   }, [step, ids, router]);

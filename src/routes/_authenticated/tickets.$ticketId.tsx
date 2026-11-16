@@ -1327,7 +1327,10 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
               <TicketHeaderLine address={headerAddress} occupancy={occupancy} ticketRef={ticket.ref} />
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 {isEmailTestTicket(ticket) ? <EmailTestChip /> : null}
-                <StatusBadge tone={priorityTone2(ticket.priority)}>{meta.short}</StatusBadge>
+                {/* Guided tours (Nov 16): the urgency step points here. */}
+                <span className="inline-flex" data-tour="ticket-urgency">
+                  <StatusBadge tone={priorityTone2(ticket.priority)}>{meta.short}</StatusBadge>
+                </span>
                 <OccupancyChip occupancy={occupancy} />
               </div>
             </div>
