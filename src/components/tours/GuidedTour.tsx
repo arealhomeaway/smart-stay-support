@@ -153,8 +153,11 @@ function useTargetRect(step: TourStep | null, key: string) {
         setSearching(false);
       } else {
         setRect(null);
-        // Pages load their data first; give a step a moment before showing it centered.
-        if (performance.now() - began > 6000) setSearching(false);
+        // Pages load their data first; give a step a moment before showing it centered, and a
+        // little longer (up to 20 seconds) while the page still shows loading placeholders.
+        const waited = performance.now() - began;
+        const loading = Boolean(document.querySelector("main .animate-pulse"));
+        if (waited > 20000 || (waited > 6000 && !loading)) setSearching(false);
       }
       raf = requestAnimationFrame(measure);
     };
