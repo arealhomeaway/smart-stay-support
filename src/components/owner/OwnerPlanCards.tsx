@@ -80,7 +80,7 @@ export function PlanCardForm({ planCardId, programId, fields, readOnly }: { plan
           </div>
         );
       })}
-      <Button type="submit" size="sm" disabled={readOnly || submit.isPending}>Send to ARHA</Button>
+      <Button type="submit" size="sm" className="min-h-11" disabled={readOnly || submit.isPending}>Send to ARHA</Button>
     </form>
   );
 }
