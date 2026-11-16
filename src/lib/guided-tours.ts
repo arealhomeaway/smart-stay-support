@@ -137,7 +137,7 @@ const OPERATIONS: TourSection[] = [
       { id: "ops-ov-load", to: "/oversight", page: "Oversight", element: "Workload by person", target: [{ text: "Workload by person", within: "h2, h3, header p, header div", closest: "section" }], title: "Workload", body: "Workload by person shows who carries how much, so you can share work fairly." },
       { id: "ops-sh-tab", to: "/shift-handoffs", page: "Shift handoffs", element: "Shift handoffs tab", target: [{ text: "Shift handoffs", within: "a, [role=tab]", exact: true }], title: "Shift handoffs", body: "Shift handoffs shows today's shifts, who pressed End my shift and every handoff." },
       { id: "ops-sh-top", to: "/shift-handoffs", page: "Shift handoffs", element: "Page heading", target: ["main h1"], title: "Start at the top", body: "Missed shift ends come first, then Right now handoffs waiting over 15 minutes, in red. Follow up on those first." },
-      { id: "ops-sh-filters", to: "/shift-handoffs", page: "Shift handoffs", element: "Date and team filters", target: ["[aria-label='Date']", "[aria-label='Team']", { text: "All teams" }], title: "Look back", body: "Use the date and team filters to look back up to 14 days, for Team A, Team B or both." },
+      { id: "ops-sh-filters", to: "/shift-handoffs", page: "Shift handoffs", element: "Date and team filters", target: ["[data-filter='date']", "[data-filter='team']"], title: "Look back", body: "Use the date and team filters to look back up to 14 days, for Team A, Team B or both." },
     ],
   },
   {
