@@ -181,8 +181,8 @@ export type SHPersonDay = {
 
 const holderOf = (roles: SHRole[], code: string) => roles.find((r) => r.code === code && r.active !== false)?.current_seat_holder ?? null;
 
-/** Each coordinator on shift on a date, from the schedule with that day's cover and time off. */
-export function shiftsOn(input: SHInput, date: string, demo: boolean, now: Date = new Date()): SHPersonDay[] {
+/** Who worked which coordinator roles on a date, from the schedule with that day's cover and time off. */
+function peopleOn(input: Pick<SHInput, "roles" | "shifts" | "overrides">, date: string) {
   const byPerson = new Map<string, { codes: string[]; start: number; end: number; covering: boolean }>();
   for (const code of SH_COORDINATOR_CODES) {
     if (!input.roles.some((r) => r.code === code && r.active !== false)) continue;
@@ -198,6 +198,12 @@ export function shiftsOn(input: SHInput, date: string, demo: boolean, now: Date 
       } else byPerson.set(person, { codes: [code], start: b.start, end: b.end, covering: Boolean(b.coverUserId) });
     }
   }
+  return byPerson;
+}
+
+/** Each coordinator on shift on a date, with End my shift and the open tickets they still own. */
+export function shiftsOn(input: SHInput, date: string, demo: boolean, now: Date = new Date()): SHPersonDay[] {
+  const byPerson = peopleOn(input, date);
   const nowMs = now.getTime();
   const open = openOwnedBy(input.tickets, demo, nowMs);
   const out: SHPersonDay[] = [];
@@ -277,17 +283,17 @@ export function handoffKind(h: Pick<SHHandoff, "id" | "handoff_type" | "current_
 const handoffDemo = (h: SHHandoff) => h.ticket?.is_demo ?? h.is_demo;
 
 /** The role a person worked that day, else the role they hold. */
-function personRole(input: SHInput, userId: string | null, date: string, demo: boolean, now: Date): string | null {
+function personRole(input: SHInput, userId: string | null, date: string): string | null {
   if (!userId) return null;
-  const day = shiftsOn(input, date, demo, now).find((p) => p.userId === userId);
-  if (day) return day.roleCodes[0] ?? null;
+  const day = peopleOn(input, date).get(userId);
+  if (day) return day.codes[0] ?? null;
   return input.roles.find((r) => r.active !== false && r.current_seat_holder === userId)?.code ?? null;
 }
 
-export function handoffRow(input: SHInput, h: SHHandoff, demo: boolean, now: Date = new Date()): SHRow {
+export function handoffRow(input: SHInput, h: SHHandoff, now: Date = new Date()): SHRow {
   const date = centralDate(h.created_at);
-  const fromCode = personRole(input, h.from_user, date, demo, now);
-  const toCode = h.to_role_code ?? personRole(input, h.to_user, date, demo, now);
+  const fromCode = personRole(input, h.from_user, date);
+  const toCode = h.to_role_code ?? personRole(input, h.to_user, date);
   const minutesWaited = (now.getTime() - Date.parse(h.created_at)) / 60_000;
   const priority = h.priority ?? h.ticket?.priority ?? "p3";
   const status: SHRow["status"] = h.status === "accepted" ? "accepted" : h.status === "rejected" || h.status === "declined" ? "declined" : "waiting";
@@ -330,7 +336,7 @@ export function handoffsOn(input: SHInput, date: string, team: SHTeam, demo: boo
   const rows = input.handoffs
     .filter((h) => handoffDemo(h) === demo)
     .filter((h) => centralDate(h.created_at) === date || (date === today && h.status === "pending"))
-    .map((h) => handoffRow(input, h, demo, now))
+    .map((h) => handoffRow(input, h, now))
     .filter((r) => teamMatch(team, r.team));
   const rank = (r: SHRow) => (r.late ? 0 : r.status === "waiting" ? 1 : 2);
   return rows.sort((a, b) => rank(a) - rank(b) || (rank(a) < 2 ? a.createdAt.localeCompare(b.createdAt) : b.createdAt.localeCompare(a.createdAt)));
@@ -352,7 +358,7 @@ export function shiftHandoffsView(input: SHInput, opts: { date: string; team: SH
 
 /** The Oversight menu count and Needs you now rows: every waiting handoff and today's missed shift ends. */
 export function shiftHandoffCounts(input: SHInput, demo: boolean, now: Date = new Date()): { waiting: number; late: number; missed: number; total: number } {
-  const waitingRows = input.handoffs.filter((h) => handoffDemo(h) === demo && h.status === "pending").map((h) => handoffRow(input, h, demo, now));
+  const waitingRows = input.handoffs.filter((h) => handoffDemo(h) === demo && h.status === "pending").map((h) => handoffRow(input, h, now));
   const missed = shiftsOn(input, centralToday(now), demo, now).filter((p) => p.state === "missed").length;
   return { waiting: waitingRows.length, late: waitingRows.filter((r) => r.late).length, missed, total: waitingRows.length + missed };
 }
