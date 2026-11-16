@@ -51,7 +51,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { OnboardingTour } from "@/components/OnboardingTour";
+import { GuidedTourProvider } from "@/components/tours/GuidedTour";
+import { TakeTourButton } from "@/components/tours/TakeTourButton";
 import { HelpFeedbackButton } from "@/components/HelpFeedback";
 import { BrandLogo } from "@/components/BrandLogo";
 import { GlobalSearch, type SearchTarget } from "@/components/GlobalSearch";
@@ -66,7 +67,6 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { PortalSwitcher, ViewAsBanner } from "@/components/PortalSwitcher";
 import { AccountSidebarItem } from "@/components/AccountSidebarItem";
 import { ViewAsMenuItem, ViewAsRoleBanner } from "@/components/ViewAsSwitcher";
-import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
 import { OwnerNotificationBell } from "@/components/owner/OwnerNotificationBell";
 import { ActAsBanner } from "@/components/ActAsBanner";
 import { clearActAs } from "@/lib/act-as";
@@ -165,14 +165,9 @@ const vendorGroups: NavGroup[] = [
 // it is rendered by OwnerSidebarNav instead of a static group list.
 const ownerGroups: NavGroup[] = [];
 
-/** Unfinished general tour/welcome popup — hidden until role-specific tours land. */
-const SHOW_GENERAL_TOUR = false;
-
 export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   useStoredMaintenancePolicy();
-  const [tourOpen, setTourOpen] = useState(false);
-  const { open: welcomeOpen, dismiss: dismissWelcome } = useWelcomeGate();
   const { enabled: flagEnabled } = useFeatureFlags();
   const {
     can,
@@ -315,6 +310,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 
   return (
+    // Guided tours (Admin, Nov 16): one tour per team, started from the header or Help.
+    <GuidedTourProvider disabled={rolesLoading || vendorMode || ownerMode}>
     <SidebarProvider>
       <CloseMenuOnPageChange />
       <Sidebar collapsible="icon">
@@ -438,6 +435,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     )}
                   </div>
                 )}
+                {!vendorMode && !ownerMode ? <TakeTourButton /> : null}
                 {!vendorMode && !ownerMode && can("oversight") && (
                   <IconAction to="/oversight" label="Alerts and escalations">
                     <ShieldAlert className="size-4" aria-hidden="true" />
@@ -518,24 +516,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         {/* Global Help & Feedback — every page inherits it from the shell. */}
         <HelpFeedbackButton />
-
-        {/*
-          General "Welcome to Resolve" popup and guided tour are hidden until
-          portal- and role-specific tours replace them. Flip SHOW_GENERAL_TOUR
-          back to true to restore the existing implementation unchanged.
-        */}
-        {SHOW_GENERAL_TOUR && !vendorMode && !ownerMode && (
-          <>
-            <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
-            <WelcomeDialog
-              open={welcomeOpen}
-              onDismiss={dismissWelcome}
-              onStartTour={() => setTourOpen(true)}
-            />
-          </>
-        )}
       </SidebarInset>
     </SidebarProvider>
+    </GuidedTourProvider>
   );
 }
 
