@@ -311,15 +311,16 @@ export async function resolveOwnerRecord(
     // records use the bare id only (owner-sync-rules.ts).
     const { ownerRezOwnerKey } = await import("@/lib/owner-sync-rules");
     const sourceOwnerId = ownerRezOwnerKey(or.sourceId);
-    const existing = await supabase
-      .from("property_owners")
-      .select("id")
-      .eq("source", "ownerrez")
-      .in("source_owner_id", [sourceOwnerId, `ownerrez:${sourceOwnerId}`])
-      .order("created_at")
-      .limit(1);
-    if (existing.error) throw existing.error;
-    if (existing.data?.[0]) return existing.data[0].id;
+    for (const key of [sourceOwnerId, `ownerrez:${sourceOwnerId}`]) {
+      const existing = await supabase
+        .from("property_owners")
+        .select("id")
+        .eq("source", "ownerrez")
+        .eq("source_owner_id", key)
+        .maybeSingle();
+      if (existing.error) throw existing.error;
+      if (existing.data) return existing.data.id;
+    }
     const { data, error } = await supabase
       .from("property_owners")
       .insert({
