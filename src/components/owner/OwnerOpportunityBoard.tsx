@@ -393,6 +393,8 @@ export function OwnerOpportunityBoard({
   // Approved mockup (Nov 16): every open item that is not waiting on an answer is an Opportunity for you, new ones first.
   const forYou = newestOpenedFirst([...view.with_arha, ...view.ready, ...view.optional]);
   const grouped = PORTAL_GROUPS.map((g) => ({ ...g, items: forYou.filter((i) => portalGroupFor(i.cardCode) === g.id) }));
+  // TEMP-DEBUG
+  if (typeof window !== "undefined") (window as unknown as { __ungrouped?: unknown }).__ungrouped = forYou.filter((i) => portalGroupFor(i.cardCode) === null).map((i) => ({ key: i.key, title: i.title, code: i.cardCode, src: (i as unknown as { source?: string }).source }));
   const done = newestCompletedFirst(view.done);
 
   const openItem = (i: Item) => setOpenKey(i.key);
