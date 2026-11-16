@@ -86,7 +86,7 @@ describe("Chat with ARHA unread count", () => {
 });
 
 describe("card photos", () => {
-  const dir = join(import.meta.dir, "../../assets/cards");
+  const dir = join(process.cwd(), "src/assets/cards");
   const files = readdirSync(dir).filter((f) => f.endsWith(".jpg"));
   it("every grouped card code has its own photo", () => {
     const codes = new Set(files.map((f) => f.slice(0, 3).toUpperCase()));
