@@ -263,7 +263,7 @@ export function LogTimeDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="log-evidence">Attach files, documents or photos (optional)</Label>
+            <Label htmlFor="log-evidence">Attach files, documents or photos</Label>
             <div
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {

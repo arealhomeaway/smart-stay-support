@@ -411,10 +411,71 @@ export type Database = {
         }
         Relationships: []
       }
+      ao_contribution_changes: {
+        Row: {
+          after_files: Json
+          after_values: Json
+          before_files: Json
+          before_values: Json
+          changed_at: string
+          changed_by: string
+          chat_message_id: string | null
+          contribution_id: string
+          id: string
+          plan_card_id: string
+          program_id: string
+          property_id: string
+        }
+        Insert: {
+          after_files: Json
+          after_values: Json
+          before_files: Json
+          before_values: Json
+          changed_at?: string
+          changed_by: string
+          chat_message_id?: string | null
+          contribution_id: string
+          id?: string
+          plan_card_id: string
+          program_id: string
+          property_id: string
+        }
+        Update: {
+          after_files?: Json
+          after_values?: Json
+          before_files?: Json
+          before_values?: Json
+          changed_at?: string
+          changed_by?: string
+          chat_message_id?: string | null
+          contribution_id?: string
+          id?: string
+          plan_card_id?: string
+          program_id?: string
+          property_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ao_contribution_changes_contribution_id_fkey"
+            columns: ["contribution_id"]
+            isOneToOne: false
+            referencedRelation: "ao_contributions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ao_contribution_changes_plan_card_id_fkey"
+            columns: ["plan_card_id"]
+            isOneToOne: false
+            referencedRelation: "ao_home_plan_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ao_contributions: {
         Row: {
           card_id: string
           field_values: Json
+          files: Json
           id: string
           plan_card_id: string
           program_id: string
@@ -425,6 +486,7 @@ export type Database = {
         Insert: {
           card_id: string
           field_values: Json
+          files?: Json
           id?: string
           plan_card_id: string
           program_id: string
@@ -435,6 +497,7 @@ export type Database = {
         Update: {
           card_id?: string
           field_values?: Json
+          files?: Json
           id?: string
           plan_card_id?: string
           program_id?: string
@@ -19368,6 +19431,10 @@ export type Database = {
       }
       ao_confirm_one_off: {
         Args: { _property: string; _task: string; _title: string }
+        Returns: string
+      }
+      ao_edit_card_answer: {
+        Args: { _files?: Json; _plan_card: string; _values: Json }
         Returns: string
       }
       ao_owner_email_run: { Args: { _now?: string }; Returns: Json }

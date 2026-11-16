@@ -69,6 +69,10 @@ export function ChatThread(p: {
   onSent?: () => void;
   className?: string;
   maxHeight?: string;
+  /** Owner portal chat panel: no banner line above the messages. */
+  hideBanner?: boolean;
+  /** The message box's placeholder (the owner portal panel says "Message"). */
+  placeholder?: string;
 }) {
   const qc = useQueryClient();
   const read = useServerFn(readHomeChatFn);
@@ -140,7 +144,7 @@ export function ChatThread(p: {
   const ownReads = useMemo(() => q.data?.readMarks ?? [], [q.data]);
   return (
     <div className={cn("flex min-h-0 flex-col gap-3", p.className)}>
-      <p className={cn("rounded-md border px-3 py-2 text-sm", tone.banner)}>{p.ownerSide ? "Messages with ARHA about this home." : style.banner}</p>
+      {p.hideBanner ? null : <p className={cn("rounded-md border px-3 py-2 text-sm", tone.banner)}>{p.ownerSide ? "Messages with ARHA about this home." : style.banner}</p>}
       {q.data && !q.data.staged ? (
         <p className="text-sm text-muted-foreground">Chat starts once it is switched on.</p>
       ) : null}
@@ -210,7 +214,7 @@ export function ChatThread(p: {
             onChange={(e) => setBody(e.target.value)}
             rows={3}
             maxLength={4000}
-            placeholder={p.ownerSide ? "Write to ARHA" : p.kind === "team" ? "Write to the team. Type @ and a name to alert a teammate." : "Write to the owner"}
+            placeholder={p.placeholder ?? (p.ownerSide ? "Write to ARHA" : p.kind === "team" ? "Write to the team. Type @ and a name to alert a teammate." : "Write to the owner")}
             aria-label="Message"
             onKeyDown={(e) => {
               if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && canSend) send.mutate();

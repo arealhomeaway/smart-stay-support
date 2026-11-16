@@ -68,6 +68,7 @@ import { PortalSwitcher, ViewAsBanner } from "@/components/PortalSwitcher";
 import { AccountSidebarItem } from "@/components/AccountSidebarItem";
 import { ViewAsMenuItem, ViewAsRoleBanner } from "@/components/ViewAsSwitcher";
 import { OwnerNotificationBell } from "@/components/owner/OwnerNotificationBell";
+import { OwnerChatButton } from "@/components/owner/OwnerChat";
 import { ActAsBanner } from "@/components/ActAsBanner";
 import { clearActAs } from "@/lib/act-as";
 import { OwnerSidebarNav } from "@/components/owner/OwnerSidebarNav";
@@ -395,7 +396,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <SidebarRail />
       </Sidebar>
 
-      <SidebarInset>
+      <SidebarInset className={livePathname === "/owner" ? "bg-portal-bg" : undefined}>
         <RouteProgress />
         <TooltipProvider delayDuration={200}>
           <header className="sticky top-0 z-30 border-b bg-card/90 backdrop-blur supports-[backdrop-filter]:bg-card/75">
@@ -443,6 +444,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                 )}
                 {/* Property page Part 2 (2.2): homes with unread chat messages, staff only. */}
                 {!vendorMode && !ownerMode ? <ChatsInbox /> : null}
+                {/* Homeowner portal (approved mockup, Nov 16): Chat with ARHA, shown once the portal names the homes. */}
+                {ownerMode || livePathname === "/owner" ? <OwnerChatButton /> : null}
                 {ownerMode ? (
                   <OwnerNotificationBell />
                 ) : vendorMode ? null : (

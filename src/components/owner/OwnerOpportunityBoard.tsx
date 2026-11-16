@@ -13,7 +13,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRouteContext } from "@tanstack/react-router";
-import { ChevronDown, Clock, Lock } from "lucide-react";
+import { Clock } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
@@ -32,9 +32,23 @@ import { ownerOnboardingActions } from "@/lib/owner-onboarding.functions";
 import { ownerReviewPresentation } from "@/lib/owner-review-presentation";
 import { startOptionalOpportunity, type LibraryTemplate } from "@/lib/opportunity-library.functions";
 import { arhaCover, imageFor } from "@/lib/opportunity-images";
+import { cardPhoto } from "@/lib/owner-card-photos";
+import { CompletedCardPanel } from "@/components/owner/CompletedCardPanel";
 import {
-  HOME_READY_VISIBLE,
-  READY_VISIBLE,
+  HOME_OPPORTUNITIES_VISIBLE,
+  PORTAL_GROUPS,
+  PORTAL_GROUP_TONE,
+  completedLine,
+  entriesForCard,
+  newestCompletedFirst,
+  newestOpenedFirst,
+  portalGroupFor,
+  portalGroupLabel,
+  portalOpensWhen,
+  type HourEntry,
+  type PortalGroupId,
+} from "@/lib/owner-portal-look";
+import {
   answerChip,
   boardGroup,
   boardView,
@@ -69,7 +83,14 @@ export type BoardReview = {
   propertyIds: string[];
 };
 
-type Item = BoardItem & { cardCode?: string | null; oncePerOwner?: boolean; status: string };
+type Item = BoardItem & {
+  cardCode?: string | null; oncePerOwner?: boolean; status: string;
+  /** When the owner finished it (plan cards: owner_completed_at; owner items: responded_at). */
+  completedAt?: string | null;
+  /** A plan card's owner item (its conversation and anchored hours). */
+  reviewId?: string | null;
+  outputFields?: unknown;
+};
 
 const DONE_REVIEW = new Set(["answered", "closed", "acknowledged", "complete", "completed", "cancelled", "archived", "resolved"]);
 
@@ -89,6 +110,8 @@ export function OwnerOpportunityBoard({
   onLogHours,
   blockedReason = null,
   programLive = false,
+  hourEntries = NO_ENTRIES,
+  onSeeComing,
 }: {
   /** "full" = the Opportunities page; "home" = the portal home page preview. */
   variant: "full" | "home";
@@ -109,6 +132,10 @@ export function OwnerOpportunityBoard({
   blockedReason?: string | null;
   /** The viewed program is live (not closed or archived): the outside wording's log time sentence. */
   programLive?: boolean;
+  /** The owner's logged hours, for "[hours] hrs logged" on completed cards. */
+  hourEntries?: HourEntry[];
+  /** Home page: "See what's coming" opens Opportunities at Coming soon. */
+  onSeeComing?: () => void;
 }) {
   const { user } = useRouteContext({ from: "/_authenticated" });
   const today = centralToday();
@@ -161,11 +188,13 @@ export function OwnerOpportunityBoard({
         propertyIds: c.property_id ? [c.property_id] : [],
         from: "Your homeowner plan",
         summary: oneLine(view.kind === "locked" ? "" : outside.get(`plan:${c.plan_card_id}`) ?? c.what_text),
-        cover: arhaCover(c.title, [], photo(c.property_id)),
+        // Approved mockup item 5: every card its own photo, by card code.
+        cover: cardPhoto(c.code) ?? arhaCover(c.title, [], photo(c.property_id)),
         sentAt: c.unlocked_at,
-        answerBy: null,
+        // Things onboarding needs from the owner carry a deadline (owner_needed cards only): Needs your answer.
+        answerBy: view.kind === "open" && !planCardOptional(c) && c.deadline_at ? c.deadline_at : null,
         deadline: c.deadline_at ?? null,
-        needsAnswer: false,
+        needsAnswer: view.kind === "open" && !planCardOptional(c) && Boolean(c.deadline_at),
         newReply: Boolean(c.owner_review_id && speakers.data?.get(c.owner_review_id) === "staff" && view.kind === "open"),
         optional: planCardOptional(c),
         locked: view.kind === "locked",
@@ -174,6 +203,9 @@ export function OwnerOpportunityBoard({
         cardCode: c.code ?? null,
         oncePerOwner: Boolean(c.once_per_owner),
         status: view.kind,
+        completedAt: c.owner_completed_at ?? null,
+        reviewId: c.owner_review_id ?? null,
+        outputFields: c.output_fields,
       });
     }
 
@@ -203,6 +235,7 @@ export function OwnerOpportunityBoard({
         finished,
         // Fix 25: after the owner's reply the item reads With ARHA until staff reply.
         status: !finished && speaker === "homeowner" ? "With ARHA" : p.label,
+        completedAt: r.responded_at ?? null,
       });
     }
 
@@ -263,7 +296,7 @@ export function OwnerOpportunityBoard({
         id: o.id,
         title: o.title,
         propertyIds: o.propertyId ? [o.propertyId] : [],
-        from: arha ? (o.team?.includes("Operations") ? "Operations Team" : "Onboarding Team") : "Optional",
+        from: arha ? (o.team?.includes("Operations") ? "Operations Team" : "Onboarding Team") : "",
         summary: oneLine(outside.get(`work:${o.id}`) ?? o.summary),
         cover: o.cover,
         sentAt: o.createdAt,
@@ -276,6 +309,7 @@ export function OwnerOpportunityBoard({
         locked: false,
         finished: o.finished,
         status: arha ? arhaStatus(o) : o.finished ? "Completed" : "In progress",
+        completedAt: o.finished ? o.responses.map((x) => x.at).filter(Boolean).sort().at(-1) ?? null : null,
       });
     }
 
@@ -287,7 +321,7 @@ export function OwnerOpportunityBoard({
         id: t.id,
         title: t.title,
         propertyIds: startable,
-        from: "Optional",
+        from: "",
         summary: oneLine(t.summary),
         cover: imageFor(t.image_key),
         sentAt: null,
@@ -298,7 +332,7 @@ export function OwnerOpportunityBoard({
         optional: true,
         locked: false,
         finished: false,
-        status: "Optional",
+        status: "Open",
       });
     }
     // Fix 5: ARHA's setup step never shows as owner work.
@@ -331,10 +365,8 @@ export function OwnerOpportunityBoard({
   };
   const opened = items.find((i) => i.key === openKey) ?? null;
 
-  const [moreReady, setMoreReady] = useState(false);
-  const [soonOpen, setSoonOpen] = useState(false);
-  const [doneOpen, setDoneOpen] = useState(false);
   const [startFor, setStartFor] = useState<LibraryTemplate | null>(null);
+  const [filter, setFilter] = useState<PortalGroupId | "all">("all");
 
   const qc = useQueryClient();
   const start = useServerFn(startOptionalOpportunity);
@@ -358,30 +390,29 @@ export function OwnerOpportunityBoard({
 
   const loading = plan.isLoading || opp.loading || onboarding.isLoading || approvals.isLoading;
   const home = variant === "home";
-  const readyShown = home ? view.ready.slice(0, HOME_READY_VISIBLE) : moreReady ? view.ready : view.ready.slice(0, READY_VISIBLE);
-  const readyHidden = view.ready.length - readyShown.length;
+  // Approved mockup (Nov 16): every open item that is not waiting on an answer is an Opportunity for you, new ones first.
+  const forYou = newestOpenedFirst([...view.with_arha, ...view.ready, ...view.optional]);
+  const grouped = PORTAL_GROUPS.map((g) => ({ ...g, items: forYou.filter((i) => portalGroupFor(i.cardCode) === g.id) }));
+  const ungrouped = forYou.filter((i) => portalGroupFor(i.cardCode) === null);
+  const done = newestCompletedFirst(view.done);
 
-  const card = (i: Item) => (
+  const openItem = (i: Item) => setOpenKey(i.key);
+  const card = (i: Item, kind: "open" | "done" = "open") => (
     <OppCard
       key={i.key}
       item={i}
-      line={sourceLine(i, homeName, multi)}
+      kind={kind}
+      homeLine={multi ? sourceLine({ ...i, from: "" }, homeName, multi) : ""}
       today={today}
-      onOpen={() => {
-        if (i.source === "template") {
-          const t = opp.templates.find((x) => x.id === i.id);
-          if (t) setOpenKey(i.key);
-        } else setOpenKey(i.key);
-      }}
+      minutes={kind === "done" ? cardMinutes(i, hourEntries) : 0}
+      onOpen={() => openItem(i)}
     />
   );
 
-  return (
-    <section aria-labelledby="owner-opps-heading" className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <h2 id="owner-opps-heading" className="text-lg font-semibold">Opportunities</h2>
-      </div>
+  const answerNote = home ? "Things onboarding needs from you, with their due dates." : "Things onboarding needs from you so your home stays on schedule. These show a due date.";
 
+  return (
+    <section aria-label="Opportunities" className={home ? "space-y-9" : "space-y-9"}>
       {!home && multi ? (
         <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="tablist" aria-label="Your homes">
           {homes.map((h) => (
@@ -409,76 +440,89 @@ export function OwnerOpportunityBoard({
       ) : null}
 
       {blockedReason ? (
-        <p className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">{blockedReason}</p>
+        <p className="rounded-[14px] border border-portal-border bg-card p-3 text-xs text-portal-muted">{blockedReason}</p>
       ) : null}
 
-      <Group
-        title="Needs your answer"
-        count={view.answer.length}
-        countTone="answer"
-        note="Waiting on you."
-        empty={loading ? "Loading…" : "Nothing is waiting on you right now."}
-      >
-        {view.answer.map(card)}
+      <Group title="Needs your answer" count={view.answer.length} note={answerNote} empty={loading ? "Loading…" : "Nothing is waiting on you right now."}>
+        {view.answer.map((i) => card(i))}
       </Group>
 
-      {/* Fix 25: every tab, a single home and the home page summary, directly under Needs your answer. */}
-      {view.with_arha.length > 0 ? (
-        <Group title="With ARHA" count={view.with_arha.length} note="You answered. ARHA replies next." empty="">
-          {view.with_arha.map(card)}
-        </Group>
-      ) : null}
-
-      {tab === "all" ? null : (
-        <Group
-          title="Ready for you"
-          count={view.ready.length}
-          note={`Setup and live-home work, showing the ${home ? HOME_READY_VISIBLE : READY_VISIBLE} closest to their deadline.`}
-          empty={loading ? "Loading…" : "Nothing else is ready right now."}
-        >
-          {readyShown.map(card)}
-          {!home && readyHidden > 0 ? (
-            <li className="min-[900px]:col-span-2">
-              <Button variant="outline" className="min-h-11 w-full" onClick={() => setMoreReady(true)}>
-                Show {readyHidden} more here
-              </Button>
-            </li>
-          ) : null}
-        </Group>
-      )}
-
-      {home ? (
-        onViewAll ? (
-          <Button variant="outline" className="min-h-11 w-full sm:w-auto" onClick={onViewAll}>
-            View all opportunities
-          </Button>
+      {tab === "all" ? (
+        view.with_arha.length > 0 ? (
+          <Group title="Opportunities for you" count={view.with_arha.length} note="You answered. ARHA replies next." empty="">
+            {view.with_arha.map((i) => card(i))}
+          </Group>
         ) : null
-      ) : tab === "all" ? null : (
+      ) : home ? (
         <>
           <Group
-            title="Optional ways to participate"
-            count={view.optional.length}
-            note="Anytime, at your own pace. Market ones show once for all your homes."
-            empty={loading ? "Loading…" : "No optional activities right now."}
+            title="Opportunities for you"
+            count={forYou.length}
+            note="All open now. Pick any that interest you, at your own pace. New ones first."
+            empty={loading ? "Loading…" : "Nothing else is open right now."}
+            right={onViewAll && forYou.length > 0 ? (
+              <button type="button" className="min-h-11 text-sm font-medium text-portal-primary underline-offset-4 hover:underline" onClick={onViewAll}>
+                View all {forYou.length}
+              </button>
+            ) : null}
           >
-            {view.optional.map(card)}
+            {forYou.slice(0, HOME_OPPORTUNITIES_VISIBLE).map((i) => card(i))}
           </Group>
-
-          {view.done.length > 0 ? (
-            <Folded label={`Completed (${view.done.length})`} open={doneOpen} onToggle={() => setDoneOpen((v) => !v)}>
-              {view.done.map(card)}
-            </Folded>
-          ) : null}
-
           {view.soon.length > 0 ? (
-            <Folded
-              label={`Coming soon (${view.soon.length}) · Opens when ARHA finishes the step before it`}
-              open={soonOpen}
-              onToggle={() => setSoonOpen((v) => !v)}
-            >
-              {view.soon.map(card)}
-            </Folded>
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-dashed border-portal-border bg-card px-5 py-4">
+              <p className="text-sm text-portal-ink">
+                <span className="font-semibold">Coming soon ({view.soon.length})</span>{" "}
+                <span className="text-portal-muted">Opens on its own when our team finishes its part.</span>
+              </p>
+              {onSeeComing ? (
+                <button type="button" className="min-h-11 text-sm font-medium text-portal-primary underline-offset-4 hover:underline" onClick={onSeeComing}>
+                  See what's coming
+                </button>
+              ) : null}
+            </div>
           ) : null}
+        </>
+      ) : (
+        <>
+          <section className="space-y-4" aria-label="Opportunities for you">
+            <GroupHead title="Opportunities for you" count={forYou.length} />
+            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="tablist" aria-label="Opportunity groups">
+              <Pill active={filter === "all"} onClick={() => setFilter("all")}>All ({forYou.length})</Pill>
+              {grouped.map((g) => (
+                <Pill key={g.id} active={filter === g.id} onClick={() => setFilter(g.id)}>{g.label} ({g.items.length})</Pill>
+              ))}
+            </div>
+            {loading && forYou.length === 0 ? <p className="text-sm text-portal-muted">Loading…</p> : null}
+            {grouped.filter((g) => filter === "all" || filter === g.id).map((g) => (
+              <SubGroup key={g.id} title={`${g.label} (${g.items.length})`}>
+                {g.items.map((i) => card(i))}
+              </SubGroup>
+            ))}
+            {filter === "all" && ungrouped.length > 0 ? (
+              <SubGroup title={`Other (${ungrouped.length})`}>{ungrouped.map((i) => card(i))}</SubGroup>
+            ) : null}
+          </section>
+
+          <section id="coming-soon" className="scroll-mt-48 space-y-3" aria-label="Coming soon">
+            <GroupHead title={loading ? "Coming soon" : `Coming soon (${view.soon.length})`} />
+            <p className="text-sm text-portal-muted">These open on their own when our team finishes its part. Nothing to do yet.</p>
+            {view.soon.length === 0 ? null : (
+              <ul className="grid gap-3 min-[900px]:grid-cols-2">
+                {view.soon.map((i) => (
+                  <li key={i.key} className="rounded-[14px] border border-dashed border-portal-border bg-card/60 p-4">
+                    <p className="text-[15px] font-bold text-portal-ink">{i.title}</p>
+                    <p className="mt-1 text-sm text-portal-muted">Opens when {portalOpensWhen(i.opensText)}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className="space-y-3" aria-label="Completed">
+            <GroupHead title={loading ? "Completed" : `Completed (${done.length})`} />
+            <p className="text-sm text-portal-muted">Everything you've finished, newest first. Open one to see what you sent, or to change it.</p>
+            {loading ? <p className="text-sm text-portal-muted">Loading…</p> : done.length === 0 ? null : <ul className="grid gap-3 min-[900px]:grid-cols-2">{done.map((i) => card(i, "done"))}</ul>}
+          </section>
         </>
       )}
 
@@ -500,6 +544,7 @@ export function OwnerOpportunityBoard({
           starting={starting.isPending}
           blockedReason={blockedReason}
           programLive={programLive}
+          entries={hourEntries}
           {...(onLogHours ? { onLogHours } : {})}
         />
       ) : null}
@@ -521,131 +566,120 @@ export function OwnerOpportunityBoard({
 // Fix 2: the first sentence, cut at 90 characters.
 const oneLine = cardLine;
 
+function cardMinutes(i: Item, entries: HourEntry[]): number {
+  return entriesForCard(entries, { title: i.title, reviewId: i.reviewId ?? (i.source === "review" ? i.id : null), propertyIds: i.propertyIds })
+    .reduce((n, e) => n + (Number(e.minutes) || 0), 0);
+}
+
+function GroupHead({ title, count, right }: { title: string; count?: number; right?: ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex items-center gap-2">
+        <h2 className="font-display text-2xl text-portal-ink">{title}</h2>
+        {count !== undefined ? (
+          <span className="numeric rounded-full bg-portal-primary/10 px-2.5 py-0.5 text-xs font-semibold text-portal-primary">{count}</span>
+        ) : null}
+      </div>
+      {right}
+    </div>
+  );
+}
+
 function Group({
-  title, count, countTone = "plain", note, empty, children,
+  title, count, note, empty, children, right,
 }: {
   title: string;
   count: number;
-  countTone?: "answer" | "plain";
   note: string;
   empty: string;
   children: ReactNode;
+  right?: ReactNode;
 }) {
   return (
     <section className="space-y-3" aria-label={title}>
       <div>
-        <div className="flex items-center gap-2">
-          <h3 className="text-base font-semibold">{title}</h3>
-          <span
-            className={
-              countTone === "answer"
-                ? "numeric rounded-full bg-answer-chip px-2 py-0.5 text-xs font-semibold text-answer-chip-foreground"
-                : "numeric rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
-            }
-          >
-            {count}
-          </span>
-        </div>
-        <p className="text-sm text-muted-foreground">{note}</p>
+        <GroupHead title={title} count={count} right={right} />
+        <p className="text-sm text-portal-muted">{note}</p>
       </div>
-      {count === 0 ? <p className="text-sm text-muted-foreground">{empty}</p> : <ul className="grid gap-3 min-[900px]:grid-cols-2">{children}</ul>}
+      {count === 0 ? (empty ? <p className="text-sm text-portal-muted">{empty}</p> : null) : <ul className="grid gap-3 min-[900px]:grid-cols-2">{children}</ul>}
     </section>
   );
 }
 
-function Folded({ label, open, onToggle, children }: { label: string; open: boolean; onToggle: () => void; children: ReactNode }) {
+function SubGroup({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="space-y-3">
-      <button
-        type="button"
-        className="flex min-h-11 w-full items-center justify-between gap-2 rounded-xl border border-border bg-muted/40 px-4 text-left text-sm font-medium"
-        aria-expanded={open}
-        onClick={onToggle}
-      >
-        <span>{label}</span>
-        <ChevronDown className={`size-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
-      </button>
-      {open ? <ul className="grid gap-3 min-[900px]:grid-cols-2">{children}</ul> : null}
+    <section className="space-y-3" aria-label={title}>
+      <h3 className="text-base font-semibold text-portal-ink">{title}</h3>
+      <ul className="grid gap-3 min-[900px]:grid-cols-2">{children}</ul>
     </section>
   );
 }
 
-function OppCard({ item, line, today, onOpen }: { item: Item; line: string; today: string; onOpen: () => void }) {
-  const group = boardGroup(item);
-  const chip = group === "answer" ? answerChip(item, today) : null;
-  const overdue = Boolean(chip?.overdue);
-  const shell =
-    group === "answer"
-      ? overdue
-        ? "border-2 border-overdue-border bg-overdue"
-        : "border-2 border-answer-border bg-answer"
-      : "border border-border bg-card";
-  const corner =
-    chip ? (
-      <span
-        className={
-          overdue
-            ? "numeric rounded-full bg-overdue-border px-2 py-0.5 text-xs font-semibold text-overdue-foreground"
-            : "numeric rounded-full bg-answer-chip px-2 py-0.5 text-xs font-semibold text-answer-chip-foreground"
-        }
-      >
-        {chip.text}
-      </span>
-    ) : (
-      <span className="text-xs font-medium text-muted-foreground">{cornerText(item)}</span>
-    );
-  const button =
-    group === "answer" ? (
-      <Button size="sm" className="min-h-11 bg-answer-action text-answer-action-foreground hover:bg-answer-action/90" onClick={onOpen}>
-        Answer now
-      </Button>
-    ) : group === "soon" ? (
-      <Button size="sm" variant="outline" className="min-h-11" disabled>
-        <Lock className="size-4" aria-hidden="true" /> Not open yet
-      </Button>
-    ) : item.source === "template" ? (
-      <Button size="sm" variant="outline" className="min-h-11" onClick={onOpen}>Start</Button>
-    ) : (
-      <Button size="sm" variant={group === "done" ? "ghost" : "outline"} className="min-h-11" onClick={onOpen}>Open</Button>
-    );
+function Pill({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
   return (
-    <li className={`flex gap-3 overflow-hidden rounded-xl p-3 shadow-sm sm:gap-4 ${shell}`}>
-      <img src={item.cover} alt="" loading="lazy" width={1024} height={640} className="h-20 w-24 shrink-0 rounded-lg object-cover sm:h-24 sm:w-32" />
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={
+        active
+          ? "min-h-11 shrink-0 rounded-full border border-portal-primary bg-portal-primary px-4 text-sm font-medium text-portal-primary-foreground"
+          : "min-h-11 shrink-0 rounded-full border border-portal-border bg-card px-4 text-sm text-portal-ink hover:border-portal-primary"
+      }
+    >
+      {children}
+    </button>
+  );
+}
+
+function OppCard({
+  item, kind, homeLine, today, minutes, onOpen,
+}: { item: Item; kind: "open" | "done"; homeLine: string; today: string; minutes: number; onOpen: () => void }) {
+  const group = portalGroupFor(item.cardCode);
+  const answer = boardGroup(item) === "answer";
+  const chip = answer ? answerChip(item, today) : null;
+  return (
+    <li className="flex gap-4 rounded-[14px] border border-portal-border bg-card p-3">
+      <img src={item.cover} alt="" loading="lazy" width={128} height={96} className="h-24 w-32 shrink-0 rounded-[10px] object-cover" />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
-          <p className="font-semibold leading-snug">{item.title}</p>
-          {corner}
+        <div className="flex flex-wrap items-center gap-2">
+          {group ? (
+            <span className={`rounded-md px-2 py-0.5 text-[11px] font-semibold ${PORTAL_GROUP_TONE[group]}`}>{portalGroupLabel(group)}</span>
+          ) : null}
+          {chip ? (
+            <span
+              className={
+                chip.overdue
+                  ? "numeric rounded-md bg-overdue-border px-2 py-0.5 text-[11px] font-semibold text-overdue-foreground"
+                  : "numeric rounded-md bg-answer-chip px-2 py-0.5 text-[11px] font-semibold text-answer-chip-foreground"
+              }
+            >
+              {chip.text}
+            </span>
+          ) : null}
+          {homeLine ? <span className="text-xs text-portal-muted">{homeLine}</span> : null}
         </div>
-        {line ? <p className="text-xs text-muted-foreground">{line}</p> : null}
-        {group === "soon" ? (
-          <p className="text-sm text-muted-foreground">Opens when {opensLine(item.opensText)}</p>
+        <p className="text-[15px] font-bold leading-snug text-portal-ink">{item.title}</p>
+        {kind === "done" ? (
+          <p className="numeric text-sm text-portal-muted">{completedLine(item.completedAt ?? null, minutes)}</p>
         ) : item.summary ? (
-          <p className="line-clamp-1 text-sm text-muted-foreground">{item.summary}</p>
+          <p className="line-clamp-1 text-sm text-portal-muted">{item.summary}</p>
         ) : null}
-        <div className="mt-1">{button}</div>
+        <div className="mt-auto pt-1">
+          <Button size="sm" variant="outline" className="min-h-11 border-portal-primary text-portal-primary hover:bg-portal-primary/10 hover:text-portal-primary" onClick={onOpen}>
+            {kind === "done" ? "View or edit" : "Open"}
+          </Button>
+        </div>
       </div>
     </li>
   );
 }
 
-function opensLine(text: string | null | undefined) {
-  const t = (text ?? "").trim().replace(/[.\s]+$/, "");
-  if (!t) return "ARHA finishes the step before it";
-  return /^(arha|we|the|your)\b/i.test(t) ? t.charAt(0).toLowerCase() + t.slice(1) : `ARHA ${t.charAt(0).toLowerCase()}${t.slice(1)}`;
-}
-
-function cornerText(i: Item): string {
-  if (i.finished) return "Completed";
-  // Fix 4: optional (anytime) cards show no due date.
-  if (i.optional) return "Optional";
-  if (i.source === "plan") return i.deadline ? `Due ${shortDate(i.deadline)}` : "Open";
-  if (i.source === "template") return "Optional";
-  return i.status;
-}
 
 /** Opens the item's own panel: each source keeps its own record and actions. */
 function ItemPanel({
-  item, programId, homes, homeName, multi, readOnly, preview, reviews, live, templates, renderReview, onClose, onStart, starting, blockedReason, onLogHours, programLive,
+  item, programId, homes, homeName, multi, readOnly, preview, reviews, live, templates, renderReview, onClose, onStart, starting, blockedReason, onLogHours, programLive, entries,
 }: {
   item: Item;
   programId: string;
@@ -664,6 +698,7 @@ function ItemPanel({
   blockedReason: string | null;
   onLogHours?: (activity: string, propertyId: string | null) => void;
   programLive: boolean;
+  entries: HourEntry[];
 }) {
   const home = sourceLine({ ...item, from: "" }, homeName, multi);
   const outsideLines = useOutsideLines(programId, programLive);
@@ -692,6 +727,28 @@ function ItemPanel({
         outsideLine={outsideLines.get(`work:${item.id}`) ?? null}
         {...(outsideState.failed ? { outsideFailed: outsideState } : {})}
         {...(onLogHours ? { onLogHours } : {})}
+      />
+    );
+  }
+  if (item.source === "plan" && item.status === "done") {
+    const group = portalGroupFor(item.cardCode);
+    const log = !blockedReason && !readOnly ? onLogHours : undefined;
+    return (
+      <CompletedCardPanel
+        planCardId={item.id}
+        programId={programId}
+        propertyId={item.propertyIds[0] ?? null}
+        title={item.title}
+        home={home || (homes[0]?.name ?? "")}
+        typeLabel={group ? portalGroupLabel(group) : null}
+        cover={item.cover}
+        completedAt={item.completedAt ?? null}
+        outputFields={item.outputFields}
+        reviewId={item.reviewId ?? null}
+        entries={entries}
+        readOnly={readOnly}
+        onClose={onClose}
+        onChangeHours={log ? () => { onClose(); log(item.title, item.propertyIds[0] ?? null); } : undefined}
       />
     );
   }
@@ -740,7 +797,7 @@ function PlanCardPanel({
       open
       onOpenChange={onOpenChange}
       cover={item.cover}
-      status={item.allHomes ? "All your homes" : view.kind === "done" ? "Completed" : view.kind === "closed" ? "Closed" : !item.optional && row.deadline_at ? `Due ${shortDate(row.deadline_at)}` : item.optional ? "Optional" : "Open"}
+      status={item.allHomes ? "All your homes" : view.kind === "done" ? "Completed" : view.kind === "closed" ? "Closed" : !item.optional && row.deadline_at ? `Due ${shortDate(row.deadline_at)}` : "Open"}
       title={row.title}
       home={[home, "Your homeowner plan"].filter(Boolean).join(" · ")}
       sentAt={row.unlocked_at}
@@ -784,9 +841,9 @@ function TemplatePanel({
       open
       onOpenChange={onOpenChange}
       cover={imageFor(template.image_key)}
-      status="Optional"
+      status="Open"
       title={template.title}
-      home={[home, "Optional"].filter(Boolean).join(" · ")}
+      home={home}
       footer={
         readOnly ? null : (
           <Button className="min-h-11" size="sm" disabled={starting} onClick={onStart}>
@@ -817,6 +874,7 @@ export function useOutsideLines(programId: string, programLive: boolean): Map<st
   return q.data ?? EMPTY_LINES;
 }
 const EMPTY_LINES = new Map<string, string>();
+const NO_ENTRIES: HourEntry[] = [];
 
 /** Whether the outside-Resolve instructions failed to load, with a retry. Same read as useOutsideLines. */
 export function useOutsideLinesFailed(programId: string, programLive: boolean): { failed: boolean; retry: () => void } {
