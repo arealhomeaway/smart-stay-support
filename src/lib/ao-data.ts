@@ -344,3 +344,21 @@ export async function loadOwnerItemLastSpeakers(reviewIds: string[], ownerSide =
   return out;
 }
 
+
+/** The owner's latest answer on a plan card, with its files (portal Completed panel). */
+export type CardAnswer = { id: string; values: Record<string, unknown>; files: { document_id: string; name: string }[]; submittedAt: string };
+export async function loadCardAnswer(planCardId: string): Promise<CardAnswer | null> {
+  const r = await db.from("ao_contributions").select("id, field_values, files, submitted_at")
+    .eq("plan_card_id", planCardId).order("submitted_at", { ascending: false }).limit(1).maybeSingle();
+  if (r.error) throw new Error("Your answer could not load.");
+  if (!r.data) return null;
+  const files = Array.isArray(r.data.files) ? (r.data.files as { document_id: string; name: string }[]) : [];
+  return { id: r.data.id, values: (r.data.field_values ?? {}) as Record<string, unknown>, files, submittedAt: r.data.submitted_at };
+}
+
+/** Allowed change A: the owner edits a completed card's answer and files (ao_edit_card_answer). */
+export async function editCardAnswer(planCardId: string, values: Record<string, unknown>, files: { document_id: string; name: string }[]) {
+  const r = await db.rpc("ao_edit_card_answer", { _plan_card: planCardId, _values: values, _files: files });
+  if (r.error) throw new Error((r.error as { message?: string }).message ?? "Your change could not be saved.");
+  return r.data as string;
+}
