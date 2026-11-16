@@ -47,7 +47,9 @@ export function findTourTarget(targets: readonly TourTarget[] | null): HTMLEleme
     const found = nodes.find((n) => {
       if (n.closest("[data-guided-tour]")) return false;
       const r = n.getBoundingClientRect();
-      return r.width > 0 && r.height > 0 && getComputedStyle(n).visibility !== "hidden";
+      // Closed sections and hidden panels do not count, so the card never points at nothing.
+      const shown = typeof n.checkVisibility === "function" ? n.checkVisibility({ contentVisibilityAuto: true, visibilityProperty: true }) : true;
+      return shown && r.width > 0 && r.height > 0;
     });
     const el = found && typeof t !== "string" && t.closest ? (found.closest<HTMLElement>(t.closest) ?? found) : found;
     if (el) return el;
