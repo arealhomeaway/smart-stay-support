@@ -3,6 +3,7 @@ import { Building2, ClipboardList, ListChecks, ShieldAlert, Users } from "lucide
 import { Button } from "@/components/ui/button";
 import { PageHeader, SectionBand } from "@/components/ui/page";
 import walkthrough from "@/assets/resolve-executive-walkthrough.mp4.asset.json";
+import { GuidedToursCard } from "@/components/tours/GuidedToursCard";
 
 export const Route = createFileRoute("/_authenticated/welcome")({
   component: WelcomePage,
@@ -72,6 +73,9 @@ function WelcomePage() {
         title="How Resolve works"
         description="Watch the walkthrough, then take the guided tour inside the app. Do both before your first shift."
       />
+
+      {/* Guided tours (Admin, Nov 16): at the top of Help. */}
+      <GuidedToursCard />
 
       <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
         <video
