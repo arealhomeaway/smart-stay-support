@@ -3,20 +3,17 @@
 -- 2. On the weekly full copy night the calls continue to 7 AM Central and the missed check moves to 7 AM.
 -- Other nights keep the 2 to 5 AM window and the 5 AM check. The call itself (address, token, time limit) is unchanged.
 
--- 0. Preflight.
+-- 0. Preflight (the schedules are checked by schedule.sql).
 DO $pre$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
                   WHERE n.nspname = 'private' AND p.proname = 'nightly_export_missed_check' AND md5(p.prosrc) = '3e27b9167c3e103634ce645ef56f80a3')
-     OR NOT EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'nightly-export-continue' AND schedule = '5-55/10 7-10 * * *')
-     OR NOT EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'nightly-export-missed-check' AND schedule = '15 10,11 * * *') THEN
+     THEN
     RAISE EXCEPTION 'Changed since the Nov 15 capture. Nothing was changed.';
   END IF;
 END $pre$;
 
--- 1. Schedules (only the timing changes).
-SELECT cron.alter_job(job_id := (SELECT jobid FROM cron.job WHERE jobname = 'nightly-export-continue'), schedule := '5-55/5 7-12 * * *');
-SELECT cron.alter_job(job_id := (SELECT jobid FROM cron.job WHERE jobname = 'nightly-export-missed-check'), schedule := '15 10-13 * * *');
+-- 1. Schedules: see schedule.sql (the two jobs' timing only, run separately by job number).
 
 -- 2. Missed check: 7 AM on the weekly night, 5 AM otherwise.
 CREATE OR REPLACE FUNCTION private.nightly_export_missed_check(_now timestamp with time zone DEFAULT now())

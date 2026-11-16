@@ -1,6 +1,5 @@
 -- Undo for nightly-export-sunday: puts back the Nov 15 schedules and missed check exactly.
-SELECT cron.alter_job(job_id := (SELECT jobid FROM cron.job WHERE jobname = 'nightly-export-continue'), schedule := '5-55/10 7-10 * * *');
-SELECT cron.alter_job(job_id := (SELECT jobid FROM cron.job WHERE jobname = 'nightly-export-missed-check'), schedule := '15 10,11 * * *');
+-- Schedules: run schedule.undo.sql.
 CREATE OR REPLACE FUNCTION private.nightly_export_missed_check(_now timestamp with time zone DEFAULT now())
  RETURNS integer
  LANGUAGE plpgsql

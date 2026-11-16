@@ -186,6 +186,11 @@ describe("staged nightly export database step", () => {
  * and is checked until 7 AM Central. Practice run of docs/pending/nightly-export-sunday on the same copy.
  */
 const SUNDAY = "docs/pending/nightly-export-sunday";
+// Live job numbers 16 and 17 are these two jobs; the practice copy numbers them differently.
+const byJobName = (sql: string) =>
+  sql
+    .replace(/alter_job\(16,/g, "alter_job((SELECT jobid FROM cron.job WHERE jobname = 'nightly-export-continue'),")
+    .replace(/alter_job\(17,/g, "alter_job((SELECT jobid FROM cron.job WHERE jobname = 'nightly-export-missed-check'),");
 async function sundayDb() {
   const pg = await db();
   await pg.exec(`
@@ -193,10 +198,11 @@ async function sundayDb() {
     INSERT INTO public.app_settings VALUES ('nightly_export_settings', '{"daily_keep": 30, "weekly_day": 0, "weekly_keep": 12}');
     CREATE TABLE IF NOT EXISTS public.audit_log(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), actor_id uuid, actor_label text, action text,
       entity_type text, entity_id uuid, entity_label text, reason text, before_value jsonb, after_value jsonb, created_at timestamptz DEFAULT now());
-    CREATE FUNCTION cron.alter_job(job_id bigint, schedule text) RETURNS void LANGUAGE sql AS $$ UPDATE cron.job SET schedule = $2 WHERE jobid = $1 $$;
+    CREATE FUNCTION cron.alter_job(job_id bigint, schedule text DEFAULT NULL) RETURNS void LANGUAGE sql AS $$ UPDATE cron.job SET schedule = $2 WHERE jobid = $1 $$;
   `);
   await pg.exec(read("drizzle/migrations/0340_build9_export_fewer_alert.sql"));
   await pg.exec(read(`${SUNDAY}/apply.sql`));
+  await pg.exec(byJobName(read(`${SUNDAY}/schedule.sql`)));
   return pg;
 }
 
@@ -234,6 +240,7 @@ describe("nightly export: Sunday full copy hours (applied Nov 15)", () => {
   it("the undo puts back every 10 minutes and the 5 AM check every night", async () => {
     const pg = await sundayDb();
     await pg.exec(read(`${SUNDAY}/apply.undo.sql`));
+    await pg.exec(byJobName(read(`${SUNDAY}/schedule.undo.sql`)));
     const jobs = (await pg.query<{ jobname: string; schedule: string }>("SELECT jobname, schedule FROM cron.job WHERE jobname LIKE 'nightly-export%' ORDER BY jobname")).rows;
     expect(jobs.map((j) => j.schedule)).toEqual(["5-55/10 7-10 * * *", "15 10,11 * * *"]);
     await pg.exec(`INSERT INTO public.backup_runs(folder_name, status, phase, weekly) VALUES ('2026-11-22', 'running', 'files', true);`);
