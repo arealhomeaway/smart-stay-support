@@ -89,14 +89,14 @@ export function CompletedCardPanel({
   const begin = useServerFn(beginUploadFn);
   const complete = useServerFn(completeUploadFn);
   const tag = useServerFn(tagOwnerUploadFn);
-  const internal = OWNER_UPLOAD_CATEGORIES.find((c) => c.value === "property_document")?.internal ?? "other";
+  const internal = OWNER_UPLOAD_CATEGORIES.find((c) => c.value === "participation")?.internal ?? "other";
   const intent = useRef((file: File, key: string) => ({
     entityType: "property" as const, entityId: propertyId ?? "", uploadKey: key, filename: file.name, mimeType: file.type, sizeBytes: file.size, note: null, category: internal, fulfilsRequestId: null,
   }));
   const [upload] = useState(() => createAttachmentUploader(begin, complete, (file, key) => intent.current(file, key)));
   const uploadOne = async (file: File, progress: (pct: number) => void, key: string) => {
     const documentId = await upload(file, progress, key);
-    await tag({ data: { documentId, ownerCategory: "property_document", workItemId: null } });
+    await tag({ data: { documentId, ownerCategory: "participation", workItemId: null } });
     return { document_id: documentId, name: file.name };
   };
 
@@ -168,6 +168,7 @@ export function CompletedCardPanel({
             ) : null}
             {editing && showUpload && propertyId ? (
               <MultiFileUpload
+                autoStart
                 upload={uploadOne}
                 onBusyChange={setUploading}
                 onResults={(r) => setFiles((prev) => [...prev, ...r.filter((x) => !prev.some((p) => p.document_id === x.document_id))])}
