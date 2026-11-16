@@ -115,7 +115,7 @@ export function CompletedCardPanel({
   const shown = editing ? files : answer.data?.files ?? [];
   return (
     <Sheet open onOpenChange={(v) => { if (!v) onClose(); }}>
-      <SheetContent side="right" className="flex w-full max-w-none flex-col gap-0 overflow-y-auto p-0 sm:max-w-[520px] [&>button.absolute]:hidden">
+      <SheetContent side="right" className="[&_.text-muted-foreground]:text-portal-muted flex w-full max-w-none flex-col gap-0 overflow-y-auto p-0 sm:max-w-[520px] [&>button.absolute]:hidden">
         <SheetHeader className="space-y-1 px-5 pb-3 pt-5 text-left">
           <div className="flex items-start justify-between gap-3">
             <p className="numeric pt-3 text-xs font-semibold text-portal-muted">{completedLine(completedAt, minutes)}</p>
