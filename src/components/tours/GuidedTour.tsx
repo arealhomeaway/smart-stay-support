@@ -86,6 +86,8 @@ async function loadPlaceIds(demo: boolean, team: TourTeam): Promise<TourPlaceIds
     .from("onboarding_tasks")
     .select("id")
     .eq("property_id", home)
+    .eq("task_kind", "do_it")
+    .is("parent_task_id", null)
     .is("archived_at", null)
     .neq("status", "complete")
     .order("created_at", { ascending: true })
