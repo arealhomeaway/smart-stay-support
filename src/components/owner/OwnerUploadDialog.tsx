@@ -105,7 +105,7 @@ export function OwnerUploadDialog({
             </div>
           ) : null}
           <div className="grid gap-1">
-            <Label htmlFor="owner-upload-note">Description / note (optional)</Label>
+            <Label htmlFor="owner-upload-note">Description / note</Label>
             <Textarea id="owner-upload-note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
           </div>
           <MultiFileUpload key={`${propertyId}-${open}`} upload={uploadAndTag} disabled={!propertyId} multiple={!request} onBusyChange={setBusy} onResults={() => {

@@ -4,7 +4,7 @@ import { ownerChatPanel } from "@/lib/owner-chat-panel";
 import { HomePhoto } from "@/components/property/HomePhoto";
 import { ownerPace } from "@/lib/ao-engine";
 import { paceSentence } from "@/lib/ao-ui";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -455,6 +455,14 @@ function OwnerHubBody({
           endsOn={snapshot.endsOn ?? null}
           endLabel={snapshot.endsOn ? usDate(snapshot.endsOn) : "December 31"}
           reports={preview ? null : <ReportDownloads />}
+          breakdown={
+            <ul className="mt-2 space-y-0.5 text-xs text-portal-muted" aria-label="Participation breakdown">
+              {yearTotals.length > 1 ? yearTotals.map((y) => <li key={y.year}>{y.year} participation year: {hrs(y.minutes)} hrs</li>) : null}
+              <li>Tagged to a home: {hrs(propertySpecificMinutes)} hrs · General: {hrs(generalMinutes)} hrs</li>
+              {properties.filter((p) => p.inclusionStatus === "included").length > 1 ? <li>Your homes for the same year share one total; each activity counts once.</li> : null}
+              <li>Progress toward more than 100 hours, not a tax qualification result.</li>
+            </ul>
+          }
         />
       ) : view === "opportunities" ? (
         <div className="space-y-1">
@@ -627,7 +635,7 @@ function OwnerHubBody({
  * participation box. Same numbers and on-track sentence as before (ownerPace / paceSentence).
  */
 function WelcomeCard({
-  photo, homeLabel, firstName: name, canLog, onLog, onAll, onMessage, hours, percent, futureStart, endsOn, endLabel, reports,
+  photo, homeLabel, firstName: name, canLog, onLog, onAll, onMessage, hours, percent, futureStart, endsOn, endLabel, reports, breakdown,
 }: {
   photo: string | null;
   homeLabel: string;
@@ -641,7 +649,8 @@ function WelcomeCard({
   futureStart: string | null;
   endsOn: string | null;
   endLabel: string;
-  reports: React.ReactNode;
+  reports: ReactNode;
+  breakdown: ReactNode;
 }) {
   const end = endsOn ? new Date(`${endsOn.slice(0, 10)}T23:59:59`) : null;
   const pace = end && !Number.isNaN(end.getTime()) && !futureStart ? ownerPace(hours, new Date(), end) : null;
@@ -677,8 +686,8 @@ function WelcomeCard({
             <p className="font-medium text-portal-ink">{pace.label}</p>
           </div>
         ) : null}
+        {breakdown}
         {reports}
-        <p className="mt-2 text-xs text-portal-muted">Progress toward more than 100 hours, not a tax qualification result.</p>
       </div>
     </section>
   );
