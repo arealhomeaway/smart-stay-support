@@ -226,9 +226,6 @@ function OwnerHubBody({
   const { home: homeParam } = Route.useSearch();
   const selectedHomeId =
     homeParam && properties.some((p) => p.propertyId === homeParam) ? homeParam : null;
-  const scopedProperties = selectedHomeId
-    ? properties.filter((p) => p.propertyId === selectedHomeId)
-    : properties;
   // A home-specific view keeps program-wide items: they still affect this home.
   const inScope = (review: Review) =>
     !selectedHomeId || review.propertyIds.length === 0 || review.propertyIds.includes(selectedHomeId);
