@@ -60,8 +60,10 @@ export function ChatThread(p: {
   propertyId: string;
   kind: ChatKind;
   canPost: boolean;
-  /** Owner portal: no folders or files, the owner's own wording. */
+  /** Owner portal: the owner's own wording; files attach without a folder pick (photos go to Photos). */
   ownerSide?: boolean;
+  /** Owner portal preview (staff): show the message box and buttons, switched off. */
+  lockedComposer?: boolean;
   people?: { id: string; name: string }[];
   /** "Make a Task" on a message (staff only). */
   onMakeTask?: (m: { id: string; body: string }) => void;
@@ -83,7 +85,7 @@ export function ChatThread(p: {
   const chatId = q.data?.chatId ?? null;
   useChatLive(chatId, () => void qc.invalidateQueries({ queryKey: chatKey(p.propertyId, p.kind) }));
   const [body, setBody] = useState("");
-  const [files, setFiles] = useState<{ document_id: string; name: string }[]>([]);
+  const [files, setFiles] = useState<{ document_id: string; name: string; folder?: string }[]>([]);
   const [folder, setFolder] = useState<ChatFolder | "">("");
   const [attaching, setAttaching] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -110,10 +112,14 @@ export function ChatThread(p: {
       filename: file.name,
       mimeType: file.type,
       sizeBytes: file.size,
-      category: CHAT_FOLDERS.find((f) => f.id === folderRef.current)?.category ?? null,
+      category: p.ownerSide ? ownerChatCategory(file.type) : CHAT_FOLDERS.find((f) => f.id === folderRef.current)?.category ?? null,
     })),
   );
-  const uploadNamed = async (file: File, progress: (v: number) => void, key: string) => ({ document_id: await upload(file, progress, key), name: file.name });
+  const uploadNamed = async (file: File, progress: (v: number) => void, key: string) => ({
+    document_id: await upload(file, progress, key),
+    name: file.name,
+    ...(p.ownerSide ? { folder: ownerChatFolder(file.type) } : {}),
+  });
 
   const send = useMutation({
     mutationFn: () =>
@@ -122,7 +128,7 @@ export function ChatThread(p: {
           propertyId: p.propertyId,
           kind: p.kind,
           body: body.trim(),
-          attachments: folder ? files.map((f) => ({ ...f, folder })) : [],
+          attachments: p.ownerSide ? files : folder ? files.map((f) => ({ ...f, folder })) : [],
           mentions: parseMentions(body, p.people ?? []),
         },
       }),
@@ -138,7 +144,7 @@ export function ChatThread(p: {
   });
   const style = CHAT_STYLE[p.kind];
   const tone = CHAT_TONE[p.kind];
-  const blockedFiles = files.length > 0 && !folder;
+  const blockedFiles = files.length > 0 && !folder && !p.ownerSide;
   const canSend = p.canPost && !send.isPending && !busy && !blockedFiles && (body.trim().length > 0 || files.length > 0);
 
   const ownReads = useMemo(() => q.data?.readMarks ?? [], [q.data]);
@@ -201,7 +207,7 @@ export function ChatThread(p: {
         })}
         <div ref={bottom} />
       </ol>
-      {p.canPost ? (
+      {p.canPost || (p.ownerSide && p.lockedComposer) ? (
         <form
           className="space-y-2"
           onSubmit={(e) => {
@@ -216,10 +222,14 @@ export function ChatThread(p: {
             maxLength={4000}
             placeholder={p.placeholder ?? (p.ownerSide ? "Write to ARHA" : p.kind === "team" ? "Write to the team. Type @ and a name to alert a teammate." : "Write to the owner")}
             aria-label="Message"
+            disabled={!p.canPost}
             onKeyDown={(e) => {
               if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && canSend) send.mutate();
             }}
           />
+          {attaching && p.ownerSide && p.canPost ? (
+            <MultiFileUpload autoStart upload={uploadNamed} onBusyChange={setBusy} onResults={(r) => setFiles(r)} label="Add photos or files" />
+          ) : null}
           {attaching && !p.ownerSide ? (
             <div className="space-y-2 rounded-md border border-border p-2">
               <label className="block text-sm">
@@ -246,15 +256,20 @@ export function ChatThread(p: {
             </div>
           ) : null}
           <div className="flex flex-wrap items-center justify-end gap-2">
-            {!p.ownerSide ? (
+            {p.ownerSide ? (
+              <Button type="button" variant="outline" className="min-h-11 border-portal-primary text-portal-primary hover:bg-portal-primary/10 hover:text-portal-primary" disabled={!p.canPost} onClick={() => setAttaching((v) => !v)} aria-expanded={attaching}>
+                <Paperclip className="size-4" aria-hidden="true" /> Attach a photo or file
+              </Button>
+            ) : (
               <Button type="button" variant="ghost" className="min-h-11" onClick={() => setAttaching((v) => !v)} aria-expanded={attaching}>
                 <Paperclip className="size-4" aria-hidden="true" /> Attach
               </Button>
-            ) : null}
-            <Button type="submit" className={cn("min-h-11", tone.send)} disabled={!canSend}>
+            )}
+            <Button type="submit" className={cn("min-h-11", p.ownerSide ? "bg-portal-primary text-portal-primary-foreground hover:bg-portal-primary/90" : tone.send)} disabled={!canSend}>
               Send
             </Button>
           </div>
+          {!p.canPost ? <p className="text-xs text-muted-foreground">Preview only. Messages are not sent from here.</p> : null}
         </form>
       ) : (
         <p className="text-sm text-muted-foreground">{p.kind === "owner" ? "You can read this chat. The home's team writes to the owner." : "You can read this chat."}</p>

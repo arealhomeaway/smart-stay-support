@@ -163,6 +163,13 @@ export function composerHint(mode: ComposerMode, ownerName: string): string {
 /** Part 3 (3.2): chat files go into the home's Files folders, never Other. */
 export const CHAT_FOLDERS = UPLOAD_FOLDERS.map((f) => ({ id: f.id as ChatFolder, label: f.label, category: f.upload as string }));
 export type ChatFolder = Exclude<HomeFolder, "other">;
+/** Owner chat files (no folder pick on the owner side): photos and videos go to Photos, anything else to Other. */
+export function ownerChatFolder(mime: string): "photos" | "other" {
+  return /^(image|video)\//i.test(mime) ? "photos" : "other";
+}
+export function ownerChatCategory(mime: string): string {
+  return ownerChatFolder(mime) === "photos" ? "media" : "other";
+}
 
 export const CHAT_STYLE = {
   owner: { label: "With the owner", banner: "The owner sees everything in this chat." },
