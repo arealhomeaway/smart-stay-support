@@ -65,7 +65,13 @@ export const importOwnerRezPropertyFn = createServerFn({ method: "POST" })
       await import("./property-intake.server");
     await assertPropertyStaff(context.supabase, context.userId);
     await assertCanAddHome(context.supabase, context.userId);
-    return importOwnerRezProperty(context.supabase, context.userId, data);
+    const result = await importOwnerRezProperty(context.supabase, context.userId, data);
+    // Link the home to Breezeway by its OwnerRez number when exactly one Breezeway home matches.
+    if (result.status !== "duplicate" && !result.property.isDemo) {
+      const { autoLinkAfterAddHome } = await import("./breezeway-auto-link.server");
+      await autoLinkAfterAddHome(result.property.id, context.userId);
+    }
+    return result;
   });
 
 
@@ -98,7 +104,13 @@ export const createPropertyManuallyFn = createServerFn({ method: "POST" })
       await import("./property-intake.server");
     await assertPropertyStaff(context.supabase, context.userId);
     await assertCanAddHome(context.supabase, context.userId);
-    return createPropertyManually(context.supabase, context.userId, data);
+    const result = await createPropertyManually(context.supabase, context.userId, data);
+    // Same automatic Breezeway link as above; homes without an OwnerRez number are left alone.
+    if (result.status === "created" && !result.property.isDemo && result.property.ownerRezId) {
+      const { autoLinkAfterAddHome } = await import("./breezeway-auto-link.server");
+      await autoLinkAfterAddHome(result.property.id, context.userId);
+    }
+    return result;
   });
 
 /** Reconcile an OwnerRez ID onto an existing property instead of duplicating it. */
