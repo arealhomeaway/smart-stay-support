@@ -79,3 +79,10 @@ describe("Help page", () => {
     expect(canOpenPath("/welcome", { roles: ["tech"], seats: {} })).toBe(true);
   });
 });
+
+describe("who gets no tour", () => {
+  it("a Finance lead (Supervisor type account with no Operations role) gets no tour by itself", async () => {
+    const { toursFor } = await import("@/lib/guided-tours");
+    expect(toursFor({ roles: ["manager"], seats: { finance: true } })).toEqual([]);
+  });
+});
