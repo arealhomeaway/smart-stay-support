@@ -1,3 +1,4 @@
+// @ts-nocheck: in-memory fixture, row shapes are checked by assertions.
 // The OwnerRez owner sync end to end against an in-memory database and fake OwnerRez answers.
 import { describe, expect, it, mock } from "bun:test";
 
