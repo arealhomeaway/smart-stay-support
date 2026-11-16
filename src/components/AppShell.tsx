@@ -1,3 +1,4 @@
+import { ShiftHandoffsMenuCount } from "@/components/home/ShiftHandoffsWaiting";
 import { useStoredMaintenancePolicy } from "@/hooks/useStoredMaintenancePolicy";
 import { TicketDrawerHost } from "@/components/nav/TicketDrawer";
 import { RecordRoutineHost, openRecordRoutine } from "@/components/routines/RecordRoutinePanel";
@@ -372,6 +373,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                           >
                             <item.icon aria-hidden="true" />
                             <span>{item.label}</span>
+                            {/* Admin, Nov 16: waiting handoffs and missed shift ends, leads only. */}
+                            {item.tour === "oversight" ? (
+                              <ShiftHandoffsMenuCount className="ml-auto min-w-6 rounded-full bg-danger px-1.5 text-center text-xs font-semibold tabular-nums text-danger-foreground group-data-[collapsible=icon]:hidden" />
+                            ) : null}
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
