@@ -63,6 +63,7 @@ import { stripPlanRoleLine } from "@/lib/task-drawer";
 import { FollowUpTask } from "@/components/onboarding/FollowUpTask";
 import { loadTaskOwnerSend, loadTaskPlanCard } from "@/lib/ao-data";
 import { TaskVerifyBadge } from "@/components/ao/TaskPlanLink";
+import { TaskHomeownerLines } from "@/components/ao/HomeownerHasPanel";
 import { TaskGallery } from "@/components/onboarding/TaskGallery";
 import { ReviewAwareComplete, TaskReviewPanel } from "@/components/onboarding/TaskReviewPanel";
 import { trackForTask } from "@/lib/onboarding-workstreams";
@@ -520,6 +521,8 @@ export function TaskDrawer({
               <Chip className={stateChip(dueText.startsWith("Overdue") ? "blocked" : "waiting")}>{dueText}</Chip>
             )}
           </div>
+          {/* Nov 16: what this Task did for the homeowner, read only. */}
+          <TaskHomeownerLines taskId={task.id} done={finished} completedAt={task.completed_at ?? null} />
           <div className="grid gap-3 text-sm sm:grid-cols-2">
             <div className="space-y-1">
               <p className="eyebrow">Assigned to</p>

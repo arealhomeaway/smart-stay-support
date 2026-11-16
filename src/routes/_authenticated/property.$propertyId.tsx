@@ -44,6 +44,7 @@ import { HomeownerCard } from "@/components/property/HomeownerCard";
 import { ArrivalReadyCard } from "@/components/scorecard/ArrivalReadyCard";
 import { LifecycleSwitcher } from "@/components/property/LifecycleSwitcher";
 import { ActiveOwnerEnrollForm } from "@/components/property/ActiveOwnerEnrollForm";
+import { HomeownerHasSection } from "@/components/ao/HomeownerHasPanel";
 import { ActualClosingCorrection } from "@/components/property/ActualClosingCorrection";
 import { CompletedOnboardingRecords } from "@/components/property/CompletedOnboardingRecords";
 import { VendorCoveragePanel } from "@/components/onboarding/VendorCoveragePanel";
@@ -583,6 +584,8 @@ function OwnerTab({ hub, propertyId, canEdit }: { hub: Hub; propertyId: string; 
   const owner = hub.ownerRecord;
   return (
     <div className="space-y-4">
+      {/* Nov 16: what has gone to the homeowner, read only (shows only for an Active Owner home). */}
+      <HomeownerHasSection propertyId={propertyId} homeName={hub.property.name} origin={`/property/${propertyId}`} />
       <SectionCard title="Owner and Contacts">
         {owner ? (
           <div className="grid gap-1 text-sm sm:grid-cols-2">
