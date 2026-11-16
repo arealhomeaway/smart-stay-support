@@ -1,4 +1,4 @@
-/** B3: onboarding homes not yet matched to Breezeway, with suggested homes and Confirm match (Admin). */
+/** B3: homes not yet matched to Breezeway, with suggested homes and Confirm match (Admin). */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -20,11 +20,11 @@ export function BreezewayMatchPanel() {
     onError: (e: Error) => toast.error(e.message),
   });
   return (
-    <SectionCard title="Match onboarding homes to Breezeway">
+    <SectionCard title="Match homes to Breezeway">
       {q.isLoading ? <p className="text-sm text-muted-foreground">Checking homes…</p> : null}
       {q.error ? <p className="text-sm text-destructive">{(q.error as Error).message}</p> : null}
       {q.data?.error ? <p className="text-sm text-destructive">{q.data.error}</p> : null}
-      {q.data && q.data.rows.length === 0 ? <p className="text-sm text-muted-foreground">Every onboarding home is matched.</p> : null}
+      {q.data && q.data.rows.length === 0 ? <p className="text-sm text-muted-foreground">Every home is matched.</p> : null}
       <ul className="divide-y divide-border">
         {(q.data?.rows ?? []).map((r) => (
           <li key={r.propertyId} className="space-y-2 py-3">

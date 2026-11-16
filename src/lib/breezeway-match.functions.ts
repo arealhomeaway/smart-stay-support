@@ -37,7 +37,7 @@ export const onboardingBreezewayMatchesFn = createServerFn({ method: "POST" })
     }[];
     const taken = new Set(all.map((p) => (p.breezeway_property_id ?? "").trim()).filter(Boolean));
     const unmatched = all.filter(
-      (p) => p.lifecycle_status === "onboarding" && !p.is_demo && !p.archived_at && p.breezeway_mapping_state !== "verified",
+      (p) => !p.is_demo && !p.archived_at && p.breezeway_mapping_state !== "verified",
     );
     let homes: import("./breezeway-match").BreezewayHome[] = [];
     let listError: string | null = null;
