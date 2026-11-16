@@ -204,3 +204,19 @@ describe("export check page", () => {
     expect(r).toEqual({ oldest: "2026-11-04", newest: "2026-11-09", count: 2 });
   });
 });
+
+describe("export hours: Sunday full copy until 7 AM Central (Admin, Nov 15)", () => {
+  it("the weekly night works until 7 AM Central; every other night stops at 5 AM", async () => {
+    const { inExportWindow, exportEndHour } = await import("@/lib/nightly-export");
+    expect(inExportWindow(new Date("2026-11-22T11:05:00Z"))).toBe(true); // Sun 5:05 AM CST
+    expect(inExportWindow(new Date("2026-11-22T12:55:00Z"))).toBe(true); // Sun 6:55 AM CST
+    expect(inExportWindow(new Date("2026-11-22T13:05:00Z"))).toBe(false); // Sun 7:05 AM CST
+    expect(inExportWindow(new Date("2026-11-16T11:05:00Z"))).toBe(false); // Mon 5:05 AM CST
+    expect(inExportWindow(new Date("2026-11-16T08:00:00Z"))).toBe(true); // Mon 2:00 AM CST
+    expect(exportEndHour(new Date("2026-11-22T09:00:00Z"))).toBe(7);
+    expect(exportEndHour(new Date("2026-11-16T09:00:00Z"))).toBe(5);
+    // A different saved weekly day moves the longer hours with it.
+    expect(inExportWindow(new Date("2026-11-18T11:05:00Z"), { dailyKeep: 30, weeklyKeep: 12, weeklyDay: 3 })).toBe(true); // Wed
+    expect(inExportWindow(new Date("2026-11-22T11:05:00Z"), { dailyKeep: 30, weeklyKeep: 12, weeklyDay: 3 })).toBe(false); // Sun
+  });
+});
