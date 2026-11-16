@@ -56,12 +56,12 @@ async function loadShiftHandoffs(demo: boolean): Promise<SHInput> {
 
 /** Loads only for the Operations Supervisor, the Director of Operations and Admin. */
 export function useShiftHandoffs() {
-  const { demoMode } = useDemo();
+  const { demoMode, demoReady } = useDemo();
   const { can } = useRole();
   const allowed = can("shift_handoffs");
   const q = useQuery({
     queryKey: ["shift-handoffs", demoMode],
-    enabled: allowed,
+    enabled: allowed && demoReady,
     staleTime: 30_000,
     refetchInterval: 60_000,
     queryFn: () => loadShiftHandoffs(demoMode),
