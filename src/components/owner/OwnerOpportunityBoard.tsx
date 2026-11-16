@@ -503,7 +503,7 @@ export function OwnerOpportunityBoard({
             ) : null}
           </section>
 
-          <section id="coming-soon" className="scroll-mt-24 space-y-3" aria-label="Coming soon">
+          <section id="coming-soon" className="scroll-mt-48 space-y-3" aria-label="Coming soon">
             <GroupHead title={`Coming soon (${view.soon.length})`} />
             <p className="text-sm text-portal-muted">These open on their own when our team finishes its part. Nothing to do yet.</p>
             {view.soon.length === 0 ? null : (
