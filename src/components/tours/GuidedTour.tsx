@@ -5,6 +5,7 @@
  * the dimmed layer blocks every click on the page while the tour is open.
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "@tanstack/react-router";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -185,6 +186,24 @@ function TourOverlay({
   // The page listens for outside presses on the document; stop them here, natively, so an
   // open drawer or chat stays open while the tour moves through it.
   const shieldRef = useRef<HTMLDivElement | null>(null);
+  // The tour sits in its own layer at the top of the page. An open drawer hides everything
+  // else from screen readers; the tour layer keeps itself visible so its buttons stay usable.
+  const [layer, setLayer] = useState<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = document.createElement("div");
+    el.setAttribute("data-guided-tour-layer", "");
+    document.body.appendChild(el);
+    const unhide = () => {
+      for (const a of ["aria-hidden", "data-aria-hidden", "inert"]) if (el.hasAttribute(a)) el.removeAttribute(a);
+    };
+    const watch = new MutationObserver(unhide);
+    watch.observe(el, { attributes: true, attributeFilter: ["aria-hidden", "data-aria-hidden", "inert"] });
+    setLayer(el);
+    return () => {
+      watch.disconnect();
+      el.remove();
+    };
+  }, []);
   useEffect(() => {
     const el = shieldRef.current;
     if (!el) return;
@@ -235,7 +254,7 @@ function TourOverlay({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose, steps.length]);
 
-  if (!step) return null;
+  if (!step || !layer) return null;
   const last = index === steps.length - 1;
   const vw = typeof window !== "undefined" ? window.innerWidth : 1280;
   const vh = typeof window !== "undefined" ? window.innerHeight : 800;
@@ -253,7 +272,7 @@ function TourOverlay({
   top = Math.min(Math.max(16, top), Math.max(16, vh - 290));
   const centered = !rect && !searching;
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[100]"
       // An open drawer turns page clicks off and closes on an outside press; the tour keeps its
@@ -324,6 +343,7 @@ function TourOverlay({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    layer,
   );
 }
