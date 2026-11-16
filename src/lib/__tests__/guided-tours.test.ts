@@ -44,14 +44,14 @@ describe("tour shape and wording", () => {
   const all = Object.values(GUIDED_TOURS).flatMap((t) => t.sections);
   it("every section has 4 to 8 steps", () => {
     for (const s of all) {
-      expect(s.steps.length).toBeGreaterThanOrEqual(4);
+      expect(s.steps.length).toBeGreaterThan(3);
       expect(s.steps.length).toBeLessThanOrEqual(8);
     }
   });
   it("every card is 1 to 3 sentences, with no long dashes or banned words", () => {
     for (const st of all.flatMap((s) => s.steps)) {
       const sentences = st.body.split(/(?<=[.!?])\s+/).filter(Boolean);
-      expect(sentences.length).toBeGreaterThanOrEqual(1);
+      expect(sentences.length).toBeGreaterThan(0);
       expect(sentences.length).toBeLessThanOrEqual(3);
       expect(`${st.title} ${st.body}`).not.toMatch(/[\u2014\u2013]|\bseats?\b|Median|\bHit\b/i);
     }
