@@ -161,7 +161,10 @@ export type Capability =
   // Weekly scorecard: the leads and Finance (totals). Onboarding roles open none of them.
   | "team_records"
   | "coaching_log"
-  | "weekly_scorecard";
+  | "weekly_scorecard"
+  // Shift handoffs (Admin, Nov 16): the Oversight view of shift ends and handoffs. The Operations
+  // Supervisor, the Director of Operations and Admin only; the database rules still decide each read.
+  | "shift_handoffs";
 
 // Creating a ticket is internal-staff work. Vendors and homeowners never get it.
 const STAFF_BASE: Capability[] = [
@@ -377,6 +380,7 @@ export function capabilitiesFor(roles: AppRole[], seats: AccessSeats = {}): Set<
   if (seats.onboardingDirector || seats.opsDirector || seats.opsSupervisor) set.add("export_check");
   // Build 14: the manual trackers follow the person's role (see the Capability notes above).
   if (seats.opsSupervisor || seats.opsDirector || roles.includes("admin")) {
+    set.add("shift_handoffs");
     set.add("team_records");
     set.add("coaching_log");
     set.add("weekly_scorecard");

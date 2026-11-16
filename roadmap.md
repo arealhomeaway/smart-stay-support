@@ -717,3 +717,7 @@
 - [ ] Link the 10 unlinked homeowner cards - blocked: every matching Task was voided as Not needed or archived; waits on the Admin's choice
 - [x] Nightly export: time limits, retries, fenced writes, every 5 minutes, weekly night to 7 AM (0342 + schedule)
 - [ ] Publish the export code before Sun Nov 22 2 AM Central - blocked: waits on Emily publishing
+
+## Nov 16 Shift handoffs and audit
+- [x] Shift handoffs view in Oversight (Supervisor, Director of Operations, Admin), count on Oversight menu and Home.
+- [x] Planned vs built audit saved to docs/audits/planned-vs-built-2026-11-16.md.

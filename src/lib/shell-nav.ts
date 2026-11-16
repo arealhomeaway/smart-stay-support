@@ -116,10 +116,11 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
   {
     key: "oversight",
     match: (p) =>
-      ["/oversight", "/supervisor-check", "/team-records", "/coaching", "/weekly-scorecard"].includes(p),
+      ["/oversight", "/supervisor-check", "/shift-handoffs", "/team-records", "/coaching", "/weekly-scorecard"].includes(p),
     tabs: [
       { label: "Oversight", to: "/oversight", capability: "oversight" },
       { label: "Supervisor check", to: "/supervisor-check", capability: "oversight" },
+      { label: "Shift handoffs", to: "/shift-handoffs", capability: "shift_handoffs" },
       // Build 14 (register BN7, BN8, BN9): the Supervisor's manual trackers.
       { label: "Team records", to: "/team-records", capability: "team_records" },
       { label: "Coaching", to: "/coaching", capability: "coaching_log" },
@@ -338,7 +339,7 @@ const OPERATIONS_MENU: MenuGroup[] = [
       { key: "work-orders", label: "Work Orders", to: "/work-orders", capability: "work_orders_internal", flag: "work_orders_page" },
       // The Vendors page opens from the Databases Vendors card, so Databases is lit there.
       { key: "databases", label: "Databases", to: "/databases", capability: "databases", alsoActive: ["/vendors"] },
-      { key: "oversight", label: "Oversight", to: "/oversight", capability: "oversight", alsoActive: ["/supervisor-check"] },
+      { key: "oversight", label: "Oversight", to: "/oversight", capability: "oversight", alsoActive: ["/supervisor-check", "/shift-handoffs"] },
       // Hidden behind the claims_menu switch now that Databases holds claims and refunds
       // (register M2, C1). The pages stay reachable by link.
       { key: "claims", label: "Guest Claims & Refunds", to: "/claims", capability: "claims_work", flag: "claims_menu", alsoActive: ["/recovery"] },

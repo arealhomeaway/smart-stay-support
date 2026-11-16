@@ -81,6 +81,8 @@ const RULES: Rule[] = [
   { prefix: "/databases", capability: "databases" },
   { prefix: "/oversight", capability: "oversight" },
   { prefix: "/supervisor-check", capability: "oversight" },
+  // Shift handoffs (Admin, Nov 16): the Operations Supervisor, the Director of Operations and Admin.
+  { prefix: "/shift-handoffs", capability: "shift_handoffs" },
   { prefix: "/analytics", capability: "analytics" },
   { prefix: "/ops-analytics", capability: "analytics" },
   // Work order oversight stays Operations only; the Work Orders pages also open read only
