@@ -70,3 +70,12 @@ describe("pages", () => {
     expect(resolveStepHref({ to: "/onboarding/$home?tab=tasks&task=$task", fallbackTo: "/onboarding" }, { ticket: null, home: "h1", task: null })).toBe("/onboarding/h1?tab=tasks");
   });
 });
+
+describe("Help page", () => {
+  it("the onboarding role and the Director of Onboarding can open Help to replay their tour", async () => {
+    const { canOpenPath } = await import("@/lib/route-access");
+    expect(canOpenPath("/welcome", { roles: ["onboarding"], seats: {} })).toBe(true);
+    expect(canOpenPath("/welcome", { roles: ["manager"], seats: { onboardingDirector: true } })).toBe(true);
+    expect(canOpenPath("/welcome", { roles: ["tech"], seats: {} })).toBe(true);
+  });
+});
