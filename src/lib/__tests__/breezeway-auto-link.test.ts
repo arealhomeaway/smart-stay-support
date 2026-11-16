@@ -206,7 +206,7 @@ describe("telling an Admin when a home cannot link itself", () => {
     });
     expect(String(f.notices[0]!["body"])).toContain("No active Breezeway home has its OwnerRez number yet.");
     // In-app only: no email is asked for.
-    expect(f.notices[0]!["email_status"]).toBeUndefined();
+    expect("email_status" in f.notices[0]!).toBe(false);
   });
 
   it("names the reason for two matches, no OwnerRez number, and a Breezeway home already in use", () => {
