@@ -213,7 +213,7 @@ const ONBOARDING: TourSection[] = [
     title: "Active Owner cards",
     steps: [
       { id: "onb-ao-items", to: "/onboarding/$home?tab=owner", fallbackTo: "/onboarding", page: "A home, Owner", element: "Every owner item", target: [{ text: "Every owner item" }, "[aria-label='Active Owner program']"], title: "Cards open by themselves", body: "When a Task is done, the homeowner cards linked to it open by themselves. Nobody has to send them." },
-      { id: "onb-ao-due", to: "/onboarding/$home?tab=owner", fallbackTo: "/onboarding", page: "A home, Owner", element: "Needs action", target: ["#owner-needs-action"], title: "15 owner items with due dates", body: "15 owner items need the owner to act, such as documents and approvals. Only these have a due date and one reminder." },
+      { id: "onb-ao-due", to: "/onboarding/$home?tab=owner", fallbackTo: "/onboarding", page: "A home, Owner", element: "Needs action", target: ["#owner-needs-action"], title: "15 owner items with due dates", body: "15 owner items need the owner to act. Only these have a due date and one reminder." },
       { id: "onb-ao-late", to: "/onboarding/$home?tab=owner", fallbackTo: "/onboarding", page: "A home, Owner", element: "Active Owner program", target: ["[aria-label='Active Owner program']"], title: "Past the due date", body: "If the owner misses the due date, ARHA takes the item over. Unlock now is only a backup." },
       { id: "onb-ao-covered", to: "/onboarding/$home?tab=owner", fallbackTo: "/onboarding", page: "A home, Owner", element: "None (centered)", target: null, title: "Not needed covers the card", body: "When a Task is marked Not needed, its owner card is covered, so the owner never sees it." },
     ],
