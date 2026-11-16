@@ -202,7 +202,7 @@ describe("telling an Admin when a home cannot link itself", () => {
       title: "Breezeway link needed: 8738 Comstock Ct",
       entity_type: "property",
       entity_id: "p1",
-      link_path: "/integrations",
+      link_path: "/integrations#breezeway-match",
     });
     expect(String(f.notices[0]!["body"])).toContain("No active Breezeway home has its OwnerRez number yet.");
     // In-app only: no email is asked for.

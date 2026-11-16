@@ -20,6 +20,8 @@ export function BreezewayMatchPanel() {
     onError: (e: Error) => toast.error(e.message),
   });
   return (
+    // The "Breezeway link needed" notice opens here (#breezeway-match).
+    <div id="breezeway-match" className="scroll-mt-32">
     <SectionCard title="Match homes to Breezeway">
       {q.isLoading ? <p className="text-sm text-muted-foreground">Checking homes…</p> : null}
       {q.error ? <p className="text-sm text-destructive">{(q.error as Error).message}</p> : null}
@@ -58,5 +60,6 @@ export function BreezewayMatchPanel() {
         ))}
       </ul>
     </SectionCard>
+    </div>
   );
 }

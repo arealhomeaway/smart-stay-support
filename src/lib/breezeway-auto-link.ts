@@ -103,7 +103,7 @@ export function planAutoLinks(
 /* ------------------------------------------------------------ link notices */
 
 export const LINK_NOTICE_KIND = "breezeway_link_needed";
-export const LINK_NOTICE_PATH = "/integrations";
+export const LINK_NOTICE_PATH = "/integrations#breezeway-match";
 
 /** Why a home could not link itself, in plain words. Only these reasons tell anyone. */
 const NOTICE_REASON: Partial<Record<AutoLinkSkip | "save_failed", string>> = {
