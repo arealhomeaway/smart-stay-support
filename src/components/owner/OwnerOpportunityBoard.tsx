@@ -504,7 +504,7 @@ export function OwnerOpportunityBoard({
           </section>
 
           <section id="coming-soon" className="scroll-mt-48 space-y-3" aria-label="Coming soon">
-            <GroupHead title={`Coming soon (${view.soon.length})`} />
+            <GroupHead title={loading ? "Coming soon" : `Coming soon (${view.soon.length})`} />
             <p className="text-sm text-portal-muted">These open on their own when our team finishes its part. Nothing to do yet.</p>
             {view.soon.length === 0 ? null : (
               <ul className="grid gap-3 min-[900px]:grid-cols-2">
@@ -519,9 +519,9 @@ export function OwnerOpportunityBoard({
           </section>
 
           <section className="space-y-3" aria-label="Completed">
-            <GroupHead title={`Completed (${done.length})`} />
+            <GroupHead title={loading ? "Completed" : `Completed (${done.length})`} />
             <p className="text-sm text-portal-muted">Everything you've finished, newest first. Open one to see what you sent, or to change it.</p>
-            {done.length === 0 ? null : <ul className="grid gap-3 min-[900px]:grid-cols-2">{done.map((i) => card(i, "done"))}</ul>}
+            {loading ? <p className="text-sm text-portal-muted">Loading…</p> : done.length === 0 ? null : <ul className="grid gap-3 min-[900px]:grid-cols-2">{done.map((i) => card(i, "done"))}</ul>}
           </section>
         </>
       )}
