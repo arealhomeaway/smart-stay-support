@@ -2416,6 +2416,13 @@
       "when": 1794847471016,
       "tag": "0344_portal_marketing_release",
       "breakpoints": true
+    },
+    {
+      "idx": 345,
+      "version": "7",
+      "when": 1794847546438,
+      "tag": "0345_portal_card_edit",
+      "breakpoints": true
     }
   ]
 }
