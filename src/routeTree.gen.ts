@@ -60,6 +60,7 @@ import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authentic
 import { Route as AuthenticatedQuarterlyRouteImport } from './routes/_authenticated/quarterly'
 import { Route as AuthenticatedRecoveryRouteImport } from './routes/_authenticated/recovery'
 import { Route as AuthenticatedRoutinesRouteImport } from './routes/_authenticated/routines'
+import { Route as AuthenticatedShiftHandoffsRouteImport } from './routes/_authenticated/shift-handoffs'
 import { Route as AuthenticatedStrDispatchCheckRouteImport } from './routes/_authenticated/str-dispatch-check'
 import { Route as AuthenticatedStrParticipationReportRouteImport } from './routes/_authenticated/str-participation-report'
 import { Route as AuthenticatedSupervisorCheckRouteImport } from './routes/_authenticated/supervisor-check'
@@ -408,6 +409,12 @@ const AuthenticatedRoutinesRoute = AuthenticatedRoutinesRouteImport.update({
   path: '/routines',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedShiftHandoffsRoute =
+  AuthenticatedShiftHandoffsRouteImport.update({
+    id: '/shift-handoffs',
+    path: '/shift-handoffs',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedStrDispatchCheckRoute =
   AuthenticatedStrDispatchCheckRouteImport.update({
     id: '/str-dispatch-check',
@@ -867,6 +874,7 @@ export interface FileRoutesByFullPath {
   '/quarterly': typeof AuthenticatedQuarterlyRoute
   '/recovery': typeof AuthenticatedRecoveryRouteWithChildren
   '/routines': typeof AuthenticatedRoutinesRoute
+  '/shift-handoffs': typeof AuthenticatedShiftHandoffsRoute
   '/str-dispatch-check': typeof AuthenticatedStrDispatchCheckRoute
   '/str-participation-report': typeof AuthenticatedStrParticipationReportRoute
   '/supervisor-check': typeof AuthenticatedSupervisorCheckRoute
@@ -985,6 +993,7 @@ export interface FileRoutesByTo {
   '/properties': typeof AuthenticatedPropertiesRoute
   '/quarterly': typeof AuthenticatedQuarterlyRoute
   '/routines': typeof AuthenticatedRoutinesRoute
+  '/shift-handoffs': typeof AuthenticatedShiftHandoffsRoute
   '/str-dispatch-check': typeof AuthenticatedStrDispatchCheckRoute
   '/str-participation-report': typeof AuthenticatedStrParticipationReportRoute
   '/supervisor-check': typeof AuthenticatedSupervisorCheckRoute
@@ -1107,6 +1116,7 @@ export interface FileRoutesById {
   '/_authenticated/quarterly': typeof AuthenticatedQuarterlyRoute
   '/_authenticated/recovery': typeof AuthenticatedRecoveryRouteWithChildren
   '/_authenticated/routines': typeof AuthenticatedRoutinesRoute
+  '/_authenticated/shift-handoffs': typeof AuthenticatedShiftHandoffsRoute
   '/_authenticated/str-dispatch-check': typeof AuthenticatedStrDispatchCheckRoute
   '/_authenticated/str-participation-report': typeof AuthenticatedStrParticipationReportRoute
   '/_authenticated/supervisor-check': typeof AuthenticatedSupervisorCheckRoute
@@ -1231,6 +1241,7 @@ export interface FileRouteTypes {
     | '/quarterly'
     | '/recovery'
     | '/routines'
+    | '/shift-handoffs'
     | '/str-dispatch-check'
     | '/str-participation-report'
     | '/supervisor-check'
@@ -1349,6 +1360,7 @@ export interface FileRouteTypes {
     | '/properties'
     | '/quarterly'
     | '/routines'
+    | '/shift-handoffs'
     | '/str-dispatch-check'
     | '/str-participation-report'
     | '/supervisor-check'
@@ -1470,6 +1482,7 @@ export interface FileRouteTypes {
     | '/_authenticated/quarterly'
     | '/_authenticated/recovery'
     | '/_authenticated/routines'
+    | '/_authenticated/shift-handoffs'
     | '/_authenticated/str-dispatch-check'
     | '/_authenticated/str-participation-report'
     | '/_authenticated/supervisor-check'
@@ -1922,6 +1935,13 @@ declare module '@tanstack/react-router' {
       path: '/routines'
       fullPath: '/routines'
       preLoaderRoute: typeof AuthenticatedRoutinesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/shift-handoffs': {
+      id: '/_authenticated/shift-handoffs'
+      path: '/shift-handoffs'
+      fullPath: '/shift-handoffs'
+      preLoaderRoute: typeof AuthenticatedShiftHandoffsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/str-dispatch-check': {
@@ -2621,6 +2641,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedQuarterlyRoute: typeof AuthenticatedQuarterlyRoute
   AuthenticatedRecoveryRoute: typeof AuthenticatedRecoveryRouteWithChildren
   AuthenticatedRoutinesRoute: typeof AuthenticatedRoutinesRoute
+  AuthenticatedShiftHandoffsRoute: typeof AuthenticatedShiftHandoffsRoute
   AuthenticatedStrDispatchCheckRoute: typeof AuthenticatedStrDispatchCheckRoute
   AuthenticatedStrParticipationReportRoute: typeof AuthenticatedStrParticipationReportRoute
   AuthenticatedSupervisorCheckRoute: typeof AuthenticatedSupervisorCheckRoute
@@ -2695,6 +2716,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedQuarterlyRoute: AuthenticatedQuarterlyRoute,
   AuthenticatedRecoveryRoute: AuthenticatedRecoveryRouteWithChildren,
   AuthenticatedRoutinesRoute: AuthenticatedRoutinesRoute,
+  AuthenticatedShiftHandoffsRoute: AuthenticatedShiftHandoffsRoute,
   AuthenticatedStrDispatchCheckRoute: AuthenticatedStrDispatchCheckRoute,
   AuthenticatedStrParticipationReportRoute:
     AuthenticatedStrParticipationReportRoute,
