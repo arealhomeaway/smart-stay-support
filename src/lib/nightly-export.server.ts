@@ -146,10 +146,11 @@ export async function withTries<T>(run: (signal: AbortSignal) => Promise<T>, sig
     const t = timeoutSignal(REQUEST_TIMEOUT_MS);
     try {
       const both = anySignal([t.signal, signal]);
-      return await Promise.race([
-        run(both),
-        new Promise<never>((_, rej) => both.addEventListener("abort", () => rej(new Error(String((both.reason as Error)?.message ?? "no answer in time"))), { once: true })),
-      ]);
+      const stop = new Promise<never>((_, rej) =>
+        both.addEventListener("abort", () => rej(new Error(String((both.reason as Error)?.message ?? "no answer in time"))), { once: true }),
+      );
+      stop.catch(() => {});
+      return await Promise.race([run(both), stop]);
     } catch (e) {
       if (signal?.aborted) throw new Error("Stopped: the file ran out of time.");
       if (attempt >= RETRIES) throw new Error(`No answer after ${RETRIES} tries: ${e instanceof Error ? e.message : String(e)}`);
