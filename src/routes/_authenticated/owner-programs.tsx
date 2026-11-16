@@ -501,7 +501,7 @@ function ProgramCard({
           ) : null}
         </div>
       </div>
-      {expanded ? <ProgramDetail row={row} available={available} /> : null}
+      {expanded ? <ProgramDetail row={row} available={available} demo={demo} /> : null}
     </SectionCard>
   );
 }
@@ -509,9 +509,11 @@ function ProgramCard({
 function ProgramDetail({
   row,
   available,
+  demo,
 }: {
   row: ProgramRow;
   available: { id: string; name: string; location: string }[];
+  demo: boolean;
 }) {
   const programId = row.id;
   const qc = useQueryClient();
@@ -871,7 +873,7 @@ function ProgramDetail({
         <h3 className="text-sm font-semibold">{HAS_COPY.title}</h3>
         <HomeownerHasLists
           programId={programId}
-          demo={Boolean(row.isDemo)}
+          demo={demo}
           homes={properties.map((p) => ({ id: p.propertyId, name: p.name }))}
         />
       </section>
