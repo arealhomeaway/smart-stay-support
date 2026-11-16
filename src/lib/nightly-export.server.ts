@@ -58,7 +58,7 @@ export interface SharePointIo {
   root(): Promise<{ driveId: string; rootId: string }>;
   ensureFolder(driveId: string, parentId: string, name: string): Promise<string>;
   /** Upload to a path under a folder (sub folders are made as needed). Returns the bytes written. */
-  put(driveId: string, folderId: string, relPath: string, bytes: Uint8Array, contentType: string): Promise<number>;
+  put(driveId: string, folderId: string, relPath: string, bytes: Uint8Array, contentType: string, signal?: AbortSignal): Promise<number>;
   /** Upload a large file in chunks read on demand. */
   putLarge(
     driveId: string,
@@ -66,6 +66,7 @@ export interface SharePointIo {
     relPath: string,
     size: number,
     readChunk: (start: number, end: number) => Promise<Uint8Array>,
+    signal?: AbortSignal,
   ): Promise<number>;
   readText(driveId: string, folderId: string, relPath: string): Promise<string | null>;
   /** Names and sizes of a folder's direct children. */
@@ -79,57 +80,139 @@ const encPath = (rel: string) => rel.split("/").map(encodeURIComponent).join("/"
 /** SharePoint's brief "busy" answers are tried again, up to 4 times, waiting a little longer each time. */
 export const RETRY_STATUSES = [429, 500, 502, 503, 504];
 const RETRIES = 4;
+/** Each try of a request gets this long for an answer; no answer counts as busy and is tried again. */
+export const REQUEST_TIMEOUT_MS = 30_000;
+/** One stored file gets this long to copy (more for a large file); then it is tried once more, then recorded as failed. */
+export const FILE_TIMEOUT_MS = 45_000;
+export const FILE_TRIES = 2;
+export const fileTimeoutMs = (bytes: number, base = FILE_TIMEOUT_MS) => Math.max(base, 15_000 + Math.ceil(bytes / 1_000_000) * 2_000);
 const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
-export async function withRetry(send: () => Promise<Response>, wait = pause): Promise<Response> {
+
+/** A signal that fires when any of the given signals fires. */
+export function anySignal(signals: (AbortSignal | undefined)[]): AbortSignal {
+  const list = signals.filter((x): x is AbortSignal => Boolean(x));
+  const ctl = new AbortController();
+  for (const sg of list) {
+    if (sg.aborted) {
+      ctl.abort(sg.reason);
+      break;
+    }
+    sg.addEventListener("abort", () => ctl.abort(sg.reason), { once: true });
+  }
+  return ctl.signal;
+}
+
+const timeoutSignal = (ms: number) => {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(new Error(`no answer within ${Math.round(ms / 1000)} seconds`)), ms);
+  return { signal: ctl.signal, clear: () => clearTimeout(t) };
+};
+
+/**
+ * Sends a request, giving each try its own time limit. Busy answers, no answer in time and dropped
+ * connections are tried again, up to 4 tries; then the last answer is returned or the error thrown.
+ * A caller's signal (the stored file's own limit) stops every try at once.
+ */
+export async function withRetry(
+  send: (signal: AbortSignal) => Promise<Response>,
+  wait = pause,
+  opts: { timeoutMs?: number; signal?: AbortSignal } = {},
+): Promise<Response> {
   for (let attempt = 1; ; attempt++) {
-    const res = await send();
+    if (opts.signal?.aborted) throw new Error("Stopped: the file ran out of time.");
+    const t = timeoutSignal(opts.timeoutMs ?? REQUEST_TIMEOUT_MS);
+    let res: Response;
+    try {
+      res = await send(anySignal([t.signal, opts.signal]));
+    } catch (e) {
+      t.clear();
+      if (opts.signal?.aborted) throw new Error("Stopped: the file ran out of time.");
+      const why = t.signal.aborted ? String((t.signal.reason as Error)?.message ?? "no answer in time") : e instanceof Error ? e.message : String(e);
+      if (attempt >= RETRIES) throw new Error(`No answer after ${RETRIES} tries: ${why}`);
+      await wait(2000 * attempt);
+      continue;
+    }
+    t.clear();
     if (!RETRY_STATUSES.includes(res.status) || attempt >= RETRIES) return res;
     const after = Number(res.headers.get("Retry-After"));
     await wait(Math.min(Number.isFinite(after) && after > 0 ? after * 1000 : 2000 * attempt, 15_000));
   }
 }
 
+/** The same tries and time limits for a call that is not a plain request (reading a stored file). */
+export async function withTries<T>(run: (signal: AbortSignal) => Promise<T>, signal?: AbortSignal, wait = pause): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    if (signal?.aborted) throw new Error("Stopped: the file ran out of time.");
+    const t = timeoutSignal(REQUEST_TIMEOUT_MS);
+    try {
+      const both = anySignal([t.signal, signal]);
+      return await Promise.race([
+        run(both),
+        new Promise<never>((_, rej) => both.addEventListener("abort", () => rej(new Error(String((both.reason as Error)?.message ?? "no answer in time"))), { once: true })),
+      ]);
+    } catch (e) {
+      if (signal?.aborted) throw new Error("Stopped: the file ran out of time.");
+      if (attempt >= RETRIES) throw new Error(`No answer after ${RETRIES} tries: ${e instanceof Error ? e.message : String(e)}`);
+      await wait(2000 * attempt);
+    } finally {
+      t.clear();
+    }
+  }
+}
+
 export function realSharePoint(key: string): SharePointIo {
-  const call = (path: string, init?: RequestInit) =>
-    withRetry(() =>
-      callAsAppUser({
-        gatewayBaseUrl: SHAREPOINT_GATEWAY_BASE_URL,
-        connectorId: SHAREPOINT_CONNECTOR_ID,
-        connectionAPIKey: key,
-        path,
-        ...(init ? { init } : {}),
-      }),
+  const call = (path: string, init?: RequestInit, signal?: AbortSignal) =>
+    withRetry(
+      (sg) =>
+        callAsAppUser({
+          gatewayBaseUrl: SHAREPOINT_GATEWAY_BASE_URL,
+          connectorId: SHAREPOINT_CONNECTOR_ID,
+          connectionAPIKey: key,
+          path,
+          init: { ...(init ?? {}), signal: sg },
+        }),
+      pause,
+      { signal },
     );
-  const graph = async (path: string, init?: RequestInit) => {
-    const res = await call(path, init);
+  const graph = async (path: string, init?: RequestInit, signal?: AbortSignal) => {
+    const res = await call(path, init, signal);
     if (!res.ok) {
       const body = await res.text();
       throw new Error(`SharePoint ${init?.method ?? "GET"} failed [${res.status}]: ${body.slice(0, 300)}`);
     }
     return res.status === 204 ? null : res.json();
   };
-  const session = async (driveId: string, folderId: string, relPath: string) =>
-    (await graph(`/drives/${driveId}/items/${folderId}:/${encPath(relPath)}:/createUploadSession`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ item: { "@microsoft.graph.conflictBehavior": "replace" } }),
-    })) as { uploadUrl: string };
+  const session = async (driveId: string, folderId: string, relPath: string, signal?: AbortSignal) =>
+    (await graph(
+      `/drives/${driveId}/items/${folderId}:/${encPath(relPath)}:/createUploadSession`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ item: { "@microsoft.graph.conflictBehavior": "replace" } }),
+      },
+      signal,
+    )) as { uploadUrl: string };
   const sendChunks = async (
     uploadUrl: string,
     size: number,
     readChunk: (start: number, end: number) => Promise<Uint8Array>,
     name: string,
+    signal?: AbortSignal,
   ) => {
     for (let start = 0; start < size; start += CHUNK) {
       const end = Math.min(start + CHUNK, size);
       const body = await readChunk(start, end);
       // The pre-authenticated upload URL goes straight to Microsoft, without credentials.
-      const res = await withRetry(() =>
-        fetch(uploadUrl, {
-          method: "PUT",
-          headers: { "Content-Length": String(end - start), "Content-Range": `bytes ${start}-${end - 1}/${size}` },
-          body: body as BodyInit,
-        }),
+      const res = await withRetry(
+        (sg) =>
+          fetch(uploadUrl, {
+            method: "PUT",
+            headers: { "Content-Length": String(end - start), "Content-Range": `bytes ${start}-${end - 1}/${size}` },
+            body: body as BodyInit,
+            signal: sg,
+          }),
+        pause,
+        { signal },
       );
       if (!res.ok && res.status !== 202) {
         throw new Error(`Upload of ${name} failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
@@ -154,21 +237,25 @@ export function realSharePoint(key: string): SharePointIo {
       })) as { id: string };
       return made.id;
     },
-    async put(driveId, folderId, relPath, bytes, contentType) {
+    async put(driveId, folderId, relPath, bytes, contentType, signal) {
       if (bytes.byteLength <= SIMPLE_UPLOAD_MAX) {
-        await graph(`/drives/${driveId}/items/${folderId}:/${encPath(relPath)}:/content`, {
-          method: "PUT",
-          headers: { "Content-Type": contentType || "application/octet-stream" },
-          body: bytes as BodyInit,
-        });
+        await graph(
+          `/drives/${driveId}/items/${folderId}:/${encPath(relPath)}:/content`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": contentType || "application/octet-stream" },
+            body: bytes as BodyInit,
+          },
+          signal,
+        );
         return bytes.byteLength;
       }
-      const s = await session(driveId, folderId, relPath);
-      return sendChunks(s.uploadUrl, bytes.byteLength, async (a, b) => bytes.slice(a, b), relPath);
+      const s = await session(driveId, folderId, relPath, signal);
+      return sendChunks(s.uploadUrl, bytes.byteLength, async (a, b) => bytes.slice(a, b), relPath, signal);
     },
-    async putLarge(driveId, folderId, relPath, size, readChunk) {
-      const s = await session(driveId, folderId, relPath);
-      return sendChunks(s.uploadUrl, size, readChunk, relPath);
+    async putLarge(driveId, folderId, relPath, size, readChunk, signal) {
+      const s = await session(driveId, folderId, relPath, signal);
+      return sendChunks(s.uploadUrl, size, readChunk, relPath, signal);
     },
     async readText(driveId, folderId, relPath) {
       const res = await call(`/drives/${driveId}/items/${folderId}:/${encPath(relPath)}`);
@@ -178,7 +265,7 @@ export function realSharePoint(key: string): SharePointIo {
       const url = item["@microsoft.graph.downloadUrl"];
       if (!url) return null;
       // A short-lived, pre-authenticated download link from Microsoft.
-      const file = await fetch(url);
+      const file = await withRetry((sg) => fetch(url, { signal: sg }));
       return file.ok ? await file.text() : null;
     },
     async listSizes(driveId, folderId) {
@@ -235,6 +322,8 @@ export type ExportStepOptions = {
   alertOnFailure?: boolean;
   /** Test only: an exact folder name. */
   folderName?: string;
+  /** Test only: a shorter time limit for one stored file. */
+  fileTimeoutMs?: number;
 };
 
 export type ExportStepResult =
@@ -244,6 +333,10 @@ export type ExportStepResult =
 
 /** Stop after this many calls in a row fail on the same night; the run is then Failed and alerts. */
 const MAX_FAILED_CALLS = 3;
+/** A call holds the night for its working time plus this long; a call that runs past it may be replaced. */
+const LEASE_GRACE_MS = 90_000;
+/** Raised when another call took the night over; this call then stops without writing anything more. */
+class LeaseLost extends Error {}
 const TABLE_CONCURRENCY = 4;
 const FILE_CONCURRENCY = 4;
 
@@ -329,23 +422,75 @@ async function listStoredFiles(db: Db): Promise<StoredFile[]> {
   }
 }
 
-async function copyStoredFile(db: Db, sp: SharePointIo, driveId: string, folderId: string, f: CopyItem): Promise<number> {
+async function copyStoredFile(db: Db, sp: SharePointIo, driveId: string, folderId: string, f: CopyItem, signal: AbortSignal): Promise<number> {
   const rel = copiedFilePath({ bucket: f.b, name: f.n });
   const store = db.storage.from(f.b);
   if (f.s <= SIMPLE_UPLOAD_MAX) {
-    const { data, error } = await store.download(f.n);
-    if (error || !data) throw new Error(error?.message ?? "could not be read from storage");
-    return sp.put(driveId, folderId, rel, new Uint8Array(await (data as Blob).arrayBuffer()), f.m ?? "application/octet-stream");
+    const bytes = await withTries(async (sg) => {
+      const { data, error } = await store.download(f.n, {}, { signal: sg });
+      if (error || !data) throw new Error(error?.message ?? "could not be read from storage");
+      return new Uint8Array(await (data as Blob).arrayBuffer());
+    }, signal);
+    return sp.put(driveId, folderId, rel, bytes, f.m ?? "application/octet-stream", signal);
   }
-  const { data: signed, error } = await store.createSignedUrl(f.n, 3600);
-  if (error || !signed?.signedUrl) throw new Error(error?.message ?? "no download link");
-  return sp.putLarge(driveId, folderId, rel, f.s, async (start, end) => {
-    const res = await fetch(signed.signedUrl as string, { headers: { Range: `bytes=${start}-${end - 1}` } });
-    if (!res.ok && res.status !== 206) throw new Error(`storage read failed [${res.status}]`);
-    const buf = new Uint8Array(await res.arrayBuffer());
-    if (buf.byteLength !== end - start) throw new Error("storage returned a different size than expected");
-    return buf;
-  });
+  const signed = await withTries(async () => {
+    const { data, error } = await store.createSignedUrl(f.n, 3600);
+    if (error || !data?.signedUrl) throw new Error(error?.message ?? "no download link");
+    return data.signedUrl as string;
+  }, signal);
+  return sp.putLarge(
+    driveId,
+    folderId,
+    rel,
+    f.s,
+    async (start, end) => {
+      const res = await withRetry((sg) => fetch(signed, { headers: { Range: `bytes=${start}-${end - 1}` }, signal: sg }), pause, { signal });
+      if (!res.ok && res.status !== 206) throw new Error(`storage read failed [${res.status}]`);
+      const buf = new Uint8Array(await res.arrayBuffer());
+      if (buf.byteLength !== end - start) throw new Error("storage returned a different size than expected");
+      return buf;
+    },
+    signal,
+  );
+}
+
+/**
+ * One stored file with its own time limit: tried, then tried once more while the call still has
+ * time, then reported as failed with the reason. It never waits longer than its limit, even if a
+ * request ignores being stopped; a late answer from a stopped try is ignored.
+ */
+async function copyWithLimit(
+  db: Db,
+  sp: SharePointIo,
+  driveId: string,
+  folderId: string,
+  f: CopyItem,
+  limitMs: number,
+  stillTime: () => boolean,
+): Promise<{ ok: true; bytes: number } | { ok: false; reason: string }> {
+  let reason = "";
+  for (let attempt = 1; attempt <= FILE_TRIES; attempt++) {
+    const ctl = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const bytes = await Promise.race([
+        copyStoredFile(db, sp, driveId, folderId, f, ctl.signal),
+        new Promise<never>((_, rej) => {
+          timer = setTimeout(() => {
+            ctl.abort(new Error("time limit"));
+            rej(new Error(`did not finish within ${Math.round(limitMs / 1000)} seconds`));
+          }, limitMs);
+        }),
+      ]);
+      return { ok: true, bytes };
+    } catch (e) {
+      reason = e instanceof Error ? e.message : String(e);
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+    if (!stillTime()) break;
+  }
+  return { ok: false, reason: `Could not be copied (${FILE_TRIES} tries): ${reason}`.slice(0, 200) };
 }
 
 function inventoryCsv(files: StoredFile[], copiedTonight: Set<string>, failed: Map<string, string>, weekly: boolean): string {
@@ -430,9 +575,12 @@ export async function runNightlyExportStep(
     run = made.data;
   }
   const runId = run!.id;
+  // The lease is this call's fence: every later write must still find it, so a call that ran past
+  // its time and was replaced can never write old progress over the newer call's.
+  let leaseUntil: string | null = new Date(Date.now() + budget + LEASE_GRACE_MS).toISOString();
   const lease = await db
     .from("backup_runs")
-    .update({ lease_until: new Date(Date.now() + budget + 60_000).toISOString() })
+    .update({ lease_until: leaseUntil })
     .eq("id", runId)
     .or(`lease_until.is.null,lease_until.lt.${new Date().toISOString()}`)
     .select("id");
@@ -443,9 +591,12 @@ export async function runNightlyExportStep(
   const p: Progress = { ...(run!.progress ?? {}) };
   const weekly = Boolean(run!.weekly);
   const startedAt = run!.started_at;
+  const fenced = (q: any) => (leaseUntil === null ? q.is("lease_until", null) : q.eq("lease_until", leaseUntil));
   const save = async (extra: Record<string, unknown> = {}) => {
-    const { error } = await db.from("backup_runs").update({ phase, progress: p, ...extra }).eq("id", runId);
+    const { data, error } = await fenced(db.from("backup_runs").update({ phase, progress: p, ...extra }).eq("id", runId)).select("id");
     if (error) throw new Error(`Could not save the run record: ${error.message}`);
+    if (!data?.length) throw new LeaseLost("Another call took over this night.");
+    if ("lease_until" in extra) leaseUntil = (extra["lease_until"] as string | null) ?? null;
   };
   const timeLeft = () => Date.now() < deadline;
 
@@ -530,7 +681,9 @@ export async function runNightlyExportStep(
         await Promise.all(
           batch.map(async (f) => {
             try {
-              const n = await copyStoredFile(db, sp!, driveId, folderId, f);
+              const r = await copyWithLimit(db, sp!, driveId, folderId, f, fileTimeoutMs(f.s, opts.fileTimeoutMs), timeLeft);
+              if (!r.ok) throw new Error(r.reason);
+              const n = r.bytes;
               c.copied++;
               c.bytes += n;
               if (kind === "nightly") {
@@ -655,19 +808,23 @@ export async function runNightlyExportStep(
     }
     return { ok: true, runId, folder, phase };
   } catch (e) {
+    if (e instanceof LeaseLost) return { ok: true, skipped: `Export for ${folder} was taken over by another call` };
     const error = e instanceof Error ? e.message : String(e);
     p.failed_calls = (p.failed_calls ?? 0) + 1;
     p.last_error = error.slice(0, 500);
     const giveUp = p.failed_calls >= MAX_FAILED_CALLS;
-    await db
-      .from("backup_runs")
-      .update({
-        progress: p,
-        error: error.slice(0, 1000),
-        lease_until: null,
-        ...(giveUp ? { phase: "done", status: "failed", verify_status: "failed", verify_reasons: [error.slice(0, 300)], finished_at: new Date().toISOString() } : {}),
-      })
-      .eq("id", runId);
+    const wrote = await fenced(
+      db
+        .from("backup_runs")
+        .update({
+          progress: p,
+          error: error.slice(0, 1000),
+          lease_until: null,
+          ...(giveUp ? { phase: "done", status: "failed", verify_status: "failed", verify_reasons: [error.slice(0, 300)], finished_at: new Date().toISOString() } : {}),
+        })
+        .eq("id", runId),
+    ).select("id");
+    if (!wrote.error && !wrote.data?.length) return { ok: true, skipped: `Export for ${folder} was taken over by another call` };
     if (giveUp && alerts) {
       try {
         await alert(db, folder, "failed", `The nightly export for ${folder} stopped: ${error}`);
