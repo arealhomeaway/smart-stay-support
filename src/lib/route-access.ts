@@ -46,6 +46,8 @@ const RULES: Rule[] = [
   { prefix: "/weekly-scorecard", capability: "weekly_scorecard" },
   { prefix: "/notifications", shared: true },
   { prefix: "/hub", shared: true },
+  // Guided tours (Admin, Nov 16): Help holds every team's tour card, so Onboarding opens it too.
+  { prefix: "/welcome", shared: true },
   { prefix: "/join", shared: true },
   { prefix: "/demo", capability: "view_as" },
   { prefix: "/onboarding", portal: "onboarding" },
