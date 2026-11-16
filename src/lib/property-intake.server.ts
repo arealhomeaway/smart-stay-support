@@ -307,14 +307,19 @@ export async function resolveOwnerRecord(
   const typed = input.typed ?? {};
 
   if (or) {
-    const sourceOwnerId = `ownerrez:${or.sourceId}`;
+    // Same owner whether an older record kept the "ownerrez:" prefix or not; new
+    // records use the bare id only (owner-sync-rules.ts).
+    const { ownerRezOwnerKey } = await import("@/lib/owner-sync-rules");
+    const sourceOwnerId = ownerRezOwnerKey(or.sourceId);
     const existing = await supabase
       .from("property_owners")
       .select("id")
-      .eq("source_owner_id", sourceOwnerId)
-      .maybeSingle();
+      .eq("source", "ownerrez")
+      .in("source_owner_id", [sourceOwnerId, `ownerrez:${sourceOwnerId}`])
+      .order("created_at")
+      .limit(1);
     if (existing.error) throw existing.error;
-    if (existing.data) return existing.data.id;
+    if (existing.data?.[0]) return existing.data[0].id;
     const { data, error } = await supabase
       .from("property_owners")
       .insert({
