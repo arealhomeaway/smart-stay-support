@@ -13,7 +13,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRouteContext } from "@tanstack/react-router";
-import { ChevronDown, Clock, Lock } from "lucide-react";
+import { Clock } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
@@ -32,9 +32,22 @@ import { ownerOnboardingActions } from "@/lib/owner-onboarding.functions";
 import { ownerReviewPresentation } from "@/lib/owner-review-presentation";
 import { startOptionalOpportunity, type LibraryTemplate } from "@/lib/opportunity-library.functions";
 import { arhaCover, imageFor } from "@/lib/opportunity-images";
+import { cardPhoto } from "@/lib/owner-card-photos";
+import { CompletedCardPanel } from "@/components/owner/CompletedCardPanel";
 import {
-  HOME_READY_VISIBLE,
-  READY_VISIBLE,
+  HOME_OPPORTUNITIES_VISIBLE,
+  PORTAL_GROUPS,
+  PORTAL_GROUP_TONE,
+  completedLine,
+  entriesForCard,
+  newestCompletedFirst,
+  newestOpenedFirst,
+  portalGroupFor,
+  portalGroupLabel,
+  type HourEntry,
+  type PortalGroupId,
+} from "@/lib/owner-portal-look";
+import {
   answerChip,
   boardGroup,
   boardView,
@@ -69,7 +82,14 @@ export type BoardReview = {
   propertyIds: string[];
 };
 
-type Item = BoardItem & { cardCode?: string | null; oncePerOwner?: boolean; status: string };
+type Item = BoardItem & {
+  cardCode?: string | null; oncePerOwner?: boolean; status: string;
+  /** When the owner finished it (plan cards: owner_completed_at; owner items: responded_at). */
+  completedAt?: string | null;
+  /** A plan card's owner item (its conversation and anchored hours). */
+  reviewId?: string | null;
+  outputFields?: unknown;
+};
 
 const DONE_REVIEW = new Set(["answered", "closed", "acknowledged", "complete", "completed", "cancelled", "archived", "resolved"]);
 
@@ -89,6 +109,8 @@ export function OwnerOpportunityBoard({
   onLogHours,
   blockedReason = null,
   programLive = false,
+  hourEntries = NO_ENTRIES,
+  onSeeComing,
 }: {
   /** "full" = the Opportunities page; "home" = the portal home page preview. */
   variant: "full" | "home";
@@ -109,6 +131,10 @@ export function OwnerOpportunityBoard({
   blockedReason?: string | null;
   /** The viewed program is live (not closed or archived): the outside wording's log time sentence. */
   programLive?: boolean;
+  /** The owner's logged hours, for "[hours] hrs logged" on completed cards. */
+  hourEntries?: HourEntry[];
+  /** Home page: "See what's coming" opens Opportunities at Coming soon. */
+  onSeeComing?: () => void;
 }) {
   const { user } = useRouteContext({ from: "/_authenticated" });
   const today = centralToday();
@@ -161,11 +187,13 @@ export function OwnerOpportunityBoard({
         propertyIds: c.property_id ? [c.property_id] : [],
         from: "Your homeowner plan",
         summary: oneLine(view.kind === "locked" ? "" : outside.get(`plan:${c.plan_card_id}`) ?? c.what_text),
-        cover: arhaCover(c.title, [], photo(c.property_id)),
+        // Approved mockup item 5: every card its own photo, by card code.
+        cover: cardPhoto(c.code) ?? arhaCover(c.title, [], photo(c.property_id)),
         sentAt: c.unlocked_at,
-        answerBy: null,
+        // Things onboarding needs from the owner carry a deadline (owner_needed cards only): Needs your answer.
+        answerBy: view.kind === "open" && !planCardOptional(c) && c.deadline_at ? c.deadline_at : null,
         deadline: c.deadline_at ?? null,
-        needsAnswer: false,
+        needsAnswer: view.kind === "open" && !planCardOptional(c) && Boolean(c.deadline_at),
         newReply: Boolean(c.owner_review_id && speakers.data?.get(c.owner_review_id) === "staff" && view.kind === "open"),
         optional: planCardOptional(c),
         locked: view.kind === "locked",
@@ -174,6 +202,9 @@ export function OwnerOpportunityBoard({
         cardCode: c.code ?? null,
         oncePerOwner: Boolean(c.once_per_owner),
         status: view.kind,
+        completedAt: c.owner_completed_at ?? null,
+        reviewId: c.owner_review_id ?? null,
+        outputFields: c.output_fields,
       });
     }
 
@@ -203,6 +234,7 @@ export function OwnerOpportunityBoard({
         finished,
         // Fix 25: after the owner's reply the item reads With ARHA until staff reply.
         status: !finished && speaker === "homeowner" ? "With ARHA" : p.label,
+        completedAt: r.responded_at ?? null,
       });
     }
 
@@ -263,7 +295,7 @@ export function OwnerOpportunityBoard({
         id: o.id,
         title: o.title,
         propertyIds: o.propertyId ? [o.propertyId] : [],
-        from: arha ? (o.team?.includes("Operations") ? "Operations Team" : "Onboarding Team") : "Optional",
+        from: arha ? (o.team?.includes("Operations") ? "Operations Team" : "Onboarding Team") : "",
         summary: oneLine(outside.get(`work:${o.id}`) ?? o.summary),
         cover: o.cover,
         sentAt: o.createdAt,
@@ -287,7 +319,7 @@ export function OwnerOpportunityBoard({
         id: t.id,
         title: t.title,
         propertyIds: startable,
-        from: "Optional",
+        from: "",
         summary: oneLine(t.summary),
         cover: imageFor(t.image_key),
         sentAt: null,
@@ -298,7 +330,7 @@ export function OwnerOpportunityBoard({
         optional: true,
         locked: false,
         finished: false,
-        status: "Optional",
+        status: "Open",
       });
     }
     // Fix 5: ARHA's setup step never shows as owner work.
@@ -648,18 +680,9 @@ function opensLine(text: string | null | undefined) {
   return /^(arha|we|the|your)\b/i.test(t) ? t.charAt(0).toLowerCase() + t.slice(1) : `ARHA ${t.charAt(0).toLowerCase()}${t.slice(1)}`;
 }
 
-function cornerText(i: Item): string {
-  if (i.finished) return "Completed";
-  // Fix 4: optional (anytime) cards show no due date.
-  if (i.optional) return "Optional";
-  if (i.source === "plan") return i.deadline ? `Due ${shortDate(i.deadline)}` : "Open";
-  if (i.source === "template") return "Optional";
-  return i.status;
-}
-
 /** Opens the item's own panel: each source keeps its own record and actions. */
 function ItemPanel({
-  item, programId, homes, homeName, multi, readOnly, preview, reviews, live, templates, renderReview, onClose, onStart, starting, blockedReason, onLogHours, programLive,
+  item, programId, homes, homeName, multi, readOnly, preview, reviews, live, templates, renderReview, onClose, onStart, starting, blockedReason, onLogHours, programLive, entries,
 }: {
   item: Item;
   programId: string;
@@ -678,6 +701,7 @@ function ItemPanel({
   blockedReason: string | null;
   onLogHours?: (activity: string, propertyId: string | null) => void;
   programLive: boolean;
+  entries: HourEntry[];
 }) {
   const home = sourceLine({ ...item, from: "" }, homeName, multi);
   const outsideLines = useOutsideLines(programId, programLive);
@@ -706,6 +730,28 @@ function ItemPanel({
         outsideLine={outsideLines.get(`work:${item.id}`) ?? null}
         {...(outsideState.failed ? { outsideFailed: outsideState } : {})}
         {...(onLogHours ? { onLogHours } : {})}
+      />
+    );
+  }
+  if (item.source === "plan" && item.status === "done") {
+    const group = portalGroupFor(item.cardCode);
+    const canLog = onLogHours && !blockedReason && !readOnly;
+    return (
+      <CompletedCardPanel
+        planCardId={item.id}
+        programId={programId}
+        propertyId={item.propertyIds[0] ?? null}
+        title={item.title}
+        home={home || (homes[0]?.name ?? "")}
+        typeLabel={group ? portalGroupLabel(group) : null}
+        cover={item.cover}
+        completedAt={item.completedAt ?? null}
+        outputFields={item.outputFields}
+        reviewId={item.reviewId ?? null}
+        entries={entries}
+        readOnly={readOnly}
+        onClose={onClose}
+        onChangeHours={canLog ? () => { onClose(); onLogHours(item.title, item.propertyIds[0] ?? null); } : undefined}
       />
     );
   }
@@ -754,7 +800,7 @@ function PlanCardPanel({
       open
       onOpenChange={onOpenChange}
       cover={item.cover}
-      status={item.allHomes ? "All your homes" : view.kind === "done" ? "Completed" : view.kind === "closed" ? "Closed" : !item.optional && row.deadline_at ? `Due ${shortDate(row.deadline_at)}` : item.optional ? "Optional" : "Open"}
+      status={item.allHomes ? "All your homes" : view.kind === "done" ? "Completed" : view.kind === "closed" ? "Closed" : !item.optional && row.deadline_at ? `Due ${shortDate(row.deadline_at)}` : "Open"}
       title={row.title}
       home={[home, "Your homeowner plan"].filter(Boolean).join(" · ")}
       sentAt={row.unlocked_at}
@@ -798,9 +844,9 @@ function TemplatePanel({
       open
       onOpenChange={onOpenChange}
       cover={imageFor(template.image_key)}
-      status="Optional"
+      status="Open"
       title={template.title}
-      home={[home, "Optional"].filter(Boolean).join(" · ")}
+      home={home}
       footer={
         readOnly ? null : (
           <Button className="min-h-11" size="sm" disabled={starting} onClick={onStart}>
@@ -831,6 +877,7 @@ export function useOutsideLines(programId: string, programLive: boolean): Map<st
   return q.data ?? EMPTY_LINES;
 }
 const EMPTY_LINES = new Map<string, string>();
+const NO_ENTRIES: HourEntry[] = [];
 
 /** Whether the outside-Resolve instructions failed to load, with a retry. Same read as useOutsideLines. */
 export function useOutsideLinesFailed(programId: string, programLive: boolean): { failed: boolean; retry: () => void } {
