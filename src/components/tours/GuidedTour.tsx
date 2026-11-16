@@ -232,6 +232,8 @@ function TourOverlay({
     if (top + 250 > vh && rect.top - 262 < 16) top = Math.max(16, vh - 266);
     left = Math.min(Math.max(16, rect.left + rect.width / 2 - cardWidth / 2), vw - cardWidth - 16);
   }
+  // A tall area (or one partly off screen) never pushes the card out of sight.
+  top = Math.min(Math.max(16, top), Math.max(16, vh - 290));
   const centered = !rect && !searching;
 
   return (
