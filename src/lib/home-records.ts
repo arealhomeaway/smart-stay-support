@@ -444,7 +444,7 @@ export function approvalLine(a: ApprovalRow, ctx: LineContext): RecordLine {
     amount: num(a.amount), estimate: null, approved: null, paidBack: null, billedTo: null,
     approval: pending || stopped ? null : approvalText(`Homeowner ${status || "answered"}`, a.decided_at),
     status: pending ? "pending" : stopped ? "na" : "known",
-    note: pending ? "Waiting on the homeowner" : stopped ? (status === "cancelled" ? "Cancelled by our team" : "Withdrawn") : null,
+    note: pending ? "Waiting on the homeowner" : stopped ? (status === "cancelled" ? "Cancelled" : "Withdrawn") : null,
     fix: null, counts: NONE,
   };
 }
