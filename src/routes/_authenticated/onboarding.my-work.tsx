@@ -197,16 +197,10 @@ function MyWork() {
   // the homes of the listed Tasks for their row chips. Read only.
   const homeownerPerson = who === "me" ? userId : who === "all" || who === "unassigned" ? null : who;
   const homeownerHomes = useMemo(() => {
-    const projects = (data?.projects ?? []) as { property_id: string; project_manager: string | null; director: string | null; status: string }[];
+    const projects = (data?.projects ?? []) as { property_id: string; project_manager: string | null; status: string }[];
+    // Everyone's Tasks: the homes this person may see the whole team's work on.
     if (who === "all" || who === "unassigned") {
-      return myHomeownerHomes({
-        person: null,
-        allHomes: can("handoff_review"),
-        projects: projects.filter((p) => can("handoff_review") || p.project_manager === userId || p.director === userId),
-        tasks: [],
-      }).size > 0 || can("handoff_review")
-        ? myHomeownerHomes({ person: null, allHomes: true, projects: projects.filter((p) => can("handoff_review") || p.project_manager === userId || p.director === userId), tasks: [] })
-        : new Set<string>();
+      return myHomeownerHomes({ person: userId, allHomes: can("handoff_review"), projects, tasks: [] });
     }
     return myHomeownerHomes({
       person: homeownerPerson,
