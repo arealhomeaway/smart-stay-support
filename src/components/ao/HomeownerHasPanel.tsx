@@ -18,12 +18,36 @@ import {
   homeownerCardGroups,
   sentForAnswer,
   type HasCardItem,
+  type HasFile,
   type HasGroup,
   type HasSentItem,
 } from "@/lib/homeowner-has";
 import { loadHomeProgram, loadHomeownerHas, loadTaskHomeownerLines } from "@/lib/homeowner-has.data";
 
 const VISIBLE_GROUPS: HasGroup[] = ["answer", "open", "waiting", "done"];
+
+/** File buttons for what the homeowner or the team attached. Opens a short-lived link. */
+export function ProofFiles({ files }: { files: HasFile[] }) {
+  const fileUrl = useServerFn(attachmentUrlFn);
+  if (files.length === 0) return null;
+  const open = async (id: string) => {
+    try {
+      const { url } = await fileUrl({ data: { documentId: id } });
+      window.open(url, "_blank", "noopener");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "That file could not open.");
+    }
+  };
+  return (
+    <div className="flex flex-wrap gap-2 pt-1">
+      {files.map((f) => (
+        <Button key={f.id} type="button" variant="outline" size="sm" className="min-h-11" onClick={() => void open(f.id)}>
+          <FileText className="size-4" aria-hidden="true" /> {f.name}
+        </Button>
+      ))}
+    </div>
+  );
+}
 
 function GroupList({ group, items }: { group: HasGroup; items: HasCardItem[] }) {
   return (
@@ -37,6 +61,14 @@ function GroupList({ group, items }: { group: HasGroup; items: HasCardItem[] }) 
             <li key={i.id} className="px-3 py-2 text-sm">
               <p className="font-medium">{i.title}</p>
               <p className={group === "answer" ? "text-xs font-medium text-warning-ink" : "text-xs text-muted-foreground"}>{i.line}</p>
+              {i.proof ? (
+                <div className="mt-1 space-y-0.5" aria-label="What the homeowner sent">
+                  {i.proof.lines.map((l, n) => (
+                    <p key={n} className="whitespace-pre-wrap text-xs text-foreground">{l}</p>
+                  ))}
+                  <ProofFiles files={i.proof.files} />
+                </div>
+              ) : null}
             </li>
           ))}
         </ul>
