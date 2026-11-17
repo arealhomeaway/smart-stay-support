@@ -12,16 +12,16 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { canAcceptHandoff, canMarkHomeReady } from "./home-context";
 import { homeownerApprovalRequired } from "./owner-dependency";
 import { unretiredOwnerWork } from "./owner-activity-queries";
+import { isRetiredRoleCode } from "./designer-role";
+
+const RETIRED_ROLE_MESSAGE = "Choose Designer. Lead Designer, Design and Staging Team are no longer roles.";
 
 export const FUNCTIONAL_ROLES = [
   { code: "onboarding_director", label: "Director of Onboarding" },
   { code: "onboarding_manager", label: "Onboarding Manager" },
   { code: "onboarding_project_manager", label: "Project Manager" },
   { code: "utilities", label: "Onboarding Utilities Coordinator" },
-  { code: "lead_designer", label: "Lead Designer" },
   { code: "designer", label: "Designer" },
-  { code: "staging_team", label: "Staging Team" },
-  { code: "design_staging", label: "Design & Staging (older steps)" },
   { code: "director_ops", label: "Operations Director" },
   { code: "operations_director", label: "Director of Operations" },
   { code: "ops_supervisor", label: "Operations Supervisor" },
@@ -30,7 +30,11 @@ export const FUNCTIONAL_ROLES = [
   { code: "owner", label: "Owner" },
 ] as const;
 
+/** Retired codes still read in history: the older Designer codes show as Designer. */
+const RETIRED_ROLE_LABELS: Record<string, string> = { lead_designer: "Designer", design_staging: "Designer", staging_team: "Staging Team" };
+
 export function roleLabel(code: string | null | undefined) {
+  if (code && RETIRED_ROLE_LABELS[code]) return RETIRED_ROLE_LABELS[code];
   return FUNCTIONAL_ROLES.find((r) => r.code === code)?.label ?? (code ? code.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "Unassigned");
 }
 
@@ -163,7 +167,7 @@ export const saveTemplateStepV2 = createServerFn({ method: "POST" })
         title: z.string().trim().min(3).max(200).optional(),
         detail: z.string().trim().max(5000).nullable().optional(),
         breezewayTemplateId: z.string().trim().max(80).nullable().optional(),
-        functionalRole: z.string().trim().max(60).nullable(),
+        functionalRole: z.string().trim().max(60).nullable().refine((v) => !isRetiredRoleCode(v), RETIRED_ROLE_MESSAGE),
         isRequired: z.boolean(),
         blocksHandoff: z.boolean(),
         isActive: z.boolean(),
@@ -233,7 +237,7 @@ const bulkTemplatePatchSchema = z
       })
       .optional(),
     offsetUnit: z.enum(["calendar", "business"]).optional(),
-    functionalRole: z.string().trim().max(60).nullable().optional(),
+    functionalRole: z.string().trim().max(60).nullable().optional().refine((v) => !isRetiredRoleCode(v), RETIRED_ROLE_MESSAGE),
     isRequired: z.boolean().optional(),
     blocksHandoff: z.boolean().optional(),
     stage: z.string().trim().min(1).max(80).optional(),

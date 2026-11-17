@@ -75,7 +75,7 @@ export function HomeVendorsTab({ propertyId, extra }: { propertyId: string; extr
           <p className="surface p-4 text-sm text-muted-foreground">No vendors for this home yet.</p>
         ) : (
           <>
-            <VendorGroup title="Stagers" rows={stagers} />
+            <VendorGroup title="Stager" rows={stagers} />
             <VendorGroup title="Set on this home" rows={onHome} />
             <VendorGroup title={vendors.data?.market ? `In ${vendors.data.market}` : "In this market"} rows={market} />
           </>

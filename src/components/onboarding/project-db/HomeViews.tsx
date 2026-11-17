@@ -158,7 +158,7 @@ export function WorkloadView({ rows }: { rows: HomeRow[] }) {
     <div className="space-y-5" aria-label="Workload">
       <div className="grid gap-6 lg:grid-cols-2">
         <Bars title="Project Managers" rows={w.pms} />
-        <Bars title="Stagers" rows={w.stagers} />
+        <Bars title="Stager" rows={w.stagers} />
       </div>
     </div>
   );

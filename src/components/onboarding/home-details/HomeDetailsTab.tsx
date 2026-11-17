@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CodeValues, useProfileContext, type HomeProfileData } from "@/components/property/HomeProfileTab";
 import { CorrectCommittedDate, SetOnceButton } from "@/components/onboarding/board/HomeBoard";
 import { getPropertyHubFn } from "@/lib/property-hub.functions";
-import { readProjectTeam, setProjectRoleAssignee, setProjectStagingProvider } from "@/lib/onboarding-team.functions";
+import { readProjectTeam, setProjectRoleAssignee } from "@/lib/onboarding-team.functions";
 import { setProjectStagersFn } from "@/lib/onboarding-home.functions";
 import { saveCredentialFn } from "@/lib/credentials.functions";
 import { homeDetailsHistoryFn, saveHomeDetailFn } from "@/lib/home-details.functions";
@@ -167,7 +167,6 @@ export function HomeDetailsTab(p: HomeDetailsProps) {
 
   const save = useServerFn(saveHomeDetailFn);
   const setRole = useServerFn(setProjectRoleAssignee);
-  const setProvider = useServerFn(setProjectStagingProvider);
   const setStagers = useServerFn(setProjectStagersFn);
   const saveCode = useServerFn(saveCredentialFn);
   const refreshAll = () => {
@@ -258,19 +257,15 @@ export function HomeDetailsTab(p: HomeDetailsProps) {
           : null,
       });
     }
-    const stagerNames = (stagers.data?.linked ?? []).map((id) => stagers.data?.pool.find((o) => o.value === id)?.label ?? "Vendor");
+    // One Stager per home (Nov 17), picked from the staging vendors.
+    const stagerId = stagers.data?.linked[0] ?? null;
+    const stagerName = stagerId ? stagers.data?.pool.find((o) => o.value === stagerId)?.label ?? "Vendor" : null;
     out.push({
-      id: "stagers", section: "team", label: "Stagers", person: true, value: stagerNames.length ? stagerNames.join(", ") : null, change: noteChange("Stager"),
+      id: "stagers", section: "team", label: "Stager", person: true, value: stagerName, raw: stagerId, change: noteChange("Stager"),
       editor: can("stagers") && p.project.id
-        ? { kind: "multi", options: stagers.data?.pool ?? [], current: stagers.data?.linked ?? [], save: (ids) => setStagers({ data: { projectId: p.project.id!, vendorIds: ids } }) }
+        ? { kind: "choice", options: stagers.data?.pool ?? [], save: (v) => setStagers({ data: { projectId: p.project.id!, vendorIds: v ? [v] : [] } }) }
         : null,
     });
-    if (team.data) {
-      out.push({
-        id: "staging_provider", section: "team", label: "Staging provider (outside)", value: team.data.stagingProvider, raw: team.data.stagingProvider,
-        editor: team.data.canEdit && can("team_role") ? { kind: "text", save: (v) => setProvider({ data: { projectId: team.data!.projectId, provider: v } }) } : null,
-      });
-    }
 
     // Owner record
     out.push({ id: "legal_owner", section: "owner", label: "Legal owner", value: ownerLine?.legal || ownerRec?.name || null });

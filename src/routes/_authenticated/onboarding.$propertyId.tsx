@@ -46,6 +46,7 @@ import { HomeownerCard } from "@/components/property/HomeownerCard";
 
 import { ProjectScopePanel } from "@/components/onboarding/ProjectScopePanel";
 import { ProjectTeamPanel } from "@/components/onboarding/ProjectTeamPanel";
+import { homeDesigner } from "@/lib/designer-role";
 import { PropertyOpportunitiesPanel } from "@/components/onboarding/PropertyOpportunitiesPanel";
 import { PlanCsvButton } from "@/components/onboarding/PlanCsvButton";
 import { independentReadinessForTasks } from "@/lib/onboarding-independent-readiness";
@@ -145,7 +146,7 @@ import { listAttachmentsFn } from "@/lib/attachments.functions";
 import { documentCategoryLabel } from "@/lib/attachments";
 import { TaskDrawer, type SaveTaskInput } from "@/components/onboarding/TaskDrawer";
 import { useRole, ViewOnlyScope } from "@/hooks/useRole";
-import { ProjectStagersCard } from "@/components/onboarding/project-db/ProjectStagersCard";
+import { ProjectStagersCard, stagerLabel, useProjectStagers } from "@/components/onboarding/project-db/ProjectStagersCard";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { stateChip } from "@/lib/semantic";
 import { usDate, usDateTime } from "@/lib/dates";
@@ -495,6 +496,11 @@ function PropertyWorkspace() {
     queryFn: () => detailsViewerFn({ data: { propertyId } }),
   });
 
+  // One Stager per home (Nov 17): the vendor picked for this home, for the Overview team list.
+  const stagerProjectId =
+    (data?.projects ?? []).find((x) => x.property_id === propertyId && x.status !== "cancelled")?.id ?? null;
+  const homeStager = useProjectStagers(stagerProjectId);
+
   if (isLoading || !data) return <LoadingPage />;
   if (
     data.homeAccess === "full" &&
@@ -616,7 +622,6 @@ function PropertyWorkspace() {
   const details = (projectRow ?? {}) as ProjectDetails & {
     id?: string;
     role_assignments?: Record<string, string> | null;
-    staging_provider?: string | null;
     external_refs?: Record<string, string> | null;
   };
   const personName = (id: string | null | undefined) => {
@@ -645,7 +650,8 @@ function PropertyWorkspace() {
   const actualClosing = (current as { actual_closing_on?: string | null }).actual_closing_on ?? null;
   const homeName = formatPropertyLabel(current).primary;
   const designerId =
-    details.role_assignments?.["design_staging"] ?? details.role_assignments?.["lead_designer"] ?? details.role_assignments?.["designer"] ?? null;
+    homeDesigner(details.role_assignments);
+  const stagerName = stagerLabel(homeStager.data?.[0] ?? null);
   const isActiveOwnerHome = Boolean(activeOwner) || details.owner_type === "Active Owner";
 
   // 1.4: the stage comes from the Tasks; Status stays the PM's choice.
@@ -877,7 +883,7 @@ function PropertyWorkspace() {
               { role: "Project Manager", tag: teamTag(pmId, "director"), name: personName(pmId) },
               { role: "Designer", tag: teamTag(designerId, "designer"), name: personName(designerId) },
               { role: "Utilities", tag: teamTag(projectRow?.utility_manager, "utilities"), name: personName(projectRow?.utility_manager) },
-              { role: "Staging Team", tag: "director", name: details.staging_provider ?? null, outside: true },
+              { role: "Stager", tag: "director", name: stagerName, outside: true },
             ]}
             owner={{
               waitingOnUs: ownerSummary.waitingOnUs,
@@ -1096,7 +1102,7 @@ function PropertyWorkspace() {
             propertyId={current.id}
             extra={
               <details className="surface overflow-hidden">
-                <summary className="flex min-h-11 cursor-pointer items-center px-4 font-medium">Stagers, coverage and work sent from Tasks</summary>
+                <summary className="flex min-h-11 cursor-pointer items-center px-4 font-medium">Stager, coverage and work sent from Tasks</summary>
                 <div className="space-y-4 border-t border-border p-4">
                   <ProjectStagersCard projectId={projectRow?.id ?? null} />
                   <VendorCoveragePanel propertyId={current.id} />
@@ -1361,9 +1367,7 @@ const NEW_TASK_ROLES = [
   { code: "onboarding_manager", label: "Onboarding Manager" },
   { code: "onboarding_project_manager", label: "Project Manager" },
   { code: "utilities", label: "Utilities" },
-  { code: "lead_designer", label: "Lead Designer" },
   { code: "designer", label: "Designer" },
-  { code: "staging_team", label: "Staging Team" },
 ] as const;
 
 function NewTaskDialog({

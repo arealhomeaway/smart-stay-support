@@ -32,9 +32,7 @@ export const saveOnboardingTaskFn = createServerFn({ method: "POST" })
             "onboarding_manager",
             "onboarding_project_manager",
             "utilities",
-            "lead_designer",
             "designer",
-            "staging_team",
           ])
           .nullable()
           .optional(),

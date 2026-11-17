@@ -16,7 +16,7 @@ import { FUNCTIONAL_ROLES } from "@/lib/v2-workflow.functions";
 import { readStepReviewSettings, saveStepReviewSettings } from "@/lib/onboarding-reviews.functions";
 import { BLOCK_OPTIONS, type StepReviewSettings } from "@/lib/onboarding-reviews";
 
-const ROLE_CHOICES = FUNCTIONAL_ROLES.filter((r) => r.code !== "owner" && r.code !== "director_onboarding" && r.code !== "design_staging");
+const ROLE_CHOICES = FUNCTIONAL_ROLES.filter((r) => r.code !== "owner" && r.code !== "director_onboarding");
 
 export function StepReviewSection({ stepId, steps, stages }: { stepId: string; steps: { id: string; title: string; stage: string }[]; stages: string[] }) {
   const qc = useQueryClient();

@@ -214,7 +214,7 @@ export function AddHomePanel(p: {
       }
       if (projectId && team.stagers.length) {
         try {
-          await setStagers({ data: { projectId, vendorIds: team.stagers } });
+          await setStagers({ data: { projectId, vendorIds: team.stagers.slice(0, 1) } });
         } catch (e) {
           problems.push(`Stager not set: ${e instanceof Error ? e.message : "try again"}`);
         }
@@ -340,23 +340,18 @@ export function AddHomePanel(p: {
                 <PersonSelect id="t-util" label="Utilities" value={team.utilities} options={p.pickers.utilities} onChange={(v) => setTeam((t) => ({ ...t, utilities: v }))} />
               </div>
               {!p.lead ? <p className="text-sm text-muted-foreground">The Director of Onboarding sets the Designer and Stager.</p> : null}
-              {p.lead ? <fieldset className="space-y-1">
-                <legend className="text-sm font-medium">Stager</legend>
-                {p.pickers.stager.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No staging vendors yet.</p>
+              {p.lead ? (
+                p.pickers.stager.length === 0 ? (
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Stager</p>
+                    <p className="text-sm text-muted-foreground">No staging vendors yet.</p>
+                  </div>
                 ) : (
-                  <ul className="grid gap-1 sm:grid-cols-2">
-                    {p.pickers.stager.map((v) => (
-                      <li key={v.id}>
-                        <label className="flex min-h-11 items-center gap-2 text-sm">
-                          <Checkbox checked={team.stagers.includes(v.id)} onCheckedChange={(on) => setTeam((t) => ({ ...t, stagers: on ? [...t.stagers, v.id] : t.stagers.filter((x) => x !== v.id) }))} />
-                          {v.name}
-                        </label>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </fieldset> : null}
+                  <div className="sm:max-w-[50%]">
+                    <PersonSelect id="t-stager" label="Stager" value={team.stagers[0] ?? ""} options={p.pickers.stager} onChange={(v) => setTeam((t) => ({ ...t, stagers: v ? [v] : [] }))} />
+                  </div>
+                )
+              ) : null}
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field id="d-close" label="Planned closing" type="date" value={dates.closing} onChange={(v) => setDates((d) => ({ ...d, closing: v }))} />
                 <Field id="d-handoff" label="Target handoff" type="date" value={dates.handoff} onChange={(v) => setDates((d) => ({ ...d, handoff: v }))} />
@@ -399,7 +394,7 @@ export function AddHomePanel(p: {
                 <dt className="text-muted-foreground">Director</dt><dd>{nameOf(p.pickers.director.length ? p.pickers.director : p.directorDefault ? [p.directorDefault] : [], team.director)}</dd>
                 <dt className="text-muted-foreground">Designer</dt><dd>{nameOf(p.pickers.designer, team.designer)}</dd>
                 <dt className="text-muted-foreground">Utilities</dt><dd>{nameOf(p.pickers.utilities, team.utilities)}</dd>
-                <dt className="text-muted-foreground">Stager</dt><dd>{team.stagers.length ? team.stagers.map((id) => nameOf(p.pickers.stager, id)).join(", ") : "Not assigned yet"}</dd>
+                <dt className="text-muted-foreground">Stager</dt><dd>{team.stagers[0] ? nameOf(p.pickers.stager, team.stagers[0]) : "Not assigned yet"}</dd>
                 <dt className="text-muted-foreground">Closing</dt><dd className="numeric">{dates.closing || "Not set"}</dd>
                 <dt className="text-muted-foreground">Target handoff</dt><dd className="numeric">{dates.handoff || "Not set"}</dd>
                 <dt className="text-muted-foreground">Scope</dt><dd>{FURNISHING_SCOPES.find((f) => f.value === scope)?.label}</dd>

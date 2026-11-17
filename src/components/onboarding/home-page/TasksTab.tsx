@@ -60,12 +60,10 @@ type Person = { id: string; full_name: string | null; email: string | null; role
 
 const ADD_ROLES = [
   { code: "onboarding_project_manager", label: "Project Manager" },
-  { code: "lead_designer", label: "Lead Designer" },
   { code: "designer", label: "Designer" },
   { code: "utilities", label: "Utilities" },
   { code: "onboarding_manager", label: "Onboarding Manager" },
   { code: "onboarding_director", label: "Director of Onboarding" },
-  { code: "staging_team", label: "Staging Team" },
 ] as const;
 
 export function TasksTab(p: {

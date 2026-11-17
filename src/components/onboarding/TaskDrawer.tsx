@@ -1020,5 +1020,5 @@ export function TaskDrawer({
 
 /** The onboarding roles a Task can be assigned to (the same list Edit selected offers). */
 const DRAWER_ROLES = FUNCTIONAL_ROLES.filter((r) =>
-  ["onboarding_director", "onboarding_manager", "onboarding_project_manager", "utilities", "lead_designer", "designer", "staging_team"].includes(r.code),
+  ["onboarding_director", "onboarding_manager", "onboarding_project_manager", "utilities", "designer"].includes(r.code),
 );

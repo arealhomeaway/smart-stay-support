@@ -7,7 +7,8 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { FILTER_KEYS, HOME_VIEWS, OPTIONAL_COLUMNS } from "@/lib/onboarding-home";
 
-const DESIGNER_ROLE = "lead_designer";
+// One Designer per home (Nov 17): the picker saves the same code Tasks route by.
+import { DESIGNER_ROLE, homeDesigner } from "@/lib/designer-role";
 const ROLE_CODE = { pm: "onboarding_project_manager", designer: DESIGNER_ROLE, utilities: "utilities" } as const;
 
 export const getOnboardingHomeFn = createServerFn({ method: "GET" })
@@ -112,7 +113,7 @@ export const assignFromListFn = createServerFn({ method: "POST" })
     if (readError || !before) throw new Error("That onboarding project was not found.");
     const assignments = (before.role_assignments ?? {}) as Record<string, string>;
     const previous =
-      data.role === "pm" ? before.project_manager : data.role === "utilities" ? before.utility_manager : assignments[DESIGNER_ROLE] ?? null;
+      data.role === "pm" ? before.project_manager : data.role === "utilities" ? before.utility_manager : homeDesigner(assignments);
     type TeamRpc = (n: string, a: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
     const rpc = context.supabase.rpc.bind(context.supabase) as unknown as TeamRpc;
     const r = await rpc("set_onboarding_project_role", {
@@ -125,10 +126,10 @@ export const assignFromListFn = createServerFn({ method: "POST" })
     return { ok: true as const, previous: previous ?? null };
   });
 
-/** 3.2 Stagers are vendors: the full list for one project (Director, Admin), through the staged function. */
+/** 3.2 The Stager is one vendor per home (Nov 17): empty clears it (Director, Admin), through the database function. */
 export const setProjectStagersFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ projectId: z.string().uuid(), vendorIds: z.array(z.string().uuid()).max(10) }).parse(d))
+  .inputValidator((d: unknown) => z.object({ projectId: z.string().uuid(), vendorIds: z.array(z.string().uuid()).max(1, "A home has one stager.") }).parse(d))
   .handler(async ({ context, data }) => {
     const { assertLead, callStaged } = await import("./onboarding-home.server");
     await assertLead(context.supabase, context.userId);

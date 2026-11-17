@@ -399,7 +399,10 @@ export function dueExplanation(task: WorkflowTask): string | null {
 const ROLE_NAMES: Record<string, string> = {
   onboarding_project_manager: "Project Manager",
   onboarding_director: "Onboarding Director",
-  design_staging: "Design",
+  designer: "Designer",
+  // Older Designer codes, read only until moved.
+  lead_designer: "Designer",
+  design_staging: "Designer",
   utilities: "Utilities",
   // Compatibility for older role keys still present in history.
   project_manager: "Project Manager",

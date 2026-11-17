@@ -10,6 +10,8 @@ export type DirectorCreatableRole = (typeof DIRECTOR_CREATABLE_ROLES)[number];
 export const ONBOARDING_POOL_CODES = new Set([
   "onboarding_project_manager",
   "utilities",
+  "designer",
+  // Older Designer pool, kept so scope reads the same before and after the move.
   "design_staging",
 ]);
 

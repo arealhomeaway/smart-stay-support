@@ -10,6 +10,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { formatPropertyLabel } from "@/lib/property-label";
+import { DESIGNER_KEYS } from "@/lib/designer-role";
 import { readCountedRows } from "@/lib/read-all-rows";
 import { centralToday, daysBetween } from "@/lib/onboarding-board";
 import { computedStage, effectiveOwner, scheduleHealth, type PageTask } from "@/lib/onboarding-home-page";
@@ -57,8 +58,9 @@ export async function assertLead(supabase: Client, userId: string) {
   return a;
 }
 
-const DESIGN_KEYS = ["design_staging", "lead_designer", "designer"] as const;
-const DESIGN_ROLE_CODES = ["design_staging", "lead_designer", "designer"];
+// One Designer per home (Nov 17): read the designer key first; older keys only until moved.
+const DESIGN_KEYS = DESIGNER_KEYS;
+const DESIGN_ROLE_CODES = [...DESIGNER_KEYS];
 const PM_SEATS = new Set(["onboarding_project_manager", "project_manager"]);
 
 type ProjectRow = {

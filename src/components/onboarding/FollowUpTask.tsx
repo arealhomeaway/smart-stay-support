@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { saveOnboardingTaskFn } from "@/lib/onboarding.functions";
 import type { WorkflowTask } from "@/lib/onboarding-workflow";
 
-type Seat = "onboarding_director" | "onboarding_manager" | "onboarding_project_manager" | "utilities" | "lead_designer" | "designer" | "staging_team";
+type Seat = "onboarding_director" | "onboarding_manager" | "onboarding_project_manager" | "utilities" | "designer";
 
 /** The line that links a follow-up to the Task it came from. */
 export const followUpLine = (title: string) => `Follow-up from: ${title}`;

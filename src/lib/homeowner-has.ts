@@ -184,7 +184,7 @@ export function senderRole(input: { appRoles: readonly string[]; roleCodes: read
   if (input.appRoles.includes("admin")) return "Admin";
   if (has("onboarding_project_manager", "project_manager")) return "Project Manager";
   if (has("utilities")) return "Utilities";
-  if (has("design_staging", "designer", "lead_designer", "design")) return "Design";
+  if (has("design_staging", "designer", "lead_designer", "design")) return "Designer";
   if (has("finance_lead")) return "Finance lead";
   if (input.appRoles.includes("tech")) return "Property Coordinator";
   if (input.appRoles.includes("onboarding")) return "Onboarding team";

@@ -222,8 +222,9 @@ function OnboardingHome() {
       let undo: () => Promise<unknown>;
       if (c.role === "stager") {
         const before = r.team.stagers.map((s) => s.id);
-        await setStagers({ data: { projectId: r.projectId, vendorIds: [...before, c.person.id] } });
-        undo = () => setStagers({ data: { projectId: r.projectId!, vendorIds: before } });
+        // One Stager per home (Nov 17): picking one replaces any other.
+        await setStagers({ data: { projectId: r.projectId, vendorIds: [c.person.id] } });
+        undo = () => setStagers({ data: { projectId: r.projectId!, vendorIds: before.slice(0, 1) } });
       } else {
         const res = await assign({ data: { projectId: r.projectId, role: c.role, userId: c.person.id } });
         undo = () => assign({ data: { projectId: r.projectId!, role: c.role as "pm", userId: res.previous } });

@@ -180,7 +180,5 @@ export const ASSIGN_ROLES = [
   "onboarding_manager",
   "onboarding_project_manager",
   "utilities",
-  "lead_designer",
   "designer",
-  "staging_team",
 ] as const;

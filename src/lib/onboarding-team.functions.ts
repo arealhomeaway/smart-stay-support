@@ -3,7 +3,7 @@ import { formatPropertyLabel } from "@/lib/property-label";
  * Onboarding team management: a departmental view over the SAME functional
  * role architecture used everywhere else.
  *  - Onboarding Director: the single `functional_roles` seat.
- *  - Project Managers / Utilities / Design & Staging: pools
+ *  - Project Managers / Utilities / Designer: pools
  *    (`functional_role_members`) — who is AVAILABLE, never who gets work.
  *  - Each project's Project Team (onboarding_projects: project_manager,
  *    utility_manager, role_assignments) decides the person per role; the
@@ -15,8 +15,10 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assignablePeople } from "@/lib/assignable-people";
 import { projectTeamRefusal } from "@/lib/onboarding-team-rules";
+import { DESIGNER_ROLE, canonicalRoleCode, homeDesigner, isRetiredRoleCode } from "@/lib/designer-role";
 
-const POOL_ROLES = ["onboarding_project_manager", "utilities", "design_staging"] as const;
+// One Designer per home (Nov 17): the single designer pool; older Designer codes read as designer.
+const POOL_ROLES = ["onboarding_project_manager", "utilities", "designer"] as const;
 const OPERATIONS_OWNED = new Set(["property_coordinator", "owner"]);
 
 type Ctx = { supabase: import("@supabase/supabase-js").SupabaseClient; userId: string };
@@ -77,7 +79,7 @@ export const readOnboardingTeam = createServerFn({ method: "POST" })
         .select("functional_role")
         .in("template_id", templateIds)
         .eq("is_active", true);
-      used = new Set((data ?? []).map((r) => r.functional_role).filter((c): c is string => Boolean(c)));
+      used = new Set((data ?? []).map((r) => canonicalRoleCode(r.functional_role)).filter((c): c is string => Boolean(c)));
     }
 
     const roleMap = new Map<string, string[]>();
@@ -96,6 +98,7 @@ export const readOnboardingTeam = createServerFn({ method: "POST" })
       .filter(
         (r) =>
           r.active &&
+          !isRetiredRoleCode(r.code) &&
           !OPERATIONS_OWNED.has(r.code) &&
           r.code !== "onboarding_director" &&
           ((POOL_ROLES as readonly string[]).includes(r.code) ||
@@ -107,7 +110,7 @@ export const readOnboardingTeam = createServerFn({ method: "POST" })
       const r = all.find((x) => x.code === code)!;
       return {
         code,
-        name: code === "onboarding_project_manager" ? "Project Managers" : code === "design_staging" ? "Design" : r.name,
+        name: code === "onboarding_project_manager" ? "Project Managers" : r.name,
         members: (members.data ?? []).filter((m) => m.role_code === code).map((m) => m.user_id),
         required: used.has(code),
       };
@@ -242,7 +245,7 @@ export const readProjectTeam = createServerFn({ method: "POST" })
     const sb = context.supabase;
     const { data: project } = await sb
       .from("onboarding_projects")
-      .select("id, project_manager, utility_manager, role_assignments, template_version_id, staging_provider")
+      .select("id, project_manager, utility_manager, role_assignments, template_version_id")
       .eq("property_id", data.propertyId)
       .neq("status", "cancelled")
       .maybeSingle();
@@ -259,8 +262,8 @@ export const readProjectTeam = createServerFn({ method: "POST" })
     ]);
     const used = new Set<string>(POOL_ROLES);
     const steps = ((version.data?.snapshot as { steps?: { functional_role?: string | null }[] } | null)?.steps ?? []);
-    for (const s of steps) if (s.functional_role) used.add(s.functional_role);
-    for (const t of taskSeats.data ?? []) if (t.assigned_seat) used.add(t.assigned_seat);
+    for (const s of steps) if (s.functional_role) used.add(canonicalRoleCode(s.functional_role));
+    for (const t of taskSeats.data ?? []) if (t.assigned_seat) used.add(canonicalRoleCode(t.assigned_seat));
     const all = roles.data ?? [];
     const assignments = (project.role_assignments ?? {}) as Record<string, string>;
     const profile = new Map((profiles.data ?? []).map((p) => [p.id, p]));
@@ -268,6 +271,7 @@ export const readProjectTeam = createServerFn({ method: "POST" })
       .filter(
         (r) =>
           r.active &&
+          !isRetiredRoleCode(r.code) &&
           used.has(r.code) &&
           r.team === "onboarding" &&
           !OPERATIONS_OWNED.has(r.code) &&
@@ -275,15 +279,18 @@ export const readProjectTeam = createServerFn({ method: "POST" })
       )
       .map((r) => {
         const column = projectRoleColumn(r.code);
-        const assignee = column ? (project[column] as string | null) : (assignments[r.code] ?? null);
+        const assignee = column
+          ? (project[column] as string | null)
+          : r.code === DESIGNER_ROLE
+            ? homeDesigner(assignments)
+            : (assignments[r.code] ?? null);
         const pool = (members.data ?? [])
           .filter((m) => m.role_code === r.code)
           .map((m) => m.user_id);
         if (assignee && !pool.includes(assignee)) pool.push(assignee);
         return {
           code: r.code,
-          // Staging is an external provider (see staging_provider); this internal role is Design.
-          name: r.code === "onboarding_project_manager" ? "Primary Project Manager" : r.code === "design_staging" ? "Design" : r.name,
+          name: r.code === "onboarding_project_manager" ? "Primary Project Manager" : r.name,
           assignee,
           pool: pool.map((id) => ({
             id,
@@ -292,7 +299,7 @@ export const readProjectTeam = createServerFn({ method: "POST" })
           })),
         };
       });
-    return { projectId: project.id, canEdit, roles: list, stagingProvider: (project.staging_provider as string | null) ?? null };
+    return { projectId: project.id, canEdit, roles: list };
   });
 
 /** The Director (or leadership) takes any Onboarding Task directly. */
@@ -319,30 +326,8 @@ export const takeOnboardingTask = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
-/** Interim, informational only: the external staging provider planned for one project. Never a user; routes nothing. */
-export const setProjectStagingProvider = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ projectId: z.string().uuid(), provider: z.string().trim().max(200).nullable() }).parse(d),
-  )
-  .handler(async ({ data, context }) => {
-    await assertCanManage(context as unknown as Ctx);
-    // Write as the signed-in user so normal RLS and project triggers apply.
-    const sb = context.supabase;
-    const { data: project } = await sb.from("onboarding_projects").select("id, staging_provider").eq("id", data.projectId).maybeSingle();
-    if (!project) throw new Error("That onboarding project was not found.");
-    const next = data.provider ? data.provider : null;
-    const { error } = await sb.from("onboarding_projects").update({ staging_provider: next }).eq("id", data.projectId);
-    if (error) throw new Error(error.message);
-    const db = await admin();
-    await db.from("audit_log").insert({
-      actor_id: context.userId,
-      action: "onboarding.staging_provider_changed",
-      entity_type: "onboarding_project",
-      entity_id: data.projectId,
-      entity_label: "Staging Provider",
-      before_value: { staging_provider: project.staging_provider },
-      after_value: { staging_provider: next },
-    } as never);
-    return { ok: true as const };
-  });
+/*
+ * The free-text "Staging provider (outside)" field is retired (Nov 17): the Stager is one vendor
+ * per home. onboarding_projects.staging_provider and its history stay in the database; nothing
+ * shows or saves it.
+ */

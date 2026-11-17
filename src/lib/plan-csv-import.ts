@@ -29,10 +29,7 @@ const ROLE_LABELS: Record<string, string> = {
   onboarding_manager: "Onboarding Manager",
   onboarding_project_manager: "Project Manager",
   utilities: "Onboarding Utilities Coordinator",
-  lead_designer: "Lead Designer",
   designer: "Designer",
-  staging_team: "Staging Team",
-  design_staging: "Design & Staging (older steps)",
 };
 function roleCode(v: string): string | null | "invalid" {
   const s = v.trim();
@@ -46,7 +43,14 @@ function roleCode(v: string): string | null | "invalid" {
     "onboarding director": "onboarding_director",
     "utilities coordinator": "utilities",
     utilities: "utilities",
-    design: "design_staging",
+    // One Designer per home (Nov 17): every older Designer label maps to designer.
+    "lead designer": "designer",
+    design: "designer",
+    "design & staging": "designer",
+    "design and staging": "designer",
+    "design & staging (older steps)": "designer",
+    lead_designer: "designer",
+    design_staging: "designer",
   };
   return hit?.[0] ?? legacy[s.toLowerCase()] ?? "invalid";
 }

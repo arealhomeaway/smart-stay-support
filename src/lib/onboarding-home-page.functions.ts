@@ -13,7 +13,7 @@ const whose = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("you") }),
   z.object({
     kind: z.literal("role"),
-    role: z.enum(["onboarding_director", "onboarding_manager", "onboarding_project_manager", "utilities", "lead_designer", "designer", "staging_team"]),
+    role: z.enum(["onboarding_director", "onboarding_manager", "onboarding_project_manager", "utilities", "designer"]),
   }),
   z.object({ kind: z.literal("person"), personId: z.string().uuid() }),
   z.object({ kind: z.literal("homeowner") }),
