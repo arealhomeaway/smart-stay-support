@@ -671,7 +671,7 @@ function OppCard({
         {kind === "done" ? (
           <p className="numeric text-sm text-portal-muted">
             {completedLine(item.completedAt ?? null, minutes)}
-            {item.source === "plan" || item.source === "review" ? ` · ${answerReviewLine(null)}` : ""}
+            {` · ${answerReviewLine(null)}`}
           </p>
         ) : item.summary ? (
           <p className="line-clamp-1 text-sm text-portal-muted">{item.summary}</p>
