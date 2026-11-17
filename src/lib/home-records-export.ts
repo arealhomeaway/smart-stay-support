@@ -18,7 +18,13 @@ function fit(text: string, font: PDFFont, size: number, width: number): string {
   return `${t}...`;
 }
 
-export async function homeRecordPdf(home: string, month: string, lines: RecordLine[], generatedOn = new Date()): Promise<Uint8Array> {
+export async function homeRecordPdf(
+  home: string,
+  month: string,
+  lines: RecordLine[],
+  opts: { onboardingHome: boolean; generatedOn?: Date } = { onboardingHome: false },
+): Promise<Uint8Array> {
+  const generatedOn = opts.generatedOn ?? new Date();
   const pdf = await PDFDocument.create();
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
@@ -90,6 +96,8 @@ export async function homeRecordPdf(home: string, month: string, lines: RecordLi
   const heads = ["Date", "What it was", "Ticket or Task", "Vendor", "Amount", "Billed to", "Approval", "Status"];
   for (const s of SECTIONS) {
     const own = sorted.filter((l) => l.section === s.key);
+    // Onboarding costs show for homes in onboarding, as on screen.
+    if (s.key === "onboarding" && !opts.onboardingHome && !own.length) continue;
     room(48);
     text(s.label, 38, 11, bold, navy);
     y -= 14;

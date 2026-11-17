@@ -61,7 +61,7 @@ function HomeRecordPage() {
     setBusy(true);
     setFailed(false);
     try {
-      downloadExport(`${fileStem(label, month)}.pdf`, "application/pdf", await homeRecordPdf(label, month, lines));
+      downloadExport(`${fileStem(label, month)}.pdf`, "application/pdf", await homeRecordPdf(label, month, lines, { onboardingHome: home?.kind === "onboarding" }));
     } catch {
       setFailed(true);
     } finally {
