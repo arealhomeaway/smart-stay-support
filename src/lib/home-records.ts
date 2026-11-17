@@ -126,7 +126,7 @@ export function monthLabel(month: string): string {
 export function monthRange(month: string): { from: string; to: string; firstDay: string; nextFirstDay: string } {
   const firstDay = `${month}-01`;
   const nextFirstDay = `${shiftMonth(month, 1)}-01`;
-  return { from: centralInstant(firstDay, 0).toISOString(), to: centralInstant(nextFirstDay, 0).toISOString(), firstDay, nextFirstDay };
+  return { from: centralInstant(firstDay, 0), to: centralInstant(nextFirstDay, 0), firstDay, nextFirstDay };
 }
 export function isValidMonth(v: unknown): v is string {
   return typeof v === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(v);
