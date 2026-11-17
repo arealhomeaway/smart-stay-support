@@ -645,7 +645,8 @@ function OppCard({
 }: { item: Item; kind: "open" | "done"; homeLine: string; today: string; minutes: number; onOpen: () => void }) {
   const group = portalGroupForItem(item);
   const answer = boardGroup(item) === "answer";
-  const chip = answer ? answerChip(item, today) : null;
+  // A finished item never shows an Overdue chip (Admin, Nov 17).
+  const chip = answer && kind !== "done" ? answerChip(item, today) : null;
   return (
     <li className="flex gap-4 rounded-[14px] border border-portal-border bg-card p-3">
       <img src={item.cover} alt="" loading="lazy" width={128} height={96} className="h-24 w-32 shrink-0 rounded-[10px] object-cover" />

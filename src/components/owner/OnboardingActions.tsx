@@ -89,7 +89,7 @@ function ActionCard({
 }) {
   const [note, setNote] = useState("");
   const decidable = action.canRespond && !readOnly && Boolean(action.publicationId);
-  const deadline = deadlineState(action.dueOn);
+  const deadline = deadlineState(action.dueOn, new Date(), Boolean(action.decidedAt));
 
   return (
     <div className="rounded-xl border border-border p-4">
