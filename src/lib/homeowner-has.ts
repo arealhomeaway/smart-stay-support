@@ -7,6 +7,7 @@
  */
 import { isArhaSetupStep, planCardOptional } from "@/lib/owner-opportunity-board";
 import { entriesForCard, hoursFromMinutes, portalOpensWhen, type HourEntry } from "@/lib/owner-portal-look";
+import { parseOutputFields } from "@/lib/ao-ui";
 
 const CENTRAL = "America/Chicago";
 
@@ -68,9 +69,19 @@ export type HasPlanCard = {
   ownerCompletedAt: string | null;
   createdAt: string | null;
   ownerReviewId: string | null;
+  /** The card's answer fields (library output_fields), to label what the homeowner sent. */
+  outputFields?: unknown;
+  /** What the homeowner sent, when the reader may see it. */
+  submission?: CardSubmission | null;
 };
 
-export type HasCardItem = { id: string; title: string; line: string; changedAt: string };
+/** The homeowner's saved answer on a plan card (ao_contributions). */
+export type CardSubmission = { values: Record<string, unknown>; files: HasFile[]; submittedAt: string };
+
+/** What the homeowner sent, read for staff: proof lines and files on a finished card. */
+export type HasProof = { lines: string[]; files: HasFile[] };
+
+export type HasCardItem = { id: string; title: string; line: string; changedAt: string; proof?: HasProof };
 export type HasCardGroups = Record<HasGroup, HasCardItem[]>;
 
 export const HIDDEN_REASON = {
@@ -83,6 +94,34 @@ export const HIDDEN_REASON = {
 
 const latest = (...values: (string | null | undefined)[]) =>
   values.filter((v): v is string => Boolean(v)).sort().at(-1) ?? "";
+
+const fieldValue = (type: string, v: unknown): string => {
+  if (v === null || v === undefined) return "";
+  if (type === "yes_no") return v === true || v === "yes" ? "Yes" : v === false || v === "no" ? "No" : String(v);
+  return String(v).trim();
+};
+
+/** "Provider: AT&T", one per answered field, in the card's own field order. */
+export function submissionLines(outputFields: unknown, sub: CardSubmission | null | undefined): string[] {
+  if (!sub) return [];
+  const fields = parseOutputFields(outputFields);
+  const known = new Set(fields.map((f) => f.key));
+  const out = fields.map((f) => ({ label: f.label, value: fieldValue(f.type, sub.values[f.key]) })).filter((x) => x.value);
+  // Values whose field was later renamed still show, under their saved key.
+  for (const [k, v] of Object.entries(sub.values)) if (!known.has(k) && fieldValue("text", v)) out.push({ label: k.replace(/_/g, " "), value: fieldValue("text", v) });
+  return out.map((x) => `${x.label}: ${x.value}`);
+}
+
+/** One short line of the answer, for lists: "Provider: AT&T · Speed: 500 Mbps". */
+export function submissionSummary(outputFields: unknown, sub: CardSubmission | null | undefined): string {
+  const text = submissionLines(outputFields, sub).join(" · ").replace(/\s+/g, " ").trim();
+  return text.length > 160 ? `${text.slice(0, 159).trimEnd()}…` : text;
+}
+
+/** "Hours: 2.7 hrs on 11/14/2026", one per saved entry for the card. */
+export function hourProofLines(entries: HourEntry[]): string[] {
+  return entries.map((e) => `Hours: ${hoursFromMinutes(Number(e.minutes) || 0)} hrs${e.entry_date ? ` on ${centralDay(e.entry_date)}` : ""}`);
+}
 
 /** Which group one card sits in, and its line. Same reading as the homeowner portal. */
 export function cardPlacement(
@@ -113,18 +152,20 @@ export function homeownerCardGroups(
 ): HasCardGroups {
   const out: HasCardGroups = { answer: [], open: [], waiting: [], done: [], hidden: [] };
   for (const c of cards) {
-    const minutes = c.ownerCompletedAt
-      ? entriesForCard(opts.hourEntries, { title: c.title, reviewId: c.ownerReviewId, propertyIds: [c.propertyId] }).reduce(
-          (sum, e) => sum + (e.minutes || 0),
-          0,
-        )
-      : 0;
+    const entries = c.ownerCompletedAt
+      ? entriesForCard(opts.hourEntries, { title: c.title, reviewId: c.ownerReviewId, propertyIds: [c.propertyId] })
+      : [];
+    const minutes = entries.reduce((sum, e) => sum + (e.minutes || 0), 0);
     const { group, line } = cardPlacement(c, { planOn: opts.planOn(c.propertyId), minutes });
+    const proof = group === "done"
+      ? { lines: [...submissionLines(c.outputFields, c.submission), ...hourProofLines(entries)], files: c.submission?.files ?? [] }
+      : undefined;
     out[group].push({
       id: c.id,
       title: c.title,
       line,
       changedAt: latest(c.ownerCompletedAt, c.expiredAt, c.unlockedAt, c.createdAt),
+      ...(proof && (proof.lines.length || proof.files.length) ? { proof } : {}),
     });
   }
   for (const g of Object.keys(out) as HasGroup[])
