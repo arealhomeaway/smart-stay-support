@@ -123,8 +123,7 @@ describe("whose homes", () => {
     expect([...set]).toEqual(["b"]);
   });
   it("counts waiting days by Central calendar day", () => {
-    expect(daysWaiting("2026-11-17T05:30:00Z", NOW)).toBe(0); // 11:30 PM Nov 16 Central is still Nov 16
-    expect(daysWaiting("2026-11-17T06:30:00Z", NOW)).toBe(0);
-    expect(daysWaiting("2026-11-17T04:30:00Z", NOW)).toBe(1);
+    expect(daysWaiting("2026-11-17T05:30:00Z", NOW)).toBe(1); // 11:30 PM Nov 16 Central
+    expect(daysWaiting("2026-11-17T06:30:00Z", NOW)).toBe(0); // 12:30 AM Nov 17 Central
   });
 });
