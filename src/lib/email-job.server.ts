@@ -52,7 +52,7 @@ export async function runEmailJob(
     }
   }
   if (deferred.length) {
-    results.deferred = deferred;
+    results["deferred"] = deferred;
     const saved = await db.rpc("record_email_job_part" as never, {
       _run_id: runId, _part: "deferred", _result: deferred, _errors: errors,
     } as never);
