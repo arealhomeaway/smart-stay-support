@@ -162,7 +162,7 @@ export function waitingRows(data: HomeownerStatusData, homes: ReadonlySet<string
   }
   for (const r of data.reviews) {
     if (!r.propertyId || !homes.has(r.propertyId) || !reviewWaiting(r)) continue;
-    out.push({ key: `review:${r.id}`, propertyId: r.propertyId, home: homeOf(data, r.propertyId), title: r.title, line: `Sent ${centralDay(r.sentAt)} · ${cap(`waiting ${dayWord(daysWaiting(r.sentAt, now))}`)}`.replace(" · Waiting", " · waiting"), overdue: false, taskId: r.taskId, at: r.sentAt ?? "" });
+    out.push({ key: `review:${r.id}`, propertyId: r.propertyId, home: homeOf(data, r.propertyId), title: r.title, line: `Sent ${centralDay(r.sentAt)} · waiting ${dayWord(daysWaiting(r.sentAt, now))}`, overdue: false, taskId: r.taskId, at: r.sentAt ?? "" });
   }
   for (const a of data.approvals) {
     if (!a.propertyId || !homes.has(a.propertyId) || !approvalWaiting(a)) continue;
