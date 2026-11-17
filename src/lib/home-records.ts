@@ -173,6 +173,8 @@ export type ExpenseRecoveryRow = {
 export type ApprovalRow = {
   id: string; entity_type: string | null; entity_id: string | null; property_id: string | null; title: string | null; amount: number | null;
   status: string | null; decided_at: string | null; requested_by: string | null; created_at: string;
+  /** The Task it was asked on is archived (set by the reader). */
+  task_archived?: boolean | undefined;
 };
 export type BudgetRow = { id: string; property_id: string | null; approved_amount: number | null; approved_by: string | null; approved_at: string | null; created_at: string };
 export type BudgetLineRow = {
@@ -431,9 +433,11 @@ const MAKE_READY = /make[\s-]?ready/i;
 export function approvalLine(a: ApprovalRow, ctx: LineContext): RecordLine {
   const status = (a.status ?? "").toLowerCase();
   const pending = status === "pending" || status === "requested" || status === "open" || status === "";
-  const stopped = status === "cancelled" || status === "withdrawn";
-  const link: LineLink | null =
-    a.entity_type === "onboarding_task" && a.entity_id && a.property_id
+  const archived = Boolean(a.task_archived);
+  const stopped = archived || status === "cancelled" || status === "withdrawn";
+  const link: LineLink | null = archived
+    ? null
+    : a.entity_type === "onboarding_task" && a.entity_id && a.property_id
       ? { kind: "task", propertyId: a.property_id, taskId: a.entity_id, label: "Task" }
       : a.entity_type === "ticket" && a.entity_id
         ? ticketLink(ctx, a.entity_id)
@@ -443,8 +447,8 @@ export function approvalLine(a: ApprovalRow, ctx: LineContext): RecordLine {
     date: dayOf(a.created_at), what: `Homeowner decision: ${a.title?.trim() || "Approval"}`, link, vendor: null,
     amount: num(a.amount), estimate: null, approved: null, paidBack: null, billedTo: null,
     approval: pending || stopped ? null : approvalText(`Homeowner ${status || "answered"}`, a.decided_at),
-    status: pending ? "pending" : stopped ? "na" : "known",
-    note: pending ? "Waiting on the homeowner" : stopped ? (status === "cancelled" ? "Cancelled" : "Withdrawn") : null,
+    status: stopped ? "na" : pending ? "pending" : "known",
+    note: archived ? "Its Task was archived" : pending ? "Waiting on the homeowner" : stopped ? (status === "cancelled" ? "Cancelled" : "Withdrawn") : null,
     fix: null, counts: NONE,
   };
 }

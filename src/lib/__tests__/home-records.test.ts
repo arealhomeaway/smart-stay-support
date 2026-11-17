@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { capabilitiesFor } from "@/lib/permissions";
 import {
-  CSV_HEADERS, breezewayLine, claimLine, expenseLine, homeSummaries, homeTotals, lastFullMonth, monthRange, refundLine, workOrderLine,
+  CSV_HEADERS, approvalLine, breezewayLine, claimLine, expenseLine, homeSummaries, homeTotals, lastFullMonth, monthRange, refundLine, workOrderLine,
   type BreezewayRow, type ClaimRow, type ExpenseRow, type LineContext, type RecordLine, type RefundRow, type WorkOrderRow,
 } from "@/lib/home-records";
 
@@ -95,6 +95,12 @@ describe("Monthly home records", () => {
     expect(homeSummaries(homes, lines, "onboarding").map((h) => h.propertyId)).toEqual(["c"]);
     expect(homeSummaries(homes, lines, "all")).toHaveLength(3);
     expect(homeSummaries(homes, lines, "all").find((h) => h.propertyId === "c")).toMatchObject({ lines: 0, missing: 0 });
+  });
+
+  it("an owner approval on an archived Task is Not applicable, not waiting on the homeowner", () => {
+    const a = { id: "a1", entity_type: "onboarding_task", entity_id: "task1", property_id: H, title: "Approve paint", amount: null, status: "pending", decided_at: null, requested_by: null, created_at: "2026-09-22T15:00:00Z" };
+    expect(approvalLine(a, ctx)).toMatchObject({ status: "pending", note: "Waiting on the homeowner" });
+    expect(approvalLine({ ...a, task_archived: true }, ctx)).toMatchObject({ status: "na", note: "Its Task was archived", link: null });
   });
 
   it("downloads carry no pay date (BN12)", () => {

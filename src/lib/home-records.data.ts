@@ -110,10 +110,13 @@ export async function loadMonthRecords(month: string): Promise<MonthRecords> {
     ...refunds.map((r) => r.approved_by), ...workOrders.map((w) => w.supervisor_approval_decided_by), ...claims.map((c) => c.approval_decided_by),
     ...expenses.map((e) => e.reviewed_by), ...budgets.map((b) => b.approved_by),
   ].filter((x): x is string => Boolean(x));
-  const [refs, roles] = await Promise.all([
+  const taskIds = approvals.filter((a) => a.entity_type === "onboarding_task" && a.entity_id).map((a) => a.entity_id as string);
+  const [refs, roles, tasks] = await Promise.all([
     chunked<{ id: string; ref: number | null }>("Tickets", ticketIds, (ids) => db.from("tickets").select("id, ref").in("id", ids)),
     roleLabels(people),
+    chunked<{ id: string; archived_at: string | null }>("Tasks", taskIds, (ids) => db.from("onboarding_tasks").select("id, archived_at").in("id", ids)),
   ]);
+  const archivedTasks = new Set(tasks.filter((t) => t.archived_at).map((t) => t.id));
   const ctx: LineContext = { ticketRefs: Object.fromEntries(refs.map((t) => [t.id, t.ref])), roles, vendorNames, expensesByTarget };
 
   // A correction replaces the row it corrects.
@@ -125,7 +128,7 @@ export async function loadMonthRecords(month: string): Promise<MonthRecords> {
     ...claims.map((c) => claimLine(c, ctx)),
     ...expenses.map((e) => expenseLine(e, ctx)),
     ...recoveries.filter((r) => !corrected.has(r.id)).map((r) => expenseRecoveryLine({ ...r, property_id: expenseById.get(r.expense_id)?.property_id ?? null })),
-    ...approvals.map((a) => approvalLine(a, ctx)),
+    ...approvals.map((a) => approvalLine({ ...a, task_archived: Boolean(a.entity_id && archivedTasks.has(a.entity_id)) }, ctx)),
     ...budgets.map((b) => budgetLine(b, ctx)),
     ...budgetItems.map((l) => budgetItemLine(l)),
     ...requests.map((f) => financialRequestLine(f)),
