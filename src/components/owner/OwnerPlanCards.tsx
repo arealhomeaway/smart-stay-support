@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Paperclip, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { SectionCard } from "@/components/ui/page";
+import { MultiFileUpload } from "@/components/MultiFileUpload";
+import { useOwnerCardUpload, type FileRef } from "@/components/owner/CompletedCardPanel";
 import { loadOwnerPlan, submitCard } from "@/lib/ao-data";
 import { ownerPace } from "@/lib/ao-engine";
 import {
@@ -44,30 +47,59 @@ export function PlanCardItem({ card, programId, readOnly }: { card: PortalPlanCa
       {view.kind === "open" ? (
         <>
           {card.what_text ? <p className="text-sm text-muted-foreground">{card.what_text}</p> : null}
-          <PlanCardForm planCardId={card.plan_card_id} programId={programId} fields={view.fields} readOnly={readOnly} />
+          <PlanCardForm planCardId={card.plan_card_id} programId={programId} propertyId={card.property_id ?? null} fields={view.fields} readOnly={readOnly} />
         </>
       ) : null}
     </div>
   );
 }
 
-export function PlanCardForm({ planCardId, programId, fields, readOnly }: { planCardId: string; programId: string; fields: OutputField[]; readOnly: boolean }) {
+/**
+ * The owner's answer on an open plan card. Text and files are kept on this device while she types
+ * (cleared once saved), so closing the panel or a failed save never loses them. Files use the owner
+ * upload path and save with the answer (ao_submit_card with files). A clear "Saved" or "Not saved"
+ * message follows each try.
+ */
+export function PlanCardForm({ planCardId, programId, propertyId = null, fields, readOnly }: { planCardId: string; programId: string; propertyId?: string | null; fields: OutputField[]; readOnly: boolean }) {
   const qc = useQueryClient();
+  const draftKey = `resolve.card-draft:${planCardId}`;
   const [values, setValues] = useState<Record<string, string>>({});
+  const [files, setFiles] = useState<FileRef[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [restored, setRestored] = useState(false);
+  const uploadOne = useOwnerCardUpload(propertyId);
+
+  // Restore a draft after hydration; then keep it current while she types.
+  useEffect(() => {
+    if (readOnly) { setRestored(true); return; }
+    const d = readCardDraft(draftKey);
+    if (d) { setValues(d.values); setFiles(d.files); }
+    setRestored(true);
+  }, [draftKey, readOnly]);
+  useEffect(() => {
+    if (!restored || readOnly) return;
+    writeCardDraft(draftKey, { values, files });
+  }, [draftKey, values, files, restored, readOnly]);
+
   const submit = useMutation({
     mutationFn: () => {
       const err = validateSubmission(fields, values);
       if (err) throw new Error(err);
-      return submitCard(planCardId, submissionValues(fields, values));
+      return submitCard(planCardId, submissionValues(fields, values), files);
     },
-    onSuccess: () => { toast.success("Sent to ARHA"); void qc.invalidateQueries({ queryKey: ["ao-owner-plan", programId] }); },
-    onError: (e: Error) => toast.error(e.message),
+    onSuccess: () => {
+      clearCardDraft(draftKey);
+      toast.success("Saved. Your answer is under Completed, and your team has it.");
+      void qc.invalidateQueries({ queryKey: ["ao-owner-plan", programId] });
+      void qc.invalidateQueries({ queryKey: ["ao-card-answer", planCardId] });
+    },
+    onError: (e: Error) => toast.error(`Not saved: ${e.message}`),
   });
   return (
     <form className="mt-2 space-y-2" onSubmit={(e) => { e.preventDefault(); submit.mutate(); }}>
       {fields.map((f) => {
         const id = `${planCardId}-${f.key}`;
-        const set = (v: string) => setValues({ ...values, [f.key]: v });
+        const set = (v: string) => setValues((prev) => ({ ...prev, [f.key]: v }));
         return (
           <div key={f.key} className="space-y-1">
             <Label htmlFor={id}>{f.label}</Label>
@@ -80,9 +112,56 @@ export function PlanCardForm({ planCardId, programId, fields, readOnly }: { plan
           </div>
         );
       })}
-      <Button type="submit" size="sm" className="min-h-11" disabled={readOnly || submit.isPending}>Send to ARHA</Button>
+      {files.length ? (
+        <ul className="space-y-1" aria-label="Files with your answer">
+          {files.map((f) => (
+            <li key={f.document_id} className="flex items-center gap-2 text-sm">
+              <Paperclip className="size-3.5" aria-hidden="true" /> {f.name || "File"}
+              <Button type="button" variant="ghost" size="sm" className="min-h-11" aria-label={`Remove ${f.name || "file"}`} disabled={readOnly || submit.isPending} onClick={() => setFiles((prev) => prev.filter((x) => x.document_id !== f.document_id))}>
+                <X className="size-4" aria-hidden="true" /> Remove
+              </Button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {propertyId && !readOnly ? (
+        <MultiFileUpload
+          autoStart
+          upload={uploadOne}
+          onBusyChange={setUploading}
+          onResults={(r) => setFiles((prev) => [...prev, ...r.filter((x) => !prev.some((p) => p.document_id === x.document_id))])}
+          label="Add a file"
+        />
+      ) : null}
+      {submit.isError ? (
+        <p role="alert" className="text-sm font-medium text-destructive">
+          Not saved: {submit.error.message} What you typed is still here. Try Send to ARHA again.
+        </p>
+      ) : null}
+      <Button type="submit" size="sm" className="min-h-11" disabled={readOnly || submit.isPending || uploading}>{submit.isPending ? "Saving…" : "Send to ARHA"}</Button>
     </form>
   );
+}
+
+type CardDraft = { values: Record<string, string>; files: FileRef[] };
+function readCardDraft(key: string): CardDraft | null {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return null;
+    const d = JSON.parse(raw) as Partial<CardDraft>;
+    const values = d.values && typeof d.values === "object" ? Object.fromEntries(Object.entries(d.values).filter(([, v]) => typeof v === "string")) as Record<string, string> : {};
+    const files = Array.isArray(d.files) ? d.files.filter((f): f is FileRef => Boolean(f && typeof f.document_id === "string")) : [];
+    return { values, files };
+  } catch { return null; }
+}
+function writeCardDraft(key: string, d: CardDraft) {
+  try {
+    if (Object.values(d.values).every((v) => !v) && d.files.length === 0) window.localStorage.removeItem(key);
+    else window.localStorage.setItem(key, JSON.stringify(d));
+  } catch { /* storage full or blocked: the form still holds the answer */ }
+}
+function clearCardDraft(key: string) {
+  try { window.localStorage.removeItem(key); } catch { /* nothing to clear */ }
 }
 
 /** Owner pace: weekly hours needed to reach 100 by the program end date. */
