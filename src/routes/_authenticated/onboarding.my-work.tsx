@@ -1,4 +1,5 @@
 import { formatPropertyLabel } from "@/lib/property-label";
+import { taskSavedMessage } from "@/lib/task-proof";
 import { overrideOnboardingTaskDateFn } from "@/lib/onboarding.functions";
 import { restoreAssignedRelease } from "@/lib/onboarding-assigned-context";
 import {
@@ -123,8 +124,10 @@ function MyWork() {
   });
   const saveTask = useMutation({
     mutationFn: useServerFn(saveOnboardingTaskFn) as never,
-    onSuccess: () => {
-      toast.success("Task saved.");
+    onSuccess: (_r: unknown, vars: { data?: SaveTaskInput } | undefined) => {
+      // Nov 17: the Saved message names the Task, and says when it was marked done.
+      const before = ((data?.tasks ?? []) as unknown as WorkflowTask[]).find((t) => t.id === vars?.data?.id);
+      toast.success(taskSavedMessage({ title: vars?.data?.title ?? before?.title, status: vars?.data?.status, wasDone: before?.status === "complete" }));
       void refresh();
     },
     onError,

@@ -1,4 +1,5 @@
 import { formatPropertyLabel } from "@/lib/property-label";
+import { taskSavedMessage } from "@/lib/task-proof";
 import { canReviewOnboardingGate } from "@/lib/onboarding-review-capabilities";
 import { gateReviewAuthority } from "@/lib/handoff-gate-authority";
 import { overrideOnboardingTaskDateFn } from "@/lib/onboarding.functions";
@@ -339,7 +340,16 @@ function PropertyWorkspace() {
     });
 
   const saveDate = mut(useServerFn(overrideOnboardingTaskDateFn), "Date override recorded.");
-  const saveTask = mut(useServerFn(saveOnboardingTaskFn), "Task saved.");
+  // Nov 17: the Saved message names the Task, and says when it was marked done.
+  const saveTask = useMutation({
+    mutationFn: useServerFn(saveOnboardingTaskFn) as never,
+    onSuccess: (_r: unknown, vars: { data?: { id?: string; title?: string; status?: string } } | undefined) => {
+      const before = ((data?.tasks ?? []) as { id: string; title: string; status: string }[]).find((t) => t.id === vars?.data?.id);
+      toast.success(taskSavedMessage({ title: vars?.data?.title ?? before?.title, status: vars?.data?.status, wasDone: before?.status === "complete" }));
+      void refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
   const setLifecycle = mut(useServerFn(setPropertyLifecycleFn), "Lifecycle updated.");
   const requestHandoff = mut(useServerFn(requestHandoffFn), "Handoff requested.");
   const reviewHandoff = mut(useServerFn(reviewHandoffFn), "Decision recorded.");
