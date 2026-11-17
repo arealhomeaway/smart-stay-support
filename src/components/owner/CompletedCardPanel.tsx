@@ -22,10 +22,10 @@ import { attachmentUrlFn, beginUploadFn, completeUploadFn, tagOwnerUploadFn } fr
 import { OWNER_UPLOAD_CATEGORIES } from "@/lib/attachments";
 import { editCardAnswer, loadCardAnswer } from "@/lib/ao-data";
 import { parseOutputFields, submissionValues, validateSubmission, type OutputField } from "@/lib/ao-ui";
-import { completedLine, entriesForCard, hoursFromMinutes, type HourEntry } from "@/lib/owner-portal-look";
+import { completedLine, entriesForCard, entryWaitingForReview, hoursFromMinutes, type HourEntry } from "@/lib/owner-portal-look";
 import { shortDate } from "@/lib/owner-opportunity-board";
 
-type FileRef = { document_id: string; name: string };
+export type FileRef = { document_id: string; name: string };
 
 export function CompletedCardPanel({
   planCardId, programId, propertyId, title, home, typeLabel, cover, completedAt, outputFields, reviewId, entries, readOnly, onClose, onChangeHours,
@@ -85,32 +85,9 @@ export function CompletedCardPanel({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  // The owner upload path: one home's property file, tagged as the owner's upload.
-  const begin = useServerFn(beginUploadFn);
-  const complete = useServerFn(completeUploadFn);
-  const tag = useServerFn(tagOwnerUploadFn);
-  const internal = OWNER_UPLOAD_CATEGORIES.find((c) => c.value === "participation")?.internal ?? "other";
-  const intent = useRef((file: File, key: string) => ({
-    entityType: "property" as const, entityId: propertyId ?? "", uploadKey: key, filename: file.name, mimeType: file.type, sizeBytes: file.size, note: null, category: internal, fulfilsRequestId: null,
-  }));
-  const [upload] = useState(() => createAttachmentUploader(begin, complete, (file, key) => intent.current(file, key)));
-  const uploadOne = async (file: File, progress: (pct: number) => void, key: string) => {
-    const documentId = await upload(file, progress, key);
-    await tag({ data: { documentId, ownerCategory: "participation", workItemId: null } });
-    return { document_id: documentId, name: file.name };
-  };
+  const uploadOne = useOwnerCardUpload(propertyId);
 
-  const urlFor = useServerFn(attachmentUrlFn);
-  const openFile = async (f: FileRef) => {
-    const w = window.open("", "_blank");
-    try {
-      const { url } = await urlFor({ data: { documentId: f.document_id } });
-      if (w) w.location.href = url;
-    } catch (e) {
-      w?.close();
-      toast.error(e instanceof Error ? e.message : "Could not open that file.");
-    }
-  };
+  const openFile = useOpenOwnerFile();
 
   const shown = editing ? files : answer.data?.files ?? [];
   return (
@@ -182,6 +159,16 @@ export function CompletedCardPanel({
             <p className="numeric text-sm text-portal-ink">
               {hoursFromMinutes(minutes)} hrs{lastDay ? ` · ${shortDate(lastDay)}` : ""}
             </p>
+            {mine.length ? (
+              <ul className="space-y-0.5 text-sm text-portal-muted" aria-label="Your saved entries">
+                {mine.map((e, i) => (
+                  <li key={`${e.entry_date ?? ""}-${i}`} className="numeric">
+                    {hoursFromMinutes(Number(e.minutes) || 0)} hrs{e.entry_date ? ` · ${shortDate(e.entry_date)}` : ""}
+                    {entryWaitingForReview(e) ? " · Waiting for review" : ""}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
             {onChangeHours ? (
               <button type="button" className="min-h-11 text-sm text-portal-primary underline-offset-4 hover:underline" onClick={onChangeHours}>
                 Change hours
@@ -197,6 +184,11 @@ export function CompletedCardPanel({
           ) : null}
         </div>
         <div className="space-y-3 border-t border-portal-border px-5 py-4">
+          {editing && save.isError ? (
+            <p role="alert" className="text-sm font-medium text-destructive">
+              Not saved: {save.error.message} Your changes are still here. Try Save again.
+            </p>
+          ) : null}
           {editing ? (
             <div className="flex flex-wrap gap-2">
               <Button className="min-h-11 bg-portal-primary text-portal-primary-foreground hover:bg-portal-primary/90" disabled={save.isPending || uploading} onClick={() => save.mutate()}>
@@ -226,7 +218,79 @@ export function CompletedCardPanel({
   );
 }
 
-function asText(f: OutputField, v: unknown): string {
+/** The owner upload path: one home's property file, tagged as the owner's upload. Shared by the
+ * open-card answer form and the completed-card editor. */
+export function useOwnerCardUpload(propertyId: string | null) {
+  const begin = useServerFn(beginUploadFn);
+  const complete = useServerFn(completeUploadFn);
+  const tag = useServerFn(tagOwnerUploadFn);
+  const internal = OWNER_UPLOAD_CATEGORIES.find((c) => c.value === "participation")?.internal ?? "other";
+  const makeIntent = (file: File, key: string) => ({
+    entityType: "property" as const, entityId: propertyId ?? "", uploadKey: key, filename: file.name, mimeType: file.type, sizeBytes: file.size, note: null, category: internal, fulfilsRequestId: null,
+  });
+  // The latest home, read at upload time.
+  const intent = useRef(makeIntent);
+  intent.current = makeIntent;
+  const [upload] = useState(() => createAttachmentUploader(begin, complete, (file, key) => intent.current(file, key)));
+  return async (file: File, progress: (pct: number) => void, key: string): Promise<FileRef> => {
+    const documentId = await upload(file, progress, key);
+    await tag({ data: { documentId, ownerCategory: "participation", workItemId: null } });
+    return { document_id: documentId, name: file.name };
+  };
+}
+
+/** Opens one of the owner's files in a new tab through a short-lived link. */
+export function useOpenOwnerFile() {
+  const urlFor = useServerFn(attachmentUrlFn);
+  return async (f: FileRef) => {
+    const w = window.open("", "_blank");
+    try {
+      const { url } = await urlFor({ data: { documentId: f.document_id } });
+      if (w) w.location.href = url;
+    } catch (e) {
+      w?.close();
+      toast.error(e instanceof Error ? e.message : "Could not open that file.");
+    }
+  };
+}
+
+/** What the owner sent on a plan card, read back from her saved answer. Read only. */
+export function SentAnswer({ planCardId, outputFields }: { planCardId: string; outputFields: unknown }) {
+  const fields = useMemo(() => parseOutputFields(outputFields), [outputFields]);
+  const answer = useQuery({ queryKey: ["ao-card-answer", planCardId], queryFn: () => loadCardAnswer(planCardId), retry: false });
+  const openFile = useOpenOwnerFile();
+  if (answer.isError) return <LoadError what="Your answer" onRetry={() => void answer.refetch()} />;
+  if (answer.isPending) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (!answer.data) return <p className="text-sm text-muted-foreground">Done. Thank you.</p>;
+  return (
+    <section aria-label="What you sent" className="space-y-2">
+      <p className="text-sm font-medium text-portal-ink">Saved {shortDate(answer.data.submittedAt)}. Your team has your answer.</p>
+      {fields.length ? (
+        <dl className="space-y-2 text-sm">
+          {fields.map((f) => (
+            <div key={f.key}>
+              <dt className="text-muted-foreground">{f.label}</dt>
+              <dd className="whitespace-pre-wrap">{asText(f, answer.data?.values[f.key]) || "Not answered"}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      {answer.data.files.length ? (
+        <ul className="space-y-1">
+          {answer.data.files.map((f) => (
+            <li key={f.document_id}>
+              <button type="button" className="inline-flex min-h-11 items-center gap-1 text-sm text-portal-primary underline-offset-4 hover:underline" onClick={() => void openFile(f)}>
+                <Paperclip className="size-3.5" aria-hidden="true" /> {f.name || "File"}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </section>
+  );
+}
+
+export function asText(f: OutputField, v: unknown): string {
   if (v === null || v === undefined) return "";
   if (f.type === "yes_no") return v === true || v === "yes" ? "yes" : v === false || v === "no" ? "no" : String(v);
   return String(v);
