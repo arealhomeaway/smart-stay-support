@@ -52,6 +52,8 @@ import { isTestRecord } from "@/lib/test-data";
 import { taskViewsFor } from "@/lib/onboarding-task-views";
 import { assignablePeople } from "@/lib/assignable-people";
 import { ReviewsWaiting } from "@/components/onboarding/ReviewsWaiting";
+import { HomeownerTaskChip, MyHomeownersSection, useHomeownerStatus } from "@/components/ao/HomeownerStatus";
+import { myHomeownerHomes, taskChip, type StatusRow } from "@/lib/homeowner-status";
 import {
   getOnboardingWorkspace,
   addOnboardingNoteFn,
@@ -89,7 +91,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 function MyWork() {
   const load = useServerFn(getOnboardingWorkspace);
   const qc = useQueryClient();
-  const { userId, readOnly, can } = useRole();
+  const { userId, readOnly, can, demoMode, isAdmin, isOnboardingDirector } = useRole();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const setFilter = (patch: Record<string, string>) => {
@@ -97,6 +99,8 @@ function MyWork() {
   };
   const linkedTask = (search as { task?: string }).task ?? null;
   const [openTaskId, setOpenTaskId] = useState<string | null>(linkedTask);
+  // A Task opened from My homeowners may belong to a teammate on one of this person's homes.
+  const [openedFromHomeowners, setOpenedFromHomeowners] = useState(false);
   useEffect(() => {
     if (linkedTask) setOpenTaskId(linkedTask);
   }, [linkedTask]);
@@ -189,6 +193,35 @@ function MyWork() {
   // Completed tasks stay in the pool so the Completed quick filter can show them.
   const mine = followedOnly ? followedHomeTasks(allTasks, follows.data ?? new Set<string>(), search.who, userId) : selection.tasks;
 
+  // Homeowner status (Admin, Nov 16): the homes this person works on, for "My homeowners", plus
+  // the homes of the listed Tasks for their row chips. Read only.
+  const homeownerPerson = who === "me" ? userId : who === "all" || who === "unassigned" ? null : who;
+  const homeownerHomes = useMemo(() => {
+    const projects = (data?.projects ?? []) as { property_id: string; project_manager: string | null; director: string | null; status: string }[];
+    if (who === "all" || who === "unassigned") {
+      return myHomeownerHomes({
+        person: null,
+        allHomes: can("handoff_review"),
+        projects: projects.filter((p) => can("handoff_review") || p.project_manager === userId || p.director === userId),
+        tasks: [],
+      }).size > 0 || can("handoff_review")
+        ? myHomeownerHomes({ person: null, allHomes: true, projects: projects.filter((p) => can("handoff_review") || p.project_manager === userId || p.director === userId), tasks: [] })
+        : new Set<string>();
+    }
+    return myHomeownerHomes({
+      person: homeownerPerson,
+      allHomes: who === "me" && (isOnboardingDirector || isAdmin),
+      projects,
+      tasks: allTasks as unknown as { property_id: string; assigned_to: string | null; status: string; archived_at?: string | null }[],
+    });
+  }, [data?.projects, allTasks, who, homeownerPerson, isOnboardingDirector, isAdmin, can, userId]);
+  const statusHomes = useMemo(
+    () => [...new Set([...homeownerHomes, ...mine.map((t) => t.property_id)])],
+    [homeownerHomes, mine],
+  );
+  const homeownerStatus = useHomeownerStatus(statusHomes, demoMode, Boolean(data));
+  const statusNow = useMemo(() => new Date(), [homeownerStatus.data]);
+
   // Each person's last view choices, remembered in their own browser.
   const [prefs, setPrefs] = useState<MyTasksPrefs>(MY_TASKS_PREFS_DEFAULTS);
   useEffect(() => {
@@ -231,7 +264,18 @@ function MyWork() {
   const sorted = sortMyTasks(filtered, prefs.sort, propertyName);
   const groups = groupMyTasks(sorted, prefs.group, t0, propertyName);
 
-  const openTask = mine.find((t) => t.id === openTaskId) ?? null;
+  const openTask =
+    mine.find((t) => t.id === openTaskId) ??
+    (openedFromHomeowners ? allTasks.find((t) => t.id === openTaskId) : undefined) ??
+    null;
+  const openHomeownerRow = (row: StatusRow) => {
+    if (row.taskId && allTasks.some((t) => t.id === row.taskId)) {
+      setOpenedFromHomeowners(true);
+      setOpenTaskId(row.taskId);
+      return;
+    }
+    void navigate({ to: "/onboarding/$propertyId", params: { propertyId: row.propertyId }, search: { tab: "owner" } as never });
+  };
   const assignedDrawerContext = data.assignedWorkContexts.find(
     (context) => context.propertyId === openTask?.property_id,
   );
@@ -284,6 +328,15 @@ function MyWork() {
         eyebrow="Onboarding"
         title="My Tasks"
         description="Onboarding tasks assigned to you across every home, in the order they need attention."
+      />
+
+      <MyHomeownersSection
+        data={homeownerStatus.data}
+        homes={homeownerHomes}
+        loading={homeownerStatus.isLoading}
+        failed={homeownerStatus.isError}
+        onRetry={() => void homeownerStatus.refetch()}
+        onOpen={openHomeownerRow}
       />
 
       <ReviewsWaiting propertyName={propertyName} />
@@ -444,8 +497,21 @@ function MyWork() {
                       view={v}
                       people={data.people}
                       selected={openTaskId === v.task.id}
-                      onSelect={(t) => setOpenTaskId(t.id)}
+                      onSelect={(t) => {
+                        setOpenedFromHomeowners(false);
+                        setOpenTaskId(t.id);
+                      }}
                       showProperty={propertyName(v.task.property_id)}
+                      extra={(() => {
+                        const chip = homeownerStatus.data
+                          ? taskChip(
+                              { id: v.task.id, done: v.task.status === "complete", completedAt: (v.task as { completed_at?: string | null }).completed_at ?? null },
+                              homeownerStatus.data,
+                              statusNow,
+                            )
+                          : null;
+                        return chip ? <HomeownerTaskChip chip={chip} /> : null;
+                      })()}
                     />
                   </div>
                 </div>
@@ -467,7 +533,10 @@ function MyWork() {
           openTask?.property_id,
           data.projects,
         )}
-        onClose={() => setOpenTaskId(null)}
+        onClose={() => {
+          setOpenTaskId(null);
+          setOpenedFromHomeowners(false);
+        }}
         onAdvance={(id) => setOpenTaskId(mine.some((t) => t.id === id) ? id : null)}
         onSave={(input: SaveTaskInput) => saveTask.mutate({ data: input } as never)}
         onSaveDate={(taskId, expectedUpdatedAt, dueOn, reason) =>

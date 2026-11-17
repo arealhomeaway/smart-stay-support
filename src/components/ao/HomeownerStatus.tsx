@@ -42,9 +42,9 @@ const CHIP_TONE: Record<HomeownerChip["kind"], string> = {
 /** The small chip on a Task row. Part of the row, so a tap opens the Task's drawer. */
 export function HomeownerTaskChip({ chip }: { chip: HomeownerChip }) {
   return (
-    <Chip className={cn("mt-1 w-fit font-medium", CHIP_TONE[chip.kind])}>
-      <span data-homeowner-chip={chip.kind}>{chip.text}</span>
-    </Chip>
+    <span className="mt-1 block" data-homeowner-chip={chip.kind}>
+      <Chip className={cn("font-medium", CHIP_TONE[chip.kind])}>{chip.text}</Chip>
+    </span>
   );
 }
 
