@@ -83,10 +83,10 @@ export function SendToHomeownerSection({
     onSuccess: (result) => {
       toast.success(
         "completed" in result && result.completed
-          ? "Sent. It is in the homeowner's portal and this Task is complete."
+          ? `Saved. "${taskTitle}" is in the homeowner's portal and this Task is complete.`
           : result.channel === "email"
-            ? "Sent. The homeowner received an email."
-            : "Sent. It is in the homeowner's portal.",
+            ? `Saved. "${taskTitle}" went to the homeowner by email.`
+            : `Saved. "${taskTitle}" is in the homeowner's portal.`,
       );
       setNote("");
       setAnswerBy("");
