@@ -32,6 +32,7 @@ export const KIND_LABELS: Record<string, string> = {
   approval_required: "Approval needed",
   claim_waiver: "Claim waiver",
   breezeway_link_needed: "Breezeway link needed",
+  email_pass_outage: "Emails not going out",
   claim_waiver_decision: "Claim waiver decision",
   cleaner_safeguard_activated: "STR cleaner time",
   cleaner_safeguard_digest: "STR cleaner weekly summary",

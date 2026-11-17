@@ -2444,6 +2444,13 @@
       "when": 1794858344141,
       "tag": "0348_chat_folder_match",
       "breakpoints": true
+    },
+    {
+      "idx": 349,
+      "version": "7",
+      "when": 1794874681362,
+      "tag": "0349_email_pass_recovery",
+      "breakpoints": true
     }
   ]
 }

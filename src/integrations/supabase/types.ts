@@ -5409,6 +5409,7 @@ export type Database = {
       }
       email_job_runs: {
         Row: {
+          closed_reason: string | null
           email_counts: Json
           errors: Json
           finished_at: string | null
@@ -5417,6 +5418,7 @@ export type Database = {
           started_at: string
         }
         Insert: {
+          closed_reason?: string | null
           email_counts?: Json
           errors?: Json
           finished_at?: string | null
@@ -5425,6 +5427,7 @@ export type Database = {
           started_at?: string
         }
         Update: {
+          closed_reason?: string | null
           email_counts?: Json
           errors?: Json
           finished_at?: string | null
@@ -5532,6 +5535,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      email_pass_outages: {
+        Row: {
+          cleared_at: string | null
+          id: string
+          last_success_at: string | null
+          noticed_at: string
+          notified: number
+        }
+        Insert: {
+          cleared_at?: string | null
+          id?: string
+          last_success_at?: string | null
+          noticed_at?: string
+          notified?: number
+        }
+        Update: {
+          cleared_at?: string | null
+          id?: string
+          last_success_at?: string | null
+          noticed_at?: string
+          notified?: number
+        }
+        Relationships: []
       }
       email_templates: {
         Row: {
