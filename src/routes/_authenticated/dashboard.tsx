@@ -41,6 +41,7 @@ import { LunchPrompt, MyShiftCard, TimeOffRequestsWaiting, useTimeOffWaiting } f
 import { NeedsYouNowPanel, type NeedsPanelItem } from "@/components/home/NeedsYouNowPanel";
 import { BonusVerifyWaiting } from "@/components/home/BonusVerifyWaiting";
 import { ShiftHandoffsWaiting } from "@/components/home/ShiftHandoffsWaiting";
+import { HomeownerNeedsRows } from "@/components/ao/HomeownerStatus";
 import { TrackersWaiting } from "@/components/home/TrackersWaiting";
 import { MyScorecardButton } from "@/components/home/MyScorecardButton";
 import { RECENT_ACTIVITY_COPY, RECENT_ACTIVITY_LIMIT, SEE_ALL_LABEL, recentActivityHeading, seeAllVisible } from "@/lib/home-needs";
@@ -300,6 +301,8 @@ function NeedsYouNow({ rows, userId, originSearch }: { rows: Row[]; userId: stri
       {!demoMode && <TrackersWaiting />}
       {/* Admin, Nov 16: waiting handoffs and missed shift ends (Supervisor, Director of Operations, Admin). */}
       <ShiftHandoffsWaiting />
+      {/* Admin, Nov 16: homeowner answered or overdue on handed-off homes (Supervisor, Director of Operations). */}
+      <HomeownerNeedsRows demo={demoMode} allowed={seats.opsSupervisor === true || seats.opsDirector === true} />
       {bookingRows.map((r) => (
         <button
           type="button"

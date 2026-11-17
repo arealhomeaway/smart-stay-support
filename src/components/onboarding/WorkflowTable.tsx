@@ -6,7 +6,7 @@
  * completion and edits go through the callbacks the property route supplies.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { ChevronDown, ChevronRight, CircleAlert, Lock } from "lucide-react";
 import { Chip } from "@/components/ui/page";
 import { cn } from "@/lib/utils";
@@ -218,12 +218,15 @@ export function TaskRow({
   selected,
   onSelect,
   showProperty,
+  extra,
 }: {
   view: TaskView;
   people: Person[];
   selected?: boolean;
   onSelect: (task: WorkflowTask) => void;
   showProperty?: string;
+  /** Optional line under the title (My Tasks: the homeowner status chip). Part of the row. */
+  extra?: ReactNode;
 }) {
   const t = view.task;
   const due = dueExplanation(t);
@@ -261,6 +264,7 @@ export function TaskRow({
         {view.reason && (
           <span className="block truncate text-xs text-muted-foreground">{view.reason}</span>
         )}
+        {extra}
       </span>
 
       <span className="truncate text-xs text-muted-foreground md:text-sm">
