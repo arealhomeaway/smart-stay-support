@@ -80,3 +80,15 @@ describe("her hours: Reviewed vs Waiting for review", () => {
     expect(answerReviewLine(null)).toBe("Sent to your team");
   });
 });
+
+import { deadlineState } from "@/lib/owner-deadline";
+
+describe("a finished homeowner item never reads as overdue", () => {
+  const now = new Date("2026-11-16T18:00:00Z");
+  it("an open item past its date is overdue", () => {
+    expect(deadlineState("2026-11-13", now)?.note).toBe("Overdue by 3 days");
+  });
+  it("the same item, finished, keeps only its date", () => {
+    expect(deadlineState("2026-11-13", now, true)).toEqual({ label: "Needed by 11/13/2026 (CT)", overdue: false, dueToday: false, note: null });
+  });
+});
