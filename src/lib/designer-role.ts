@@ -41,3 +41,14 @@ export function homeDesigner(assignments: Record<string, unknown> | null | undef
  * "Design & Staging" are older exports of the same role.
  */
 export const DESIGNER_IMPORT_LABELS = ["designer", "lead designer", "design", "design & staging", "design and staging", "design & staging (older steps)"] as const;
+
+/**
+ * Stager history stores vendor ids (set_onboarding_project_stagers). Screens show the vendor's
+ * name: each comma-separated id becomes its name, an unknown id becomes "A vendor", and an empty
+ * value stays empty so the line reads "Not set".
+ */
+export function stagerEventValue(value: string | null | undefined, names: ReadonlyMap<string, string>): string | null {
+  const ids = (value ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  if (!ids.length) return null;
+  return ids.map((id) => names.get(id) ?? "A vendor").join(", ");
+}

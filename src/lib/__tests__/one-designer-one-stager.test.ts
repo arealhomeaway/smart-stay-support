@@ -32,3 +32,13 @@ describe("one Designer role", () => {
     expect(homeDesigner({})).toBeNull();
   });
 });
+
+describe("Stager history shows names", () => {
+  it("turns the stored vendor id into the vendor's name", async () => {
+    const { stagerEventValue } = await import("../designer-role");
+    const names = new Map([["71000efa-6dca-4ff7-b60a-31a1a9881a73", "Assem Please"]]);
+    expect(stagerEventValue("71000efa-6dca-4ff7-b60a-31a1a9881a73", names)).toBe("Assem Please");
+    expect(stagerEventValue("", names)).toBeNull();
+    expect(stagerEventValue("00000000-0000-0000-0000-000000000000", names)).toBe("A vendor");
+  });
+});

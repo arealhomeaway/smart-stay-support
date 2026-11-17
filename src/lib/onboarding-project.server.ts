@@ -22,6 +22,7 @@ import {
   readOnboardingAssignmentAuthority,
   resolveNewProjectAssignments,
 } from "./onboarding-assignment.server";
+import { stagerEventValue } from "./designer-role";
 
 type Client = SupabaseClient<Database>;
 
@@ -100,6 +101,29 @@ export async function loadPropertyProjectForActor(
   return { ...result, assignments: { ...assignments, projectManagerId: userId } };
 }
 
+/** Stager history keeps vendor ids; the screen shows the vendor names (display only). */
+async function nameStagerEvents<E extends { kind: string; prior_value: string | null; new_value: string | null }>(
+  supabase: Client,
+  events: E[],
+): Promise<E[]> {
+  const stager = events.filter((e) => e.kind === "stagers_changed");
+  if (!stager.length) return events;
+  const ids = [...new Set(stager.flatMap((e) => `${e.prior_value ?? ""},${e.new_value ?? ""}`.split(",")).map((s) => s.trim()).filter(Boolean))];
+  const names = new Map<string, string>();
+  if (ids.length) {
+    const { data } = await supabase.from("vendor_orgs").select("id, display_name, legal_name").in("id", ids);
+    for (const v of (data ?? []) as { id: string; display_name: string | null; legal_name: string | null }[]) {
+      const n = v.display_name || v.legal_name;
+      if (n) names.set(v.id, n);
+    }
+  }
+  return events.map((e) =>
+    e.kind === "stagers_changed"
+      ? { ...e, prior_value: stagerEventValue(e.prior_value, names), new_value: stagerEventValue(e.new_value, names) }
+      : e,
+  );
+}
+
 export async function loadProjectForProperty(supabase: Client, propertyId: string) {
   const [project, events] = await Promise.all([
     supabase
@@ -117,7 +141,7 @@ export async function loadProjectForProperty(supabase: Client, propertyId: strin
   ]);
   if (project.error) throw project.error;
   if (events.error) throw events.error;
-  return { project: project.data ?? null, events: events.data ?? [] };
+  return { project: project.data ?? null, events: await nameStagerEvents(supabase, events.data ?? []) };
 }
 
 export type StartProjectInput = {
