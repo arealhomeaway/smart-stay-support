@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { capabilitiesFor } from "@/lib/permissions";
 import {
   CSV_HEADERS, breezewayLine, claimLine, expenseLine, homeSummaries, homeTotals, lastFullMonth, monthRange, refundLine, workOrderLine,

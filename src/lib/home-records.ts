@@ -10,7 +10,7 @@
  * (src/lib/expenses.ts), estimates never count as invoiced, claim dates come from
  * claimOpenedAt (src/lib/claims.ts). No pay date is ever shown (register BN12).
  */
-import { amountAtRisk, claimOpenedAt, claimStageLabel, isOpenClaim, type ClaimStage, type ClaimType } from "@/lib/claims";
+import { amountAtRisk, claimOpenedAt, claimStageLabel, isOpenClaim, type ClaimDisposition, type ClaimStage, type ClaimType } from "@/lib/claims";
 import { missingDocumentation, RESPONSIBILITY_LABEL, type ExpenseType, type Responsibility, type SplitLine } from "@/lib/expenses";
 import { RECOVERY_ACTION_LABELS, RECOVERY_STAGE_LABELS, type RecoveryAction, type RecoveryStage } from "@/lib/guest-recovery";
 import { centralDate, centralInstant, centralToday } from "@/lib/team-schedule";
@@ -348,7 +348,7 @@ export function claimLine(c: ClaimRow, ctx: LineContext): RecordLine {
   return {
     id: `cl:${c.id}`, section: "claims", propertyId: c.property_id ?? "", date: claimDate(c),
     what: `Claim: ${c.title?.trim() || "Damage claim"}`, link, vendor: null,
-    amount: amountAtRisk({ ...c, claim_type: c.claim_type as ClaimType, stage }), estimate: num(c.estimated_amount),
+    amount: amountAtRisk({ ...c, claim_type: c.claim_type as ClaimType, stage, disposition: c.disposition as ClaimDisposition | null }), estimate: num(c.estimated_amount),
     approved: num(c.approved_amount), paidBack, billedTo: null,
     approval: approvalText(roleOf(ctx, c.approval_decided_by), c.approval_decided_at),
     status: s, note, fix: s === "missing" ? link : null,
