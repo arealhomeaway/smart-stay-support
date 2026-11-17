@@ -53,10 +53,12 @@ describe("screen visibility", () => {
     expect([canEditCardLibrary(admin), canEditCardLibrary(od), canEditCardLibrary(staff)]).toEqual([true, true, false]);
     expect(canToggleHomeAutomation(staff)).toBe(false);
   });
-  test("contributions: Admin, Onboarding Director, Directors", () => {
+  test("contributions: every staff member, never a homeowner or vendor", () => {
     expect(canViewContributions({ ...staff, isOpsDirector: true })).toBe(true);
-    expect(canViewContributions(staff)).toBe(false);
+    expect(canViewContributions(staff)).toBe(true);
     expect(canViewContributions(od)).toBe(true);
+    expect(canViewContributions(admin)).toBe(true);
+    expect(canViewContributions({ isAdmin: false, isOnboardingDirector: false, isStaff: false })).toBe(false);
   });
   test("Send to Active Owner gate", () => {
     expect(canSendToActiveOwner("active")).toBe(true);

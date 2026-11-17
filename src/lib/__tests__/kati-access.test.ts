@@ -37,11 +37,11 @@ describe("Onboarding Director Active Owner access", () => {
     expect(canOpenPath(p, pc)).toBe(false);
     expect(canOpenPath(p, homeowner)).toBe(false);
   });
-  it("PC cannot edit cards or switch homes", () => {
+  it("PC cannot edit cards or switch homes, but reads homeowner answers", () => {
     const who = { isAdmin: false, isOnboardingDirector: false, isStaff: true };
     expect(canEditCardLibrary(who)).toBe(false);
     expect(canToggleHomeAutomation(who)).toBe(false);
-    expect(canViewContributions(who)).toBe(false);
+    expect(canViewContributions(who)).toBe(true);
   });
   for (const p of [...OD_PAGES, "/owner-report-wording"]) it("Admin still opens ${p}".replace("${p}", p), () => {
     expect(canOpenPath(p, admin)).toBe(true);
