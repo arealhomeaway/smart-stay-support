@@ -431,6 +431,7 @@ const MAKE_READY = /make[\s-]?ready/i;
 export function approvalLine(a: ApprovalRow, ctx: LineContext): RecordLine {
   const status = (a.status ?? "").toLowerCase();
   const pending = status === "pending" || status === "requested" || status === "open" || status === "";
+  const stopped = status === "cancelled" || status === "withdrawn";
   const link: LineLink | null =
     a.entity_type === "onboarding_task" && a.entity_id && a.property_id
       ? { kind: "task", propertyId: a.property_id, taskId: a.entity_id, label: "Task" }
@@ -441,8 +442,10 @@ export function approvalLine(a: ApprovalRow, ctx: LineContext): RecordLine {
     id: `ap:${a.id}`, section: MAKE_READY.test(a.title ?? "") ? "onboarding" : "approvals", propertyId: a.property_id ?? "",
     date: dayOf(a.created_at), what: `Homeowner decision: ${a.title?.trim() || "Approval"}`, link, vendor: null,
     amount: num(a.amount), estimate: null, approved: null, paidBack: null, billedTo: null,
-    approval: pending ? null : approvalText(`Homeowner ${status === "approved" ? "approved" : status || "answered"}`, a.decided_at),
-    status: pending ? "pending" : "known", note: pending ? "Waiting on the homeowner" : null, fix: null, counts: NONE,
+    approval: pending || stopped ? null : approvalText(`Homeowner ${status || "answered"}`, a.decided_at),
+    status: pending ? "pending" : stopped ? "na" : "known",
+    note: pending ? "Waiting on the homeowner" : stopped ? (status === "cancelled" ? "Cancelled by our team" : "Withdrawn") : null,
+    fix: null, counts: NONE,
   };
 }
 
