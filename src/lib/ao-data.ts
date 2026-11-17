@@ -82,8 +82,11 @@ export async function loadTaskPlanCard(taskId: string) {
 export async function loadOwnerPlan(programId: string) {
   return unwrap<import("@/lib/ao-ui").PortalPlanCard[]>(await db.rpc("ao_owner_plan", { _program: programId }));
 }
-export async function submitCard(planCardId: string, values: Record<string, unknown>) {
-  const r = unwrap<string>(await db.rpc("ao_submit_card", { _plan_card: planCardId, _values: values }));
+export async function submitCard(planCardId: string, values: Record<string, unknown>, files: { document_id: string; name: string }[] = []) {
+  // With files: the three-argument save, which runs the same card save and stores the files on the answer.
+  const r = unwrap<string>(await (files.length
+    ? db.rpc("ao_submit_card", { _plan_card: planCardId, _values: values, _files: files })
+    : db.rpc("ao_submit_card", { _plan_card: planCardId, _values: values })));
   if (!r.available) throw new Error("This item is not set up yet");
   return r.data;
 }

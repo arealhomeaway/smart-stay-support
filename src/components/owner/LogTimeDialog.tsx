@@ -175,7 +175,7 @@ export function LogTimeDialog({
       });
     },
     onSuccess: () => {
-      toast.success("Time logged.");
+      toast.success("Saved. Your hours are on your dashboard, marked Waiting for review.");
       onOpenChange(false);
       reset();
       onDone();
@@ -320,6 +320,11 @@ export function LogTimeDialog({
             <span>{MANUAL_ENTRY_CONFIRMATION}</span>
           </label>
         </div>
+        {save.isError ? (
+          <p role="alert" className="text-sm font-medium text-destructive">
+            Not saved: {save.error.message} What you typed is still here. Try Save entry again.
+          </p>
+        ) : null}
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
@@ -328,7 +333,7 @@ export function LogTimeDialog({
             disabled={save.isPending || openingZip || activity.trim().length < 3 || !confirmed}
             onClick={() => save.mutate()}
           >
-            Save entry
+            {save.isPending ? "Saving…" : "Save entry"}
           </Button>
         </DialogFooter>
       </DialogContent>

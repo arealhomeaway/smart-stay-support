@@ -78,22 +78,50 @@ export type HourEntry = {
   superseded?: boolean;
   propertyIds: string[];
   entry_date?: string | null;
+  review_status?: string | null;
+  reviewed_at?: string | null;
 };
 
 /**
  * The hours logged for one card, read from the owner's existing entries: an entry anchored to the
  * card's owner item, or an entry whose activity is the card's title (what "Log hours for this" fills
- * in) on the same home. Superseded entries never count.
+ * in), on its own or followed by the owner's own words ("Share your home design preferences. Looked
+ * through..."), on the same home. Superseded entries never count. Display only: counting is unchanged.
  */
 export function entriesForCard(entries: HourEntry[], card: { title: string; reviewId: string | null; propertyIds: string[] }): HourEntry[] {
   const title = card.title.trim().toLowerCase();
   return entries.filter((e) => {
     if (e.superseded) return false;
     if (card.reviewId && e.review_id === card.reviewId) return true;
-    if ((e.activity ?? "").trim().toLowerCase() !== title) return false;
+    if (!activityNamesCard(e.activity, title)) return false;
     if (card.propertyIds.length === 0 || e.propertyIds.length === 0) return true;
     return e.propertyIds.some((p) => card.propertyIds.includes(p));
   });
+}
+
+function activityNamesCard(activity: string | null, title: string): boolean {
+  const a = (activity ?? "").trim().toLowerCase();
+  if (!title || !a.startsWith(title)) return false;
+  // The title alone, or the title followed by punctuation or a space, never a longer word.
+  return a.length === title.length || /[\s.,;:!?)\-]/.test(a.charAt(title.length));
+}
+
+/** An owner's own saved entry not yet looked at by the team. Display only. */
+export function entryWaitingForReview(e: { review_status?: string | null; reviewed_at?: string | null }): boolean {
+  return !e.reviewed_at && (e.review_status ?? "submitted") === "submitted";
+}
+
+/** Tagged to a home vs general, from the owner's own saved entries (superseded entries excluded). */
+export function hoursSplit(entries: HourEntry[]): { taggedMinutes: number; generalMinutes: number } {
+  let taggedMinutes = 0;
+  let generalMinutes = 0;
+  for (const e of entries) {
+    if (e.superseded) continue;
+    const m = Number(e.minutes) || 0;
+    if (e.propertyIds.length > 0) taggedMinutes += m;
+    else generalMinutes += m;
+  }
+  return { taggedMinutes, generalMinutes };
 }
 
 export function hoursFromMinutes(minutes: number): string {

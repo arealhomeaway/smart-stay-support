@@ -101,6 +101,12 @@ async function loadOwnerHomeByProgram(supabase: Client, programId: string, previ
     ownerView: true,
     preview,
   });
+  // Every file on each saved entry (the participation reader returns only the first one), so the
+  // owner sees all of her screenshots. Display only; a failed read falls back to the first file.
+  const entryFiles = await supabase.from("owner_time_entries").select("id, attachment_paths").eq("program_id", programId);
+  const filesByEntry = new Map<string, unknown>(
+    entryFiles.error ? [] : (entryFiles.data ?? []).map((row) => [row.id, row.attachment_paths] as [string, unknown]),
+  );
 
   return {
     linked: true as const,
@@ -112,7 +118,7 @@ async function loadOwnerHomeByProgram(supabase: Client, programId: string, previ
         tickets.find((ticket) => ticket.id === review.ticket_id),
       ),
     ),
-    entries: agg.entries,
+    entries: agg.entries.map((e) => ({ ...e, attachment_paths: filesByEntry.get(e.id) ?? null })),
     responseReceipts: receipts,
     badges: agg.badges,
     badgeRefreshPending: false,

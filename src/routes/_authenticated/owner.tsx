@@ -58,6 +58,7 @@ import { ownerContacts } from "@/lib/owner-contacts.functions";
 import { OwnerFilesPanel, useOwnerDocuments } from "@/components/OwnerFilesPanel";
 import { OnboardingProgress } from "@/components/owner/OnboardingProgress";
 import { ownerReportFile } from "@/lib/owner-report.functions";
+import { entryWaitingForReview, hoursSplit } from "@/lib/owner-portal-look";
 import { saveOwnerReportFile } from "@/lib/owner-report-download";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useOwnerPreview } from "@/lib/owner-preview";
@@ -216,11 +217,11 @@ function OwnerHubBody({
   };
 
   const { program, properties, reviews, badges, alerts, tickets, snapshot } = data;
-  const { yearTotals = [], generalMinutes = 0, propertySpecificMinutes = 0 } = data as unknown as {
-    yearTotals?: { year: string; minutes: number }[];
-    generalMinutes?: number;
-    propertySpecificMinutes?: number;
-  };
+  const { yearTotals = [] } = data as unknown as { yearTotals?: { year: string; minutes: number }[] };
+  // Tagged to a home vs general, from her own saved entries (the server never sent these totals).
+  const { taggedMinutes: propertySpecificMinutes, generalMinutes } = hoursSplit(
+    data.entries.map((e) => ({ minutes: e.minutes, activity: e.activity, superseded: Boolean(e.superseded), propertyIds: e.propertyIds })),
+  );
   const hrs = (m: number) => Math.round((m / 60) * 10) / 10;
 
   const { home: homeParam } = Route.useSearch();
@@ -341,15 +342,21 @@ function OwnerHubBody({
 
   // Recent activity: what happened, always labelled with the home it belongs to.
   const activity = useMemo(() => {
-    type Item = { id: string; at: string; property: string; label: string; entryId?: string; files?: number };
+    type Item = { id: string; at: string; sortAt?: string; property: string; label: string; entryId?: string; files?: number };
     const items: Item[] = [
       ...data.entries
         .filter((e) => !e.superseded && inHome(e.propertyIds))
         .map((e) => ({
           id: `entry-${e.id}`,
           at: e.entry_date,
+          // A just-saved entry is listed first even when its work date is earlier.
+          sortAt: e.created_at ?? e.entry_date,
           property: propertyLabel(e.propertyIds),
-          label: [`Logged ${Math.round((e.minutes / 60) * 100) / 100} hours: ${e.activity}`, loggedByLabel(attribution, e.owner_user_id)].filter(Boolean).join(" · "),
+          label: [
+            `Logged ${Math.round((e.minutes / 60) * 100) / 100} hours: ${e.activity}`,
+            loggedByLabel(attribution, e.owner_user_id),
+            entryWaitingForReview(e) ? "Waiting for review" : null,
+          ].filter(Boolean).join(" · "),
           entryId: e.id,
           files: attachmentCount(e),
         })),
@@ -378,7 +385,7 @@ function OwnerHubBody({
           label: `${respondedLabel(r.id)}: ${r.title}`,
         })),
     ];
-    return items.sort((a, b) => (a.at < b.at ? 1 : -1)).slice(0, 15);
+    return items.sort((a, b) => ((a.sortAt ?? a.at) < (b.sortAt ?? b.at) ? 1 : -1)).slice(0, 15);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data.entries, docs.data, tickets, reviews, selectedHomeId, properties, attribution]);
 
@@ -420,7 +427,7 @@ function OwnerHubBody({
   }, [chatHomes, preview]);
   useEffect(() => () => ownerChatPanel.unregister(), []);
   const hourEntries = useMemo(
-    () => data.entries.map((e) => ({ minutes: e.minutes, activity: e.activity, review_id: (e as { review_id?: string | null }).review_id ?? null, superseded: Boolean(e.superseded), propertyIds: e.propertyIds, entry_date: e.entry_date })),
+    () => data.entries.map((e) => ({ minutes: e.minutes, activity: e.activity, review_id: (e as { review_id?: string | null }).review_id ?? null, superseded: Boolean(e.superseded), propertyIds: e.propertyIds, entry_date: e.entry_date, review_status: e.review_status, reviewed_at: e.reviewed_at })),
     [data.entries],
   );
   const goOpportunities = () => void navigate({ search: (prev) => { const { queue: _q, ...rest } = prev; return { ...rest, view: "opportunities" as const }; } });
