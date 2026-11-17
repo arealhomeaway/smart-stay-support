@@ -15,7 +15,7 @@ export function doneByLine(role: string | null | undefined, completedAt: string 
 }
 
 /** The Saved message after a Task save, naming the Task. */
-export function taskSavedMessage(input: { title?: string | null; status?: string | null; wasDone?: boolean }): string {
+export function taskSavedMessage(input: { title?: string | null | undefined; status?: string | null | undefined; wasDone?: boolean | undefined }): string {
   const name = (input.title ?? "").trim() || "This Task";
   if (input.status === "complete" && !input.wasDone) return `Saved. "${name}" is marked done.`;
   return `Saved. "${name}" is updated.`;
