@@ -3,7 +3,7 @@
  * My Tasks and the homeowner rows in Operations Needs you now. Read only; the rules live in
  * src/lib/homeowner-status.ts over the "What the homeowner has" reading.
  */
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { AlertTriangle, ArrowRight, MessageSquareReply } from "lucide-react";
@@ -48,28 +48,64 @@ export function HomeownerTaskChip({ chip }: { chip: HomeownerChip }) {
   );
 }
 
-function RowList({ rows, onOpen, empty }: { rows: StatusRow[]; onOpen: (r: StatusRow) => void; empty: string }) {
+/** Rows shown before "Show all", so a long list never pushes the Tasks off the screen. */
+const FIRST_ROWS = 8;
+
+function RowList({
+  rows,
+  onOpen,
+  empty,
+}: {
+  rows: StatusRow[];
+  onOpen: (r: StatusRow) => void;
+  empty: string;
+}) {
+  const [all, setAll] = useState(false);
   if (rows.length === 0) return <p className="px-1 text-sm text-muted-foreground">{empty}</p>;
+  const shown = all ? rows : rows.slice(0, FIRST_ROWS);
   return (
-    <ul className="divide-y divide-border rounded-md border border-border">
-      {rows.map((r) => (
-        <li key={r.key}>
-          <button
-            type="button"
-            onClick={() => onOpen(r)}
-            data-homeowner-row={r.key}
-            className="flex min-h-11 w-full items-start gap-3 px-3 py-2 text-left text-sm hover:bg-muted/50"
-          >
-            <span className="min-w-0 flex-1">
-              <span className="block font-medium">{r.title}</span>
-              <span className="block text-xs text-muted-foreground">{r.home}</span>
-              <span className={cn("block text-xs", r.overdue ? "font-medium text-state-blocked" : "text-foreground")}>{r.line}</span>
-            </span>
-            <ArrowRight className="mt-1 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-          </button>
-        </li>
-      ))}
-    </ul>
+    <div className="space-y-1.5">
+      <ul className="divide-y divide-border rounded-md border border-border">
+        {shown.map((r) => (
+          <li key={r.key}>
+            <button
+              type="button"
+              onClick={() => onOpen(r)}
+              data-homeowner-row={r.key}
+              className="flex min-h-11 w-full items-start gap-3 px-3 py-2 text-left text-sm hover:bg-muted/50"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block font-medium">{r.title}</span>
+                <span className="block text-xs text-muted-foreground">{r.home}</span>
+                <span
+                  className={cn(
+                    "block text-xs",
+                    r.overdue ? "font-medium text-state-blocked" : "text-foreground",
+                  )}
+                >
+                  {r.line}
+                </span>
+              </span>
+              <ArrowRight
+                className="mt-1 size-4 shrink-0 text-muted-foreground"
+                aria-hidden="true"
+              />
+            </button>
+          </li>
+        ))}
+      </ul>
+      {rows.length > FIRST_ROWS ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="min-h-11"
+          onClick={() => setAll((v) => !v)}
+        >
+          {all ? "Show fewer" : `Show all (${rows.length})`}
+        </Button>
+      ) : null}
+    </div>
   );
 }
 
@@ -110,13 +146,15 @@ export function MyHomeownersSection({
         <div className="grid gap-3 lg:grid-cols-2">
           <div className="space-y-1.5">
             <h3 className="text-sm font-medium">
-              {STATUS_COPY.waiting} <span className="numeric text-muted-foreground">({waiting.length})</span>
+              {STATUS_COPY.waiting}{" "}
+              <span className="numeric text-muted-foreground">({waiting.length})</span>
             </h3>
             <RowList rows={waiting} onOpen={onOpen} empty={STATUS_COPY.empty} />
           </div>
           <div className="space-y-1.5">
             <h3 className="text-sm font-medium">
-              {STATUS_COPY.answered} <span className="numeric text-muted-foreground">({answered.length})</span>
+              {STATUS_COPY.answered}{" "}
+              <span className="numeric text-muted-foreground">({answered.length})</span>
             </h3>
             <RowList rows={answered} onOpen={onOpen} empty={STATUS_COPY.noneAnswered} />
           </div>
@@ -163,7 +201,8 @@ export function HomeownerNeedsRows({ demo, allowed }: { demo: boolean; allowed: 
           )}
           <span className="min-w-0 flex-1">
             <span className={cn("block font-medium", r.kind === "overdue" && "text-danger")}>
-              {r.kind === "overdue" ? STATUS_COPY.needsOverdue : STATUS_COPY.needsAnswered}: {r.title}
+              {r.kind === "overdue" ? STATUS_COPY.needsOverdue : STATUS_COPY.needsAnswered}:{" "}
+              {r.title}
             </span>
             <span className="block text-sm text-muted-foreground">
               {r.home} · {r.line}
