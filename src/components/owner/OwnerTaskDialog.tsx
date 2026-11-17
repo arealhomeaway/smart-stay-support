@@ -151,8 +151,8 @@ export function OwnerTaskDialog({
     onSuccess: (_r, decision) => {
       toast.success(
         decision === "approved"
-          ? "Approved: thank you. Your project manager has been notified."
-          : "Sent back to your project manager with your note.",
+          ? `Saved: you approved "${action?.title ?? "this item"}". Your project manager has been notified.`
+          : `Saved: "${action?.title ?? "This item"}" went back to your project manager with your note.`,
       );
       setNote("");
       onOpenChange(false);

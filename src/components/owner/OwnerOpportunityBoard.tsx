@@ -38,6 +38,7 @@ import {
   HOME_OPPORTUNITIES_VISIBLE,
   PORTAL_GROUPS,
   PORTAL_GROUP_TONE,
+  answerReviewLine,
   completedLine,
   entriesForCard,
   newestCompletedFirst,
@@ -668,7 +669,10 @@ function OppCard({
         </div>
         <p className="text-[15px] font-bold leading-snug text-portal-ink">{item.title}</p>
         {kind === "done" ? (
-          <p className="numeric text-sm text-portal-muted">{completedLine(item.completedAt ?? null, minutes)}</p>
+          <p className="numeric text-sm text-portal-muted">
+            {completedLine(item.completedAt ?? null, minutes)}
+            {` · ${answerReviewLine(null)}`}
+          </p>
         ) : item.summary ? (
           <p className="line-clamp-1 text-sm text-portal-muted">{item.summary}</p>
         ) : null}
@@ -816,7 +820,7 @@ function PlanCardPanel({
       {item.allHomes ? <p className="text-sm text-muted-foreground">Answer once and it counts for every one of your homes.</p> : null}
       {view.kind === "open" ? (
         <PanelSection label="Your answer">
-          <PlanCardForm planCardId={row.plan_card_id} programId={programId} propertyId={row.property_id ?? item.propertyIds[0] ?? null} fields={view.fields} readOnly={readOnly} />
+          <PlanCardForm planCardId={row.plan_card_id} programId={programId} propertyId={row.property_id ?? item.propertyIds[0] ?? null} title={row.title} fields={view.fields} readOnly={readOnly} />
         </PanelSection>
       ) : view.kind === "done" ? (
         <SentAnswer planCardId={row.plan_card_id} outputFields={row.output_fields} />

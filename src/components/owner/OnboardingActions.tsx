@@ -216,8 +216,8 @@ export function OnboardingActions({
     onSuccess: (_r, v) => {
       toast.success(
         v.decision === "approved"
-          ? "Approved: thank you. Your project manager has been notified."
-          : "Sent back to your project manager with your note.",
+          ? `Saved: you approved "${v.action.title}". Your project manager has been notified.`
+          : `Saved: "${v.action.title}" went back to your project manager with your note.`,
       );
       const p = v.action.participation;
       if (p) {

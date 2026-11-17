@@ -43,7 +43,7 @@ export function OwnerItemConversation({
   const approve = useMutation({
     mutationFn: () => approveOwnerItem(reviewId),
     onSuccess: () => {
-      toast.success("Approved. Your ARHA team has it.");
+      toast.success("Saved: your approval. Your ARHA team has it.");
       void qc.invalidateQueries({ queryKey: ["owner-item-is-approval", reviewId] });
       void qc.invalidateQueries({ queryKey: ["owner-item-speakers"] });
       done();
@@ -54,7 +54,7 @@ export function OwnerItemConversation({
   const done = () => { setText(""); void qc.invalidateQueries({ queryKey: key }); void qc.invalidateQueries({ queryKey: ["owner-item-speakers"] }); onChanged?.(); };
   const send = useMutation({
     mutationFn: async () => { if (side === "owner") await replyToOwnerItem(reviewId, text.trim()); else await manageOwnerItem(reviewId, "reply", text.trim()); },
-    onSuccess: () => { toast.success(side === "owner" ? "Sent to your ARHA team" : "Reply sent"); done(); },
+    onSuccess: () => { toast.success(side === "owner" ? "Saved: your message is with your ARHA team." : "Saved: your reply is with the homeowner."); done(); },
     onError: (e: Error) => toast.error(e.message),
   });
   const manage = useMutation({

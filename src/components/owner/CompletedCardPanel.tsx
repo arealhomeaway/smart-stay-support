@@ -22,7 +22,7 @@ import { attachmentUrlFn, beginUploadFn, completeUploadFn, tagOwnerUploadFn } fr
 import { OWNER_UPLOAD_CATEGORIES } from "@/lib/attachments";
 import { editCardAnswer, loadCardAnswer } from "@/lib/ao-data";
 import { parseOutputFields, submissionValues, validateSubmission, type OutputField } from "@/lib/ao-ui";
-import { completedLine, entriesForCard, entryWaitingForReview, hoursFromMinutes, type HourEntry } from "@/lib/owner-portal-look";
+import { answerReviewLine, completedLine, entriesForCard, entryStatusLine, hoursFromMinutes, type HourEntry } from "@/lib/owner-portal-look";
 import { shortDate } from "@/lib/owner-opportunity-board";
 
 export type FileRef = { document_id: string; name: string };
@@ -75,7 +75,7 @@ export function CompletedCardPanel({
     onSuccess: async () => {
       setEditing(false);
       setShowUpload(false);
-      toast.success("Saved. Your team sees the update in your home's chat.");
+      toast.success(`Saved: your change to "${title}". Your team sees it in your home's chat.`);
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["ao-card-answer", planCardId] }),
         qc.invalidateQueries({ queryKey: ["home-chat"] }),
@@ -100,6 +100,9 @@ export function CompletedCardPanel({
           </div>
           <SheetTitle className="text-left font-display text-2xl font-normal leading-snug text-portal-ink">{title}</SheetTitle>
           <SheetDescription className="text-left text-portal-muted">{[home, typeLabel].filter(Boolean).join(" · ")}</SheetDescription>
+          <p className="text-sm font-medium text-portal-ink" data-testid="card-review-status">
+            {completedAt ? `Finished ${shortDate(completedAt)} · ` : ""}{answerReviewLine(null)}
+          </p>
         </SheetHeader>
         <img src={cover} alt="" width={912} height={736} className="h-[120px] w-full object-cover" />
         <div className="flex-1 space-y-6 px-5 py-5">
@@ -164,7 +167,7 @@ export function CompletedCardPanel({
                 {mine.map((e, i) => (
                   <li key={`${e.entry_date ?? ""}-${i}`} className="numeric">
                     {hoursFromMinutes(Number(e.minutes) || 0)} hrs{e.entry_date ? ` · ${shortDate(e.entry_date)}` : ""}
-                    {entryWaitingForReview(e) ? " · Waiting for review" : ""}
+                    {` · ${entryStatusLine(e)}`}
                   </li>
                 ))}
               </ul>

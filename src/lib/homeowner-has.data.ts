@@ -7,10 +7,13 @@ import { supabase } from "@/integrations/supabase/client";
 import type { HourEntry } from "@/lib/owner-portal-look";
 import {
   approvalStatusLine,
+  centralDay,
+  submissionLines,
   reviewStatusLine,
   senderRole,
   taskSentLine,
   openedCardLine,
+  type CardSubmission,
   type HasApproval,
   type HasFile,
   type HasPlanCard,
@@ -56,8 +59,29 @@ export async function loadHomeProgram(propertyId: string): Promise<HomeProgram |
 type CardRow = {
   id: string; property_id: string; program_id: string; join_outcome: string; unlocked_at: string | null; deadline_at: string | null;
   expired_at: string | null; owner_completed_at: string | null; created_at: string | null; owner_review_id: string | null;
-  card: { code: string | null; title: string; opens_text: string | null; stage_window: string | null; lane: string | null } | null;
+  card: { code: string | null; title: string; opens_text: string | null; stage_window: string | null; lane: string | null; output_fields?: unknown } | null;
 };
+
+/**
+ * The homeowner's latest saved answer per plan card. Read under the existing access rule on saved
+ * answers: a reader the rule does not cover gets no rows, and the card shows its status only.
+ */
+export async function loadCardSubmissions(planCardIds: string[]): Promise<Map<string, CardSubmission>> {
+  const rowsOut = await chunked<{ plan_card_id: string; field_values: unknown; files: unknown; submitted_at: string }>(
+    planCardIds,
+    (ids) => db.from("ao_contributions").select("plan_card_id, field_values, files, submitted_at").in("plan_card_id", ids).order("submitted_at", { ascending: false }),
+    "Homeowner answers",
+  );
+  const out = new Map<string, CardSubmission>();
+  for (const r of rowsOut) {
+    if (out.has(r.plan_card_id)) continue;
+    const files = Array.isArray(r.files)
+      ? (r.files as { document_id?: string; name?: string }[]).filter((f) => typeof f?.document_id === "string").map((f) => ({ id: f.document_id as string, name: f.name || "File" }))
+      : [];
+    out.set(r.plan_card_id, { values: (r.field_values ?? {}) as Record<string, unknown>, files, submittedAt: r.submitted_at });
+  }
+  return out;
+}
 
 export type HomeownerHasData = {
   cards: HasPlanCard[];
@@ -87,7 +111,7 @@ async function sharedTaskFiles(taskIds: string[], demo: boolean): Promise<Map<st
 }
 
 /** Role label per teammate id, never a name. */
-async function roleLabels(userIds: string[]): Promise<Record<string, string>> {
+export async function roleLabels(userIds: string[]): Promise<Record<string, string>> {
   const ids = [...new Set(userIds.filter(Boolean))];
   if (ids.length === 0) return {};
   const [appRoles, seats, pools] = await Promise.all([
@@ -120,7 +144,7 @@ export async function loadHomeownerHas(input: { programId: string; propertyIds: 
   const [cardRows, settings, reviewRows, entryRows, approvalRows] = await Promise.all([
     chunked<CardRow>(propertyIds, (ids) =>
       db.from("ao_home_plan_cards")
-        .select("id, property_id, program_id, join_outcome, unlocked_at, deadline_at, expired_at, owner_completed_at, created_at, owner_review_id, card:ao_library_cards(code, title, opens_text, stage_window, lane)")
+        .select("id, property_id, program_id, join_outcome, unlocked_at, deadline_at, expired_at, owner_completed_at, created_at, owner_review_id, card:ao_library_cards(code, title, opens_text, stage_window, lane, output_fields)")
         .eq("program_id", programId).in("property_id", ids), "Homeowner cards"),
     chunked<{ property_id: string; automated: boolean }>(propertyIds, (ids) =>
       db.from("ao_home_plan_settings").select("property_id, automated").in("property_id", ids), "Homeowner cards"),
@@ -134,8 +158,8 @@ export async function loadHomeownerHas(input: { programId: string; propertyIds: 
         .eq("program_id", programId).is("archived_at", null),
       "Owner items",
     ),
-    rows<{ id: string; minutes: number; activity: string | null; review_id: string | null; amends_entry_id: string | null; entry_date: string | null }>(
-      db.from("owner_time_entries").select("id, minutes, activity, review_id, amends_entry_id, entry_date").eq("program_id", programId),
+    rows<{ id: string; minutes: number; activity: string | null; review_id: string | null; amends_entry_id: string | null; entry_date: string | null; reviewed_at: string | null }>(
+      db.from("owner_time_entries").select("id, minutes, activity, review_id, amends_entry_id, entry_date, reviewed_at").eq("program_id", programId),
       "Hours",
     ),
     chunked<{
@@ -184,12 +208,13 @@ export async function loadHomeownerHas(input: { programId: string; propertyIds: 
     ...mine.map((r) => r.onboarding_task_id ?? firstSend.get(r.id)?.task_id ?? ""),
     ...myApprovals.map((a) => a.entity_id ?? ""),
   ];
-  const [files, roles] = await Promise.all([
+  const [files, roles, submissions] = await Promise.all([
     sharedTaskFiles(taskIds, demo),
     roleLabels([
       ...mine.map((r) => firstSend.get(r.id)?.sent_by ?? r.created_by ?? ""),
       ...myApprovals.map((a) => a.requested_by ?? ""),
     ]),
+    loadCardSubmissions(cardRows.filter((c) => c.owner_completed_at).map((c) => c.id)),
   ]);
 
   const amended = new Set(entryRows.map((e) => e.amends_entry_id).filter(Boolean) as string[]);
@@ -212,6 +237,8 @@ export async function loadHomeownerHas(input: { programId: string; propertyIds: 
       ownerCompletedAt: c.owner_completed_at,
       createdAt: c.created_at,
       ownerReviewId: c.owner_review_id,
+      outputFields: c.card?.output_fields ?? null,
+      submission: submissions.get(c.id) ?? null,
     })),
     planOn: Object.fromEntries(settings.map((s) => [s.property_id, Boolean(s.automated)])),
     hourEntries: entryRows.map((e) => ({
@@ -221,6 +248,7 @@ export async function loadHomeownerHas(input: { programId: string; propertyIds: 
       superseded: amended.has(e.id),
       propertyIds: entryHomes.filter((x) => x.entry_id === e.id).map((x) => x.property_id),
       entry_date: e.entry_date,
+      reviewed_at: e.reviewed_at,
     })),
     reviews: mine.map((r) => {
       const send = firstSend.get(r.id);
@@ -254,11 +282,11 @@ export async function loadHomeownerHas(input: { programId: string; propertyIds: 
 }
 
 /** The two Task drawer lines: the card finishing it opened, and its owner item or approval. */
-export async function loadTaskHomeownerLines(input: { taskId: string; done: boolean; completedAt: string | null }): Promise<{ opened: string[]; sent: string | null }> {
+export async function loadTaskHomeownerLines(input: { taskId: string; done: boolean; completedAt: string | null }): Promise<{ opened: string[]; sent: string | null; answers: { title: string; line: string; lines: string[]; files: HasFile[] }[] }> {
   const { taskId } = input;
   const [cards, sends, items, approvals] = await Promise.all([
-    rows<{ unlocked_at: string | null; card: { title: string } | null }>(
-      db.from("ao_home_plan_cards").select("unlocked_at, card:ao_library_cards(title)").eq("linked_task_id", taskId),
+    rows<{ id: string; unlocked_at: string | null; owner_completed_at: string | null; card: { title: string; output_fields?: unknown } | null }>(
+      db.from("ao_home_plan_cards").select("id, unlocked_at, owner_completed_at, card:ao_library_cards(title, output_fields)").eq("linked_task_id", taskId),
       "The homeowner card",
     ),
     rows<{ review_id: string; sent_at: string }>(
@@ -309,5 +337,41 @@ export async function loadTaskHomeownerLines(input: { taskId: string; done: bool
       sent = s.waiting ? taskSentLine({ sentAt: a.created_at, answered: false, answeredAt: null, answer: "" }) : s.line;
     }
   }
-  return { opened, sent };
+  // What the homeowner sent on the linked cards she finished.
+  const finishedCards = cards.filter((c) => c.owner_completed_at);
+  const subs = finishedCards.length ? await loadCardSubmissions(finishedCards.map((c) => c.id)) : new Map<string, CardSubmission>();
+  const answers = finishedCards.map((c) => {
+    const sub = subs.get(c.id) ?? null;
+    return {
+      title: c.card?.title ?? "Homeowner card",
+      line: `Homeowner finished ${c.card?.title ?? "the card"} ${centralDay(c.owner_completed_at)}`,
+      lines: submissionLines(c.card?.output_fields, sub),
+      files: sub?.files ?? [],
+    };
+  });
+  return { opened, sent, answers };
+}
+
+/** Proof on finished Tasks: their files, when they were sent to the homeowner, and who finished them (role). */
+export async function loadTaskProof(input: { taskIds: string[]; completerIds: string[] }): Promise<{
+  files: Record<string, string[]>;
+  sentAt: Record<string, string>;
+  roles: Record<string, string>;
+}> {
+  const [docs, sends, approvals, roles] = await Promise.all([
+    chunked<{ entity_id: string; title: string | null; original_filename: string | null }>(input.taskIds, (ids) =>
+      db.from("documents").select("entity_id, title, original_filename").eq("entity_type", "onboarding_task").in("entity_id", ids)
+        .eq("upload_status", "stored").is("archived_at", null).is("deleted_at", null).order("created_at"), "Task files"),
+    chunked<{ task_id: string; sent_at: string }>(input.taskIds, (ids) =>
+      db.from("owner_item_task_sends").select("task_id, sent_at").in("task_id", ids).order("sent_at", { ascending: false }), "Sent to the homeowner"),
+    chunked<{ entity_id: string; created_at: string | null; status: string }>(input.taskIds, (ids) =>
+      db.from("approvals").select("entity_id, created_at, status").eq("entity_type", "onboarding_task").eq("approver_role", "owner").in("entity_id", ids), "Sent to the homeowner"),
+    roleLabels(input.completerIds),
+  ]);
+  const files: Record<string, string[]> = {};
+  for (const d of docs) (files[d.entity_id] ??= []).push(d.original_filename || d.title || "File");
+  const sentAt: Record<string, string> = {};
+  for (const s of sends) if (!sentAt[s.task_id]) sentAt[s.task_id] = s.sent_at;
+  for (const a of approvals) if (!sentAt[a.entity_id] && a.created_at && a.status !== "withdrawn" && a.status !== "cancelled") sentAt[a.entity_id] = a.created_at;
+  return { files, sentAt, roles };
 }

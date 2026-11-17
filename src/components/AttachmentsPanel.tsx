@@ -19,6 +19,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { filesSavedMessage } from "@/lib/task-proof";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -319,6 +320,8 @@ export function AttachmentsPanel({
         ) : null}
         {canDrop ? <MultiFileUpload key={`${entityType}-${entityId}`} upload={upload} multiple={!fulfilsRequestId} label={dropLabel} onBusyChange={onUploadBusyChange} onResults={ids => {
           onUploaded?.(ids);
+          // Nov 17: every upload confirms what saved.
+          if (ids.length) toast.success(filesSavedMessage(ids.length, title));
           if (folderPick && ids.length) void qc.invalidateQueries({ queryKey: ["home-files"] });
           for (const queryKey of attachmentUploadInvalidationKeys(entityType, entityId)) void qc.invalidateQueries({ queryKey });
         }}/> : null}

@@ -147,3 +147,32 @@ export function portalOpensWhen(text: string | null | undefined): string {
   if (!t || /^open on day one/i.test(t)) return "our team finishes its part";
   return /^(ARHA|I|Owner)\b/.test(t) ? t : t.charAt(0).toLowerCase() + t.slice(1);
 }
+
+/* ---------- Proof that it saved (Admin, Nov 17). Display only; no counting or review rule here. ---------- */
+
+/** "Waiting for review" until the team reviews the entry, then "Reviewed by your team Nov 18". */
+export function entryStatusLine(e: { review_status?: string | null; reviewed_at?: string | null }): string {
+  if (e.reviewed_at) return `Reviewed by your team ${shortDate(e.reviewed_at)}`;
+  return "Waiting for review";
+}
+
+/** Her saved hours split by review: reviewed vs waiting (superseded entries excluded). */
+export function hoursByReview(entries: (HourEntry & { reviewed_at?: string | null })[]): { reviewedMinutes: number; waitingMinutes: number } {
+  let reviewedMinutes = 0;
+  let waitingMinutes = 0;
+  for (const e of entries) {
+    if (e.superseded) continue;
+    const m = Number(e.minutes) || 0;
+    if (e.reviewed_at) reviewedMinutes += m;
+    else waitingMinutes += m;
+  }
+  return { reviewedMinutes, waitingMinutes };
+}
+
+/**
+ * Status under a finished answer. Answers have no recorded team review step (only hours do), so
+ * the line says where the answer is, never "reviewed".
+ */
+export function answerReviewLine(completedAt: string | null | undefined): string {
+  return completedAt ? `Sent to your team ${shortDate(completedAt)}` : "Sent to your team";
+}

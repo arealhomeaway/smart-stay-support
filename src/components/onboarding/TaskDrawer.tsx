@@ -39,6 +39,8 @@ import { evidenceSatisfied } from "@/lib/onboarding-evidence";
 import { listAttachmentsFn } from "@/lib/attachments.functions";
 import { bulkUpdateHomeTasksFn, markTaskStartedFn } from "@/lib/onboarding.functions";
 import { SendToHomeownerSection, sendFormId } from "@/components/onboarding/SendToHomeownerDialog";
+import { roleLabels } from "@/lib/homeowner-has.data";
+import { doneByLine, filesLine } from "@/lib/task-proof";
 import { ApprovalComplete, OpenFormButton, TaskKindMiddle, missingFillFields, outsideEvidence, useFillIn, type OutsideDraft } from "@/components/onboarding/TaskKindMiddle";
 import { TaskOwnerCompletions } from "@/components/onboarding/OwnerCompletionsReview";
 import { EmailComposer } from "@/components/EmailComposer";
@@ -238,6 +240,16 @@ export function TaskDrawer({
   const fileCount = (stepFiles.data?.files ?? []).filter(
     (f) => f.upload_status === "stored" && !f.archived_at,
   ).length;
+  const completerRole = useQuery({
+    queryKey: ["task-completer-role", (task as { completed_by?: string | null } | null)?.completed_by ?? "none"],
+    queryFn: async () => {
+      const id = (task as { completed_by?: string | null } | null)?.completed_by;
+      return id ? (await roleLabels([id]))[id] ?? null : null;
+    },
+    enabled: Boolean((task as { completed_by?: string | null } | null)?.completed_by),
+    retry: false,
+    staleTime: 300_000,
+  });
   const ownerSend = useQuery({
     queryKey: ["task-owner-send", task?.id ?? "none"],
     queryFn: () => loadTaskOwnerSend(task!.id),
@@ -439,7 +451,9 @@ export function TaskDrawer({
       }),
     );
   const completerId = (task as WorkflowTask & { completed_by?: string | null }).completed_by ?? null;
-  const completedBy = completerId ? people.find((p) => p.id === completerId) : null;
+  const storedFileNames = (stepFiles.data?.files ?? [])
+    .filter((f) => f.upload_status === "stored" && !f.archived_at)
+    .map((f) => (f as { original_filename?: string | null; title?: string | null }).original_filename || (f as { title?: string | null }).title || "File");
   // Fix 17: the same rule the server enforces on Reopen.
   const canReopenTop = canReopenCompletedTask({ userId, isAdmin: Boolean(isAdmin), isOnboardingDirector: Boolean(isOnboardingDirector) }, completerId);
   const filesSection = (
@@ -496,10 +510,10 @@ export function TaskDrawer({
           )}
           {finished && (
             <div className="space-y-2 rounded-md border border-border p-3 text-sm">
-              <p>
-                Completed by {completedBy?.full_name || completedBy?.email || "a teammate"}
-                {task.completed_at ? ` on ${usDate(task.completed_at)}` : ""}
-              </p>
+              {/* Nov 17: proof the finished work saved: who (role) and when, plus what was attached. */}
+              <p className="font-medium">{doneByLine(completerRole.data ?? null, task.completed_at ?? null)}</p>
+              {storedFileNames.length > 0 ? <p className="text-muted-foreground">{filesLine(storedFileNames)}</p> : null}
+              {task.evidence_note?.trim() ? <p className="whitespace-pre-wrap text-muted-foreground">Note: {task.evidence_note.trim()}</p> : null}
               {canReopenTop && !disabled && (
                 topReopen ? (
                   <div className="flex flex-wrap gap-2">

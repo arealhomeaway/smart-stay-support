@@ -85,6 +85,9 @@ function RowList({
                 >
                   {r.line}
                 </span>
+                {r.files?.length ? (
+                  <span className="block text-xs text-muted-foreground">Files: {r.files.map((f) => f.name).join(", ")}</span>
+                ) : null}
               </span>
               <ArrowRight
                 className="mt-1 size-4 shrink-0 text-muted-foreground"
