@@ -39,7 +39,7 @@ describe("CSV round-trip of the new step fields", () => {
   it("keeps description, done when, video, business-day rule, role and conditions", () => {
     const row = planRow({
       plan: "T", stageNo: 1, stage: "Phase 1", taskNo: 1, title: "Purchase pool furniture", detail: "Order set",
-      role: "lead_designer", person: "", status: "", dueOn: "", anchor: "planned_closing", offset: -5,
+      role: "designer", person: "", status: "", dueOn: "", anchor: "planned_closing", offset: -5,
       required: true, blocksHandoff: false, evidence: false, ownerApproval: false, ownerDependency: null,
       module: "", breezeway: "", opportunity: null, unit: "business", description: "Why", doneWhen: "Delivered",
       videoUrl: "https://example.com/v", conditions: "furnishing_scope=full_furnishing; module=pool",
@@ -50,7 +50,7 @@ describe("CSV round-trip of the new step fields", () => {
     expect(t.videoUrl).toBe("https://example.com/v");
     expect(t.offsetUnit).toBe("business");
     expect(t.offsetDays).toBe(-5);
-    expect(t.functionalRole).toBe("lead_designer");
+    expect(t.functionalRole).toBe("designer");
     expect(t.condition?.all.length).toBe(2);
   });
   it("keeps an unknown role as a label and explains it instead of dropping it", () => {
