@@ -18,6 +18,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { guestInResidenceFor } from "@/lib/guest-impact";
 import { askCoach, askCoachFollowUp, linkCoachSession } from "@/lib/coach.functions";
 import { captureTicketReservation, getPropertyStay } from "@/lib/ownerrez.functions";
 import type { Guidance } from "@/lib/coach-schema";
@@ -178,7 +179,7 @@ function CoachPage() {
           source_channel: "internal",
           ownerrez_booking_id: stay?.ok ? stay.data.booking_id : null,
           guest_name: stay?.ok ? stay.data.guest_name : null,
-          guest_in_residence: g.occupancy_status === "occupied",
+          guest_in_residence: guestInResidenceFor({ occupancy: g.occupancy_status, guestImpact: g.guest_impact }),
           playbook_id: wt?.playbook_id ?? null,
           reported_at: now.toISOString(),
           acknowledged_at: now.toISOString(),

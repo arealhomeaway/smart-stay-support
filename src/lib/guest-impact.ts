@@ -31,6 +31,29 @@ export const ISSUE_RELATION: { value: IssueRelation; label: string }[] = [
   { value: "none", label: "No guest / reservation" },
 ];
 
+/**
+ * Guest in residence when a ticket is created or imported (Emily, Nov 17): true only when the
+ * home is occupied or a guest is affected. A vacant home with no guest impact never carries it,
+ * so it never forces the "Tell the guest" step or a guest update clock. Staff can still turn it
+ * on later (Active-stay impact: Yes). The database default is false.
+ */
+export const OCCUPIED_STATUSES = ["occupied", "same_day_departure", "in_home"] as const;
+export const GUEST_AFFECTED_IMPACTS = ["active_guest_affected"] as const;
+
+export function guestInResidenceFor(input: { occupancy?: string | null; guestImpact?: string | null }): boolean {
+  return (
+    (OCCUPIED_STATUSES as readonly string[]).includes(input.occupancy ?? "") ||
+    (GUEST_AFFECTED_IMPACTS as readonly string[]).includes(input.guestImpact ?? "")
+  );
+}
+
+/** A resolved or closed ticket never carries a guest update clock (mirrored by a database trigger). */
+export const NO_GUEST_CLOCK_STATUSES = ["resolved", "closed"] as const;
+
+export function guestClockAllowed(status: string | null | undefined): boolean {
+  return !(NO_GUEST_CLOCK_STATUSES as readonly string[]).includes(status ?? "");
+}
+
 /** Live guest read statuses (see property-contact.ts) → occupancy. Anything unverified is unknown. */
 export function occupancyFromGuestStatus(status: string | null | undefined): Occupancy {
   if (status === "occupied") return "in_home";
@@ -122,6 +145,8 @@ export type ImpactTicket = {
   issue_reservation_relation?: string | null;
   guest_in_residence?: boolean | null;
   guest_confirmed?: boolean | null;
+  /** When given, a resolved or closed ticket shows no guest update clock. */
+  status?: string | null;
 };
 
 /**
@@ -205,7 +230,7 @@ export function ticketGuestComm(
     comm: eff.comm,
     postStay: eff.postStay,
     guest_update_at: t.guest_update_at ?? null,
-    next_guest_update_at: t.next_guest_update_at ?? null,
+    next_guest_update_at: guestClockAllowed(t.status) ? (t.next_guest_update_at ?? null) : null,
     waiting_on: t.waiting_on ?? null,
     guest_confirmed: t.guest_confirmed ?? null,
     now,

@@ -104,7 +104,7 @@ import { NotionImportBlock } from "@/components/tickets/NotionImportBlock";
 import { ReopenTicketDialog } from "@/components/tickets/ReopenTicketDialog";
 import { NextStepCard } from "@/components/tickets/NextStepCard";
 import { CloseReopenButtons } from "@/components/tickets/CloseReopenButtons";
-import { nextStepView } from "@/lib/ticket-next-step";
+import { nextStepView, skipKindFor } from "@/lib/ticket-next-step";
 import { CLOSE_REOPEN_COPY, closeReopenState } from "@/lib/ticket-close-reopen";
 import { REOPEN_COPY, reopenPathFor, type ReopenTicketLike } from "@/lib/ticket-reopen";
 import { ArchiveTicketButton, ArchivedTicketBanner } from "@/components/scorecard/TicketArchive";
@@ -197,9 +197,11 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   const [closeRequested, setCloseRequested] = useState(false);
   const [guidedLeads, setGuidedLeadsFlag] = useState(false);
   const [guidedLeadTitle, setGuidedLeadTitle] = useState<string | null>(null);
-  const setGuidedLeads = useCallback((leads: boolean, title?: string | null) => {
+  const [guidedLeadStep, setGuidedLeadStep] = useState<string | null>(null);
+  const setGuidedLeads = useCallback((leads: boolean, title?: string | null, step?: string | null) => {
     setGuidedLeadsFlag(leads);
     setGuidedLeadTitle(leads ? (title ?? null) : null);
+    setGuidedLeadStep(leads ? (step ?? null) : null);
   }, []);
   // Guided checklist: refund form opener and the repair/vendor tools toggle.
   const [refundSignal, setRefundSignal] = useState(0);
@@ -1396,7 +1398,13 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             <StepTracker tracker={tracker} />
             <DoThisNow due={doNowDue}>
               {nextStep && (
-                <NextStepCard ticketId={ticketId} view={nextStep} canEdit={canWorkTickets} onChanged={refresh} />
+                <NextStepCard
+                  ticketId={ticketId}
+                  view={nextStep}
+                  canEdit={canWorkTickets}
+                  skip={skipKindFor({ custom: nextStep.custom, guidedStep: guidedLeads ? guidedLeadStep : null })}
+                  onChanged={refresh}
+                />
               )}
               {quietLine && <p className="text-sm text-muted-foreground">{quietLine}</p>}
               {sla.escalation && (

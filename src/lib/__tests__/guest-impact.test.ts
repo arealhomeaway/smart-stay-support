@@ -164,3 +164,55 @@ describe("legacy tickets keep working", () => {
     expect(g.activeCadence).toBe(true);
   });
 });
+
+// Nov 17 (Emily): guest in residence only when the home is occupied or a guest is affected;
+// a resolved or closed ticket carries no guest update clock.
+describe("guest in residence at create and import", () => {
+  it("is false for a vacant home with no guest impact", async () => {
+    const { guestInResidenceFor } = await import("../guest-impact");
+    expect(guestInResidenceFor({ occupancy: "vacant", guestImpact: "none" })).toBe(false);
+    expect(guestInResidenceFor({ occupancy: null, guestImpact: null })).toBe(false);
+    expect(guestInResidenceFor({ occupancy: "unknown", guestImpact: "none" })).toBe(false);
+  });
+  it("is true when the home is occupied", async () => {
+    const { guestInResidenceFor } = await import("../guest-impact");
+    expect(guestInResidenceFor({ occupancy: "occupied", guestImpact: "none" })).toBe(true);
+    expect(guestInResidenceFor({ occupancy: "same_day_departure", guestImpact: "none" })).toBe(true);
+  });
+  it("is true when a guest is affected, even with occupancy not known", async () => {
+    const { guestInResidenceFor } = await import("../guest-impact");
+    expect(guestInResidenceFor({ occupancy: "vacant", guestImpact: "active_guest_affected" })).toBe(true);
+  });
+  it("a safety issue in a vacant home is not a guest in residence", async () => {
+    const { guestInResidenceFor } = await import("../guest-impact");
+    expect(guestInResidenceFor({ occupancy: "vacant", guestImpact: "safety_security" })).toBe(false);
+  });
+  it("a vacant ticket no longer owes the guest step", async () => {
+    const { ticketGuestComm } = await import("../guest-impact");
+    const t = { guest_in_residence: false, active_stay_impact: null, guest_comm_required: null, guest_update_at: null };
+    expect(ticketGuestComm(t).commState).toBe("not_required");
+    expect(ticketGuestComm(t).activeCadence).toBe(false);
+  });
+});
+
+describe("no guest update clock once a ticket is resolved or closed", () => {
+  it("guestClockAllowed", async () => {
+    const { guestClockAllowed } = await import("../guest-impact");
+    expect(guestClockAllowed("resolved")).toBe(false);
+    expect(guestClockAllowed("closed")).toBe(false);
+    expect(guestClockAllowed("in_progress")).toBe(true);
+    expect(guestClockAllowed(undefined)).toBe(true);
+  });
+  it("a resolved ticket with a stored clock shows no guest update due", async () => {
+    const { ticketGuestComm } = await import("../guest-impact");
+    const base = {
+      guest_in_residence: true, active_stay_impact: "yes", guest_comm_required: "yes",
+      guest_update_at: "2026-11-17T16:02:31Z", next_guest_update_at: "2026-11-17T18:02:31Z",
+    };
+    const now = new Date("2026-11-17T20:00:00Z");
+    expect(ticketGuestComm({ ...base, status: "in_progress" }, null, now).commState).toBe("update_due");
+    const done = ticketGuestComm({ ...base, status: "resolved" }, null, now);
+    expect(done.commState).toBe("informed");
+    expect(done.commDueAt).toBeNull();
+  });
+});

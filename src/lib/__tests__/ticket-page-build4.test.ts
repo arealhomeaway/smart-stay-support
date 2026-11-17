@@ -65,16 +65,18 @@ describe("Do this now: one next step with a due time (T5, T13)", () => {
   });
   test("a change is saved on the ticket's own next step fields, recorded with who and when, and never starts a clock", () => {
     const card = read("src/components/tickets/NextStepCard.tsx");
-    expect(card).toContain("next_action: nextAction, next_action_due_at: dueIso");
-    expect(card).toContain('event_type: "next_step_changed"');
-    expect(card).toContain("author_id: userData.user.id");
+    expect(card).toContain("next_action: step.trim(), next_action_due_at: dueIso");
+    expect(card).toContain("next_action: null, next_action_due_at: null");
+    expect(card).toContain('log(uid, "next_step_changed"');
+    expect(card).toContain("author_id: userId");
+    expect(card).toContain("await work(userData.user.id)");
     expect(card).not.toContain("ensureTicketActionStarted");
     expect(card).not.toMatch(/\b(acknowledged_at|action_started_at|response_due_at|action_due_at)\b/);
     // who and when also land in the add-only state log through the existing trigger
     expect(read("drizzle/migrations/0270_ticket_times_and_states.sql")).toContain("AFTER INSERT OR UPDATE OF next_action, next_action_due_at");
   });
   test("the ticket page shows the step inside Do this now", () => {
-    expect(PAGE).toContain("<NextStepCard ticketId={ticketId} view={nextStep}");
+    expect(PAGE).toMatch(/<NextStepCard\s+ticketId=\{ticketId\}\s+view=\{nextStep\}/);
     expect(PAGE).toContain("derivedLabel: (guidedLeads && guidedLeadTitle) || (currentAction?.title ?? null)");
     expect(PAGE).toContain('derivedDueAt: ticket.status === "waiting" ? (ticket.next_review_at ?? null)');
   });
@@ -198,5 +200,42 @@ describe("One touch asks What did you do? (T11)", () => {
     const flags = read("src/components/work-entry/HomeRepeatFlags.tsx");
     expect(flags).toContain("What you did:");
     expect(flags).toContain('.eq("problem_type_id", flag.work_type_id)');
+  });
+});
+
+// Nov 17 (Emily): Change next step lets the ticket owner skip or change the step, with a reason in Activity.
+describe("Change next step: skip or change, with a required reason", () => {
+  test("only the guest update step and a written step can be skipped", async () => {
+    const { skipKindFor } = await import("../ticket-next-step");
+    expect(skipKindFor({ custom: false, guidedStep: "guest_update" })).toBe("guest_update");
+    expect(skipKindFor({ custom: true, guidedStep: null })).toBe("written");
+    expect(skipKindFor({ custom: false, guidedStep: "decide" })).toBeNull();
+    expect(skipKindFor({ custom: false, guidedStep: null })).toBeNull();
+  });
+  test("skipping the guest step stops guest updates; skipping a written step clears it", async () => {
+    const { skipPatch } = await import("../ticket-next-step");
+    expect(skipPatch("guest_update")).toEqual({ guest_comm_required: "no", next_guest_update_at: null });
+    expect(skipPatch("written")).toEqual({ next_action: null, next_action_due_at: null });
+  });
+  test("a reason is required, short", async () => {
+    const { reasonProblem } = await import("../ticket-next-step");
+    expect(reasonProblem("")).toBe("Write a short reason.");
+    expect(reasonProblem("  ab ")).toBe("Write a short reason.");
+    expect(reasonProblem("x".repeat(201))).toBe("Keep the reason under 200 characters.");
+    expect(reasonProblem("No guest in the home")).toBeNull();
+  });
+  test("the reason is written to Activity", async () => {
+    const { skipHistoryLine, nextStepHistoryLine } = await import("../ticket-next-step");
+    expect(skipHistoryLine("Guest update due", "No guest in the home")).toBe("Step skipped: Guest update due. Reason: No guest in the home.");
+    expect(nextStepHistoryLine("Call the vendor", null, () => "", "Vendor asked for a call")).toBe(
+      "Next step changed: Call the vendor. No due time. Reason: Vendor asked for a call.",
+    );
+    const card = read("src/components/tickets/NextStepCard.tsx");
+    expect(card).toContain('log(uid, "step_skipped", skipHistoryLine(view.label, reason))');
+    expect(card).toContain("reasonProblem(reason)");
+  });
+  test("a new step never inherits the suggested step's late due time", () => {
+    const card = read("src/components/tickets/NextStepCard.tsx");
+    expect(card).toContain('setDue(view.custom ? isoToCentralInput(view.dueAt) : "")');
   });
 });

@@ -1,6 +1,7 @@
 import { formatPropertyLabel, matchesPropertySearch } from "@/lib/property-label";
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import {
+  guestInResidenceFor,
   isPostStayFeedback,
   suggestActiveStayImpact,
   suggestGuestComm,
@@ -26,7 +27,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { slaDueDates } from "@/lib/tickets";
 import {
   activityCategoryFor,
-  guestInHomeFrom,
   NOT_SURE_PROBLEM,
   ONE_TOUCH_DID,
   oneTouchOutcome,
@@ -377,7 +377,8 @@ export function NewTicketForm({
       });
       return { postStay, relation, impact, comm: suggestGuestComm(impact) };
     })();
-    const guestInResidence = guestInHomeFrom(understood.occupancy);
+    // Guest in residence only when the home is occupied or a guest is affected (src/lib/guest-impact.ts).
+    const guestInResidence = guestInResidenceFor({ occupancy: understood.occupancy, guestImpact: understood.guestImpact });
 
     const { data: ticket, error } = await supabase
       .from("tickets")

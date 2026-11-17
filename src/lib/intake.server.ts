@@ -11,6 +11,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { writeHistoryLine } from "@/lib/history-line";
+import { guestInResidenceFor } from "@/lib/guest-impact";
 
 type Db = SupabaseClient<Database>;
 
@@ -169,6 +170,7 @@ export async function createIntakeMatter(db: Db, payload: IntakePayload): Promis
       status: "open",
       guest_impact: "none",
       occupancy_status: "unknown",
+      guest_in_residence: guestInResidenceFor({ occupancy: "unknown", guestImpact: "none" }),
       source_channel: source === "email" ? "email" : source,
       initiator_type: "external",
       source_reference: payload.externalId ?? payload.from ?? null,

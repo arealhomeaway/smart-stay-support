@@ -154,6 +154,7 @@ export function OccupancyGuestPanel({
 
   async function save(patch: {
     active_stay_impact?: string;
+    guest_in_residence?: boolean;
     guest_comm_required?: string;
     issue_reservation_relation?: string;
     reservation_guest_name?: string | null;
@@ -376,7 +377,8 @@ export function OccupancyGuestPanel({
             </Label>
             <Select
               value={ticket.active_stay_impact ?? ""}
-              onValueChange={(v) => void save({ active_stay_impact: v })}
+              // Staff turn guest in residence on by hand here (src/lib/guest-impact.ts).
+              onValueChange={(v) => void save(v === "yes" ? { active_stay_impact: v, guest_in_residence: true } : { active_stay_impact: v })}
               disabled={readOnly || saving}
             >
               <SelectTrigger aria-label="Active-stay impact" data-testid="active-stay-impact">

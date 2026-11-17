@@ -113,7 +113,7 @@ export function GuidedTicketPanel({
   /** The existing Current Action card — shown when no guided step leads. */
   children?: ReactNode;
   /** Tells the page when a guided step leads, so older stage blocks step aside. */
-  onLeadChange?: (leads: boolean, leadTitle?: string | null) => void;
+  onLeadChange?: (leads: boolean, leadTitle?: string | null, leadStep?: string | null) => void;
   /** A genuine vendor commitment miss from the Work Order rules, if any. */
   vendorFollowUp?: string | null;
   /** The existing Work Order list, shown inside the one Waiting on Vendor state. */
@@ -278,7 +278,9 @@ export function GuidedTicketPanel({
         : vendorFollowUp
           ? "Follow up with the vendor"
           : "Wait for the vendor to finish";
-  useEffect(() => onLeadChange?.(leads, leadTitle), [leads, leadTitle, onLeadChange]);
+  // Which guided step leads, so Change next step can offer to skip the guest step.
+  const leadStep = leads && !needsWorkOrder && guidedStep && !closed && !readOnly ? guidedStep : null;
+  useEffect(() => onLeadChange?.(leads, leadTitle, leadStep), [leads, leadTitle, leadStep, onLeadChange]);
 
   return (
     <div className="space-y-3">

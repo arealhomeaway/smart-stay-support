@@ -23,7 +23,48 @@ export const NEXT_STEP_COPY = {
   tooShort: "Write the next step in a few words.",
   tooLong: "Keep the next step under 200 characters.",
   badDue: "Pick a due time that is a real date and time.",
+  chooseSkip: "Skip this step",
+  chooseChange: "Set a different step",
+  reasonLabel: "Reason",
+  reasonPlaceholder: "For example: no guest in the home",
+  reasonShort: "Write a short reason.",
+  reasonLong: "Keep the reason under 200 characters.",
+  skip: "Skip step",
+  skipped: "Step skipped.",
 } as const;
+
+/**
+ * What "Skip this step" does (Emily, Nov 17). Only steps that run no response or action clock
+ * can be skipped: the guest update step (guest communication becomes not required and the guest
+ * update clock stops) and a step a person wrote (it is cleared). Every other step can be changed.
+ */
+export type SkipKind = "guest_update" | "written" | null;
+
+export function skipKindFor(input: { custom: boolean; guidedStep: string | null | undefined }): SkipKind {
+  if (input.custom) return "written";
+  if (input.guidedStep === "guest_update") return "guest_update";
+  return null;
+}
+
+/** The ticket fields a skip writes. A written step is cleared; the guest step stops owing updates. */
+export function skipPatch(kind: Exclude<SkipKind, null>) {
+  return kind === "guest_update"
+    ? { guest_comm_required: "no", next_guest_update_at: null }
+    : { next_action: null, next_action_due_at: null };
+}
+
+/** The reason is required for every skip or change. Returns the problem, or null. */
+export function reasonProblem(reason: string): string | null {
+  const r = reason.trim();
+  if (r.length < 3) return NEXT_STEP_COPY.reasonShort;
+  if (r.length > 200) return NEXT_STEP_COPY.reasonLong;
+  return null;
+}
+
+/** The Activity line for a skip. */
+export function skipHistoryLine(stepLabel: string, reason: string): string {
+  return `Step skipped: ${stepLabel.trim()}. Reason: ${reason.trim()}.`;
+}
 
 export type NextStepInput = {
   /** A step a person wrote on the ticket, if any. */
@@ -116,7 +157,13 @@ export function nextStepProblem(step: string, dueLocal: string): string | null {
 }
 
 /** The history line written with every change, read with who and when on the ticket. */
-export function nextStepHistoryLine(step: string | null, dueIso: string | null, format: (iso: string) => string): string {
-  if (!step) return "Next step done. Back to the suggested step.";
-  return dueIso ? `Next step changed: ${step}. Due ${format(dueIso)}.` : `Next step changed: ${step}. No due time.`;
+export function nextStepHistoryLine(
+  step: string | null,
+  dueIso: string | null,
+  format: (iso: string) => string,
+  reason?: string | null,
+): string {
+  const why = reason?.trim() ? ` Reason: ${reason.trim()}.` : "";
+  if (!step) return `Next step done. Back to the suggested step.${why}`;
+  return dueIso ? `Next step changed: ${step}. Due ${format(dueIso)}.${why}` : `Next step changed: ${step}. No due time.${why}`;
 }

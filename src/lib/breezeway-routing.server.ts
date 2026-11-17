@@ -32,6 +32,7 @@ import {
   type RoutingDecision,
   type TriageWindow,
 } from "./coverage-model";
+import { guestInResidenceFor } from "./guest-impact";
 
 export { TEAM_B_ROLE_CODES, isWithinWindow, pickLightestCandidate };
 export type { RoutingDecision };
@@ -269,6 +270,8 @@ export async function createTicketFromWorkOrder(
         : null,
       external_synced_at: now,
       breezeway_task_id: wo.breezewayTaskId,
+      // No occupancy or guest impact comes from Breezeway: no guest in residence (src/lib/guest-impact.ts).
+      guest_in_residence: guestInResidenceFor({ occupancy: null, guestImpact: null }),
       reported_at: now,
       created_by: actorId,
       department_code: "operations",
