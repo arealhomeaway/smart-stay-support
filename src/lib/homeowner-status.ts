@@ -240,6 +240,6 @@ export function handedOffHomes(projects: { property_id: string; status: string; 
     if (!cur || p.created_at > cur.created_at) latest.set(p.property_id, p);
   }
   return new Set(
-    [...latest.values()].filter((p) => p.ops_accepted_at || ["completed", "archived"].includes(p.status)).map((p) => p.property_id),
+    [...latest.values()].filter((p) => p.ops_accepted_at || ["complete", "completed", "archived"].includes(p.status)).map((p) => p.property_id),
   );
 }
