@@ -91,6 +91,8 @@ export type OwnerTaskDetails = {
   priorResponse: string | null;
   /** When it was sent to the homeowner. */
   sentAt?: string | null;
+  /** She already answered or finished it: the deadline never reads as overdue. */
+  finished?: boolean;
 };
 
 export function OwnerTaskDialog({
@@ -133,7 +135,8 @@ export function OwnerTaskDialog({
   const [response, setResponse] = useState("");
   const [note, setNote] = useState("");
   const decide = useServerFn(decideOwnerApproval);
-  const deadline = deadlineState(details.respondBy ?? action?.dueOn ?? null);
+  const finished = Boolean(details.finished) || Boolean(action?.decidedAt);
+  const deadline = deadlineState(details.respondBy ?? action?.dueOn ?? null, new Date(), finished);
   const decidable = Boolean(action?.canRespond && action?.publicationId);
   const files = action?.files?.length ? action.files : (sharedFiles ?? []);
 

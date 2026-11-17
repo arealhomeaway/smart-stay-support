@@ -857,6 +857,7 @@ function ReviewPanel({
             ? ownerTicketResponseGuidance(responseContext?.requestCategory)
             : null,
           priorResponse: review.owner_response ?? null,
+          finished: review.status === "answered" || review.status === "closed",
         }}
         action={action}
         sharedFiles={sharedFiles}

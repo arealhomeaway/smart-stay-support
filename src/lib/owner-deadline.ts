@@ -50,14 +50,19 @@ export type DeadlineState = {
   note: string | null;
 };
 
-/** How one owner deadline reads: the date, and whether it has slipped. */
+/**
+ * How one owner deadline reads: the date, and whether it has slipped. A finished item never reads
+ * as overdue or due (Admin, Nov 17): only the date stays.
+ */
 export function deadlineState(
   value: string | null | undefined,
   now: Date = new Date(),
+  finished = false,
 ): DeadlineState | null {
   const days = daysUntilDeadline(value, now);
   if (days == null) return null;
   const label = `Needed by ${centralDeadline(value)}`;
+  if (finished) return { label, overdue: false, dueToday: false, note: null };
   if (days < 0)
     return {
       label,
