@@ -96,7 +96,7 @@ export function RecordLineRow({ line, origin, homeLabel }: { line: RecordLine; o
       {money.length ? <p className="break-words text-sm text-muted-foreground">{money.join(" · ")}</p> : null}
       <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
         <StatusBadge tone={STATUS_TONE[line.status]}>{STATUS_LABEL[line.status]}</StatusBadge>
-        {line.note ? <span className="text-sm">{line.status === "pending" && !line.note.startsWith("Waiting") ? `Waiting on: ${line.note}` : line.note}</span> : null}
+        {line.note ? <span className="text-sm">{line.note}</span> : null}
         {line.link ? <LineLinkView link={line.link} origin={origin} /> : null}
       </div>
     </li>

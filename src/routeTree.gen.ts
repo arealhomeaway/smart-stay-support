@@ -84,6 +84,8 @@ import { Route as AuthenticatedDatabasesKeyRouteImport } from './routes/_authent
 import { Route as AuthenticatedDirectBookingsIndexRouteImport } from './routes/_authenticated/direct-bookings.index'
 import { Route as AuthenticatedDirectBookingsRequestIdRouteImport } from './routes/_authenticated/direct-bookings.$requestId'
 import { Route as AuthenticatedDirectBookingsSettingsRouteImport } from './routes/_authenticated/direct-bookings.settings'
+import { Route as AuthenticatedHomeRecordsIndexRouteImport } from './routes/_authenticated/home-records.index'
+import { Route as AuthenticatedHomeRecordsPropertyIdRouteImport } from './routes/_authenticated/home-records.$propertyId'
 import { Route as AuthenticatedIntegrationsNotionImportRouteImport } from './routes/_authenticated/integrations_.notion-import'
 import { Route as AuthenticatedLeadsIndexRouteImport } from './routes/_authenticated/leads.index'
 import { Route as AuthenticatedLeadsManagerRouteImport } from './routes/_authenticated/leads.manager'
@@ -546,6 +548,18 @@ const AuthenticatedDirectBookingsSettingsRoute =
     path: '/direct-bookings/settings',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedHomeRecordsIndexRoute =
+  AuthenticatedHomeRecordsIndexRouteImport.update({
+    id: '/home-records/',
+    path: '/home-records/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedHomeRecordsPropertyIdRoute =
+  AuthenticatedHomeRecordsPropertyIdRouteImport.update({
+    id: '/home-records/$propertyId',
+    path: '/home-records/$propertyId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedIntegrationsNotionImportRoute =
   AuthenticatedIntegrationsNotionImportRouteImport.update({
     id: '/integrations_/notion-import',
@@ -895,6 +909,7 @@ export interface FileRoutesByFullPath {
   '/databases/$key': typeof AuthenticatedDatabasesKeyRoute
   '/direct-bookings/$requestId': typeof AuthenticatedDirectBookingsRequestIdRoute
   '/direct-bookings/settings': typeof AuthenticatedDirectBookingsSettingsRoute
+  '/home-records/$propertyId': typeof AuthenticatedHomeRecordsPropertyIdRoute
   '/integrations/notion-import': typeof AuthenticatedIntegrationsNotionImportRoute
   '/leads/manager': typeof AuthenticatedLeadsManagerRoute
   '/leads/my-leads': typeof AuthenticatedLeadsMyLeadsRoute
@@ -924,6 +939,7 @@ export interface FileRoutesByFullPath {
   '/claims/': typeof AuthenticatedClaimsIndexRoute
   '/databases/': typeof AuthenticatedDatabasesIndexRoute
   '/direct-bookings/': typeof AuthenticatedDirectBookingsIndexRoute
+  '/home-records/': typeof AuthenticatedHomeRecordsIndexRoute
   '/leads/': typeof AuthenticatedLeadsIndexRoute
   '/onboarding/': typeof AuthenticatedOnboardingIndexRoute
   '/recovery/': typeof AuthenticatedRecoveryIndexRoute
@@ -1012,6 +1028,7 @@ export interface FileRoutesByTo {
   '/databases/$key': typeof AuthenticatedDatabasesKeyRoute
   '/direct-bookings/$requestId': typeof AuthenticatedDirectBookingsRequestIdRoute
   '/direct-bookings/settings': typeof AuthenticatedDirectBookingsSettingsRoute
+  '/home-records/$propertyId': typeof AuthenticatedHomeRecordsPropertyIdRoute
   '/integrations/notion-import': typeof AuthenticatedIntegrationsNotionImportRoute
   '/leads/manager': typeof AuthenticatedLeadsManagerRoute
   '/leads/my-leads': typeof AuthenticatedLeadsMyLeadsRoute
@@ -1041,6 +1058,7 @@ export interface FileRoutesByTo {
   '/claims': typeof AuthenticatedClaimsIndexRoute
   '/databases': typeof AuthenticatedDatabasesIndexRoute
   '/direct-bookings': typeof AuthenticatedDirectBookingsIndexRoute
+  '/home-records': typeof AuthenticatedHomeRecordsIndexRoute
   '/leads': typeof AuthenticatedLeadsIndexRoute
   '/onboarding': typeof AuthenticatedOnboardingIndexRoute
   '/recovery': typeof AuthenticatedRecoveryIndexRoute
@@ -1137,6 +1155,7 @@ export interface FileRoutesById {
   '/_authenticated/databases/$key': typeof AuthenticatedDatabasesKeyRoute
   '/_authenticated/direct-bookings/$requestId': typeof AuthenticatedDirectBookingsRequestIdRoute
   '/_authenticated/direct-bookings/settings': typeof AuthenticatedDirectBookingsSettingsRoute
+  '/_authenticated/home-records/$propertyId': typeof AuthenticatedHomeRecordsPropertyIdRoute
   '/_authenticated/integrations_/notion-import': typeof AuthenticatedIntegrationsNotionImportRoute
   '/_authenticated/leads/manager': typeof AuthenticatedLeadsManagerRoute
   '/_authenticated/leads/my-leads': typeof AuthenticatedLeadsMyLeadsRoute
@@ -1166,6 +1185,7 @@ export interface FileRoutesById {
   '/_authenticated/claims/': typeof AuthenticatedClaimsIndexRoute
   '/_authenticated/databases/': typeof AuthenticatedDatabasesIndexRoute
   '/_authenticated/direct-bookings/': typeof AuthenticatedDirectBookingsIndexRoute
+  '/_authenticated/home-records/': typeof AuthenticatedHomeRecordsIndexRoute
   '/_authenticated/leads/': typeof AuthenticatedLeadsIndexRoute
   '/_authenticated/onboarding/': typeof AuthenticatedOnboardingIndexRoute
   '/_authenticated/recovery/': typeof AuthenticatedRecoveryIndexRoute
@@ -1262,6 +1282,7 @@ export interface FileRouteTypes {
     | '/databases/$key'
     | '/direct-bookings/$requestId'
     | '/direct-bookings/settings'
+    | '/home-records/$propertyId'
     | '/integrations/notion-import'
     | '/leads/manager'
     | '/leads/my-leads'
@@ -1291,6 +1312,7 @@ export interface FileRouteTypes {
     | '/claims/'
     | '/databases/'
     | '/direct-bookings/'
+    | '/home-records/'
     | '/leads/'
     | '/onboarding/'
     | '/recovery/'
@@ -1379,6 +1401,7 @@ export interface FileRouteTypes {
     | '/databases/$key'
     | '/direct-bookings/$requestId'
     | '/direct-bookings/settings'
+    | '/home-records/$propertyId'
     | '/integrations/notion-import'
     | '/leads/manager'
     | '/leads/my-leads'
@@ -1408,6 +1431,7 @@ export interface FileRouteTypes {
     | '/claims'
     | '/databases'
     | '/direct-bookings'
+    | '/home-records'
     | '/leads'
     | '/onboarding'
     | '/recovery'
@@ -1503,6 +1527,7 @@ export interface FileRouteTypes {
     | '/_authenticated/databases/$key'
     | '/_authenticated/direct-bookings/$requestId'
     | '/_authenticated/direct-bookings/settings'
+    | '/_authenticated/home-records/$propertyId'
     | '/_authenticated/integrations_/notion-import'
     | '/_authenticated/leads/manager'
     | '/_authenticated/leads/my-leads'
@@ -1532,6 +1557,7 @@ export interface FileRouteTypes {
     | '/_authenticated/claims/'
     | '/_authenticated/databases/'
     | '/_authenticated/direct-bookings/'
+    | '/_authenticated/home-records/'
     | '/_authenticated/leads/'
     | '/_authenticated/onboarding/'
     | '/_authenticated/recovery/'
@@ -2105,6 +2131,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDirectBookingsSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/home-records/': {
+      id: '/_authenticated/home-records/'
+      path: '/home-records'
+      fullPath: '/home-records/'
+      preLoaderRoute: typeof AuthenticatedHomeRecordsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/home-records/$propertyId': {
+      id: '/_authenticated/home-records/$propertyId'
+      path: '/home-records/$propertyId'
+      fullPath: '/home-records/$propertyId'
+      preLoaderRoute: typeof AuthenticatedHomeRecordsPropertyIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/integrations_/notion-import': {
       id: '/_authenticated/integrations_/notion-import'
       path: '/integrations/notion-import'
@@ -2657,6 +2697,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDatabasesKeyRoute: typeof AuthenticatedDatabasesKeyRoute
   AuthenticatedDirectBookingsRequestIdRoute: typeof AuthenticatedDirectBookingsRequestIdRoute
   AuthenticatedDirectBookingsSettingsRoute: typeof AuthenticatedDirectBookingsSettingsRoute
+  AuthenticatedHomeRecordsPropertyIdRoute: typeof AuthenticatedHomeRecordsPropertyIdRoute
   AuthenticatedIntegrationsNotionImportRoute: typeof AuthenticatedIntegrationsNotionImportRoute
   AuthenticatedPropertyPropertyIdRoute: typeof AuthenticatedPropertyPropertyIdRoute
   AuthenticatedTicketsTicketIdRoute: typeof AuthenticatedTicketsTicketIdRoute
@@ -2665,6 +2706,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVendorScorecardRoute: typeof AuthenticatedVendorScorecardRoute
   AuthenticatedDatabasesIndexRoute: typeof AuthenticatedDatabasesIndexRoute
   AuthenticatedDirectBookingsIndexRoute: typeof AuthenticatedDirectBookingsIndexRoute
+  AuthenticatedHomeRecordsIndexRoute: typeof AuthenticatedHomeRecordsIndexRoute
   AuthenticatedTicketsIndexRoute: typeof AuthenticatedTicketsIndexRoute
   AuthenticatedVendorIndexRoute: typeof AuthenticatedVendorIndexRoute
 }
@@ -2735,6 +2777,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedDirectBookingsRequestIdRoute,
   AuthenticatedDirectBookingsSettingsRoute:
     AuthenticatedDirectBookingsSettingsRoute,
+  AuthenticatedHomeRecordsPropertyIdRoute:
+    AuthenticatedHomeRecordsPropertyIdRoute,
   AuthenticatedIntegrationsNotionImportRoute:
     AuthenticatedIntegrationsNotionImportRoute,
   AuthenticatedPropertyPropertyIdRoute: AuthenticatedPropertyPropertyIdRoute,
@@ -2744,6 +2788,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVendorScorecardRoute: AuthenticatedVendorScorecardRoute,
   AuthenticatedDatabasesIndexRoute: AuthenticatedDatabasesIndexRoute,
   AuthenticatedDirectBookingsIndexRoute: AuthenticatedDirectBookingsIndexRoute,
+  AuthenticatedHomeRecordsIndexRoute: AuthenticatedHomeRecordsIndexRoute,
   AuthenticatedTicketsIndexRoute: AuthenticatedTicketsIndexRoute,
   AuthenticatedVendorIndexRoute: AuthenticatedVendorIndexRoute,
 }
