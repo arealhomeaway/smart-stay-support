@@ -189,6 +189,7 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
         "/cleaner-hours",
         "/str-participation-report",
         "/finance",
+        "/home-records",
         "/command-center",
       ].some(
         (r) => p === r || p.startsWith(r + "/"),
@@ -199,6 +200,7 @@ export const PAGE_TAB_GROUPS: PageTabGroup[] = [
       { label: "STR Cleaner Time", to: "/cleaner-hours", capability: "cleaner_hours" },
       // Who opens Finance (to work, or to view) is decided by the page rule.
       { label: "Finance", to: "/finance" },
+      { label: "Monthly home records", to: "/home-records", capability: "home_records" },
       { label: "Executive View", to: "/command-center", capability: "command_center" },
     ],
   },
@@ -303,6 +305,7 @@ export const ANALYTICS_TARGETS: { to: string; capability: Capability }[] = [
   { to: "/owner-analytics", capability: "owner_programs" },
   { to: "/cleaner-hours", capability: "cleaner_hours" },
   { to: "/finance", capability: "finance_workspace" },
+  { to: "/home-records", capability: "home_records" },
   { to: "/command-center", capability: "command_center" },
 ];
 /**

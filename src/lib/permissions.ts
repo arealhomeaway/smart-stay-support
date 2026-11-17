@@ -164,7 +164,10 @@ export type Capability =
   | "weekly_scorecard"
   // Shift handoffs (Admin, Nov 16): the Oversight view of shift ends and handoffs. The Operations
   // Supervisor, the Director of Operations and Admin only; the database rules still decide each read.
-  | "shift_handoffs";
+  | "shift_handoffs"
+  // Monthly home records (Admin, Nov 17): the read only money record per home per month in
+  // Insight. Admin, the Directors, the Operations Supervisor and the Finance lead.
+  | "home_records";
 
 // Creating a ticket is internal-staff work. Vendors and homeowners never get it.
 const STAFF_BASE: Capability[] = [
@@ -384,6 +387,10 @@ export function capabilitiesFor(roles: AppRole[], seats: AccessSeats = {}): Set<
     set.add("team_records");
     set.add("coaching_log");
     set.add("weekly_scorecard");
+  }
+  // Monthly home records follow the person's role (see the Capability note above).
+  if (roles.includes("admin") || seats.opsSupervisor || seats.opsDirector || seats.onboardingDirector || seats.finance) {
+    set.add("home_records");
   }
   if (seats.finance) {
     set.add("team_records");

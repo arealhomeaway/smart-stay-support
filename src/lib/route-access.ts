@@ -86,6 +86,8 @@ const RULES: Rule[] = [
   // Shift handoffs (Admin, Nov 16): the Operations Supervisor, the Director of Operations and Admin.
   { prefix: "/shift-handoffs", capability: "shift_handoffs" },
   { prefix: "/analytics", capability: "analytics" },
+  // Monthly home records (Admin, Nov 17): Admin, the Directors, the Operations Supervisor, the Finance lead.
+  { prefix: "/home-records", capability: "home_records" },
   { prefix: "/ops-analytics", capability: "analytics" },
   // Work order oversight stays Operations only; the Work Orders pages also open read only
   // for the Director of Onboarding and Project Managers.
