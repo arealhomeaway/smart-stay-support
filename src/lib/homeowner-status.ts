@@ -135,6 +135,8 @@ export type StatusRow = {
   overdue: boolean;
   taskId: string | null;
   at: string;
+  /** Files the homeowner sent with a card answer. */
+  files?: HasFile[];
 };
 
 const homeOf = (data: HomeownerStatusData, id: string) => data.homeLabels[id] ?? "Home";
@@ -182,15 +184,21 @@ export function answeredRows(data: HomeownerStatusData, homes: ReadonlySet<strin
     if (!homes.has(c.propertyId) || !cardDone(c, data.planOn[c.propertyId] ?? false) || !recent(c.ownerCompletedAt, now)) continue;
     const r = c.ownerReviewId ? data.cardReviews[c.ownerReviewId] : undefined;
     const answer = r && reviewAnswered(r) ? reviewStatusLine(r).line : "";
+    // What she sent on the card itself, when the reader may see it.
+    const sent = submissionSummary(c.outputFields, c.submission);
+    const files = c.submission?.files ?? [];
     out.push({
       key: `card:${c.id}`,
       propertyId: c.propertyId,
       home: homeOf(data, c.propertyId),
       title: c.title,
-      line: answer.includes(":") ? answer : `Finished ${centralDay(c.ownerCompletedAt)}`,
+      line: sent
+        ? `Answered ${centralDay(c.ownerCompletedAt)}: ${sent}`
+        : answer.includes(":") ? answer : `Finished ${centralDay(c.ownerCompletedAt)}`,
       overdue: false,
       taskId: c.linkedTaskId,
       at: c.ownerCompletedAt ?? "",
+      ...(files.length ? { files } : {}),
     });
   }
   for (const r of data.reviews) {
