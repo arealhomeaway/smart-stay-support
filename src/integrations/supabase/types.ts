@@ -19519,10 +19519,12 @@ export type Database = {
         Args: { _accept: boolean; _id: string }
         Returns: string
       }
-      ao_submit_card: {
-        Args: { _plan_card: string; _values: Json }
-        Returns: string
-      }
+      ao_submit_card:
+        | { Args: { _plan_card: string; _values: Json }; Returns: string }
+        | {
+            Args: { _files: Json; _plan_card: string; _values: Json }
+            Returns: string
+          }
       ao_unlock_now: { Args: { _plan_card: string }; Returns: boolean }
       append_owner_review_message: {
         Args: {

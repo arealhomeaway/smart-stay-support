@@ -33,7 +33,7 @@ import { ownerReviewPresentation } from "@/lib/owner-review-presentation";
 import { startOptionalOpportunity, type LibraryTemplate } from "@/lib/opportunity-library.functions";
 import { arhaCover, imageFor } from "@/lib/opportunity-images";
 import { cardPhoto } from "@/lib/owner-card-photos";
-import { CompletedCardPanel } from "@/components/owner/CompletedCardPanel";
+import { CompletedCardPanel, SentAnswer } from "@/components/owner/CompletedCardPanel";
 import {
   HOME_OPPORTUNITIES_VISIBLE,
   PORTAL_GROUPS,
@@ -816,10 +816,10 @@ function PlanCardPanel({
       {item.allHomes ? <p className="text-sm text-muted-foreground">Answer once and it counts for every one of your homes.</p> : null}
       {view.kind === "open" ? (
         <PanelSection label="Your answer">
-          <PlanCardForm planCardId={row.plan_card_id} programId={programId} fields={view.fields} readOnly={readOnly} />
+          <PlanCardForm planCardId={row.plan_card_id} programId={programId} propertyId={row.property_id ?? item.propertyIds[0] ?? null} fields={view.fields} readOnly={readOnly} />
         </PanelSection>
       ) : view.kind === "done" ? (
-        <p className="text-sm text-muted-foreground">Done. Thank you.</p>
+        <SentAnswer planCardId={row.plan_card_id} outputFields={row.output_fields} />
       ) : view.kind === "closed" ? (
         <p className="text-sm text-muted-foreground">This item has closed. ARHA is taking care of it.</p>
       ) : (
