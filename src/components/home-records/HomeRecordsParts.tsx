@@ -120,7 +120,6 @@ export function MissingList({ lines, origin, homeLabels, limit }: { lines: Recor
           </li>
         ))}
       </ul>
-      {limit && lines.length > limit ? <p className="text-sm text-muted-foreground">{lines.length - limit} more below, on each home.</p> : null}
     </div>
   );
 }

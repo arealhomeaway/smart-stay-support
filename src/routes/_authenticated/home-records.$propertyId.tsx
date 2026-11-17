@@ -15,13 +15,17 @@ import { MissingList, MonthPicker, RecordLineRow, TotalsStrip, useMonthRecords }
 import { downloadExport } from "@/lib/oversight-export";
 import { homeRecordPdf } from "@/lib/home-records-export";
 import {
-  HR_COPY, SECTIONS, fileStem, homeCsv, homeTotals, isValidMonth, lastFullMonth, missingLines, monthLabel, sortLines,
+  HR_COPY, SECTIONS, type HomeFilter, fileStem, homeCsv, homeTotals, isValidMonth, lastFullMonth, missingLines, monthLabel, sortLines,
 } from "@/lib/home-records";
 
 const DESCRIPTION = "One home's money for the month, line by line, with totals for the owner statement.";
 
 export const Route = createFileRoute("/_authenticated/home-records/$propertyId")({
-  validateSearch: (raw: Record<string, unknown>): { month?: string | undefined } => (isValidMonth(raw["month"]) ? { month: raw["month"] } : {}),
+  validateSearch: (raw: Record<string, unknown>): { month?: string | undefined; show?: HomeFilter | undefined } => ({
+    ...(isValidMonth(raw["month"]) ? { month: raw["month"] } : {}),
+    // The all-homes filter, kept so All homes returns to the same list.
+    ...(raw["show"] === "active" || raw["show"] === "onboarding" || raw["show"] === "all" ? { show: raw["show"] } : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Home record for the month: Resolve" },
@@ -72,7 +76,7 @@ function HomeRecordPage() {
 
   return (
     <div className="space-y-5">
-      <Link to="/home-records" search={{ month }} className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-primary hover:underline">
+      <Link to="/home-records" search={{ month, ...(search.show ? { show: search.show } : {}) }} className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-primary hover:underline">
         <ArrowLeft className="size-4" aria-hidden="true" /> All homes
       </Link>
       <PageHeader
@@ -91,7 +95,7 @@ function HomeRecordPage() {
       />
       {failed ? <p role="alert" className="text-sm text-destructive">The PDF could not be made. Try again.</p> : null}
       <div className="lg:max-w-xs">
-        <MonthPicker value={month} onChange={(m) => void navigate({ search: { month: m }, replace: true })} />
+        <MonthPicker value={month} onChange={(m) => void navigate({ search: (prev) => ({ ...prev, month: m }), replace: true })} />
       </div>
 
       {q.isError ? <LoadError what="This home's record" onRetry={() => void q.refetch()} /> : null}
