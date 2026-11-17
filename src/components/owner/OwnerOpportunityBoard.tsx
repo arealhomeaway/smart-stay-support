@@ -816,7 +816,7 @@ function PlanCardPanel({
       {item.allHomes ? <p className="text-sm text-muted-foreground">Answer once and it counts for every one of your homes.</p> : null}
       {view.kind === "open" ? (
         <PanelSection label="Your answer">
-          <PlanCardForm planCardId={row.plan_card_id} programId={programId} propertyId={row.property_id ?? item.propertyIds[0] ?? null} fields={view.fields} readOnly={readOnly} />
+          <PlanCardForm planCardId={row.plan_card_id} programId={programId} propertyId={row.property_id ?? item.propertyIds[0] ?? null} title={row.title} fields={view.fields} readOnly={readOnly} />
         </PanelSection>
       ) : view.kind === "done" ? (
         <SentAnswer planCardId={row.plan_card_id} outputFields={row.output_fields} />

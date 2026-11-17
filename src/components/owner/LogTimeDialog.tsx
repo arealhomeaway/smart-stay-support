@@ -175,7 +175,8 @@ export function LogTimeDialog({
       });
     },
     onSuccess: () => {
-      toast.success("Saved. Your hours are on your dashboard, marked Waiting for review.");
+      const h = Math.round((parseOwnerMinutes(minutes) / 60) * 10) / 10;
+      toast.success(`Saved: ${h} hrs for "${activity.trim().slice(0, 80)}". It shows under Your hours, marked Waiting for review.`);
       onOpenChange(false);
       reset();
       onDone();

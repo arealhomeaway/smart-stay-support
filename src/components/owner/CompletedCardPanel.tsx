@@ -75,7 +75,7 @@ export function CompletedCardPanel({
     onSuccess: async () => {
       setEditing(false);
       setShowUpload(false);
-      toast.success("Saved. Your team sees the update in your home's chat.");
+      toast.success(`Saved: your change to "${title}". Your team sees it in your home's chat.`);
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["ao-card-answer", planCardId] }),
         qc.invalidateQueries({ queryKey: ["home-chat"] }),

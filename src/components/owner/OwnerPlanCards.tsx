@@ -47,7 +47,7 @@ export function PlanCardItem({ card, programId, readOnly }: { card: PortalPlanCa
       {view.kind === "open" ? (
         <>
           {card.what_text ? <p className="text-sm text-muted-foreground">{card.what_text}</p> : null}
-          <PlanCardForm planCardId={card.plan_card_id} programId={programId} propertyId={card.property_id ?? null} fields={view.fields} readOnly={readOnly} />
+          <PlanCardForm planCardId={card.plan_card_id} programId={programId} propertyId={card.property_id ?? null} title={card.title} fields={view.fields} readOnly={readOnly} />
         </>
       ) : null}
     </div>
@@ -60,7 +60,7 @@ export function PlanCardItem({ card, programId, readOnly }: { card: PortalPlanCa
  * upload path and save with the answer (ao_submit_card with files). A clear "Saved" or "Not saved"
  * message follows each try.
  */
-export function PlanCardForm({ planCardId, programId, propertyId = null, fields, readOnly }: { planCardId: string; programId: string; propertyId?: string | null; fields: OutputField[]; readOnly: boolean }) {
+export function PlanCardForm({ planCardId, programId, propertyId = null, title = "", fields, readOnly }: { planCardId: string; programId: string; propertyId?: string | null; title?: string; fields: OutputField[]; readOnly: boolean }) {
   const qc = useQueryClient();
   const draftKey = `resolve.card-draft:${planCardId}`;
   const [values, setValues] = useState<Record<string, string>>({});
@@ -89,7 +89,7 @@ export function PlanCardForm({ planCardId, programId, propertyId = null, fields,
     },
     onSuccess: () => {
       clearCardDraft(draftKey);
-      toast.success("Saved. Your answer is under Completed, and your team has it.");
+      toast.success(`Saved: your answer${title ? ` to "${title}"` : ""}${files.length ? ` with ${files.length === 1 ? "1 file" : `${files.length} files`}` : ""}. It is under Completed, and your team has it.`);
       void qc.invalidateQueries({ queryKey: ["ao-owner-plan", programId] });
       void qc.invalidateQueries({ queryKey: ["ao-card-answer", planCardId] });
     },
@@ -129,7 +129,10 @@ export function PlanCardForm({ planCardId, programId, propertyId = null, fields,
           autoStart
           upload={uploadOne}
           onBusyChange={setUploading}
-          onResults={(r) => setFiles((prev) => [...prev, ...r.filter((x) => !prev.some((p) => p.document_id === x.document_id))])}
+          onResults={(r) => {
+            setFiles((prev) => [...prev, ...r.filter((x) => !prev.some((p) => p.document_id === x.document_id))]);
+            if (r.length) toast.success(`${r.length === 1 ? "1 file is" : `${r.length} files are`} ready. They save with your answer when you press Send to ARHA.`);
+          }}
           label="Add a file"
         />
       ) : null}

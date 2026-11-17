@@ -292,12 +292,12 @@ export function OpportunityDetail({
   const send = useMutation({
     mutationFn: (v: { kind: "acknowledge" | "feedback" | "decision"; decision?: "authorize" | "changes" }) =>
       respond({ data: { id: item!.id, kind: v.kind, decision: v.decision ?? null, text } }),
-    onSuccess: () => { setText(""); toast.success("Sent to your ARHA team."); refresh(); },
+    onSuccess: () => { setText(""); toast.success(`Saved: your answer to "${item?.title ?? "this item"}" is with your ARHA team.`); refresh(); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not send."),
   });
   const done = useMutation({
     mutationFn: () => complete({ data: { id: item!.id } }),
-    onSuccess: () => { toast.success("Marked complete. Thank you!"); refresh(); },
+    onSuccess: () => { toast.success(`Saved: "${item?.title ?? "This item"}" is marked done. Thank you!`); refresh(); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update."),
   });
 
