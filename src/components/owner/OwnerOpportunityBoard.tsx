@@ -83,8 +83,6 @@ export type BoardReview = {
   recommendation: string | null;
   respond_by: string | null;
   propertyIds: string[];
-  /** When the team closed the item (read as reviewed once she finished it). */
-  closed_at?: string | null;
 };
 
 type Item = BoardItem & {
@@ -96,8 +94,6 @@ type Item = BoardItem & {
   /** A plan card's owner item (its conversation and anchored hours). */
   reviewId?: string | null;
   outputFields?: unknown;
-  /** When the team closed the item's owner item; "Reviewed by your team [date]" once she finished. */
-  reviewedAt?: string | null;
 };
 
 const DONE_REVIEW = new Set(["answered", "closed", "acknowledged", "complete", "completed", "cancelled", "archived", "resolved"]);
@@ -214,7 +210,6 @@ export function OwnerOpportunityBoard({
         completedAt: c.owner_completed_at ?? null,
         reviewId: c.owner_review_id ?? null,
         outputFields: c.output_fields,
-        reviewedAt: c.owner_review_id ? reviews.find((r) => r.id === c.owner_review_id)?.closed_at ?? null : null,
       });
     }
 
@@ -245,7 +240,6 @@ export function OwnerOpportunityBoard({
         // Fix 25: after the owner's reply the item reads With ARHA until staff reply.
         status: !finished && speaker === "homeowner" ? "With ARHA" : p.label,
         completedAt: r.responded_at ?? null,
-        reviewedAt: r.closed_at ?? null,
       });
     }
 
@@ -677,7 +671,7 @@ function OppCard({
         {kind === "done" ? (
           <p className="numeric text-sm text-portal-muted">
             {completedLine(item.completedAt ?? null, minutes)}
-            {item.source === "plan" || item.source === "review" ? ` · ${answerReviewLine(item.completedAt ?? null, item.reviewedAt ?? null)}` : ""}
+            {item.source === "plan" || item.source === "review" ? ` · ${answerReviewLine(null)}` : ""}
           </p>
         ) : item.summary ? (
           <p className="line-clamp-1 text-sm text-portal-muted">{item.summary}</p>
@@ -761,7 +755,6 @@ function ItemPanel({
         completedAt={item.completedAt ?? null}
         outputFields={item.outputFields}
         reviewId={item.reviewId ?? null}
-        reviewedAt={item.reviewedAt ?? null}
         entries={entries}
         readOnly={readOnly}
         onClose={onClose}

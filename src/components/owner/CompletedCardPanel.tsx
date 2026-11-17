@@ -28,7 +28,7 @@ import { shortDate } from "@/lib/owner-opportunity-board";
 export type FileRef = { document_id: string; name: string };
 
 export function CompletedCardPanel({
-  planCardId, programId, propertyId, title, home, typeLabel, cover, completedAt, outputFields, reviewId, reviewedAt = null, entries, readOnly, onClose, onChangeHours,
+  planCardId, programId, propertyId, title, home, typeLabel, cover, completedAt, outputFields, reviewId, entries, readOnly, onClose, onChangeHours,
 }: {
   planCardId: string;
   programId: string;
@@ -40,8 +40,6 @@ export function CompletedCardPanel({
   completedAt: string | null;
   outputFields: unknown;
   reviewId: string | null;
-  /** When the team closed the card's owner item (reviewed). */
-  reviewedAt?: string | null;
   entries: HourEntry[];
   readOnly: boolean;
   onClose: () => void;
@@ -103,7 +101,7 @@ export function CompletedCardPanel({
           <SheetTitle className="text-left font-display text-2xl font-normal leading-snug text-portal-ink">{title}</SheetTitle>
           <SheetDescription className="text-left text-portal-muted">{[home, typeLabel].filter(Boolean).join(" · ")}</SheetDescription>
           <p className="text-sm font-medium text-portal-ink" data-testid="card-review-status">
-            {completedAt ? `Finished ${shortDate(completedAt)} · ` : ""}{answerReviewLine(completedAt, reviewedAt)}
+            {completedAt ? `Finished ${shortDate(completedAt)} · ` : ""}{answerReviewLine(null)}
           </p>
         </SheetHeader>
         <img src={cover} alt="" width={912} height={736} className="h-[120px] w-full object-cover" />

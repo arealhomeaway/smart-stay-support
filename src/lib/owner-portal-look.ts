@@ -170,10 +170,9 @@ export function hoursByReview(entries: (HourEntry & { reviewed_at?: string | nul
 }
 
 /**
- * A finished card or item: "Reviewed by your team Nov 18" once the team closed its owner item after
- * she finished it, else "Waiting for review".
+ * Status under a finished answer. Answers have no recorded team review step (only hours do), so
+ * the line says where the answer is, never "reviewed".
  */
-export function answerReviewLine(completedAt: string | null | undefined, closedAt: string | null | undefined): string {
-  if (closedAt && (!completedAt || Date.parse(closedAt) >= Date.parse(completedAt))) return `Reviewed by your team ${shortDate(closedAt)}`;
-  return "Waiting for review";
+export function answerReviewLine(completedAt: string | null | undefined): string {
+  return completedAt ? `Sent to your team ${shortDate(completedAt)}` : "Sent to your team";
 }
