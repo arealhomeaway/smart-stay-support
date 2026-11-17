@@ -39,7 +39,7 @@ export const Route = createFileRoute("/_authenticated/owner-contributions")({
 function ContributionsPage() {
   const role = useRole();
   const search = Route.useSearch();
-  const allowed = canViewContributions({ isAdmin: role.isAdmin, isOnboardingDirector: role.isOnboardingDirector, isOpsDirector: role.access.seats.opsDirector === true });
+  const allowed = canViewContributions({ isAdmin: role.isAdmin, isOnboardingDirector: role.isOnboardingDirector, isOpsDirector: role.access.seats.opsDirector === true, isStaff: role.isStaff });
   const q = useQuery({ queryKey: ["ao-contributions"], queryFn: loadContributions, enabled: allowed, retry: false });
   const [f, setF] = useState({ card: "all", home: "all", from: "", to: "", q: search.q ?? "", planCard: search.planCard ?? "" });
   const rows = q.data?.available ? q.data.data : [];
@@ -48,7 +48,7 @@ function ContributionsPage() {
   const shown = filterContributions(rows, f);
   const header = <PageHeader eyebrow="Active Owner" title="Homeowner contributions" description="What homeowners submitted on their plan cards." />;
 
-  if (!allowed) return <div className="space-y-6">{header}<EmptyState title="Admin, the Onboarding Director and Directors can see contributions" /></div>;
+  if (!allowed) return <div className="space-y-6">{header}<EmptyState title="Only the ARHA team can see contributions" /></div>;
   if (q.isLoading) return <LoadingPage />;
   if (q.error) return <div className="space-y-6">{header}<EmptyState title="Could not load contributions" hint={(q.error as Error).message} /></div>;
   if (!q.data?.available) return <div className="space-y-6">{header}<EmptyState title={NOT_SET_UP} hint="Contributions will appear here once the homeowner plan is switched on." /></div>;
@@ -93,8 +93,8 @@ function ContributionsPage() {
             <li key={r.id} className="py-2 text-sm">
               <p className="font-medium">{r.cardCode} {r.card}</p>
               <p className="text-xs text-muted-foreground">{r.home}, submitted by {r.member} on {usDate(r.submittedAt)}</p>
-              <dl className="mt-1 grid grid-cols-[max-content_1fr] gap-x-3 text-xs">
-                {Object.entries(r.values).map(([k, v]) => <Fragment key={k}><dt className="text-muted-foreground">{k}</dt><dd>{String(v)}</dd></Fragment>)}
+              <dl className="mt-1 grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 text-xs">
+                {Object.entries(r.values).map(([k, v]) => <Fragment key={k}><dt className="text-muted-foreground">{k}</dt><dd className="min-w-0 break-words [overflow-wrap:anywhere]">{String(v)}</dd></Fragment>)}
               </dl>
             </li>
           ))}

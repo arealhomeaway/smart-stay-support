@@ -91,7 +91,7 @@ export async function submitCard(planCardId: string, values: Record<string, unkn
   return r.data;
 }
 
-type ContributionDbRow = { id: string; plan_card_id: string; submitted_at: string; submitted_by: string; field_values: Record<string, unknown>; property_id: string; card: { code: string; title: string } | null };
+type ContributionDbRow = { id: string; plan_card_id: string; submitted_at: string; submitted_by: string; field_values: Record<string, unknown>; property_id: string; card_id: string | null };
 
 async function inChunks<T>(ids: string[], q: (ids: string[]) => PromiseLike<{ data: T[] | null }>) {
   const out: T[] = [];
@@ -101,22 +101,26 @@ async function inChunks<T>(ids: string[], q: (ids: string[]) => PromiseLike<{ da
 
 export async function loadContributions() {
   const r = await fetchAllPages<ContributionDbRow>((from, to) =>
-    db.from("ao_contributions").select("id,plan_card_id,submitted_at,submitted_by,field_values,property_id,card:ao_library_cards(code,title)")
+    db.from("ao_contributions").select("id,plan_card_id,submitted_at,submitted_by,field_values,property_id,card_id")
       .order("submitted_at", { ascending: false }).order("id").range(from, to));
   if (!r.available) return r;
   const rows = r.data;
   const propIds = [...new Set(rows.map((x) => x.property_id))];
   const userIds = [...new Set(rows.map((x) => x.submitted_by))];
-  const [props, people] = await Promise.all([
+  // The answer has no database link to its library card, so the card is read by its id.
+  const cardIds = [...new Set(rows.map((x) => x.card_id).filter((x): x is string => Boolean(x)))];
+  const [props, people, libCards] = await Promise.all([
     inChunks(propIds, (ids) => supabase.from("properties").select("id,name").in("id", ids)),
     inChunks(userIds, (ids) => supabase.from("profiles").select("id,full_name").in("id", ids)),
+    inChunks<{ id: string; code: string; title: string }>(cardIds, (ids) => db.from("ao_library_cards").select("id,code,title").in("id", ids)),
   ]);
+  const cardOf = new Map((libCards.data ?? []).map((c) => [c.id, c]));
   const pName = new Map((props.data ?? []).map((p) => [p.id, p.name]));
   const uName = new Map((people.data ?? []).map((p) => [p.id, p.full_name ?? "Homeowner"]));
   return {
     available: true as const,
     data: rows.map((x) => ({
-      id: x.id, planCardId: x.plan_card_id, card: x.card?.title ?? "", cardCode: x.card?.code ?? "", home: pName.get(x.property_id) ?? "Home",
+      id: x.id, planCardId: x.plan_card_id, card: cardOf.get(x.card_id ?? "")?.title ?? "", cardCode: cardOf.get(x.card_id ?? "")?.code ?? "", home: pName.get(x.property_id) ?? "Home",
       member: uName.get(x.submitted_by) ?? "Homeowner", submittedAt: x.submitted_at, values: x.field_values ?? {},
     })),
   };

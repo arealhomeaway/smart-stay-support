@@ -31,7 +31,8 @@ export type Who = { isAdmin: boolean; isOnboardingDirector: boolean; isOpsDirect
 export const canEditCardLibrary = (w: Who) => w.isAdmin || w.isOnboardingDirector;
 export const canToggleHomeAutomation = canEditCardLibrary;
 export const canViewHomePlan = (w: Who) => Boolean(w.isStaff) || canEditCardLibrary(w);
-export const canViewContributions = (w: Who) => w.isAdmin || w.isOnboardingDirector || Boolean(w.isOpsDirector);
+/** Every staff member reads homeowner answers (Admin approval, Nov 17); homeowners and vendors do not. */
+export const canViewContributions = (w: Who) => w.isAdmin || w.isOnboardingDirector || Boolean(w.isOpsDirector) || Boolean(w.isStaff);
 
 export type FieldType = "text" | "long_text" | "number" | "date" | "yes_no";
 export type OutputField = { key: string; label: string; type: FieldType };
