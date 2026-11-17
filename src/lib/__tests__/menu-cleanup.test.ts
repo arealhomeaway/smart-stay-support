@@ -179,6 +179,8 @@ describe("Analytics replaces Reports", () => {
       "/owner-analytics",
       "/cleaner-hours",
       "/finance",
+      // Monthly home records (Admin, Nov 17) joined Insight; every role above still opens the same place.
+      "/home-records",
       "/command-center",
     ]);
     for (const roles of [["tech"], ["manager"], ["admin"]] as AppRole[][]) {
