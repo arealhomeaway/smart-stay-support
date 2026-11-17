@@ -93,8 +93,8 @@ function ContributionsPage() {
             <li key={r.id} className="py-2 text-sm">
               <p className="font-medium">{r.cardCode} {r.card}</p>
               <p className="text-xs text-muted-foreground">{r.home}, submitted by {r.member} on {usDate(r.submittedAt)}</p>
-              <dl className="mt-1 grid grid-cols-[max-content_1fr] gap-x-3 text-xs">
-                {Object.entries(r.values).map(([k, v]) => <Fragment key={k}><dt className="text-muted-foreground">{k}</dt><dd>{String(v)}</dd></Fragment>)}
+              <dl className="mt-1 grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 text-xs">
+                {Object.entries(r.values).map(([k, v]) => <Fragment key={k}><dt className="text-muted-foreground">{k}</dt><dd className="min-w-0 break-words [overflow-wrap:anywhere]">{String(v)}</dd></Fragment>)}
               </dl>
             </li>
           ))}
