@@ -1,5 +1,7 @@
 import { formatPropertyLabel } from "@/lib/property-label";
-import { taskSavedMessage } from "@/lib/task-proof";
+import { doneRecently, taskSavedMessage, type DoneTask } from "@/lib/task-proof";
+import { loadTaskProof } from "@/lib/homeowner-has.data";
+import { DoneRecentlySection, taskProofText } from "@/components/onboarding/DoneRecently";
 import { overrideOnboardingTaskDateFn } from "@/lib/onboarding.functions";
 import { restoreAssignedRelease } from "@/lib/onboarding-assigned-context";
 import {
@@ -219,6 +221,25 @@ function MyWork() {
   const homeownerStatus = useHomeownerStatus(statusHomes, demoMode, Boolean(data));
   const statusNow = useMemo(() => new Date(), [homeownerStatus.data]);
 
+  // Nov 17: the person's own finished Tasks (last 7 days) and the proof on finished rows.
+  const doneNow = useMemo(() => new Date(), [data]);
+  const recentDone = useMemo(
+    () => doneRecently(allTasks as unknown as (DoneTask & { evidence_note?: string | null })[], homeownerPerson, doneNow),
+    [allTasks, homeownerPerson, doneNow],
+  );
+  const proofTasks = useMemo(() => {
+    const byId = new Map<string, DoneTask>();
+    for (const t of [...recentDone, ...(mine as unknown as DoneTask[]).filter((t) => t.status === "complete")]) byId.set(t.id, t);
+    return [...byId.values()];
+  }, [recentDone, mine]);
+  const proofKey = proofTasks.map((t) => t.id).sort();
+  const taskProof = useQuery({
+    queryKey: ["task-proof", proofKey],
+    enabled: proofKey.length > 0,
+    staleTime: 60_000,
+    queryFn: () => loadTaskProof({ taskIds: proofKey, completerIds: proofTasks.map((t) => t.completed_by ?? "").filter(Boolean) }),
+  });
+
   // Each person's last view choices, remembered in their own browser.
   const [prefs, setPrefs] = useState<MyTasksPrefs>(MY_TASKS_PREFS_DEFAULTS);
   useEffect(() => {
@@ -335,6 +356,18 @@ function MyWork() {
         onRetry={() => void homeownerStatus.refetch()}
         onOpen={openHomeownerRow}
       />
+
+      {homeownerPerson ? (
+        <DoneRecentlySection
+          tasks={recentDone}
+          proof={taskProof.data}
+          propertyName={propertyName}
+          onOpen={(id) => {
+            setOpenedFromHomeowners(!mine.some((t) => t.id === id));
+            setOpenTaskId(id);
+          }}
+        />
+      ) : null}
 
       <ReviewsWaiting propertyName={propertyName} />
 
@@ -507,7 +540,12 @@ function MyWork() {
                               statusNow,
                             )
                           : null;
-                        return chip ? <HomeownerTaskChip chip={chip} /> : null;
+                        const done = v.task.status === "complete" ? (
+                          <span className="mt-1 block text-xs text-muted-foreground" data-task-proof={v.task.id}>
+                            {taskProofText(v.task as unknown as DoneTask, taskProof.data)}
+                          </span>
+                        ) : null;
+                        return chip || done ? <>{chip ? <HomeownerTaskChip chip={chip} /> : null}{done}</> : null;
                       })()}
                     />
                   </div>
