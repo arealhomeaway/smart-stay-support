@@ -456,7 +456,10 @@ export function onboardingOnlyMenu(access: NavAccess): MenuGroup[] {
     },
     {
       label: "Insight",
-      items: [{ key: "finance", label: "Finance", to: "/finance", capability: "finance_view" }],
+      items: [
+        { key: "finance", label: "Finance", to: "/finance", capability: "finance_view" },
+        { key: "home-records", label: "Monthly home records", to: "/home-records", capability: "home_records" },
+      ],
     },
   ];
   for (const g of shared) {
