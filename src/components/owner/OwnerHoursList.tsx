@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { entryStatusLine, hoursByReview, hoursFromMinutes, type HourEntry } from "@/lib/owner-portal-look";
-import { shortDate } from "@/lib/owner-portal-look";
+import { shortDate } from "@/lib/owner-opportunity-board";
 
 type Entry = HourEntry & {
   id: string;

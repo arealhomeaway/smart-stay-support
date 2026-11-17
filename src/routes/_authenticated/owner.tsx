@@ -59,6 +59,7 @@ import { OwnerFilesPanel, useOwnerDocuments } from "@/components/OwnerFilesPanel
 import { OnboardingProgress } from "@/components/owner/OnboardingProgress";
 import { ownerReportFile } from "@/lib/owner-report.functions";
 import { entryWaitingForReview, hoursSplit } from "@/lib/owner-portal-look";
+import { OwnerHoursList } from "@/components/owner/OwnerHoursList";
 import { saveOwnerReportFile } from "@/lib/owner-report-download";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useOwnerPreview } from "@/lib/owner-preview";
@@ -589,6 +590,11 @@ function OwnerHubBody({
           {...(preview || logHoursBlockedReason ? {} : { onLogHours: openManualLog })}
         />
       </div>
+
+      <OwnerHoursList
+        entries={data.entries.filter((e) => inHome(e.propertyIds)) as never}
+        homeLabel={(ids) => propertyLabel(ids)}
+      />
 
       <OnboardingProgress
         readOnly={preview}
