@@ -5,7 +5,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { formatPropertyLabel } from "@/lib/property-label";
 import { UNSENT_REVIEW, GONE_APPROVAL } from "@/lib/homeowner-has";
-import type { HomeownerStatusData, StatusReview } from "@/lib/homeowner-status";
+import { handedOffHomes, type HomeownerStatusData, type StatusReview } from "@/lib/homeowner-status";
 
 const db = supabase as unknown as { from: (t: string) => any }; // eslint-disable-line @typescript-eslint/no-explicit-any
 type Res<T> = { data: T[] | null; error: { message?: string } | null };
@@ -161,6 +161,5 @@ export async function loadHandedOffProgramHomes(demo: boolean): Promise<string[]
   const homes = [...new Set([...live.map((p) => p.property_id ?? ""), ...linked.map((l) => l.property_id)])].filter(Boolean);
   const projects = await chunked<{ property_id: string; status: string; ops_accepted_at: string | null; created_at: string }>(homes, (x) =>
     db.from("onboarding_projects").select("property_id, status, ops_accepted_at, created_at").in("property_id", x), "Homes");
-  const { handedOffHomes } = await import("@/lib/homeowner-status");
   return [...handedOffHomes(projects)];
 }
