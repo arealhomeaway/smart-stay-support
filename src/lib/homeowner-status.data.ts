@@ -5,6 +5,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { formatPropertyLabel } from "@/lib/property-label";
 import { UNSENT_REVIEW, GONE_APPROVAL } from "@/lib/homeowner-has";
+import { loadCardSubmissions } from "@/lib/homeowner-has.data";
 import { handedOffHomes, type HomeownerStatusData, type StatusReview } from "@/lib/homeowner-status";
 
 const db = supabase as unknown as { from: (t: string) => any }; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -78,10 +79,10 @@ export async function loadHomeownerStatus(input: { propertyIds: string[]; demo: 
     chunked<{
       id: string; property_id: string; program_id: string; join_outcome: string; unlocked_at: string | null; deadline_at: string | null;
       expired_at: string | null; owner_completed_at: string | null; created_at: string | null; owner_review_id: string | null; linked_task_id: string | null;
-      card: { code: string | null; title: string; opens_text: string | null; stage_window: string | null; lane: string | null; owner_needed: boolean | null } | null;
+      card: { code: string | null; title: string; opens_text: string | null; stage_window: string | null; lane: string | null; owner_needed: boolean | null; output_fields?: unknown } | null;
     }>(ids, (x) =>
       db.from("ao_home_plan_cards")
-        .select("id, property_id, program_id, join_outcome, unlocked_at, deadline_at, expired_at, owner_completed_at, created_at, owner_review_id, linked_task_id, card:ao_library_cards(code, title, opens_text, stage_window, lane, owner_needed)")
+        .select("id, property_id, program_id, join_outcome, unlocked_at, deadline_at, expired_at, owner_completed_at, created_at, owner_review_id, linked_task_id, card:ao_library_cards(code, title, opens_text, stage_window, lane, owner_needed, output_fields)")
         .in("property_id", x).order("id"), "Homeowner cards"),
     chunked<{ property_id: string; automated: boolean }>(ids, (x) =>
       db.from("ao_home_plan_settings").select("property_id, automated").in("property_id", x).order("property_id"), "Homeowner cards"),
@@ -122,6 +123,12 @@ export async function loadHomeownerStatus(input: { propertyIds: string[]; demo: 
   const extraHomes = new Map<string, string[]>();
   for (const x of reviewHomes) extraHomes.set(x.review_id, [...(extraHomes.get(x.review_id) ?? []), x.property_id]);
 
+  // What the homeowner sent on cards finished in the last 7 days (existing read rule on saved answers).
+  const recentSince = Date.now() - 8 * 86_400_000;
+  const submissions = await loadCardSubmissions(
+    cards.filter((c) => c.owner_completed_at && Date.parse(c.owner_completed_at) >= recentSince).map((c) => c.id),
+  );
+
   const toReview = (r: ReviewRow): StatusReview => {
     const send = firstSend.get(r.id);
     // The home it is about: its own home, an added home in this list, else the program's first home here.
@@ -146,6 +153,7 @@ export async function loadHomeownerStatus(input: { propertyIds: string[]; demo: 
       joinOutcome: c.join_outcome, unlockedAt: c.unlocked_at, deadlineAt: c.deadline_at, expiredAt: c.expired_at,
       ownerCompletedAt: c.owner_completed_at, createdAt: c.created_at, ownerReviewId: c.owner_review_id,
       linkedTaskId: c.linked_task_id, ownerNeeded: Boolean(c.card?.owner_needed),
+      outputFields: c.card?.output_fields ?? null, submission: submissions.get(c.id) ?? null,
     })),
     reviews: live.filter((r) => !cardItems.has(r.id)).map(toReview),
     cardReviews: Object.fromEntries(live.filter((r) => cardItems.has(r.id)).map((r) => [r.id, toReview(r)])),
