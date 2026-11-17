@@ -256,11 +256,21 @@ export function TaskHomeownerLines({ taskId, done, completedAt }: { taskId: stri
     retry: false,
   });
   const lines = q.data ? [...q.data.opened, ...(q.data.sent ? [q.data.sent] : [])] : [];
-  if (lines.length === 0) return null;
+  const answers = q.data?.answers ?? [];
+  if (lines.length === 0 && answers.length === 0) return null;
   return (
     <div className="space-y-0.5 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm" data-testid="task-homeowner-lines">
       {lines.map((l) => (
         <p key={l}>{l}</p>
+      ))}
+      {answers.map((a) => (
+        <div key={a.title} className="space-y-0.5 pt-1" aria-label="What the homeowner sent">
+          <p className="font-medium">{a.line}</p>
+          {a.lines.map((l, n) => (
+            <p key={n} className="whitespace-pre-wrap text-xs">{l}</p>
+          ))}
+          <ProofFiles files={a.files} />
+        </div>
       ))}
     </div>
   );
