@@ -23,7 +23,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
+import { TicketTable, TablePill, TwoLine, type TicketTableColumn } from "@/components/queue/TicketTable";
+import { GROUP_BY_OPTIONS, dueCell, groupTableRows, parseGroupBy, reportedShort, statusPillLabel } from "@/lib/ticket-table";
 import { useRole } from "@/hooks/useRole";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { jobMap } from "@/lib/geo.functions";
@@ -43,12 +45,16 @@ import { StatusBadge, ticketTone } from "@/components/ui/status";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usDate, usDateTime } from "@/lib/dates";
 import {
+  CATEGORIES,
   OPEN_STATUSES,
   STATUSES,
+  TEAMS,
   labelFor,
   relativeTime,
   slaState,
   priorityMeta,
+  priorityTone,
+  statusTone,
 } from "@/lib/tickets";
 import { currentOwnerId, queueSort } from "@/lib/matters";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
@@ -62,7 +68,6 @@ import {
   TEAM_QUEUE_COPY,
   automatedWaiting,
   chipCounts,
-  dueLine,
   inScope,
   parseScope,
   sourceGroups,
@@ -91,7 +96,7 @@ export const Route = createFileRoute("/_authenticated/team-queue")({
       { title: "Team Queue | Resolve Operations" },
       {
         name: "description",
-        content: "Work nobody owns yet. Take what you can do, and see everyone's work by owner, urgency, home and problem type.",
+        content: "Every open ticket the team is carrying, grouped by urgency, status or person. Pick up what needs picking up.",
       },
       { property: "og:title", content: "Team Queue | Resolve Operations" },
       {
@@ -328,21 +333,19 @@ function TeamQueuePage() {
     }));
   }, [data, orders.data, dispatches.data]);
 
-  // The team chip applies to Everyone's work too; All unclaimed shows only work with no owner.
-  const inChip = (t: { kind?: string } & Record<string, unknown>) => {
-    const team = t.kind === "work_order" ? null : ticketTeam(t as never);
-    if (!inScope(team, scope)) return false;
-    if (scope === "unclaimed") return !currentOwnerId(t as never);
-    return true;
-  };
+  // Table view (Emily, Nov 18): the view tabs (All team, Team A, Team B, Only mine, Unassigned)
+  // drive the table through the existing Owner's team, Only mine and Unassigned filters.
+  // The team chips stay with Pick up work below.
+  const filterTickets = (mine: boolean, f: TeamQueueFilters) =>
+    applyTeamQueueFilters(
+      (mine ? all.filter((ticket) => currentOwnerId(ticket) === userId) : all) as never,
+      f,
+      homeTeamOf,
+    ) as unknown as typeof all;
 
   const tickets = useMemo(
     () =>
-      (applyTeamQueueFilters(
-        (lens === "mine" ? all.filter((ticket) => currentOwnerId(ticket) === userId) : all) as never,
-        filters,
-        homeTeamOf,
-      ) as unknown as typeof all).filter((t) => inChip(t as never)).sort((a, b) => {
+      filterTickets(lens === "mine", filters).sort((a, b) => {
         if (sortParam === "due") {
           return (a.next_action_due_at ?? a.action_due_at ?? a.response_due_at ?? "9999")
             .localeCompare(b.next_action_due_at ?? b.action_due_at ?? b.response_due_at ?? "9999");
@@ -354,15 +357,18 @@ function TeamQueuePage() {
         return queueSort(a as never, b as never);
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [all, filters, homeTeamOf, lens, userId, sortParam, scope],
+    [all, filters, homeTeamOf, lens, userId, sortParam],
   );
 
-  const standaloneOrders = useMemo(() => {
+  const standaloneBase = useMemo(() => {
     const activeTicketIds = new Set(all.filter((ticket) => OPEN_STATUSES.includes(ticket.status)).map((ticket) => ticket.id));
-    const rows = standaloneOperationsOrders(orders.data ?? [], propertyCatalog.data ?? [], dispatches.data ?? [], activeTicketIds);
-    const scoped = lens === "mine" ? rows.filter((row) => row.assigned_to === userId) : rows;
-    return (applyTeamQueueFilters(scoped, filters, homeTeamOf) as typeof rows)
-      .filter((row) => scope !== "unclaimed" || !row.assigned_to)
+    return standaloneOperationsOrders(orders.data ?? [], propertyCatalog.data ?? [], dispatches.data ?? [], activeTicketIds);
+  }, [orders.data, propertyCatalog.data, dispatches.data, all]);
+  const filterOrders = (mine: boolean, f: TeamQueueFilters) =>
+    applyTeamQueueFilters(mine ? standaloneBase.filter((row) => row.assigned_to === userId) : standaloneBase, f, homeTeamOf) as typeof standaloneBase;
+
+  const standaloneOrders = useMemo(() => {
+    return filterOrders(lens === "mine", filters)
       .sort((a, b) => {
         if (sortParam === "due") return (a.next_action_due_at ?? "9999").localeCompare(b.next_action_due_at ?? "9999");
         if (sortParam === "newest") return (b.reported_at ?? "").localeCompare(a.reported_at ?? "");
@@ -371,7 +377,45 @@ function TeamQueuePage() {
         if (priorityGap) return priorityGap;
         return queueSort(a as never, b as never);
       });
-  }, [orders.data, propertyCatalog.data, dispatches.data, all, filters, homeTeamOf, lens, userId, sortParam, scope]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [standaloneBase, filters, homeTeamOf, lens, userId, sortParam]);
+
+  type QueueTab = keyof typeof TEAM_QUEUE_COPY.tabs;
+  const TAB_ORDER: QueueTab[] = ["all", "a", "b", "mine", "unassigned"];
+  const tabSettings = (tab: QueueTab) => ({
+    mine: tab === "mine",
+    homeTeam: tab === "a" ? "guest_experience" : tab === "b" ? "property_operations" : "all",
+    unassigned: tab === "unassigned",
+  });
+  const activeTab: QueueTab | null =
+    lens === "mine" ? "mine"
+    : filters.unassigned ? "unassigned"
+    : filters.homeTeam === "guest_experience" ? "a"
+    : filters.homeTeam === "property_operations" ? "b"
+    : filters.homeTeam === "all" ? "all"
+    : null;
+  const tabCounts = useMemo(() => {
+    const out = {} as Record<QueueTab, number>;
+    for (const tab of TAB_ORDER) {
+      const t = tabSettings(tab);
+      const f = { ...filters, homeTeam: t.homeTeam, unassigned: t.unassigned };
+      out[tab] = filterTickets(t.mine, f).length + filterOrders(t.mine, f).length;
+    }
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [all, standaloneBase, filters, homeTeamOf, userId]);
+  const chooseTab = (tab: QueueTab) => {
+    const t = tabSettings(tab);
+    const nextFlags = new Set(flags);
+    if (t.unassigned) nextFlags.add("unassigned");
+    else nextFlags.delete("unassigned");
+    setParam({
+      lens: t.mine ? "mine" : undefined,
+      homeTeam: t.homeTeam === "all" ? undefined : t.homeTeam,
+      flags: [...nextFlags].join(",") || undefined,
+    });
+  };
+  const groupBy = parseGroupBy(params["groupBy"]);
 
   const mapPins = useMemo(() => {
     const byProperty = new Map<string, Array<(typeof tickets)[number] | (typeof standaloneOrders)[number]>>();
@@ -522,13 +566,8 @@ function TeamQueuePage() {
   }, [all, standaloneOrders]);
 
 
-  // More filters counts everything except the five filters in the row.
-  const moreCount = filterCount
-    - (filters.assignee !== "all" ? 1 : 0)
-    - (filters.priority !== "all" ? 1 : 0)
-    - (filters.property !== "all" ? 1 : 0)
-    - (filters.workType !== "all" ? 1 : 0)
-    - (filters.q.trim() ? 1 : 0);
+  // The Filter button counts every filter in its popover; search sits beside it.
+  const popoverCount = filterCount - (filters.q.trim() ? 1 : 0);
   const clearFilters = () =>
     setParam({
       assignee: undefined, homeTeam: undefined, priority: undefined, status: undefined, property: undefined,
@@ -554,207 +593,181 @@ function TeamQueuePage() {
   const homeOptions = properties;
 
   const viewButtons = (["list", "kanban", "calendar"] as const).filter((option) => option !== view);
-  const rowDue = (t: Parameters<typeof dueLine>[0]) => dueLine(t, (iso) => usDateTime(iso));
+
+  // ---------- Table (Emily, Nov 18): layout only ----------
+  type TableItem = (typeof tickets)[number] | (typeof standaloneOrders)[number];
+  const ownerOf = (row: TableItem) => currentOwnerId(row as never);
+  // A Work Order with no Ticket has no reply clock; it reads from its own start and check back fields.
+  const dueOf = (row: TableItem) => dueCell("kind" in row ? { ...row, acknowledged_at: row.reported_at } : row, now);
+  const teamShort = (id: string) => TEAMS.find((t) => t.value === homeTeamOf(id))?.short ?? null;
+  const columns: TicketTableColumn<TableItem>[] = [
+    {
+      key: "priority", header: "Priority", track: "96px",
+      cell: (row) => {
+        const p = effectiveOperationsPriority(row);
+        return <TablePill className={priorityTone(p)}>{priorityMeta(p).short}</TablePill>;
+      },
+    },
+    {
+      key: "ticket", header: "Ticket", track: "minmax(200px,2fr)",
+      cell: (row) => (
+        <TwoLine
+          top={<>{row.title}{"kind" in row ? null : isEmailTestTicket(row) ? <> <EmailTestChip /></> : null}</>}
+          topClassName="font-bold"
+          sub={"kind" in row ? "Work Order" : `#${row.ref}`}
+        />
+      ),
+    },
+    {
+      key: "property", header: "Property", track: "minmax(190px,1.6fr)",
+      cell: (row) => (
+        <TwoLine
+          top={row.property_id ? formatPropertyLabel(row.properties).full : TEAM_QUEUE_COPY.noHome}
+          sub={(row.properties as { market?: string | null } | null)?.market ?? undefined}
+        />
+      ),
+    },
+    {
+      key: "type", header: "Issue type", track: "minmax(120px,1fr)",
+      cell: (row) => (
+        <span className="block truncate">
+          {(row as { work_types?: { name?: string | null } | null }).work_types?.name ?? labelFor(CATEGORIES, "category" in row ? (row.category as string | null) : null)}
+        </span>
+      ),
+    },
+    {
+      key: "owner", header: "Owner", track: "minmax(130px,1fr)",
+      cell: (row) => {
+        const id = ownerOf(row);
+        return id
+          ? <TwoLine top={displayName(people.get(id))} topClassName="font-bold" sub={teamShort(id) ?? undefined} />
+          : <TablePill className="border-coral/30 bg-coral/12 text-coral">Unassigned</TablePill>;
+      },
+    },
+    {
+      key: "status", header: "Status", track: "minmax(140px,1fr)",
+      cell: (row) => <TablePill className={statusTone(row.status)}>{statusPillLabel(row as never)}</TablePill>,
+    },
+    {
+      key: "due", header: "Due", track: "minmax(120px,1fr)",
+      cell: (row) => {
+        const d = dueOf(row);
+        const red = d.overdue || d.alert;
+        return (
+          <TwoLine
+            top={d.line1}
+            sub={d.line2 ?? undefined}
+            topClassName={`${red ? "text-coral" : d.line1 === "No due date" ? "text-muted-foreground" : ""} ${d.overdue ? "font-bold" : ""}`}
+            subClassName={`${red ? "text-coral" : ""} ${d.overdue ? "font-bold" : ""}`}
+          />
+        );
+      },
+    },
+    {
+      key: "reported", header: "Reported", track: "92px",
+      cell: (row) => <span className="block truncate text-xs text-muted-foreground">{reportedShort(row.reported_at, now)}</span>,
+    },
+  ];
+  const tableGroups = groupTableRows(
+    viewItems as TableItem[],
+    groupBy,
+    { priority: (row) => effectiveOperationsPriority(row), ownerId: ownerOf, ownerName: (id) => displayName(people.get(id)) },
+    now,
+  ).map((g) => {
+    const pill = g.tone === "p1" || g.tone === "p2" || g.tone === "p3" ? priorityTone(g.tone)
+      : g.tone === "status" ? statusTone(g.status ?? "open")
+      : g.tone === "unassigned" ? "border-coral/30 bg-coral/12 text-coral"
+      : "border-border bg-muted text-foreground";
+    return {
+      key: `${groupBy}:${g.key}`,
+      label: g.label,
+      rows: g.rows,
+      header: (
+        <span className="flex min-w-0 flex-wrap items-center gap-2.5">
+          <TablePill className={pill}>{g.label}</TablePill>
+          <span className="text-muted-foreground">{TEAM_QUEUE_COPY.open(g.rows.length)}</span>
+          {g.overdue > 0 ? <span className="font-semibold text-coral">{TEAM_QUEUE_COPY.overdue(g.overdue)}</span> : null}
+        </span>
+      ),
+    };
+  });
 
   return (
     <div className="space-y-6">
       <QueueOpenLogger source="team_queue" />
-      <header className="space-y-1.5">
-        <h1 className="font-display text-3xl font-semibold">{TEAM_QUEUE_COPY.title}</h1>
-        <p className="text-[15px] text-muted-foreground">{TEAM_QUEUE_COPY.subtitle}</p>
-      </header>
-
-      {demoMode && (
-        <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-2.5 text-sm">
-          <span className="font-medium">Demo data.</span> These tickets are seeded examples and
-          never trigger emails, texts or integrations.
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1.5">
+          <h1 className="font-display text-3xl font-semibold">{TEAM_QUEUE_COPY.title}</h1>
+          <p className="text-[15px] text-muted-foreground">{TEAM_QUEUE_COPY.subtitle}</p>
         </div>
-      )}
-
-      <div role="group" aria-label={TEAM_QUEUE_COPY.chipsLabel} className="flex flex-wrap gap-2" data-testid="team-chips">
-        {QUEUE_SCOPES.map((option) => (
-          <button
-            key={option}
-            type="button"
-            aria-pressed={scope === option}
-            onClick={() => setParam({ team: option }, true)}
-            className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors ${
-              scope === option ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-foreground hover:bg-muted"
-            }`}
-          >
-            {TEAM_QUEUE_COPY.chips[option]}
-            <span className="numeric opacity-80">{counts[option]}</span>
-          </button>
-        ))}
-      </div>
-
-      {emailTests.length > 0 ? (
-        <EmailTestRecords>
-          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
-            {emailTests.map((t) => (
-              <li key={t.id}>
-                <Link
-                  to="/tickets/$ticketId"
-                  params={{ ticketId: t.id }}
-                  search={originSearch}
-                  className="flex min-h-11 flex-wrap items-center gap-2 px-4 py-3 hover:bg-muted/40"
-                >
-                  <span className="numeric text-[13px] text-muted-foreground">#{t.ref}</span>
-                  <span className="font-bold text-[15px]">{t.title}</span>
-                  <EmailTestChip />
-                  <span className="text-[13px] text-muted-foreground">
-                    {t.property_id ? formatPropertyLabel(t.properties).primary : TEAM_QUEUE_COPY.noHome} · {labelFor(STATUSES, t.status)}
-                  </span>
-                  <span className="ml-auto text-sm font-semibold text-primary">{EMAIL_TEST_COPY.open}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </EmailTestRecords>
-      ) : null}
-
-      <section aria-label={TEAM_QUEUE_COPY.pickUp} className="space-y-3.5">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-xl font-semibold">{TEAM_QUEUE_COPY.pickUp}</h2>
-          <span className="text-sm text-muted-foreground">{TEAM_QUEUE_COPY.summary(counts[scope], handoffRows.length)}</span>
-        </div>
-
-        {can("direct_bookings_work") && <OvernightDirectBookings demoMode={demoMode} />}
-
-        <TicketHandoffsQueue
-          rows={handoffRows}
-          userId={userId}
-          canAct={canTake}
-          myTeam={myTeam}
-          homeTeamOf={homeTeamOf}
-          cfg={coverage.data ?? DEFAULT_QUEUE_TIMING}
-          now={now}
-          originSearch={originSearch}
-          onChanged={refreshQueue}
-          done={done}
-          setDone={setDone}
-        />
-
-        <AutomatedSourceQueue
-          rows={sourceRows}
-          userId={userId}
-          canTake={canTake}
-          scope={scope}
-          myTeam={myTeam}
-          cfg={coverage.data ?? DEFAULT_QUEUE_TIMING}
-          now={now}
-          originSearch={originSearch}
-          onTaken={refreshQueue}
-          done={done}
-          setDone={setDone}
-        />
-
-        {pickUpEmpty && !isLoading ? (
-          <p className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground" data-testid="pick-up-empty">
-            {TEAM_QUEUE_COPY.empty}
-          </p>
-        ) : null}
-
-        <NotionImportedGroup
-          rows={(data ?? []) as unknown as Parameters<typeof NotionImportedGroup>[0]["rows"]}
-          homeTeamOf={homeTeamOf}
-          scope={scope}
-          canTake={canTake}
-          originSearch={originSearch}
-          onTaken={refreshQueue}
-          done={done}
-          setDone={setDone}
-        />
-      </section>
-
-      <DepartureReviewQueue />
-
-      <section aria-label={TEAM_QUEUE_COPY.everyone} className="space-y-3.5 border-t-2 border-border pt-6">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-xl font-semibold">{TEAM_QUEUE_COPY.everyone}</h2>
-          <nav aria-label="Other views" className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
-            <span>{TEAM_QUEUE_COPY.otherViews}</span>
-            {viewButtons.map((option) => (
-              <Button
-                key={option}
-                variant="ghost"
-                className="min-h-11 px-3 font-semibold text-primary"
-                disabled={!operationsAccess && option !== "list"}
-                onClick={() => void navigate({ search: withOperationsView(params, option) })}
-              >
-                {TEAM_QUEUE_COPY.views[option]}
-              </Button>
-            ))}
-          </nav>
-        </div>
-
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[repeat(4,minmax(0,1fr))_minmax(0,1.4fr)_auto]">
-          <FilterSelect
-            label={TEAM_QUEUE_COPY.owner}
-            value={filters.assignee}
-            onChange={(v) => setParam({ assignee: v === "all" ? undefined : v })}
-            options={[
-              { value: "all", label: TEAM_QUEUE_COPY.allOwners },
-              ...owners.map((o) => ({ value: o.id, label: o.name })),
-              { value: "unassigned", label: TEAM_QUEUE_COPY.noOwner },
-            ]}
-          />
-          <FilterSelect
-            label={TEAM_QUEUE_COPY.urgent}
-            value={filters.priority}
-            onChange={(v) => setParam({ priority: v === "all" ? undefined : v })}
-            options={[
-              { value: "all", label: TEAM_QUEUE_COPY.any },
-              ...(["p1", "p2", "p3"] as const).map((p) => ({ value: p, label: urgencyName(p) })),
-            ]}
-          />
-          <FilterSelect
-            label={TEAM_QUEUE_COPY.home}
-            value={filters.property}
-            onChange={(v) => setParam({ property: v === "all" ? undefined : v })}
-            options={[
-              { value: "all", label: TEAM_QUEUE_COPY.allHomes },
-              ...homeOptions.map(([id, name]) => ({ value: id, label: name })),
-            ]}
-          />
-          <FilterSelect
-            label={TEAM_QUEUE_COPY.problemType}
-            value={filters.workType}
-            onChange={(v) => setParam({ workType: v === "all" ? undefined : v })}
-            options={[
-              { value: "all", label: TEAM_QUEUE_COPY.allTypes },
-              ...(problemTypes.data ?? []).map((p) => ({ value: p.id, label: p.name })),
-            ]}
-          />
-          <label className="block text-xs font-medium text-muted-foreground">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          <label className="relative block min-w-0 flex-1 sm:w-72 sm:flex-none">
             <span className="sr-only">{TEAM_QUEUE_COPY.search}</span>
-            <span aria-hidden="true">&nbsp;</span>
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
             <Input
-              className="mt-1 h-11 rounded-lg text-sm text-foreground"
+              className="h-11 rounded-lg pl-9 text-sm text-foreground"
               placeholder={TEAM_QUEUE_COPY.search}
               value={filters.q}
               onChange={(e) => setParam({ q: e.target.value || undefined }, true)}
               aria-label={TEAM_QUEUE_COPY.search}
             />
           </label>
-          <div className="flex items-end gap-2">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="min-h-11 gap-1.5 rounded-lg">
-                  <SlidersHorizontal className="size-4" />
-                  {TEAM_QUEUE_COPY.moreFilters}
-                  {moreCount > 0 && (
-                    <Badge variant="outline" className="ml-1 border-primary/40 bg-primary/10 text-primary">
-                      {moreCount}
-                    </Badge>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent
-                align="end"
-                collisionPadding={12}
-                className="max-h-[min(75vh,var(--radix-popover-content-available-height))] w-[min(30rem,calc(100vw-2rem))] space-y-3 overflow-y-auto overscroll-contain"
-              >
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="min-h-11 gap-1.5 rounded-lg">
+                <SlidersHorizontal className="size-4" />
+                {TEAM_QUEUE_COPY.moreFilters}
+                {popoverCount > 0 && (
+                  <Badge variant="outline" className="ml-1 border-primary/40 bg-primary/10 text-primary">
+                    {popoverCount}
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              collisionPadding={12}
+              className="max-h-[min(75vh,var(--radix-popover-content-available-height))] w-[min(30rem,calc(100vw-2rem))] space-y-3 overflow-y-auto overscroll-contain"
+            >
+              <div className="grid gap-2 sm:grid-cols-2">
+                <FilterSelect
+                  label={TEAM_QUEUE_COPY.owner}
+                  value={filters.assignee}
+                  onChange={(v) => setParam({ assignee: v === "all" ? undefined : v })}
+                  options={[
+                    { value: "all", label: TEAM_QUEUE_COPY.allOwners },
+                    ...owners.map((o) => ({ value: o.id, label: o.name })),
+                    { value: "unassigned", label: TEAM_QUEUE_COPY.noOwner },
+                  ]}
+                />
+                <FilterSelect
+                  label={TEAM_QUEUE_COPY.urgent}
+                  value={filters.priority}
+                  onChange={(v) => setParam({ priority: v === "all" ? undefined : v })}
+                  options={[
+                    { value: "all", label: TEAM_QUEUE_COPY.any },
+                    ...(["p1", "p2", "p3"] as const).map((p) => ({ value: p, label: urgencyName(p) })),
+                  ]}
+                />
+                <FilterSelect
+                  label={TEAM_QUEUE_COPY.home}
+                  value={filters.property}
+                  onChange={(v) => setParam({ property: v === "all" ? undefined : v })}
+                  options={[
+                    { value: "all", label: TEAM_QUEUE_COPY.allHomes },
+                    ...homeOptions.map(([id, name]) => ({ value: id, label: name })),
+                  ]}
+                />
+                <FilterSelect
+                  label={TEAM_QUEUE_COPY.problemType}
+                  value={filters.workType}
+                  onChange={(v) => setParam({ workType: v === "all" ? undefined : v })}
+                  options={[
+                    { value: "all", label: TEAM_QUEUE_COPY.allTypes },
+                    ...(problemTypes.data ?? []).map((p) => ({ value: p.id, label: p.name })),
+                  ]}
+                />
+              </div>
                 <div className="flex flex-wrap gap-2">
                   {flagButtons.map((f) => (
                     <Button key={f.key} className="min-h-11" variant={flags.has(f.key) ? "default" : "outline"}
@@ -819,13 +832,98 @@ function TeamQueuePage() {
                   </label>
                 </div>
               </PopoverContent>
-            </Popover>
-            {filterCount > 0 ? (
-              <Button variant="ghost" className="min-h-11" onClick={clearFilters}>
-                {TEAM_QUEUE_COPY.clear(filterCount)}
-              </Button>
-            ) : null}
-          </div>
+          </Popover>
+          {filterCount > 0 ? (
+            <Button variant="ghost" className="min-h-11" onClick={clearFilters}>
+              {TEAM_QUEUE_COPY.clear(filterCount)}
+            </Button>
+          ) : null}
+        </div>
+      </header>
+
+      {demoMode && (
+        <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-2.5 text-sm">
+          <span className="font-medium">Demo data.</span> These tickets are seeded examples and
+          never trigger emails, texts or integrations.
+        </div>
+      )}
+
+      {can("direct_bookings_work") && <OvernightDirectBookings demoMode={demoMode} />}
+
+      {emailTests.length > 0 ? (
+        <EmailTestRecords>
+          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+            {emailTests.map((t) => (
+              <li key={t.id}>
+                <Link
+                  to="/tickets/$ticketId"
+                  params={{ ticketId: t.id }}
+                  search={originSearch}
+                  className="flex min-h-11 flex-wrap items-center gap-2 px-4 py-3 hover:bg-muted/40"
+                >
+                  <span className="numeric text-[13px] text-muted-foreground">#{t.ref}</span>
+                  <span className="font-bold text-[15px]">{t.title}</span>
+                  <EmailTestChip />
+                  <span className="text-[13px] text-muted-foreground">
+                    {t.property_id ? formatPropertyLabel(t.properties).primary : TEAM_QUEUE_COPY.noHome} · {labelFor(STATUSES, t.status)}
+                  </span>
+                  <span className="ml-auto text-sm font-semibold text-primary">{EMAIL_TEST_COPY.open}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </EmailTestRecords>
+      ) : null}
+
+      <section aria-label={TEAM_QUEUE_COPY.tableLabel} className="space-y-3">
+        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2 border-b border-border">
+          <nav aria-label={TEAM_QUEUE_COPY.tabsLabel} className="-mb-px flex max-w-full gap-1 overflow-x-auto" data-testid="queue-tabs">
+            {TAB_ORDER.map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                aria-pressed={activeTab === tab}
+                onClick={() => chooseTab(tab)}
+                className={`inline-flex min-h-11 shrink-0 items-center gap-2 border-b-2 px-3 text-sm font-semibold transition-colors ${
+                  activeTab === tab ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {TEAM_QUEUE_COPY.tabs[tab]}
+                <span className={`numeric rounded-full px-2 py-0.5 text-xs ${activeTab === tab ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>{tabCounts[tab]}</span>
+              </button>
+            ))}
+          </nav>
+          {view === "list" ? (
+            <div role="group" aria-label={TEAM_QUEUE_COPY.groupBy} className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
+              <span>{TEAM_QUEUE_COPY.groupBy}</span>
+              <div className="inline-flex rounded-lg border border-border bg-muted/40 p-0.5">
+                {GROUP_BY_OPTIONS.map((o) => (
+                  <button
+                    key={o.value}
+                    type="button"
+                    aria-pressed={groupBy === o.value}
+                    onClick={() => setParam({ groupBy: o.value === "priority" ? undefined : o.value }, true)}
+                    className={`min-h-11 rounded-md px-3 text-sm font-semibold transition-colors ${
+                      groupBy === o.value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2" data-testid="queue-flags">
+          {flagButtons.filter((f) => f.key !== "untouched").map((f) => (
+            <Button key={f.key} className="min-h-11" variant={flags.has(f.key) ? "default" : "outline"}
+              onClick={() => toggleFlag(f.key)} aria-pressed={flags.has(f.key)}>
+              {f.label}
+              <span className="numeric ml-1.5 opacity-70">{f.count}</span>
+            </Button>
+          ))}
+          <span className="ml-auto text-sm text-muted-foreground">{TEAM_QUEUE_COPY.tableSummary(viewItems.length)}</span>
         </div>
 
         {isError || (operationsAccess && (orders.isError || dispatches.isError || propertyCatalog.isError)) ? (
@@ -978,81 +1076,125 @@ function TeamQueuePage() {
         </div>
         ) : (
           <div className="space-y-2">
-            <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card" data-testid="everyone-list">
-              {tickets.map((t) => {
-                const ownerId = currentOwnerId(t);
-                const priority = effectiveOperationsPriority(t);
-                return (
-                  <li key={t.id} className="flex items-center gap-1 pr-4">
-                    <label className="flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center">
-                      <Checkbox
-                        aria-label={`Select ticket ${t.ref}`}
-                        checked={selectedTickets.includes(t.id)}
-                        onCheckedChange={() =>
-                          setSelectedTickets((prev) =>
-                            prev.includes(t.id) ? prev.filter((x) => x !== t.id) : [...prev, t.id],
-                          )
-                        }
-                      />
-                    </label>
-                    <Link
-                      to="/tickets/$ticketId"
-                      params={{ ticketId: t.id }}
-                      search={originSearch}
-                      className="flex min-h-11 min-w-0 flex-1 flex-col gap-1 py-3 hover:bg-muted/40 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
-                    >
-                      <div className="min-w-0 space-y-0.5">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="numeric text-[13px] text-muted-foreground">#{t.ref}</span>
-                          <span className="font-bold text-[15px]">{t.title}</span>
-                          {isEmailTestTicket(t) ? <EmailTestChip /> : null}
-                          <QueueChip className={urgencyChipClass(priority)}>{urgencyName(priority)}</QueueChip>
-                        </div>
-                        <p className="text-[13px] text-muted-foreground">
-                          {t.property_id ? formatPropertyLabel(t.properties).primary : TEAM_QUEUE_COPY.noHome} · {labelFor(STATUSES, t.status)}
-                        </p>
-                      </div>
-                      <div className="shrink-0 sm:text-right">
-                        <p className={`text-sm font-bold ${ownerId ? "" : "text-unowned"}`}>
-                          {ownerId ? displayName(people.get(ownerId)) : TEAM_QUEUE_COPY.noOwner}
-                        </p>
-                        <p className="text-[13px] text-muted-foreground">{rowDue(t)}</p>
-                      </div>
-                    </Link>
-                  </li>
-                );
-              })}
-              {standaloneOrders.map((order) => {
-                const priority = effectiveOperationsPriority(order);
-                return (
-                  <li key={order.id} className="pl-11 pr-4">
-                    <Link to="/work-orders" search={{ open: order.id, ...originSearch } as never}
-                      className="flex min-h-11 min-w-0 flex-col gap-1 py-3 hover:bg-muted/40 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                      <div className="min-w-0 space-y-0.5">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-[13px] text-muted-foreground">Work Order</span>
-                          <span className="font-bold text-[15px]">{order.title}</span>
-                          <QueueChip className={urgencyChipClass(priority)}>{urgencyName(priority)}</QueueChip>
-                        </div>
-                        <p className="text-[13px] text-muted-foreground">
-                          {formatPropertyLabel(order.properties).primary} · {order.status.replace("_", " ")}
-                        </p>
-                      </div>
-                      <div className="shrink-0 sm:text-right">
-                        <p className={`text-sm font-bold ${order.assigned_to ? "" : "text-unowned"}`}>
-                          {order.assigned_to ? displayName(people.get(order.assigned_to)) : TEAM_QUEUE_COPY.noOwner}
-                        </p>
-                        <p className="text-[13px] text-muted-foreground">{rowDue(order as never)}</p>
-                      </div>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+            <TicketTable
+              label={TEAM_QUEUE_COPY.tableLabel}
+              testId="everyone-list"
+              columns={columns}
+              groups={tableGroups}
+              rowKey={(row) => row.id}
+              lead={{
+                header: "Pick",
+                track: "44px",
+                cell: (row) => "kind" in row ? null : (
+                  <label className="flex min-h-11 min-w-11 cursor-pointer items-center justify-center">
+                    <Checkbox
+                      aria-label={`Select ticket ${row.ref}`}
+                      checked={selectedTickets.includes(row.id)}
+                      onCheckedChange={() =>
+                        setSelectedTickets((prev) =>
+                          prev.includes(row.id) ? prev.filter((x) => x !== row.id) : [...prev, row.id],
+                        )
+                      }
+                    />
+                  </label>
+                ),
+              }}
+              renderRow={(row, rowProps, children) => "kind" in row ? (
+                <Link to="/work-orders" search={{ open: row.id, ...originSearch } as never} {...rowProps}>{children}</Link>
+              ) : (
+                <Link to="/tickets/$ticketId" params={{ ticketId: row.id }} search={originSearch} {...rowProps}>{children}</Link>
+              )}
+            />
             <QueueBulkActions selected={selectedTickets} onClear={() => setSelectedTickets([])} />
           </div>
         )}
+
+        <nav aria-label="Other views" className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
+          <span>{TEAM_QUEUE_COPY.otherViews}</span>
+          {viewButtons.map((option) => (
+            <Button
+              key={option}
+              variant="ghost"
+              className="min-h-11 px-3 font-semibold text-primary"
+              disabled={!operationsAccess && option !== "list"}
+              onClick={() => void navigate({ search: withOperationsView(params, option) })}
+            >
+              {TEAM_QUEUE_COPY.views[option]}
+            </Button>
+          ))}
+        </nav>
       </section>
+
+      <section aria-label={TEAM_QUEUE_COPY.pickUp} className="space-y-3.5 border-t-2 border-border pt-6">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-xl font-semibold">{TEAM_QUEUE_COPY.pickUp}</h2>
+          <span className="text-sm text-muted-foreground">{TEAM_QUEUE_COPY.summary(counts[scope], handoffRows.length)}</span>
+        </div>
+
+        <div role="group" aria-label={TEAM_QUEUE_COPY.chipsLabel} className="flex flex-wrap gap-2" data-testid="team-chips">
+          {QUEUE_SCOPES.map((option) => (
+            <button
+              key={option}
+              type="button"
+              aria-pressed={scope === option}
+              onClick={() => setParam({ team: option }, true)}
+              className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors ${
+                scope === option ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-foreground hover:bg-muted"
+              }`}
+            >
+              {TEAM_QUEUE_COPY.chips[option]}
+              <span className="numeric opacity-80">{counts[option]}</span>
+            </button>
+          ))}
+        </div>
+
+        <TicketHandoffsQueue
+          rows={handoffRows}
+          userId={userId}
+          canAct={canTake}
+          myTeam={myTeam}
+          homeTeamOf={homeTeamOf}
+          cfg={coverage.data ?? DEFAULT_QUEUE_TIMING}
+          now={now}
+          originSearch={originSearch}
+          onChanged={refreshQueue}
+          done={done}
+          setDone={setDone}
+        />
+
+        <AutomatedSourceQueue
+          rows={sourceRows}
+          userId={userId}
+          canTake={canTake}
+          scope={scope}
+          myTeam={myTeam}
+          cfg={coverage.data ?? DEFAULT_QUEUE_TIMING}
+          now={now}
+          originSearch={originSearch}
+          onTaken={refreshQueue}
+          done={done}
+          setDone={setDone}
+        />
+
+        {pickUpEmpty && !isLoading ? (
+          <p className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground" data-testid="pick-up-empty">
+            {TEAM_QUEUE_COPY.empty}
+          </p>
+        ) : null}
+
+        <NotionImportedGroup
+          rows={(data ?? []) as unknown as Parameters<typeof NotionImportedGroup>[0]["rows"]}
+          homeTeamOf={homeTeamOf}
+          scope={scope}
+          canTake={canTake}
+          originSearch={originSearch}
+          onTaken={refreshQueue}
+          done={done}
+          setDone={setDone}
+        />
+      </section>
+
+      <DepartureReviewQueue />
     </div>
   );
 }

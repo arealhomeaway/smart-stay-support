@@ -17,7 +17,7 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 
 export const TEAM_QUEUE_COPY = {
   title: "Team Queue",
-  subtitle: "Work nobody owns yet. Take what you can do.",
+  subtitle: "Every open ticket the team is carrying. Pick up what needs picking up.",
   chipsLabel: "Choose a team",
   chips: { a: "Team A", b: "Team B", all: "All teams", unclaimed: "All unclaimed" } as Record<QueueScope, string>,
   pickUp: "Pick up work",
@@ -84,7 +84,15 @@ export const TEAM_QUEUE_COPY = {
   problemType: "Problem type",
   allTypes: "All problem types",
   search: "Search by title or home",
-  moreFilters: "More filters",
+  moreFilters: "Filter",
+  // Table view (Emily, Nov 18).
+  tabsLabel: "Choose a view",
+  tabs: { all: "All team", a: "Team A", b: "Team B", mine: "Only mine", unassigned: "Unassigned" },
+  groupBy: "Group by",
+  tableLabel: "Open tickets",
+  tableSummary: (n: number) => `${plural(n, "ticket", "tickets")} · overdue first, then what is due soonest`,
+  open: (n: number) => `${n} open`,
+  overdue: (n: number) => `${n} overdue`,
   clear: (n: number) => `Clear ${plural(n, "filter", "filters")}`,
   emptyList: "Nothing matches these filters.",
   due: (label: string) => `Due ${label}`,

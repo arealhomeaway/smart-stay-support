@@ -38,7 +38,7 @@ const central = (hhmm: string, day = "2026-11-09") => {
 describe("the page words, exactly as drawn", () => {
   it("title, subtitle, chips, sections and empty states", () => {
     expect(TEAM_QUEUE_COPY.title).toBe("Team Queue");
-    expect(TEAM_QUEUE_COPY.subtitle).toBe("Work nobody owns yet. Take what you can do.");
+    expect(TEAM_QUEUE_COPY.subtitle).toBe("Every open ticket the team is carrying. Pick up what needs picking up.");
     expect(Object.values(TEAM_QUEUE_COPY.chips)).toEqual(["Team A", "Team B", "All teams", "All unclaimed"]);
     expect(TEAM_QUEUE_COPY.pickUp).toBe("Pick up work");
     expect(TEAM_QUEUE_COPY.summary(8, 2)).toBe("8 waiting for an owner · 2 handoffs waiting for you");
@@ -47,7 +47,7 @@ describe("the page words, exactly as drawn", () => {
     expect(TEAM_QUEUE_COPY.everyone).toBe("Everyone's work");
     expect(TEAM_QUEUE_COPY.emptyList).toBe("Nothing matches these filters.");
     expect(TEAM_QUEUE_COPY.search).toBe("Search by title or home");
-    expect(TEAM_QUEUE_COPY.moreFilters).toBe("More filters");
+    expect(TEAM_QUEUE_COPY.moreFilters).toBe("Filter");
     expect(TEAM_QUEUE_COPY.problemType).toBe("Problem type");
     expect([TEAM_QUEUE_COPY.allOwners, TEAM_QUEUE_COPY.noOwner, TEAM_QUEUE_COPY.urgent, TEAM_QUEUE_COPY.any]).toEqual(["All owners", "No owner", "How urgent", "Any"]);
   });

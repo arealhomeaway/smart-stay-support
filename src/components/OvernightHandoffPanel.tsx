@@ -47,7 +47,7 @@ function reasons(t: Row) {
   return out;
 }
 
-export function OvernightHandoffPanel({ className }: { className?: string | undefined }) {
+export function OvernightHandoffPanel({ className, compact = false }: { className?: string | undefined; compact?: boolean }) {
   const { data, isLoading } = useQuery({
     queryKey: ["overnight-handoff"],
     queryFn: async () => {
@@ -86,6 +86,42 @@ export function OvernightHandoffPanel({ className }: { className?: string | unde
 
   const label = windowLabel(data.cfg);
   const openCount = data.rows.length;
+
+  // Compact (Oversight strip, Nov 18): one line with the same rows behind it.
+  if (compact) {
+    return (
+      <details className={className ? `surface group px-4 py-3 ${className}` : "surface group px-4 py-3"}>
+        <summary className="flex min-h-7 cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-amber/14 text-amber">
+            <Sunrise className="size-3.5" />
+          </span>
+          <span className="min-w-0 flex-1 truncate text-base font-medium">Overnight handoff</span>
+          <StatusBadge tone={openCount === 0 ? "resolved" : "waiting"}>{openCount} open</StatusBadge>
+          <span className="text-sm text-primary group-open:hidden">Details</span>
+        </summary>
+        <div className="mt-3 border-t border-border pt-3 text-sm">
+          {!data.window ? (
+            <p className="text-muted-foreground">Not available until the after-hours coverage window is configured.</p>
+          ) : openCount === 0 ? (
+            <p className="text-muted-foreground">Nothing from overnight still needs attention.</p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {data.rows.map((t) => (
+                <li key={t.id}>
+                  <Link to="/tickets/$ticketId" params={{ ticketId: t.id }}
+                    className="flex min-h-11 flex-wrap items-center gap-2 py-2 transition-colors hover:bg-secondary/60">
+                    <span className="min-w-0 flex-1 truncate font-medium">{t.title}</span>
+                    <span className="truncate text-xs text-muted-foreground">{[formatPropertyLabel(t.properties).primary, usDateTime(t.reported_at), ...reasons(t)].join(" · ")}</span>
+                    <StatusBadge tone={ticketTone(t.status)}>{labelFor(STATUSES, t.status)}</StatusBadge>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </details>
+    );
+  }
 
   return (
     <section className={className ? `surface p-4 ${className}` : "surface p-4"}>

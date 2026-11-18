@@ -14,9 +14,11 @@ import { useState } from "react";
 import { ApprovalDetail } from "@/components/approvals/ApprovalDetail";
 import { UnplacedOwnerReplies } from "@/components/approvals/UnplacedOwnerReplies";
 import { ChevronRight } from "lucide-react";
-import { PropertyPhoto } from "@/components/PropertyPhoto";
-import { StatusBadge, ticketTone } from "@/components/ui/status";
-import { usDate, usDateTime } from "@/lib/dates";
+import { StatusBadge } from "@/components/ui/status";
+import { usDate } from "@/lib/dates";
+import { TicketTable, TablePill, TwoLine, type TicketTableColumn, type TicketTableGroup } from "@/components/queue/TicketTable";
+import { dueLabelAt, reportedShort, statusPillLabel } from "@/lib/ticket-table";
+import { useHomeTeams } from "@/hooks/useHomeTeam";
 import { workloadByPerson } from "@/lib/oversight";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -26,8 +28,7 @@ import { Button } from "@/components/ui/button";
 
 import {
   OPEN_STATUSES,
-  STATUSES,
-  labelFor,
+  TEAMS,
   priorityMeta,
   priorityTone,
   relativeTime,
@@ -290,14 +291,14 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
 
   const blockers: ExceptionSection[] = [
     {
-      title: "Past SLA: acknowledged but not started",
+      title: "Acknowledged but not started",
       description: "Someone replied but no work has begun inside the target.",
       rows: notStarted,
       nextAction: "Start work",
       timingField: "reported_at",
     },
     {
-      title: "Handoffs waiting to be accepted",
+      title: "Handoff not accepted",
       description: "Ownership has not transferred. The original owner is still accountable.",
       rows: pendingHandoffs,
       nextAction: "Accept the handoff",
@@ -321,7 +322,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
       timingField: "reported_at",
     },
     {
-      title: "Reopened tickets",
+      title: "Reopened",
       description: "Closed too early, or the fix did not hold. Worth a look at the playbook.",
       rows: reopened,
       nextAction: "Check the playbook",
@@ -469,6 +470,153 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
     ),
   );
 
+  /* ---------------- the one table (Emily, Nov 18): layout only ---------------- */
+
+  const { homeTeamOf } = useHomeTeams();
+  type OvRow = {
+    key: string;
+    ticketId: string | null;
+    approvalId: string | null;
+    priority: string | null;
+    title: string;
+    sub: string | null;
+    property: (typeof data)[number]["properties"] | null;
+    ownerId: string | null;
+    status: { label: string; tone: string } | null;
+    why: string;
+    when: string | null;
+    late: boolean;
+    doNext: string;
+  };
+  const nowDate = new Date(now);
+  const ticketRow = (t: (typeof data)[number], section: ExceptionSection): OvRow => {
+    const review = section.timingField === "next_review_at" ? t.next_review_at : null;
+    return {
+      key: `${section.title}:${t.id}`,
+      ticketId: t.id,
+      approvalId: null,
+      priority: t.priority,
+      title: t.title,
+      sub: `#${t.ref}`,
+      property: t.properties,
+      ownerId: t.current_action_owner ?? t.assigned_to ?? null,
+      status: { label: statusPillLabel(t), tone: statusTone(t.status) },
+      why: section.title,
+      when: review ? dueLabelAt(review, nowDate) : `Reported ${reportedShort(t.reported_at, nowDate)}`,
+      late: review ? new Date(review).getTime() < now : false,
+      doNext: section.nextAction,
+    };
+  };
+  const escalationRows: OvRow[] = (s?.escalations ?? []).map((e) => {
+    const t = data.find((row) => row.id === e.ticket_id);
+    return {
+      key: `escalation:${e.id}`,
+      ticketId: String(e.ticket_id),
+      approvalId: null,
+      priority: t?.priority ?? null,
+      title: t?.title ?? (e.help_needed || e.reason || "Ticket"),
+      sub: t ? `#${t.ref}` : null,
+      property: t?.properties ?? null,
+      ownerId: t ? (t.current_action_owner ?? t.assigned_to ?? null) : null,
+      status: t ? { label: statusPillLabel(t), tone: statusTone(t.status) } : null,
+      why: "Asked for a supervisor",
+      when: [e.help_needed || e.reason, e.urgency !== "normal" ? e.urgency : null, `Raised ${relativeTime(e.created_at)}`].filter(Boolean).join(" · "),
+      late: false,
+      doNext: "Take the call",
+    };
+  });
+  const today = new Date(now).toISOString().slice(0, 10);
+  const approvalRows: OvRow[] = approvals.slice(0, 12).map((a) => {
+    const kind = a.kind.replace(/_/g, " ");
+    return {
+      key: `approval:${a.id}`,
+      ticketId: null,
+      approvalId: a.id,
+      priority: null,
+      title: a.title,
+      sub: null,
+      property: null,
+      ownerId: null,
+      status: { label: "Awaiting a decision", tone: statusTone("waiting") },
+      why: `${kind.charAt(0).toUpperCase()}${kind.slice(1)}${a.amount ? ` · $${Number(a.amount).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : ""}`,
+      when: a.due_on ? `Due ${usDate(a.due_on)}` : null,
+      late: Boolean(a.due_on && a.due_on < today),
+      doNext: "Review",
+    };
+  });
+  const sumRows = (list: ExceptionSection[]) => list.reduce((n, sec) => n + sec.rows.length, 0);
+  const groupDefs = [
+    { id: "group-decisions", label: "Decisions needed", hint: "Nobody can move these until someone decides.", sections: decisions, extra: [] as OvRow[], count: sumRows(decisions) },
+    { id: "group-escalations", label: "Escalations", hint: "Someone needs a supervisor now.", sections: escalationSections, extra: escalationRows, count: sumRows(escalationSections) + (s?.escalations ?? []).length },
+    { id: "group-blockers", label: "Blockers", hint: "Work has stalled between people.", sections: blockers, extra: [], count: sumRows(blockers) },
+    { id: "group-overdue", label: "Overdue / high-risk", hint: "Past where it should be.", sections: overdue, extra: [], count: sumRows(overdue) },
+    { id: "group-approvals", label: "Approvals", hint: "Waiting on your yes or no.", sections: [] as ExceptionSection[], extra: approvalRows, count: approvals.length },
+    { id: "group-review", label: "Review before closing", hint: "Finished work that needs a look before it closes.", sections: reviewBeforeClosing, extra: [], count: sumRows(reviewBeforeClosing) },
+  ];
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const tableGroups: TicketTableGroup<OvRow>[] = groupDefs.map((g) => {
+    const more = [
+      ...g.sections.filter((sec) => sec.rows.length > 12).map((sec) => `+${sec.rows.length - 12} more in ${sec.title}`),
+      ...(g.id === "group-approvals" && approvals.length > 12 ? [`+${approvals.length - 12} more`] : []),
+    ];
+    return {
+      key: g.id,
+      label: g.label,
+      rows: [...g.extra, ...g.sections.flatMap((sec) => sec.rows.slice(0, 12).map((t) => ticketRow(t, sec)))],
+      header: (
+        <span className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
+          <span className="font-semibold">{g.label}</span>
+          <StatusBadge tone="escalated">{g.count}</StatusBadge>
+          <span className="text-xs text-muted-foreground">{g.hint}</span>
+        </span>
+      ),
+      empty: (
+        <span className="flex items-center gap-3">
+          <span className="size-1.5 rounded-full bg-success" />
+          {g.label} · all clear
+        </span>
+      ),
+      footer: more.length ? more.join(" · ") : undefined,
+    };
+  });
+  const teamShort = (id: string) => TEAMS.find((t) => t.value === homeTeamOf(id))?.short ?? null;
+  const columns: TicketTableColumn<OvRow>[] = [
+    {
+      key: "priority", header: "Priority", track: "96px",
+      cell: (row) => row.priority ? <TablePill className={priorityTone(row.priority)}>{priorityMeta(row.priority).short}</TablePill> : null,
+    },
+    { key: "ticket", header: "Ticket", track: "minmax(200px,1.6fr)", cell: (row) => <TwoLine top={row.title} topClassName="font-bold" sub={row.sub ?? undefined} /> },
+    {
+      key: "property", header: "Property", track: "minmax(190px,1.4fr)",
+      cell: (row) => row.property ? <TwoLine top={formatPropertyLabel(row.property).full} sub={row.property.market ?? undefined} /> : null,
+    },
+    {
+      key: "owner", header: "Owner", track: "minmax(130px,1fr)",
+      cell: (row) => {
+        if (row.approvalId) return null;
+        if (!row.ownerId) return <TablePill className="border-coral/30 bg-coral/12 text-coral">Unassigned</TablePill>;
+        const p = (s?.profiles ?? []).find((pr) => pr.id === row.ownerId);
+        return <TwoLine top={p?.full_name ?? p?.email ?? "Unassigned"} topClassName="font-bold" sub={teamShort(row.ownerId) ?? undefined} />;
+      },
+    },
+    {
+      key: "status", header: "Status", track: "minmax(150px,1fr)",
+      cell: (row) => row.status ? <TablePill className={row.status.tone}>{row.status.label}</TablePill> : null,
+    },
+    {
+      key: "why", header: "Why it is here", track: "minmax(200px,1.4fr)",
+      cell: (row) => <TwoLine top={row.why} sub={row.when ?? undefined} subClassName={row.late ? "font-semibold text-coral" : ""} />,
+    },
+    {
+      key: "next", header: "Do next", track: "178px",
+      cell: (row) => (
+        <span className="inline-flex min-h-11 max-w-full items-center truncate rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground">
+          {row.doNext}
+        </span>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-8">
       <div>
@@ -476,7 +624,8 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
         <p className="mt-1 text-muted-foreground">
           {totalExceptions === 0
             ? "Nothing is slipping right now."
-            : `${totalExceptions} thing${totalExceptions === 1 ? "" : "s"} need${totalExceptions === 1 ? "s" : ""} intervention.`}
+            : `${totalExceptions} thing${totalExceptions === 1 ? "" : "s"} need${totalExceptions === 1 ? "s" : ""} intervention.`}{" "}
+          Each row says what to do next.
         </p>
         <ReportingBaselineNote className="mt-3 max-w-2xl" />
         {showExportCheckLink(access) ? (
@@ -486,51 +635,26 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
         ) : null}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2" data-testid="oversight-strip">
         <OnCallNowCard />
-        <OvernightHandoffPanel />
+        <OvernightHandoffPanel compact />
       </div>
 
       <InsuranceRiskCard />
 
-      {/* Compact exception strip: what needs judgment, at a glance. Each chip
-          jumps straight to its section below. */}
+      {/* The six judgment groups: each chip opens its group in the table and folds the others. */}
       <nav aria-label="Exception summary" className="flex flex-wrap gap-2">
-        {[
-          {
-            id: "group-decisions",
-            label: "Owner approvals",
-            count: decisions.reduce((n, sec) => n + sec.rows.length, 0),
-          },
-          {
-            id: "group-escalations",
-            label: "Escalations",
-            count:
-              escalationSections.reduce((n, sec) => n + sec.rows.length, 0) +
-              (s?.escalations ?? []).length,
-          },
-          {
-            id: "group-blockers",
-            label: "Blockers",
-            count: blockers.reduce((n, sec) => n + sec.rows.length, 0),
-          },
-          {
-            id: "group-overdue",
-            label: "Overdue / high-risk",
-            count: overdue.reduce((n, sec) => n + sec.rows.length, 0),
-          },
-          { id: "group-approvals", label: "Approvals", count: approvals.length },
-          {
-            id: "group-review",
-            label: "Review before closing",
-            count: reviewBeforeClosing.reduce((n, sec) => n + sec.rows.length, 0),
-          },
-        ].map((g) => (
-          <a
+        {groupDefs.map((g) => (
+          <button
             key={g.id}
-            href={`#${g.id}`}
+            type="button"
+            aria-pressed={openGroups[g.id] !== false && Object.values(openGroups).some((v) => v === false)}
+            onClick={() => {
+              setOpenGroups(Object.fromEntries(groupDefs.map((d) => [d.id, d.id === g.id])));
+              document.getElementById("oversight-table")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
             className={
-              "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors " +
+              "flex min-h-11 items-center gap-1.5 rounded-full border px-3 text-sm transition-colors " +
               (g.count > 0
                 ? "border-coral/30 bg-coral/8 text-coral hover:bg-coral/14"
                 : "border-border/60 text-muted-foreground hover:bg-secondary/60")
@@ -539,188 +663,34 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
             {g.count > 0 ? <span className="size-1.5 rounded-full bg-coral" /> : null}
             {g.label}
             <span className="numeric font-semibold">{g.count}</span>
-          </a>
+          </button>
         ))}
       </nav>
 
-      {/* Judgment groups: only groups with something in them get full presence.
-          An empty group collapses to one quiet line — this is where a coordinator
-          spends their attention, not a stat wall. */}
-      <div className="space-y-3">
-        <GroupSection
-          id="group-decisions"
-          title="Owner approvals"
-          count={decisions.reduce((n, sec) => n + sec.rows.length, 0)}
-        >
-          {decisions.map((section) => (
-            <SubList
-              key={section.title}
-              section={section}
-              origin={originSearch}
-              profiles={s?.profiles ?? []}
-            />
-          ))}
-        </GroupSection>
-
-        <GroupSection
-          id="group-escalations"
-          title="Escalations"
-          count={
-            escalationSections.reduce((n, sec) => n + sec.rows.length, 0) +
-            (s?.escalations ?? []).length
+      <div id="oversight-table" className="scroll-mt-4">
+        <TicketTable
+          label="Work that needs a supervisor"
+          testId="oversight-table"
+          columns={columns}
+          groups={tableGroups}
+          rowKey={(row) => row.key}
+          open={openGroups}
+          onToggle={(key, next) => setOpenGroups((prev) => ({ ...prev, [key]: next }))}
+          renderRow={(row, rowProps, children) =>
+            row.approvalId ? (
+              <button type="button" onClick={() => setOpenApproval(row.approvalId)} {...rowProps}>{children}</button>
+            ) : (
+              <Link to="/tickets/$ticketId" params={{ ticketId: row.ticketId ?? "" }} search={originSearch} {...rowProps}>{children}</Link>
+            )
           }
-        >
-          {(s?.escalations ?? []).length > 0 && (
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
-                A request for a call, not a handoff. The raiser still owns the work until you take
-                it.
-              </p>
-              {(s?.escalations ?? []).map((e) => (
-                <Link
-                  key={e.id}
-                  to="/tickets/$ticketId"
-                  params={{ ticketId: String(e.ticket_id) }}
-                  className="flex items-start justify-between gap-3 rounded-lg border border-border/60 px-3 py-2 text-sm hover:bg-secondary"
-                >
-                  <span>
-                    <span className="font-medium">{e.help_needed || e.reason}</span>
-                    <span className="mt-0.5 block text-xs text-muted-foreground">
-                      Raised {relativeTime(e.created_at)}
-                    </span>
-                  </span>
-                  <span className="flex items-center gap-2">
-                    {e.urgency !== "normal" && (
-                      <StatusBadge tone="escalated">{e.urgency}</StatusBadge>
-                    )}
-                    <ChevronRight className="size-4 text-muted-foreground" />
-                  </span>
-                </Link>
-              ))}
-            </div>
-          )}
-          {escalationSections.map((section) => (
-            <SubList
-              key={section.title}
-              section={section}
-              origin={originSearch}
-              profiles={s?.profiles ?? []}
-            />
-          ))}
-        </GroupSection>
-
-        <GroupSection
-          id="group-blockers"
-          title="Blockers"
-          count={blockers.reduce((n, sec) => n + sec.rows.length, 0)}
-        >
-          {blockers.map((section) => (
-            <SubList
-              key={section.title}
-              section={section}
-              origin={originSearch}
-              profiles={s?.profiles ?? []}
-            />
-          ))}
-        </GroupSection>
-
-        <GroupSection
-          id="group-overdue"
-          title="Overdue / high-risk"
-          count={overdue.reduce((n, sec) => n + sec.rows.length, 0)}
-        >
-          {overdue.map((section) => (
-            <SubList
-              key={section.title}
-              section={section}
-              origin={originSearch}
-              profiles={s?.profiles ?? []}
-            />
-          ))}
-        </GroupSection>
-
-        <GroupSection id="group-approvals" title="Approvals" count={approvals.length}>
-          {approvals.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Open one to see the home, the ticket it came from, the amount and who it sits with.
-              </p>
-              {approvals.slice(0, 12).map((a) => (
-                <button
-                  key={a.id}
-                  type="button"
-                  onClick={() => setOpenApproval(a.id)}
-                  className="flex w-full items-center justify-between gap-3 rounded-md border border-border/60 px-3 py-2 text-left text-sm transition-colors hover:bg-secondary"
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate font-medium">{a.title}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {a.kind.replace(/_/g, " ")}
-                      {a.amount
-                        ? ` · $${Number(a.amount).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
-                        : ""}
-                      {a.due_on ? ` · due ${usDate(a.due_on)}` : ""}
-                    </span>
-                  </span>
-                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
-                </button>
-              ))}
-              {approvals.length > 12 && (
-                <p className="text-xs text-muted-foreground">+{approvals.length - 12} more</p>
-              )}
-            </div>
-          )}
-        </GroupSection>
-
-        <GroupSection
-          id="group-review"
-          title="Review before closing"
-          count={reviewBeforeClosing.reduce((n, sec) => n + sec.rows.length, 0)}
-        >
-          {reviewBeforeClosing.map((section) => (
-            <SubList
-              key={section.title}
-              section={section}
-              origin={originSearch}
-              profiles={s?.profiles ?? []}
-            />
-          ))}
-        </GroupSection>
+        />
       </div>
 
       <UnplacedOwnerReplies onOpenApproval={(id) => setOpenApproval(id)} />
 
       <ApprovalDetail approvalId={openApproval} onClose={() => setOpenApproval(null)} />
 
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Where the work sits</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {summaries.map((sum) => (
-            <Link
-              key={sum.title}
-              to={sum.to}
-              className="rounded-lg border border-border bg-card p-4 transition-colors hover:bg-secondary"
-            >
-              <div className="flex items-center gap-2 font-medium">
-                {sum.title}
-                {sum.count > 0 && (
-                  <Badge variant="outline" className="border-warning/40 bg-warning/10">
-                    {sum.count}
-                  </Badge>
-                )}
-                <ChevronRight className="ml-auto size-4 text-muted-foreground" />
-              </div>
-              {sum.lines.map((l) => (
-                <p key={l} className="text-sm text-muted-foreground">
-                  {l}
-                </p>
-              ))}
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-2">
+      <div className="grid items-start gap-4 lg:grid-cols-2">
         <SectionCard
           title="Workload by person"
           description="Open work only. This is balance, not output."
@@ -748,16 +718,44 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
           ))}
         </SectionCard>
 
-        <SectionCard
-          title="Where issues are coming from"
-          description="Open work by property, market and issue type."
-          bodyClassName="grid gap-4 text-sm sm:grid-cols-3"
-        >
-          <TrendList title="Property" rows={byProperty} />
-          <TrendList title="Market" rows={byMarket} />
-          <TrendList title="Issue type" rows={byType} />
-        </SectionCard>
-      </section>
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold">Where the work sits</h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {summaries.map((sum) => (
+              <Link
+                key={sum.title}
+                to={sum.to}
+                className="rounded-lg border border-border bg-card p-4 transition-colors hover:bg-secondary"
+              >
+                <div className="flex items-center gap-2 font-medium">
+                  {sum.title}
+                  {sum.count > 0 && (
+                    <Badge variant="outline" className="border-warning/40 bg-warning/10">
+                      {sum.count}
+                    </Badge>
+                  )}
+                  <ChevronRight className="ml-auto size-4 text-muted-foreground" />
+                </div>
+                {sum.lines.map((l) => (
+                  <p key={l} className="text-sm text-muted-foreground">
+                    {l}
+                  </p>
+                ))}
+              </Link>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <SectionCard
+        title="Where issues are coming from"
+        description="Open work by property, market and issue type."
+        bodyClassName="grid gap-4 text-sm sm:grid-cols-3"
+      >
+        <TrendList title="Property" rows={byProperty} />
+        <TrendList title="Market" rows={byMarket} />
+        <TrendList title="Issue type" rows={byType} />
+      </SectionCard>
 
       <p className="text-sm text-muted-foreground">
         Context: {open.length} open · {closedThisWeek} closed in the last 7 days.
@@ -780,143 +778,5 @@ function TrendList({ title, rows }: { title: string; rows: [string, number][] })
         ))}
       </ul>
     </div>
-  );
-}
-
-type Profile = { id: string; full_name: string | null; email: string | null };
-
-function ownerName(ticket: Row, profiles: Profile[]) {
-  const id = ticket.current_action_owner ?? ticket.assigned_to;
-  if (!id) return "Nobody yet";
-  const p = profiles.find((pr) => pr.id === id);
-  return p?.full_name ?? p?.email ?? "Nobody yet";
-}
-
-/**
- * One row a supervisor can act on: the property, what's wrong, its state, who
- * owns it, what to do next and when. Every group renders the same shape so
- * scanning across judgment areas costs no extra attention.
- */
-function ExceptionRow({
-  ticket,
-  origin,
-  nextAction,
-  timingField,
-  profiles,
-}: {
-  ticket: Row;
-  origin: { from: string };
-  nextAction: string;
-  timingField: "reported_at" | "next_review_at";
-  profiles: Profile[];
-}) {
-  const when = timingField === "next_review_at" ? ticket.next_review_at : ticket.reported_at;
-  return (
-    <Link
-      to="/tickets/$ticketId"
-      params={{ ticketId: ticket.id }}
-      search={origin}
-      className="flex flex-wrap items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-secondary"
-    >
-      <PropertyPhoto
-        url={ticket.properties?.primary_photo_url}
-        name={formatPropertyLabel(ticket.properties).primary}
-      />
-      <span className="min-w-0">
-        <span className="block truncate font-medium">{ticket.title}</span>
-        <span className="text-xs text-muted-foreground">
-          {formatPropertyLabel(ticket.properties).primary} ·{" "}
-          {priorityMeta(ticket.priority).short}
-        </span>
-      </span>
-      <StatusBadge tone={ticketTone(ticket.status)}>
-        {labelFor(STATUSES, ticket.status)}
-      </StatusBadge>
-      <span className="text-sm text-muted-foreground">{ownerName(ticket, profiles)}</span>
-      <span className="ml-auto flex flex-col items-end text-right text-sm">
-        <span className="font-medium text-foreground">{nextAction}</span>
-        <span className="text-xs text-muted-foreground">{usDateTime(when)}</span>
-      </span>
-    </Link>
-  );
-}
-
-/** One exception list, rendered under its parent judgment group. */
-function SubList({
-  section,
-  origin,
-  profiles,
-}: {
-  section: {
-    title: string;
-    description: string;
-    rows: Row[];
-    nextAction: string;
-    timingField: "reported_at" | "next_review_at";
-  };
-  origin: { from: string };
-  profiles: Profile[];
-}) {
-  if (section.rows.length === 0) return null;
-  return (
-    <div className="space-y-2">
-      <p className="text-sm font-medium">
-        {section.title}
-        <span className="ml-1.5 text-muted-foreground">({section.rows.length})</span>
-      </p>
-      <p className="text-xs text-muted-foreground">{section.description}</p>
-      {section.rows.slice(0, 12).map((t) => (
-        <ExceptionRow
-          key={t.id}
-          ticket={t as Row}
-          origin={origin}
-          nextAction={section.nextAction}
-          timingField={section.timingField}
-          profiles={profiles}
-        />
-      ))}
-      {section.rows.length > 12 && (
-        <p className="text-xs text-muted-foreground">+{section.rows.length - 12} more</p>
-      )}
-    </div>
-  );
-}
-
-/**
- * A judgment group: a quiet "all clear" line when it is empty, a collapsible
- * section with full presence when it isn't. Progressive disclosure is the
- * whole point — a coordinator should never scroll past ten empty cards to
- * find the one that matters.
- */
-function GroupSection({
-  id,
-  title,
-  count,
-  children,
-}: {
-  id: string;
-  title: string;
-  count: number;
-  children: ReactNode;
-}) {
-  if (count === 0) {
-    return (
-      <div
-        id={id}
-        className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-2 text-sm text-muted-foreground"
-      >
-        <span className="size-1.5 rounded-full bg-success" />
-        {title} · all clear
-      </div>
-    );
-  }
-  return (
-    <details id={id} open className="surface px-4 py-3">
-      <summary className="flex cursor-pointer list-none items-center gap-2">
-        <h2 className="text-base font-semibold">{title}</h2>
-        <StatusBadge tone="escalated">{count}</StatusBadge>
-      </summary>
-      <div className="mt-3 space-y-4 border-t border-border pt-3">{children}</div>
-    </details>
   );
 }
