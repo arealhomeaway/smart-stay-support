@@ -21,6 +21,8 @@ import { OpportunityDetail, StartDialog, arhaStatus, useOwnerOpportunityData, ty
 import { OwnerSidePanel, PanelSection } from "@/components/owner/OwnerSidePanel";
 import { PlanCardForm } from "@/components/owner/OwnerPlanCards";
 import { OwnerItemConversation } from "@/components/owner/OwnerItemConversation";
+import { AddMoreBox } from "@/components/owner/AddMoreBox";
+import { addToOwnerItem } from "@/lib/homeowner-reopen.data";
 import { OwnerApprovalPanel } from "@/components/OwnerApprovalPanel";
 import { OnboardingActions } from "@/components/owner/OnboardingActions";
 import { LibraryVideoIndexError, LibraryVideoPlayer, useLibraryVideoIndex } from "@/components/owner/LibraryVideoPlayer";
@@ -790,6 +792,7 @@ function PlanCardPanel({
   onOpenChange: (next: boolean) => void;
   footer: ReactNode;
 }) {
+  const qc = useQueryClient();
   const q = useQuery({ queryKey: ["ao-owner-plan", programId, "portal"], queryFn: () => loadOwnerPortalPlan(programId), retry: false });
   const row = q.data?.available ? q.data.data.find((c) => c.plan_card_id === item.id) : undefined;
   const outsideLine = useOutsideLines(programId, programLive).get(`plan:${item.id}`) ?? null;
@@ -831,6 +834,19 @@ function PlanCardPanel({
         <p className="text-sm text-muted-foreground">{view.text}</p>
       )}
       {row.owner_review_id ? <OwnerItemConversation reviewId={row.owner_review_id} side="owner" readOnly={readOnly} /> : null}
+      {/* Nov 18: a closed card in her Completed list can still take more from her. */}
+      {view.kind === "closed" && row.owner_review_id && !readOnly ? (
+        <AddMoreBox
+          key={row.owner_review_id}
+          title={row.title}
+          onSave={(body) => addToOwnerItem(row.owner_review_id!, body)}
+          savedLine={`Saved: your update to "${row.title}". Your ARHA team has it.`}
+          onSaved={() => {
+            void qc.invalidateQueries({ queryKey: ["owner-item-detail", row.owner_review_id] });
+            void qc.invalidateQueries({ queryKey: ["owner-item-speakers"] });
+          }}
+        />
+      ) : null}
     </OwnerSidePanel>
   );
 }
