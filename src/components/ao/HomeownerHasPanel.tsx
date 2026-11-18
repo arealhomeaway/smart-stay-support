@@ -257,7 +257,8 @@ export function TaskHomeownerLines({ taskId, done, completedAt }: { taskId: stri
   });
   const lines = q.data ? [...q.data.opened, ...(q.data.sent ? [q.data.sent] : [])] : [];
   const answers = q.data?.answers ?? [];
-  if (lines.length === 0 && answers.length === 0) return null;
+  const updates = q.data?.updates ?? [];
+  if (lines.length === 0 && answers.length === 0 && updates.length === 0) return null;
   return (
     <div className="space-y-0.5 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm" data-testid="task-homeowner-lines">
       {lines.map((l) => (
@@ -271,6 +272,9 @@ export function TaskHomeownerLines({ taskId, done, completedAt }: { taskId: stri
           ))}
           <ProofFiles files={a.files} />
         </div>
+      ))}
+      {updates.map((u) => (
+        <p key={u} className="font-medium" data-testid="homeowner-updated-line">{u}</p>
       ))}
     </div>
   );

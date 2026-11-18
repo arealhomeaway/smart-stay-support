@@ -18,6 +18,7 @@ import {
   type HasPlanCard,
   type HasReview,
 } from "@/lib/homeowner-has";
+import { homeownerUpdatedLine } from "@/lib/homeowner-reopen";
 
 export const STATUS_COPY = {
   myHomeowners: "My homeowners",
@@ -46,7 +47,11 @@ export type HomeownerStatusData = {
   approvals: StatusApproval[];
   planOn: Record<string, boolean>;
   homeLabels: Record<string, string>;
+  /** What homeowners changed after finishing or submitting (Nov 18). */
+  updates?: StatusUpdate[];
 };
+
+export type StatusUpdate = { id: string; propertyId: string | null; title: string; taskId: string | null; at: string };
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -211,6 +216,11 @@ export function answeredRows(data: HomeownerStatusData, homes: ReadonlySet<strin
     if (!a.propertyId || !homes.has(a.propertyId) || approvalWaiting(a) || !recent(a.decidedAt, now)) continue;
     out.push({ key: `approval:${a.id}`, propertyId: a.propertyId, home: homeOf(data, a.propertyId), title: a.title, line: approvalStatusLine(a).line, overdue: false, taskId: a.taskId, at: a.decidedAt ?? "" });
   }
+  // Nov 18: every change she made after finishing, in the last 7 days.
+  for (const u of data.updates ?? []) {
+    if (!u.propertyId || !homes.has(u.propertyId) || !recent(u.at, now)) continue;
+    out.push({ key: `update:${u.id}`, propertyId: u.propertyId, home: homeOf(data, u.propertyId), title: u.title, line: homeownerUpdatedLine(u.title, u.at), overdue: false, taskId: u.taskId, at: u.at });
+  }
   return out.sort((x, y) => y.at.localeCompare(x.at) || x.title.localeCompare(y.title));
 }
 
@@ -218,7 +228,8 @@ export function answeredRows(data: HomeownerStatusData, homes: ReadonlySet<strin
 export function needsRows(data: HomeownerStatusData, homes: ReadonlySet<string>, now: Date): (StatusRow & { kind: "overdue" | "answered" })[] {
   return [
     ...waitingRows(data, homes, now).filter((r) => r.overdue).map((r) => ({ ...r, kind: "overdue" as const })),
-    ...answeredRows(data, homes, now).map((r) => ({ ...r, kind: "answered" as const })),
+    // Needs you now is unchanged: homeowner updates show on My homeowners and the Task drawer only.
+    ...answeredRows(data, homes, now).filter((r) => !r.key.startsWith("update:")).map((r) => ({ ...r, kind: "answered" as const })),
   ];
 }
 

@@ -220,6 +220,10 @@ export async function loadOwnerItemDetail(reviewId: string) {
 }
 /** The homeowner writes back in the same item. */
 export async function replyToOwnerItem(reviewId: string, body: string) {
+  // owner_item_add (Nov 18) is the same reply and also tells the team when she adds to an answered
+  // item; until it is applied, the existing reply is used unchanged.
+  const added = unwrap<string>(await db.rpc("owner_item_add", { _review_id: reviewId, _body: body }));
+  if (added.available) return added.data;
   const r = unwrap<string>(await db.rpc("owner_item_reply", { _review_id: reviewId, _body: body }));
   if (!r.available) throw new Error("Replies are not set up yet");
   return r.data;

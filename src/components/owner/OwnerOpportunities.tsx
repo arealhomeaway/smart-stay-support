@@ -12,6 +12,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { OwnerConversation } from "@/components/OwnerConversation";
+import { AddMoreBox } from "@/components/owner/AddMoreBox";
+import { addToOpportunity } from "@/lib/homeowner-reopen.data";
 import { Clock, FileText, Link2 } from "lucide-react";
 import { inQueue, queueCounts, type QueueInput } from "@/lib/owner-opportunity-filters";
 import { toast } from "sonner";
@@ -377,6 +379,20 @@ export function OpportunityDetail({
         refreshKeys={[["owner-opportunities"]]}
       />
       </div>
+
+      {/* Nov 18: a finished Opportunity can be reopened to add more or update it. */}
+      {item.finished && !readOnly ? (
+        <AddMoreBox
+          key={item.id}
+          title={item.title}
+          onSave={(body) => addToOpportunity(item.id, body)}
+          savedLine={`Saved: your update to "${item.title}". It is open again and your ARHA team has it.`}
+          onSaved={() => {
+            refresh();
+            void qc.invalidateQueries({ queryKey: ["owner-conversation"] });
+          }}
+        />
+      ) : null}
 
       {canRespond ? (
         <div className="space-y-2">

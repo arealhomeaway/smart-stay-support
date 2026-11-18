@@ -8,6 +8,8 @@
  * through the single-shot published approval, and a written response still
  * goes through the review record.
  */
+import { AddMoreBox } from "@/components/owner/AddMoreBox";
+import { addToOwnerItem } from "@/lib/homeowner-reopen.data";
 import { OwnerItemConversation } from "@/components/owner/OwnerItemConversation";
 import { useState, type ReactNode } from "react";
 import { OwnerSidePanel, PanelSection } from "@/components/owner/OwnerSidePanel";
@@ -179,6 +181,15 @@ export function OwnerTaskDialog({
         Send to ARHA
       </Button>
     </div>
+  ) : finished && reviewId && !readOnly ? (
+    // Nov 18: an item she already answered can be reopened to add more or update her answer.
+    <AddMoreBox
+      key={reviewId}
+      title={details.title}
+      onSave={(body) => addToOwnerItem(reviewId, body)}
+      savedLine={`Saved: your update to "${details.title}". Your ARHA team has it.`}
+      onSaved={onDecided}
+    />
   ) : null;
 
   return (

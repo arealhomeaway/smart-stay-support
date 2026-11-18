@@ -1,10 +1,14 @@
 /**
  * Homeowner portal "Your hours" (Admin, Nov 17): every entry she saved, newest saved first, each
  * marked "Waiting for review" or "Reviewed by your team [date]", with Reviewed and Waiting totals
- * shown separately so she never re-enters work. Display only; hours rules are unchanged.
+ * shown separately so she never re-enters work. Hours rules are unchanged.
+ * Nov 18: Edit and Add more on her own entries. The original stays on file (a change is a new entry
+ * that amends it), and the change waits for review.
  */
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { HourEntryChangeDialog, type ChangeableEntry } from "@/components/owner/HourEntryChangeDialog";
+import { REOPEN_COPY, canChangeOwnEntry } from "@/lib/homeowner-reopen";
 import { entryStatusLine, hoursByReview, hoursFromMinutes, type HourEntry } from "@/lib/owner-portal-look";
 import { shortDate } from "@/lib/owner-opportunity-board";
 
@@ -14,16 +18,35 @@ type Entry = HourEntry & {
   review_status?: string | null;
   reviewed_at?: string | null;
   attachment_paths?: unknown;
+  attachment_path?: string | null;
+  owner_user_id?: string | null;
 };
 
 const FIRST = 10;
 
-function fileCount(paths: unknown): number {
-  return Array.isArray(paths) ? paths.filter((p) => typeof p === "string" && p).length : 0;
+function fileCount(paths: unknown, single?: string | null): number {
+  const n = Array.isArray(paths) ? paths.filter((p) => typeof p === "string" && p).length : 0;
+  return n || (single ? 1 : 0);
 }
 
-export function OwnerHoursList({ entries, homeLabel }: { entries: Entry[]; homeLabel: (ids: string[]) => string }) {
+export function OwnerHoursList({
+  entries,
+  homeLabel,
+  programId = null,
+  userId = null,
+  readOnly = true,
+  onSaved,
+}: {
+  entries: Entry[];
+  homeLabel: (ids: string[]) => string;
+  /** Needed to change entries; without it the list is display only (staff preview). */
+  programId?: string | null;
+  userId?: string | null;
+  readOnly?: boolean;
+  onSaved?: () => void;
+}) {
   const [all, setAll] = useState(false);
+  const [change, setChange] = useState<{ entry: ChangeableEntry; mode: "edit" | "add" } | null>(null);
   const live = entries
     .filter((e) => !e.superseded)
     .sort((a, b) => (b.created_at ?? b.entry_date ?? "").localeCompare(a.created_at ?? a.entry_date ?? ""));
@@ -43,7 +66,12 @@ export function OwnerHoursList({ entries, homeLabel }: { entries: Entry[]; homeL
         <>
           <ul className="divide-y divide-border">
             {shown.map((e) => {
-              const files = fileCount(e.attachment_paths);
+              const files = fileCount(e.attachment_paths, e.attachment_path);
+              const mine = Boolean(programId) && canChangeOwnEntry(e, userId, readOnly);
+              const changeable: ChangeableEntry = {
+                id: e.id, activity: e.activity ?? "", entry_date: e.entry_date ?? "", minutes: Number(e.minutes) || 0,
+                reviewed_at: e.reviewed_at ?? null, fileCount: files,
+              };
               return (
                 <li key={e.id} className="py-2 text-sm" data-hour-entry={e.id}>
                   <p className="font-medium text-portal-ink">
@@ -57,6 +85,16 @@ export function OwnerHoursList({ entries, homeLabel }: { entries: Entry[]; homeL
                       entryStatusLine(e),
                     ].filter(Boolean).join(" · ")}
                   </p>
+                  {mine ? (
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={() => setChange({ entry: changeable, mode: "edit" })}>
+                        {REOPEN_COPY.edit}
+                      </Button>
+                      <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={() => setChange({ entry: changeable, mode: "add" })}>
+                        {REOPEN_COPY.addMore}
+                      </Button>
+                    </div>
+                  ) : null}
                 </li>
               );
             })}
@@ -68,6 +106,16 @@ export function OwnerHoursList({ entries, homeLabel }: { entries: Entry[]; homeL
           ) : null}
         </>
       )}
+      {change && programId ? (
+        <HourEntryChangeDialog
+          key={`${change.entry.id}:${change.mode}`}
+          entry={change.entry}
+          mode={change.mode}
+          programId={programId}
+          onClose={() => setChange(null)}
+          onSaved={() => onSaved?.()}
+        />
+      ) : null}
     </section>
   );
 }

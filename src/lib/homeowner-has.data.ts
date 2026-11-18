@@ -19,6 +19,7 @@ import {
   type HasPlanCard,
   type HasReview,
 } from "@/lib/homeowner-has";
+import { homeownerUpdatedLine } from "@/lib/homeowner-reopen";
 
 // Engine tables are not all in the generated types.
 const db = supabase as unknown as {
@@ -281,9 +282,44 @@ export async function loadHomeownerHas(input: { programId: string; propertyIds: 
   };
 }
 
-/** The two Task drawer lines: the card finishing it opened, and its owner item or approval. */
-export async function loadTaskHomeownerLines(input: { taskId: string; done: boolean; completedAt: string | null }): Promise<{ opened: string[]; sent: string | null; answers: { title: string; line: string; lines: string[]; files: HasFile[] }[] }> {
+export type HomeownerUpdate = {
+  id: string; propertyId: string | null; kind: string; itemId: string; title: string; taskId: string | null; at: string; isDemo: boolean;
+};
+type UpdateRow = { id: string; property_id: string | null; kind: string; item_id: string; item_title: string; task_id: string | null; created_at: string; is_demo: boolean | null };
+const toUpdate = (r: UpdateRow): HomeownerUpdate => ({
+  id: r.id, propertyId: r.property_id, kind: r.kind, itemId: r.item_id, title: r.item_title, taskId: r.task_id, at: r.created_at, isDemo: Boolean(r.is_demo),
+});
+const UPDATE_COLUMNS = "id, property_id, kind, item_id, item_title, task_id, created_at, is_demo";
+
+/**
+ * What homeowners changed after finishing or submitting (Nov 18): one row per change, newest first.
+ * Empty while the record is not set up yet, so team screens never break.
+ */
+export async function loadHomeownerUpdates(input: { propertyIds?: string[]; taskId?: string; since?: string }): Promise<HomeownerUpdate[]> {
+  const ids = [...new Set(input.propertyIds ?? [])].filter(Boolean);
+  if (!input.taskId && ids.length === 0) return [];
+  const run = async (q: (b: any) => any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+    let b = db.from("homeowner_updates").select(UPDATE_COLUMNS);
+    if (input.since) b = b.gte("created_at", input.since);
+    const r = await q(b).order("created_at", { ascending: false }).limit(500);
+    if (r.error) {
+      const { isMissingDbObject } = await import("@/lib/ao-ui");
+      if (isMissingDbObject(r.error)) return [] as UpdateRow[];
+      throw new Error("Homeowner updates could not load.");
+    }
+    return (r.data ?? []) as UpdateRow[];
+  };
+  const out: UpdateRow[] = [];
+  if (input.taskId) out.push(...(await run((b) => b.eq("task_id", input.taskId))));
+  for (let i = 0; i < ids.length; i += 150) out.push(...(await run((b) => b.in("property_id", ids.slice(i, i + 150)))));
+  const seen = new Set<string>();
+  return out.filter((r) => (seen.has(r.id) ? false : (seen.add(r.id), true))).map(toUpdate);
+}
+
+/** The Task drawer lines: the card finishing it opened, its owner item or approval, and homeowner updates. */
+export async function loadTaskHomeownerLines(input: { taskId: string; done: boolean; completedAt: string | null }): Promise<{ opened: string[]; sent: string | null; answers: { title: string; line: string; lines: string[]; files: HasFile[] }[]; updates: string[] }> {
   const { taskId } = input;
+  const updatesP = loadHomeownerUpdates({ taskId });
   const [cards, sends, items, approvals] = await Promise.all([
     rows<{ id: string; unlocked_at: string | null; owner_completed_at: string | null; card: { title: string; output_fields?: unknown } | null }>(
       db.from("ao_home_plan_cards").select("id, unlocked_at, owner_completed_at, card:ao_library_cards(title, output_fields)").eq("linked_task_id", taskId),
@@ -349,7 +385,9 @@ export async function loadTaskHomeownerLines(input: { taskId: string; done: bool
       files: sub?.files ?? [],
     };
   });
-  return { opened, sent, answers };
+  // Every later change she made, one line each (newest first), so the team sees she reopened it.
+  const updates = (await updatesP).map((u) => homeownerUpdatedLine(u.title, u.at));
+  return { opened, sent, answers, updates: [...new Set(updates)] };
 }
 
 /** Proof on finished Tasks: their files, when they were sent to the homeowner, and who finished them (role). */

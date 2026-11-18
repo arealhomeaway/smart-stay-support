@@ -118,6 +118,11 @@ export function CompletedCardPanel({
                   <FieldInput key={f.key} id={`${planCardId}-${f.key}`} field={f} value={values[f.key] ?? ""} onChange={(v) => setValues({ ...values, [f.key]: v })} />
                 ))}
               </div>
+            ) : !answer.data ? (
+              // Finished with nothing saved: she can still add her answer or a file (Nov 18).
+              <p className="text-sm text-portal-muted" data-testid="card-nothing-saved">
+                Nothing was saved with this card yet. Use Edit my answer or Add a file to add it now.
+              </p>
             ) : fields.length ? (
               <dl className="space-y-2 text-sm">
                 {fields.map((f) => (
@@ -204,10 +209,10 @@ export function CompletedCardPanel({
             </div>
           ) : (
             <div className="flex flex-wrap gap-2">
-              <Button className="min-h-11 bg-portal-primary text-portal-primary-foreground hover:bg-portal-primary/90" disabled={readOnly || !answer.data} onClick={() => startEdit(false)}>
+              <Button className="min-h-11 bg-portal-primary text-portal-primary-foreground hover:bg-portal-primary/90" disabled={readOnly || answer.isPending || answer.isError} onClick={() => startEdit(false)}>
                 Edit my answer
               </Button>
-              <Button variant="outline" className="min-h-11 border-portal-primary text-portal-primary" disabled={readOnly || !answer.data || !propertyId} onClick={() => startEdit(true)}>
+              <Button variant="outline" className="min-h-11 border-portal-primary text-portal-primary" disabled={readOnly || answer.isPending || answer.isError || !propertyId} onClick={() => startEdit(true)}>
                 Add a file
               </Button>
             </div>

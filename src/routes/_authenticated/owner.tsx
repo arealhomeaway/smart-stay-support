@@ -594,6 +594,10 @@ function OwnerHubBody({
       <OwnerHoursList
         entries={data.entries.filter((e) => inHome(e.propertyIds)) as never}
         homeLabel={(ids) => propertyLabel(ids)}
+        programId={program.id}
+        userId={user.id}
+        readOnly={preview}
+        onSaved={invalidate}
       />
 
       <OnboardingProgress

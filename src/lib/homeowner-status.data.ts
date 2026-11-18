@@ -5,7 +5,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { formatPropertyLabel } from "@/lib/property-label";
 import { UNSENT_REVIEW, GONE_APPROVAL } from "@/lib/homeowner-has";
-import { loadCardSubmissions } from "@/lib/homeowner-has.data";
+import { loadCardSubmissions, loadHomeownerUpdates } from "@/lib/homeowner-has.data";
 import { handedOffHomes, type HomeownerStatusData, type StatusReview } from "@/lib/homeowner-status";
 
 const db = supabase as unknown as { from: (t: string) => any }; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -125,6 +125,7 @@ export async function loadHomeownerStatus(input: { propertyIds: string[]; demo: 
 
   // What the homeowner sent on cards finished in the last 7 days (existing read rule on saved answers).
   const recentSince = Date.now() - 8 * 86_400_000;
+  const updatesP = loadHomeownerUpdates({ propertyIds: ids, since: new Date(recentSince).toISOString() });
   const submissions = await loadCardSubmissions(
     cards.filter((c) => c.owner_completed_at && Date.parse(c.owner_completed_at) >= recentSince).map((c) => c.id),
   );
@@ -165,6 +166,9 @@ export async function loadHomeownerStatus(input: { propertyIds: string[]; demo: 
       })),
     planOn: Object.fromEntries(settings.map((s) => [s.property_id, Boolean(s.automated)])),
     homeLabels: Object.fromEntries(props.map((p) => [p.id, formatPropertyLabel(p).primary])),
+    updates: (await updatesP)
+      .filter((u) => (input.demo || !u.isDemo) && u.propertyId && programOf.has(u.propertyId))
+      .map((u) => ({ id: u.id, propertyId: u.propertyId, title: u.title, taskId: u.taskId, at: u.at })),
   };
 }
 
