@@ -444,7 +444,7 @@ export function ClaimWorkflowPanel({
             Resolve does not submit claims. Record it after you submit on the platform, with proof attached.
           </p>
           {docPicker(subDocs, setSubDocs, postSubmit)}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             <Input aria-label="Submitted on" type="date" value={subDate} disabled={postSubmit} onChange={(e) => setSubDate(e.target.value)} />
             <Input aria-label="Submission reference" placeholder="Case / reference" value={subRef} disabled={postSubmit} onChange={(e) => setSubRef(e.target.value)} />
             {lineTotal !== null && lineTotal > 0 ? (
