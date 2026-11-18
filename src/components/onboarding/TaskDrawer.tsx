@@ -289,6 +289,8 @@ export function TaskDrawer({
     enabled: Boolean(task?.id) && (storedKind ?? (task ? effectiveTaskKind(task) : null)) === "work_order",
   });
   const workOrderSent = Boolean(bzState.data?.sentTaskId ?? bzState.data?.link?.breezeway_task_id);
+  // While that read is loading, say nothing rather than the wrong line for a sent work order.
+  const workOrderLoading = bzState.isPending && bzState.fetchStatus !== "idle";
   // Role changes use the same people rule and transaction as Edit selected.
   const canAssignRole = useQuery({
     queryKey: ["can-bulk-edit-home-tasks", task?.property_id ?? "none"],
@@ -442,7 +444,7 @@ export function TaskDrawer({
       ? middle === "send_to_owner"
         ? ownerReady ? null : releaseHint ?? "Write what you're asking (20 characters or more)."
         : middle === "work_order" && !workOrderSent
-          ? kindBlock
+          ? workOrderLoading ? null : kindBlock
           : kindBlock ?? completeHint({
               kind: "ordinary",
               releaseBlocked: !evidenceMissing && !view.canComplete && !awaitingOwner,
