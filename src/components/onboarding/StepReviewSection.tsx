@@ -77,7 +77,7 @@ export function StepReviewSection({ stepId, steps, stages }: { stepId: string; s
   );
 
   return (
-    <div className="mt-2 space-y-3 rounded-md border border-border p-3" aria-label="Review">
+    <div className="mt-2 min-w-0 space-y-3 rounded-md border border-border p-3" aria-label="Review">
       <p className="text-sm font-medium">Review</p>
       <p className="text-xs text-muted-foreground">
         Choose who must approve this step before it counts as done. Reviewers come from each home's Project Team, or whoever is covering that role. Leave both empty for no review.
@@ -110,10 +110,10 @@ export function StepReviewSection({ stepId, steps, stages }: { stepId: string; s
           {blocks === "steps" ? (
             <div className="max-h-48 space-y-1 overflow-y-auto rounded-md border border-border p-2">
               {steps.filter((s) => s.id !== stepId).map((s) => (
-                <label key={s.id} className="flex items-center gap-2 text-sm">
-                  <Checkbox checked={blockedSteps.includes(s.id)} onCheckedChange={(v) => setBlockedSteps((cur) => (v ? [...cur, s.id] : cur.filter((x) => x !== s.id)))} />
-                  <span className="truncate">{s.title}</span>
-                  <span className="text-xs text-muted-foreground">{s.stage}</span>
+                <label key={s.id} className="flex min-w-0 items-center gap-2 text-sm">
+                  <Checkbox className="shrink-0" checked={blockedSteps.includes(s.id)} onCheckedChange={(v) => setBlockedSteps((cur) => (v ? [...cur, s.id] : cur.filter((x) => x !== s.id)))} />
+                  <span className="w-0 min-w-0 flex-1 truncate">{s.title}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">{s.stage}</span>
                 </label>
               ))}
             </div>

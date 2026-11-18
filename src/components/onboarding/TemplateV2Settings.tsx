@@ -272,10 +272,10 @@ function StepDialog({ step, onClose, onSave, onRemove, saving, fileSources, stag
             <p className="text-xs text-muted-foreground">Files uploaded on these steps appear on this step for the same home. Nothing is copied. Internal only: homeowners and vendors never see them.</p>
             <div className="max-h-48 space-y-1 overflow-y-auto">
               {fileSources.options.filter((o) => o.id !== step.id).map((o) => (
-                <label key={o.id} className="flex items-center gap-2 text-sm">
-                  <Checkbox checked={showFrom.includes(o.id)} onCheckedChange={(v) => setShowFrom((cur) => (v ? [...cur, o.id] : cur.filter((x) => x !== o.id)))} />
-                  <span className="truncate">{o.title}</span>
-                  <span className="text-xs text-muted-foreground">{o.stage}</span>
+                <label key={o.id} className="flex min-w-0 items-center gap-2 text-sm">
+                  <Checkbox className="shrink-0" checked={showFrom.includes(o.id)} onCheckedChange={(v) => setShowFrom((cur) => (v ? [...cur, o.id] : cur.filter((x) => x !== o.id)))} />
+                  <span className="w-0 min-w-0 flex-1 truncate">{o.title}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">{o.stage}</span>
                 </label>
               ))}
             </div>

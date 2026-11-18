@@ -2493,6 +2493,13 @@
       "when": 1794960804143,
       "tag": "0355_guest_in_residence_fix",
       "breakpoints": true
+    },
+    {
+      "idx": 356,
+      "version": "7",
+      "when": 1794965249957,
+      "tag": "0356_template_version_names",
+      "breakpoints": true
     }
   ]
 }
