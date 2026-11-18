@@ -1,3 +1,4 @@
+import { deadlineLine, filingReminderReached } from "@/lib/claim-coordinator";
 import { formatPropertyLabel } from "@/lib/property-label";
 /**
  * Shared claim reads and row presentation.
@@ -15,7 +16,6 @@ import { showSaved } from "@/components/history-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/page";
-import { StatusBadge } from "@/components/ui/status";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { stateChip } from "@/lib/semantic";
 import { displayName, useCurrentUserId, useStaffDirectory } from "@/hooks/useTeam";
@@ -25,8 +25,6 @@ import {
   claimStageLabel,
   CLAIM_TYPE_LABELS,
   amountAtRisk,
-  deadlineLabel,
-  deadlineState,
   evidenceProgress,
   formatMoney,
   nextAction,
@@ -122,7 +120,8 @@ export function ClaimRowCard({
   const qc = useQueryClient();
   const userId = useCurrentUserId();
   const progress = evidenceProgress(requirements);
-  const deadline = deadlineState(claim.deadline_on);
+  // Coordinator view (Nov 18): highlighted only from the filing reminder until Submitted.
+  const reminded = filingReminderReached(claim);
   const risk = amountAtRisk(claim);
 
   // Same write the workspace performs: assignment plus its audit entry.
@@ -156,7 +155,7 @@ export function ClaimRowCard({
   const canAssignToMe = canEdit && !claim.assigned_to && !!userId;
 
   return (
-    <div className="rounded-lg border bg-card shadow-card transition-colors hover:bg-muted/50">
+    <div className={`rounded-lg border bg-card shadow-card transition-colors hover:bg-muted/50 ${reminded ? "border-primary ring-1 ring-primary" : ""}`}>
       <div className="flex items-start gap-3">
         <PropertyPhoto url={propertyPhoto} name={propertyName} className="mt-3 ml-4" />
         <button type="button" onClick={onOpen} className="resolve-press flex-1 px-0 py-3 text-left">
@@ -166,11 +165,7 @@ export function ClaimRowCard({
               {claimStageLabel(claim)}
             </Chip>
             <Chip>{CLAIM_TYPE_LABELS[claim.claim_type]}</Chip>
-            {deadline === "overdue" ? (
-              <StatusBadge tone="escalated">Deadline passed</StatusBadge>
-            ) : deadline === "today" || deadline === "approaching" ? (
-              <StatusBadge tone="waiting">{deadlineLabel(claim.deadline_on)}</StatusBadge>
-            ) : null}
+            {reminded ? <Chip data-testid="claim-file-soon">{deadlineLine(claim)}</Chip> : null}
             {progress.blocking.length > 0 ? (
               <Chip className="border-border/60">{progress.blocking.length} evidence missing</Chip>
             ) : null}
@@ -180,7 +175,7 @@ export function ClaimRowCard({
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {claim.title} · {claim.guest_name ?? "Guest unrecorded"} · at risk {formatMoney(risk)} ·{" "}
-            {assigneeName} · {deadlineLabel(claim.deadline_on)}
+            {assigneeName} · {deadlineLine(claim)}
           </p>
         </button>
         <div className="flex shrink-0 flex-col items-end gap-1 py-3 pr-4 text-xs">

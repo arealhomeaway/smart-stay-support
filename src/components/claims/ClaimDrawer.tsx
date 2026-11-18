@@ -1,5 +1,8 @@
 import { ExpensesCard } from "@/components/finance/ExpensesCard";
 import { ClaimWorkflowPanel } from "@/components/claims/ClaimWorkflowPanel";
+import { AmountsSection, DatesSection, PlatformLogSection, ReportedIssuesSection, StatusBar, useLineItems } from "@/components/claims/ClaimCoordinatorSections";
+import { deadlineLine, lineItemsTotal } from "@/lib/claim-coordinator";
+import { useRole } from "@/hooks/useRole";
 /**
  * Claim workspace.
  *
@@ -39,8 +42,6 @@ import {
   DISPOSITION_LABELS,
   RECOVERY_SOURCE,
   amountAtRisk,
-  deadlineLabel,
-  deadlineState,
   evidenceProgress,
   formatDate,
   formatMoney,
@@ -121,6 +122,11 @@ export function ClaimDrawer({
     },
   });
 
+  // Coordinator view: Manager & Finance opens by default for leads and Finance.
+  const { isSupervisor, seats } = useRole();
+  const managerView = isSupervisor || !!seats.finance || !!seats.opsDirector || !!seats.opsSupervisor || !!seats.onboardingDirector;
+  const lineItems = useLineItems(claim?.id ?? "");
+  const lineTotal = lineItems.data?.rows.length ? lineItemsTotal(lineItems.data.rows) : null;
   const reqs = (requirements.data ?? []) as RequirementLike[];
   const progress = useMemo(() => evidenceProgress(reqs), [reqs]);
 
@@ -257,8 +263,7 @@ export function ClaimDrawer({
           <p className="text-xs font-medium uppercase tracking-wide text-primary">Next action</p>
           <p className="mt-1 font-semibold">{nextAction(claim, { requirements: reqs })}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {deadlineLabel(claim.deadline_on)}
-            {claim.deadline_on ? ` · deadline ${formatDate(claim.deadline_on)}` : ""}
+            {deadlineLine(claim)}
             {claim.follow_up_on ? ` · follow up ${formatDate(claim.follow_up_on)}` : ""}
           </p>
           {canEdit && suggested !== claim.stage ? (
@@ -282,10 +287,6 @@ export function ClaimDrawer({
 
         {/* Context */}
         <section className="space-y-1 text-sm">
-          <h3 className="text-sm font-semibold">Incident</h3>
-          <p className="text-muted-foreground">
-            {claim.incident_description || "No description recorded."}
-          </p>
           <p className="text-xs text-muted-foreground">
             {propertyName} · incident {formatDate(claim.incident_on)} ·{" "}
             {claim.guest_name ?? "Guest unrecorded"}
@@ -317,7 +318,9 @@ export function ClaimDrawer({
         </section>
 
         <Separator className="my-4" />
-        <ExpensesCard propertyId={claim.property_id ?? null} linkType="claim" targetId={claim.id} />
+        <DatesSection claim={claim} />
+        <Separator className="my-4" />
+        <ReportedIssuesSection claim={claim} />
         <Separator className="my-4" />
 
         {/* Evidence */}
@@ -389,6 +392,24 @@ export function ClaimDrawer({
 
         <Separator className="my-4" />
 
+
+        <Separator className="my-4" />
+        <AmountsSection claim={claim} canEdit={canEdit} userId={userId ?? null} onChanged={refresh} />
+        <Separator className="my-4" />
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold">Status</h3>
+          <StatusBar claim={claim} />
+          <ClaimWorkflowPanel claim={claim} canEdit={canEdit} people={people} onChanged={refresh} part="status" lineTotal={lineTotal} />
+        </section>
+        <Separator className="my-4" />
+        <PlatformLogSection claim={claim} canEdit={canEdit} userId={userId ?? null} people={people} />
+        <Separator className="my-4" />
+        <details className="group rounded-lg border" open={managerView} data-testid="claim-manager-finance">
+          <summary className="flex min-h-11 cursor-pointer items-center px-4 text-sm font-semibold">Manager &amp; Finance</summary>
+          <div className="space-y-4 px-4 pb-4">
+        <ExpensesCard propertyId={claim.property_id ?? null} linkType="claim" targetId={claim.id} />
+        <Separator className="my-4" />
+
         {/* Money — only amounts somebody actually recorded. */}
         <section className="space-y-3">
           <h3 className="text-sm font-semibold">Financials</h3>
@@ -407,7 +428,7 @@ export function ClaimDrawer({
 
         <Separator className="my-4" />
 
-        <ClaimWorkflowPanel claim={claim} canEdit={canEdit} people={people} onChanged={refresh} />
+        <ClaimWorkflowPanel claim={claim} canEdit={canEdit} people={people} onChanged={refresh} part="manager" />
 
         {/* Working controls */}
         {canEdit ? (
@@ -483,7 +504,7 @@ export function ClaimDrawer({
                   }
                 />
                 <p className="text-[11px] text-muted-foreground">
-                  From the platform notice: Resolve never guesses it.
+                  Airbnb and Vrbo: checkout + 14 days. Other sources: enter the date, then confirm it below.
                 </p>
               </div>
               <div className="space-y-1">
@@ -578,6 +599,8 @@ export function ClaimDrawer({
           <p className="text-sm text-muted-foreground">You have read-only access to claims.</p>
         )}
 
+          </div>
+        </details>
         <Separator className="my-4" />
 
         {/* History */}

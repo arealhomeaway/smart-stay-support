@@ -12,6 +12,8 @@
  * notices rather than a repeating nag.
  */
 
+import { deadlineLine, filingReminderReached, reminderLink, reminderRecipient } from "@/lib/claim-coordinator";
+
 export const ALERT_KINDS = [
   "sla_response_warning",
   "sla_response_breached",
@@ -21,6 +23,7 @@ export const ALERT_KINDS = [
   "vendor_missed_eta",
   "claim_deadline_soon",
   "claim_deadline_passed",
+  "claim_filing_reminder",
 ] as const;
 
 export type AlertKind = (typeof ALERT_KINDS)[number];
@@ -78,6 +81,8 @@ export type ClaimForAlerts = {
   stage: string;
   assigned_to?: string | null;
   deadline_on?: string | null;
+  deadline_source?: string | null;
+  deadline_verified?: boolean | null;
   is_demo?: boolean | null;
 };
 
@@ -225,50 +230,39 @@ function daysUntilDate(deadline: string, now: Date): number | null {
   return Math.round((due - today) / 86_400_000);
 }
 
-/** Claim filing windows: a few days' notice, then a single "it has passed". */
-export function claimDeadlineAlerts(claims: ClaimForAlerts[], now = new Date()): DeadlineAlert[] {
+/**
+ * Claim filing reminder (approved Nov 18): one in-app notice from 3 days before the
+ * filing deadline (Chicago), only before Submitted, to the claim owner or else the
+ * Operations Supervisor. Never for a deadline that still needs verification. The link
+ * carries the deadline date, so a changed deadline gets its own single reminder and an
+ * old date never fires. Normal priority: no urgency, no email.
+ */
+export function claimDeadlineAlerts(claims: ClaimForAlerts[], now = new Date(), supervisorId: string | null = null): DeadlineAlert[] {
   const alerts: DeadlineAlert[] = [];
   for (const claim of claims) {
-    if (CLOSED_CLAIM_STAGES.includes(claim.stage)) continue;
-    if (!claim.assigned_to || !claim.deadline_on) continue;
-    const days = daysUntilDate(claim.deadline_on, now);
-    if (days === null) continue;
+    if (!filingReminderReached(claim, now)) continue;
+    const userId = reminderRecipient(claim.assigned_to, supervisorId);
+    if (!userId) continue;
     const name = claim.ref ? `${claim.ref} · ${claim.title ?? "Claim"}` : (claim.title ?? "Claim");
-
-    if (days < 0) {
-      alerts.push({
-        kind: "claim_deadline_passed",
-        userId: claim.assigned_to,
-        title: `Claim filing deadline has passed: ${name}`,
-        body: `The deadline was ${Math.abs(days)} day${Math.abs(days) === 1 ? "" : "s"} ago and this claim is still open. Escalate it today.`,
-        entityType: "claim",
-        entityId: claim.id,
-        linkPath: "/claims",
-        priority: "urgent",
-        isDemo: Boolean(claim.is_demo),
-      });
-    } else if (days <= CLAIM_WARNING_DAYS) {
-      alerts.push({
-        kind: "claim_deadline_soon",
-        userId: claim.assigned_to,
-        title:
-          days === 0
-            ? `Claim deadline is today: ${name}`
-            : `Claim deadline in ${days} day${days === 1 ? "" : "s"} · ${name}`,
-        body: "Finish the evidence and file before the window closes.",
-        entityType: "claim",
-        entityId: claim.id,
-        linkPath: "/claims",
-        priority: days === 0 ? "urgent" : "normal",
-        isDemo: Boolean(claim.is_demo),
-      });
-    }
+    alerts.push({
+      kind: "claim_filing_reminder",
+      userId,
+      title: `${deadlineLine(claim)} · ${name}`,
+      body: "File this claim with the platform before the deadline.",
+      entityType: "claim",
+      entityId: claim.id,
+      linkPath: reminderLink(claim.id, claim.deadline_on!),
+      priority: "normal",
+      isDemo: Boolean(claim.is_demo),
+    });
   }
   return alerts;
 }
 
 /** One alert per person, record and stage — the key the pass dedupes on. */
-export function alertKey(alert: Pick<DeadlineAlert, "kind" | "userId" | "entityId">) {
+export function alertKey(alert: Pick<DeadlineAlert, "kind" | "userId" | "entityId"> & { linkPath?: string | null }) {
+  // A claim filing reminder fires once per claim and deadline date, whoever holds it.
+  if (alert.kind === "claim_filing_reminder") return `${alert.kind}::${alert.linkPath ?? ""}`;
   return `${alert.kind}::${alert.userId}::${alert.entityId}`;
 }
 
