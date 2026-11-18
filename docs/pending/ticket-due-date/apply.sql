@@ -2,7 +2,8 @@
 -- 1. tickets.due_on (nullable date).
 -- 2. BEFORE INSERT trigger: when due_on is empty, Right now and Today get today (Central), Routine gets today + 7.
 --    Set once at creation; a later priority change never touches it. Runs for every way a ticket is created.
--- 3. Open tickets that exist today (not resolved, not closed) get the same rule from the day they were created.
+-- 3. Open tickets that exist today (not resolved, not closed) get the same rule from their reported date (Central):
+--    Right now and Today = reported date, Routine = reported date + 7.
 --    Resolved and closed tickets are not touched.
 -- 4. Open tickets from the Notion import: the Due Date read once from each ticket's Notion page (Nov 18, read only,
 --    nothing written to Notion) replaces that default. Pages with no Due Date keep the default. Source: notion-due-dates.csv.
@@ -39,11 +40,17 @@ SELECT set_config('resolve.import_quiet', 'on', true);
 ALTER TABLE public.tickets DISABLE TRIGGER tickets_updated;
 ALTER TABLE public.tickets DISABLE TRIGGER tickets_keep_reopened_notion;
 
-UPDATE public.tickets t SET due_on =
-  (coalesce(t.reported_at, t.created_at) AT TIME ZONE 'America/Chicago')::date
-  + CASE lower(t.priority) WHEN 'p3' THEN 7 ELSE 0 END
-WHERE t.due_on IS NULL AND t.status NOT IN ('resolved', 'closed') AND lower(t.priority) IN ('p1', 'p2', 'p3');
+DO $d$ DECLARE n int; BEGIN
+  UPDATE public.tickets t SET due_on =
+    (coalesce(t.reported_at, t.created_at) AT TIME ZONE 'America/Chicago')::date
+    + CASE lower(t.priority) WHEN 'p3' THEN 7 ELSE 0 END
+  WHERE t.due_on IS NULL AND t.status NOT IN ('resolved', 'closed') AND lower(t.priority) IN ('p1', 'p2', 'p3');
+  GET DIAGNOSTICS n = ROW_COUNT;
+  PERFORM set_config('resolve.due_default_count', n::text, true);
+END $d$;
 
+-- Notion Due Dates replace the default for open imported tickets; the count is kept for the audit row.
+DO $n$ DECLARE n int; BEGIN
 UPDATE public.tickets t SET due_on = v.d
 FROM (VALUES
   ('0017a8d1-cd16-43f5-87de-dbabf25161ec'::uuid, DATE '2025-08-18'),
@@ -701,6 +708,9 @@ FROM (VALUES
   ('ffd477be-c3cd-4822-9d5b-3679ef229d99'::uuid, DATE '2026-10-26')
 ) AS v(id, d)
 WHERE t.id = v.id AND t.external_source = 'notion' AND t.status NOT IN ('resolved', 'closed');
+  GET DIAGNOSTICS n = ROW_COUNT;
+  PERFORM set_config('resolve.due_notion_count', n::text, true);
+END $n$;
 
 ALTER TABLE public.tickets ENABLE TRIGGER tickets_keep_reopened_notion;
 ALTER TABLE public.tickets ENABLE TRIGGER tickets_updated;
@@ -747,4 +757,7 @@ VALUES ('98bd6696-4018-4965-b645-0471c5ae3925', 'Admin', 'ticket_due_date.apply'
   jsonb_build_object(
     'open_with_due_date', (SELECT count(*) FROM public.tickets WHERE due_on IS NOT NULL AND status NOT IN ('resolved', 'closed')),
     'closed_or_resolved_with_due_date', (SELECT count(*) FROM public.tickets WHERE due_on IS NOT NULL AND status IN ('resolved', 'closed')),
+    'existing_open_given_default', current_setting('resolve.due_default_count', true)::int,
+    'notion_dates_written', current_setting('resolve.due_notion_count', true)::int,
+    'kept_default', current_setting('resolve.due_default_count', true)::int - current_setting('resolve.due_notion_count', true)::int,
     'open_notion_with_due_date', (SELECT count(*) FROM public.tickets WHERE external_source = 'notion' AND status NOT IN ('resolved', 'closed') AND due_on IS NOT NULL)));

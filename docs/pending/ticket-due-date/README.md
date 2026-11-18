@@ -8,8 +8,9 @@ Due date on Operations tickets (Emily, Nov 18).
   7 days (Central). Runs for every way a ticket is created (Record work, email, Direct Bookings, Breezeway, imports,
   demo). Named to run after the other insert rules so it reads the final priority. A later priority change never
   touches the date.
-- Open tickets (not resolved, not closed) get the same rule counted from the day each was created. Resolved and closed
-  tickets are not touched.
+- Every existing open ticket (not resolved, not closed) gets a date once from its priority and its reported date
+  (Central): Right now and Today = reported date, Routine = reported date + 7. Resolved and closed stay empty.
+  Then the Notion step below replaces that default where a Notion Due Date exists.
 - Open tickets from the Notion import: the Due Date read once (Nov 18) from each ticket's own Notion page, using the
   page link the import kept (`external_id`) and the existing Notion connection. Read only; nothing was written to
   Notion. Values in `notion-due-dates.csv` (ticket, Notion page, Due Date, page archived in Notion).
@@ -34,6 +35,13 @@ always rolls back), `notion-due-dates.csv`, `CHECKSUMS.sha256`.
 - Notices before 1304, after 1304. Triggers back on. Afterwards preflight unchanged.
 - Read only, full list: all 653 Notion dates belong to open imported tickets. 628 match the date the import kept,
   20 were changed in Notion since, 5 had none at import.
+
+## Practice (Nov 18 addendum, live database, rolled back)
+- The updated fill, run in one transaction and then cancelled: 759 existing open tickets given a default from their
+  reported date (Central); 0 open left without a date; 0 resolved or closed given one; 0 open non-Notion tickets off
+  the rule. #4930 and #4941 (Today, reported Nov 16): Nov 16. #4960 and #4978 (Today, reported Nov 17): Nov 17.
+- The audit row now records: existing open given a default, Notion dates written, and how many kept the default.
+- Afterwards: no due date column or trigger left; the paused triggers were back on.
 
 ## Apply
 Only on `Approved: apply ticket-due-date`: preflight, checksums, apply.sql in one transaction, then counts.
