@@ -269,7 +269,7 @@ function isFinishedTask(view: TaskView) {
   return view.status === "complete" || view.status === "carryover";
 }
 
-/** One quick filter at a time. Date filters only apply to work still open. */
+/** One quick filter button's rule. Date filters only apply to work still open. */
 export function matchesMyTasksQuick(view: TaskView, quick: MyTasksQuick, today: string) {
   if (quick === "completed") return isFinishedTask(view);
   if (isFinishedTask(view)) return false;
@@ -280,6 +280,42 @@ export function matchesMyTasksQuick(view: TaskView, quick: MyTasksQuick, today: 
   if (quick === "overdue") return view.overdue || Boolean(due && due < today);
   if (quick === "this_week") return Boolean(due && due >= weeks.thisStart && due <= weeks.thisEnd);
   return Boolean(due && due >= weeks.nextStart && due <= weeks.nextEnd);
+}
+
+/** The four date buttons; any number can be on at once. */
+export const MY_TASKS_DATE_QUICKS: readonly MyTasksQuick[] = ["due_today", "this_week", "next_week", "overdue"];
+const isDateQuick = (q: MyTasksQuick) => MY_TASKS_DATE_QUICKS.includes(q);
+const QUICK_ORDER = Object.keys(MY_TASKS_QUICK_LABELS) as MyTasksQuick[];
+
+/**
+ * The buttons that are on, kept valid: Completed alone, Incomplete alone, or one or more date
+ * buttons. Anything else (empty, unknown, a mix) falls back the same way a click would.
+ */
+export function normalizeMyTasksQuicks(input: readonly MyTasksQuick[]): MyTasksQuick[] {
+  const on = QUICK_ORDER.filter((q) => input.includes(q));
+  if (on.includes("completed") && on.length === 1) return ["completed"];
+  const dates = on.filter(isDateQuick);
+  if (dates.length > 0) return dates;
+  if (on.includes("completed")) return ["completed"];
+  return ["incomplete"];
+}
+
+/**
+ * One button press. Completed and Incomplete each turn every other button off. A date button
+ * turns Completed and Incomplete off; turning the last date button off turns Incomplete back on.
+ * Pressing Completed or Incomplete while it is on goes back to Incomplete, so one view is always on.
+ */
+export function toggleMyTasksQuick(current: readonly MyTasksQuick[], key: MyTasksQuick): MyTasksQuick[] {
+  const on = normalizeMyTasksQuicks(current);
+  if (key === "completed") return on.includes("completed") ? ["incomplete"] : ["completed"];
+  if (key === "incomplete") return ["incomplete"];
+  if (on.includes(key)) return normalizeMyTasksQuicks(on.filter((q) => q !== key));
+  return normalizeMyTasksQuicks([...on.filter(isDateQuick), key]);
+}
+
+/** A Task shows if it matches ANY button that is on. */
+export function matchesMyTasksQuicks(view: TaskView, quicks: readonly MyTasksQuick[], today: string) {
+  return normalizeMyTasksQuicks(quicks).some((q) => matchesMyTasksQuick(view, q, today));
 }
 
 /** Optional due-date range on top of the quick filter. Undated work only shows with no range. */
@@ -357,14 +393,15 @@ export function groupMyTasks(
 }
 
 export type MyTasksPrefs = {
-  quick: MyTasksQuick;
+  /** The quick filter buttons that are on, as a list. */
+  quick: MyTasksQuick[];
   sort: MyTasksSort;
   group: MyTasksGroup;
   from: string;
   to: string;
 };
 export const MY_TASKS_PREFS_DEFAULTS: MyTasksPrefs = {
-  quick: "incomplete",
+  quick: ["incomplete"],
   sort: "due",
   group: "due",
   from: "",
@@ -384,13 +421,16 @@ export function loadMyTasksPrefs(
   try {
     const raw = storage.getItem(myTasksPrefsKey(userId));
     if (!raw) return MY_TASKS_PREFS_DEFAULTS;
-    const parsed = JSON.parse(raw) as Partial<MyTasksPrefs>;
+    const parsed = JSON.parse(raw) as Partial<Omit<MyTasksPrefs, "quick">> & { quick?: unknown };
     const date = (v: unknown) =>
       typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : "";
     return {
-      quick: Object.hasOwn(MY_TASKS_QUICK_LABELS, parsed.quick ?? "")
-        ? (parsed.quick as MyTasksQuick)
-        : "incomplete",
+      // A view saved before the buttons combined is one value; it loads as that one button.
+      quick: normalizeMyTasksQuicks(
+        (Array.isArray(parsed.quick) ? parsed.quick : [parsed.quick]).filter(
+          (q): q is MyTasksQuick => typeof q === "string" && Object.hasOwn(MY_TASKS_QUICK_LABELS, q),
+        ),
+      ),
       sort: parsed.sort === "home" ? "home" : "due",
       group: parsed.group === "home" ? "home" : "due",
       from: date(parsed.from),

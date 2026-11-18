@@ -6,10 +6,12 @@ import {
   loadMyTasksPrefs,
   matchesMyTasksDueRange,
   matchesMyTasksQuick,
+  matchesMyTasksQuicks,
   myTasksPrefsKey,
   myTasksWeeks,
   saveMyTasksPrefs,
   sortMyTasks,
+  toggleMyTasksQuick,
 } from "@/lib/onboarding-work-views";
 
 function view(
@@ -90,6 +92,46 @@ describe("matchesMyTasksQuick", () => {
     expect(matchesMyTasksQuick(view("5", "2026-11-15"), "next_week", TODAY)).toBe(true);
     expect(matchesMyTasksQuick(view("6", "2026-11-16"), "next_week", TODAY)).toBe(false);
     expect(matchesMyTasksQuick(view("7", null), "this_week", TODAY)).toBe(false);
+  });
+});
+
+describe("combined quick filters", () => {
+  const pool = [
+    view("late", "2026-11-03"),
+    view("today", TODAY),
+    view("week", "2026-11-07"),
+    view("next", "2026-11-10"),
+    view("nodate", null),
+    view("doneLate", "2026-11-03", "complete"),
+  ];
+  const shown = (quicks: Parameters<typeof matchesMyTasksQuicks>[1]) =>
+    pool.filter((v) => matchesMyTasksQuicks(v, quicks, TODAY)).map((v) => v.task.id);
+
+  it("Overdue plus Due today shows overdue Tasks and Tasks due today, open only", () => {
+    expect(shown(["overdue", "due_today"])).toEqual(["late", "today"]);
+  });
+
+  it("turning on a date button turns Incomplete off and adds to other date buttons", () => {
+    expect(toggleMyTasksQuick(["incomplete"], "overdue")).toEqual(["overdue"]);
+    expect(toggleMyTasksQuick(["overdue"], "due_today")).toEqual(["due_today", "overdue"]);
+  });
+
+  it("turning Incomplete on turns every date button off", () => {
+    expect(toggleMyTasksQuick(["overdue", "due_today", "next_week"], "incomplete")).toEqual(["incomplete"]);
+    expect(shown(["incomplete"])).toEqual(["late", "today", "week", "next", "nodate"]);
+  });
+
+  it("turning the last date button off turns Incomplete back on", () => {
+    expect(toggleMyTasksQuick(["overdue", "due_today"], "overdue")).toEqual(["due_today"]);
+    expect(toggleMyTasksQuick(["due_today"], "due_today")).toEqual(["incomplete"]);
+  });
+
+  it("Completed is shown alone and any other button turns it off", () => {
+    expect(toggleMyTasksQuick(["overdue", "due_today"], "completed")).toEqual(["completed"]);
+    expect(toggleMyTasksQuick(["incomplete"], "completed")).toEqual(["completed"]);
+    expect(shown(["completed"])).toEqual(["doneLate"]);
+    expect(toggleMyTasksQuick(["completed"], "overdue")).toEqual(["overdue"]);
+    expect(toggleMyTasksQuick(["completed"], "incomplete")).toEqual(["incomplete"]);
   });
 });
 
@@ -174,11 +216,11 @@ describe("My Tasks saved view", () => {
 
   it("remembers each person's last choice under their own key", () => {
     const storage = fakeStorage();
-    saveMyTasksPrefs(storage, "user-1", { ...MY_TASKS_PREFS_DEFAULTS, quick: "overdue", group: "home" });
-    saveMyTasksPrefs(storage, "user-2", { ...MY_TASKS_PREFS_DEFAULTS, quick: "due_today" });
-    expect(loadMyTasksPrefs(storage, "user-1").quick).toBe("overdue");
+    saveMyTasksPrefs(storage, "user-1", { ...MY_TASKS_PREFS_DEFAULTS, quick: ["overdue", "due_today"], group: "home" });
+    saveMyTasksPrefs(storage, "user-2", { ...MY_TASKS_PREFS_DEFAULTS, quick: ["completed"] });
+    expect(loadMyTasksPrefs(storage, "user-1").quick).toEqual(["due_today", "overdue"]);
     expect(loadMyTasksPrefs(storage, "user-1").group).toBe("home");
-    expect(loadMyTasksPrefs(storage, "user-2").quick).toBe("due_today");
+    expect(loadMyTasksPrefs(storage, "user-2").quick).toEqual(["completed"]);
     expect(myTasksPrefsKey("user-1")).not.toBe(myTasksPrefsKey("user-2"));
   });
 
@@ -189,6 +231,16 @@ describe("My Tasks saved view", () => {
     expect(loadMyTasksPrefs(storage, "user-1")).toEqual(MY_TASKS_PREFS_DEFAULTS);
     storage.setItem(myTasksPrefsKey("user-1"), JSON.stringify({ quick: "nonsense", sort: "sideways" }));
     expect(loadMyTasksPrefs(storage, "user-1")).toEqual(MY_TASKS_PREFS_DEFAULTS);
+  });
+
+  it("loads a view saved as one value before the change as that one button", () => {
+    const storage = fakeStorage();
+    storage.setItem(myTasksPrefsKey("user-1"), JSON.stringify({ quick: "overdue", sort: "home", group: "due", from: "", to: "" }));
+    const loaded = loadMyTasksPrefs(storage, "user-1");
+    expect(loaded.quick).toEqual(["overdue"]);
+    expect(loaded.sort).toBe("home");
+    storage.setItem(myTasksPrefsKey("user-2"), JSON.stringify({ quick: "completed" }));
+    expect(loadMyTasksPrefs(storage, "user-2").quick).toEqual(["completed"]);
   });
 
   it("keeps a valid saved date range", () => {

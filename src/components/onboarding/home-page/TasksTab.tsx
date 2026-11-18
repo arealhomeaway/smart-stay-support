@@ -21,10 +21,14 @@ import { TASK_KIND_LABEL, type TaskKindCode } from "@/lib/onboarding-task-kinds"
 import { assignablePeople } from "@/lib/assignable-people";
 import { addStageTaskFn } from "@/lib/onboarding-home-page.functions";
 import {
+  DUE_FILTER_LABEL,
+  DUE_FILTER_ORDER,
   OWNER_TAG_LABEL,
   OWNER_TAG_ORDER,
   PAGE_STAGE_NAMES,
   canAddOneOff,
+  dueChipLabel,
+  dueCounts,
   lateElsewhereLabel,
   lateEverywhere,
   ownerTagFor,
@@ -35,7 +39,9 @@ import {
   stageLists,
   stageRail,
   tagCounts,
+  toggleDueFilter,
   type AddViewer,
+  type DueFilter,
   type OwnerTag,
   type PageTask,
   type Whose,
@@ -77,6 +83,9 @@ export function TasksTab(p: {
   onStage: (stage: number | null) => void;
   tag: OwnerTag | null;
   onTag: (tag: OwnerTag | null) => void;
+  /** Due buttons that are on (held by the page, never saved); held here when the page does not pass them. */
+  due?: DueFilter[];
+  onDue?: (due: DueFilter[]) => void;
   catchUp?: CatchUpSelection | undefined;
   onOpen: (taskId: string) => void;
   /** Who may add (null hides Add task, e.g. a locked plan). */
@@ -89,6 +98,9 @@ export function TasksTab(p: {
   initialAllLate?: boolean | undefined;
 }) {
   const [term, setTerm] = useState("");
+  const [localDue, setLocalDue] = useState<DueFilter[]>([]);
+  const dueSel = p.due ?? localDue;
+  const onDue = p.onDue ?? setLocalDue;
   // The all-late view; × or picking any stage returns to the stage list.
   const [allLate, setAllLate] = useState(Boolean(p.initialAllLate));
   const pickStage = (stage: number | null) => {
@@ -102,7 +114,9 @@ export function TasksTab(p: {
   const rail = useMemo(() => stageRail(p.tasks), [p.tasks]);
   const inScope = p.stage === null ? p.tasks : p.tasks.filter((t) => stageIndexOf(t.stage) === p.stage);
   const counts = tagCounts(inScope, p.viewerId, p.pmId);
-  const lists = stageLists(p.tasks, { stage: p.stage, today: p.today, tag: p.tag, viewerId: p.viewerId, pmId: p.pmId });
+  const dueOn = dueSel.length > 0;
+  const dueCount = dueCounts(inScope, p.today);
+  const lists = stageLists(p.tasks, { stage: p.stage, today: p.today, tag: p.tag, viewerId: p.viewerId, pmId: p.pmId, due: dueSel });
   const late = allLate ? lateEverywhere(p.tasks, { today: p.today, tag: p.tag, viewerId: p.viewerId, pmId: p.pmId }) : [];
   const hits = searchPlanTasks(p.tasks, term);
   const order = allLate
@@ -111,7 +125,7 @@ export function TasksTab(p: {
   const stageRow = p.stage === null ? null : rail[p.stage]!;
   const allDone = p.tasks.filter((t) => !t.parent_task_id && isFinished(t)).length;
   const allTotal = p.tasks.filter((t) => !t.parent_task_id).length;
-  const skipped = (p.notNeeded ?? []).filter((t) => p.stage === null || stageIndexOf(t.stage) === p.stage);
+  const skipped = dueOn ? [] : (p.notNeeded ?? []).filter((t) => p.stage === null || stageIndexOf(t.stage) === p.stage);
 
   const row = (t: PageTask, from: string | null = null, rowOrder: string[] = order) => {
     const tag = ownerTagFor(t, p.viewerId, p.pmId);
@@ -244,6 +258,31 @@ export function TasksTab(p: {
             </Button>
           ) : null}
         </div>
+        <div className="space-y-1" aria-label="Due">
+          <p className="eyebrow">Due</p>
+          <div className="flex gap-2 overflow-x-auto pb-1 md:block md:space-y-1 md:overflow-visible md:pb-0">
+            {DUE_FILTER_ORDER.map((f) => (
+              <button
+                key={f}
+                type="button"
+                aria-pressed={dueSel.includes(f)}
+                onClick={() => onDue(toggleDueFilter(dueSel, f))}
+                className={cn(
+                  "flex min-h-11 shrink-0 items-center gap-2 rounded-md bg-muted px-3 text-left text-sm text-foreground md:w-full",
+                  dueSel.includes(f) && "outline outline-2 outline-offset-1 outline-foreground",
+                )}
+              >
+                <span className="min-w-0 flex-1 truncate">{DUE_FILTER_LABEL[f]}</span>
+                <span className="numeric text-xs font-semibold">{dueCount[f]}</span>
+              </button>
+            ))}
+          </div>
+          {dueOn ? (
+            <Button variant="link" className="h-11 px-0" onClick={() => onDue([])}>
+              Clear dates
+            </Button>
+          ) : null}
+        </div>
         <p className="text-xs text-muted-foreground">
           Green is always you, whoever is signed in. Late Tasks in other stages show as one line at the top. Unassigned Tasks belong to the PM until handed off.
         </p>
@@ -296,6 +335,21 @@ export function TasksTab(p: {
           </>
         ) : (
           <>
+            {dueOn ? (
+              <div>
+                <span className="inline-flex min-h-11 items-center gap-1 rounded-full bg-foreground pl-4 pr-1 text-sm font-medium text-background">
+                  {dueChipLabel(dueSel)}
+                  <button
+                    type="button"
+                    onClick={() => onDue([])}
+                    aria-label="Clear dates"
+                    className="inline-flex size-11 items-center justify-center rounded-full hover:bg-background/15"
+                  >
+                    <X className="size-4" aria-hidden="true" />
+                  </button>
+                </span>
+              </div>
+            ) : null}
             {lists.lateElsewhere > 0 ? (
               <button
                 type="button"
@@ -313,6 +367,15 @@ export function TasksTab(p: {
               </span>
             </div>
             {p.stage === 5 ? p.handoff : null}
+            {dueOn && lists.doNow.length === 0 && lists.upNext.length === 0 ? (
+              <div className="surface overflow-hidden">
+                <p className="px-3 py-3 text-sm text-muted-foreground">No open Tasks match these dates.</p>
+                {p.stage !== null && p.addViewer ? (
+                  <AddTaskRow propertyId={p.propertyId} stageKey={stageKeyFor(p.stage, p.tasks)} stageName={PAGE_STAGE_NAMES[p.stage]!} people={p.people} viewer={p.addViewer} />
+                ) : null}
+              </div>
+            ) : (
+            <>
             <div className="surface overflow-hidden">
               <p className="border-b border-border bg-muted/30 px-3 py-2 text-xs font-semibold tracking-wide text-late">DO NOW · {lists.doNow.length}</p>
               {lists.doNow.length ? (
@@ -332,6 +395,8 @@ export function TasksTab(p: {
                 <AddTaskRow propertyId={p.propertyId} stageKey={stageKeyFor(p.stage, p.tasks)} stageName={PAGE_STAGE_NAMES[p.stage]!} people={p.people} viewer={p.addViewer} />
               ) : null}
             </div>
+            </>
+            )}
             {lists.done.length > 0 ? (
               <details className="surface overflow-hidden">
                 <summary className="flex min-h-11 cursor-pointer items-center px-3 text-sm text-muted-foreground">Done ({lists.done.length})</summary>

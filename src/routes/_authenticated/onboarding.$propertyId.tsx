@@ -140,6 +140,7 @@ import {
   type AddViewer,
   type AttentionChip,
   type OwnerTag,
+  type DueFilter,
   type PageTask,
 } from "@/lib/onboarding-home-page";
 import { listAttachmentsFn } from "@/lib/attachments.functions";
@@ -414,6 +415,9 @@ function PropertyWorkspace() {
   // Ask the owner, the Status to stage map, the owner counts, the homeowner plan switch and labels.
   const [stageSel, setStageSel] = useState<number | null | undefined>(undefined);
   const [tagSel, setTagSel] = useState<OwnerTag | null>(null);
+  // The Tasks tab's Due buttons: kept while on this home's page, never saved.
+  const [dueSel, setDueSel] = useState<DueFilter[]>([]);
+  useEffect(() => setDueSel([]), [propertyId]);
   // Fix 6: filters a Needs attention chip set are cleared on the way back to Overview,
   // by the Back button or the browser's Back.
   const jumpFilters = useRef(false);
@@ -936,6 +940,8 @@ function PropertyWorkspace() {
             onStage={setStageSel}
             tag={tagSel}
             onTag={setTagSel}
+            due={dueSel}
+            onDue={setDueSel}
             catchUp={catchUpOn ? catchUp : undefined}
             onOpen={setOpenTaskId}
             addViewer={addViewer}

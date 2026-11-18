@@ -7,6 +7,7 @@
  * who may add a one-off Task. The database and server functions re-check every save.
  */
 import { SIX_STAGES, daysBetween, isFinished, shortDate, sixStageFor } from "@/lib/onboarding-board";
+import { myTasksWeeks } from "@/lib/onboarding-work-views";
 
 /* ---------------------------------------------------------------- tabs */
 
@@ -285,22 +286,32 @@ export type ListedTask<T extends PageTask> = { task: T; fromStage: string | null
  */
 export function stageLists<T extends PageTask>(
   tasks: T[],
-  input: { stage: number | null; today: string; tag: OwnerTag | null; viewerId: string | null | undefined; pmId: string | null | undefined },
+  input: {
+    stage: number | null;
+    today: string;
+    tag: OwnerTag | null;
+    viewerId: string | null | undefined;
+    pmId: string | null | undefined;
+    /** Due buttons that are on: Do now and Up next keep only matching Tasks and Done is empty. */
+    due?: readonly DueFilter[];
+  },
 ) {
+  const due = input.due ?? [];
   const soon = addDaysIso(input.today, 2);
   const keep = (t: T) => !t.parent_task_id && (!input.tag || ownerTagFor(t, input.viewerId, input.pmId) === input.tag);
   const inStage = (t: T) => input.stage === null || stageIndexOf(t.stage) === input.stage;
   const lateBy = (t: T) => (t.due_on && t.due_on < input.today ? daysBetween(t.due_on, input.today) : 0);
   const open = tasks.filter((t) => !isFinished(t) && keep(t));
+  const dated = (t: T) => matchesDueFilters(t, due, input.today);
   const byDue = (a: T, b: T) => (a.due_on ?? "9999").localeCompare(b.due_on ?? "9999") || a.title.localeCompare(b.title);
   const doNow: ListedTask<T>[] = open
-    .filter((t) => inStage(t) && t.due_on !== null && t.due_on <= soon)
+    .filter((t) => inStage(t) && dated(t) && t.due_on !== null && t.due_on <= soon)
     .sort(byDue)
     .map((task) => ({ task, late: lateBy(task), fromStage: null }));
   const now = new Set(doNow.map((x) => x.task.id));
-  const upNext = open.filter((t) => inStage(t) && !now.has(t.id)).sort(byDue);
+  const upNext = open.filter((t) => inStage(t) && dated(t) && !now.has(t.id)).sort(byDue);
   const done = tasks
-    .filter((t) => isFinished(t) && inStage(t) && keep(t))
+    .filter((t) => due.length === 0 && isFinished(t) && inStage(t) && keep(t))
     .sort((a, b) => (b.completed_at ?? "").localeCompare(a.completed_at ?? ""));
   const lateElsewhere = open.filter((t) => !inStage(t) && lateBy(t) > 0).length;
   return { doNow, upNext, done, lateElsewhere };
@@ -341,6 +352,58 @@ export function rowDue(t: Pick<PageTask, "due_on" | "status" | "completed_at">, 
   if (t.due_on < today) return { text: `${days(daysBetween(t.due_on, today))} late`, late: true };
   if (t.due_on === today) return { text: "Today", late: false };
   return { text: shortDate(t.due_on), late: false };
+}
+
+/* ------------------------------------------------------------- Due */
+
+export const DUE_FILTER_ORDER = ["overdue", "due_today", "this_week", "next_week"] as const;
+export type DueFilter = (typeof DUE_FILTER_ORDER)[number];
+export const DUE_FILTER_LABEL: Record<DueFilter, string> = {
+  overdue: "Overdue",
+  due_today: "Due today",
+  this_week: "Due this week",
+  next_week: "Due next week",
+};
+
+/**
+ * The Due buttons' one rule. Only open Tasks, never sub-Tasks. Overdue is the rule that makes a
+ * row's date red (rowDue). Due this week and Due next week are Monday to Sunday (myTasksWeeks).
+ * A Task matches if it matches ANY button that is on; with none on, nothing is narrowed.
+ */
+export function matchesDueFilters(
+  t: Pick<PageTask, "due_on" | "status" | "completed_at" | "parent_task_id">,
+  filters: readonly DueFilter[],
+  today: string,
+): boolean {
+  if (filters.length === 0) return true;
+  if (t.parent_task_id || isFinished(t)) return false;
+  const due = t.due_on;
+  const weeks = myTasksWeeks(today);
+  return filters.some((f) => {
+    if (f === "overdue") return rowDue(t, today).late;
+    if (!due) return false;
+    if (f === "due_today") return due === today;
+    if (f === "this_week") return due >= weeks.thisStart && due <= weeks.thisEnd;
+    return due >= weeks.nextStart && due <= weeks.nextEnd;
+  });
+}
+
+/** Open count per Due button in a set of Tasks (like the Whose Task counts). */
+export function dueCounts(tasks: PageTask[], today: string): Record<DueFilter, number> {
+  const out: Record<DueFilter, number> = { overdue: 0, due_today: 0, this_week: 0, next_week: 0 };
+  for (const t of tasks) for (const f of DUE_FILTER_ORDER) if (matchesDueFilters(t, [f], today)) out[f] += 1;
+  return out;
+}
+
+/** One Due button press: on becomes off, off becomes on; kept in button order. */
+export function toggleDueFilter(current: readonly DueFilter[], f: DueFilter): DueFilter[] {
+  const on = current.includes(f) ? current.filter((x) => x !== f) : [...current, f];
+  return DUE_FILTER_ORDER.filter((x) => on.includes(x));
+}
+
+/** The dark chip's words: "Showing: Overdue or Due today". */
+export function dueChipLabel(filters: readonly DueFilter[]): string {
+  return `Showing: ${DUE_FILTER_ORDER.filter((x) => filters.includes(x)).map((x) => DUE_FILTER_LABEL[x]).join(" or ")}`;
 }
 
 /** Stage rail: done/total per stage and whether it is complete. */

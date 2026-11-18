@@ -43,7 +43,8 @@ import {
   MY_TASKS_PREFS_DEFAULTS,
   loadMyTasksPrefs,
   saveMyTasksPrefs,
-  matchesMyTasksQuick,
+  matchesMyTasksQuicks,
+  toggleMyTasksQuick,
   matchesMyTasksDueRange,
   sortMyTasks,
   groupMyTasks,
@@ -277,7 +278,7 @@ function MyWork() {
     )
     .filter((v) => (search.home === "all" || followedOnly ? true : v.task.property_id === search.home))
     .filter((v) => matchesWorkFilter(v, search.state as WorkFilter))
-    .filter((v) => matchesMyTasksQuick(v, prefs.quick, t0))
+    .filter((v) => matchesMyTasksQuicks(v, prefs.quick, t0))
     .filter((v) => matchesMyTasksDueRange(v, prefs.from, prefs.to));
   const sorted = sortMyTasks(filtered, prefs.sort, propertyName);
   const groups = groupMyTasks(sorted, prefs.group, t0, propertyName);
@@ -436,9 +437,9 @@ function MyWork() {
               <Button
                 key={key}
                 size="sm"
-                variant={prefs.quick === key ? "default" : "outline"}
-                aria-pressed={prefs.quick === key}
-                onClick={() => updatePrefs({ quick: key })}
+                variant={prefs.quick.includes(key) ? "default" : "outline"}
+                aria-pressed={prefs.quick.includes(key)}
+                onClick={() => updatePrefs({ quick: toggleMyTasksQuick(prefs.quick, key) })}
               >
                 {label}
               </Button>
