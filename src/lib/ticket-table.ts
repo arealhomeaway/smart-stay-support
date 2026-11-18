@@ -5,6 +5,7 @@
  */
 import { priorityMeta, WAITING_ON, STATUSES, labelFor } from "@/lib/tickets";
 import { queueSort } from "@/lib/matters";
+import { dueDateLabel, dueOnEndIso, dueOverdueDays, overdueByDays } from "@/lib/ticket-due-date";
 
 const CENTRAL = "America/Chicago";
 
@@ -16,6 +17,8 @@ export type DueTicket = {
   response_due_at?: string | null;
   action_due_at?: string | null;
   next_review_at?: string | null;
+  /** Due date (Nov 18): set once at creation, changed on the ticket page. */
+  due_on?: string | null;
 };
 
 export type DueCell = {
@@ -72,6 +75,11 @@ export function dueCell(t: DueTicket, now = new Date()): DueCell {
   }
   if (!t.acknowledged_at) return clockCell("Reply now", t.response_due_at, now);
   if (!t.action_started_at) return clockCell("Start work", t.action_due_at, now);
+  // Due date (Nov 18): when no clock applies, the ticket's Due date; else "No due date".
+  if (t.due_on) {
+    const late = dueOverdueDays(t, now);
+    return { line1: dueDateLabel(t.due_on, now), line2: late ? overdueByDays(late) : "Finish by", overdue: late > 0, alert: false, dueAt: dueOnEndIso(t.due_on) };
+  }
   return { line1: "No due date", line2: null, overdue: false, alert: false, dueAt: null };
 }
 

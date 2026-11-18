@@ -62,6 +62,7 @@ import { MatterOwnershipPanel } from "@/components/MatterOwnershipPanel";
 import { MentionTextarea, useMentionPeople } from "@/components/tickets/MentionTextarea";
 import { mentionsInText } from "@/lib/mentions";
 import { TicketPriorityPanel } from "@/components/TicketPriorityPanel";
+import { TicketDueDate } from "@/components/tickets/TicketDueDate";
 import { EmailComposer } from "@/components/EmailComposer";
 
 import { VendorRatingPanel } from "@/components/VendorRatingPanel";
@@ -1333,6 +1334,16 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                 <span className="inline-flex" data-tour="ticket-urgency">
                   <StatusBadge tone={priorityTone2(ticket.priority)}>{meta.short}</StatusBadge>
                 </span>
+                {/* Due date (Nov 18): shown once the staged Due date change is applied. */}
+                {"due_on" in ticket ? (
+                  <TicketDueDate
+                    ticketId={String(ticket.id)}
+                    dueOn={((ticket as { due_on?: string | null }).due_on ?? null)}
+                    status={String(ticket.status)}
+                    canEdit={!role.readOnly && !closed && !ticket["archived_at"]}
+                    onChanged={refresh}
+                  />
+                ) : null}
                 <OccupancyChip occupancy={occupancy} />
               </div>
             </div>
