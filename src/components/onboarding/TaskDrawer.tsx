@@ -45,6 +45,7 @@ import { ApprovalComplete, OpenFormButton, TaskKindMiddle, missingFillFields, ou
 import { TaskOwnerCompletions } from "@/components/onboarding/OwnerCompletionsReview";
 import { EmailComposer } from "@/components/EmailComposer";
 import { readTaskKindFn } from "@/lib/onboarding-task-kinds.functions";
+import { onboardingBreezewayStateFn } from "@/lib/onboarding-kati.functions";
 import {
   canReopenCompletedTask,
   completionBlock,
@@ -57,6 +58,7 @@ import {
   isTaskKind,
   mainButtonLabel,
   sendNeedsFile,
+  BREEZEWAY_MARK_DONE_NOTE,
   type TaskKindCode,
 } from "@/lib/onboarding-task-kinds";
 import { loadHomeProgramStatus } from "@/lib/ao-data";
@@ -278,6 +280,15 @@ export function TaskDrawer({
   const storedKind = kindQ.data?.ready && isTaskKind(kindQ.data.kind) ? (kindQ.data.kind as TaskKindCode) : null;
   const settings = kindQ.data?.ready ? kindQ.data.settings : {};
   const fillQ = useFillIn(task?.property_id ?? "", settings.fields ?? [], storedKind === "fill_in" && Boolean(task?.property_id));
+  // Nov 18: once a Breezeway work order is sent (or linked), the team may mark the Resolve Task done by hand.
+  // Same query and cache key as the Breezeway section on this Task, so nothing extra is fetched.
+  const bzStateFn = useServerFn(onboardingBreezewayStateFn);
+  const bzState = useQuery({
+    queryKey: ["onboarding-breezeway", task?.id ?? "none"],
+    queryFn: () => bzStateFn({ data: { taskId: task!.id } }),
+    enabled: Boolean(task?.id) && (storedKind ?? (task ? effectiveTaskKind(task) : null)) === "work_order",
+  });
+  const workOrderSent = Boolean(bzState.data?.sentTaskId ?? bzState.data?.link?.breezeway_task_id);
   // Role changes use the same people rule and transaction as Edit selected.
   const canAssignRole = useQuery({
     queryKey: ["can-bulk-edit-home-tasks", task?.property_id ?? "none"],
@@ -418,6 +429,7 @@ export function TaskDrawer({
     outsideProof: outside.proof,
     sent: false,
     approved: true,
+    workOrderSent,
   });
   const releaseHint = !view.canComplete && !evidenceMissing && !awaitingOwner ? view.reason ?? "Not workable yet." : null;
   // Item 39: Send waits for a file on the Task when the step says so; the server refuses it too.
@@ -429,7 +441,7 @@ export function TaskDrawer({
     : middle === "do_it" || middle === "work_order" || middle === "send_to_owner"
       ? middle === "send_to_owner"
         ? ownerReady ? null : releaseHint ?? "Write what you're asking (20 characters or more)."
-        : middle === "work_order"
+        : middle === "work_order" && !workOrderSent
           ? kindBlock
           : kindBlock ?? completeHint({
               kind: "ordinary",
@@ -636,7 +648,7 @@ export function TaskDrawer({
         // Item 18b: Done only closes the drawer; it never saves or sends.
         <div className="flex w-full flex-col gap-1">
           <div className="flex w-full flex-wrap items-start justify-end gap-2">
-            {finished || (middle === "send_to_owner" && sentToOwner) || middle === "work_order" ? null : (
+            {finished || (middle === "send_to_owner" && sentToOwner) || (middle === "work_order" && !workOrderSent) ? null : (
               <div className="min-w-0 flex-1">
                 {middle === "send_to_owner" ? (
                   <Button type="submit" form={sendFormId(task.id)} className="min-h-11 w-full" disabled={disabled || !ownerReady || Boolean(sendFileBlock)}>
@@ -668,11 +680,12 @@ export function TaskDrawer({
                       disabled={disabled || Boolean(hint)}
                       onClick={() => complete(middle === "outside_resolve" ? outsideEvidence(outside) : undefined)}
                     >
-                      {mainButtonLabel(middle)}
+                      {middle === "work_order" ? "Mark done" : mainButtonLabel(middle)}
                     </Button>
                   </ReviewAwareComplete>
                 )}
                 {sendFileBlock && <p className="mt-1 text-xs text-muted-foreground">{sendFileBlock}</p>}
+                {middle === "work_order" && <p className="mt-1 text-xs text-muted-foreground">{BREEZEWAY_MARK_DONE_NOTE}</p>}
               </div>
             )}
             <Button type="button" variant="outline" className="min-h-11 min-w-24" onClick={onClose}>

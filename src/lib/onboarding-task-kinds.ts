@@ -180,6 +180,8 @@ export type CompletionState = {
   sent?: boolean;
   /** Approval: the step review is approved. */
   approved?: boolean;
+  /** Work order: a Breezeway work order was sent or linked, so the team may mark it done by hand (Nov 18). */
+  workOrderSent?: boolean;
 };
 
 const proofGiven = (s: CompletionState) => (s.proofNote ?? "").trim().length >= 5 || (s.fileCount ?? 0) > 0;
@@ -194,7 +196,8 @@ export function completionBlock(kind: TaskKindCode, s: CompletionState): string 
     case "upload_files":
       return (s.fileCount ?? 0) > 0 ? null : "Upload at least one file.";
     case "work_order":
-      return "Completes by itself when Breezeway marks the job done.";
+      if (!s.workOrderSent) return "Completes by itself when Breezeway marks the job done.";
+      return proofGiven(s) ? null : "Add where the proof is under Details, or attach a file.";
     case "send_to_owner":
       return s.sent ? null : "Completes when you send it to the homeowner.";
     case "outside_resolve":
@@ -210,6 +213,9 @@ export function completionBlock(kind: TaskKindCode, s: CompletionState): string 
       return s.approved ? null : "Approve, or send it back with a note.";
   }
 }
+
+/** Shown wherever a Task with a Breezeway work order is marked done by hand (Nov 18). */
+export const BREEZEWAY_MARK_DONE_NOTE = "This marks the Resolve Task done. The Breezeway work order is not changed.";
 
 export const OUTSIDE_DOCUMENT_MAX = 80;
 export const OUTSIDE_MESSAGE_MAX = 600;

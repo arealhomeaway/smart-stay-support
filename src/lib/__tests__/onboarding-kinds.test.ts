@@ -36,6 +36,12 @@ describe("each kind's main button and completion rule", () => {
     expect(mainButtonLabel("work_order")).toBeNull();
     expect(completionBlock("work_order", {})).toBe("Completes by itself when Breezeway marks the job done.");
   });
+  it("Work order sent to Breezeway: the team may mark it done by hand with proof (Nov 18)", () => {
+    expect(completionBlock("work_order", { workOrderSent: true })).toBe("Add where the proof is under Details, or attach a file.");
+    expect(completionBlock("work_order", { workOrderSent: true, proofNote: "Photos in Breezeway" })).toBeNull();
+    expect(completionBlock("work_order", { workOrderSent: true, fileCount: 1 })).toBeNull();
+    expect(completionBlock("work_order", { workOrderSent: false, proofNote: "Photos in Breezeway" })).toBe("Completes by itself when Breezeway marks the job done.");
+  });
   it("Send to the homeowner: the main button sends", () => {
     expect(mainButtonLabel("send_to_owner")).toBe("Send to the homeowner");
     expect(completionBlock("send_to_owner", { sent: true })).toBeNull();

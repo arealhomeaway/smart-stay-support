@@ -20,6 +20,7 @@ import { beginUploadFn, completeUploadFn } from "@/lib/attachments.functions";
 import { createAttachmentUploader } from "@/lib/attachment-upload-client";
 import { earliestDoneOn, markDoneProblem, type DoneWhen } from "@/lib/plan-catch-up";
 import { CoveredList, HeldList } from "@/components/onboarding/CatchUpLists";
+import { BREEZEWAY_MARK_DONE_NOTE } from "@/lib/onboarding-task-kinds";
 
 function centralToday() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago" }).format(new Date());
@@ -150,6 +151,9 @@ export function BulkCompleteDialog({
                     <li key={t.taskId}>{t.title}</li>
                   ))}
                 </ul>
+                {(preview.breezeway ?? []).length > 0 ? (
+                  <p className="mt-2 text-sm text-muted-foreground">{BREEZEWAY_MARK_DONE_NOTE}</p>
+                ) : null}
               </div>
               {(preview.approvedOutside ?? []).length > 0 ? (
                 <div>

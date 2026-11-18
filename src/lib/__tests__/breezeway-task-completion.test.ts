@@ -51,4 +51,12 @@ it("recognizes only completed Breezeway states", () => {
  expect(breezewayCompleted("Finished", null)).toBe(true);
  expect(breezewayCompleted(null,"Approved")).toBe(true);
  expect(breezewayCompleted("In Progress", "Open")).toBe(false);
+});it("a Task the team already marked done stays done: no reopen, no error, completer and date kept (Nov 18)", async () => {
+ const by = "00000000-0000-4000-8000-0000000000aa", at = "2026-11-17T18:00:00.000Z";
+ await db.query("UPDATE onboarding_tasks SET status='complete', completed_by=$1, completed_at=$2", [by, at]);
+ expect((await call()).rows[0]?.done).toBe(false);
+ const row = (await db.query<{ status: string; completed_by: string; at: string }>("SELECT status, completed_by, to_char(completed_at AT TIME ZONE 'UTC','YYYY-MM-DD\"T\"HH24:MI:SS') at FROM onboarding_tasks")).rows[0];
+ expect(row).toEqual({ status: "complete", completed_by: by, at: "2026-11-17T18:00:00" });
+ expect((await db.query("SELECT 1 FROM audit_log")).rows).toEqual([]);
+ expect((await db.query("SELECT 1 FROM onboarding_notes")).rows).toEqual([]);
 });

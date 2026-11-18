@@ -17,6 +17,12 @@ const OTHER_PM = "00000000-0000-4000-8000-0000000000a5";
 const HOME = "00000000-0000-4000-8000-0000000000b1";
 const NEW_HOME = "00000000-0000-4000-8000-0000000000b2";
 
+const markDoneBreezeway = () => {
+  const sql = readFileSync("docs/pending/mark-done-breezeway/apply.sql", "utf8");
+  const start = sql.indexOf("CREATE OR REPLACE FUNCTION public.bulk_complete_onboarding_tasks");
+  return sql.slice(start, sql.indexOf("END $function$;", start) + "END $function$;".length);
+};
+
 let db: PGlite;
 const as = async (user: string | null) => {
   await db.query("DELETE FROM public.me");
@@ -54,6 +60,8 @@ beforeEach(async () => {
     INSERT INTO public.onboarding_projects(property_id, project_manager) VALUES ('${HOME}', '${PM}'), ('${NEW_HOME}', '${OTHER_PM}');
   `);
   await db.exec(readFileSync(`${DIR}/apply.sql`, "utf8"));
+  // mark-done-breezeway (Nov 18): the live Mark done, where a sent Breezeway work order no longer holds a Task.
+  await db.exec(markDoneBreezeway());
 });
 
 describe("plan catch-up: Mark done", () => {
@@ -151,7 +159,7 @@ describe("plan catch-up: Mark done", () => {
     expect((await one("SELECT outcome FROM private.ao_plan_outcomes($1)", [HOME])).outcome).toBe("already_covered");
   });
 
-  it("skip and save: blocked Tasks are listed, the rest save, and a refused Task keeps nothing", async () => {
+  it("skip and save: blocked Tasks are listed, the rest save (a sent Breezeway work order does not hold), and a refused Task keeps nothing", async () => {
     const step = "00000000-0000-4000-8000-0000000000c3";
     const ok = await task({ title: "Fine", sort_order: 1 });
     const blocked = await task({ title: "Blocked one", blocker: "Waiting on HOA", sort_order: 2 });
@@ -162,15 +170,45 @@ describe("plan catch-up: Mark done", () => {
     const pc = (await one("INSERT INTO public.ao_home_plan_cards(property_id, card_id, join_outcome, linked_task_id) VALUES ($1,$2,'locked',$3) RETURNING id", [HOME, card, boom])).id;
     await as(PM);
     const out = await done([ok, blocked, bz, boom], "Proof in SharePoint");
-    expect(out.completed).toBe(1);
+    expect(out.completed).toBe(2);
     expect(out.held.map((h) => [h.title, h.reason])).toEqual([
       ["Blocked one", "Blocked: Waiting on HOA"],
-      ["Work order: Paint", "A Breezeway work order was already sent for it."],
       ["Explodes", "This step needs review before it is done."],
     ]);
+    expect(out.ready.map((t) => t.title)).toEqual(["Fine", "Work order: Paint"]);
+    expect(out.breezeway.map((t) => t.title)).toEqual(["Work order: Paint"]);
+    expect((await one("SELECT status, completed_by FROM public.onboarding_tasks WHERE id=$1", [bz]))).toEqual({ status: "complete", completed_by: PM });
+    expect((await one("SELECT status FROM public.breezeway_outbound_tasks WHERE onboarding_task_id=$1", [bz])).status).toBe("synced");
     expect((await one("SELECT status FROM public.onboarding_tasks WHERE id=$1", [boom])).status).toBe("open");
     expect((await one("SELECT join_outcome FROM public.ao_home_plan_cards WHERE id=$1", [pc])).join_outcome).toBe("locked");
-    expect(Number((await one("SELECT count(*) n FROM public.audit_log WHERE action='onboarding_task_bulk_completed'")).n)).toBe(1);
+    // One audit row per completed Task, as usual: the plain Task and the Breezeway one.
+    expect((await db.query("SELECT entity_id FROM public.audit_log WHERE action='onboarding_task_bulk_completed' ORDER BY entity_id", [])).rows.map((r) => r.entity_id).sort())
+      .toEqual([ok, bz].sort());
+  });
+});
+
+describe("plan catch-up: Mark done with a sent Breezeway work order (Nov 18)", () => {
+  it("the preview counts a Task with a sent or linked Breezeway work order as ready and lists it for the note", async () => {
+    const sent = await task({ title: "Work order: Install TV mounts", sort_order: 1 });
+    const linked = await task({ title: "Work order: Pre-Work Inspection", sort_order: 2 });
+    const plain = await task({ title: "Order the welcome book", sort_order: 3 });
+    await db.query("INSERT INTO public.breezeway_outbound_tasks(onboarding_task_id, status) VALUES ($1, 'synced')", [sent]);
+    await db.query("INSERT INTO public.onboarding_task_breezeway_links(task_id, breezeway_task_id) VALUES ($1, 555)", [linked]);
+    await as(PM);
+    const preview = await done([sent, linked, plain], "", null, true);
+    expect(preview.ready.length).toBe(3);
+    expect(preview.held).toEqual([]);
+    expect(preview.breezeway.map((t) => t.title)).toEqual(["Work order: Install TV mounts", "Work order: Pre-Work Inspection"]);
+  });
+
+  it("a Blocked Task with a sent Breezeway work order is still held as Blocked", async () => {
+    const a = await task({ title: "Work order: Paint", blocker: "Waiting on paint" });
+    await db.query("INSERT INTO public.breezeway_outbound_tasks(onboarding_task_id, status) VALUES ($1, 'synced')", [a]);
+    await as(PM);
+    const preview = await done([a], "", null, true);
+    expect(preview.ready).toEqual([]);
+    expect(preview.held.map((h) => h.reason)).toEqual(["Blocked: Waiting on paint"]);
+    expect(preview.breezeway).toEqual([]);
   });
 });
 

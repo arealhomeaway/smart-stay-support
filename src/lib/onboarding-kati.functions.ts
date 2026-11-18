@@ -25,6 +25,8 @@ export type BulkCompleteResult = {
   batchId?: string | null;
   covered?: { taskId: string; title: string; code: string; onPlan: boolean }[];
   approvedOutside?: { taskId: string; title: string }[];
+  /** Nov 18: ready Tasks that have a Breezeway work order; marking them done never changes Breezeway. */
+  breezeway?: { taskId: string; title: string }[];
 };
 
 export const bulkCompleteHomeTasksFn = createServerFn({ method: "POST" })
