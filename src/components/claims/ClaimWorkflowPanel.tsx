@@ -51,12 +51,20 @@ export function ClaimWorkflowPanel({
   canEdit,
   people,
   onChanged,
+  part = "all",
+  lineTotal = null,
 }: {
   claim: ClaimRow;
   canEdit: boolean;
   people: TeamMember[];
   onChanged: () => void;
+  /** Coordinator view (Nov 18): "status" = submission and decision; "manager" = everything else. */
+  part?: "all" | "status" | "manager";
+  /** Line item total; when set it is the amount requested. */
+  lineTotal?: number | null;
 }) {
+  const showStatus = part !== "manager";
+  const showManager = part !== "status";
   const qc = useQueryClient();
   const { isSupervisor, access, userId } = useRole();
   const isFinance = access.seats.finance === true;
@@ -309,6 +317,7 @@ export function ClaimWorkflowPanel({
 
   return (
     <section className="space-y-4">
+      {part === "all" ? (<>
       {/* Guided steps */}
       <ol className="flex flex-wrap gap-1">
         {GUIDED_STEPS.map((s) => (
@@ -317,6 +326,8 @@ export function ClaimWorkflowPanel({
           </li>
         ))}
       </ol>
+      </>) : null}
+      {showManager ? (<>
       <div className="flex flex-wrap gap-2 text-xs">
         <Chip className={settled ? stateChip("done") : stateChip("waiting")}>
           {settled ? "Financially settled" : "Not financially settled"}
@@ -424,18 +435,23 @@ export function ClaimWorkflowPanel({
         </p>
       </div>
 
+      </>) : null}
       {/* Submission */}
-      {canEdit ? (
+      {canEdit && showStatus ? (
         <div className="space-y-2 rounded-md border p-3">
           <h4 className="text-sm font-semibold">Record submission</h4>
           <p className="text-xs text-muted-foreground">
             Resolve does not submit claims. Record it after you submit on the platform, with proof attached.
           </p>
           {docPicker(subDocs, setSubDocs, postSubmit)}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             <Input aria-label="Submitted on" type="date" value={subDate} disabled={postSubmit} onChange={(e) => setSubDate(e.target.value)} />
             <Input aria-label="Submission reference" placeholder="Case / reference" value={subRef} disabled={postSubmit} onChange={(e) => setSubRef(e.target.value)} />
-            <Input aria-label="Amount requested" placeholder="Requested $" inputMode="decimal" value={subAmt} disabled={postSubmit} onChange={(e) => setSubAmt(e.target.value)} />
+            {lineTotal !== null && lineTotal > 0 ? (
+              <p className="self-center text-xs" aria-label="Amount requested">Requested {formatMoney(lineTotal)} (line items)</p>
+            ) : (
+              <Input aria-label="Amount requested" placeholder="Requested $" inputMode="decimal" value={subAmt} disabled={postSubmit} onChange={(e) => setSubAmt(e.target.value)} />
+            )}
           </div>
           {postSubmit ? (
             <p className="text-xs">Submitted {formatDate(claim.submitted_on)} · ref {claim.external_reference} · {claim.submission_document_ids.length} proof file(s)</p>
@@ -449,10 +465,10 @@ export function ClaimWorkflowPanel({
                     stage: "submitted",
                     submitted_on: subDate,
                     external_reference: subRef.trim(),
-                    submitted_amount: num(subAmt),
+                    submitted_amount: lineTotal !== null && lineTotal > 0 ? lineTotal : num(subAmt),
                     submission_document_ids: subDocs,
                   },
-                  body: `Recorded submitted · ref ${subRef.trim()} · requested ${formatMoney(num(subAmt))}`,
+                  body: `Recorded submitted · ref ${subRef.trim()} · requested ${formatMoney(lineTotal !== null && lineTotal > 0 ? lineTotal : num(subAmt))}`,
                 })
               }
             >
@@ -468,7 +484,7 @@ export function ClaimWorkflowPanel({
       ) : null}
 
       {/* Decision */}
-      {canEdit && postSubmit ? (
+      {canEdit && postSubmit && showStatus ? (
         <div className="space-y-2 rounded-md border p-3">
           <h4 className="text-sm font-semibold">Decision received</h4>
           <Select value={disp} onValueChange={(v) => setDisp(v as ClaimDisposition)}>
@@ -507,6 +523,7 @@ export function ClaimWorkflowPanel({
         </div>
       ) : null}
 
+      {showManager ? (<>
       {/* Waivers */}
       <div className="space-y-2 rounded-md border p-3">
         <h4 className="text-sm font-semibold">Waiver</h4>
@@ -681,7 +698,8 @@ export function ClaimWorkflowPanel({
           </div>
         </div>
       ) : null}
-      <Separator />
+      </>) : null}
+      {part === "all" ? <Separator /> : null}
     </section>
   );
 }

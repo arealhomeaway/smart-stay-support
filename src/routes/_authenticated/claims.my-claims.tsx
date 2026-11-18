@@ -13,7 +13,8 @@ import {
 } from "@/components/claims/ClaimList";
 import { useCurrentUserId } from "@/hooks/useTeam";
 import { useRole } from "@/hooks/useRole";
-import { amountAtRisk, claimSort, deadlineState, formatMoney, isOpenClaim } from "@/lib/claims";
+import { amountAtRisk, claimSort, formatMoney, isOpenClaim } from "@/lib/claims";
+import { filingReminderReached } from "@/lib/claim-coordinator";
 
 export const Route = createFileRoute("/_authenticated/claims/my-claims")({
   component: MyClaims,
@@ -36,9 +37,8 @@ function MyClaims() {
     [claims.data, userId],
   );
 
-  const urgent = mine.filter((c) =>
-    ["overdue", "today", "approaching"].includes(deadlineState(c.deadline_on)),
-  );
+  // Highlighted from the filing reminder until Submitted; no other urgency styling.
+  const fileSoon = mine.filter((c) => filingReminderReached(c));
 
   return (
     <div className="space-y-5">
@@ -49,11 +49,7 @@ function MyClaims() {
       />
       <div className="grid gap-3 sm:grid-cols-3">
         <StatTile label="Open claims" value={mine.length} />
-        <StatTile
-          label="Deadline within a week"
-          value={urgent.length}
-          tone={urgent.length ? "critical" : "neutral"}
-        />
+        <StatTile label="File soon" value={fileSoon.length} />
         <StatTile
           label="Value at risk"
           value={formatMoney(mine.reduce((s, c) => s + (amountAtRisk(c) ?? 0), 0))}

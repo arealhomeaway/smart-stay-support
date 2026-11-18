@@ -111,51 +111,56 @@ describe("missed vendor dispatch", () => {
   });
 });
 
-describe("claim deadline reminders", () => {
+describe("claim filing reminder (Nov 18 rule)", () => {
   const claim = (over: Partial<ClaimForAlerts> & { id: string }): ClaimForAlerts => ({
     stage: "gathering",
     assigned_to: "u1",
+    deadline_verified: true,
     ...over,
   });
 
-  it("reminds inside the warning window, calls out today, and escalates once passed", () => {
+  it("reminds the owner once from 3 days before, normal priority, never overdue alerts", () => {
     const alerts = claimDeadlineAlerts(
       [
-        claim({ id: "soon", deadline_on: "2026-09-23" }),
-        claim({ id: "today", deadline_on: "2026-09-21" }),
+        claim({ id: "three", deadline_on: "2026-09-24" }),
+        claim({ id: "four", deadline_on: "2026-09-25" }),
         claim({ id: "gone", deadline_on: "2026-09-18" }),
-        claim({ id: "far", deadline_on: "2026-10-30" }),
       ],
       NOW,
     );
-    expect(alerts.map((a) => [a.entityId, a.kind])).toEqual([
-      ["soon", "claim_deadline_soon"],
-      ["today", "claim_deadline_soon"],
-      ["gone", "claim_deadline_passed"],
+    expect(alerts.map((a) => [a.entityId, a.kind, a.userId, a.priority])).toEqual([
+      ["three", "claim_filing_reminder", "u1", "normal"],
+      ["gone", "claim_filing_reminder", "u1", "normal"],
     ]);
-    expect(alerts[1]!.priority).toBe("urgent");
   });
 
-  it("ignores settled claims", () => {
-    expect(
-      claimDeadlineAlerts([claim({ id: "done", stage: "recovered", deadline_on: "2026-09-18" })], NOW),
-    ).toEqual([]);
+  it("sends an unowned claim to the Operations Supervisor", () => {
+    const alerts = claimDeadlineAlerts([claim({ id: "c", assigned_to: null, deadline_on: "2026-09-23" })], NOW, "sup");
+    expect(alerts.map((a) => a.userId)).toEqual(["sup"]);
+  });
+
+  it("sends nothing once Submitted or when the deadline needs verification", () => {
+    expect(claimDeadlineAlerts([
+      claim({ id: "s", stage: "submitted", deadline_on: "2026-09-23" }),
+      claim({ id: "v", deadline_verified: false, deadline_source: null, deadline_on: "2026-09-23" }),
+    ], NOW, "sup")).toEqual([]);
+  });
+
+  it("treats an Airbnb/Vrbo default deadline as known", () => {
+    const alerts = claimDeadlineAlerts([claim({ id: "d", deadline_verified: false, deadline_source: "platform_default", deadline_on: "2026-09-23" })], NOW);
+    expect(alerts).toHaveLength(1);
   });
 });
 
 describe("one alert per record per stage", () => {
-  it("drops anything already sent and any duplicate in the same pass", () => {
-    const alerts = claimDeadlineAlerts(
-      [
-        { id: "c1", stage: "gathering", assigned_to: "u1", deadline_on: "2026-09-22" },
-        { id: "c1", stage: "gathering", assigned_to: "u1", deadline_on: "2026-09-22" },
-        { id: "c2", stage: "gathering", assigned_to: "u1", deadline_on: "2026-09-22" },
-      ],
-      NOW,
-    );
-    const sent = new Set([
-      alertKey({ kind: "claim_deadline_soon", userId: "u1", entityId: "c2" }),
-    ]);
-    expect(newAlerts(alerts, sent).map((a) => a.entityId)).toEqual(["c1"]);
+  it("fires a filing reminder once per claim and deadline date, and again for a new date", () => {
+    const first = claimDeadlineAlerts([claim2("c1", "2026-09-22"), claim2("c1", "2026-09-22")], NOW);
+    expect(newAlerts(first, new Set()).length).toBe(1);
+    const sent = new Set(first.map((a) => alertKey(a)));
+    expect(newAlerts(claimDeadlineAlerts([{ ...claim2("c1", "2026-09-22"), assigned_to: "u2" }], NOW), sent)).toEqual([]);
+    expect(newAlerts(claimDeadlineAlerts([claim2("c1", "2026-09-23")], NOW), sent).length).toBe(1);
   });
 });
+function claim2(id: string, deadline_on: string): ClaimForAlerts {
+  return { id, stage: "gathering", assigned_to: "u1", deadline_on, deadline_verified: true };
+}

@@ -54,13 +54,16 @@ export async function sweepDeadlineAlerts(supabase: Client, now = new Date()) {
       .not("assigned_to", "is", null),
     supabase
       .from("claims")
-      .select("id, title, stage, assigned_to, deadline_on, is_demo")
-      .not("assigned_to", "is", null)
+      .select("id, title, stage, assigned_to, deadline_on, deadline_source, deadline_verified, is_demo")
+      .in("stage", ["potential", "gathering", "costing", "ready_to_submit"])
       .not("deadline_on", "is", null),
   ]);
 
   const failure = tickets.error ?? workOrders.error ?? claims.error;
   if (failure) throw new Error(failure.message);
+  // Unowned claim reminders go to the Operations Supervisor (cover first, then the role holder).
+  const supervisor = await supabase.rpc("seat_holder_at", { _role_code: "ops_supervisor" });
+  const supervisorId = supervisor.error ? null : ((supervisor.data as string | null) ?? null);
 
   const candidates: DeadlineAlert[] = [
     ...ticketSlaAlerts((tickets.data ?? []) as unknown as TicketForAlerts[], now),
@@ -74,7 +77,7 @@ export async function sweepDeadlineAlerts(supabase: Client, now = new Date()) {
       })) as unknown as WorkOrderForAlerts[],
       now,
     ),
-    ...claimDeadlineAlerts((claims.data ?? []) as unknown as ClaimForAlerts[], now),
+    ...claimDeadlineAlerts((claims.data ?? []) as unknown as ClaimForAlerts[], now, supervisorId),
   ];
 
   if (candidates.length === 0) {
@@ -83,10 +86,11 @@ export async function sweepDeadlineAlerts(supabase: Client, now = new Date()) {
 
   const { data: sent, error: sentError } = await supabase
     .from("staff_notifications")
-    .select("kind, user_id, entity_id")
+    .select("kind, user_id, entity_id, link_path")
     .in("kind", [...ALERT_KINDS])
     .in("entity_id", Array.from(new Set(candidates.map((a) => a.entityId))))
-    .gte("created_at", since);
+    // Filing reminders are once per claim and deadline date for good, not only for 30 days.
+    .or(`created_at.gte.${since},kind.eq.claim_filing_reminder`);
   if (sentError) throw new Error(sentError.message);
 
   const alreadySent = new Set(
@@ -95,6 +99,7 @@ export async function sweepDeadlineAlerts(supabase: Client, now = new Date()) {
         kind: row.kind as DeadlineAlert["kind"],
         userId: row.user_id,
         entityId: row.entity_id ?? "",
+        linkPath: row.link_path,
       }),
     ),
   );
