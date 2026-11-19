@@ -141,6 +141,8 @@ export function ChecklistStepView({
   const [na, setNa] = useState(false);
   const [nextHours, setNextHours] = useState(2);
   const [editKey, setEditKey] = useState<string | null>(null);
+  // Kept open across Edit and Cancel, so the list does not fold away mid-edit.
+  const [historyOpen, setHistoryOpen] = useState(false);
   const reset = () => { setChoice(null); setNote(""); setFields({}); setNa(false); };
   const editable = Boolean(canEditDone && onEdit && !readOnly);
   const startEdit = (s: ChecklistStep, a: ChecklistAnswer) => {
@@ -154,7 +156,12 @@ export function ChecklistStepView({
   const stopEdit = () => { setEditKey(null); reset(); };
 
   const doneList = progress.done.length > 0 && (
-    <details className="group rounded-md border border-border px-3 py-2 text-sm" data-testid="checklist-history">
+    <details
+      className="group rounded-md border border-border px-3 py-2 text-sm"
+      data-testid="checklist-history"
+      open={historyOpen}
+      onToggle={(e) => setHistoryOpen((e.currentTarget as HTMLDetailsElement).open)}
+    >
       <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-muted-foreground">
         <span>{progress.done.length} step{progress.done.length === 1 ? "" : "s"} done</span>
         <ChevronDown className="size-4 transition-transform group-open:rotate-180" />

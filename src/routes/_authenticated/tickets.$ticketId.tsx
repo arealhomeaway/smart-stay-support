@@ -589,6 +589,8 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     waitingOn?: string;
     hint?: string;
     action?: string;
+    /** Shown even with the close form open; brings the matching control into view. */
+    target?: string;
   }[] = [
     ...requiredOpen.map((s) => ({
       label: s.instruction,
@@ -639,6 +641,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             state: guestConfirmed || ticket.guest_confirmed ? ("complete" as const) : ("needs_you" as const),
             hint: "Turn on Guest confirmed below once the guest tells you it is fixed.",
             action: "Confirm",
+            target: "[data-guest-confirmed-toggle]",
           },
         ]
       : []),
@@ -1200,8 +1203,17 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             ) : (
               <StatusBadge tone="escalated">Needs you</StatusBadge>
             )}
-            {c.state === "needs_you" && c.action && !closeOpen && (
-              <Button size="sm" variant="outline" onClick={() => setCloseOpen(true)}>
+            {c.state === "needs_you" && c.action && (!closeOpen || c.target) && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setCloseOpen(true);
+                  if (c.target) {
+                    setTimeout(() => document.querySelector(c.target!)?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+                  }
+                }}
+              >
                 {c.action}
               </Button>
             )}
@@ -1278,12 +1290,14 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
           )}
 
           {guestComm.activeCadence && !ticket.guest_confirmed && (
+            <div data-guest-confirmed-toggle>
             <ToggleRow
               title="Guest confirmed the issue is fully resolved"
               hint="Get it in writing before you check this."
               checked={guestConfirmed || Boolean(ticket.guest_confirmed)}
               onChange={setGuestConfirmed}
             />
+            </div>
           )}
 
           <Button onClick={resolveTicket} size="lg">
