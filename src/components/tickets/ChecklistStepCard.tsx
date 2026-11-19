@@ -15,8 +15,10 @@ import { usDate, usDateTime } from "@/lib/dates";
 import {
   ACTION_LABELS,
   NOT_APPLICABLE,
+  answerChangeLine,
   answerHistoryLine,
   answerProblem,
+  answerUnchanged,
   checklistProgress,
   fillQuestion,
   parseChecklistRow,
@@ -79,7 +81,7 @@ export function useChecklistAnswers(ticketId: string, enabled: boolean) {
     queryFn: async () => {
       const { data, error } = await (supabase as unknown as Db)
         .from("ticket_steps")
-        .select("step_key, answer, answer_fields, note, not_applicable_reason, completed_by, completed_at, created_at")
+        .select("id, step_key, answer, answer_fields, note, not_applicable_reason, completed_by, completed_at, created_at")
         .eq("ticket_id", ticketId)
         .not("step_key", "is", null);
       if (error) throw error;
@@ -91,6 +93,7 @@ export function useChecklistAnswers(ticketId: string, enabled: boolean) {
           fields: r["answer_fields"] ?? null,
           answeredBy: r["completed_by"] ?? null,
           answeredAt: r["completed_at"] ?? r["created_at"],
+          rowId: r["id"] ?? null,
         }),
       );
     },
@@ -110,6 +113,8 @@ export function ChecklistStepView({
   actionSlot,
   waitingControl,
   nameFor,
+  canEditDone,
+  onEdit,
 }: {
   template: ChecklistTemplate;
   answers: ChecklistAnswer[];
@@ -123,6 +128,10 @@ export function ChecklistStepView({
   actionSlot?: (action: ChecklistAction) => ReactNode;
   waitingControl?: ReactNode;
   nameFor?: (id: string | null | undefined) => string;
+  /** Finished steps show Edit (ticket open, person can work tickets). */
+  canEditDone?: boolean;
+  /** Saves an edited finished step on its existing row. Rejects to keep the form open. */
+  onEdit?: (step: ChecklistStep, before: ChecklistAnswer, a: { value: string; note: string; fields: Record<string, string> }) => Promise<unknown> | void;
 }) {
   const progress = checklistProgress(template, answers, activeGuest);
   const step = progress.current;
@@ -131,7 +140,18 @@ export function ChecklistStepView({
   const [fields, setFields] = useState<Record<string, string>>({});
   const [na, setNa] = useState(false);
   const [nextHours, setNextHours] = useState(2);
+  const [editKey, setEditKey] = useState<string | null>(null);
   const reset = () => { setChoice(null); setNote(""); setFields({}); setNa(false); };
+  const editable = Boolean(canEditDone && onEdit && !readOnly);
+  const startEdit = (s: ChecklistStep, a: ChecklistAnswer) => {
+    const wasNa = a.value === NOT_APPLICABLE;
+    setEditKey(s.key);
+    setNa(wasNa);
+    setChoice(wasNa ? null : a.value);
+    setNote(a.note ?? "");
+    setFields({ ...(a.fields ?? {}) });
+  };
+  const stopEdit = () => { setEditKey(null); reset(); };
 
   const doneList = progress.done.length > 0 && (
     <details className="group rounded-md border border-border px-3 py-2 text-sm" data-testid="checklist-history">
@@ -141,20 +161,117 @@ export function ChecklistStepView({
       </summary>
       <ol className="mt-2 space-y-1">
         {progress.done.map(({ step: s, answer, option }) => (
-          <li key={s.key} className="flex gap-2">
+          <li key={s.key} className="flex items-start gap-2">
             <Check className="mt-0.5 size-4 shrink-0 text-primary" />
-            <span>
+            <span className="min-w-0 flex-1">
               <span className="font-medium">{s.label}. {fillQuestion(s.question, facts, template.settings)}</span>{" "}
               <span className="text-muted-foreground">
                 {answer.value === NOT_APPLICABLE ? `Doesn't apply: ${answer.note ?? ""}` : (option?.label ?? answer.value)}
                 {answer.answeredAt ? ` · ${nameFor ? nameFor(answer.answeredBy) + ", " : ""}${usDateTime(answer.answeredAt)}` : ""}
               </span>
             </span>
+            {editable && !editKey && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="min-h-11 shrink-0 sm:min-h-8"
+                aria-label={`Edit step ${s.label}`}
+                onClick={() => startEdit(s, answer)}
+              >
+                Edit
+              </Button>
+            )}
           </li>
         ))}
       </ol>
     </details>
   );
+
+  const answerInputs = (s: ChecklistStep, o: ChecklistStep["options"][number] | null, withActions: boolean) => (
+    <>
+      {!readOnly && !na && (
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Answer">
+          {s.options.map((x) => (
+            <Button key={x.value} variant={choice === x.value ? "default" : "outline"} onClick={() => setChoice(x.value)}>
+              {x.label}
+            </Button>
+          ))}
+        </div>
+      )}
+      {o?.effect && !na && <p className="text-sm text-muted-foreground">{o.effect}</p>}
+      {withActions && o?.action && !na && !readOnly && (actionSlot?.(o.action) ?? (onAction && (
+        <Button variant="outline" size="sm" onClick={() => onAction(o.action!, s)}>{ACTION_LABELS[o.action]}</Button>
+      )))}
+
+      {!readOnly && !na && (s.fields ?? []).map((f) => (
+        <div key={f.key} className="space-y-1">
+          <label className="text-sm font-medium" htmlFor={`cl-${s.key}-${f.key}`}>{f.label}{f.required ? "" : " (optional)"}</label>
+          <Input
+            id={`cl-${s.key}-${f.key}`}
+            type={f.kind === "datetime" ? "datetime-local" : "text"}
+            inputMode={f.kind === "money" ? "decimal" : undefined}
+            value={fields[f.key] ?? ""}
+            onChange={(e) => setFields({ ...fields, [f.key]: e.target.value })}
+          />
+        </div>
+      ))}
+
+      {!readOnly && (o?.noteRequired || na || (choice && !o?.noteRequired)) && (
+        <Input
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder={na ? "Why doesn't this apply? (required)" : o?.noteRequired ? "Note (required)" : "Optional note"}
+          aria-label={na ? "Reason this step doesn't apply" : "Note"}
+        />
+      )}
+    </>
+  );
+
+  // Editing a finished step: the same answers, filled in with what was saved.
+  const editing = editKey ? progress.done.find((d) => d.step.key === editKey) ?? null : null;
+  if (editable && editing) {
+    const s = editing.step;
+    const before = editing.answer;
+    const o = s.options.find((x) => x.value === choice) ?? null;
+    const after = { value: na ? NOT_APPLICABLE : (choice ?? ""), note, fields };
+    const problem = choice || na ? answerProblem(s, after) : "Choose an answer.";
+    const unchanged = !problem && answerUnchanged(before, after);
+    return (
+      <div className="space-y-3" data-testid="checklist-card">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {template.title} · Step {s.label} · Editing
+          </p>
+          <span className="text-xs text-muted-foreground">{progress.done.length} of {progress.total} done</span>
+        </div>
+        <h3 className="text-lg font-semibold" data-testid="checklist-question">{fillQuestion(s.question, facts, template.settings)}</h3>
+        {s.help && <p className="text-sm text-muted-foreground">{fillQuestion(s.help, facts, template.settings)}</p>}
+        {answerInputs(s, o, false)}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            disabled={busy || Boolean(problem) || unchanged}
+            title={problem ?? (unchanged ? "Nothing has changed." : undefined)}
+            onClick={async () => {
+              try {
+                await onEdit!(s, before, after);
+                stopEdit();
+              } catch {
+                // The error is shown by the caller; keep the answer open to try again.
+              }
+            }}
+          >
+            Save
+          </Button>
+          <Button variant="outline" onClick={stopEdit}>Cancel</Button>
+          {problem && (choice || na) && <span className="text-sm text-muted-foreground">{problem}</span>}
+          <Button variant="ghost" size="sm" onClick={() => { setNa(!na); setChoice(null); }}>
+            {na ? "Back to the answers" : "This doesn't apply"}
+          </Button>
+        </div>
+        {doneList}
+      </div>
+    );
+  }
 
   if (!step) {
     return (
@@ -199,41 +316,7 @@ export function ChecklistStepView({
         <Button variant="outline" size="sm" onClick={() => onAction(step.action!, step)}>{ACTION_LABELS[step.action]}</Button>
       )}
 
-      {!readOnly && !na && (
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Answer">
-          {step.options.map((o) => (
-            <Button key={o.value} variant={choice === o.value ? "default" : "outline"} onClick={() => setChoice(o.value)}>
-              {o.label}
-            </Button>
-          ))}
-        </div>
-      )}
-      {opt?.effect && !na && <p className="text-sm text-muted-foreground">{opt.effect}</p>}
-      {opt?.action && !na && !readOnly && (actionSlot?.(opt.action) ?? (onAction && (
-        <Button variant="outline" size="sm" onClick={() => onAction(opt.action!, step)}>{ACTION_LABELS[opt.action]}</Button>
-      )))}
-
-      {!readOnly && !na && (step.fields ?? []).map((f) => (
-        <div key={f.key} className="space-y-1">
-          <label className="text-sm font-medium" htmlFor={`cl-${step.key}-${f.key}`}>{f.label}{f.required ? "" : " (optional)"}</label>
-          <Input
-            id={`cl-${step.key}-${f.key}`}
-            type={f.kind === "datetime" ? "datetime-local" : "text"}
-            inputMode={f.kind === "money" ? "decimal" : undefined}
-            value={fields[f.key] ?? ""}
-            onChange={(e) => setFields({ ...fields, [f.key]: e.target.value })}
-          />
-        </div>
-      ))}
-
-      {!readOnly && (opt?.noteRequired || na || (choice && !opt?.noteRequired)) && (
-        <Input
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder={na ? "Why doesn't this apply? (required)" : opt?.noteRequired ? "Note (required)" : "Optional note"}
-          aria-label={na ? "Reason this step doesn't apply" : "Note"}
-        />
-      )}
+      {answerInputs(step, opt, true)}
 
       {showNextUpdate && !na && (
         <div className="space-y-1">
@@ -303,6 +386,7 @@ export function ChecklistStepCard({
   actionSlot,
   waitingControl,
   nameFor,
+  canEditDone,
 }: {
   ticketId: string;
   playbookId: string;
@@ -315,6 +399,8 @@ export function ChecklistStepCard({
   actionSlot?: (action: ChecklistAction) => ReactNode;
   waitingControl?: ReactNode;
   nameFor?: (id: string | null | undefined) => string;
+  /** Ticket open and the person can work tickets: finished steps can be edited. */
+  canEditDone?: boolean;
 }) {
   const qc = useQueryClient();
   const tpl = usePinnedChecklist(playbookId);
@@ -352,6 +438,33 @@ export function ChecklistStepCard({
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save the answer."),
   });
+  // Edit a finished step: the same row on this ticket, never a second one.
+  const edit = useMutation({
+    mutationFn: async ({ step, before, a }: { step: ChecklistStep; before: ChecklistAnswer; a: { value: string; note: string; fields: Record<string, string> } }) => {
+      if (!before.rowId) throw new Error("This answer could not be found. Refresh the page.");
+      const na = a.value === NOT_APPLICABLE;
+      const { data, error } = await (supabase as unknown as Db)
+        .from("ticket_steps")
+        .update({
+          answer: a.value,
+          answer_fields: Object.keys(a.fields).length ? a.fields : null,
+          note: na ? null : a.note.trim() || null,
+          not_applicable_reason: na ? a.note.trim() : null,
+        })
+        .eq("id", before.rowId)
+        .eq("ticket_id", ticketId)
+        .eq("step_key", step.key)
+        .select("id");
+      if (error) throw error;
+      if (!data || (data as unknown[]).length !== 1) throw new Error("Could not change this answer.");
+      await log("note", answerChangeLine(step, fillQuestion(step.question, facts, tpl.data?.settings), before, a));
+    },
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["ticket-checklist-answers", ticketId] });
+      await onChanged();
+    },
+    onError: (e) => toast.error((e as { message?: string } | null)?.message || "Could not change the answer."),
+  });
 
   if (tpl.isLoading || answers.isLoading) return <p className="text-sm text-muted-foreground">Loading checklist…</p>;
   if (!tpl.data) return null;
@@ -362,8 +475,10 @@ export function ChecklistStepCard({
       activeGuest={activeGuest}
       facts={facts}
       readOnly={readOnly}
-      busy={save.isPending}
+      busy={save.isPending || edit.isPending}
       onAnswer={(step, a) => save.mutate({ step, a })}
+      canEditDone={Boolean(canEditDone)}
+      onEdit={(step, before, a) => edit.mutateAsync({ step, before, a })}
       onAction={onAction}
       {...(actionSlot ? { actionSlot } : {})}
       {...(waitingControl ? { waitingControl } : {})}

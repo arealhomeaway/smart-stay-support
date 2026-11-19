@@ -636,9 +636,9 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             label: "Guest confirmation",
             // A confirmation already recorded on the ticket counts — never ask again.
             done: guestConfirmed || Boolean(ticket.guest_confirmed),
-            state: guestConfirmed || ticket.guest_confirmed ? ("complete" as const) : ("waiting" as const),
-            waitingOn: "Waiting on guest",
-            hint: "Resolve will mark this complete when confirmation is recorded.",
+            state: guestConfirmed || ticket.guest_confirmed ? ("complete" as const) : ("needs_you" as const),
+            hint: "Turn on Guest confirmed below once the guest tells you it is fixed.",
+            action: "Confirm",
           },
         ]
       : []),
@@ -1160,7 +1160,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
               : []
           }
           requiredEvidence={
-            workType?.required_closure_evidence ? [workType.required_closure_evidence] : []
+            requiredEvidence ? [requiredEvidence] : []
           }
           specialHandling={[ticket.properties?.access_notes, ticket.properties?.notes].filter(
             (v): v is string => Boolean(v && v.trim()),
@@ -1449,6 +1449,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                     activeGuest={checklistActiveGuest}
                     facts={checklistFacts}
                     readOnly={role.readOnly || closed}
+                    canEditDone={canWorkTickets && !closed && !ticket["archived_at"]}
                     log={log}
                     onChanged={refresh}
                     onAction={(action) => {

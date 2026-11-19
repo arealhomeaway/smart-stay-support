@@ -102,6 +102,8 @@ export type ChecklistAnswer = {
   fields?: Record<string, string> | null;
   answeredBy?: string | null;
   answeredAt?: string | null;
+  /** The saved ticket_steps row, so a finished step can be edited in place. */
+  rowId?: string | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -241,6 +243,47 @@ export function answerHistoryLine(step: ChecklistStep, a: { value: string; note?
   const fields = (step.fields ?? []).map((f) => (a.fields?.[f.key] ? `${f.label}: ${a.fields[f.key]}` : null)).filter(Boolean);
   const note = (a.note ?? "").trim();
   return [`Checklist step ${step.label}, "${step.question}": ${label}.`, ...fields, note ? `Note: ${note}` : null].filter(Boolean).join(" ");
+}
+
+/** The label a saved answer shows for a step. */
+export function answerLabel(step: ChecklistStep, value: string): string {
+  return value === NOT_APPLICABLE ? "This doesn't apply" : (step.options.find((o) => o.value === value)?.label ?? value);
+}
+
+/**
+ * One history line for an edited finished step:
+ * "Changed answer on [step]: [old answer] to [new answer]". A changed note or field
+ * is added after it so the earlier wording stays in history.
+ */
+export function answerChangeLine(
+  step: ChecklistStep,
+  question: string,
+  before: { value: string; note?: string | null; fields?: Record<string, string> | null },
+  after: { value: string; note?: string | null; fields?: Record<string, string> | null },
+): string {
+  const head = `Changed answer on step ${step.label}, "${question}": ${answerLabel(step, before.value)} to ${answerLabel(step, after.value)}.`;
+  const extra: string[] = [];
+  for (const f of step.fields ?? []) {
+    const o = String(before.fields?.[f.key] ?? "").trim();
+    const n = String(after.fields?.[f.key] ?? "").trim();
+    if (o !== n) extra.push(`${f.label}: ${o || "blank"} to ${n || "blank"}.`);
+  }
+  const on = String(before.note ?? "").trim();
+  const nn = String(after.note ?? "").trim();
+  if (on !== nn) extra.push(`Note: ${on || "blank"} to ${nn || "blank"}.`);
+  return [head, ...extra].join(" ");
+}
+
+/** True when an edit would change nothing on the saved answer. */
+export function answerUnchanged(
+  before: { value: string; note?: string | null; fields?: Record<string, string> | null },
+  after: { value: string; note?: string | null; fields?: Record<string, string> | null },
+): boolean {
+  if (before.value !== after.value) return false;
+  if (String(before.note ?? "").trim() !== String(after.note ?? "").trim()) return false;
+  const keys = new Set([...Object.keys(before.fields ?? {}), ...Object.keys(after.fields ?? {})]);
+  for (const k of keys) if (String(before.fields?.[k] ?? "").trim() !== String(after.fields?.[k] ?? "").trim()) return false;
+  return true;
 }
 
 export function fillQuestion(q: string, facts: { lockSystem?: string | null }, settings: ChecklistSetting[] = []) {

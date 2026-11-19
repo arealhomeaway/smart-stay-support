@@ -1,0 +1,2 @@
+# src/components/tickets rules
+- Editing a finished ticket checklist step updates that step's latest `ticket_steps` row in place (never a second row) and writes one "Changed answer on ..." history line from `answerChangeLine` (src/lib/ticket-checklists.ts); DB `guard_checklist_answer` alone decides which columns may change and who may change them, deletes stay refused. Why: one answer per step, history keeps the old answer.
