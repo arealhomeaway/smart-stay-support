@@ -130,9 +130,16 @@ export const saveHomeDetailFn = createServerFn({ method: "POST" })
     }
     if (!viewer.projectId) throw new Error("This home has no onboarding project yet.");
     if (data.target === "choice") {
+      const ownerType = data.field === "owner_type";
+      const { readOwnerType, enrollForOwnerType } = await import("./owner-type-enrollment.server");
+      const before = ownerType ? await readOwnerType(context.supabase as never, viewer.projectId) : null;
       const { error } = await db.rpc("save_onboarding_project_details", { _project_id: viewer.projectId, _patch: { [data.field]: data.value } });
       if (error) throw new Error(error.message);
-      return { ok: true as const };
+      // Owner Type set to Active Owner enrolls the home through the existing Enroll path.
+      const activeOwner = ownerType
+        ? await enrollForOwnerType(context.supabase as never, context.userId, { projectId: viewer.projectId, before, after: data.value })
+        : null;
+      return { ok: true as const, activeOwner };
     }
     if (data.target === "committed") {
       // Set once; a correction goes through correct_committed_handoff_date (Supervisor or Admin, register O3).

@@ -28,12 +28,19 @@ export const saveOnboardingDetailsFn = createServerFn({ method: "POST" })
     z.object({ projectId: z.string().uuid(), patch: patchSchema }).parse(d),
   )
   .handler(async ({ context, data }) => {
+    const ownerTypeChanging = data.patch.owner_type !== undefined;
+    const { readOwnerType, enrollForOwnerType } = await import("./owner-type-enrollment.server");
+    const before = ownerTypeChanging ? await readOwnerType(context.supabase as never, data.projectId) : null;
     const { data: result, error } = await context.supabase.rpc("save_onboarding_project_details", {
       _project_id: data.projectId,
       _patch: data.patch,
     });
     if (error) throw new Error(error.message);
-    return result as { projectId: string; changed: number };
+    // Owner Type set to Active Owner enrolls the home through the existing Enroll path.
+    const activeOwner = ownerTypeChanging
+      ? await enrollForOwnerType(context.supabase as never, context.userId, { projectId: data.projectId, before, after: data.patch.owner_type })
+      : null;
+    return { ...(result as { projectId: string; changed: number }), activeOwner };
   });
 
 export const correctCommittedHandoffFn = createServerFn({ method: "POST" })

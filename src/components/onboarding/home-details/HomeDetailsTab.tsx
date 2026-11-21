@@ -23,6 +23,7 @@ import { readProjectTeam, setProjectRoleAssignee } from "@/lib/onboarding-team.f
 import { setProjectStagersFn } from "@/lib/onboarding-home.functions";
 import { saveCredentialFn } from "@/lib/credentials.functions";
 import { homeDetailsHistoryFn, saveHomeDetailFn } from "@/lib/home-details.functions";
+import { ownerTypeMessage, type OwnerTypeOutcome } from "@/lib/owner-type-enrollment";
 import { readPropertyOwnerFn } from "@/lib/owner-link.functions";
 import { ownerRow } from "@/lib/onboarding-home-page";
 import {
@@ -490,9 +491,11 @@ function DetailRowView({ row, focused, onSaved }: { row: Row; focused: boolean; 
       }
       return ed.save(v === NONE ? null : v);
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       setEditing(false);
-      toast.success("Saved.");
+      const notice = ownerTypeMessage((result as { activeOwner?: OwnerTypeOutcome | null } | undefined)?.activeOwner);
+      if (notice?.tone === "warning") toast.warning(notice.text);
+      else toast.success(notice?.text ?? "Saved.");
       onSaved();
     },
     onError: (e: Error) => setProblem(e.message),

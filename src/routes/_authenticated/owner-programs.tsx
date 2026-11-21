@@ -74,6 +74,9 @@ import { useViewAs } from "@/hooks/useViewAs";
 import { setOwnerPreview } from "@/lib/owner-preview";
 import { beginActAs } from "@/lib/act-as";
 import { useRole } from "@/hooks/useRole";
+import { ProgramHomeowners } from "@/components/property/ProgramHomeowners";
+import { ActiveOwnerEnrollForm } from "@/components/property/ActiveOwnerEnrollForm";
+import { finishSetupLabel } from "@/lib/owner-type-enrollment";
 import {
   Select,
   SelectContent,
@@ -123,6 +126,7 @@ type ProgramRow = {
   variance: number;
   progressState: string;
   lastOwnerActivityAt: string | null;
+  programSince?: string | null;
   openTasks: number;
   coverageConcerns: number;
   nextMilestone: { day: number; hours: number };
@@ -360,9 +364,17 @@ function ProgramCard({
   const percent = Math.min(100, Math.round((row.reportedHours / OWNER_GOAL_HOURS) * 100));
   const router = useRouter();
   const { setViewAs } = useViewAs();
-  const { isSupervisor, isOnboardingDirector } = useRole();
+  const { isSupervisor, isOnboardingDirector, can } = useRole();
   const canActAs = isSupervisor || isOnboardingDirector;
+  // Same people who can enroll a home: Director of Onboarding or Admin.
+  const canEnroll = can("active_owner_enroll");
   const [acting, setActing] = useState(false);
+  const [finishing, setFinishing] = useState(false);
+  const qc = useQueryClient();
+  const finishLabel = canEnroll
+    ? finishSetupLabel({ ownerLinked: row.ownerLinked, ownerEmail: row.ownerEmail, propertyCount: row.properties.length })
+    : null;
+  const firstHome = row.properties[0];
 
 
   /** Open this program's hub exactly as its homeowner sees it — read-only. */
@@ -501,6 +513,23 @@ function ProgramCard({
           ) : null}
         </div>
       </div>
+      {finishLabel && firstHome ? (
+        <div className="mt-3">
+          <Button size="sm" className="min-h-11" onClick={() => setFinishing(true)}>
+            {finishLabel}
+          </Button>
+          <ActiveOwnerEnrollForm
+            propertyId={firstHome.id}
+            propertyName={firstHome.name}
+            finishing
+            showTrigger={false}
+            open={finishing}
+            onOpenChange={setFinishing}
+            onDone={() => void qc.invalidateQueries({ queryKey: ["owner-programs"] })}
+          />
+        </div>
+      ) : null}
+      {canEnroll ? <ProgramHomeowners programId={row.id} allowRemove={false} /> : null}
       {expanded ? <ProgramDetail row={row} available={available} demo={demo} /> : null}
     </SectionCard>
   );

@@ -34,7 +34,7 @@ import {
 export const MAIN_HOMEOWNER_LABEL = "Main homeowner, receives emails";
 
 /** Staff list of everyone who shares this home's homeowner dashboard. */
-export function ProgramHomeowners({ programId }: { programId: string }) {
+export function ProgramHomeowners({ programId, allowRemove = true }: { programId: string; allowRemove?: boolean }) {
   const qc = useQueryClient();
   const list = useServerFn(listProgramHomeowners);
   const addFn = useServerFn(addProgramCoOwner);
@@ -42,14 +42,12 @@ export function ProgramHomeowners({ programId }: { programId: string }) {
   const key = ["program-homeowners", programId];
   const homeowners = useQuery({ queryKey: key, queryFn: () => list({ data: { programId } }) });
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState<"form" | "confirm">("form");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [removing, setRemoving] = useState<ProgramHomeowner | null>(null);
 
   const reset = () => {
     setOpen(false);
-    setStep("form");
     setName("");
     setEmail("");
   };
@@ -59,7 +57,7 @@ export function ProgramHomeowners({ programId }: { programId: string }) {
       toast.success(
         r.held
           ? `${name.trim()} was added. This is a practice home, so the email is held.`
-          : `${name.trim()} was added. A set-password email is on its way to them.`,
+          : `Welcome email sent to ${email.trim().toLowerCase()}`,
       );
       reset();
       void qc.invalidateQueries({ queryKey: key });
@@ -87,7 +85,7 @@ export function ProgramHomeowners({ programId }: { programId: string }) {
           <Users className="size-4" /> Homeowners
         </h3>
         {data?.ready ? (
-          <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
+          <Button size="sm" variant="outline" className="min-h-11" onClick={() => setOpen(true)}>
             Add co-owner
           </Button>
         ) : null}
@@ -108,7 +106,7 @@ export function ProgramHomeowners({ programId }: { programId: string }) {
                   {h.role === "primary" ? MAIN_HOMEOWNER_LABEL : "Co-owner"}
                 </p>
               </div>
-              {h.role === "co_owner" ? (
+              {allowRemove && h.role === "co_owner" ? (
                 <Button size="sm" variant="ghost" onClick={() => setRemoving(h)}>
                   Remove
                 </Button>
@@ -121,44 +119,32 @@ export function ProgramHomeowners({ programId }: { programId: string }) {
       <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : reset())}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{step === "form" ? "Add co-owner" : "Confirm co-owner"}</DialogTitle>
+            <DialogTitle>Add co-owner</DialogTitle>
             <DialogDescription>
               A co-owner gets their own login and sees the same homeowner dashboard as the main homeowner.
             </DialogDescription>
           </DialogHeader>
-          {step === "form" ? (
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <Label htmlFor="co-owner-name">Full name</Label>
-                <Input id="co-owner-name" value={name} onChange={(e) => setName(e.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="co-owner-email">Email</Label>
-                <Input id="co-owner-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-              </div>
+          <form
+            className="space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (canContinue && !add.isPending) add.mutate();
+            }}
+          >
+            <div className="space-y-1">
+              <Label htmlFor={`co-owner-name-${programId}`}>Name</Label>
+              <Input id={`co-owner-name-${programId}`} className="h-11" value={name} maxLength={120} onChange={(e) => setName(e.target.value)} />
             </div>
-          ) : (
-            <p className="text-sm">
-              {name.trim()} ({email.trim()}) will be added as a co-owner. A set-password email goes to them.
-              Routine emails keep going to the main homeowner only.
-            </p>
-          )}
-          <DialogFooter>
-            {step === "form" ? (
-              <Button disabled={!canContinue} onClick={() => setStep("confirm")}>
-                Continue
+            <div className="space-y-1">
+              <Label htmlFor={`co-owner-email-${programId}`}>Email</Label>
+              <Input id={`co-owner-email-${programId}`} className="h-11" type="email" value={email} maxLength={255} onChange={(e) => setEmail(e.target.value)} />
+            </div>
+            <DialogFooter>
+              <Button type="submit" className="min-h-11" disabled={!canContinue || add.isPending}>
+                {add.isPending ? "Adding…" : "Add"}
               </Button>
-            ) : (
-              <>
-                <Button variant="outline" onClick={() => setStep("form")} disabled={add.isPending}>
-                  Back
-                </Button>
-                <Button onClick={() => add.mutate()} disabled={add.isPending}>
-                  {add.isPending ? "Adding…" : "Add co-owner"}
-                </Button>
-              </>
-            )}
-          </DialogFooter>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

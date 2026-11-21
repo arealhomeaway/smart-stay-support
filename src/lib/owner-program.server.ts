@@ -31,6 +31,7 @@ import {
   createOwnerProgramAtomically,
 } from "./owner-program-lifecycle.server";
 import { activateOwnerProgramAtomically } from "./owner-program-activation.server";
+import { programSince } from "./owner-attention";
 type Client = SupabaseClient<Database>;
 
 /** Throws unless the caller is an admin or manager. */
@@ -119,6 +120,8 @@ export type AdminProgramRow = {
   variance: number;
   progressState: string;
   lastOwnerActivityAt: string | null;
+  /** Created or activated, whichever is later. */
+  programSince: string | null;
   openTasks: number;
   coverageConcerns: number;
   nextMilestone: { day: number; hours: number };
@@ -146,7 +149,7 @@ export async function loadPrograms(supabase: Client, demo = false) {
       supabase
         .from("owner_programs")
         .select(
-          "id, owner_user_id, status, started_on, ends_on, onboarding_lead, operations_lead, dfy_confirmed, last_owner_activity_at, canonical_owner:property_owners(name, email)",
+          "id, owner_user_id, status, started_on, ends_on, onboarding_lead, operations_lead, dfy_confirmed, last_owner_activity_at, created_at, activated_at, canonical_owner:property_owners(name, email)",
         )
         // Demo programs stay out of the production queue unless demo mode is on.
         .eq("is_demo", demo)
@@ -259,6 +262,7 @@ export async function loadPrograms(supabase: Client, demo = false) {
       variance: snapshot.variance,
       progressState: snapshot.state,
       lastOwnerActivityAt: p.last_owner_activity_at,
+      programSince: programSince(p.created_at, p.activated_at),
       openTasks: openTasks.length,
       coverageConcerns: propertyRows.filter((x) => x.coverage !== "in_progress" || x.overdue > 0)
         .length,

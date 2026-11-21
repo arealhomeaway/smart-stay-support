@@ -48,6 +48,7 @@ import {
   type Stepper,
 } from "@/lib/onboarding-board";
 import { correctCommittedHandoffFn, saveOnboardingDetailsFn } from "@/lib/onboarding-details.functions";
+import { ownerTypeMessage } from "@/lib/owner-type-enrollment";
 import { HealthDot, StageProgress } from "./BoardParts";
 import { planStageElementId, searchPlanTasks } from "@/lib/plan-search";
 
@@ -410,8 +411,10 @@ function useSaveDetails(projectId: string | null) {
       if (!projectId) throw new Error("This home has no onboarding project yet.");
       return save({ data: { projectId, patch } });
     },
-    onSuccess: () => {
-      toast.success("Saved.");
+    onSuccess: (result) => {
+      const notice = ownerTypeMessage(result?.activeOwner);
+      if (notice?.tone === "warning") toast.warning(notice.text);
+      else toast.success(notice?.text ?? "Saved.");
       void qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
       void qc.invalidateQueries({ queryKey: ["onboarding-project"] });
     },
