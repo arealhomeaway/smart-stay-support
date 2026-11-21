@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { shownBadges } from "../owner-participation";
 
 describe("flagged badges are not shown as earned", () => {
