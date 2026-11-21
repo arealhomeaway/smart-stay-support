@@ -2,7 +2,8 @@
  * Property page Part 1 (1.5 to 1.8, as fixed): the Tasks tab. A left rail (search, the six stages
  * with done/total, whose Task with open counts) and the selected stage's list: one line for late
  * Tasks in other stages (opens the all-late view), Do now (late or due within 2 days), Up next,
- * + Add task to this stage, Done folded.
+ * + Add task to this stage, Done folded. Whose Task counts cover the whole plan and picking a row
+ * lists that row's Tasks in every stage; no plan Task is hidden by its date, stage or kind.
  * Selection reuses the plan catch-up bar; the rules live in src/lib/onboarding-home-page.ts.
  */
 import { useMemo, useState, type ReactNode } from "react";
@@ -31,6 +32,7 @@ import {
   dueCounts,
   lateElsewhereLabel,
   lateEverywhere,
+  noStageCount,
   ownerTagFor,
   ownerTagText,
   rowDue,
@@ -39,6 +41,7 @@ import {
   stageLists,
   stageRail,
   tagCounts,
+  tagDoneCounts,
   toggleDueFilter,
   type AddViewer,
   type DueFilter,
@@ -113,7 +116,15 @@ export function TasksTab(p: {
   };
   const rail = useMemo(() => stageRail(p.tasks), [p.tasks]);
   const inScope = p.stage === null ? p.tasks : p.tasks.filter((t) => stageIndexOf(t.stage) === p.stage);
-  const counts = tagCounts(inScope, p.viewerId, p.pmId);
+  // Whose Task counts cover the whole plan, whatever stage is picked.
+  const counts = tagCounts(p.tasks, p.viewerId, p.pmId);
+  const doneByTag = tagDoneCounts(p.tasks, p.viewerId, p.pmId);
+  const noStage = noStageCount(p.tasks);
+  // Picking a Whose Task row lists that row's Tasks in every stage.
+  const pickTag = (tag: OwnerTag | null) => {
+    if (tag) pickStage(null);
+    p.onTag(tag);
+  };
   const dueOn = dueSel.length > 0;
   const dueCount = dueCounts(inScope, p.today);
   const lists = stageLists(p.tasks, { stage: p.stage, today: p.today, tag: p.tag, viewerId: p.viewerId, pmId: p.pmId, due: dueSel });
@@ -240,7 +251,7 @@ export function TasksTab(p: {
                 key={tag}
                 type="button"
                 aria-pressed={p.tag === tag}
-                onClick={() => p.onTag(p.tag === tag ? null : tag)}
+                onClick={() => pickTag(p.tag === tag ? null : tag)}
                 className={cn(
                   "flex min-h-11 shrink-0 items-center gap-2 rounded-md px-3 text-left text-sm md:w-full",
                   TAG_CLASS[tag].tag,
@@ -248,7 +259,9 @@ export function TasksTab(p: {
                 )}
               >
                 <span className="min-w-0 flex-1 truncate">{OWNER_TAG_LABEL[tag]}</span>
-                <span className="numeric text-xs font-semibold">{counts[tag]}</span>
+                <span className="numeric text-xs font-semibold">
+                  {counts[tag] === 0 && doneByTag[tag] > 0 ? `All ${doneByTag[tag]} done` : counts[tag]}
+                </span>
               </button>
             ))}
           </div>
@@ -349,6 +362,15 @@ export function TasksTab(p: {
                   </button>
                 </span>
               </div>
+            ) : null}
+            {noStage > 0 && p.stage !== null ? (
+              <button
+                type="button"
+                onClick={() => pickStage(null)}
+                className="flex min-h-11 w-full items-center rounded-lg border border-border bg-muted/40 px-4 text-left text-sm font-medium hover:bg-muted"
+              >
+                {noStage === 1 ? "1 Task in no stage ›" : `${noStage} Tasks in no stage ›`}
+              </button>
             ) : null}
             {lists.lateElsewhere > 0 ? (
               <button

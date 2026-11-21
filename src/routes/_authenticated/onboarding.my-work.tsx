@@ -499,7 +499,7 @@ function MyWork() {
       {groups
         .filter((g) => g.items.length > 0)
         .map((g) => (
-          <details key={g.key} open={g.key !== "later" && g.key !== "nodate"} className="surface overflow-hidden">
+          <details key={g.key} open className="surface overflow-hidden">
             <summary className="cursor-pointer border-b border-border bg-muted/40 px-3 py-2">
               <p className="text-sm font-semibold">
                 {g.label} <span className="numeric text-muted-foreground">({g.items.length})</span>

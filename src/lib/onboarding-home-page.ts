@@ -124,6 +124,8 @@ export type PageTask = {
   owner_approval_status?: string | null;
   /** The role as staff read it (taskRoleLabel). */
   roleLabel?: string | null;
+  /** The Task's owner from the workspace (planTaskOwner), when loaded. */
+  plan_owner?: string | null;
 };
 
 /** 1.4: the computed stage is the earliest stage that still has an open Task (1 to 6). */
@@ -229,8 +231,8 @@ export const OWNER_TAG_LABEL: Record<OwnerTag, string> = {
 const DESIGN_SEATS = new Set(["designer", "lead_designer", "design_staging"]);
 
 /** The ownership rule: a Task with no person counts as the home's PM's until a person is assigned. */
-export function effectiveOwner(t: Pick<PageTask, "assigned_to">, pmId: string | null | undefined): string | null {
-  return t.assigned_to ?? pmId ?? null;
+export function effectiveOwner(t: Pick<PageTask, "assigned_to" | "plan_owner">, pmId: string | null | undefined): string | null {
+  return t.plan_owner ?? t.assigned_to ?? pmId ?? null;
 }
 
 /** 1.5: which colored tag a Task wears. "You" wins when the Task is the viewer's (PM owns unassigned). */
@@ -258,15 +260,43 @@ export function ownerTagText(
       ? "You"
       : t.assigned_to
         ? (nameOf(t.assigned_to) ?? "Teammate")
-        : "PM owns it";
+        : owner && owner !== pmId
+          ? (nameOf(owner) ?? "Teammate")
+          : "PM owns it";
   return `${role} · ${who}`;
 }
 
-/** Open count per tag in a set of Tasks (the WHOSE TASK rows). */
+/**
+ * Every WHOSE TASK row a Task belongs to: its colored row (ownerTagFor), plus Designer or
+ * Utilities whenever the Task is that role's work and Homeowner whenever it is sent to the
+ * homeowner, so a role's count never drops to 0 because the viewer owns that work.
+ */
+export function ownerTagsFor(t: PageTask, viewerId: string | null | undefined, pmId: string | null | undefined): OwnerTag[] {
+  const tags = new Set<OwnerTag>([ownerTagFor(t, viewerId, pmId)]);
+  const seat = t.assigned_seat ?? null;
+  if (t.task_kind === "send_to_owner") tags.add("homeowner");
+  if (seat && DESIGN_SEATS.has(seat)) tags.add("designer");
+  if (seat === "utilities") tags.add("utilities");
+  return OWNER_TAG_ORDER.filter((tag) => tags.has(tag));
+}
+
+/** Finished count per tag across the whole plan (a row with no open Tasks says they are all done). */
+export function tagDoneCounts(tasks: PageTask[], viewerId: string | null | undefined, pmId: string | null | undefined) {
+  const out: Record<OwnerTag, number> = { you: 0, designer: 0, utilities: 0, homeowner: 0, director: 0, unassigned: 0 };
+  for (const t of tasks) if (isFinished(t) && !t.parent_task_id) for (const tag of ownerTagsFor(t, viewerId, pmId)) out[tag] += 1;
+  return out;
+}
+
+/** Open count per tag across the whole plan (the WHOSE TASK rows), whatever the stage or date. */
 export function tagCounts(tasks: PageTask[], viewerId: string | null | undefined, pmId: string | null | undefined) {
   const out: Record<OwnerTag, number> = { you: 0, designer: 0, utilities: 0, homeowner: 0, director: 0, unassigned: 0 };
-  for (const t of tasks) if (!isFinished(t) && !t.parent_task_id) out[ownerTagFor(t, viewerId, pmId)] += 1;
+  for (const t of tasks) if (!isFinished(t) && !t.parent_task_id) for (const tag of ownerTagsFor(t, viewerId, pmId)) out[tag] += 1;
   return out;
+}
+
+/** Tasks whose stage is not one of the six (shown under All stages, counted for one line). */
+export function noStageCount(tasks: PageTask[]): number {
+  return tasks.filter((t) => !t.parent_task_id && stageIndexOf(t.stage) < 0).length;
 }
 
 /* ------------------------------------------- Do now / Up next / Done */
@@ -298,7 +328,7 @@ export function stageLists<T extends PageTask>(
 ) {
   const due = input.due ?? [];
   const soon = addDaysIso(input.today, 2);
-  const keep = (t: T) => !t.parent_task_id && (!input.tag || ownerTagFor(t, input.viewerId, input.pmId) === input.tag);
+  const keep = (t: T) => !t.parent_task_id && (!input.tag || ownerTagsFor(t, input.viewerId, input.pmId).includes(input.tag));
   const inStage = (t: T) => input.stage === null || stageIndexOf(t.stage) === input.stage;
   const lateBy = (t: T) => (t.due_on && t.due_on < input.today ? daysBetween(t.due_on, input.today) : 0);
   const open = tasks.filter((t) => !isFinished(t) && keep(t));
@@ -334,7 +364,7 @@ export function lateEverywhere<T extends PageTask>(
         !isFinished(t) &&
         t.due_on !== null &&
         t.due_on < input.today &&
-        (!input.tag || ownerTagFor(t, input.viewerId, input.pmId) === input.tag),
+        (!input.tag || ownerTagsFor(t, input.viewerId, input.pmId).includes(input.tag)),
     )
     .sort((a, b) => a.due_on!.localeCompare(b.due_on!) || a.title.localeCompare(b.title))
     .map((task) => ({ task, late: daysBetween(task.due_on!, input.today), fromStage: stageNameOf(task.stage) }));

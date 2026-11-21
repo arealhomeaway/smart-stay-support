@@ -1,6 +1,7 @@
 import { buildReleaseContext, type StateInput, type ReleaseContext } from "./onboarding-state";
 import { projectScope, splitByScope } from "./onboarding-scope";
 import type { WorkflowTask } from "./onboarding-workflow";
+import { ownerOfTask } from "./plan-task-owner";
 
 export function assignedWorkContext(
   input: StateInput & {
@@ -21,7 +22,9 @@ export function assignedWorkContext(
     excludedTaskIds: scoped.outOfScope.map(({ task }) => task.id),
   });
   const related = new Set(
-    scoped.inScope.filter((task) => task.assigned_to === userId).map((task) => task.id),
+    scoped.inScope
+      .filter((task) => ownerOfTask(task as { assigned_to: string | null; plan_owner?: string | null }) === userId)
+      .map((task) => task.id),
   );
   const descendants = new Set(related);
   let expanded = true;

@@ -21,6 +21,7 @@ import {
   assertOnboardingPropertyManagement,
 } from "./onboarding-task-access.server";
 import { assignedWorkContext, type AssignedWorkContext } from "./onboarding-assigned-context";
+import { homeRoleHolder, planTaskOwner, type HomeTeam } from "./plan-task-owner";
 import { onboardingWorkspaceMode } from "./onboarding-workspace-view";
 import { writeAudit } from "./audit.server";
 import { readCountedRows } from "./read-all-rows";
@@ -181,30 +182,24 @@ export async function loadOnboardingWorkspace(
   // Property → Project → Project Team → Role → Person. A Task carrying only a
   // role resolves to the person the project team names for that role, so
   // My Tasks and every list show a real name. No global pool fallback.
-  const roleHolder = (propertyIdForTask: string, seat: string | null): string | null => {
-    const project = projects.find(
-      (p) => p.property_id === propertyIdForTask && p.status !== "cancelled",
-    ) as
-      | (typeof projects)[number] & {
-          utility_manager?: string | null;
-          role_assignments?: Record<string, string> | null;
-        }
+  const projectFor = (propertyIdForTask: string) =>
+    projects.find((p) => p.property_id === propertyIdForTask && p.status !== "cancelled") as
+      | ((typeof projects)[number] & HomeTeam)
       | undefined;
-    if (!project || !seat) return null;
-    if (seat === "onboarding_project_manager" || seat === "project_manager")
-      return project.project_manager ?? null;
-    if (seat === "onboarding_director" || seat === "director_onboarding")
-      return project.director ?? null;
-    if (seat === "utilities") return project.utility_manager ?? null;
-    const assigned = project.role_assignments?.[seat];
-    return typeof assigned === "string" && assigned ? assigned : null;
-  };
+  const roleHolder = (propertyIdForTask: string, seat: string | null): string | null =>
+    homeRoleHolder(projectFor(propertyIdForTask), seat);
   if (tasks.data)
     tasks.data = tasks.data.map((t) =>
       t.assigned_to || t.status === "complete"
         ? t
         : { ...t, assigned_to: roleHolder(t.property_id, t.assigned_seat) },
     );
+  // Every plan Task carries its owner (planTaskOwner), whatever its date, stage, kind or status,
+  // so My Tasks and a home's Whose Task read the same owner and no Task drops out of a list.
+  const tasksWithOwner = (tasks.data ?? []).map((t) => ({
+    ...t,
+    plan_owner: planTaskOwner(t, projectFor(t.property_id)),
+  }));
   // Department-wide view: leadership or the Onboarding Director seat.
   const supervisor = await supabase.rpc("is_onboarding_leader", { _user_id: userId });
   if (supervisor.error) throw new Error("Could not verify your workspace view.");
@@ -287,7 +282,7 @@ export async function loadOnboardingWorkspace(
     pipeline: inPipeline.map((p) => p.id),
     projects,
     stageCaptures,
-    tasks: tasks.data ?? [],
+    tasks: tasksWithOwner,
     activeOwnerProperties: [...participation.values()],
     approvalMismatches,
     handoffs: handoffs.data ?? [],
@@ -336,7 +331,7 @@ export async function loadOnboardingWorkspace(
       .map((project) => project.property_id),
   );
   const assigned = workspace.tasks.filter(
-    (task) => task.assigned_to === userId && !managed.has(task.property_id),
+    (task) => task.plan_owner === userId && !managed.has(task.property_id),
   );
   const propertyIds = new Set(assigned.map((task) => task.property_id));
   const contexts = workspace.properties

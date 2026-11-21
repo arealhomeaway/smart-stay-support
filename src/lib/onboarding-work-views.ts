@@ -1,5 +1,6 @@
 import type { TaskView } from "./onboarding-workflow";
 import type { SearchSchemaInput } from "@tanstack/react-router";
+import { ownerOfTask } from "./plan-task-owner";
 
 export const PROPERTY_QUEUE_FILTER_LABELS = {
   mine: "My Tasks",
@@ -467,7 +468,7 @@ export function canQuickComplete(view: TaskView) {
 }
 
 /** Team browsing is a work view, not an additional data permission. */
-export function myWorkSelection<T extends { assigned_to: string | null; property_id: string }>(
+export function myWorkSelection<T extends { assigned_to: string | null; plan_owner?: string | null; property_id: string }>(
   tasks: T[],
   viewerId: string | null,
   requested: string,
@@ -500,8 +501,11 @@ export function myWorkSelection<T extends { assigned_to: string | null; property
       // "all" shows every task the viewer is allowed to see, so work can be
       // filtered and dispatched without hunting through each home.
       if (who === "all") return inScope(task.property_id);
-      if (who === "me") return Boolean(viewerId) && task.assigned_to === viewerId;
-      return inScope(task.property_id) && task.assigned_to === target;
+      // A person's Tasks are the ones planTaskOwner gives them: named, their role on the home, or
+      // unassigned on a home they run as PM. Date, stage and kind never take a Task out.
+      if (who === "me") return Boolean(viewerId) && ownerOfTask(task) === viewerId;
+      if (who === "unassigned") return inScope(task.property_id) && task.assigned_to === null;
+      return inScope(task.property_id) && ownerOfTask(task) === target;
     }),
   };
 }
@@ -512,7 +516,7 @@ export const FOLLOWED_HOMES = "followed";
  * Part 3 (3.5): Tasks on the homes a person added to My homes. Every Task on those homes, or only
  * one person's (or Unassigned) when chosen; never homes outside the list.
  */
-export function followedHomeTasks<T extends { assigned_to: string | null; property_id: string }>(
+export function followedHomeTasks<T extends { assigned_to: string | null; plan_owner?: string | null; property_id: string }>(
   tasks: T[],
   followed: ReadonlySet<string>,
   who: string,
@@ -523,7 +527,7 @@ export function followedHomeTasks<T extends { assigned_to: string | null; proper
     if (who === "all") return true;
     if (who === "unassigned") return t.assigned_to === null;
     if (who === "me") return true;
-    return t.assigned_to === who || (who === viewerId && t.assigned_to === viewerId);
+    return ownerOfTask(t) === who;
   });
 }
 
