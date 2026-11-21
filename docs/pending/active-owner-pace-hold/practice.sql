@@ -47,8 +47,7 @@ VALUES ('98bd6696-4018-4965-b645-0471c5ae3925', 'Admin', 'active_owner_pace_hold
 DO $practice$
 DECLARE P uuid := 'e341b2b0-a6cf-40b3-9d1c-ff7584aec196'; OWNER text := 'b1d78033-d2d4-4e05-8b2d-3c1cbcd8a443';
   S uuid := '579cb6ae-c5a5-4aa3-aac2-64eedd2faafe'; ADMIN uuid := '98bd6696-4018-4965-b645-0471c5ae3925';
-  H uuid := 'a0000000-0000-4000-8000-00000000a001'; d date := private.business_today(); e1 uuid; e2 uuid; c1 uuid; h timestamptz;
-  held text := 'none';
+  HOME uuid := 'a0000000-0000-4000-8000-00000000a001'; d date := private.business_today(); e1 uuid; e2 uuid; c1 uuid; h timestamptz;
 BEGIN
   SELECT pace_emails_held_until INTO h FROM public.owner_programs WHERE id = P;
   INSERT INTO _out(line) VALUES ('0 start: demo hold ' || coalesce(h::text, 'none'));
@@ -56,7 +55,7 @@ BEGIN
   -- 1 and 2: the homeowner logs and then edits her own entry, signed in as her.
   PERFORM set_config('request.jwt.claims', json_build_object('sub', OWNER, 'role', 'authenticated')::text, true);
   e1 := public.log_owner_time_entry(jsonb_build_object('programId', P, 'phase', 'ongoing', 'entryDate', d, 'minutes', 30,
-    'activity', 'Practice pace hold check', 'attachmentPaths', '[]'::jsonb, 'confirmed', true), ARRAY[H]);
+    'activity', 'Practice pace hold check', 'attachmentPaths', '[]'::jsonb, 'confirmed', true), ARRAY[HOME]);
   SELECT pace_emails_held_until INTO h FROM public.owner_programs WHERE id = P;
   INSERT INTO _out(line) VALUES ('1 homeowner log: hold ' || coalesce(h::text, 'none'));
   e2 := public.owner_update_time_entry(e1, '{"mode":"edit","minutes":"35"}'::jsonb);
