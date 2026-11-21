@@ -676,7 +676,7 @@ export function buildProgramReportSnapshot(
       propertyName: receipt.propertyId ? nameOf(receipt.propertyId) : null,
       countsTowardTotal: false,
     })),
-    badges: agg.badges,
+    badges: shownBadges(agg.badges),
     generatedAt: new Date().toISOString(),
   };
 }
