@@ -9,3 +9,10 @@
 - Created since the apply started: 0 owner notices, 0 emails, 0 program events, 0 home chat lines,
   0 owner messages, 0 new hour entries. Badges unchanged (7). 32 audit_log rows (owner_time_entry.link_repeat).
 - Undo: apply.undo.sql.
+
+## Correction (17:46 UTC)
+The 17:42 read back showed 0 emails, but the regular five-minute pass at 17:45:02 then re-scored her pace
+on the lower total and sent one "Significantly behind" alert: owner_notifications af61e216 (progress_pace,
+email sent 17:45:05 to the program login), owner_program_events alert_sent, email_log 421a0536. Practice
+could not show this because it rolled back before any pass ran. The same pace alert does not repeat inside
+seven days unless more urgent; Significantly behind is already the most urgent pace state.

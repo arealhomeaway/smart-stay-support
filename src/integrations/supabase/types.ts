@@ -8278,6 +8278,73 @@ export type Database = {
           },
         ]
       }
+      homeowner_updates: {
+        Row: {
+          actor_id: string
+          chat_message_id: string | null
+          created_at: string
+          id: string
+          is_demo: boolean
+          item_id: string
+          item_title: string
+          kind: string
+          program_id: string
+          property_id: string | null
+          summary: string
+          task_id: string | null
+        }
+        Insert: {
+          actor_id: string
+          chat_message_id?: string | null
+          created_at?: string
+          id?: string
+          is_demo?: boolean
+          item_id: string
+          item_title: string
+          kind: string
+          program_id: string
+          property_id?: string | null
+          summary: string
+          task_id?: string | null
+        }
+        Update: {
+          actor_id?: string
+          chat_message_id?: string | null
+          created_at?: string
+          id?: string
+          is_demo?: boolean
+          item_id?: string
+          item_title?: string
+          kind?: string
+          program_id?: string
+          property_id?: string | null
+          summary?: string
+          task_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homeowner_updates_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "owner_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "homeowner_updates_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "homeowner_updates_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inquiry_sources: {
         Row: {
           active: boolean
@@ -20604,6 +20671,10 @@ export type Database = {
         }
         Returns: string
       }
+      owner_add_to_opportunity: {
+        Args: { _body: string; _id: string }
+        Returns: string
+      }
       owner_badge_refresh_version: {
         Args: { _actor_id: string; _program_id: string }
         Returns: string
@@ -20638,6 +20709,10 @@ export type Database = {
         Returns: boolean
       }
       owner_hours_eligibility: { Args: { _program_id: string }; Returns: Json }
+      owner_item_add: {
+        Args: { _body: string; _review_id: string }
+        Returns: string
+      }
       owner_item_approve: { Args: { _review_id: string }; Returns: Json }
       owner_item_detail: { Args: { _review_id: string }; Returns: Json }
       owner_item_is_approval: { Args: { _review_id: string }; Returns: boolean }
@@ -20715,6 +20790,10 @@ export type Database = {
         Returns: string
       }
       owner_str_reports: { Args: never; Returns: Json }
+      owner_update_time_entry: {
+        Args: { _change: Json; _entry_id: string }
+        Returns: string
+      }
       perform_handoff_step: {
         Args: {
           _booking_block?: boolean
