@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/dialog";
 import { answerOwnerReview, ownerHome, ownerHomePreview } from "@/lib/owner-portal.functions";
 import { OWNER_GOAL_HOURS } from "@/lib/owner-participation";
-import { LogTimeContext, LogTimeDialog, useOpenLogTime, type LogTimeAnchor } from "@/components/owner/LogTimeDialog";
+import { LogTimeContext, LogTimeDialog, useOpenLogTime, type LogTimeAnchor, type LoggedEntry } from "@/components/owner/LogTimeDialog";
 import { OwnerOpportunityBoard, useOutsideLines } from "@/components/owner/OwnerOpportunityBoard";
 import { canSendToActiveOwner } from "@/lib/ao-engine";
 import { isOwnerQueue, type OwnerQueue } from "@/lib/owner-opportunity-filters";
@@ -497,6 +497,8 @@ function OwnerHubBody({
             (p) => homeClosingArrived(p),
           )
           .map((p) => ({ id: p.propertyId, name: p.name }))}
+        currentEntries={preview ? [] : (data.entries as unknown as LoggedEntry[])}
+        userId={user.id}
         onDone={() => {
           logAfter?.();
           invalidate();

@@ -5,7 +5,7 @@
  * homeowner types the real minutes they spent. An optional photo, receipt or
  * document can be attached as their own evidence of the work.
  */
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Paperclip, X } from "lucide-react";
@@ -28,6 +28,9 @@ import { logOwnerParticipation } from "@/lib/owner-portal.functions";
 import { beginParticipationEvidenceFn } from "@/lib/owner-evidence.functions";
 import { MANUAL_ENTRY_CONFIRMATION, MANUAL_ENTRY_NOTICE, parseOwnerMinutes } from "@/lib/owner-participation";
 import { isZip, prepareUploadSelection } from "@/lib/zip-upload";
+import { HOURS_REPEAT_COPY, findRepeatEntry, isAlreadySaved, repeatQuestion, type RepeatEntry } from "@/lib/hours-repeat";
+import { shortDate } from "@/lib/owner-opportunity-board";
+import { HourEntryChangeDialog, type ChangeableEntry } from "@/components/owner/HourEntryChangeDialog";
 
 export type LogTimeAnchor = {
   /** The participation opportunity this time belongs to. */
@@ -40,6 +43,19 @@ export type LogTimeAnchor = {
 };
 
 const today = () => new Date().toISOString().slice(0, 10);
+
+/** One of her saved entries, as the portal already loads them (Nov 21 repeat question). */
+export type LoggedEntry = RepeatEntry & {
+  minutes: number;
+  reviewed_at?: string | null;
+  attachment_paths?: unknown;
+  attachment_path?: string | null;
+};
+
+function fileCount(entry: LoggedEntry): number {
+  const n = Array.isArray(entry.attachment_paths) ? entry.attachment_paths.filter((p) => typeof p === "string" && p).length : 0;
+  return n || (entry.attachment_path ? 1 : 0);
+}
 
 /**
  * One Log time window per page. Any button (a review row, an onboarding item,
@@ -71,6 +87,8 @@ export function LogTimeDialog({
   phase = "ongoing",
   properties = [],
   defaultPropertyIds = [],
+  currentEntries = [],
+  userId = null,
 }: {
   open: boolean;
   onOpenChange: (next: boolean) => void;
@@ -85,6 +103,9 @@ export function LogTimeDialog({
   properties?: { id: string; name: string }[];
   /** Pre-selected homes (an Opportunity's own home). */
   defaultPropertyIds?: string[];
+  /** Her saved entries in this program, for the "Update that one instead?" question (Nov 21). */
+  currentEntries?: LoggedEntry[];
+  userId?: string | null;
 }) {
   const [minutes, setMinutes] = useState("");
   const [activity, setActivity] = useState(defaultActivity);
@@ -95,6 +116,14 @@ export function LogTimeDialog({
   const [homes, setHomes] = useState<string[]>(defaultPropertyIds);
   const log = useServerFn(logOwnerParticipation);
   const beginEvidence = useServerFn(beginParticipationEvidenceFn);
+  // Nov 21: one save at a time, even on a fast double click (before the button re-renders as disabled).
+  const saving = useRef(false);
+  const [repeatOf, setRepeatOf] = useState<LoggedEntry | null>(null);
+  const [saidNew, setSaidNew] = useState(false);
+  const [updating, setUpdating] = useState<{
+    entry: ChangeableEntry;
+    initial: { activity: string; entryDate: string; minutes: string; files: File[] };
+  } | null>(null);
 
   const reset = () => {
     setMinutes("");
@@ -103,6 +132,8 @@ export function LogTimeDialog({
     setFiles([]);
     setEntryDate(today());
     setHomes(defaultPropertyIds);
+    setRepeatOf(null);
+    setSaidNew(false);
   };
 
   /** Files build up across picks and drops, so nothing already chosen is lost. */
@@ -182,9 +213,58 @@ export function LogTimeDialog({
       onDone();
     },
     onError: (e: Error) => toast.error(e.message),
+    onSettled: () => { saving.current = false; },
   });
 
+  const submit = () => {
+    if (saving.current || save.isPending) return;
+    saving.current = true;
+    save.mutate();
+  };
+  /** Before a new entry: ask once when it looks like one she already logged. Never blocks saving. */
+  const onSave = () => {
+    if (saving.current || save.isPending) return;
+    if (!saidNew) {
+      let match: LoggedEntry | null = null;
+      try {
+        match = findRepeatEntry(
+          { entryDate: anchor ? today() : entryDate, activity, reviewId: anchor ? anchor.id : null },
+          currentEntries,
+          userId,
+        );
+      } catch {
+        match = null;
+      }
+      if (match) {
+        setRepeatOf(match);
+        return;
+      }
+    }
+    submit();
+  };
+  const saveAsNew = () => {
+    setRepeatOf(null);
+    setSaidNew(true);
+    submit();
+  };
+  const updateInstead = (entry: LoggedEntry) => {
+    setUpdating({
+      entry: {
+        id: entry.id,
+        activity: entry.activity ?? "",
+        entry_date: entry.entry_date,
+        minutes: Number(entry.minutes) || 0,
+        reviewed_at: entry.reviewed_at ?? null,
+        fileCount: fileCount(entry),
+      },
+      initial: { activity: activity.trim(), entryDate: anchor ? today() : entryDate, minutes, files },
+    });
+    setRepeatOf(null);
+    onOpenChange(false);
+  };
+
   return (
+    <>
     <Dialog
       open={open}
       onOpenChange={(next) => {
@@ -212,7 +292,7 @@ export function LogTimeDialog({
                   type="date"
                   max={today()}
                   value={entryDate}
-                  onChange={(e) => setEntryDate(e.target.value)}
+                  onChange={(e) => { setEntryDate(e.target.value); setRepeatOf(null); }}
                 />
               </div>
               {properties.length > 1 && (
@@ -249,7 +329,7 @@ export function LogTimeDialog({
               id="log-activity"
               rows={3}
               value={activity}
-              onChange={(e) => setActivity(e.target.value)}
+              onChange={(e) => { setActivity(e.target.value); setRepeatOf(null); }}
             />
           </div>
           <div className="space-y-1">
@@ -323,21 +403,54 @@ export function LogTimeDialog({
         </div>
         {save.isError ? (
           <p role="alert" className="text-sm font-medium text-destructive">
-            Not saved: {save.error.message} What you typed is still here. Try Save entry again.
+            {isAlreadySaved(save.error)
+              ? HOURS_REPEAT_COPY.alreadySaved
+              : `Not saved: ${save.error.message} What you typed is still here. Try Save entry again.`}
           </p>
         ) : null}
+        {repeatOf ? (
+          <div role="alert" className="space-y-2 rounded-xl border border-border bg-muted/40 p-3" data-testid="repeat-question">
+            <p className="text-sm font-medium">
+              {repeatQuestion(repeatOf.activity ?? "", shortDate(repeatOf.entry_date))}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" className="min-h-11" onClick={() => updateInstead(repeatOf)}>
+                {HOURS_REPEAT_COPY.update}
+              </Button>
+              <Button type="button" variant="outline" className="min-h-11" onClick={saveAsNew}>
+                {HOURS_REPEAT_COPY.isNew}
+              </Button>
+            </div>
+          </div>
+        ) : null}
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+          <Button variant="ghost" onClick={() => { setRepeatOf(null); onOpenChange(false); }}>
             Cancel
           </Button>
-          <Button
-            disabled={save.isPending || openingZip || activity.trim().length < 3 || !confirmed}
-            onClick={() => save.mutate()}
-          >
-            {save.isPending ? "Saving…" : "Save entry"}
-          </Button>
+          {repeatOf ? null : (
+            <Button
+              disabled={save.isPending || openingZip || activity.trim().length < 3 || !confirmed}
+              onClick={onSave}
+            >
+              {save.isPending ? HOURS_REPEAT_COPY.saving : "Save entry"}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    {updating ? (
+      <HourEntryChangeDialog
+        entry={updating.entry}
+        mode="edit"
+        programId={programId}
+        initial={updating.initial}
+        onClose={() => {
+          setUpdating(null);
+          reset();
+        }}
+        onSaved={onDone}
+      />
+    ) : null}
+    </>
   );
 }

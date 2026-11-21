@@ -2,7 +2,7 @@
  * Edit or Add more on one of the homeowner's own hours entries (approved Nov 18). The original
  * entry stays on file; the saved change waits for review. Files are only added, never removed.
  */
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Paperclip, X } from "lucide-react";
@@ -17,6 +17,7 @@ import { beginParticipationEvidenceFn } from "@/lib/owner-evidence.functions";
 import { prepareUploadSelection } from "@/lib/zip-upload";
 import { REOPEN_COPY, hoursChangeProblem } from "@/lib/homeowner-reopen";
 import { saveHoursChange } from "@/lib/homeowner-reopen.data";
+import { HOURS_REPEAT_COPY, isAlreadySaved } from "@/lib/hours-repeat";
 import { shortDate } from "@/lib/owner-opportunity-board";
 
 export type ChangeableEntry = {
@@ -37,18 +38,23 @@ export function HourEntryChangeDialog({
   programId,
   onClose,
   onSaved,
+  initial,
 }: {
   entry: ChangeableEntry;
   mode: "edit" | "add";
   programId: string;
   onClose: () => void;
   onSaved: () => void;
+  /** Nov 21: what she typed in Log your time, carried over when she chose Update. */
+  initial?: { activity: string; entryDate: string; minutes: string; files: File[] };
 }) {
-  const [activity, setActivity] = useState(entry.activity);
-  const [entryDate, setEntryDate] = useState(entry.entry_date);
-  const [minutes, setMinutes] = useState(String(entry.minutes));
+  const [activity, setActivity] = useState(initial?.activity ?? entry.activity);
+  const [entryDate, setEntryDate] = useState(initial?.entryDate ?? entry.entry_date);
+  const [minutes, setMinutes] = useState(initial?.minutes || String(entry.minutes));
   const [note, setNote] = useState("");
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<File[]>(() => (initial?.files ?? []).slice(0, Math.max(0, MAX_FILES - entry.fileCount)));
+  // Nov 21: one save at a time, even on a fast double click (before the button re-renders as disabled).
+  const saving = useRef(false);
   const beginEvidence = useServerFn(beginParticipationEvidenceFn);
   const room = Math.max(0, MAX_FILES - entry.fileCount);
 
@@ -94,7 +100,13 @@ export function HourEntryChangeDialog({
       onClose();
     },
     onError: (e: Error) => toast.error(e.message),
+    onSettled: () => { saving.current = false; },
   });
+  const submit = () => {
+    if (saving.current || save.isPending) return;
+    saving.current = true;
+    save.mutate();
+  };
 
   return (
     <Dialog open onOpenChange={(v) => { if (!v && !save.isPending) onClose(); }}>
@@ -161,14 +173,16 @@ export function HourEntryChangeDialog({
           </div>
           {save.isError ? (
             <p role="alert" className="text-sm font-medium text-destructive">
-              Not saved: {save.error.message} Your changes are still here. Try Save again.
+              {isAlreadySaved(save.error)
+                ? HOURS_REPEAT_COPY.alreadySaved
+                : `Not saved: ${save.error.message} Your changes are still here. Try Save again.`}
             </p>
           ) : null}
         </div>
         <DialogFooter className="gap-2">
           <Button type="button" variant="ghost" className="min-h-11" disabled={save.isPending} onClick={onClose}>Cancel</Button>
-          <Button type="button" className="min-h-11" disabled={save.isPending} onClick={() => save.mutate()}>
-            {save.isPending ? "Saving…" : "Save"}
+          <Button type="button" className="min-h-11" disabled={save.isPending} onClick={submit}>
+            {save.isPending ? HOURS_REPEAT_COPY.saving : "Save"}
           </Button>
         </DialogFooter>
       </DialogContent>
