@@ -15,6 +15,7 @@ import {
   nextMilestone,
 } from "./owner-participation";
 import { milestoneCheckpoints, milestoneWindow } from "./owner-milestones";
+import { paceEmailBody, withoutHeldPaceAlerts } from "./pace-hold";
 import {
   loadProgramAggregate,
   recordEvent,
@@ -65,7 +66,7 @@ export function candidateAlerts(agg: ProgramAggregate): Candidate[] {
       alertKind: "progress_pace",
       severity: PROGRESS_SEVERITY[s.state],
       title: PROGRESS_META[s.state].label,
-      body: `You are currently a few hours behind your recommended pace. Please review your available activities and confirm that you have entered the time for any work you recently completed.`,
+      body: paceEmailBody(hours, s.benchmark),
     });
   }
 
@@ -132,6 +133,25 @@ export function candidateAlerts(agg: ProgramAggregate): Candidate[] {
 }
 
 /**
+ * The program's pace hold, or null. Read on its own so a database without the column yet
+ * (staged docs/pending/active-owner-pace-hold) keeps today's behavior.
+ */
+async function paceHeldUntil(supabase: Client, programId: string): Promise<string | null> {
+  try {
+    const r = await (supabase.from("owner_programs") as unknown as {
+      select: (c: string) => { eq: (k: string, v: string) => { maybeSingle: () => PromiseLike<{ data: { pace_emails_held_until?: string | null } | null; error: unknown }> } };
+    })
+      .select("pace_emails_held_until")
+      .eq("id", programId)
+      .maybeSingle();
+    if (r.error || !r.data) return null;
+    return r.data.pace_emails_held_until ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Evaluates one program and queues any owner alert that is due. Returns the
  * alert kinds sent.
  */
@@ -142,8 +162,11 @@ export async function evaluateProgramAlerts(supabase: Client, programId: string,
   const agg = await loadProgramAggregate(supabase, programId);
   if (!["active", "target_reached"].includes(agg.program.status)) return { sent: [] as string[] };
 
-  const candidates = candidateAlerts(agg);
-  if (candidates.length === 0) return { sent: [] as string[] };
+  const all = candidateAlerts(agg);
+  if (all.length === 0) return { sent: [] as string[] };
+  // After a team or data correction of her hours, pace-type nudges wait (pace-hold.ts);
+  // everything else, including the team follow-ups below, runs as before.
+  const candidates = withoutHeldPaceAlerts(all, await paceHeldUntil(supabase, programId));
 
   const recent = await supabase
     .from("owner_alert_log")

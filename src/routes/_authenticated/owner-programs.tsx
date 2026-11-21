@@ -1,6 +1,7 @@
 import { OwnerProgramSetup } from "@/components/OwnerProgramSetup";
 import { ownerAttention as attentionReason } from "@/lib/owner-attention";
 import { EmptyState, LoadingPage, PageHeader, SectionCard, StatTile } from "@/components/ui/page";
+import { paceHoldLine } from "@/lib/pace-hold";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useId, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -114,6 +115,7 @@ type ProgramRow = {
   ownerEmail: string | null;
   ownerLinked: boolean;
   ownerUserId?: string | null;
+  paceHeldUntil?: string | null;
   status: ProgramStatus;
   startedOn: string | null;
   endsOn: string | null;
@@ -512,6 +514,9 @@ function ProgramCard({
             </span>
           ) : null}
         </div>
+        {paceHoldLine(row.paceHeldUntil) ? (
+          <p className="text-xs font-medium text-muted-foreground">{paceHoldLine(row.paceHeldUntil)}</p>
+        ) : null}
       </div>
       {finishLabel && firstHome ? (
         <div className="mt-3">

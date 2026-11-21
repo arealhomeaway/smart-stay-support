@@ -460,6 +460,15 @@ export const BADGE_BY_CODE = Object.fromEntries(BADGES.map((b) => [b.code, b])) 
 export const BADGE_HOURS_NOTE =
   "Hour milestones are based on participation you reported yourself. Badges never add, estimate or suggest time, and they do not imply tax qualification.";
 
+/**
+ * Badges a screen may show as earned. A badge the refresh flagged (needs_review) is left out
+ * everywhere; it stays in the program history and shows again by itself once the refresh
+ * finds it earned again.
+ */
+export function shownBadges<T extends { needs_review?: boolean | null }>(badges: T[]): T[] {
+  return badges.filter((badge) => badge.needs_review !== true);
+}
+
 /** The next hour badge the owner is working toward, with a share of progress. */
 export function nextHourBadge(reportedHours: number, earned: string[]) {
   const remaining = BADGES.filter(

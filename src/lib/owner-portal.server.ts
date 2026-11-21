@@ -21,6 +21,7 @@ import { ownerNotificationText } from "./owner-notification";
 import { automaticOpportunityView } from "./owner-automatic-opportunity";
 import { ownerProgramProjection } from "./owner-program-projection";
 import { syncProgramBadges } from "./owner-badges.server";
+import { shownBadges } from "./owner-participation";
 import { loadOwnerResponseReceipts } from "./owner-response-history.server";
 export type { OwnerTicket } from "./owner-ticket-projection.server";
 
@@ -120,7 +121,7 @@ async function loadOwnerHomeByProgram(supabase: Client, programId: string, previ
     ),
     entries: agg.entries.map((e) => ({ ...e, attachment_paths: filesByEntry.get(e.id) ?? null })),
     responseReceipts: receipts,
-    badges: agg.badges,
+    badges: shownBadges(agg.badges),
     badgeRefreshPending: false,
     alerts: (alerts.data ?? []).map((row) => ({ ...row, ...ownerNotificationText(row) })),
     tickets,

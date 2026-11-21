@@ -7,7 +7,6 @@
 import { Award, Lock } from "lucide-react";
 import { BADGES, BADGE_HOURS_NOTE, nextHourBadge } from "@/lib/owner-participation";
 import { SectionCard } from "@/components/ui/page";
-import { StatusBadge } from "@/components/ui/status";
 import { usDate } from "@/lib/dates";
 
 export type EarnedBadge = {
@@ -27,7 +26,9 @@ export function OwnerBadges({
   /** A one-line milestone strip for inside another panel. */
   compact?: boolean;
 }) {
-  const earnedCodes = earned.filter((badge) => !badge.needs_review).map((badge) => badge.code);
+  // A flagged badge (needs_review) is not shown at all; it returns by itself once earned again.
+  const shown = earned.filter((badge) => !badge.needs_review);
+  const earnedCodes = shown.map((badge) => badge.code);
   const next = nextHourBadge(reportedHours, earnedCodes);
 
   if (compact) {
@@ -45,7 +46,7 @@ export function OwnerBadges({
         </div>
         <ol className="flex flex-wrap gap-1.5">
           {BADGES.map((def) => {
-            const got = earned.find((b) => b.code === def.code);
+            const got = shown.find((b) => b.code === def.code);
             return (
               <li
                 key={def.code}
@@ -56,7 +57,6 @@ export function OwnerBadges({
               >
                 {got ? <Award className="size-3" /> : <Lock className="size-3" />}
                 {def.name}
-                {got?.needs_review ? " (under review)" : ""}
               </li>
             );
           })}
@@ -95,7 +95,7 @@ export function OwnerBadges({
 
         <div className="grid gap-2 sm:grid-cols-2">
           {BADGES.map((def) => {
-            const got = earned.find((b) => b.code === def.code);
+            const got = shown.find((b) => b.code === def.code);
             return (
               <div
                 key={def.code}
@@ -111,7 +111,6 @@ export function OwnerBadges({
                 <div className="min-w-0 space-y-0.5">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-sm font-medium">{def.name}</p>
-                    {got?.needs_review && <StatusBadge tone="waiting">Under review</StatusBadge>}
                   </div>
                   <p className="text-xs text-muted-foreground">{def.requirement}</p>
                   {got && <p className="text-xs text-sage">Earned {usDate(got.awarded_at)}</p>}

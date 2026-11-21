@@ -33,6 +33,7 @@ import { defaultModules } from "@/lib/onboarding-scope";
 import { ActualClosingCorrection } from "./ActualClosingCorrection";
 import { ProgramHomeowners } from "./ProgramHomeowners";
 import { HomeAutomation } from "@/components/ao/HomeAutomation";
+import { paceHoldLine } from "@/lib/pace-hold";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Draft: not started",
@@ -181,6 +182,9 @@ export function ActiveOwnerPanel({
               <span className="text-sm text-muted-foreground">No homeowner linked yet</span>
             )}
           </div>
+          {paceHoldLine(row.paceHeldUntil) ? (
+            <p className="text-xs font-medium text-muted-foreground">{paceHoldLine(row.paceHeldUntil)}</p>
+          ) : null}
           <dl className="grid gap-3 sm:grid-cols-3 text-sm">
             <div>
               <dt className="text-muted-foreground">Day in program</dt>

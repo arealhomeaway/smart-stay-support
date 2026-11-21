@@ -19,6 +19,7 @@ import {
   ownerGoalMet,
   REPORT_DISCLAIMER,
   progressSnapshot,
+  shownBadges,
   type ProgramStatus,
 } from "./owner-participation";
 import { combinedMinutes, loadProgramAggregate } from "./owner-participation.server";
@@ -108,6 +109,8 @@ export type AdminProgramRow = {
   ownerLinked: boolean;
   /** The homeowner's portal account, when one is linked. */
   ownerUserId: string | null;
+  /** Pace emails held until (after a team or data correction of her hours), or null. */
+  paceHeldUntil: string | null;
   status: ProgramStatus;
   startedOn: string | null;
   endsOn: string | null;
@@ -136,6 +139,26 @@ export type AdminProgramRow = {
   onboardingOpportunities: number;
   operationsOpportunities: number;
 };
+
+/**
+ * Each program's pace hold. Read on its own so a database without the column yet
+ * (staged docs/pending/active-owner-pace-hold) shows no hold instead of failing the board.
+ */
+async function loadPaceHolds(supabase: Client, demo: boolean): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  try {
+    const r = await (supabase.from("owner_programs") as unknown as {
+      select: (c: string) => { eq: (k: string, v: boolean) => PromiseLike<{ data: { id: string; pace_emails_held_until?: string | null }[] | null; error: unknown }> };
+    })
+      .select("id, pace_emails_held_until")
+      .eq("is_demo", demo);
+    if (r.error) return out;
+    for (const row of r.data ?? []) if (row.pace_emails_held_until) out.set(row.id, row.pace_emails_held_until);
+  } catch {
+    // No hold shown; the board itself is unaffected.
+  }
+  return out;
+}
 
 /** One row per participation program, plus the homes still free to enroll. */
 export async function loadPrograms(supabase: Client, demo = false) {
@@ -168,7 +191,7 @@ export async function loadPrograms(supabase: Client, demo = false) {
         .select("id, program_id, minutes, review_status, amends_entry_id, entry_date")
         .eq("is_demo", demo),
       supabase.from("owner_time_entry_properties").select("entry_id, property_id"),
-      supabase.from("owner_badges").select("program_id, code"),
+      supabase.from("owner_badges").select("program_id, code, needs_review"),
       supabase
         .from("owner_notifications")
         .select("program_id, created_at")
@@ -190,6 +213,7 @@ export async function loadPrograms(supabase: Client, demo = false) {
 
   const today = new Date().toISOString().slice(0, 10);
   const reviewProperty = new Map((reviews.data ?? []).map((r) => [r.id, r.property_id]));
+  const paceHolds = await loadPaceHolds(supabase, demo);
 
   const rows: AdminProgramRow[] = (programs.data ?? []).map((p) => {
     const myLinks = (links.data ?? []).filter(
@@ -250,6 +274,7 @@ export async function loadPrograms(supabase: Client, demo = false) {
       ownerEmail: p.canonical_owner?.email ?? null,
       ownerLinked: Boolean(p.owner_user_id),
       ownerUserId: p.owner_user_id ?? null,
+      paceHeldUntil: paceHolds.get(p.id) ?? null,
       status: p.status as ProgramStatus,
       startedOn: p.started_on,
       endsOn: p.ends_on,
@@ -267,7 +292,7 @@ export async function loadPrograms(supabase: Client, demo = false) {
       coverageConcerns: propertyRows.filter((x) => x.coverage !== "in_progress" || x.overdue > 0)
         .length,
       nextMilestone: snapshot.next,
-      badgeCount: (badges.data ?? []).filter((b) => b.program_id === p.id).length,
+      badgeCount: shownBadges((badges.data ?? []).filter((b) => b.program_id === p.id)).length,
       onboardingLead: p.onboarding_lead,
       operationsLead: p.operations_lead,
       lastNotificationAt:
@@ -489,7 +514,7 @@ export async function loadProgramDetail(supabase: Client, programId: string) {
     properties: agg.properties,
     reviews: agg.reviews,
     entries: agg.entries,
-    badges: agg.badges,
+    badges: shownBadges(agg.badges),
     snapshot: agg.snapshot,
     reportedMinutes: agg.reportedMinutes,
     onboardingMinutes: agg.onboardingMinutes,
