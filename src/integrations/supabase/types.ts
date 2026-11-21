@@ -11804,6 +11804,7 @@ export type Database = {
           owner_phone: string | null
           owner_record_id: string | null
           owner_user_id: string | null
+          pace_emails_held_until: string | null
           property_id: string | null
           report_version: string
           started_on: string | null
@@ -11845,6 +11846,7 @@ export type Database = {
           owner_phone?: string | null
           owner_record_id?: string | null
           owner_user_id?: string | null
+          pace_emails_held_until?: string | null
           property_id?: string | null
           report_version?: string
           started_on?: string | null
@@ -11886,6 +11888,7 @@ export type Database = {
           owner_phone?: string | null
           owner_record_id?: string | null
           owner_user_id?: string | null
+          pace_emails_held_until?: string | null
           property_id?: string | null
           report_version?: string
           started_on?: string | null

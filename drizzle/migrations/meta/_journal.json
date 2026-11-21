@@ -2521,6 +2521,13 @@
       "when": 1795283791541,
       "tag": "0359_hours_double_save",
       "breakpoints": true
+    },
+    {
+      "idx": 360,
+      "version": "7",
+      "when": 1795288407774,
+      "tag": "0360_active_owner_pace_hold",
+      "breakpoints": true
     }
   ]
 }
