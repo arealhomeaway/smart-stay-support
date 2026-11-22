@@ -51,7 +51,6 @@
 - [x] Utility cost box labelled "Estimated monthly cost"
 - [x] Cost segregation step off the plan + 8 open copies archived (applied Nov 22, migration 0364)
 - [ ] Notion Utility Property Matrix import: blocked. The Notion tables holding providers, account numbers, logins and Property IDs are not shared with the Resolve Notion connection
-- [ ] Account numbers and logins limited to Project Manager, Utilities, Director, Admin: build with the import (today every staff member can read utility accounts)
 
 ## Roles apply, no proof, homeowner answer review (Nov 22)
 - [x] Apply onboarding-roles-attach (Designer and Onboarding Manager only; Project Manager and Utilities left for the Director)
