@@ -46,9 +46,12 @@ const money = (n: number) =>
 export function PropertyFactsPanel({
   propertyId,
   canEdit,
+  hideFacts = false,
 }: {
   propertyId: string;
   canEdit: boolean;
+  /** Nov 22: utilities Tasks leave out "Property and equipment facts"; that information stays on the onboarding forms. */
+  hideFacts?: boolean;
 }) {
   const qc = useQueryClient();
   const load = useServerFn(getOnboardingFinance);
@@ -216,6 +219,7 @@ export function PropertyFactsPanel({
           )}
         </CardContent>
       </Card>
+      {hideFacts ? null : (
       <Card>
         <CardHeader>
           <CardTitle>Property and equipment facts</CardTitle>
@@ -407,6 +411,7 @@ export function PropertyFactsPanel({
           ) : null}
         </CardContent>
       </Card>
+      )}
 
       <Card>
         <CardHeader>
@@ -463,10 +468,14 @@ export function PropertyFactsPanel({
                           ))}
                         </SelectContent>
                       </Select>
+                      <Label htmlFor={`utility-cost-${u.id}`}>
+                        Estimated monthly cost
+                      </Label>
                       <Input
-                        className="max-w-[8rem]"
+                        id={`utility-cost-${u.id}`}
+                        className="max-w-[13rem]"
                         inputMode="decimal"
-                        placeholder="Cost $"
+                        placeholder="$"
                         value={costDraft[u.id] ?? ""}
                         onChange={(e) => setCostDraft({ ...costDraft, [u.id]: e.target.value })}
                       />

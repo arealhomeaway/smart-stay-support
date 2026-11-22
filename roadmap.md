@@ -45,3 +45,10 @@
 - [x] Description arrives as the work order's instructions (new sends); list open ones sent the wrong way
 - [x] Task done once its work order is created; shows Breezeway status (staged: onboarding-work-order-done, needs mark-done-breezeway first)
 - [x] Reopen with reason when canceled or past date unfinished (staged)
+
+## Onboarding utilities and checklist cleanup (Nov 22)
+- [x] Utilities tasks no longer show "Property and equipment facts"
+- [x] Utility cost box labelled "Estimated monthly cost"
+- [ ] Cost segregation step off the plan + 8 open copies archived: staged docs/pending/cost-seg-removal, waiting on "Approved: apply cost-seg-removal"
+- [ ] Notion Utility Property Matrix import: blocked. The Notion tables holding providers, account numbers, logins and Property IDs are not shared with the Resolve Notion connection
+- [ ] Account numbers and logins limited to Project Manager, Utilities, Director, Admin: build with the import (today every staff member can read utility accounts)

@@ -22,7 +22,9 @@ it("clears hour-pace warnings at exactly 100 while preserving unfinished propert
 it("no quiet-week alarm until the program is 7 days old, from the later of created and activated", async () => {
   const { programSince } = await import("../owner-attention");
   const day = 86_400_000;
-  const ago = (d: number) => new Date(Date.now() - d * day).toISOString();
+  // One clock for the whole test, so two calls for the same day give the same time.
+  const now = Date.now();
+  const ago = (d: number) => new Date(now - d * day).toISOString();
   const row = { status: "active", goalMet: false, variance: 0, lastOwnerActivityAt: null, openTasks: 35, daysLeft: 40, properties: [] };
   expect(ownerAttention({ ...row, programSince: ago(0) })).toBe(null);
   expect(ownerAttention({ ...row, programSince: ago(6) })).toBe(null);

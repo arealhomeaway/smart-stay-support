@@ -826,7 +826,7 @@ export function TaskDrawer({
         {/* Nov 21: every Utilities Task shows the home's utilities, with Add utility for the people who may change them. */}
         {showsUtilitiesPanel(task, middle, settings.fields, finished) && (
           <section aria-label="Utilities">
-            <PropertyFactsPanel propertyId={task.property_id} canEdit={(canEditUtilities ?? canManageTask) && !disabled} />
+            <PropertyFactsPanel propertyId={task.property_id} canEdit={(canEditUtilities ?? canManageTask) && !disabled} hideFacts />
           </section>
         )}
 

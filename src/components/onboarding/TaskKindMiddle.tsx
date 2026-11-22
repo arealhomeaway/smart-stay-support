@@ -180,7 +180,7 @@ function FillIn({ settings, propertyId, canEdit, canEditUtilities = canEdit, pla
         <SchedulePanel propertyId={propertyId} plannedClosingOn={plannedClosingOn} actualClosingOn={null} actualAccessOn={null} canEdit={canEdit} onChange={() => void q.refetch()} />
       )}
       {has("team_roles") && <ProjectTeamPanel propertyId={propertyId} />}
-      {(has("wifi") || has("access_plan") || has("utility_accounts")) && <PropertyFactsPanel propertyId={propertyId} canEdit={canEditUtilities} />}
+      {(has("wifi") || has("access_plan") || has("utility_accounts")) && <PropertyFactsPanel propertyId={propertyId} canEdit={canEditUtilities} hideFacts={has("utility_accounts")} />}
       {/* Item 1: edited here, with the same saves as Home info. */}
       <FillInEditors propertyId={propertyId} fields={fields} canEdit={canEdit} />
     </section>
