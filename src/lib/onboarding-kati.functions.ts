@@ -85,8 +85,10 @@ export type OnboardingBreezewayState = {
   home: { eligible: boolean; reason: string | null } | null;
   /** Why the Task reopened from its Breezeway work order, if it did. */
   reopenReason: string | null;
-  /** Set when the Task's text could not be written as the work order's instructions. */
+  /** Set when the box text could not be written as the work order's instructions. */
   instructionsError: string | null;
+  /** A sent work order's instructions as Breezeway has them (read live; the synced copy if Breezeway does not answer). */
+  instructions: { text: string | null; asOf: string | null } | null;
 };
 
 export const onboardingBreezewayStateFn = createServerFn({ method: "POST" })
@@ -111,10 +113,11 @@ export const onboardingBreezewayStateFn = createServerFn({ method: "POST" })
     let mirror: OnboardingBreezewayState["mirror"] = null;
     let comments: OnboardingBreezewayState["comments"] = [];
     let photos: OnboardingBreezewayState["photos"] = [];
+    let instructions: OnboardingBreezewayState["instructions"] = null;
     if (bzId) {
       const [wo, c, p] = await Promise.all([
         db.from("breezeway_work_orders")
-          .select("name, status, stage, scheduled_date, assignees, finished_at, last_synced_at")
+          .select("name, description, status, stage, scheduled_date, assignees, finished_at, last_synced_at")
           .eq("breezeway_task_id", bzId).maybeSingle(),
         db.from("breezeway_work_order_comments").select("author, body, commented_at")
           .eq("breezeway_task_id", bzId).order("commented_at", { ascending: false }).limit(5),
@@ -139,6 +142,12 @@ export const onboardingBreezewayStateFn = createServerFn({ method: "POST" })
         : null;
       comments = c.data ?? [];
       photos = p.data ?? [];
+      instructions = { text: (wo.data?.description ?? "").trim() || null, asOf: wo.data?.last_synced_at ?? null };
+      const staff = await context.supabase.rpc("is_onboarding_staff", { _user_id: context.userId });
+      if (!staff.error && staff.data) {
+        const { workOrderInstructionsNow } = await import("@/lib/breezeway-template-instructions.server");
+        instructions = await workOrderInstructionsNow(Number(bzId)).catch(() => instructions);
+      }
     }
     const sendSwitchOn = flag.data?.enabled === true;
     // The home check only matters once the switch is on; it is never asked otherwise.
@@ -160,6 +169,7 @@ export const onboardingBreezewayStateFn = createServerFn({ method: "POST" })
       history: history.count ?? 0,
       sendSwitchOn,
       home,
+      instructions,
       ...(await workOrderExtras(db, data.taskId)),
     };
   });
@@ -213,7 +223,7 @@ export const sendOnboardingWorkOrderFn = createServerFn({ method: "POST" })
     z
       .object({
         taskId: z.string().uuid(),
-        /** B2: the Breezeway template is required; title and description come prefilled from the Task. */
+        /** B2: the Breezeway template is required; the title comes from the Task, the instructions from the template. */
         templateId: z.number().int().positive(),
         priority: z.enum(["low", "normal", "high", "urgent", "watch"]).default("normal"),
         title: z.string().trim().min(3).max(200).optional(),
@@ -255,10 +265,11 @@ export const sendOnboardingWorkOrderFn = createServerFn({ method: "POST" })
     });
     if (refusal) return { ok: false as const, message: refusal };
     if (!link.data?.assignee_choice) return { ok: false as const, message: "Choose a Breezeway person, or Leave unassigned, and save first." };
-    // 3.8: the full step text (or what was typed), then the note with the sender's name.
+    // The instructions box exactly as sent (the template's own text unless edited), then the note
+    // with the sender's name. The Task's step guidance is never sent.
     const me = await db.from("profiles").select("full_name").eq("id", context.userId).maybeSingle();
     const author = (me.data?.full_name as string | null | undefined) ?? null;
-    const base = data.description !== undefined ? data.description : task.data.detail ? String(task.data.detail) : null;
+    const base = data.description ?? null;
     let description = breezewayDescription(base, data.note ?? null, author);
     // Only this Task's own stored files, read as the caller (RLS applies).
     type Doc = { id: string; title: string | null; original_filename: string | null; mime_type: string | null; size_bytes: number | null; storage_path: string | null };
@@ -291,7 +302,7 @@ export const sendOnboardingWorkOrderFn = createServerFn({ method: "POST" })
         sourceId: data.taskId,
         requestKey: onboardingSendRequestKey(data.taskId),
         title: data.title ?? stripWorkOrderPrefix(String(task.data.title)).slice(0, 200),
-        // Part 3 (3.8): the full step text, the sender's note and any file links.
+        // The instructions box, the sender's note and any file links.
         description: description.slice(0, 4000) || null,
         department: "maintenance",
         priority: data.priority,
@@ -368,4 +379,15 @@ export const onboardingBreezewayTemplatesFn = createServerFn({ method: "POST" })
     const { listBreezewayTemplates } = await import("@/lib/breezeway-directory.server");
     const templates = await listBreezewayTemplates().catch(() => []);
     return { templates: templates.map((t) => ({ id: t.id, name: t.name, department: t.department ?? null })) };
+  });
+
+/** A Breezeway template's own instructions, to fill the instructions box (onboarding staff, read only). */
+export const onboardingTemplateInstructionsFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ templateId: z.number().int().positive() }).parse(d))
+  .handler(async ({ context, data }) => {
+    const staff = await context.supabase.rpc("is_onboarding_staff", { _user_id: context.userId });
+    if (staff.error || !staff.data) throw new Error("Onboarding staff access is required.");
+    const { templateInstructions } = await import("@/lib/breezeway-template-instructions.server");
+    return templateInstructions(data.templateId);
   });

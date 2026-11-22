@@ -59,7 +59,7 @@ only. Owner: Y = homeowner can see it. Onb / Ops: required for that workflow.
 
 | Display label | Resolve key | Source | Edit | Owner | Onb | Ops | Provenance | Duplication concern |
 |---|---|---|---|---|---|---|---|---|
-| Utility accounts | `utilities` *(add, jsonb array)* | ARHA | Y | Y (own home) | Y | Y | manual as_of | provider is a Contact/vendor ref; **no logins**, masked account reference only |
+| Utility accounts | `utilities` *(add, jsonb array)* | ARHA | Y | N | Y | Y | manual as_of | provider is a Contact/vendor ref; **all staff see full account numbers and logins**; never homeowners or vendors |
 | Billing responsibility | inside `utilities[].billing_responsibility` | ARHA | Y | Y | Y | Y | manual as_of | – |
 | Transfer status | inside `utilities[].transfer_status` | ARHA | Y | Y | Y | – | manual as_of | replaces the Utilities Coordinator spreadsheet |
 
@@ -145,6 +145,7 @@ only. Owner: Y = homeowner can see it. Onb / Ops: required for that workflow.
 
 ## Explicitly NOT imported
 
-Door codes, alarm codes, Wi-Fi passwords, utility logins, any password, any
-credential. Owner-program state (enrolment, phase, hours) is never copied onto
+Door codes, alarm codes, Wi-Fi passwords, any password, any credential other than
+utility account numbers and logins (all staff see those in full on the property's
+details; never homeowners or vendors; changed Nov 22). Owner-program state (enrolment, phase, hours) is never copied onto
 the property — it is read from the program.

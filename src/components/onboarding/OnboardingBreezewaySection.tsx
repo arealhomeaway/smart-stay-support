@@ -34,6 +34,7 @@ import {
   sendToBreezewayRefusal,
 } from "@/lib/onboarding-breezeway";
 import { Textarea } from "@/components/ui/textarea";
+import { useTemplateInstructions } from "@/components/onboarding/useTemplateInstructions";
 import { SearchablePicker } from "@/components/SearchablePicker";
 import { UNASSIGNED_VALUE, breezewayPersonOptions, breezewayTemplateOptions } from "@/lib/searchable-picker";
 import {
@@ -57,7 +58,6 @@ export function OnboardingBreezewaySection({
   taskId,
   disabled,
   defaultTitle,
-  defaultDescription,
   onSent,
 }: {
   taskId: string;
@@ -65,7 +65,6 @@ export function OnboardingBreezewaySection({
   onSent?: () => void;
   /** B2: prefilled from the Task, editable before sending. */
   defaultTitle?: string;
-  defaultDescription?: string | null;
   /** The home, kept for callers; the server reads the task's own home. */
   propertyId?: string;
   disabled: boolean;
@@ -86,7 +85,9 @@ export function OnboardingBreezewaySection({
   const [priority, setPriority] = useState("normal");
   // Item 37: the Title follows the chosen template until the user edits it.
   const [title, setTitle] = useState(() => breezewayTitleDefault(defaultTitle));
-  const [description, setDescription] = useState(defaultDescription ?? "");
+  // The instructions box: the template's own instructions from Breezeway, editable; sent exactly as it is.
+  const instructions = useTemplateInstructions(templateId ? Number(templateId) : null);
+  const description = instructions.text;
   // Part 3 (3.8): a note signed with the sender's name, and the Task's files to go with it.
   const [note, setNote] = useState("");
   const [fileIds, setFileIds] = useState<string[]>([]);
@@ -186,6 +187,7 @@ export function OnboardingBreezewaySection({
       alreadyLinked: Boolean(linkedId),
     }) ??
     (!templateId ? "Choose a Breezeway template." : null) ??
+    (instructions.loading ? "Loading the template's instructions." : null) ??
     (title.trim().length < 3 ? "Give the work order a title." : null);
   const dirty =
     (date || "") !== (data.link?.tentative_date ?? "") ||
@@ -215,6 +217,10 @@ export function OnboardingBreezewaySection({
               <p className="text-muted-foreground">Breezeway number {linkedId} · Status: {workOrderStatusLabel(data.mirror.stage, data.mirror.status, data.mirror.scheduled_date)}</p>
               {data.reopenReason ? <p className="font-medium text-late">Reopened: {data.reopenReason}</p> : null}
               {data.instructionsError ? <p className="text-late">The instructions did not reach Breezeway: {data.instructionsError} Add them in Breezeway.</p> : null}
+              <div className="space-y-1">
+                <p className="eyebrow">Instructions in Breezeway</p>
+                <p className="whitespace-pre-wrap text-foreground">{data.instructions?.text ?? "No instructions in Breezeway."}</p>
+              </div>
               <p className="flex items-center gap-2 text-muted-foreground">
                 <UserCheck className="size-4 shrink-0" /> {data.mirror.assignee_names || "Not assigned in Breezeway"}
               </p>
@@ -304,14 +310,15 @@ export function OnboardingBreezewaySection({
                 onChange={(e) => setTitle(e.target.value)} />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor={`bz-desc-${taskId}`}>Description</Label>
-              <Textarea id={`bz-desc-${taskId}`} rows={3} value={description} disabled={disabled} maxLength={4000}
-                onChange={(e) => setDescription(e.target.value)} />
+              <Label htmlFor={`bz-desc-${taskId}`}>Instructions</Label>
+              <Textarea id={`bz-desc-${taskId}`} rows={6} value={description} disabled={disabled || instructions.loading} maxLength={4000}
+                onChange={(e) => instructions.setText(e.target.value)} />
+              {instructions.hint ? <p className="text-xs text-muted-foreground">{instructions.hint}</p> : null}
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor={`bz-note-${taskId}`}>Your note (optional)</Label>
               <Textarea id={`bz-note-${taskId}`} rows={2} value={note} disabled={disabled} maxLength={1000}
-                placeholder="Added under the description with your name"
+                placeholder="Added under the instructions with your name"
                 onChange={(e) => setNote(e.target.value)} />
             </div>
             {(taskFiles.data?.files ?? []).length ? (

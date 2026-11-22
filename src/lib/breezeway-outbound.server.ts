@@ -197,7 +197,8 @@ async function resolveSource(source: OutboundSource) {
     if (t.is_demo) throw new Error("Demo tasks are never sent to Breezeway.");
     if (t.archived_at) throw new Error("Archived tasks are never sent to Breezeway.");
     propertyId = t.property_id;
-    defaults = { title: t.title, description: t.detail, priority: null };
+    // A Task's step guidance is never sent to Breezeway; the instructions come only from the box.
+    defaults = { title: t.title, description: null, priority: null };
   }
 
   if (!propertyId) throw new Error("That record has no property, so it cannot reach Breezeway.");
@@ -636,10 +637,10 @@ export async function createOutboundTask(
       };
     }
     // Onboarding Tasks: Breezeway lets a template replace the description sent on create,
-    // so the Task's text is written as the work order's instructions straight after.
-    if (input.sourceType === "onboarding_task" && typeof taskId === "number" && description) {
+    // so what was in the instructions box is written straight after, exactly as it was.
+    if (input.sourceType === "onboarding_task" && typeof taskId === "number") {
       try {
-        await setOnboardingInstructions(row.id, taskId, description);
+        await setOnboardingInstructions(row.id, taskId, description ?? "");
       } catch {
         console.error("[breezeway-outbound] instructions step failed after create; the work order stands.");
       }
@@ -679,21 +680,21 @@ export async function createOutboundTask(
 }
 
 /**
- * Reads the new work order and, when its instructions are not ours, sets them once.
+ * Reads the new work order and, when its instructions differ from the box text, sets them once.
  * The work order already exists, so a failure here never undoes the send; it is kept
  * on the outbound row (instructions_error) for the Task to show.
  */
 async function setOnboardingInstructions(outboundId: string, breezewayTaskId: number, ours: string) {
   const db = await admin();
-  const { instructionsText } = await import("./onboarding-work-order-status");
+  const { instructionsToWrite } = await import("./onboarding-work-order-status");
   let error: string | null = null;
   try {
     const current = await breezewayRequest<{ description?: string | null }>(`/task/${breezewayTaskId}`);
-    const next = instructionsText(ours, current?.description ?? null);
-    if (next) {
+    const next = instructionsToWrite(ours, current?.description ?? null);
+    if (next !== null) {
       await breezewayRequest(`/task/${breezewayTaskId}`, { method: "PATCH", allowWrite: true, retry: false, body: { description: next } });
       const check = await breezewayRequest<{ description?: string | null }>(`/task/${breezewayTaskId}`);
-      if (instructionsText(ours, check?.description ?? null)) error = "Breezeway did not keep the instructions.";
+      if (instructionsToWrite(ours, check?.description ?? null) !== null) error = "Breezeway did not keep the instructions.";
     }
   } catch (e) {
     error = e instanceof BreezewayError ? e.message : "Breezeway did not respond.";

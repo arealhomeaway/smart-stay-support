@@ -1,6 +1,6 @@
 /**
  * Onboarding Task work orders in Breezeway: the status words a Task shows and
- * the instructions text a new work order must carry. Pure, browser safe.
+ * the instructions a work order carries. Pure, browser safe.
  * The reopen rule itself lives only in DB reopen_tasks_for_work_orders.
  */
 export type WorkOrderStatusLabel = "Scheduled" | "Not scheduled" | "In Progress" | "Completed" | "Canceled";
@@ -17,17 +17,42 @@ export function workOrderStatusLabel(stage: string | null | undefined, status: s
   return scheduledDate ? "Scheduled" : "Not scheduled";
 }
 
+/** Line endings and trailing spaces never count as a difference. */
+const norm = (v: string | null | undefined) =>
+  (v ?? "").replace(/\r\n/g, "\n").split("\n").map((l) => l.trimEnd()).join("\n").trim();
 const squash = (v: string) => v.replace(/\s+/g, " ").trim();
 
 /**
- * What the work order's instructions should become, or null when Breezeway
- * already shows ours. Our text comes first; a template's own text is kept under it.
+ * What the work order's instructions must become, or null when Breezeway already shows exactly
+ * what was in the box at send. The box text is written as it is, empty included.
  */
-export function instructionsText(ours: string | null | undefined, current: string | null | undefined): string | null {
-  const mine = (ours ?? "").trim();
-  if (!mine) return null;
-  const now = (current ?? "").trim();
-  if (now && squash(now).includes(squash(mine))) return null;
-  const next = now ? `${mine}\n\n${now}` : mine;
-  return next.slice(0, 4000);
+export function instructionsToWrite(intended: string | null | undefined, current: string | null | undefined): string | null {
+  const want = norm(intended);
+  return want === norm(current) ? null : want.slice(0, 4000);
+}
+
+/** A Resolve Task's step guidance (About this step, Instructions, Done when, Good to know); never sent to Breezeway. */
+export function isStepGuidance(text: string | null | undefined): boolean {
+  return /^\s*About this step:/i.test(text ?? "");
+}
+
+/**
+ * A Breezeway template's own instructions, read from work orders Breezeway made from it (newest first).
+ * Breezeway does not offer a template's text directly. The text found inside the most of them wins,
+ * so a copy someone added lines to never replaces the template's own words; ties go to the shortest,
+ * then the newest. Empty texts and Resolve step guidance never count.
+ */
+export function pickTemplateInstructions(found: { taskId: number; text: string | null }[]): { text: string; fromTaskId: number } | null {
+  const usable = found
+    .map((f) => ({ taskId: f.taskId, text: norm(f.text) }))
+    .filter((f) => f.text && !isStepGuidance(f.text));
+  let best: { text: string; fromTaskId: number; score: number } | null = null;
+  for (const c of usable) {
+    const key = squash(c.text);
+    const score = usable.filter((o) => squash(o.text).includes(key)).length;
+    if (!best || score > best.score || (score === best.score && c.text.length < best.text.length)) {
+      best = { text: c.text, fromTaskId: c.taskId, score };
+    }
+  }
+  return best ? { text: best.text.slice(0, 4000), fromTaskId: best.fromTaskId } : null;
 }

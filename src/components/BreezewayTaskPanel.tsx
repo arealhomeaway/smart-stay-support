@@ -45,6 +45,7 @@ import {
   createBreezewayOutboundTask,
 } from "@/lib/breezeway-outbound.functions";
 import { usDate, usDateTime } from "@/lib/dates";
+import { useTemplateInstructions } from "@/components/onboarding/useTemplateInstructions";
 
 type Props = {
   sourceType: "ticket" | "onboarding_task";
@@ -97,9 +98,15 @@ export function BreezewayTaskPanel({
 
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(defaultTitle);
-  const [description, setDescription] = useState(defaultDescription ?? "");
+  const [ticketDescription, setTicketDescription] = useState(defaultDescription ?? "");
   const [department, setDepartment] = useState<string>("maintenance");
   const [templateId, setTemplateId] = useState<string>("none");
+  // Onboarding Tasks: the instructions follow the chosen template's own text until edited, and the
+  // Task's step guidance is never sent. Tickets keep their own description as before.
+  const onboarding = sourceType === "onboarding_task";
+  const instructions = useTemplateInstructions(templateId === "none" ? null : Number(templateId), onboarding);
+  const description = onboarding ? instructions.text : ticketDescription;
+  const setDescription = onboarding ? instructions.setText : setTicketDescription;
   const [assigneeIds, setAssigneeIds] = useState<number[]>([]);
   const [assigneeSearch, setAssigneeSearch] = useState("");
   const [evidenceNote, setEvidenceNote] = useState("");
@@ -299,8 +306,10 @@ export function BreezewayTaskPanel({
               rows={3}
               placeholder="Scope: what is wrong, what you already checked, what done looks like"
               value={description}
+              disabled={onboarding && instructions.loading}
               onChange={(e) => setDescription(e.target.value)}
             />
+            {onboarding && instructions.hint ? <p className="text-xs text-muted-foreground">{instructions.hint}</p> : null}
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
@@ -440,7 +449,7 @@ export function BreezewayTaskPanel({
           <Button
             className="w-full"
             size="lg"
-            disabled={send.isPending || !title.trim() || Boolean(dispatchBasicsProblem({ scheduledDate, assigneeIds, sourceType }))}
+            disabled={send.isPending || !title.trim() || (onboarding && instructions.loading) || Boolean(dispatchBasicsProblem({ scheduledDate, assigneeIds, sourceType }))}
             onClick={() => setConfirmOpen(true)}
           >
             <Send className="size-4" />
@@ -467,7 +476,7 @@ export function BreezewayTaskPanel({
             <Button variant="outline" onClick={() => setConfirmOpen(false)}>
               Cancel
             </Button>
-            <Button disabled={send.isPending || Boolean(dispatchBasicsProblem({ scheduledDate, assigneeIds, sourceType }))} onClick={() => send.mutate()}>
+            <Button disabled={send.isPending || (onboarding && instructions.loading) || Boolean(dispatchBasicsProblem({ scheduledDate, assigneeIds, sourceType }))} onClick={() => send.mutate()}>
               {send.isPending ? "Sending…" : "Send it"}
             </Button>
           </>

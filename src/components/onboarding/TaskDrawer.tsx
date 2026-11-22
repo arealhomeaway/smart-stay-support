@@ -722,7 +722,7 @@ export function TaskDrawer({
 
         {middle === "work_order" && (
           <section className="space-y-2" aria-label="Breezeway work order">
-            <OnboardingBreezewaySection taskId={task.id} propertyId={task.property_id} disabled={disabled} defaultTitle={task.title} defaultDescription={(detailText ?? "").trim() || task.description || ""} onSent={onClose} />
+            <OnboardingBreezewaySection taskId={task.id} propertyId={task.property_id} disabled={disabled} defaultTitle={task.title} onSent={onClose} />
           </section>
         )}
 
@@ -937,7 +937,6 @@ export function TaskDrawer({
                   sourceType="onboarding_task"
                   sourceId={task.id}
                   defaultTitle={task.title}
-                  defaultDescription={task.detail ?? null}
                 />
               </section>
             )}

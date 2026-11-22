@@ -19,3 +19,9 @@ Each write was read back from Breezeway: all 5 keep the Task's text. Breezeway a
 Files: before.json (instructions before the write, for undo), after.json (what Breezeway shows after).
 Undo: set each work order's description back to its `before` value in before.json (empty for 3 of them).
 Nothing in the Resolve database was changed by this write; the outbound rows' instructions_set_at stays empty.
+
+## Restored Nov 22 (correction: Breezeway's own instructions stay, Task guidance is never written)
+On the Admin's correction, each of the 5 work orders' instructions (`description`) was set back to its `before`
+value in before.json (empty for 3). Before writing, each still showed exactly the Nov 22 write. Breezeway answered
+201 to each; the read-back matches before.json exactly (empty reads back as empty), and name, date, template,
+home and priority are unchanged. Record: restore.json.

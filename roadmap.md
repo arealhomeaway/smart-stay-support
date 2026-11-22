@@ -66,3 +66,11 @@
 - [x] Apply onboarding-work-order-done (0363)
 - [x] Apply cost-seg-removal (0364)
 - [x] Write Task text into the 5 Daniel Court work order instructions in Breezeway (docs/pending/daniel-court-instructions)
+
+## Breezeway work order correction (Nov 22)
+- [x] Instructions box fills with the Breezeway template's own instructions; editable; sent exactly as in the box
+- [x] Task step guidance never written into Breezeway (work order section and vendor dispatch panel)
+- [x] Sent work orders show their instructions as Breezeway has them now
+- [x] 5 Daniel Court work orders put back from before.json, read back
+- [x] Done on send and reopen when late or canceled unchanged
+- [x] Property page review draft: all staff see full utility account numbers and logins; never owners or vendors
