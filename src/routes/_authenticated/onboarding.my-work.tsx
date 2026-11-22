@@ -8,6 +8,7 @@ import {
   onboardingWorkspaceKey,
   canManageOnboardingProperty,
 } from "@/lib/onboarding-workspace-view";
+import { canEditHomeUtilities } from "@/lib/utilities-task";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -485,6 +486,7 @@ function MyWork() {
           <SelectContent>
             <SelectItem value="due">Group by due date</SelectItem>
             <SelectItem value="home">Group by home</SelectItem>
+            <SelectItem value="role">Group by role</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -569,6 +571,7 @@ function MyWork() {
           openTask?.property_id,
           data.projects,
         )}
+        canEditUtilities={canEditHomeUtilities(userId, can("handoff_review"), openTask?.property_id, data.projects)}
         onClose={() => {
           setOpenTaskId(null);
           setOpenedFromHomeowners(false);

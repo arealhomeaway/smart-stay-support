@@ -7,6 +7,7 @@ import {
   onboardingWorkspaceKey,
   canManageOnboardingProperty,
 } from "@/lib/onboarding-workspace-view";
+import { canEditHomeUtilities } from "@/lib/utilities-task";
 import { createFileRoute, Link, Navigate, notFound } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -1225,6 +1226,7 @@ function PropertyWorkspace() {
           openTask?.property_id,
           data.projects,
         )}
+        canEditUtilities={canEditHomeUtilities(userId, can("handoff_review") || isOnboardingDirector, openTask?.property_id, data.projects)}
         onVoid={(taskId: string, reason: string) => {
           voidTask.mutate({ data: { taskId, reason } } as never);
           setOpenTaskId(null);

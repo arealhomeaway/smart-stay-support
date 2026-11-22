@@ -69,6 +69,7 @@ export function TaskKindMiddle({
   propertyId,
   disabled,
   canEdit,
+  canEditUtilities,
   plannedClosingOn,
   outside,
   onOutside,
@@ -83,6 +84,8 @@ export function TaskKindMiddle({
   propertyId: string;
   disabled: boolean;
   canEdit: boolean;
+  /** Nov 21: the utilities panel also opens for the home's Utilities person. */
+  canEditUtilities?: boolean;
   plannedClosingOn: string | null;
   outside: OutsideDraft;
   onOutside: (d: OutsideDraft) => void;
@@ -93,7 +96,7 @@ export function TaskKindMiddle({
   sendBlocked?: string | null;
 }) {
   if (kind === "fill_in") {
-    return <FillIn settings={settings} propertyId={propertyId} canEdit={canEdit && !disabled} plannedClosingOn={plannedClosingOn} />;
+    return <FillIn settings={settings} propertyId={propertyId} canEdit={canEdit && !disabled} canEditUtilities={(canEditUtilities ?? canEdit) && !disabled} plannedClosingOn={plannedClosingOn} />;
   }
   if (kind === "upload_files") {
     return (
@@ -157,7 +160,7 @@ export function TaskKindMiddle({
   return null;
 }
 
-function FillIn({ settings, propertyId, canEdit, plannedClosingOn }: { settings: KindSettings; propertyId: string; canEdit: boolean; plannedClosingOn: string | null }) {
+function FillIn({ settings, propertyId, canEdit, canEditUtilities = canEdit, plannedClosingOn }: { settings: KindSettings; propertyId: string; canEdit: boolean; canEditUtilities?: boolean; plannedClosingOn: string | null }) {
   const fields = settings.fields ?? [];
   const q = useFillIn(propertyId, fields, true);
   if (!fields.length) return <p className="rounded-lg border border-border p-4 text-sm text-muted-foreground">This step has no fields chosen yet.</p>;
@@ -177,7 +180,7 @@ function FillIn({ settings, propertyId, canEdit, plannedClosingOn }: { settings:
         <SchedulePanel propertyId={propertyId} plannedClosingOn={plannedClosingOn} actualClosingOn={null} actualAccessOn={null} canEdit={canEdit} onChange={() => void q.refetch()} />
       )}
       {has("team_roles") && <ProjectTeamPanel propertyId={propertyId} />}
-      {(has("wifi") || has("access_plan") || has("utility_accounts")) && <PropertyFactsPanel propertyId={propertyId} canEdit={canEdit} />}
+      {(has("wifi") || has("access_plan") || has("utility_accounts")) && <PropertyFactsPanel propertyId={propertyId} canEdit={canEditUtilities} />}
       {/* Item 1: edited here, with the same saves as Home info. */}
       <FillInEditors propertyId={propertyId} fields={fields} canEdit={canEdit} />
     </section>

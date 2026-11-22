@@ -1,4 +1,4 @@
-import type { TaskView } from "./onboarding-workflow";
+import { taskRoleLabel, type TaskView } from "./onboarding-workflow";
 import type { SearchSchemaInput } from "@tanstack/react-router";
 import { ownerOfTask } from "./plan-task-owner";
 
@@ -248,7 +248,7 @@ export const MY_TASKS_QUICK_LABELS = {
 } as const;
 export type MyTasksQuick = keyof typeof MY_TASKS_QUICK_LABELS;
 export type MyTasksSort = "due" | "home";
-export type MyTasksGroup = "due" | "home";
+export type MyTasksGroup = "due" | "home" | "role";
 
 /** Monday-start week bounds around a YYYY-MM-DD today, as date strings. */
 export function myTasksWeeks(today: string) {
@@ -351,6 +351,24 @@ export function sortMyTasks(
   });
 }
 
+/**
+ * Nov 21: one group per Task role, Utilities first so utilities work is together and easy to find,
+ * then the other roles by name, Tasks with no role last. Items keep the sort already applied.
+ */
+export function groupMyTasksByRole(views: TaskView[]) {
+  const labelOf = (v: TaskView) => taskRoleLabel(v.task) ?? "";
+  const labels = [...new Set(views.map(labelOf))].sort((a, b) => {
+    const rank = (l: string) => (l === "Utilities" ? 0 : l === "" ? 2 : 1);
+    return rank(a) - rank(b) || a.localeCompare(b);
+  });
+  return labels.map((label) => ({
+    key: `role:${label || "none"}`,
+    label: label || "No role",
+    hint: label === "Utilities" ? "Every utilities Task, all homes." : label ? `${label} Tasks.` : "Tasks with no role.",
+    items: views.filter((v) => labelOf(v) === label),
+  }));
+}
+
 /** Group by due date buckets or by home. Items keep the sort already applied. */
 export function groupMyTasks(
   views: TaskView[],
@@ -358,6 +376,7 @@ export function groupMyTasks(
   today: string,
   homeName: (propertyId: string) => string,
 ) {
+  if (group === "role") return groupMyTasksByRole(views);
   if (group === "home") {
     const names = [...new Set(views.map((v) => homeName(v.task.property_id)))].sort((a, b) =>
       a.localeCompare(b),
@@ -433,7 +452,7 @@ export function loadMyTasksPrefs(
         ),
       ),
       sort: parsed.sort === "home" ? "home" : "due",
-      group: parsed.group === "home" ? "home" : "due",
+      group: parsed.group === "home" || parsed.group === "role" ? parsed.group : "due",
       from: date(parsed.from),
       to: date(parsed.to),
     };

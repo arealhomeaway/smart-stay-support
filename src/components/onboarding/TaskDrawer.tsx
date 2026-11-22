@@ -41,6 +41,8 @@ import { bulkUpdateHomeTasksFn, markTaskStartedFn } from "@/lib/onboarding.funct
 import { SendToHomeownerSection, sendFormId } from "@/components/onboarding/SendToHomeownerDialog";
 import { roleLabels } from "@/lib/homeowner-has.data";
 import { doneByLine, filesLine } from "@/lib/task-proof";
+import { PropertyFactsPanel } from "@/components/onboarding/PropertyFactsPanel";
+import { showsUtilitiesPanel } from "@/lib/utilities-task";
 import { ApprovalComplete, OpenFormButton, TaskKindMiddle, missingFillFields, outsideEvidence, useFillIn, type OutsideDraft } from "@/components/onboarding/TaskKindMiddle";
 import { TaskOwnerCompletions } from "@/components/onboarding/OwnerCompletionsReview";
 import { EmailComposer } from "@/components/EmailComposer";
@@ -160,6 +162,7 @@ export function TaskDrawer({
   disabled,
   canRecordException,
   canManageTask,
+  canEditUtilities,
   onClose,
   onSave,
   onSaveDate,
@@ -180,6 +183,8 @@ export function TaskDrawer({
   disabled: boolean;
   canRecordException: boolean;
   canManageTask: boolean;
+  /** Nov 21: may add or change the home's utilities (runs the home or holds its Utilities role). */
+  canEditUtilities?: boolean;
   onClose: () => void;
   onSave: (input: SaveTaskInput) => void;
   onSaveDate: (
@@ -793,6 +798,7 @@ export function TaskDrawer({
             propertyId={task.property_id}
             disabled={disabled}
             canEdit={canManageTask}
+            canEditUtilities={canEditUtilities ?? canManageTask}
             plannedClosingOn={null}
             outside={outside}
             onOutside={setOutside}
@@ -805,6 +811,13 @@ export function TaskDrawer({
             }}
             assignedTo={task.assigned_to}
           />
+        )}
+
+        {/* Nov 21: every Utilities Task shows the home's utilities, with Add utility for the people who may change them. */}
+        {showsUtilitiesPanel(task, middle, settings.fields, finished) && (
+          <section aria-label="Utilities">
+            <PropertyFactsPanel propertyId={task.property_id} canEdit={(canEditUtilities ?? canManageTask) && !disabled} />
+          </section>
         )}
 
         {middle === "send_to_owner" && (
