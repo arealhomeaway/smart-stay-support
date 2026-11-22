@@ -154,9 +154,9 @@ describe("plan rows", () => {
 
 describe("Mark done form", () => {
   const today = "2026-11-12";
-  it("needs a proof note of at least 5 characters", () => {
-    expect(markDoneProblem({ note: "ok", when: "today", doneOn: null, today, count: 2 })).toContain("at least 5");
-    expect(markDoneProblem({ note: "In SharePoint", when: "today", doneOn: null, today, count: 2 })).toBeNull();
+  it("needs no note (O8 changed Nov 22)", () => {
+    expect(markDoneProblem({ note: "", when: "today", doneOn: null, today, count: 2 })).toBeNull();
+    expect(markDoneProblem({ note: "ok", when: "today", doneOn: null, today, count: 2 })).toBeNull();
   });
   it("Earlier needs a date no more than two years back and not in the future", () => {
     expect(earliestDoneOn(today)).toBe("2024-11-12");

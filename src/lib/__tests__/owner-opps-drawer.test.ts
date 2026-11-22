@@ -14,7 +14,7 @@ import {
   sourceLine,
   type BoardItem,
 } from "../owner-opportunity-board";
-import { PROOF_HINT, SEND_HINT, WORK_ORDER_HINT, completeHint, drawerKind, dueChip, firstLines, mentionIds, stepsDone } from "../task-drawer";
+import { SEND_HINT, WORK_ORDER_HINT, completeHint, drawerKind, dueChip, firstLines, mentionIds, stepsDone } from "../task-drawer";
 import { isBreezewayWorkOrderStep } from "../onboarding-breezeway";
 
 const base: BoardItem = {
@@ -139,11 +139,10 @@ describe("Part B: three kinds of Task", () => {
     expect(stepsDone([{ status: "complete" }, { status: "open" }, { status: "complete" }])).toBe("2 of 3 done");
   });
   it("the line under a grey Complete", () => {
-    const b = { kind: "ordinary" as const, releaseBlocked: false, reason: null, evidenceMissing: true, proofOk: false, awaitingOwner: false };
-    expect(completeHint(b)).toBe(PROOF_HINT);
-    expect(PROOF_HINT).toBe("Add where the proof is, or attach a file.");
-    expect(completeHint({ ...b, proofOk: true })).toBeNull();
-    expect(completeHint({ ...b, kind: "work_order", evidenceMissing: false })).toBe(WORK_ORDER_HINT);
+    const b = { kind: "ordinary" as const, releaseBlocked: false, reason: null, awaitingOwner: false };
+    // Nov 22 (O7, O8 changed): nothing waits on proof, so a ready Task has no line.
+    expect(completeHint(b)).toBeNull();
+    expect(completeHint({ ...b, kind: "work_order" })).toBeNull();
     expect(WORK_ORDER_HINT).toBe("Completes by itself when Breezeway marks the job done.");
     expect(completeHint({ ...b, kind: "homeowner", awaitingOwner: true })).toBe(SEND_HINT);
     expect(completeHint({ ...b, releaseBlocked: true, reason: "Waits for Order linens" })).toBe("Waits for Order linens");
@@ -160,12 +159,12 @@ describe("Part B screens", () => {
   const send = readFileSync("src/components/onboarding/SendToHomeownerDialog.tsx", "utf8");
   it("B6: the old sections are gone from the drawer", () => {
     for (const gone of ["TaskOwnerCollaboration", "TaskOwnerDependency", "GuidedActionCard", "Write to the homeowner", 'label="Email homeowner"',
-      "What proves this is done", "Notes & files", "Authorised exception", "Need something from the homeowner?"])
+      "What proves this is done", "Notes & files", "Authorised exception", "Need something from the homeowner?",
+      "Proof it&apos;s done", "Where is the proof?", "Or attach a file"])
       expect(drawer).not.toContain(gone);
   });
   it("B1 to B5: the approved wording is on the drawer", () => {
-    for (const t of ["Assigned to", "Mark as started", "Home info", "What to do", "Full instructions", "Proof it&apos;s done",
-      "Where is the proof?", "Or attach a file", "Details", "What did you find?", "Exception", "History", "Complete", "Close"])
+    for (const t of ["Assigned to", "Mark as started", "Home info", "What to do", "Full instructions", "Details", "What did you find?", "Exception", "History", "Complete", "Close"])
       expect(drawer).toContain(t);
     for (const t of ["Send to the homeowner", "What you&apos;re asking", "Files to share", "Answer by (optional)", "Email instead"])
       expect(send).toContain(t);

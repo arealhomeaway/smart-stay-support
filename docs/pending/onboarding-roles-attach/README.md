@@ -48,3 +48,6 @@ restores the team rule exactly, removes the new rule and trigger, writes one aud
 | 250 Springfield Xing | Project Manager, Utilities, Designer, Onboarding Manager |
 | 3400 N Fern Avenue | Utilities, Designer, Onboarding Manager |
 | 8602 E. Galveston St. | Utilities, Designer, Onboarding Manager |
+
+## Applied
+Applied Nov 22 as migration 0361 on "Approved: apply onboarding-roles-attach". Readback: 65 open Designer and Onboarding Manager Tasks filled, 0 named-role Tasks left empty, Project Manager and Utilities Tasks with nobody on them unchanged at 423, new-home rule in place, 0 owner notices, 0 emails.

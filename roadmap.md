@@ -54,9 +54,10 @@
 - [ ] Account numbers and logins limited to Project Manager, Utilities, Director, Admin: build with the import (today every staff member can read utility accounts)
 
 ## Roles apply, no proof, homeowner answer review (Nov 22)
-- [ ] Apply onboarding-roles-attach (Designer and Onboarding Manager only; Project Manager and Utilities left for the Director)
-- [ ] O7/O8 changed: no proof anywhere (task window, Mark done form, save rules); database part staged
-- [ ] Owner completions page put back as before the last build
-- [ ] My Tasks My homeowners: unreviewed answers with task name, answer, Reviewed button
-- [ ] Collapsed Reviewed list with who and when; new owner answer returns it
-- [ ] Stage the review database change
+- [x] Apply onboarding-roles-attach (Designer and Onboarding Manager only; Project Manager and Utilities left for the Director)
+- [x] O7/O8 changed: no proof on screens and in app saves
+- [ ] No-proof database part: staged docs/pending/onboarding-no-proof, waiting on "Approved: apply onboarding-no-proof"
+- [x] Owner completions page put back as before the last build
+- [x] My Tasks My homeowners: unreviewed answers with task name, answer, Reviewed button (shows once applied)
+- [x] Collapsed Reviewed list with who and when; new owner answer returns it (shows once applied)
+- [ ] Review database change: staged docs/pending/homeowner-answer-review, waiting on "Approved: apply homeowner-answer-review"

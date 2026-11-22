@@ -15,12 +15,10 @@ import { stripPlanRoleLine } from "@/lib/task-drawer";
 import { suggestBreezewayHomes } from "@/lib/breezeway-match";
 
 describe("each kind's main button and completion rule", () => {
-  it("Do it: Complete; proof only when the step requires evidence", () => {
+  it("Do it: Complete, with no proof asked for (O7 and O8 changed Nov 22)", () => {
     expect(mainButtonLabel("do_it")).toBe("Complete");
-    expect(completionBlock("do_it", { evidenceRequired: false })).toBeNull();
-    expect(completionBlock("do_it", { evidenceRequired: true, proofNote: "abc" })).toBe("Add where the proof is, or attach a file.");
-    expect(completionBlock("do_it", { evidenceRequired: true, proofNote: "in the folder" })).toBeNull();
-    expect(completionBlock("do_it", { evidenceRequired: true, fileCount: 1 })).toBeNull();
+    expect(completionBlock("do_it", {})).toBeNull();
+    expect(completionBlock("do_it", { fileCount: 0 })).toBeNull();
   });
   it("Fill in Resolve: Save and complete once every field is filled", () => {
     expect(mainButtonLabel("fill_in")).toBe("Save and complete");
@@ -36,11 +34,9 @@ describe("each kind's main button and completion rule", () => {
     expect(mainButtonLabel("work_order")).toBeNull();
     expect(completionBlock("work_order", {})).toBe("Completes by itself when Breezeway marks the job done.");
   });
-  it("Work order sent to Breezeway: the team may mark it done by hand with proof (Nov 18)", () => {
-    expect(completionBlock("work_order", { workOrderSent: true })).toBe("Add where the proof is under Details, or attach a file.");
-    expect(completionBlock("work_order", { workOrderSent: true, proofNote: "Photos in Breezeway" })).toBeNull();
-    expect(completionBlock("work_order", { workOrderSent: true, fileCount: 1 })).toBeNull();
-    expect(completionBlock("work_order", { workOrderSent: false, proofNote: "Photos in Breezeway" })).toBe("Completes by itself when Breezeway marks the job done.");
+  it("Work order sent to Breezeway: the team may mark it done by hand, no proof asked for (Nov 18, Nov 22)", () => {
+    expect(completionBlock("work_order", { workOrderSent: true })).toBeNull();
+    expect(completionBlock("work_order", { workOrderSent: false })).toBe("Completes by itself when Breezeway marks the job done.");
   });
   it("Send to the homeowner: the main button sends", () => {
     expect(mainButtonLabel("send_to_owner")).toBe("Send to the homeowner");
@@ -51,19 +47,17 @@ describe("each kind's main button and completion rule", () => {
     expect(drawerMiddle("send_to_owner", { fallback: "outside_resolve" }, false)).toBe("outside_resolve");
     expect(drawerMiddle("send_to_owner", { fallback: "email" }, true)).toBe("send_to_owner");
   });
-  it("Done outside Resolve: where and proof are both needed", () => {
-    expect(completionBlock("outside_resolve", { where: null, outsideProof: "env 12345" })).toBe("Choose where it went.");
-    expect(completionBlock("outside_resolve", { where: "docusign", outsideProof: "" })).toBe("Paste a link or envelope number, or upload a screenshot.");
-    expect(completionBlock("outside_resolve", { where: "docusign", outsideProof: "env 12345" })).toBeNull();
-    expect(completionBlock("outside_resolve", { where: "docusign", fileCount: 1 })).toBeNull();
+  it("Done outside Resolve: only where it went is needed, no proof (Nov 22)", () => {
+    expect(completionBlock("outside_resolve", { where: null })).toBe("Choose where it went.");
+    expect(completionBlock("outside_resolve", { where: "docusign" })).toBeNull();
   });
   it("Email: Send email; completes when it sends", () => {
     expect(mainButtonLabel("email")).toBe("Send email");
     expect(completionBlock("email", { sent: false })).toBe("Completes when the email sends.");
     expect(completionBlock("email", { sent: true })).toBeNull();
   });
-  it("Vendor or team request: a reply or quote is attached", () => {
-    expect(completionBlock("vendor_request", {})).toBe("Attach the reply or quote, or note it.");
+  it("Vendor or team request: Done in one step, no reply or quote asked for (Nov 22)", () => {
+    expect(completionBlock("vendor_request", {})).toBeNull();
     expect(completionBlock("vendor_request", { fileCount: 1 })).toBeNull();
   });
   it("Approval: Approve; completes when approved", () => {

@@ -40,11 +40,9 @@ describe("the one guided action on an onboarding task", () => {
     expect(validateAction(a!, {})).toBeNull();
   });
 
-  it("asks for the required evidence before the step can be finished", () => {
+  it("never asks for proof before the step can be finished (O7 changed Nov 22)", () => {
     const a = onboardingTaskAction(v(task({ evidence_required: true })));
-    expect(a?.id).toBe("capture_evidence");
-    expect(validateAction(a!, {})).toContain("proves this is done");
-    expect(validateAction(a!, { evidence: "Meter photo in the task files" })).toBeNull();
+    expect(a?.id).not.toBe("capture_evidence");
   });
 
   it("asks what changed before a blocker is cleared", () => {

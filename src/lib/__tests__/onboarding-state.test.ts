@@ -99,9 +99,9 @@ describe("release integrity", () => {
     expect(releaseState(t, [t], context(t)).state).toBe("ready");
   });
 
-  it("requires evidence again for reopened work", () => {
+  it("reopened work can be finished again with no proof (O7 changed Nov 22)", () => {
     const t = task({ completed_at: "2026-01-10T00:00:00Z", evidence_required: true });
-    expect(releaseState(t, [t], context(t)).canComplete).toBe(false);
+    expect(releaseState(t, [t], context(t)).canComplete).toBe(true);
   });
 });
 
