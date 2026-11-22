@@ -108,7 +108,7 @@ export function TemplateCsvImport({ onCreated }: { onCreated: (id: string) => vo
                               {t.scheduleAnchor ? ` · ${describeRule(t.scheduleAnchor, t.offsetDays, t.offsetUnit)}` : ""}
                               {t.condition ? ` · ${describeCondition(t.condition)}` : ""}
                               {t.description || t.doneWhen || t.videoUrl ? " · has guidance" : ""}
-                              {t.blocksHandoff ? " · blocks handoff" : ""}{t.evidenceRequired ? " · evidence" : ""}
+                              {t.blocksHandoff ? " · blocks handoff" : ""}
                               {t.opportunity ? " · owner Opportunity text" : ""}{t.breezewayTemplateId ? " · Breezeway template" : ""}
                             </span>
                           </li>

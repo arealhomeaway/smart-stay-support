@@ -65,30 +65,23 @@ export function stepsDone(steps: { status: string | null }[]): string {
   return `${done} of ${steps.length} done`;
 }
 
-export const PROOF_HINT = "Add where the proof is, or attach a file.";
 export const WORK_ORDER_HINT = "Completes by itself when Breezeway marks the job done.";
 export const SEND_HINT = "Completes when you send it to the homeowner.";
 
 /**
  * The line under a grey Complete button; null when Complete is available.
- * Order: the release rule's own reason first, then the kind's own rule, then proof.
+ * Order: the release rule's own reason first, then the homeowner decision.
  */
 export function completeHint(input: {
   kind: DrawerKind;
-  /** Blocked by release (an earlier step, a lock), not by missing proof. */
+  /** Blocked by release (an earlier step, a lock). Nov 22: no Task waits on proof (O7, O8 changed). */
   releaseBlocked: boolean;
   reason: string | null | undefined;
-  /** Proof is required and none is stored yet. */
-  evidenceMissing: boolean;
-  /** A note of at least 5 characters, or a file. */
-  proofOk: boolean;
   /** Waiting on a homeowner decision that has not come back. */
   awaitingOwner: boolean;
 }): string | null {
   if (input.releaseBlocked) return input.reason || "This step is not ready yet.";
-  if (input.kind === "work_order" && !input.proofOk) return WORK_ORDER_HINT;
   if (input.awaitingOwner) return input.kind === "homeowner" ? SEND_HINT : input.reason || SEND_HINT;
-  if (input.evidenceMissing && !input.proofOk) return PROOF_HINT;
   return null;
 }
 

@@ -485,7 +485,6 @@ export function canQuickComplete(view: TaskView) {
   const t = view.task;
   return (
     view.canComplete &&
-    !t.evidence_required &&
     !t.requires_owner_approval &&
     !(t.blocker ?? "").trim() &&
     !["needs_review", "correction", "complete"].includes(view.status)

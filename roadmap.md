@@ -52,3 +52,11 @@
 - [ ] Cost segregation step off the plan + 8 open copies archived: staged docs/pending/cost-seg-removal, waiting on "Approved: apply cost-seg-removal"
 - [ ] Notion Utility Property Matrix import: blocked. The Notion tables holding providers, account numbers, logins and Property IDs are not shared with the Resolve Notion connection
 - [ ] Account numbers and logins limited to Project Manager, Utilities, Director, Admin: build with the import (today every staff member can read utility accounts)
+
+## Roles apply, no proof, homeowner answer review (Nov 22)
+- [ ] Apply onboarding-roles-attach (Designer and Onboarding Manager only; Project Manager and Utilities left for the Director)
+- [ ] O7/O8 changed: no proof anywhere (task window, Mark done form, save rules); database part staged
+- [ ] Owner completions page put back as before the last build
+- [ ] My Tasks My homeowners: unreviewed answers with task name, answer, Reviewed button
+- [ ] Collapsed Reviewed list with who and when; new owner answer returns it
+- [ ] Stage the review database change

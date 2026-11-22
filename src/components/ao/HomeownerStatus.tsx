@@ -4,7 +4,8 @@
  * src/lib/homeowner-status.ts over the "What the homeowner has" reading.
  */
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { AlertTriangle, ArrowRight, MessageSquareReply } from "lucide-react";
 import { Chip } from "@/components/ui/page";
@@ -12,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { moduleChip, stateChip } from "@/lib/semantic";
 import { loadHandedOffProgramHomes, loadHomeownerStatus } from "@/lib/homeowner-status.data";
+import { loadAnswerReviews, markAnswerReviewed, type AnswerReviewData } from "@/lib/homeowner-answer-review.data";
+import { ANSWER_REVIEW_COPY, answerRows, reviewedLine, splitAnswers, type AnswerRow } from "@/lib/homeowner-answer-review";
 import {
   STATUS_COPY,
   answeredRows,
@@ -22,13 +25,13 @@ import {
   type StatusRow,
 } from "@/lib/homeowner-status";
 
-export function useHomeownerStatus(propertyIds: string[], demo: boolean, enabled = true) {
+export function useHomeownerStatus(propertyIds: string[], demo: boolean, enabled = true, allAnswers = false) {
   const key = [...new Set(propertyIds)].sort();
   return useQuery({
-    queryKey: ["homeowner-status", demo, key],
+    queryKey: ["homeowner-status", demo, key, allAnswers],
     enabled: enabled && key.length > 0,
     staleTime: 60_000,
-    queryFn: () => loadHomeownerStatus({ propertyIds: key, demo }),
+    queryFn: () => loadHomeownerStatus({ propertyIds: key, demo, allAnswers }),
   });
 }
 
@@ -112,6 +115,25 @@ function RowList({
   );
 }
 
+/** Homeowner answers to review (Nov 22): the reviews on these homes, or "not available" before the staged change. */
+export function useAnswerReviews(propertyIds: string[], enabled = true) {
+  const key = [...new Set(propertyIds)].sort();
+  return useQuery({
+    queryKey: ["homeowner-answer-reviews", key],
+    enabled: enabled && key.length > 0,
+    staleTime: 30_000,
+    queryFn: () => loadAnswerReviews(key),
+  });
+}
+
+export type AnswerReviewProps = {
+  data: AnswerReviewData | undefined;
+  /** The home's assigned Project Manager (the Director of Onboarding and Admin cover). */
+  canReview: (propertyId: string) => boolean;
+  /** The onboarding Task an answer belongs to, by id. */
+  taskTitle: (taskId: string | null) => string | null;
+};
+
 /** My Tasks, near the top: what waits on this person's homeowners and what they answered. */
 export function MyHomeownersSection({
   data,
@@ -120,6 +142,7 @@ export function MyHomeownersSection({
   failed,
   onRetry,
   onOpen,
+  review,
 }: {
   data: HomeownerStatusData | undefined;
   homes: ReadonlySet<string>;
@@ -127,10 +150,14 @@ export function MyHomeownersSection({
   failed: boolean;
   onRetry: () => void;
   onOpen: (row: StatusRow) => void;
+  review?: AnswerReviewProps | undefined;
 }) {
   const now = useMemo(() => new Date(), [data]);
   const waiting = data ? waitingRows(data, homes, now) : [];
-  const answered = data ? answeredRows(data, homes, now) : [];
+  const reviewOn = Boolean(review?.data?.available);
+  // Before the review record exists, the answered list stays the 7-day list it was.
+  const answered = data && !reviewOn ? answeredRows(data, homes, now) : [];
+  const split = data && reviewOn ? splitAnswers(answerRows(data, homes, now), review!.data!.reviews) : null;
   return (
     <section aria-label={STATUS_COPY.myHomeowners} className="surface space-y-3 p-3">
       <h2 className="text-base font-semibold">{STATUS_COPY.myHomeowners}</h2>
@@ -143,7 +170,7 @@ export function MyHomeownersSection({
         </div>
       ) : loading && homes.size > 0 ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
-      ) : waiting.length === 0 && answered.length === 0 ? (
+      ) : waiting.length === 0 && answered.length === 0 && (!split || split.toReview.length + split.reviewed.length === 0) ? (
         <p className="text-sm text-muted-foreground">{STATUS_COPY.empty}</p>
       ) : (
         <div className="grid gap-3 lg:grid-cols-2">
@@ -154,16 +181,113 @@ export function MyHomeownersSection({
             </h3>
             <RowList rows={waiting} onOpen={onOpen} empty={STATUS_COPY.empty} />
           </div>
-          <div className="space-y-1.5">
-            <h3 className="text-sm font-medium">
-              {STATUS_COPY.answered}{" "}
-              <span className="numeric text-muted-foreground">({answered.length})</span>
-            </h3>
-            <RowList rows={answered} onOpen={onOpen} empty={STATUS_COPY.noneAnswered} />
-          </div>
+          {split && review ? (
+            <AnswerReviewColumn split={split} review={review} onOpen={onOpen} />
+          ) : (
+            <div className="space-y-1.5">
+              <h3 className="text-sm font-medium">
+                {STATUS_COPY.answered}{" "}
+                <span className="numeric text-muted-foreground">({answered.length})</span>
+              </h3>
+              <RowList rows={answered} onOpen={onOpen} empty={STATUS_COPY.noneAnswered} />
+            </div>
+          )}
         </div>
       )}
     </section>
+  );
+}
+
+function AnswerText({ row, taskTitle }: { row: AnswerRow; taskTitle: AnswerReviewProps["taskTitle"] }) {
+  const task = taskTitle(row.taskId);
+  return (
+    <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">
+      <span className="block font-medium">{task ?? row.title}</span>
+      {task && task !== row.title ? <span className="block text-xs text-muted-foreground">{row.title}</span> : null}
+      <span className="block text-xs text-muted-foreground">{row.home}</span>
+      <span className="block whitespace-pre-wrap text-sm text-foreground">{row.line}</span>
+      {row.files?.length ? (
+        <span className="block text-xs text-muted-foreground">Files: {row.files.map((f) => f.name).join(", ")}</span>
+      ) : null}
+    </span>
+  );
+}
+
+/** My homeowners, right column (Nov 22): answers not reviewed yet, each with Reviewed; reviewed ones folded. */
+function AnswerReviewColumn({
+  split,
+  review,
+  onOpen,
+}: {
+  split: ReturnType<typeof splitAnswers>;
+  review: AnswerReviewProps;
+  onOpen: (row: StatusRow) => void;
+}) {
+  const qc = useQueryClient();
+  const mark = useMutation({
+    mutationFn: (row: AnswerRow) => markAnswerReviewed({ propertyId: row.propertyId, itemKey: row.itemKey, answerAt: row.answerAt }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["homeowner-answer-reviews"] }),
+    onError: (e: Error) => toast.error(e.message || ANSWER_REVIEW_COPY.failed),
+  });
+  const names = review.data?.names ?? {};
+  return (
+    <div className="space-y-1.5">
+      <h3 className="text-sm font-medium">
+        {ANSWER_REVIEW_COPY.toReview} <span className="numeric text-muted-foreground">({split.toReview.length})</span>
+      </h3>
+      {split.toReview.length === 0 ? (
+        <p className="px-1 text-sm text-muted-foreground">{ANSWER_REVIEW_COPY.none}</p>
+      ) : (
+        <ul className="divide-y divide-border rounded-md border border-border" aria-label={ANSWER_REVIEW_COPY.toReview}>
+          {split.toReview.map((r) => {
+            const saving = mark.isPending && mark.variables?.itemKey === r.itemKey;
+            return (
+              <li key={r.itemKey} className="flex flex-wrap items-start gap-2 px-3 py-2 text-sm" data-answer-row={r.itemKey}>
+                <button
+                  type="button"
+                  onClick={() => onOpen(r)}
+                  className="flex min-h-11 min-w-0 flex-1 items-start gap-3 text-left hover:opacity-80"
+                >
+                  <AnswerText row={r} taskTitle={review.taskTitle} />
+                  <ArrowRight className="mt-1 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                </button>
+                {review.canReview(r.propertyId) ? (
+                  <Button type="button" size="sm" variant="outline" className="min-h-11" disabled={mark.isPending} onClick={() => mark.mutate(r)}>
+                    {saving ? ANSWER_REVIEW_COPY.saving : ANSWER_REVIEW_COPY.button}
+                  </Button>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {split.reviewed.length > 0 ? (
+        <details className="min-w-0 overflow-hidden rounded-md border border-border">
+          <summary className="flex min-h-11 cursor-pointer items-center px-3 text-sm font-medium">
+            {ANSWER_REVIEW_COPY.reviewed} <span className="numeric ml-1 text-muted-foreground">({split.reviewed.length})</span>
+          </summary>
+          <ul className="divide-y divide-border border-t border-border" aria-label={ANSWER_REVIEW_COPY.reviewed}>
+            {split.reviewed.map((r) => (
+              <li key={r.itemKey}>
+                <button
+                  type="button"
+                  onClick={() => onOpen(r)}
+                  className="flex min-h-11 w-full items-start gap-3 px-3 py-2 text-left text-sm hover:bg-muted/50"
+                >
+                  <span className="min-w-0 flex-1">
+                    <AnswerText row={r} taskTitle={review.taskTitle} />
+                    <span className="block text-xs text-muted-foreground">
+                      {reviewedLine(r.review.reviewedBy ? names[r.review.reviewedBy] : null, r.review.reviewedAt)}
+                    </span>
+                  </span>
+                  <ArrowRight className="mt-1 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
+    </div>
   );
 }
 

@@ -61,7 +61,8 @@ import { isTestRecord } from "@/lib/test-data";
 import { taskViewsFor } from "@/lib/onboarding-task-views";
 import { assignablePeople } from "@/lib/assignable-people";
 import { ReviewsWaiting } from "@/components/onboarding/ReviewsWaiting";
-import { HomeownerTaskChip, MyHomeownersSection, useHomeownerStatus } from "@/components/ao/HomeownerStatus";
+import { HomeownerTaskChip, MyHomeownersSection, useAnswerReviews, useHomeownerStatus, type AnswerReviewProps } from "@/components/ao/HomeownerStatus";
+import { canReviewAnswers } from "@/lib/homeowner-answer-review";
 import { myHomeownerHomes, taskChip, type StatusRow } from "@/lib/homeowner-status";
 import {
   getOnboardingWorkspace,
@@ -233,7 +234,25 @@ function MyWork() {
     () => [...new Set([...homeownerHomes, ...mine.map((t) => t.property_id)])],
     [homeownerHomes, mine],
   );
-  const homeownerStatus = useHomeownerStatus(statusHomes, demoMode, Boolean(data));
+  // Nov 22: My homeowners reads every homeowner answer, so unreviewed ones never age out.
+  const homeownerStatus = useHomeownerStatus(statusHomes, demoMode, Boolean(data), true);
+  const answerReviews = useAnswerReviews([...homeownerHomes], Boolean(data));
+  const answerReview = useMemo<AnswerReviewProps>(() => {
+    const pm = new Map<string, { pm: string | null; at: string }>();
+    for (const p of (data?.projects ?? []) as { property_id: string; project_manager: string | null; status: string; created_at?: string | null }[]) {
+      if (p.status === "cancelled") continue;
+      const at = p.created_at ?? "";
+      const cur = pm.get(p.property_id);
+      if (!cur || at > cur.at) pm.set(p.property_id, { pm: p.project_manager, at });
+    }
+    const titles = new Map(allTasks.map((t) => [t.id, t.title] as const));
+    return {
+      data: answerReviews.data,
+      canReview: (propertyId) =>
+        !readOnly && canReviewAnswers({ userId, projectManager: pm.get(propertyId)?.pm ?? null, isOnboardingDirector, isAdmin }),
+      taskTitle: (taskId) => (taskId ? titles.get(taskId) ?? null : null),
+    };
+  }, [answerReviews.data, data?.projects, allTasks, readOnly, userId, isOnboardingDirector, isAdmin]);
   const statusNow = useMemo(() => new Date(), [homeownerStatus.data]);
 
   // Nov 17: the person's own finished Tasks (last 7 days) and the proof on finished rows.
@@ -414,6 +433,7 @@ function MyWork() {
         failed={homeownerStatus.isError}
         onRetry={() => void homeownerStatus.refetch()}
         onOpen={openHomeownerRow}
+        review={answerReview}
       />
 
       {homeownerPerson ? (

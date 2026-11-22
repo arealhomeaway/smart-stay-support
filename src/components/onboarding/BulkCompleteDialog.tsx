@@ -1,8 +1,8 @@
 /**
  * Mark done for many Tasks on a home's Plan tab (Kati ticket 65, extended by plan catch-up,
  * Admin approval Nov 12). One form for all selected Tasks: when it was done (Today, or Earlier
- * as Done before Resolve on a date up to two years back), one proof note (required, decision O7)
- * and one optional file, saved as the evidence on every Task. Before saving it lists the owner
+ * as Done before Resolve on a date up to two years back), one optional note and one optional
+ * file, saved on every Task (Nov 22: O7 and O8 changed, no proof is asked for). Before saving it lists the owner
  * cards these Tasks cover, the owner approvals recorded as approved outside Resolve (Earlier only)
  * and the Tasks that cannot be marked, with the reason. The database saves each Task completely
  * or not at all and skips the ones it lists (item 8).
@@ -171,13 +171,12 @@ export function BulkCompleteDialog({
           ) : null}
 
           <div className="grid gap-1.5">
-            <Label htmlFor="bulk-note">Proof</Label>
+            <Label htmlFor="bulk-note">Note (optional)</Label>
             <Textarea
               id="bulk-note"
               rows={3}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="For example: Signed copy is in the SharePoint home folder"
             />
           </div>
           <div className="grid gap-1.5">

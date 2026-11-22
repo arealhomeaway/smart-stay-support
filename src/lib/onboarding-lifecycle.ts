@@ -496,10 +496,6 @@ export function deriveRisk(input: ProjectInput): Risk {
     reasons.push(
       `${roll.ownerPending} homeowner decision${roll.ownerPending === 1 ? "" : "s"} outstanding`,
     );
-  if (roll.missingEvidence > 0)
-    reasons.push(
-      `${roll.missingEvidence} step${roll.missingEvidence === 1 ? "" : "s"} missing required evidence`,
-    );
   if (roll.blocked > 0)
     reasons.push(`${roll.blocked} blocked step${roll.blocked === 1 ? "" : "s"}`);
   if (input.property.lifecycle_status === "handoff_corrections")

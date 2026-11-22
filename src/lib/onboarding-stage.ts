@@ -29,7 +29,6 @@ export function stageCompletionBlockers(
     if (t.status !== "complete" && t.status !== "carryover") return [`${t.title}: work is open`];
     if (t.requires_owner_approval && t.owner_approval_status !== "approved")
       return [`${t.title}: owner decision is missing`];
-    if (t.evidence_required && !t.evidence_note?.trim()) return [`${t.title}: evidence is missing`];
     if (t.blocker?.trim()) return [`${t.title}: ${t.blocker}`];
     if (t.status === "carryover" && (!t.assigned_to || !t.due_on || !t.carryover_reason?.trim()))
       return [`${t.title}: carryover needs an owner, date and reason`];

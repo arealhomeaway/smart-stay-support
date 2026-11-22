@@ -35,7 +35,6 @@ import { TaskTeamComments } from "@/components/onboarding/TaskTeamComments";
 import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
 import { BreezewayHomeLink, OnboardingBreezewaySection } from "@/components/onboarding/OnboardingBreezewaySection";
 import { showsBreezewayHomeLink } from "@/lib/onboarding-breezeway";
-import { evidenceSatisfied } from "@/lib/onboarding-evidence";
 import { listAttachmentsFn } from "@/lib/attachments.functions";
 import { bulkUpdateHomeTasksFn, markTaskStartedFn } from "@/lib/onboarding.functions";
 import { SendToHomeownerSection, sendFormId } from "@/components/onboarding/SendToHomeownerDialog";
@@ -222,7 +221,7 @@ export function TaskDrawer({
     decision_note: string | null;
     detail?: string | null;
   }[];
-}) {  const [evidence, setEvidence] = useState("");
+}) {
   const [due, setDue] = useState("");
   const [dueOpen, setDueOpen] = useState(false);
   const [overrideReason, setOverrideReason] = useState("");
@@ -234,7 +233,7 @@ export function TaskDrawer({
   const [voidOpen, setVoidOpen] = useState(false);
   const [voidReason, setVoidReason] = useState("");
   const [fullOpen, setFullOpen] = useState(false);
-  const [outside, setOutside] = useState<OutsideDraft>({ where: null, proof: "", note: "" });
+  const [outside, setOutside] = useState<OutsideDraft>({ where: null, note: "" });
   const [ownerReady, setOwnerReady] = useState(false);
   const [topReopen, setTopReopen] = useState(false);
   const { userId, isAdmin, isOnboardingDirector } = useRole();
@@ -331,7 +330,6 @@ export function TaskDrawer({
   });
 
   useEffect(() => {
-    setEvidence(task?.evidence_note ?? "");
     setDue(task?.due_on ?? "");
     setDueOpen(false);
     setOverrideReason("");
@@ -346,7 +344,7 @@ export function TaskDrawer({
     setTopReopen(false);
   }, [task?.id, task?.evidence_note, task?.due_on]);
   useEffect(() => {
-    setOutside({ where: (settings.where as OutsideDraft["where"]) ?? null, proof: "", note: "" });
+    setOutside({ where: (settings.where as OutsideDraft["where"]) ?? null, note: "" });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task?.id, settings.where]);
   // Fix 11/12: a link from Owner Completions opens the drawer at the owner conversation.
@@ -369,9 +367,6 @@ export function TaskDrawer({
     .map((id) => tasks.find((t) => t.id === id))
     .filter((t): t is WorkflowTask => Boolean(t));
   const downstream = tasks.filter((t) => (t.depends_on ?? []).includes(task.id));
-  const evidenceMissing =
-    task.evidence_required && !evidenceSatisfied({ note: task.evidence_note, fileCount });
-  const proofOk = evidenceSatisfied({ note: evidence, fileCount });
   const awaitingOwner = task.requires_owner_approval && task.owner_approval_status !== "approved";
   const dueChanged = (due || null) !== (task.due_on ?? null);
   const track = trackForTask({ title: task.title, stage: task.stage });
@@ -431,17 +426,14 @@ export function TaskDrawer({
     </div>
   );
   const kindBlock = completionBlock(middle, {
-    proofNote: evidence,
     fileCount,
-    evidenceRequired: task.evidence_required,
     missingFields: middle === "fill_in" ? missingFillFields(settings.fields ?? [], fillQ.data?.filled) : [],
     where: outside.where,
-    outsideProof: outside.proof,
     sent: false,
     approved: true,
     workOrderSent,
   });
-  const releaseHint = !view.canComplete && !evidenceMissing && !awaitingOwner ? view.reason ?? "Not workable yet." : null;
+  const releaseHint = !view.canComplete && !awaitingOwner ? view.reason ?? "Not workable yet." : null;
   // Item 39: Send waits for a file on the Task when the step says so; the server refuses it too.
   const sendFileBlock = !finished && (middle === "send_to_owner" || middle === "email") ? sendNeedsFile(settings, fileCount) : null;
   // Item 38: where the Files box sits for this kind.
@@ -455,10 +447,8 @@ export function TaskDrawer({
           ? workOrderLoading ? null : kindBlock
           : kindBlock ?? completeHint({
               kind: "ordinary",
-              releaseBlocked: !evidenceMissing && !view.canComplete && !awaitingOwner,
+              releaseBlocked: !view.canComplete && !awaitingOwner,
               reason: view.reason,
-              evidenceMissing: false,
-              proofOk: true,
               awaitingOwner,
             })
       : middle === "email" || middle === "approval"
@@ -469,7 +459,8 @@ export function TaskDrawer({
       taskPayload(task, {
         status: "complete",
         blocker: "",
-        ...(note ? { evidenceNote: note } : evidence.trim() ? { evidenceNote: evidence.trim() } : {}),
+        // Nov 22 (O7, O8 changed): no proof is asked for; a note is saved only when the kind writes one.
+        ...(note ? { evidenceNote: note } : {}),
       }),
     );
   const completerId = (task as WorkflowTask & { completed_by?: string | null }).completed_by ?? null;
@@ -491,9 +482,6 @@ export function TaskDrawer({
       {isPhotoStep(task.title) && <OpenPhotosFolderButton propertyId={task.property_id} />}
     </section>
   );
-  const scrollToFiles = () =>
-    document.getElementById(`task-files-${task.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
-
   return (
     <TaskWorkspace
       open
@@ -688,12 +676,13 @@ export function TaskDrawer({
                     assignedTo={task.assigned_to}
                     disabled={disabled}
                     blockedReason={releaseHint}
-                    onApprove={() => complete(evidence.trim() || "Approved")}
+                    onApprove={() => complete("Approved")}
                   />
                 ) : (
                   <ReviewAwareComplete taskId={task.id} disabled={disabled || Boolean(hint)}>
                     <Button
                       className="min-h-11 w-full"
+                      data-tour="task-mark-done"
                       disabled={disabled || Boolean(hint)}
                       onClick={() => complete(middle === "outside_resolve" ? outsideEvidence(outside) : undefined)}
                     >
@@ -765,9 +754,7 @@ export function TaskDrawer({
                       checked={done}
                       disabled={disabled || done}
                       onCheckedChange={() => {
-                        // A step that needs proof opens so the proof can be added there.
-                        if (s.evidence_required && !s.evidence_note) onAdvance?.(s.id);
-                        else onSave(taskPayload(s, { status: "complete", blocker: "" }));
+                        onSave(taskPayload(s, { status: "complete", blocker: "" }));
                       }}
                     />
                     <Label htmlFor={`step-${s.id}`} className="text-sm font-normal">{s.title}</Label>
@@ -782,24 +769,6 @@ export function TaskDrawer({
         {filesAt === "top" && filesSection}
 
         {/* The middle changes with the kind of Task. */}
-        {middle === "do_it" && !finished && (
-          <section className="space-y-2 rounded-lg border border-border p-4" aria-label="Proof it's done">
-            <p className="font-medium">Proof it&apos;s done</p>
-            <Label htmlFor={`proof-${task.id}`} className="text-sm">Where is the proof?</Label>
-            <Textarea
-              id={`proof-${task.id}`}
-              rows={2}
-              value={evidence}
-              disabled={disabled}
-              onChange={(e) => setEvidence(e.target.value)}
-              placeholder="For example: the signed copy is in the home folder."
-            />
-            <Button variant="link" className="h-auto min-h-11 px-0" onClick={scrollToFiles}>
-              Or attach a file
-            </Button>
-          </section>
-        )}
-
         {!finished && !["do_it", "work_order", "send_to_owner"].includes(middle) && (
           <TaskKindMiddle
             kind={middle}
@@ -907,20 +876,6 @@ export function TaskDrawer({
         <details className="space-y-4 text-sm">
           <summary className="flex min-h-11 cursor-pointer items-center text-muted-foreground">Details</summary>
           <div className="mt-3 space-y-5">
-            {middle === "work_order" && !finished && (
-              <section className="space-y-2">
-                <p className="eyebrow">Proof</p>
-                <Label htmlFor={`wo-proof-${task.id}`} className="text-sm">Where is the proof?</Label>
-                <Textarea
-                  id={`wo-proof-${task.id}`}
-                  rows={2}
-                  value={evidence}
-                  disabled={disabled}
-                  onChange={(e) => setEvidence(e.target.value)}
-                  placeholder="Only when finishing by hand: where the proof is."
-                />
-              </section>
-            )}
             {middle === "send_to_owner" && fullExtra && (
               <section className="space-y-1">
                 <p className="eyebrow">Full instructions</p>

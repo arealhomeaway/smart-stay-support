@@ -18,7 +18,6 @@ import { GATE_STEPS, type HandoffCheck } from "./onboarding";
 import { ONBOARDING_STAGES } from "./onboarding";
 import { stageReviewMatchesWork, type StageCapture } from "./onboarding-stage";
 import type { WorkflowTask } from "./onboarding-workflow";
-import { evidenceSatisfied } from "./onboarding-evidence";
 import { homeownerApprovalRequired } from "./owner-dependency";
 
 /* -------------------------------------------------------------- lifecycle */
@@ -555,13 +554,7 @@ export function releaseState(
   if ((task.blocker ?? "").trim())
     return { state: "waiting", reason: `Blocked: ${task.blocker!.trim()}`, canComplete: false };
 
-  // Evidence is a stored file OR a note of at least 5 characters (onboarding-evidence.ts).
-  const evidenceMissing =
-    task.evidence_required &&
-    !evidenceSatisfied({ note: task.evidence_note, fileCount: task.evidence_file_count });
-  // A completion note is asked for when finishing; it never makes a Task look
-  // started or hold it back from being worked.
-  if (evidenceMissing) return { state: "ready", reason: null, canComplete: false };
+  // Nov 22 (O7, O8 changed): no Task waits on proof before it can be completed.
 
   const reopened = Boolean(task.completed_at) && task.status !== "complete";
   if (reopened)

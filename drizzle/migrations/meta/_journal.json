@@ -2528,6 +2528,13 @@
       "when": 1795288407774,
       "tag": "0360_active_owner_pace_hold",
       "breakpoints": true
+    },
+    {
+      "idx": 361,
+      "version": "7",
+      "when": 1795317273954,
+      "tag": "0361_onboarding_roles_attach",
+      "breakpoints": true
     }
   ]
 }

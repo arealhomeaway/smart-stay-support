@@ -1,11 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
-import {
-  EVIDENCE_PROBLEM,
-  bulkCompleteProblem,
-  evidenceSatisfied,
-  fileEvidenceNote,
-} from "@/lib/onboarding-evidence";
+import { markDoneProblem } from "@/lib/plan-catch-up";
+import { completionBlock } from "@/lib/onboarding-task-kinds";
 import {
   breezewayConnection,
   isBreezewayWorkOrderStep,
@@ -35,35 +31,34 @@ const base: WorkflowTask = {
   carryover_reason: null, linked_ticket_id: null, status: "open", sort_order: 10, completed_at: null,
 };
 
-describe("ticket 65: evidence is a file or a note of at least 5 characters", () => {
-  it("a note completes, a file completes, neither does not", () => {
-    expect(evidenceSatisfied({ note: "Signed copy is in the SharePoint home folder" })).toBe(true);
-    expect(evidenceSatisfied({ note: "", fileCount: 1 })).toBe(true);
-    expect(evidenceSatisfied({ note: "", fileCount: 0 })).toBe(false);
-    expect(evidenceSatisfied({ note: "done" })).toBe(false);
-    expect(evidenceSatisfied({ note: "done." })).toBe(true);
+describe("Nov 22: O7 and O8 changed, no onboarding Task asks for proof", () => {
+  it("a Task marked as needing proof can be finished with no note and no file", () => {
+    expect(canFinish({ ...base, evidence_file_count: 0 })).toBe(true);
+    expect(canFinish({ ...base, evidence_note: "" })).toBe(true);
   });
-  it("the step can be completed with a file and no note, and not with neither", () => {
-    expect(canFinish({ ...base, evidence_file_count: 1 })).toBe(true);
-    expect(canFinish({ ...base, evidence_file_count: 0 })).toBe(false);
-    expect(canFinish({ ...base, evidence_note: "In the home folder" })).toBe(true);
-    expect(canFinish({ ...base, evidence_note: "done" })).toBe(false);
+  it("the guided card goes straight to complete, never to a proof step", () => {
+    expect(onboardingTaskAction(viewTask(base, []))?.id).toBe("complete_task");
   });
-  it("the guided card stops asking for proof once a file is on the step", () => {
-    expect(onboardingTaskAction(viewTask(base, []))?.id).toBe("capture_evidence");
-    expect(onboardingTaskAction(viewTask({ ...base, evidence_file_count: 1 }, []))?.id).toBe("complete_task");
+  it("Mark done for many Tasks needs no note; the Done before Resolve date rules stay", () => {
+    const ok = { note: "", when: "today" as const, doneOn: null, today: "2026-11-22", count: 5 };
+    expect(markDoneProblem(ok)).toBeNull();
+    expect(markDoneProblem({ ...ok, when: "earlier" })).toBe("Pick the date it was done.");
+    expect(markDoneProblem({ ...ok, when: "earlier", doneOn: "2026-11-23" })).toBe("Pick a date that is not in the future.");
+    expect(markDoneProblem({ ...ok, when: "earlier", doneOn: "2026-11-02" })).toBeNull();
   });
-  it("a file alone is recorded by name", () => {
-    expect(fileEvidenceNote("signed.pdf")).toBe("Proof is the attached file: signed.pdf");
+  it("no kind of Task waits on proof in the task window", () => {
+    expect(completionBlock("do_it", {})).toBeNull();
+    expect(completionBlock("vendor_request", {})).toBeNull();
+    expect(completionBlock("work_order", { workOrderSent: true })).toBeNull();
+    expect(completionBlock("outside_resolve", { where: "docusign" })).toBeNull();
+    expect(completionBlock("outside_resolve", {})).toBe("Choose where it went.");
   });
-  it("bulk complete needs one note or one file, and a past or today Done before Resolve date", () => {
-    const ok = { note: "Signed copy is in the SharePoint home folder", hasFile: false, doneBeforeResolve: false, doneOn: null, today: "2026-11-10", count: 5 };
-    expect(bulkCompleteProblem(ok)).toBeNull();
-    expect(bulkCompleteProblem({ ...ok, note: "ok" })).toBe(EVIDENCE_PROBLEM);
-    expect(bulkCompleteProblem({ ...ok, note: "", hasFile: true })).toBeNull();
-    expect(bulkCompleteProblem({ ...ok, doneBeforeResolve: true })).toBe("Pick the date the work was done.");
-    expect(bulkCompleteProblem({ ...ok, doneBeforeResolve: true, doneOn: "2026-11-11" })).toContain("future");
-    expect(bulkCompleteProblem({ ...ok, doneBeforeResolve: true, doneOn: "2026-11-02" })).toBeNull();
+  it("the task window and the save have no proof field or proof check", () => {
+    const drawer = readFileSync("src/components/onboarding/TaskDrawer.tsx", "utf8");
+    expect(drawer).not.toContain("Proof it&apos;s done");
+    expect(drawer).not.toContain("Where is the proof?");
+    expect(readFileSync("src/lib/onboarding.server.ts", "utf8")).not.toContain("EVIDENCE_PROBLEM");
+    expect(readFileSync("src/components/onboarding/BulkCompleteDialog.tsx", "utf8")).not.toContain('>Proof<');
   });
   it("the save no longer refuses long plan instructions", () => {
     const fns = readFileSync("src/lib/onboarding.functions.ts", "utf8");

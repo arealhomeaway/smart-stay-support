@@ -1518,13 +1518,6 @@ function NewTaskDialog({
           </label>
           <label className="flex items-center gap-2 text-sm">
             <Checkbox
-              checked={evidenceRequired}
-              onCheckedChange={(v) => setEvidenceRequired(Boolean(v))}
-            />
-            Needs evidence (a file or a note on where the proof is)
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox
               checked={blocksHandoff}
               onCheckedChange={(v) => setBlocksHandoff(Boolean(v))}
             />

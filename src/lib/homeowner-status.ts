@@ -35,7 +35,12 @@ export const STATUS_COPY = {
 export const RECENT_DAYS = 7;
 
 export type StatusCard = HasPlanCard & { linkedTaskId: string | null; ownerNeeded: boolean };
-export type StatusReview = HasReview & { propertyId: string | null; taskId: string | null };
+export type StatusReview = HasReview & {
+  propertyId: string | null;
+  taskId: string | null;
+  /** The newest homeowner message on the item, when loaded (Nov 22 answer review). */
+  ownerAnsweredAt?: string | null;
+};
 export type StatusApproval = HasApproval & { propertyId: string | null; taskId: string | null };
 
 export type HomeownerStatusData = {
@@ -51,7 +56,16 @@ export type HomeownerStatusData = {
   updates?: StatusUpdate[];
 };
 
-export type StatusUpdate = { id: string; propertyId: string | null; title: string; taskId: string | null; at: string };
+export type StatusUpdate = {
+  id: string;
+  propertyId: string | null;
+  title: string;
+  taskId: string | null;
+  at: string;
+  /** What changed: hours, card, opportunity or owner_item, and the item's id (Nov 22 answer review). */
+  kind?: string;
+  itemId?: string;
+};
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -186,9 +200,22 @@ const recent = (at: string | null | undefined, now: Date) =>
 
 /** "Homeowner answered or finished": the last 7 days, newest first, with the answer. */
 export function answeredRows(data: HomeownerStatusData, homes: ReadonlySet<string>, now: Date): StatusRow[] {
+  return answerList(data, homes, now, true);
+}
+
+/**
+ * Every homeowner answer on these homes, newest first, with no 7-day limit (Nov 22, for the
+ * answer review on My Tasks). Same rows and lines as answeredRows.
+ */
+export function allAnswerRows(data: HomeownerStatusData, homes: ReadonlySet<string>, now: Date): StatusRow[] {
+  return answerList(data, homes, now, false);
+}
+
+function answerList(data: HomeownerStatusData, homes: ReadonlySet<string>, now: Date, recentOnly: boolean): StatusRow[] {
+  const inWindow = (at: string | null | undefined) => !recentOnly || recent(at, now);
   const out: StatusRow[] = [];
   for (const c of data.cards) {
-    if (!homes.has(c.propertyId) || !cardDone(c, data.planOn[c.propertyId] ?? false) || !recent(c.ownerCompletedAt, now)) continue;
+    if (!homes.has(c.propertyId) || !cardDone(c, data.planOn[c.propertyId] ?? false) || !inWindow(c.ownerCompletedAt)) continue;
     const r = c.ownerReviewId ? data.cardReviews[c.ownerReviewId] : undefined;
     const answer = r && reviewAnswered(r) ? reviewStatusLine(r).line : "";
     // What she sent on the card itself, when the reader may see it.
@@ -209,16 +236,16 @@ export function answeredRows(data: HomeownerStatusData, homes: ReadonlySet<strin
     });
   }
   for (const r of data.reviews) {
-    if (!r.propertyId || !homes.has(r.propertyId) || !reviewAnswered(r) || !recent(reviewAnsweredAt(r), now)) continue;
+    if (!r.propertyId || !homes.has(r.propertyId) || !reviewAnswered(r) || !inWindow(reviewAnsweredAt(r))) continue;
     out.push({ key: `review:${r.id}`, propertyId: r.propertyId, home: homeOf(data, r.propertyId), title: r.title, line: reviewStatusLine(r).line, overdue: false, taskId: r.taskId, at: reviewAnsweredAt(r) ?? "" });
   }
   for (const a of data.approvals) {
-    if (!a.propertyId || !homes.has(a.propertyId) || approvalWaiting(a) || !recent(a.decidedAt, now)) continue;
+    if (!a.propertyId || !homes.has(a.propertyId) || approvalWaiting(a) || !inWindow(a.decidedAt)) continue;
     out.push({ key: `approval:${a.id}`, propertyId: a.propertyId, home: homeOf(data, a.propertyId), title: a.title, line: approvalStatusLine(a).line, overdue: false, taskId: a.taskId, at: a.decidedAt ?? "" });
   }
   // Nov 18: every change she made after finishing, in the last 7 days.
   for (const u of data.updates ?? []) {
-    if (!u.propertyId || !homes.has(u.propertyId) || !recent(u.at, now)) continue;
+    if (!u.propertyId || !homes.has(u.propertyId) || !inWindow(u.at)) continue;
     out.push({ key: `update:${u.id}`, propertyId: u.propertyId, home: homeOf(data, u.propertyId), title: u.title, line: homeownerUpdatedLine(u.title, u.at), overdue: false, taskId: u.taskId, at: u.at });
   }
   return out.sort((x, y) => y.at.localeCompare(x.at) || x.title.localeCompare(y.title));

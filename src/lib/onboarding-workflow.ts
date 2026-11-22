@@ -155,7 +155,6 @@ export function viewTask(
   const waitingOn: string[] = [];
 
 
-  const evidenceMissing = task.evidence_required && !(task.evidence_note ?? "").trim();
   const awaitingOwner =
     task.requires_owner_approval &&
     task.owner_approval_status !== "approved" &&
@@ -181,7 +180,7 @@ export function viewTask(
     reason = "Blocked: Homeowner requested changes";
   } else if (task.status === "blocked") {
     status = "blocked";
-    reason = evidenceMissing ? "Blocked: Missing Evidence" : "Blocked: Internal Review";
+    reason = "Blocked: Internal Review";
   } else if (awaitingOwner) {
     status = "needs_review";
     reason = "Homeowner approval required before completion";
@@ -209,15 +208,6 @@ export function viewTask(
       label: "Owner",
       explain:
         "Sent to the Owner Portal for a recorded homeowner decision. Sending alone does not complete the step.",
-    });
-  }
-  if (task.evidence_required) {
-    markers.push({
-      key: "evidence",
-      label: "Evidence",
-      explain: evidenceMissing
-        ? "Required evidence is not recorded yet. This task cannot be marked complete."
-        : "Required evidence is recorded.",
     });
   }
   if (template?.breezewayTemplateId) {
@@ -362,14 +352,6 @@ export function whyThisTaskExists(view: TaskView, all: WorkflowTask[]): string[]
     lines.push("Requires a recorded homeowner decision before it can be completed.");
   }
 
-  if (task.evidence_required) {
-    lines.push(
-      task.evidence_note
-        ? "Evidence is required before completion, and has been recorded."
-        : "Evidence is required before completion. None recorded yet.",
-    );
-  }
-
   if (template?.breezewayTemplateId) {
     lines.push("Fulfilled by a Breezeway New House Setup Work Order.");
   }
@@ -444,7 +426,6 @@ export type PropertyRollup = {
   progress: number;
   blocked: number;
   ownerPending: number;
-  missingEvidence: number;
   overdue: number;
   carryover: number;
   nextMilestone: string | null;
@@ -468,9 +449,6 @@ export function rollupProperty(tasks: WorkflowTask[], release?: ReleaseContext):
     blocked: blockedViews.length,
     ownerPending: open.filter(
       (v) => v.task.requires_owner_approval && v.task.owner_approval_status !== "approved",
-    ).length,
-    missingEvidence: open.filter(
-      (v) => v.task.evidence_required && !(v.task.evidence_note ?? "").trim(),
     ).length,
     overdue: open.filter((v) => v.overdue).length,
     carryover: views.filter((v) => v.status === "carryover").length,

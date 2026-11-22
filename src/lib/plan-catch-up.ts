@@ -139,7 +139,6 @@ export function markDoneProblem(input: { note: string; when: DoneWhen; doneOn: s
     if (input.doneOn > input.today) return "Pick a date that is not in the future.";
     if (input.doneOn < earliestDoneOn(input.today)) return "Pick a date in the last two years.";
   }
-  if (input.note.trim().length < 5) return "Add a note that says where the proof is (at least 5 characters).";
   return null;
 }
 

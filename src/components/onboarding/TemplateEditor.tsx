@@ -152,7 +152,6 @@ function SortableStep({
             {step.ownerApprovalWhenActiveOwner ? (
               <Badge variant="outline">Approval for Active Owner homes</Badge>
             ) : null}
-            {step.evidenceRequired ? <Badge variant="outline">Evidence required</Badge> : null}
             {(step.tags ?? []).map((tag) => (
               <Badge key={tag} variant={tag === ACTIVE_OWNER_TAG ? "default" : "secondary"}>
                 {tagLabel(tag)}
@@ -550,7 +549,6 @@ export function TemplateEditor({ templateId }: { templateId: string }) {
                     ["blocksHandoff", "Must be done before handoff"],
                     ["requiresOwnerApproval", "Needs homeowner approval"],
                     ["ownerApprovalWhenActiveOwner", "Needs approval on Active Owner homes only"],
-                    ["evidenceRequired", "Needs a photo or document to close"],
                   ] as const
                 ).map(([field, label]) => (
                   <label key={field} className="flex items-center gap-2 text-sm">

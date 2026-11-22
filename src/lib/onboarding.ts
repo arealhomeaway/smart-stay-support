@@ -174,9 +174,6 @@ export function validateHandoff(
   const missingApproval = tasks.filter(
     (t) => t.requires_owner_approval && t.owner_approval_status !== "approved",
   );
-  const missingEvidence = tasks.filter(
-    (t) => t.evidence_required && !(t.evidence_note ?? "").trim() && t.status === "complete",
-  );
   const blockers = tasks.filter((t) => (t.blocker ?? "").trim() && t.status !== "complete");
 
   const checks: HandoffCheck[] = [
@@ -231,13 +228,6 @@ export function validateHandoff(
       passed: missingApproval.length === 0,
       blocking: true,
       detail: `${missingApproval.length} task(s) awaiting a homeowner decision.`,
-    },
-    {
-      key: "evidence",
-      label: "Required evidence captured",
-      passed: missingEvidence.length === 0,
-      blocking: true,
-      detail: `${missingEvidence.length} completed task(s) missing required evidence.`,
     },
     {
       key: "blockers",

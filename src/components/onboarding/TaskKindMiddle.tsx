@@ -36,12 +36,12 @@ import {
   type WhereCode,
 } from "@/lib/onboarding-task-kinds";
 
-export type OutsideDraft = { where: WhereCode | null; proof: string; note: string };
+export type OutsideDraft = { where: WhereCode | null; note: string };
 
-/** The proof line saved on a Done outside Resolve Task. */
+/** The line saved on a Done outside Resolve Task: where it went, and the note when given (no proof, Nov 22). */
 export function outsideEvidence(d: OutsideDraft): string {
   const where = WHERE_IT_WENT.find((w) => w.code === d.where)?.label ?? "Other";
-  return [`Where it went: ${where}`, d.proof.trim() ? `Proof: ${d.proof.trim()}` : null, d.note.trim() ? `Note: ${d.note.trim()}` : null]
+  return [`Where it went: ${where}`, d.note.trim() ? `Note: ${d.note.trim()}` : null]
     .filter(Boolean)
     .join(" · ");
 }
@@ -118,12 +118,6 @@ export function TaskKindMiddle({
               {WHERE_IT_WENT.map((w) => <SelectItem key={w.code} value={w.code}>{w.label}</SelectItem>)}
             </SelectContent>
           </Select>
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor={`outside-proof-${taskId}`}>Proof</Label>
-          <Input id={`outside-proof-${taskId}`} className="min-h-11" value={outside.proof} disabled={disabled}
-            onChange={(e) => onOutside({ ...outside, proof: e.target.value })}
-            placeholder="Paste a link or envelope number, or upload a screenshot below" />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor={`outside-note-${taskId}`}>Note</Label>

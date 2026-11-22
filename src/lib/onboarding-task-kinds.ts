@@ -167,15 +167,12 @@ export function mainButtonLabel(kind: TaskKindCode): string | null {
 }
 
 export type CompletionState = {
-  /** Proof note (at least 5 characters) or a stored file. */
-  proofNote?: string | null;
+  /** Stored files on the Task (Upload files needs one). Nov 22: no kind asks for proof (O7, O8 changed). */
   fileCount?: number;
-  evidenceRequired?: boolean;
   /** Fill in Resolve: the step's fields that still have no value. */
   missingFields?: string[];
   /** Done outside Resolve. */
   where?: string | null;
-  outsideProof?: string | null;
   /** Email and Send to the homeowner: the send went out. */
   sent?: boolean;
   /** Approval: the step review is approved. */
@@ -184,31 +181,26 @@ export type CompletionState = {
   workOrderSent?: boolean;
 };
 
-const proofGiven = (s: CompletionState) => (s.proofNote ?? "").trim().length >= 5 || (s.fileCount ?? 0) > 0;
 
 /** Each kind's completion rule: null when the Task may complete, else the plain reason. */
 export function completionBlock(kind: TaskKindCode, s: CompletionState): string | null {
   switch (kind) {
     case "do_it":
-      return s.evidenceRequired && !proofGiven(s) ? "Add where the proof is, or attach a file." : null;
+      return null;
     case "fill_in":
       return (s.missingFields ?? []).length ? `Fill in ${s.missingFields!.join(", ")}.` : null;
     case "upload_files":
       return (s.fileCount ?? 0) > 0 ? null : "Upload at least one file.";
     case "work_order":
-      if (!s.workOrderSent) return "Completes by itself when Breezeway marks the job done.";
-      return proofGiven(s) ? null : "Add where the proof is under Details, or attach a file.";
+      return s.workOrderSent ? null : "Completes by itself when Breezeway marks the job done.";
     case "send_to_owner":
       return s.sent ? null : "Completes when you send it to the homeowner.";
     case "outside_resolve":
-      if (!s.where) return "Choose where it went.";
-      return (s.outsideProof ?? "").trim().length >= 5 || (s.fileCount ?? 0) > 0
-        ? null
-        : "Paste a link or envelope number, or upload a screenshot.";
+      return s.where ? null : "Choose where it went.";
     case "email":
       return s.sent ? null : "Completes when the email sends.";
     case "vendor_request":
-      return proofGiven(s) ? null : "Attach the reply or quote, or note it.";
+      return null;
     case "approval":
       return s.approved ? null : "Approve, or send it back with a note.";
   }

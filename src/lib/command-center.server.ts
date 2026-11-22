@@ -621,10 +621,7 @@ export async function loadCommandCenter(
   );
   const requiredComplete = tasks.filter((t) => t.blocks_handoff && t.status === "complete").length;
   const requiredTotal = tasks.filter((t) => t.blocks_handoff).length;
-  const evidenceOk = tasks.filter(
-    (t) => t.evidence_required && (t.evidence_note ?? "").trim(),
-  ).length;
-  const evidenceNeeded = tasks.filter((t) => t.evidence_required).length;
+  // Nov 22 (O7, O8 changed): onboarding Tasks no longer need proof, so there is no evidence measure.
   const ownerApprovalsOut = tasks.filter(
     (t) => t.requires_owner_approval && t.owner_approval_status === "pending",
   ).length;
@@ -727,22 +724,6 @@ export async function loadCommandCenter(
         status: ownerApprovalsOut === 0 ? "green" : "yellow",
         denominator: `${tasks.filter((t) => t.requires_owner_approval).length} approval-gated tasks`,
         drill: { to: "/onboarding", label: "Approvals" },
-      }),
-      kpi({
-        key: "readiness_evidence",
-        label: "Readiness-checklist evidence complete",
-        unit: "percent",
-        value: pct(evidenceOk, evidenceNeeded),
-        target: "100%",
-        status: grade(pct(evidenceOk, evidenceNeeded), {
-          good: 100,
-          warn: 85,
-          higherIsBetter: true,
-        }),
-        denominator: `${evidenceNeeded} evidence-required tasks`,
-        unavailable:
-          evidenceNeeded === 0 ? "No evidence-required onboarding tasks recorded yet." : null,
-        drill: { to: "/onboarding", label: "Evidence" },
       }),
       kpi({
         key: "first_pass_handoff",

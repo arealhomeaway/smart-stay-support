@@ -66,7 +66,7 @@ type ReviewRow = {
 };
 
 /** Everything the homeowner has, for many homes at once. */
-export async function loadHomeownerStatus(input: { propertyIds: string[]; demo: boolean }): Promise<HomeownerStatusData> {
+export async function loadHomeownerStatus(input: { propertyIds: string[]; demo: boolean; allAnswers?: boolean }): Promise<HomeownerStatusData> {
   const empty: HomeownerStatusData = { cards: [], reviews: [], cardReviews: {}, approvals: [], planOn: {}, homeLabels: {} };
   const ids = [...new Set(input.propertyIds)].filter(Boolean);
   if (ids.length === 0) return empty;
@@ -119,13 +119,15 @@ export async function loadHomeownerStatus(input: { propertyIds: string[]; demo: 
   const firstSend = new Map<string, (typeof sends)[number]>();
   for (const s of sends) if (!firstSend.has(s.review_id)) firstSend.set(s.review_id, s);
   const lastMessage = new Map<string, string>();
-  for (const m of messages) if (!lastMessage.has(m.review_id)) lastMessage.set(m.review_id, m.body);
+  const lastMessageAt = new Map<string, string>();
+  for (const m of messages) if (!lastMessage.has(m.review_id)) { lastMessage.set(m.review_id, m.body); lastMessageAt.set(m.review_id, m.created_at); }
   const extraHomes = new Map<string, string[]>();
   for (const x of reviewHomes) extraHomes.set(x.review_id, [...(extraHomes.get(x.review_id) ?? []), x.property_id]);
 
   // What the homeowner sent on cards finished in the last 7 days (existing read rule on saved answers).
-  const recentSince = Date.now() - 8 * 86_400_000;
-  const updatesP = loadHomeownerUpdates({ propertyIds: ids, since: new Date(recentSince).toISOString() });
+  // My Tasks answer review (Nov 22) reads every finished card and every change, with no time limit.
+  const recentSince = input.allAnswers ? 0 : Date.now() - 8 * 86_400_000;
+  const updatesP = loadHomeownerUpdates(input.allAnswers ? { propertyIds: ids } : { propertyIds: ids, since: new Date(recentSince).toISOString() });
   const submissions = await loadCardSubmissions(
     cards.filter((c) => c.owner_completed_at && Date.parse(c.owner_completed_at) >= recentSince).map((c) => c.id),
   );
@@ -144,6 +146,7 @@ export async function loadHomeownerStatus(input: { propertyIds: string[]; demo: 
       respondedAt: r.responded_at, closedAt: r.closed_at, decision: r.owner_decision, response: r.owner_response,
       lastOwnerMessage: lastMessage.get(r.id) ?? null, files: [],
       propertyId: home, taskId: send?.task_id ?? r.onboarding_task_id,
+      ownerAnsweredAt: lastMessageAt.get(r.id) ?? null,
     };
   };
 
@@ -168,7 +171,7 @@ export async function loadHomeownerStatus(input: { propertyIds: string[]; demo: 
     homeLabels: Object.fromEntries(props.map((p) => [p.id, formatPropertyLabel(p).primary])),
     updates: (await updatesP)
       .filter((u) => (input.demo || !u.isDemo) && u.propertyId && programOf.has(u.propertyId))
-      .map((u) => ({ id: u.id, propertyId: u.propertyId, title: u.title, taskId: u.taskId, at: u.at })),
+      .map((u) => ({ id: u.id, propertyId: u.propertyId, title: u.title, taskId: u.taskId, at: u.at, kind: u.kind, itemId: u.itemId })),
   };
 }
 

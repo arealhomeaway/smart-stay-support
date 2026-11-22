@@ -4,14 +4,13 @@
  * Same pattern as the ticket workspace: what to do now, why it is next, what
  * has to be written down, and what happens the moment it is finished. Pure —
  * it reads only what viewTask() already derived and the task's own fields, and
- * it grants no authority: release rules, evidence gates and owner approval
- * remain the source of truth.
+ * it grants no authority: release rules and owner approval remain the source
+ * of truth. Nov 22 (O7, O8 changed): no Task asks for proof before it is done.
  */
 import type { GuidedAction } from "@/lib/guided-action";
 import type { TaskView, WorkflowTask } from "@/lib/onboarding-workflow";
 import type { ReleaseContext } from "@/lib/onboarding-state";
 import { viewTask } from "@/lib/onboarding-workflow";
-import { EVIDENCE_NOTE_MIN, evidenceSatisfied } from "@/lib/onboarding-evidence";
 
 export type TaskActionId =
   | "wait_for_dependency"
@@ -167,29 +166,6 @@ export function onboardingTaskAction(view: TaskView): TaskAction | null {
           type: "longtext",
           required: true,
           minLength: 5,
-        },
-      ],
-    };
-  }
-
-  if (
-    task.evidence_required &&
-    !evidenceSatisfied({ note: task.evidence_note, fileCount: task.evidence_file_count })
-  ) {
-    return {
-      id: "capture_evidence",
-      title: "Record what proves this is done",
-      because: "Attach a file below, or write where the proof is.",
-      then: "Then you can mark it complete.",
-      completeLabel: "Save & advance",
-      fields: [
-        {
-          name: "evidence",
-          label: "What proves this is done",
-          type: "longtext",
-          required: true,
-          minLength: EVIDENCE_NOTE_MIN,
-          help: "For example: Signed copy is in the SharePoint home folder.",
         },
       ],
     };
