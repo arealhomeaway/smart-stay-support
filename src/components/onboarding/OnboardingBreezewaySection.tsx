@@ -8,6 +8,7 @@
  * status, assignee, comments and photos. Send to Breezeway is built but stays
  * off until the onboarding send switch is turned on after a verification send.
  */
+import { workOrderStatusLabel } from "@/lib/onboarding-work-order-status";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -144,9 +145,12 @@ export function OnboardingBreezewaySection({
     onSuccess: (r) => {
       if (r && "ok" in r && r.ok === false) toast.error(r.message);
       else {
-        const missed = (r as { filesNotAdded?: string[] } | undefined)?.filesNotAdded ?? [];
-        if (missed.length) toast.message(`Sent to Breezeway. Not added: ${missed.join(", ")}. Add them in Breezeway.`);
-        else toast.success("Sent to Breezeway.");
+        const out = r as { filesNotAdded?: string[]; taskDone?: boolean; notDoneReason?: string | null } | undefined;
+        const missed = out?.filesNotAdded ?? [];
+        const done = out?.taskDone ? " Task marked done." : out?.notDoneReason ? ` Task still open: ${out.notDoneReason}` : "";
+        if (missed.length) toast.message(`Sent to Breezeway.${done} Not added: ${missed.join(", ")}. Add them in Breezeway.`);
+        else toast.success(`Sent to Breezeway.${done}`);
+        void qc.invalidateQueries({ queryKey: ["task-work-orders"] });
         onSent?.();
       }
       void qc.invalidateQueries({ queryKey: key });
@@ -208,7 +212,9 @@ export function OnboardingBreezewaySection({
           </p>
           {data.mirror ? (
             <>
-              <p className="text-muted-foreground">Breezeway number {linkedId} · Status: {data.mirror.stage || data.mirror.status || "Not reported"}</p>
+              <p className="text-muted-foreground">Breezeway number {linkedId} · Status: {workOrderStatusLabel(data.mirror.stage, data.mirror.status, data.mirror.scheduled_date)}</p>
+              {data.reopenReason ? <p className="font-medium text-late">Reopened: {data.reopenReason}</p> : null}
+              {data.instructionsError ? <p className="text-late">The instructions did not reach Breezeway: {data.instructionsError} Add them in Breezeway.</p> : null}
               <p className="flex items-center gap-2 text-muted-foreground">
                 <UserCheck className="size-4 shrink-0" /> {data.mirror.assignee_names || "Not assigned in Breezeway"}
               </p>

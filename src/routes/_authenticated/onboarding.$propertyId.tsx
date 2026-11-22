@@ -1,3 +1,4 @@
+import { useTaskWorkOrderStatuses } from "@/components/onboarding/TaskWorkOrderChip";
 import { EscalationsSection } from "@/components/onboarding/escalations/EscalationsSection";
 import { formatPropertyLabel } from "@/lib/property-label";
 import { taskSavedMessage } from "@/lib/task-proof";
@@ -506,6 +507,10 @@ function PropertyWorkspace() {
   const stagerProjectId =
     (data?.projects ?? []).find((x) => x.property_id === propertyId && x.status !== "cancelled")?.id ?? null;
   const homeStager = useProjectStagers(stagerProjectId);
+  // Breezeway status of this home's Tasks, read once for the Tasks tab rows.
+  const homeWorkOrders = useTaskWorkOrderStatuses(
+    ((data?.tasks ?? []) as { id: string; property_id: string }[]).filter((t) => t.property_id === propertyId).map((t) => t.id),
+  );
 
   if (isLoading || !data) return <LoadingPage />;
   if (
@@ -933,6 +938,7 @@ function PropertyWorkspace() {
           )}
           <EscalationsSection propertyId={current.id} viewerId={userId ?? null} canClose={isOnboardingDirector || isAdminViewer} />
           <TasksTab
+            workOrders={homeWorkOrders.data}
             propertyId={current.id}
             tasks={planTasks}
             people={data.people}

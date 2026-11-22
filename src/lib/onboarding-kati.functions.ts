@@ -83,6 +83,10 @@ export type OnboardingBreezewayState = {
   history: number;
   sendSwitchOn: boolean;
   home: { eligible: boolean; reason: string | null } | null;
+  /** Why the Task reopened from its Breezeway work order, if it did. */
+  reopenReason: string | null;
+  /** Set when the Task's text could not be written as the work order's instructions. */
+  instructionsError: string | null;
 };
 
 export const onboardingBreezewayStateFn = createServerFn({ method: "POST" })
@@ -156,8 +160,25 @@ export const onboardingBreezewayStateFn = createServerFn({ method: "POST" })
       history: history.count ?? 0,
       sendSwitchOn,
       home,
+      ...(await workOrderExtras(db, data.taskId)),
     };
   });
+
+/** Reopen reason and instructions result; both arrive with the staged onboarding-work-order-done change and read as empty before it. */
+async function workOrderExtras(db: Loose, taskId: string) {
+  const [watch, out] = await Promise.all([
+    db.from("onboarding_task_work_order_watch").select("reopen_reason, state, reopened_at")
+      .eq("task_id", taskId).order("created_at", { ascending: false }).limit(1),
+    db.from("breezeway_outbound_tasks").select("instructions_error")
+      .eq("onboarding_task_id", taskId).order("created_at", { ascending: false }).limit(1),
+  ]);
+  const w = watch.error ? null : (watch.data?.[0] as { reopen_reason: string | null; state: string } | undefined);
+  const o = out.error ? null : (out.data?.[0] as { instructions_error: string | null } | undefined);
+  return {
+    reopenReason: w?.state === "reopened" ? w.reopen_reason ?? null : null,
+    instructionsError: o?.instructions_error ?? null,
+  };
+}
 
 export const saveOnboardingBreezewayFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -301,7 +322,25 @@ export const sendOnboardingWorkOrderFn = createServerFn({ method: "POST" })
         }
       }
     }
-    return result.ok && notAdded.length ? { ...result, filesNotAdded: notAdded } : result;
+    // The Task is done once its work order exists in Breezeway, through the canonical Mark done
+    // (DB complete_task_on_work_order_created). A hold keeps it open and says why.
+    let taskDone = false;
+    let notDoneReason: string | null = null;
+    const outboundId = result.ok ? (result.link as { id?: string } | undefined)?.id ?? null : null;
+    if (result.ok && outboundId && bzTaskId) {
+      const done = await (context.supabase.rpc as unknown as Rpc)("complete_task_on_work_order_created", { _outbound_id: outboundId });
+      if (done.error) {
+        notDoneReason = /could not find the function|does not exist/i.test(done.error.message)
+          ? null
+          : done.error.message;
+      } else {
+        const out = (done.data ?? {}) as { completed?: number; held?: { reason?: string }[] };
+        taskDone = (out.completed ?? 0) > 0;
+        if (!taskDone) notDoneReason = out.held?.[0]?.reason ?? null;
+      }
+    }
+    if (!result.ok) return result;
+    return { ...result, ...(notAdded.length ? { filesNotAdded: notAdded } : {}), taskDone, notDoneReason };
   });
 
 export const breezewayHomeLinkFn = createServerFn({ method: "POST" })

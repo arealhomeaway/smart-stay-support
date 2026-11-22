@@ -6,6 +6,7 @@ import { archiveOnboardingTaskFn, overrideOnboardingTaskDateFn } from "@/lib/onb
 import { planCatchUpViewerFn } from "@/lib/plan-catch-up.functions";
 import { canUseCatchUp, catchUpSelectable, type CatchUpTask, type CatchUpViewer } from "@/lib/plan-catch-up";
 import { TaskRowActions } from "@/components/onboarding/TaskRowActions";
+import { TaskWorkOrderChip, useTaskWorkOrderStatuses } from "@/components/onboarding/TaskWorkOrderChip";
 import { ChevronRight } from "lucide-react";
 import { restoreAssignedRelease } from "@/lib/onboarding-assigned-context";
 import {
@@ -286,6 +287,9 @@ function MyWork() {
       return next;
     });
   };
+
+  // One Breezeway status read for every Task this view can list (before the loading return, so hook order holds).
+  const workOrders = useTaskWorkOrderStatuses(mine.map((t) => t.id));
 
   if (isLoading || !data) return <LoadingPage />;
 
@@ -599,7 +603,8 @@ function MyWork() {
                             {taskProofText(v.task as unknown as DoneTask, taskProof.data)}
                           </span>
                         ) : null;
-                        return chip || done ? <>{chip ? <HomeownerTaskChip chip={chip} /> : null}{done}</> : null;
+                        const wo = workOrders.data?.[v.task.id];
+                        return chip || done || wo ? <>{chip ? <HomeownerTaskChip chip={chip} /> : null}{wo ? <span className="mt-1 block"><TaskWorkOrderChip status={wo} /></span> : null}{done}</> : null;
                       })()}
                     />
                   </div>

@@ -635,6 +635,15 @@ export async function createOutboundTask(
         ...(stuck ? { link: toLink(stuck) } : {}),
       };
     }
+    // Onboarding Tasks: Breezeway lets a template replace the description sent on create,
+    // so the Task's text is written as the work order's instructions straight after.
+    if (input.sourceType === "onboarding_task" && typeof taskId === "number" && description) {
+      try {
+        await setOnboardingInstructions(row.id, taskId, description);
+      } catch {
+        console.error("[breezeway-outbound] instructions step failed after create; the work order stands.");
+      }
+    }
     return { ok: true, link: toLink(update.data as unknown as Row) };
   } catch (error) {
     const message = error instanceof BreezewayError ? error.message : "Breezeway did not respond.";
@@ -667,6 +676,37 @@ export async function createOutboundTask(
       ...(uncertain ? { link: toLink(uncertain) } : {}),
     };
   }
+}
+
+/**
+ * Reads the new work order and, when its instructions are not ours, sets them once.
+ * The work order already exists, so a failure here never undoes the send; it is kept
+ * on the outbound row (instructions_error) for the Task to show.
+ */
+async function setOnboardingInstructions(outboundId: string, breezewayTaskId: number, ours: string) {
+  const db = await admin();
+  const { instructionsText } = await import("./onboarding-work-order-status");
+  let error: string | null = null;
+  try {
+    const current = await breezewayRequest<{ description?: string | null }>(`/task/${breezewayTaskId}`);
+    const next = instructionsText(ours, current?.description ?? null);
+    if (next) {
+      await breezewayRequest(`/task/${breezewayTaskId}`, { method: "PATCH", allowWrite: true, retry: false, body: { description: next } });
+      const check = await breezewayRequest<{ description?: string | null }>(`/task/${breezewayTaskId}`);
+      if (instructionsText(ours, check?.description ?? null)) error = "Breezeway did not keep the instructions.";
+    }
+  } catch (e) {
+    error = e instanceof BreezewayError ? e.message : "Breezeway did not respond.";
+  }
+  // Columns arrive with the staged onboarding-work-order-done change; before that this write is skipped.
+  const saved = await db
+    .from("breezeway_outbound_tasks")
+    .update({ instructions_set_at: error ? null : new Date().toISOString(), instructions_error: error } as never)
+    .eq("id", outboundId);
+  if (saved.error && saved.error.code !== "42703" && saved.error.code !== "PGRST204") {
+    console.error(`[breezeway-outbound] instructions result not recorded (${saved.error.code})`);
+  }
+  return error;
 }
 
 async function rowById(id: string): Promise<Row | null> {

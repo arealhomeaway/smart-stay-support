@@ -40,3 +40,8 @@
 - [ ] Saved named views per person (filters, grouping, sort); Group by home saved per person
 - [ ] Kanban view for one property, picked from a dropdown
 - [ ] Project Database homepage: per person drag/show/hide columns; Stager / on-site team column
+
+## Onboarding Breezeway work orders (Nov 22)
+- [x] Description arrives as the work order's instructions (new sends); list open ones sent the wrong way
+- [x] Task done once its work order is created; shows Breezeway status (staged: onboarding-work-order-done, needs mark-done-breezeway first)
+- [x] Reopen with reason when canceled or past date unfinished (staged)

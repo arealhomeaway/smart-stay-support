@@ -35,6 +35,7 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
         const { runOwnerRezListingCache } = await import("@/lib/onboarding-home.server");
         const { runOwnerCommsJobs } = await import("@/lib/owner-tab.server");
         const { runOnboardingDailyReminders, drainHeldOnboardingEmails } = await import("@/lib/onboarding-daily-reminder.server");
+        const { runWorkOrderReopenPass } = await import("@/lib/onboarding-work-order-reopen.server");
 
         try {
           const result = await runEmailJob(supabaseAdmin, [
@@ -55,6 +56,9 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
             // inbox (sent only to that address). Both skipped until their staged change is applied.
             { name: "onboarding_daily_reminder", run: () => runOnboardingDailyReminders(supabaseAdmin) },
             { name: "onboarding_test_inbox", run: () => drainHeldOnboardingEmails(supabaseAdmin) },
+            // Onboarding Tasks reopen when their Breezeway work order is canceled or passes its date unfinished.
+            // Reads the synced Breezeway copy only; skipped until its staged change is applied.
+            { name: "onboarding_work_order_reopen", run: () => runWorkOrderReopenPass(supabaseAdmin) },
             // Last, so it can never hold up existing deliveries. Skipped silently until the staged function exists.
             { name: "ao_clocks", run: () => runAoClocksGuarded(supabaseAdmin) },
             // Review overdue alerts are in-app only; they never queue email.

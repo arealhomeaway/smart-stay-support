@@ -16,6 +16,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CatchUpBox, type CatchUpSelection } from "@/components/onboarding/PlanCatchUp";
 import { TaskRowActions } from "@/components/onboarding/TaskRowActions";
+import { TaskWorkOrderChip } from "@/components/onboarding/TaskWorkOrderChip";
+import type { TaskWorkOrderStatus } from "@/lib/onboarding-work-order-status.functions";
 import { stageCheckState, toggleStage } from "@/lib/plan-catch-up";
 import { searchPlanTasks } from "@/lib/plan-search";
 import { isFinished } from "@/lib/onboarding-board";
@@ -93,6 +95,8 @@ export function TasksTab(p: {
   catchUp?: CatchUpSelection | undefined;
   /** Nov 22: each selectable row also has the same Mark done, Not needed and Change due date as My Tasks. */
   rowActions?: { homeName: string; onChanged: () => void } | undefined;
+  /** Breezeway status per Task, read once by the page. */
+  workOrders?: Record<string, TaskWorkOrderStatus> | undefined;
   onOpen: (taskId: string) => void;
   /** Who may add (null hides Add task, e.g. a locked plan). */
   addViewer: AddViewer | null;
@@ -142,6 +146,7 @@ export function TasksTab(p: {
   const skipped = dueOn ? [] : (p.notNeeded ?? []).filter((t) => p.stage === null || stageIndexOf(t.stage) === p.stage);
 
   const row = (t: PageTask, from: string | null = null, rowOrder: string[] = order) => {
+    const wo = p.workOrders?.[t.id];
     const tag = ownerTagFor(t, p.viewerId, p.pmId);
     const due = rowDue(t, p.today);
     const canTick = Boolean(p.catchUp?.selectable.has(t.id));
@@ -165,6 +170,7 @@ export function TasksTab(p: {
           <span className={cn("inline-flex min-h-7 items-center rounded-full px-2.5 text-xs font-medium", TAG_CLASS[tag].tag)}>
             {ownerTagText(t, p.viewerId, p.pmId, nameOf)}
           </span>
+          <TaskWorkOrderChip status={wo} />
           <span className={cn("numeric w-24 text-right text-xs", due.late ? "font-medium text-late" : "text-muted-foreground")}>{due.text}</span>
         </div>
         {p.rowActions && canTick ? (
