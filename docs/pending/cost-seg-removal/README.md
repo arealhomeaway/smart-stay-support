@@ -30,3 +30,6 @@ undo: newest version 10 equals version 8; fingerprints of steps, tasks and versi
 ## Undo (apply.undo.sql)
 Switches the step back on, saves the next version as an exact copy of version 8 (saved versions are never
 changed or deleted) and unarchives exactly the 8 Tasks this change archived.
+
+## Applied
+Applied Nov 22 on "Approved: apply cost-seg-removal". Checksums verified and preflight re-run first; migration file matches apply.sql byte for byte; audit row written; 0 emails, 0 owner notices.

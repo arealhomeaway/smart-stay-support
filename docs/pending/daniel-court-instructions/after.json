@@ -1,0 +1,47 @@
+[
+  {
+    "bz": 177312935,
+    "name": "New House Setup - Standard Inspection",
+    "before": "Please conduct the Standard Inspection. \n\nCut and paste the below URL into your phone/tablet browser to access the inspection. Thank you.\n\nhttps://arha.fillout.com/standard",
+    "next": "About this step:\nDraft this now so the handyman can be booked as soon as we have access. Schedule within 10 calendar days of closing.\n\nInstructions:\n1. Click Dispatch to Breezeway to create the work order from the New House Setup - Standard Inspection template.\n2. Choose the date. Leave the person blank until after closing; you will assign them then.\n3. Check this property is attached and the instructions are complete.\n\nDone when:\nThe work order is in Breezeway with a date, and the person is still blank.\n\nGood to know:\nDo not assign a person until closing is confirmed, so no vendor shows up to a home we cannot get into.\n\nPlease conduct the Standard Inspection. \n\nCut and paste the below URL into your phone/tablet browser to access the inspection. Thank you.\n\nhttps://arha.fillout.com/standard",
+    "patch_status": 201,
+    "after": "About this step:\nDraft this now so the handyman can be booked as soon as we have access. Schedule within 10 calendar days of closing.\n\nInstructions:\n1. Click Dispatch to Breezeway to create the work order from the New House Setup - Standard Inspection template.\n2. Choose the date. Leave the person blank until after closing; you will assign them then.\n3. Check this property is attached and the instructions are complete.\n\nDone when:\nThe work order is in Breezeway with a date, and the person is still blank.\n\nGood to know:\nDo not assign a person until closing is confirmed, so no vendor shows up to a home we cannot get into.\n\nPlease conduct the Standard Inspection. \n\nCut and paste the below URL into your phone/tablet browser to access the inspection. Thank you.\n\nhttps://arha.fillout.com/standard",
+    "kept": true
+  },
+  {
+    "bz": 177312999,
+    "name": "New House Setup - Press Curtains",
+    "before": null,
+    "next": "About this step:\nDraft this now so the cleaner can be booked as soon as we have access. When assigning, enter the quantity of 108 inch and 96 inch panels and attach the window coverings instructions from the Design Plan.\n\nInstructions:\n1. Click Dispatch to Breezeway to create the work order from the New House Setup - Press Curtains template.\n2. Choose the date. Leave the person blank until after closing; you will assign them then.\n3. Check this property is attached and the instructions are complete.\n\nDone when:\nThe work order is in Breezeway with a date, and the person is still blank.\n\nGood to know:\nDo not assign a person until closing is confirmed, so no vendor shows up to a home we cannot get into.",
+    "patch_status": 201,
+    "after": "About this step:\nDraft this now so the cleaner can be booked as soon as we have access. When assigning, enter the quantity of 108 inch and 96 inch panels and attach the window coverings instructions from the Design Plan.\n\nInstructions:\n1. Click Dispatch to Breezeway to create the work order from the New House Setup - Press Curtains template.\n2. Choose the date. Leave the person blank until after closing; you will assign them then.\n3. Check this property is attached and the instructions are complete.\n\nDone when:\nThe work order is in Breezeway with a date, and the person is still blank.\n\nGood to know:\nDo not assign a person until closing is confirmed, so no vendor shows up to a home we cannot get into.",
+    "kept": true
+  },
+  {
+    "bz": 177313021,
+    "name": "New House Setup - Assemble Boxed Furniture",
+    "before": null,
+    "next": "About this step:\nDraft this now so the handyman can be booked as soon as we have access. When assigning, attach a PDF list of boxed furniture from the pick list (never the Smartsheet link). Ask for photos of assembled items and a note on anything missing.\n\nInstructions:\n1. Click Dispatch to Breezeway to create the work order from the New House Setup - Assemble Boxed Furniture template.\n2. Choose the date. Leave the person blank until after closing; you will assign them then.\n3. Check this property is attached and the instructions are complete.\n\nDone when:\nThe work order is in Breezeway with a date, and the person is still blank.\n\nGood to know:\nDo not assign a person until closing is confirmed, so no vendor shows up to a home we cannot get into.",
+    "patch_status": 201,
+    "after": "About this step:\nDraft this now so the handyman can be booked as soon as we have access. When assigning, attach a PDF list of boxed furniture from the pick list (never the Smartsheet link). Ask for photos of assembled items and a note on anything missing.\n\nInstructions:\n1. Click Dispatch to Breezeway to create the work order from the New House Setup - Assemble Boxed Furniture template.\n2. Choose the date. Leave the person blank until after closing; you will assign them then.\n3. Check this property is attached and the instructions are complete.\n\nDone when:\nThe work order is in Breezeway with a date, and the person is still blank.\n\nGood to know:\nDo not assign a person until closing is confirmed, so no vendor shows up to a home we cannot get into.",
+    "kept": true
+  },
+  {
+    "bz": 177313132,
+    "name": "Lawn Care",
+    "before": null,
+    "next": "About this step:\nDraft this now so the handyman can be booked as soon as we have access. Only for approved landscaping. Same writing rules as home repairs. If the home is newly sodded, adjust the sprinklers; if there are none, let the owner know the risk.\n\nInstructions:\n1. Create the work order in Breezeway with clear, specific instructions.\n2. Choose the date. Leave the person blank until after closing; you will assign them then.\n3. Check this property is attached and the instructions are complete.\n\nDone when:\nThe work order is in Breezeway with a date, and the person is still blank. Or this step is marked not needed.\n\nGood to know:\nDo not assign a person until closing is confirmed, so no vendor shows up to a home we cannot get into.",
+    "patch_status": 201,
+    "after": "About this step:\nDraft this now so the handyman can be booked as soon as we have access. Only for approved landscaping. Same writing rules as home repairs. If the home is newly sodded, adjust the sprinklers; if there are none, let the owner know the risk.\n\nInstructions:\n1. Create the work order in Breezeway with clear, specific instructions.\n2. Choose the date. Leave the person blank until after closing; you will assign them then.\n3. Check this property is attached and the instructions are complete.\n\nDone when:\nThe work order is in Breezeway with a date, and the person is still blank. Or this step is marked not needed.\n\nGood to know:\nDo not assign a person until closing is confirmed, so no vendor shows up to a home we cannot get into.",
+    "kept": true
+  },
+  {
+    "bz": 177313141,
+    "name": "New House Setup - Painting",
+    "before": "Paint the rooms approved on the estimate",
+    "next": "About this step:\nDraft this now so the handyman can be booked as soon as we have access. Only for approved painting. Same writing rules as home repairs.\n\nInstructions:\n1. Create the work order in Breezeway with clear, specific instructions.\n2. Choose the date. Leave the person blank until after closing; you will assign them then.\n3. Check this property is attached and the instructions are complete.\n\nDone when:\nThe work order is in Breezeway with a date, and the person is still blank. Or this step is marked not needed.\n\nGood to know:\nDo not assign a person until closing is confirmed, so no vendor shows up to a home we cannot get into.\n\nPaint the rooms approved on the estimate",
+    "patch_status": 201,
+    "after": "About this step:\nDraft this now so the handyman can be booked as soon as we have access. Only for approved painting. Same writing rules as home repairs.\n\nInstructions:\n1. Create the work order in Breezeway with clear, specific instructions.\n2. Choose the date. Leave the person blank until after closing; you will assign them then.\n3. Check this property is attached and the instructions are complete.\n\nDone when:\nThe work order is in Breezeway with a date, and the person is still blank. Or this step is marked not needed.\n\nGood to know:\nDo not assign a person until closing is confirmed, so no vendor shows up to a home we cannot get into.\n\nPaint the rooms approved on the estimate",
+    "kept": true
+  }
+]

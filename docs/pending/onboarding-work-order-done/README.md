@@ -36,3 +36,6 @@ two columns, nothing deleted), `practice.sql` (always rolls back), `SHA256SUMS`.
 
 ## Apply
 Only on `Approved: apply mark-done-breezeway` then `Approved: apply onboarding-work-order-done`.
+
+## Applied
+Applied Nov 22 on "Approved: apply onboarding-work-order-done". Checksums verified and preflight re-run first; migration file matches apply.sql byte for byte; audit row written; 0 emails, 0 owner notices.

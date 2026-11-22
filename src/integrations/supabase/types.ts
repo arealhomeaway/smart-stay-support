@@ -2417,6 +2417,8 @@ export type Database = {
           dispatch_guarded: boolean
           error_message: string | null
           id: string
+          instructions_error: string | null
+          instructions_set_at: string | null
           last_synced_at: string | null
           last_webhook_at: string | null
           onboarding_task_id: string | null
@@ -2453,6 +2455,8 @@ export type Database = {
           dispatch_guarded?: boolean
           error_message?: string | null
           id?: string
+          instructions_error?: string | null
+          instructions_set_at?: string | null
           last_synced_at?: string | null
           last_webhook_at?: string | null
           onboarding_task_id?: string | null
@@ -2489,6 +2493,8 @@ export type Database = {
           dispatch_guarded?: boolean
           error_message?: string | null
           id?: string
+          instructions_error?: string | null
+          instructions_set_at?: string | null
           last_synced_at?: string | null
           last_webhook_at?: string | null
           onboarding_task_id?: string | null
@@ -10247,6 +10253,69 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "onboarding_task_stage_history_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_task_work_order_watch: {
+        Row: {
+          breezeway_task_id: number
+          completed_at: string
+          completed_by: string | null
+          created_at: string
+          id: string
+          is_demo: boolean
+          outbound_id: string
+          property_id: string
+          reopen_kind: string | null
+          reopen_reason: string | null
+          reopened_at: string | null
+          state: string
+          task_id: string
+        }
+        Insert: {
+          breezeway_task_id: number
+          completed_at?: string
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          is_demo?: boolean
+          outbound_id: string
+          property_id: string
+          reopen_kind?: string | null
+          reopen_reason?: string | null
+          reopened_at?: string | null
+          state?: string
+          task_id: string
+        }
+        Update: {
+          breezeway_task_id?: number
+          completed_at?: string
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          is_demo?: boolean
+          outbound_id?: string
+          property_id?: string
+          reopen_kind?: string | null
+          reopen_reason?: string | null
+          reopened_at?: string | null
+          state?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_task_work_order_watch_outbound_id_fkey"
+            columns: ["outbound_id"]
+            isOneToOne: true
+            referencedRelation: "breezeway_outbound_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_task_work_order_watch_task_id_fkey"
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "onboarding_tasks"
@@ -20140,6 +20209,10 @@ export type Database = {
         }
         Returns: string
       }
+      complete_task_on_work_order_created: {
+        Args: { _outbound_id: string }
+        Returns: Json
+      }
       confirm_handoff_suggestion: { Args: { _id: string }; Returns: undefined }
       confirm_statement_reconciliation: {
         Args: {
@@ -21429,6 +21502,7 @@ export type Database = {
         Returns: Json
       }
       reopen_owner_request: { Args: { _id: string }; Returns: undefined }
+      reopen_tasks_for_work_orders: { Args: never; Returns: Json }
       reopen_ticket: {
         Args: {
           _action_due_at: string

@@ -49,7 +49,7 @@
 ## Onboarding utilities and checklist cleanup (Nov 22)
 - [x] Utilities tasks no longer show "Property and equipment facts"
 - [x] Utility cost box labelled "Estimated monthly cost"
-- [ ] Cost segregation step off the plan + 8 open copies archived: staged docs/pending/cost-seg-removal, waiting on "Approved: apply cost-seg-removal"
+- [x] Cost segregation step off the plan + 8 open copies archived (applied Nov 22, migration 0364)
 - [ ] Notion Utility Property Matrix import: blocked. The Notion tables holding providers, account numbers, logins and Property IDs are not shared with the Resolve Notion connection
 - [ ] Account numbers and logins limited to Project Manager, Utilities, Director, Admin: build with the import (today every staff member can read utility accounts)
 
@@ -61,3 +61,9 @@
 - [x] My Tasks My homeowners: unreviewed answers with task name, answer, Reviewed button (shows once applied)
 - [x] Collapsed Reviewed list with who and when; new owner answer returns it (shows once applied)
 - [ ] Review database change: staged docs/pending/homeowner-answer-review, waiting on "Approved: apply homeowner-answer-review"
+
+## Approvals and Daniel Court instructions (Nov 22)
+- [x] Apply mark-done-breezeway (0362)
+- [x] Apply onboarding-work-order-done (0363)
+- [x] Apply cost-seg-removal (0364)
+- [x] Write Task text into the 5 Daniel Court work order instructions in Breezeway (docs/pending/daniel-court-instructions)

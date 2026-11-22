@@ -30,3 +30,6 @@ handoff md5 a05f1c6078a26640b75f08c80b063865; not applied before.
 
 ## Undo
 apply.undo.sql puts the three checks back exactly (reverse of apply.sql) and writes one audit row.
+
+## Update Nov 22, after mark-done-breezeway was applied
+Mark done now has md5 c3020cd782381d77d156567a5e78e06d. This change edits only the proof lines, which are still there once: preflight re-run passes all 5 checks. The practice has not been re-run on the new version; re-run it before apply.

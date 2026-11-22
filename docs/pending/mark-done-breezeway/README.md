@@ -27,3 +27,6 @@ Lets the onboarding team mark a Task done in Mark done (Plan catch-up) after its
 ## Apply
 Only on `Approved: apply mark-done-breezeway`: preflight, checksums, apply.sql in one transaction, then preflight
 shows the hold gone.
+
+## Applied
+Applied Nov 22 on "Approved: apply mark-done-breezeway". Checksums verified and preflight re-run first; migration file matches apply.sql byte for byte; audit row written; 0 emails, 0 owner notices.
