@@ -32,3 +32,11 @@
 - [ ] Owner tab prompt at 6 days since last update
 - [ ] Tour step 27 wording; tour on for onboarding team
 - [ ] No owner sends while testing; read back scheduled updates per home
+
+## Onboarding filters, search and views (Nov 22)
+- [ ] One Filter button opening a selection panel
+- [ ] My Tasks search: task text, task type, assignee role, tag; same search in project task list
+- [ ] Task type filter (Utilities, Designer...)
+- [ ] Saved named views per person (filters, grouping, sort); Group by home saved per person
+- [ ] Kanban view for one property, picked from a dropdown
+- [ ] Project Database homepage: per person drag/show/hide columns; Stager / on-site team column
