@@ -5618,6 +5618,7 @@ export type Database = {
           help_needed: string | null
           id: string
           is_demo: boolean
+          onboarding_task_id: string | null
           outcome: string | null
           outcome_note: string | null
           property_id: string | null
@@ -5628,6 +5629,7 @@ export type Database = {
           ticket_id: string | null
           updated_at: string
           urgency: string
+          work_item_id: string | null
           work_order_id: string | null
         }
         Insert: {
@@ -5639,6 +5641,7 @@ export type Database = {
           help_needed?: string | null
           id?: string
           is_demo?: boolean
+          onboarding_task_id?: string | null
           outcome?: string | null
           outcome_note?: string | null
           property_id?: string | null
@@ -5649,6 +5652,7 @@ export type Database = {
           ticket_id?: string | null
           updated_at?: string
           urgency?: string
+          work_item_id?: string | null
           work_order_id?: string | null
         }
         Update: {
@@ -5660,6 +5664,7 @@ export type Database = {
           help_needed?: string | null
           id?: string
           is_demo?: boolean
+          onboarding_task_id?: string | null
           outcome?: string | null
           outcome_note?: string | null
           property_id?: string | null
@@ -5670,9 +5675,17 @@ export type Database = {
           ticket_id?: string | null
           updated_at?: string
           urgency?: string
+          work_item_id?: string | null
           work_order_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "escalations_onboarding_task_id_fkey"
+            columns: ["onboarding_task_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "escalations_property_id_fkey"
             columns: ["property_id"]
@@ -5699,6 +5712,13 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escalations_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
             referencedColumns: ["id"]
           },
           {
@@ -8284,6 +8304,48 @@ export type Database = {
           },
         ]
       }
+      homeowner_answer_reviews: {
+        Row: {
+          answer_at: string
+          id: string
+          item_key: string
+          property_id: string
+          reviewed_at: string
+          reviewed_by: string
+        }
+        Insert: {
+          answer_at: string
+          id?: string
+          item_key: string
+          property_id: string
+          reviewed_at?: string
+          reviewed_by: string
+        }
+        Update: {
+          answer_at?: string
+          id?: string
+          item_key?: string
+          property_id?: string
+          reviewed_at?: string
+          reviewed_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homeowner_answer_reviews_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "homeowner_answer_reviews_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       homeowner_updates: {
         Row: {
           actor_id: string
@@ -9343,6 +9405,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      onboarding_daily_reminders: {
+        Row: {
+          created_at: string
+          email_status: string
+          emailed_to: string | null
+          local_day: string
+          notification_id: string | null
+          task_ids: string[]
+          time_zone: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_status?: string
+          emailed_to?: string | null
+          local_day: string
+          notification_id?: string | null
+          task_ids?: string[]
+          time_zone: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_status?: string
+          emailed_to?: string | null
+          local_day?: string
+          notification_id?: string | null
+          task_ids?: string[]
+          time_zone?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       onboarding_flag_snapshots: {
         Row: {
@@ -13100,6 +13195,7 @@ export type Database = {
           phone: string | null
           removed_at: string | null
           removed_by: string | null
+          time_zone: string
           updated_at: string
         }
         Insert: {
@@ -13118,6 +13214,7 @@ export type Database = {
           phone?: string | null
           removed_at?: string | null
           removed_by?: string | null
+          time_zone?: string
           updated_at?: string
         }
         Update: {
@@ -13136,6 +13233,7 @@ export type Database = {
           phone?: string | null
           removed_at?: string | null
           removed_by?: string | null
+          time_zone?: string
           updated_at?: string
         }
         Relationships: []
@@ -20638,6 +20736,10 @@ export type Database = {
         Returns: string
       }
       mark_home_chat_read: { Args: { _chat_id: string }; Returns: string }
+      mark_homeowner_answer_reviewed: {
+        Args: { _answer_at: string; _item_key: string; _property_id: string }
+        Returns: Json
+      }
       mark_onboarding_task_started: {
         Args: { _task_id: string }
         Returns: Json
@@ -21011,6 +21113,10 @@ export type Database = {
           _sop_url?: string
           _title: string
         }
+        Returns: string
+      }
+      raise_onboarding_escalation: {
+        Args: { _reason: string; _task_id: string; _work_item_id: string }
         Returns: string
       }
       read_completed_onboarding_records: {
@@ -21593,6 +21699,10 @@ export type Database = {
         Args: { _id: string; _note: string; _status: string }
         Returns: undefined
       }
+      resolve_onboarding_escalation: {
+        Args: { _id: string; _note: string }
+        Returns: string
+      }
       resolve_owner_request: { Args: { _id: string }; Returns: undefined }
       respond_owner_approval: {
         Args: {
@@ -21844,6 +21954,7 @@ export type Database = {
         Args: { _channels: string[] }
         Returns: Json
       }
+      set_my_time_zone: { Args: { _tz: string }; Returns: string }
       set_onboarding_project_role: {
         Args: {
           _project_id: string

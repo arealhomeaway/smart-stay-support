@@ -32,3 +32,8 @@ button) and a folded "Reviewed" list with who reviewed each one and when.
 ## Undo
 apply.undo.sql copies every saved review into one audit line, then removes the action, the append-only rule and
 the record. My homeowners then shows its 7-day list again.
+
+## Applied
+Applied Nov 22 on "Approved: apply homeowner-answer-review" as migration 0366. Checksums verified and preflight re-run
+first (all 5 ok). Read back: record exists with row security on, 0 rows, append-only rule and staff read policy in
+place, Reviewed action runs for signed-in staff only (not signed-out); audit row `homeowner_answer_review.apply`.

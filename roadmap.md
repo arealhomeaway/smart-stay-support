@@ -15,13 +15,13 @@
 - [x] Part 4 "Update that one instead?" question on new logs
 
 ## Onboarding notifications and escalations (Nov 22)
-- [x] Owner tasks notify only the home's Project Manager (staged: onboarding-notify-escalate, waiting on approval)
+- [x] Owner tasks notify only the home's Project Manager (applied 0367 Nov 22)
 - [x] No notice when completing a task you created (already true; practised)
-- [x] Director of Onboarding notified only for: tasks they sent, escalations, PM hand-added tasks (staged)
+- [x] Director of Onboarding notified only for: tasks they sent, escalations, PM hand-added tasks (applied 0367)
 - [x] Daily 8 AM local reminder (built; starts once staged change applied and published)
 - [x] Escalate button on owner cards (shows once staged change applied)
 - [x] Escalations list above the task list (shows once applied)
-- [x] Each escalation: email + in-app to Director of Onboarding (staged)
+- [x] Each escalation: email + in-app to Director of Onboarding (applied 0367; email sends to test inbox after publish)
 - [x] All onboarding emails only to the test inbox until the setting is removed
 
 ## Owner weekly updates and onboarding tour (Nov 22)
@@ -55,11 +55,11 @@
 ## Roles apply, no proof, homeowner answer review (Nov 22)
 - [x] Apply onboarding-roles-attach (Designer and Onboarding Manager only; Project Manager and Utilities left for the Director)
 - [x] O7/O8 changed: no proof on screens and in app saves
-- [ ] No-proof database part: staged docs/pending/onboarding-no-proof, waiting on "Approved: apply onboarding-no-proof"
+- [x] No-proof database part: practice re-run, applied 0365 Nov 22
 - [x] Owner completions page put back as before the last build
 - [x] My Tasks My homeowners: unreviewed answers with task name, answer, Reviewed button (shows once applied)
 - [x] Collapsed Reviewed list with who and when; new owner answer returns it (shows once applied)
-- [ ] Review database change: staged docs/pending/homeowner-answer-review, waiting on "Approved: apply homeowner-answer-review"
+- [x] Review database change: applied 0366 Nov 22
 
 ## Approvals and Daniel Court instructions (Nov 22)
 - [x] Apply mark-done-breezeway (0362)

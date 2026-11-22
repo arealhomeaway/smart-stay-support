@@ -33,3 +33,13 @@ apply.undo.sql puts the three checks back exactly (reverse of apply.sql) and wri
 
 ## Update Nov 22, after mark-done-breezeway was applied
 Mark done now has md5 c3020cd782381d77d156567a5e78e06d. This change edits only the proof lines, which are still there once: preflight re-run passes all 5 checks. The practice has not been re-run on the new version; re-run it before apply.
+
+## Practice re-run (Nov 22, after mark-done-breezeway, live database, rolled back)
+Against Mark done md5 c3020cd782381d77d156567a5e78e06d: before, Mark done with no note refused; after apply,
+saved 1, held 0 (done by the Director, no note); proof checks left 0; notices 0, emails 0; after undo the three
+definitions matched before. Task left open afterwards.
+
+## Applied
+Applied Nov 22 on "Approved: apply onboarding-no-proof" as migration 0365. Checksums verified and preflight re-run
+first (all 5 ok); migration file matches apply.sql (only the final newline differs); audit row
+`onboarding_no_proof.apply` written; proof checks left in the three functions: 0.

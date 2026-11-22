@@ -49,3 +49,10 @@ while applied. The new columns, index, time zone and reminder table stay (nothin
 
 **Not changed**: Operations escalations and their screens; staff review alerts (the overdue review
 alert to the Director stays); handoff alerts; Finance notices; followed home notices; any Task data.
+
+## Applied
+Applied Nov 22 on "Approved: apply onboarding-notify-escalate" as migration 0367. Checksums verified and preflight
+re-run first (all 6 ok, no five-minute run open). Read back: test inbox set to the COO's address; everyone's time
+zone Central; escalation columns and rules, three actions, hand-added Task trigger and reminder record exist;
+email status allows held; 0 onboarding escalations, 0 held emails; audit row `onboarding_notify_escalate.apply`.
+Held emails are sent to the test inbox only by the new build's five-minute pass, so they wait until it is published.
