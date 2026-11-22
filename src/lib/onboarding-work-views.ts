@@ -369,6 +369,12 @@ export function groupMyTasksByRole(views: TaskView[]) {
   }));
 }
 
+/** Nov 22: in the due-date grouping, Later and No date start folded; every other group starts open. */
+export const MY_TASKS_FOLDED_GROUPS = ["later", "nodate"] as const;
+export function myTasksGroupStartsOpen(group: MyTasksGroup, key: string) {
+  return group !== "due" || !(MY_TASKS_FOLDED_GROUPS as readonly string[]).includes(key);
+}
+
 /** Group by due date buckets or by home. Items keep the sort already applied. */
 export function groupMyTasks(
   views: TaskView[],

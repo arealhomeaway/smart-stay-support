@@ -106,6 +106,15 @@ export function barActions(selected: CatchUpTask[]): BarAction[] {
   return all ? ["mark_done", "not_needed", "assign", "due_date", "reopen"] : ["mark_done", "not_needed", "assign", "due_date"];
 }
 
+/**
+ * Nov 22: one Task's actions on a list row (My Tasks and a home's Tasks tab), the bar's Mark done,
+ * Not needed and Change due date; a finished Task is not marked done again.
+ */
+export type RowAction = "mark_done" | "not_needed" | "due_date";
+export function rowActionsFor(t: Pick<CatchUpTask, "status">): RowAction[] {
+  return isFinishedTask(t) ? ["not_needed", "due_date"] : ["mark_done", "not_needed", "due_date"];
+}
+
 export function selectedLabel(n: number) {
   return `${n} selected`;
 }

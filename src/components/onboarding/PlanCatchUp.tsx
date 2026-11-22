@@ -300,7 +300,7 @@ export function PlanCatchUpBar({
   );
 }
 
-function CatchUpActionDialog({
+export function CatchUpActionDialog({
   action,
   propertyId,
   homeName,

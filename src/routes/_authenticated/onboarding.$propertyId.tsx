@@ -944,6 +944,7 @@ function PropertyWorkspace() {
             due={dueSel}
             onDue={setDueSel}
             catchUp={catchUpOn ? catchUp : undefined}
+            rowActions={catchUpOn ? { homeName, onChanged: () => void qc.invalidateQueries() } : undefined}
             onOpen={setOpenTaskId}
             addViewer={addViewer}
             initialAllLate={landLate}

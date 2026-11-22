@@ -2,7 +2,11 @@ import { formatPropertyLabel } from "@/lib/property-label";
 import { doneRecently, taskSavedMessage, type DoneTask } from "@/lib/task-proof";
 import { loadTaskProof } from "@/lib/homeowner-has.data";
 import { DoneRecentlySection, taskProofText } from "@/components/onboarding/DoneRecently";
-import { overrideOnboardingTaskDateFn } from "@/lib/onboarding.functions";
+import { archiveOnboardingTaskFn, overrideOnboardingTaskDateFn } from "@/lib/onboarding.functions";
+import { planCatchUpViewerFn } from "@/lib/plan-catch-up.functions";
+import { canUseCatchUp, catchUpSelectable, type CatchUpTask, type CatchUpViewer } from "@/lib/plan-catch-up";
+import { TaskRowActions } from "@/components/onboarding/TaskRowActions";
+import { ChevronRight } from "lucide-react";
 import { restoreAssignedRelease } from "@/lib/onboarding-assigned-context";
 import {
   onboardingWorkspaceKey,
@@ -10,7 +14,7 @@ import {
 } from "@/lib/onboarding-workspace-view";
 import { canEditHomeUtilities } from "@/lib/utilities-task";
 import { createFileRoute } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
@@ -26,14 +30,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TaskRow } from "@/components/onboarding/WorkflowTable";
-import { TaskDrawer, taskPayload, type SaveTaskInput } from "@/components/onboarding/TaskDrawer";
-import { Checkbox } from "@/components/ui/checkbox";
+import { TaskDrawer, type SaveTaskInput } from "@/components/onboarding/TaskDrawer";
 import { useRole } from "@/hooks/useRole";
 import { viewTask, type WorkflowTask } from "@/lib/onboarding-workflow";
 import { projectScope, splitByScope } from "@/lib/onboarding-scope";
-import { buildReleaseContext } from "@/lib/onboarding-state";
+import { buildReleaseContext, deriveLifecycle } from "@/lib/onboarding-state";
 import {
-  canQuickComplete,
   myWorkSelection,
   followedHomeTasks,
   FOLLOWED_HOMES,
@@ -49,6 +51,7 @@ import {
   matchesMyTasksDueRange,
   sortMyTasks,
   groupMyTasks,
+  myTasksGroupStartsOpen,
   type MyTasksPrefs,
   type MyTasksQuick,
   type WorkFilter,
@@ -168,6 +171,15 @@ function MyWork() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+  // Nov 22: the home page's Not needed, in the task window here too.
+  const voidTask = useMutation({
+    mutationFn: useServerFn(archiveOnboardingTaskFn) as never,
+    onSuccess: () => {
+      toast.success("Step voided.");
+      void refresh();
+    },
+    onError,
+  });
   const recordException = useMutation({
     mutationFn: useServerFn(recordTaskExceptionFn) as never,
     onSuccess: () => {
@@ -241,6 +253,26 @@ function MyWork() {
     staleTime: 60_000,
     queryFn: () => loadTaskProof({ taskIds: proofKey, completerIds: proofTasks.map((t) => t.completed_by ?? "").filter(Boolean) }),
   });
+
+  // Nov 22: the home page's row actions need the same per-home permission read as its Tasks tab.
+  const canEdit = !readOnly && can("handoff_request");
+  const homeKey = [...new Set(mine.map((t) => t.property_id))].sort().join(",");
+  const homeIds = useMemo(() => (homeKey ? homeKey.split(",") : []), [homeKey]);
+  const viewerFn = useServerFn(planCatchUpViewerFn);
+  const viewerQueries = useQueries({
+    queries: homeIds.map((id) => ({
+      queryKey: ["plan-catch-up-viewer", id, userId],
+      enabled: Boolean(userId) && canEdit,
+      staleTime: 60 * 1000,
+      queryFn: () => viewerFn({ data: { propertyId: id } }),
+    })),
+  });
+  const viewers = new Map<string, CatchUpViewer | null>(
+    homeIds.map((id, i) => {
+      const d = viewerQueries[i]?.data;
+      return [id, d && userId ? { ...d, userId } : null];
+    }),
+  );
 
   // Each person's last view choices, remembered in their own browser.
   const [prefs, setPrefs] = useState<MyTasksPrefs>(MY_TASKS_PREFS_DEFAULTS);
@@ -340,15 +372,36 @@ function MyWork() {
             .map((task) => task.id),
         })
       : undefined;
-  const canEdit = !readOnly && can("handoff_request");
+  // A home Operations has accepted keeps its plan as history, as on the home page.
+  const lockedHomes = new Map<string, boolean>();
+  const homeLocked = (propertyId: string) => {
+    if (!lockedHomes.has(propertyId)) {
+      const property = data.properties.find((p) => p.id === propertyId);
+      lockedHomes.set(
+        propertyId,
+        !property ||
+          deriveLifecycle({
+            property: property as never,
+            project: (data.projects.find((p) => p.property_id === propertyId && p.status !== "cancelled") ?? null) as never,
+            tasks: allTasks.filter((t) => t.property_id === propertyId) as never,
+            handoff: (data.handoffs.find(
+              (h) => h.property_id === propertyId && ["requested", "accepted_pending_live"].includes(h.status),
+            ) ?? null) as never,
+          }).locked,
+      );
+    }
+    return lockedHomes.get(propertyId)!;
+  };
+  const rowActionsOn = (task: WorkflowTask) => {
+    const viewer = viewers.get(task.property_id) ?? null;
+    return Boolean(
+      canEdit && viewer && canUseCatchUp(viewer) && catchUpSelectable(viewer, task as unknown as CatchUpTask) && !homeLocked(task.property_id),
+    );
+  };
 
-  return (
-    <div className="space-y-5">
-      <PageHeader
-        eyebrow="Onboarding"
-        title="My Tasks"
-        description="Onboarding tasks assigned to you across every home, in the order they need attention."
-      />
+  const asides = (
+    <>
+      <ReviewsWaiting propertyName={propertyName} />
 
       <MyHomeownersSection
         data={homeownerStatus.data}
@@ -370,8 +423,16 @@ function MyWork() {
           }}
         />
       ) : null}
+    </>
+  );
 
-      <ReviewsWaiting propertyName={propertyName} />
+  return (
+    <div className="space-y-5">
+      <PageHeader
+        eyebrow="Onboarding"
+        title="My Tasks"
+        description="Onboarding tasks assigned to you across every home, in the order they need attention."
+      />
 
       <div className="flex flex-wrap gap-2">
         {selection.canBrowseTeam && (
@@ -501,30 +562,19 @@ function MyWork() {
       {groups
         .filter((g) => g.items.length > 0)
         .map((g) => (
-          <details key={g.key} open className="surface overflow-hidden">
-            <summary className="cursor-pointer border-b border-border bg-muted/40 px-3 py-2">
+          <details key={`${prefs.group}:${g.key}`} open={myTasksGroupStartsOpen(prefs.group, g.key)} className="group surface overflow-hidden">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 border-b border-border bg-muted/40 px-3 py-2 [&::-webkit-details-marker]:hidden">
+              <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90" aria-hidden="true" />
+              <span className="min-w-0">
               <p className="text-sm font-semibold">
                 {g.label} <span className="numeric text-muted-foreground">({g.items.length})</span>
               </p>
               <p className="text-xs text-muted-foreground">{g.hint}</p>
+              </span>
             </summary>
             {g.items
               .map((v) => (
                 <div key={v.task.id} className="flex items-center border-b border-border/60 last:border-b-0">
-                  <span className="flex w-10 shrink-0 justify-center">
-                    {canQuickComplete(v) && canEdit ? (
-                      <Checkbox
-                        aria-label={`Mark "${v.task.title}" done`}
-                        disabled={saveTask.isPending}
-                        onCheckedChange={(checked) => {
-                          if (checked)
-                            saveTask.mutate({
-                              data: taskPayload(v.task, { status: "complete", blocker: "" }),
-                            } as never);
-                        }}
-                      />
-                    ) : null}
-                  </span>
                   <div className="min-w-0 flex-1">
                     <TaskRow
                       view={v}
@@ -535,6 +585,7 @@ function MyWork() {
                         setOpenTaskId(t.id);
                       }}
                       showProperty={propertyName(v.task.property_id)}
+                      linkProperty
                       extra={(() => {
                         const chip = homeownerStatus.data
                           ? taskChip(
@@ -552,10 +603,22 @@ function MyWork() {
                       })()}
                     />
                   </div>
+                  <span className="flex w-12 shrink-0 justify-center">
+                    {rowActionsOn(v.task) ? (
+                      <TaskRowActions
+                        propertyId={v.task.property_id}
+                        homeName={propertyName(v.task.property_id)}
+                        task={v.task}
+                        onChanged={() => void qc.invalidateQueries()}
+                      />
+                    ) : null}
+                  </span>
                 </div>
               ))}
           </details>
         ))}
+
+      {asides}
 
       <TaskDrawer
         task={openTask}
@@ -577,6 +640,11 @@ function MyWork() {
           setOpenedFromHomeowners(false);
         }}
         onAdvance={(id) => setOpenTaskId(mine.some((t) => t.id === id) ? id : null)}
+        linkProperty
+        onVoid={(taskId: string, reason: string) => {
+          voidTask.mutate({ data: { taskId, reason } } as never);
+          setOpenTaskId(null);
+        }}
         onSave={(input: SaveTaskInput) => saveTask.mutate({ data: input } as never)}
         onSaveDate={(taskId, expectedUpdatedAt, dueOn, reason) =>
           saveDate.mutate({ data: { taskId, expectedUpdatedAt, dueOn, reason } })

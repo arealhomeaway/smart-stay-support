@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CatchUpBox, type CatchUpSelection } from "@/components/onboarding/PlanCatchUp";
+import { TaskRowActions } from "@/components/onboarding/TaskRowActions";
 import { stageCheckState, toggleStage } from "@/lib/plan-catch-up";
 import { searchPlanTasks } from "@/lib/plan-search";
 import { isFinished } from "@/lib/onboarding-board";
@@ -90,6 +91,8 @@ export function TasksTab(p: {
   due?: DueFilter[];
   onDue?: (due: DueFilter[]) => void;
   catchUp?: CatchUpSelection | undefined;
+  /** Nov 22: each selectable row also has the same Mark done, Not needed and Change due date as My Tasks. */
+  rowActions?: { homeName: string; onChanged: () => void } | undefined;
   onOpen: (taskId: string) => void;
   /** Who may add (null hides Add task, e.g. a locked plan). */
   addViewer: AddViewer | null;
@@ -164,6 +167,11 @@ export function TasksTab(p: {
           </span>
           <span className={cn("numeric w-24 text-right text-xs", due.late ? "font-medium text-late" : "text-muted-foreground")}>{due.text}</span>
         </div>
+        {p.rowActions && canTick ? (
+          <span className="flex w-12 shrink-0 items-center justify-center">
+            <TaskRowActions propertyId={p.propertyId} homeName={p.rowActions.homeName} task={t} onChanged={p.rowActions.onChanged} />
+          </span>
+        ) : null}
       </li>
     );
   };

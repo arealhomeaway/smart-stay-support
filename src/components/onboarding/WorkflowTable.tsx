@@ -6,8 +6,9 @@
  * completion and edits go through the callbacks the property route supplies.
  */
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
 import { ChevronDown, ChevronRight, CircleAlert, Lock } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { Chip } from "@/components/ui/page";
 import { cn } from "@/lib/utils";
 import { stateChip } from "@/lib/semantic";
@@ -218,6 +219,7 @@ export function TaskRow({
   selected,
   onSelect,
   showProperty,
+  linkProperty = false,
   extra,
 }: {
   view: TaskView;
@@ -225,17 +227,35 @@ export function TaskRow({
   selected?: boolean;
   onSelect: (task: WorkflowTask) => void;
   showProperty?: string;
+  /** My Tasks (Nov 22): the home's address opens that home's onboarding page. */
+  linkProperty?: boolean;
   /** Optional line under the title (My Tasks: the homeowner status chip). Part of the row. */
   extra?: ReactNode;
 }) {
   const t = view.task;
   const due = dueExplanation(t);
+  // A link cannot sit inside a button, so a row with a home link is a focusable row instead.
+  const Root = linkProperty ? "div" : "button";
+  const rootProps = linkProperty
+    ? {
+        role: "button" as const,
+        tabIndex: 0,
+        onClick: () => onSelect(t),
+        onKeyDown: (e: KeyboardEvent) => {
+          if (e.target !== e.currentTarget) return;
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onSelect(t);
+          }
+        },
+      }
+    : { type: "button" as const, onClick: () => onSelect(t) };
   return (
-    <button
-      type="button"
-      onClick={() => onSelect(t)}
+    <Root
+      {...rootProps}
       className={cn(
         "grid w-full grid-cols-1 items-center gap-1.5 border-b border-border/60 px-3 py-2 text-left last:border-b-0 hover:bg-muted/50 md:grid-cols-[1fr_10rem_7rem_9rem] md:gap-3",
+        linkProperty && "cursor-pointer",
         selected && "bg-muted",
       )}
     >
@@ -258,9 +278,18 @@ export function TaskRow({
             </span>
           ))}
         </span>
-        {showProperty && (
+        {showProperty && linkProperty ? (
+          <Link
+            to="/onboarding/$propertyId"
+            params={{ propertyId: t.property_id }}
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex min-h-7 max-w-full items-center truncate text-xs text-primary underline-offset-4 hover:underline"
+          >
+            {showProperty}
+          </Link>
+        ) : showProperty ? (
           <span className="block truncate text-xs text-muted-foreground">{showProperty}</span>
-        )}
+        ) : null}
         {view.reason && (
           <span className="block truncate text-xs text-muted-foreground">{view.reason}</span>
         )}
@@ -288,6 +317,6 @@ export function TaskRow({
           <Chip className={stateChip("blocked")}>Overdue</Chip>
         )}
       </span>
-    </button>
+    </Root>
   );
 }

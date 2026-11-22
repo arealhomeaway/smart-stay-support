@@ -11,6 +11,9 @@ import { usDate } from "@/lib/dates";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { OpportunityDetail, useOwnerCollaboration } from "@/components/onboarding/OwnerCollaboration";
 import { completionRowOpens } from "@/lib/onboarding-task-kinds";
+import { needsAttention, reviewHistoryFor, splitOwnerCompletions, type ReviewHistoryRow } from "@/lib/owner-completion-review";
+
+export { needsAttention };
 
 export type CompletionRow = {
   work_item_id: string;
@@ -54,48 +57,81 @@ export function useOwnerCompletions(demoMode: boolean, propertyId?: string) {
   });
 }
 
-/** Rows that need staff attention: not yet reviewed, follow-up open, or new owner activity since review. */
-export function needsAttention(r: CompletionRow) {
-  return r.review_status !== "reviewed" || r.new_owner_activity;
+/** Nov 22: every review of the reviewed completions, with the reviewer's name. */
+function useReviewHistory(workItemIds: string[]) {
+  const key = [...workItemIds].sort();
+  return useQuery({
+    queryKey: ["owner-completions", "history", key],
+    enabled: key.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("owner_completion_reviews")
+        .select("id, work_item_id, status, internal_note, created_at, actor_id")
+        .in("work_item_id", key)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      const rows = (data ?? []) as ReviewHistoryRow[];
+      const actorIds = [...new Set(rows.map((r) => r.actor_id).filter((x): x is string => Boolean(x)))];
+      const names = new Map<string, string>();
+      if (actorIds.length) {
+        const people = await supabase.from("profiles").select("id, full_name").in("id", actorIds);
+        for (const p of people.data ?? []) if (p.full_name) names.set(p.id, p.full_name);
+      }
+      return { rows, names };
+    },
+  });
 }
 
 export function OwnerCompletionsReview({ demoMode, propertyId }: { demoMode: boolean; propertyId?: string }) {
   const q = useOwnerCompletions(demoMode, propertyId);
-  const [filter, setFilter] = useState<"open" | "all">("open");
+  const { toReview, reviewed } = splitOwnerCompletions(q.data ?? []);
+  const history = useReviewHistory(reviewed.map((r) => r.work_item_id));
   if (q.isLoading) return <LoadingRows />;
   if (q.error) return <p className="text-sm text-destructive">Owner completions could not be loaded.</p>;
-  const all = q.data ?? [];
-  const rows = filter === "open" ? all.filter(needsAttention) : all;
   return (
     <div className="space-y-3">
-      <div className="flex gap-2">
-        <Button size="sm" variant={filter === "open" ? "default" : "outline"} onClick={() => setFilter("open")}>
-          To review ({all.filter(needsAttention).length})
-        </Button>
-        <Button size="sm" variant={filter === "all" ? "default" : "outline"} onClick={() => setFilter("all")}>
-          All completions ({all.length})
-        </Button>
-      </div>
+      <p className="text-sm font-medium">To review ({toReview.length})</p>
       <p className="text-xs text-muted-foreground">
         Staff follow-through only. The owner's completion stays recorded and participation counts immediately; ARHA does not approve owner hours or participation, and review never blocks handoff.
       </p>
-      {rows.length === 0 ? (
+      {toReview.length === 0 ? (
         <EmptyState title="Nothing to review" hint="Owner-completed Opportunities appear here." />
       ) : (
         <ul className="space-y-2">
-          {rows.map((r) => (
+          {toReview.map((r) => (
             <CompletionCard key={r.work_item_id} row={r} />
           ))}
         </ul>
       )}
+      {reviewed.length > 0 ? (
+        <details className="group min-w-0 overflow-hidden rounded-lg border border-border">
+          <summary className="flex min-h-11 cursor-pointer items-center px-3 text-sm font-medium">Reviewed ({reviewed.length})</summary>
+          <ul className="space-y-2 border-t border-border p-2">
+            {reviewed.map((r) => (
+              <CompletionCard
+                key={r.work_item_id}
+                row={r}
+                history={history.data ? { rows: reviewHistoryFor(history.data.rows, r.work_item_id), names: history.data.names } : null}
+              />
+            ))}
+          </ul>
+        </details>
+      ) : null}
     </div>
   );
 }
 
-function CompletionCard({ row: r }: { row: CompletionRow }) {
+function CompletionCard({
+  row: r,
+  history,
+}: {
+  row: CompletionRow;
+  /** Reviewed list only: every review of this completion, newest first. */
+  history?: { rows: ReviewHistoryRow[]; names: Map<string, string> } | null;
+}) {
   const [viewing, setViewing] = useState(false);
   return (
-    <li className="rounded-lg border border-border p-3 text-sm">
+    <li className="min-w-0 rounded-lg border border-border p-3 text-sm [overflow-wrap:anywhere]">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="space-y-0.5">
           <p className="font-medium">{r.title}</p>
@@ -115,12 +151,21 @@ function CompletionCard({ row: r }: { row: CompletionRow }) {
           {r.new_owner_activity ? <span className="text-xs font-medium text-primary">New owner activity since review</span> : null}
         </div>
       </div>
-      <p className="mt-2 rounded bg-muted/50 p-2 text-xs">
-        <span className="font-medium">Latest owner feedback: </span>
+      <p className="mt-2 whitespace-pre-wrap rounded bg-muted/50 p-2 text-sm">
+        <span className="font-medium">Owner's answer: </span>
         {r.latest_feedback ? `“${r.latest_feedback}”` : "None given."}
         {r.latest_feedback_at ? <span className="text-muted-foreground"> · {usDate(r.latest_feedback_at)}</span> : null}
       </p>
-      {r.reviewed_at ? (
+      {history ? (
+        <ul className="mt-2 space-y-1 text-xs text-muted-foreground" aria-label="Review history">
+          {history.rows.map((h) => (
+            <li key={h.id}>
+              {REVIEW_LABEL[h.status] ?? h.status} by {(h.actor_id && history.names.get(h.actor_id)) || "staff"} on {usDate(h.created_at)}
+              {h.internal_note ? ` · Internal note: ${h.internal_note}` : ""}
+            </li>
+          ))}
+        </ul>
+      ) : r.reviewed_at ? (
         <p className="mt-1 text-xs text-muted-foreground">
           Last review: {REVIEW_LABEL[r.review_status]} by {r.reviewed_by_name ?? "staff"} on {usDate(r.reviewed_at)}
           {r.latest_internal_note ? ` · Internal note: ${r.latest_internal_note}` : ""}

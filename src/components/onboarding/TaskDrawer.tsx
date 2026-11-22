@@ -173,6 +173,7 @@ export function TaskDrawer({
   onAddObservation,
   onAdvance,
   onVoid,
+  linkProperty = false,
   release,
   approvals = [],
 }: {
@@ -207,6 +208,8 @@ export function TaskDrawer({
   onAdvance?: (taskId: string) => void;
   /** Mark a step not needed for this home (supervisors only). */
   onVoid?: (taskId: string, reason: string) => void;
+  /** My Tasks (Nov 22): the home's name opens that home's onboarding page. */
+  linkProperty?: boolean;
   /** Authoritative release context; without it nothing may be completed early. */
   release?: ReleaseContext;
   /** Canonical owner approval records already raised for this task. */
@@ -500,7 +503,14 @@ export function TaskDrawer({
       headerExtra={
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground">
-            {propertyName} · {stageLabel(task.stage)}
+            {linkProperty ? (
+              <Link to="/onboarding/$propertyId" params={{ propertyId: task.property_id }} className="text-primary underline-offset-4 hover:underline">
+                {propertyName}
+              </Link>
+            ) : (
+              propertyName
+            )}{" "}
+            · {stageLabel(task.stage)}
           </p>
           {(links.from || links.followUps.length > 0) && (
             <div className="space-y-0.5 text-sm">
