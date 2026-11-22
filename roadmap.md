@@ -13,3 +13,22 @@
 - [ ] Part 2 Edit and Add more for hours: docs/pending/homeowner-reopen rechecked, waiting on "Approved: apply homeowner-reopen"
 - [x] Part 3 screen: Save disabled, "Saving...", "Already saved." shown; [ ] server guard staged docs/pending/hours-double-save, waiting on approval (after homeowner-reopen)
 - [x] Part 4 "Update that one instead?" question on new logs
+
+## Onboarding notifications and escalations (Nov 22)
+- [ ] Owner tasks notify only the home's Project Manager
+- [ ] No notice when completing a task you created
+- [ ] Director of Onboarding notified only for: tasks they sent, escalations, PM hand-added tasks
+- [ ] Daily 8 AM local reminder (app + email): overdue and due today, linked
+- [ ] Escalate button on owner cards (PM view), linked to task
+- [ ] Escalations tab above the task list on the project page
+- [ ] Each escalation: email + in-app to Director of Onboarding
+- [ ] All test emails only to the test inbox until publish
+
+## Owner weekly updates and onboarding tour (Nov 22)
+- [ ] Replace task-written weekly update card with three templated updates (Closing +7/+14/+21, 9 AM local, business days)
+- [ ] Portal for Active Owners, email for others, PM reply-to and copy, logged on owner tab
+- [ ] PM preview the business day before with Edit / Hold
+- [ ] Call or Email on owner tab fills the matching template
+- [ ] Owner tab prompt at 6 days since last update
+- [ ] Tour step 27 wording; tour on for onboarding team
+- [ ] No owner sends while testing; read back scheduled updates per home
