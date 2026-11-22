@@ -1,3 +1,4 @@
+import { EscalationsSection } from "@/components/onboarding/escalations/EscalationsSection";
 import { formatPropertyLabel } from "@/lib/property-label";
 import { taskSavedMessage } from "@/lib/task-proof";
 import { canReviewOnboardingGate } from "@/lib/onboarding-review-capabilities";
@@ -930,6 +931,7 @@ function PropertyWorkspace() {
               </p>
             </section>
           )}
+          <EscalationsSection propertyId={current.id} viewerId={userId ?? null} canClose={isOnboardingDirector || isAdminViewer} />
           <TasksTab
             propertyId={current.id}
             tasks={planTasks}

@@ -15,14 +15,14 @@
 - [x] Part 4 "Update that one instead?" question on new logs
 
 ## Onboarding notifications and escalations (Nov 22)
-- [ ] Owner tasks notify only the home's Project Manager
-- [ ] No notice when completing a task you created
-- [ ] Director of Onboarding notified only for: tasks they sent, escalations, PM hand-added tasks
-- [ ] Daily 8 AM local reminder (app + email): overdue and due today, linked
-- [ ] Escalate button on owner cards (PM view), linked to task
-- [ ] Escalations tab above the task list on the project page
-- [ ] Each escalation: email + in-app to Director of Onboarding
-- [ ] All test emails only to the test inbox until publish
+- [x] Owner tasks notify only the home's Project Manager (staged: onboarding-notify-escalate, waiting on approval)
+- [x] No notice when completing a task you created (already true; practised)
+- [x] Director of Onboarding notified only for: tasks they sent, escalations, PM hand-added tasks (staged)
+- [x] Daily 8 AM local reminder (built; starts once staged change applied and published)
+- [x] Escalate button on owner cards (shows once staged change applied)
+- [x] Escalations list above the task list (shows once applied)
+- [x] Each escalation: email + in-app to Director of Onboarding (staged)
+- [x] All onboarding emails only to the test inbox until the setting is removed
 
 ## Owner weekly updates and onboarding tour (Nov 22)
 - [ ] Replace task-written weekly update card with three templated updates (Closing +7/+14/+21, 9 AM local, business days)

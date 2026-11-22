@@ -145,6 +145,8 @@ function useOversightData() {
           supabase
             .from("escalations")
             .select("id, ticket_id, reason, help_needed, urgency, status, created_at, escalated_by")
+            // Operations escalations only: onboarding escalations carry no ticket.
+            .not("ticket_id", "is", null)
             .eq("status", "open")
             .eq("is_demo", demoMode),
         ]);

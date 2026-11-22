@@ -56,6 +56,8 @@ export function SupervisorAttentionBand({ isDirector }: { isDirector?: boolean |
           .select(
             "id, ticket_id, escalated_to_role, escalated_by, urgency, status, reason, outcome, created_at, resolved_at",
           )
+          // Operations escalations only: onboarding escalations carry no ticket.
+          .not("ticket_id", "is", null)
           .eq("is_demo", demoMode)
           .limit(200),
         supabase

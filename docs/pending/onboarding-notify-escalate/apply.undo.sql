@@ -1,0 +1,115 @@
+-- onboarding-notify-escalate undo. One transaction. Restores the four notice rules exactly (functions-before.sql),
+-- removes the new rules, trigger and test inbox. Rows written while applied are kept: held emails become
+-- skipped (never sent), onboarding escalations and reminder rows stay as history.
+DROP TRIGGER IF EXISTS notify_director_pm_added_task ON public.onboarding_tasks;
+DROP FUNCTION IF EXISTS private.notify_director_pm_added_task();
+CREATE OR REPLACE FUNCTION private.notify_onboarding_recipients(_recipients uuid[], _actor uuid, _kind text, _title text, _body text, _entity_type text, _entity_id uuid, _link text, _is_demo boolean)
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE r uuid; n integer := 0; _prop uuid;
+BEGIN
+  _prop := nullif(split_part(split_part(_link, '/onboarding/', 2), '?', 1), '')::uuid;
+  FOR r IN SELECT DISTINCT x FROM unnest(_recipients) x WHERE x IS NOT NULL LOOP
+    CONTINUE WHEN r = _actor;
+    CONTINUE WHEN NOT private.onboarding_scope_ok(r, _prop);
+    INSERT INTO staff_notifications(user_id, kind, title, body, entity_type, entity_id, link_path, priority, actor_id, is_demo, email_status)
+    VALUES (r, _kind, _title, _body, _entity_type, _entity_id, _link, 'normal', _actor, coalesce(_is_demo,false),
+            CASE WHEN coalesce(_is_demo,false) THEN 'none' ELSE 'pending' END);
+    n := n + 1;
+  END LOOP;
+  RETURN n;
+END $function$;
+
+CREATE OR REPLACE FUNCTION private.notify_opportunity_staff(_id uuid, _verb text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE w record; _owner text; _home text; _link text; _to uuid[] := '{}';
+  t_creator uuid; t_assignee uuid; _pm uuid;
+BEGIN
+  SELECT * INTO w FROM work_items WHERE id=_id;
+  IF w IS NULL OR w.property_id IS NULL THEN RETURN; END IF;
+  IF w.source_task_id IS NOT NULL THEN
+    SELECT created_by, assigned_to INTO t_creator, t_assignee FROM onboarding_tasks WHERE id=w.source_task_id;
+  END IF;
+  SELECT project_manager INTO _pm FROM onboarding_projects
+   WHERE property_id=w.property_id AND status <> 'cancelled' ORDER BY created_at DESC LIMIT 1;
+  _to := ARRAY[_pm, t_creator, t_assignee, w.assigned_to, public.seat_holder('onboarding_director')]
+      || coalesce((SELECT array_agg(user_id) FROM onboarding_follows WHERE property_id=w.property_id), '{}');
+  SELECT coalesce(pr.full_name, 'The homeowner') INTO _owner FROM owner_programs p LEFT JOIN profiles pr ON pr.id=p.owner_user_id WHERE p.id=w.program_id;
+  SELECT public.format_property_label(to_jsonb(properties))->>'primary' INTO _home FROM properties WHERE id=w.property_id;
+  _link := '/onboarding/'||w.property_id||'?opp='||w.id;
+  PERFORM private.notify_onboarding_recipients(_to, auth.uid(), 'owner_collaboration',
+    coalesce(_owner,'The homeowner')||' '||_verb, w.title||' · '||_home, 'work_item', w.id, _link, w.is_demo);
+END $function$;
+
+CREATE OR REPLACE FUNCTION private.owner_item_notify(_review owner_reviews, _title text, _body text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'private'
+AS $function$
+DECLARE task uuid;
+BEGIN
+  SELECT task_id INTO task FROM public.owner_item_task_sends WHERE review_id = _review.id;
+  task := coalesce(task, _review.onboarding_task_id);
+  INSERT INTO public.staff_notifications(user_id, kind, title, body, entity_type, entity_id, link_path, priority, email_status, is_demo)
+  SELECT uid, 'owner_item_message', left(_title, 200), left(btrim(_body), 500), 'owner_review', _review.id,
+         '/onboarding/' || _review.property_id || CASE WHEN task IS NULL THEN '' ELSE '?tab=plan&task=' || task END,
+         'normal', CASE WHEN coalesce(_review.is_demo, false) THEN 'none' ELSE 'pending' END, coalesce(_review.is_demo, false)
+    FROM private.owner_item_recipients(_review.id) uid;
+END $function$;
+
+CREATE OR REPLACE FUNCTION private.owner_item_recipients(_review_id uuid)
+ RETURNS SETOF uuid
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'private'
+AS $function$
+  WITH r AS (SELECT id, property_id, onboarding_task_id FROM public.owner_reviews WHERE id = _review_id),
+  t AS (
+    SELECT tk.assigned_to FROM r
+      LEFT JOIN public.owner_item_task_sends s ON s.review_id = r.id
+      JOIN public.onboarding_tasks tk ON tk.id = coalesce(s.task_id, r.onboarding_task_id)
+  ),
+  assigned AS (SELECT assigned_to AS uid FROM t WHERE assigned_to IS NOT NULL),
+  leads AS (
+    SELECT p.project_manager AS uid FROM r JOIN public.onboarding_projects p ON p.property_id = r.property_id AND p.status = 'active'
+     WHERE NOT EXISTS (SELECT 1 FROM assigned)
+    UNION SELECT public.seat_holder('onboarding_director') WHERE NOT EXISTS (SELECT 1 FROM assigned)
+  ),
+  followers AS (SELECT f.user_id AS uid FROM r JOIN public.onboarding_follows f ON f.property_id = r.property_id)
+  SELECT DISTINCT uid FROM (SELECT uid FROM assigned UNION SELECT uid FROM leads UNION SELECT uid FROM followers) x
+   WHERE uid IS NOT NULL AND uid IS DISTINCT FROM auth.uid()
+$function$;
+REVOKE EXECUTE ON FUNCTION public.raise_onboarding_escalation(uuid, uuid, text) FROM authenticated;
+REVOKE EXECUTE ON FUNCTION public.resolve_onboarding_escalation(uuid, text) FROM authenticated;
+DROP FUNCTION IF EXISTS public.raise_onboarding_escalation(uuid, uuid, text);
+DROP FUNCTION IF EXISTS public.resolve_onboarding_escalation(uuid, text);
+DROP FUNCTION IF EXISTS public.set_my_time_zone(text);
+DROP FUNCTION IF EXISTS private.onboarding_email_status(boolean);
+DELETE FROM public.app_settings WHERE key = 'onboarding_email_test_inbox';
+UPDATE public.staff_notifications SET email_status = 'skipped', email_error = 'Held for the test inbox; never sent.'
+ WHERE email_status = 'held';
+ALTER TABLE public.staff_notifications DROP CONSTRAINT staff_notifications_email_status_check;
+ALTER TABLE public.staff_notifications ADD CONSTRAINT staff_notifications_email_status_check
+  CHECK (email_status = ANY (ARRAY['none','pending','sent','skipped','failed']));
+-- Escalations: the two new columns, the index and the daily reminder table stay (nothing deleted).
+-- The role rule returns to Operations only when no onboarding escalation was ever raised.
+DO $u$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.escalations WHERE escalated_to_role = 'onboarding_director') THEN
+    ALTER TABLE public.escalations DROP CONSTRAINT escalations_onboarding_shape_ck;
+    ALTER TABLE public.escalations DROP CONSTRAINT escalations_role_ck;
+    ALTER TABLE public.escalations ADD CONSTRAINT escalations_role_ck CHECK (escalated_to_role = ANY (ARRAY['supervisor','director']));
+  END IF;
+END $u$;
+DROP FUNCTION IF EXISTS private.home_project_manager(uuid);
+DROP FUNCTION IF EXISTS private.onboarding_director();
+INSERT INTO public.audit_log(actor_id, action, entity_type, entity_label, after_value)
+VALUES (NULL, 'onboarding_notify_escalate.undo', 'system', 'Onboarding notices and escalations', '{}'::jsonb);

@@ -34,6 +34,7 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
         const { runNightlyPidSync } = await import("@/lib/pid-sync/run.server");
         const { runOwnerRezListingCache } = await import("@/lib/onboarding-home.server");
         const { runOwnerCommsJobs } = await import("@/lib/owner-tab.server");
+        const { runOnboardingDailyReminders, drainHeldOnboardingEmails } = await import("@/lib/onboarding-daily-reminder.server");
 
         try {
           const result = await runEmailJob(supabaseAdmin, [
@@ -50,6 +51,10 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
             { name: "staff", run: (id) => drainStaffNotifications(supabaseAdmin, 50, undefined, id) },
             { name: "scheduled", run: (id) => drainScheduledEmails(new Date(), id) },
             { name: "welcomes", run: (id) => drainOwnerWelcomes(supabaseAdmin, 20, id) },
+            // Onboarding: the 8 AM reminder in each person's time zone, and emails held for the test
+            // inbox (sent only to that address). Both skipped until their staged change is applied.
+            { name: "onboarding_daily_reminder", run: () => runOnboardingDailyReminders(supabaseAdmin) },
+            { name: "onboarding_test_inbox", run: () => drainHeldOnboardingEmails(supabaseAdmin) },
             // Last, so it can never hold up existing deliveries. Skipped silently until the staged function exists.
             { name: "ao_clocks", run: () => runAoClocksGuarded(supabaseAdmin) },
             // Review overdue alerts are in-app only; they never queue email.

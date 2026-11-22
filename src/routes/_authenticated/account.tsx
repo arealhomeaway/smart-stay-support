@@ -4,6 +4,7 @@
  * The one place a person manages how they appear on work and what reaches
  * their inbox. Everything here is their own record — no one else's.
  */
+import { TimeZoneField } from "@/components/account/TimeZoneField";
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -264,6 +265,9 @@ function AccountPage() {
                 <p className="text-xs text-muted-foreground">
                   Added to the bottom of messages you send from Resolve.
                 </p>
+              </div>
+              <div className="md:col-span-2">
+                <TimeZoneField />
               </div>
             </div>
             <Separator className="my-4" />

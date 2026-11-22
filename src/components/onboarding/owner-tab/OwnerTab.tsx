@@ -23,6 +23,8 @@ import { needsAttention as completionNeedsAttention, useOwnerCompletions } from 
 import type { usePropertyOwnerSummary } from "@/components/onboarding/PropertyOpportunitiesPanel";
 import { ChatThread } from "@/components/chat/ChatThread";
 import { WeeklyUpdateDialog } from "./WeeklyUpdateDialog";
+import { EscalateButton } from "@/components/onboarding/escalations/EscalateButton";
+import { useHomeEscalations } from "@/components/onboarding/escalations/EscalationsSection";
 import { readPropertyOwnerFn } from "@/lib/owner-link.functions";
 import {
   logOwnerContactFn,
@@ -121,6 +123,10 @@ export function OwnerTab(p: {
   const logReminder = useServerFn(logReminderNowFn);
 
   const hasPortal = Boolean(p.summary.program);
+  const escalations = useHomeEscalations(p.propertyId);
+  const escalatedCards = new Set((escalations.data?.rows ?? []).map((e) => e.workItemId).filter(Boolean));
+  // Escalate shows on every owner card for the people who work this home (Project Manager, team, Director, Admin).
+  const canEscalate = Boolean(data?.rights.askOwner && escalations.data?.ready);
   const rows = useMemo<NeedsActionRow[]>(() => {
     if (!data) return [];
     const waitingOnUs: Extract<NeedsActionRow, { kind: "waiting_on_us" }>[] = p.summary.attention.map((i) => ({
@@ -240,6 +246,9 @@ export function OwnerTab(p: {
                       >
                         {open ? "Close" : "Reply"}
                       </Button>
+                      {canEscalate && o ? (
+                        <EscalateButton propertyId={p.propertyId} workItemId={o.id} title={r.title} escalated={escalatedCards.has(o.id)} />
+                      ) : null}
                     </div>
                     {open ? (
                       <div className="border-t border-amber/40 bg-card p-3">
@@ -284,6 +293,7 @@ export function OwnerTab(p: {
                       <Button variant="outline" className="min-h-11" disabled>
                         {r.reminderSent ? `Reminder sent ${fmtDay(data.reminders[r.id])}` : r.reminderOn ? `Reminder goes out ${fmtDay(r.reminderOn)}` : "No due date"}
                       </Button>
+                      {canEscalate ? <EscalateButton propertyId={p.propertyId} workItemId={r.id} title={r.title} escalated={escalatedCards.has(r.id)} /> : null}
                     </div>
                     {data.rights.askOwner ? (
                       pref === "email" || !link ? (
@@ -327,6 +337,7 @@ export function OwnerTab(p: {
                     <Button className="min-h-11" variant="outline" disabled={review.isPending || !data.rights.askOwner} onClick={() => review.mutate(r.id)}>
                       Mark reviewed
                     </Button>
+                    {canEscalate ? <EscalateButton propertyId={p.propertyId} workItemId={r.id} title={r.title} escalated={escalatedCards.has(r.id)} /> : null}
                   </li>
                 );
               }
