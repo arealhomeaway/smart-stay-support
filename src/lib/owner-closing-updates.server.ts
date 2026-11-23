@@ -1,8 +1,8 @@
 /**
  * Owner updates after closing (Nov 22): reads each home's facts, keeps its three updates in line with
  * the Resolve Closing Date, sends the Project Manager preview the business day before, and sends each
- * update at 9:00 AM home time. Active Owners get it in the portal; other owners by email from the
- * shared mailbox with the Project Manager as Reply-To and on Cc. While the test inbox setting is on,
+ * update at 9:00 AM home time. Active Owners get it in the portal and by email (primary login only);
+ * other owners by email. Every email goes from the shared mailbox with the Project Manager as Reply-To and on Cc. While the test inbox setting is on,
  * every update goes only to that inbox. Quiet until docs/pending/owner-closing-updates is applied.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -22,6 +22,7 @@ import {
   resolveClosingDate,
   sendDecision,
   stopReason,
+  updateDelivery,
   type HomeFacts,
   type StoredUpdate,
   type UpdateNo,
@@ -48,7 +49,9 @@ export type HomeUpdateContext = {
   ownerFirstNames: string;
   ownerEmails: string[];
   pm: { id: string; name: string; email: string | null } | null;
-  program: { id: string; ownerUserId: string } | null;
+  program: { id: string; ownerUserId: string; ownerEmail: string | null } | null;
+  /** Portal (Active Owners) and the email addresses this update goes to. */
+  delivery: { portal: boolean; emails: string[] };
 };
 
 export type StoredRow = StoredUpdate & {
@@ -123,8 +126,9 @@ export async function loadHomeContexts(db: Db, propertyIds?: string[]): Promise<
     ...((programs.data ?? []) as { owner_user_id: string | null }[]).map((p) => p.owner_user_id),
     ...((members.data ?? []) as { user_id: string }[]).map((m) => m.user_id),
   ].filter(Boolean))] as string[];
-  const memberProfiles = memberIds.length ? await sb.from("profiles").select("id, full_name").in("id", memberIds) : { data: [] };
+  const memberProfiles = memberIds.length ? await sb.from("profiles").select("id, full_name, email").in("id", memberIds) : { data: [] };
   const nameOf = new Map(((memberProfiles.data ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, p.full_name?.trim() ?? ""]));
+  const emailOf = new Map(((memberProfiles.data ?? []) as { id: string; email: string | null }[]).map((p) => [p.id, p.email ?? null]));
   const ownerById = new Map(((owners.data ?? []) as any[]).map((o) => [o.id, o]));
   const pmById = new Map(((pms.data ?? []) as any[]).map((p) => [p.id, p]));
   const progById = new Map(((programs.data ?? []) as any[]).map((p) => [p.id, p]));
@@ -151,6 +155,8 @@ export async function loadHomeContexts(db: Db, propertyIds?: string[]): Promise<
     };
     const address = formatPropertyLabel(h).primary;
     const pm = p.project_manager ? pmById.get(p.project_manager) : null;
+    const ownerEmails = [owner?.email, owner?.co_owner_email].map((e: string | null | undefined) => e?.trim()).filter((e): e is string => !!e && /@/.test(e));
+    const program = active ? { id: active.id as string, ownerUserId: active.owner_user_id as string, ownerEmail: emailOf.get(active.owner_user_id) ?? null } : null;
     return {
       propertyId: p.property_id,
       isDemo: Boolean(p.is_demo || h.is_demo),
@@ -160,9 +166,10 @@ export async function loadHomeContexts(db: Db, propertyIds?: string[]): Promise<
       stop: stopReason(facts),
       startedAt: p.created_at ?? null,
       ownerFirstNames: ownerFirstNames(people, owner?.name ?? null),
-      ownerEmails: [owner?.email, owner?.co_owner_email].map((e: string | null | undefined) => e?.trim()).filter((e): e is string => !!e && /@/.test(e)),
+      ownerEmails,
       pm: pm ? { id: pm.id, name: pm.full_name?.trim() || "Your Project Manager", email: pm.email ?? null } : null,
-      program: active ? { id: active.id, ownerUserId: active.owner_user_id } : null,
+      program,
+      delivery: updateDelivery({ activeOwner: !!program, primaryLoginEmail: program?.ownerEmail ?? null, ownerEmails }),
     };
   });
 }
@@ -215,7 +222,8 @@ export async function readHomeUpdates(sb: Db, propertyId: string, now: Date = ne
     timeZone: ctx.facts.timeZone,
     stop: ctx.stop,
     channel: ctx.program ? ("portal" as const) : ("email" as const),
-    to: ctx.program ? [] : ctx.ownerEmails,
+    portal: ctx.delivery.portal,
+    to: ctx.delivery.emails,
     projectManager: ctx.pm ? { name: ctx.pm.name, email: ctx.pm.email } : null,
     ownerFirstNames: ctx.ownerFirstNames,
     startedAt: ctx.startedAt,
@@ -290,7 +298,7 @@ export async function runOwnerClosingUpdates(db: Db, now: Date = new Date()) {
 
     const decision = sendDecision({ sendOn: row.sendOn, sendAt: row.sendAt, timeZone: row.timeZone, now });
     if (decision === "wait") continue;
-    if (decision === "missed" || !ctx.pm || (!ctx.program && !ctx.ownerEmails.length && !inbox.email)) {
+    if (decision === "missed" || !ctx.pm || (!ctx.delivery.portal && !ctx.delivery.emails.length && !inbox.email)) {
       const reason = decision === "missed" ? "Its send time passed. It is not sent late." : !ctx.pm ? "No Project Manager on the home at send time." : "No owner email on file at send time.";
       const up = await sb.from("owner_closing_updates").update({ status: "missed", status_reason: reason }).eq("id", row.id).eq("status", "scheduled");
       if (!up.error) { out.missed++; await event(db, row.id, ctx.propertyId, "missed", { update_no: row.no, reason }); }
@@ -311,35 +319,50 @@ export async function runOwnerClosingUpdates(db: Db, now: Date = new Date()) {
 
 type Delivery = { status: "sent" | "test_sent" | "failed"; channel: "portal" | "email"; to: string[]; subject: string; body: string; error: string | null };
 
-/** One update to its owners, or only to the test inbox while testing. */
+/**
+ * One update to its owners, or only to the test inbox while testing. Active Owners: portal first, then the
+ * email; a portal post that lands counts as sent and an email failure is kept as the reason.
+ */
 async function deliver(db: Db, ctx: HomeUpdateContext, row: Pick<StoredRow, "no" | "editedSubject" | "editedBody">, testTo: string | null): Promise<Delivery> {
   const msg = messageFor(ctx, row.no, row);
-  const channel = ctx.program ? ("portal" as const) : ("email" as const);
+  const channel = ctx.delivery.portal ? ("portal" as const) : ("email" as const);
+  const emails = ctx.delivery.emails;
   const { sendEmail, emailShell, emailText } = await import("@/lib/email.server");
+  const pmEmail = ctx.pm?.email ?? undefined;
   if (testTo) {
     const subject = `[RESOLVE TEST] ${msg.subject}`;
+    const emailPart = emails.length ? `by email to ${emails.join(", ")}` : "by email, but no owner email is on file";
     const note = channel === "portal"
-      ? "Test copy. This owner is an Active Owner: the real update goes to their Resolve portal."
-      : `Test copy. The real update goes by email to the owner, with the Project Manager on Cc and as Reply-To.`;
+      ? `Test copy. This owner is an Active Owner: the real update goes to their Resolve portal and ${emailPart}, with the Project Manager on Cc and as Reply-To.`
+      : `Test copy. The real update goes ${emailPart}, with the Project Manager on Cc and as Reply-To.`;
     const body = `${note}\n\n${msg.body}`;
     const r = await sendEmail({ to: testTo, subject, html: emailShell(subject, body, undefined, "owner"), bodyText: emailText(subject, body), purpose: "owner_update_test_copy", entity: { type: "property", id: ctx.propertyId } });
     return { status: r.status === "sent" ? "test_sent" : "failed", channel, to: [testTo], subject: msg.subject, body: msg.body, error: r.status === "sent" ? null : r.error };
   }
+  const sendOwnerEmail = async () => {
+    const [to, ...more] = emails;
+    if (!to) return { ok: false, error: "No owner email on file." };
+    const r = await sendEmail({
+      to, toAdditional: more, cc: pmEmail ? [pmEmail] : [], ...(pmEmail ? { replyTo: pmEmail, staffReplyTo: true } : {}),
+      subject: msg.subject, html: emailShell(msg.subject, msg.body, undefined, "owner"), bodyText: msg.body,
+      purpose: "owner_closing_update", entity: { type: "property", id: ctx.propertyId },
+    });
+    return { ok: r.status === "sent", error: r.status === "sent" ? null : r.error ?? "The email could not be sent." };
+  };
   if (channel === "portal") {
     const ins = await loose(db).from("owner_notifications").insert({
       program_id: ctx.program!.id, owner_user_id: ctx.program!.ownerUserId, kind: "owner_update", priority: "p3",
       title: msg.subject, body: msg.body, action_path: `/owner?home=${ctx.propertyId}`, email_status: "skipped", is_demo: false,
     }).select("id").maybeSingle();
-    return { status: ins.error ? "failed" : "sent", channel, to: ["portal"], subject: msg.subject, body: msg.body, error: ins.error?.message ?? null };
+    if (ins.error) return { status: "failed", channel, to: [], subject: msg.subject, body: msg.body, error: ins.error.message };
+    const e = await sendOwnerEmail();
+    return {
+      status: "sent", channel, to: e.ok ? ["portal", ...emails] : ["portal"], subject: msg.subject, body: msg.body,
+      error: e.ok ? null : `Posted in the portal. The email did not send: ${e.error}`,
+    };
   }
-  const [to, ...more] = ctx.ownerEmails;
-  const pmEmail = ctx.pm?.email ?? undefined;
-  const r = await sendEmail({
-    to: to!, toAdditional: more, cc: pmEmail ? [pmEmail] : [], ...(pmEmail ? { replyTo: pmEmail, staffReplyTo: true } : {}),
-    subject: msg.subject, html: emailShell(msg.subject, msg.body, undefined, "owner"), bodyText: msg.body,
-    purpose: "owner_closing_update", entity: { type: "property", id: ctx.propertyId },
-  });
-  return { status: r.status === "sent" ? "sent" : "failed", channel, to: ctx.ownerEmails, subject: msg.subject, body: msg.body, error: r.status === "sent" ? null : r.error };
+  const e = await sendOwnerEmail();
+  return { status: e.ok ? "sent" : "failed", channel, to: emails, subject: msg.subject, body: msg.body, error: e.error };
 }
 
 /** Send a test copy of one update to the test inbox now (Project Manager, Director, Admin). Never to an owner. */

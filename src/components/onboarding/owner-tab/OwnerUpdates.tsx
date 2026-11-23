@@ -75,7 +75,7 @@ export function OwnerUpdatesCard({ propertyId, onOpen }: { propertyId: string; o
             ))}
           </ul>
           <p className="text-xs text-muted-foreground">
-            {d.channel === "portal" ? "Goes to the owner's portal." : "Goes by email, from the team mailbox."}
+            {d.channel === "portal" ? "Goes to the owner's portal and by email, from the team mailbox." : "Goes by email, from the team mailbox."}
             {d.testing ? " Testing: sends go to the test inbox only." : ""}
           </p>
         </>
@@ -153,8 +153,11 @@ export function OwnerUpdateDialog(p: { propertyId: string; no: 1 | 2 | 3 | null;
             {item.reason ? <p className="text-muted-foreground">{item.reason}</p> : null}
             <dl className="grid grid-cols-[6rem_minmax(0,1fr)] gap-x-3 gap-y-1">
               <dt className="text-muted-foreground">To</dt>
-              <dd>{d.channel === "portal" ? "The owner's portal" : d.to.length ? d.to.join(", ") : "No owner email on file"}</dd>
-              {d.channel === "email" ? (
+              <dd>
+                {d.channel === "portal" ? "The owner's portal and " : ""}
+                {d.to.length ? d.to.join(", ") : "no owner email on file"}
+              </dd>
+              {d.projectManager || d.to.length ? (
                 <>
                   <dt className="text-muted-foreground">Cc and reply</dt>
                   <dd>{d.projectManager?.email ?? "No Project Manager on this home"}</dd>

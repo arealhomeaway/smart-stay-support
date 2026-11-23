@@ -11,6 +11,7 @@ import {
   renderUpdate,
   sendDecision,
   stopReason,
+  updateDelivery,
   usFederalHolidays,
   type HomeFacts,
 } from "@/lib/owner-closing-updates";
@@ -153,5 +154,20 @@ describe("6 days since the last update", () => {
   });
   it("never shows once the home is Live", () => {
     expect(quietOwnerDays({ lastUpdateAt: "2026-11-01T00:00:00Z", startedAt: null, now, stopped: true })).toBeNull();
+  });
+});
+
+describe("who gets an update (Nov 23)", () => {
+  it("Active Owners get the portal and an email to the primary login only", () => {
+    expect(updateDelivery({ activeOwner: true, primaryLoginEmail: "primary@x.com", ownerEmails: ["record@x.com", "co@x.com"] }))
+      .toEqual({ portal: true, emails: ["primary@x.com"] });
+  });
+  it("Active Owner with no login email falls back to the owner record's first email", () => {
+    expect(updateDelivery({ activeOwner: true, primaryLoginEmail: null, ownerEmails: ["record@x.com", "co@x.com"] }))
+      .toEqual({ portal: true, emails: ["record@x.com"] });
+  });
+  it("other owners get email only, to every owner record address", () => {
+    expect(updateDelivery({ activeOwner: false, primaryLoginEmail: null, ownerEmails: ["record@x.com", "co@x.com"] }))
+      .toEqual({ portal: false, emails: ["record@x.com", "co@x.com"] });
   });
 });

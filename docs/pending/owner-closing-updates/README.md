@@ -1,4 +1,4 @@
-# owner-closing-updates (staged, not applied)
+# owner-closing-updates (APPLIED Nov 23 2026, 13:38 UTC, migration 0368, on "Approved: apply owner-closing-updates")
 
 Owner updates 1, 2 and 3 after closing replace the Friday weekly update (Admin, Nov 22).
 Apply only on the exact words `Approved: apply owner-closing-updates`.

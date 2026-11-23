@@ -11107,6 +11107,151 @@ export type Database = {
           },
         ]
       }
+      owner_closing_update_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          detail: Json
+          id: string
+          property_id: string
+          update_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          property_id: string
+          update_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          property_id?: string
+          update_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_closing_update_events_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "owner_closing_update_events_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_closing_update_events_update_id_fkey"
+            columns: ["update_id"]
+            isOneToOne: false
+            referencedRelation: "owner_closing_updates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_closing_updates: {
+        Row: {
+          channel: string | null
+          closing_on: string
+          created_at: string
+          edited_at: string | null
+          edited_body: string | null
+          edited_by: string | null
+          edited_subject: string | null
+          held_at: string | null
+          held_by: string | null
+          id: string
+          preview_notified_at: string | null
+          property_id: string
+          send_at: string
+          send_on: string
+          sent_at: string | null
+          sent_body: string | null
+          sent_subject: string | null
+          sent_to: string[] | null
+          status: string
+          status_reason: string | null
+          time_zone: string
+          update_no: number
+          updated_at: string
+        }
+        Insert: {
+          channel?: string | null
+          closing_on: string
+          created_at?: string
+          edited_at?: string | null
+          edited_body?: string | null
+          edited_by?: string | null
+          edited_subject?: string | null
+          held_at?: string | null
+          held_by?: string | null
+          id?: string
+          preview_notified_at?: string | null
+          property_id: string
+          send_at: string
+          send_on: string
+          sent_at?: string | null
+          sent_body?: string | null
+          sent_subject?: string | null
+          sent_to?: string[] | null
+          status?: string
+          status_reason?: string | null
+          time_zone: string
+          update_no: number
+          updated_at?: string
+        }
+        Update: {
+          channel?: string | null
+          closing_on?: string
+          created_at?: string
+          edited_at?: string | null
+          edited_body?: string | null
+          edited_by?: string | null
+          edited_subject?: string | null
+          held_at?: string | null
+          held_by?: string | null
+          id?: string
+          preview_notified_at?: string | null
+          property_id?: string
+          send_at?: string
+          send_on?: string
+          sent_at?: string | null
+          sent_body?: string | null
+          sent_subject?: string | null
+          sent_to?: string[] | null
+          status?: string
+          status_reason?: string | null
+          time_zone?: string
+          update_no?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_closing_updates_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "owner_closing_updates_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       owner_completion_reviews: {
         Row: {
           actor_id: string | null
@@ -20529,6 +20674,10 @@ export type Database = {
         Args: { _listing_id: string; _name: string; _reason: string }
         Returns: Json
       }
+      edit_owner_closing_update: {
+        Args: { _body: string; _id: string; _subject: string }
+        Returns: Json
+      }
       email_delivery_allowed: {
         Args: {
           _actor_id?: string
@@ -20578,6 +20727,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      hold_owner_closing_update: { Args: { _id: string }; Returns: Json }
       holds_functional_role: {
         Args: { _code: string; _user_id: string }
         Returns: boolean

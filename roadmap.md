@@ -25,7 +25,7 @@
 - [x] All onboarding emails only to the test inbox until the setting is removed
 
 ## Owner weekly updates and onboarding tour (Nov 22)
-- [x] Replace task-written weekly update card with three templated updates (Closing +7/+14/+21, 9 AM local, business days) — built in preview; DB staged as owner-closing-updates
+- [x] Replace task-written weekly update card with three templated updates (Closing +7/+14/+21, 9 AM local, business days) — built in preview; DB applied Nov 23 (0368); Active Owners portal + email (Nov 23); real sends wait on Emily approving removal of the test inbox; publish waits on Emily
 - [x] Portal for Active Owners, email for others, PM reply-to and copy, logged on owner tab (preview)
 - [x] PM preview the business day before with Edit / Hold (preview)
 - [x] Call or Email on owner tab fills the matching template (preview)

@@ -2577,6 +2577,13 @@
       "when": 1795376223229,
       "tag": "0367_onboarding_notify_escalate",
       "breakpoints": true
+    },
+    {
+      "idx": 368,
+      "version": "7",
+      "when": 1795441105844,
+      "tag": "0368_owner_closing_updates",
+      "breakpoints": true
     }
   ]
 }

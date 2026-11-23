@@ -331,3 +331,17 @@ export function quietOwnerDays(input: { lastUpdateAt: string | null; startedAt: 
   const days = Math.floor((input.now.getTime() - Date.parse(from)) / 86_400_000);
   return days >= QUIET_OWNER_DAYS ? days : null;
 }
+
+/**
+ * Who gets an update (Nov 23): Active Owners get it in the portal and by email; the email goes only to the
+ * program's primary login (co-owner rule: routine email is primary only), else the owner record's email.
+ * Other owners get it by email to the owner record's addresses.
+ */
+export function updateDelivery(input: { activeOwner: boolean; primaryLoginEmail: string | null; ownerEmails: string[] }): { portal: boolean; emails: string[] } {
+  const ok = (e: string | null | undefined): e is string => !!e && /@/.test(e.trim());
+  if (input.activeOwner) {
+    const e = ok(input.primaryLoginEmail) ? input.primaryLoginEmail.trim() : input.ownerEmails.find(ok)?.trim() ?? null;
+    return { portal: true, emails: e ? [e] : [] };
+  }
+  return { portal: false, emails: input.ownerEmails.filter(ok).map((e) => e.trim()) };
+}
