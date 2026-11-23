@@ -45,7 +45,8 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
             // never more than one a day per owner. Before delivery so they go out in this pass.
             // Skipped silently until the staged function exists.
             // Property page Part 2: unread chat alerts, owner reminders (the business day before, held for
-            // the daily email below), Friday weekly drafts and auto-send. Skipped until staged; never fails.
+            // the daily email below), and owner updates 1-3 after closing (Nov 22; they replace the Friday
+            // weekly drafts and auto-send). Skipped until staged; never fails.
             { name: "owner_comms", run: () => runOwnerCommsJobs(supabaseAdmin) },
             { name: "ao_owner_email", run: () => runAoOwnerEmailGuarded(supabaseAdmin) },
             { name: "owner", run: (id) => drainOwnerAlerts(supabaseAdmin, 50, undefined, id) },

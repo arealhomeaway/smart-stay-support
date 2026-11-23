@@ -129,6 +129,11 @@ type SendInput = {
   /** Files carried with the message, already read into base64 by the caller. */
   attachments?: { name: string; contentType: string; contentBytes: string }[];
   replyTo?: string;
+  /**
+   * Owner updates after closing (Nov 22): replies go to the home's Project Manager. Only a company
+   * address is honored; anything else stays pinned to the shared mailbox.
+   */
+  staffReplyTo?: boolean;
   /** What this message is for — shows in the delivery log. */
   purpose?: string;
   ticketId?: string | null;
@@ -207,6 +212,12 @@ async function logDelivery(entry: {
   }
 }
 
+/** An address on the shared mailbox's own domain (a team member), never an outside address. */
+function companyAddress(address: string): boolean {
+  const domain = SHARED_MAILBOX.split("@")[1] ?? "";
+  return !!domain && address.trim().toLowerCase().endsWith(`@${domain}`);
+}
+
 /**
  * Sends one message from the shared mailbox. Never throws.
  * Retries throttles and provider outages with backoff, then records the outcome.
@@ -277,12 +288,13 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
   // Replies always come back to the shared inbox, even when a ticket is owned
   // by an individual coordinator. Their name may appear in the signature; the
   // address never changes.
-  if (isEmailAddress(input.replyTo) && input.replyTo.trim().toLowerCase() !== SHARED_MAILBOX) {
+  const staffReply = input.staffReplyTo && isEmailAddress(input.replyTo) && companyAddress(input.replyTo) ? input.replyTo.trim() : null;
+  if (!staffReply && isEmailAddress(input.replyTo) && input.replyTo.trim().toLowerCase() !== SHARED_MAILBOX) {
     console.warn(
       `Ignoring requested reply-to ${input.replyTo.trim()}. Replies are pinned to ${SHARED_MAILBOX}.`,
     );
   }
-  const replyTo = SHARED_MAILBOX;
+  const replyTo = staffReply ?? SHARED_MAILBOX;
   const message = {
     subject: input.subject,
     body: { contentType: "HTML", content: input.html },

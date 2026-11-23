@@ -62,7 +62,11 @@ export type NeedsActionRow =
   | { kind: "waiting_on_us"; id: string; title: string; who: string; at: string | null; source: "item" | "chat" }
   | { kind: "waiting_on_owner"; id: string; title: string; dueOn: string | null; taskTitle: string; reminderOn: string | null; reminderSent: boolean }
   | { kind: "check_it"; id: string; title: string; what: string; at: string | null }
-  | { kind: "weekly"; id: string; ownerFirstNames: string };
+  | { kind: "weekly"; id: string; ownerFirstNames: string }
+  /** Owner updates after closing (Nov 22): the business day before a send, Preview with Edit and Hold. */
+  | { kind: "owner_update"; id: string; no: 1 | 2 | 3; sendOn: string; subject: string }
+  /** 6 days or more since the owner last heard from us. */
+  | { kind: "quiet_owner"; id: string; days: number; ownerFirstNames: string };
 
 /**
  * 2.1: only these four kinds, in this order. Plan cards are never listed (only counted on the right).
@@ -74,6 +78,8 @@ export function needsAction(input: {
   waitingOnOwner: Extract<NeedsActionRow, { kind: "waiting_on_owner" }>[];
   checkIt: Extract<NeedsActionRow, { kind: "check_it" }>[];
   weekly: Extract<NeedsActionRow, { kind: "weekly" }> | null;
+  ownerUpdate?: Extract<NeedsActionRow, { kind: "owner_update" }> | null;
+  quiet?: Extract<NeedsActionRow, { kind: "quiet_owner" }> | null;
 }): NeedsActionRow[] {
   const byAt = <T extends { at: string | null }>(a: T, b: T) => (b.at ?? "").localeCompare(a.at ?? "");
   return [
@@ -81,12 +87,14 @@ export function needsAction(input: {
     ...[...input.waitingOnOwner].sort((a, b) => (a.dueOn ?? "9999").localeCompare(b.dueOn ?? "9999")),
     ...(input.activeOwner ? [...input.checkIt].sort(byAt) : []),
     ...(input.weekly ? [input.weekly] : []),
+    ...(input.ownerUpdate ? [input.ownerUpdate] : []),
+    ...(input.quiet ? [input.quiet] : []),
   ];
 }
 
-/** The Owner tab count: owner answers staff have not replied to, plus a weekly update ready to send. */
+/** The Owner tab count: owner answers staff have not replied to, an update to preview, and a quiet owner. */
 export function ownerTabCount(rows: NeedsActionRow[]): number {
-  return rows.filter((r) => r.kind === "waiting_on_us" || r.kind === "weekly").length;
+  return rows.filter((r) => r.kind === "waiting_on_us" || r.kind === "weekly" || r.kind === "owner_update" || r.kind === "quiet_owner").length;
 }
 
 /** Owner chat: the owner is waiting on us when their newest message is newer than the newest staff message. */
@@ -110,7 +118,7 @@ export const TIMELINE_TAG: Record<TimelineKind, string> = {
   text: "Text",
   call: "Call",
   approval: "Approval",
-  weekly: "Weekly update",
+  weekly: "Owner update",
 };
 export const TIMELINE_FILTERS = [
   { key: "all", label: "All", kinds: TIMELINE_KINDS as readonly TimelineKind[] },
@@ -118,7 +126,7 @@ export const TIMELINE_FILTERS = [
   { key: "emails", label: "Emails", kinds: ["email"] as TimelineKind[] },
   { key: "calls", label: "Calls and texts", kinds: ["call", "text"] as TimelineKind[] },
   { key: "approvals", label: "Approvals", kinds: ["approval"] as TimelineKind[] },
-  { key: "weekly", label: "Weekly updates", kinds: ["weekly"] as TimelineKind[] },
+  { key: "weekly", label: "Owner updates", kinds: ["weekly"] as TimelineKind[] },
 ] as const;
 export type TimelineFilter = (typeof TIMELINE_FILTERS)[number]["key"];
 

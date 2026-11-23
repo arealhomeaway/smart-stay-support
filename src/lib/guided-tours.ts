@@ -213,7 +213,7 @@ const ONBOARDING: TourSection[] = [
     title: "Active Owner cards",
     steps: [
       { id: "onb-ao-items", to: "/onboarding/$home?tab=owner", fallbackTo: "/onboarding", page: "A home, Owner", element: "Every owner item", target: [{ text: "Every owner item" }, "[aria-label='Active Owner program']"], title: "Cards open by themselves", body: "When a Task is done, the homeowner cards linked to it open by themselves. Nobody has to send them." },
-      { id: "onb-ao-due", to: "/onboarding/$home?tab=owner", fallbackTo: "/onboarding", page: "A home, Owner", element: "Needs action", target: ["#owner-needs-action"], title: "15 owner items with due dates", body: "15 owner items need the owner to act. Only these have a due date and one reminder." },
+      { id: "onb-ao-due", to: "/onboarding/$home?tab=owner", fallbackTo: "/onboarding", page: "A home, Owner", element: "Needs action", target: ["#owner-needs-action"], title: "Owner tasks", body: "The owner tasks list shows what the owner needs to do for this home, with any due dates." },
       { id: "onb-ao-late", to: "/onboarding/$home?tab=owner", fallbackTo: "/onboarding", page: "A home, Owner", element: "Active Owner program", target: ["[aria-label='Active Owner program']"], title: "Past the due date", body: "If the owner misses the due date, ARHA takes the item over. Unlock now is only a backup." },
       { id: "onb-ao-covered", to: "/onboarding/$home?tab=owner", fallbackTo: "/onboarding", page: "A home, Owner", element: "None (centered)", target: null, title: "Not needed covers the card", body: "When a Task is marked Not needed, its owner card is covered, so the owner never sees it." },
     ],
@@ -224,8 +224,8 @@ const ONBOARDING: TourSection[] = [
     steps: [
       { id: "onb-chat-open", to: "/onboarding/$home?chat=owner", fallbackTo: "/onboarding", page: "A home, Chat", element: "Chat panel", target: [{ text: "With the owner" }, "[aria-label='Chat']", "[aria-label^='Chats']"], title: "The home chat", body: "Each home has a chat. With the owner goes to the homeowner. Team only stays inside ARHA." },
       { id: "onb-chat-write", to: "/onboarding/$home?chat=owner", fallbackTo: "/onboarding", page: "A home, Chat", element: "Chat panel", target: ["[role='dialog'][data-state='open'] textarea", { text: "With the owner" }], title: "Write here", body: "Write to the owner here, not by personal text. Every message stays on the home." },
-      { id: "onb-weekly", to: "/onboarding/$home?tab=owner", fallbackTo: "/onboarding", page: "A home, Owner", element: "Weekly update", target: [{ text: "Weekly update", within: "p", closest: "div" }], title: "Friday weekly update", body: "Every Friday Resolve drafts a weekly update for the owner. Read it and approve it before it goes out." },
-      { id: "onb-weekly-auto", to: "/onboarding/$home?tab=owner", fallbackTo: "/onboarding", page: "A home, Owner", element: "Send weekly updates automatically", target: [{ text: "Send weekly updates automatically", within: "p, label, span", closest: "div" }], title: "Automatic sending", body: "Send weekly updates automatically is off for every home at the start. Only Admin and a Director can turn it on. The Project Manager can pause it for a home." },
+      { id: "onb-weekly", to: "/onboarding/$home?tab=owner", fallbackTo: "/onboarding", page: "A home, Owner", element: "Owner updates", target: ["[aria-label='Owner updates']"], title: "Owner updates", body: "Three updates go to the owner one, two and three weeks after closing. The business day before each one, you can Edit it or Hold it." },
+      { id: "onb-weekly-auto", to: "/onboarding/$home?tab=owner", fallbackTo: "/onboarding", page: "A home, Owner", element: "Needs action", target: ["#owner-needs-action"], title: "Keep the owner posted", body: "When the owner has not heard from us for 6 days, Needs action says so. Email or a call starts with the matching owner update." },
     ],
   },
   {
@@ -287,7 +287,8 @@ export function autostartTeam(v: TourViewer): TourTeam | null {
   return toursFor(v)[0] ?? null;
 }
 
-export const tourSeenKey = (team: TourTeam, userId: string) => `resolve.guided-tour.v2.${team}.${userId}`;
+/** Onboarding moved to v3 on Nov 22 so the corrected tour starts once more for the onboarding team. */
+export const tourSeenKey = (team: TourTeam, userId: string) => `resolve.guided-tour.${team === "onboarding" ? "v3" : "v2"}.${team}.${userId}`;
 
 export function sectionsFor(team: TourTeam, v: TourViewer): TourSection[] {
   return GUIDED_TOURS[team].sections.filter((s) => s.audience !== "leads" || isTourLead(v));

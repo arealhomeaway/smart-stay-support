@@ -9,9 +9,7 @@ import {
   ownerChatWaiting,
   ownerTabRights,
   weekStartOf,
-  weeklyAutoSendDue,
   weeklyDraft,
-  weeklyDraftDue,
   centralParts,
   type OwnerTabViewer,
   type TimelineRow,
@@ -75,7 +73,7 @@ export async function readOwnerTab(sb: Db, uid: string, propertyId: string) {
       ? sb.from("property_owners").select("id, name, preferred_method, team_notes, team_notes_updated_at, team_notes_updated_by").eq("id", ownerId).maybeSingle()
       : Promise.resolve({ data: null, error: null }),
     sb.from("owner_request_messages").select("id, body, author_name, author_type, created_at, work_item_id, event").eq("property_id", propertyId).order("created_at", { ascending: false }).limit(200),
-    sb.from("email_log").select("id, subject, recipient, sent_by, status, created_at, sent_at").eq("entity_type", "property").eq("entity_id", propertyId).in("status", ["sent", "scheduled"]).order("created_at", { ascending: false }).limit(100),
+    sb.from("email_log").select("id, subject, recipient, sent_by, status, created_at, sent_at, purpose").eq("entity_type", "property").eq("entity_id", propertyId).in("status", ["sent", "scheduled"]).order("created_at", { ascending: false }).limit(100),
     sb.from("approvals").select("id, title, status, decided_at, created_at, responded_at, response_channel").eq("property_id", propertyId).order("created_at", { ascending: false }).limit(100),
     sb.from("home_chats" as never).select("id, kind").eq("property_id", propertyId),
     sb.from("onboarding_notes").select("id, body, author_id, created_at, kind" as never).eq("property_id", propertyId).in("kind" as never, ["call", "text"] as never).is("archived_at", null).order("created_at", { ascending: false }).limit(200),
@@ -105,6 +103,9 @@ export async function readOwnerTab(sb: Db, uid: string, propertyId: string) {
   const noteRows = (staged.notes ? notes.data ?? [] : []) as unknown as { id: string; body: string; author_id: string | null; created_at: string; kind: "call" | "text" }[];
   const weeklyRows = (staged.weekly ? weekly.data ?? [] : []) as unknown as { id: string; week_start: string; draft_text: string; edited_text: string | null; status: string; sent_at: string | null; sent_by: string | null; sent_text: string | null; sent_automatically: boolean; created_at: string }[];
   const reminderRows = (staged.reminders ? reminders.data ?? [] : []) as unknown as { work_item_id: string; sent_at: string; due_on: string }[];
+  // Owner updates after closing that reached the owner (staged; empty until applied).
+  const closing = await sb.from("owner_closing_updates" as never).select("id, update_no, channel, sent_subject, sent_at, status").eq("property_id", propertyId).eq("status", "sent");
+  const closingRows = (isStagedMissing(closing.error) ? [] : closing.data ?? []) as unknown as { id: string; update_no: number; channel: string | null; sent_subject: string | null; sent_at: string | null }[];
   const who = await names(sb, [
     ...chatMsgs.map((m) => m.author_id),
     ...noteRows.map((n) => n.author_id),
@@ -118,13 +119,28 @@ export async function readOwnerTab(sb: Db, uid: string, propertyId: string) {
     ...((itemMsgs.data ?? []) as { id: string; body: string | null; author_name: string | null; author_type: string; created_at: string; event: string | null }[])
       .filter((m) => (m.body ?? "").trim())
       .map((m) => ({ id: `item-${m.id}`, kind: "portal" as const, text: m.body ?? "", who: m.author_name ?? (m.author_type === "homeowner" ? "The owner" : "A teammate"), at: m.created_at })),
-    ...((emails.data ?? []) as { id: string; subject: string; recipient: string; sent_by: string | null; created_at: string; sent_at: string | null; status: string }[])
+    // Owner updates after closing show once, as their own rows below; test copies never show.
+    ...((emails.data ?? []) as { id: string; subject: string; recipient: string; sent_by: string | null; created_at: string; sent_at: string | null; status: string; purpose: string | null }[])
+      .filter((e) => e.purpose !== "owner_update_test_copy" && e.purpose !== "owner_closing_update")
       .map((e) => ({ id: `email-${e.id}`, kind: "email" as const, text: `${e.subject}${e.status === "scheduled" ? " (scheduled)" : ""}`, who: e.sent_by ? who.get(e.sent_by) ?? "A teammate" : "Resolve", at: e.sent_at ?? e.created_at })),
     ...noteRows.map((n) => ({ id: `note-${n.id}`, kind: n.kind, text: n.body, who: (n.author_id && who.get(n.author_id)) || "A teammate", at: n.created_at })),
     ...((approvals.data ?? []) as { id: string; title: string; status: string; decided_at: string | null; created_at: string }[])
       .map((a) => ({ id: `approval-${a.id}`, kind: "approval" as const, text: `${a.title}: ${a.status === "approved" ? "Approved" : a.status === "rejected" || a.status === "declined" ? "Declined" : "Asked"}`, who: a.decided_at ? "The owner" : "A teammate", at: a.decided_at ?? a.created_at })),
     ...weeklyRows.filter((w) => w.status === "sent" && w.sent_at).map((w) => ({ id: `weekly-${w.id}`, kind: "weekly" as const, text: w.sent_text ?? w.draft_text, who: w.sent_automatically ? "Resolve" : (w.sent_by && who.get(w.sent_by)) || "A teammate", at: w.sent_at! })),
+    ...closingRows.map((u) => ({ id: `owner-update-${u.id}`, kind: "weekly" as const, text: `Update ${u.update_no}: ${u.sent_subject ?? ""} (${u.channel === "portal" ? "portal" : "email"})`, who: "Resolve", at: u.sent_at! })),
   ];
+
+  // 6 days since the last update: the newest message, email, call, text or update from the team to the owner.
+  const ownerItemAuthors = new Set(["homeowner", "owner"]);
+  const outbound = [
+    ...chatMsgs.filter((m) => m.author_type === "staff").map((m) => m.created_at),
+    ...((itemMsgs.data ?? []) as { author_type: string; created_at: string; body: string | null }[]).filter((m) => !ownerItemAuthors.has(m.author_type) && (m.body ?? "").trim()).map((m) => m.created_at),
+    ...((emails.data ?? []) as { status: string; sent_at: string | null; purpose: string | null }[]).filter((e) => e.status === "sent" && e.sent_at && e.purpose !== "owner_update_test_copy").map((e) => e.sent_at!),
+    ...noteRows.map((n) => n.created_at),
+    ...weeklyRows.filter((w) => w.status === "sent" && w.sent_at).map((w) => w.sent_at!),
+    ...closingRows.map((u) => u.sent_at!),
+  ].sort();
+  const lastUpdateAt = outbound.at(-1) ?? null;
 
   // 2.1 item 2: owner decisions holding up an open Task, with their due dates.
   const decisionItems = await sb
@@ -149,7 +165,6 @@ export async function readOwnerTab(sb: Db, uid: string, propertyId: string) {
   const hol = await sb.from("ao_business_holidays").select("day").gte("day", new Date(Date.now() - 86400000 * 30).toISOString().slice(0, 10)).limit(200);
   const holidays = ((hol.data ?? []) as { day: string }[]).map((h) => h.day);
 
-  const draft = weeklyRows.find((w) => w.status === "draft") ?? null;
   return {
     decisions,
     holidays,
@@ -174,7 +189,9 @@ export async function readOwnerTab(sb: Db, uid: string, propertyId: string) {
     ownerChatId: ownerChat?.id ?? null,
     ownerChatWaiting: ownerChatWaiting(chatMsgs),
     lastOwnerChatMessage: chatMsgs.find((m) => m.author_type === "owner") ?? null,
-    weekly: draft ? { id: draft.id, weekStart: draft.week_start, text: draft.edited_text ?? draft.draft_text } : null,
+    // Owner updates after closing (Nov 22) replace the Friday weekly update: its drafts no longer show.
+    weekly: null as null | { id: string; weekStart: string; text: string },
+    lastUpdateAt,
     weeklySettings: (staged.weekly ? settings.data : null) as null | { auto_send: boolean; paused: boolean },
     reminders: Object.fromEntries(reminderRows.map((r) => [r.work_item_id, r.sent_at])),
   };
@@ -212,7 +229,7 @@ export async function readHomeChat(sb: Db, uid: string, propertyId: string, kind
 
 /* ------------------------------------------------------------------ scheduled parts */
 
-/** Five-minute job (Part 2): unread chat alerts, owner reminders, Friday drafts and auto-send. Never throws. */
+/** Five-minute job (Part 2): unread chat alerts, owner reminders and the owner updates after closing. Never throws. */
 export async function runOwnerCommsJobs(db: Db, now: Date = new Date()) {
   const out: Record<string, unknown> = {};
   const call = async (name: string, fn: string) => {
@@ -221,12 +238,16 @@ export async function runOwnerCommsJobs(db: Db, now: Date = new Date()) {
   };
   try { await call("chat_unread", "home_chat_unread_alert_run"); } catch (e) { out["chat_unread"] = String(e); }
   try { await call("owner_reminders", "owner_decision_reminder_run"); } catch (e) { out["owner_reminders"] = String(e); }
-  try { out["weekly_drafts"] = weeklyDraftDue(now) ? await writeWeeklyDrafts(db, now) : "not Friday morning"; } catch (e) { out["weekly_drafts"] = String(e); }
-  try { out["weekly_auto_send"] = weeklyAutoSendDue(now) ? await autoSendWeekly(db) : "not Friday 3 PM"; } catch (e) { out["weekly_auto_send"] = String(e); }
+  // Owner updates after closing (Nov 22) replace the Friday weekly drafts and auto-send, which no longer run.
+  try {
+    const { runOwnerClosingUpdates } = await import("@/lib/owner-closing-updates.server");
+    out["owner_updates"] = await runOwnerClosingUpdates(db as never, now);
+  } catch (e) { out["owner_updates"] = String(e); }
   return { ok: true as const, ...out };
 }
 
-async function writeWeeklyDrafts(db: Db, now: Date) {
+/** Retired Nov 22 (replaced by owner updates after closing); kept, no longer run. */
+export async function writeWeeklyDrafts(db: Db, now: Date) {
   const today = centralParts(now).date;
   const weekStart = weekStartOf(today);
   const probe = await db.from("owner_weekly_updates" as never).select("id").eq("week_start", weekStart).limit(1);
@@ -271,7 +292,8 @@ async function writeWeeklyDrafts(db: Db, now: Date) {
   return { written };
 }
 
-async function autoSendWeekly(db: Db) {
+/** Retired Nov 22 (replaced by owner updates after closing); kept, no longer run. */
+export async function autoSendWeekly(db: Db) {
   const { data } = await db.from("owner_weekly_update_settings" as never).select("property_id").eq("auto_send", true).eq("paused", false);
   let sent = 0;
   for (const s of (data ?? []) as { property_id: string }[]) {

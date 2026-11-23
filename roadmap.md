@@ -25,13 +25,13 @@
 - [x] All onboarding emails only to the test inbox until the setting is removed
 
 ## Owner weekly updates and onboarding tour (Nov 22)
-- [ ] Replace task-written weekly update card with three templated updates (Closing +7/+14/+21, 9 AM local, business days)
-- [ ] Portal for Active Owners, email for others, PM reply-to and copy, logged on owner tab
-- [ ] PM preview the business day before with Edit / Hold
-- [ ] Call or Email on owner tab fills the matching template
-- [ ] Owner tab prompt at 6 days since last update
-- [ ] Tour step 27 wording; tour on for onboarding team
-- [ ] No owner sends while testing; read back scheduled updates per home
+- [x] Replace task-written weekly update card with three templated updates (Closing +7/+14/+21, 9 AM local, business days) — built in preview; DB staged as owner-closing-updates
+- [x] Portal for Active Owners, email for others, PM reply-to and copy, logged on owner tab (preview)
+- [x] PM preview the business day before with Edit / Hold (preview)
+- [x] Call or Email on owner tab fills the matching template (preview)
+- [x] Owner tab prompt at 6 days since last update (preview)
+- [x] Tour step 27 wording; tour on for onboarding team (preview)
+- [x] No owner sends while testing; read back scheduled updates per home (preview)
 
 ## Onboarding filters, search and views (Nov 22)
 - [ ] One Filter button opening a selection panel

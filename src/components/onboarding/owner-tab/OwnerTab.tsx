@@ -13,7 +13,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { EmailComposer } from "@/components/EmailComposer";
 import { HomeAutomation } from "@/components/ao/HomeAutomation";
 import { loadHomePlan } from "@/lib/ao-data";
@@ -22,7 +21,8 @@ import { ReleasedActivityDetail } from "@/components/onboarding/ReleasedActivity
 import { needsAttention as completionNeedsAttention, useOwnerCompletions } from "@/components/onboarding/OwnerCompletionsReview";
 import type { usePropertyOwnerSummary } from "@/components/onboarding/PropertyOpportunitiesPanel";
 import { ChatThread } from "@/components/chat/ChatThread";
-import { WeeklyUpdateDialog } from "./WeeklyUpdateDialog";
+import { OwnerUpdateDialog, OwnerUpdatesCard, fmtSendDay, useOwnerUpdates } from "./OwnerUpdates";
+import { matchingUpdate, quietOwnerDays } from "@/lib/owner-closing-updates";
 import { EscalateButton } from "@/components/onboarding/escalations/EscalateButton";
 import { useHomeEscalations } from "@/components/onboarding/escalations/EscalationsSection";
 import { readPropertyOwnerFn } from "@/lib/owner-link.functions";
@@ -33,7 +33,6 @@ import {
   readOwnerTabFn,
   saveGoodToKnowFn,
   setOwnerPreferredFn,
-  setWeeklySwitchFn,
 } from "@/lib/owner-tab.functions";
 import {
   COMPOSER_LABEL,
@@ -67,7 +66,7 @@ export function useOwnerTabData(propertyId: string, enabled = true) {
   return useQuery({ queryKey: ownerTabKey(propertyId), queryFn: () => read({ data: { propertyId } }), enabled, staleTime: 30_000 });
 }
 
-/** The Owner tab count (the tab badge): owner answers staff have not replied to, plus a weekly update ready. */
+/** The Owner tab count (the tab badge): owner answers staff have not replied to (the Friday weekly update is retired). */
 export function ownerTabBadge(summary: Summary, tab: ReturnType<typeof useOwnerTabData>["data"]): number {
   const chat = tab?.ownerChatWaiting ? 1 : 0;
   const weekly = tab?.weekly && tab.rights.sendWeekly ? 1 : 0;
@@ -119,7 +118,9 @@ export function OwnerTab(p: {
   const completions = useOwnerCompletions(p.isDemo, p.propertyId);
   const [replying, setReplying] = useState<{ id: string; source: "item" | "chat" } | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
-  const [weeklyOpen, setWeeklyOpen] = useState(false);
+  const [updateOpen, setUpdateOpen] = useState<1 | 2 | 3 | null>(null);
+  const updatesQ = useOwnerUpdates(p.propertyId);
+  const updates = updatesQ.data?.updates ?? null;
   const logReminder = useServerFn(logReminderNowFn);
 
   const hasPortal = Boolean(p.summary.program);
@@ -158,9 +159,27 @@ export function OwnerTab(p: {
         what: r.evidence_count ? `${r.evidence_count} ${r.evidence_count === 1 ? "file" : "files"}` : r.latest_feedback ? "A note" : "Marked done",
         at: r.completed_at,
       })),
-      weekly: data.weekly && data.rights.sendWeekly ? { kind: "weekly", id: data.weekly.id, ownerFirstNames: ownerFirst } : null,
+      weekly: null,
+      // The business day before an owner update sends, the Project Manager previews it (Edit or Hold).
+      ownerUpdate: (() => {
+        if (!updates || !updatesQ.data?.canChange) return null;
+        const due = updates.items.find((i) => (i.status === "scheduled" || i.status === "planned") && i.previewOn && i.sendOn && i.previewOn <= updates.today && i.sendOn >= updates.today);
+        return due ? { kind: "owner_update" as const, id: `update-${due.no}`, no: due.no, sendOn: due.sendOn!, subject: due.subject } : null;
+      })(),
+      quiet: (() => {
+        if (!updates || !data.rights.logContact) return null;
+        const days = quietOwnerDays({ lastUpdateAt: data.lastUpdateAt, startedAt: updates.startedAt, now: new Date(), stopped: !!updates.stop });
+        return days === null ? null : { kind: "quiet_owner" as const, id: "quiet", days, ownerFirstNames: ownerFirst };
+      })(),
     });
-  }, [data, p.summary.attention, p.activeOwner, completions.data, ownerFirst]);
+  }, [data, p.summary.attention, p.activeOwner, completions.data, ownerFirst, updates, updatesQ.data?.canChange]);
+  // Call or Email on the Owner tab fills in the owner update that matches this home now.
+  const template = useMemo(() => {
+    if (!updates) return null;
+    const no = matchingUpdate(updates.items, updates.today);
+    const i = updates.items.find((x) => x.no === no);
+    return i ? { subject: i.subject, body: i.body } : null;
+  }, [updates]);
 
   // Reply: once the row leaves Needs action (staff have answered), say so and stay on the tab.
   const replyingRef = useRef(replying);
@@ -341,34 +360,41 @@ export function OwnerTab(p: {
                   </li>
                 );
               }
-              return (
-                <li key={`weekly-${r.id}`} className="flex flex-wrap items-center gap-3 rounded-lg border border-info/40 bg-info/10 px-3 py-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium">This week's update for {r.ownerFirstNames}</p>
-                    <p className="text-xs text-muted-foreground">Written from this week's Tasks. Review, edit if needed, and send.</p>
-                  </div>
-                  <Button className="min-h-11" onClick={() => setWeeklyOpen(true)}>
-                    Review and send
-                  </Button>
-                </li>
-              );
+              if (r.kind === "owner_update") {
+                return (
+                  <li key={r.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-info/40 bg-info/10 px-3 py-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium">Owner update {r.no} sends {fmtSendDay(r.sendOn)} at 9:00 AM</p>
+                      <p className="text-xs text-muted-foreground">{r.subject}</p>
+                    </div>
+                    <Button className="min-h-11" onClick={() => setUpdateOpen(r.no)}>
+                      Preview
+                    </Button>
+                  </li>
+                );
+              }
+              if (r.kind === "quiet_owner") {
+                return (
+                  <li key={r.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-amber/50 bg-amber/10 px-3 py-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium">{r.days} days since {r.ownerFirstNames} last heard from us</p>
+                      <p className="text-xs text-muted-foreground">Send a quick update.</p>
+                    </div>
+                    <Button
+                      className="min-h-11"
+                      variant="outline"
+                      onClick={() => document.getElementById("owner-composer")?.scrollIntoView({ behavior: "smooth", block: "center" })}
+                    >
+                      Write to {r.ownerFirstNames}
+                    </Button>
+                  </li>
+                );
+              }
+              return null;
             })}
           </ul>
           <p className="text-xs text-muted-foreground">Only what needs someone shows here. The owner's optional plan cards don't: they're the owner's to do, at their pace.</p>
-          {data.weekly ? (
-            <WeeklyUpdateDialog
-              open={weeklyOpen}
-              onOpenChange={setWeeklyOpen}
-              propertyId={p.propertyId}
-              homeName={p.homeName}
-              weekly={data.weekly}
-              hasPortal={hasPortal}
-              onSent={() => {
-                setSentTo(ownerFirst);
-                void qc.invalidateQueries({ queryKey: ownerTabKey(p.propertyId) });
-              }}
-            />
-          ) : null}
+          <OwnerUpdateDialog propertyId={p.propertyId} no={updateOpen} onOpenChange={(o) => !o && setUpdateOpen(null)} />
         </section>
 
         <ConversationTimeline
@@ -378,6 +404,7 @@ export function OwnerTab(p: {
           ownerFirst={ownerFirst}
           ownerEmail={owner?.email ?? null}
           canLog={data.rights.logContact}
+          template={template}
         />
       </div>
 
@@ -405,15 +432,10 @@ export function OwnerTab(p: {
             <p className="text-sm">
               Their cards: {p.summary.cards.open} open · {p.summary.cards.done} done
             </p>
-            <WeeklyLine propertyId={p.propertyId} settings={data.weeklySettings} ready={data.staged.weekly} canAuto={data.rights.switchAutoSend} canPause={data.rights.pauseWeekly} />
             <p className="text-xs text-muted-foreground">Behind on hours is the Director's to raise, not the PM's.</p>
           </section>
-        ) : (
-          <section className="surface space-y-2 p-4" aria-label="Weekly update">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Weekly update</h2>
-            <WeeklyLine propertyId={p.propertyId} settings={data.weeklySettings} ready={data.staged.weekly} canAuto={data.rights.switchAutoSend} canPause={data.rights.pauseWeekly} />
-          </section>
-        )}
+        ) : null}
+        <OwnerUpdatesCard propertyId={p.propertyId} onOpen={setUpdateOpen} />
       </aside>
     </div>
   );
@@ -449,42 +471,6 @@ function ProgramHours({ hours, startOn, today }: { hours: number; startOn: strin
         <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, hours)}%` }} />
       </div>
       {pace !== null ? <p className="text-xs text-muted-foreground">on pace for about {pace} by Dec 31</p> : null}
-    </div>
-  );
-}
-
-function WeeklyLine(p: {
-  propertyId: string;
-  settings: { auto_send: boolean; paused: boolean } | null;
-  ready: boolean;
-  canAuto: boolean;
-  canPause: boolean;
-}) {
-  const qc = useQueryClient();
-  const set = useServerFn(setWeeklySwitchFn);
-  const m = useMutation({
-    mutationFn: (v: { autoSend?: boolean; paused?: boolean }) =>
-      set({ data: { propertyId: p.propertyId, autoSend: v.autoSend ?? null, paused: v.paused ?? null } }),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ownerTabKey(p.propertyId) }),
-    onError: (e: Error) => toast.error(e.message),
-  });
-  const auto = p.settings?.auto_send ?? false;
-  const paused = p.settings?.paused ?? false;
-  return (
-    <div className="space-y-2">
-      <p className="text-sm">Weekly update: draft every Friday for you to approve</p>
-      {p.ready && p.canAuto ? (
-        <label className="flex min-h-11 items-center justify-between gap-3 text-sm">
-          Send weekly updates automatically
-          <Switch checked={auto} disabled={m.isPending} onCheckedChange={(v) => m.mutate({ autoSend: v })} />
-        </label>
-      ) : null}
-      {p.ready && auto && p.canPause ? (
-        <label className="flex min-h-11 items-center justify-between gap-3 text-sm">
-          Pause this home's automatic update
-          <Switch checked={paused} disabled={m.isPending} onCheckedChange={(v) => m.mutate({ paused: v })} />
-        </label>
-      ) : null}
     </div>
   );
 }
@@ -627,6 +613,8 @@ function ConversationTimeline(p: {
   ownerFirst: string;
   ownerEmail: string | null;
   canLog: boolean;
+  /** The owner update that matches this home now; Email and a call fill in with it. */
+  template: { subject: string; body: string } | null;
 }) {
   const qc = useQueryClient();
   const [filter, setFilter] = useState<TimelineFilter>("all");
@@ -634,6 +622,7 @@ function ConversationTimeline(p: {
   const [mode, setMode] = useState<ComposerMode | null>(p.modes[0] ?? null);
   const [text, setText] = useState("");
   const [logKind, setLogKind] = useState<"call" | "text">("call");
+  const filled = useRef<string | null>(null);
   const post = useServerFn(postHomeChatFn);
   const log = useServerFn(logOwnerContactFn);
   const refresh = () => {
@@ -647,6 +636,7 @@ function ConversationTimeline(p: {
       return null;
     },
     onSuccess: () => {
+      filled.current = null;
       setText("");
       toast.success(mode === "log" ? "Saved." : `Sent to ${p.ownerFirst}`);
       refresh();
@@ -655,11 +645,26 @@ function ConversationTimeline(p: {
   });
   const shown = filterTimeline([...p.rows].sort((a, b) => b.at.localeCompare(a.at)), filter, search);
   const current = mode && p.modes.includes(mode) ? mode : p.modes[0] ?? null;
+  // Email, or logging a call: the box fills with the matching owner update unless someone has typed.
+  const wantsTemplate = current === "email" || (current === "log" && logKind === "call");
+  useEffect(() => {
+    const untouched = text === "" || text === filled.current;
+    if (!untouched) return;
+    if (wantsTemplate && p.template) {
+      filled.current = p.template.body;
+      setText(p.template.body);
+    } else if (filled.current !== null) {
+      filled.current = null;
+      setText("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wantsTemplate, p.template?.body]);
+  const fromTemplate = !!p.template && text === p.template.body;
   return (
     <section className="space-y-3" aria-label="Every conversation with the owner">
       <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Every conversation with the owner</h2>
       {current ? (
-        <div className="surface space-y-2 p-3">
+        <div id="owner-composer" className="surface scroll-mt-28 space-y-2 p-3">
           <div role="radiogroup" aria-label="How" className="flex flex-wrap gap-1">
             {p.modes.map((m) => (
               <button
@@ -702,8 +707,10 @@ function ConversationTimeline(p: {
                   label="Write the email"
                   variant="primary"
                   initialBody={text}
+                  {...(fromTemplate ? { initialSubject: p.template!.subject } : {})}
                   initialTo={p.ownerEmail}
                   onSent={() => {
+                    filled.current = null;
                     setText("");
                     refresh();
                   }}
