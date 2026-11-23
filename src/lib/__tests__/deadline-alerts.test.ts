@@ -119,19 +119,54 @@ describe("claim filing reminder (Nov 18 rule)", () => {
     ...over,
   });
 
-  it("reminds the owner once from 3 days before, normal priority, never overdue alerts", () => {
+  it("reminds the owner from 3 days before through the day before, normal priority", () => {
     const alerts = claimDeadlineAlerts(
       [
         claim({ id: "three", deadline_on: "2026-09-24" }),
         claim({ id: "four", deadline_on: "2026-09-25" }),
-        claim({ id: "gone", deadline_on: "2026-09-18" }),
+        claim({ id: "tomorrow", deadline_on: "2026-09-22" }),
       ],
       NOW,
     );
     expect(alerts.map((a) => [a.entityId, a.kind, a.userId, a.priority])).toEqual([
       ["three", "claim_filing_reminder", "u1", "normal"],
-      ["gone", "claim_filing_reminder", "u1", "normal"],
+      ["tomorrow", "claim_filing_reminder", "u1", "normal"],
     ]);
+  });
+
+  // Nov 23 rule: one overdue alert the day after the deadline (Chicago), nothing on the day itself.
+  it("sends nothing on the deadline day itself", () => {
+    expect(claimDeadlineAlerts([claim({ id: "today", deadline_on: "2026-09-21" })], NOW)).toEqual([]);
+  });
+
+  it("sends one overdue alert the day after the deadline, normal priority, to the owner", () => {
+    const alerts = claimDeadlineAlerts([claim({ id: "late", deadline_on: "2026-09-20" })], NOW, "sup");
+    expect(alerts.map((a) => [a.entityId, a.kind, a.userId, a.priority])).toEqual([["late", "claim_filing_overdue", "u1", "normal"]]);
+    expect(alerts[0]!.title).toContain("Not filed by Sep 20");
+  });
+
+  it("sends no overdue alert two or more days after the deadline", () => {
+    expect(claimDeadlineAlerts([claim({ id: "old", deadline_on: "2026-09-19" }), claim({ id: "older", deadline_on: "2026-09-01" })], NOW, "sup")).toEqual([]);
+  });
+
+  it("uses the Chicago date for the day after: 11:30 PM Central on the deadline day is still nothing", () => {
+    // 2026-09-21T04:30Z is Sep 20, 11:30 PM in Chicago.
+    expect(claimDeadlineAlerts([claim({ id: "c", deadline_on: "2026-09-20" })], new Date("2026-09-21T04:30:00Z"))).toEqual([]);
+    expect(claimDeadlineAlerts([claim({ id: "c", deadline_on: "2026-09-20" })], new Date("2026-09-21T05:30:00Z"))).toHaveLength(1);
+  });
+
+  it("sends an unowned overdue claim to the Operations Supervisor, and nothing after Submitted or unverified", () => {
+    expect(claimDeadlineAlerts([claim({ id: "u", assigned_to: null, deadline_on: "2026-09-20" })], NOW, "sup").map((a) => a.userId)).toEqual(["sup"]);
+    expect(claimDeadlineAlerts([
+      claim({ id: "s", stage: "submitted", deadline_on: "2026-09-20" }),
+      claim({ id: "v", deadline_verified: false, deadline_source: null, deadline_on: "2026-09-20" }),
+    ], NOW, "sup")).toEqual([]);
+  });
+
+  it("an unowned demo claim goes to the demo stand-in, never the real Supervisor", () => {
+    const demo = claim({ id: "d", assigned_to: null, deadline_on: "2026-09-20", is_demo: true });
+    expect(claimDeadlineAlerts([demo], NOW, "sup", "demo-sup").map((a) => [a.userId, a.isDemo])).toEqual([["demo-sup", true]]);
+    expect(claimDeadlineAlerts([demo], NOW, "sup", null)).toEqual([]);
   });
 
   it("sends an unowned claim to the Operations Supervisor", () => {
@@ -159,6 +194,16 @@ describe("one alert per record per stage", () => {
     const sent = new Set(first.map((a) => alertKey(a)));
     expect(newAlerts(claimDeadlineAlerts([{ ...claim2("c1", "2026-09-22"), assigned_to: "u2" }], NOW), sent)).toEqual([]);
     expect(newAlerts(claimDeadlineAlerts([claim2("c1", "2026-09-23")], NOW), sent).length).toBe(1);
+  });
+
+  it("fires one overdue alert per claim and deadline date, separate from the reminder", () => {
+    const reminder = claimDeadlineAlerts([claim2("c1", "2026-09-22")], NOW);
+    const sent = new Set(reminder.map((a) => alertKey(a)));
+    const dayAfter = new Date("2026-09-23T12:00:00Z");
+    const overdue = claimDeadlineAlerts([claim2("c1", "2026-09-22")], dayAfter);
+    expect(newAlerts(overdue, sent).map((a) => a.kind)).toEqual(["claim_filing_overdue"]);
+    overdue.forEach((a) => sent.add(alertKey(a)));
+    expect(newAlerts(claimDeadlineAlerts([{ ...claim2("c1", "2026-09-22"), assigned_to: "u2" }], dayAfter), sent)).toEqual([]);
   });
 });
 function claim2(id: string, deadline_on: string): ClaimForAlerts {

@@ -1,6 +1,6 @@
 /**
  * Claims Coordinator view rules (approved Nov 18). Pure: the filing deadline default,
- * how the deadline reads, the one filing reminder and the line-item total.
+ * how the deadline reads, the filing reminder, the one overdue alert and the line-item total.
  * The staged database trigger `claims_default_filing_deadline` mirrors defaultFilingDeadline.
  */
 
@@ -8,6 +8,8 @@
 export const PLATFORM_FILING_DAYS = 14;
 /** Days before the filing deadline that the one reminder goes out. */
 export const FILING_REMINDER_DAYS = 3;
+/** Days after the filing deadline that the one overdue alert goes out (the day after, Chicago). */
+export const FILING_OVERDUE_DAYS_AFTER = 1;
 /** deadline_source value written when Resolve set the deadline from checkout. */
 export const PLATFORM_DEFAULT_SOURCE = "platform_default";
 /** Stages before Submitted: the only ones a filing reminder can fire for. */
@@ -84,6 +86,21 @@ export function filingReminderReached(c: ReminderFacts, now = new Date()): boole
   if (!(PRE_SUBMISSION_STAGES as readonly string[]).includes(c.stage)) return false;
   if (!deadlineKnown(c)) return false;
   return daysBetween(chicagoToday(now), c.deadline_on!) <= FILING_REMINDER_DAYS;
+}
+
+/**
+ * Which filing alert is due today (Chicago), if any (Nov 23 rule). At most two per deadline date:
+ * the reminder from 3 days before through the day before, and the overdue alert on the day after
+ * only. Nothing on the deadline day itself, nothing after Submitted, nothing for a deadline that
+ * still needs verification. The highlight on My claims stays filingReminderReached.
+ */
+export function filingAlertDue(c: ReminderFacts, now = new Date()): "reminder" | "overdue" | null {
+  if (!(PRE_SUBMISSION_STAGES as readonly string[]).includes(c.stage)) return null;
+  if (!deadlineKnown(c)) return null;
+  const days = daysBetween(chicagoToday(now), c.deadline_on!);
+  if (days >= 1 && days <= FILING_REMINDER_DAYS) return "reminder";
+  if (days === -FILING_OVERDUE_DAYS_AFTER) return "overdue";
+  return null;
 }
 
 /** Who gets the reminder: the claim owner, else the Operations Supervisor. */

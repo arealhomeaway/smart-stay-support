@@ -3040,6 +3040,94 @@ export type Database = {
           },
         ]
       }
+      claim_line_items: {
+        Row: {
+          amount_requested: number
+          archived_at: string | null
+          archived_by: string | null
+          claim_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_demo: boolean
+          issue: string
+          updated_at: string
+        }
+        Insert: {
+          amount_requested: number
+          archived_at?: string | null
+          archived_by?: string | null
+          claim_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_demo?: boolean
+          issue: string
+          updated_at?: string
+        }
+        Update: {
+          amount_requested?: number
+          archived_at?: string | null
+          archived_by?: string | null
+          claim_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_demo?: boolean
+          issue?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_line_items_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claim_platform_log: {
+        Row: {
+          author_id: string
+          claim_id: string
+          created_at: string
+          entry_on: string
+          id: string
+          is_demo: boolean
+          platform_said: string
+          we_did: string | null
+        }
+        Insert: {
+          author_id: string
+          claim_id: string
+          created_at?: string
+          entry_on?: string
+          id?: string
+          is_demo?: boolean
+          platform_said: string
+          we_did?: string | null
+        }
+        Update: {
+          author_id?: string
+          claim_id?: string
+          created_at?: string
+          entry_on?: string
+          id?: string
+          is_demo?: boolean
+          platform_said?: string
+          we_did?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_platform_log_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       claim_waivers: {
         Row: {
           claim_id: string

@@ -137,7 +137,29 @@ END $function$;
 CREATE TRIGGER claim_platform_log_guard BEFORE INSERT OR UPDATE OR DELETE ON public.claim_platform_log
   FOR EACH ROW EXECUTE FUNCTION public.claim_platform_log_guard();
 
+-- 4. Filing alerts (Nov 23 addition): when a claim's filing deadline date changes, its unretracted
+-- filing reminder and overdue alerts for any other date are cancelled (hidden from the inbox, kept as
+-- history). The new date then gets its own reminder and overdue alert from the five-minute pass.
+-- AFTER UPDATE with no column list, so a deadline moved by the default trigger above also counts.
+CREATE OR REPLACE FUNCTION public.claims_retract_filing_alerts()
+ RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
+AS $function$
+BEGIN
+  UPDATE public.staff_notifications
+     SET retracted_at = now(), retracted_by = auth.uid(), retracted_reason = 'The filing deadline changed.'
+   WHERE entity_type = 'claim' AND entity_id = NEW.id
+     AND kind IN ('claim_filing_reminder', 'claim_filing_overdue')
+     AND retracted_at IS NULL
+     AND (NEW.deadline_on IS NULL OR coalesce(link_path, '') NOT LIKE '%file_by=' || NEW.deadline_on::text || '%');
+  RETURN NEW;
+END $function$;
+REVOKE ALL ON FUNCTION public.claims_retract_filing_alerts() FROM PUBLIC, anon, authenticated;
+CREATE TRIGGER claims_retract_filing_alerts
+  AFTER UPDATE ON public.claims
+  FOR EACH ROW WHEN (OLD.deadline_on IS DISTINCT FROM NEW.deadline_on)
+  EXECUTE FUNCTION public.claims_retract_filing_alerts();
+
 INSERT INTO public.audit_log(actor_id, actor_label, action, entity_type, entity_label, reason, after_value)
 VALUES ('98bd6696-4018-4965-b645-0471c5ae3925', 'Admin', 'claims_coordinator_view.apply', 'table', 'claims coordinator view',
-  'Airbnb/Vrbo filing deadline default, claim line items feeding the submitted amount, append-only platform log. Undo: docs/pending/claims-coordinator-view/apply.undo.sql.',
-  jsonb_build_object('adds', jsonb_build_array('claims_default_filing_deadline', 'claim_line_items', 'claim_platform_log')));
+  'Airbnb/Vrbo filing deadline default, claim line items feeding the submitted amount, append-only platform log, filing alerts cancelled when the deadline date changes. Undo: docs/pending/claims-coordinator-view/apply.undo.sql.',
+  jsonb_build_object('adds', jsonb_build_array('claims_default_filing_deadline', 'claim_line_items', 'claim_platform_log', 'claims_retract_filing_alerts')));

@@ -11,6 +11,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import {
   ALERT_KINDS,
+  CLAIM_FILING_ALERT_KINDS,
   alertKey,
   claimDeadlineAlerts,
   newAlerts,
@@ -64,6 +65,11 @@ export async function sweepDeadlineAlerts(supabase: Client, now = new Date()) {
   // Unowned claim reminders go to the Operations Supervisor (cover first, then the role holder).
   const supervisor = await supabase.rpc("seat_holder_at", { _role_code: "ops_supervisor" });
   const supervisorId = supervisor.error ? null : ((supervisor.data as string | null) ?? null);
+  // Demo claims never reach real staff: unowned ones go to the designated demo stand-in, which
+  // notify_staff_isolated re-checks before anything is written.
+  const demoSeats = await supabase.from("app_settings").select("value").eq("key", "demo_notification_recipients").maybeSingle();
+  const demoValue = (demoSeats.data?.value ?? null) as Record<string, unknown> | null;
+  const demoSupervisorId = typeof demoValue?.["ops_supervisor"] === "string" ? (demoValue["ops_supervisor"] as string) : null;
 
   const candidates: DeadlineAlert[] = [
     ...ticketSlaAlerts((tickets.data ?? []) as unknown as TicketForAlerts[], now),
@@ -77,7 +83,7 @@ export async function sweepDeadlineAlerts(supabase: Client, now = new Date()) {
       })) as unknown as WorkOrderForAlerts[],
       now,
     ),
-    ...claimDeadlineAlerts((claims.data ?? []) as unknown as ClaimForAlerts[], now, supervisorId),
+    ...claimDeadlineAlerts((claims.data ?? []) as unknown as ClaimForAlerts[], now, supervisorId, demoSupervisorId),
   ];
 
   if (candidates.length === 0) {
@@ -89,8 +95,8 @@ export async function sweepDeadlineAlerts(supabase: Client, now = new Date()) {
     .select("kind, user_id, entity_id, link_path")
     .in("kind", [...ALERT_KINDS])
     .in("entity_id", Array.from(new Set(candidates.map((a) => a.entityId))))
-    // Filing reminders are once per claim and deadline date for good, not only for 30 days.
-    .or(`created_at.gte.${since},kind.eq.claim_filing_reminder`);
+    // Filing alerts are once per claim and deadline date for good, not only for 30 days.
+    .or(`created_at.gte.${since},kind.in.(${CLAIM_FILING_ALERT_KINDS.join(",")})`);
   if (sentError) throw new Error(sentError.message);
 
   const alreadySent = new Set(

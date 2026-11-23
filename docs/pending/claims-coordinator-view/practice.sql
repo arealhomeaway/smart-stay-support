@@ -137,10 +137,32 @@ END $function$;
 CREATE TRIGGER claim_platform_log_guard BEFORE INSERT OR UPDATE OR DELETE ON public.claim_platform_log
   FOR EACH ROW EXECUTE FUNCTION public.claim_platform_log_guard();
 
+-- 4. Filing alerts (Nov 23 addition): when a claim's filing deadline date changes, its unretracted
+-- filing reminder and overdue alerts for any other date are cancelled (hidden from the inbox, kept as
+-- history). The new date then gets its own reminder and overdue alert from the five-minute pass.
+-- AFTER UPDATE with no column list, so a deadline moved by the default trigger above also counts.
+CREATE OR REPLACE FUNCTION public.claims_retract_filing_alerts()
+ RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
+AS $function$
+BEGIN
+  UPDATE public.staff_notifications
+     SET retracted_at = now(), retracted_by = auth.uid(), retracted_reason = 'The filing deadline changed.'
+   WHERE entity_type = 'claim' AND entity_id = NEW.id
+     AND kind IN ('claim_filing_reminder', 'claim_filing_overdue')
+     AND retracted_at IS NULL
+     AND (NEW.deadline_on IS NULL OR coalesce(link_path, '') NOT LIKE '%file_by=' || NEW.deadline_on::text || '%');
+  RETURN NEW;
+END $function$;
+REVOKE ALL ON FUNCTION public.claims_retract_filing_alerts() FROM PUBLIC, anon, authenticated;
+CREATE TRIGGER claims_retract_filing_alerts
+  AFTER UPDATE ON public.claims
+  FOR EACH ROW WHEN (OLD.deadline_on IS DISTINCT FROM NEW.deadline_on)
+  EXECUTE FUNCTION public.claims_retract_filing_alerts();
+
 INSERT INTO public.audit_log(actor_id, actor_label, action, entity_type, entity_label, reason, after_value)
 VALUES ('98bd6696-4018-4965-b645-0471c5ae3925', 'Admin', 'claims_coordinator_view.apply', 'table', 'claims coordinator view',
-  'Airbnb/Vrbo filing deadline default, claim line items feeding the submitted amount, append-only platform log. Undo: docs/pending/claims-coordinator-view/apply.undo.sql.',
-  jsonb_build_object('adds', jsonb_build_array('claims_default_filing_deadline', 'claim_line_items', 'claim_platform_log')));
+  'Airbnb/Vrbo filing deadline default, claim line items feeding the submitted amount, append-only platform log, filing alerts cancelled when the deadline date changes. Undo: docs/pending/claims-coordinator-view/apply.undo.sql.',
+  jsonb_build_object('adds', jsonb_build_array('claims_default_filing_deadline', 'claim_line_items', 'claim_platform_log', 'claims_retract_filing_alerts')));
 
 -- Practice checks on demo claims only; everything rolls back.
 DO $t$
@@ -180,5 +202,33 @@ BEGIN
     (SELECT count(*) FROM claim_activity WHERE claim_id=a));
   out := out || format('homeowner/vendor grants: anon line=%s anon log=%s',
     has_table_privilege('anon', 'public.claim_line_items', 'SELECT'), has_table_privilege('anon', 'public.claim_platform_log', 'SELECT'));
+  -- Nov 23 addition: filing alerts cancelled when the deadline date changes (demo claim, rolled back).
+  DECLARE sup uuid := (SELECT current_seat_holder FROM functional_roles WHERE code = 'ops_supervisor');
+          me uuid := '98bd6696-4018-4965-b645-0471c5ae3925'; r uuid; o uuid; keep uuid; isolated uuid; emails_before int := (SELECT count(*) FROM email_log);
+  BEGIN
+    isolated := public.notify_staff_isolated(sup, 'claim_filing_overdue', 'PRACTICE', 'x', 'claim', a,
+      format('/claims/my-claims?claim=%s&file_by=%s', a, (SELECT deadline_on FROM claims WHERE id=a)), 'normal', NULL, false, true);
+    out := out || format('; demo overdue to real Supervisor written=%s', isolated IS NOT NULL);
+    INSERT INTO staff_notifications(user_id, kind, title, entity_type, entity_id, link_path, priority, is_demo)
+      VALUES (me, 'claim_filing_reminder', 'PRACTICE', 'claim', a, format('/claims/my-claims?claim=%s&file_by=%s', a, (SELECT deadline_on FROM claims WHERE id=a)), 'normal', true) RETURNING id INTO r;
+    INSERT INTO staff_notifications(user_id, kind, title, entity_type, entity_id, link_path, priority, is_demo)
+      VALUES (me, 'claim_filing_overdue', 'PRACTICE', 'claim', a, format('/claims/my-claims?claim=%s&file_by=%s', a, (SELECT deadline_on FROM claims WHERE id=a)), 'normal', true) RETURNING id INTO o;
+    INSERT INTO staff_notifications(user_id, kind, title, entity_type, entity_id, link_path, priority, is_demo)
+      VALUES (me, 'claim_filing_reminder', 'PRACTICE', 'claim', d, format('/claims/my-claims?claim=%s&file_by=%s', d, (SELECT deadline_on FROM claims WHERE id=d)), 'normal', true) RETURNING id INTO keep;
+    UPDATE claims SET title = 'PRACTICE Airbnb renamed' WHERE id = a;
+    out := out || format('; other edit cancelled=%s', (SELECT count(*) FROM staff_notifications WHERE id IN (r,o) AND retracted_at IS NOT NULL));
+    UPDATE claims SET stay_departure = '2026-11-19' WHERE id = a; -- default trigger moves the deadline to Dec 3
+    out := out || format('; deadline now %s, old alerts cancelled=%s reason=%s, other claim untouched=%s',
+      (SELECT deadline_on FROM claims WHERE id=a),
+      (SELECT count(*) FROM staff_notifications WHERE id IN (r,o) AND retracted_at IS NOT NULL),
+      (SELECT retracted_reason FROM staff_notifications WHERE id = r),
+      (SELECT retracted_at IS NULL FROM staff_notifications WHERE id = keep));
+    INSERT INTO staff_notifications(user_id, kind, title, entity_type, entity_id, link_path, priority, is_demo)
+      VALUES (me, 'claim_filing_reminder', 'PRACTICE', 'claim', a, format('/claims/my-claims?claim=%s&file_by=%s', a, (SELECT deadline_on FROM claims WHERE id=a)), 'normal', true) RETURNING id INTO r;
+    UPDATE claims SET deadline_on = '2026-12-05', deadline_verified = true WHERE id = a;
+    out := out || format('; typed new date %s cancelled new-date reminder=%s',
+      (SELECT deadline_on FROM claims WHERE id=a), (SELECT retracted_at IS NOT NULL FROM staff_notifications WHERE id = r));
+    out := out || format('; emails written=%s', (SELECT count(*) FROM email_log) - emails_before);
+  END;
   RAISE EXCEPTION 'PRACTICE ROLLED BACK: %', out;
 END $t$;

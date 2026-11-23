@@ -12,7 +12,7 @@
  * notices rather than a repeating nag.
  */
 
-import { deadlineLine, filingReminderReached, reminderLink, reminderRecipient } from "@/lib/claim-coordinator";
+import { deadlineLine, filingAlertDue, plainDate, reminderLink, reminderRecipient } from "@/lib/claim-coordinator";
 
 export const ALERT_KINDS = [
   "sla_response_warning",
@@ -24,7 +24,11 @@ export const ALERT_KINDS = [
   "claim_deadline_soon",
   "claim_deadline_passed",
   "claim_filing_reminder",
+  "claim_filing_overdue",
 ] as const;
+
+/** Claim filing alerts: once per claim and deadline date, whoever holds the claim. */
+export const CLAIM_FILING_ALERT_KINDS = ["claim_filing_reminder", "claim_filing_overdue"] as const;
 
 export type AlertKind = (typeof ALERT_KINDS)[number];
 
@@ -231,24 +235,35 @@ function daysUntilDate(deadline: string, now: Date): number | null {
 }
 
 /**
- * Claim filing reminder (approved Nov 18): one in-app notice from 3 days before the
- * filing deadline (Chicago), only before Submitted, to the claim owner or else the
- * Operations Supervisor. Never for a deadline that still needs verification. The link
- * carries the deadline date, so a changed deadline gets its own single reminder and an
- * old date never fires. Normal priority: no urgency, no email.
+ * Claim filing alerts. The reminder (approved Nov 18): one in-app notice from 3 days before the
+ * filing deadline (Chicago) through the day before. The overdue alert (approved Nov 23): one
+ * in-app notice on the day after the deadline only. Both only before Submitted, to the claim
+ * owner or else the Operations Supervisor (for a demo claim, the designated demo stand-in), and
+ * never for a deadline that still needs verification. The link carries the deadline date, so a
+ * changed deadline gets its own reminder and its own overdue alert, and an old date never fires.
+ * Normal priority: no urgency, no email.
  */
-export function claimDeadlineAlerts(claims: ClaimForAlerts[], now = new Date(), supervisorId: string | null = null): DeadlineAlert[] {
+export function claimDeadlineAlerts(
+  claims: ClaimForAlerts[],
+  now = new Date(),
+  supervisorId: string | null = null,
+  demoSupervisorId: string | null = null,
+): DeadlineAlert[] {
   const alerts: DeadlineAlert[] = [];
   for (const claim of claims) {
-    if (!filingReminderReached(claim, now)) continue;
-    const userId = reminderRecipient(claim.assigned_to, supervisorId);
+    const due = filingAlertDue(claim, now);
+    if (!due) continue;
+    const userId = reminderRecipient(claim.assigned_to, claim.is_demo ? demoSupervisorId : supervisorId);
     if (!userId) continue;
     const name = claim.ref ? `${claim.ref} · ${claim.title ?? "Claim"}` : (claim.title ?? "Claim");
     alerts.push({
-      kind: "claim_filing_reminder",
+      kind: due === "reminder" ? "claim_filing_reminder" : "claim_filing_overdue",
       userId,
-      title: `${deadlineLine(claim)} · ${name}`,
-      body: "File this claim with the platform before the deadline.",
+      title: due === "reminder" ? `${deadlineLine(claim)} · ${name}` : `Not filed by ${plainDate(claim.deadline_on!)} · ${name}`,
+      body:
+        due === "reminder"
+          ? "File this claim with the platform before the deadline."
+          : "The filing deadline passed yesterday. File this claim with the platform as soon as you can.",
       entityType: "claim",
       entityId: claim.id,
       linkPath: reminderLink(claim.id, claim.deadline_on!),
@@ -261,8 +276,8 @@ export function claimDeadlineAlerts(claims: ClaimForAlerts[], now = new Date(), 
 
 /** One alert per person, record and stage — the key the pass dedupes on. */
 export function alertKey(alert: Pick<DeadlineAlert, "kind" | "userId" | "entityId"> & { linkPath?: string | null }) {
-  // A claim filing reminder fires once per claim and deadline date, whoever holds it.
-  if (alert.kind === "claim_filing_reminder") return `${alert.kind}::${alert.linkPath ?? ""}`;
+  // A claim filing alert fires once per claim and deadline date, whoever holds it.
+  if ((CLAIM_FILING_ALERT_KINDS as readonly string[]).includes(alert.kind)) return `${alert.kind}::${alert.linkPath ?? ""}`;
   return `${alert.kind}::${alert.userId}::${alert.entityId}`;
 }
 
