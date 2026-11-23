@@ -80,5 +80,12 @@ export const updateOwnerRecordFn = createServerFn({ method: "POST" })
     const hub = await import("@/lib/property-hub.server");
     const m = await import("@/lib/owner-link.server");
     const viewer = await hub.loadViewer(context.supabase, context.userId);
-    return m.updateOwnerRecord(viewer, data);
+    const saved = await m.updateOwnerRecord(viewer, data);
+    // A saved email finishes Active Owner setup that was waiting for it (Admin, Nov 23).
+    if (data.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { finishAfterEmailSaved } = await import("@/lib/active-owner-auto-enroll.server");
+      await finishAfterEmailSaved(supabaseAdmin as never, data.ownerId, context.userId, context.supabase as never);
+    }
+    return saved;
   });

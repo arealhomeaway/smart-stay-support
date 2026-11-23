@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { assertOwnerAccountRoles, runEnrollment, type EnrollmentInput } from "./active-owner-enrollment";
+import { assertOwnerAccountRoles, runEnrollment, type AutoEnrollmentInput } from "./active-owner-enrollment";
 
 /**
  * The one canonical homeowner login path: reuse the login for this email or create it
@@ -27,7 +27,9 @@ export async function findOrCreateOwnerLogin(db: SupabaseClient, email: string, 
 }
 
 /** Existing enrollment action delegates here; every database checkpoint uses existing canonical RPCs. */
-export async function enrollFully(db: SupabaseClient, actor: SupabaseClient, actorId: string, input: EnrollmentInput) {
+export async function enrollFully(db: SupabaseClient, actor: SupabaseClient, actorId: string, input: AutoEnrollmentInput) {
+  // Automatic enrollment only (the manual window always sends an email): no login and no welcome yet.
+  const noEmail = input.email.trim() === "";
   async function checkpoint(step: string, accountId?: string) {
     const r = await actor.rpc("active_owner_enrollment_step", {
       _request_id: input.requestId, _step: step, _input: input, _account_id: accountId ?? null,
@@ -55,6 +57,7 @@ export async function enrollFully(db: SupabaseClient, actor: SupabaseClient, act
       }
       return { id, created };
     },
-    step: (step, id) => checkpoint(step, id),
+    step: (step, id) => checkpoint(step, id ?? undefined),
+    ...(noEmail ? { skipAccount: async () => { await checkpoint("account"); } } : {}),
   });
 }

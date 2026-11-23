@@ -204,7 +204,8 @@ export async function startOnboardingProject(
     // second project.
     if (existing.data.status === "active" || existing.data.status === "planning") {
       if ((existing.data.modules ?? []).includes("active_owner")) {
-        await ensureActiveOwnerEnrollment(supabase, userId, input.propertyId);
+        // Full enrollment, never only a draft program (Admin, Nov 23).
+        await enrollAutomatically(supabase, userId, input.propertyId, "start_onboarding");
       }
       const { applyOnboardingTemplate } = await import("./onboarding-template.server");
       await applyOnboardingTemplate(supabase, userId, {
@@ -263,7 +264,8 @@ export async function startOnboardingProject(
   if (update.error) throw update.error;
 
   if (modules.includes("active_owner")) {
-    await ensureActiveOwnerEnrollment(supabase, userId, input.propertyId);
+    // Full enrollment, never only a draft program (Admin, Nov 23).
+    await enrollAutomatically(supabase, userId, input.propertyId, "start_onboarding");
   }
 
   // Starting onboarding has to hand the team a plan, not an empty shell.
@@ -434,6 +436,12 @@ export async function updateProject(
 
   let enrollmentWarning: string | null = null;
   const scopeChanged = input.modules !== undefined || input.furnishingScope !== undefined;
+  // A closing date saved on an Active Owner home finishes its setup (it clears "Add the closing date").
+  const closingSaved = Boolean(input.plannedClosingOn) && input.modules === undefined;
+  if (closingSaved && ((data.modules ?? []).includes("active_owner") || data.owner_type === "Active Owner")) {
+    const outcome = await enrollAutomatically(supabase, userId, data.property_id, "closing_added");
+    if (outcome?.kind === "needs_attention") enrollmentWarning = outcome.detail;
+  }
   if (scopeChanged) {
     await recordProjectEvent(supabase, {
       projectId: data.id,
@@ -454,11 +462,9 @@ export async function updateProject(
     const wasActiveOwner = (current.data.modules ?? []).includes("active_owner");
     const nowActiveOwner = (data.modules ?? []).includes("active_owner");
     if (nowActiveOwner && !wasActiveOwner) {
-      try {
-        await ensureActiveOwnerEnrollment(supabase, userId, data.property_id);
-      } catch (e) {
-        enrollmentWarning = e instanceof Error ? e.message : "Enrollment could not be updated.";
-      }
+      // Full enrollment through the one automatic path; problems are flagged, never lost.
+      const outcome = await enrollAutomatically(supabase, userId, data.property_id, "module");
+      if (outcome?.kind === "needs_attention") enrollmentWarning = outcome.detail;
     }
   } else {
     await recordProjectEvent(supabase, {
@@ -493,6 +499,28 @@ function describeScope(row: ProjectRow) {
 
 
 /**
+ * Any path that sets a home to Active Owner enrolls it fully (Admin, Nov 23): the one
+ * automatic path, on the server, recorded as the person who saved. Never throws, so the
+ * save that triggered it always stands.
+ */
+async function enrollAutomatically(
+  supabase: Client,
+  userId: string,
+  propertyId: string,
+  source: "module" | "start_onboarding" | "closing_added",
+) {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { autoEnrollHome } = await import("./active-owner-auto-enroll.server");
+    return await autoEnrollHome(supabaseAdmin as never, { propertyId, actorId: userId, source, actorClient: supabase as never });
+  } catch (error) {
+    console.error("automatic Active Owner enrollment", error);
+    return null;
+  }
+}
+
+/**
+ * Superseded Nov 23 by enrollAutomatically (full enrollment); kept, unused by the save paths.
  * Active Owner is enrolled per PROPERTY, never as a global owner flag.
  *
  * If the owner already runs a participation program, this home joins it; if

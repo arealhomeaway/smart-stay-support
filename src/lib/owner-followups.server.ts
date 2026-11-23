@@ -32,7 +32,7 @@ type HomeInput = {
   items: OwnerItem[];
 };
 
-async function routeFor(db: Db, propertyId: string) {
+export async function routeFor(db: Db, propertyId: string) {
   const project = await db
     .from("onboarding_projects")
     .select("project_manager, director, ops_accepted_at, status")

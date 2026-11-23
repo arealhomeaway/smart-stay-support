@@ -48,108 +48,63 @@ describe("rules", () => {
 });
 
 // ---------------------------------------------------------------- server composition
-type Row = Record<string, unknown>;
-let tables: Record<string, Row[]> = {};
-let calls: { updateProject: Row[]; ensure: string[]; enroll: Row[] } = { updateProject: [], ensure: [], enroll: [] };
-let authority = true;
+// Admin, Nov 23: every role enrolls through the one automatic path (autoEnrollHome). The
+// former "someone who cannot enroll ... enrolls nothing" and "no email stops at the draft"
+// checks are replaced by the rules below and in active-owner-auto-enroll.test.ts.
+import { enrollForOwnerType, OWNER_TYPE_MODULE_REASON } from "../owner-type-enrollment.server";
+import { HOME, OWNER, PM, baseTables, fakeDb, fakeDeps } from "./support/fake-auto-enroll-db";
 
-function query(table: string) {
-  const filters: ((r: Row) => boolean)[] = [];
-  const rows = () => (tables[table] ?? []).filter((r) => filters.every((f) => f(r)));
-  const api = {
-    select: () => api,
-    eq: (c: string, v: unknown) => (filters.push((r) => r[c] === v), api),
-    is: (c: string, v: unknown) => (filters.push((r) => (r[c] ?? null) === v), api),
-    not: () => api,
-    single: async () => ({ data: rows()[0] ?? null, error: rows()[0] ? null : { message: "none" } }),
-    maybeSingle: async () => ({ data: rows()[0] ?? null, error: null }),
-    then: (resolve: (v: unknown) => unknown) => Promise.resolve({ data: rows(), error: null }).then(resolve),
-  };
-  return api;
-}
-const actor = { from: (t: string) => query(t) };
-
-const deps = {
-  isActiveOwnerAuthority: async () => authority,
-  mayActOnRecord: async () => true,
-  updateProject: async (_s: unknown, _u: string, input: Row) => {
-    calls.updateProject.push(input);
-    tables.onboarding_projects[0].modules = input.modules;
-  },
-  ensureActiveOwnerEnrollment: async (_s: unknown, _u: string, propertyId: string) => {
-    calls.ensure.push(propertyId);
-  },
-  enrollFully: async (_a: unknown, actorId: string, input: Row) => {
-    calls.enroll.push({ ...input, actorId });
-    return { complete: true, welcomeHeld: false, steps: [] };
-  },
+let tables;
+const run = (who, before, after) => {
+  const { db } = fakeDb(tables);
+  const f = fakeDeps(tables);
+  // the saver's own signed-in access is the same fake database here
+  return enrollForOwnerType(db, who, { projectId: "proj", before, after }, { db, auto: f.deps }).then((out) => ({ out, calls: f.calls }));
 };
 
-import { enrollForOwnerType as run, OWNER_TYPE_MODULE_REASON } from "../owner-type-enrollment.server";
-const enrollForOwnerType = (a, u, i) => run(a, u, i, deps);
-
 beforeEach(() => {
-  authority = true;
-  calls = { updateProject: [], ensure: [], enroll: [] };
-  tables = {
-    onboarding_projects: [{ id: "proj", property_id: "11111111-1111-4111-8111-111111111111", modules: ["utilities"], planned_closing_on: "2026-11-30" }],
-    properties: [{ id: "11111111-1111-4111-8111-111111111111", owner_record_id: "22222222-2222-4222-8222-222222222222", planned_closing_on: null, actual_closing_on: null, is_demo: false }],
-    property_owners: [{ id: "22222222-2222-4222-8222-222222222222", name: "Pat Owner", email: "Pat@Example.com", active: true }],
-    owner_program_properties: [],
-    owner_programs: [],
-  };
+  tables = baseTables({ ownerType: "Active Owner", modules: ["utilities"], closing: "2026-11-30" });
 });
 
 describe("Owner Type set to Active Owner", () => {
-  it("adds the module with a reason and enrolls through the Enroll path as the person who saved", async () => {
-    const out = await enrollForOwnerType(actor, "user-1", { projectId: "proj", before: "Standard DFY", after: "Active Owner" });
-    expect(calls.updateProject).toHaveLength(1);
-    expect(calls.updateProject[0].modules).toEqual(["utilities", "active_owner"]);
-    expect(calls.updateProject[0].reason).toBe(OWNER_TYPE_MODULE_REASON);
-    expect(calls.ensure).toEqual(["11111111-1111-4111-8111-111111111111"]);
-    expect(calls.enroll).toHaveLength(1);
-    expect(calls.enroll[0]).toMatchObject({ actorId: "user-1", propertyId: "11111111-1111-4111-8111-111111111111", ownerRecordId: "22222222-2222-4222-8222-222222222222", name: "Pat Owner", email: "pat@example.com", closingDate: "2026-11-30" });
+  it("adds the module with the same History reason and enrolls as the person who saved", async () => {
+    const { out, calls } = await run(PM, "Standard DFY", "Active Owner");
+    expect(tables.onboarding_projects[0].modules).toEqual(["utilities", "active_owner"]);
+    expect(tables.onboarding_project_events.some((e) => e.kind === "scope_changed" && e.detail === OWNER_TYPE_MODULE_REASON)).toBe(true);
+    expect(calls.enroll[0]).toMatchObject({ actorId: PM, propertyId: HOME, ownerRecordId: OWNER, name: "Pat Owner", email: "pat@example.com", closingDate: "2026-11-30" });
     expect(out).toEqual({ kind: "enrolled", email: "pat@example.com", welcomeHeld: false });
   });
 
   it("never creates a second program when the home is already in a live program", async () => {
     tables.onboarding_projects[0].modules = ["active_owner"];
-    tables.owner_program_properties = [{ property_id: "11111111-1111-4111-8111-111111111111", inclusion_status: "included", owner_programs: { status: "active", archived_at: null } }];
-    const out = await enrollForOwnerType(actor, "user-1", { projectId: "proj", before: null, after: "Active Owner" });
+    const program = { id: "live", owner_record_id: OWNER, status: "active", archived_at: null, owner_user_id: "login" };
+    tables.owner_programs.push(program);
+    tables.owner_program_properties.push({ property_id: HOME, inclusion_status: "included", owner_programs: program });
+    const { out, calls } = await run(PM, null, "Active Owner");
     expect(out).toEqual({ kind: "already_enrolled" });
-    expect(calls.ensure).toHaveLength(0);
     expect(calls.enroll).toHaveLength(0);
-    expect(calls.updateProject).toHaveLength(0);
+    expect(tables.owner_programs).toHaveLength(1);
   });
 
-  it("no owner email: the program is still created and linked, with no login and no welcome", async () => {
+  it("no owner email: enrolled with no login and no welcome, and the message asks for the email", async () => {
     tables.property_owners[0].email = null;
-    const out = await enrollForOwnerType(actor, "user-1", { projectId: "proj", before: null, after: "Active Owner" });
-    expect(calls.ensure).toEqual(["11111111-1111-4111-8111-111111111111"]);
-    expect(calls.enroll).toHaveLength(0);
-    expect(out).toEqual({ kind: "needs_email" });
-  });
-
-  it("someone who cannot enroll keeps the module in step but enrolls nothing", async () => {
-    authority = false;
-    const out = await enrollForOwnerType(actor, "pm", { projectId: "proj", before: null, after: "Active Owner" });
-    expect(calls.updateProject).toHaveLength(1);
-    expect(calls.ensure).toHaveLength(0);
-    expect(calls.enroll).toHaveLength(0);
-    expect(out).toEqual({ kind: "needs_authority" });
+    const { out, calls } = await run(PM, null, "Active Owner");
+    expect(calls.enroll[0].email).toBe("");
+    expect(out).toEqual({ kind: "enrolled_no_email" });
+    expect(ownerTypeMessage(out)?.text).toContain("Add the homeowner's email");
   });
 
   it("changing away from Active Owner, or saving the same value, does nothing", async () => {
-    expect(await enrollForOwnerType(actor, "user-1", { projectId: "proj", before: "Active Owner", after: "Standard DFY" })).toBe(null);
-    expect(await enrollForOwnerType(actor, "user-1", { projectId: "proj", before: "Active Owner", after: "Active Owner" })).toBe(null);
-    expect(calls.updateProject).toHaveLength(0);
-    expect(calls.enroll).toHaveLength(0);
+    expect((await run(PM, "Active Owner", "Standard DFY")).out).toBe(null);
+    expect((await run(PM, "Active Owner", "Active Owner")).out).toBe(null);
+    expect(tables.onboarding_projects[0].modules).toEqual(["utilities"]);
+    expect(tables.owner_programs).toHaveLength(0);
   });
 
   it("uses the home's planned closing when the project has none", async () => {
     tables.onboarding_projects[0].planned_closing_on = null;
     tables.properties[0].planned_closing_on = "2026-12-10";
-    await enrollForOwnerType(actor, "user-1", { projectId: "proj", before: null, after: "Active Owner" });
+    const { calls } = await run(PM, null, "Active Owner");
     expect(calls.enroll[0].closingDate).toBe("2026-12-10");
   });
 });

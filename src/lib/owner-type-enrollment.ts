@@ -1,7 +1,7 @@
 /**
- * Owner Type "Active Owner" enrolls the home (Help: Nov 20 code change).
- * Pure, browser-safe rules; the server side composes the existing Enroll path
- * (enrollFully) and module change (updateProject) in owner-type-enrollment.server.ts.
+ * Owner Type "Active Owner" enrolls the home (Help: Nov 20 code change; every path and
+ * every role since Nov 23). Pure, browser-safe rules; the server side runs the one
+ * automatic path (autoEnrollHome in active-owner-auto-enroll.server.ts).
  */
 export const ACTIVE_OWNER_TYPE = "Active Owner";
 
@@ -31,6 +31,8 @@ export function enrollmentClosingDate(d: {
 
 export type OwnerTypeOutcome =
   | { kind: "enrolled"; email: string; welcomeHeld: boolean }
+  | { kind: "enrolled_no_email" }
+  | { kind: "waiting_closing" }
   | { kind: "already_enrolled" }
   | { kind: "needs_authority" }
   | { kind: "needs_owner_record" }
@@ -49,6 +51,10 @@ export function ownerTypeMessage(o: OwnerTypeOutcome | null | undefined): { tone
           ? "Saved. This home is enrolled in Active Owner. The welcome email is held until its wording is approved."
           : `Saved. This home is enrolled in Active Owner. Welcome email sent to ${o.email}.`,
       };
+    case "enrolled_no_email":
+      return { tone: "warning", text: "Saved. This home is enrolled in Active Owner. Add the homeowner's email to send the login and welcome." };
+    case "waiting_closing":
+      return { tone: "warning", text: "Saved. Add the closing date to finish Active Owner setup." };
     case "needs_authority":
       return { tone: "warning", text: "Saved. The Director of Onboarding or an Admin sets up Active Owner for this home." };
     case "needs_owner_record":

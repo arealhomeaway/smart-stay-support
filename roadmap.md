@@ -74,3 +74,14 @@
 - [x] 5 Daniel Court work orders put back from before.json, read back
 - [x] Done on send and reopen when late or canceled unchanged
 - [x] Property page review draft: all staff see full utility account numbers and logins; never owners or vendors
+
+## Active Owner enrollment fully automatic on every path (Admin, Nov 23)
+- [x] 1a Add property step 3 for everyone who can add a home
+- [x] 1b Owner Type set to Active Owner on any save enrolls, any role, as the saver
+- [x] 1c Start onboarding / scope change with the module enrolls fully
+- [x] 1d Owner Type label and module kept in step on save
+- [x] 2 5 minute safety net (existing five-minute job)
+- [ ] 3a-3d Missing details never block; Needs you now items (3c waits on a decision: program cannot go live without a closing date)
+- [ ] 4 Staged ao-module-sync for 3400 N Fern Ave and 624 Daniel Court (waiting on "Approved: apply ao-module-sync")
+- [x] 5 Tests, practice on demo data, read-only check of the 8 live homes, AGENTS.md rule
+- [ ] Staged ao-auto-enroll database change (needed for 1-3), waiting on "Approved: apply ao-auto-enroll"

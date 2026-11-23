@@ -37,6 +37,7 @@ import { SupervisorAttentionBand } from "@/components/SupervisorAttentionBand";
 import { SupervisorRecords } from "@/components/scorecard/SupervisorRecords";
 import { HandoffsWaiting } from "@/components/operations/HandoffsWaiting";
 import { OwnerFollowUps } from "@/components/OwnerFollowUps";
+import { ActiveOwnerSetupWaiting } from "@/components/ActiveOwnerSetupWaiting";
 import { LunchPrompt, MyShiftCard, TimeOffRequestsWaiting, useTimeOffWaiting } from "@/components/home/MyShift";
 import { NeedsYouNowPanel, type NeedsPanelItem } from "@/components/home/NeedsYouNowPanel";
 import { BonusVerifyWaiting } from "@/components/home/BonusVerifyWaiting";
@@ -295,6 +296,8 @@ function NeedsYouNow({ rows, userId, originSearch }: { rows: Row[]; userId: stri
     >
       <HandoffsWaiting />
       <OwnerFollowUps />
+      {/* Admin, Nov 23: Active Owner homes waiting on a homeowner email, a closing date or a fix. */}
+      <ActiveOwnerSetupWaiting />
       <TimeOffRequestsWaiting userId={userId} demoMode={demoMode} />
       {/* Build 13 (register BN6): a closed bonus period this person verifies. */}
       {!demoMode && <BonusVerifyWaiting />}

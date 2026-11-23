@@ -8,12 +8,15 @@ export type IntakeReceipt = {
 };
 
 /** Retain the canonical home on failure. Retries never replay a successful intake. */
-export async function runPropertySetup(options: { startPlan: boolean; activeOwner: boolean; mayEnroll: boolean }, previous: IntakeReceipt | null, actions: {
+/**
+ * Active Owner is open to everyone who can add a home (Admin, Nov 23): the enrollment runs on the
+ * server through the one automatic path; a missing detail comes back as a notice, never a block.
+ */
+export async function runPropertySetup(options: { startPlan: boolean; activeOwner: boolean }, previous: IntakeReceipt | null, actions: {
   intake: () => Promise<{ id: string; name: string }>;
   plan: (id: string) => Promise<unknown>;
-  enroll: (id: string) => Promise<EnrollmentReceipt>;
+  enroll: (id: string) => Promise<EnrollmentReceipt & { notice?: string | null }>;
 }): Promise<IntakeReceipt> {
-  if (options.activeOwner && !options.mayEnroll) throw new Error("An Admin or the Onboarding Director can enroll this home.");
   const result: IntakeReceipt = previous ? structuredClone(previous) : { propertyId: null, propertyName: "", enrollment: null,
     steps: [{ key: "property", status: "not_reached" }, { key: "plan", status: options.startPlan ? "not_reached" : "not_requested" }, { key: "activeOwner", status: options.activeOwner ? "not_reached" : "not_requested" }] };
   for (const step of result.steps) {
@@ -23,7 +26,14 @@ export async function runPropertySetup(options: { startPlan: boolean; activeOwne
       else {
         if (!result.propertyId) throw new Error("Add the property before continuing.");
         if (step.key === "plan") await actions.plan(result.propertyId);
-        else { result.enrollment = await actions.enroll(result.propertyId); if (!result.enrollment.complete) throw new Error("Active Owner setup needs attention. Retry the unfinished steps."); }
+        else {
+          const { notice, ...enrollment } = await actions.enroll(result.propertyId);
+          result.enrollment = enrollment;
+          if (!enrollment.complete) throw new Error(notice || "Active Owner setup needs attention. Retry the unfinished steps.");
+          step.status = "done"; delete step.detail;
+          if (notice) step.detail = notice;
+          continue;
+        }
       }
       step.status = "done"; delete step.detail;
     } catch (e) { step.status = "failed"; step.detail = e instanceof Error ? e.message : "This step did not finish."; return result; }

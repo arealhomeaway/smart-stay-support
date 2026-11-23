@@ -12,11 +12,16 @@ export const enrollmentInput = z.object({
   operationsLead: z.string().uuid().nullable().default(null), notes: z.string().trim().max(4000).default(""),
 });
 export type EnrollmentInput = z.infer<typeof enrollmentInput>;
+/**
+ * Automatic enrollment (ao-auto-enroll): the same input, but missing details never block.
+ * No email: no login and no welcome yet. No closing date: the run stops before the closing step.
+ */
+export type AutoEnrollmentInput = Omit<EnrollmentInput, "email" | "closingDate"> & { email: string; closingDate: string | null };
 export const ENROLLMENT_STEPS = ["account", "enrollment", "closing", "activation", "onboarding", "operating", "welcome"] as const;
 export type EnrollmentStep = typeof ENROLLMENT_STEPS[number];
 export type EnrollmentReceipt = {
   complete: boolean; programId: string | null; accountId: string | null; accountCreated: boolean;
-  steps: { key: EnrollmentStep; status: "done" | "failed" | "not_reached"; detail?: string }[];
+  steps: { key: EnrollmentStep; status: "done" | "failed" | "not_reached" | "skipped"; detail?: string }[];
   welcomeHeld: boolean; onboardingAdded: number; operatingAdded: number;
 };
 
@@ -24,9 +29,11 @@ export type EnrollmentReceipt = {
 export async function runEnrollment(ops: {
   prepare: () => Promise<void>;
   account: () => Promise<{ id: string; created: boolean }>;
-  step: (step: Exclude<EnrollmentStep, "account">, accountId: string) => Promise<{
+  step: (step: Exclude<EnrollmentStep, "account">, accountId: string | null) => Promise<{
     programId: string; added?: number; held?: boolean;
   }>;
+  /** Automatic enrollment with no homeowner email: record the account step as skipped, no login, no welcome. */
+  skipAccount?: () => Promise<void>;
 }): Promise<EnrollmentReceipt> {
   await ops.prepare(); // Migration availability/authority/identity checked BEFORE creating any account.
   const receipt: EnrollmentReceipt = {
@@ -36,11 +43,18 @@ export async function runEnrollment(ops: {
   };
   for (const step of receipt.steps) {
     try {
-      if (step.key === "account") {
+      if (step.key === "account" && ops.skipAccount) {
+        await ops.skipAccount();
+        step.status = "skipped";
+        continue;
+      } else if (step.key === "welcome" && ops.skipAccount) {
+        step.status = "skipped";
+        continue;
+      } else if (step.key === "account") {
         const account = await ops.account();
         receipt.accountId = account.id; receipt.accountCreated = account.created;
       } else {
-        if (!receipt.accountId) throw new Error("The homeowner login needs to be checked before continuing.");
+        if (!receipt.accountId && !ops.skipAccount) throw new Error("The homeowner login needs to be checked before continuing.");
         const saved = await ops.step(step.key, receipt.accountId);
         receipt.programId = saved.programId;
         if (step.key === "onboarding") receipt.onboardingAdded = saved.added ?? 0;

@@ -36,11 +36,16 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
         const { runOwnerCommsJobs } = await import("@/lib/owner-tab.server");
         const { runOnboardingDailyReminders, drainHeldOnboardingEmails } = await import("@/lib/onboarding-daily-reminder.server");
         const { runWorkOrderReopenPass } = await import("@/lib/onboarding-work-order-reopen.server");
+        const { runActiveOwnerSafetyNet } = await import("@/lib/active-owner-auto-enroll.server");
 
         try {
           const result = await runEmailJob(supabaseAdmin, [
             { name: "progress", run: (id) => evaluateAllPrograms(supabaseAdmin, id) },
             { name: "deadlines_and_vendor_reminders", run: () => sweepDeadlineAlerts(supabaseAdmin) },
+            // Active Owner safety net (Nov 23): any non-demo home labelled Active Owner with no live program
+            // is enrolled through the one automatic path. Never touches an enrolled home and never fails;
+            // skipped until its staged change is applied. Before delivery so its welcome follows the usual rules.
+            { name: "active_owner_safety_net", run: () => runActiveOwnerSafetyNet(supabaseAdmin) },
             // Active Owner email: plan is ready, then one daily email at the set time (default 9 AM Central),
             // never more than one a day per owner. Before delivery so they go out in this pass.
             // Skipped silently until the staged function exists.
