@@ -37,9 +37,9 @@
 - [x] One Filter button opening a selection panel (My Tasks and Project Database, preview)
 - [x] My Tasks search: task text, task type, assignee role, tag; same search in project task list (preview)
 - [x] Task type filter (Utilities, Designer...) (preview)
-- [ ] Saved named views per person; Group by home saved per person (built; waits on Approved: apply onboarding-task-views)
+- [x] Saved named views per person; Group by home saved per person (applied as 0369, Nov 23)
 - [x] Kanban view for one property, picked from a dropdown (preview)
-- [ ] Project Database columns per person: drag/show/hide and Stager column built; saved per person after apply onboarding-task-views
+- [x] Project Database columns per person: drag/show/hide and Stager column, saved per person (applied as 0369, Nov 23)
 
 ## Onboarding Breezeway work orders (Nov 22)
 - [x] Description arrives as the work order's instructions (new sends); list open ones sent the wrong way

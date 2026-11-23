@@ -2584,6 +2584,13 @@
       "when": 1795441105844,
       "tag": "0368_owner_closing_updates",
       "breakpoints": true
+    },
+    {
+      "idx": 369,
+      "version": "7",
+      "when": 1795463429527,
+      "tag": "0369_onboarding_task_views",
+      "breakpoints": true
     }
   ]
 }

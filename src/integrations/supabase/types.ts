@@ -19949,6 +19949,7 @@ export type Database = {
         Args: { _expense: string; _reason: string }
         Returns: undefined
       }
+      archive_my_tasks_view: { Args: { _id: string }; Returns: Json }
       archive_onboarding_home_view: { Args: { _id: string }; Returns: Json }
       archive_qa_work_order_fixture: {
         Args: { _actor?: string }
@@ -20941,6 +20942,7 @@ export type Database = {
         }[]
       }
       my_spending_approval_authority: { Args: never; Returns: boolean }
+      my_tasks_views: { Args: never; Returns: Json }
       nightly_export_alert: {
         Args: { _folder: string; _message: string; _reason: string }
         Returns: number
@@ -21954,6 +21956,11 @@ export type Database = {
       }
       save_home_profile_card: {
         Args: { _card: string; _changes: Json; _property_id: string }
+        Returns: Json
+      }
+      save_my_tasks_prefs: { Args: { _settings: Json }; Returns: Json }
+      save_my_tasks_view: {
+        Args: { _name: string; _settings: Json }
         Returns: Json
       }
       save_onboarding_home_columns: {
