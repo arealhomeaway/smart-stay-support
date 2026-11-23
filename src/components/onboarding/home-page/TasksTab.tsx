@@ -20,6 +20,7 @@ import { TaskWorkOrderChip } from "@/components/onboarding/TaskWorkOrderChip";
 import type { TaskWorkOrderStatus } from "@/lib/onboarding-work-order-status.functions";
 import { stageCheckState, toggleStage } from "@/lib/plan-catch-up";
 import { searchPlanTasks } from "@/lib/plan-search";
+import { matchesTaskSearch, TASK_SEARCH_PLACEHOLDER } from "@/lib/onboarding-task-search";
 import { isFinished } from "@/lib/onboarding-board";
 import { TASK_KIND_LABEL, type TaskKindCode } from "@/lib/onboarding-task-kinds";
 import { assignablePeople } from "@/lib/assignable-people";
@@ -136,7 +137,10 @@ export function TasksTab(p: {
   const dueCount = dueCounts(inScope, p.today);
   const lists = stageLists(p.tasks, { stage: p.stage, today: p.today, tag: p.tag, viewerId: p.viewerId, pmId: p.pmId, due: dueSel });
   const late = allLate ? lateEverywhere(p.tasks, { today: p.today, tag: p.tag, viewerId: p.viewerId, pmId: p.pmId }) : [];
-  const hits = searchPlanTasks(p.tasks, term);
+  // Nov 23: the same search as My Tasks (text, type, role and tag), the Whose Task tag included.
+  const hits = searchPlanTasks(p.tasks, term, (t, q) =>
+    matchesTaskSearch(t, q, [OWNER_TAG_LABEL[ownerTagFor(t, p.viewerId, p.pmId)], ownerTagText(t, p.viewerId, p.pmId, nameOf)]),
+  );
   const order = allLate
     ? late.map((x) => x.task.id)
     : [...lists.doNow.map((x) => x.task.id), ...lists.upNext.map((t) => t.id), ...lists.done.map((t) => t.id)];
@@ -206,7 +210,7 @@ export function TasksTab(p: {
       <aside className="min-w-0 space-y-4" aria-label="Find Tasks">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-          <Input type="search" value={term} onChange={(e) => setTerm(e.target.value)} placeholder="Search all Tasks" aria-label="Search all Tasks" className="h-11 pl-9" maxLength={120} />
+          <Input type="search" value={term} onChange={(e) => setTerm(e.target.value)} placeholder={TASK_SEARCH_PLACEHOLDER} aria-label="Search all Tasks" className="h-11 pl-9" maxLength={120} />
         </div>
         {/* Phone: a Stage dropdown. */}
         <div className="md:hidden">

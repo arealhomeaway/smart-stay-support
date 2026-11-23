@@ -531,6 +531,79 @@ export function optionalCell(key: OptionalColumn, r: HomeRow): string {
   }
 }
 
+/**
+ * Nov 23: each person orders, shows and hides every column but Home (always first, it opens the home).
+ * The saved list is the shown columns in order after a leading "home"; a list without "home" is the
+ * older choice of extra columns only, read as the standard columns followed by those extras.
+ */
+export const FIXED_COLUMNS = [
+  { key: "status", label: "Status" },
+  { key: "dates", label: "Closing to Handoff" },
+  { key: "team", label: "Team" },
+  { key: "schedule", label: "Schedule" },
+  { key: "stager", label: "Stager / on-site team" },
+] as const;
+export type FixedColumn = (typeof FIXED_COLUMNS)[number]["key"];
+export type HomeColumn = FixedColumn | OptionalColumn;
+export const HOME_COLUMNS: readonly { key: HomeColumn; label: string }[] = [...FIXED_COLUMNS, ...OPTIONAL_COLUMNS];
+export const DEFAULT_HOME_COLUMNS: HomeColumn[] = FIXED_COLUMNS.map((c) => c.key);
+export const HOME_COLUMN_MARK = "home";
+
+const isHomeColumn = (c: string): c is HomeColumn => HOME_COLUMNS.some((x) => x.key === c);
+
+/** The shown columns, in order, from a saved list (either form). */
+export function columnLayout(saved: readonly string[] | null | undefined): HomeColumn[] {
+  if (!saved) return [...DEFAULT_HOME_COLUMNS];
+  const unique = (list: string[]) => [...new Set(list)].filter(isHomeColumn);
+  if (saved[0] === HOME_COLUMN_MARK || saved.includes(HOME_COLUMN_MARK)) return unique(saved.filter((c) => c !== HOME_COLUMN_MARK));
+  return unique([...DEFAULT_HOME_COLUMNS, ...saved.filter((c) => (OPTIONAL_COLUMNS as readonly { key: string }[]).some((o) => o.key === c))]);
+}
+
+/**
+ * Which saved list wins: the person's saved record once it is in the new form, else the one kept in
+ * this browser (until the staged change is applied), else the saved record read in the older form.
+ */
+export function pickColumnLayout(saved: readonly string[] | null | undefined, local: readonly string[] | null | undefined): HomeColumn[] {
+  if (saved && saved.includes(HOME_COLUMN_MARK)) return columnLayout(saved);
+  if (local && local.length) return columnLayout(local);
+  return columnLayout(saved ?? null);
+}
+
+/** The list saved for a layout (new form). */
+export function columnsToSave(shown: readonly HomeColumn[]): string[] {
+  return [HOME_COLUMN_MARK, ...new Set(shown)];
+}
+
+/** Every column in the chooser: shown ones first in their order, then the hidden ones. */
+export function columnChooserList(shown: readonly HomeColumn[]): { key: HomeColumn; label: string; shown: boolean }[] {
+  const byKey = new Map(HOME_COLUMNS.map((c) => [c.key, c.label] as const));
+  return [
+    ...shown.map((key) => ({ key, label: byKey.get(key) ?? key, shown: true })),
+    ...HOME_COLUMNS.filter((c) => !shown.includes(c.key)).map((c) => ({ key: c.key, label: c.label, shown: false })),
+  ];
+}
+
+/** Show or hide one column; a column shown again goes to the end. */
+export function toggleColumn(shown: readonly HomeColumn[], key: HomeColumn): HomeColumn[] {
+  return shown.includes(key) ? shown.filter((c) => c !== key) : [...shown, key];
+}
+
+/** Drag (or the move buttons): put column `key` where `target` is, among the shown columns. */
+export function moveColumn(shown: readonly HomeColumn[], key: HomeColumn, target: HomeColumn): HomeColumn[] {
+  if (key === target || !shown.includes(key) || !shown.includes(target)) return [...shown];
+  const rest = shown.filter((c) => c !== key);
+  const at = rest.indexOf(target);
+  const from = shown.indexOf(key);
+  const to = shown.indexOf(target);
+  rest.splice(from < to ? at + 1 : at, 0, key);
+  return rest;
+}
+
+/** The Stager / on-site team cell: the home's Stager from the vendor list. */
+export function stagerCell(r: Pick<HomeRow, "team">): string {
+  return r.team.stagers.map((s) => s.name).join(", ");
+}
+
 /* ----------------------------------------------------------------- CSV */
 
 const csvCell = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);

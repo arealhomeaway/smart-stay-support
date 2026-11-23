@@ -1,6 +1,7 @@
 import { taskRoleLabel, type TaskView } from "./onboarding-workflow";
 import type { SearchSchemaInput } from "@tanstack/react-router";
 import { ownerOfTask } from "./plan-task-owner";
+import { isTaskTypeCode, type TaskTypeCode } from "./onboarding-task-search";
 
 export const PROPERTY_QUEUE_FILTER_LABELS = {
   mine: "My Tasks",
@@ -418,6 +419,7 @@ export function groupMyTasks(
   return groups;
 }
 
+export type MyTasksLayout = "list" | "board";
 export type MyTasksPrefs = {
   /** The quick filter buttons that are on, as a list. */
   quick: MyTasksQuick[];
@@ -425,6 +427,12 @@ export type MyTasksPrefs = {
   group: MyTasksGroup;
   from: string;
   to: string;
+  /** Nov 23: Task types picked in the Filter panel; none picked shows every type. */
+  types: TaskTypeCode[];
+  /** Nov 23: List, or the Kanban board for one home. */
+  layout: MyTasksLayout;
+  /** The home the board shows (a property id), or "" for the first home in the list. */
+  board: string;
 };
 export const MY_TASKS_PREFS_DEFAULTS: MyTasksPrefs = {
   quick: ["incomplete"],
@@ -432,10 +440,35 @@ export const MY_TASKS_PREFS_DEFAULTS: MyTasksPrefs = {
   group: "due",
   from: "",
   to: "",
+  types: [],
+  layout: "list",
+  board: "",
 };
 
 export function myTasksPrefsKey(userId: string | null) {
   return `resolve.myTasks.prefs.${userId ?? "anonymous"}`;
+}
+
+/** Any stored view choices (browser or the person's saved record), kept valid; unknown parts fall back. */
+export function parseMyTasksPrefs(raw: unknown): MyTasksPrefs {
+  if (!raw || typeof raw !== "object") return MY_TASKS_PREFS_DEFAULTS;
+  const parsed = raw as Partial<Record<keyof MyTasksPrefs, unknown>>;
+  const date = (v: unknown) => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : "");
+  return {
+    // A view saved before the buttons combined is one value; it loads as that one button.
+    quick: normalizeMyTasksQuicks(
+      (Array.isArray(parsed.quick) ? parsed.quick : [parsed.quick]).filter(
+        (q): q is MyTasksQuick => typeof q === "string" && Object.hasOwn(MY_TASKS_QUICK_LABELS, q),
+      ),
+    ),
+    sort: parsed.sort === "home" ? "home" : "due",
+    group: parsed.group === "home" || parsed.group === "role" ? parsed.group : "due",
+    from: date(parsed.from),
+    to: date(parsed.to),
+    types: Array.isArray(parsed.types) ? [...new Set(parsed.types.filter(isTaskTypeCode))] : [],
+    layout: parsed.layout === "board" ? "board" : "list",
+    board: typeof parsed.board === "string" && /^[0-9a-f-]{36}$/i.test(parsed.board) ? parsed.board : "",
+  };
 }
 
 /** Each person's last My Tasks view, remembered in their own browser. */
@@ -447,21 +480,7 @@ export function loadMyTasksPrefs(
   try {
     const raw = storage.getItem(myTasksPrefsKey(userId));
     if (!raw) return MY_TASKS_PREFS_DEFAULTS;
-    const parsed = JSON.parse(raw) as Partial<Omit<MyTasksPrefs, "quick">> & { quick?: unknown };
-    const date = (v: unknown) =>
-      typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : "";
-    return {
-      // A view saved before the buttons combined is one value; it loads as that one button.
-      quick: normalizeMyTasksQuicks(
-        (Array.isArray(parsed.quick) ? parsed.quick : [parsed.quick]).filter(
-          (q): q is MyTasksQuick => typeof q === "string" && Object.hasOwn(MY_TASKS_QUICK_LABELS, q),
-        ),
-      ),
-      sort: parsed.sort === "home" ? "home" : "due",
-      group: parsed.group === "home" || parsed.group === "role" ? parsed.group : "due",
-      from: date(parsed.from),
-      to: date(parsed.to),
-    };
+    return parseMyTasksPrefs(JSON.parse(raw));
   } catch {
     return MY_TASKS_PREFS_DEFAULTS;
   }
@@ -556,7 +575,7 @@ export function followedHomeTasks<T extends { assigned_to: string | null; plan_o
 }
 
 export function validateMyWorkSearch(
-  search: { who?: unknown; program?: unknown; home?: unknown; state?: unknown; task?: unknown } & SearchSchemaInput,
+  search: { who?: unknown; program?: unknown; home?: unknown; state?: unknown; task?: unknown; q?: unknown } & SearchSchemaInput,
 ) {
   const text = (v: unknown, fallback: string) => (typeof v === "string" && v ? v : fallback);
   const who = text(search.who, "me");
@@ -564,8 +583,11 @@ export function validateMyWorkSearch(
   const state = text(search.state, "all");
   // Nov 12 item 30: Search Resolve opens a Task's drawer here by its id.
   const task = text(search.task, "");
+  // Nov 23: the search bar's words ride in the address so Back keeps them.
+  const q = text(search.q, "").slice(0, 120);
   return {
     ...(/^[0-9a-f-]{36}$/i.test(task) ? { task } : {}),
+    ...(q ? { q } : {}),
     who: who === "unassigned" || who === "all" || /^[0-9a-f-]{36}$/i.test(who) ? who : "me",
     program: ["all", "active_owner", "standard"].includes(program) ? program : "all",
     // Part 3 (3.5): "followed" is the homes in the viewer's My homes list.

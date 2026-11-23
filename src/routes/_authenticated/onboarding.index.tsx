@@ -49,7 +49,10 @@ import {
   viewToSave,
   visibleRows,
   OPTIONAL_COLUMNS,
+  columnsToSave,
+  pickColumnLayout,
   type FilterKey,
+  type HomeColumn,
   type HomeRow,
   type HomeSearch,
   type OptionalColumn,
@@ -139,24 +142,31 @@ function OnboardingHome() {
       replace,
     });
 
-  // Columns: saved per person (staged saved_views); until applied, kept for this person on this device.
-  const [localColumns, setLocalColumns] = useState<OptionalColumn[] | null>(null);
+  // Columns (Nov 23): each person's order, shown and hidden columns, saved for them; until the staged
+  // change is applied, kept for this person in this browser.
+  const [localColumns, setLocalColumns] = useState<string[] | null>(null);
   useEffect(() => {
     if (!userId || typeof window === "undefined") return;
     try {
       const raw = window.localStorage.getItem(COLUMNS_KEY(userId));
-      if (raw) setLocalColumns((JSON.parse(raw) as string[]).filter((c): c is OptionalColumn => OPTIONAL_COLUMNS.some((o) => o.key === c)));
+      if (raw) {
+        const parsed = JSON.parse(raw) as unknown;
+        if (Array.isArray(parsed)) setLocalColumns(parsed.filter((c): c is string => typeof c === "string"));
+      }
     } catch {
       /* ignore */
     }
   }, [userId]);
-  const columns: OptionalColumn[] = (data?.columns as OptionalColumn[] | null | undefined) ?? localColumns ?? [];
+  const columns: HomeColumn[] = pickColumnLayout(data?.columns as string[] | null | undefined, localColumns);
   const saveColumns = useServerFn(saveHomeColumnsFn);
-  const onColumns = (next: OptionalColumn[]) => {
-    setLocalColumns(next);
-    if (userId && typeof window !== "undefined") window.localStorage.setItem(COLUMNS_KEY(userId), JSON.stringify(next));
+  const onColumns = (next: HomeColumn[]) => {
+    const list = columnsToSave(next);
+    setLocalColumns(list);
+    if (userId && typeof window !== "undefined") window.localStorage.setItem(COLUMNS_KEY(userId), JSON.stringify(list));
     if (data?.columns !== null && data?.columns !== undefined)
-      void saveColumns({ data: { columns: next } }).then(refresh, (e: Error) => toast.error(e.message));
+      void saveColumns({ data: { columns: list } }).then((r) => {
+        if (r.ok) refresh();
+      }, (e: Error) => toast.error(e.message));
   };
 
   const saveView = useMutation({
@@ -289,7 +299,7 @@ function OnboardingHome() {
   };
 
   const downloadCsv = () => {
-    const blob = new Blob([homesCsv(shown, columns)], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob([homesCsv(shown, columns.filter((c): c is OptionalColumn => OPTIONAL_COLUMNS.some((o) => o.key === c)))], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;

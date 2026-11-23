@@ -18,18 +18,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { EmptyState, LoadingPage, PageHeader } from "@/components/ui/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Search } from "lucide-react";
 import { TaskRow } from "@/components/onboarding/WorkflowTable";
 import { TaskDrawer, type SaveTaskInput } from "@/components/onboarding/TaskDrawer";
 import { useRole } from "@/hooks/useRole";
@@ -42,21 +36,30 @@ import {
   FOLLOWED_HOMES,
   matchesWorkFilter,
   validateMyWorkSearch,
-  WORK_FILTER_LABELS,
-  MY_TASKS_QUICK_LABELS,
+  MY_TASKS_DATE_QUICKS,
   MY_TASKS_PREFS_DEFAULTS,
   loadMyTasksPrefs,
   saveMyTasksPrefs,
   matchesMyTasksQuicks,
-  toggleMyTasksQuick,
   matchesMyTasksDueRange,
   sortMyTasks,
   groupMyTasks,
   myTasksGroupStartsOpen,
   type MyTasksPrefs,
-  type MyTasksQuick,
   type WorkFilter,
 } from "@/lib/onboarding-work-views";
+import { matchesTaskSearch, matchesTaskTypes, TASK_SEARCH_PLACEHOLDER } from "@/lib/onboarding-task-search";
+import {
+  activeFilterCount,
+  boardHome,
+  clearedFilters,
+  openSettings,
+  settingsOf,
+  type MyTasksAddress,
+  type MyTasksSavedView,
+} from "@/lib/my-tasks-saved-views";
+import { archiveMyTasksViewFn, getMyTasksViewsFn, saveMyTasksPrefsFn, saveMyTasksViewFn } from "@/lib/my-tasks-views.functions";
+import { MyTasksBoard, MyTasksFilterPanel, MyTasksLayoutSwitch, MyTasksViewsMenu } from "@/components/onboarding/MyTasksControls";
 import { isTestRecord } from "@/lib/test-data";
 import { taskViewsFor } from "@/lib/onboarding-task-views";
 import { assignablePeople } from "@/lib/assignable-people";
@@ -104,9 +107,6 @@ function MyWork() {
   const { userId, readOnly, can, demoMode, isAdmin, isOnboardingDirector } = useRole();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
-  const setFilter = (patch: Record<string, string>) => {
-    void navigate({ search: { ...search, ...patch }, replace: true });
-  };
   const linkedTask = (search as { task?: string }).task ?? null;
   const [openTaskId, setOpenTaskId] = useState<string | null>(linkedTask);
   // A Task opened from My homeowners may belong to a teammate on one of this person's homes.
@@ -294,16 +294,68 @@ function MyWork() {
     }),
   );
 
-  // Each person's last view choices, remembered in their own browser.
+  // Each person's last view choices (Group by home included): saved for them once the staged
+  // onboarding-task-views change is applied, and always remembered in their own browser too.
+  const address: MyTasksAddress = { who: search.who, program: search.program, home: search.home, state: search.state, ...(search.q ? { q: search.q } : {}) };
   const [prefs, setPrefs] = useState<MyTasksPrefs>(MY_TASKS_PREFS_DEFAULTS);
+  const touched = useRef(false);
   useEffect(() => {
     if (userId) setPrefs(loadMyTasksPrefs(window.localStorage, userId));
   }, [userId]);
+  const loadViews = useServerFn(getMyTasksViewsFn);
+  const savedViews = useQuery({ queryKey: ["my-tasks-views", userId], enabled: Boolean(userId), queryFn: () => loadViews() });
+  useEffect(() => {
+    const server = savedViews.data?.prefs;
+    if (server && !touched.current) setPrefs(openSettings(server).prefs);
+  }, [savedViews.data?.prefs]);
+  const savePrefsFn = useServerFn(saveMyTasksPrefsFn);
+  const prefsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rememberOnServer = (next: MyTasksPrefs, addr: MyTasksAddress) => {
+    if (savedViews.data?.pending !== false) return;
+    if (prefsTimer.current) clearTimeout(prefsTimer.current);
+    prefsTimer.current = setTimeout(() => {
+      void savePrefsFn({ data: { settings: settingsOf(addr, next) as unknown as Record<string, unknown> } }).catch(() => undefined);
+    }, 600);
+  };
   const updatePrefs = (patch: Partial<MyTasksPrefs>) => {
+    touched.current = true;
     setPrefs((current) => {
       const next = { ...current, ...patch };
       saveMyTasksPrefs(window.localStorage, userId, next);
+      rememberOnServer(next, address);
       return next;
+    });
+  };
+  const setAddress = (patch: Partial<MyTasksAddress>) => {
+    const next = { ...address, ...patch };
+    void navigate({ search: { ...search, ...patch, ...(next.q ? { q: next.q } : { q: undefined }) } as never, replace: true });
+    touched.current = true;
+    rememberOnServer(prefs, next);
+  };
+  const saveViewFn = useServerFn(saveMyTasksViewFn);
+  const saveView = useMutation({
+    mutationFn: (name: string) => saveViewFn({ data: { name, settings: settingsOf(address, prefs) as unknown as Record<string, unknown> } }),
+    onSuccess: () => {
+      toast.success("View saved.");
+      void savedViews.refetch();
+    },
+    onError,
+  });
+  const removeViewFn = useServerFn(archiveMyTasksViewFn);
+  const removeView = useMutation({
+    mutationFn: (id: string) => removeViewFn({ data: { id } }),
+    onSuccess: () => void savedViews.refetch(),
+    onError,
+  });
+  const openView = (v: MyTasksSavedView) => {
+    const opened = openSettings(v.settings);
+    touched.current = true;
+    setPrefs(opened.prefs);
+    saveMyTasksPrefs(window.localStorage, userId, opened.prefs);
+    rememberOnServer(opened.prefs, opened.address);
+    void navigate({
+      search: { ...(linkedTask ? { task: linkedTask } : {}), ...opened.address, q: opened.address.q || undefined } as never,
+      replace: true,
     });
   };
 
@@ -324,7 +376,8 @@ function MyWork() {
       .filter((p) => p.status !== "cancelled" && (p.modules ?? []).includes("active_owner"))
       .map((p) => p.property_id),
   );
-  const filtered = views
+  // Nov 23: the Filter panel's choices, the Task type and the search bar (text, type, role, tag).
+  const base = views
     .filter((v) =>
       search.program === "all"
         ? true
@@ -334,9 +387,20 @@ function MyWork() {
     )
     .filter((v) => (search.home === "all" || followedOnly ? true : v.task.property_id === search.home))
     .filter((v) => matchesWorkFilter(v, search.state as WorkFilter))
-    .filter((v) => matchesMyTasksQuicks(v, prefs.quick, t0))
+    .filter((v) => matchesTaskTypes(v.task, prefs.types))
+    .filter((v) => matchesTaskSearch(v.task, search.q ?? ""))
     .filter((v) => matchesMyTasksDueRange(v, prefs.from, prefs.to));
+  const filtered = base.filter((v) => matchesMyTasksQuicks(v, prefs.quick, t0));
   const sorted = sortMyTasks(filtered, prefs.sort, propertyName);
+  // The board shows every column (Done included) unless a due date button is on.
+  const dateQuickOn = prefs.quick.some((q) => MY_TASKS_DATE_QUICKS.includes(q));
+  const boardPool = sortMyTasks(dateQuickOn ? filtered : base, "due", propertyName);
+  const boardHomes = [...new Set(boardPool.map((v) => v.task.property_id))]
+    .map((id) => ({ id, label: propertyName(id) }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+  const boardOn = prefs.layout === "board";
+  const shownHome = boardHome(prefs.board, search.home, boardHomes.map((h) => h.id));
+  const filterCount = activeFilterCount(address, prefs, selection.canBrowseTeam);
   const groups = groupMyTasks(sorted, prefs.group, t0, propertyName);
 
   const openTask =
@@ -458,132 +522,68 @@ function MyWork() {
         description="Onboarding tasks assigned to you across every home, in the order they need attention."
       />
 
-      <div className="flex flex-wrap gap-2">
-        {selection.canBrowseTeam && (
-          <Select value={who} onValueChange={(v) => setFilter({ who: v })}>
-            <SelectTrigger className="w-56">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="me">Assigned to me</SelectItem>
-              <SelectItem value="all">Every assignee</SelectItem>
-              <SelectItem value="unassigned">Unassigned</SelectItem>
-              {assignablePeople(data.people).map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.full_name || p.email || "Teammate"}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-        <Select value={search.program} onValueChange={(v) => setFilter({ program: v })}>
-          <SelectTrigger className="w-52">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Every program</SelectItem>
-            <SelectItem value="active_owner">Active Owner only</SelectItem>
-            <SelectItem value="standard">Standard only</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={search.home} onValueChange={(v) => setFilter({ home: v })}>
-          <SelectTrigger className="w-64">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Every home</SelectItem>
-            <SelectItem value={FOLLOWED_HOMES}>Homes I follow ({follows.data?.size ?? 0})</SelectItem>
-            {data.properties
-              .filter((p) => !isTestRecord(p))
-              .map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {formatPropertyLabel(p).primary}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
-        <Select value={search.state} onValueChange={(v) => setFilter({ state: v })}>
-          <SelectTrigger className="w-52">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {Object.entries(WORK_FILTER_LABELS).map(([key, label]) => (
-              <SelectItem key={key} value={key}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
       <div className="flex flex-wrap items-center gap-2" aria-label="My Tasks view">
-        <div className="flex flex-wrap gap-1" role="group" aria-label="Quick filters">
-          {(Object.entries(MY_TASKS_QUICK_LABELS) as [MyTasksQuick, string][]).map(
-            ([key, label]) => (
-              <Button
-                key={key}
-                size="sm"
-                variant={prefs.quick.includes(key) ? "default" : "outline"}
-                aria-pressed={prefs.quick.includes(key)}
-                onClick={() => updatePrefs({ quick: toggleMyTasksQuick(prefs.quick, key) })}
-              >
-                {label}
-              </Button>
-            ),
-          )}
+        <div className="relative min-w-[12rem] flex-1 sm:max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          <Input
+            type="search"
+            aria-label="Search tasks"
+            placeholder={TASK_SEARCH_PLACEHOLDER}
+            maxLength={120}
+            value={search.q ?? ""}
+            onChange={(e) => setAddress({ q: e.target.value })}
+            className="min-h-11 pl-9"
+          />
         </div>
-        <label className="flex items-center gap-1 text-xs text-muted-foreground">
-          Due from
-          <Input
-            type="date"
-            className="h-8 w-36"
-            value={prefs.from}
-            onChange={(e) => updatePrefs({ from: e.target.value })}
-          />
-        </label>
-        <label className="flex items-center gap-1 text-xs text-muted-foreground">
-          to
-          <Input
-            type="date"
-            className="h-8 w-36"
-            value={prefs.to}
-            onChange={(e) => updatePrefs({ to: e.target.value })}
-          />
-        </label>
-        {(prefs.from || prefs.to) && (
-          <Button size="sm" variant="ghost" onClick={() => updatePrefs({ from: "", to: "" })}>
-            Clear dates
-          </Button>
-        )}
-        <Select value={prefs.sort} onValueChange={(v) => updatePrefs({ sort: v as MyTasksPrefs["sort"] })}>
-          <SelectTrigger className="w-48" aria-label="Sort tasks">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="due">Sort by due date</SelectItem>
-            <SelectItem value="home">Sort by home</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={prefs.group} onValueChange={(v) => updatePrefs({ group: v as MyTasksPrefs["group"] })}>
-          <SelectTrigger className="w-48" aria-label="Group tasks">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="due">Group by due date</SelectItem>
-            <SelectItem value="home">Group by home</SelectItem>
-            <SelectItem value="role">Group by role</SelectItem>
-          </SelectContent>
-        </Select>
+        <MyTasksFilterPanel
+          address={address}
+          prefs={prefs}
+          count={filterCount}
+          canBrowseTeam={selection.canBrowseTeam}
+          people={assignablePeople(data.people)}
+          homes={data.properties.filter((p) => !isTestRecord(p)).map((p) => ({ id: p.id, label: formatPropertyLabel(p).primary }))}
+          followsCount={follows.data?.size ?? 0}
+          onAddress={setAddress}
+          onPrefs={updatePrefs}
+          onClear={() => {
+            const c = clearedFilters(prefs);
+            updatePrefs(c.prefs);
+            setAddress({ ...c.address, q: "" });
+          }}
+        />
+        <MyTasksViewsMenu
+          views={savedViews.data?.views ?? []}
+          pending={savedViews.data?.pending !== false}
+          saving={saveView.isPending}
+          onSave={(name) => saveView.mutate(name)}
+          onOpen={openView}
+          onRemove={(v) => removeView.mutate(v.id)}
+        />
+        <MyTasksLayoutSwitch layout={prefs.layout} onLayout={(layout) => updatePrefs({ layout })} />
       </div>
 
-      {filtered.length === 0 && (
+      {boardOn ? (
+        <MyTasksBoard
+          views={boardPool}
+          homes={boardHomes}
+          home={shownHome}
+          onHome={(board) => updatePrefs({ board })}
+          people={data.people}
+          onOpen={(t) => {
+            setOpenedFromHomeowners(false);
+            setOpenTaskId(t.id);
+          }}
+        />
+      ) : null}
+
+      {!boardOn && filtered.length === 0 && (
         <EmptyState
           title="Nothing matches"
           hint="No onboarding task matches this view right now."
         />
       )}
 
-      {groups
+      {(boardOn ? [] : groups)
         .filter((g) => g.items.length > 0)
         .map((g) => (
           <details key={`${prefs.group}:${g.key}`} open={myTasksGroupStartsOpen(prefs.group, g.key)} className="group surface overflow-hidden">

@@ -5,7 +5,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { FILTER_KEYS, HOME_VIEWS, OPTIONAL_COLUMNS } from "@/lib/onboarding-home";
+import { FILTER_KEYS, HOME_COLUMNS, HOME_COLUMN_MARK, HOME_VIEWS } from "@/lib/onboarding-home";
 
 // One Designer per home (Nov 17): the picker saves the same code Tasks route by.
 import { DESIGNER_ROLE, homeDesigner } from "@/lib/designer-role";
@@ -184,13 +184,26 @@ export const archiveHomeViewFn = createServerFn({ method: "POST" })
     return callStaged<{ ok: true }>(context.supabase, "archive_onboarding_home_view", { _id: data.id });
   });
 
-/** 2.3 Columns: the person's own choice of extra columns. */
+/**
+ * 2.3 Columns: the person's own columns, shown ones in order after "home" (Nov 23). Until the staged
+ * onboarding-task-views change is applied the database only knows the older names; then this says
+ * pending and the page keeps the choice in the person's browser.
+ */
 export const saveHomeColumnsFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ columns: z.array(z.enum(OPTIONAL_COLUMNS.map((c) => c.key) as [string, ...string[]])).max(OPTIONAL_COLUMNS.length) }).parse(d),
+    z
+      .object({ columns: z.array(z.enum([HOME_COLUMN_MARK, ...HOME_COLUMNS.map((c) => c.key)] as [string, ...string[]])).max(HOME_COLUMNS.length + 1) })
+      .refine((v) => new Set(v.columns).size === v.columns.length, "Unknown column.")
+      .parse(d),
   )
   .handler(async ({ context, data }) => {
     const { callStaged } = await import("./onboarding-home.server");
-    return callStaged<{ ok: true }>(context.supabase, "save_onboarding_home_columns", { _columns: data.columns });
+    try {
+      await callStaged<{ ok: true }>(context.supabase, "save_onboarding_home_columns", { _columns: data.columns });
+      return { ok: true as const, pending: false };
+    } catch (e) {
+      if (e instanceof Error && e.message === "Unknown column.") return { ok: false as const, pending: true };
+      throw e;
+    }
   });

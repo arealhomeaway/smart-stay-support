@@ -1,17 +1,26 @@
-/** 2.3 Table view (default): grouped by phase; phone cards; Columns chooser; Upcoming and OwnerRez rows. */
+/**
+ * 2.3 Table view (default): grouped by phase; phone cards; Columns chooser; Upcoming and OwnerRez rows.
+ * Nov 23: each person drags, shows and hides every column but Home, saved for them; the Stager /
+ * on-site team column shows the home's Stager.
+ */
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, ChevronRight, Columns3 } from "lucide-react";
-import type { ReactNode } from "react";
+import { ArrowDown, ArrowRight, ArrowUp, ChevronRight, Columns3, GripVertical } from "lucide-react";
+import { useState, type DragEvent, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { shortDate } from "@/lib/onboarding-board";
 import {
-  OPTIONAL_COLUMNS,
+  HOME_COLUMNS,
+  columnChooserList,
   groupByPhase,
+  moveColumn,
   optionalCell,
   reasonLine,
+  stagerCell,
+  toggleColumn,
+  type HomeColumn,
   type HomeRow,
   type OptionalColumn,
   type OwnerRezRow,
@@ -99,17 +108,60 @@ export type TableProps = {
   pickers: Record<TeamRole, Person[]> | null;
   onAssign: (row: HomeRow, choice: AssignChoice) => void;
   assigning: boolean;
-  columns: OptionalColumn[];
-  onColumns: (c: OptionalColumn[]) => void;
+  /** The shown columns after Home, in order. */
+  columns: HomeColumn[];
+  onColumns: (c: HomeColumn[]) => void;
   /** 2.5: Under contract and Contract fell through (Director, Admin). */
   upcomingActions: ((row: HomeRow) => ReactNode) | null;
   /** 2.6: the OwnerRez group, shown when its tile is on. */
   ownerRez: { rows: OwnerRezRow[]; error: string | null; loading: boolean; added: Set<string>; actions: (r: OwnerRezRow) => ReactNode } | null;
 };
 
+const COLUMN_LABEL = new Map(HOME_COLUMNS.map((c) => [c.key, c.label] as const));
+
+function ColumnHead({ k }: { k: HomeColumn }) {
+  if (k === "dates")
+    return (
+      <span className="inline-flex items-center gap-1">
+        Closing <ArrowRight className="size-3" aria-label="to" /> Handoff
+      </span>
+    );
+  return <>{COLUMN_LABEL.get(k) ?? k}</>;
+}
+
+function cellFor(k: HomeColumn, r: HomeRow, p: TableProps): ReactNode {
+  switch (k) {
+    case "status":
+      return (
+        <>
+          <StatusChip status={r.status} />
+          <p className="mt-1 text-xs text-muted-foreground">Invoice: {r.invoiceStatus ?? "Not started"}</p>
+        </>
+      );
+    case "dates":
+      return <Dates row={r} />;
+    case "team":
+      return <TeamCircles row={r} pickers={p.pickers} onAssign={p.onAssign} busy={p.assigning} />;
+    case "schedule":
+      return <Schedule row={r} reason={reasonLine(r, p.tile, p.today)} />;
+    case "stager": {
+      const name = stagerCell(r);
+      return name ? <span className="text-sm">{name}</span> : <span className="text-xs text-muted-foreground">Not set</span>;
+    }
+    default:
+      return <span className="text-sm">{optionalCell(k as OptionalColumn, r)}</span>;
+  }
+}
+
 export function HomesTable(p: TableProps) {
   const groups = groupByPhase(p.rows);
-  const extra = OPTIONAL_COLUMNS.filter((c) => p.columns.includes(c.key));
+  const shown = p.columns;
+  const [dragging, setDragging] = useState<HomeColumn | null>(null);
+  const dropOn = (target: HomeColumn) => (e: DragEvent) => {
+    e.preventDefault();
+    if (dragging) p.onColumns(moveColumn(shown, dragging, target));
+    setDragging(null);
+  };
   return (
     <div className="space-y-4">
       {p.ownerRez ? <OwnerRezGroup {...p.ownerRez} /> : null}
@@ -120,16 +172,23 @@ export function HomesTable(p: TableProps) {
           <thead className="bg-muted/40 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
             <tr>
               <th scope="col" className="px-3 py-2 font-medium">Home</th>
-              <th scope="col" className="px-3 py-2 font-medium">Status</th>
-              <th scope="col" className="px-3 py-2 font-medium">
-                <span className="inline-flex items-center gap-1">
-                  Closing <ArrowRight className="size-3" aria-label="to" /> Handoff
-                </span>
-              </th>
-              <th scope="col" className="px-3 py-2 font-medium">Team</th>
-              <th scope="col" className="px-3 py-2 font-medium">Schedule</th>
-              {extra.map((c) => (
-                <th key={c.key} scope="col" className="px-3 py-2 font-medium">{c.label}</th>
+              {shown.map((k) => (
+                <th
+                  key={k}
+                  scope="col"
+                  draggable
+                  onDragStart={(e) => {
+                    setDragging(k);
+                    e.dataTransfer.effectAllowed = "move";
+                  }}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={dropOn(k)}
+                  onDragEnd={() => setDragging(null)}
+                  className={cn("cursor-grab select-none px-3 py-2 font-medium", dragging === k && "opacity-50")}
+                  title="Drag to move"
+                >
+                  <ColumnHead k={k} />
+                </th>
               ))}
               <th scope="col" className="w-10 px-2 py-2"><span className="sr-only">Open</span></th>
             </tr>
@@ -137,7 +196,7 @@ export function HomesTable(p: TableProps) {
           {groups.map((g) => (
             <tbody key={g.phase} className="divide-y divide-border border-t border-border">
               <tr className="bg-primary/5">
-                <th colSpan={6 + extra.length} scope="colgroup" className="px-3 py-2 text-left text-sm font-semibold text-primary">
+                <th colSpan={2 + shown.length} scope="colgroup" className="px-3 py-2 text-left text-sm font-semibold text-primary">
                   {g.label} <span className="numeric font-normal">({g.rows.length})</span>
                 </th>
               </tr>
@@ -147,17 +206,10 @@ export function HomesTable(p: TableProps) {
                     {p.rowLink(r, <HomeCell row={r} viewOnly={p.isViewOnly(r)} />, "block")}
                     {r.lifecycle === "upcoming" && p.upcomingActions ? <div className="mt-2 flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>{p.upcomingActions(r)}</div> : null}
                   </td>
-                  <td className="px-3 py-2">
-                    <StatusChip status={r.status} />
-                    <p className="mt-1 text-xs text-muted-foreground">Invoice: {r.invoiceStatus ?? "Not started"}</p>
-                  </td>
-                  <td className="px-3 py-2"><Dates row={r} /></td>
-                  <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
-                    <TeamCircles row={r} pickers={p.pickers} onAssign={p.onAssign} busy={p.assigning} />
-                  </td>
-                  <td className="px-3 py-2"><Schedule row={r} reason={reasonLine(r, p.tile, p.today)} /></td>
-                  {extra.map((c) => (
-                    <td key={c.key} className="px-3 py-2 text-sm">{optionalCell(c.key, r)}</td>
+                  {shown.map((k) => (
+                    <td key={k} className="px-3 py-2" onClick={k === "team" ? (e) => e.stopPropagation() : undefined}>
+                      {cellFor(k, r, p)}
+                    </td>
                   ))}
                   <td className="px-2 py-2 text-muted-foreground"><ChevronRight className="size-4" aria-hidden="true" /></td>
                 </tr>
@@ -206,26 +258,63 @@ export function HomesTable(p: TableProps) {
           {p.rows.length} of {p.total} homes
         </p>
         <TeamLegend />
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="min-h-11 gap-1">
-              <Columns3 className="size-4" aria-hidden="true" /> Columns
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-60 space-y-1">
-            {OPTIONAL_COLUMNS.map((c) => (
-              <label key={c.key} className="flex min-h-11 items-center gap-2 text-sm">
-                <Checkbox
-                  checked={p.columns.includes(c.key)}
-                  onCheckedChange={(v) => p.onColumns(v ? [...p.columns, c.key] : p.columns.filter((x) => x !== c.key))}
-                />
-                {c.label}
-              </label>
-            ))}
-          </PopoverContent>
-        </Popover>
+        <ColumnChooser columns={shown} onColumns={p.onColumns} />
       </div>
     </div>
+  );
+}
+
+/** Columns: tick to show or hide, drag (or the arrows) to move. Home always stays first. */
+function ColumnChooser(p: { columns: HomeColumn[]; onColumns: (c: HomeColumn[]) => void }) {
+  const list = columnChooserList(p.columns);
+  const [dragging, setDragging] = useState<HomeColumn | null>(null);
+  const step = (k: HomeColumn, by: -1 | 1) => {
+    const i = p.columns.indexOf(k);
+    const target = p.columns[i + by];
+    if (target) p.onColumns(moveColumn(p.columns, k, target));
+  };
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" className="min-h-11 gap-1">
+          <Columns3 className="size-4" aria-hidden="true" /> Columns
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-72 space-y-1">
+        <p className="px-1 pb-1 text-xs text-muted-foreground">Home stays first. Drag to change the order.</p>
+        {list.map((c, i) => (
+          <div
+            key={c.key}
+            draggable={c.shown}
+            onDragStart={() => setDragging(c.key)}
+            onDragOver={(e) => c.shown && e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              if (dragging && c.shown) p.onColumns(moveColumn(p.columns, dragging, c.key));
+              setDragging(null);
+            }}
+            onDragEnd={() => setDragging(null)}
+            className={cn("flex min-h-11 items-center gap-1 rounded-md", c.shown && "cursor-grab", dragging === c.key && "opacity-50")}
+          >
+            <GripVertical className={cn("size-4 shrink-0", c.shown ? "text-muted-foreground" : "text-transparent")} aria-hidden="true" />
+            <label className="flex min-h-11 flex-1 items-center gap-2 text-sm">
+              <Checkbox checked={c.shown} onCheckedChange={() => p.onColumns(toggleColumn(p.columns, c.key))} />
+              {c.label}
+            </label>
+            {c.shown ? (
+              <>
+                <button type="button" aria-label={`Move ${c.label} left`} disabled={i === 0} onClick={() => step(c.key, -1)} className="inline-flex size-11 items-center justify-center rounded-md hover:bg-muted disabled:opacity-30">
+                  <ArrowUp className="size-4" aria-hidden="true" />
+                </button>
+                <button type="button" aria-label={`Move ${c.label} right`} disabled={i === p.columns.length - 1} onClick={() => step(c.key, 1)} className="inline-flex size-11 items-center justify-center rounded-md hover:bg-muted disabled:opacity-30">
+                  <ArrowDown className="size-4" aria-hidden="true" />
+                </button>
+              </>
+            ) : null}
+          </div>
+        ))}
+      </PopoverContent>
+    </Popover>
   );
 }
 

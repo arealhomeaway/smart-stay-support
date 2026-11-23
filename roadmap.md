@@ -34,12 +34,12 @@
 - [x] No owner sends while testing; read back scheduled updates per home (preview)
 
 ## Onboarding filters, search and views (Nov 22)
-- [ ] One Filter button opening a selection panel
-- [ ] My Tasks search: task text, task type, assignee role, tag; same search in project task list
-- [ ] Task type filter (Utilities, Designer...)
-- [ ] Saved named views per person (filters, grouping, sort); Group by home saved per person
-- [ ] Kanban view for one property, picked from a dropdown
-- [ ] Project Database homepage: per person drag/show/hide columns; Stager / on-site team column
+- [x] One Filter button opening a selection panel (My Tasks and Project Database, preview)
+- [x] My Tasks search: task text, task type, assignee role, tag; same search in project task list (preview)
+- [x] Task type filter (Utilities, Designer...) (preview)
+- [ ] Saved named views per person; Group by home saved per person (built; waits on Approved: apply onboarding-task-views)
+- [x] Kanban view for one property, picked from a dropdown (preview)
+- [ ] Project Database columns per person: drag/show/hide and Stager column built; saved per person after apply onboarding-task-views
 
 ## Onboarding Breezeway work orders (Nov 22)
 - [x] Description arrives as the work order's instructions (new sends); list open ones sent the wrong way

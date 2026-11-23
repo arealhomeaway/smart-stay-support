@@ -1,6 +1,9 @@
-/** 2.2 Filter bar: My homes / All homes, the tile chip, Search, filters, Clear, Save this view, Download CSV, views. */
+/**
+ * 2.2 Filter bar: My homes / All homes, the tile chip, Search, filters, Clear, Save this view, Download CSV, views.
+ * Nov 23: every filter sits in one Filter button that opens a selection panel.
+ */
 import { useState } from "react";
-import { ChevronDown, Download, Search, X } from "lucide-react";
+import { ChevronDown, Download, Search, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,13 +12,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import {
   FILTER_LABELS,
@@ -31,33 +32,8 @@ import {
   type TileKey,
 } from "@/lib/onboarding-home";
 
-const MAIN_FILTERS: FilterKey[] = ["owner", "sched", "pm", "status", "market", "invoice"];
-
-function FilterMenu(p: { k: FilterKey; rows: HomeRow[]; value: string | undefined; onChange: (v: string | undefined) => void }) {
-  const opts = filterOptions(p.k, p.rows);
-  const chosen = opts.find((o) => o.value === p.value)?.label;
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant={p.value ? "secondary" : "outline"} className="min-h-11 gap-1">
-          {FILTER_LABELS[p.k]}
-          {chosen ? `: ${chosen}` : ""}
-          <ChevronDown className="size-4" aria-hidden="true" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="max-h-80 overflow-y-auto">
-        <DropdownMenuRadioGroup value={p.value ?? ""} onValueChange={(v) => p.onChange(v || undefined)}>
-          <DropdownMenuRadioItem value="" className="min-h-11">Any</DropdownMenuRadioItem>
-          {opts.map((o) => (
-            <DropdownMenuRadioItem key={o.value} value={o.value} className="min-h-11">
-              {o.label}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
+/** Every filter, in the order the panel lists them. */
+const PANEL_FILTERS: FilterKey[] = ["owner", "sched", "pm", "status", "market", "invoice", ...MORE_FILTERS];
 
 export function FilterBar(p: {
   tab: "active" | "all";
@@ -84,7 +60,8 @@ export function FilterBar(p: {
 }) {
   const [naming, setNaming] = useState(false);
   const [name, setName] = useState("");
-  const moreOn = MORE_FILTERS.filter((k) => p.filters[k]).length;
+  const [panel, setPanel] = useState(false);
+  const filtersOn = PANEL_FILTERS.filter((k) => p.filters[k]).length;
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -120,38 +97,47 @@ export function FilterBar(p: {
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        {MAIN_FILTERS.map((k) => (
-          <FilterMenu key={k} k={k} rows={p.rows} value={p.filters[k]} onChange={(v) => p.onFilter(k, v)} />
-        ))}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant={moreOn ? "secondary" : "outline"} className="min-h-11 gap-1">
-              More filters{moreOn ? ` (${moreOn})` : ""}
-              <ChevronDown className="size-4" aria-hidden="true" />
+        <Sheet open={panel} onOpenChange={setPanel}>
+          <SheetTrigger asChild>
+            <Button variant={filtersOn ? "secondary" : "outline"} className="min-h-11 gap-1">
+              <SlidersHorizontal className="size-4" aria-hidden="true" /> Filter{filtersOn ? ` (${filtersOn})` : ""}
             </Button>
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-[min(22rem,90vw)] space-y-2">
-            {MORE_FILTERS.map((k) => {
-              const opts = filterOptions(k, p.rows);
-              return (
-                <div key={k} className="flex items-center justify-between gap-2">
-                  <Label htmlFor={`more-${k}`} className="text-sm">{FILTER_LABELS[k]}</Label>
-                  <select
-                    id={`more-${k}`}
-                    value={p.filters[k] ?? ""}
-                    onChange={(e) => p.onFilter(k, e.target.value || undefined)}
-                    className="min-h-11 w-44 rounded-md border border-input bg-background px-2 text-sm"
-                  >
-                    <option value="">Any</option>
-                    {opts.map((o) => (
-                      <option key={o.value} value={o.value}>{o.label}</option>
-                    ))}
-                  </select>
-                </div>
-              );
-            })}
-          </PopoverContent>
-        </Popover>
+          </SheetTrigger>
+          <SheetContent side="right" className="flex w-full flex-col overflow-y-auto sm:max-w-md">
+            <SheetHeader>
+              <SheetTitle>Filter homes</SheetTitle>
+            </SheetHeader>
+            <div className="flex-1 space-y-3 py-4">
+              {PANEL_FILTERS.map((k) => {
+                const opts = filterOptions(k, p.rows);
+                return (
+                  <div key={k} className="space-y-1">
+                    <Label htmlFor={`filter-${k}`} className="text-sm">{FILTER_LABELS[k]}</Label>
+                    <select
+                      id={`filter-${k}`}
+                      value={p.filters[k] ?? ""}
+                      onChange={(e) => p.onFilter(k, e.target.value || undefined)}
+                      className="min-h-11 w-full rounded-md border border-input bg-background px-2 text-sm"
+                    >
+                      <option value="">Any</option>
+                      {opts.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              })}
+            </div>
+            <SheetFooter className="gap-2">
+              <Button variant="outline" className="min-h-11" disabled={!p.anyOn} onClick={p.onClear}>
+                Clear filters
+              </Button>
+              <Button className="min-h-11" onClick={() => setPanel(false)}>
+                Done
+              </Button>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
         {p.anyOn ? (
           <Button variant="ghost" className="min-h-11" onClick={p.onClear}>
             Clear filters

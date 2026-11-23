@@ -1,6 +1,6 @@
 /**
  * Plan search on a home's Plan tab (Nov 12 item 30). Typing filters Tasks by
- * title across every stage, finished ones included, and each result names its
+ * title (or the matcher a page passes) across every stage, finished ones included, and each result names its
  * stage; a blank search returns null so the normal list shows. Pure.
  */
 import { SIX_STAGES, sixStageFor } from "@/lib/onboarding-board";
@@ -14,6 +14,8 @@ export type PlanSearchHit<T> = { task: T; stage: string };
 export function searchPlanTasks<T extends { title: string; stage: string }>(
   tasks: readonly T[],
   term: string,
+  /** Nov 23: a page may pass the shared Task search rule; by default the title is matched. */
+  matches: (task: T, term: string) => boolean = (task, t) => norm(task.title).includes(norm(t)),
 ): PlanSearchHit<T>[] | null {
   const q = norm(term);
   if (!q) return null;
@@ -22,7 +24,7 @@ export function searchPlanTasks<T extends { title: string; stage: string }>(
     return i === -1 ? SIX_STAGES.length : i;
   };
   return tasks
-    .filter((t) => norm(t.title).includes(q))
+    .filter((t) => matches(t, term))
     .map((task) => ({ task, stage: sixStageFor(task.stage) ?? OTHER_STAGE_LABEL }))
     .sort((a, b) => order(a.stage) - order(b.stage) || a.task.title.localeCompare(b.task.title));
 }
