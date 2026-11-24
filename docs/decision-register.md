@@ -10,7 +10,7 @@ H5 Tiers: Below goal, Goal met, Strong, Exceeds. Waiting on someone else never c
 H6 Mobile first, tap targets at least 44px.
 H7 Mockup boards are the master for layout and wording; sample names in a board are placeholders.
 H8 Resolve is the record. Notion is retired; never ask anyone to edit Notion.
-H9 Nothing is deleted: pages are hidden behind switches; tickets are archived (reason required, hidden from lists and counts, history kept, only an Admin restores).
+H9 Homes still in Onboarding that pass the safety check can be deleted by the Admin, Director of Operations, and Director of Onboarding. An Admin can always delete. Everything else stays archive-only.
 H10 Door, lock and Wi-Fi codes stay behind a logged Show; if the log fails the code is not shown; never in reports.
 H11 Where a decision says automatic, build it automatic with no button.
 H12 Protect what exists: change only what a decision or request names; list every existing file modified; run the whole suite, type check and build before and after; never weaken a test. A decision overrides old code.

@@ -755,6 +755,7 @@ function PropertyWorkspace() {
       place={place}
       photo={current.primary_photo_url ?? null}
       status={details.project_status ?? null}
+      lifecycle={current.lifecycle_status ?? null}
       activeOwner={isActiveOwnerHome}
       health={health}
       more={more}

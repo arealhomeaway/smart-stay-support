@@ -1,0 +1,4 @@
+6dc8fe6cf01cdbebaee437bc310a3046285e1ca3deb121938aa9f3b4d37a2c7f  docs/pending/property-delete/01_property_delete.sql
+2e586557b79ea118611ca86420b4ef1fb1cbae9fb4238c9db9eacd99ea022991  docs/pending/property-delete/preflight.sql
+ba7f93cc1464feef61df4190a73ae9d9a817c67a94efdeec3c92a46c7d4171bd  docs/pending/property-delete/undo.sql
+0e718c651cb407b49f03381a4a9cc8c1cf42c0e2fc2a44a5f0dff2c1218715cd  docs/pending/property-delete/director-baseline.json

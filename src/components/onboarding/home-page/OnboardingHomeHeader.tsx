@@ -17,6 +17,7 @@ import { ShellInlineTrail } from "@/components/nav/ShellNav";
 import { readPropertyOwnerFn } from "@/lib/owner-link.functions";
 import { ownerRow, type ContactButton } from "@/lib/onboarding-home-page";
 import { cn } from "@/lib/utils";
+import { DeletePropertyMenu } from "@/components/property/DeletePropertyMenu";
 
 export function OnboardingHomeHeader(p: {
   propertyId: string;
@@ -24,6 +25,7 @@ export function OnboardingHomeHeader(p: {
   place: string;
   photo: string | null;
   status: string | null;
+  lifecycle: string | null;
   activeOwner: boolean;
   health: { behind: boolean; label: string };
   more: string[];
@@ -157,6 +159,7 @@ export function OnboardingHomeHeader(p: {
         {/* Part 3 (3.7): on a phone Chat floats at the bottom instead. */}
         <div className="hidden md:contents">{p.chat}</div>
         <FollowHomeButton propertyId={p.propertyId} myHomes />
+        <DeletePropertyMenu propertyId={p.propertyId} lifecycle={p.lifecycle} />
       </div>
     </header>
   );

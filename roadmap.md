@@ -1,5 +1,14 @@
 # Roadmap
 
+## Delete property (Admin, Nov 24)
+- [x] Update H9 with the approved onboarding-only exception
+- [x] Preview menu/server checks and staged items 1-7 without widening is_director; full behavior awaits application
+- [x] Stage property-delete with preflight, isolated practice, undo and checksums
+- [x] Read-only list of the two homes passing the specified safety checks, with creation details
+- [x] Focused authority/lifecycle/safety/atomic audit tests: 39 passed; existing property-page tests: 40 passed
+- [ ] Item 6 exact file removal: blocked by external-storage transaction limitation; reviewed removal contract needed
+- [ ] Live deletion/full-schema practice: blocked by unapproved staged action and unresolved linked-history/file handling; no apply or publication
+
 ## Proof that it saved (Admin, Nov 17)
 - [x] H1-H3 homeowner Saved messages, Completed proof, Your hours
 - [x] T4-T6 team Saved messages, Done by [role], Done recently

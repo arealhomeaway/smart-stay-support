@@ -61,3 +61,4 @@
 - Business-decision approval uses homeownerApprovalRequired for template writes and completion presentation, mirrored by pending database guards; existing mismatches need separate correction approval. Why: one rule without silent data repair.
 - Owner follow-ups: staff are never prompted to call/text owners; the behind rule lives only in `src/lib/owner-behind.ts` and one open `owner_followup_tasks` row per home is kept by `owner-followups.server` (PM in onboarding, follow-up seat/cover after handoff). Why: one rule, no duplicate or false-alarm prompts.
 - Active Owner plan engine, card de-duplication, report wording and onboarding review step rules: see `drizzle/AGENTS.md`.
+- Property deletion uses one caller-authenticated, staged transaction with action-specific authority; director helpers stay unchanged. Why: atomic removal without wider access.
