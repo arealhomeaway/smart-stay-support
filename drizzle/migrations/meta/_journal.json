@@ -2598,6 +2598,13 @@
       "when": 1795464279300,
       "tag": "0370_claims_coordinator_view",
       "breakpoints": true
+    },
+    {
+      "idx": 371,
+      "version": "7",
+      "when": 1795539598715,
+      "tag": "0371_director_ops_onboarding",
+      "breakpoints": true
     }
   ]
 }
