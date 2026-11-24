@@ -358,7 +358,7 @@ export const readHandoffV2 = createServerFn({ method: "POST" })
       requirements,
       blockers: requirements.filter((t) => !["complete", "done"].includes(t.status)),
       // Register O4 as changed Nov 11: the Director of Onboarding or an Admin marks ready; perform_handoff_step checks the same.
-      canMarkReady: canMarkHomeReady(context.userId, holder("onboarding_director"), isAdmin, adminChecksOn),
+      canMarkReady: canMarkHomeReady(context.userId, holder("onboarding_director"), isAdmin, adminChecksOn) || (holder("director_ops") === context.userId),
       canAccept: canAcceptHandoff(context.userId, holder("director_ops"), isAdmin, cover.data ?? []),
     };
   });
