@@ -2612,6 +2612,13 @@
       "when": 1795568748798,
       "tag": "0372_property_delete",
       "breakpoints": true
+    },
+    {
+      "idx": 373,
+      "version": "7",
+      "when": 1795569397445,
+      "tag": "0373_property_delete_fix",
+      "breakpoints": true
     }
   ]
 }

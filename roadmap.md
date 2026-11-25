@@ -95,4 +95,5 @@
 - [x] 5 Tests, practice on demo data, read-only check of the 8 live homes, AGENTS.md rule
 - [ ] Staged ao-auto-enroll database change (needed for 1-3), waiting on "Approved: apply ao-auto-enroll"
 
-- [ ] property-delete-fix: staged; safety check fails on a view in the removal list. Waiting on "Approved: apply property-delete-fix", then delete the two fake homes and run steps 4-5.
+- [x] property-delete-fix applied (0373); 123 test deleted.
+- [ ] property-delete-fix2: staged; delete step skips work items moved by a trigger. Waiting on "Approved: apply property-delete-fix2", then delete 5253 Trace.
