@@ -2675,6 +2675,13 @@
       "when": 1795578891057,
       "tag": "0381_routing_skip_supervisor_off",
       "breakpoints": true
+    },
+    {
+      "idx": 382,
+      "version": "7",
+      "when": 1795586501708,
+      "tag": "0382_auto_assign_by_seat",
+      "breakpoints": true
     }
   ]
 }

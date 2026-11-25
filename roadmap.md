@@ -1,5 +1,10 @@
 # Roadmap
 
+## Auto-assign by seat (Emily, approved ops-simplification)
+- [x] Read live ticket source/team breakdown (205 open, 131 unowned); preserve exact undo.
+- [x] Applied function as 0382; protected routing/alert fingerprint unchanged, 25 tests pass; automated demo 5139 assigned and archived.
+- [x] Scheduled job 24 for Nov 26 14:00 UTC, sequential spread with audit IDs and self-removal; T15 updated. Future execution awaits scheduled time, not an unfinished implementation.
+
 ## Simple coordinator Home (Emily, Nov 25)
 - [x] Coordinator-only My work, Take one and Hand off using existing reads/actions; leaders retain their Home.
 - [x] Signed-in View as desktop/phone checked; Home buttons 9 to 6, 68 focused tests pass; booking panel and Prepare handoffs opened. No database, switch or publish changes.
