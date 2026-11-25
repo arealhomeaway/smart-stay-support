@@ -1,0 +1,3 @@
+7a8379cea8259900a46fcbb165a1aee08398d285f5b2ee5e76fa9876d2ce38fa  docs/pending/automated-ticket-types/apply.sql
+a0ed81ad7cb640e9edd53350716baac3115fa289b9f8bd25fe3fabc59c858914  docs/pending/automated-ticket-types/apply.undo.sql
+b8af6ca70fc4ec4d0fb86253ea3b917736c91cc9e737f9dc19572a2abc2e24ae  docs/pending/automated-ticket-types/undo.sql
