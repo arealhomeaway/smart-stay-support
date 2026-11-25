@@ -7228,6 +7228,62 @@ export type Database = {
           },
         ]
       }
+      guest_ready_standards: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          lock_note: string | null
+          locked: boolean
+          match_priority: string | null
+          must_be_done: string
+          rule: string
+          rule_days: number | null
+          sort_order: number
+          updated_at: string
+          updated_by: string | null
+          work_type_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          lock_note?: string | null
+          locked?: boolean
+          match_priority?: string | null
+          must_be_done?: string
+          rule?: string
+          rule_days?: number | null
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+          work_type_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          lock_note?: string | null
+          locked?: boolean
+          match_priority?: string | null
+          must_be_done?: string
+          rule?: string
+          rule_days?: number | null
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+          work_type_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_ready_standards_work_type_id_fkey"
+            columns: ["work_type_id"]
+            isOneToOne: false
+            referencedRelation: "work_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guest_recovery: {
         Row: {
           approval_authority: string | null
@@ -16624,6 +16680,7 @@ export type Database = {
           departure_review_id: string | null
           description: string | null
           due_at: string | null
+          due_locked: boolean
           due_on: string | null
           emergency_vendor_authorized_at: string | null
           emergency_vendor_authorized_by: string | null
@@ -16762,6 +16819,7 @@ export type Database = {
           departure_review_id?: string | null
           description?: string | null
           due_at?: string | null
+          due_locked?: boolean
           due_on?: string | null
           emergency_vendor_authorized_at?: string | null
           emergency_vendor_authorized_by?: string | null
@@ -16900,6 +16958,7 @@ export type Database = {
           departure_review_id?: string | null
           description?: string | null
           due_at?: string | null
+          due_locked?: boolean
           due_on?: string | null
           emergency_vendor_authorized_at?: string | null
           emergency_vendor_authorized_by?: string | null
@@ -22051,6 +22110,19 @@ export type Database = {
         Returns: undefined
       }
       save_direct_booking_settings: { Args: { _value: Json }; Returns: Json }
+      save_guest_ready_standard: {
+        Args: {
+          _id: string
+          _label: string
+          _lock_note: string
+          _locked: boolean
+          _must_be_done: string
+          _rule: string
+          _rule_days: number
+          _work_type_id: string
+        }
+        Returns: string
+      }
       save_handoff_requirement: { Args: { _value: Json }; Returns: string }
       save_home_detail_field: {
         Args: { _field: string; _project_id: string; _value: string }
@@ -22271,7 +22343,7 @@ export type Database = {
         Returns: undefined
       }
       set_ticket_due_on: {
-        Args: { _due_on: string; _ticket_id: string }
+        Args: { _due_on: string; _reason?: string; _ticket_id: string }
         Returns: Json
       }
       set_weekly_update_switch: {
