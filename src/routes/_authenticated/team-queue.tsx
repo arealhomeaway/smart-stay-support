@@ -23,7 +23,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Lock, Search, SlidersHorizontal } from "lucide-react";
+import { Lock, Pencil, Search, SlidersHorizontal } from "lucide-react";
+import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
+import { setTicketStatusFn } from "@/lib/ticket-lifecycle.functions";
+import { TEAM_B_DUE, TEAM_B_DUE_LABELS, TEAM_B_TABS, TEAM_B_TAB_LABELS, hiddenOnboarding, inDueFilter, inTeamBScope, parseTeamBDue, parseTeamBTab, rollUpReported, sourceLabel, teamBTab } from "@/lib/team-b-view";
 import { TicketTable, TablePill, TwoLine, type TicketTableColumn } from "@/components/queue/TicketTable";
 import { GROUP_BY_OPTIONS, dueCell, groupTableRows, parseGroupBy, reportedShort, statusPillLabel } from "@/lib/ticket-table";
 import { useRole } from "@/hooks/useRole";
@@ -284,7 +288,7 @@ function TeamQueuePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tickets")
-        .select("*, properties(name, nickname, market, city, state, address_line1, unit, postal_code, ownerrez_property_id, time_zone), work_types(name, functional_role_code, action_start_minutes), claims(id)")
+        .select("*, properties(name, nickname, market, city, state, address_line1, unit, postal_code, ownerrez_property_id, time_zone, lifecycle_status), work_types(name, functional_role_code, action_start_minutes), claims(id)")
         .eq("is_demo", demoMode)
         .is("archived_at", null)
         .order("reported_at", { ascending: false });
@@ -325,7 +329,7 @@ function TeamQueuePage() {
     }
     // Imported Notion tickets stay out of the queue and its counts until someone
     // reopens or takes them; recent ones show only in the "Imported from Notion" group.
-    return withoutQuietNotion(withoutImportHeld(data ?? [])).map((ticket) => ({
+    return withoutQuietNotion(withoutImportHeld(data ?? [])).filter((ticket) => !hiddenOnboarding(ticket as never)).map((ticket) => ({
       ...ticket,
       workOrder: byTicket.get(ticket.id) ?? null,
       dispatchState: byDispatch.get(ticket.id)?.status ?? null,
@@ -412,7 +416,9 @@ function TeamQueuePage() {
     setParam({
       lens: t.mine ? "mine" : undefined,
       homeTeam: t.homeTeam === "all" ? undefined : t.homeTeam,
-      flags: [...nextFlags].join(",") || undefined,
+      flags: tab === "b" ? undefined : [...nextFlags].join(",") || undefined,
+      bTab: undefined,
+      bDue: undefined,
     });
   };
   const groupBy = parseGroupBy(params["groupBy"]);
@@ -456,7 +462,52 @@ function TeamQueuePage() {
     }));
   }, [map.data, tickets, standaloneOrders, filters, homeTeamOf, lens]);
   const selectedPin = mapPins.find((pin) => pin.propertyId === params["pin"]) ?? null;
-  const viewItems = [...tickets, ...standaloneOrders];
+  // Team B view (change 2 of 5): five tabs, four due filters, its own scope and columns.
+  const teamBMode = activeTab === "b";
+  const bTab = parseTeamBTab(params["bTab"]);
+  const bDue = parseTeamBDue(params["bDue"]);
+  const teamBBase = useMemo(() => {
+    if (!teamBMode) return [] as typeof all;
+    const f = { ...filters, homeTeam: "all", unassigned: false, status: "all" } as TeamQueueFilters;
+    return (applyTeamQueueFilters(all as never, f, homeTeamOf) as unknown as typeof all).filter((t) => {
+      const owner = currentOwnerId(t);
+      return inTeamBScope(t as never, owner ? homeTeamOf(owner) : null, owner, "property_operations");
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teamBMode, all, filters, homeTeamOf]);
+  const teamBDueRows = teamBBase.filter((t) => inDueFilter(t as never, bDue, now));
+  const teamBCounts = Object.fromEntries(TEAM_B_TABS.map((k) => [k, teamBDueRows.filter((t) => teamBTab(t as never) === k).length])) as Record<string, number>;
+  const teamBDueCounts = Object.fromEntries(TEAM_B_DUE.map((k) => [k, teamBBase.filter((t) => teamBTab(t as never) === bTab && inDueFilter(t as never, k, now)).length])) as Record<string, number>;
+  const teamBRows = (() => {
+    const rows = teamBDueRows.filter((t) => teamBTab(t as never) === bTab);
+    return bTab === "reported" ? rollUpReported(rows as never) as unknown as typeof all : rows;
+  })();
+  const viewItems = teamBMode ? [...teamBRows] : [...tickets, ...standaloneOrders];
+  const [noteFor, setNoteFor] = useState<{ id: string; ref: number | null; title: string } | null>(null);
+  const [noteText, setNoteText] = useState("");
+  const [noteSaving, setNoteSaving] = useState(false);
+  const [openRollup, setOpenRollup] = useState<string | null>(null);
+  const setStatus = useServerFn(setTicketStatusFn);
+  const saveQuickNote = async () => {
+    if (!noteFor || !noteText.trim()) return;
+    setNoteSaving(true);
+    const { error } = await supabase.from("ticket_activity").insert({ ticket_id: noteFor.id, author_id: userId, kind: "note", event_type: "note", body: noteText.trim() } as never);
+    setNoteSaving(false);
+    if (error) { toast.error("That update could not be saved."); return; }
+    toast.success("Update added.");
+    setNoteFor(null); setNoteText("");
+  };
+  const closeIssues = async (ids: string[]) => {
+    let failed = 0;
+    for (const id of ids) {
+      try {
+        const r = await setStatus({ data: { ticketId: id, status: "resolved", patch: {} } });
+        if (!r.ok) { failed++; toast.error(r.message); }
+      } catch { failed++; }
+    }
+    if (!failed) toast.success(ids.length > 1 ? "Issues resolved." : "Issue resolved.");
+    await refetch();
+  };
   const calendarMonth = operationsCalendarMonth(params["month"]);
   const itemDate = (item: { next_action_due_at?: string | null; action_due_at?: string | null; response_due_at?: string | null; due_at?: string | null; workOrder?: { scheduled_for: string | null } | null }) =>
     (item.next_action_due_at ?? item.action_due_at ?? item.response_due_at ?? item.due_at ?? item.workOrder?.scheduled_for)?.slice(0, 10) ?? "Unscheduled";
@@ -668,6 +719,39 @@ function TeamQueuePage() {
       cell: (row) => <span className="block truncate text-xs text-muted-foreground">{reportedShort(row.reported_at, now)}</span>,
     },
   ];
+  type RollupRow = TableItem & { rollup?: Array<{ id: string; ref: number | null; title: string | null; priority: string | null }> };
+  const descriptionColumn: TicketTableColumn<TableItem> = {
+    key: "description", header: "Description", track: "minmax(220px,2fr)",
+    cell: (row) => {
+      const r = row as RollupRow;
+      if (!r.rollup) return <TwoLine top={row.title} topClassName="font-bold" sub={"kind" in row ? "Breezeway" : sourceLabel(row as never)} />;
+      const shown = openRollup === row.property_id;
+      return (
+        <div className="min-w-0">
+          <TwoLine top={row.title} topClassName="font-bold" sub="Breezeway reported issue" />
+          <button type="button" className="mt-1 min-h-11 text-sm font-semibold text-primary underline-offset-2 hover:underline"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenRollup(shown ? null : row.property_id ?? null); }}>
+            {shown ? "Hide issues" : "Show issues"}
+          </button>
+          {shown ? (
+            <ul className="mt-1 space-y-1" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+              {r.rollup.map((i) => (
+                <li key={i.id} className="flex items-center justify-between gap-2 rounded-md border border-border bg-background px-2 py-1 text-sm">
+                  <span className="truncate">#{i.ref} {i.title}</span>
+                  <Button size="sm" variant="outline" className="min-h-11" onClick={() => void closeIssues([i.id])}>Mark resolved</Button>
+                </li>
+              ))}
+              <li><Button size="sm" className="min-h-11" onClick={() => void closeIssues(r.rollup!.map((i) => i.id))}>Close all</Button></li>
+            </ul>
+          ) : null}
+        </div>
+      );
+    },
+  };
+  const teamBOrder = ["property", "priority", "type", "owner", "status", "due", "reported"];
+  const activeColumns = teamBMode
+    ? [descriptionColumn, ...teamBOrder.map((k) => columns.find((c) => c.key === k)!).filter(Boolean)]
+    : columns;
   const tableGroups = groupTableRows(
     viewItems as TableItem[],
     groupBy,
@@ -915,6 +999,29 @@ function TeamQueuePage() {
           ) : null}
         </div>
 
+        {teamBMode ? (
+          <div className="space-y-2" data-testid="team-b-view">
+            <nav aria-label="Team B work" className="flex max-w-full gap-1 overflow-x-auto border-b border-border">
+              {TEAM_B_TABS.map((k) => (
+                <button key={k} type="button" aria-pressed={bTab === k}
+                  onClick={() => setParam({ bTab: k === "maintenance" ? undefined : k }, true)}
+                  className={`inline-flex min-h-11 shrink-0 items-center gap-2 border-b-2 px-3 text-sm font-semibold ${bTab === k ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+                  {TEAM_B_TAB_LABELS[k]}
+                  <span className={`numeric rounded-full px-2 py-0.5 text-xs ${bTab === k ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>{teamBCounts[k]}</span>
+                </button>
+              ))}
+            </nav>
+            <div className="flex flex-wrap items-center gap-2">
+              {TEAM_B_DUE.map((k) => (
+                <Button key={k} className="min-h-11" variant={bDue === k ? "default" : "outline"} aria-pressed={bDue === k}
+                  onClick={() => setParam({ bDue: k === "today" ? undefined : k }, true)}>
+                  {TEAM_B_DUE_LABELS[k]}<span className="numeric ml-1.5 opacity-70">{teamBDueCounts[k]}</span>
+                </Button>
+              ))}
+              <span className="ml-auto text-sm text-muted-foreground">{TEAM_QUEUE_COPY.tableSummary(viewItems.length)}</span>
+            </div>
+          </div>
+        ) : (
         <div className="flex flex-wrap items-center gap-2" data-testid="queue-flags">
           {flagButtons.filter((f) => f.key !== "untouched").map((f) => (
             <Button key={f.key} className="min-h-11" variant={flags.has(f.key) ? "default" : "outline"}
@@ -925,6 +1032,7 @@ function TeamQueuePage() {
           ))}
           <span className="ml-auto text-sm text-muted-foreground">{TEAM_QUEUE_COPY.tableSummary(viewItems.length)}</span>
         </div>
+        )}
 
         {isError || (operationsAccess && (orders.isError || dispatches.isError || propertyCatalog.isError)) ? (
           <EmptyState
@@ -1076,16 +1184,32 @@ function TeamQueuePage() {
         </div>
         ) : (
           <div className="space-y-2">
+            {teamBMode && noteFor ? (
+              <div className="space-y-2 rounded-lg border border-border bg-card p-3" data-testid="quick-note">
+                <p className="text-sm font-semibold">Add an update to #{noteFor.ref} {noteFor.title}</p>
+                <Textarea value={noteText} onChange={(e) => setNoteText(e.target.value)} rows={2} aria-label="Update" />
+                <div className="flex gap-2">
+                  <Button className="min-h-11" disabled={!noteText.trim() || noteSaving} onClick={() => void saveQuickNote()}>{noteSaving ? "Saving..." : "Add update"}</Button>
+                  <Button className="min-h-11" variant="outline" onClick={() => setNoteFor(null)}>Cancel</Button>
+                </div>
+              </div>
+            ) : null}
             <TicketTable
               label={TEAM_QUEUE_COPY.tableLabel}
               testId="everyone-list"
-              columns={columns}
+              columns={activeColumns}
               groups={tableGroups}
               rowKey={(row) => row.id}
               lead={{
-                header: "Pick",
+                header: teamBMode ? "Note" : "Pick",
                 track: "44px",
-                cell: (row) => "kind" in row ? null : (
+                cell: (row) => "kind" in row ? null : teamBMode ? (
+                  <button type="button" aria-label={`Add an update to ticket ${row.ref}`}
+                    className="flex min-h-11 min-w-11 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+                    onClick={() => { setNoteFor({ id: row.id, ref: row.ref ?? null, title: row.title ?? "" }); setNoteText(""); }}>
+                    <Pencil className="size-4" />
+                  </button>
+                ) : (
                   <label className="flex min-h-11 min-w-11 cursor-pointer items-center justify-center">
                     <Checkbox
                       aria-label={`Select ticket ${row.ref}`}

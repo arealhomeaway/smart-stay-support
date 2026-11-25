@@ -5,6 +5,8 @@ export const OPERATIONS_SEARCH_KEYS = [
   "acceptance", "completion", "dateFrom", "dateTo", "due", "age", "flags", "q",
   // Team Queue team chip: a, b, all or unclaimed.
   "team",
+  // Team B view tab and due filter (change 2 of 5).
+  "bTab", "bDue",
   // Team Queue table grouping: priority, status or person.
   "groupBy",
 ] as const;

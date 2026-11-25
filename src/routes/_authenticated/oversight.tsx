@@ -21,6 +21,7 @@ import { dueLabelAt, reportedShort, statusPillLabel } from "@/lib/ticket-table";
 import { useHomeTeams } from "@/hooks/useHomeTeam";
 import { workloadByPerson } from "@/lib/oversight";
 import { supabase } from "@/integrations/supabase/client";
+import { hiddenOnboarding } from "@/lib/team-b-view";
 import { Badge } from "@/components/ui/badge";
 import { SectionCard } from "@/components/ui/page";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -106,14 +107,15 @@ function useOversightData() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tickets")
-        .select("*, properties(name, nickname, market, city, primary_photo_url, address_line1, unit, state, postal_code, ownerrez_property_id)")
+        .select("*, properties(name, nickname, market, city, primary_photo_url, address_line1, unit, state, postal_code, ownerrez_property_id, lifecycle_status)")
         .eq("is_demo", demoMode)
         .is("archived_at", null)
         .order("reported_at", { ascending: false })
         .limit(500);
       if (error) throw error;
       // Imported Notion tickets are not Oversight work until reopened in Resolve.
-      return withoutQuietNotion(data ?? []);
+      // Homes still in Onboarding are not Operations work (change 2 of 5, item 7).
+      return withoutQuietNotion(data ?? []).filter((t) => !hiddenOnboarding(t as never));
     },
   });
 
