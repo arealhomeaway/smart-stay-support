@@ -19,6 +19,8 @@ BEGIN
         AND created_at >= '2026-11-16 00:00:00 America/Chicago'::timestamptz
         AND created_at < target
         AND assigned_to IS NULL AND current_action_owner IS NULL
+        AND NOT EXISTS (SELECT 1 FROM public.arrival_checks a
+          WHERE a.ticket_id = tickets.id OR a.issue_ticket_id = tickets.id)
       ORDER BY created_at, id FOR UPDATE
     LOOP
       -- Each call is a separate statement so it sees all preceding assignments.
