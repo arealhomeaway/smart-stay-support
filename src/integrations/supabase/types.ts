@@ -13620,6 +13620,7 @@ export type Database = {
           geocode_status: string | null
           geocoded_at: string | null
           grounds: Json
+          guidebook_url: string | null
           handoff_accepted_at: string | null
           hoa: Json
           hvac: Json
@@ -13711,6 +13712,7 @@ export type Database = {
           geocode_status?: string | null
           geocoded_at?: string | null
           grounds?: Json
+          guidebook_url?: string | null
           handoff_accepted_at?: string | null
           hoa?: Json
           hvac?: Json
@@ -13802,6 +13804,7 @@ export type Database = {
           geocode_status?: string | null
           geocoded_at?: string | null
           grounds?: Json
+          guidebook_url?: string | null
           handoff_accepted_at?: string | null
           hoa?: Json
           hvac?: Json
@@ -22365,6 +22368,10 @@ export type Database = {
       }
       set_owner_team_notes: {
         Args: { _notes: string; _owner_id: string }
+        Returns: string
+      }
+      set_property_guidebook_link: {
+        Args: { _property_id: string; _url: string }
         Returns: string
       }
       set_staff_no_second_look: {

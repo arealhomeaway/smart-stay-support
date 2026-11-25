@@ -2654,6 +2654,13 @@
       "when": 1795578078823,
       "tag": "0378_shift_end_reminder",
       "breakpoints": true
+    },
+    {
+      "idx": 379,
+      "version": "7",
+      "when": 1795578396749,
+      "tag": "0379_property_guidebook_link",
+      "breakpoints": true
     }
   ]
 }
