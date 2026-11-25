@@ -16624,6 +16624,7 @@ export type Database = {
           departure_review_id: string | null
           description: string | null
           due_at: string | null
+          due_on: string | null
           emergency_vendor_authorized_at: string | null
           emergency_vendor_authorized_by: string | null
           emergency_vendor_basis: string | null
@@ -16761,6 +16762,7 @@ export type Database = {
           departure_review_id?: string | null
           description?: string | null
           due_at?: string | null
+          due_on?: string | null
           emergency_vendor_authorized_at?: string | null
           emergency_vendor_authorized_by?: string | null
           emergency_vendor_basis?: string | null
@@ -16898,6 +16900,7 @@ export type Database = {
           departure_review_id?: string | null
           description?: string | null
           due_at?: string | null
+          due_on?: string | null
           emergency_vendor_authorized_at?: string | null
           emergency_vendor_authorized_by?: string | null
           emergency_vendor_basis?: string | null
@@ -22266,6 +22269,10 @@ export type Database = {
       set_staff_no_second_look: {
         Args: { _on: boolean; _user_id: string }
         Returns: undefined
+      }
+      set_ticket_due_on: {
+        Args: { _due_on: string; _ticket_id: string }
+        Returns: Json
       }
       set_weekly_update_switch: {
         Args: { _auto_send?: boolean; _paused?: boolean; _property_id: string }
