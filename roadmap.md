@@ -1,5 +1,14 @@
 # Roadmap
 
+## Operations simplification (Emily, Nov 25, approved ops-simplification)
+- [ ] Separate old backlog from live tickets, maintenance/lawn reviews and Direct Booking requests; stop backlog counts and clocks
+- [ ] ops-simplification staged but NOT ready to apply: isolated fixture lacks routing dependencies; behavior/undo/preflight execution incomplete
+- [ ] Route all new live tickets/reviews through existing schedule routing; one-time assignment tomorrow 8 AM Central
+- [ ] Team Queue: Team A, Team B, Mine; subject tabs, four due filters, one combined table
+- [ ] Home: compact leader line; personal live Needs you now, seven rows maximum, no bookings older than 24 hours
+- [ ] Verify before/after counts, Team A mapping, full-suite comparison and signed-in preview; 69 focused tests passed, baseline 527 files attempted with timed-out batches
+- [x] Keep guest-ready-type-links, database-priority-words and reported-issue-order-links on hold; none applied, no switches changed, no publish
+
 ## Operations cleanup (Emily, Nov 25)
 - [x] 1 Lock icons across all named ticket lists; signed-in Oversight/Supervisor/Databases verified, Home via shared renderer/tests
 - [ ] 2 Preview wiring complete; waiting on Approved: apply guest-ready-type-links

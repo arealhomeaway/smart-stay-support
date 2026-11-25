@@ -1,0 +1,5 @@
+0a5fdcf6eadd3573d9d40be465f499b6b64c7cf125b3dda2e3050f254883e1dd  docs/pending/ops-simplification/apply.sql
+c0f993422e18a005516dafb1b8dbdda8684784288c62e0f9610add229c619f5c  docs/pending/ops-simplification/undo.sql
+64a8d0a061c1e3afcea167fff2efe893153d6ea7eaee7c2d304db81c6a4bef66  docs/pending/ops-simplification/preflight.sql
+e3988a09667c1581bc9803546fcf2a4413eb2779583431b9a1f147a819ca57af  docs/pending/ops-simplification/practice.mjs
+a630ef0cfcacd6405ed94a7eb7912c6be50c13f96848f523f8925650693c8192  docs/pending/ops-simplification/practice-setup.sql
