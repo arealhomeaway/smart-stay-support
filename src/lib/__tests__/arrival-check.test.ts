@@ -138,3 +138,26 @@ describe("wording", () => {
     expect(texts).not.toMatch(/\bP[1-4]\b|\bPC\d\b/);
   });
 });
+
+import { arrivalProgress, isSameDayBooking, lastClean, openMaintenance } from "../arrival-check";
+describe("arrival check change 3", () => {
+  const o = (x: Record<string, unknown>) => ({ breezeway_task_id: 1, name: null, department: "maintenance", status: "Created", stage: "new", breezeway_created_at: "2026-11-20T00:00:00Z", finished_at: null, scheduled_date: null, report_url: null, ...x });
+  const now = new Date("2026-11-25T18:00:00Z");
+  it("progress counts five steps", () => {
+    expect(arrivalProgress({ clean: true, lock: true }).label).toBe("2 of 5 done");
+  });
+  it("same day booking is Central date", () => {
+    expect(isSameDayBooking("2026-11-25T15:00:00Z", "2026-11-25")).toBe(true);
+    expect(isSameDayBooking("2026-11-25T03:00:00Z", "2026-11-25")).toBe(false);
+  });
+  it("last clean is the most recent cleaning order", () => {
+    const r = lastClean([o({ breezeway_task_id: 1, department: "housekeeping", scheduled_date: "2026-11-20", status: "Approved", stage: "finished" }), o({ breezeway_task_id: 2, department: "housekeeping", scheduled_date: "2026-11-25" })]);
+    expect(r?.order.breezeway_task_id).toBe(2);
+    expect(r?.done).toBe(false);
+  });
+  it("open maintenance: last 30 days, not finished, no cleaning or inspection", () => {
+    const r = openMaintenance([o({}), o({ breezeway_created_at: "2026-09-01T00:00:00Z" }), o({ department: "housekeeping" }), o({ department: "inspection" }), o({ stage: "finished" })], now);
+    expect(r.shown.length).toBe(1);
+    expect(r.leftOut).toBe("Not shown: 2 cleaning or inspection work orders, 1 maintenance report older than 30 days.");
+  });
+});

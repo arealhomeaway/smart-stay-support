@@ -25,6 +25,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Lock, Pencil, Search, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
+import { isArrivalCheckTicket } from "@/lib/arrival-check";
 import { Textarea } from "@/components/ui/textarea";
 import { setTicketStatusFn } from "@/lib/ticket-lifecycle.functions";
 import { TEAM_B_DUE, TEAM_B_DUE_LABELS, TEAM_B_TABS, TEAM_B_TAB_LABELS, hiddenOnboarding, inDueFilter, inTeamBScope, parseTeamBDue, parseTeamBTab, rollUpReported, sourceLabel, teamBTab } from "@/lib/team-b-view";
@@ -329,7 +330,9 @@ function TeamQueuePage() {
     }
     // Imported Notion tickets stay out of the queue and its counts until someone
     // reopens or takes them; recent ones show only in the "Imported from Notion" group.
-    return withoutQuietNotion(withoutImportHeld(data ?? [])).filter((ticket) => !hiddenOnboarding(ticket as never)).map((ticket) => ({
+    return withoutQuietNotion(withoutImportHeld(data ?? [])).filter((ticket) => !hiddenOnboarding(ticket as never))
+      // Arrival checks belong to Team A Routine Work (change 3 of 5), not the Team Queue.
+      .filter((ticket) => !isArrivalCheckTicket(ticket)).map((ticket) => ({
       ...ticket,
       workOrder: byTicket.get(ticket.id) ?? null,
       dispatchState: byDispatch.get(ticket.id)?.status ?? null,

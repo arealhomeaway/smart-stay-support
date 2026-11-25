@@ -17,6 +17,7 @@ import { EmptyState, LoadingPage, PageHeader, SectionCard } from "@/components/u
 import { StatusBadge } from "@/components/ui/status";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { RoutineDrawer, type RoutineRow } from "@/components/routines/RoutineDrawer";
+import { ArrivalChecksSection } from "@/components/routines/ArrivalChecksSection";
 import { MaintenanceReviewQueue } from "@/components/routines/MaintenanceReviewQueue";
 import { useDemo } from "@/components/DemoProvider";
 import { useSeat } from "@/hooks/useSeat";
@@ -119,7 +120,7 @@ function RoutinesPage() {
             ? `${overdue.length} routine ${overdue.length === 1 ? "check is" : "checks are"} late`
             : "Routine work is on track"
         }
-        description="Guest touch bases, work order reviews and guest reviews. Checkout and Cleaning Review are retired: the Departure Review in the Team Queue covers them. Past checks stay here for history."
+        description="Arrival checks, guest touch bases, work order reviews and guest reviews. Checkout and Cleaning Review are retired: the Departure Review in the Team Queue covers them. Past checks stay here for history."
         actions={
           <>
             <div className="flex rounded-lg border border-border p-0.5">
@@ -141,6 +142,8 @@ function RoutinesPage() {
           </>
         }
       />
+
+      <ArrivalChecksSection demoMode={demoMode} />
 
       <Section
         title="Late"

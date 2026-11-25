@@ -18,7 +18,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SectionCard } from "@/components/ui/page";
-import { ARRIVAL_COPY as C, arrivalResultLabel, arrivalTime, type ArrivalResult } from "@/lib/arrival-check";
+import { ARRIVAL_COPY as C, arrivalResultLabel, arrivalTime, lastClean, openMaintenance, type ArrivalResult, type MirrorOrder } from "@/lib/arrival-check";
+import { breezewayTaskLink } from "@/lib/breezeway-bridge";
 
 type WorkOrder = { id: number; name: string | null; department: string | null; status: string | null; link: string };
 type CheckView = {
@@ -46,6 +47,8 @@ type CheckView = {
   completed_by_name: string | null;
   lock_brand: string | null;
   work_orders: WorkOrder[];
+  steps?: Record<string, unknown> | null;
+  recheck_flag?: boolean | null;
 };
 
 type Rpc = { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
@@ -67,12 +70,43 @@ export function ArrivalCheckPanel({ ticketId, propertyId, readOnly }: { ticketId
   const [issue, setIssue] = useState("");
   const [plan, setPlan] = useState("");
   const [saving, setSaving] = useState(false);
+  const [cleanOk, setCleanOk] = useState(false);
+  const [detailsSent, setDetailsSent] = useState(false);
+  const [recheck, setRecheck] = useState<boolean | null>(null);
+  const mirror = useQuery({
+    queryKey: ["arrival-mirror", propertyId],
+    enabled: Boolean(propertyId),
+    queryFn: async () => {
+      const { data, error } = await (supabase as unknown as { from: (t: string) => any }) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .from("breezeway_work_orders")
+        .select("breezeway_task_id, name, department, status, stage, breezeway_created_at, finished_at, scheduled_date, report_url")
+        .eq("property_id", propertyId).order("breezeway_created_at", { ascending: false }).limit(300);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as MirrorOrder[];
+    },
+  });
+  const rpc = supabase as unknown as Rpc;
+  async function saveStep(step: string, done: boolean, flag?: boolean) {
+    if (!q.data) return;
+    // Saved progress needs the staged arrival-team-a package; the screen works without it.
+    await rpc.rpc("save_arrival_check_step", { _check_id: q.data.id, _step: step, _done: done, ...(flag === undefined ? {} : { _recheck: flag }) });
+  }
+  async function guestInformed(o: MirrorOrder) {
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user || !q.data) return;
+    const { error } = await supabase.from("ticket_activity").insert({ ticket_id: q.data.ticket_id, author_id: u.user.id, kind: "note", event_type: "note", body: `Guest informed about work order: ${o.name ?? o.breezeway_task_id}.` } as never);
+    if (error) toast.error("Not saved. Try again."); else toast.success("Note added.");
+  }
 
   const c = q.data;
   if (!c) return null;
+  const clean = lastClean(mirror.data ?? []);
+  const maint = openMaintenance(mirror.data ?? []);
+  const cleanDone = clean ? clean.done && clean.approved : cleanOk;
+  const flagged = recheck ?? Boolean(c.recheck_flag);
   const done = c.status !== "open";
   const canSave =
-    !readOnly && !saving && lock !== null && (lock === "yes" || lockNote.trim().length > 0) && reviewed &&
+    !readOnly && !saving && cleanDone && detailsSent && lock !== null && (lock === "yes" || lockNote.trim().length > 0) && reviewed &&
     outcome !== null && (outcome === "ready" || (issue.trim().length > 0 && plan.trim().length > 0));
 
   async function save() {
@@ -148,14 +182,42 @@ export function ArrivalCheckPanel({ ticketId, propertyId, readOnly }: { ticketId
           </div>
         ) : (
           <div className="space-y-5">
+            <fieldset className="space-y-2" disabled={readOnly} data-step="clean">
+              <legend className="text-sm font-semibold">Last clean is closed and approved</legend>
+              {mirror.isLoading ? <p className="text-sm text-muted-foreground">Loading...</p> : clean ? (
+                <>
+                  <p className="text-sm">{clean.order.name || "Clean"} · {clean.order.status ?? "No status"} · {clean.approved ? "Approved" : "Not approved yet"}</p>
+                  <a href={breezewayTaskLink(clean.order.breezeway_task_id, clean.order.report_url)} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-1.5 text-sm text-primary hover:underline">
+                    Open Breezeway requirements <ExternalLink className="size-3.5" aria-hidden="true" />
+                  </a>
+                  {!cleanDone ? (
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">{clean.done ? "The clean is done but not approved yet." : "The clean is not done yet. The last guest may not have checked out."}</p>
+                      <Button variant="outline" className="min-h-11" onClick={() => { const next = !flagged; setRecheck(next); void saveStep("clean", false, next); }}>
+                        {flagged ? "Recheck is on" : "Remind me to recheck"}
+                      </Button>
+                    </div>
+                  ) : null}
+                </>
+              ) : (
+                <label className="flex min-h-11 items-center gap-3 text-sm">
+                  <Checkbox checked={cleanOk} onCheckedChange={(v) => { setCleanOk(v === true); void saveStep("clean", v === true); }} aria-label="No clean on record. Checked." />
+                  No clean on record. Checked.
+                </label>
+              )}
+            </fieldset>
+
             <fieldset className="space-y-2" disabled={readOnly}>
               <legend className="text-sm font-semibold">{C.stepLock}</legend>
               <p className="text-sm text-muted-foreground">{c.lock_brand ? C.lockBrand(c.lock_brand) : C.lockUnknown}</p>
               <p className="text-sm">{C.lockQuestion}</p>
               <div className="flex gap-2">
-                <button type="button" className={choice(lock === "yes")} aria-pressed={lock === "yes"} onClick={() => setLock("yes")}>{C.lockYes}</button>
+                <button type="button" className={choice(lock === "yes")} aria-pressed={lock === "yes"} onClick={() => { setLock("yes"); void saveStep("lock", true); }}>{C.lockYes}</button>
                 <button type="button" className={choice(lock === "no")} aria-pressed={lock === "no"} onClick={() => setLock("no")}>{C.lockNo}</button>
               </div>
+              {lock === "yes" && propertyId ? (
+                <Link to="/property/$propertyId" params={{ propertyId }} className="inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline">View lock</Link>
+              ) : null}
               {lock === "no" && (
                 <div className="space-y-1">
                   <Label htmlFor="arrival-lock-note">{C.lockNote}</Label>
@@ -166,30 +228,41 @@ export function ArrivalCheckPanel({ ticketId, propertyId, readOnly }: { ticketId
 
             <fieldset className="space-y-2" disabled={readOnly}>
               <legend className="text-sm font-semibold">{C.stepWorkOrders}</legend>
-              {c.work_orders.length === 0 ? (
+              {maint.shown.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{C.noWorkOrders}</p>
               ) : (
                 <ul className="space-y-1">
-                  {c.work_orders.map((w) => (
-                    <li key={w.id}>
-                      <a href={w.link} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-1.5 text-sm text-primary hover:underline">
-                        {w.name || "Work order"}{w.department ? ` · ${w.department}` : ""}{w.status ? ` · ${w.status}` : ""}
+                  {maint.shown.map((w) => (
+                    <li key={w.breezeway_task_id} className="flex flex-wrap items-center justify-between gap-2">
+                      <a href={breezewayTaskLink(w.breezeway_task_id, w.report_url)} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-1.5 text-sm text-primary hover:underline">
+                        {w.name || "Work order"}{w.status ? ` · ${w.status}` : ""}
                         <ExternalLink className="size-3.5" aria-hidden="true" />
                       </a>
+                      <Button size="sm" variant="outline" className="min-h-11" onClick={() => void guestInformed(w)}>Guest informed</Button>
                     </li>
                   ))}
                 </ul>
               )}
+              {maint.leftOut ? <p className="text-xs text-muted-foreground">{maint.leftOut}</p> : null}
               <label className="flex min-h-11 items-center gap-3 text-sm">
-                <Checkbox checked={reviewed} onCheckedChange={(v) => setReviewed(v === true)} aria-label={C.reviewed} />
+                <Checkbox checked={reviewed} onCheckedChange={(v) => { setReviewed(v === true); void saveStep("work_orders", v === true); }} aria-label={C.reviewed} />
                 {C.reviewed}
+              </label>
+            </fieldset>
+
+            <fieldset className="space-y-2" disabled={readOnly} data-step="details">
+              <legend className="text-sm font-semibold">Check-in details sent to guest</legend>
+              <p className="text-sm text-muted-foreground">No guidebook link is saved for this home yet.</p>
+              <label className="flex min-h-11 items-center gap-3 text-sm">
+                <Checkbox checked={detailsSent} onCheckedChange={(v) => { setDetailsSent(v === true); void saveStep("details", v === true); }} aria-label="Check-in details sent" />
+                Check-in details sent
               </label>
             </fieldset>
 
             <fieldset className="space-y-2" disabled={readOnly}>
               <legend className="text-sm font-semibold">{C.stepOutcome}</legend>
               <div className="flex gap-2">
-                <button type="button" className={choice(outcome === "ready")} aria-pressed={outcome === "ready"} onClick={() => setOutcome("ready")}>{C.ready}</button>
+                <button type="button" className={choice(outcome === "ready")} aria-pressed={outcome === "ready"} onClick={() => { setOutcome("ready"); void saveStep("home", true); }}>{C.ready}</button>
                 <button type="button" className={choice(outcome === "issue")} aria-pressed={outcome === "issue"} onClick={() => setOutcome("issue")}>{C.issue}</button>
               </div>
               {outcome === "issue" && (

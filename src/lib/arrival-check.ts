@@ -53,17 +53,17 @@ export const ARRIVAL_COPY = {
   ownerStay: "Owner stay",
   lateBooking: "Booked less than 2 hours before check in",
   test: "Test",
-  stepLock: "1. Smart lock",
+  stepLock: "Smart lock",
   lockQuestion: "Does the lock show connected?",
   lockYes: "Connected",
   lockNo: "Not connected",
   lockNote: "What is wrong with the lock",
   lockBrand: (b: string) => `Lock: ${b}`,
   lockUnknown: "Lock brand not on the home record",
-  stepWorkOrders: "2. Open Breezeway work orders",
+  stepWorkOrders: "Open maintenance work orders reviewed",
   noWorkOrders: "No open Breezeway work orders for this home.",
   reviewed: "I reviewed the open work orders",
-  stepOutcome: "3. The home",
+  stepOutcome: "The home",
   ready: "Ready for the guest",
   issue: "Issue found",
   issueText: "What is the issue",
@@ -197,4 +197,71 @@ export function arrivalTotals(rows: ArrivalRow[]) {
     missed,
     issues: counted.filter((r) => r.outcome === "issue").length,
   };
+}
+
+// ---------- Change 3 of 5 (Emily, Nov 25): Team A Routine Work, five steps ----------
+export const ARRIVAL_STEPS = ["clean", "lock", "work_orders", "details", "home"] as const;
+export type ArrivalStep = (typeof ARRIVAL_STEPS)[number];
+
+/** "2 of 5 done" from the saved step map. */
+export function arrivalProgress(steps: Record<string, unknown> | null | undefined): { done: number; label: string } {
+  const done = ARRIVAL_STEPS.filter((s) => steps?.[s] === true).length;
+  return { done, label: `${done} of ${ARRIVAL_STEPS.length} done` };
+}
+
+/** Booked on the arrival date (Central). */
+export function isSameDayBooking(bookedAt: string | null | undefined, arrivalOn: string): boolean {
+  if (!bookedAt) return false;
+  const d = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(bookedAt));
+  return d === arrivalOn.slice(0, 10);
+}
+
+export type MirrorOrder = {
+  breezeway_task_id: number;
+  name: string | null;
+  department: string | null;
+  status: string | null;
+  stage: string | null;
+  breezeway_created_at: string | null;
+  finished_at: string | null;
+  scheduled_date: string | null;
+  report_url: string | null;
+};
+
+const finished = (o: MirrorOrder) => {
+  const st = (o.stage ?? "").toLowerCase();
+  const n = (o.status ?? "").toLowerCase();
+  return st === "finished" || ["finished", "approved", "closed", "deleted"].includes(n);
+};
+const dept = (o: MirrorOrder) => (o.department ?? "").toLowerCase();
+const isCleaning = (o: MirrorOrder) => dept(o) === "housekeeping" || dept(o) === "cleaning" || /clean/i.test(o.name ?? "") && dept(o) !== "maintenance";
+const isInspection = (o: MirrorOrder) => dept(o) === "inspection" || /inspection/i.test(o.name ?? "");
+
+/** The home's most recent cleaning work order, its done and approved state. */
+export function lastClean(orders: MirrorOrder[]): { order: MirrorOrder; done: boolean; approved: boolean } | null {
+  const cleans = orders.filter(isCleaning).sort((a, b) =>
+    (b.scheduled_date ?? b.breezeway_created_at ?? "").localeCompare(a.scheduled_date ?? a.breezeway_created_at ?? ""));
+  const o = cleans[0];
+  if (!o) return null;
+  return { order: o, done: finished(o), approved: (o.status ?? "").toLowerCase() === "approved" };
+}
+
+/** Maintenance work orders made in the last 30 days and not finished, plus what was left out. */
+export function openMaintenance(orders: MirrorOrder[], now = new Date()) {
+  const cutoff = now.getTime() - 30 * 86_400_000;
+  const shown: MirrorOrder[] = [];
+  let cleanOrInspection = 0;
+  let older = 0;
+  for (const o of orders) {
+    if (finished(o)) continue;
+    if (isCleaning(o) || isInspection(o)) { cleanOrInspection++; continue; }
+    if (dept(o) !== "maintenance") { cleanOrInspection++; continue; }
+    const at = o.breezeway_created_at ? Date.parse(o.breezeway_created_at) : NaN;
+    if (!Number.isFinite(at) || at < cutoff) { older++; continue; }
+    shown.push(o);
+  }
+  const parts: string[] = [];
+  if (cleanOrInspection) parts.push(`${cleanOrInspection} cleaning or inspection work order${cleanOrInspection === 1 ? "" : "s"}`);
+  if (older) parts.push(`${older} maintenance report${older === 1 ? "" : "s"} older than 30 days`);
+  return { shown, leftOut: parts.length ? `Not shown: ${parts.join(", ")}.` : null };
 }

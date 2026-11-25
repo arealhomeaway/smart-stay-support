@@ -22,6 +22,7 @@ import { useHomeTeams } from "@/hooks/useHomeTeam";
 import { workloadByPerson } from "@/lib/oversight";
 import { supabase } from "@/integrations/supabase/client";
 import { hiddenOnboarding } from "@/lib/team-b-view";
+import { OverdueArrivalChecksCard } from "@/components/operations/OverdueArrivalChecksCard";
 import { Badge } from "@/components/ui/badge";
 import { SectionCard } from "@/components/ui/page";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -632,6 +633,9 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
           Each row says what to do next.
         </p>
         <ReportingBaselineNote className="mt-3 max-w-2xl" />
+        {access.roles.includes("admin") || access.seats?.opsSupervisor || access.seats?.opsDirector || access.seats?.onboardingDirector ? (
+          <div className="mt-4 max-w-xl"><OverdueArrivalChecksCard /></div>
+        ) : null}
         {showExportCheckLink(access) ? (
           <Button asChild variant="outline" className="mt-3 min-h-11">
             <Link to="/export-check">Nightly export check</Link>
