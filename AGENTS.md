@@ -62,3 +62,4 @@
 - Owner follow-ups: staff are never prompted to call/text owners; the behind rule lives only in `src/lib/owner-behind.ts` and one open `owner_followup_tasks` row per home is kept by `owner-followups.server` (PM in onboarding, follow-up seat/cover after handoff). Why: one rule, no duplicate or false-alarm prompts.
 - Active Owner plan engine, card de-duplication, report wording and onboarding review step rules: see `drizzle/AGENTS.md`.
 - Property deletion uses one caller-authenticated, staged transaction with action-specific authority; director helpers stay unchanged. Why: atomic removal without wider access.
+- Oversight supervisor sections (P1, No owner, Past due, Who has what) read rules only from src/lib/oversight-sections.ts over the already-loaded open list and reuse the bulk ticket update for Reassign. Why: one late rule, no new reads or writes.

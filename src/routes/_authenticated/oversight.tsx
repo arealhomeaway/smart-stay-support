@@ -25,6 +25,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { hiddenOnboarding } from "@/lib/team-b-view";
 import { AllOpenTicketsTable } from "@/components/operations/AllOpenTicketsTable";
 import { OverdueArrivalChecksCard } from "@/components/operations/OverdueArrivalChecksCard";
+import { OversightSections, applyOversightFilter, filterLabel, type OversightFilter } from "@/components/operations/OversightSections";
+import { withoutImportHeld } from "@/lib/import-hold";
 import { Badge } from "@/components/ui/badge";
 import { SectionCard } from "@/components/ui/page";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -365,7 +367,9 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
     ...reviewBeforeClosing,
   ];
 
-  const totalExceptions = sections.reduce((n, sec) => n + sec.rows.length, 0);
+  const liveOpen = withoutImportHeld(open);
+  const [showAll, setShowAll] = useState(false);
+  const [tableFilter, setTableFilter] = useState<OversightFilter | null>(null);
 
   /* ---------------- compact linked summaries ---------------- */
 
@@ -637,17 +641,35 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-semibold">Operations oversight</h1>
-        <p className="mt-1 text-muted-foreground">
-          {totalExceptions === 0
-            ? "Nothing is slipping right now."
-            : `${totalExceptions} thing${totalExceptions === 1 ? "" : "s"} need${totalExceptions === 1 ? "s" : ""} intervention.`}{" "}
-          Each row says what to do next.
-        </p>
         <ReportingBaselineNote className="mt-3 max-w-2xl" />
+        <div className="mt-4">
+          <OversightSections
+            open={liveOpen as never}
+            nameFor={nameFor}
+            onSeeAll={(f) => {
+              setTableFilter(f);
+              setShowAll(true);
+              setTimeout(() => document.getElementById("all-open-tickets")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+            }}
+          />
+        </div>
         {access.roles.includes("admin") || access.seats?.opsSupervisor || access.seats?.opsDirector || access.seats?.onboardingDirector ? (
           <div className="mt-4 max-w-xl"><OverdueArrivalChecksCard /></div>
         ) : null}
-        <div className="mt-6"><AllOpenTicketsTable tickets={open as never} /></div>
+        <div id="all-open-tickets" className="mt-6 scroll-mt-4 space-y-3">
+          {showAll ? (
+            <>
+              <div className="flex flex-wrap items-center gap-2">
+                {tableFilter ? <span className="text-sm font-medium">Showing: {filterLabel(tableFilter)}</span> : null}
+                {tableFilter ? <Button variant="outline" className="min-h-11" onClick={() => setTableFilter(null)}>Show every open ticket</Button> : null}
+                <Button variant="ghost" className="min-h-11" onClick={() => { setShowAll(false); setTableFilter(null); }}>Hide open tickets</Button>
+              </div>
+              <AllOpenTicketsTable key={tableFilter ? JSON.stringify(tableFilter) : "all"} tickets={applyOversightFilter(liveOpen as never, tableFilter) as never} />
+            </>
+          ) : (
+            <Button variant="outline" className="min-h-11" onClick={() => setShowAll(true)}>Show all open tickets</Button>
+          )}
+        </div>
         {showExportCheckLink(access) ? (
           <Button asChild variant="outline" className="mt-3 min-h-11">
             <Link to="/export-check">Nightly export check</Link>
