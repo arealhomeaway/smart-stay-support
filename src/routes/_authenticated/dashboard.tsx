@@ -1,4 +1,5 @@
 import { TicketDueLabel } from "@/components/tickets/TicketDueLabel";
+import { CoordinatorHome } from "@/components/home/CoordinatorHome";
 import { hiddenOnboarding } from "@/lib/team-b-view";
 import { formatPropertyLabel } from "@/lib/property-label";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -112,6 +113,8 @@ function Dashboard() {
   const userId = role.userId ?? null;
   const { homeTeamOf } = useHomeTeams();
   const myTeam = homeTeamOf(userId);
+  const coordinatorHome = role.roles.includes("tech") && !role.roles.some(r => r === "admin" || r === "manager")
+    && !role.isOnboardingDirector && !role.seats.opsDirector && !role.seats.opsSupervisor;
 
   // Work this person owns or has been handed, open and recently finished.
   const mine = useQuery({
@@ -212,6 +215,7 @@ function Dashboard() {
         description={HOME_COPY.heroLine}
       />
 
+      {coordinatorHome ? <CoordinatorHome rows={rows} userId={userId} team={myTeam} walkRows={walkRows} originSearch={originSearch} /> : <>
       {/* Register T1: My scorecard, only for a person who has a scorecard. */}
       <MyScorecardButton userId={userId} />
 
@@ -247,6 +251,7 @@ function Dashboard() {
       <MyShiftCard userId={userId} isCoordinator={role.roles.includes("tech")} rows={walkRows} demoMode={demoMode} />
 
       <RecentActivity rows={rows} originSearch={originSearch} />
+      </>}
     </div>
   );
 }

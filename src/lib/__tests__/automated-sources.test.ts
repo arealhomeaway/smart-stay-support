@@ -84,7 +84,8 @@ describe("the Team Queue: Waiting to be taken, by team and source", () => {
     const panel = read("src/components/MatterOwnershipPanel.tsx");
     for (const f of ["assigned_to: targetId", "current_action_owner: targetId", "record_owner: ticket.record_owner ?? targetId", "accountable_owner: ticket.accountable_owner ?? targetId", 'assignment_source: "manual"', "assignment_note: null"])
       expect(panel).toContain(f);
-    const queue = read("src/components/operations/AutomatedSourceQueue.tsx");
+    expect(read("src/components/operations/AutomatedSourceQueue.tsx")).toContain('takeUnownedTicket(t, userId)');
+    const queue = read("src/components/operations/take-unowned-ticket.ts");
     expect(queue).toContain('.is("assigned_to", null)');
     expect(queue).toContain('.is("current_action_owner", null)');
   });

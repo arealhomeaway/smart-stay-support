@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPropertyLabel, type PropertyLabelFields } from "@/lib/property-label";
 import { breezewayTaskUrl } from "@/lib/departure-review";
-import { takeTicketPatch, type AutomatedSource, type AutomatedTicket } from "@/lib/automated-sources";
+import { type AutomatedSource, type AutomatedTicket } from "@/lib/automated-sources";
 import {
   TEAM_QUEUE_COPY,
   alertLine,
@@ -28,6 +28,7 @@ import {
 } from "@/lib/team-queue-board";
 import { QueueGroup, QueueRow, TakeButton, type DoneProps } from "./QueueRow";
 import { arrivalDueLine, isArrivalCheckTicket } from "@/lib/arrival-check";
+import { takeUnownedTicket } from "./take-unowned-ticket";
 
 export type SourceRow = AutomatedTicket & {
   ref?: number | null;
@@ -103,27 +104,9 @@ export function AutomatedSourceQueue({
     if (!userId) return;
     setBusy(t.id);
     try {
-      const db = supabase as unknown as Db;
-      const { data, error } = await db
-        .from("tickets")
-        .update(takeTicketPatch(t, userId))
-        .eq("id", t.id)
-        .is("assigned_to", null)
-        .is("current_action_owner", null)
-        .select("id");
-      if (error) throw error;
-      if (!data || data.length === 0) {
-        toast.error(TEAM_QUEUE_COPY.alreadyTaken);
-      } else {
-        await db.from("ticket_activity").insert({
-          ticket_id: t.id,
-          author_id: userId,
-          kind: "assignment",
-          event_type: "assigned",
-          body: TEAM_QUEUE_COPY.history.took,
-          internal: false,
-          mentions: [],
-        });
+      const taken = await takeUnownedTicket(t, userId);
+      if (!taken) toast.error(TEAM_QUEUE_COPY.alreadyTaken);
+      else {
         setDone(t.id, { kind: "took", group: source, team, snapshot: t as unknown as Record<string, unknown>, before: t as unknown as Record<string, unknown> });
       }
       await onTaken();

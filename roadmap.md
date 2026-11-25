@@ -1,5 +1,10 @@
 # Roadmap
 
+## Simple coordinator Home (Emily, Nov 25)
+- [x] Coordinator-only My work, Take one and Hand off using existing reads/actions; leaders retain their Home.
+- [x] Signed-in View as desktop/phone checked; Home buttons 9 to 6, 68 focused tests pass; booking panel and Prepare handoffs opened. No database, switch or publish changes.
+- [ ] Actual Team A/B Take and handoff mutation verification waits for a writable coordinator session with matching work; View as is read-only and has no Team A/B identity selector.
+
 ## Quiet hold check (Emily, Nov 25)
 - [x] Read all real open tickets and reproduce the existing Home calculation before/after; C and D both empty, no live data update needed.
 - [x] Confirm ordinary tickets are not quieted by import_hold; skip D as instructed and preserve every existing rule.

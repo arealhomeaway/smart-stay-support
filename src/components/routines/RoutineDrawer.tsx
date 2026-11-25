@@ -1,4 +1,5 @@
 import { formatPropertyLabel } from "@/lib/property-label";
+import { startRoutineReview } from "@/components/routines/start-routine-review";
 /**
  * Running one routine control.
  *
@@ -126,12 +127,7 @@ export function RoutineDrawer({
   const start = useMutation({
     mutationFn: async () => {
       if (!row || row.draft) return;
-      const { data: auth } = await supabase.auth.getUser();
-      const { error } = await supabase
-        .from("routine_controls")
-        .update({ status: "in_progress", assigned_to: row.assigned_to ?? auth.user?.id ?? null })
-        .eq("id", row.id);
-      if (error) throw error;
+      await startRoutineReview(row);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["routine-controls"] }),
   });
