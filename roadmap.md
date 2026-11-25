@@ -94,3 +94,5 @@
 - [ ] 4 Staged ao-module-sync for 3400 N Fern Ave and 624 Daniel Court (waiting on "Approved: apply ao-module-sync")
 - [x] 5 Tests, practice on demo data, read-only check of the 8 live homes, AGENTS.md rule
 - [ ] Staged ao-auto-enroll database change (needed for 1-3), waiting on "Approved: apply ao-auto-enroll"
+
+- [ ] property-delete-fix: staged; safety check fails on a view in the removal list. Waiting on "Approved: apply property-delete-fix", then delete the two fake homes and run steps 4-5.

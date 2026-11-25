@@ -20281,6 +20281,7 @@ export type Database = {
         Returns: boolean
       }
       can_correct_actual_closing: { Args: never; Returns: boolean }
+      can_delete_onboarding_property: { Args: never; Returns: boolean }
       can_edit_claims_in_databases: {
         Args: { _user_id: string }
         Returns: boolean
@@ -20326,6 +20327,10 @@ export type Database = {
           _id: string
           _note?: string
         }
+        Returns: Json
+      }
+      check_onboarding_property_delete: {
+        Args: { _property_id: string }
         Returns: Json
       }
       claim_marketing_photo_download: {
@@ -20731,6 +20736,10 @@ export type Database = {
       decide_time_off: {
         Args: { _decision: string; _id: string; _note: string }
         Returns: undefined
+      }
+      delete_onboarding_property: {
+        Args: { _address: string; _property_id: string; _reason: string }
+        Returns: Json
       }
       direct_booking_active_owner_homes: {
         Args: { _ids: string[] }
@@ -21313,6 +21322,8 @@ export type Database = {
         Args: { _project_id: string; _role: string }
         Returns: string
       }
+      property_delete_scope: { Args: { _property_id: string }; Returns: Json }
+      property_delete_tables: { Args: never; Returns: string[] }
       property_label_add: {
         Args: { _label_id: string; _property_ids: string[] }
         Returns: number

@@ -2605,6 +2605,13 @@
       "when": 1795539598715,
       "tag": "0371_director_ops_onboarding",
       "breakpoints": true
+    },
+    {
+      "idx": 372,
+      "version": "7",
+      "when": 1795568748798,
+      "tag": "0372_property_delete",
+      "breakpoints": true
     }
   ]
 }
