@@ -1,4 +1,9 @@
 import { formatPropertyLabel, matchesPropertySearch } from "@/lib/property-label";
+import { useGuestReadyStandards } from "@/hooks/useGuestReadyStandards";
+import { dueForNewTicket, standardFor } from "@/lib/guest-ready-standards";
+import { centralToday, dueDateLabel } from "@/lib/ticket-due-date";
+import { BreezewayRepairLink } from "@/components/workorders/BreezewayRepairLink";
+import { Checkbox } from "@/components/ui/checkbox";
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import {
   guestInResidenceFor,
@@ -13,7 +18,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { captureTicketReservation, getPropertyStay } from "@/lib/ownerrez.functions";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Camera, Mic, X } from "lucide-react";
+import { Camera, Lock, Mic, X } from "lucide-react";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { CHECKLIST_CATEGORIES, categoryUsesChecklist, isActiveGuest, parseChecklistRow, templatePriority } from "@/lib/ticket-checklists";
 import { supabase } from "@/integrations/supabase/client";
@@ -178,6 +183,9 @@ export function NewTicketForm({
   const [saving, setSaving] = useState<null | "ticket" | "one_touch" | "escalate">(null);
   const [saved, setSaved] = useState<Saved | null>(null);
   const [createdTicketId, setCreatedTicketId] = useState<string | null>(null);
+  // Change 1 item 5: after saving, do what the ticket's Send Breezeway Work Order button does.
+  const [sendBreezeway, setSendBreezeway] = useState(false);
+  const guestReady = useGuestReadyStandards();
   const [escalated, setEscalated] = useState(false);
   const [listening, setListening] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -314,6 +322,9 @@ export function NewTicketForm({
   });
   const who = whoWillDoIt(route, Boolean(workType));
 
+  // Priority and due date fill in from Guest-ready standards before saving (the database sets the saved date).
+  const standard = standardFor(guestReady.data?.rows ?? [], { workTypeName: workType?.name ?? null, workTypeId: workType?.id ?? null, priority });
+  const duePreview = dueForNewTicket(guestReady.data?.saved ? standard : null, priority, centralToday());
   const home = (properties ?? []).find((p) => p.id === propertyId);
   const homeLabel = home ? formatPropertyLabel(home).primary : "";
   const ready = Boolean(propertyId) && description.trim().length > 0;
@@ -339,6 +350,7 @@ export function NewTicketForm({
     setSaved(null);
     setCreatedTicketId(null);
     setEscalated(false);
+    setSendBreezeway(false);
   }
 
   /** One ordinary ticket through the existing creation and routing. Returns its id. */
@@ -678,6 +690,9 @@ export function NewTicketForm({
               </p>
             )}
           </div>
+          {saved.kind === "ticket" && saved.ticketId && sendBreezeway ? (
+            <BreezewayRepairLink ticketId={saved.ticketId} hasHome={Boolean(propertyId)} readOnly={false} />
+          ) : null}
           {saved.kind === "ticket" && saved.ticketId && (
             <Button type="button" className="min-h-[52px] w-full text-base font-semibold" onClick={() => onCreated(saved.ticketId!)}>
               Open ticket
@@ -712,6 +727,22 @@ export function NewTicketForm({
                       {formatPropertyLabel(p).primary}
                     </SelectItem>
                   ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold">Ticket type</Label>
+            <Select value={workType?.id ?? ""} onValueChange={(v) => setChosenWorkTypeId(v)}>
+              <SelectTrigger className="h-11 text-[15px]" aria-label="Ticket type">
+                <SelectValue placeholder="Pick a ticket type" />
+              </SelectTrigger>
+              <SelectContent>
+                {problemTypes.map((w) => (
+                  <SelectItem key={w.id} value={w.id} className="min-h-11">
+                    {w.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -785,8 +816,16 @@ export function NewTicketForm({
                 <dd className="font-semibold">{understood.problem}</dd>
                 <dt className="text-muted-foreground">Repair needed at the home</dt>
                 <dd className="font-semibold">{REPAIR_WORDS[understood.repair]}</dd>
-                <dt className="text-muted-foreground">How urgent</dt>
+                <dt className="text-muted-foreground">Priority</dt>
                 <dd className="font-semibold">{urgencyWords(priority)}</dd>
+                <dt className="text-muted-foreground">Due date</dt>
+                <dd className="font-semibold" data-testid="rw-due-preview">
+                  <span className="inline-flex items-center gap-1">
+                    {duePreview.locked ? <Lock className="size-3.5" aria-label="Locked" /> : null}
+                    {duePreview.dueOn ? dueDateLabel(duePreview.dueOn) : "Not set"}
+                  </span>
+                  {duePreview.note ? <span className="block text-xs font-normal text-muted-foreground">{duePreview.note}</span> : null}
+                </dd>
                 <dt className="text-muted-foreground">Who will do it</dt>
                 <dd className="font-semibold">{who}</dd>
               </dl>
@@ -841,6 +880,11 @@ export function NewTicketForm({
             />
             <p id="rw-did-help" className="text-sm text-muted-foreground">{ONE_TOUCH_DID.help}</p>
           </div>
+
+          <label className="flex min-h-11 items-center gap-3 text-sm font-medium">
+            <Checkbox checked={sendBreezeway} onCheckedChange={(v) => setSendBreezeway(v === true)} aria-label="Send Breezeway work order now" />
+            Send Breezeway work order now
+          </label>
 
           <div className="flex flex-col gap-3">
             <Button

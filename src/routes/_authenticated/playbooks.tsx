@@ -68,6 +68,8 @@ export const Route = createFileRoute("/_authenticated/playbooks")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  // "How to work this ticket" opens one approved playbook by id.
+  validateSearch: (s: Record<string, unknown>): { open?: string } => (typeof s["open"] === "string" ? { open: s["open"] } : {}),
   // Every staff account can read the library. Saving, approving and review
   // notes are checked below and by the database.
   component: () => (
@@ -122,8 +124,9 @@ function PlaybooksPage() {
   const canSave = isDirector;
   const libraryOnly = !isDirector;
   const readOnly = previewOnly || libraryOnly;
-  const [filter, setFilter] = useState<PlaybookStatus | "all" | "attention">(libraryOnly ? "approved" : "attention");
-  const [openId, setOpenId] = useState<string | null>(null);
+  const search = Route.useSearch();
+  const [filter, setFilter] = useState<PlaybookStatus | "all" | "attention">(search.open || libraryOnly ? "approved" : "attention");
+  const [openId, setOpenId] = useState<string | null>(search.open ?? null);
   const [showNew, setShowNew] = useState(false);
   const [editUploaded, setEditUploaded] = useState<string | null>(null);
   const readLinks = useServerFn(getSopPlaybookLinks);

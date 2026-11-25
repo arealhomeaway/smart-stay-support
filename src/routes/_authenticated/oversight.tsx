@@ -276,7 +276,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
 
   const escalationSections: ExceptionSection[] = [
     {
-      title: "Right now not acknowledged",
+      title: "P1 not acknowledged",
       description: "Escalation ladder is running. Someone must respond now.",
       rows: unackedP1,
       nextAction: "Acknowledge now",
@@ -317,7 +317,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
       timingField: "next_review_at",
     },
     {
-      title: "Right now and Today aging",
+      title: "P1 and P2 aging",
       description: "Still open well past where this priority should have landed.",
       rows: agingP12,
       nextAction: "Push this forward",
@@ -756,7 +756,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
       >
         <TrendList title="Property" rows={byProperty} />
         <TrendList title="Market" rows={byMarket} />
-        <TrendList title="Issue type" rows={byType} />
+        <TrendList title="Ticket type" rows={byType} />
       </SectionCard>
 
       <p className="text-sm text-muted-foreground">

@@ -808,7 +808,7 @@ export const OVERNIGHT_COPY = {
   clockStarts: (time: string) => `Reply clock starts at ${time}.`,
   queueTitle: "Direct Bookings from overnight",
   queueHint: "Arrived after hours. The first to press Start owns it.",
-  urgency: "Right now",
+  urgency: "P1",
   team: "Team A",
 } as const;
 

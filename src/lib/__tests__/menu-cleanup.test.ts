@@ -33,7 +33,7 @@ describe("who sees what", () => {
       // Vendors left the menu (Nov 9, register M1): it opens from the Databases card.
       ["My day", ["Home", "Team Queue", "Direct Bookings", "Databases"]],
       // Fix batch 2 (Nov 8): coordinators open the Team group read only.
-      ["Team", ["Team and Coverage", "Playbooks"]],
+      ["Team", ["Team and Coverage", "Playbooks", "Guest-ready standards"]],
       ["Homes and owners", ["Properties"]],
     ]);
   });
@@ -41,7 +41,7 @@ describe("who sees what", () => {
   it("a Supervisor", () => {
     expect(shape(operationsMenu(accessFor(["manager"])))).toEqual([
       ["My day", ["Home", "Team Queue", "Direct Bookings", "Databases", "Oversight"]],
-      ["Team", ["Team and Coverage", "Playbooks"]],
+      ["Team", ["Team and Coverage", "Playbooks", "Guest-ready standards"]],
       // Build 5 (Emily, Nov 9): the Supervisor sees Onboarding only through the read only Handoffs page.
       ["Homes and owners", ["Properties", "Handoffs", "Active Owner"]],
       ["Insight", ["Analytics"]],
@@ -52,7 +52,7 @@ describe("who sees what", () => {
   it("an Admin", () => {
     expect(shape(operationsMenu(accessFor(["admin"])))).toEqual([
       ["My day", ["Home", "Team Queue", "Direct Bookings", "Databases", "Oversight"]],
-      ["Team", ["Team and Coverage", "Playbooks"]],
+      ["Team", ["Team and Coverage", "Playbooks", "Guest-ready standards"]],
       ["Homes and owners", ["Properties", "Onboarding", "Active Owner"]],
       ["Insight", ["Analytics"]],
       ["Admin", ["Admin tools"]],

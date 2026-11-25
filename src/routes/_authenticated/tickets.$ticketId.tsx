@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { breezewayOutboundState } from "@/lib/breezeway-outbound.functions";
 import { ticketStage, repairIsPossible, repairIsComplete, breezewayRepairSignal, BREEZEWAY_CHECK_STEP } from "@/lib/ticket-stage";
 import { ticketBreezewayOrdersFn } from "@/lib/breezeway-bridge.functions";
+import { useGuestReadyStandards } from "@/hooks/useGuestReadyStandards";
+import { breezewayRequirementsLink, canChangeLockedDue, isBreezewayReviewType, standardFor } from "@/lib/guest-ready-standards";
 import { scopedClosureEvidence } from "@/lib/closure-evidence";
 import { closureEvidenceSatisfied, requiresPhotoOrFile } from "@/lib/evidence-requirements";
 import { listAttachmentsFn } from "@/lib/attachments.functions";
@@ -29,6 +31,7 @@ import {
   Building2,
   Camera,
   CheckCircle2,
+  ExternalLink,
   Circle,
   PauseCircle,
 } from "lucide-react";
@@ -418,6 +421,8 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     queryFn: () => bzOrdersFn({ data: { ticketId } }),
   });
   const [showAllDetails, setShowAllDetails] = useState(false);
+  // Guest-ready standards (change 1): the lock note and review tickets' main Breezeway button.
+  const guestReady = useGuestReadyStandards();
 
   // Waiting is a saved state, not a form: reopening the ticket shows exactly
   // what was parked, on what, and when it comes back.
@@ -506,6 +511,9 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
 
   const { ticket, steps, activity } = data;
   const workType = ticket.work_types;
+  const bzRequirements = isBreezewayReviewType(workType?.name ?? null)
+    ? breezewayRequirementsLink(((bzOrders as { linked?: { reportLink?: string | null; taskPage?: string | null }[] } | undefined)?.linked) ?? [])
+    : null;
   const historyCategoryKey = categoryKeyFor(ticket as { maintenance_category?: string | null; category?: string | null });
   const historyCategoryLabel = historyCategoryKey
     ? historyCategoryKey.field === "maintenance_category"
@@ -1150,7 +1158,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             meta.summary,
             ...(sla.escalation
               ? [
-                  `Right now ticket escalated to ${sla.escalation.who} · ${sla.escalation.minutes} minutes with no action started.`,
+                  `P1 ticket escalated to ${sla.escalation.who} · ${sla.escalation.minutes} minutes with no action started.`,
                 ]
               : []),
             ...(requiredOpen.length > 0
@@ -1355,6 +1363,9 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                     dueOn={((ticket as { due_on?: string | null }).due_on ?? null)}
                     status={String(ticket.status)}
                     canEdit={!role.readOnly && !closed && !ticket["archived_at"]}
+                    locked={Boolean((ticket as { due_locked?: boolean | null }).due_locked)}
+                    lockNote={standardFor(guestReady.data?.rows ?? [], { workTypeName: workType?.name ?? null, workTypeId: (ticket as { work_type_id?: string | null }).work_type_id ?? null, priority: ticket.priority })?.lockNote ?? null}
+                    canChangeLocked={canChangeLockedDue(role.roles, role.access.seats)}
                     onChanged={refresh}
                   />
                 ) : null}
@@ -1372,6 +1383,13 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             onArchived={afterArchive}
           />
         </div>
+        {bzRequirements ? (
+          <Button asChild size="lg" className="mb-2 min-h-11" data-testid="open-breezeway-requirements">
+            <a href={bzRequirements} target="_blank" rel="noreferrer noopener">
+              <ExternalLink className="size-4" aria-hidden="true" /> Open Breezeway requirements
+            </a>
+          </Button>
+        ) : null}
         <CloseReopenButtons
           state={closeReopen}
           onClose={() => {
@@ -1436,7 +1454,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
           <div className="flex items-start gap-3 rounded-lg border border-danger/40 bg-danger/10 p-4">
             <BellRing className="mt-0.5 size-5 shrink-0 text-danger" />
             <div>
-              <p className="font-medium text-danger">Right now ticket escalated: {sla.escalation.who}</p>
+              <p className="font-medium text-danger">P1 ticket escalated: {sla.escalation.who}</p>
               <p className="text-sm text-muted-foreground">
                 {sla.escalation.minutes} minutes since this came in with no action started.
               </p>
@@ -1833,8 +1851,8 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                 picked={notePicked}
                 onPickedChange={setNotePicked}
               />
-              <Button onClick={addNote} size="sm" variant="secondary">
-                Add note
+              <Button onClick={addNote} size="sm" variant="secondary" className="min-h-11">
+                Add an update
               </Button>
             </div>
             <div className="max-h-96 overflow-y-auto border-t border-border pt-2">

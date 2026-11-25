@@ -26,8 +26,8 @@ import { join, relative } from "node:path";
  *   "follow-up" or "2-3" are ordinary words.
  * - symbol: emoji, arrows, check marks and stars used as words. The middle dot and the
  *   ellipsis are allowed separators.
- * - urgencyCode: P1, P2, P3 or P4. Screens say Right now, Today and Routine; the codes
- *   stay only as lower case values (p1, p2, p3) in code and the database.
+ * - urgencyCode: P4, which is retired. Since Nov 24 (register H4) screens say P1, P2 and P3
+ *   (Priority 1, 2, 3 where there is room); values stay lower case (p1, p2, p3).
  * - Text that code compares or searches with (=== "\u2014", .replace("\u2014", ...),
  *   .includes, .split, .startsWith) is logic, not screen text, and is skipped.
  */
@@ -48,7 +48,7 @@ const PUNCTUATION: Record<string, RegExp> = {
   shortDash: /\u2013/,
   hyphenDash: /\S\s+-\s+\S|^\s*-\s+\S|\S\s+-\s*$/,
   symbol: /[\p{Extended_Pictographic}\u2190-\u21FF\u2713\u2714\u2716\u2605\u2606]/u,
-  urgencyCode: /\bP[1-4]\b/,
+  urgencyCode: /\bP4\b/,
 };
 Object.assign(WORDS, PUNCTUATION);
 const NAMES = ["Emily", "Micah", "Kati", "James", "Josh", "Avy", "Nelson", "Qym", "Mike", "Romeo", "Roms"];
@@ -76,7 +76,7 @@ const FROZEN: Record<string, Record<string, number>> = {
   "src/lib/onboarding.server.ts": { longDash: 1 },
   // Instructions sent to the AI models (Coach and evidence review). They are never shown on
   // a screen; the model is told to answer in Right now, Today and Routine.
-  "src/lib/coach.server.ts": { longDash: 7, shortDash: 1, hyphenDash: 10, symbol: 1, urgencyCode: 2 },
+  "src/lib/coach.server.ts": { longDash: 7, shortDash: 1, hyphenDash: 10, symbol: 1 },
   "src/lib/coach-field-notes.ts": { longDash: 1, shortDash: 1, hyphenDash: 1 },
   "src/lib/evidence.server.ts": { longDash: 1 },
   // The Outlook category name. It must match the category that already exists in the
@@ -202,7 +202,7 @@ describe("screen words and names", () => {
       "Owner - reply",
       "Done \u2705",
       "Open \u2192",
-      "Unresolved P1",
+      "Unresolved P4",
       ...NAMES.map((n) => `Ask ${n} first`),
     ];
     for (const s of samples) expect(Object.values(WORDS).some((re) => re.test(s))).toBe(true);

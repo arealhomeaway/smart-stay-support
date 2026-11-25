@@ -55,7 +55,7 @@ export const NOTIFICATION_CATEGORIES: CategoryMeta[] = [
   {
     key: "team_queue",
     label: "Team Queue",
-    description: "Right now work nobody has taken yet.",
+    description: "P1 work nobody has taken yet.",
   },
 ];
 

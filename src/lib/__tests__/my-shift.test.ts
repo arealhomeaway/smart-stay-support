@@ -180,7 +180,7 @@ describe("Lunch (register S1)", () => {
     expect(lunchPrompt(s, at("12:45"))).toEqual({ lunchStart: 780, lunchEnd: 840 });
     expect(lunchPrompt(s, at("13:59"))).not.toBeNull();
     expect(lunchPrompt(s, at("14:00"))).toBeNull();
-    expect(MY_SHIFT_COPY.lunchAsk(780)).toBe("Your lunch starts at 1 PM. Any Right now or time sensitive work? Hand it off first.");
+    expect(MY_SHIFT_COPY.lunchAsk(780)).toBe("Your lunch starts at 1 PM. Any P1 or time sensitive work? Hand it off first.");
   });
 
   it("asks only about Right now and Today work due before lunch ends", () => {

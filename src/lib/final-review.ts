@@ -93,7 +93,7 @@ export type FinalReviewRequirement = {
 export function finalReviewRequirement(facts: FinalReviewFacts): FinalReviewRequirement {
   const reasons: string[] = [];
 
-  if (facts.priority === "p1") reasons.push("Right now: the most urgent work is always reviewed.");
+  if (facts.priority === "p1") reasons.push("P1: the most urgent work is always reviewed.");
   if (facts.emergency) reasons.push("Emergency mitigation was carried out.");
   if (facts.policyExceptionUsed) reasons.push("A policy exception was used on this ticket.");
   if (facts.escalated || facts.escalation_level)

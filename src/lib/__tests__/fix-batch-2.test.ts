@@ -141,9 +141,9 @@ describe("7. Playbook library read only", () => {
       expect(canSavePlaybooks(p.roles, p.seats)).toBe(false);
     }
   });
-  it("the Team group in the Operations menu shows Team & Coverage and Playbooks to coordinators", () => {
+  it("the Team group in the Operations menu shows Team & Coverage, Playbooks and Guest-ready standards to coordinators", () => {
     const menu = operationsMenu({ can: (c) => has(PC.roles, PC.seats, c), canOpen: (path) => canOpenPath(path, PC) });
-    expect(menu.find((g) => g.label === "Team")?.items.map((i) => i.label)).toEqual(["Team and Coverage", "Playbooks"]);
+    expect(menu.find((g) => g.label === "Team")?.items.map((i) => i.label)).toEqual(["Team and Coverage", "Playbooks", "Guest-ready standards"]);
   });
 });
 

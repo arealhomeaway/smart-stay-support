@@ -119,8 +119,8 @@ describe("Team Queue: overnight requests wait at the top as Right now for Team A
     ];
     expect(overnightQueueRows(rows).map((r) => r.id)).toEqual(["early", "late"]);
   });
-  it("labels: Right now, Team A", () => {
-    expect(OVERNIGHT_COPY.urgency).toBe("Right now");
+  it("labels: P1, Team A", () => {
+    expect(OVERNIGHT_COPY.urgency).toBe("P1");
     expect(OVERNIGHT_COPY.team).toBe("Team A");
   });
   it("the Team Queue shows the group above everything else, to people who work Direct Bookings", () => {

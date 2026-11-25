@@ -237,6 +237,17 @@ export function GuidanceCard({
           </>
         )}
 
+        {/* Change 1 (Nov 24): everyone gets "How to work this ticket" when an approved playbook matches. */}
+        {subjectType === "ticket" && authored ? (
+          <Link
+            to="/playbooks"
+            search={{ open: authored.id }}
+            className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline-offset-4 hover:underline"
+            data-testid="how-to-work-ticket"
+          >
+            How to work this ticket
+          </Link>
+        ) : null}
         {/* Administration is not frontline work — only editors get the link. */}
         {primary && canEdit && (
           <Link

@@ -46,7 +46,7 @@ export function ShiftHandoffsWaiting() {
         row(
           "shift-handoffs-waiting",
           waitingLine(counts.waiting),
-          counts.late > 0 ? `${counts.late} Right now waiting more than 15 min` : "Shift handoffs",
+          counts.late > 0 ? `${counts.late} P1 waiting more than 15 min` : "Shift handoffs",
           counts.late > 0,
         )}
     </>

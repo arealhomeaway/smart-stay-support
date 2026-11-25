@@ -71,14 +71,14 @@ describe("phone menu and tap sizes (Build 7, H6)", () => {
   });
 });
 
-describe("urgency words on screens (Build 7, H4)", () => {
-  it("labels and short names are the words, the values stay p1 to p3", () => {
+describe("priority words on screens (H4, changed Nov 24)", () => {
+  it("short names are P1 to P3, labels Priority 1 to 3, the values stay p1 to p3", () => {
     expect(PRIORITIES.map((p) => p.value)).toEqual(["p1", "p2", "p3"]);
-    expect(priorityMeta("p1").short).toBe("Right now");
-    expect(priorityMeta("p2").label).toBe("Today");
-    expect(priorityMeta("p3").short).toBe("Routine");
-    expect(urgencyWords("p2")).toBe("Today");
-    expect(EMERGENCY_BASIS_LABELS.p1).toBe("Right now Ticket");
+    expect(priorityMeta("p1").short).toBe("P1");
+    expect(priorityMeta("p2").label).toBe("Priority 2");
+    expect(priorityMeta("p3").short).toBe("P3");
+    expect(urgencyWords("p2")).toBe("P2");
+    expect(EMERGENCY_BASIS_LABELS.p1).toBe("P1 Ticket");
   });
   it("no screen shows a priority code made from the value", () => {
     const offenders: string[] = [];

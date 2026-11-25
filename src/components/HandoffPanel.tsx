@@ -404,7 +404,7 @@ export function HandoffPanel({
             </div>
             {h.priority === "p1" && (
               <p className="flex items-center gap-2 text-xs font-medium text-danger">
-                <ShieldAlert className="size-3.5" /> Right now handoff not accepted yet. The Operations
+                <ShieldAlert className="size-3.5" /> P1 handoff not accepted yet. The Operations
                 Supervisor is told.
               </p>
             )}

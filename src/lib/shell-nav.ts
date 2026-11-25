@@ -353,6 +353,8 @@ const OPERATIONS_MENU: MenuGroup[] = [
     items: [
       { key: "team", label: "Team and Coverage", to: "/team", capability: "team_schedule_view" },
       { key: "playbooks", label: "Playbooks", to: "/playbooks", capability: "playbooks_view", alsoActive: ["/ticket-checklists"] },
+      // Change 1 (Nov 24): Guest-ready standards sits after Playbooks under Team.
+      { key: "guest-ready-standards", label: "Guest-ready standards", to: "/guest-ready-standards", capability: "playbooks_view" },
     ],
   },
   {

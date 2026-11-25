@@ -85,7 +85,7 @@ export const SH_COPY = {
   missedTitle: "Missed shift ends",
   missedHint: "The shift is over but End my shift was not pressed.",
   missedNone: "No missed shift ends.",
-  lateTitle: "Right now handoffs waiting too long",
+  lateTitle: "P1 handoffs waiting too long",
   shiftsTitle: "Shifts",
   shiftsNone: "No coordinator shifts on this day.",
   handoffsTitle: "Handoffs",

@@ -28,16 +28,15 @@ const OLD_NAMES = [
   /Standard \(planned work\)/i,
 ];
 
-describe("urgency names: Right now, Today, Routine", () => {
-  it("one shared place names each urgency, codes stay internal", () => {
-    expect(URGENCY_NAMES).toEqual({ p1: "Right now", p2: "Today", p3: "Routine" });
-    // Build 7 (register H4): the screen words carry no code, label and short alike.
+describe("priority names: P1, P2, P3 (register H4, Nov 24)", () => {
+  it("one shared place names each priority: P1 to P3, Priority 1 to 3 where there is room", () => {
+    expect(URGENCY_NAMES).toEqual({ p1: "P1", p2: "P2", p3: "P3" });
     expect(PRIORITIES.map((p) => [p.value, p.name, p.label, p.short])).toEqual([
-      ["p1", "Right now", "Right now", "Right now"],
-      ["p2", "Today", "Today", "Today"],
-      ["p3", "Routine", "Routine", "Routine"],
+      ["p1", "Priority 1", "Priority 1", "P1"],
+      ["p2", "Priority 2", "Priority 2", "P2"],
+      ["p3", "Priority 3", "Priority 3", "P3"],
     ]);
-    expect(priorityMeta("p2").name).toBe("Today");
+    expect(priorityMeta("p2").name).toBe("Priority 2");
   });
 
   it("no app text uses the old urgency names", () => {

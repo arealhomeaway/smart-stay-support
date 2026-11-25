@@ -41,16 +41,17 @@ export const RECORD_TYPES = [
 ] as const;
 
 /**
- * Urgency names, one place for every screen, alert, email and filter:
- * Right now (P1), Today (P2), Routine (P3). The codes p1, p2, p3 stay internal.
+ * Priority words, one place for every Operations screen and filter (register H4, changed Nov 24 after the
+ * Operations walkthrough): P1, P2, P3, and Priority 1, Priority 2, Priority 3 where there is room.
  */
-export const URGENCY_NAMES = { p1: "Right now", p2: "Today", p3: "Routine" } as const;
+export const URGENCY_NAMES = { p1: "P1", p2: "P2", p3: "P3" } as const;
+export const PRIORITY_LONG_NAMES = { p1: "Priority 1", p2: "Priority 2", p3: "Priority 3" } as const;
 
 export const PRIORITIES = [
   {
     value: "p1",
-    name: URGENCY_NAMES.p1,
-    label: URGENCY_NAMES.p1,
+    name: PRIORITY_LONG_NAMES.p1,
+    label: PRIORITY_LONG_NAMES.p1,
     short: URGENCY_NAMES.p1,
     responseMinutes: 3,
     actionMinutes: 5,
@@ -59,8 +60,8 @@ export const PRIORITIES = [
   },
   {
     value: "p2",
-    name: URGENCY_NAMES.p2,
-    label: URGENCY_NAMES.p2,
+    name: PRIORITY_LONG_NAMES.p2,
+    label: PRIORITY_LONG_NAMES.p2,
     short: URGENCY_NAMES.p2,
     responseMinutes: 30,
     actionMinutes: 60,
@@ -69,13 +70,13 @@ export const PRIORITIES = [
   },
   {
     value: "p3",
-    name: URGENCY_NAMES.p3,
-    label: URGENCY_NAMES.p3,
+    name: PRIORITY_LONG_NAMES.p3,
+    label: PRIORITY_LONG_NAMES.p3,
     short: URGENCY_NAMES.p3,
     responseMinutes: 120,
     actionMinutes: 480,
     summary:
-      "Routine, preventive, reporting or planned work. Complete in queue order after Right now and Today work.",
+      "Routine, preventive, reporting or planned work. Complete in queue order after P1 and P2 work.",
   },
 ] as const;
 
@@ -222,7 +223,7 @@ export const HANDOFF_TYPES = [
   {
     value: "lunch_coverage",
     label: "Lunch coverage",
-    hint: "New Right now or Today work while you step away.",
+    hint: "New P1 or P2 work while you step away.",
   },
   {
     value: "supervisor_intervention",

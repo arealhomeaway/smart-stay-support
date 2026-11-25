@@ -212,7 +212,7 @@ export function BreezewayRepairLink({
                 disabled={link.isPending || (!picked && !number.replace(/[^0-9]/g, ""))}
                 onClick={() => link.mutate()}
               >
-                Link work order
+                Send Breezeway Work Order
               </Button>
             </div>
           )

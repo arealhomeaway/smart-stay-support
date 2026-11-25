@@ -97,3 +97,8 @@
 
 - [x] property-delete-fix applied (0373); 123 test deleted.
 - [ ] property-delete-fix2: staged; delete step skips work items moved by a trigger. Waiting on "Approved: apply property-delete-fix2", then delete 5253 Trace.
+
+## Change 1 of 5 (Nov 24): Guest-ready standards, locked due dates, ticket panel, New ticket
+- [x] Preview build (page, lock UI, P1-P3 words, Ticket type, panel buttons, New ticket)
+- [ ] Apply ticket-due-date then guest-ready-standards (waits on Emily's approval words)
+- [ ] Change 2 of 5: Team B view (waits; questions answered Nov 24)

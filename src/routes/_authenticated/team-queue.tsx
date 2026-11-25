@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Lock, Search, SlidersHorizontal } from "lucide-react";
 import { TicketTable, TablePill, TwoLine, type TicketTableColumn } from "@/components/queue/TicketTable";
 import { GROUP_BY_OPTIONS, dueCell, groupTableRows, parseGroupBy, reportedShort, statusPillLabel } from "@/lib/ticket-table";
 import { useRole } from "@/hooks/useRole";
@@ -628,7 +628,7 @@ function TeamQueuePage() {
       ),
     },
     {
-      key: "type", header: "Issue type", track: "minmax(120px,1fr)",
+      key: "type", header: "Ticket type", track: "minmax(120px,1fr)",
       cell: (row) => (
         <span className="block truncate">
           {(row as { work_types?: { name?: string | null } | null }).work_types?.name ?? labelFor(CATEGORIES, "category" in row ? (row.category as string | null) : null)}
@@ -655,7 +655,7 @@ function TeamQueuePage() {
         const red = d.overdue || d.alert;
         return (
           <TwoLine
-            top={d.line1}
+            top={(row as { due_locked?: boolean | null }).due_locked ? <span className="inline-flex items-center gap-1"><Lock className="size-3" aria-label="Locked" />{d.line1}</span> : d.line1}
             sub={d.line2 ?? undefined}
             topClassName={`${red ? "text-coral" : d.line1 === "No due date" ? "text-muted-foreground" : ""} ${d.overdue ? "font-bold" : ""}`}
             subClassName={`${red ? "text-coral" : ""} ${d.overdue ? "font-bold" : ""}`}
