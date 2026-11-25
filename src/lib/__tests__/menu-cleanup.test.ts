@@ -29,9 +29,9 @@ const allPaths = (groups: MenuGroup[]) => groups.flatMap((g) => g.items.map((i) 
 describe("who sees what", () => {
   it("a Property Coordinator", () => {
     expect(shape(operationsMenu(accessFor(["tech"])))).toEqual([
-      // Databases (Nov 8, register M1, M2); Guest Claims & Refunds hidden behind its switch.
+      // Databases (Nov 8, register M1, M2); Guest Claims & Refunds back in My day (change 5 of 5).
       // Vendors left the menu (Nov 9, register M1): it opens from the Databases card.
-      ["My day", ["Home", "Team Queue", "Direct Bookings", "Databases"]],
+      ["My day", ["Home", "Team Queue", "Direct Bookings", "Databases", "Guest Claims & Refunds"]],
       // Fix batch 2 (Nov 8): coordinators open the Team group read only.
       ["Team", ["Team and Coverage", "Playbooks", "Guest-ready standards"]],
       ["Homes and owners", ["Properties"]],
@@ -40,7 +40,7 @@ describe("who sees what", () => {
 
   it("a Supervisor", () => {
     expect(shape(operationsMenu(accessFor(["manager"])))).toEqual([
-      ["My day", ["Home", "Team Queue", "Direct Bookings", "Databases", "Oversight"]],
+      ["My day", ["Home", "Team Queue", "Direct Bookings", "Databases", "Oversight", "Guest Claims & Refunds"]],
       ["Team", ["Team and Coverage", "Playbooks", "Guest-ready standards"]],
       // Build 5 (Emily, Nov 9): the Supervisor sees Onboarding only through the read only Handoffs page.
       ["Homes and owners", ["Properties", "Handoffs", "Active Owner"]],
@@ -51,7 +51,7 @@ describe("who sees what", () => {
 
   it("an Admin", () => {
     expect(shape(operationsMenu(accessFor(["admin"])))).toEqual([
-      ["My day", ["Home", "Team Queue", "Direct Bookings", "Databases", "Oversight"]],
+      ["My day", ["Home", "Team Queue", "Direct Bookings", "Databases", "Oversight", "Guest Claims & Refunds"]],
       ["Team", ["Team and Coverage", "Playbooks", "Guest-ready standards"]],
       ["Homes and owners", ["Properties", "Onboarding", "Active Owner"]],
       ["Insight", ["Analytics"]],

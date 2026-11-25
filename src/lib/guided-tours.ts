@@ -49,6 +49,8 @@ const OPERATIONS: TourSection[] = [
       { id: "ops-my-shift", to: "/dashboard", page: "Home", element: "My shift card", target: ["[data-my-shift]"], title: "My shift", body: "My shift shows your hours today, your lunch time and the tickets you own. Check it when you start." },
       { id: "ops-needs-you", to: "/dashboard", page: "Home", element: "Needs you now card", target: [needsYouNow], title: "Needs you now", body: "Needs you now lists what waits on you: handoffs to accept, approvals and alerts. Clear it before you pick up new work." },
       { id: "ops-lunch", to: "/dashboard", page: "Home", element: "Before lunch prompt", target: ["[data-lunch-prompt]"], title: "Before lunch", body: "About 15 minutes before lunch, Resolve asks you to hand off any P1 or time sensitive work. Press Hand off before lunch so nothing waits while you are away." },
+      { id: "ops-new-ticket", to: "/dashboard", page: "Home", element: "None (centered)", target: null, title: "New ticket", body: "Pick the property, the ticket type and a short description. Priority and due date fill in from Guest-ready standards before you save." },
+      { id: "ops-standards", to: "/guest-ready-standards", page: "Guest-ready standards", element: "Guest-ready standards in the left menu", target: ["[data-tour='guest-ready-standards']", "main h1"], title: "Guest-ready standards", body: "This page sets what must be done and when for each ticket type. Locked rows set due dates the team cannot change." },
       { id: "ops-record", to: "/dashboard", page: "Home", element: "Record work and Record routine work buttons", target: ["[data-testid='top-bar-work-actions']", "[data-tour='log']"], title: "Record work", body: "Press Record work for every new guest message or home problem. It makes one ticket with an owner and a clock. Record routine work is for the regular checks." },
     ],
   },
@@ -56,10 +58,14 @@ const OPERATIONS: TourSection[] = [
     id: "ops-queue",
     title: "Take a ticket from the Team Queue",
     steps: [
-      { id: "ops-queue-menu", to: "/team-queue", page: "Team Queue", element: "Team Queue in the left menu", target: ["[data-tour='team-queue']"], title: "Team Queue", body: "Team Queue holds work nobody owns yet. Open it whenever you can take more." },
-      { id: "ops-queue-teams", to: "/team-queue", page: "Team Queue", element: "Team chips", target: [{ text: "Team A", exact: true }, { text: "All unclaimed" }], title: "Choose a team", body: "Pick your team, or All unclaimed. The most urgent and oldest work is at the top." },
-      { id: "ops-queue-wait", to: "/team-queue", page: "Team Queue", element: "Pick up work list", target: [{ text: "Pick up work", within: "h1, h2, h3" }, { text: "Take it", exact: true, closest: "li, article, [role=row], div" }], title: "Pick up work", body: "Each row shows the home, the problem and how long it has waited. A red time means it is late." },
-      { id: "ops-queue-take", to: "/team-queue", page: "Team Queue", element: "Take it button", target: [{ text: "Take it", exact: true }], title: "Take it", body: "Press Take it to make the ticket yours. Its clock is now yours, so start right away." },
+      { id: "ops-queue-menu", to: "/team-queue", page: "Team Queue", element: "Team Queue in the left menu", target: ["[data-tour='team-queue']"], title: "Team Queue", body: "Team Queue holds the team's open work. Open it whenever you can take more." },
+      { id: "ops-queue-teams", to: "/team-queue", page: "Team Queue", element: "Team chips", target: [{ text: "Team A", exact: true }, { text: "Team B", exact: true }], title: "Choose a team", body: "Pick your team. The most urgent and oldest work is at the top." },
+      { id: "ops-queue-btabs", to: "/team-queue?team=b", page: "Team Queue, Team B", element: "Team B tabs", target: [{ text: "Maintenance", within: "button, [role=tab]" }], title: "Team B tabs", body: "Team B has five tabs: Maintenance, Reported issues, Cleaning reviews, Inspection reviews and Lawn care reviews. Maintenance opens first." },
+      { id: "ops-queue-bdue", to: "/team-queue?team=b", page: "Team Queue, Team B", element: "Due filters", target: [{ text: "Due today", within: "button" }], title: "Due filters", body: "Due today, This week, Next week and Closed choose which tickets show. Due today is the default." },
+      { id: "ops-queue-rollup", to: "/team-queue?team=b&bTab=reported", page: "Team Queue, Team B", element: "Reported issues row", target: [{ text: "Show issues", within: "button" }, { text: "Reported issues", within: "button, [role=tab]" }], title: "Reported issues", body: "Several issues at one home show as one row. Press Show issues to see each one and mark it resolved." },
+      { id: "ops-queue-note", to: "/team-queue?team=b", page: "Team Queue, Team B", element: "Pencil button", target: ["[aria-label^='Add an update to ticket']"], title: "Quick note", body: "Press the pencil to add an update without opening the ticket." },
+      { id: "ops-queue-take", to: "/team-queue", page: "Team Queue", element: "Take it button", target: [{ text: "Take it", exact: true }], title: "Take it", body: "Unassigned tickets show Take it. Press it to make the ticket yours, then start right away." },
+
     ],
   },
   {
@@ -67,12 +73,13 @@ const OPERATIONS: TourSection[] = [
     title: "Work a ticket",
     steps: [
       { id: "ops-ticket-now", to: "/tickets/$ticket", fallbackTo: "/team-queue", page: "A ticket", element: "Do this now", target: ["[data-current-work]"], title: "Do this now", body: "The top of every ticket says what to do next. Follow it one step at a time." },
-      { id: "ops-ticket-urgency", to: "/tickets/$ticket", fallbackTo: "/team-queue", page: "A ticket", element: "Urgency on the ticket", target: ["[data-tour='ticket-urgency']"], title: "Priority", body: "Priority is P1, P2 or P3. It sets how fast you must answer. Only a Supervisor changes it, from More." },
-      { id: "ops-ticket-clock", to: "/tickets/$ticket", fallbackTo: "/team-queue", page: "A ticket", element: "About this ticket (response clock inside)", target: ["[data-testid='details-about'] > summary"], title: "Response clock", body: "Open About this ticket to see the response clock. It shows how long you have to answer. Late tickets alert the Supervisor." },
-      { id: "ops-ticket-guide", to: "/tickets/$ticket", fallbackTo: "/team-queue", page: "A ticket", element: "Guided checklist (inside Do this now)", target: ["[data-checklist-tools]", "[data-current-work]"], title: "Guided checklist", body: "The guided checklist walks you through the problem: what to ask the guest, what to try and when to send a vendor. Tick each step as you do it." },
-      { id: "ops-ticket-notes", to: "/tickets/$ticket", fallbackTo: "/team-queue", page: "A ticket", element: "Activity (Add note inside)", target: ["[data-testid='details-activity'] > summary"], title: "Notes", body: "Open Activity and press Add note each time something happens. The next person reads it, so say what you did and what is next." },
-      { id: "ops-ticket-files", to: "/tickets/$ticket", fallbackTo: "/team-queue", page: "A ticket", element: "Evidence (photos and files inside)", target: ["[data-testid='details-evidence'] > summary", { text: "Add photos" }], title: "Photos and files", body: "Open Evidence to add photos and files. Some tickets cannot close until the proof is added." },
-      { id: "ops-ticket-more", to: "/tickets/$ticket", fallbackTo: "/team-queue", page: "A ticket", element: "More button", target: [{ text: "More", exact: true }], title: "More", body: "More holds assignment, escalation and Handoffs. Use it when the ticket needs someone else." },
+      { id: "ops-ticket-urgency", to: "/tickets/$ticket", fallbackTo: "/team-queue", page: "A ticket", element: "Priority on the ticket", target: ["[data-tour='ticket-urgency']"], title: "Priority", body: "Priority is P1, P2 or P3. It sets how fast you must answer." },
+      { id: "ops-ticket-due", to: "/tickets/$ticket", fallbackTo: "/team-queue", page: "A ticket", element: "Due date", target: ["[data-testid='due-lock-reason']", { text: "Due", within: "span, p, dt" }], title: "Due date", body: "A lock means the due date comes from Guest-ready standards. Only a Supervisor, Director or Admin changes it, with a reason." },
+      { id: "ops-ticket-playbook", to: "/tickets/$ticket", fallbackTo: "/team-queue", page: "A ticket", element: "How to work this ticket link", target: [{ text: "How to work this ticket" }], title: "How to work this ticket", body: "This link opens the playbook for this ticket type. It shows only when one matches." },
+      { id: "ops-ticket-notes", to: "/tickets/$ticket", fallbackTo: "/team-queue", page: "A ticket", element: "Add an update box", target: [{ text: "Add an update" }, "[data-testid='details-activity'] > summary"], title: "Updates", body: "Write in Add an update each time something happens. The newest update is at the top, with who wrote it and when." },
+      { id: "ops-ticket-review", to: "/tickets/$ticket", fallbackTo: "/team-queue", page: "A ticket", element: "Open Breezeway requirements button", target: [{ text: "Open Breezeway requirements" }], title: "Review tickets", body: "On cleaning, inspection and lawn care reviews, Open Breezeway requirements opens the Breezeway report." },
+      { id: "ops-ticket-close", to: "/tickets/$ticket", fallbackTo: "/team-queue", page: "A ticket", element: "Close ticket button", target: [{ text: "Close ticket" }, { text: "Reopen ticket" }], title: "Close ticket", body: "Press Close ticket when the work is done. A closed ticket shows Reopen ticket." },
+
     ],
   },
   {
@@ -89,10 +96,11 @@ const OPERATIONS: TourSection[] = [
     id: "ops-sources",
     title: "Arrival checks and email tickets",
     steps: [
-      { id: "ops-arrival", to: "/team-queue", page: "Team Queue", element: "From OwnerRez group", target: [{ text: "From OwnerRez", within: "button, h2, h3, h4, p, span" }], title: "Arrival checks", body: "Before a guest arrives, an arrival check ticket comes in from OwnerRez. It shows in this group with its due time." },
-      { id: "ops-arrival-due", to: "/team-queue", page: "Team Queue", element: "Due time on the row", target: [{ text: "Due ", within: "span, p" }], title: "Due time", body: "The due time turns red in the last 30 minutes. Take it and finish the check before the guest gets there." },
-      { id: "ops-email", to: "/team-queue", page: "Team Queue", element: "From email group", target: [{ text: "From email", within: "button, h2, h3, h4, p, span" }], title: "Email tickets", body: "Emails to the team inbox become tickets here, marked Email." },
-      { id: "ops-email-work", to: "/team-queue", page: "Team Queue", element: "Take it button", target: [{ text: "Take it", exact: true }], title: "Work them the same way", body: "An email ticket is a normal ticket with a clock and alerts. Press Take it and answer from the ticket." },
+      { id: "ops-arrival", to: "/routines", page: "Routine Work", element: "Arrival checks section", target: [{ text: "Arrival checks", within: "h2, h3, header div" }], title: "Arrival checks", body: "Arrival checks are Team A routine work. They sit at the top of Routine Work, with check in time and progress." },
+      { id: "ops-arrival-take", to: "/routines", page: "Routine Work", element: "Take it button", target: [{ text: "Take it", exact: true }, { text: "Open", exact: true }], title: "Take a check", body: "Press Take it, then Open. Finish every step before the deadline, two hours before check in." },
+      { id: "ops-arrival-steps", to: "/routines", page: "Routine Work", element: "None (centered)", target: null, title: "The five steps", body: "Check the last clean, the smart lock, open maintenance work orders, the check in details and the home. Complete check turns on when all are done." },
+      { id: "ops-email", to: "/team-queue?team=b", page: "Team Queue, Team B", element: "Maintenance tab", target: [{ text: "Maintenance", within: "button, [role=tab]" }], title: "Email tickets", body: "Emails to the team inbox become tickets with the label Email. They land unassigned until someone takes them." },
+
     ],
   },
   {
@@ -111,10 +119,12 @@ const OPERATIONS: TourSection[] = [
     id: "ops-end-shift",
     title: "End my shift",
     steps: [
+      { id: "ops-end-banner", to: "/dashboard", page: "Any page", element: "Shift end banner", target: ["[data-tour='shift-end-banner']"], title: "Before your shift ends", body: "30 minutes before your shift ends, a banner asks you to prepare your handoffs. Press Prepare handoffs, or Later." },
+      { id: "ops-end-prepare", to: "/prepare-handoffs", page: "Prepare handoffs", element: "Prepare handoffs page", target: ["[data-tour='prepare-handoffs'] h1"], title: "Prepare handoffs", body: "This page lists your open tickets due today. Each row hands off to the next person on shift." },
+      { id: "ops-end-all", to: "/prepare-handoffs", page: "Prepare handoffs", element: "Hand off all button", target: ["[data-tour='hand-off-all']"], title: "Hand off all", body: "Write done so far and the next step, then press Hand off all. The other person must accept." },
       { id: "ops-end-button", to: "/dashboard", page: "Home", element: "End my shift button", target: ["[data-end-shift]"], title: "End my shift", body: "Press End my shift before you sign off, every shift." },
-      { id: "ops-end-list", to: "/dashboard", page: "Home", element: "My shift card", target: ["[data-my-shift]"], title: "Hand off what you own", body: "Resolve lists every ticket you still own. For each one, write done so far, next step and due, then send." },
       { id: "ops-end-nothing", to: "/dashboard", page: "Home", element: "None (centered)", target: null, title: "Nothing to hand off", body: "If you own nothing, press Nothing to hand off. The Supervisor sees who ended their shift and who did not." },
-      { id: "ops-end-next", to: "/dashboard", page: "Home", element: "Needs you now card", target: [needsYouNow], title: "Next shift", body: "Your next shift starts here. Anything handed to you waits in Needs you now." },
+
     ],
   },
   {
@@ -135,6 +145,8 @@ const OPERATIONS: TourSection[] = [
       { id: "ops-ov-menu", to: "/oversight", page: "Oversight", element: "Oversight in the left menu", target: ["[data-tour='oversight']"], title: "Oversight", body: "Oversight shows what is late or stuck across the team. The number on it counts waiting handoffs and missed shift ends." },
       { id: "ops-ov-esc", to: "/oversight", page: "Oversight", element: "Escalations", target: [{ text: "Escalations", within: "h2, h3, header p, header div", closest: "section" }], title: "Escalations", body: "Escalations lists tickets past their clock. Act on the oldest first." },
       { id: "ops-ov-load", to: "/oversight", page: "Oversight", element: "Workload by person", target: [{ text: "Workload by person", within: "h2, h3, header p, header div", closest: "section" }], title: "Workload", body: "Workload by person shows who carries how much, so you can share work fairly." },
+      { id: "ops-ov-all", to: "/oversight", page: "Oversight", element: "All open tickets table", target: [{ text: "All open tickets", within: "h2, h3, header div", closest: "section" }], title: "All open tickets", body: "All open tickets shows both teams. Tick rows, then Move due date, Reassign or Close selected." },
+      { id: "ops-sc", to: "/supervisor-check", page: "Supervisor check", element: "Team Queue table", target: [{ text: "Team Queue", within: "h2" }], title: "Supervisor check", body: "Supervisor check shows the same table the team sees, for both teams." },
       { id: "ops-sh-tab", to: "/shift-handoffs", page: "Shift handoffs", element: "Shift handoffs tab", target: [{ text: "Shift handoffs", within: "a, [role=tab]", exact: true }], title: "Shift handoffs", body: "Shift handoffs shows today's shifts, who pressed End my shift and every handoff." },
       { id: "ops-sh-top", to: "/shift-handoffs", page: "Shift handoffs", element: "Page heading", target: ["main h1"], title: "Start at the top", body: "Missed shift ends come first, then P1 handoffs waiting over 15 minutes, in red. Follow up on those first." },
       { id: "ops-sh-filters", to: "/shift-handoffs", page: "Shift handoffs", element: "Date and team filters", target: ["[data-filter='date']", "[data-filter='team']"], title: "Look back", body: "Use the date and team filters to look back up to 14 days, for Team A, Team B or both." },

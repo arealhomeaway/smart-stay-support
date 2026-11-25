@@ -343,9 +343,9 @@ const OPERATIONS_MENU: MenuGroup[] = [
       // The Vendors page opens from the Databases Vendors card, so Databases is lit there.
       { key: "databases", label: "Databases", to: "/databases", capability: "databases", alsoActive: ["/vendors"] },
       { key: "oversight", label: "Oversight", to: "/oversight", capability: "oversight", alsoActive: ["/supervisor-check", "/shift-handoffs"] },
-      // Hidden behind the claims_menu switch now that Databases holds claims and refunds
-      // (register M2, C1). The pages stay reachable by link.
-      { key: "claims", label: "Guest Claims & Refunds", to: "/claims", capability: "claims_work", flag: "claims_menu", alsoActive: ["/recovery"] },
+      // Change 5 of 5, item 5: back in My day after Oversight for everyone with claims_work.
+      // The claims_menu switch no longer gates it; the Databases claims card stays.
+      { key: "claims", label: "Guest Claims & Refunds", to: "/claims", capability: "claims_work", alsoActive: ["/recovery"] },
     ],
   },
   {

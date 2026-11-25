@@ -57,6 +57,7 @@ import { Route as AuthenticatedOwnerOversightRouteImport } from './routes/_authe
 import { Route as AuthenticatedOwnerProgramsRouteImport } from './routes/_authenticated/owner-programs'
 import { Route as AuthenticatedOwnerReportWordingRouteImport } from './routes/_authenticated/owner-report-wording'
 import { Route as AuthenticatedPlaybooksRouteImport } from './routes/_authenticated/playbooks'
+import { Route as AuthenticatedPrepareHandoffsRouteImport } from './routes/_authenticated/prepare-handoffs'
 import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated/properties'
 import { Route as AuthenticatedQuarterlyRouteImport } from './routes/_authenticated/quarterly'
 import { Route as AuthenticatedRecoveryRouteImport } from './routes/_authenticated/recovery'
@@ -398,6 +399,12 @@ const AuthenticatedPlaybooksRoute = AuthenticatedPlaybooksRouteImport.update({
   path: '/playbooks',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPrepareHandoffsRoute =
+  AuthenticatedPrepareHandoffsRouteImport.update({
+    id: '/prepare-handoffs',
+    path: '/prepare-handoffs',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPropertiesRoute = AuthenticatedPropertiesRouteImport.update({
   id: '/properties',
   path: '/properties',
@@ -892,6 +899,7 @@ export interface FileRoutesByFullPath {
   '/owner-programs': typeof AuthenticatedOwnerProgramsRoute
   '/owner-report-wording': typeof AuthenticatedOwnerReportWordingRoute
   '/playbooks': typeof AuthenticatedPlaybooksRoute
+  '/prepare-handoffs': typeof AuthenticatedPrepareHandoffsRoute
   '/properties': typeof AuthenticatedPropertiesRoute
   '/quarterly': typeof AuthenticatedQuarterlyRoute
   '/recovery': typeof AuthenticatedRecoveryRouteWithChildren
@@ -1015,6 +1023,7 @@ export interface FileRoutesByTo {
   '/owner-programs': typeof AuthenticatedOwnerProgramsRoute
   '/owner-report-wording': typeof AuthenticatedOwnerReportWordingRoute
   '/playbooks': typeof AuthenticatedPlaybooksRoute
+  '/prepare-handoffs': typeof AuthenticatedPrepareHandoffsRoute
   '/properties': typeof AuthenticatedPropertiesRoute
   '/quarterly': typeof AuthenticatedQuarterlyRoute
   '/routines': typeof AuthenticatedRoutinesRoute
@@ -1140,6 +1149,7 @@ export interface FileRoutesById {
   '/_authenticated/owner-programs': typeof AuthenticatedOwnerProgramsRoute
   '/_authenticated/owner-report-wording': typeof AuthenticatedOwnerReportWordingRoute
   '/_authenticated/playbooks': typeof AuthenticatedPlaybooksRoute
+  '/_authenticated/prepare-handoffs': typeof AuthenticatedPrepareHandoffsRoute
   '/_authenticated/properties': typeof AuthenticatedPropertiesRoute
   '/_authenticated/quarterly': typeof AuthenticatedQuarterlyRoute
   '/_authenticated/recovery': typeof AuthenticatedRecoveryRouteWithChildren
@@ -1268,6 +1278,7 @@ export interface FileRouteTypes {
     | '/owner-programs'
     | '/owner-report-wording'
     | '/playbooks'
+    | '/prepare-handoffs'
     | '/properties'
     | '/quarterly'
     | '/recovery'
@@ -1391,6 +1402,7 @@ export interface FileRouteTypes {
     | '/owner-programs'
     | '/owner-report-wording'
     | '/playbooks'
+    | '/prepare-handoffs'
     | '/properties'
     | '/quarterly'
     | '/routines'
@@ -1515,6 +1527,7 @@ export interface FileRouteTypes {
     | '/_authenticated/owner-programs'
     | '/_authenticated/owner-report-wording'
     | '/_authenticated/playbooks'
+    | '/_authenticated/prepare-handoffs'
     | '/_authenticated/properties'
     | '/_authenticated/quarterly'
     | '/_authenticated/recovery'
@@ -1953,6 +1966,13 @@ declare module '@tanstack/react-router' {
       path: '/playbooks'
       fullPath: '/playbooks'
       preLoaderRoute: typeof AuthenticatedPlaybooksRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/prepare-handoffs': {
+      id: '/_authenticated/prepare-handoffs'
+      path: '/prepare-handoffs'
+      fullPath: '/prepare-handoffs'
+      preLoaderRoute: typeof AuthenticatedPrepareHandoffsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/properties': {
@@ -2698,6 +2718,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOwnerProgramsRoute: typeof AuthenticatedOwnerProgramsRoute
   AuthenticatedOwnerReportWordingRoute: typeof AuthenticatedOwnerReportWordingRoute
   AuthenticatedPlaybooksRoute: typeof AuthenticatedPlaybooksRoute
+  AuthenticatedPrepareHandoffsRoute: typeof AuthenticatedPrepareHandoffsRoute
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRoute
   AuthenticatedQuarterlyRoute: typeof AuthenticatedQuarterlyRoute
   AuthenticatedRecoveryRoute: typeof AuthenticatedRecoveryRouteWithChildren
@@ -2776,6 +2797,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOwnerProgramsRoute: AuthenticatedOwnerProgramsRoute,
   AuthenticatedOwnerReportWordingRoute: AuthenticatedOwnerReportWordingRoute,
   AuthenticatedPlaybooksRoute: AuthenticatedPlaybooksRoute,
+  AuthenticatedPrepareHandoffsRoute: AuthenticatedPrepareHandoffsRoute,
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRoute,
   AuthenticatedQuarterlyRoute: AuthenticatedQuarterlyRoute,
   AuthenticatedRecoveryRoute: AuthenticatedRecoveryRouteWithChildren,

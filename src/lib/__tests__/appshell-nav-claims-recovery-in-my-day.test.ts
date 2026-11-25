@@ -32,12 +32,16 @@ describe("AppShell menu: My day and tab pages", () => {
     for (const tab of ["/map", "/routines", "/recovery", "/vendors"]) expect(tabs).toContain(tab);
   });
 
-  // Register M2 (Nov 8): Guest Claims & Refunds stayed until Databases existed. Now it hides
-  // behind the claims_menu switch; the page still opens by link and keeps its claims_work rule.
-  it("Guest Claims & Refunds is hidden behind its switch, still gated on claims_work and reachable by link", () => {
-    expect(myDay(["tech"]).map((i) => i.to)).not.toContain("/claims");
-    const on = operationsMenu({ can: (c) => can(["tech"], c), canOpen: (p) => canOpenPath(p, { roles: ["tech"] }), flagEnabled: (k) => k === "claims_menu" })
+  // Change 5 of 5, item 5: Guest Claims & Refunds shows in My day after Oversight for
+  // everyone with claims_work, with no switch; onboarding-only people still never see it.
+  it("Guest Claims & Refunds shows in My day after Oversight without a switch, gated on claims_work", () => {
+    const on = operationsMenu({ can: (c) => can(["tech"], c), canOpen: (p) => canOpenPath(p, { roles: ["tech"] }), flagEnabled: () => false })
       .find((g) => g.label === "My day")!.items;
+    const paths = on.map((i) => i.to);
+    expect(paths[paths.length - 1]).toBe("/claims");
+    const sup = operationsMenu({ can: (c) => can(["manager"], c), canOpen: (p) => canOpenPath(p, { roles: ["manager"] }), flagEnabled: () => false })
+      .find((g) => g.label === "My day")!.items.map((i) => i.to);
+    expect(sup.indexOf("/claims")).toBe(sup.indexOf("/oversight") + 1);
     const claims = on.find((i) => i.to === "/claims");
     expect(claims?.label).toBe("Guest Claims & Refunds");
     expect(claims?.capability).toBe("claims_work");

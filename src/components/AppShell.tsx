@@ -54,6 +54,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { GuidedTourProvider } from "@/components/tours/GuidedTour";
 import { TakeTourButton } from "@/components/tours/TakeTourButton";
 import { HelpFeedbackButton } from "@/components/HelpFeedback";
+import { ShiftEndBanner } from "@/components/home/ShiftEndBanner";
 import { BrandLogo } from "@/components/BrandLogo";
 import { GlobalSearch, type SearchTarget } from "@/components/GlobalSearch";
 import { RouteProgress } from "@/components/nav/RouteProgress";
@@ -486,6 +487,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           }`}
         >
           <div className="mx-auto w-full max-w-[1400px]">
+            <ShiftEndBanner />
             <ShellNavProvider>
               {(pageLabel) => (
                 <>
