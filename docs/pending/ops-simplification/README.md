@@ -3,7 +3,10 @@
 Approved by Emily Nov 25: Approved: apply ops-simplification. Earlier guest-ready-type-links, database-priority-words and reported-issue-order-links stay on hold.
 
 ## Scope
-Add canonical backlog markers and history; separate pre-Nov16 open work and all Notion tickets without changing owners/status/deadlines; restrict ordinary reads and suppress backlog notification/escalation producers. Preserve source imports, schedules, switches and captured scorecard history. Existing routing is composed for all new tickets and maintenance/lawn reviews, including the existing other-team, lunch-only, on-call and Supervisor fallback rules. Arrival checks route to Team A before insert.
+Part 1 stages canonical backlog markers and history for OPEN work only: pre-Nov16 open work and open Notion tickets. Closed/resolved records are untouched. No restrictive policies are added to existing records; history remains readable. Current live-reader exclusions and Old backlog labels still need implementation. Notification/escalation suppression is staged. Preserve source imports, schedules, switches and captured scorecard history. Existing routing is composed for all new tickets and maintenance/lawn reviews, including existing other-team, lunch-only, on-call and Supervisor fallback rules. Arrival checks route to Team A before insert.
+
+## STOPPED: Nov 25 part 1 practice failed
+The real-schema fixture incorrectly recreated the generated `vendor_orgs.qualification_score` expression as a DEFAULT. PostgreSQL rejected it with `cannot use column reference in DEFAULT expression`. No behavior checks or live preflight execution ran; nothing was applied or scheduled. Emily instructed stopping on any practice failure, so no retry was made. The fixture contains 47 real dependency definitions, including seat_holder_at; the remaining schema-copy issue must be fixed before another run. Close/archive/reactivation actions were moved to deferred-actions.sql, which is not part of part 1 application and remains unverified.
 
 ## One-time assignment
 Capture the currently open unassigned live ticket/review IDs, not future arrivals. SQL-only job at Nov 26, 2026 8 AM Central (14:00 UTC); serial routing sees prior assignments in the same transaction. Receipt prevents repeat execution; job unschedules after success. Nothing assigned tonight by this backfill.
@@ -15,7 +18,7 @@ Capture the currently open unassigned live ticket/review IDs, not future arrival
 4. Read counts, current rules, assignment receipt and schedules.
 
 ## Undo
-undo.sql restores exact deployed rules/ACL-preserving replacements, removes only added triggers/policies and clears untouched separation markers. New tables and history remain. Post-apply explicit changes and one-time assignments are never silently reversed. An undo after the scheduled assignment needs reviewed IDs and separate approval.
+undo.sql is staged to restore deployed rules/ACL-preserving replacements, remove only added triggers and clear untouched separation markers. It has NOT passed practice. New tables and history remain. Post-apply explicit changes and one-time assignments must never be silently reversed. An undo after the scheduled assignment needs reviewed IDs and separate approval.
 
 ## Defaults
 Cutover uses midnight Nov 16 Central. Unknown Guest-ready standard uses the existing priority due-date default for tickets; maintenance review fallback remains next day. No prior pending standard/link/priority package is included.

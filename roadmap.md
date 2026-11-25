@@ -1,8 +1,9 @@
 # Roadmap
 
 ## Operations simplification (Emily, Nov 25, approved ops-simplification)
+- [ ] Part 1 stopped as instructed: open-only markers/no restrictive policies staged; 47 real dependencies captured; practice failed on generated vendor qualification score represented as DEFAULT. No apply, schedule or live-reader changes.
 - [ ] Separate old backlog from live tickets, maintenance/lawn reviews and Direct Booking requests; stop backlog counts and clocks
-- [ ] ops-simplification staged but NOT ready to apply: isolated fixture lacks routing dependencies; behavior/undo/preflight execution incomplete
+- [ ] ops-simplification staged but NOT ready to apply: isolated schema reconstruction failed; behavior/undo/preflight execution incomplete
 - [ ] Route all new live tickets/reviews through existing schedule routing; one-time assignment tomorrow 8 AM Central
 - [ ] Team Queue: Team A, Team B, Mine; subject tabs, four due filters, one combined table
 - [ ] Home: compact leader line; personal live Needs you now, seven rows maximum, no bookings older than 24 hours

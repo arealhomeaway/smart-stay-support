@@ -1,12 +1,5 @@
 -- Additive undo: retains new tables/history. No post-apply action or assigned record is silently undone.
 SELECT cron.unschedule('ops-simplification-assign-once') WHERE EXISTS (SELECT 1 FROM public.ops_assignment_batch WHERE finished_at IS NULL);
-DROP POLICY IF EXISTS ops_live_only ON public.tickets;
-DROP POLICY IF EXISTS ops_live_only ON public.routine_controls;
-DROP POLICY IF EXISTS ops_live_only ON public.leads;
-DROP POLICY IF EXISTS ops_live_only ON public.escalations;
-DROP POLICY IF EXISTS ops_live_only ON public.handoffs;
-DROP POLICY IF EXISTS ops_live_only ON public.work_orders;
-DROP POLICY IF EXISTS ops_live_only ON public.staff_notifications;
 DROP TRIGGER IF EXISTS a_ops_backlog_stamp ON public.tickets;
 DROP TRIGGER IF EXISTS a_ops_backlog_stamp ON public.routine_controls;
 DROP TRIGGER IF EXISTS a_ops_backlog_stamp ON public.leads;
@@ -40,8 +33,7 @@ BEGIN
   NEW.assignment_note := r.note;
   RETURN NEW;
 END;
-$function$
-
+$function$;
 CREATE OR REPLACE FUNCTION private.arrival_check_create(_booking text, _check_in timestamp with time zone, _late boolean, _at timestamp with time zone)
  RETURNS uuid
  LANGUAGE plpgsql
@@ -92,8 +84,7 @@ BEGIN
   UPDATE public.arrival_reservations SET decision = 'created', decision_reason = NULL, decided_at = _at
    WHERE ownerrez_booking_id = _booking;
   RETURN _check;
-END $function$
-
+END $function$;
 CREATE OR REPLACE FUNCTION private.ticket_owner_wait_clock()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -131,8 +122,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$function$
-
+$function$;
 CREATE OR REPLACE FUNCTION public.run_ticket_timed_alerts()
  RETURNS integer
  LANGUAGE plpgsql
@@ -297,8 +287,7 @@ BEGIN
 
   RETURN _sent;
 END;
-$function$
-
+$function$;
 CREATE OR REPLACE FUNCTION public.escalate_direct_booking_approvals()
  RETURNS integer
  LANGUAGE plpgsql
@@ -317,8 +306,7 @@ BEGIN
     n := n + 1;
   END LOOP;
   RETURN n;
-END $function$
-
+END $function$;
 CREATE OR REPLACE FUNCTION public.release_overnight_direct_bookings(_at timestamp with time zone DEFAULT now())
  RETURNS integer
  LANGUAGE plpgsql
@@ -357,8 +345,7 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE WARNING 'release_overnight_direct_bookings: %', SQLERRM;
   RETURN 0;
-END $function$
-
+END $function$;
 CREATE OR REPLACE FUNCTION public.direct_booking_daily_summary(_at timestamp with time zone DEFAULT now())
  RETURNS integer
  LANGUAGE plpgsql
@@ -377,8 +364,7 @@ BEGIN
   SELECT u, 'direct_booking_daily', 'Direct booking replies sent ' || to_char(_day, 'Mon FMDD') || ': ' || _count, _body, '/direct-bookings', 'normal'
     FROM public.functional_role_holders('ops_supervisor') u;
   RETURN _count;
-END $function$
-
+END $function$;
 CREATE OR REPLACE FUNCTION public.coordinators_on_shift(_at timestamp with time zone DEFAULT now())
  RETURNS TABLE(user_id uuid, role_code text, team text, covering boolean, at_lunch boolean, load integer, last_given timestamp with time zone)
  LANGUAGE sql
@@ -418,8 +404,7 @@ AS $function$
         AND t.assignment_source IN ('automatic', 'breezeway_auto_route'))
   FROM r
   WHERE public.staff_assignable(r.uid)
-$function$
-
+$function$;
 CREATE OR REPLACE FUNCTION public.notify_staff(_user_id uuid, _kind text, _title text, _body text, _entity_type text, _entity_id uuid, _link_path text, _priority text, _actor_id uuid, _email boolean, _is_demo boolean)
  RETURNS uuid
  LANGUAGE plpgsql
@@ -449,8 +434,7 @@ BEGIN
 
   RETURN _id;
 END;
-$function$
-
+$function$;
 CREATE OR REPLACE FUNCTION public.email_delivery_allowed(_recipients text[], _entity_type text DEFAULT NULL::text, _entity_id uuid DEFAULT NULL::uuid, _ticket_id uuid DEFAULT NULL::uuid, _actor_id uuid DEFAULT NULL::uuid)
  RETURNS boolean
  LANGUAGE plpgsql
@@ -497,8 +481,7 @@ BEGIN
   END IF;
  END IF;
  RETURN true;
-END $function$
-
+END $function$;
 CREATE OR REPLACE FUNCTION public.record_work_escalate(_ticket_id uuid)
  RETURNS uuid
  LANGUAGE plpgsql
@@ -557,15 +540,13 @@ BEGIN
 
   RETURN _id;
 END;
-$function$
-
+$function$;
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
  RETURNS trigger
  LANGUAGE plpgsql
  SET search_path TO 'public'
 AS $function$
-BEGIN NEW.updated_at = now(); RETURN NEW; END; $function$
-
+BEGIN NEW.updated_at = now(); RETURN NEW; END; $function$;
 CREATE OR REPLACE FUNCTION public.keep_reopened_notion_ticket()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -576,7 +557,7 @@ BEGIN
     RETURN OLD;
   END IF;
   RETURN NEW;
-END $function$
+END $function$;
 
 SELECT set_config('resolve.import_quiet','on',true);
 UPDATE public.tickets SET ops_backlog_at=NULL WHERE ops_live_at IS NULL;

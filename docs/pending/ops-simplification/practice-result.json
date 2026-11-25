@@ -1,0 +1,6 @@
+{
+  "result": "FAIL",
+  "failed": "real schema and dependencies",
+  "error": "cannot use column reference in DEFAULT expression",
+  "checks": []
+}
