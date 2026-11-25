@@ -29,7 +29,7 @@ import { toast } from "sonner";
 import { isArrivalCheckTicket } from "@/lib/arrival-check";
 import { Textarea } from "@/components/ui/textarea";
 import { setTicketStatusFn } from "@/lib/ticket-lifecycle.functions";
-import { TEAM_B_DUE, TEAM_B_DUE_LABELS, TEAM_B_TABS, TEAM_B_TAB_LABELS, hiddenOnboarding, inDueFilter, inTeamBScope, parseTeamBDue, parseTeamBTab, rollUpReported, sourceLabel, teamBTab } from "@/lib/team-b-view";
+import { TEAM_B_DUE, TEAM_B_DUE_LABELS, TEAM_B_TABS, TEAM_B_TAB_LABELS, hiddenOnboarding, inDueFilter, inTeamBScope, parseTeamBDue, parseTeamBTab, rollUpReported, sourceLabel, teamBTab, teamBTotal } from "@/lib/team-b-view";
 import { TicketTable, TablePill, TwoLine, type TicketTableColumn } from "@/components/queue/TicketTable";
 import { GROUP_BY_OPTIONS, dueCell, groupTableRows, parseGroupBy, reportedShort, statusPillLabel } from "@/lib/ticket-table";
 import { useRole } from "@/hooks/useRole";
@@ -299,7 +299,7 @@ export function TeamQueueBoard({ embedded = false }: { embedded?: boolean } = {}
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tickets")
-        .select("*, properties(name, nickname, market, city, state, address_line1, unit, postal_code, ownerrez_property_id, time_zone, lifecycle_status), work_types(name, functional_role_code, action_start_minutes), claims(id)")
+        .select("*, properties(name, nickname, market, city, state, address_line1, unit, postal_code, ownerrez_property_id, time_zone, lifecycle_status), work_types(name, functional_role_code, action_start_minutes), claims(id), handoff_carryovers(ticket_id)")
         .eq("is_demo", demoMode)
         .is("archived_at", null)
         .order("reported_at", { ascending: false });
@@ -480,16 +480,15 @@ export function TeamQueueBoard({ embedded = false }: { embedded?: boolean } = {}
   const bTab = parseTeamBTab(params["bTab"]);
   const bDue = parseTeamBDue(params["bDue"]);
   const teamBBase = useMemo(() => {
-    if (!teamBMode) return [] as typeof all;
     const f = { ...filters, homeTeam: "all", unassigned: false, status: "all" } as TeamQueueFilters;
     return (applyTeamQueueFilters(all as never, f, homeTeamOf) as unknown as typeof all).filter((t) => {
       const owner = currentOwnerId(t);
       return inTeamBScope(t as never, owner ? homeTeamOf(owner) : null, owner, "property_operations");
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [teamBMode, all, filters, homeTeamOf]);
+  }, [all, filters, homeTeamOf]);
   const teamBDueRows = teamBBase.filter((t) => inDueFilter(t as never, bDue, now));
-  const teamBReviews = useTeamBReviews(demoMode, teamBMode);
+  const teamBReviews = useTeamBReviews(demoMode, operationsAccess);
   const reviewItems = teamBReviews.data?.items;
   const teamBCounts = Object.fromEntries(TEAM_B_TABS.map((k) => [k, teamBDueRows.filter((t) => teamBTab(t as never) === k).length + reviewCount(reviewItems, k, bDue, now)])) as Record<string, number>;
   const teamBDueCounts = Object.fromEntries(TEAM_B_DUE.map((k) => [k, teamBBase.filter((t) => teamBTab(t as never) === bTab && inDueFilter(t as never, k, now)).length + reviewCount(reviewItems, bTab, k, now)])) as Record<string, number>;
@@ -988,7 +987,7 @@ export function TeamQueueBoard({ embedded = false }: { embedded?: boolean } = {}
                 }`}
               >
                 {TEAM_QUEUE_COPY.tabs[tab]}
-                <span className={`numeric rounded-full px-2 py-0.5 text-xs ${activeTab === tab ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>{tabCounts[tab]}</span>
+                <span className={`numeric rounded-full px-2 py-0.5 text-xs ${activeTab === tab ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>{tab === "b" ? teamBTotal(teamBCounts) : tabCounts[tab]}</span>
               </button>
             ))}
           </nav>
@@ -1244,7 +1243,7 @@ export function TeamQueueBoard({ embedded = false }: { embedded?: boolean } = {}
               renderRow={(row, rowProps, children) => "kind" in row ? (
                 <Link to="/work-orders" search={{ open: row.id, ...originSearch } as never} {...rowProps}>{children}</Link>
               ) : (
-                <Link to="/tickets/$ticketId" params={{ ticketId: row.id }} search={originSearch} {...rowProps}>{children}</Link>
+                <Link to="/tickets/$ticketId" params={{ ticketId: row.id }} search={{ ...originSearch, ...((row as RollupRow).rollup ? { issues: ((row as RollupRow).rollup ?? []).map((t) => t.id).join(",") } : {}) }} {...rowProps}>{children}</Link>
               )}
             />
             <QueueBulkActions selected={selectedTickets} onClear={() => setSelectedTickets([])} />

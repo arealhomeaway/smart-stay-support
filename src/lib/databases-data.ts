@@ -392,7 +392,7 @@ async function tickets(ctx: LoadContext): Promise<ListData> {
     readAll((from, to) =>
       supabase
         .from("tickets")
-        .select("id, ref, title, property_id, work_type_id, status, assigned_to, external_source, external_status, external_id, reported_at, import_hold, created_at")
+        .select("id, ref, title, property_id, work_type_id, status, assigned_to, external_source, external_status, external_id, reported_at, import_hold, created_at, due_on, due_locked")
         .eq("is_demo", ctx.demo)
         .is("archived_at", null)
         .order("created_at", { ascending: false })
@@ -441,6 +441,8 @@ async function tickets(ctx: LoadContext): Promise<ListData> {
         // The Notion number: the page id, with and without its dashes.
         ...(notionId ? { extra: `${notionId} ${notionId.replace(/-/g, "")}` } : {}),
         ticket: {
+          due_on: t.due_on,
+          due_locked: t.due_locked,
           status: t.status,
           external_source: t.external_source ?? null,
           external_status: t.external_status ?? null,

@@ -41,12 +41,14 @@ export type TeamBTicket = {
   maintenance_category?: string | null;
   title?: string | null;
   due_on?: string | null;
+  due_locked?: boolean | null;
   next_action_due_at?: string | null;
   action_due_at?: string | null;
   response_due_at?: string | null;
   work_types?: { name?: string | null } | null;
   properties?: { lifecycle_status?: string | null } | null;
   from_handoff?: boolean;
+  handoff_carryovers?: Array<{ ticket_id?: string | null }> | null;
 };
 
 const DONE = ["closed", "resolved"];
@@ -84,7 +86,7 @@ export function inTeamBScope(t: TeamBTicket, ownerTeam: string | null, ownerId: 
 
 /** Homes still in Onboarding never show in Operations queues; handoff carry-over work stays. */
 export function hiddenOnboarding(t: TeamBTicket): boolean {
-  return (t.properties?.lifecycle_status ?? "") === "onboarding" && !t.from_handoff;
+  return (t.properties?.lifecycle_status ?? "") === "onboarding" && !t.from_handoff && !(t.handoff_carryovers?.length);
 }
 
 /** Central calendar date (YYYY-MM-DD) of an instant. */
@@ -138,11 +140,12 @@ export function rollUpReported<T extends TeamBTicket>(rows: T[]): Array<T & { ro
   for (const r of rows) {
     const group = r.property_id ? open.get(r.property_id) : undefined;
     if (!group || group.length < 2 || isDone(r)) { out.push(r); continue; }
-    if (seen.has(r.property_id!)) continue;
-    seen.add(r.property_id!);
+    if (!r.property_id || seen.has(r.property_id)) continue;
+    seen.add(r.property_id);
     const lead = [...group].sort((a, b) =>
       (RANK[a.priority ?? "p3"] ?? 2) - (RANK[b.priority ?? "p3"] ?? 2) ||
-      (dueDateOf(a) ?? "9999").localeCompare(dueDateOf(b) ?? "9999"))[0]!;
+      (dueDateOf(a) ?? "9999").localeCompare(dueDateOf(b) ?? "9999"))[0];
+    if (!lead) continue;
     out.push({ ...lead, title: `${group.length} reported issues`, rollup: group });
   }
   return out;
@@ -154,7 +157,7 @@ export function rollUpReported<T extends TeamBTicket>(rows: T[]): Array<T & { ro
 
 export type ReviewSourceRow =
   | { source: "departure"; id: string; status: string; clean_completed_at: string | null; stay_departure: string | null; title: string | null; property: string }
-  | { source: "routine"; id: string; status: string; due_at: string | null; title: string | null; property: string };
+  | { source: "routine"; id: string; status: string; due_at: string | null; due_on?: string | null; title: string | null; property: string };
 
 export type TeamBReviewItem = {
   source: "departure" | "routine";
@@ -166,7 +169,13 @@ export type TeamBReviewItem = {
   due_on: string | null;
 };
 
-const LAWN = /lawn|landscap|yard|mow|irrigation|sprinkler/i;
+export const LAWN_REVIEW_PATTERN = "lawn|landscap|yard|mow|irrigation|sprinkler";
+export const isLawnReview = (title: string | null) => new RegExp(LAWN_REVIEW_PATTERN, "i").test(title ?? "");
+
+/** The Team B chip is the sum of the exact five tab populations. */
+export function teamBTotal(counts: Record<string, number>): number {
+  return TEAM_B_TABS.reduce((sum, tab) => sum + (counts[tab] ?? 0), 0);
+}
 
 export function reviewItem(r: ReviewSourceRow): TeamBReviewItem | null {
   if (r.status === "cancelled") return null;
@@ -176,7 +185,7 @@ export function reviewItem(r: ReviewSourceRow): TeamBReviewItem | null {
     return { source: "departure", id: r.id, tab: "cleaning", title: r.title || "Cleaning review", property: r.property,
       status: closed ? "closed" : "open", due_on: at ? centralDate(new Date(at)) : null };
   }
-  return { source: "routine", id: r.id, tab: LAWN.test(r.title ?? "") ? "lawn" : "maintenance",
+  return { source: "routine", id: r.id, tab: isLawnReview(r.title) ? "lawn" : "maintenance",
     title: r.title || "Maintenance review", property: r.property, status: closed ? "closed" : "open",
-    due_on: r.due_at ? centralDate(new Date(r.due_at)) : null };
+    due_on: r.due_on ?? (r.due_at ? centralDate(new Date(r.due_at)) : null) };
 }

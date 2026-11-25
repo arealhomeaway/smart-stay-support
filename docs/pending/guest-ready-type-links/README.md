@@ -1,0 +1,8 @@
+# Guest-ready type links
+Waiting for `Approved: apply guest-ready-type-links`.
+Adds Minor items and Pest control catalog types by copying the current Ongoing maintenance policy. They keep Not set, as approved; editing either standard uses the existing save and new-ticket due rule. No existing tickets are retyped or redated.
+Lawn care reviews remain maintenance routine controls. The existing lawn-title classifier connects them to the Lawn care review standard; new display dates use the clean's finish day plus the configured seven days (latest day of the 3-to-7-day window). Existing open lawn rows receive only new display fields. Original due_at, completion, owners, capture facts, bridge, sync, alerts and switches stay unchanged.
+Preflight must confirm the three exact unlinked rows, the original catalog ID, both missing new types and new columns absent. Abort on drift. Capture work_types, routine_controls and scorecard table fingerprints excluding only the added fields before applying.
+Apply SQL and one audit_log application receipt in a transaction. Verify all three standard associations, two new catalog rows, lawn display dates and unchanged existing-field fingerprints.
+Undo disables the display-date trigger and restores the captured unlinked standards. Newly created types are hidden, not deleted; added fields and any new tickets remain. The application uses the original due_at after the standard link is removed (undo-safe read).
+Practice uses isolated data for lawn/non-lawn classification, exact seven-day display date, unchanged due_at/status/owner, canonical type links and undo. No live writes or outbound calls during practice.

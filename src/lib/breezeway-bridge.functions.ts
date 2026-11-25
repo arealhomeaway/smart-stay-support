@@ -90,6 +90,27 @@ export const ticketBreezewayOrdersFn = createServerFn({ method: "POST" })
     return ticketBreezewayOrders(context.supabase, data.ticketId);
   });
 
+/** Atomically links one mirrored order to every issue in the captured row. */
+export const linkReportedIssuesBreezewayOrderFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { ticketIds: string[]; workOrderId?: string; taskNumber?: string }) => {
+    const ticketIds = Array.from(new Set((input.ticketIds ?? []).map((id) => uuid(id, "ticket"))));
+    if (ticketIds.length < 2 || ticketIds.length > 100) throw new Error("Choose between 2 and 100 reported issues.");
+    const digits = String(input.taskNumber ?? "").replace(/[^0-9]/g, "");
+    const workOrderId = input.workOrderId ? uuid(input.workOrderId, "work order") : null;
+    const taskNumber = digits && digits.length <= 12 ? Number(digits) : null;
+    if (!workOrderId && !taskNumber) throw new Error("Pick a Breezeway work order or paste its number.");
+    return { ticketIds, workOrderId, taskNumber };
+  })
+  .handler(async ({ context, data }) => {
+    await assertStaff(context.supabase, context.userId);
+    const { data: result, error } = await (context.supabase as unknown as Loose).rpc("link_reported_issues_breezeway_order", {
+      _ticket_ids: data.ticketIds, _work_order_id: data.workOrderId, _task_number: data.taskNumber,
+    });
+    if (error) throw new Error(/could not find the function/i.test(error.message) ? "Linking all issues needs the approved database change. Nothing was linked." : error.message);
+    return result as { ok: true; workOrderId: string; breezewayTaskId: number };
+  });
+
 /** Links a Breezeway work order to the ticket: picked from the home's list, or by its number. */
 export const linkTicketBreezewayOrderFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

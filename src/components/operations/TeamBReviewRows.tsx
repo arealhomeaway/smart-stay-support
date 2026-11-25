@@ -12,7 +12,7 @@ import { inDueFilter, reviewItem, type TeamBDue, type TeamBReviewItem, type Team
 import { DepartureReviewSheet } from "@/components/departure/DepartureReviewQueue";
 import { RoutineDrawer, type RoutineRow } from "@/components/routines/RoutineDrawer";
 
-const ROUTINE_COLS = "id, kind, status, title, outcome, property_id, ticket_id, follow_up_ticket_id, guest_name, reservation_confirmation, stay_arrival, stay_departure, due_at, findings, notes, evidence_urls, completed_at, assigned_to, event_key, properties(name, nickname, address_line1, unit, city, state, postal_code)";
+const ROUTINE_COLS = "*, properties(name, nickname, address_line1, unit, city, state, postal_code)";
 
 export function useTeamBReviews(demoMode: boolean, enabled: boolean) {
   return useQuery({
@@ -37,7 +37,7 @@ export function useTeamBReviews(demoMode: boolean, enabled: boolean) {
       const routines = new Map<string, RoutineRow>();
       for (const r of rc.data ?? []) {
         routines.set(r.id, r as unknown as RoutineRow);
-        const it = reviewItem({ source: "routine", id: r.id, status: r.status, due_at: r.due_at, title: r.title, property: label(r.properties) });
+        const it = reviewItem({ source: "routine", id: r.id, status: r.status, due_at: r.due_at, ...("due_on" in r ? { due_on: (r as { due_on: string | null }).due_on } : {}), title: r.title, property: label(r.properties) });
         if (it) items.push(it);
       }
       return { items, routines };

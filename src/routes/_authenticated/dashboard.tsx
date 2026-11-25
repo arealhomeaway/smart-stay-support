@@ -1,3 +1,5 @@
+import { TicketDueLabel } from "@/components/tickets/TicketDueLabel";
+import { hiddenOnboarding } from "@/lib/team-b-view";
 import { formatPropertyLabel } from "@/lib/property-label";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -102,7 +104,7 @@ type Row = HomeTicket & {
   properties: (HomeTicket["properties"] & { primary_photo_url?: string | null }) | null;
 };
 
-const PROPERTY_FIELDS = "name, nickname, primary_photo_url, address_line1, unit, city, state, postal_code, ownerrez_property_id, time_zone";
+const PROPERTY_FIELDS = "name, nickname, primary_photo_url, address_line1, unit, city, state, postal_code, ownerrez_property_id, time_zone, lifecycle_status";
 
 function Dashboard() {
   const { demoMode } = useDemo();
@@ -119,7 +121,7 @@ function Dashboard() {
       const id = userId!;
       const { data, error } = await supabase
         .from("tickets")
-        .select(`*, properties(${PROPERTY_FIELDS}), work_types(name)`)
+        .select(`*, properties(${PROPERTY_FIELDS}), work_types(name), handoff_carryovers(ticket_id)`)
         .eq("is_demo", demoMode)
         .is("archived_at", null)
         .or(
@@ -128,7 +130,7 @@ function Dashboard() {
         .order("reported_at", { ascending: false })
         .limit(500);
       if (error) throw error;
-      return (data ?? []) as unknown as Row[];
+      return (data ?? []).filter((t) => !hiddenOnboarding(t)) as unknown as Row[];
     },
   });
 
@@ -140,7 +142,7 @@ function Dashboard() {
       const { data, error } = await supabase
         .from("tickets")
         .select(
-          "id, status, priority, functional_role_code, import_hold, external_source, external_status, reported_at, assigned_to, current_action_owner, record_owner, accountable_owner",
+          "id, status, priority, functional_role_code, import_hold, external_source, external_status, reported_at, assigned_to, current_action_owner, record_owner, accountable_owner, handoff_carryovers(ticket_id), properties(lifecycle_status)",
         )
         .eq("is_demo", demoMode)
         .is("archived_at", null)
@@ -148,7 +150,7 @@ function Dashboard() {
         .is("assigned_to", null)
         .is("current_action_owner", null)
         .is("record_owner", null)
-        .is("accountable_owner", null)
+        .is("accountable_owner, handoff_carryovers(ticket_id), properties(lifecycle_status)", null)
         .limit(1000);
       if (error) throw error;
       return (data ?? []) as unknown as HomeTicket[];
@@ -402,6 +404,7 @@ function NeedsYouNow({ rows, userId, originSearch }: { rows: Row[]; userId: stri
           <span className="min-w-0 flex-1">
             <span className="block truncate font-medium">{i.title}</span>
             <span className="block truncate text-sm text-muted-foreground">{i.detail}</span>
+            <TicketDueLabel dueOn={rows.find((t) => t.id === i.ticketId)?.due_on} locked={rows.find((t) => t.id === i.ticketId)?.due_locked} />
           </span>
           <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
         </button>
@@ -585,6 +588,7 @@ function WorkRow({ t, origin, compact = false }: { t: Row; origin: { from: strin
           <span className="font-medium text-primary">{next ? next.label : "Done"}</span>
         </span>
       </span>
+      <TicketDueLabel dueOn={t.due_on} locked={t.due_locked} />
       {imported && <StatusBadge tone="context">{HOME_COPY.importBadge}</StatusBadge>}
       <Badge variant="outline" className={/Overdue|Escalated/.test(urgent) ? "border-danger/40 text-danger" : ""}>
         {urgent}

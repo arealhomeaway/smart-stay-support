@@ -10,6 +10,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { ReportedIssuesPanel } from "@/components/tickets/ReportedIssuesPanel";
+import { reportedIssueIds } from "@/lib/reported-issue-group";
 import type { NewTicketSearch } from "@/routes/_authenticated/tickets.new";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ExternalLink, X } from "lucide-react";
@@ -77,9 +79,11 @@ export function drawerNewTicketContext(href: string | null, origin: string): New
  */
 export function TicketDrawerHost({ children }: { children: ReactNode }) {
   const [ticketId, setTicketIdRaw] = useState<string | null>(null);
+  const [issueIds, setIssueIds] = useState<string[]>([]);
   const [newCtx, setNewCtx] = useState<NewTicketSearch | null>(null);
   const setTicketId = useCallback((id: string | null) => {
     setNewCtx(null);
+    setIssueIds([]);
     setTicketIdRaw(id);
   }, []);
   const api = useMemo<DrawerApi>(
@@ -117,6 +121,7 @@ export function TicketDrawerHost({ children }: { children: ReactNode }) {
       e.preventDefault();
       e.stopPropagation();
       setTicketId(id);
+      setIssueIds(reportedIssueIds(new URL(a.href, window.location.origin).searchParams.get("issues"), id));
     }
     document.addEventListener("click", onClick, true);
     return () => document.removeEventListener("click", onClick, true);
@@ -152,7 +157,7 @@ export function TicketDrawerHost({ children }: { children: ReactNode }) {
             <div className="flex items-center gap-2">
               {ticketId && (
                 <Button asChild variant="outline" size="sm">
-                  <Link to="/tickets/$ticketId" params={{ ticketId }} data-full-page="">
+                  <Link to="/tickets/$ticketId" params={{ ticketId }} search={issueIds.length > 1 ? { issues: issueIds.join(",") } : {}} data-full-page="">
                     <ExternalLink className="size-4" /> Open full page
                   </Link>
                 </Button>
@@ -165,7 +170,7 @@ export function TicketDrawerHost({ children }: { children: ReactNode }) {
           <div ref={contentRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-5 md:px-6">
             {ticketId && (
               <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-                <TicketWorkspace key={ticketId} ticketId={ticketId} onClose={() => setTicketId(null)} />
+                {issueIds.length > 1 ? <ReportedIssuesPanel key={issueIds.join(",")} ticketIds={issueIds} onClose={() => setTicketId(null)} /> : <TicketWorkspace key={ticketId} ticketId={ticketId} onClose={() => setTicketId(null)} />}
               </Suspense>
             )}
             {newCtx && (

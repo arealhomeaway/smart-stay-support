@@ -240,6 +240,7 @@ export function HomeProfileTab({
   const goToRef = useRef(goTo);
   goToRef.current = goTo;
   useEffect(() => {
+    if (window.location.hash === "#hp-entry") goToRef.current("lock_brand");
     const onGo = (e: Event) => goToRef.current(String((e as CustomEvent).detail));
     window.addEventListener("home-profile:go", onGo);
     return () => window.removeEventListener("home-profile:go", onGo);

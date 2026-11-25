@@ -183,7 +183,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
         .order("sort_order"),
       supabaseAdmin
         .from("tickets")
-        .select("id, ref, title, status, priority, created_at, reported_at, assigned_to, work_type_id, external_source, external_status")
+        .select("id, ref, title, status, priority, created_at, reported_at, assigned_to, work_type_id, external_source, external_status, due_on, due_locked")
         .eq("property_id", propertyId)
         .eq("is_demo", p.is_demo)
         .is("archived_at", null)
@@ -875,6 +875,8 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
             title: t.title,
             status: t.status,
             priority: t.priority,
+            dueOn: t.due_on,
+            dueLocked: t.due_locked,
             createdAt: t.created_at,
             // A historical Notion record never shows an assignee.
             assigned: showsAssignee(t) && Boolean(t.assigned_to),

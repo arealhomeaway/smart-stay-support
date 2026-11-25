@@ -4,6 +4,7 @@
  * Staff only. The server decides what each person may read; this file renders
  * it. Codes stay encrypted behind a logged Show. Nothing here deletes data.
  */
+import { TicketDueLabel } from "@/components/tickets/TicketDueLabel";
 import { HomeRepeatFlags } from "@/components/work-entry/HomeRepeatFlags";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -671,6 +672,7 @@ function OperationsTab({ hub, canEdit }: { hub: Hub; canEdit: boolean }) {
                   <span className="font-medium">ARHA-{t.ref}</span> {t.title}
                 </span>
                 <span className="flex items-center gap-2">
+                  <TicketDueLabel dueOn={t.dueOn} locked={t.dueLocked} />
                   {t.notionBadge && <StatusBadge tone="context">{t.notionBadge}</StatusBadge>}
                   <StatusBadge tone={ticketTone(t.status)}>{label(t.status)}</StatusBadge>
                 </span>

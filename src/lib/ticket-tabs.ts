@@ -45,6 +45,8 @@ export const HISTORICAL_LABEL = "Historical record from Notion";
 
 /** What the tabs read from a ticket row. */
 export type TicketFacts = {
+  due_on?: string | null;
+  due_locked?: boolean | null;
   status: string;
   external_source: string | null;
   external_status: string | null;

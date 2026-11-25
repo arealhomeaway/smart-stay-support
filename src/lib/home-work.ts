@@ -4,6 +4,7 @@
  * the "Needs you now" items. Browser-safe and display-only: no clocks, owners
  * or statuses are changed here.
  */
+import { hiddenOnboarding } from "./team-b-view";
 import { isImportHeld } from "@/lib/import-hold";
 import { currentOwnerId, isMine, type MatterOwnership } from "@/lib/matters";
 import { isQuietNotion, isRecentOpenImport, type NotionTicketLike } from "@/lib/notion-ticket-display";
@@ -42,7 +43,11 @@ export type HomeTicket = MatterOwnership &
     action_started_at?: string | null;
     response_due_at?: string | null;
     action_due_at?: string | null;
-    properties?: PropertyLabelFields | null;
+    properties?: (PropertyLabelFields & { lifecycle_status?: string | null }) | null;
+    from_handoff?: boolean;
+    handoff_carryovers?: Array<{ ticket_id?: string | null }> | null;
+    due_on?: string | null;
+    due_locked?: boolean | null;
     work_types?: { name?: string | null } | null;
     external_source?: string | null;
     external_id?: string | null;
@@ -51,7 +56,7 @@ export type HomeTicket = MatterOwnership &
 
 /** Counts as Resolve work at all: not held on an import list, not a quiet Notion import. */
 export function isResolveWork(t: HomeTicket, now: number = Date.now()): boolean {
-  return !isImportHeld(t) && !isQuietNotion(t, now);
+  return !hiddenOnboarding(t) && !isImportHeld(t) && !isQuietNotion(t, now);
 }
 
 const WAITING = new Set(["waiting", "awaiting_guest"]);
@@ -63,7 +68,7 @@ const WAITING = new Set(["waiting", "awaiting_guest"]);
  * Needs you now, Oversight, scorecards) until they press Take this ticket.
  */
 export function isMyRecentImport(t: HomeTicket, userId: string | null, now: number = Date.now()): boolean {
-  return !isImportHeld(t) && isRecentOpenImport(t, now) && isMine(t, userId);
+  return !hiddenOnboarding(t) && !isImportHeld(t) && isRecentOpenImport(t, now) && isMine(t, userId);
 }
 
 export function inHomeTab(t: HomeTicket, tab: HomeTab, userId: string | null, now: number = Date.now()): boolean {

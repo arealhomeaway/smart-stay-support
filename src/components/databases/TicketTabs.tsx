@@ -4,6 +4,7 @@
  * works for people who can work tickets, register T12). Rules live in
  * src/lib/ticket-tabs.ts; this file only draws them.
  */
+import { TicketDueLabel } from "@/components/tickets/TicketDueLabel";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -247,6 +248,7 @@ function columnsFor(tab: TicketTabKey): Col[] {
   ];
   // Closed history never shows an owner (N2).
   if (tab !== "closed_history") cols.push({ label: "Owner", value: (r) => r.cells[5] ?? "" });
+  cols.push({ label: "Due date", value: (r) => r.ticket?.due_on ?? "", nowrap: true });
   cols.push({ label: "Created", value: (r) => (r.ticket ? day(originalCreatedAt(r.ticket)) : ""), nowrap: true });
   return cols;
 }
@@ -281,7 +283,7 @@ function TicketTable({ rows, tab, now, canFixHome, demoMode }: { rows: DbRow[]; 
             <tr key={r.id} className="border-t border-border align-middle" data-ticket-row={r.id}>
               {cols.map((c, i) => (
                 <td key={c.label} className={cn("px-3 py-2", c.strong && "font-semibold", c.nowrap && "whitespace-nowrap")}>
-                  {c.value(r)}
+                  {c.label === "Due date" ? <TicketDueLabel dueOn={r.ticket?.due_on} locked={r.ticket?.due_locked} /> : c.value(r)}
                   {i === 1 && label(r) ? <span className="mt-0.5 block text-xs text-muted-foreground">{label(r)}</span> : null}
                   {i === 2 && fixing ? <ChooseHome row={r} demoMode={demoMode} /> : null}
                 </td>
@@ -301,7 +303,7 @@ function TicketTable({ rows, tab, now, canFixHome, demoMode }: { rows: DbRow[]; 
                   return v ? (
                     <div key={c.label} className="min-w-0">
                       <dt className="text-xs text-muted-foreground">{c.label}</dt>
-                      <dd className={c.strong ? "break-words font-semibold" : "break-words text-sm"}>{v}</dd>
+                      <dd className={c.strong ? "break-words font-semibold" : "break-words text-sm"}>{c.label === "Due date" ? <TicketDueLabel dueOn={r.ticket?.due_on} locked={r.ticket?.due_locked} /> : v}</dd>
                     </div>
                   ) : null;
                 })}

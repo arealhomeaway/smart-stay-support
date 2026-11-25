@@ -218,7 +218,7 @@ export function ArrivalCheckPanel({ ticketId, propertyId, readOnly }: { ticketId
                 <button type="button" className={choice(lock === "no")} aria-pressed={lock === "no"} onClick={() => setLock("no")}>{C.lockNo}</button>
               </div>
               {lock === "yes" && propertyId ? (
-                <Link to="/property/$propertyId" params={{ propertyId }} className="inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline">View lock</Link>
+                <Link to="/property/$propertyId" params={{ propertyId }} search={{ tab: "profile" }} hash="hp-entry" className="inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline">View lock</Link>
               ) : null}
               {lock === "no" && (
                 <div className="space-y-1">

@@ -34,8 +34,8 @@ export const DEFAULT_STANDARDS: GuestReadyStandard[] = [
   { id: "arrival-check", label: "Arrival check", mustBeDone: "By the arrival check deadline", locked: true, rule: "arrival_deadline", ruleDays: null, workTypeName: "Arrival check", matchPriority: null, lockNote: "Arrival checks are always due by the arrival check deadline.", sortOrder: 30 },
   { id: "lawn-care-review", label: "Lawn care review", mustBeDone: "Within 3 to 7 days", locked: false, rule: "days", ruleDays: 7, workTypeName: null, matchPriority: null, lockNote: null, sortOrder: 40 },
   { id: "inspection-review", label: "Inspection review", mustBeDone: "Not set", locked: false, rule: "not_set", ruleDays: null, workTypeName: "Quarterly inspection review", matchPriority: null, lockNote: null, sortOrder: 50 },
-  { id: "minor-items", label: "Minor items (paint touch-ups, weeds)", mustBeDone: "Not set", locked: false, rule: "not_set", ruleDays: null, workTypeName: null, matchPriority: null, lockNote: null, sortOrder: 60 },
-  { id: "pest-control", label: "Pest control", mustBeDone: "Not set", locked: false, rule: "not_set", ruleDays: null, workTypeName: null, matchPriority: null, lockNote: null, sortOrder: 70 },
+  { id: "minor-items", label: "Minor items (paint touch-ups, weeds)", mustBeDone: "Not set", locked: false, rule: "not_set", ruleDays: null, workTypeName: "Minor items", matchPriority: null, lockNote: null, sortOrder: 60 },
+  { id: "pest-control", label: "Pest control", mustBeDone: "Not set", locked: false, rule: "not_set", ruleDays: null, workTypeName: "Pest control", matchPriority: null, lockNote: null, sortOrder: 70 },
 ];
 
 export const DUE_MODE = { locked: "Locked", open: "Team can change" } as const;

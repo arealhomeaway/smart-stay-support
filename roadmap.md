@@ -1,5 +1,16 @@
 # Roadmap
 
+## Operations cleanup (Emily, Nov 25)
+- [x] 1 Lock icons across all named ticket lists; signed-in Oversight/Supervisor/Databases verified, Home via shared renderer/tests
+- [ ] 2 Preview wiring complete; waiting on Approved: apply guest-ready-type-links
+- [ ] 3 Waiting on Approved: apply database-priority-words
+- [ ] 4 All issues verified in shared panel; atomic linking waits on Approved: apply reported-issue-order-links
+- [x] 5 Hide onboarding homes from Home and Needs you now, keep real carry-over links; tests pass
+- [x] 6 Team B 140 equals five tabs 73+13+0+0+54 in signed-in preview
+- [x] 7 View lock targets profile access section; target scroll verified, direct click test incomplete
+- [x] Preview builds/typecheck pass; 37 focused tests and 16 isolated package checks pass; no publish or switch changes
+- [ ] Complete full-suite before/after comparison: baseline timed out in a later batch; not completed this turn
+
 ## Delete property (Admin, Nov 24)
 - [x] Update H9 with the approved onboarding-only exception
 - [x] Preview menu/server checks and staged items 1-7 without widening is_director; full behavior awaits application

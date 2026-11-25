@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Chip } from "@/components/ui/page";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
-import { linkTicketBreezewayOrderFn, ticketBreezewayOrdersFn } from "@/lib/breezeway-bridge.functions";
+import { linkReportedIssuesBreezewayOrderFn, linkTicketBreezewayOrderFn, ticketBreezewayOrdersFn } from "@/lib/breezeway-bridge.functions";
 import { workOrderComments, workOrderPhotos } from "@/lib/breezeway-workorders.functions";
 import { BRIDGE_COPY, type TicketBreezewayOrder } from "@/lib/breezeway-bridge";
 import { usDate, usDateTime } from "@/lib/dates";
@@ -110,14 +110,17 @@ export function BreezewayRepairLink({
   ticketId,
   hasHome,
   readOnly,
+  ticketIds,
 }: {
   ticketId: string;
+  ticketIds?: string[];
   hasHome: boolean;
   readOnly: boolean;
 }) {
   const qc = useQueryClient();
   const listFn = useServerFn(ticketBreezewayOrdersFn);
   const linkFn = useServerFn(linkTicketBreezewayOrderFn);
+  const groupFn = useServerFn(linkReportedIssuesBreezewayOrderFn);
   const [picked, setPicked] = useState<string>("");
   const [number, setNumber] = useState("");
   const key = ["ticket-breezeway-orders", ticketId];
@@ -125,10 +128,9 @@ export function BreezewayRepairLink({
   const orders = useQuery({ queryKey: key, queryFn: () => listFn({ data: { ticketId } }) });
 
   const link = useMutation({
-    mutationFn: () =>
-      linkFn({
-        data: picked ? { ticketId, workOrderId: picked } : { ticketId, taskNumber: number.trim() },
-      }),
+    mutationFn: () => ticketIds && ticketIds.length > 1
+      ? groupFn({ data: { ticketIds, ...(picked ? { workOrderId: picked } : { taskNumber: number.trim() }) } })
+      : linkFn({ data: picked ? { ticketId, workOrderId: picked } : { ticketId, taskNumber: number.trim() } }),
     onSuccess: async (r) => {
       if (!r.ok) {
         toast.error(r.message);
@@ -138,7 +140,7 @@ export function BreezewayRepairLink({
       setPicked("");
       setNumber("");
       await qc.invalidateQueries({ queryKey: key });
-      await qc.invalidateQueries({ queryKey: ["ticket", ticketId] });
+      await Promise.all((ticketIds ?? [ticketId]).flatMap((id) => [qc.invalidateQueries({ queryKey: ["ticket", id] }), qc.invalidateQueries({ queryKey: ["ticket-breezeway-orders", id] })]));
     },
     onError: (e: Error) => toast.error(e.message),
   });

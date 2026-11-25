@@ -145,6 +145,9 @@ import {
   ticketAssigneeName,
 } from "@/lib/tickets";
 
+import { ReportedIssuesPanel } from "@/components/tickets/ReportedIssuesPanel";
+import { reportedIssueIds } from "@/lib/reported-issue-group";
+
 export const Route = createFileRoute("/_authenticated/tickets/$ticketId")({
   head: () => ({
     meta: [
@@ -163,8 +166,10 @@ export const Route = createFileRoute("/_authenticated/tickets/$ticketId")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  validateSearch: (raw: Record<string, unknown>): { from?: string | undefined } =>
-    typeof raw["from"] === "string" && raw["from"] ? { from: raw["from"] } : {},
+  validateSearch: (raw: Record<string, unknown>): { from?: string; issues?: string } => ({
+    ...(typeof raw["from"] === "string" && raw["from"] ? { from: raw["from"] } : {}),
+    ...(typeof raw["issues"] === "string" && raw["issues"] ? { issues: raw["issues"] } : {}),
+  }),
   component: TicketDetailPage,
   errorComponent: () => <p className="text-muted-foreground">This ticket could not be loaded.</p>,
   notFoundComponent: () => <p className="text-muted-foreground">{TICKET_UNAVAILABLE}</p>,
@@ -172,7 +177,9 @@ export const Route = createFileRoute("/_authenticated/tickets/$ticketId")({
 
 function TicketDetailPage() {
   const { ticketId } = Route.useParams();
-  return <TicketWorkspace ticketId={ticketId} />;
+  const search = Route.useSearch();
+  const ids = reportedIssueIds(search.issues, ticketId);
+  return ids.length > 1 ? <ReportedIssuesPanel ticketIds={ids} /> : <TicketWorkspace ticketId={ticketId} />;
 }
 
 /**

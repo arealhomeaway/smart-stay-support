@@ -1,3 +1,5 @@
+import { TicketDueLabel } from "@/components/tickets/TicketDueLabel";
+import { hiddenOnboarding } from "@/lib/team-b-view";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,7 +37,7 @@ export const Route = createFileRoute("/_authenticated/supervisor-check")({
   ),
 });
 
-type Row = CheckTicket & { ref: number | null };
+type Row = CheckTicket & { ref: number | null; due_on?: string | null; due_locked?: boolean | null };
 type Refund = { id: string; ticket_id: string | null; approval_status: string | null; proposed_amount: number | null; created_at: string };
 
 const KIND_LABEL = { created: "New", changed: "Changed", closed: "Closed" } as const;
@@ -48,7 +50,7 @@ function SupervisorCheck() {
       const [t, r] = await Promise.all([
         supabase
           .from("tickets")
-          .select("id, ref, title, status, created_at, updated_at, resolved_at, assigned_to, next_action_due_at, external_source, external_status, reported_at, import_hold")
+          .select("id, ref, title, status, created_at, updated_at, resolved_at, assigned_to, next_action_due_at, external_source, external_status, reported_at, import_hold, due_on, due_locked, handoff_carryovers(ticket_id), properties(lifecycle_status)")
           .eq("is_demo", demoMode)
           .is("archived_at", null)
           .order("updated_at", { ascending: false })
@@ -62,7 +64,7 @@ function SupervisorCheck() {
       ]);
       if (t.error) throw t.error;
       if (r.error) throw r.error;
-      const tickets = (t.data ?? []).map((x) => ({ ...x, closed_at: (x as { resolved_at: string | null }).resolved_at })) as unknown as Row[];
+      const tickets = (t.data ?? []).filter((t) => !hiddenOnboarding(t as never)).map((x) => ({ ...x, closed_at: (x as { resolved_at: string | null }).resolved_at })) as unknown as Row[];
       return { tickets, refunds: (r.data ?? []) as Refund[] };
     },
   });
@@ -81,6 +83,7 @@ function SupervisorCheck() {
             <Link to="/tickets/$ticketId" params={{ ticketId: t.id }} className="font-medium underline-offset-2 hover:underline">
               {t.ref ? `#${t.ref} ` : ""}{t.title ?? "Ticket"}
             </Link>
+            <TicketDueLabel dueOn={t.due_on} locked={t.due_locked} />
             <span className="ml-2 text-muted-foreground">{t.status.replace(/_/g, " ")}</span>
           </li>
         ))}
@@ -111,6 +114,7 @@ function SupervisorCheck() {
                   {(t as Row).ref ? `#${(t as Row).ref} ` : ""}{t.title ?? "Ticket"}
                 </Link>
                 <span className="text-muted-foreground">{usDateTime(t.updated_at ?? t.created_at)}</span>
+                <TicketDueLabel dueOn={(t as Row).due_on} locked={(t as Row).due_locked} />
               </li>
             ))}
           </ul>

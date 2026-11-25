@@ -104,7 +104,7 @@ export function AllOpenTicketsTable({ tickets }: { tickets: OpenRow[] }) {
             {rows.map((r) => (
               <tr key={r.id}>
                 <td className="p-2"><input type="checkbox" className="h-5 w-5" aria-label={`Select ${r.title ?? "ticket"}`} checked={picked.has(r.id)} onChange={() => toggle(r.id)} /></td>
-                <td className="p-2"><Link to="/tickets/$ticketId" params={{ ticketId: r.id }} className="font-medium hover:underline">{r.ref && !r.rollup ? `#${r.ref} ` : ""}{r.title ?? "Ticket"}</Link></td>
+                <td className="p-2"><Link to="/tickets/$ticketId" params={{ ticketId: r.id }} search={r.rollup ? { issues: r.rollup.map((t) => t.id).join(",") } : {}} className="font-medium hover:underline">{r.ref && !r.rollup ? `#${r.ref} ` : ""}{r.title ?? "Ticket"}</Link></td>
                 <td className="p-2">{r.properties ? formatPropertyLabel(r.properties as never).full : ""}</td>
                 <td className="p-2">{String(r.priority ?? "").toUpperCase()}</td>
                 <td className="p-2">{r.assigned_to ? displayName((staff ?? []).find((p) => p.id === r.assigned_to) ?? null) : "Unassigned"}</td>

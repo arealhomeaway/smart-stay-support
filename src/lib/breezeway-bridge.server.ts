@@ -162,7 +162,11 @@ export async function ticketBreezewayOrders(caller: unknown, ticketId: string) {
         .order("breezeway_updated_at", { ascending: false, nullsFirst: false })
         .limit(40)
     : { data: [] };
-  const linkedRows = ((linked.data ?? []) as OrderRow[]).map(toOrder);
+  const associations = await (caller as Loose).from("reported_issue_order_links").select("work_order_id").eq("ticket_id", ticketId);
+  if (associations.error && !["42P01", "PGRST205"].includes(associations.error.code)) throw new Error("The linked work orders could not be read.");
+  const ids = (associations.data ?? []).map((r: { work_order_id: string }) => r.work_order_id);
+  const additional = ids.length ? await db.from("breezeway_work_orders").select(ORDER_SELECT).in("id", ids) : { data: [] };
+  const linkedRows = Array.from(new Map([...((linked.data ?? []) as OrderRow[]), ...((additional.data ?? []) as OrderRow[])].map((r) => [r.id, toOrder(r)])).values());
   const linkedIds = new Set(linkedRows.map((r) => r.id));
   return {
     hasHome: Boolean(ticket.property_id),

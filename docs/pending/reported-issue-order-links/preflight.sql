@@ -1,0 +1,2 @@
+SELECT to_regclass('public.reported_issue_order_links'),to_regprocedure('public.link_reported_issues_breezeway_order(uuid[],uuid,bigint)'),to_regprocedure('private.can_edit_ticket(uuid,uuid)'),to_regprocedure('private.is_synthetic_account()');
+SELECT property_id,count(*) FROM public.tickets WHERE external_source='breezeway' AND archived_at IS NULL AND status NOT IN ('closed','resolved') GROUP BY property_id HAVING count(*)>1;
