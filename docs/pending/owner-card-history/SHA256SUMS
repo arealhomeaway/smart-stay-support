@@ -1,0 +1,4 @@
+577d31d837f09d56194c5c07737ca1ab94459326f3263cb6553ced4e885049bc  docs/pending/owner-card-history/apply.sql
+32a2d5e4bfb2cfff2f66dbcf27bf0691046c4b74eef41f58d50e04450ab9dc22  docs/pending/owner-card-history/finish.sql
+c73fca47ad5c3a50f4d2dfb41e87ffa12e1c78d1d4d952898c6feb171f083a0c  docs/pending/owner-card-history/apply.undo.sql
+4ff6475e3c054ab698996fe9c4985a41ea010b40f49e3a807d9548282d4bb1bf  docs/pending/owner-card-history/preflight.sql

@@ -13304,6 +13304,76 @@ export type Database = {
           },
         ]
       }
+      owner_work_saves: {
+        Row: {
+          actor_id: string
+          card_id: string | null
+          entry_id: string | null
+          field_values: Json
+          files: Json
+          flagged: boolean
+          id: string
+          program_id: string
+          property_ids: string[]
+          saved_at: string
+          source: string
+          supersedes: string | null
+          title: string
+        }
+        Insert: {
+          actor_id: string
+          card_id?: string | null
+          entry_id?: string | null
+          field_values?: Json
+          files?: Json
+          flagged?: boolean
+          id: string
+          program_id: string
+          property_ids?: string[]
+          saved_at?: string
+          source?: string
+          supersedes?: string | null
+          title?: string
+        }
+        Update: {
+          actor_id?: string
+          card_id?: string | null
+          entry_id?: string | null
+          field_values?: Json
+          files?: Json
+          flagged?: boolean
+          id?: string
+          program_id?: string
+          property_ids?: string[]
+          saved_at?: string
+          source?: string
+          supersedes?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_work_saves_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "owner_time_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_work_saves_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "owner_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_work_saves_supersedes_fkey"
+            columns: ["supersedes"]
+            isOneToOne: false
+            referencedRelation: "owner_work_saves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ownerrez_listing_cache: {
         Row: {
           added_on: string | null
@@ -21843,6 +21913,7 @@ export type Database = {
           status: string
         }[]
       }
+      read_owner_work_history: { Args: { _program: string }; Returns: Json }
       read_program_attribution: {
         Args: { _program_id: string }
         Returns: {
@@ -22365,6 +22436,7 @@ export type Database = {
         }
         Returns: string
       }
+      save_owner_card_work: { Args: { _save: Json }; Returns: string }
       save_owner_opportunity: {
         Args: {
           _content: Json

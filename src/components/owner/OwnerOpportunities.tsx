@@ -8,7 +8,7 @@
  * Owner-facing language only: "Opportunity", never task, ticket or requirement.
  */
 import { LoadError } from "@/components/ui/page";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { OwnerConversation } from "@/components/OwnerConversation";
@@ -261,8 +261,9 @@ function ResourceLinks({ items }: { items: Live["resources"] }) {
 
 /** The full Opportunity, in the side panel. Opening an ARHA Opportunity is what records it as viewed. */
 export function OpportunityDetail({
-  item, onClose, readOnly, homes, blockedReason, onLogHours, statusLabel, outsideLine = null, outsideFailed,
+  item, onClose, readOnly, homes, blockedReason, onLogHours, statusLabel, outsideLine = null, outsideFailed, workForm = null,
 }: {
+  workForm?: ReactNode;
   item: Live | null;
   onClose: () => void;
   readOnly: boolean;
@@ -323,11 +324,11 @@ export function OpportunityDetail({
       sentAt={item.createdAt}
       answerBy={item.dueOn ?? null}
       footer={
-        readOnly ? null : (
+        readOnly || workForm ? null : (
           <>
             {onLogHours && !blockedReason ? (
               <Button className="min-h-11" size="sm" variant="outline" onClick={() => { const p = item.propertyId; const a = item.title; onClose(); onLogHours(a, p); }}>
-                <Clock className="size-4" aria-hidden="true" /> Log hours for this
+                <Clock className="size-4" aria-hidden="true" /> Add more time
               </Button>
             ) : null}
             {/* Fix 24: an approval item has only Approve and Ask a question. */}
@@ -357,7 +358,7 @@ export function OpportunityDetail({
 
       {/* Build 17 finding 2: every Opportunity carries the conversation, so a staff message is seen
           and answered from the moment the thread exists, whoever leads the item. */}
-      {canRespond && t.includes("decision") ? (
+      {!workForm && canRespond && t.includes("decision") ? (
         <div className="flex flex-wrap gap-2">
           <Button className="min-h-11" disabled={send.isPending} onClick={() => send.mutate({ kind: "decision", decision: "authorize" })}>Approve</Button>
           <Button
@@ -375,13 +376,13 @@ export function OpportunityDetail({
         status={item.finished ? "complete" : "open"}
         legacy={item.responses}
         viewer="homeowner"
-        readOnly={readOnly}
+        readOnly={readOnly || Boolean(workForm)}
         refreshKeys={[["owner-opportunities"]]}
       />
       </div>
 
       {/* Nov 18: a finished Opportunity can be reopened to add more or update it. */}
-      {item.finished && !readOnly ? (
+      {item.finished && !readOnly && !workForm ? (
         <AddMoreBox
           key={item.id}
           title={item.title}
@@ -394,7 +395,7 @@ export function OpportunityDetail({
         />
       ) : null}
 
-      {canRespond ? (
+      {!workForm && canRespond ? (
         <div className="space-y-2">
           {t.includes("feedback") && !t.includes("decision") && !item.responses.length ? (
             <Textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="Share your thoughts or the changes you'd like…" aria-label="Your reply" />
@@ -407,6 +408,7 @@ export function OpportunityDetail({
         </div>
       ) : null}
 
+      {workForm}
       <OwnerUploadDialog
         open={upload}
         onOpenChange={setUpload}

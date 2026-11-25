@@ -1,0 +1,18 @@
+[
+  {
+    "sql": "CREATE OR REPLACE FUNCTION private.demo_owner_link_ok(_actor uuid, _program_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n SELECT _actor IS NOT NULL AND EXISTS(\n  SELECT 1 FROM public.owner_programs p JOIN auth.users a ON a.id=_actor\n  WHERE p.id=_program_id AND p.is_demo AND p.archived_at IS NULL AND private.is_program_member(p.id,_actor)\n   AND a.deleted_at IS NULL AND (a.banned_until IS NULL OR a.banned_until<=now())\n   AND a.email_confirmed_at IS NOT NULL AND lower(a.email) LIKE '%@resolve-test.invalid'\n   AND EXISTS(SELECT 1 FROM public.user_roles WHERE user_id=_actor AND role::text='owner')\n   AND NOT EXISTS(SELECT 1 FROM public.user_roles WHERE user_id=_actor AND role::text<>'owner')\n   AND NOT EXISTS(SELECT 1 FROM public.owner_programs o WHERE o.owner_user_id=_actor AND o.id<>p.id)\n   AND EXISTS(SELECT 1 FROM public.owner_program_properties pp WHERE pp.program_id=p.id)\n   AND NOT EXISTS(SELECT 1 FROM public.owner_program_properties pp LEFT JOIN public.properties h ON h.id=pp.property_id\n     WHERE pp.program_id=p.id AND (pp.is_demo IS NOT TRUE OR h.is_demo IS NOT TRUE))\n   AND (SELECT l.action='owner_program.demo_account_linked' AND l.after_value->>'owner_user_id'=_actor::text\n        FROM public.audit_log l WHERE l.entity_type='owner_program' AND l.entity_id=p.id\n         AND l.action IN ('owner_program.demo_account_linked','owner_program.demo_account_unlinked')\n         AND public.has_role(l.actor_id,'admin')\n        ORDER BY l.created_at DESC LIMIT 1) IS TRUE\n    OR EXISTS(SELECT 1 FROM public.program_members m WHERE m.program_id=p.id AND m.user_id=_actor\n     AND m.role='co_owner' AND m.removed_at IS NULL AND public.has_role(m.added_by,'admin')))\n$function$\n",
+    "name": "demo_owner_link_ok"
+  },
+  {
+    "sql": "CREATE OR REPLACE FUNCTION private.is_program_member(_program_id uuid, _user_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'private', 'pg_temp'\nAS $function$\n  SELECT _user_id IS NOT NULL AND EXISTS (\n    SELECT 1 FROM public.owner_programs p WHERE p.id=_program_id\n      AND (p.owner_user_id=_user_id OR EXISTS (\n        SELECT 1 FROM public.program_members m\n        WHERE m.program_id=p.id AND m.user_id=_user_id AND m.removed_at IS NULL\n      ))\n  )\n$function$\n",
+    "name": "is_program_member"
+  },
+  {
+    "sql": "CREATE OR REPLACE FUNCTION private.is_synthetic_account()\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'auth'\nAS $function$\n  SELECT EXISTS (\n    SELECT 1 FROM auth.users u\n    WHERE u.id = auth.uid()\n      AND u.email ~* '@(resolve-test\\.invalid|example\\.(com|invalid)|demo\\.arha\\.test)$'\n  )\n$function$\n",
+    "name": "is_synthetic_account"
+  },
+  {
+    "sql": "CREATE OR REPLACE FUNCTION private.owner_program_live(_status text)\n RETURNS boolean\n LANGUAGE sql\n IMMUTABLE\n SET search_path TO 'public'\nAS $function$\n  SELECT _status IN ('draft', 'waiting_for_closing', 'ready_for_onboarding', 'active', 'target_reached')\n$function$\n",
+    "name": "owner_program_live"
+  }
+]

@@ -65,6 +65,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useOwnerPreview } from "@/lib/owner-preview";
 import { useDemo } from "@/components/DemoProvider";
 import { ownerProgramDisplay } from "@/lib/owner-program-display";
+import { OwnerWorkForm } from "@/components/owner/OwnerWorkForm";
 import { OwnerPortalMenu } from "@/components/owner/OwnerPortalMenu";
 
 export const Route = createFileRoute("/_authenticated/owner")({
@@ -484,27 +485,7 @@ function OwnerHubBody({
         </div>
       ) : null}
 
-      <LogTimeDialog
-        key={logKey}
-        open={heroLogOpen}
-        onOpenChange={setHeroLogOpen}
-        programId={program.id}
-        anchor={heroLogAnchor}
-        defaultActivity={heroLogActivity}
-        defaultPropertyIds={logHomes}
-        phase={ownerPhase}
-        properties={properties
-          .filter(
-            (p) => homeClosingArrived(p),
-          )
-          .map((p) => ({ id: p.propertyId, name: p.name }))}
-        currentEntries={preview ? [] : (data.entries as unknown as LoggedEntry[])}
-        userId={user.id}
-        onDone={() => {
-          logAfter?.();
-          invalidate();
-        }}
-      />
+      {heroLogOpen ? <Dialog open onOpenChange={setHeroLogOpen}><DialogContent className="max-h-[90dvh] overflow-y-auto"><DialogHeader><DialogTitle>Add work</DialogTitle></DialogHeader><OwnerWorkForm programId={program.id} propertyId={logHomes[0] ?? selectedHomeId ?? properties[0]?.propertyId ?? null} readOnly={preview} onSaved={() => { setHeroLogOpen(false); logAfter?.(); invalidate(); }} /></DialogContent></Dialog> : null}
 
       {!preview && logHoursBlockedReason ? (
         <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm" role="status">
@@ -868,6 +849,7 @@ function ReviewPanel({
           priorResponse: review.owner_response ?? null,
           finished: review.status === "answered" || review.status === "closed",
         }}
+        workForm={<OwnerWorkForm programId={programId} source="review" cardId={review.id} propertyId={review.propertyIds[0] ?? null} title={review.title} readOnly={readOnly} onSaved={onDone} {...(action?.publicationId ? { approvalId: action.approvalId, publicationId: action.publicationId, decisionChoices: [{value:"approved",label:"Approve"},{value:"declined",label:"Request changes"}] } : {})} />}
         action={action}
         sharedFiles={sharedFiles}
         reviewId={review.id}

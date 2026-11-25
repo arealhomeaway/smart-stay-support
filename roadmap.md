@@ -5,6 +5,7 @@
 - [ ] Shared owner/staff history, totals, duplicate prompt and owner-only archive (H9 clarification requested).
 - [ ] Owner menu and weekly-email history destination.
 - [ ] Stage, practise and apply authorized database package; demo-owner desktop/phone and staff verification.
+- [ ] Use the existing demo homeowner for writable save tests (authorized 21:18 UTC); owner-only archive still awaits H9 clarification.
 
 ## Shared simple staff Home (Emily, Nov 25)
 - [x] Mount existing CoordinatorHome for all staff; plain leader Oversight link, no totals. Old components kept, reads/actions unchanged.

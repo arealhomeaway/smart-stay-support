@@ -27,7 +27,8 @@ import { OwnerApprovalPanel } from "@/components/OwnerApprovalPanel";
 import { OnboardingActions } from "@/components/owner/OnboardingActions";
 import { LibraryVideoIndexError, LibraryVideoPlayer, useLibraryVideoIndex } from "@/components/owner/LibraryVideoPlayer";
 import { loadOwnerItemLastSpeakers, loadOwnerPortalPlan, loadOwnerOutsideLines, type OwnerPortalPlanRow } from "@/lib/ao-data";
-import { portalCardView } from "@/lib/ao-ui";
+import { OwnerWorkForm, SavedWorkFile } from "@/components/owner/OwnerWorkForm";
+import { parseOutputFields, portalCardView } from "@/lib/ao-ui";
 import { inQueue } from "@/lib/owner-opportunity-filters";
 import { ownerApprovals } from "@/lib/owner-portal.functions";
 import { ownerOnboardingActions } from "@/lib/owner-onboarding.functions";
@@ -96,6 +97,9 @@ type Item = BoardItem & {
   /** A plan card's owner item (its conversation and anchored hours). */
   reviewId?: string | null;
   outputFields?: unknown;
+  publicationId?: string | null;
+  question?: string | null;
+  sharedFiles?: { document_id: string; name: string }[];
 };
 
 const DONE_REVIEW = new Set(["answered", "closed", "acknowledged", "complete", "completed", "cancelled", "archived", "resolved"]);
@@ -252,6 +256,9 @@ export function OwnerOpportunityBoard({
         key: `action:${a.approvalId}`,
         source: "action",
         id: a.approvalId,
+        publicationId: a.publicationId,
+        question: a.detail,
+        sharedFiles: a.files.map(f => ({ document_id: f.id, name: f.title })),
         title: a.title,
         propertyIds: a.propertyId ? [a.propertyId] : [],
         from: "Onboarding Team",
@@ -277,6 +284,8 @@ export function OwnerOpportunityBoard({
         key: `approval:${a.id}`,
         source: "approval",
         id: a.id,
+        publicationId: a.publication_id,
+        question: a.detail,
         title: a.title,
         propertyIds: a.property_id ? [a.property_id] : [],
         from: "Operations Team",
@@ -720,7 +729,7 @@ function ItemPanel({
   const logFooter =
     onLogHours && !blockedReason && !readOnly ? (
       <Button className="min-h-11" size="sm" variant="outline" onClick={() => { onClose(); onLogHours(item.title, item.propertyIds[0] ?? null); }}>
-        <Clock className="size-4" aria-hidden="true" /> Log hours for this
+        <Clock className="size-4" aria-hidden="true" /> Add more time
       </Button>
     ) : null;
   if (item.source === "review") {
@@ -732,6 +741,7 @@ function ItemPanel({
     return (
       <OpportunityDetail
         item={w}
+        workForm={<OwnerWorkForm programId={programId} source="opportunity" cardId={item.id} propertyId={item.propertyIds[0] ?? null} title={item.title} readOnly={readOnly} {...(w?.responseTypes.includes("decision") ? { decisionChoices: [{ value: "authorize", label: "Approve" }, { value: "changes", label: "Request changes" }] } : {})} />}
         onClose={onClose}
         readOnly={readOnly}
         homes={homes}
@@ -743,37 +753,13 @@ function ItemPanel({
       />
     );
   }
-  if (item.source === "plan" && item.status === "done") {
-    const group = portalGroupFor(item.cardCode);
-    const log = !blockedReason && !readOnly ? onLogHours : undefined;
-    return (
-      <CompletedCardPanel
-        planCardId={item.id}
-        programId={programId}
-        propertyId={item.propertyIds[0] ?? null}
-        title={item.title}
-        home={home || (homes[0]?.name ?? "")}
-        typeLabel={group ? portalGroupLabel(group) : null}
-        cover={item.cover}
-        completedAt={item.completedAt ?? null}
-        outputFields={item.outputFields}
-        reviewId={item.reviewId ?? null}
-        entries={entries}
-        readOnly={readOnly}
-        onClose={onClose}
-        onChangeHours={log ? () => { onClose(); log(item.title, item.propertyIds[0] ?? null); } : undefined}
-      />
-    );
-  }
-  if (item.source === "plan") return <PlanCardPanel item={item} programId={programId} programLive={programLive} home={home} readOnly={readOnly} onOpenChange={onOpenChange} footer={logFooter} />;
+  if (item.source === "plan") return <PlanCardPanel item={item} programId={programId} programLive={programLive} home={home} readOnly={readOnly} onOpenChange={onOpenChange} footer={null} />;
   if (item.source === "approval" || item.source === "action") {
     return (
-      <OwnerSidePanel open onOpenChange={onOpenChange} status={item.status} title={item.title} home={[home, item.from].filter(Boolean).join(" · ")} sentAt={item.sentAt} answerBy={item.answerBy} footer={logFooter}>
-        {item.source === "approval" ? (
-          <OwnerApprovalPanel readOnly={readOnly} onlyId={item.id} />
-        ) : (
-          <OnboardingActions readOnly={readOnly} programId={preview ? programId : null} onlyId={item.id} />
-        )}
+      <OwnerSidePanel open onOpenChange={onOpenChange} status={item.status} title={item.title} home={[home, item.from].filter(Boolean).join(" · ")} sentAt={item.sentAt} answerBy={item.answerBy} footer={null}>
+        {item.question ? <p className="whitespace-pre-wrap text-sm">{item.question}</p> : null}
+        {item.sharedFiles?.map(f => <SavedWorkFile key={f.document_id} file={f} />)}
+        <OwnerWorkForm programId={programId} source={item.source} cardId={item.id} propertyId={item.propertyIds[0] ?? null} title={item.title} readOnly={readOnly} {...(item.publicationId ? { publicationId: item.publicationId } : {})} decisionChoices={[{value:"approved",label:"Approve"},{value:"declined",label:"Request changes"}]} />
       </OwnerSidePanel>
     );
   }
@@ -822,17 +808,7 @@ function PlanCardPanel({
         <LoadError what="The instructions" onRetry={outsideState.retry} />
       ) : outsideLine || row.what_text ? <PanelSection label="What we're asking"><p className="whitespace-pre-wrap text-muted-foreground">{outsideLine ?? row.what_text}</p></PanelSection> : null}
       {item.allHomes ? <p className="text-sm text-muted-foreground">Answer once and it counts for every one of your homes.</p> : null}
-      {view.kind === "open" ? (
-        <PanelSection label="Your answer">
-          <PlanCardForm planCardId={row.plan_card_id} programId={programId} propertyId={row.property_id ?? item.propertyIds[0] ?? null} title={row.title} fields={view.fields} readOnly={readOnly} />
-        </PanelSection>
-      ) : view.kind === "done" ? (
-        <SentAnswer planCardId={row.plan_card_id} outputFields={row.output_fields} />
-      ) : view.kind === "closed" ? (
-        <p className="text-sm text-muted-foreground">This item has closed. ARHA is taking care of it.</p>
-      ) : (
-        <p className="text-sm text-muted-foreground">{view.text}</p>
-      )}
+      {view.kind !== "locked" ? <OwnerWorkForm programId={programId} source="plan" cardId={row.plan_card_id} propertyId={row.property_id ?? null} title={row.title} fields={parseOutputFields(row.output_fields)} reviewId={row.owner_review_id ?? null} readOnly={readOnly} /> : <p className="text-sm text-muted-foreground">{view.text}</p>}
       {row.owner_review_id ? <OwnerItemConversation reviewId={row.owner_review_id} side="owner" readOnly={readOnly} /> : null}
       {/* Nov 18: a closed card in her Completed list can still take more from her. */}
       {view.kind === "closed" && row.owner_review_id && !readOnly ? (

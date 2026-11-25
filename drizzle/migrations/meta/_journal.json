@@ -2703,6 +2703,20 @@
       "when": 1795630398767,
       "tag": "0385_weekly_hours_report",
       "breakpoints": true
+    },
+    {
+      "idx": 386,
+      "version": "7",
+      "when": 1795640928171,
+      "tag": "0386_owner_card_history",
+      "breakpoints": true
+    },
+    {
+      "idx": 387,
+      "version": "7",
+      "when": 1795641069736,
+      "tag": "0387_owner_card_history_finish",
+      "breakpoints": true
     }
   ]
 }

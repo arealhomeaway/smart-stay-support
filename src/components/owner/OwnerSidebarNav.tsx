@@ -28,7 +28,8 @@ export function OwnerSidebarNav() {
   const search = useRouterState({
     select: (s) => s.location.search as { home?: string; view?: string },
   });
-  const onOwner = useRouterState({ select: (s) => s.location.pathname === "/owner" });
+  const path = useRouterState({ select: (s) => s.location.pathname });
+  const onOwner = path === "/owner";
 
   return (
     <SidebarGroup>
@@ -41,7 +42,7 @@ export function OwnerSidebarNav() {
             <SidebarMenuItem key={item.label}>
               <SidebarMenuButton
                 asChild
-                isActive={item.view === "history" ? !onOwner && window.location.pathname === "/owner/history" : onOwner && search.view === item.view}
+                isActive={item.view === "history" ? !onOwner && path === "/owner/history" : onOwner && search.view === item.view}
                 tooltip={item.label}
                 className={buttonClass}
               >

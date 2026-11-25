@@ -3,9 +3,9 @@ import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import type { WorkHistoryRow } from '@/lib/owner-work-history';
 export type OwnerWorkSave = {
  saveKey: string; programId: string; source: string; cardId: string | null; propertyIds: string[];
- activity: string; minutes: number; entryDate: string; values: Record<string, unknown>;
+ activity: string; minutes: number; entryDate: string; values: Record<string, string | number | boolean | null>;
  files: { document_id: string; name: string }[]; paths: string[]; phase: string;
- editSaveId?: string; editEntryId?: string; decision?: string; publicationId?: string; mode?: string;
+ editSaveId?: string; editEntryId?: string; decision?: string; approvalId?:string; publicationId?: string; mode?: string;
 };
 export const readOwnerWorkHistory = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
  .inputValidator((data: { programId: string }) => data)

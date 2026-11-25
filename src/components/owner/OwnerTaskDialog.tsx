@@ -113,6 +113,7 @@ export function OwnerTaskDialog({
   reviewId,
   readOnly = false,
   extra = null,
+  workForm = null,
 }: {
   open: boolean;
   onOpenChange: (next: boolean) => void;
@@ -133,6 +134,7 @@ export function OwnerTaskDialog({
   readOnly?: boolean;
   /** Extra sections for this item, such as a photo download. */
   extra?: ReactNode;
+  workForm?: ReactNode;
 }) {
   const [response, setResponse] = useState("");
   const [note, setNote] = useState("");
@@ -203,9 +205,9 @@ export function OwnerTaskDialog({
       answerBy={details.respondBy ?? action?.dueOn ?? null}
       footer={
         <>
-          {canLogTime ? (
+          {workForm ? null : canLogTime ? (
             <Button className="min-h-11" size="sm" variant="outline" onClick={onLogTime}>
-              <Clock className="mr-1 size-4" aria-hidden="true" /> Log hours for this
+              <Clock className="mr-1 size-4" aria-hidden="true" /> Add more time
             </Button>
           ) : (
             <p className="text-xs text-muted-foreground">
@@ -264,7 +266,7 @@ export function OwnerTaskDialog({
         <p className="text-xs text-muted-foreground">Decision recorded {usDateTime(action.decidedAt)}.</p>
       ) : null}
 
-      {decidable ? (
+      {!workForm && decidable ? (
         <div className="rounded-xl border border-border p-3">
           <p className="text-sm font-medium">Your decision</p>
           <p className="mt-1 text-xs text-muted-foreground">{SILENCE_IS_NOT_APPROVAL}</p>
@@ -288,10 +290,11 @@ export function OwnerTaskDialog({
         </div>
       ) : null}
 
+      {workForm}
       {reviewId && open ? (
-        <OwnerItemConversation reviewId={reviewId} side="owner" readOnly={readOnly} onChanged={onDecided} fallback={reply} />
+        <OwnerItemConversation reviewId={reviewId} side="owner" readOnly={readOnly || Boolean(workForm)} onChanged={onDecided} fallback={workForm ? null : reply} />
       ) : (
-        reply
+        workForm ? null : reply
       )}
     </OwnerSidePanel>
   );

@@ -22,6 +22,7 @@ CREATE POLICY owner_work_saves_read ON public.owner_work_saves FOR SELECT TO aut
 
 CREATE OR REPLACE FUNCTION public.save_owner_card_work(_save jsonb)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+#variable_conflict use_variable
 DECLARE uid uuid:=auth.uid(); prog public.owner_programs; pc public.ao_home_plan_cards; r public.owner_reviews;
  w public.work_items; ap public.approvals; old public.owner_work_saves; receipt public.owner_work_saves;
  sid uuid:=(_save->>'saveKey')::uuid; pid uuid:=(_save->>'programId')::uuid;
@@ -104,7 +105,7 @@ BEGIN
    ELSIF 'feedback'=ANY(w.response_types) THEN
     PERFORM public.respond_owner_opportunity(card,'feedback',NULL,act);
    ELSE PERFORM public.complete_owner_opportunity(card); END IF;
-  ELSIF src IN ('approval','action') AND ap.status='pending' AND nullif(_save->>'decision','') IS NOT NULL THEN
+  ELSIF src IN ('approval','action') AND ap.status='pending' AND nullif(_save->>'decision','') IS NOT NULL AND nullif(_save->>'publicationId','') IS NOT NULL THEN
    PERFORM public.respond_owner_approval(card,(_save->>'publicationId')::uuid,ap.updated_at,(_save->>'decision') IN ('yes','approved','authorize'),act);
   ELSE issue:=true; UPDATE public.owner_work_saves SET flagged=true WHERE id=sid;
   END IF;
@@ -126,7 +127,7 @@ BEGIN
   FROM public.owner_time_entries e JOIN public.owner_programs p ON p.id=e.program_id
   WHERE e.program_id=_program AND e.is_demo=p.is_demo
  ), rows AS (
- SELECT jsonb_build_object('id',e.id,'entryId',e.id,'saveId',s.id,'source',coalesce(s.source,'work'),'cardId',s.card_id,
+ SELECT jsonb_build_object('id',e.id,'entryId',e.id,'reviewId',e.review_id,'saveId',s.id,'source',coalesce(s.source,'work'),'cardId',s.card_id,
  'title',coalesce(s.title,e.activity),'kind',CASE WHEN s.card_id IS NOT NULL THEN 'Card' ELSE 'Added work' END,
  'date',e.entry_date,'savedAt',e.created_at,'activity',concat_ws(E'\n',e.activity,nullif(s.field_values->>'link','')),'minutes',e.minutes,'superseded',e.superseded,
  'actorId',e.owner_user_id,'values',coalesce(s.field_values,'{}'::jsonb),'files',coalesce(s.files,'[]'::jsonb),
@@ -140,7 +141,7 @@ BEGIN
  UNION ALL
  SELECT jsonb_build_object('id',c.id,'entryId',NULL,'saveId',NULL,'source','plan','cardId',c.plan_card_id,'title',l.title,'kind','Card',
  'date',c.submitted_at AT TIME ZONE 'America/Chicago','savedAt',c.submitted_at,'activity',coalesce(c.field_values->>'activity',c.field_values::text),'minutes',0,
- 'superseded',false,'actorId',c.submitted_by,'values',c.field_values,'files',c.files,'paths','[]'::jsonb,'propertyIds',jsonb_build_array(c.property_id),'flagged',false)
+ 'superseded',false,'reviewId',(SELECT pc.owner_review_id FROM public.ao_home_plan_cards pc WHERE pc.id=c.plan_card_id),'actorId',c.submitted_by,'values',c.field_values,'files',c.files,'paths','[]'::jsonb,'propertyIds',jsonb_build_array(c.property_id),'flagged',false)
  FROM public.ao_contributions c JOIN public.ao_library_cards l ON l.id=c.card_id
  WHERE c.program_id=_program AND NOT EXISTS(SELECT 1 FROM public.owner_work_saves s WHERE s.program_id=_program AND s.source='plan' AND s.card_id=c.plan_card_id)
  UNION ALL
@@ -155,132 +156,13 @@ END $$;
 REVOKE ALL ON FUNCTION public.read_owner_work_history(uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.read_owner_work_history(uuid) TO authenticated,service_role;
 
-CREATE OR REPLACE FUNCTION public.log_owner_time_entry(_entry jsonb, _property_ids uuid[])
- RETURNS uuid
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
-DECLARE program public.owner_programs; opportunity public.owner_reviews; enrollment public.owner_program_properties;
- home public.properties; link record; chosen uuid[]; context_ids uuid[]; chosen_property uuid;
- entry_day date; reported_minutes integer; new_id uuid; ticket public.tickets; manual boolean;
- paths jsonb; path_item text;
+DO $patch$
+DECLARE def text;
 BEGIN
- IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Sign in to record participation.'; END IF;
- IF _entry IS NULL OR jsonb_typeof(_entry) IS DISTINCT FROM 'object' OR (_entry->'confirmed') IS DISTINCT FROM 'true'::jsonb THEN
-  RAISE EXCEPTION 'Confirm that this entry records the time you personally spent.';
- END IF;
- program:=private.lock_owner_time_program((_entry->>'programId')::uuid,auth.uid(),false,true);
- entry_day:=(_entry->>'entryDate')::date; reported_minutes:=(_entry->>'minutes')::integer;
- manual:=nullif(_entry->>'reviewId','') IS NULL;
- IF entry_day IS NULL OR NOT isfinite(entry_day) OR entry_day>private.business_today() THEN
-  RAISE EXCEPTION 'Choose a date no later than today.';
- END IF;
- IF length(trim(coalesce(_entry->>'activity',''))) < 3 THEN
-  RAISE EXCEPTION 'What did you do? needs at least 3 characters.';
- END IF;
- IF length(trim(coalesce(_entry->>'activity',''))) > 2000 THEN
-  RAISE EXCEPTION 'What did you do? can be up to 2,000 characters.';
- END IF;
- IF reported_minutes IS NULL OR reported_minutes NOT BETWEEN 1 AND 1440 THEN
-  RAISE EXCEPTION 'Minutes spent must be a whole number from 1 to 1,440.';
- END IF;
- IF length(coalesce(_entry->>'output',''))>1000 OR length(coalesce(_entry->>'comments',''))>1000 THEN
-  RAISE EXCEPTION 'Notes can be up to 1,000 characters.';
- END IF;
- IF coalesce(_entry->>'phase','') NOT IN ('onboarding','ongoing')
-  OR length(coalesce(_entry->>'activityCategory',''))>80 OR length(coalesce(_entry->>'output',''))>1000
-  OR length(coalesce(_entry->>'comments',''))>1000 OR length(coalesce(_entry->>'attachmentPath',''))>400 THEN
-   RAISE EXCEPTION 'This could not save. Your entry is still here. Please try again, and if it happens again, message your ARHA contact.';
- END IF;
- paths:=coalesce(_entry->'attachmentPaths','[]'::jsonb);
- IF jsonb_typeof(paths) IS DISTINCT FROM 'array' OR jsonb_array_length(paths)>10 THEN
-  RAISE EXCEPTION 'Attach at most ten files to one entry.';
- END IF;
- FOR path_item IN SELECT jsonb_array_elements_text(paths) LOOP
-  IF path_item IS NULL OR length(trim(path_item)) NOT BETWEEN 1 AND 400 THEN
-   RAISE EXCEPTION 'One of the attached files could not be recorded. Try again.';
-   END IF;
- END LOOP;
- IF jsonb_array_length(paths)>0 AND nullif(_entry->>'attachmentPath','') IS DISTINCT FROM (paths->>0) THEN
-  RAISE EXCEPTION 'The attached files could not be recorded. Try again.';
- END IF;
- IF cardinality(coalesce(_property_ids,'{}'::uuid[]))>25 OR array_position(_property_ids,NULL) IS NOT NULL THEN
-  RAISE EXCEPTION 'Choose at most 25 valid properties.';
- END IF;
- SELECT coalesce(array_agg(DISTINCT p ORDER BY p),'{}'::uuid[]) INTO chosen FROM unnest(coalesce(_property_ids,'{}'::uuid[])) p;
- IF manual THEN
-   IF nullif(_entry->>'ticketId','') IS NOT NULL THEN
-   RAISE EXCEPTION 'A self-recorded activity cannot carry a Ticket link.';
-   END IF;
-  context_ids:=chosen;
- ELSE
-  SELECT * INTO opportunity FROM public.owner_reviews WHERE id=(_entry->>'reviewId')::uuid AND program_id=program.id FOR SHARE NOWAIT;
-  IF NOT FOUND OR opportunity.archived_at IS NOT NULL OR opportunity.is_demo IS DISTINCT FROM program.is_demo
-   OR coalesce(opportunity.status,'') NOT IN ('awaiting_owner','answered','returned') OR opportunity.available_from>now() OR opportunity.available_from::date>entry_day
-   OR opportunity.phase IS DISTINCT FROM (_entry->>'phase') THEN
-   RAISE EXCEPTION 'Choose an available participation opportunity from this program.';
-   END IF;
-  IF opportunity.task_type NOT IN ('property_specific','multi_property','program_wide') OR opportunity.task_type IS NULL THEN
-   RAISE EXCEPTION 'This opportunity needs a valid participation scope.';
-  END IF;
-  IF opportunity.task_type='property_specific' THEN
-   IF opportunity.property_id IS NULL THEN RAISE EXCEPTION 'This opportunity needs its canonical Property.'; END IF;
-   IF cardinality(chosen)=0 THEN chosen:=ARRAY[opportunity.property_id]; END IF;
-   IF chosen IS DISTINCT FROM ARRAY[opportunity.property_id] THEN RAISE EXCEPTION 'That opportunity belongs to a different Property.'; END IF;
-  ELSIF opportunity.task_type='multi_property' AND cardinality(chosen)=0 THEN
-   RAISE EXCEPTION 'Select the opportunity properties this activity involved.';
-   ELSIF opportunity.task_type='program_wide' AND opportunity.property_id IS NOT NULL THEN
-   RAISE EXCEPTION 'The program-wide opportunity has conflicting Property context.';
-   END IF;
-  context_ids:=chosen;
-  IF opportunity.property_id IS NOT NULL THEN context_ids:=array_append(context_ids,opportunity.property_id); END IF;
-  FOR link IN SELECT r.property_id FROM public.owner_review_properties r WHERE r.review_id=opportunity.id ORDER BY r.property_id FOR SHARE NOWAIT LOOP
-   context_ids:=array_append(context_ids,link.property_id);
-   IF opportunity.task_type='property_specific' AND link.property_id IS DISTINCT FROM opportunity.property_id THEN
-    RAISE EXCEPTION 'The opportunity Property links changed. Ask the team to reconcile them.';
-   END IF;
-   END LOOP;
-  IF opportunity.task_type='multi_property' AND EXISTS(SELECT 1 FROM unnest(chosen) p WHERE NOT EXISTS(
-   SELECT 1 FROM public.owner_review_properties r WHERE r.review_id=opportunity.id AND r.property_id=p
-  )) THEN RAISE EXCEPTION 'That Property is not assigned to this participation opportunity.'; END IF;
- END IF;
- FOR chosen_property IN SELECT DISTINCT p FROM unnest(context_ids) p ORDER BY p LOOP
-  SELECT * INTO enrollment FROM public.owner_program_properties e WHERE e.program_id=program.id AND e.property_id=chosen_property FOR SHARE NOWAIT;
-  IF NOT FOUND OR enrollment.inclusion_status IS DISTINCT FROM 'included' OR enrollment.archived_at IS NOT NULL
-   OR enrollment.is_demo IS DISTINCT FROM program.is_demo THEN
-   RAISE EXCEPTION 'Tag only homes included in this program.';
-   END IF;
-  SELECT * INTO home FROM public.properties h WHERE h.id=chosen_property FOR SHARE NOWAIT;
-  IF NOT FOUND OR home.owner_record_id IS DISTINCT FROM program.owner_record_id OR home.archived_at IS NOT NULL
-   OR home.is_demo IS DISTINCT FROM program.is_demo THEN RAISE EXCEPTION 'That Property is no longer available to this Owner.'; END IF;
- END LOOP;
- IF NOT manual THEN
-  IF nullif(_entry->>'ticketId','')::uuid IS DISTINCT FROM opportunity.ticket_id THEN
-   RAISE EXCEPTION 'Time must retain its participation opportunity Ticket link.';
-  END IF;
-  IF opportunity.ticket_id IS NOT NULL THEN
-    SELECT * INTO ticket FROM public.tickets WHERE id=opportunity.ticket_id FOR SHARE NOWAIT;
-   IF NOT FOUND OR ticket.property_id IS DISTINCT FROM opportunity.property_id OR NOT ticket.property_id=ANY(chosen)
-    OR ticket.is_demo IS DISTINCT FROM program.is_demo THEN RAISE EXCEPTION 'The opportunity Ticket context changed.'; END IF;
-  END IF;
- END IF;
- -- Double save guard (Nov 21): the same homeowner, program, date, minutes and description saved in the
- -- last 10 minutes is already on file.
- IF private.owner_time_recent_repeat(program.id,auth.uid(),entry_day,reported_minutes,trim(_entry->>'activity'),NULL,NULL) AND NOT EXISTS (SELECT 1 FROM public.owner_work_saves s WHERE s.id=nullif(_entry->>'cardSaveKey','')::uuid AND s.program_id=program.id AND s.actor_id=auth.uid() AND s.entry_id IS NULL) THEN
-  RAISE EXCEPTION 'Already saved.';
- END IF;
- INSERT INTO public.owner_time_entries(program_id,owner_user_id,phase,entry_date,minutes,activity,activity_category,decision_outcome,output,comments,attachment_path,attachment_paths,review_id,ticket_id,attested,is_demo,owner_update_revision,review_status)
- VALUES(program.id,auth.uid(),_entry->>'phase',entry_day,reported_minutes,trim(_entry->>'activity'),nullif(_entry->>'activityCategory',''),nullif(_entry->>'output',''),nullif(_entry->>'output',''),nullif(_entry->>'comments',''),nullif(_entry->>'attachmentPath',''),paths,opportunity.id,opportunity.ticket_id,true,program.is_demo,
-  CASE WHEN manual THEN NULL ELSE nullif(_entry->>'ownerUpdateRevision','')::integer END,'submitted')
- RETURNING id INTO new_id;
- INSERT INTO public.owner_time_entry_properties(entry_id,property_id) SELECT new_id,p FROM unnest(chosen) p;
-  UPDATE public.owner_program_properties e SET last_owner_activity_at=now() WHERE e.program_id=program.id AND e.property_id=ANY(chosen);
- UPDATE public.owner_programs SET last_owner_activity_at=now() WHERE id=program.id;
- INSERT INTO public.owner_program_events(program_id,entry_id,review_id,kind,summary,actor_id,new_value,detail)
- VALUES(program.id,new_id,opportunity.id,'time_entry',reported_minutes::text||' minutes reported: '||trim(_entry->>'activity'),auth.uid(),reported_minutes::text,
-  jsonb_build_object('propertyIds',to_jsonb(chosen),'phase',_entry->>'phase','category',_entry->>'activityCategory','selfRecorded',manual,'attachmentCount',jsonb_array_length(paths)));
- RETURN new_id;
-EXCEPTION WHEN lock_not_available THEN RAISE EXCEPTION 'The program or opportunity is being updated. Refresh and try again.';
-END $function$
-;
+ SELECT pg_get_functiondef('public.log_owner_time_entry(jsonb,uuid[])'::regprocedure) INTO def;
+ def:=replace(def,
+ $old$IF private.owner_time_recent_repeat(program.id,auth.uid(),entry_day,reported_minutes,trim(_entry->>'activity'),NULL,NULL) THEN$old$,
+ $new$IF private.owner_time_recent_repeat(program.id,auth.uid(),entry_day,reported_minutes,trim(_entry->>'activity'),NULL,NULL)
+ AND NOT EXISTS(SELECT 1 FROM public.owner_work_saves s WHERE s.id=nullif(_entry->>'cardSaveKey','')::uuid AND s.program_id=program.id AND s.actor_id=auth.uid() AND s.entry_id IS NULL AND s.saved_at=transaction_timestamp()) THEN$new$);
+ EXECUTE def;
+END $patch$;

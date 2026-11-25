@@ -1,8 +1,8 @@
 import { loggedMinutes } from '@/lib/owner-portal-look';
 export type WorkHistoryRow = {
  id: string; entryId: string | null; saveId: string | null; source: string; cardId: string | null;
- title: string; kind: 'Card' | 'Added work'; date: string; savedAt: string; activity: string | null;
- minutes: number; superseded: boolean; actorId: string | null; values: Record<string, unknown>;
+ reviewId?: string | null; title: string; kind: 'Card' | 'Added work'; date: string; savedAt: string; activity: string | null;
+ minutes: number; superseded: boolean; actorId: string | null; values: Record<string, string | number | boolean | null>;
  files: { document_id: string; name: string }[]; paths: string[]; propertyIds: string[]; flagged: boolean;
 };
 export function historyTotals(rows: WorkHistoryRow[]) {

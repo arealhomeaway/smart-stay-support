@@ -1,0 +1,48 @@
+import {PGlite} from '@electric-sql/pglite';
+import {readFileSync,writeFileSync} from 'node:fs';
+const dir='docs/pending/owner-card-history';
+const c=JSON.parse(readFileSync(`${dir}/live-capture/capture.json`,'utf8'));
+const helpers=JSON.parse(readFileSync(`${dir}/live-capture/helpers.json`,'utf8'));
+const db=new PGlite();
+const owner='00000000-0000-4000-8000-000000000001',program='00000000-0000-4000-8000-000000000002',home='00000000-0000-4000-8000-000000000003',review='00000000-0000-4000-8000-000000000004',card='00000000-0000-4000-8000-000000000005',library='00000000-0000-4000-8000-000000000006';
+const tables=new Map<string,any[]>();for(const col of c.tables){tables.set(col.table,[...(tables.get(col.table)??[]),col]);}
+await db.exec(`CREATE SCHEMA auth; CREATE SCHEMA private; CREATE ROLE anon;CREATE ROLE authenticated;CREATE ROLE service_role;CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;CREATE TABLE auth.users(id uuid,email text,deleted_at timestamptz,banned_until timestamptz,email_confirmed_at timestamptz);CREATE TABLE public.user_roles(user_id uuid,role text);CREATE TABLE public.program_members(program_id uuid,user_id uuid,removed_at timestamptz,role text,added_by uuid);CREATE TABLE public.property_owners(id uuid,active boolean);`);
+for(const sequence of new Set(c.tables.map((col:any)=>/nextval\('([^']+)'/.exec(col.default??'')?.[1]).filter(Boolean)))await db.exec(`CREATE SEQUENCE public.${sequence}`);
+for(const [table,cols]of tables)await db.exec(`CREATE TABLE public.${table} (${cols.map(col=>`"${col.column}" ${col.type}${col.default?` DEFAULT ${col.default}`:''}${col.nullable==='NO'?' NOT NULL':''}${col.column==='id'?' PRIMARY KEY':''}`).join(',')});`);
+await db.exec(`CREATE FUNCTION private.business_today() RETURNS date LANGUAGE sql AS $$ SELECT '2026-11-25'::date $$;
+CREATE FUNCTION private.is_staff(uuid) RETURNS boolean LANGUAGE sql AS $$SELECT EXISTS(SELECT 1 FROM public.user_roles WHERE user_id=$1 AND role<>'owner')$$;
+CREATE FUNCTION public.has_role(uuid,text) RETURNS boolean LANGUAGE sql AS $$SELECT EXISTS(SELECT 1 FROM public.user_roles WHERE user_id=$1 AND role=$2)$$;
+CREATE FUNCTION private.owner_program_readable(uuid,uuid,boolean) RETURNS boolean LANGUAGE sql AS $$SELECT EXISTS(SELECT 1 FROM public.owner_programs WHERE id=$2 AND owner_user_id=$1)$$;
+CREATE FUNCTION private.owner_current_property_for_actor(uuid,uuid,uuid) RETURNS boolean LANGUAGE sql AS $$SELECT EXISTS(SELECT 1 FROM public.owner_programs WHERE id=$3 AND owner_user_id=$1 AND property_id=$2)$$;
+CREATE FUNCTION private.record_homeowner_update(uuid,uuid,text,uuid,text,uuid,text,text,uuid DEFAULT NULL) RETURNS uuid LANGUAGE sql AS $$SELECT gen_random_uuid()$$;
+CREATE FUNCTION public.post_home_chat_message(uuid,text,text,jsonb,uuid[]) RETURNS uuid LANGUAGE sql AS $$SELECT gen_random_uuid()$$;
+CREATE FUNCTION public.owner_item_add(uuid,text) RETURNS uuid LANGUAGE sql AS $$SELECT $1$$;`);
+for(const name of ['is_program_member','is_synthetic_account','owner_program_live'])await db.exec(helpers.find((h:any)=>h.name===name).sql);
+await db.exec(`CREATE FUNCTION private.demo_owner_link_ok(uuid,uuid) RETURNS boolean LANGUAGE sql AS $$SELECT true$$;`);
+for(const name of ['lock_owner_time_program','owner_time_recent_repeat','ao_submit_card','ao_edit_card_answer','owner_update_time_entry','log_owner_time_entry'])for(const f of c.functions.filter((f:any)=>f.name===name))await db.exec(f.sql);
+await db.exec(readFileSync(`${dir}/apply.sql`,'utf8'));
+await db.exec(readFileSync(`${dir}/finish.sql`,'utf8')); 
+function seed(table:string,over:Record<string,any>){const cols=tables.get(table)??[];const o={...over};for(const col of cols)if(col.nullable==='NO'&&!col.default&&!(col.column in o)){o[col.column]=col.type==='uuid'?owner:col.type.endsWith('[]')?[]:col.type==='jsonb'?{}:col.type==='boolean'?false:col.type==='date'?'2026-11-25':col.type.includes('timestamp')?'2026-11-25T12:00:00Z':col.type==='text'?'fixture':1;}return db.query(`INSERT INTO public.${table}(${Object.keys(o).map(k=>`"${k}"`).join(',')}) VALUES(${Object.keys(o).map((_,i)=>`$${i+1}`).join(',')})`,Object.entries(o).map(([k,v])=>cols.find(col=>col.column===k)?.type==='jsonb'?JSON.stringify(v):v));}
+await db.exec(`INSERT INTO auth.users VALUES('${owner}','demo@resolve-test.invalid',null,null,now());INSERT INTO public.user_roles VALUES('${owner}','owner');INSERT INTO public.property_owners VALUES('${owner}',true);SELECT set_config('request.jwt.claim.sub','${owner}',false);`);
+await seed('properties',{id:home,owner_record_id:owner,is_demo:true,archived_at:null,name:'Practice home'});
+await seed('owner_programs',{id:program,property_id:home,owner_record_id:owner,owner_user_id:owner,status:'active',started_on:'2026-11-01',is_demo:true,archived_at:null,completed_at:null});
+await seed('owner_program_properties',{program_id:program,property_id:home,inclusion_status:'included',is_demo:true,archived_at:null,closing_date:'2026-11-01',closing_confirmed:true});
+await seed('owner_reviews',{id:review,program_id:program,property_id:home,title:'Practice card',task_type:'property_specific',phase:'ongoing',status:'awaiting_owner',is_demo:true,archived_at:null,available_from:'2026-11-01T00:00:00Z'});
+await seed('ao_library_cards',{id:library,title:'Practice card',once_per_owner:false});
+await seed('ao_home_plan_cards',{id:card,program_id:program,property_id:home,card_id:library,owner_review_id:review,unlocked_at:'2026-11-01T00:00:00Z'});
+const call=async(o:Record<string,any>)=>(await db.query<{id:string}>(`SELECT public.save_owner_card_work($1::jsonb) id`,[JSON.stringify(o)])).rows[0]?.id;
+const payload={saveKey:'00000000-0000-4000-8000-000000000011',programId:program,source:'plan',cardId:card,propertyIds:[home],activity:'Worked on a Google document',minutes:90,entryDate:'2026-11-25',values:{activity:'Worked on a Google document',link:'https://docs.google.com/document/d/practice'},files:[],paths:[],phase:'ongoing'};
+let n=0;const check=(v:boolean,label:string)=>{if(!v)throw new Error(label);n++;console.log('PASS',label);};
+const id=await call(payload);check(id===payload.saveKey,'save returns replay receipt');
+const rows=async()=>(await db.query<any>(`SELECT read_owner_work_history('${program}') rows`)).rows[0].rows;
+let r=await rows();check(r.length===1&&r[0].minutes===90,'answer and 1.5 hours are one history row');check(r[0].activity.includes('https://docs.google.com'),'Google Docs link read back');
+await call(payload);check((await rows()).length===1,'retry cannot duplicate');
+await call({...payload,saveKey:'00000000-0000-4000-8000-000000000012',mode:'add'});check((await rows()).length===2,'explicit identical new entry saves');
+await call({...payload,saveKey:'00000000-0000-4000-8000-000000000013',editSaveId:id,minutes:105,activity:'Updated the document',values:{activity:'Updated the document'}});
+r=await rows();check(r.reduce((s:any,x:any)=>s+(x.superseded?0:x.minutes),0)===195,'edit preserves original and totals current entries');
+check(r.some((x:any)=>x.superseded),'original remains on file');
+await db.exec(`SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000099',false)`);
+try{await call({...payload,saveKey:'00000000-0000-4000-8000-000000000014'});throw new Error('unauthorized save succeeded');}catch(e){check(String(e).includes('enabled account')||String(e).includes('not available'),'foreign account cannot save');}
+await db.exec(readFileSync(`${dir}/apply.undo.sql`,'utf8'));check((await db.query<{n:number}>('SELECT count(*)::int n FROM owner_time_entries')).rows[0]?.n===3,'undo preserves all entries');
+writeFileSync(`${dir}/practice-results.md`,`# Isolated practice\n\n${n} checks passed. Uses captured live table columns and canonical card/time/edit definitions; identity and notification helpers are modeled, not a full live-schema clone. Checked combined save, link, replay, explicit duplicates, edit originals/totals, foreign-account refusal and undo retention.\n`);
+await db.close();

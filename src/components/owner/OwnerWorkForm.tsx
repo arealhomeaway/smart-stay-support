@@ -16,22 +16,22 @@ import type { WorkHistoryRow } from '@/lib/owner-work-history';
 import type { OutputField } from '@/lib/ao-ui';
 import { shortDate } from '@/lib/owner-opportunity-board';
 
-export function OwnerWorkForm({programId, source='work', cardId=null, propertyId=null, title='Added work', fields=[], readOnly=false, initial=null, publicationId, decisionChoices, onSaved}: {
+export function OwnerWorkForm({programId, source='work', cardId=null, propertyId=null, title='Added work', fields=[], readOnly=false, initial=null, publicationId, approvalId, decisionChoices, reviewId=null, onSaved}: {
  programId:string; source?:string; cardId?:string|null; propertyId?:string|null; title?:string;
- fields?:OutputField[]; readOnly?:boolean; initial?:WorkHistoryRow|null; publicationId?:string;
- decisionChoices?: {value:string; label:string}[]; onSaved?:()=>void;
+ fields?:OutputField[]; readOnly?:boolean; initial?:WorkHistoryRow|null; publicationId?:string; approvalId?:string;
+ reviewId?:string|null; decisionChoices?: {value:string; label:string}[]; onSaved?:()=>void;
 }) {
  const read = useServerFn(readOwnerWorkHistory);
  const q = useQuery({queryKey:['owner-work-history',programId],queryFn:()=>read({data:{programId}})});
- const rows=(q.data??[]).filter(r=>!r.superseded && cardId && r.cardId===cardId);
- const saved=initial??rows[0]??null;
+ const rows=(q.data??[]).filter(r=>!r.superseded && cardId && (r.cardId===cardId || Boolean(reviewId && r.reviewId===reviewId)));
+ const saved=initial??rows.find(r=>r.cardId===cardId)??rows[0]??null;
  const [mode,setMode]=useState<'view'|'edit'|'add'>(initial?'edit':'view');
- const [activity,setActivity]=useState(initial?.activity??'');
+ const [activity,setActivity]=useState(typeof initial?.values['activity']==='string'?initial.values['activity']:initial?.activity??'');
  const [hours,setHours]=useState(initial?String(Math.floor(initial.minutes/60)):'');
  const [minutes,setMinutes]=useState(initial?String(initial.minutes%60):'');
  const [day,setDay]=useState(initial?.date.slice(0,10)??centralToday());
- const [link,setLink]=useState('');
- const [values,setValues]=useState<Record<string,unknown>>(initial?.values??{});
+ const [link,setLink]=useState(typeof initial?.values['link']==='string'?initial.values['link']:'');
+ const [values,setValues]=useState<Record<string,string|number|boolean|null>>(initial?.values??{});
  const [files,setFiles]=useState(initial?.files??[]);
  const [busy,setBusy]=useState(false);
  const key=useRef(crypto.randomUUID());
@@ -42,11 +42,11 @@ export function OwnerWorkForm({programId, source='work', cardId=null, propertyId
   values:{...values,activity,link},files,paths:[],phase:'ongoing',mode:mode==='add'?'add':'save',
   ...(mode==='edit'&&saved?.saveId?{editSaveId:saved.saveId}:{}),
   ...(mode==='edit'&&saved?.entryId?{editEntryId:saved.entryId}:{}),
-  ...(typeof values['decision']==='string'?{decision:values['decision']}:{}),...(publicationId?{publicationId}:{})}}),
+  ...(typeof values['decision']==='string'?{decision:values['decision']}:{}),...(publicationId?{publicationId}:{}),...(approvalId?{approvalId}:{})}}),
   onSuccess:async()=>{key.current=crypto.randomUUID();setMode('view');setActivity('');setLink('');setHours('');setMinutes('');
    await Promise.all(['owner-work-history','owner-home','ao-owner-plan','ao-card-answer','owner-opportunities','owner-onboarding','owner-approvals'].map(k=>qc.invalidateQueries({queryKey:[k]})));
    toast.success('Saved'); onSaved?.();},onError:e=>toast.error(ownerSaveMessage(e))});
- const begin=(next:'edit'|'add')=>{setMode(next);key.current=crypto.randomUUID();setActivity(next==='edit'?saved?.activity??'':'');
+ const begin=(next:'edit'|'add')=>{setMode(next);key.current=crypto.randomUUID();setActivity(next==='edit'?(typeof saved?.values['activity']==='string'?saved.values['activity']:saved?.activity??''):'');setLink(next==='edit'&&typeof saved?.values['link']==='string'?saved.values['link']:'');
   setHours(next==='edit'?String(Math.floor((saved?.minutes??0)/60)):'');setMinutes(next==='edit'?String((saved?.minutes??0)%60):'');
   setValues(saved?.values??{});setFiles(next==='edit'?saved?.files??[]:[]);setDay(next==='edit'?saved?.date.slice(0,10)??centralToday():centralToday());};
  if(saved&&mode==='view') return <section className="space-y-3" aria-label="Saved card">
