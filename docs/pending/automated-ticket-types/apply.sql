@@ -1,4 +1,4 @@
--- Staged, NOT applied. Needs: Approved: apply automated-ticket-types
+-- APPLIED Nov 25 2026 as migration 0383 (Approved: apply automated-ticket-types)
 -- New Breezeway bridge tickets get the "Reported issue" type. Only sets the type when none is given.
 -- Runs before tickets_auto_assign (name order) so routing sees the Team B type, the same team untyped Breezeway already used.
 CREATE OR REPLACE FUNCTION private.ticket_automated_type()
