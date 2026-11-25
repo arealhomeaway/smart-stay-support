@@ -750,6 +750,156 @@ export type Database = {
         }
         Relationships: []
       }
+      ao_hours_report_edits: {
+        Row: {
+          after_value: Json
+          before_value: Json | null
+          edited_at: string
+          edited_by: string
+          id: string
+        }
+        Insert: {
+          after_value: Json
+          before_value?: Json | null
+          edited_at?: string
+          edited_by: string
+          id?: string
+        }
+        Update: {
+          after_value?: Json
+          before_value?: Json | null
+          edited_at?: string
+          edited_by?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      ao_hours_report_holds: {
+        Row: {
+          held_at: string
+          held_by: string
+          id: string
+          property_id: string
+          week_start: string
+        }
+        Insert: {
+          held_at?: string
+          held_by: string
+          id?: string
+          property_id: string
+          week_start: string
+        }
+        Update: {
+          held_at?: string
+          held_by?: string
+          id?: string
+          property_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ao_hours_report_holds_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "ao_hours_report_holds_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ao_hours_report_homes: {
+        Row: {
+          id: string
+          property_id: string
+          report_id: string
+          sent_at: string
+          sent_text: string
+        }
+        Insert: {
+          id?: string
+          property_id: string
+          report_id: string
+          sent_at?: string
+          sent_text: string
+        }
+        Update: {
+          id?: string
+          property_id?: string
+          report_id?: string
+          sent_at?: string
+          sent_text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ao_hours_report_homes_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "ao_hours_report_homes_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ao_hours_report_homes_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "ao_hours_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ao_hours_reports: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          notification_id: string | null
+          portal_notification_id: string | null
+          program_id: string
+          subject: string
+          week_start: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          notification_id?: string | null
+          portal_notification_id?: string | null
+          program_id: string
+          subject: string
+          week_start: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          notification_id?: string | null
+          portal_notification_id?: string | null
+          program_id?: string
+          subject?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ao_hours_reports_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "owner_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ao_library_card_history: {
         Row: {
           card_id: string
@@ -20060,6 +20210,16 @@ export type Database = {
         Returns: Json
       }
       ao_process_clocks: { Args: { _now?: string }; Returns: Json }
+      ao_record_hours_report: {
+        Args: {
+          _body: string
+          _program_id: string
+          _property_ids: string[]
+          _subject: string
+          _week_start: string
+        }
+        Returns: string
+      }
       ao_set_home_automation: {
         Args: { _covered_card_ids?: string[]; _on: boolean; _property: string }
         Returns: Json
@@ -20905,6 +21065,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      hold_ao_hours_report: {
+        Args: { _property_id: string; _week_start: string }
+        Returns: Json
       }
       hold_owner_closing_update: { Args: { _id: string }; Returns: Json }
       holds_functional_role: {
@@ -22115,6 +22279,7 @@ export type Database = {
       run_arrival_checks: { Args: never; Returns: Json }
       run_handoff_reminders: { Args: { _now?: string }; Returns: number }
       run_ticket_timed_alerts: { Args: never; Returns: number }
+      save_ao_hours_report_settings: { Args: { _value: Json }; Returns: Json }
       save_arha_opportunity: {
         Args: {
           _content: Json

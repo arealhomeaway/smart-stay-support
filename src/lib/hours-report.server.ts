@@ -28,14 +28,22 @@ export async function loadHoursReportSettings(db: Db): Promise<HoursReportSettin
   return readHoursReportSettings((r.data as { value?: unknown } | null)?.value);
 }
 
-const firstName = (name: string | null | undefined) => (name ?? "").trim().split(/\s+/)[0] || null;
+/** First name from the main homeowner's user profile only; none means "Hi there,". */
+async function profileFirstName(db: Db, programId: string): Promise<string | null> {
+  const prog = await db.from("owner_programs").select("owner_user_id").eq("id", programId).maybeSingle();
+  const uid = (prog.data as { owner_user_id: string | null } | null)?.owner_user_id;
+  if (!uid) return null;
+  const prof = await db.from("profiles").select("first_name").eq("id", uid).maybeSingle();
+  return ((prof.data as { first_name: string | null } | null)?.first_name ?? "").trim() || null;
+}
 
 /** The email for one program right now, from the existing combined total. */
 export async function buildProgramReport(db: Db, programId: string, settings: HoursReportSettings, now = new Date()) {
   const agg = await loadProgramAggregate(db as never, programId);
-  const p = agg.program as unknown as { ownerName: string | null; startedOn: string | null; endsOn: string | null };
+  const p = agg.program as unknown as { startedOn: string | null; endsOn: string | null };
+  const first = await profileFirstName(db, programId);
   const end = programEndInstant(p.endsOn, p.startedOn) ?? new Date(`${now.getUTCFullYear()}-12-31T23:59:59-06:00`);
-  const r = renderHoursReport(settings, { firstName: firstName(p.ownerName), reportedMinutes: agg.reportedMinutes, end, now });
+  const r = renderHoursReport(settings, { firstName: first, reportedMinutes: agg.reportedMinutes, end, now });
   const propertyIds = (agg.includedProperties ?? []).map((x: { propertyId: string }) => x.propertyId);
   return { ...r, propertyIds, endsOn: p.endsOn };
 }

@@ -2689,6 +2689,20 @@
       "when": 1795607566004,
       "tag": "0383_automated_ticket_types",
       "breakpoints": true
+    },
+    {
+      "idx": 384,
+      "version": "7",
+      "when": 1795630340290,
+      "tag": "0384_active_owner_hours_fix",
+      "breakpoints": true
+    },
+    {
+      "idx": 385,
+      "version": "7",
+      "when": 1795630398767,
+      "tag": "0385_weekly_hours_report",
+      "breakpoints": true
     }
   ]
 }

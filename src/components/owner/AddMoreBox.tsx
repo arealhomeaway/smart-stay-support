@@ -2,6 +2,7 @@
  * "Add more or update" on something the homeowner already finished (approved Nov 18). One box,
  * one Save: a named Saved line on success, or the error with her words kept in the box.
  */
+import { ownerSaveMessage, OWNER_SAVE_FALLBACK } from "@/lib/owner-save-error";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -33,7 +34,7 @@ export function AddMoreBox({
       toast.success(savedLine);
       onSaved?.();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(ownerSaveMessage(e)),
   });
   if (!open) {
     return (
@@ -52,7 +53,7 @@ export function AddMoreBox({
       <p className="text-xs text-muted-foreground">{REOPEN_COPY.keepNote}</p>
       {save.isError ? (
         <p role="alert" className="text-sm font-medium text-destructive">
-          Not saved: {save.error.message} Your words are still here. Try Save again.
+          {ownerSaveMessage(save.error) === OWNER_SAVE_FALLBACK ? OWNER_SAVE_FALLBACK : `Not saved: ${ownerSaveMessage(save.error)} Your words are still here. Try Save again.`}
         </p>
       ) : null}
       <div className="flex flex-wrap gap-2">

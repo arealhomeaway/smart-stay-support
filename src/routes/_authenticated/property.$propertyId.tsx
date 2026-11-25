@@ -84,9 +84,10 @@ export const Route = createFileRoute("/_authenticated/property/$propertyId")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  validateSearch: (raw: Record<string, unknown>): { from?: string | undefined; tab?: string | undefined } => ({
+  validateSearch: (raw: Record<string, unknown>): { from?: string | undefined; tab?: string | undefined; card?: string | undefined } => ({
     ...(typeof raw["from"] === "string" && raw["from"] ? { from: raw["from"] } : {}),
     ...(typeof raw["tab"] === "string" && raw["tab"] ? { tab: raw["tab"] } : {}),
+    ...(typeof raw["card"] === "string" && raw["card"] ? { card: raw["card"] } : {}),
   }),
   component: PropertyPage,
 });

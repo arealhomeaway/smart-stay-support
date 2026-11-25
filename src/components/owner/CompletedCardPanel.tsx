@@ -4,6 +4,7 @@
  * answer" and "Add a file" save through ao_edit_card_answer, which keeps a change record and posts
  * one line in the home's owner chat. The card stays completed. Uploads use the owner upload path.
  */
+import { ownerSaveMessage, OWNER_SAVE_FALLBACK } from "@/lib/owner-save-error";
 import { LinkedText } from "@/components/owner/LinkedText";
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -83,7 +84,7 @@ export function CompletedCardPanel({
         qc.invalidateQueries({ queryKey: ["home-chat-inbox"] }),
       ]);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(ownerSaveMessage(e)),
   });
 
   const uploadOne = useOwnerCardUpload(propertyId);
@@ -195,7 +196,7 @@ export function CompletedCardPanel({
         <div className="space-y-3 border-t border-portal-border px-5 py-4">
           {editing && save.isError ? (
             <p role="alert" className="text-sm font-medium text-destructive">
-              Not saved: {save.error.message} Your changes are still here. Try Save again.
+              {ownerSaveMessage(save.error) === OWNER_SAVE_FALLBACK ? OWNER_SAVE_FALLBACK : `Not saved: ${ownerSaveMessage(save.error)} Your changes are still here. Try Save again.`}
             </p>
           ) : null}
           {editing ? (

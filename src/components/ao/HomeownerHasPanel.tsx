@@ -3,7 +3,7 @@
  * home, grouped the way the homeowner portal reads them, and every owner item or approval the
  * team sent for the homeowner's answer. Same component on both home pages and on Active Owner.
  */
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -58,7 +58,7 @@ function GroupList({ group, items }: { group: HasGroup; items: HasCardItem[] }) 
       {items.length === 0 ? null : (
         <ul className="divide-y divide-border rounded-md border border-border">
           {items.map((i) => (
-            <li key={i.id} className="px-3 py-2 text-sm">
+            <li key={i.id} id={`owner-card-${i.id}`} className="scroll-mt-24 px-3 py-2 text-sm data-[focus=true]:bg-accent">
               <p className="font-medium">{i.title}</p>
               <p className={group === "answer" ? "text-xs font-medium text-warning-ink" : "text-xs text-muted-foreground"}>{i.line}</p>
               {i.proof ? (
@@ -165,6 +165,18 @@ export function HomeownerHasLists({
     const sent = sentForAnswer(d.reviews, d.approvals, (id) => (id ? d.roles[id] ?? "Our team" : "Our team"));
     return { perHome, sent };
   }, [q.data, homes]);
+
+  // A link to one card (?card=<plan card id>) scrolls to it and marks it once the cards load.
+  useEffect(() => {
+    if (!view) return;
+    const card = new URLSearchParams(window.location.search).get("card");
+    if (!card) return;
+    const el = document.getElementById(`owner-card-${card}`);
+    if (!el) return;
+    el.closest("details")?.setAttribute("open", "");
+    el.dataset["focus"] = "true";
+    el.scrollIntoView({ block: "center" });
+  }, [view]);
 
   if (ids.length === 0) return <p className="text-sm text-muted-foreground">{HAS_COPY.noCards}</p>;
   if (q.isLoading) return <p className="text-sm text-muted-foreground">{HAS_COPY.loading}</p>;

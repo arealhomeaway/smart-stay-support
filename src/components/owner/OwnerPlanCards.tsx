@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ownerSaveMessage, OWNER_SAVE_FALLBACK } from "@/lib/owner-save-error";
 import { Paperclip, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -93,7 +94,7 @@ export function PlanCardForm({ planCardId, programId, propertyId = null, title =
       void qc.invalidateQueries({ queryKey: ["ao-owner-plan", programId] });
       void qc.invalidateQueries({ queryKey: ["ao-card-answer", planCardId] });
     },
-    onError: (e: Error) => toast.error(`Not saved: ${e.message}`),
+    onError: (e: Error) => { const m = ownerSaveMessage(e); toast.error(m === OWNER_SAVE_FALLBACK ? m : `Not saved: ${m}`); },
   });
   return (
     <form className="mt-2 space-y-2" onSubmit={(e) => { e.preventDefault(); submit.mutate(); }}>

@@ -18,13 +18,20 @@ describe("weekly hours report", () => {
     expect(l[2]).toBe("To reach 120 hours (our recommendation): 80.0 more");
     expect(l[3]).toMatch(/^To reach 100 by December 31: about [\d.]+ hours a week \(4\.\d weeks left\)$/);
   });
-  it("at 100 hours the 100 line passes and the weekly line goes", () => {
-    const l = hoursBoxLines(100 * 60, end, mon9);
+  it("exactly 100.0 hours has not passed 100 (the goal is more than 100)", () => {
+    expect(hoursBoxLines(100 * 60, end, mon9)[1]).not.toBe("You've passed 100 hours.");
+  });
+  it("above 100.0 hours the 100 line passes and the weekly line goes", () => {
+    const l = hoursBoxLines(100 * 60 + 6, end, mon9);
     expect(l[1]).toBe("You've passed 100 hours.");
     expect(l).toHaveLength(3);
   });
-  it("at 120 hours the 120 line passes", () => {
-    expect(hoursBoxLines(120 * 60, end, mon9)[2]).toBe("You've passed 120 hours.");
+  it("exactly 120.0 hours has not passed 120; above it has", () => {
+    expect(hoursBoxLines(120 * 60, end, mon9)[2]).not.toBe("You've passed 120 hours.");
+    expect(hoursBoxLines(120 * 60 + 6, end, mon9)[2]).toBe("You've passed 120 hours.");
+  });
+  it("no first name greets with Hi there", () => {
+    expect(renderHoursReport(S, { firstName: null, reportedMinutes: 0, end, now: mon9 }).body).toContain("Hi there,");
   });
   it("under one week left: hours this week", () => {
     const l = hoursBoxLines(90 * 60, end, new Date("2026-12-28T15:00:00Z"));

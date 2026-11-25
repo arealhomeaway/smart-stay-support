@@ -62,7 +62,7 @@ export function earnedBadges(agg: ProgramAggregate): { code: string; rule: strin
       add(code, `${hours} reported hours reached the ${def.hours}-hour milestone`);
     }
   }
-  if (ownerGoalMet(minutes)) add("hundred_plus", `${hours} reported hours met the 100-hour target`);
+  if (ownerGoalMet(minutes)) add("hundred_plus", `${hours} reported hours passed 100 hours`);
 
   const onboardingReviews = reviews.filter((r) => r.phase === "onboarding");
   const onboardingDone =

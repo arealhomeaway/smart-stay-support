@@ -75,7 +75,7 @@ export const myOwnerAnswers = createServerFn({ method: "GET" })
         title: title.get(r.card_id) ?? "Homeowner card",
         answer: answerText(r.field_values),
         submittedAt: r.submitted_at,
-        link: `/property/${r.property_id}?tab=owner`,
+        link: `/property/${r.property_id}?tab=owner&card=${r.plan_card_id}`,
       });
     }
     return out;

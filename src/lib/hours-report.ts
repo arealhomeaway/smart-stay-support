@@ -73,8 +73,8 @@ export function programEndInstant(endsOn: string | null | undefined, startedOn: 
 export function hoursBoxLines(reportedMinutes: number, end: Date, now: Date): string[] {
   const logged = r1(reportedMinutes / 60);
   const lines = [`Hours logged: ${fmt(logged)}`];
-  lines.push(logged >= 100 ? "You've passed 100 hours." : `To reach 100 hours: ${fmt(100 - logged)} more`);
-  lines.push(logged >= 120 ? "You've passed 120 hours." : `To reach 120 hours (our recommendation): ${fmt(120 - logged)} more`);
+  lines.push(logged > 100 ? "You've passed 100 hours." : `To reach 100 hours: ${fmt(100 - logged)} more`);
+  lines.push(logged > 120 ? "You've passed 120 hours." : `To reach 120 hours (our recommendation): ${fmt(120 - logged)} more`);
   if (logged < 100) {
     const weeksLeft = (end.getTime() - now.getTime()) / (7 * 86_400_000);
     if (weeksLeft < 1) lines.push(`To reach 100 by December 31: ${fmt(100 - logged)} hours this week.`);

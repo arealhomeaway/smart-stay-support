@@ -6,6 +6,7 @@
  * published the owner-facing explanation. Files here are only the ones staff
  * explicitly shared.
  */
+import { ownerSaveMessage } from "@/lib/owner-save-error";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -239,7 +240,7 @@ export function OnboardingActions({
       void qc.invalidateQueries({ queryKey: ["owner-home"] });
     },
     onError: (e: Error) => {
-      toast.error(e.message);
+      toast.error(ownerSaveMessage(e));
       void qc.invalidateQueries({ queryKey: ["owner-onboarding"] });
     },
   });
