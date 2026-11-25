@@ -1,11 +1,12 @@
 # Roadmap
 
 ## One save per owner card and My history (Nov 25)
-- [ ] Combine answers, actual time and evidence into one canonical card save, retaining existing choices and answers.
-- [ ] Shared owner/staff history, totals, duplicate prompt and owner-only archive (H9 clarification requested).
-- [ ] Owner menu and weekly-email history destination.
-- [ ] Stage, practise and apply authorized database package; demo-owner desktop/phone and staff verification.
-- [ ] Use the existing demo homeowner for writable save tests (authorized 21:18 UTC); owner-only archive still awaits H9 clarification.
+- [x] Combine answers, actual time and evidence into one canonical card save; demo plan-card save and edit verified.
+- [x] Shared owner/staff history, totals and duplicate prompt verified with matching 15 rows on desktop/phone.
+- [ ] Owner-only removal: blocked pending H9 archive-only clarification; no removal action added.
+- [x] Owner menu and weekly-email history destination.
+- [x] Stage, practise and apply authorized database package; 62 focused tests passed.
+- [x] Use authorized existing demo homeowner: Saved 1.5 hrs + Docs link, phone edit, Added work and duplicate notice verified; Emily's staff list/totals matched.
 
 ## Shared simple staff Home (Emily, Nov 25)
 - [x] Mount existing CoordinatorHome for all staff; plain leader Oversight link, no totals. Old components kept, reads/actions unchanged.

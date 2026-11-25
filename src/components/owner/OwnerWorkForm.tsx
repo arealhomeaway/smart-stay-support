@@ -49,11 +49,11 @@ export function OwnerWorkForm({programId, source='work', cardId=null, propertyId
  const begin=(next:'edit'|'add')=>{setMode(next);key.current=crypto.randomUUID();setActivity(next==='edit'?(typeof saved?.values['activity']==='string'?saved.values['activity']:saved?.activity??''):'');setLink(next==='edit'&&typeof saved?.values['link']==='string'?saved.values['link']:'');
   setHours(next==='edit'?String(Math.floor((saved?.minutes??0)/60)):'');setMinutes(next==='edit'?String((saved?.minutes??0)%60):'');
   setValues(saved?.values??{});setFiles(next==='edit'?saved?.files??[]:[]);setDay(next==='edit'?saved?.date.slice(0,10)??centralToday():centralToday());};
- if(saved&&mode==='view') return <section className="space-y-3" aria-label="Saved card">
+ if(saved&&mode==='view') return <section className="space-y-3 pb-16" aria-label="Saved card">
   <p className="font-semibold text-success">Saved</p><p className="numeric">{(rows.length?rows.reduce((n,r)=>n+r.minutes,0):saved.minutes)/60} hrs · {shortDate(saved.date)}</p>
   <LinkedText text={saved.activity} className="whitespace-pre-wrap break-words" />
   {saved.files.map(f=><SavedWorkFile key={f.document_id} file={f}/>)}
-  {!readOnly?<div className="flex flex-wrap gap-2"><Button variant="outline" className="min-h-11" onClick={()=>begin('edit')}>Edit</Button><Button variant="outline" className="min-h-11" onClick={()=>begin('add')}>Add more time</Button></div>:null}
+  {!readOnly?<div className="flex flex-wrap justify-end gap-2"><Button variant="outline" className="min-h-11" onClick={()=>begin('edit')}>Edit</Button><Button variant="outline" className="min-h-11" onClick={()=>begin('add')}>Add more time</Button></div>:null}
  </section>;
  if(readOnly) return <p className="text-sm text-muted-foreground">No work saved yet.</p>;
  return <form className="space-y-3" onSubmit={e=>{e.preventDefault();if(!save.isPending)save.mutate();}} aria-label={`Save work on ${title}`}>
@@ -66,7 +66,7 @@ export function OwnerWorkForm({programId, source='work', cardId=null, propertyId
   {files.map(f=><SavedWorkFile key={f.document_id} file={f}/>)}
   {propertyId?<MultiFileUpload label="Add file" autoStart upload={upload} onBusyChange={setBusy} onResults={r=>setFiles(v=>[...v,...r.filter(x=>!v.some(f=>f.document_id===x.document_id))])}/>:null}
   {save.isError?<p role="alert" className="text-sm text-destructive">{ownerSaveMessage(save.error)}</p>:null}
-  <div className="flex gap-2"><Button type="submit" className="min-h-11" disabled={save.isPending||busy}>{save.isPending?'Saving...':'Save'}</Button>{mode!=='view'?<Button type="button" variant="ghost" className="min-h-11" onClick={()=>setMode('view')}>Cancel</Button>:null}</div>
+  <div className="flex justify-end gap-2"><Button type="submit" className="min-h-11" disabled={save.isPending||busy}>{save.isPending?'Saving...':'Save'}</Button>{mode!=='view'?<Button type="button" variant="ghost" className="min-h-11" onClick={()=>setMode('view')}>Cancel</Button>:null}</div>
  </form>;
 }
 
