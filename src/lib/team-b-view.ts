@@ -147,3 +147,36 @@ export function rollUpReported<T extends TeamBTicket>(rows: T[]): Array<T & { ro
   }
   return out;
 }
+
+// ---------- Review rows in Team B tabs (Emily's answers, Nov 25) ----------
+// Cleaning reviews come from Departure Review; maintenance and lawn reviews stay routine checks.
+// They are not tickets: they show as rows in their tab with the same Due filters.
+
+export type ReviewSourceRow =
+  | { source: "departure"; id: string; status: string; clean_completed_at: string | null; stay_departure: string | null; title: string | null; property: string }
+  | { source: "routine"; id: string; status: string; due_at: string | null; title: string | null; property: string };
+
+export type TeamBReviewItem = {
+  source: "departure" | "routine";
+  id: string;
+  tab: TeamBTab;
+  title: string;
+  property: string;
+  status: string;
+  due_on: string | null;
+};
+
+const LAWN = /lawn|landscap|yard|mow|irrigation|sprinkler/i;
+
+export function reviewItem(r: ReviewSourceRow): TeamBReviewItem | null {
+  if (r.status === "cancelled") return null;
+  const closed = r.status === "completed";
+  if (r.source === "departure") {
+    const at = r.clean_completed_at ?? (r.stay_departure ? `${r.stay_departure.slice(0, 10)}T18:00:00Z` : null);
+    return { source: "departure", id: r.id, tab: "cleaning", title: r.title || "Cleaning review", property: r.property,
+      status: closed ? "closed" : "open", due_on: at ? centralDate(new Date(at)) : null };
+  }
+  return { source: "routine", id: r.id, tab: LAWN.test(r.title ?? "") ? "lawn" : "maintenance",
+    title: r.title || "Maintenance review", property: r.property, status: closed ? "closed" : "open",
+    due_on: r.due_at ? centralDate(new Date(r.due_at)) : null };
+}

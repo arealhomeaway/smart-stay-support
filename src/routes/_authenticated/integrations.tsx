@@ -18,6 +18,7 @@ import { FullBackupPanel } from "@/components/FullBackupPanel";
 import { BreezewayConnectionPanel } from "@/components/BreezewayConnectionPanel";
 import { BreezewayMatchPanel } from "@/components/BreezewayMatchPanel";
 import { BreezewayBridgePanel } from "@/components/BreezewayBridgePanel";
+import { DepartureReviewLiveSwitch } from "@/components/DepartureReviewLiveSwitch";
 import { ArrivalChecksPanel } from "@/components/ArrivalChecksPanel";
 import { BreezewayWebhookPanel } from "@/components/BreezewayWebhookPanel";
 import { BreezewayOutboundReviewPanel } from "@/components/BreezewayOutboundReviewPanel";
@@ -120,6 +121,7 @@ function IntegrationsPage() {
       <BreezewayConnectionPanel />
       {isAdmin ? <BreezewayMatchPanel /> : null}
       <BreezewayBridgePanel />
+      {isAdmin ? <DepartureReviewLiveSwitch /> : null}
       <ArrivalChecksPanel />
       <BreezewaySendingPanel />
       <BreezewayWebhookPanel />

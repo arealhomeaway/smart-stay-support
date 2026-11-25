@@ -57,3 +57,20 @@ describe("Team B view", () => {
     expect(hiddenOnboarding(t({ properties: { lifecycle_status: "active_operations" } }))).toBe(false);
   });
 });
+
+import { reviewItem } from "../team-b-view";
+describe("Team B review rows", () => {
+  test("departure reviews land in Cleaning reviews, due on the clean day (Central)", () => {
+    const r = reviewItem({ source: "departure", id: "d", status: "open", clean_completed_at: "2026-11-25T03:00:00Z", stay_departure: null, title: null, property: "1 Elm" });
+    expect(r?.tab).toBe("cleaning");
+    expect(r?.due_on).toBe("2026-11-24");
+  });
+  test("lawn routine checks go to Lawn care reviews, others to Maintenance", () => {
+    expect(reviewItem({ source: "routine", id: "a", status: "due", due_at: null, title: "Lawn mowing", property: "" })?.tab).toBe("lawn");
+    expect(reviewItem({ source: "routine", id: "b", status: "due", due_at: null, title: "Fix faucet", property: "" })?.tab).toBe("maintenance");
+  });
+  test("completed is Closed, cancelled is hidden", () => {
+    expect(reviewItem({ source: "routine", id: "a", status: "completed", due_at: null, title: "x", property: "" })?.status).toBe("closed");
+    expect(reviewItem({ source: "routine", id: "a", status: "cancelled", due_at: null, title: "x", property: "" })).toBeNull();
+  });
+});

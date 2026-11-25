@@ -20,6 +20,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { SectionCard } from "@/components/ui/page";
 import { ARRIVAL_COPY as C, arrivalResultLabel, arrivalTime, lastClean, openMaintenance, type ArrivalResult, type MirrorOrder } from "@/lib/arrival-check";
 import { breezewayTaskLink } from "@/lib/breezeway-bridge";
+import { useGuidebookLink } from "@/components/property/GuidebookLinkCard";
 
 type WorkOrder = { id: number; name: string | null; department: string | null; status: string | null; link: string };
 type CheckView = {
@@ -85,6 +86,7 @@ export function ArrivalCheckPanel({ ticketId, propertyId, readOnly }: { ticketId
       return (data ?? []) as MirrorOrder[];
     },
   });
+  const guidebook = useGuidebookLink(propertyId);
   const rpc = supabase as unknown as Rpc;
   async function saveStep(step: string, done: boolean, flag?: boolean) {
     if (!q.data) return;
@@ -252,7 +254,12 @@ export function ArrivalCheckPanel({ ticketId, propertyId, readOnly }: { ticketId
 
             <fieldset className="space-y-2" disabled={readOnly} data-step="details">
               <legend className="text-sm font-semibold">Check-in details sent to guest</legend>
-              <p className="text-sm text-muted-foreground">No guidebook link is saved for this home yet.</p>
+              {guidebook.data ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <a className="break-all text-sm text-primary underline" href={guidebook.data} target="_blank" rel="noreferrer">{guidebook.data}</a>
+                  <Button type="button" variant="outline" className="min-h-11" onClick={() => { void navigator.clipboard.writeText(guidebook.data!).then(() => toast.success("Link copied."), () => toast.error("Not copied. Try again.")); }}>Copy link</Button>
+                </div>
+              ) : null}
               <label className="flex min-h-11 items-center gap-3 text-sm">
                 <Checkbox checked={detailsSent} onCheckedChange={(v) => { setDetailsSent(v === true); void saveStep("details", v === true); }} aria-label="Check-in details sent" />
                 Check-in details sent

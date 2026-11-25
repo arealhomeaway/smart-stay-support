@@ -55,6 +55,7 @@ import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 import { useRole } from "@/hooks/useRole";
 import { toast } from "sonner";
 import { HomePhoto } from "@/components/property/HomePhoto";
+import { GuidebookLinkCard } from "@/components/property/GuidebookLinkCard";
 import { COMPLIANCE_ITEMS, displayValue, missingForHandoff } from "@/lib/home-profile";
 import {
   MORE_MENU_LABELS,
@@ -631,6 +632,7 @@ function OperationsTab({ hub, canEdit }: { hub: Hub; canEdit: boolean }) {
       <HomeRepeatFlags propertyId={hub.property.id} />
       <ArrivalReadyCard propertyId={hub.property.id} />
       <OwnerRezListingCard propertyId={hub.property.id} listingId={hub.property.ownerRezListingId} canEdit={canEdit} />
+      <GuidebookLinkCard propertyId={hub.property.id} />
       <SectionCard title="Breezeway work orders">
         <div className="space-y-3">
           <BreezewayWorkOrderPanel propertyId={hub.property.id} />

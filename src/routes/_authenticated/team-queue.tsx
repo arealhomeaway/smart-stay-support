@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useDemo } from "@/components/DemoProvider";
+import { TeamBReviewRows, reviewCount, useTeamBReviews } from "@/components/operations/TeamBReviewRows";
 import { useCurrentUserId, useStaffDirectory, displayName } from "@/hooks/useTeam";
 import { useHomeTeams } from "@/hooks/useHomeTeam";
 import { Badge } from "@/components/ui/badge";
@@ -488,8 +489,10 @@ export function TeamQueueBoard({ embedded = false }: { embedded?: boolean } = {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [teamBMode, all, filters, homeTeamOf]);
   const teamBDueRows = teamBBase.filter((t) => inDueFilter(t as never, bDue, now));
-  const teamBCounts = Object.fromEntries(TEAM_B_TABS.map((k) => [k, teamBDueRows.filter((t) => teamBTab(t as never) === k).length])) as Record<string, number>;
-  const teamBDueCounts = Object.fromEntries(TEAM_B_DUE.map((k) => [k, teamBBase.filter((t) => teamBTab(t as never) === bTab && inDueFilter(t as never, k, now)).length])) as Record<string, number>;
+  const teamBReviews = useTeamBReviews(demoMode, teamBMode);
+  const reviewItems = teamBReviews.data?.items;
+  const teamBCounts = Object.fromEntries(TEAM_B_TABS.map((k) => [k, teamBDueRows.filter((t) => teamBTab(t as never) === k).length + reviewCount(reviewItems, k, bDue, now)])) as Record<string, number>;
+  const teamBDueCounts = Object.fromEntries(TEAM_B_DUE.map((k) => [k, teamBBase.filter((t) => teamBTab(t as never) === bTab && inDueFilter(t as never, k, now)).length + reviewCount(reviewItems, bTab, k, now)])) as Record<string, number>;
   const teamBRows = (() => {
     const rows = teamBDueRows.filter((t) => teamBTab(t as never) === bTab);
     return bTab === "reported" ? rollUpReported(rows as never) as unknown as typeof all : rows;
@@ -1032,6 +1035,9 @@ export function TeamQueueBoard({ embedded = false }: { embedded?: boolean } = {}
               ))}
               <span className="ml-auto text-sm text-muted-foreground">{TEAM_QUEUE_COPY.tableSummary(viewItems.length)}</span>
             </div>
+            {teamBReviews.data ? (
+              <TeamBReviewRows items={teamBReviews.data.items} routines={teamBReviews.data.routines} tab={bTab} due={bDue} now={now} />
+            ) : null}
           </div>
         ) : (
         <div className="flex flex-wrap items-center gap-2" data-testid="queue-flags">
