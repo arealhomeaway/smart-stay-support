@@ -1303,6 +1303,9 @@ export type Database = {
           cancelled_at: string | null
           check_in_at: string
           cleared_at: string | null
+          closed_outside_at: string | null
+          closed_outside_by: string | null
+          closed_outside_reason: string | null
           completed_at: string | null
           completed_by: string | null
           created_at: string
@@ -1322,9 +1325,11 @@ export type Database = {
           ownerrez_booking_id: string
           pets: number | null
           property_id: string | null
+          recheck_flag: boolean
           result: string | null
           result_at: string | null
           status: string
+          steps: Json
           team: string
           ticket_id: string | null
           time_zone: string
@@ -1338,6 +1343,9 @@ export type Database = {
           cancelled_at?: string | null
           check_in_at: string
           cleared_at?: string | null
+          closed_outside_at?: string | null
+          closed_outside_by?: string | null
+          closed_outside_reason?: string | null
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string
@@ -1357,9 +1365,11 @@ export type Database = {
           ownerrez_booking_id: string
           pets?: number | null
           property_id?: string | null
+          recheck_flag?: boolean
           result?: string | null
           result_at?: string | null
           status?: string
+          steps?: Json
           team?: string
           ticket_id?: string | null
           time_zone: string
@@ -1373,6 +1383,9 @@ export type Database = {
           cancelled_at?: string | null
           check_in_at?: string
           cleared_at?: string | null
+          closed_outside_at?: string | null
+          closed_outside_by?: string | null
+          closed_outside_reason?: string | null
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string
@@ -1392,9 +1405,11 @@ export type Database = {
           ownerrez_booking_id?: string
           pets?: number | null
           property_id?: string | null
+          recheck_flag?: boolean
           result?: string | null
           result_at?: string | null
           status?: string
+          steps?: Json
           team?: string
           ticket_id?: string | null
           time_zone?: string
@@ -20275,6 +20290,7 @@ export type Database = {
         Returns: Json
       }
       breezeway_bridge_status: { Args: never; Returns: Json }
+      bulk_close_overdue_arrival_checks: { Args: never; Returns: number }
       bulk_complete_onboarding_tasks: {
         Args: {
           _done_on?: string
@@ -22104,6 +22120,15 @@ export type Database = {
           _title: string
         }
         Returns: string
+      }
+      save_arrival_check_step: {
+        Args: {
+          _check_id: string
+          _done: boolean
+          _recheck?: boolean
+          _step: string
+        }
+        Returns: Json
       }
       save_breezeway_sending: {
         Args: { _home_ids: string[]; _mode: string }

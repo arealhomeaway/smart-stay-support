@@ -2640,6 +2640,13 @@
       "when": 1795577217945,
       "tag": "0376_guest_ready_standards",
       "breakpoints": true
+    },
+    {
+      "idx": 377,
+      "version": "7",
+      "when": 1795577349916,
+      "tag": "0377_arrival_team_a",
+      "breakpoints": true
     }
   ]
 }
