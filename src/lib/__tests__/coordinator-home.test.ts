@@ -21,6 +21,13 @@ describe('coordinator Home existing live-work rules', () => {
     expect(coordinatorTakeTickets([a], 'guest_experience').map(t => t.id)).toEqual(['t']);
     expect(coordinatorTakeTickets([a], 'property_operations')).toEqual([]);
   });
+  it('leaders with no Operations home team see no Take one tickets', () => {
+    const rows = [{ ...ticket, assigned_to: null },
+      { ...ticket, id: 'a', assigned_to: null, functional_role_code: 'ge_day' }];
+    expect(coordinatorTakeTickets(rows, null)).toEqual([]);
+    expect(coordinatorTakeTickets(rows, 'leadership')).toEqual([]);
+    expect(coordinatorTakeTickets(rows, 'property_operations').map(t => t.id)).toEqual(['t']);
+  });
   it('both lists show at most ten rows before See all', () => {
     expect(COORDINATOR_HOME_LIMIT).toBe(10);
     expect(Array.from({ length: 11 }, (_, i) => i).slice(0, COORDINATOR_HOME_LIMIT)).toHaveLength(10);

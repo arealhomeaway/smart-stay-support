@@ -1,5 +1,6 @@
 import { TicketDueLabel } from "@/components/tickets/TicketDueLabel";
 import { CoordinatorHome } from "@/components/home/CoordinatorHome";
+import { Button } from "@/components/ui/button";
 import { hiddenOnboarding } from "@/lib/team-b-view";
 import { formatPropertyLabel } from "@/lib/property-label";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -74,7 +75,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
       { title: "Home | Resolve Operations" },
       {
         name: "description",
-        content: "What needs you now, your work, routine work due today and recent activity, in one place.",
+        content: "Your assigned work, work to take and handoffs in Resolve.",
       },
       { property: "og:title", content: "Home | Resolve Operations" },
       { property: "og:description", content: "Your working day in Resolve, in one screen." },
@@ -113,8 +114,7 @@ function Dashboard() {
   const userId = role.userId ?? null;
   const { homeTeamOf } = useHomeTeams();
   const myTeam = homeTeamOf(userId);
-  const coordinatorHome = role.roles.includes("tech") && !role.roles.some(r => r === "admin" || r === "manager")
-    && !role.isOnboardingDirector && !role.seats.opsDirector && !role.seats.opsSupervisor;
+  const simpleHome = role.isStaff;
 
   // Work this person owns or has been handed, open and recently finished.
   const mine = useQuery({
@@ -215,7 +215,14 @@ function Dashboard() {
         description={HOME_COPY.heroLine}
       />
 
-      {coordinatorHome ? <CoordinatorHome rows={rows} userId={userId} team={myTeam} walkRows={walkRows} originSearch={originSearch} /> : <>
+      {simpleHome ? <>
+        {(role.isSupervisor || role.isOnboardingDirector || role.seats.opsDirector || role.seats.opsSupervisor) && (
+          <Button asChild variant="link" className="min-h-11 px-0">
+            <Link to="/oversight">Open Oversight</Link>
+          </Button>
+        )}
+        <CoordinatorHome rows={rows} userId={userId} team={myTeam} walkRows={walkRows} originSearch={originSearch} />
+      </> : <>
       {/* Register T1: My scorecard, only for a person who has a scorecard. */}
       <MyScorecardButton userId={userId} />
 

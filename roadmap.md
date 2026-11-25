@@ -1,5 +1,9 @@
 # Roadmap
 
+## Shared simple staff Home (Emily, Nov 25)
+- [x] Mount existing CoordinatorHome for all staff; plain leader Oversight link, no totals. Old components kept, reads/actions unchanged.
+- [x] Emily checked at 1440/390: only header, Open Oversight and three sections; Home buttons 18 to 6, no 338/decision totals, no-team Take one empty. Seven tests pass. Approval reader/render path unchanged; Emily has zero pending personal approvals, so no approval action tested.
+
 ## Auto-assign by seat (Emily, approved ops-simplification)
 - [x] Read live ticket source/team breakdown (205 open, 131 unowned); preserve exact undo.
 - [x] Applied function as 0382; protected routing/alert fingerprint unchanged, 25 tests pass; automated demo 5139 assigned and archived.
