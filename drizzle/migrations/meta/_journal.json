@@ -2647,6 +2647,13 @@
       "when": 1795577349916,
       "tag": "0377_arrival_team_a",
       "breakpoints": true
+    },
+    {
+      "idx": 378,
+      "version": "7",
+      "when": 1795578078823,
+      "tag": "0378_shift_end_reminder",
+      "breakpoints": true
     }
   ]
 }

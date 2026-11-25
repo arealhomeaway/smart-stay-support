@@ -21126,6 +21126,10 @@ export type Database = {
         Args: { _property_id: string }
         Returns: boolean
       }
+      notify_my_shift_end: {
+        Args: { _demo?: boolean; _ends_at: string; _open_due: number }
+        Returns: boolean
+      }
       notify_staff: {
         Args: {
           _actor_id: string
