@@ -2,11 +2,11 @@
  * What may be changed on several tickets at once, and by whom.
  *
  * Bulk is a convenience, never a shortcut past a rule. Closing work still
- * happens one ticket at a time because closure needs evidence, and priority
+ * goes through each ticket's own closing checks (change 4: Close selected), and priority
  * still needs a supervisor and a written reason — exactly as it does on the
  * ticket itself.
  */
-export const BULK_ACTIONS = ["assign", "status", "priority"] as const;
+export const BULK_ACTIONS = ["assign", "status", "priority", "due", "close"] as const;
 export type BulkAction = (typeof BULK_ACTIONS)[number];
 
 /** Statuses that are a simple statement of where the work stands. */
@@ -55,7 +55,7 @@ const internal = (roles: string[]) =>
 export function canRunBulkAction(viewer: BulkViewer, action: BulkAction): boolean {
   if (viewer.readOnly) return false;
   const roles = viewer.roles ?? [];
-  if (action === "assign" || action === "priority") return supervisor(roles);
+  if (action === "assign" || action === "priority" || action === "due" || action === "close") return supervisor(roles);
   return internal(roles);
 }
 
@@ -65,6 +65,8 @@ export function bulkDenialReason(viewer: BulkViewer, action: BulkAction): string
   if (viewer.readOnly) return "You are previewing another role, so nothing can be changed.";
   if (action === "assign") return "Only a Supervisor can reassign other people's tickets.";
   if (action === "priority") return "Only a Supervisor can change priority.";
+  if (action === "due") return "Only a Supervisor can move due dates for many tickets.";
+  if (action === "close") return "Only a Supervisor can close many tickets at once.";
   return "Only Operations staff can update tickets.";
 }
 
@@ -75,7 +77,13 @@ export type BulkRequest = {
   status?: string;
   priority?: string;
   reason?: string;
+  /** Move due date: the new date, YYYY-MM-DD. */
+  dueOn?: string;
+  /** Move due date: true when any selected ticket has a locked due date. */
+  anyLocked?: boolean;
 };
+
+export const DUE_REASON_MIN = 3;
 
 export type BulkPlan =
   | { ok: true; ticketIds: string[]; action: BulkAction; patch: Record<string, unknown>; reason: string | null }
@@ -115,6 +123,20 @@ export function planBulkUpdate(request: BulkRequest): BulkPlan {
       };
     if (!isBulkStatus(status)) return { ok: false, error: "Choose a status." };
     return { ok: true, ticketIds: ids, action: "status", patch: { status }, reason: null };
+  }
+
+  if (request.action === "due") {
+    const dueOn = String(request.dueOn ?? "");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dueOn)) return { ok: false, error: "Pick a date." };
+    const reason = String(request.reason ?? "").trim();
+    if (request.anyLocked && reason.length < DUE_REASON_MIN)
+      return { ok: false, error: "Write a short reason. Some of these due dates are locked." };
+    return { ok: true, ticketIds: ids, action: "due", patch: { due_on: dueOn }, reason: reason || null };
+  }
+
+  if (request.action === "close") {
+    // Each ticket still goes through its own closing checks on the server.
+    return { ok: true, ticketIds: ids, action: "close", patch: { status: "closed" }, reason: null };
   }
 
   const priority = String(request.priority ?? "").toLowerCase();

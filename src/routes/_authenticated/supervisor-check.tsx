@@ -8,6 +8,8 @@ import { SectionCard } from "@/components/ui/page";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDemo } from "@/components/DemoProvider";
 import { usDateTime } from "@/lib/dates";
+import { TeamQueueBoard } from "./team-queue";
+import { parseOperationsSearch } from "@/lib/operations-view-state";
 import { groupSupervisorCheck, type CheckTicket } from "@/lib/supervisor-check";
 
 export const Route = createFileRoute("/_authenticated/supervisor-check")({
@@ -25,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/supervisor-check")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: parseOperationsSearch,
   component: () => (
     <RequireCapability capability="oversight" title="Oversight">
       <SupervisorCheck />
@@ -89,10 +92,12 @@ function SupervisorCheck() {
       <header>
         <h1 className="font-display text-2xl font-semibold">Supervisor check</h1>
         <p className="text-sm text-muted-foreground">
-          Read only. Open any item to act on it there. Live exceptions stay on{" "}
+          Live exceptions stay on{" "}
           <Link to="/oversight" className="underline">Oversight</Link>.
         </p>
       </header>
+
+      <TeamQueueBoard embedded />
 
       <SectionCard title={`Last 24 hours (${g.last24h.length})`}>
         {g.last24h.length === 0 ? (

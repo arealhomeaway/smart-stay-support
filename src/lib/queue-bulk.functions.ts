@@ -42,11 +42,11 @@ export const bulkUpdateTicketsFn = createServerFn({ method: "POST" })
 
     const { data: before, error: readError } = await context.supabase
       .from("tickets")
-      .select("id, ref, status, priority, assigned_to")
+      .select(plan.action === "due" ? "id, ref, status, priority, assigned_to, due_on" : "id, ref, status, priority, assigned_to")
       .in("id", plan.ticketIds);
     if (readError) throw new Error(readError.message);
 
-    const rows = before ?? [];
+    const rows = (before ?? []) as unknown as { id: string; ref: number | null; status: string; priority: string | null; assigned_to: string | null; due_on?: string | null }[];
     const updated: string[] = [];
     const skipped: { ref: string | number | null; why: string }[] = [];
 
@@ -60,7 +60,20 @@ export const bulkUpdateTicketsFn = createServerFn({ method: "POST" })
       )
         continue;
 
-      if (plan.action === "status") {
+      if (plan.action === "due" && (row as { due_on?: string | null }).due_on === plan.patch["due_on"]) continue;
+      if (plan.action === "close" && ["closed", "resolved"].includes(String(row.status))) continue;
+
+      if (plan.action === "due") {
+        // Same database door as one ticket: locked dates need a Supervisor and the reason.
+        const args = plan.reason
+          ? { _ticket_id: row.id, _due_on: plan.patch["due_on"], _reason: plan.reason }
+          : { _ticket_id: row.id, _due_on: plan.patch["due_on"] };
+        const { error } = await context.supabase.rpc("set_ticket_due_on" as never, args as never);
+        if (error) {
+          skipped.push({ ref: row.ref ?? null, why: error.message });
+          continue;
+        }
+      } else if (plan.action === "status" || plan.action === "close") {
         // Same door as a single ticket: every lifecycle rule applies.
         const m = await import("@/lib/ticket-lifecycle.server");
         const privileged = roles.includes("admin") || roles.includes("manager");
@@ -90,7 +103,11 @@ export const bulkUpdateTicketsFn = createServerFn({ method: "POST" })
       updated.push(row.id);
 
       const body =
-        plan.action === "status"
+        plan.action === "due"
+          ? `Due date moved to ${String(plan.patch["due_on"])} in a bulk update${plan.reason ? `: ${plan.reason}` : "."}`
+          : plan.action === "close"
+            ? "Closed in a bulk update."
+            : plan.action === "status"
           ? `Status set to ${String(plan.patch["status"]).replace("_", " ")} in a queue update.`
           : plan.action === "priority"
             ? `Priority changed from ${String(row.priority ?? "").toUpperCase()} to ${String(

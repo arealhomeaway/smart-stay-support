@@ -2,7 +2,7 @@ import { EmailTestChip } from "@/components/EmailTestChip";
 import { EMAIL_TEST_COPY, isEmailTestTicket, seesEmailTestsFor } from "@/lib/email-intake";
 import { EmailTestRecords } from "@/components/EmailTestRecords";
 import { formatPropertyLabel } from "@/lib/property-label";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -119,8 +119,16 @@ export const Route = createFileRoute("/_authenticated/team-queue")({
 type Db = { from: (t: string) => any };
 
 function TeamQueuePage() {
-  const navigate = Route.useNavigate();
-  const params = Route.useSearch();
+  return <TeamQueueBoard />;
+}
+
+/**
+ * The Team Queue table. Supervisor check renders this same board (change 4, item 1) so a
+ * supervisor sees exactly what the team sees; it reads filters from whichever page holds it.
+ */
+export function TeamQueueBoard({ embedded = false }: { embedded?: boolean } = {}) {
+  const navigate = useNavigate();
+  const params = parseOperationsSearch(useSearch({ strict: false }) as Record<string, unknown>);
   const { demoMode } = useDemo();
   const userId = useCurrentUserId();
   const { data: staff } = useStaffDirectory();
@@ -199,11 +207,12 @@ function TeamQueuePage() {
 
   const setParam = (patch: Record<string, string | undefined>, replace = false) =>
     void navigate({
-      search: (prev: Record<string, string | undefined>) => {
+      to: ".",
+      search: ((prev: Record<string, string | undefined>) => {
         const next = { ...prev, ...patch };
         for (const [k, v] of Object.entries(next)) if (!v) delete next[k];
         return next;
-      },
+      }) as never,
       replace,
     });
 
@@ -784,7 +793,7 @@ function TeamQueuePage() {
       <QueueOpenLogger source="team_queue" />
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 space-y-1.5">
-          <h1 className="font-display text-3xl font-semibold">{TEAM_QUEUE_COPY.title}</h1>
+          {embedded ? <h2 className="font-display text-2xl font-semibold">{TEAM_QUEUE_COPY.title}</h2> : <h1 className="font-display text-3xl font-semibold">{TEAM_QUEUE_COPY.title}</h1>}
           <p className="text-[15px] text-muted-foreground">{TEAM_QUEUE_COPY.subtitle}</p>
         </div>
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
@@ -1244,7 +1253,7 @@ function TeamQueuePage() {
               variant="ghost"
               className="min-h-11 px-3 font-semibold text-primary"
               disabled={!operationsAccess && option !== "list"}
-              onClick={() => void navigate({ search: withOperationsView(params, option) })}
+              onClick={() => void navigate({ to: ".", search: withOperationsView(params, option) as never })}
             >
               {TEAM_QUEUE_COPY.views[option]}
             </Button>
