@@ -1,0 +1,13 @@
+{
+  "result": "pass",
+  "scope": "isolated Notion correction only; NOT full ops-simplification validation",
+  "checks": [
+    "exactly 30 days is recent; one second older is backlog",
+    "restoration and marking preserve owner, status, dates and existing row content",
+    "closed and resolved Notion records have no backlog marker",
+    "8 AM capture skips every Notion import, including started imports",
+    "new Notion inserts preserve mapped assignees",
+    "quiet recent imports cannot create staff notices",
+    "quiet recent imports cannot create escalations"
+  ]
+}

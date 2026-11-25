@@ -1,12 +1,28 @@
 /** Operations go-live and one shared projection of live work. */
 export const OPS_GO_LIVE = '2026-11-16T00:00:00-06:00';
 export const HOME_NEEDS_LIMIT = 7;
-export type OpsRecord = { ops_backlog_at?: string | null; ops_live_at?: string | null; ops_archived_at?: string | null; created_at?: string | null; external_source?: string | null; status?: string; kind?: string | null };
+export type OpsRecord = { ops_backlog_at?: string | null; ops_live_at?: string | null; ops_archived_at?: string | null; created_at?: string | null; reported_at?: string | null; external_source?: string | null; external_status?: string | null; status?: string; kind?: string | null };
+const DONE = new Set(['closed','resolved','completed','cancelled']);
+/** reported_at is the source creation time; created_at is the retained import time. */
+export function recentAtNotionImport(r: OpsRecord): boolean {
+ if(r.external_source !== 'notion' || !r.reported_at || !r.created_at)return false;
+ const source=Date.parse(r.reported_at), imported=Date.parse(r.created_at);
+ return Number.isFinite(source)&&Number.isFinite(imported)&&source<=imported&&imported-source<=30*86_400_000;
+}
+export function isQuietNotionImport(r: OpsRecord): boolean {
+ return r.external_source==='notion'&&!r.ops_live_at&&r.external_status!=='reopened_in_resolve';
+}
+/** The one-time assignment excludes ALL Notion imports, even already started ones. */
+export function cutoverAssignmentEligible(r: OpsRecord): boolean {
+ return r.external_source!=='notion'&&!DONE.has(r.status??'open')&&!isOldBacklog(r);
+}
 export function isOldBacklog(r: OpsRecord): boolean {
-  if (r.ops_backlog_at || r.ops_archived_at) return true;
+  if (DONE.has(r.status??'open')) return false;
+  if (r.ops_archived_at) return true;
   if (r.ops_live_at) return false;
-  if (r.external_source === 'notion') return true;
-  return Boolean(r.created_at && Date.parse(r.created_at) < Date.parse(OPS_GO_LIVE) && !['closed','resolved','completed','cancelled'].includes(r.status ?? 'open'));
+  if (r.external_source === 'notion') return r.external_status!=='reopened_in_resolve'&&!recentAtNotionImport(r);
+  if (r.ops_backlog_at) return true;
+  return Boolean(r.created_at && Date.parse(r.created_at) < Date.parse(OPS_GO_LIVE));
 }
 export const TEAM_A_SUBJECTS = ['guest','bookings','arrival','reviews','other'] as const;
 export type TeamASubject = typeof TEAM_A_SUBJECTS[number];

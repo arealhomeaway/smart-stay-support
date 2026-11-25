@@ -1,9 +1,19 @@
 import { describe,it,expect } from 'bun:test';
-import { isOldBacklog,personalNeeds,defaultOpsTeam,teamASubject,TEAM_A_SUBJECTS } from '../ops-simplification';
+import { isOldBacklog,isQuietNotionImport,recentAtNotionImport,cutoverAssignmentEligible,personalNeeds,defaultOpsTeam,teamASubject,TEAM_A_SUBJECTS } from '../ops-simplification';
 describe('Operations simplification rules',()=>{
  it('open work created before Nov 16 Central is backlog',()=>expect(isOldBacklog({created_at:'2026-11-16T05:59:59Z',status:'open'})).toBe(true));
  it('the Nov 16 Central start is live',()=>expect(isOldBacklog({created_at:'2026-11-16T06:00:00Z',status:'open'})).toBe(false));
- it('every Notion date starts in backlog',()=>expect(isOldBacklog({external_source:'notion',created_at:'2026-11-25T12:00:00Z'})).toBe(true));
+ it('older open Notion imports go to backlog',()=>expect(isOldBacklog({external_source:'notion',reported_at:'2026-10-01T12:00:00Z',created_at:'2026-11-09T12:00:00Z',status:'open'})).toBe(true));
+ it('closed Notion imports are history, never backlog',()=>expect(isOldBacklog({external_source:'notion',reported_at:'2025-01-01T12:00:00Z',created_at:'2026-11-09T12:00:00Z',status:'closed'})).toBe(false));
+ it('resolved Notion imports are history, never backlog',()=>expect(isOldBacklog({external_source:'notion',reported_at:'2025-01-01T12:00:00Z',created_at:'2026-11-09T12:00:00Z',status:'resolved'})).toBe(false));
+ it('exactly 30 days before import is recent',()=>expect(recentAtNotionImport({external_source:'notion',reported_at:'2026-10-10T12:00:00Z',created_at:'2026-11-09T12:00:00Z'})).toBe(true));
+ it('more than 30 days before import is older',()=>expect(recentAtNotionImport({external_source:'notion',reported_at:'2026-10-10T11:59:59Z',created_at:'2026-11-09T12:00:00Z'})).toBe(false));
+ it('recent at import remains live without an aging clock',()=>expect(isOldBacklog({external_source:'notion',reported_at:'2026-10-28T12:00:00Z',created_at:'2026-11-09T12:00:00Z',status:'open'})).toBe(false));
+ it('recent imports are quiet before being taken or changed',()=>expect(isQuietNotionImport({external_source:'notion',status:'open'})).toBe(true));
+ it('started imports are no longer quiet',()=>expect(isQuietNotionImport({external_source:'notion',status:'open',external_status:'reopened_in_resolve'})).toBe(false));
+ it('8 AM assignment skips recent Notion imports',()=>expect(cutoverAssignmentEligible({external_source:'notion',reported_at:'2026-10-28T12:00:00Z',created_at:'2026-11-09T12:00:00Z',status:'open'})).toBe(false));
+ it('8 AM assignment skips started Notion imports too',()=>expect(cutoverAssignmentEligible({external_source:'notion',external_status:'reopened_in_resolve',status:'open'})).toBe(false));
+ it('a live non-Notion ticket remains eligible',()=>expect(cutoverAssignmentEligible({external_source:'email',created_at:'2026-11-25T12:00:00Z',status:'open'})).toBe(true));
  it('an explicit move makes a Notion record live',()=>expect(isOldBacklog({external_source:'notion',ops_live_at:'2026-11-25T12:00:00Z'})).toBe(false));
  it('Needs you now stops at seven',()=>expect(personalNeeds(Array.from({length:9},(_,i)=>({id:String(i),personId:'me',priority:i,at:null})),'me').rows.length).toBe(7));
  it('Needs you now is for this person only',()=>expect(personalNeeds([{id:'1',personId:'other',priority:0,at:null}],'me').total).toBe(0));

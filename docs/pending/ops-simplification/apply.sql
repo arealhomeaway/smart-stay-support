@@ -41,11 +41,14 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.ops_is_backlog_entity(text,uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.ops_is_backlog_entity(text,uuid) TO authenticated,service_role;
+CREATE OR REPLACE FUNCTION private.ops_notion_recent(_source_created timestamptz,_imported timestamptz) RETURNS boolean LANGUAGE sql IMMUTABLE AS $$ SELECT coalesce(_source_created BETWEEN _imported - interval '720 hours' AND _imported,false) $$;
+REVOKE ALL ON FUNCTION private.ops_notion_recent(timestamptz,timestamptz) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION private.ops_notion_recent(timestamptz,timestamptz) TO service_role;
 CREATE OR REPLACE FUNCTION private.ops_backlog_stamp() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,private AS $$
 BEGIN
  IF TG_OP='INSERT' THEN
   IF TG_TABLE_NAME='tickets' THEN
-   IF NEW.ops_live_at IS NULL AND NEW.status NOT IN ('resolved','closed') AND NEW.archived_at IS NULL AND (NEW.external_source='notion' OR NEW.created_at<'2026-11-16 00:00:00-06'::timestamptz) THEN NEW.ops_backlog_at:=coalesce(NEW.ops_backlog_at,now()); END IF;
+   IF NEW.ops_live_at IS NULL AND NEW.status NOT IN ('resolved','closed') AND NEW.archived_at IS NULL AND ((NEW.external_source='notion' AND NEW.external_status IS DISTINCT FROM 'reopened_in_resolve' AND NOT private.ops_notion_recent(NEW.reported_at,NEW.created_at)) OR (NEW.external_source IS DISTINCT FROM 'notion' AND NEW.created_at<'2026-11-16 00:00:00-06'::timestamptz)) THEN NEW.ops_backlog_at:=coalesce(NEW.ops_backlog_at,now()); END IF;
   ELSIF TG_TABLE_NAME='routine_controls' THEN
    IF NEW.ops_live_at IS NULL AND NEW.kind='maintenance_review' AND NEW.status IN ('due','in_progress') AND NEW.created_at<'2026-11-16 00:00:00-06'::timestamptz THEN NEW.ops_backlog_at:=coalesce(NEW.ops_backlog_at,now()); END IF;
   ELSE
@@ -69,15 +72,35 @@ BEGIN
  RETURN NEW;
 END $$;
 CREATE TRIGGER b_ops_review_assign BEFORE INSERT ON public.routine_controls FOR EACH ROW EXECUTE FUNCTION private.ops_review_assign();
+CREATE OR REPLACE FUNCTION public.ops_is_quiet_notion_entity(_type text,_id uuid) RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public AS $$
+DECLARE parent uuid; v boolean;
+BEGIN
+ IF _id IS NULL THEN RETURN false; END IF;
+ IF _type='ticket' THEN
+  SELECT external_source='notion' AND ops_live_at IS NULL AND external_status IS DISTINCT FROM 'reopened_in_resolve' INTO v FROM public.tickets WHERE id=_id;
+  RETURN coalesce(v,false);
+ END IF;
+ CASE _type
+ WHEN 'work_order' THEN SELECT ticket_id INTO parent FROM public.work_orders WHERE id=_id;
+ WHEN 'handoff' THEN SELECT ticket_id INTO parent FROM public.handoffs WHERE id=_id;
+ WHEN 'escalation' THEN SELECT ticket_id INTO parent FROM public.escalations WHERE id=_id;
+ WHEN 'approval' THEN SELECT entity_id INTO parent FROM public.approvals WHERE id=_id AND entity_type='ticket';
+ ELSE RETURN false;
+ END CASE;
+ RETURN public.ops_is_quiet_notion_entity('ticket',parent);
+END $$;
+REVOKE ALL ON FUNCTION public.ops_is_quiet_notion_entity(text,uuid) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.ops_is_quiet_notion_entity(text,uuid) TO service_role;
 CREATE OR REPLACE FUNCTION private.ops_notification_guard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
 BEGIN
- IF public.ops_is_backlog_entity(NEW.entity_type,NEW.entity_id) THEN RETURN NULL; END IF;
+ IF public.ops_is_backlog_entity(NEW.entity_type,NEW.entity_id) OR public.ops_is_quiet_notion_entity(NEW.entity_type,NEW.entity_id) THEN RETURN NULL; END IF;
  RETURN NEW;
 END $$;
 CREATE TRIGGER a_ops_notification_guard BEFORE INSERT ON public.staff_notifications FOR EACH ROW EXECUTE FUNCTION private.ops_notification_guard();
 CREATE OR REPLACE FUNCTION private.ops_escalation_guard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
 BEGIN
  IF public.ops_is_backlog_entity('ticket',NEW.ticket_id) THEN RAISE EXCEPTION 'Move this item to live work first.'; END IF;
+ IF public.ops_is_quiet_notion_entity('ticket',NEW.ticket_id) THEN RAISE EXCEPTION 'Take this Notion ticket before escalating it.'; END IF;
  RETURN NEW;
 END $$;
 CREATE TRIGGER a_ops_escalation_guard BEFORE INSERT ON public.escalations FOR EACH ROW EXECUTE FUNCTION private.ops_escalation_guard();
@@ -94,7 +117,7 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  IF NEW.ops_backlog_at IS NOT NULL THEN RETURN NEW; END IF;
+  IF NEW.ops_backlog_at IS NOT NULL OR NEW.external_source='notion' THEN RETURN NEW; END IF;
   SELECT * INTO r FROM public.ticket_route_at(
     CASE WHEN NEW.functional_role_code LIKE 'ge\_%' OR NEW.work_type_id IN (SELECT id FROM public.work_types WHERE name = 'Arrival check') THEN 'ge_day' ELSE 'po_day' END, NEW.work_type_id, now());
   NEW.current_action_owner := r.user_id;
@@ -165,7 +188,7 @@ AS $function$
 DECLARE
   _wait interval;
 BEGIN
-  IF NEW.ops_backlog_at IS NOT NULL OR (TG_OP = 'UPDATE' AND OLD.ops_backlog_at IS NOT NULL) THEN RETURN NEW; END IF;
+  IF NEW.ops_backlog_at IS NOT NULL OR (TG_OP = 'UPDATE' AND OLD.ops_backlog_at IS NOT NULL) OR (NEW.external_source='notion' AND NEW.ops_live_at IS NULL AND NEW.external_status IS DISTINCT FROM 'reopened_in_resolve') THEN RETURN NEW; END IF;
   IF TG_OP = 'INSERT' THEN
     IF NEW.assigned_to IS NULL THEN
       NEW.unowned_since := coalesce(NEW.unowned_since, NEW.reported_at, now());
@@ -496,7 +519,7 @@ AS $function$
 DECLARE
   _id uuid;
 BEGIN
-  IF public.ops_is_backlog_entity(_entity_type, _entity_id) THEN RETURN NULL; END IF;
+  IF public.ops_is_backlog_entity(_entity_type, _entity_id) OR public.ops_is_quiet_notion_entity(_entity_type, _entity_id) THEN RETURN NULL; END IF;
   IF _user_id IS NULL THEN
     RETURN NULL;
   END IF;
@@ -527,7 +550,7 @@ CREATE OR REPLACE FUNCTION public.email_delivery_allowed(_recipients text[], _en
 AS $function$
 DECLARE address text; tab text; row_data jsonb;
 BEGIN
-  IF public.ops_is_backlog_entity(_entity_type, _entity_id) OR public.ops_is_backlog_entity('ticket', _ticket_id) THEN RETURN false; END IF;
+  IF public.ops_is_backlog_entity(_entity_type, _entity_id) OR public.ops_is_backlog_entity('ticket', _ticket_id) OR public.ops_is_quiet_notion_entity(_entity_type,_entity_id) OR public.ops_is_quiet_notion_entity('ticket',_ticket_id) THEN RETURN false; END IF;
  IF cardinality(_recipients) IS NULL OR cardinality(_recipients)=0 THEN RETURN false; END IF;
  FOREACH address IN ARRAY _recipients LOOP
   IF address IS NULL OR address !~* '^[^[:space:]@]+@[^[:space:]@]+\.[a-z]{2,}$'
@@ -580,6 +603,7 @@ DECLARE
   _supervisor uuid;
 BEGIN
   IF public.ops_is_backlog_entity('ticket', _ticket_id) THEN RAISE EXCEPTION 'Move this item to live work first.'; END IF;
+ IF public.ops_is_quiet_notion_entity('ticket',_ticket_id) THEN RAISE EXCEPTION 'Take this Notion ticket before escalating it.'; END IF;
   IF NOT private.is_staff(auth.uid()) THEN
     RAISE EXCEPTION 'Only Resolve staff can escalate a ticket.';
   END IF;
@@ -654,7 +678,8 @@ END $function$
 
 SELECT set_config('resolve.ops_transition','on',true);
 SELECT set_config('resolve.import_quiet','on',true);
-WITH moved AS (UPDATE public.tickets SET ops_backlog_at=now() WHERE ops_backlog_at IS NULL AND status NOT IN ('resolved','closed') AND archived_at IS NULL AND (external_source='notion' OR created_at<'2026-11-16 00:00:00-06'::timestamptz) RETURNING *) INSERT INTO public.ops_backlog_history(entity_type,entity_id,action,reason,before_value,after_value) SELECT 'ticket',id,'separated','Before Operations go-live',to_jsonb(moved)-'ops_backlog_at',jsonb_build_object('ops_backlog_at',ops_backlog_at) FROM moved;
+UPDATE public.tickets SET ops_backlog_at=NULL WHERE ops_backlog_at IS NOT NULL AND external_source='notion' AND status NOT IN ('resolved','closed') AND archived_at IS NULL AND private.ops_notion_recent(reported_at,created_at);
+WITH moved AS (UPDATE public.tickets SET ops_backlog_at=now() WHERE ops_backlog_at IS NULL AND status NOT IN ('resolved','closed') AND archived_at IS NULL AND ((external_source='notion' AND external_status IS DISTINCT FROM 'reopened_in_resolve' AND NOT private.ops_notion_recent(reported_at,created_at)) OR (external_source IS DISTINCT FROM 'notion' AND created_at<'2026-11-16 00:00:00-06'::timestamptz)) RETURNING *) INSERT INTO public.ops_backlog_history(entity_type,entity_id,action,reason,before_value,after_value) SELECT 'ticket',id,'separated','Before Operations go-live',to_jsonb(moved)-'ops_backlog_at',jsonb_build_object('ops_backlog_at',ops_backlog_at) FROM moved;
 WITH moved AS (UPDATE public.routine_controls SET ops_backlog_at=now() WHERE ops_backlog_at IS NULL AND kind='maintenance_review' AND status IN ('due','in_progress') AND created_at<'2026-11-16 00:00:00-06'::timestamptz RETURNING *) INSERT INTO public.ops_backlog_history(entity_type,entity_id,action,reason,before_value,after_value) SELECT 'routine',id,'separated','Before Operations go-live',to_jsonb(moved)-'ops_backlog_at',jsonb_build_object('ops_backlog_at',ops_backlog_at) FROM moved;
 WITH moved AS (UPDATE public.leads SET ops_backlog_at=now() WHERE ops_backlog_at IS NULL AND kind='direct_booking' AND outcome IS NULL AND stage NOT IN ('converted','lost') AND created_at<'2026-11-16 00:00:00-06'::timestamptz RETURNING *) INSERT INTO public.ops_backlog_history(entity_type,entity_id,action,reason,before_value,after_value) SELECT 'lead',id,'separated','Before Operations go-live',to_jsonb(moved)-'ops_backlog_at',jsonb_build_object('ops_backlog_at',ops_backlog_at) FROM moved;
 SELECT set_config('resolve.import_quiet','',true);
@@ -672,7 +697,7 @@ END $$;
 REVOKE ALL ON FUNCTION public.ops_old_backlog() FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.ops_old_backlog() TO authenticated,service_role;
 INSERT INTO public.ops_assignment_batch(id,run_at) VALUES('ops-simplification','2026-11-26 14:00:00+00');
-INSERT INTO public.ops_assignment_batch_items SELECT 'ops-simplification','ticket',id FROM public.tickets WHERE ops_backlog_at IS NULL AND status NOT IN ('resolved','closed') AND archived_at IS NULL AND assigned_to IS NULL AND current_action_owner IS NULL AND NOT is_demo;
+INSERT INTO public.ops_assignment_batch_items SELECT 'ops-simplification','ticket',id FROM public.tickets WHERE ops_backlog_at IS NULL AND status NOT IN ('resolved','closed') AND archived_at IS NULL AND assigned_to IS NULL AND current_action_owner IS NULL AND external_source IS DISTINCT FROM 'notion' AND NOT is_demo;
 INSERT INTO public.ops_assignment_batch_items SELECT 'ops-simplification','routine',id FROM public.routine_controls WHERE ops_backlog_at IS NULL AND kind='maintenance_review' AND status IN ('due','in_progress') AND assigned_to IS NULL AND NOT is_demo;
 CREATE OR REPLACE FUNCTION public.ops_assign_pending_once() RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,private AS $$
 DECLARE b public.ops_assignment_batch; i record; t public.tickets; rc public.routine_controls; r record; n int:=0;
@@ -682,7 +707,7 @@ BEGIN
  FOR i IN SELECT x.* FROM public.ops_assignment_batch_items x LEFT JOIN public.tickets t ON x.entity_type='ticket' AND t.id=x.entity_id LEFT JOIN public.routine_controls rc ON x.entity_type='routine' AND rc.id=x.entity_id WHERE x.batch_id=b.id ORDER BY coalesce(t.created_at,rc.created_at),x.entity_type,x.entity_id LOOP
   IF i.entity_type='ticket' THEN
    SELECT * INTO t FROM public.tickets WHERE id=i.entity_id FOR UPDATE;
-   IF t.ops_backlog_at IS NOT NULL OR t.archived_at IS NOT NULL OR t.status IN ('resolved','closed') OR t.assigned_to IS NOT NULL OR t.current_action_owner IS NOT NULL THEN CONTINUE; END IF;
+   IF t.external_source='notion' OR t.ops_backlog_at IS NOT NULL OR t.archived_at IS NOT NULL OR t.status IN ('resolved','closed') OR t.assigned_to IS NOT NULL OR t.current_action_owner IS NOT NULL THEN CONTINUE; END IF;
    SELECT * INTO r FROM public.ticket_route_at(CASE WHEN t.functional_role_code LIKE 'ge\_%' OR EXISTS(SELECT 1 FROM public.work_types WHERE id=t.work_type_id AND name='Arrival check') THEN 'ge_day' ELSE 'po_day' END,NULL,now());
    UPDATE public.tickets SET assigned_to=r.user_id,current_action_owner=r.user_id,assignment_source=r.source,assignment_note=r.note,ops_assigned_at=now() WHERE id=t.id;
   ELSE

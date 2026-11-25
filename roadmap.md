@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Operations simplification (Emily, Nov 25, approved ops-simplification)
+- [ ] Notion correction staged: 24 pure tests/7 focused isolated checks pass; fresh counts reported. No live moves, assignment or all-screen wiring until full package practice passes.
 - [ ] Part 1 stopped as instructed: open-only markers/no restrictive policies staged; 47 real dependencies captured; practice failed on generated vendor qualification score represented as DEFAULT. No apply, schedule or live-reader changes.
 - [ ] Separate old backlog from live tickets, maintenance/lawn reviews and Direct Booking requests; stop backlog counts and clocks
 - [ ] ops-simplification staged but NOT ready to apply: isolated schema reconstruction failed; behavior/undo/preflight execution incomplete
