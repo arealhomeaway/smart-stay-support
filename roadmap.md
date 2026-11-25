@@ -1,5 +1,10 @@
 # Roadmap
 
+## Quiet hold check (Emily, Nov 25)
+- [x] Read all real open tickets and reproduce the existing Home calculation before/after; C and D both empty, no live data update needed.
+- [x] Confirm ordinary tickets are not quieted by import_hold; skip D as instructed and preserve every existing rule.
+- [x] Record the empty changed-ID list, exact no-op undo, preflight, isolated no-op practice and counts in docs/pending/quiet-hold-backlog. No switches changed or publish.
+
 ## Operations simplification (Emily, Nov 25, approved ops-simplification)
 - [ ] Notion correction staged: 24 pure tests/7 focused isolated checks pass; fresh counts reported. No live moves, assignment or all-screen wiring until full package practice passes.
 - [ ] Part 1 stopped as instructed: open-only markers/no restrictive policies staged; 47 real dependencies captured; practice failed on generated vendor qualification score represented as DEFAULT. No apply, schedule or live-reader changes.
