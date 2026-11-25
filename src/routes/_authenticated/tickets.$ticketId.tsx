@@ -1050,6 +1050,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     repairPossible: repairIsPossible(ticket.category, workType?.name) && !repairExists,
     requiredOpenSteps: requiredOpen.length,
     missingClosureEvidence: Boolean(requiredEvidence) && !evidenceSatisfied,
+    guestWaiting: guestIsWaiting(ticket),
   });
   const headerAddress =
     [ticket.properties?.address_line1, ticket.properties?.city].filter(Boolean).join(", ") || propertyName || null;
@@ -1613,7 +1614,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                       ? ` · comes back to you ${usDateTime(ticket.next_review_at)}`
                       : ""}
                   </p>
-                  {ticket.next_review_at && (
+                  {ticket.next_review_at && guestIsWaiting(ticket) && (
                     <p className="text-sm text-muted-foreground" data-testid="waiting-paused">
                       The response timer is paused until then.
                     </p>

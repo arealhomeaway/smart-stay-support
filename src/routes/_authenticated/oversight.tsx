@@ -211,6 +211,9 @@ function Oversight() {
   );
 }
 
+/** Emily, Nov 25: the older sections below All open tickets stay hidden. */
+const SHOW_LEGACY_SECTIONS = false;
+
 function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSupport }) {
   const { access } = useRole();
   const open = data.filter((t) => OPEN_STATUSES.includes(t.status));
@@ -677,6 +680,10 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
         ) : null}
       </div>
 
+      {/* Older sections below All open tickets are hidden for everyone (Emily,
+          Nov 25). The code stays; flip this back to true to bring them back. */}
+      {SHOW_LEGACY_SECTIONS ? (
+      <>
       <div className="grid gap-3 lg:grid-cols-2" data-testid="oversight-strip">
         <OnCallNowCard />
         <OvernightHandoffPanel compact />
@@ -802,6 +809,8 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
       <p className="text-sm text-muted-foreground">
         Context: {open.length} open · {closedThisWeek} closed in the last 7 days.
       </p>
+      </>
+      ) : null}
     </div>
   );
 }

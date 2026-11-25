@@ -60,6 +60,12 @@ export type CurrentActionInput = {
   requiredOpenSteps?: number;
   /** The work type asks for closure evidence that is not on file. */
   missingClosureEvidence?: boolean;
+  /**
+   * A guest is waiting for an answer (guestIsWaiting). When false the reply
+   * clock wording is dropped: there is no guest to reply to. Defaults to
+   * true so existing callers keep their wording.
+   */
+  guestWaiting?: boolean;
 };
 
 const WAITING_WHO: Record<string, string> = {
@@ -120,11 +126,15 @@ export function ticketCurrentAction(t: CurrentActionInput): CurrentAction | null
   const legacyGuest = comm === undefined && Boolean(t.guest_in_residence);
   if (status === "closed" || t.closed_at) return null;
 
+  const guestWaiting = t.guestWaiting ?? true;
+
   if (!t.acknowledged_at) {
     return {
       id: "acknowledge",
       title: "Confirm you have it",
-      because: "Nobody has confirmed we have it yet, and the response clock is running.",
+      because: guestWaiting
+        ? "Nobody has confirmed we have it yet, and the response clock is running."
+        : "Take it to show you own this.",
       then: "Then you'll say what you're doing first.",
       completeLabel: "Continue",
       fields: [
@@ -144,8 +154,10 @@ export function ticketCurrentAction(t: CurrentActionInput): CurrentAction | null
       id: "waiting_followup",
       title: `Follow up with ${who}`,
       because: t.waiting_reason
-        ? `${t.waiting_reason.replace(/[.!?\s]+$/, "")}. The response timer is paused until then.`
-        : "This is parked with someone else. The response timer is paused until then.",
+        ? `${t.waiting_reason.replace(/[.!?\s]+$/, "")}.${guestWaiting ? " The response timer is paused until then." : ""}`
+        : guestWaiting
+          ? "This is parked with someone else. The response timer is paused until then."
+          : "This is parked with someone else.",
       then: "Either it comes back to you now, or it's parked again with a new follow-up time.",
       completeLabel: "Continue",
       fields: [
