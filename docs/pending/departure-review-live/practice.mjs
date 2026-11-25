@@ -1,0 +1,63 @@
+import { PGlite } from '@electric-sql/pglite';
+import { readFileSync } from 'node:fs';
+import assert from 'node:assert/strict';
+const read = (name) => readFileSync(new URL(name, import.meta.url), 'utf8');
+const db = new PGlite();
+let passed = 0;
+const check = (condition) => { assert.ok(condition); passed++; };
+await db.exec(`
+CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
+CREATE SCHEMA auth;
+CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT nullif(current_setting('test.user_id',true),'')::uuid $$;
+CREATE FUNCTION public.has_role(_id uuid,_role text) RETURNS boolean LANGUAGE sql AS $$ SELECT _id='98bd6696-4018-4965-b645-0471c5ae3925'::uuid AND _role='admin' $$;
+CREATE TABLE app_settings(key text PRIMARY KEY,value jsonb);
+CREATE TABLE audit_log(actor_id uuid,action text,entity_type text,entity_label text,after_value jsonb);
+CREATE TABLE properties(id uuid PRIMARY KEY,is_demo boolean);
+CREATE TABLE breezeway_work_orders(id uuid PRIMARY KEY,property_id uuid,department text,status text,reservation_snapshot jsonb,finished_at timestamptz,breezeway_updated_at timestamptz,breezeway_task_id text,name text,assignees jsonb,photo_count int);
+CREATE TABLE departure_clean_matches(breezeway_work_order_id uuid,state text,reservation jsonb,ownerrez_booking_id text,checkout_date date);
+CREATE TABLE departure_reviews(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),property_id uuid,breezeway_work_order_id uuid,breezeway_task_id text,event_key text UNIQUE,guest_name text,stay_arrival date,stay_departure date,ownerrez_booking_id text,reservation_code text,booking_source text,deposit_payer text,deposit_amount numeric,clean_name text,clean_completed_at timestamptz,clean_completed_exact boolean,cleaner_name text,clean_photo_count int,is_demo boolean);
+CREATE TABLE cleaning_reviews(departure_review_id uuid,property_id uuid,breezeway_task_id text,ownerrez_booking_id text,reservation_code text,cleaner_name text,is_demo boolean);
+CREATE TABLE departure_review_events(departure_review_id uuid,property_id uuid,event_type text,summary text);
+`);
+await db.exec(read('undo/01_departure_review_live.sql'));
+await db.exec(`REVOKE ALL ON FUNCTION create_departure_review_from_clean(uuid) FROM PUBLIC; GRANT EXECUTE ON FUNCTION create_departure_review_from_clean(uuid) TO service_role;`);
+const definition = async () => (await db.query(`SELECT pg_get_functiondef('create_departure_review_from_clean(uuid)'::regprocedure) d`)).rows[0]?.d;
+const before = await definition();
+await db.exec(`BEGIN; ${read('01_departure_review_live.sql')} COMMIT;`);
+check((await db.query(`SELECT count(*) n FROM app_settings`)).rows[0]?.n === 0);
+const permissions = (await db.query(`SELECT has_function_privilege('anon','set_departure_review_live(boolean)','execute') anon, has_function_privilege('authenticated','set_departure_review_live(boolean)','execute') staff, has_function_privilege('anon','create_departure_review_from_clean(uuid)','execute') producer_anon`)).rows[0];
+check(permissions?.anon === false && permissions?.staff === true && permissions?.producer_anon === false);
+await assert.rejects(db.query(`SELECT set_departure_review_live(true)`), /Only Admin/); passed++;
+await db.exec(`SELECT set_config('test.user_id','00000000-0000-0000-0000-000000000001',false)`);
+await assert.rejects(db.query(`SELECT set_departure_review_live(true)`), /Only Admin/); passed++;
+await db.exec(`INSERT INTO properties VALUES(md5('real')::uuid,false),(md5('demo')::uuid,true);`);
+async function clean(label, { demo=false, status='finished', department='housekeeping', time='now()', departure="current_date - 1", booking=label, matched=false } = {}) {
+  await db.exec(`INSERT INTO breezeway_work_orders(id,property_id,department,status,reservation_snapshot,finished_at,breezeway_updated_at,breezeway_task_id,name,assignees,photo_count)
+    VALUES(md5('${label}')::uuid,md5('${demo ? 'demo' : 'real'}')::uuid,'${department}','${status}',
+    ${matched ? "NULL" : `jsonb_build_object('departure',${departure},'arrival',current_date-3,'ownerrez_booking_id','${booking}')`},${time},${time},'${label}','Departure clean','[]',0);`);
+  if (matched) await db.exec(`INSERT INTO departure_clean_matches VALUES(md5('${label}')::uuid,'matched','{}','${booking}',current_date-1)`);
+  return (await db.query(`SELECT create_departure_review_from_clean(md5('${label}')::uuid) id`)).rows[0]?.id;
+}
+check(await clean('off') === null);
+check(typeof await clean('demo',{demo:true}) === 'string');
+await db.exec(`SELECT set_config('test.user_id','98bd6696-4018-4965-b645-0471c5ae3925',false); SELECT set_departure_review_live(true);`);
+check((await db.query(`SELECT value->>'enabled' enabled,value->>'started_at' started FROM app_settings`)).rows[0]?.enabled === 'true');
+check(await clean('old',{time:"now()-interval '1 day'"}) === null);
+check(await clean('unfinished',{status:'in_progress'}) === null);
+check(await clean('maintenance',{department:'maintenance'}) === null);
+check(await clean('future',{departure:'current_date+1'}) === null);
+const first = await clean('first',{status:'approved'});
+check(typeof first === 'string');
+check(await clean('duplicate',{booking:'first',status:'closed'}) === null);
+check(typeof await clean('matched',{matched:true,status:'closed'}) === 'string');
+check((await db.query(`SELECT (SELECT count(*) FROM departure_reviews) = (SELECT count(*) FROM cleaning_reviews) AND (SELECT count(*) FROM departure_reviews) = (SELECT count(*) FROM departure_review_events) ok`)).rows[0]?.ok === true);
+const retained = (await db.query(`SELECT * FROM departure_reviews ORDER BY id`)).rows;
+await db.exec(`SELECT set_departure_review_live(false)`);
+check(await clean('stopped') === null);
+await db.exec(`BEGIN; ${read('undo/01_departure_review_live.sql')} COMMIT;`);
+check(await definition() === before);
+check((await db.query(`SELECT to_regprocedure('set_departure_review_live(boolean)') fn, value->>'enabled' enabled FROM app_settings`)).rows[0]?.fn === null);
+assert.deepEqual((await db.query(`SELECT * FROM departure_reviews ORDER BY id`)).rows,retained); passed++;
+check((await db.query(`SELECT value->>'enabled' enabled FROM app_settings`)).rows[0]?.enabled === 'false');
+await db.close();
+console.log(`${passed} checks passed: Admin-only control, default unchanged, forward-only real homes, demo behavior, Finished/Approved/Closed gates, matched reservation, no duplicates, linked records, exact function undo and retained history. Reduced-schema isolated PostgreSQL fixture; not a full live trigger clone.`);

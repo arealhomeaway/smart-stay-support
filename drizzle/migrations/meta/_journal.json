@@ -2661,6 +2661,13 @@
       "when": 1795578396749,
       "tag": "0379_property_guidebook_link",
       "breakpoints": true
+    },
+    {
+      "idx": 380,
+      "version": "7",
+      "when": 1795578695331,
+      "tag": "0380_departure_review_live",
+      "breakpoints": true
     }
   ]
 }

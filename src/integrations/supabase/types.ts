@@ -22312,6 +22312,7 @@ export type Database = {
         Args: { _on: boolean; _reason: string; _user: string }
         Returns: undefined
       }
+      set_departure_review_live: { Args: { _on: boolean }; Returns: Json }
       set_email_intake: { Args: { _enabled: boolean }; Returns: Json }
       set_guest_rating_channels: {
         Args: { _channels: string[] }
