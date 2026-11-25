@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { EmailComposer } from "@/components/EmailComposer";
 import { HomeAutomation } from "@/components/ao/HomeAutomation";
 import { HoursReportLine } from "@/components/ao/HoursReport";
+import { OwnerWorkHistory } from "@/components/owner/OwnerWorkHistory";
 import { loadHomePlan } from "@/lib/ao-data";
 import { OpportunityDetail } from "@/components/onboarding/OwnerCollaboration";
 import { ReleasedActivityDetail } from "@/components/onboarding/ReleasedActivityDetail";
@@ -400,6 +401,7 @@ export function OwnerTab(p: {
         </section>
 
         {p.activeOwner && <HoursReportLine propertyId={p.propertyId} />}
+        {p.activeOwner && p.summary.program ? <OwnerWorkHistory programId={p.summary.program.id} propertyId={p.propertyId} readOnly /> : null}
 
         <ConversationTimeline
           propertyId={p.propertyId}

@@ -1,5 +1,11 @@
 # Roadmap
 
+## One save per owner card and My history (Nov 25)
+- [ ] Combine answers, actual time and evidence into one canonical card save, retaining existing choices and answers.
+- [ ] Shared owner/staff history, totals, duplicate prompt and owner-only archive (H9 clarification requested).
+- [ ] Owner menu and weekly-email history destination.
+- [ ] Stage, practise and apply authorized database package; demo-owner desktop/phone and staff verification.
+
 ## Shared simple staff Home (Emily, Nov 25)
 - [x] Mount existing CoordinatorHome for all staff; plain leader Oversight link, no totals. Old components kept, reads/actions unchanged.
 - [x] Emily checked at 1440/390: only header, Open Oversight and three sections; Home buttons 18 to 6, no 338/decision totals, no-team Take one empty. Seven tests pass. Approval reader/render path unchanged; Emily has zero pending personal approvals, so no approval action tested.

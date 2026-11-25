@@ -65,6 +65,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useOwnerPreview } from "@/lib/owner-preview";
 import { useDemo } from "@/components/DemoProvider";
 import { ownerProgramDisplay } from "@/lib/owner-program-display";
+import { OwnerPortalMenu } from "@/components/owner/OwnerPortalMenu";
 
 export const Route = createFileRoute("/_authenticated/owner")({
   // Homeowners with more than one home switch between them here, so the chosen
@@ -446,6 +447,7 @@ function OwnerHubBody({
   return (
     <LogTimeContext.Provider value={preview ? null : openLogTime}>
     <div className={view === "home" || view === "opportunities" ? "mx-auto max-w-[1120px] space-y-9 text-portal-ink" : "space-y-6"}>
+      <OwnerPortalMenu {...(selectedHomeId ? { home: selectedHomeId } : {})} />
       <OwnerChatPanel />
       {preview ? (
         <StatusBadge tone="review">Preview only: staff view, read-only</StatusBadge>
@@ -688,7 +690,7 @@ function WelcomeCard({
         <div className="flex flex-wrap gap-2 pt-2">
           {canLog ? (
             <Button className="min-h-11 bg-portal-primary text-portal-primary-foreground hover:bg-portal-primary/90" onClick={onLog}>
-              <Clock className="size-4" aria-hidden="true" /> Log hours
+              <Clock className="size-4" aria-hidden="true" /> Add work
             </Button>
           ) : null}
           <Button variant="outline" className={outline} onClick={onAll}>See all opportunities</Button>

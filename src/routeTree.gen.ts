@@ -104,6 +104,7 @@ import { Route as AuthenticatedOnboardingTeamRouteImport } from './routes/_authe
 import { Route as AuthenticatedOnboardingTemplatesRouteImport } from './routes/_authenticated/onboarding.templates'
 import { Route as AuthenticatedOnboardingTransitionsRouteImport } from './routes/_authenticated/onboarding.transitions'
 import { Route as AuthenticatedOnboardingUtilitiesRouteImport } from './routes/_authenticated/onboarding.utilities'
+import { Route as AuthenticatedOwnerHistoryRouteImport } from './routes/_authenticated/owner_.history'
 import { Route as AuthenticatedPropertyPropertyIdRouteImport } from './routes/_authenticated/property.$propertyId'
 import { Route as AuthenticatedRecoveryIndexRouteImport } from './routes/_authenticated/recovery.index'
 import { Route as AuthenticatedRecoveryManagerRouteImport } from './routes/_authenticated/recovery.manager'
@@ -668,6 +669,12 @@ const AuthenticatedOnboardingUtilitiesRoute =
     path: '/utilities',
     getParentRoute: () => AuthenticatedOnboardingRoute,
   } as any)
+const AuthenticatedOwnerHistoryRoute =
+  AuthenticatedOwnerHistoryRouteImport.update({
+    id: '/owner_/history',
+    path: '/owner/history',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPropertyPropertyIdRoute =
   AuthenticatedPropertyPropertyIdRouteImport.update({
     id: '/property/$propertyId',
@@ -940,6 +947,7 @@ export interface FileRoutesByFullPath {
   '/onboarding/templates': typeof AuthenticatedOnboardingTemplatesRoute
   '/onboarding/transitions': typeof AuthenticatedOnboardingTransitionsRouteWithChildren
   '/onboarding/utilities': typeof AuthenticatedOnboardingUtilitiesRouteWithChildren
+  '/owner/history': typeof AuthenticatedOwnerHistoryRoute
   '/property/$propertyId': typeof AuthenticatedPropertyPropertyIdRoute
   '/recovery/manager': typeof AuthenticatedRecoveryManagerRoute
   '/recovery/my-recoveries': typeof AuthenticatedRecoveryMyRecoveriesRoute
@@ -1061,6 +1069,7 @@ export interface FileRoutesByTo {
   '/onboarding/templates': typeof AuthenticatedOnboardingTemplatesRoute
   '/onboarding/transitions': typeof AuthenticatedOnboardingTransitionsRouteWithChildren
   '/onboarding/utilities': typeof AuthenticatedOnboardingUtilitiesRouteWithChildren
+  '/owner/history': typeof AuthenticatedOwnerHistoryRoute
   '/property/$propertyId': typeof AuthenticatedPropertyPropertyIdRoute
   '/recovery/manager': typeof AuthenticatedRecoveryManagerRoute
   '/recovery/my-recoveries': typeof AuthenticatedRecoveryMyRecoveriesRoute
@@ -1190,6 +1199,7 @@ export interface FileRoutesById {
   '/_authenticated/onboarding/templates': typeof AuthenticatedOnboardingTemplatesRoute
   '/_authenticated/onboarding/transitions': typeof AuthenticatedOnboardingTransitionsRouteWithChildren
   '/_authenticated/onboarding/utilities': typeof AuthenticatedOnboardingUtilitiesRouteWithChildren
+  '/_authenticated/owner_/history': typeof AuthenticatedOwnerHistoryRoute
   '/_authenticated/property/$propertyId': typeof AuthenticatedPropertyPropertyIdRoute
   '/_authenticated/recovery/manager': typeof AuthenticatedRecoveryManagerRoute
   '/_authenticated/recovery/my-recoveries': typeof AuthenticatedRecoveryMyRecoveriesRoute
@@ -1319,6 +1329,7 @@ export interface FileRouteTypes {
     | '/onboarding/templates'
     | '/onboarding/transitions'
     | '/onboarding/utilities'
+    | '/owner/history'
     | '/property/$propertyId'
     | '/recovery/manager'
     | '/recovery/my-recoveries'
@@ -1440,6 +1451,7 @@ export interface FileRouteTypes {
     | '/onboarding/templates'
     | '/onboarding/transitions'
     | '/onboarding/utilities'
+    | '/owner/history'
     | '/property/$propertyId'
     | '/recovery/manager'
     | '/recovery/my-recoveries'
@@ -1568,6 +1580,7 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding/templates'
     | '/_authenticated/onboarding/transitions'
     | '/_authenticated/onboarding/utilities'
+    | '/_authenticated/owner_/history'
     | '/_authenticated/property/$propertyId'
     | '/_authenticated/recovery/manager'
     | '/_authenticated/recovery/my-recoveries'
@@ -2297,6 +2310,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOnboardingUtilitiesRouteImport
       parentRoute: typeof AuthenticatedOnboardingRoute
     }
+    '/_authenticated/owner_/history': {
+      id: '/_authenticated/owner_/history'
+      path: '/owner/history'
+      fullPath: '/owner/history'
+      preLoaderRoute: typeof AuthenticatedOwnerHistoryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/property/$propertyId': {
       id: '/_authenticated/property/$propertyId'
       path: '/property/$propertyId'
@@ -2741,6 +2761,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDirectBookingsSettingsRoute: typeof AuthenticatedDirectBookingsSettingsRoute
   AuthenticatedHomeRecordsPropertyIdRoute: typeof AuthenticatedHomeRecordsPropertyIdRoute
   AuthenticatedIntegrationsNotionImportRoute: typeof AuthenticatedIntegrationsNotionImportRoute
+  AuthenticatedOwnerHistoryRoute: typeof AuthenticatedOwnerHistoryRoute
   AuthenticatedPropertyPropertyIdRoute: typeof AuthenticatedPropertyPropertyIdRoute
   AuthenticatedTicketsTicketIdRoute: typeof AuthenticatedTicketsTicketIdRoute
   AuthenticatedTicketsNewRoute: typeof AuthenticatedTicketsNewRoute
@@ -2825,6 +2846,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedHomeRecordsPropertyIdRoute,
   AuthenticatedIntegrationsNotionImportRoute:
     AuthenticatedIntegrationsNotionImportRoute,
+  AuthenticatedOwnerHistoryRoute: AuthenticatedOwnerHistoryRoute,
   AuthenticatedPropertyPropertyIdRoute: AuthenticatedPropertyPropertyIdRoute,
   AuthenticatedTicketsTicketIdRoute: AuthenticatedTicketsTicketIdRoute,
   AuthenticatedTicketsNewRoute: AuthenticatedTicketsNewRoute,

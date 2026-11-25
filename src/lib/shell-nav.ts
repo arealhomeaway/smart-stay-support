@@ -10,6 +10,14 @@
  */
 import type { Capability } from "@/lib/permissions";
 
+export const OWNER_PORTAL_LINKS = [
+  { label: "Home", view: null },
+  { label: "Opportunities", view: "opportunities" },
+  { label: "My history", view: "history" },
+  { label: "Documents & Photos", view: "documents" },
+  { label: "My Team", view: "team" },
+] as const;
+
 export type Crumb = { label: string; to: string; search?: Record<string, string> };
 
 export type DepartmentLink = {

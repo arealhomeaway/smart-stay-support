@@ -84,7 +84,7 @@ export function hoursBoxLines(reportedMinutes: number, end: Date, now: Date): st
 }
 
 export const LOG_HOURS_LABEL = "Log my hours";
-export const LOG_HOURS_PATH = "/owner";
+export const LOG_HOURS_PATH = "/owner/history";
 
 export function renderHoursReport(s: HoursReportSettings, input: { firstName: string | null; reportedMinutes: number; end: Date; now: Date }) {
   const f = { firstName: input.firstName?.trim() || "there", date: reportDateLabel(input.now) };

@@ -1,0 +1,3656 @@
+{
+  "tables": [
+    {
+      "type": "uuid",
+      "table": "ao_contribution_changes",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "ao_contribution_changes",
+      "column": "plan_card_id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "ao_contribution_changes",
+      "column": "contribution_id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "ao_contribution_changes",
+      "column": "property_id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "ao_contribution_changes",
+      "column": "program_id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "ao_contribution_changes",
+      "column": "changed_by",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "ao_contribution_changes",
+      "column": "changed_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "ao_contribution_changes",
+      "column": "before_values",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "ao_contribution_changes",
+      "column": "after_values",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "ao_contribution_changes",
+      "column": "before_files",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "ao_contribution_changes",
+      "column": "after_files",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "ao_contribution_changes",
+      "column": "chat_message_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "ao_contributions",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "ao_contributions",
+      "column": "plan_card_id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "ao_contributions",
+      "column": "property_id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "ao_contributions",
+      "column": "program_id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "ao_contributions",
+      "column": "card_id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "ao_contributions",
+      "column": "submitted_by",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "ao_contributions",
+      "column": "field_values",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "ao_contributions",
+      "column": "submitted_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "ao_contributions",
+      "column": "files",
+      "default": "'[]'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "ao_home_plan_cards",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "ao_home_plan_cards",
+      "column": "property_id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "ao_home_plan_cards",
+      "column": "program_id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "ao_home_plan_cards",
+      "column": "card_id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "integer",
+      "table": "ao_home_plan_cards",
+      "column": "card_version",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "ao_home_plan_cards",
+      "column": "join_outcome",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "ao_home_plan_cards",
+      "column": "owner_review_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "ao_home_plan_cards",
+      "column": "linked_task_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "ao_home_plan_cards",
+      "column": "unlocked_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "ao_home_plan_cards",
+      "column": "unlocked_by",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "ao_home_plan_cards",
+      "column": "deadline_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "ao_home_plan_cards",
+      "column": "reminder_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "ao_home_plan_cards",
+      "column": "cutoff_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "ao_home_plan_cards",
+      "column": "reminder_sent_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "ao_home_plan_cards",
+      "column": "expired_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "ao_home_plan_cards",
+      "column": "owner_completed_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "ao_home_plan_cards",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "ao_home_plan_cards",
+      "column": "covered_reason",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "ao_home_plan_cards",
+      "column": "covered_source",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "ao_home_plan_cards",
+      "column": "covered_item_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "ao_library_cards",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO"
+    },
+    {
+      "type": "integer",
+      "table": "ao_library_cards",
+      "column": "version",
+      "default": "1",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "ao_library_cards",
+      "column": "title",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "ao_library_cards",
+      "column": "what_text",
+      "default": "''::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "ao_library_cards",
+      "column": "why_text",
+      "default": "''::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "ao_library_cards",
+      "column": "how_text",
+      "default": "''::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "ao_library_cards",
+      "column": "required_output",
+      "default": "''::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "ao_library_cards",
+      "column": "documentation_note",
+      "default": "''::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "numeric",
+      "table": "ao_library_cards",
+      "column": "est_hours_min",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "numeric",
+      "table": "ao_library_cards",
+      "column": "est_hours_max",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "ao_library_cards",
+      "column": "lane",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "ao_library_cards",
+      "column": "stage_window",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "boolean",
+      "table": "ao_library_cards",
+      "column": "team_needs_this",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "ao_library_cards",
+      "column": "lock_rule",
+      "default": "'none'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid[]",
+      "table": "ao_library_cards",
+      "column": "linked_template_task_ids",
+      "default": "ARRAY[]::uuid[]",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "ao_library_cards",
+      "column": "code",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "ao_library_cards",
+      "column": "status",
+      "default": "'draft'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "ao_library_cards",
+      "column": "card_group",
+      "default": "''::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "boolean",
+      "table": "ao_library_cards",
+      "column": "event_triggered",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "ao_library_cards",
+      "column": "opens_text",
+      "default": "''::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "ao_library_cards",
+      "column": "deadline_text",
+      "default": "''::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "integer",
+      "table": "ao_library_cards",
+      "column": "deadline_business_days",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "integer",
+      "table": "ao_library_cards",
+      "column": "deadline_calendar_days",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "ao_library_cards",
+      "column": "cutoff_rule",
+      "default": "'next_business_day_9am'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "integer",
+      "table": "ao_library_cards",
+      "column": "cutoff_business_days",
+      "default": "1",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "ao_library_cards",
+      "column": "takeover_text",
+      "default": "''::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "ao_library_cards",
+      "column": "output_fields",
+      "default": "'[]'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "ao_library_cards",
+      "column": "retired_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "ao_library_cards",
+      "column": "updated_by",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "ao_library_cards",
+      "column": "updated_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "ao_library_cards",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "boolean",
+      "table": "ao_library_cards",
+      "column": "once_per_owner",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "boolean",
+      "table": "ao_library_cards",
+      "column": "owner_needed",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "approvals",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "approvals",
+      "column": "entity_type",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "approvals",
+      "column": "entity_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "approvals",
+      "column": "department_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "approvals",
+      "column": "property_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "approvals",
+      "column": "kind",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "approvals",
+      "column": "title",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "approvals",
+      "column": "detail",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "numeric",
+      "table": "approvals",
+      "column": "amount",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "approvals",
+      "column": "currency",
+      "default": "'USD'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "approvals",
+      "column": "requested_by",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "approvals",
+      "column": "approver_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "approvals",
+      "column": "approver_role",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "approvals",
+      "column": "status",
+      "default": "'pending'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "approvals",
+      "column": "decision_note",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "approvals",
+      "column": "decided_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "date",
+      "table": "approvals",
+      "column": "due_on",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "approvals",
+      "column": "evidence_url",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "approvals",
+      "column": "external_reference",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "approvals",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "approvals",
+      "column": "updated_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "boolean",
+      "table": "approvals",
+      "column": "is_demo",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "approvals",
+      "column": "response_channel",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "approvals",
+      "column": "recorded_by",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "approvals",
+      "column": "responded_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "bigint",
+      "table": "approvals",
+      "column": "ref",
+      "default": "nextval('approvals_ref_seq'::regclass)",
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "approvals",
+      "column": "owner_email_to",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "approvals",
+      "column": "owner_email_sent_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "approvals",
+      "column": "owner_email_conversation_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "jsonb",
+      "table": "approvals",
+      "column": "onboarding_delivery_attempt",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "jsonb",
+      "table": "approvals",
+      "column": "onboarding_delivery_history",
+      "default": "'[]'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_program_events",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_program_events",
+      "column": "program_id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_program_events",
+      "column": "property_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_program_events",
+      "column": "entry_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_program_events",
+      "column": "review_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_program_events",
+      "column": "kind",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "owner_program_events",
+      "column": "summary",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "owner_program_events",
+      "column": "detail",
+      "default": "'{}'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "owner_program_events",
+      "column": "previous_value",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_program_events",
+      "column": "new_value",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_program_events",
+      "column": "reason",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_program_events",
+      "column": "actor_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_program_events",
+      "column": "actor_label",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "owner_program_events",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_program_properties",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_program_properties",
+      "column": "program_id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_program_properties",
+      "column": "property_id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "date",
+      "table": "owner_program_properties",
+      "column": "closing_date",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "owner_program_properties",
+      "column": "closing_confirmed",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "date",
+      "table": "owner_program_properties",
+      "column": "added_on",
+      "default": "CURRENT_DATE",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_program_properties",
+      "column": "added_by",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_program_properties",
+      "column": "inclusion_status",
+      "default": "'included'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "owner_program_properties",
+      "column": "onboarding_status",
+      "default": "'not_started'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "owner_program_properties",
+      "column": "launch_status",
+      "default": "'not_ready'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "owner_program_properties",
+      "column": "coverage_status",
+      "default": "'no_activity'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "owner_program_properties",
+      "column": "last_owner_activity_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_program_properties",
+      "column": "notes",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "owner_program_properties",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "owner_program_properties",
+      "column": "updated_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "boolean",
+      "table": "owner_program_properties",
+      "column": "is_demo",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "owner_program_properties",
+      "column": "archived_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_programs",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_programs",
+      "column": "property_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_programs",
+      "column": "owner_user_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_programs",
+      "column": "owner_name",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_programs",
+      "column": "owner_email",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_programs",
+      "column": "status",
+      "default": "'pending'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "date",
+      "table": "owner_programs",
+      "column": "started_on",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "date",
+      "table": "owner_programs",
+      "column": "ends_on",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "numeric",
+      "table": "owner_programs",
+      "column": "target_hours",
+      "default": "100",
+      "nullable": "NO"
+    },
+    {
+      "type": "numeric",
+      "table": "owner_programs",
+      "column": "onboarding_target_hours",
+      "default": "60",
+      "nullable": "NO"
+    },
+    {
+      "type": "numeric",
+      "table": "owner_programs",
+      "column": "ongoing_target_hours",
+      "default": "40",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "owner_programs",
+      "column": "notes",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_programs",
+      "column": "created_by",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "owner_programs",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "owner_programs",
+      "column": "updated_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "owner_programs",
+      "column": "owner_phone",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "owner_programs",
+      "column": "notify_email",
+      "default": "true",
+      "nullable": "NO"
+    },
+    {
+      "type": "boolean",
+      "table": "owner_programs",
+      "column": "notify_sms_p1",
+      "default": "true",
+      "nullable": "NO"
+    },
+    {
+      "type": "boolean",
+      "table": "owner_programs",
+      "column": "notify_push",
+      "default": "true",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_programs",
+      "column": "activated_by",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "owner_programs",
+      "column": "activated_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "numeric",
+      "table": "owner_programs",
+      "column": "operating_target_hours",
+      "default": "105",
+      "nullable": "NO"
+    },
+    {
+      "type": "numeric",
+      "table": "owner_programs",
+      "column": "onboarding_milestone_hours",
+      "default": "60",
+      "nullable": "NO"
+    },
+    {
+      "type": "integer",
+      "table": "owner_programs",
+      "column": "onboarding_milestone_day",
+      "default": "35",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_programs",
+      "column": "onboarding_lead",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_programs",
+      "column": "operations_lead",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "owner_programs",
+      "column": "dfy_confirmed",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "owner_programs",
+      "column": "dfy_confirmed_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_programs",
+      "column": "internal_notes",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "owner_programs",
+      "column": "completed_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_programs",
+      "column": "completed_by",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "owner_programs",
+      "column": "last_owner_activity_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "owner_programs",
+      "column": "is_demo",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "owner_programs",
+      "column": "archived_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_programs",
+      "column": "archived_by",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_programs",
+      "column": "archive_reason",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "jsonb",
+      "table": "owner_programs",
+      "column": "completion_report",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_programs",
+      "column": "report_version",
+      "default": "gen_random_uuid()",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_programs",
+      "column": "owner_record_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "owner_programs",
+      "column": "pace_emails_held_until",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_review_properties",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_review_properties",
+      "column": "review_id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_review_properties",
+      "column": "property_id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "owner_review_properties",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_reviews",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_reviews",
+      "column": "program_id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_reviews",
+      "column": "template_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_reviews",
+      "column": "ticket_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_reviews",
+      "column": "phase",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "owner_reviews",
+      "column": "stage",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "owner_reviews",
+      "column": "title",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "owner_reviews",
+      "column": "recommendation",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_reviews",
+      "column": "evidence",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_reviews",
+      "column": "impact",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_reviews",
+      "column": "decision_path",
+      "default": "'consult'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "date",
+      "table": "owner_reviews",
+      "column": "respond_by",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_reviews",
+      "column": "status",
+      "default": "'prepared'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "owner_reviews",
+      "column": "owner_decision",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_reviews",
+      "column": "owner_response",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "owner_reviews",
+      "column": "notified_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "owner_reviews",
+      "column": "responded_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "owner_reviews",
+      "column": "closed_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_reviews",
+      "column": "outcome",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "integer",
+      "table": "owner_reviews",
+      "column": "sort_order",
+      "default": "0",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_reviews",
+      "column": "created_by",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "owner_reviews",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "owner_reviews",
+      "column": "updated_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "owner_reviews",
+      "column": "task_type",
+      "default": "'program_wide'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_reviews",
+      "column": "property_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_reviews",
+      "column": "business_question",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_reviews",
+      "column": "attachment_path",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "owner_reviews",
+      "column": "is_demo",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "owner_reviews",
+      "column": "archived_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "jsonb",
+      "table": "owner_reviews",
+      "column": "photos",
+      "default": "'[]'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "owner_reviews",
+      "column": "source_type",
+      "default": "'program'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_reviews",
+      "column": "onboarding_task_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_reviews",
+      "column": "owner_action_type",
+      "default": "'review_comment'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "owner_reviews",
+      "column": "available_from",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_reviews",
+      "column": "staff_context",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "owner_reviews",
+      "column": "auto_ticket",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_time_entries",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_time_entries",
+      "column": "program_id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_time_entries",
+      "column": "review_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_time_entries",
+      "column": "owner_user_id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "owner_time_entries",
+      "column": "phase",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "date",
+      "table": "owner_time_entries",
+      "column": "entry_date",
+      "default": "CURRENT_DATE",
+      "nullable": "NO"
+    },
+    {
+      "type": "integer",
+      "table": "owner_time_entries",
+      "column": "minutes",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "owner_time_entries",
+      "column": "activity",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "owner_time_entries",
+      "column": "materials_reviewed",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_time_entries",
+      "column": "output",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "owner_time_entries",
+      "column": "attested",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_time_entries",
+      "column": "amends_entry_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "owner_time_entries",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_time_entries",
+      "column": "ticket_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_time_entries",
+      "column": "activity_category",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_time_entries",
+      "column": "decision_outcome",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_time_entries",
+      "column": "comments",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_time_entries",
+      "column": "attachment_path",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_time_entries",
+      "column": "correction_reason",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_time_entries",
+      "column": "review_status",
+      "default": "'submitted'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_time_entries",
+      "column": "reviewed_by",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "owner_time_entries",
+      "column": "reviewed_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "owner_time_entries",
+      "column": "review_note",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "owner_time_entries",
+      "column": "flagged",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "boolean",
+      "table": "owner_time_entries",
+      "column": "is_demo",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "integer",
+      "table": "owner_time_entries",
+      "column": "owner_update_revision",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "jsonb",
+      "table": "owner_time_entries",
+      "column": "owner_update_snapshot",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_time_entries",
+      "column": "review_version",
+      "default": "gen_random_uuid()",
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "owner_time_entries",
+      "column": "attachment_paths",
+      "default": "'[]'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_time_entry_properties",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_time_entry_properties",
+      "column": "entry_id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "owner_time_entry_properties",
+      "column": "property_id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "owner_time_entry_properties",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "properties",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "name",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "nickname",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "address_line1",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "city",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "state",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "postal_code",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "unit",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "access_notes",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "wifi_notes",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "notes",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "properties",
+      "column": "active",
+      "default": "true",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "properties",
+      "column": "created_by",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "properties",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "properties",
+      "column": "updated_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "ownerrez_property_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "properties",
+      "column": "ownerrez_synced_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "breezeway_property_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "properties",
+      "column": "breezeway_synced_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "double precision",
+      "table": "properties",
+      "column": "latitude",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "double precision",
+      "table": "properties",
+      "column": "longitude",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "formatted_address",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "geocode_status",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "properties",
+      "column": "geocoded_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "properties",
+      "column": "last_quarterly_review_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "date",
+      "table": "properties",
+      "column": "quarterly_review_due_on",
+      "default": "CURRENT_DATE",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "lifecycle_status",
+      "default": "'not_onboarded'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "onboarding_stage",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "properties",
+      "column": "onboarding_owner",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "properties",
+      "column": "onboarding_started_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "properties",
+      "column": "handoff_accepted_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "properties",
+      "column": "archived_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "archive_reason",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "market",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "properties",
+      "column": "is_demo",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "date",
+      "table": "properties",
+      "column": "planned_closing_on",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "date",
+      "table": "properties",
+      "column": "actual_closing_on",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "date",
+      "table": "properties",
+      "column": "actual_access_on",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "breezeway_mapping_state",
+      "default": "'unmapped'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "properties",
+      "column": "breezeway_mapping_verified_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "breezeway_mapping_note",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "properties",
+      "column": "owner_record_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "ownerrez_owner_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "primary_photo_url",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "primary_photo_medium_url",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "primary_photo_thumb_url",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "primary_photo_source",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "properties",
+      "column": "primary_photo_synced_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "integer",
+      "table": "properties",
+      "column": "bedrooms",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "numeric",
+      "table": "properties",
+      "column": "bathrooms",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "integer",
+      "table": "properties",
+      "column": "max_guests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "integer",
+      "table": "properties",
+      "column": "living_area_sqft",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "property_type",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "check_in_time",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "check_out_time",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "time_zone",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "listing_public_url",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "listing_alias",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "neighborhood",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "tier",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "integer",
+      "table": "properties",
+      "column": "min_stay_months",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "integer",
+      "table": "properties",
+      "column": "year_built",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "properties",
+      "column": "instant_book",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "furniture_package",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "date",
+      "table": "properties",
+      "column": "legacy_handoff_date",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "operating_notes",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "jsonb",
+      "table": "properties",
+      "column": "facts",
+      "default": "'{}'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "properties",
+      "column": "parking",
+      "default": "'{}'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "properties",
+      "column": "access",
+      "default": "'{}'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "properties",
+      "column": "utilities",
+      "default": "'{}'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "properties",
+      "column": "hvac",
+      "default": "'{}'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "properties",
+      "column": "systems",
+      "default": "'{}'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "properties",
+      "column": "fireplace",
+      "default": "'{}'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "properties",
+      "column": "storm_shelter",
+      "default": "'{}'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "properties",
+      "column": "sprinklers",
+      "default": "'{}'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "properties",
+      "column": "grounds",
+      "default": "'{}'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "properties",
+      "column": "waste",
+      "default": "'{}'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "properties",
+      "column": "pool_spa",
+      "default": "'{}'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "properties",
+      "column": "hoa",
+      "default": "'{}'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "properties",
+      "column": "amenities",
+      "default": "'{}'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "properties",
+      "column": "security",
+      "default": "'{}'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "properties",
+      "column": "warranty",
+      "default": "'{}'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "properties",
+      "column": "compliance",
+      "default": "'{}'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "properties",
+      "column": "external_refs",
+      "default": "'{}'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "geocode_source",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "geocode_address_fingerprint",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "properties",
+      "column": "coords_overridden_by",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "properties",
+      "column": "coords_overridden_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "coords_override_reason",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "properties",
+      "column": "guidebook_url",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO"
+    },
+    {
+      "type": "integer",
+      "table": "tickets",
+      "column": "ref",
+      "default": "nextval('tickets_ref_seq'::regclass)",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "property_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "playbook_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "title",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "description",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "category",
+      "default": "'other'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "priority",
+      "default": "'p3'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "status",
+      "default": "'open'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "guest_name",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "guest_contact",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "tickets",
+      "column": "guest_in_residence",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "reported_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "due_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "assigned_to",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "vendor_name",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "resolution_notes",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "tickets",
+      "column": "guest_confirmed",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "resolved_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "created_by",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "updated_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "record_type",
+      "default": "'ticket'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "work_type_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "bucket",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "source_channel",
+      "default": "'internal'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "initiator_type",
+      "default": "'guest'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "source_reference",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "acknowledged_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "action_started_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "response_due_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "action_due_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "next_action",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "next_action_due_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "promised_update_due_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "next_review_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "waiting_on",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "waiting_reason",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "accountable_owner",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "current_action_owner",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "guest_comm_owner",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "pending_handoff_to",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "handoff_type",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "handoff_status",
+      "default": "'none'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "handoff_note",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "escalation_level",
+      "default": "'none'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "escalated_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "tickets",
+      "column": "supervisor_caught",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "created_on_behalf_of",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "outcome_type",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "tickets",
+      "column": "final_communication_sent",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "closure_evidence",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "late_reason",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "closure_qa_result",
+      "default": "'not_reviewed'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "integer",
+      "table": "tickets",
+      "column": "reopen_count",
+      "default": "0",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "last_reopened_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "tickets",
+      "column": "avoidable_reopen",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "priority_override_reason",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "functional_role_code",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "record_owner",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "tickets",
+      "column": "cross_team",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "guest_impact",
+      "default": "'none'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "occupancy_status",
+      "default": "'vacant'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "suggested_priority",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "reclassified_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "ownerrez_booking_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "breezeway_task_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "breezeway_task_url",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "breezeway_task_status",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "breezeway_synced_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "external_source",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "external_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "external_status",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "external_url",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "external_synced_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "vendor_user_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "vendor_brief",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "vendor_dispatched_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "vendor_accepted_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "vendor_completed_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "vendor_status",
+      "default": "'none'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "department_code",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "project_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "tickets",
+      "column": "is_demo",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "archived_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "archive_reason",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "archived_by",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "closure_exception_reason",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "closure_exception_by",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "closure_exception_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "owner_participation_path",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "tickets",
+      "column": "owner_submitted",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "owner_submitted_by",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "assignment_source",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "assignment_note",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "reservation_guest_name",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "reservation_channel",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "reservation_confirmation",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "date",
+      "table": "tickets",
+      "column": "reservation_arrival",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "date",
+      "table": "tickets",
+      "column": "reservation_departure",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "integer",
+      "table": "tickets",
+      "column": "reservation_guest_count",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "reservation_url",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "reservation_snapshot_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "final_review_by",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "final_review_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "final_review_note",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "repair_reported_incomplete_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "tickets",
+      "column": "guest_recovery_needed",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "guest_recovery_flagged_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "guest_recovery_flagged_by",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "resolution_path",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "resolution_path_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "resolution_path_by",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "guest_update_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "guest_update_note",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "next_guest_update_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "selected_vendor_org_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "emergency_vendor_basis",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "emergency_vendor_reason",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "emergency_vendor_authorized_by",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "emergency_vendor_authorized_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "entry_kind",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "maintenance_category",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "insurance_risk",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "numeric",
+      "table": "tickets",
+      "column": "estimated_cost",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "active_stay_impact",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "guest_comm_required",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "issue_reservation_relation",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "guest_feedback_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "linked_feedback_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "departure_review_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "import_hold",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "tickets",
+      "column": "checklist_playbook_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "tickets",
+      "column": "checklist_category",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "tickets",
+      "column": "unowned_since",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "date",
+      "table": "tickets",
+      "column": "due_on",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "tickets",
+      "column": "due_locked",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "work_items",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "work_items",
+      "column": "department",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "work_items",
+      "column": "kind",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "work_items",
+      "column": "property_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "work_items",
+      "column": "source_table",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "work_items",
+      "column": "source_id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "work_items",
+      "column": "linked_task_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "work_items",
+      "column": "program_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "work_items",
+      "column": "title",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "jsonb",
+      "table": "work_items",
+      "column": "owner_content",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "work_items",
+      "column": "status",
+      "default": "'open'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "work_items",
+      "column": "functional_role",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "work_items",
+      "column": "assigned_to",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "date",
+      "table": "work_items",
+      "column": "due_on",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "work_items",
+      "column": "required",
+      "default": "true",
+      "nullable": "NO"
+    },
+    {
+      "type": "boolean",
+      "table": "work_items",
+      "column": "blocks_handoff",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "work_items",
+      "column": "completed_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "work_items",
+      "column": "is_demo",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "work_items",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "work_items",
+      "column": "updated_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "work_items",
+      "column": "source",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "work_items",
+      "column": "source_department",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "work_items",
+      "column": "source_project_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "work_items",
+      "column": "source_task_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text[]",
+      "table": "work_items",
+      "column": "response_types",
+      "default": "'{}'::text[]",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "work_items",
+      "column": "sent_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "work_items",
+      "column": "viewed_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "work_items",
+      "column": "responded_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "jsonb",
+      "table": "work_items",
+      "column": "owner_response",
+      "default": "'[]'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "work_items",
+      "column": "library_template_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "work_items",
+      "column": "retired_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "work_items",
+      "column": "retired_reason",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "integer",
+      "table": "work_items",
+      "column": "owner_priority",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "work_items",
+      "column": "needs_owner_attention",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "work_items",
+      "column": "owner_attention_set_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "work_items",
+      "column": "owner_attention_set_by",
+      "default": null,
+      "nullable": "YES"
+    }
+  ],
+  "functions": [
+    {
+      "sql": "CREATE OR REPLACE FUNCTION public.respond_owner_review(_review_id uuid, _expected_updated_at timestamp with time zone, _decision text, _response text, _owner_update_revision integer)\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE review public.owner_reviews; program public.owner_programs; snapshot jsonb;\nBEGIN\n -- Scope validation locks program then review before any response write.\n snapshot:=public.read_owner_review_update(_review_id,_owner_update_revision);\n SELECT p.* INTO program FROM public.owner_programs p JOIN public.owner_reviews r ON r.program_id=p.id WHERE r.id=_review_id;\n IF NOT FOUND OR auth.uid() IS NULL OR NOT coalesce(private.is_program_member(program.id,auth.uid()),false) OR program.archived_at IS NOT NULL OR program.status IN ('closed','completed') THEN\n  RAISE EXCEPTION 'This participation program is not available for your response.';\n END IF;\n SELECT * INTO review FROM public.owner_reviews WHERE id=_review_id AND program_id=program.id FOR UPDATE NOWAIT;\n IF NOT FOUND THEN RAISE EXCEPTION 'This opportunity is not available.'; END IF;\n IF _expected_updated_at IS NULL OR review.updated_at IS DISTINCT FROM _expected_updated_at THEN RAISE EXCEPTION 'The opportunity changed. Refresh before responding.'; END IF;\n IF review.status NOT IN ('awaiting_owner','returned') OR review.available_from>now() THEN RAISE EXCEPTION 'This opportunity is not currently awaiting your response.'; END IF;\n IF length(trim(coalesce(_decision,''))) NOT BETWEEN 1 AND 60 OR length(coalesce(_response,''))>2000 THEN RAISE EXCEPTION 'Enter a valid response.'; END IF;\n IF review.auto_ticket AND _decision<>'acknowledged' THEN RAISE EXCEPTION 'Use the canonical approval request; this response records participation only.'; END IF;\n\n UPDATE public.owner_reviews SET owner_decision=_decision,owner_response=nullif(_response,''),\n  status=CASE WHEN auto_ticket THEN status ELSE 'answered' END,responded_at=now(),updated_at=clock_timestamp() WHERE id=review.id;\n INSERT INTO public.owner_program_events(program_id,review_id,kind,summary,actor_id,previous_value,new_value,detail)\n VALUES(review.program_id,review.id,CASE WHEN review.auto_ticket THEN 'owner_participation_response' ELSE 'owner_decision' END,\n  CASE WHEN review.auto_ticket THEN 'Participation response recorded for property work; no repair approval granted.' ELSE 'Owner response recorded for participation opportunity.' END,\n  auth.uid(),review.owner_decision,_decision,jsonb_build_object('previousResponse',review.owner_response,'response',nullif(_response,''),'ownerUpdate',snapshot,'propertyId',review.property_id,'ticketId',review.ticket_id));\n RETURN review.id;\nEND $function$\n",
+      "args": "_review_id uuid, _expected_updated_at timestamp with time zone, _decision text, _response text, _owner_update_revision integer",
+      "name": "respond_owner_review",
+      "schema": "public"
+    },
+    {
+      "sql": "CREATE OR REPLACE FUNCTION public.ao_submit_card(_plan_card uuid, _values jsonb)\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE pc public.ao_home_plan_cards; cid uuid; uid uuid := auth.uid(); sib public.ao_home_plan_cards;\nBEGIN\n  SELECT * INTO pc FROM public.ao_home_plan_cards WHERE id = _plan_card FOR UPDATE;\n  IF NOT FOUND OR uid IS NULL\n     OR NOT private.owner_current_property_for_actor(uid, pc.property_id, pc.program_id) THEN\n    RAISE EXCEPTION 'Not allowed' USING ERRCODE = '42501';\n  END IF;\n  IF pc.unlocked_at IS NULL THEN RAISE EXCEPTION 'This item is not open yet'; END IF;\n  IF pc.expired_at IS NOT NULL THEN RAISE EXCEPTION 'This item has closed'; END IF;\n  IF pc.owner_completed_at IS NOT NULL THEN RAISE EXCEPTION 'Another homeowner already answered this item'; END IF;\n  INSERT INTO public.ao_contributions(plan_card_id, property_id, program_id, card_id, submitted_by, field_values)\n    VALUES (pc.id, pc.property_id, pc.program_id, pc.card_id, uid, coalesce(_values, '{}'::jsonb)) RETURNING id INTO cid;\n  UPDATE public.ao_home_plan_cards SET owner_completed_at = now() WHERE id = pc.id;\n  UPDATE public.owner_reviews SET status = 'answered', responded_at = now(), updated_at = now() WHERE id = pc.owner_review_id;\n  IF EXISTS (SELECT 1 FROM public.ao_library_cards c WHERE c.id = pc.card_id AND c.once_per_owner) THEN\n    FOR sib IN SELECT * FROM public.ao_home_plan_cards s\n               WHERE s.program_id = pc.program_id AND s.card_id = pc.card_id AND s.id <> pc.id\n                 AND s.unlocked_at IS NOT NULL AND s.expired_at IS NULL AND s.owner_completed_at IS NULL\n               FOR UPDATE LOOP\n      CONTINUE WHEN NOT private.owner_current_property_for_actor(uid, sib.property_id, sib.program_id);\n      INSERT INTO public.ao_contributions(plan_card_id, property_id, program_id, card_id, submitted_by, field_values)\n        VALUES (sib.id, sib.property_id, sib.program_id, sib.card_id, uid, coalesce(_values, '{}'::jsonb));\n      UPDATE public.ao_home_plan_cards SET owner_completed_at = now() WHERE id = sib.id;\n      UPDATE public.owner_reviews SET status = 'answered', responded_at = now(), updated_at = now() WHERE id = sib.owner_review_id;\n    END LOOP;\n  END IF;\n  RETURN cid;\nEND $function$\n",
+      "args": "_plan_card uuid, _values jsonb",
+      "name": "ao_submit_card",
+      "schema": "public"
+    },
+    {
+      "sql": "CREATE OR REPLACE FUNCTION public.ao_submit_card(_plan_card uuid, _values jsonb, _files jsonb)\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE uid uuid := auth.uid(); pc public.ao_home_plan_cards; f jsonb; new_files jsonb := coalesce(_files, '[]'::jsonb); cid uuid;\nBEGIN\n  IF jsonb_typeof(new_files) <> 'array' OR jsonb_array_length(new_files) > 20 THEN RAISE EXCEPTION 'Attach up to 20 files.'; END IF;\n  SELECT * INTO pc FROM public.ao_home_plan_cards WHERE id = _plan_card;\n  IF NOT FOUND OR uid IS NULL OR NOT private.owner_current_property_for_actor(uid, pc.property_id, pc.program_id) THEN\n    RAISE EXCEPTION 'Not allowed' USING ERRCODE = '42501';\n  END IF;\n  FOR f IN SELECT * FROM jsonb_array_elements(new_files) LOOP\n    IF NOT EXISTS (SELECT 1 FROM public.documents d WHERE d.id = (f ->> 'document_id')::uuid AND d.deleted_at IS NULL\n                     AND (d.property_id = pc.property_id OR (d.entity_type = 'property' AND d.entity_id = pc.property_id))\n                     AND d.uploaded_by = uid) THEN\n      RAISE EXCEPTION 'A file is not one of your files on this home.';\n    END IF;\n  END LOOP;\n  new_files := coalesce((SELECT jsonb_agg(jsonb_build_object('document_id', x ->> 'document_id', 'name', left(coalesce(x ->> 'name', ''), 300)))\n                       FROM jsonb_array_elements(new_files) x), '[]'::jsonb);\n  cid := public.ao_submit_card(_plan_card, _values);\n  IF jsonb_array_length(new_files) > 0 THEN\n    UPDATE public.ao_contributions x SET files = new_files\n     WHERE x.id = cid\n        OR (x.program_id = pc.program_id AND x.card_id = pc.card_id AND x.submitted_by = uid AND x.submitted_at = now());\n  END IF;\n  RETURN cid;\nEND $function$\n",
+      "args": "_plan_card uuid, _values jsonb, _files jsonb",
+      "name": "ao_submit_card",
+      "schema": "public"
+    },
+    {
+      "sql": "CREATE OR REPLACE FUNCTION public.complete_owner_opportunity(_id uuid)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nBEGIN\n  UPDATE work_items w SET status='complete', completed_at=now(), viewed_at=coalesce(viewed_at, now())\n   WHERE w.id=_id AND w.kind='opportunity' AND w.status NOT IN ('draft','archived') AND w.retired_at IS NULL\n     AND public.owner_owns_program(w.program_id);\n  IF NOT FOUND THEN RAISE EXCEPTION 'This Opportunity is not available to you.'; END IF;\n  PERFORM private.notify_opportunity_staff(_id, 'completed');\nEND $function$\n",
+      "args": "_id uuid",
+      "name": "complete_owner_opportunity",
+      "schema": "public"
+    },
+    {
+      "sql": "CREATE OR REPLACE FUNCTION public.respond_owner_opportunity(_id uuid, _kind text, _decision text, _text text)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE w record; t record; _appr uuid; _result text := null; _owner text; _note text;\nBEGIN\n  SELECT wi.* INTO w FROM work_items wi JOIN owner_programs p ON p.id=wi.program_id\n   WHERE wi.id=_id AND wi.kind='opportunity' AND wi.status NOT IN ('draft','archived') AND private.is_program_member(p.id,auth.uid())\n   FOR UPDATE OF wi;\n  IF w IS NULL THEN RAISE EXCEPTION 'This Opportunity is not available to you.'; END IF;\n  IF _kind NOT IN ('acknowledge','feedback','decision') OR NOT (_kind = ANY (w.response_types)) THEN\n    RAISE EXCEPTION 'This Opportunity does not take that kind of response.'; END IF;\n  IF _kind='feedback' AND coalesce(trim(_text),'')='' THEN RAISE EXCEPTION 'Type your feedback before submitting.'; END IF;\n  IF _kind='decision' AND coalesce(_decision,'') NOT IN ('authorize','changes') THEN RAISE EXCEPTION 'Choose a decision.'; END IF;\n  IF length(coalesce(_text,'')) > 5000 THEN RAISE EXCEPTION 'Please keep your response under 5,000 characters.'; END IF;\n  SELECT coalesce(pr.full_name,'The homeowner') INTO _owner FROM profiles pr WHERE pr.id=auth.uid();\n  _owner := coalesce(_owner,'The homeowner');\n  IF _kind='decision' AND w.source='arha' AND w.source_task_id IS NOT NULL THEN\n    SELECT * INTO t FROM onboarding_tasks WHERE id=w.source_task_id AND property_id=w.property_id AND archived_at IS NULL FOR UPDATE;\n    IF t.id IS NOT NULL AND (coalesce(t.requires_owner_approval,false) OR coalesce(t.owner_dependency,'')='business_decision') AND t.owner_approval_status='approved' THEN\n      RAISE EXCEPTION 'This decision was already answered by an owner on this program.';\n    END IF;\n    IF t.id IS NOT NULL AND (coalesce(t.requires_owner_approval,false) OR coalesce(t.owner_dependency,'')='business_decision') AND t.owner_approval_status IN ('awaiting_owner','changes_requested','pending','not_required') THEN\n      SELECT id INTO _appr FROM approvals WHERE entity_type='onboarding_task' AND entity_id=t.id AND property_id=t.property_id AND status IN ('pending','awaiting_owner') ORDER BY created_at DESC LIMIT 1 FOR UPDATE;\n      _note := _owner||' '||CASE WHEN _decision='authorize' THEN 'authorized this work' ELSE 'requested changes' END\n               ||' in Opportunity \"'||w.title||'\"'||coalesce(': '||nullif(trim(coalesce(_text,'')),''),'');\n      IF _decision='authorize' THEN\n        IF _appr IS NOT NULL THEN\n          UPDATE approvals SET status='approved', decision_note=_note, decided_at=now(), responded_at=now(), response_channel='owner_portal' WHERE id=_appr;\n        END IF;\n        UPDATE onboarding_tasks SET owner_approval_status='approved' WHERE id=t.id;\n        INSERT INTO audit_log(actor_id, action, entity_type, entity_id, entity_label, after_value)\n          VALUES (auth.uid(), 'owner_item_approved', 'onboarding_task', t.id, t.title, jsonb_build_object('opportunity', w.id, 'at', now()));\n        _result := 'approved';\n      ELSE\n        IF _appr IS NOT NULL THEN UPDATE approvals SET decision_note=_note WHERE id=_appr; END IF;\n        _result := 'still_waiting';\n      END IF;\n    END IF;\n  END IF;\n  UPDATE work_items SET responded_at=now(), viewed_at=coalesce(viewed_at, now()),\n    owner_response = owner_response || jsonb_build_array(jsonb_strip_nulls(jsonb_build_object(\n      'kind',_kind,'decision',_decision,'text',nullif(trim(coalesce(_text,'')),''),'at',now(),\n      'by',_owner,'task_id',CASE WHEN _result IS NOT NULL THEN w.source_task_id END,'task_approval',_result)))\n   WHERE id=_id;\n  PERFORM private.notify_opportunity_staff(_id, CASE WHEN _kind<>'decision' THEN 'responded'\n    WHEN _decision='authorize' THEN 'authorized this work' ELSE 'requested changes' END);\nEND $function$\n",
+      "args": "_id uuid, _kind text, _decision text, _text text",
+      "name": "respond_owner_opportunity",
+      "schema": "public"
+    },
+    {
+      "sql": "CREATE OR REPLACE FUNCTION public.ao_edit_card_answer(_plan_card uuid, _values jsonb, _files jsonb DEFAULT '[]'::jsonb)\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE uid uuid := auth.uid(); pc public.ao_home_plan_cards; c public.ao_library_cards; con public.ao_contributions;\n  f jsonb; new_files jsonb := coalesce(_files, '[]'::jsonb); vals jsonb := coalesce(_values, '{}'::jsonb);\n  change_id uuid; mid uuid; sib public.ao_home_plan_cards;\nBEGIN\n  SELECT * INTO pc FROM public.ao_home_plan_cards WHERE id = _plan_card FOR UPDATE;\n  IF NOT FOUND OR uid IS NULL OR NOT private.owner_current_property_for_actor(uid, pc.property_id, pc.program_id) THEN\n    RAISE EXCEPTION 'Not allowed' USING ERRCODE = '42501';\n  END IF;\n  IF pc.owner_completed_at IS NULL THEN RAISE EXCEPTION 'Send your answer first.'; END IF;\n  IF jsonb_typeof(vals) <> 'object' THEN RAISE EXCEPTION 'Your answer could not be read.'; END IF;\n  IF jsonb_typeof(new_files) <> 'array' OR jsonb_array_length(new_files) > 20 THEN RAISE EXCEPTION 'Attach up to 20 files.'; END IF;\n  SELECT * INTO c FROM public.ao_library_cards WHERE id = pc.card_id;\n  SELECT * INTO con FROM public.ao_contributions WHERE plan_card_id = pc.id ORDER BY submitted_at DESC LIMIT 1 FOR UPDATE;\n  IF NOT FOUND THEN\n    -- Finished with nothing saved: her first answer starts the record (an empty before in history).\n    IF vals = '{}'::jsonb AND jsonb_array_length(new_files) = 0 THEN RAISE EXCEPTION 'Write your answer or add a file first.'; END IF;\n    INSERT INTO public.ao_contributions(plan_card_id, property_id, program_id, card_id, submitted_by, field_values, files)\n      VALUES (pc.id, pc.property_id, pc.program_id, pc.card_id, uid, '{}'::jsonb, '[]'::jsonb)\n      RETURNING * INTO con;\n  END IF;\n  FOR f IN SELECT * FROM jsonb_array_elements(new_files) LOOP\n    IF NOT EXISTS (SELECT 1 FROM public.documents d WHERE d.id = (f ->> 'document_id')::uuid AND d.deleted_at IS NULL\n                     AND (d.property_id = pc.property_id OR (d.entity_type = 'property' AND d.entity_id = pc.property_id))\n                     AND (d.uploaded_by = uid OR con.files @> jsonb_build_array(jsonb_build_object('document_id', f ->> 'document_id')))) THEN\n      RAISE EXCEPTION 'A file is not one of your files on this home.';\n    END IF;\n  END LOOP;\n  new_files := coalesce((SELECT jsonb_agg(jsonb_build_object('document_id', x ->> 'document_id', 'name', left(coalesce(x ->> 'name', ''), 300)))\n                       FROM jsonb_array_elements(new_files) x), '[]'::jsonb);\n  IF con.field_values = vals AND con.files = new_files THEN RAISE EXCEPTION 'Nothing changed.'; END IF;\n  mid := public.post_home_chat_message(pc.property_id, 'owner', 'I updated my answer on ' || c.title || '.', '[]'::jsonb, '{}'::uuid[]);\n  INSERT INTO public.ao_contribution_changes(plan_card_id, contribution_id, property_id, program_id, changed_by,\n      before_values, after_values, before_files, after_files, chat_message_id)\n    VALUES (pc.id, con.id, pc.property_id, pc.program_id, uid, con.field_values, vals, con.files, new_files, mid)\n    RETURNING id INTO change_id;\n  UPDATE public.ao_contributions SET field_values = vals, files = new_files WHERE id = con.id;\n  PERFORM private.record_homeowner_update(pc.program_id, pc.property_id, 'card', pc.id, c.title, pc.linked_task_id,\n    'Homeowner updated the answer on ' || c.title, NULL, mid);\n  -- A market card answered once for every home keeps one answer: its other homes' copies follow.\n  IF c.once_per_owner THEN\n    FOR sib IN SELECT * FROM public.ao_home_plan_cards s\n                WHERE s.program_id = pc.program_id AND s.card_id = pc.card_id AND s.id <> pc.id AND s.owner_completed_at IS NOT NULL LOOP\n      CONTINUE WHEN NOT private.owner_current_property_for_actor(uid, sib.property_id, sib.program_id);\n      INSERT INTO public.ao_contribution_changes(plan_card_id, contribution_id, property_id, program_id, changed_by,\n          before_values, after_values, before_files, after_files, chat_message_id)\n        SELECT sib.id, x.id, sib.property_id, sib.program_id, uid, x.field_values, vals, x.files, new_files, mid\n          FROM public.ao_contributions x WHERE x.plan_card_id = sib.id ORDER BY x.submitted_at DESC LIMIT 1;\n      UPDATE public.ao_contributions SET field_values = vals, files = new_files\n       WHERE id = (SELECT x.id FROM public.ao_contributions x WHERE x.plan_card_id = sib.id ORDER BY x.submitted_at DESC LIMIT 1);\n    END LOOP;\n  END IF;\n  RETURN change_id;\nEND $function$\n",
+      "args": "_plan_card uuid, _values jsonb, _files jsonb",
+      "name": "ao_edit_card_answer",
+      "schema": "public"
+    },
+    {
+      "sql": "CREATE OR REPLACE FUNCTION public.log_owner_time_entry(_entry jsonb, _property_ids uuid[])\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE program public.owner_programs; opportunity public.owner_reviews; enrollment public.owner_program_properties;\n home public.properties; link record; chosen uuid[]; context_ids uuid[]; chosen_property uuid;\n entry_day date; reported_minutes integer; new_id uuid; ticket public.tickets; manual boolean;\n paths jsonb; path_item text;\nBEGIN\n IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Sign in to record participation.'; END IF;\n IF _entry IS NULL OR jsonb_typeof(_entry) IS DISTINCT FROM 'object' OR (_entry->'confirmed') IS DISTINCT FROM 'true'::jsonb THEN\n  RAISE EXCEPTION 'Confirm that this entry records the time you personally spent.';\n END IF;\n program:=private.lock_owner_time_program((_entry->>'programId')::uuid,auth.uid(),false,true);\n entry_day:=(_entry->>'entryDate')::date; reported_minutes:=(_entry->>'minutes')::integer;\n manual:=nullif(_entry->>'reviewId','') IS NULL;\n IF entry_day IS NULL OR NOT isfinite(entry_day) OR entry_day>private.business_today() THEN\n  RAISE EXCEPTION 'Choose a date no later than today.';\n END IF;\n IF length(trim(coalesce(_entry->>'activity',''))) < 3 THEN\n  RAISE EXCEPTION 'What did you do? needs at least 3 characters.';\n END IF;\n IF length(trim(coalesce(_entry->>'activity',''))) > 2000 THEN\n  RAISE EXCEPTION 'What did you do? can be up to 2,000 characters.';\n END IF;\n IF reported_minutes IS NULL OR reported_minutes NOT BETWEEN 1 AND 1440 THEN\n  RAISE EXCEPTION 'Minutes spent must be a whole number from 1 to 1,440.';\n END IF;\n IF length(coalesce(_entry->>'output',''))>1000 OR length(coalesce(_entry->>'comments',''))>1000 THEN\n  RAISE EXCEPTION 'Notes can be up to 1,000 characters.';\n END IF;\n IF coalesce(_entry->>'phase','') NOT IN ('onboarding','ongoing')\n  OR length(coalesce(_entry->>'activityCategory',''))>80 OR length(coalesce(_entry->>'output',''))>1000\n  OR length(coalesce(_entry->>'comments',''))>1000 OR length(coalesce(_entry->>'attachmentPath',''))>400 THEN\n   RAISE EXCEPTION 'This could not save. Your entry is still here. Please try again, and if it happens again, message your ARHA contact.';\n END IF;\n paths:=coalesce(_entry->'attachmentPaths','[]'::jsonb);\n IF jsonb_typeof(paths) IS DISTINCT FROM 'array' OR jsonb_array_length(paths)>10 THEN\n  RAISE EXCEPTION 'Attach at most ten files to one entry.';\n END IF;\n FOR path_item IN SELECT jsonb_array_elements_text(paths) LOOP\n  IF path_item IS NULL OR length(trim(path_item)) NOT BETWEEN 1 AND 400 THEN\n   RAISE EXCEPTION 'One of the attached files could not be recorded. Try again.';\n   END IF;\n END LOOP;\n IF jsonb_array_length(paths)>0 AND nullif(_entry->>'attachmentPath','') IS DISTINCT FROM (paths->>0) THEN\n  RAISE EXCEPTION 'The attached files could not be recorded. Try again.';\n END IF;\n IF cardinality(coalesce(_property_ids,'{}'::uuid[]))>25 OR array_position(_property_ids,NULL) IS NOT NULL THEN\n  RAISE EXCEPTION 'Choose at most 25 valid properties.';\n END IF;\n SELECT coalesce(array_agg(DISTINCT p ORDER BY p),'{}'::uuid[]) INTO chosen FROM unnest(coalesce(_property_ids,'{}'::uuid[])) p;\n IF manual THEN\n   IF nullif(_entry->>'ticketId','') IS NOT NULL THEN\n   RAISE EXCEPTION 'A self-recorded activity cannot carry a Ticket link.';\n   END IF;\n  context_ids:=chosen;\n ELSE\n  SELECT * INTO opportunity FROM public.owner_reviews WHERE id=(_entry->>'reviewId')::uuid AND program_id=program.id FOR SHARE NOWAIT;\n  IF NOT FOUND OR opportunity.archived_at IS NOT NULL OR opportunity.is_demo IS DISTINCT FROM program.is_demo\n   OR coalesce(opportunity.status,'') NOT IN ('awaiting_owner','answered','returned') OR opportunity.available_from>now() OR opportunity.available_from::date>entry_day\n   OR opportunity.phase IS DISTINCT FROM (_entry->>'phase') THEN\n   RAISE EXCEPTION 'Choose an available participation opportunity from this program.';\n   END IF;\n  IF opportunity.task_type NOT IN ('property_specific','multi_property','program_wide') OR opportunity.task_type IS NULL THEN\n   RAISE EXCEPTION 'This opportunity needs a valid participation scope.';\n  END IF;\n  IF opportunity.task_type='property_specific' THEN\n   IF opportunity.property_id IS NULL THEN RAISE EXCEPTION 'This opportunity needs its canonical Property.'; END IF;\n   IF cardinality(chosen)=0 THEN chosen:=ARRAY[opportunity.property_id]; END IF;\n   IF chosen IS DISTINCT FROM ARRAY[opportunity.property_id] THEN RAISE EXCEPTION 'That opportunity belongs to a different Property.'; END IF;\n  ELSIF opportunity.task_type='multi_property' AND cardinality(chosen)=0 THEN\n   RAISE EXCEPTION 'Select the opportunity properties this activity involved.';\n   ELSIF opportunity.task_type='program_wide' AND opportunity.property_id IS NOT NULL THEN\n   RAISE EXCEPTION 'The program-wide opportunity has conflicting Property context.';\n   END IF;\n  context_ids:=chosen;\n  IF opportunity.property_id IS NOT NULL THEN context_ids:=array_append(context_ids,opportunity.property_id); END IF;\n  FOR link IN SELECT r.property_id FROM public.owner_review_properties r WHERE r.review_id=opportunity.id ORDER BY r.property_id FOR SHARE NOWAIT LOOP\n   context_ids:=array_append(context_ids,link.property_id);\n   IF opportunity.task_type='property_specific' AND link.property_id IS DISTINCT FROM opportunity.property_id THEN\n    RAISE EXCEPTION 'The opportunity Property links changed. Ask the team to reconcile them.';\n   END IF;\n   END LOOP;\n  IF opportunity.task_type='multi_property' AND EXISTS(SELECT 1 FROM unnest(chosen) p WHERE NOT EXISTS(\n   SELECT 1 FROM public.owner_review_properties r WHERE r.review_id=opportunity.id AND r.property_id=p\n  )) THEN RAISE EXCEPTION 'That Property is not assigned to this participation opportunity.'; END IF;\n END IF;\n FOR chosen_property IN SELECT DISTINCT p FROM unnest(context_ids) p ORDER BY p LOOP\n  SELECT * INTO enrollment FROM public.owner_program_properties e WHERE e.program_id=program.id AND e.property_id=chosen_property FOR SHARE NOWAIT;\n  IF NOT FOUND OR enrollment.inclusion_status IS DISTINCT FROM 'included' OR enrollment.archived_at IS NOT NULL\n   OR enrollment.is_demo IS DISTINCT FROM program.is_demo THEN\n   RAISE EXCEPTION 'Tag only homes included in this program.';\n   END IF;\n  SELECT * INTO home FROM public.properties h WHERE h.id=chosen_property FOR SHARE NOWAIT;\n  IF NOT FOUND OR home.owner_record_id IS DISTINCT FROM program.owner_record_id OR home.archived_at IS NOT NULL\n   OR home.is_demo IS DISTINCT FROM program.is_demo THEN RAISE EXCEPTION 'That Property is no longer available to this Owner.'; END IF;\n END LOOP;\n IF NOT manual THEN\n  IF nullif(_entry->>'ticketId','')::uuid IS DISTINCT FROM opportunity.ticket_id THEN\n   RAISE EXCEPTION 'Time must retain its participation opportunity Ticket link.';\n  END IF;\n  IF opportunity.ticket_id IS NOT NULL THEN\n    SELECT * INTO ticket FROM public.tickets WHERE id=opportunity.ticket_id FOR SHARE NOWAIT;\n   IF NOT FOUND OR ticket.property_id IS DISTINCT FROM opportunity.property_id OR NOT ticket.property_id=ANY(chosen)\n    OR ticket.is_demo IS DISTINCT FROM program.is_demo THEN RAISE EXCEPTION 'The opportunity Ticket context changed.'; END IF;\n  END IF;\n END IF;\n -- Double save guard (Nov 21): the same homeowner, program, date, minutes and description saved in the\n -- last 10 minutes is already on file.\n IF private.owner_time_recent_repeat(program.id,auth.uid(),entry_day,reported_minutes,trim(_entry->>'activity'),NULL,NULL) THEN\n  RAISE EXCEPTION 'Already saved.';\n END IF;\n INSERT INTO public.owner_time_entries(program_id,owner_user_id,phase,entry_date,minutes,activity,activity_category,decision_outcome,output,comments,attachment_path,attachment_paths,review_id,ticket_id,attested,is_demo,owner_update_revision,review_status)\n VALUES(program.id,auth.uid(),_entry->>'phase',entry_day,reported_minutes,trim(_entry->>'activity'),nullif(_entry->>'activityCategory',''),nullif(_entry->>'output',''),nullif(_entry->>'output',''),nullif(_entry->>'comments',''),nullif(_entry->>'attachmentPath',''),paths,opportunity.id,opportunity.ticket_id,true,program.is_demo,\n  CASE WHEN manual THEN NULL ELSE nullif(_entry->>'ownerUpdateRevision','')::integer END,'submitted')\n RETURNING id INTO new_id;\n INSERT INTO public.owner_time_entry_properties(entry_id,property_id) SELECT new_id,p FROM unnest(chosen) p;\n  UPDATE public.owner_program_properties e SET last_owner_activity_at=now() WHERE e.program_id=program.id AND e.property_id=ANY(chosen);\n UPDATE public.owner_programs SET last_owner_activity_at=now() WHERE id=program.id;\n INSERT INTO public.owner_program_events(program_id,entry_id,review_id,kind,summary,actor_id,new_value,detail)\n VALUES(program.id,new_id,opportunity.id,'time_entry',reported_minutes::text||' minutes reported: '||trim(_entry->>'activity'),auth.uid(),reported_minutes::text,\n  jsonb_build_object('propertyIds',to_jsonb(chosen),'phase',_entry->>'phase','category',_entry->>'activityCategory','selfRecorded',manual,'attachmentCount',jsonb_array_length(paths)));\n RETURN new_id;\nEXCEPTION WHEN lock_not_available THEN RAISE EXCEPTION 'The program or opportunity is being updated. Refresh and try again.';\nEND $function$\n",
+      "args": "_entry jsonb, _property_ids uuid[]",
+      "name": "log_owner_time_entry",
+      "schema": "public"
+    },
+    {
+      "sql": "CREATE OR REPLACE FUNCTION public.owner_update_time_entry(_entry_id uuid, _change jsonb)\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE uid uuid := auth.uid(); original public.owner_time_entries; program public.owner_programs; review public.owner_reviews;\n  scope uuid; new_id uuid; mode text; act text; day date; mins integer; note text; paths jsonb; old_paths jsonb; added jsonb; p text;\n  comments text; reason text; changed text[] := '{}'; label text; home uuid;\nBEGIN\n  IF uid IS NULL THEN RAISE EXCEPTION 'Sign in to change your hours.'; END IF;\n  IF _change IS NULL OR jsonb_typeof(_change) IS DISTINCT FROM 'object' THEN RAISE EXCEPTION 'Your change could not be read. Try again.'; END IF;\n  mode := coalesce(_change->>'mode', 'edit');\n  IF mode NOT IN ('edit', 'add') THEN RAISE EXCEPTION 'Your change could not be read. Try again.'; END IF;\n  SELECT program_id INTO scope FROM public.owner_time_entries WHERE id = _entry_id AND owner_user_id = uid;\n  IF NOT FOUND THEN RAISE EXCEPTION 'That entry is not available to you.'; END IF;\n  program := private.lock_owner_time_program(scope, uid, false, false);\n  IF NOT pg_try_advisory_xact_lock(hashtextextended('owner-time-correction:' || _entry_id::text, 0)) THEN\n    RAISE EXCEPTION 'This entry is being changed. Refresh and try again.';\n  END IF;\n  SELECT * INTO original FROM public.owner_time_entries WHERE id = _entry_id FOR UPDATE NOWAIT;\n  IF NOT FOUND OR original.program_id IS DISTINCT FROM program.id OR original.owner_user_id IS DISTINCT FROM uid\n     OR original.is_demo IS DISTINCT FROM program.is_demo THEN RAISE EXCEPTION 'The entry changed. Refresh and try again.'; END IF;\n  IF EXISTS (SELECT 1 FROM public.owner_time_entries WHERE amends_entry_id = original.id) THEN\n    -- Double save guard (Nov 21): a second click on Save finds her change already on file.\n    IF private.owner_time_recent_repeat(program.id, uid,\n         CASE WHEN mode = 'edit' THEN coalesce(nullif(_change->>'entryDate', '')::date, original.entry_date) ELSE original.entry_date END,\n         CASE WHEN mode = 'edit' THEN coalesce(nullif(_change->>'minutes', '')::integer, original.minutes) ELSE original.minutes END,\n         CASE WHEN mode = 'edit' THEN btrim(coalesce(_change->>'activity', original.activity)) ELSE original.activity END,\n         _change->>'note', original.id) THEN\n      RAISE EXCEPTION 'Already saved.';\n    END IF;\n    RAISE EXCEPTION 'This entry was already updated. Refresh to see the latest version.';\n  END IF;\n\n  old_paths := CASE WHEN jsonb_typeof(original.attachment_paths) = 'array' AND jsonb_array_length(original.attachment_paths) > 0 THEN original.attachment_paths\n                    WHEN original.attachment_path IS NOT NULL THEN jsonb_build_array(original.attachment_path)\n                    ELSE '[]'::jsonb END;\n  -- Files are only added: every file she sent before stays with the entry.\n  added := coalesce(_change->'addPaths', '[]'::jsonb);\n  IF jsonb_typeof(added) IS DISTINCT FROM 'array' THEN RAISE EXCEPTION 'One of the files could not be recorded. Try again.'; END IF;\n  FOR p IN SELECT jsonb_array_elements_text(added) LOOP\n    IF p IS NULL OR length(p) NOT BETWEEN 1 AND 400 OR old_paths ? p\n       OR left(p, length('owner_participation/' || program.id::text || '/')) <> 'owner_participation/' || program.id::text || '/' THEN\n      RAISE EXCEPTION 'One of the files could not be recorded. Try again.';\n    END IF;\n  END LOOP;\n  paths := old_paths || added;\n  IF jsonb_array_length(paths) > 10 THEN RAISE EXCEPTION 'Attach at most ten files to one entry.'; END IF;\n\n  IF mode = 'edit' THEN\n    act := btrim(coalesce(_change->>'activity', original.activity));\n    day := coalesce(nullif(_change->>'entryDate', '')::date, original.entry_date);\n    mins := coalesce(nullif(_change->>'minutes', '')::integer, original.minutes);\n  ELSE\n    act := original.activity; day := original.entry_date; mins := original.minutes;\n  END IF;\n  note := nullif(btrim(coalesce(_change->>'note', '')), '');\n  IF mins IS NULL OR mins NOT BETWEEN 1 AND 1440 THEN RAISE EXCEPTION 'Enter the time you spent, up to 24 hours.'; END IF;\n  IF length(coalesce(act, '')) < 3 THEN RAISE EXCEPTION 'What did you do? needs at least 3 characters.'; END IF;\n  IF length(act) > 2000 THEN RAISE EXCEPTION 'What did you do? can be up to 2,000 characters.'; END IF;\n  IF day IS NULL OR NOT isfinite(day) OR day > private.business_today() THEN RAISE EXCEPTION 'Choose a date no later than today.'; END IF;\n  IF note IS NOT NULL AND length(note) > 1000 THEN RAISE EXCEPTION 'Keep your note under 1,000 characters.'; END IF;\n  IF original.review_id IS NOT NULL THEN\n    SELECT * INTO review FROM public.owner_reviews WHERE id = original.review_id;\n    IF FOUND AND review.available_from IS NOT NULL AND day < review.available_from::date THEN\n      RAISE EXCEPTION 'Choose a date on or after the day this was sent to you.';\n    END IF;\n  END IF;\n\n  IF mins IS DISTINCT FROM original.minutes THEN changed := array_append(changed, 'time'); END IF;\n  IF day IS DISTINCT FROM original.entry_date THEN changed := array_append(changed, 'date'); END IF;\n  IF act IS DISTINCT FROM original.activity THEN changed := array_append(changed, 'description'); END IF;\n  IF note IS NOT NULL THEN changed := array_append(changed, 'note'); END IF;\n  IF paths IS DISTINCT FROM old_paths THEN changed := array_append(changed, 'files'); END IF;\n  IF cardinality(changed) = 0 THEN\n    RAISE EXCEPTION '%', CASE WHEN mode = 'add' THEN 'Add a note or a file first.' ELSE 'Nothing changed.' END;\n  END IF;\n\n  -- Double save guard (Nov 21): the same date, minutes and description saved in the last 10 minutes\n  -- (other than this entry and the versions before it) is already on file.\n  IF private.owner_time_recent_repeat(program.id, uid, day, mins, act, note, original.id) THEN\n    RAISE EXCEPTION 'Already saved.';\n  END IF;\n  comments := original.comments;\n  IF note IS NOT NULL THEN\n    comments := concat_ws(E'\\n\\n', nullif(comments, ''), 'Added ' || to_char(private.business_today(), 'Mon FMDD') || ': ' || note);\n  END IF;\n  IF length(coalesce(comments, '')) > 4000 THEN RAISE EXCEPTION 'This entry has too many notes. Start a new entry instead.'; END IF;\n  reason := CASE WHEN mode = 'add' THEN 'Homeowner added more' ELSE 'Homeowner edited the entry' END;\n\n  INSERT INTO public.owner_time_entries(program_id, owner_user_id, phase, entry_date, minutes, activity, activity_category, output,\n      decision_outcome, materials_reviewed, attachment_path, attachment_paths, comments, review_id, ticket_id, amends_entry_id,\n      correction_reason, review_status, attested, is_demo)\n  VALUES (original.program_id, original.owner_user_id, original.phase, day, mins, act, original.activity_category, original.output,\n      original.decision_outcome, original.materials_reviewed, paths->>0, paths, comments, original.review_id, original.ticket_id, original.id,\n      reason, 'submitted', true, original.is_demo)\n  RETURNING id INTO new_id;\n  INSERT INTO public.owner_time_entry_properties(entry_id, property_id)\n    SELECT new_id, property_id FROM public.owner_time_entry_properties WHERE entry_id = original.id ORDER BY property_id;\n  SELECT property_id INTO home FROM public.owner_time_entry_properties WHERE entry_id = new_id ORDER BY property_id LIMIT 1;\n  UPDATE public.owner_programs SET last_owner_activity_at = now() WHERE id = program.id;\n  INSERT INTO public.owner_program_events(program_id, entry_id, review_id, kind, summary, actor_id, previous_value, new_value, reason, detail)\n  VALUES (program.id, new_id, original.review_id, 'time_entry', reason || ': ' || act, uid, original.minutes::text, mins::text, reason,\n    jsonb_build_object('correctionOf', original.id, 'homeownerUpdate', true, 'changed', to_jsonb(changed),\n      'wasReviewed', original.reviewed_at IS NOT NULL, 'attachmentCount', jsonb_array_length(paths),\n      'propertyIds', coalesce((SELECT jsonb_agg(property_id ORDER BY property_id) FROM public.owner_time_entry_properties WHERE entry_id = new_id), '[]'::jsonb)));\n  label := to_char(day, 'Mon FMDD');\n  PERFORM private.record_homeowner_update(program.id, home, 'hours', new_id, 'Hours on ' || label, NULL,\n    reason || ' for ' || label || ': ' || left(act, 200),\n    CASE WHEN mode = 'add' THEN 'I added more to my hours for ' ELSE 'I updated my hours for ' END || label || ': ' || left(act, 200) || '.');\n  RETURN new_id;\nEXCEPTION WHEN lock_not_available THEN RAISE EXCEPTION 'The program or entry is being updated. Refresh and try again.';\nEND $function$\n",
+      "args": "_entry_id uuid, _change jsonb",
+      "name": "owner_update_time_entry",
+      "schema": "public"
+    },
+    {
+      "sql": "CREATE OR REPLACE FUNCTION public.respond_owner_approval(_approval_id uuid, _publication_id uuid, _expected_updated_at timestamp with time zone, _approved boolean, _note text)\n RETURNS timestamp with time zone\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE request public.approvals%ROWTYPE; publication public.owner_approval_publications%ROWTYPE; decided timestamptz;\nBEGIN\n IF auth.uid() IS NULL OR _approved IS NULL OR length(coalesce(_note,''))>2000 OR (_approved=false AND length(trim(coalesce(_note,'')))=0) THEN\n  RAISE EXCEPTION 'Sign in and provide a valid decision, including a note when requesting changes.';\n END IF;\n -- Do not inspect/lock another recipient's operational source on a guessed id.\n IF NOT EXISTS(SELECT 1 FROM public.approvals a WHERE a.id=_approval_id AND a.approver_id=auth.uid() AND a.approver_role='owner'\n  AND a.is_demo=false AND private.owner_approval_program(a) IS NOT NULL) THEN RAISE EXCEPTION 'That approval is not available to this owner account.'; END IF;\n request:=private.lock_owner_approval(_approval_id);\n SELECT * INTO publication FROM public.owner_approval_publications WHERE approval_id=request.id ORDER BY revision DESC LIMIT 1;\n IF publication.id IS NULL OR _publication_id IS DISTINCT FROM publication.id OR _expected_updated_at IS NULL OR request.updated_at IS DISTINCT FROM _expected_updated_at\n  OR publication.approval_updated_at IS DISTINCT FROM request.updated_at OR publication.recipient_id IS DISTINCT FROM auth.uid()\n  OR publication.program_id IS DISTINCT FROM private.owner_approval_program(request)\n  OR publication.owner_record_id IS DISTINCT FROM (SELECT owner_record_id FROM public.owner_programs WHERE id=publication.program_id)\n  OR publication.property_id IS DISTINCT FROM request.property_id OR publication.entity_type IS DISTINCT FROM request.entity_type OR publication.entity_id IS DISTINCT FROM request.entity_id THEN\n  RAISE EXCEPTION 'A current staff-reviewed summary is required. Review the updated request before responding; your note can be kept.';\n END IF;\n IF request.entity_type IN('work_order','onboarding_task','financial_request') THEN\n  decided:=public.record_versioned_owner_response(request.id,auth.uid(),_expected_updated_at,_approved,trim(coalesce(_note,'')));\n ELSE\n  decided:=now();\n  UPDATE public.approvals SET status=CASE WHEN _approved THEN 'approved' ELSE 'declined' END,decision_note=nullif(trim(_note),''),decided_at=decided WHERE id=request.id;\n END IF;\n IF NOT EXISTS(SELECT 1 FROM public.owner_approval_receipts r WHERE r.approval_id=request.id AND r.publication_id=publication.id AND r.actor_id=auth.uid()) THEN\n  RAISE EXCEPTION 'The exact reviewed decision context could not be retained. No response was saved.';\n END IF;\n -- Work Order delegate already writes its canonical audit. This publication receipt\n -- is additional immutable context; task/finance/generic responses need this audit.\n IF request.entity_type<>'work_order' THEN\n  INSERT INTO public.audit_log(actor_id,action,entity_type,entity_id,reason,after_value)\n  VALUES(auth.uid(),CASE WHEN _approved THEN 'owner_approval_approved' ELSE 'owner_approval_declined' END,'approval',request.id,nullif(trim(_note),''),\n   jsonb_build_object('decided_at',decided,'publication_id',publication.id,'revision',publication.revision));\n END IF;\n RETURN decided;\nEXCEPTION WHEN lock_not_available THEN RAISE EXCEPTION 'The approval context is being updated. Refresh and review it before responding.';\nEND $function$\n",
+      "args": "_approval_id uuid, _publication_id uuid, _expected_updated_at timestamp with time zone, _approved boolean, _note text",
+      "name": "respond_owner_approval",
+      "schema": "public"
+    },
+    {
+      "sql": "CREATE OR REPLACE FUNCTION private.lock_owner_time_program(_program_id uuid, _actor_id uuid, _staff boolean, _new_activity boolean)\n RETURNS owner_programs\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE program public.owner_programs; arrived boolean;\nBEGIN\n SELECT * INTO program FROM public.owner_programs WHERE id=_program_id FOR UPDATE NOWAIT;\n IF NOT FOUND OR _actor_id IS NULL OR program.archived_at IS NOT NULL OR program.completed_at IS NOT NULL THEN\n  RAISE EXCEPTION 'This program is not open for this participation change.';\n END IF;\n SELECT EXISTS(SELECT 1 FROM public.owner_program_properties e WHERE e.program_id=program.id AND e.inclusion_status='included'\n   AND e.archived_at IS NULL AND e.is_demo=program.is_demo AND e.closing_confirmed AND e.closing_date IS NOT NULL\n   AND e.closing_date<=private.business_today()) INTO arrived;\n IF _new_activity AND NOT _staff THEN\n  IF NOT coalesce(private.owner_program_live(program.status), false) THEN\n   RAISE EXCEPTION 'This program is not open for this participation change.';\n END IF;\n\n ELSIF (program.started_on IS NULL OR NOT isfinite(program.started_on)) AND NOT (program.status IN ('draft','waiting_for_closing','ready_for_onboarding') AND arrived)\n  OR (_new_activity AND NOT coalesce(private.owner_program_live(program.status), false))\n  OR (NOT _new_activity AND NOT (coalesce(private.owner_program_live(program.status), false) OR program.status = 'paused')) THEN\n  RAISE EXCEPTION 'This program is not open for this participation change.';\n END IF;\n PERFORM 1 FROM auth.users WHERE id=_actor_id AND deleted_at IS NULL AND (banned_until IS NULL OR banned_until<=now()) FOR SHARE NOWAIT;\n IF NOT FOUND THEN RAISE EXCEPTION 'An enabled account is required for participation changes.'; END IF;\n PERFORM 1 FROM public.user_roles WHERE user_id=_actor_id FOR SHARE NOWAIT;\n IF _staff THEN\n   IF NOT (coalesce(public.has_role(_actor_id,'admin'),false) OR coalesce(public.has_role(_actor_id,'manager'),false))\n   OR (program.is_demo AND NOT coalesce(public.has_role(_actor_id,'admin'),false)) THEN\n   RAISE EXCEPTION 'Only an authorized supervisor can review or correct participation.';\n  END IF;\n ELSE\n  IF NOT coalesce(private.is_program_member(program.id,_actor_id),false)\n   OR (program.is_demo AND NOT (_actor_id=auth.uid() AND private.is_synthetic_account()\n        AND coalesce(private.demo_owner_link_ok(_actor_id, program.id),false)))\n   OR NOT EXISTS(SELECT 1 FROM public.user_roles WHERE user_id=_actor_id AND role::text='owner')\n   OR EXISTS(SELECT 1 FROM public.user_roles WHERE user_id=_actor_id AND role::text<>'owner') THEN\n    RAISE EXCEPTION 'That participation program is not available to you.';\n  END IF;\n END IF;\n PERFORM 1 FROM public.property_owners WHERE id=program.owner_record_id AND active FOR SHARE NOWAIT;\n IF NOT FOUND THEN RAISE EXCEPTION 'Participation requires an active canonical Owner.'; END IF;\n RETURN program;\nEND $function$\n",
+      "args": "_program_id uuid, _actor_id uuid, _staff boolean, _new_activity boolean",
+      "name": "lock_owner_time_program",
+      "schema": "private"
+    },
+    {
+      "sql": "CREATE OR REPLACE FUNCTION private.owner_time_recent_repeat(_program uuid, _owner uuid, _day date, _minutes integer, _activity text, _note text, _chain_of uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE\n SET search_path TO 'public'\nAS $function$\n  WITH RECURSIVE chain(id) AS (\n    SELECT _chain_of WHERE _chain_of IS NOT NULL\n    UNION\n    SELECT e.amends_entry_id FROM public.owner_time_entries e JOIN chain c ON e.id = c.id WHERE e.amends_entry_id IS NOT NULL\n  )\n  SELECT EXISTS (\n    SELECT 1 FROM public.owner_time_entries d\n     WHERE d.program_id = _program AND d.owner_user_id = _owner AND d.entry_date = _day AND d.minutes = _minutes\n       AND d.created_at > now() - interval '10 minutes'\n       AND lower(regexp_replace(btrim(d.activity), '\\s+', ' ', 'g')) = lower(regexp_replace(btrim(coalesce(_activity, '')), '\\s+', ' ', 'g'))\n       AND (nullif(btrim(coalesce(_note, '')), '') IS NULL OR position(btrim(_note) IN coalesce(d.comments, '')) > 0)\n       AND d.id NOT IN (SELECT id FROM chain))\n$function$\n",
+      "args": "_program uuid, _owner uuid, _day date, _minutes integer, _activity text, _note text, _chain_of uuid",
+      "name": "owner_time_recent_repeat",
+      "schema": "private"
+    }
+  ]
+}
