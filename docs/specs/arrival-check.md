@@ -5,7 +5,7 @@ guests" (every arriving home is checked at least 2 hours before check in, or the
 with a safe backup plan) and a second line of verification so nothing slips. It is a bonus metric,
 not a write up standard.
 
-Switch `arrival_checks`, OFF. When Emily turns it on it sets a forward only start line and only
+Switch `arrival_checks`, ON since Nov 16, 2026 6:09 AM Central. When Emily turns it on it sets a forward only start line and only
 arrivals at least 2 hours after that moment get a check (same pattern as email intake, register E1).
 
 1. WHICH ARRIVALS: every reservation in the OwnerRez sync that starts (check in date) at an active,
@@ -54,7 +54,7 @@ arrivals at least 2 hours after that moment get a check (same pattern as email i
    Supervisor, the Director of Operations, the COO and Admin see every row; a coordinator sees only
    their own rows; Finance views; onboarding roles hidden. View only in the list; work happens on the
    ticket.
-9. SWITCH, START LINE AND TEST: switch `arrival_checks` OFF; Turn on moves the start line forward only
+9. SWITCH, START LINE AND TEST: switch `arrival_checks` (ON since Nov 16, 2026 6:09 AM Central); Turn on moves the start line forward only
    and records who and when; nothing is created for older arrivals; a test reservation (at the
    Fitzgerald test home, marked with the existing test marking) creates a test check excluded from
    every count, score and report, visible to the Admin, the Supervisor and the Directors, with Clear
@@ -68,9 +68,12 @@ scorecard capture and Databases keep working; no live OwnerRez searches beyond t
 
 ## As built
 
-Built Nov 10, switch OFF, not published. Migrations 0325 (01) and 0326 (02 fixes), staged with undo, README
+Built Nov 10, not published then. Switch turned ON Nov 16, 2026 6:09 AM Central. Migrations 0325 (01) and 0326 (02 fixes), staged with undo, README
 and checksums in docs/pending/arrival-check/. Times are shown in Central. Homes ready for guests is one shared
 team score (correction E, docs/specs/bonus-guide-values.md). The sync stores bookings from the existing OwnerRez
 fetch only (no new requests); it reaches only through tomorrow, which is enough for the 6 AM creation. The
 published app does not store bookings until a publish Emily approves. Owner stay recognition (type owner, or a
 block titled as an owner stay) is not confirmed by Emily.
+
+
+Live state read Nov 25, 2026 from feature_flags (the source the Integrations page uses): `breezeway_bridge` enabled = true and `arrival_checks` enabled = true, both since Nov 16, 2026 6:09 AM Central.

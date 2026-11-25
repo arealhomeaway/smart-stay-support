@@ -18,7 +18,7 @@ Row counts are raw counts on Nov 11 at 04:00 UTC and include demo and test rows 
 2. **The legacy Active Owner tables are still read and written.** `owner_task_templates` (32 rows) and `owner_opportunity_library` (8 rows) are read by `src/lib/after-handoff.functions.ts:35-36,94-95`, `src/lib/ao-data.ts:167` and `owner-program.server.ts`; `owner_opportunity_library` is written by `src/lib/opportunity-library.functions.ts:85-110` (the Optional Library at `/owner-library`). The project rule says they are "legacy and not used". Code says otherwise.
 3. **The Automated homeowner plan switch only works on a program's primary home.** `ao_set_home_automation` requires `owner_programs.property_id` to equal the home. 3915 W 104th St S is a second home in a live program, so the switch refuses it ("This home has no active Active Owner program").
 4. **Turning on the Automated plan for 9211 Fitzgerald Dr today would email the owner about 27 times.** Each open card creates an owner item waiting on the owner, and the existing owner item trigger queues one email per item when `notify_email` is on (it is on for this program). Details in 4b and 4c.
-5. **Breezeway safety sweep (job 22) is active every 10 minutes** against `/api/public/hooks/breezeway-mirror`. In the preview code it does nothing while the bridge is off. The published Nov 6 code answers the same address and refreshes work orders (5,245 rows, newest copy 03:40 UTC). Which version answers it today is Not verified.
+5. **Breezeway safety sweep (job 22) is active every 10 minutes** against `/api/public/hooks/breezeway-mirror`. The bridge is ON since Nov 16, 2026 6:09 AM Central, so the sweep can create tickets. The published Nov 6 code answers the same address and refreshes work orders (5,245 rows, newest copy 03:40 UTC). Which version answers it today is Not verified.
 6. **`breezeway_outbound` is On.** The bridge, onboarding send and internal work orders are Off, but ticket sends to Breezeway are governed by this switch plus the verified-home and dispatch guards. Do not describe "all Breezeway sending" as off.
 
 ---
@@ -96,7 +96,7 @@ Each system lists: purpose; tables (rows); pages; server functions; scheduled jo
 - Routes: `/api/public/hooks/breezeway-mirror`, `/api/public/hooks/breezeway/$token` (webhook), `/api/public/hooks/cleaner-hours-reconcile`.
 - Server functions: `breezeway`, `breezeway-bridge`, `breezeway-workorders`, `breezeway-outbound`, `breezeway-sending`, `sync-review`.
 - Jobs: `breezeway-safety-sweep` every 10 minutes, active (0.5). Last webhook event Nov 11 03:40 UTC.
-- Switches: `breezeway_bridge` Off, `breezeway_outbound` On, `onboarding_breezeway_send` Off, `internal_work_orders` Off.
+- Switches: `breezeway_bridge` On (since Nov 16, 2026 6:09 AM Central), `breezeway_outbound` On, `onboarding_breezeway_send` Off, `internal_work_orders` Off.
 
 ### 1.9 OwnerRez
 - Purpose: homes, owners, photos, bookings and guest reviews from OwnerRez.
@@ -172,7 +172,7 @@ Each system lists: purpose; tables (rows); pages; server functions; scheduled jo
 
 ### 1.22 Arrival checks
 - Tables: `arrival_checks` 1, `arrival_reservations` 1, `arrival_check_state` 1 (last run Nov 11 04:03 UTC, switch off, 0 created).
-- Pages: Arrival readiness card in Databases; panel on tickets. Job: `arrival-checks` every minute, active, does nothing while Off. Switch: `arrival_checks` Off.
+- Pages: Arrival readiness card in Databases; panel on tickets. Job: `arrival-checks` every minute, active. Switch: `arrival_checks` On (since Nov 16, 2026 6:09 AM Central).
 
 ### 1.23 Other systems found (not in the requested list)
 - Departure Review and cleaning: `departure_reviews` 3, `departure_review_events` 21, `departure_clean_matches` 0; Databases card.
@@ -302,3 +302,6 @@ Note: the preview step removes duplicates of the same Task, but the turn on step
 - Victor's portal in a browser.
 - The full list of tables touched inside every database function (only the main tables are listed).
 - Whether Microsoft 365, SharePoint, Breezeway and OwnerRez connections are healthy today (not called).
+
+
+Correction Nov 25: Live state read Nov 25, 2026 from feature_flags (the source the Integrations page uses): `breezeway_bridge` enabled = true and `arrival_checks` enabled = true, both since Nov 16, 2026 6:09 AM Central.
