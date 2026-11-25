@@ -8,11 +8,11 @@ const iso = (mins: number) => new Date(NOW.getTime() + mins * 60_000).toISOStrin
 
 describe("Due column", () => {
   it("not acknowledged: Reply now, overdue or due from response_due_at", () => {
-    expect(dueCell({ status: "open", response_due_at: iso(-90) }, NOW)).toMatchObject({ line1: "Reply now", line2: "Overdue by 2h", overdue: true });
-    expect(dueCell({ status: "open", response_due_at: iso(20) }, NOW)).toMatchObject({ line1: "Reply now", line2: "Due in 20m", overdue: false });
+    expect(dueCell({ status: "open", source_channel: "guest_message", response_due_at: iso(-90) }, NOW)).toMatchObject({ line1: "Reply now", line2: "Overdue by 2h", overdue: true });
+    expect(dueCell({ status: "open", source_channel: "guest_message", response_due_at: iso(20) }, NOW)).toMatchObject({ line1: "Reply now", line2: "Due in 20m", overdue: false });
   });
   it("acknowledged but not started: Start work from action_due_at", () => {
-    expect(dueCell({ status: "in_progress", acknowledged_at: iso(-60), action_due_at: iso(-30) }, NOW)).toMatchObject({ line1: "Start work", line2: "Overdue by 30m", overdue: true });
+    expect(dueCell({ status: "in_progress", source_channel: "guest_message", acknowledged_at: iso(-60), action_due_at: iso(-30) }, NOW)).toMatchObject({ line1: "Start work", line2: "Overdue by 30m", overdue: true });
   });
   it("waiting with a check back date: the date, then Check back; overdue when past", () => {
     expect(dueCell({ status: "waiting", acknowledged_at: iso(-600), next_review_at: iso(120) }, NOW)).toMatchObject({ line1: "Nov 18 · 2:00 PM", line2: "Check back", overdue: false });
@@ -67,10 +67,10 @@ describe("Groups and order", () => {
   });
   it("inside a group: overdue first, then soonest due, then the existing queue order; overdue counted", () => {
     const rows = [
-      t("later", { response_due_at: iso(60) }),
+      t("later", { source_channel: "guest_message", response_due_at: iso(60) }),
       t("none", { acknowledged_at: iso(-5), action_started_at: iso(-4) }),
-      t("late", { response_due_at: iso(-10) }),
-      t("soon", { response_due_at: iso(5) }),
+      t("late", { source_channel: "guest_message", response_due_at: iso(-10) }),
+      t("soon", { source_channel: "guest_message", response_due_at: iso(5) }),
     ];
     const [g] = groupTableRows(rows, "priority", pick, NOW);
     expect(g!.rows.map((r) => r.id)).toEqual(["late", "soon", "later", "none"]);

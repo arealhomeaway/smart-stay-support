@@ -18,8 +18,8 @@ describe("supervisor check", () => {
   });
   it("lists overdue and unassigned; the three import-only lists are gone", () => {
     const g = groupSupervisorCheck([
-      t({ next_action_due_at: h(1) }),
-      t({ status: "closed", next_action_due_at: h(1) }),
+      t({ due_on: "2020-01-01" }),
+      t({ status: "closed", due_on: "2020-01-01" }),
       t({ assigned_to: null }),
       t({ external_source: "notion", reported_at: h(48) }),
       t({ external_source: "notion", import_hold: "backlog_review", assigned_to: null, reported_at: h(24 * 90) }),

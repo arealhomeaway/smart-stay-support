@@ -1,3 +1,4 @@
+import { ticketDueDay, ticketLate } from "@/lib/ticket-deadline";
 /**
  * The Team Queue filter model.
  *
@@ -202,7 +203,9 @@ export function applyTeamQueueFilters(
     if (filters.dateTo && (!relevantDate || relevantDate.slice(0, 10) > filters.dateTo)) return false;
 
     if (filters.due !== "all") {
-      const due = relevantDate;
+      // One deadline (Nov 25): the due date, or a guest-waiting ticket's running clock.
+      const day = "status" in t ? ticketDueDay(t as never) : null;
+      const due = day ? `${day}T23:59:59-06:00` : "status" in t ? null : relevantDate;
       if (!due) {
         if (filters.due !== "unscheduled") return false;
       } else {
@@ -240,7 +243,7 @@ export function applyTeamQueueFilters(
     if (filters.unassigned && !isUnassigned(t)) return false;
     if (filters.escalated && !isEscalated(t)) return false;
     if (filters.blocked && !isBlocked(t)) return false;
-    if (filters.overdue && !slaState(t).breached) return false;
+    if (filters.overdue && !ticketLate(t as never)) return false;
 
     if (q) {
       const hay = [t.ref ? `#${t.ref}` : "", t.title, t.description, t.guest_name]

@@ -7,6 +7,7 @@ import { formatPropertyLabel } from "@/lib/property-label";
  * Raw volume stays at the bottom as context: it is never a productivity score
  * for a coordinator.
  */
+import { guestIsWaiting, ticketLate } from "@/lib/ticket-deadline";
 import type { ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -214,11 +215,13 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
 
   const unackedP1 = open.filter((t) => t.priority === "p1" && !t.acknowledged_at);
   const unacked = open.filter(
-    (t) => t.priority !== "p1" && !t.acknowledged_at && slaState(t).response?.breached,
+    (t) => t.priority !== "p1" && !t.acknowledged_at && guestIsWaiting(t) && slaState(t).response?.breached,
   );
   const notStarted = open.filter(
-    (t) => t.acknowledged_at && !t.action_started_at && slaState(t).action?.breached,
+    (t) => t.acknowledged_at && !t.action_started_at && guestIsWaiting(t) && slaState(t).action?.breached,
   );
+  // One deadline (Nov 25): every other ticket is late only once past its due date.
+  const pastDue = open.filter((t) => !guestIsWaiting(t) && ticketLate(t));
   const pendingHandoffs = open.filter((t) => t.handoff_status === "pending");
   const unassigned = open.filter((t) => !t.assigned_to && !t.current_action_owner);
   const waitingNoReview = open.filter((t) => t.status === "waiting" && !t.next_review_at);
@@ -313,6 +316,13 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
   ];
 
   const overdue: ExceptionSection[] = [
+    {
+      title: "Past its due date",
+      description: "Open work past the date it should be done.",
+      rows: pastDue,
+      nextAction: "Finish or move the date",
+      timingField: "reported_at",
+    },
     {
       title: "Waiting past its review date",
       description: "The promised check-in never happened.",

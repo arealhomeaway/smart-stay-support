@@ -1,4 +1,5 @@
 import { EmailTestChip } from "@/components/EmailTestChip";
+import { ticketDueDay, ticketLate } from "@/lib/ticket-deadline";
 import { EMAIL_TEST_COPY, isEmailTestTicket, seesEmailTestsFor } from "@/lib/email-intake";
 import { EmailTestRecords } from "@/components/EmailTestRecords";
 import { formatPropertyLabel } from "@/lib/property-label";
@@ -364,8 +365,8 @@ export function TeamQueueBoard({ embedded = false }: { embedded?: boolean } = {}
     () =>
       filterTickets(lens === "mine", filters).sort((a, b) => {
         if (sortParam === "due") {
-          return (a.next_action_due_at ?? a.action_due_at ?? a.response_due_at ?? "9999")
-            .localeCompare(b.next_action_due_at ?? b.action_due_at ?? b.response_due_at ?? "9999");
+          // One deadline (Nov 25): the due date, or a guest-waiting ticket's running clock.
+          return (ticketDueDay(a as never) ?? "9999").localeCompare(ticketDueDay(b as never) ?? "9999");
         }
         if (sortParam === "newest") return (b.reported_at ?? "").localeCompare(a.reported_at ?? "");
         const priorityOrder = { p1: 0, p2: 1, p3: 2 } as Record<string, number>;
@@ -625,7 +626,7 @@ export function TeamQueueBoard({ embedded = false }: { embedded?: boolean } = {}
       {
         key: "overdue",
         label: "Overdue",
-        count: active.filter((t) => slaState(t).breached).length,
+        count: active.filter((t) => "status" in t && ticketLate(t as never)).length,
       },
     ];
   }, [all, standaloneOrders]);

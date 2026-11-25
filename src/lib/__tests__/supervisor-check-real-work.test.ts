@@ -37,7 +37,7 @@ describe("untouched Notion imports appear in no list", () => {
       expect(listed([t])).toEqual(NONE);
     }
     // Even with a past due time it is not Overdue.
-    expect(listed([{ ...recentImport, next_action_due_at: h(1) }])).toEqual(NONE);
+    expect(listed([{ ...recentImport, due_on: "2020-01-01" }])).toEqual(NONE);
   });
 });
 
@@ -48,7 +48,7 @@ describe("after Take it is ordinary work", () => {
     expect(listed([taken])).toEqual({ last24h: ["imp:changed"], overdue: [], unassigned: [] });
   });
   it("follows the normal Overdue and Unassigned rules", () => {
-    expect(listed([{ ...taken, next_action_due_at: h(0.1) }]).overdue).toEqual(["imp"]);
+    expect(listed([{ ...taken, due_on: "2020-01-01" }]).overdue).toEqual(["imp"]);
     expect(listed([{ ...taken, assigned_to: null }]).unassigned).toEqual(["imp"]);
   });
   it("a ticket created in Notion in the last 24 hours and taken shows as New", () => {
@@ -66,7 +66,7 @@ describe("an ordinary ticket is unchanged in every list", () => {
       base({ id: "new", created_at: h(2), updated_at: h(1), assigned_to: null }),
       base({ id: "chg", updated_at: h(3) }),
       base({ id: "cls", status: "closed", closed_at: h(1), created_at: h(30) }),
-      base({ id: "late", next_action_due_at: h(1) }),
+      base({ id: "late", due_on: "2020-01-01" }),
       base({ id: "old" }),
       base({ id: "held", assigned_to: null, import_hold: "needs_home" }),
     ];

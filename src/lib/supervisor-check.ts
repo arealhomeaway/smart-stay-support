@@ -9,6 +9,7 @@
  * Imported history is found in Databases.
  */
 import { withoutQuietNotion } from "@/lib/notion-ticket-display";
+import { ticketLate } from "@/lib/ticket-deadline";
 
 export const CLOSED_STATUSES = ["resolved", "closed", "cancelled"] as const;
 
@@ -25,6 +26,12 @@ export type CheckTicket = {
   external_status?: string | null;
   reported_at?: string | null;
   import_hold?: string | null;
+  source_channel?: string | null;
+  due_on?: string | null;
+  acknowledged_at?: string | null;
+  action_started_at?: string | null;
+  response_due_at?: string | null;
+  action_due_at?: string | null;
 };
 
 export type ActivityKind = "created" | "closed" | "changed";
@@ -52,7 +59,8 @@ export function isOpen(t: Pick<CheckTicket, "status">) {
 }
 
 export function isOverdue(t: CheckTicket, now: number) {
-  return isOpen(t) && !!t.next_action_due_at && Date.parse(t.next_action_due_at) < now;
+  // One deadline (Nov 25): past its due date, or a guest-waiting clock that has passed.
+  return isOpen(t) && ticketLate(t, new Date(now));
 }
 
 export function groupSupervisorCheck(tickets: CheckTicket[], now: number) {

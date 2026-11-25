@@ -50,7 +50,7 @@ function SupervisorCheck() {
       const [t, r] = await Promise.all([
         supabase
           .from("tickets")
-          .select("id, ref, title, status, created_at, updated_at, resolved_at, assigned_to, next_action_due_at, external_source, external_status, reported_at, import_hold, due_on, due_locked, handoff_carryovers(ticket_id), properties(lifecycle_status)")
+          .select("id, ref, title, status, created_at, updated_at, resolved_at, assigned_to, next_action_due_at, source_channel, acknowledged_at, action_started_at, response_due_at, action_due_at, external_source, external_status, reported_at, import_hold, due_on, due_locked, handoff_carryovers(ticket_id), properties(lifecycle_status)")
           .eq("is_demo", demoMode)
           .is("archived_at", null)
           .order("updated_at", { ascending: false })

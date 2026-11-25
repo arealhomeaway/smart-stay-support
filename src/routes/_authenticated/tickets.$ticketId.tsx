@@ -1,4 +1,5 @@
 import { EmailTestChip } from "@/components/EmailTestChip";
+import { guestClockView, guestIsWaiting } from "@/lib/ticket-deadline";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { isEmailTestTicket, seesEmailTestRecords, ticketShownInLens } from "@/lib/email-intake";
 import { formatPropertyLabel } from "@/lib/property-label";
@@ -560,7 +561,8 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   };
   const meta = priorityMeta(ticket.priority);
   // An untouched Notion import shows no clocks, minutes or escalation (register N4, T7).
-  const sla = visibleClocks(ticket, slaState(ticket));
+  // One deadline (Nov 25): reply and start clocks only where a guest is waiting.
+  const sla = guestClockView(ticket, visibleClocks(ticket, slaState(ticket)));
   const quietLine = quietImportLine(ticket);
   // The requirement, scoped to this scenario: a porch railing never has to
   // certify every smoke and CO device in the home.
@@ -866,7 +868,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
       closure_evidence: evidence.trim() || null,
       final_communication_sent: finalComms,
       guest_confirmed: confirmed,
-      late_reason: sla.breached ? "SLA target missed" : null,
+      late_reason: visibleClocks(ticket, slaState(ticket)).breached ? "SLA target missed" : null,
       // Finishing the work again puts it back in front of a reviewer; an
       // earlier "changes needed" answer is history, not a standing decision.
       closure_qa_result: "not_reviewed",
@@ -1077,8 +1079,8 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             commDueAt: guestComm.commDueAt,
             acknowledged_at: ticket.acknowledged_at,
             action_started_at: ticket.action_started_at,
-            response_due_at: (ticket as { response_due_at?: string | null }).response_due_at ?? null,
-            action_due_at: (ticket as { action_due_at?: string | null }).action_due_at ?? null,
+            response_due_at: guestIsWaiting(ticket) ? (ticket as { response_due_at?: string | null }).response_due_at ?? null : null,
+            action_due_at: guestIsWaiting(ticket) ? (ticket as { action_due_at?: string | null }).action_due_at ?? null : null,
             next_guest_update_at: ticket.next_guest_update_at ?? null,
           }),
         });
@@ -1091,8 +1093,8 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
           commDueAt: guestComm.commDueAt,
           acknowledged_at: ticket.acknowledged_at,
           action_started_at: ticket.action_started_at,
-          response_due_at: (ticket as { response_due_at?: string | null }).response_due_at ?? null,
-          action_due_at: (ticket as { action_due_at?: string | null }).action_due_at ?? null,
+          response_due_at: guestIsWaiting(ticket) ? (ticket as { response_due_at?: string | null }).response_due_at ?? null : null,
+          action_due_at: guestIsWaiting(ticket) ? (ticket as { action_due_at?: string | null }).action_due_at ?? null : null,
           next_guest_update_at: ticket.next_guest_update_at ?? null,
         }),
       );

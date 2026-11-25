@@ -109,3 +109,4 @@
 
 - Grouped reported-issue links use one caller-authenticated atomic RPC and retain exact captured issue IDs; never use separate writes while pending. Why: no partial links or lost canonical Ticket history.
 - Lawn guest-ready due_on is display-only; due_at remains the routine clock and capture deadline. Why: standards never rewrite existing capture facts.
+- Ticket deadlines: reply/start clocks show and count only for guest-waiting tickets (`guestIsWaiting` in src/lib/ticket-deadline.ts); every other ticket is late only past due_on. Display only; stored clocks and alerts unchanged. Why: one deadline per ticket on every screen.

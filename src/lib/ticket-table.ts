@@ -5,6 +5,7 @@
  */
 import { priorityMeta, WAITING_ON, STATUSES, labelFor } from "@/lib/tickets";
 import { queueSort } from "@/lib/matters";
+import { guestIsWaiting } from "@/lib/ticket-deadline";
 import { dueDateLabel, dueOnEndIso, dueOverdueDays, overdueByDays } from "@/lib/ticket-due-date";
 
 const CENTRAL = "America/Chicago";
@@ -19,6 +20,7 @@ export type DueTicket = {
   next_review_at?: string | null;
   /** Due date (Nov 18): set once at creation, changed on the ticket page. */
   due_on?: string | null;
+  source_channel?: string | null;
 };
 
 export type DueCell = {
@@ -73,8 +75,9 @@ export function dueCell(t: DueTicket, now = new Date()): DueCell {
     const label = late ? dueLabelAt(t.next_review_at, now) : null;
     return { line1: shortDateTime(t.next_review_at, now), line2: late ? label : "Check back", overdue: late, alert: false, dueAt: t.next_review_at };
   }
-  if (!t.acknowledged_at) return clockCell("Reply now", t.response_due_at, now);
-  if (!t.action_started_at) return clockCell("Start work", t.action_due_at, now);
+  // One deadline (Nov 25): the reply and start clocks only where a guest is waiting.
+  if (guestIsWaiting(t) && !t.acknowledged_at) return clockCell("Reply now", t.response_due_at, now);
+  if (guestIsWaiting(t) && !t.action_started_at) return clockCell("Start work", t.action_due_at, now);
   // Due date (Nov 18): when no clock applies, the ticket's Due date; else "No due date".
   if (t.due_on) {
     const late = dueOverdueDays(t, now);

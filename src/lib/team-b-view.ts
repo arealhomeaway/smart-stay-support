@@ -1,3 +1,4 @@
+import { guestIsWaiting } from "@/lib/ticket-deadline";
 /**
  * Team B view of the Team Queue (change 2 of 5, Emily, Nov 25). Pure and browser safe:
  * tabs, due filters, source label, scope, onboarding hiding and the reported issue roll up.
@@ -96,6 +97,8 @@ export function centralDate(d: Date): string {
 
 export function dueDateOf(t: TeamBTicket): string | null {
   if (t.due_on) return t.due_on.slice(0, 10);
+  // One deadline (Nov 25): only a guest-waiting ticket falls back to its clock.
+  if (!guestIsWaiting(t as { source_channel?: string | null })) return null;
   const at = t.next_action_due_at ?? t.action_due_at ?? t.response_due_at;
   return at ? centralDate(new Date(at)) : null;
 }
