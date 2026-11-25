@@ -1,4 +1,5 @@
 import { OwnerProgramSetup } from "@/components/OwnerProgramSetup";
+import { HoursReportSettingsCard } from "@/components/ao/HoursReport";
 import { LinkedText } from "@/components/owner/LinkedText";
 import { linkCount, linkCountLabel } from "@/lib/owner-links";
 import { ownerAttention as attentionReason } from "@/lib/owner-attention";
@@ -228,6 +229,8 @@ function ProgramsBoard() {
 
 
       <ProgramSummary rows={rows} />
+
+      <HoursReportSettingsCard />
 
       {attention.length > 0 && (
         <SectionCard

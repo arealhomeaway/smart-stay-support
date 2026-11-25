@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { EmailComposer } from "@/components/EmailComposer";
 import { HomeAutomation } from "@/components/ao/HomeAutomation";
+import { HoursReportLine } from "@/components/ao/HoursReport";
 import { loadHomePlan } from "@/lib/ao-data";
 import { OpportunityDetail } from "@/components/onboarding/OwnerCollaboration";
 import { ReleasedActivityDetail } from "@/components/onboarding/ReleasedActivityDetail";
@@ -85,6 +86,7 @@ const TAG_TONE: Record<TimelineKind, string> = {
   call: "bg-sage/25 text-foreground",
   approval: "bg-role-homeowner-bg text-role-homeowner-fg",
   weekly: "bg-sky/25 text-foreground",
+  hours: "bg-sky/25 text-foreground",
 };
 
 function firstNames(people: string[]): string {
@@ -396,6 +398,8 @@ export function OwnerTab(p: {
           <p className="text-xs text-muted-foreground">Only what needs someone shows here. The owner's optional plan cards don't: they're the owner's to do, at their pace.</p>
           <OwnerUpdateDialog propertyId={p.propertyId} no={updateOpen} onOpenChange={(o) => !o && setUpdateOpen(null)} />
         </section>
+
+        {p.activeOwner && <HoursReportLine propertyId={p.propertyId} />}
 
         <ConversationTimeline
           propertyId={p.propertyId}

@@ -106,6 +106,9 @@ export async function readOwnerTab(sb: Db, uid: string, propertyId: string) {
   // Owner updates after closing that reached the owner (staged; empty until applied).
   const closing = await sb.from("owner_closing_updates" as never).select("id, update_no, channel, sent_subject, sent_at, sent_to, status").eq("property_id", propertyId).eq("status", "sent");
   const closingRows = (isStagedMissing(closing.error) ? [] : closing.data ?? []) as unknown as { id: string; update_no: number; channel: string | null; sent_subject: string | null; sent_at: string | null; sent_to: string[] | null }[];
+  // Weekly hours reports sent for this home (staged; empty until applied).
+  const hoursSent = await sb.from("ao_hours_report_homes" as never).select("id, sent_text, sent_at").eq("property_id", propertyId).order("sent_at", { ascending: false }).limit(60);
+  const hoursRows = (isStagedMissing(hoursSent.error) ? [] : hoursSent.data ?? []) as unknown as { id: string; sent_text: string; sent_at: string }[];
   const closingHow = (u: { channel: string | null; sent_to: string[] | null }) =>
     u.channel !== "portal" ? "email" : (u.sent_to ?? []).some((t) => t !== "portal") ? "portal and email" : "portal";
   const who = await names(sb, [
@@ -129,6 +132,7 @@ export async function readOwnerTab(sb: Db, uid: string, propertyId: string) {
     ...((approvals.data ?? []) as { id: string; title: string; status: string; decided_at: string | null; created_at: string }[])
       .map((a) => ({ id: `approval-${a.id}`, kind: "approval" as const, text: `${a.title}: ${a.status === "approved" ? "Approved" : a.status === "rejected" || a.status === "declined" ? "Declined" : "Asked"}`, who: a.decided_at ? "The owner" : "A teammate", at: a.decided_at ?? a.created_at })),
     ...weeklyRows.filter((w) => w.status === "sent" && w.sent_at).map((w) => ({ id: `weekly-${w.id}`, kind: "weekly" as const, text: w.sent_text ?? w.draft_text, who: w.sent_automatically ? "Resolve" : (w.sent_by && who.get(w.sent_by)) || "A teammate", at: w.sent_at! })),
+    ...hoursRows.map((h) => ({ id: `hours-${h.id}`, kind: "hours" as const, text: h.sent_text, who: "Resolve", at: h.sent_at })),
     ...closingRows.map((u) => ({ id: `owner-update-${u.id}`, kind: "weekly" as const, text: `Update ${u.update_no}: ${u.sent_subject ?? ""} (${closingHow(u)})`, who: "Resolve", at: u.sent_at! })),
   ];
 

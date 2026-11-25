@@ -37,6 +37,7 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
         const { runOnboardingDailyReminders, drainHeldOnboardingEmails } = await import("@/lib/onboarding-daily-reminder.server");
         const { runWorkOrderReopenPass } = await import("@/lib/onboarding-work-order-reopen.server");
         const { runActiveOwnerSafetyNet } = await import("@/lib/active-owner-auto-enroll.server");
+        const { runWeeklyHoursReports } = await import("@/lib/hours-report.server");
 
         try {
           const result = await runEmailJob(supabaseAdmin, [
@@ -53,6 +54,9 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
             // the daily email below), and owner updates 1-3 after closing (Nov 22; they replace the Friday
             // weekly drafts and auto-send). Skipped until staged; never fails.
             { name: "owner_comms", run: () => runOwnerCommsJobs(supabaseAdmin) },
+            // Weekly hours report (Nov 25): held for the daily email below, as its top section or alone.
+            // Skipped until docs/pending/weekly-hours-report is applied.
+            { name: "ao_hours_report", run: () => runWeeklyHoursReports(supabaseAdmin) },
             { name: "ao_owner_email", run: () => runAoOwnerEmailGuarded(supabaseAdmin) },
             { name: "owner", run: (id) => drainOwnerAlerts(supabaseAdmin, 50, undefined, id) },
             { name: "staff", run: (id) => drainStaffNotifications(supabaseAdmin, 50, undefined, id) },

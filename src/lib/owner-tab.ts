@@ -110,7 +110,7 @@ export function ownerChatWaiting(messages: { author_type: string; created_at: st
 
 /* ------------------------------------------------------------------ timeline */
 
-export const TIMELINE_KINDS = ["portal", "email", "text", "call", "approval", "weekly"] as const;
+export const TIMELINE_KINDS = ["portal", "email", "text", "call", "approval", "weekly", "hours"] as const;
 export type TimelineKind = (typeof TIMELINE_KINDS)[number];
 export const TIMELINE_TAG: Record<TimelineKind, string> = {
   portal: "Portal",
@@ -119,6 +119,7 @@ export const TIMELINE_TAG: Record<TimelineKind, string> = {
   call: "Call",
   approval: "Approval",
   weekly: "Owner update",
+  hours: "Hours report",
 };
 export const TIMELINE_FILTERS = [
   { key: "all", label: "All", kinds: TIMELINE_KINDS as readonly TimelineKind[] },
@@ -127,6 +128,7 @@ export const TIMELINE_FILTERS = [
   { key: "calls", label: "Calls and texts", kinds: ["call", "text"] as TimelineKind[] },
   { key: "approvals", label: "Approvals", kinds: ["approval"] as TimelineKind[] },
   { key: "weekly", label: "Owner updates", kinds: ["weekly"] as TimelineKind[] },
+  { key: "hours", label: "Hours reports", kinds: ["hours"] as TimelineKind[] },
 ] as const;
 export type TimelineFilter = (typeof TIMELINE_FILTERS)[number]["key"];
 

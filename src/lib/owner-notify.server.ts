@@ -47,14 +47,14 @@ async function sendEmail(
   ticketId?: string | null,
   // The wording wrapper the onboarding director controls. The facts stay ours.
   copy?: { copy: OwnerEmailCopy; ownerName: string | null } | null,
-  context?: { url: string; propertyName: string | null; item: string | null },
+  context?: { url: string; propertyName: string | null; item: string | null; actionLabel?: string },
   notification?: { id: string; isDemo: boolean; jobRunId?: string },
 ) {
   const { sendEmail: send, emailShell } = await import("./email.server");
   const { refTag } = await import("./intake.server");
   const rendered = copy
     ? renderOwnerEmail(copy.copy, { title: subject, body, ownerName: copy.ownerName })
-    : { subject, body, actionLabel: "Open your owner portal" };
+    : { subject, body, actionLabel: context?.actionLabel ?? "Open your owner portal" };
   // Every property-related email names the item and the home in the subject.
   const parts = [rendered.subject];
   if (context?.item && !rendered.subject.includes(context.item)) parts.push(context.item);
@@ -218,11 +218,14 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50, onlyId?: st
             safeText.body,
             ticketRef,
             row.ticket_id,
-            {
-              copy: copyConfig[ownerEmailVariantFor(row.kind)],
-              ownerName: program?.owner_name ?? null,
-            },
-            { url: ownerLink(row.action_path), propertyName, item },
+            // The weekly hours report carries its own Admin wording and the Log my hours button.
+            row.kind === "ao_hours_email"
+              ? null
+              : {
+                  copy: copyConfig[ownerEmailVariantFor(row.kind)],
+                  ownerName: program?.owner_name ?? null,
+                },
+            { url: ownerLink(row.action_path), propertyName, item, ...(row.kind === "ao_hours_email" ? { actionLabel: "Log my hours" } : {}) },
             { id: row.id, isDemo: row.is_demo, ...(jobRunId ? { jobRunId } : {}) },
           );
           patch.email_status = result.status;
