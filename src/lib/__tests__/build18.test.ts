@@ -72,8 +72,8 @@ describe("Build 18 item 3: no suggested hours on any card", () => {
     expect(read("src/routes/_authenticated/owner-library.tsx")).toMatch(/suggested_minutes/);
   });
 
-  it("the owner's pace meter is unchanged", () => {
-    expect(read("src/lib/ao-ui.ts")).toMatch(/hours a week to reach 100 by/);
+  it("the owner's pace meter stays, now paced to the 120-hour recommendation (Nov 25)", () => {
+    expect(read("src/lib/ao-ui.ts")).toMatch(/hours a week to reach 120 by/);
   });
 });
 

@@ -4,6 +4,7 @@
  * answer" and "Add a file" save through ao_edit_card_answer, which keeps a change record and posts
  * one line in the home's owner chat. The card stays completed. Uploads use the owner upload path.
  */
+import { LinkedText } from "@/components/owner/LinkedText";
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -22,7 +23,7 @@ import { attachmentUrlFn, beginUploadFn, completeUploadFn, tagOwnerUploadFn } fr
 import { OWNER_UPLOAD_CATEGORIES } from "@/lib/attachments";
 import { editCardAnswer, loadCardAnswer } from "@/lib/ao-data";
 import { parseOutputFields, submissionValues, validateSubmission, type OutputField } from "@/lib/ao-ui";
-import { answerReviewLine, completedLine, entriesForCard, entryStatusLine, hoursFromMinutes, type HourEntry } from "@/lib/owner-portal-look";
+import { answerReviewLine, completedLine, entriesForCard, entrySavedLine, hoursFromMinutes, type HourEntry } from "@/lib/owner-portal-look";
 import { shortDate } from "@/lib/owner-opportunity-board";
 
 export type FileRef = { document_id: string; name: string };
@@ -128,7 +129,7 @@ export function CompletedCardPanel({
                 {fields.map((f) => (
                   <div key={f.key}>
                     <dt className="text-portal-muted">{f.label}</dt>
-                    <dd className="whitespace-pre-wrap text-portal-ink">{asText(f, answer.data?.values[f.key]) || "Not answered"}</dd>
+                    <dd className="whitespace-pre-wrap break-words text-portal-ink"><LinkedText text={asText(f, answer.data?.values[f.key]) || "Not answered"} /></dd>
                   </div>
                 ))}
               </dl>
@@ -172,7 +173,7 @@ export function CompletedCardPanel({
                 {mine.map((e, i) => (
                   <li key={`${e.entry_date ?? ""}-${i}`} className="numeric">
                     {hoursFromMinutes(Number(e.minutes) || 0)} hrs{e.entry_date ? ` · ${shortDate(e.entry_date)}` : ""}
-                    {` · ${entryStatusLine(e)}`}
+                    {` · ${entrySavedLine(e)}`}
                   </li>
                 ))}
               </ul>
@@ -278,7 +279,7 @@ export function SentAnswer({ planCardId, outputFields }: { planCardId: string; o
           {fields.map((f) => (
             <div key={f.key}>
               <dt className="text-muted-foreground">{f.label}</dt>
-              <dd className="whitespace-pre-wrap">{asText(f, answer.data?.values[f.key]) || "Not answered"}</dd>
+              <dd className="whitespace-pre-wrap break-words"><LinkedText text={asText(f, answer.data?.values[f.key]) || "Not answered"} /></dd>
             </div>
           ))}
         </dl>

@@ -8,13 +8,19 @@
  * as soon as it is logged.
  */
 
-/** Participation goal: 100+ logged hours. */
+import { centralDaysUntil, centralToday } from "./central-today";
+
+/** Participation goal: MORE than 100 logged hours (V2). */
 export const OWNER_GOAL_HOURS = 100;
-/** Kept for stored-row compatibility; pacing now targets the 100-hour goal. */
-export const OPERATING_TARGET_HOURS = OWNER_GOAL_HOURS;
+/** ARHA recommends 120 hours; every pace figure uses this. */
+export const OWNER_RECOMMENDED_HOURS = 120;
+/** Kept for stored-row compatibility; pacing targets the 120-hour recommendation. */
+export const OPERATING_TARGET_HOURS = OWNER_RECOMMENDED_HOURS;
 export const ONBOARDING_MILESTONE_HOURS = 60;
 
-export const OWNER_GOAL_LABEL = "At least 100 hours";
+export const OWNER_GOAL_LABEL = "More than 100 hours";
+/** Shown wherever the goal shows. */
+export const OWNER_GOAL_DISPLAY = "Goal: more than 100 hours · Recommended: 120 hours";
 
 export function parseOwnerMinutes(value: string): number {
   const minutes = Number(value);
@@ -138,9 +144,10 @@ export function projectDay(startedOn: string | null | undefined) {
   return Math.max(0, Math.min(programLengthDays(startedOn), days));
 }
 
-export function daysRemaining(startedOn: string | null | undefined) {
-  if (!startedOn) return 0;
-  return Math.max(0, programLengthDays(startedOn) - projectDay(startedOn));
+/** Days from today (America/Chicago) to the program end, for every program, including one whose closing is still ahead. */
+export function daysRemaining(startedOn: string | null | undefined, endsOn?: string | null, now: Date = new Date()) {
+  const end = endsOn && /^\d{4}-\d{2}-\d{2}/.test(endsOn) ? endsOn.slice(0, 10) : programWindowEnd(startedOn);
+  return centralDaysUntil(end, now);
 }
 
 export function hoursFromMinutes(minutes: number) {
@@ -165,20 +172,20 @@ export function formatDuration(minutes: number) {
 /* ------------------------------------------------------------------ */
 
 /**
- * Even pace toward the 100-hour goal across the closing-date-to-year-end
+ * Even pace toward the 120-hour recommendation across the closing-date-to-year-end
  * window. `totalDays` is that window's length (see programLengthDays).
  */
 export function benchmarkHours(day: number, totalDays: number) {
   if (day <= 0 || totalDays <= 0) return 0;
   const d = Math.min(day, totalDays);
-  return Math.round(OWNER_GOAL_HOURS * (d / totalDays) * 100) / 100;
+  return Math.round(OWNER_RECOMMENDED_HOURS * (d / totalDays) * 100) / 100;
 }
 
-/** Next quarter-of-goal marker (25 / 50 / 75 / 100 hours) and the day it falls on. */
+/** Next quarter-of-recommendation marker (30 / 60 / 90 / 120 hours) and the day it falls on. */
 export function nextMilestone(day: number, totalDays: number): { day: number; hours: number } {
   const marks = [0.25, 0.5, 0.75, 1].map((f) => ({
     day: Math.max(1, Math.round(totalDays * f)),
-    hours: Math.round(OWNER_GOAL_HOURS * f),
+    hours: Math.round(OWNER_RECOMMENDED_HOURS * f),
   }));
   return marks.find((m) => m.day > day) ?? marks[marks.length - 1]!;
 }
@@ -265,6 +272,7 @@ export type ProgressSnapshot = {
 export function progressSnapshot(input: {
   status: ProgramStatus;
   startedOn: string | null;
+  endsOn?: string | null;
   reportedMinutes: number;
 }): ProgressSnapshot {
   const day = projectDay(input.startedOn);
@@ -293,16 +301,16 @@ export function progressSnapshot(input: {
   return {
     day,
     totalDays,
-    endsOn: programWindowEnd(input.startedOn),
-    daysLeft: daysRemaining(input.startedOn),
+    endsOn: input.endsOn ?? programWindowEnd(input.startedOn),
+    daysLeft: daysRemaining(input.startedOn, input.endsOn),
     reportedHours,
     benchmark,
     variance,
     percentOfTarget: Math.min(
       100,
-      Math.round((reportedHours / OWNER_GOAL_HOURS) * 1000) / 10,
+      Math.round((reportedHours / OWNER_RECOMMENDED_HOURS) * 1000) / 10,
     ),
-    hoursToGoal: Math.ceil(Math.max(0, OWNER_GOAL_HOURS - input.reportedMinutes / 60) * 100) / 100,
+    hoursToGoal: Math.ceil(Math.max(0, OWNER_RECOMMENDED_HOURS - input.reportedMinutes / 60) * 100) / 100,
     state,
     next: nextMilestone(day, totalDays),
   };
@@ -394,7 +402,7 @@ export const BADGES: BadgeDef[] = [
     name: "100-Hour Milestone",
     kind: "hours",
     hours: 100,
-    requirement: "At least 100 reported hours",
+    requirement: "More than 100 reported hours",
   },
   {
     code: "program_complete",
@@ -532,7 +540,7 @@ export function inParticipationWindow(
   date: string,
   startedOn: string | null | undefined,
   endsOn?: string | null,
-  today = new Date().toISOString().slice(0, 10),
+  today = centralToday(),
 ) {
   const end = participationWindowEnd(startedOn, endsOn);
   if (!startedOn || !end || date > today) return false;
@@ -549,7 +557,7 @@ export function participationYears(closingDates: (string | null | undefined)[]) 
 export function participationYearTotals(
   entries: { entry_date: string; minutes: number }[],
   closingDates: (string | null | undefined)[],
-  today = new Date().toISOString().slice(0, 10),
+  today = centralToday(),
 ) {
   return participationYears(closingDates).map((year) => ({
     year,
@@ -561,7 +569,7 @@ export function participationYearTotals(
 
 /** Use counted minutes, never rounded display hours, to decide completion. */
 export function ownerGoalMet(reportedMinutes: number): boolean {
-  return Number.isFinite(reportedMinutes) && reportedMinutes >= OWNER_GOAL_HOURS * 60;
+  return Number.isFinite(reportedMinutes) && reportedMinutes > OWNER_GOAL_HOURS * 60;
 }
 
 /** Inputs that establish an owner's participation period. */
@@ -582,7 +590,7 @@ export type ParticipationPeriod = {
 export function countsTowardParticipation(
   date: string,
   period: ParticipationPeriod,
-  today = new Date().toISOString().slice(0, 10),
+  today = centralToday(),
 ) {
   const years = participationYears(period.closingDates);
   if (years.length) return date <= today && years.includes(date.slice(0, 4));
@@ -592,7 +600,7 @@ export function countsTowardParticipation(
 /** Effective entries (corrections replace originals) that count in the period. */
 export function countedParticipationEntries<
   T extends { id: string; amends_entry_id: string | null; entry_date: string },
->(entries: T[], period: ParticipationPeriod, today = new Date().toISOString().slice(0, 10)): T[] {
+>(entries: T[], period: ParticipationPeriod, today = centralToday()): T[] {
   return countableParticipationEntries(entries).filter((e) =>
     countsTowardParticipation(e.entry_date, period, today),
   );

@@ -4,7 +4,7 @@ import { formatPropertyLabel, type PropertyLabelFields } from "@/lib/property-la
  *
  * One homeowner has one program. A program can carry one home or several;
  * either way there is a single program window (closing date → December 31), a single combined commitment of
- * at least 100 hours and a single pace benchmark. Individual homes are
+ * more than 100 hours and a single pace benchmark. Individual homes are
  * measured by the tasks and decisions they need, never by their own hour
  * target.
  */
@@ -563,7 +563,7 @@ export async function completeProgram(
     throw new Error("Only an active program can be completed. Resume a paused program first.");
   }
   const check = completionChecklist(agg);
-  if (!check.hoursMet) throw new Error("The homeowner has not yet reported at least 100 hours.");
+  if (!check.hoursMet) throw new Error("The homeowner has not yet reported more than 100 hours.");
   if (!check.propertyTasksComplete) {
     throw new Error("Required owner tasks are still open on one or more properties.");
   }

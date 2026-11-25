@@ -4,7 +4,7 @@
  * review until the team looks at them, and the tagged/general split reads her saved entries.
  */
 import { describe, expect, it } from "bun:test";
-import { entriesForCard, entryWaitingForReview, hoursSplit, type HourEntry } from "@/lib/owner-portal-look";
+import { entriesForCard, entrySavedLine, hoursSplit, type HourEntry } from "@/lib/owner-portal-look";
 
 const card = { title: "Share your home design preferences", reviewId: null, propertyIds: ["h1"] };
 const e = (activity: string, minutes: number, extra: Partial<HourEntry> = {}): HourEntry => ({ activity, minutes, propertyIds: ["h1"], ...extra });
@@ -34,13 +34,10 @@ describe("hours on a completed card", () => {
   });
 });
 
-describe("Waiting for review", () => {
-  it("a submitted entry with no review is waiting", () => {
-    expect(entryWaitingForReview({ review_status: "submitted", reviewed_at: null })).toBe(true);
-  });
-  it("a reviewed entry is not waiting", () => {
-    expect(entryWaitingForReview({ review_status: "approved", reviewed_at: "2026-11-17T15:00:00Z" })).toBe(false);
-    expect(entryWaitingForReview({ review_status: "submitted", reviewed_at: "2026-11-17T15:00:00Z" })).toBe(false);
+describe("Saved, never Waiting for review (Nov 25)", () => {
+  it("every entry reads Saved [date], whatever its stored review state", () => {
+    expect(entrySavedLine({ created_at: "2026-11-17T15:00:00Z" })).toBe("Saved Nov 17");
+    expect(entrySavedLine({ created_at: "2026-11-17T15:00:00Z" })).not.toMatch(/review/i);
   });
 });
 

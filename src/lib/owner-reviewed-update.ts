@@ -33,6 +33,7 @@ export function captureReviewedOpportunity(review: {
     propertyIds: [...review.propertyIds],
     ownerUpdateRevision: review.owner_update_revision ?? null,
     description: review.recommendation,
+    title: (review as { title?: string | null }).title ?? null,
   };
 }
 

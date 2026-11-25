@@ -1,15 +1,17 @@
 /**
- * Homeowner portal "Your hours" (Admin, Nov 17): every entry she saved, newest saved first, each
- * marked "Waiting for review" or "Reviewed by your team [date]", with Reviewed and Waiting totals
- * shown separately so she never re-enters work. Hours rules are unchanged.
+ * Homeowner portal "Your hours": every entry she saved, newest saved first, each showing
+ * "Saved [date]" and the card it belongs to, with one "[X] hrs logged" total so she never
+ * re-enters work. ARHA does not review or approve owner hours (Nov 25). Hours rules are unchanged.
  * Nov 18: Edit and Add more on her own entries. The original stays on file (a change is a new entry
- * that amends it), and the change waits for review.
+ * that amends it). Links in her words are clickable and counted like files.
  */
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { HourEntryChangeDialog, type ChangeableEntry } from "@/components/owner/HourEntryChangeDialog";
 import { REOPEN_COPY, canChangeOwnEntry } from "@/lib/homeowner-reopen";
-import { entryStatusLine, hoursByReview, hoursFromMinutes, type HourEntry } from "@/lib/owner-portal-look";
+import { entrySavedLine, hoursFromMinutes, hoursLoggedLine, loggedMinutes, type HourEntry } from "@/lib/owner-portal-look";
+import { linkCount, linkCountLabel } from "@/lib/owner-links";
+import { LinkedText } from "@/components/owner/LinkedText";
 import { shortDate } from "@/lib/owner-opportunity-board";
 
 type Entry = HourEntry & {
@@ -36,8 +38,11 @@ export function OwnerHoursList({
   userId = null,
   readOnly = true,
   onSaved,
+  cardTitle,
 }: {
   entries: Entry[];
+  /** The card an entry belongs to, by its owner item id. */
+  cardTitle?: (reviewId: string | null | undefined) => string | null | undefined;
   homeLabel: (ids: string[]) => string;
   /** Needed to change entries; without it the list is display only (staff preview). */
   programId?: string | null;
@@ -50,14 +55,14 @@ export function OwnerHoursList({
   const live = entries
     .filter((e) => !e.superseded)
     .sort((a, b) => (b.created_at ?? b.entry_date ?? "").localeCompare(a.created_at ?? a.entry_date ?? ""));
-  const { reviewedMinutes, waitingMinutes } = hoursByReview(live);
+  const total = loggedMinutes(live);
   const shown = all ? live : live.slice(0, FIRST);
   return (
     <section aria-label="Your hours" id="owner-hours" className="scroll-mt-24 space-y-3 rounded-xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-base font-semibold text-portal-ink">Your hours</h2>
-        <p className="numeric text-sm text-portal-muted" data-testid="hours-by-review">
-          Reviewed {hoursFromMinutes(reviewedMinutes)} hrs · Waiting for review {hoursFromMinutes(waitingMinutes)} hrs
+        <p className="numeric text-sm text-portal-muted" data-testid="hours-logged-total">
+          {hoursLoggedLine(total)}
         </p>
       </div>
       {live.length === 0 ? (
@@ -75,14 +80,16 @@ export function OwnerHoursList({
               return (
                 <li key={e.id} className="py-2 text-sm" data-hour-entry={e.id}>
                   <p className="font-medium text-portal-ink">
-                    <span className="numeric">{hoursFromMinutes(Number(e.minutes) || 0)} hrs</span> · {e.activity}
+                    <span className="numeric">{hoursFromMinutes(Number(e.minutes) || 0)} hrs</span> · <LinkedText text={e.activity} className="whitespace-pre-wrap break-words" />
                   </p>
                   <p className="text-xs text-portal-muted">
                     {[
+                      entrySavedLine(e),
+                      cardTitle?.(e.review_id) || null,
                       e.entry_date ? `Work on ${shortDate(e.entry_date)}` : null,
                       homeLabel(e.propertyIds),
                       files ? `${files} ${files === 1 ? "file" : "files"}` : null,
-                      entryStatusLine(e),
+                      linkCountLabel(linkCount(e.activity)),
                     ].filter(Boolean).join(" · ")}
                   </p>
                   {mine ? (

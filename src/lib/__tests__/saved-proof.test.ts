@@ -6,7 +6,7 @@
 import { describe, expect, it } from "bun:test";
 import { doneByLine, doneRecently, filesLine, filesSavedMessage, taskSavedMessage } from "@/lib/task-proof";
 import { submissionLines, submissionSummary } from "@/lib/homeowner-has";
-import { answerReviewLine, entryStatusLine, hoursByReview } from "@/lib/owner-portal-look";
+import { answerReviewLine, entrySavedLine, hoursLoggedLine, loggedMinutes } from "@/lib/owner-portal-look";
 
 describe("Done by [role] on [date]", () => {
   it("names the role and the Central date", () => {
@@ -64,17 +64,18 @@ describe("what the homeowner sent, for the team", () => {
   });
 });
 
-describe("her hours: Reviewed vs Waiting for review", () => {
-  it("splits totals and skips superseded entries", () => {
-    expect(hoursByReview([
-      { minutes: 120, activity: "a", propertyIds: [], reviewed_at: "2026-11-15T00:00:00Z" },
+describe("her hours: Saved [date] and one total (Nov 25, no review)", () => {
+  it("one total that skips superseded entries", () => {
+    const m = loggedMinutes([
+      { minutes: 120, activity: "a", propertyIds: [] },
       { minutes: 160, activity: "b", propertyIds: [] },
       { minutes: 60, activity: "c", propertyIds: [], superseded: true },
-    ])).toEqual({ reviewedMinutes: 120, waitingMinutes: 160 });
+    ]);
+    expect(m).toBe(280);
+    expect(hoursLoggedLine(m)).toBe("4.7 hrs logged");
   });
-  it("labels each entry", () => {
-    expect(entryStatusLine({ review_status: "submitted" })).toBe("Waiting for review");
-    expect(entryStatusLine({ reviewed_at: "2026-11-15T18:00:00Z" })).toBe("Reviewed by your team Nov 15");
+  it("labels each entry Saved [date]", () => {
+    expect(entrySavedLine({ created_at: "2026-11-15T18:00:00Z" })).toBe("Saved Nov 15");
   });
   it("never says an answer was reviewed, since answers have no review step", () => {
     expect(answerReviewLine(null)).toBe("Sent to your team");

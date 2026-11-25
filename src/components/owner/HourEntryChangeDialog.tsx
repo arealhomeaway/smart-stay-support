@@ -1,6 +1,6 @@
 /**
  * Edit or Add more on one of the homeowner's own hours entries (approved Nov 18). The original
- * entry stays on file; the saved change waits for review. Files are only added, never removed.
+ * entry stays on file. ARHA does not review owner hours. Files are only added, never removed.
  */
 import { useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
@@ -19,6 +19,8 @@ import { REOPEN_COPY, hoursChangeProblem } from "@/lib/homeowner-reopen";
 import { saveHoursChange } from "@/lib/homeowner-reopen.data";
 import { HOURS_REPEAT_COPY, isAlreadySaved } from "@/lib/hours-repeat";
 import { shortDate } from "@/lib/owner-opportunity-board";
+import { centralToday } from "@/lib/central-today";
+import { OWNER_ACTIVITY_MAX, activityCounter, ownerSaveMessage } from "@/lib/owner-save-error";
 
 export type ChangeableEntry = {
   id: string;
@@ -30,7 +32,7 @@ export type ChangeableEntry = {
 };
 
 const MAX_FILES = 10;
-const todayKey = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago" }).format(new Date());
+const todayKey = () => centralToday();
 
 export function HourEntryChangeDialog({
   entry,
@@ -95,11 +97,11 @@ export function HourEntryChangeDialog({
     },
     onSuccess: () => {
       const day = shortDate(mode === "edit" ? entryDate : entry.entry_date);
-      toast.success(`Saved: your ${mode === "edit" ? "change" : "addition"} to your hours for ${day}. It shows under Your hours, marked Waiting for review.`);
+      toast.success(`Saved ${shortDate(todayKey())}: your ${mode === "edit" ? "change" : "addition"} to your hours for ${day}. It shows under Your hours.`);
       onSaved();
       onClose();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(ownerSaveMessage(e)),
     onSettled: () => { saving.current = false; },
   });
   const submit = () => {
@@ -114,7 +116,7 @@ export function HourEntryChangeDialog({
         <DialogHeader>
           <DialogTitle>{mode === "edit" ? "Edit your hours" : "Add more to your hours"}</DialogTitle>
           <DialogDescription>
-            {REOPEN_COPY.keepNote}{entry.reviewed_at ? ` ${REOPEN_COPY.waitingAgain}` : ""}
+            {REOPEN_COPY.keepNote}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
@@ -122,7 +124,8 @@ export function HourEntryChangeDialog({
             <>
               <div className="space-y-1">
                 <Label htmlFor="change-activity">What did you do?</Label>
-                <Textarea id="change-activity" rows={3} value={activity} onChange={(e) => setActivity(e.target.value)} />
+                <Textarea id="change-activity" rows={3} maxLength={OWNER_ACTIVITY_MAX} value={activity} onChange={(e) => setActivity(e.target.value)} />
+                <p className="numeric text-right text-xs text-muted-foreground" aria-live="polite">{activityCounter(activity)}</p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1">
@@ -175,7 +178,9 @@ export function HourEntryChangeDialog({
             <p role="alert" className="text-sm font-medium text-destructive">
               {isAlreadySaved(save.error)
                 ? HOURS_REPEAT_COPY.alreadySaved
-                : `Not saved: ${save.error.message} Your changes are still here. Try Save again.`}
+                : ownerSaveMessage(save.error) === save.error.message
+                  ? `Not saved: ${save.error.message} Your changes are still here.`
+                  : ownerSaveMessage(save.error)}
             </p>
           ) : null}
         </div>

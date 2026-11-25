@@ -31,6 +31,8 @@ import { isZip, prepareUploadSelection } from "@/lib/zip-upload";
 import { HOURS_REPEAT_COPY, findRepeatEntry, isAlreadySaved, repeatQuestion, type RepeatEntry } from "@/lib/hours-repeat";
 import { shortDate } from "@/lib/owner-opportunity-board";
 import { HourEntryChangeDialog, type ChangeableEntry } from "@/components/owner/HourEntryChangeDialog";
+import { centralToday } from "@/lib/central-today";
+import { OWNER_ACTIVITY_MAX, activityCounter, ownerEntryProblem, ownerSaveMessage } from "@/lib/owner-save-error";
 
 export type LogTimeAnchor = {
   /** The participation opportunity this time belongs to. */
@@ -40,9 +42,12 @@ export type LogTimeAnchor = {
   propertyIds: string[];
   ownerUpdateRevision: number | null;
   description?: string | null;
+  /** The card name, shown in the Saved message. */
+  title?: string | null;
 };
 
-const today = () => new Date().toISOString().slice(0, 10);
+/** Today in America/Chicago, the same day the database uses (evening saves are never "future"). */
+const today = () => centralToday();
 
 /** One of her saved entries, as the portal already loads them (Nov 21 repeat question). */
 export type LoggedEntry = RepeatEntry & {
@@ -173,6 +178,8 @@ export function LogTimeDialog({
       if (entryPhase !== "onboarding" && entryPhase !== "ongoing") {
         throw new Error("This opportunity needs a valid participation phase.");
       }
+      const problem = ownerEntryProblem({ activity, minutes });
+      if (problem) throw new Error(problem);
       const attachmentPaths: string[] = [];
       for (const item of files) {
         const started = await beginEvidence({
@@ -207,12 +214,13 @@ export function LogTimeDialog({
     },
     onSuccess: () => {
       const h = Math.round((parseOwnerMinutes(minutes) / 60) * 10) / 10;
-      toast.success(`Saved: ${h} hrs for "${activity.trim().slice(0, 80)}". It shows under Your hours, marked Waiting for review.`);
+      const card = anchor?.title?.trim();
+      toast.success(`Saved ${shortDate(today())}: ${h} hrs${card ? ` on ${card}` : ""}. It shows under Your hours.`);
       onOpenChange(false);
       reset();
       onDone();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(ownerSaveMessage(e)),
     onSettled: () => { saving.current = false; },
   });
 
@@ -328,9 +336,13 @@ export function LogTimeDialog({
             <Textarea
               id="log-activity"
               rows={3}
+              maxLength={OWNER_ACTIVITY_MAX}
               value={activity}
               onChange={(e) => { setActivity(e.target.value); setRepeatOf(null); }}
             />
+            <p className="numeric text-right text-xs text-muted-foreground" aria-live="polite" data-testid="activity-counter">
+              {activityCounter(activity)}
+            </p>
           </div>
           <div className="space-y-1">
             <Label htmlFor="log-minutes">Minutes spent</Label>
@@ -405,7 +417,9 @@ export function LogTimeDialog({
           <p role="alert" className="text-sm font-medium text-destructive">
             {isAlreadySaved(save.error)
               ? HOURS_REPEAT_COPY.alreadySaved
-              : `Not saved: ${save.error.message} What you typed is still here. Try Save entry again.`}
+              : ownerSaveMessage(save.error) === save.error.message
+                ? `Not saved: ${save.error.message} Your entry is still here.`
+                : ownerSaveMessage(save.error)}
           </p>
         ) : null}
         {repeatOf ? (

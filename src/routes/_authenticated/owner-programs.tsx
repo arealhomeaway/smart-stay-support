@@ -1,4 +1,6 @@
 import { OwnerProgramSetup } from "@/components/OwnerProgramSetup";
+import { LinkedText } from "@/components/owner/LinkedText";
+import { linkCount, linkCountLabel } from "@/lib/owner-links";
 import { ownerAttention as attentionReason } from "@/lib/owner-attention";
 import { EmptyState, LoadingPage, PageHeader, SectionCard, StatTile } from "@/components/ui/page";
 import { paceHoldLine } from "@/lib/pace-hold";
@@ -38,6 +40,7 @@ import {
   COVERAGE_META,
   OWNER_GOAL_HOURS,
   OWNER_GOAL_LABEL,
+  OWNER_GOAL_DISPLAY,
   PROGRAM_STATUS_META,
   programLengthDays,
   PROGRESS_META,
@@ -217,7 +220,7 @@ function ProgramsBoard() {
           <>
             Each homeowner runs one program per closing calendar year (General and pre-closing activities included) with a single combined goal of{" "}
             <span className="font-medium text-foreground">{OWNER_GOAL_LABEL.toLowerCase()}</span> of
-            self-reported participation. {COMBINED_TOTAL_NOTICE}
+            self-reported participation ({OWNER_GOAL_DISPLAY}). {COMBINED_TOTAL_NOTICE}
           </>
         }
       />
@@ -932,11 +935,12 @@ function ProgramDetail({
                 className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3 text-sm"
               >
                 <div>
-                  <p className="font-medium">{e.activity}</p>
+                  <p className="whitespace-pre-wrap break-words font-medium"><LinkedText text={e.activity} /></p>
                   <p className="text-xs text-muted-foreground">
                     {usCalendarDate(e.entry_date)} · {formatDuration(e.minutes)} ·{" "}
                     {e.activity_category ?? "uncategorized"}
                     {e.amends_entry_id ? " · correction" : ""}
+                    {linkCount(e.activity) ? ` · ${linkCountLabel(linkCount(e.activity))}` : ""}
                   </p>
                 </div>
                 <Button
@@ -1075,7 +1079,7 @@ function ProgramDetail({
         <ul className="space-y-1 text-sm">
           <ChecklistItem
             ok={Boolean(checklist?.hoursMet)}
-            label={`At least ${OWNER_GOAL_HOURS} hours reported`}
+            label={`More than ${OWNER_GOAL_HOURS} hours reported`}
           />
           <ChecklistItem
             ok={Boolean(checklist?.propertyTasksComplete)}

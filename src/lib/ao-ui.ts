@@ -141,7 +141,7 @@ export function submissionValues(fields: OutputField[], values: Record<string, s
 }
 
 export function paceSentence(weeklyNeeded: number, endLabel: string): string {
-  return `About ${weeklyNeeded} hours a week to reach 100 by ${endLabel}`;
+  return `About ${weeklyNeeded} hours a week to reach 120 by ${endLabel}`;
 }
 
 /** Task drawer: verify badge shows only when the linked plan card was completed by the homeowner. */

@@ -26,6 +26,7 @@ it("retains the displayed revision, narrative and property links across refreshe
     propertyIds: ["home"],
     ownerUpdateRevision: 1,
     description: "Initial repair",
+    title: null,
   });
 });
 it("does not invent a revision for legacy opportunities and parses only safe snapshot fields", () => {

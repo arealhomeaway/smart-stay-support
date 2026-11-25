@@ -67,8 +67,8 @@ export const logOwnerParticipation = createServerFn({ method: "POST" })
         phase: z.enum(["onboarding", "ongoing"]),
         entryDate: isoDate,
         // Always typed in by the homeowner — never prefilled or suggested.
-        minutes: z.number().int().min(1).max(1440),
-        activity: z.string().trim().min(3).max(500),
+        minutes: z.number().int("Minutes spent must be a whole number from 1 to 1,440.").min(1, "Minutes spent must be a whole number from 1 to 1,440.").max(1440, "Minutes spent must be a whole number from 1 to 1,440."),
+        activity: z.string().trim().min(3, "What did you do? needs at least 3 characters.").max(2000, "What did you do? can be up to 2,000 characters."),
         activityCategory: z.string().trim().max(80).default(""),
         output: z.string().trim().max(1000).default(""),
         comments: z.string().trim().max(1000).default(""),
@@ -100,8 +100,8 @@ export const resubmitOwnerParticipation = createServerFn({ method: "POST" })
     z
       .object({
         entryId: z.string().uuid(),
-        minutes: z.number().int().min(1).max(1440),
-        activity: z.string().trim().min(3).max(500),
+        minutes: z.number().int("Minutes spent must be a whole number from 1 to 1,440.").min(1, "Minutes spent must be a whole number from 1 to 1,440.").max(1440, "Minutes spent must be a whole number from 1 to 1,440."),
+        activity: z.string().trim().min(3, "What did you do? needs at least 3 characters.").max(2000, "What did you do? can be up to 2,000 characters."),
         note: z.string().trim().max(1000).default(""),
         confirmed: z.literal(true, {
           message: "Please confirm the entry reflects the time you personally spent.",

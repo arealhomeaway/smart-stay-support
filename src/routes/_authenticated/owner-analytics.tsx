@@ -5,8 +5,7 @@ import { Download, TrendingDown, Users } from "lucide-react";
 import { ownerAnalytics } from "@/lib/owner-analytics.functions";
 import type { OwnerProgramMetric } from "@/lib/owner-analytics.server";
 import {
-  OPERATING_TARGET_HOURS,
-  OWNER_GOAL_HOURS,
+  OWNER_GOAL_DISPLAY,
   PROGRESS_META,
   PROGRAM_STATUS_META,
   REPORT_DISCLAIMER,
@@ -18,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LoadingPage, PageHeader, SectionBand, StatTile } from "@/components/ui/page";
 import { usDate } from "@/lib/dates";
+import { centralToday } from "@/lib/central-today";
 
 export const Route = createFileRoute("/_authenticated/owner-analytics")({
   head: () => ({
@@ -26,12 +26,12 @@ export const Route = createFileRoute("/_authenticated/owner-analytics")({
       {
         name: "description",
         content:
-          "Staff and executive view of Active Owner programs: reported hours against the 105-hour operating target, pace, review backlog and CSV export.",
+          "Staff and executive view of Active Owner programs: reported hours against the goal of more than 100 hours, pace to the 120-hour recommendation, days left and CSV export.",
       },
       { property: "og:title", content: "Owner Participation: Resolve" },
       {
         property: "og:description",
-        content: "Participation pace and review backlog across every live owner program.",
+        content: "Participation pace and days left across every live owner program.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -55,18 +55,22 @@ const CSV_COLUMNS: { key: keyof OwnerProgramMetric; label: string }[] = [
   { key: "properties", label: "Homes" },
   { key: "entries", label: "Counted entries" },
   { key: "reportedHours", label: "Reported hours" },
-  { key: "approvedHours", label: "ARHA-approved hours" },
-  { key: "pendingHours", label: "Awaiting review hours" },
-  { key: "returnedHours", label: "Returned hours" },
   { key: "benchmarkHours", label: "Benchmark hours" },
   { key: "varianceHours", label: "Variance hours" },
-  { key: "percentOfOperatingTarget", label: "% of 105-hour target" },
-  { key: "hoursToGoal", label: "Hours to 100-hour goal" },
-  { key: "hoursPerWeekNeeded", label: "Hours per week needed" },
+  { key: "percentOfOperatingTarget", label: "% of 120-hour recommendation" },
+  { key: "hoursToGoal", label: "Hours to 120-hour recommendation" },
+  { key: "hoursPerWeekNeeded", label: "Hours per week needed (120)" },
+  { key: "goalMet", label: "Goal met (more than 100)" },
   { key: "state", label: "Pace" },
   { key: "lastEntryAt", label: "Last entry" },
   { key: "daysSinceLastEntry", label: "Days since last entry" },
 ];
+
+/** "Dec 31" from a YYYY-MM-DD date. */
+function endsLabel(iso: string) {
+  const d = new Date(`${iso.slice(0, 10)}T12:00:00Z`);
+  return Number.isNaN(d.getTime()) ? iso : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(d);
+}
 
 function toCsv(rows: OwnerProgramMetric[]) {
   const esc = (v: unknown) => {
@@ -83,7 +87,7 @@ function download(rows: OwnerProgramMetric[]) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `active-owner-participation-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `active-owner-participation-${centralToday()}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -105,7 +109,7 @@ function OwnerAnalyticsPage() {
         <PageHeader
           eyebrow="Insight"
           title="Owner Participation"
-          description={`Program goal is at least ${OWNER_GOAL_HOURS} hours for the homeowner; ARHA paces to the ${OPERATING_TARGET_HOURS}-hour internal operating target.`}
+          description={OWNER_GOAL_DISPLAY}
         />
         <Button variant="outline" disabled={rows.length === 0} onClick={() => download(rows)}>
           <Download className="mr-2 size-4" /> Export CSV
@@ -120,7 +124,7 @@ function OwnerAnalyticsPage() {
         </p>
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <StatTile
               label="Active programs"
               value={data?.totals.activePrograms ?? 0}
@@ -129,13 +133,6 @@ function OwnerAnalyticsPage() {
             <StatTile
               label="Reported hours"
               value={data?.totals.reportedHours ?? 0}
-              hint={`${data?.totals.approvedHours ?? 0} ARHA-approved`}
-            />
-            <StatTile
-              label="Awaiting review"
-              value={`${data?.totals.pendingEntries ?? 0} entries`}
-              tone={(data?.totals.pendingEntries ?? 0) > 0 ? "attention" : "positive"}
-              hint={`${data?.totals.pendingHours ?? 0} hours pending`}
             />
             <StatTile
               label="Behind pace"
@@ -148,7 +145,7 @@ function OwnerAnalyticsPage() {
           <div>
             <SectionBand
               title="Programs"
-              hint={`Average ${data?.totals.averageReportedHours ?? 0} reported hrs/program · ${data?.totals.averageVarianceHours ?? 0} vs benchmark · ${data?.totals.goalMet ?? 0} at or above the ${OWNER_GOAL_HOURS}-hour goal`}
+              hint={`Average ${data?.totals.averageReportedHours ?? 0} reported hrs/program · ${data?.totals.averageVarianceHours ?? 0} vs benchmark · ${data?.totals.goalMet ?? 0} with more than 100 hours`}
               actions={<Users className="size-4 text-muted-foreground" />}
             />
             {rows.length === 0 ? (
@@ -162,7 +159,7 @@ function OwnerAnalyticsPage() {
                     <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
                       <th className="px-5 py-2.5">Owner</th>
                       <th className="px-5 py-2.5">Status</th>
-                      <th className="px-5 py-2.5">Day</th>
+                      <th className="px-5 py-2.5">Days left</th>
                       <th className="px-5 py-2.5 text-right">Reported</th>
                       <th className="px-5 py-2.5 text-right">Variance</th>
                       <th className="px-5 py-2.5">Pace</th>
@@ -190,10 +187,10 @@ function OwnerAnalyticsPage() {
                           </Badge>
                         </td>
                         <td className="numeric px-5 py-2.5 whitespace-nowrap">
-                          {r.day}/90
-                          <span className="block text-xs text-muted-foreground">
-                            {r.daysLeft} left
-                          </span>
+                          {r.daysLeft} days left
+                          {r.endsOn ? (
+                            <span className="block text-xs text-muted-foreground">Ends {endsLabel(r.endsOn)}</span>
+                          ) : null}
                         </td>
                         <td className="numeric px-5 py-2.5 text-right font-medium">
                           {r.reportedHours}
@@ -231,10 +228,8 @@ function OwnerAnalyticsPage() {
                     <thead>
                       <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
                         <th className="px-5 py-2.5">Owner</th>
-                        <th className="px-5 py-2.5 text-right">Approved</th>
-                        <th className="px-5 py-2.5 text-right">Pending</th>
                         <th className="px-5 py-2.5 text-right">Benchmark</th>
-                        <th className="px-5 py-2.5 text-right">% of target</th>
+                        <th className="px-5 py-2.5 text-right">% of 120</th>
                         <th className="px-5 py-2.5 text-right">Hrs/week needed</th>
                       </tr>
                     </thead>
@@ -242,8 +237,6 @@ function OwnerAnalyticsPage() {
                       {rows.map((r) => (
                         <tr key={r.programId} className="border-b last:border-0">
                           <td className="px-5 py-2.5 font-medium">{r.ownerName}</td>
-                          <td className="numeric px-5 py-2.5 text-right">{r.approvedHours}</td>
-                          <td className="numeric px-5 py-2.5 text-right">{r.pendingHours}</td>
                           <td className="numeric px-5 py-2.5 text-right text-muted-foreground">
                             {r.benchmarkHours}
                           </td>

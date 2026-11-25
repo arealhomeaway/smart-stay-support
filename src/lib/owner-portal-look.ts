@@ -78,8 +78,7 @@ export type HourEntry = {
   superseded?: boolean;
   propertyIds: string[];
   entry_date?: string | null;
-  review_status?: string | null;
-  reviewed_at?: string | null;
+  created_at?: string | null;
 };
 
 /**
@@ -104,11 +103,6 @@ function activityNamesCard(activity: string | null, title: string): boolean {
   if (!title || !a.startsWith(title)) return false;
   // The title alone, or the title followed by punctuation or a space, never a longer word.
   return a.length === title.length || /[\s.,;:!?)\-]/.test(a.charAt(title.length));
-}
-
-/** An owner's own saved entry not yet looked at by the team. Display only. */
-export function entryWaitingForReview(e: { review_status?: string | null; reviewed_at?: string | null }): boolean {
-  return !e.reviewed_at && (e.review_status ?? "submitted") === "submitted";
 }
 
 /** Tagged to a home vs general, from the owner's own saved entries (superseded entries excluded). */
@@ -148,25 +142,22 @@ export function portalOpensWhen(text: string | null | undefined): string {
   return /^(ARHA|I|Owner)\b/.test(t) ? t : t.charAt(0).toLowerCase() + t.slice(1);
 }
 
-/* ---------- Proof that it saved (Admin, Nov 17). Display only; no counting or review rule here. ---------- */
+/* ---------- Proof that it saved (Nov 25). ARHA does not review or approve owner hours. Display only. ---------- */
 
-/** "Waiting for review" until the team reviews the entry, then "Reviewed by your team Nov 18". */
-export function entryStatusLine(e: { review_status?: string | null; reviewed_at?: string | null }): string {
-  if (e.reviewed_at) return `Reviewed by your team ${shortDate(e.reviewed_at)}`;
-  return "Waiting for review";
+/** "Saved Nov 18" from when the entry was saved (its work date when the save time is unknown). */
+export function entrySavedLine(e: { created_at?: string | null; entry_date?: string | null }): string {
+  const day = shortDate(e.created_at ?? e.entry_date ?? null);
+  return day ? `Saved ${day}` : "Saved";
 }
 
-/** Her saved hours split by review: reviewed vs waiting (superseded entries excluded). */
-export function hoursByReview(entries: (HourEntry & { reviewed_at?: string | null })[]): { reviewedMinutes: number; waitingMinutes: number } {
-  let reviewedMinutes = 0;
-  let waitingMinutes = 0;
-  for (const e of entries) {
-    if (e.superseded) continue;
-    const m = Number(e.minutes) || 0;
-    if (e.reviewed_at) reviewedMinutes += m;
-    else waitingMinutes += m;
-  }
-  return { reviewedMinutes, waitingMinutes };
+/** Total of her current entries (superseded entries excluded). */
+export function loggedMinutes(entries: HourEntry[]): number {
+  return entries.reduce((n, e) => (e.superseded ? n : n + (Number(e.minutes) || 0)), 0);
+}
+
+/** "12.5 hrs logged". */
+export function hoursLoggedLine(minutes: number): string {
+  return `${hoursFromMinutes(minutes)} hrs logged`;
 }
 
 /**

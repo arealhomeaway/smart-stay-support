@@ -18,6 +18,7 @@ import {
   progressSnapshot,
   OPERATING_TARGET_HOURS,
   OWNER_GOAL_HOURS,
+  OWNER_RECOMMENDED_HOURS,
   ownerGoalMet,
   type ProgramStatus,
   type ProgressState,
@@ -48,7 +49,7 @@ export type OwnerProgramMetric = {
   varianceHours: number;
   percentOfOperatingTarget: number;
   hoursToGoal: number;
-  /** Hours per remaining week needed to clear the operating target. */
+  /** Hours per remaining week (today, Central, to ends_on) needed to reach the 120-hour recommendation. */
   hoursPerWeekNeeded: number | null;
   state: ProgressState;
   lastEntryAt: string | null;
@@ -176,6 +177,7 @@ export async function loadOwnerAnalytics(
     const snapshot = progressSnapshot({
       status: p.status as ProgramStatus,
       startedOn: p.started_on,
+      endsOn: p.ends_on,
       reportedMinutes: reported,
     });
 
@@ -185,7 +187,7 @@ export async function loadOwnerAnalytics(
         .sort()
         .at(-1) ?? null;
     const weeksLeft = snapshot.daysLeft / 7;
-    const remaining = Math.max(0, OPERATING_TARGET_HOURS - hoursFromMinutes(reported));
+    const remaining = Math.max(0, OWNER_RECOMMENDED_HOURS - hoursFromMinutes(reported));
 
     return {
       programId: p.id,

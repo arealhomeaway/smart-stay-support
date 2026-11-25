@@ -37,7 +37,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { answerOwnerReview, ownerHome, ownerHomePreview } from "@/lib/owner-portal.functions";
-import { OWNER_GOAL_HOURS } from "@/lib/owner-participation";
+import { OWNER_GOAL_DISPLAY, OWNER_RECOMMENDED_HOURS } from "@/lib/owner-participation";
 import { LogTimeContext, LogTimeDialog, useOpenLogTime, type LogTimeAnchor, type LoggedEntry } from "@/components/owner/LogTimeDialog";
 import { OwnerOpportunityBoard, useOutsideLines } from "@/components/owner/OwnerOpportunityBoard";
 import { canSendToActiveOwner } from "@/lib/ao-engine";
@@ -58,7 +58,7 @@ import { ownerContacts } from "@/lib/owner-contacts.functions";
 import { OwnerFilesPanel, useOwnerDocuments } from "@/components/OwnerFilesPanel";
 import { OnboardingProgress } from "@/components/owner/OnboardingProgress";
 import { ownerReportFile } from "@/lib/owner-report.functions";
-import { entryWaitingForReview, hoursSplit } from "@/lib/owner-portal-look";
+import { hoursSplit } from "@/lib/owner-portal-look";
 import { OwnerHoursList } from "@/components/owner/OwnerHoursList";
 import { saveOwnerReportFile } from "@/lib/owner-report-download";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -356,7 +356,6 @@ function OwnerHubBody({
           label: [
             `Logged ${Math.round((e.minutes / 60) * 100) / 100} hours: ${e.activity}`,
             loggedByLabel(attribution, e.owner_user_id),
-            entryWaitingForReview(e) ? "Waiting for review" : null,
           ].filter(Boolean).join(" · "),
           entryId: e.id,
           files: attachmentCount(e),
@@ -516,7 +515,7 @@ function OwnerHubBody({
       ) : null}
 
       {targetReached ? (
-        <Celebrate title="You've reached at least 100 hours of reported participation.">
+        <Celebrate title="You've reached more than 100 hours of reported participation.">
           Thank you for the time you've put in. Your final report will be ready when your program closes on
           December 31.
         </Celebrate>
@@ -600,6 +599,7 @@ function OwnerHubBody({
         userId={user.id}
         readOnly={preview}
         onSaved={invalidate}
+        cardTitle={(rid) => (rid ? (reviews as Review[]).find((r) => r.id === rid)?.title ?? null : null)}
       />
 
       <OnboardingProgress
@@ -676,7 +676,7 @@ function WelcomeCard({
   breakdown: ReactNode;
 }) {
   const end = endsOn ? new Date(`${endsOn.slice(0, 10)}T23:59:59`) : null;
-  const pace = end && !Number.isNaN(end.getTime()) && !futureStart ? ownerPace(hours, new Date(), end) : null;
+  const pace = end && !Number.isNaN(end.getTime()) && !futureStart ? ownerPace(hours, new Date(), end, OWNER_RECOMMENDED_HOURS) : null;
   const outline = "min-h-11 border-portal-primary text-portal-primary hover:bg-portal-primary/10 hover:text-portal-primary";
   return (
     <section className="grid gap-6 rounded-2xl border border-portal-border bg-card p-6 md:grid-cols-[200px_minmax(0,1fr)] lg:grid-cols-[200px_minmax(0,1fr)_300px]" aria-label="Welcome">
@@ -697,7 +697,8 @@ function WelcomeCard({
       </div>
       <div className="rounded-[14px] border border-portal-border p-4 md:col-span-2 lg:col-span-1" aria-label="Your participation">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-portal-muted">Your participation</p>
-        <p className="numeric mt-2 text-2xl font-semibold text-portal-ink">{hours} hrs of {OWNER_GOAL_HOURS}</p>
+        <p className="numeric mt-2 text-2xl font-semibold text-portal-ink">{hours} hrs logged</p>
+        <p className="mt-1 text-sm text-portal-muted">{OWNER_GOAL_DISPLAY}</p>
         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-portal-border" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(percent)}>
           <div className="h-full rounded-full bg-portal-gold" style={{ width: `${Math.max(0, Math.min(100, percent))}%` }} />
         </div>

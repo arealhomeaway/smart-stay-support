@@ -51,7 +51,7 @@ export function candidateAlerts(agg: ProgramAggregate): Candidate[] {
       kind: "goal_exceeded",
       alertKind: "progress_celebration",
       severity: 0,
-      title: "You have reached at least 100 hours of reported participation",
+      title: "You have reached more than 100 hours of reported participation",
       body: `Congratulations: you have reported ${hours} hours across your program. Thank you for the time and care you have put in. Please keep recording any remaining activities as you complete them.`,
     });
     return out;

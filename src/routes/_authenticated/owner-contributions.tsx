@@ -1,4 +1,5 @@
 import { Fragment, useMemo, useState } from "react";
+import { LinkedText } from "@/components/owner/LinkedText";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Download } from "lucide-react";
@@ -94,7 +95,7 @@ function ContributionsPage() {
               <p className="font-medium">{r.cardCode} {r.card}</p>
               <p className="text-xs text-muted-foreground">{r.home}, submitted by {r.member} on {usDate(r.submittedAt)}</p>
               <dl className="mt-1 grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 text-xs">
-                {Object.entries(r.values).map(([k, v]) => <Fragment key={k}><dt className="text-muted-foreground">{k}</dt><dd className="min-w-0 break-words [overflow-wrap:anywhere]">{String(v)}</dd></Fragment>)}
+                {Object.entries(r.values).map(([k, v]) => <Fragment key={k}><dt className="text-muted-foreground">{k}</dt><dd className="min-w-0 break-words [overflow-wrap:anywhere]"><LinkedText text={typeof v === "string" ? v : String(v)} /></dd></Fragment>)}
               </dl>
             </li>
           ))}

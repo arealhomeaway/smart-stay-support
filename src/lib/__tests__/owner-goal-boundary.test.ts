@@ -111,17 +111,18 @@ function fixture(countedMinutes: number, retainOutsideWindow = false) {
   };
 }
 
-it("meets the goal at exactly 6000 counted minutes, never by rounding a smaller total", () => {
+it("meets the goal only above 6000 counted minutes (more than 100 hours, Nov 25), never by rounding", () => {
   for (const [minutes, expected] of [
     [5999, false],
     [5999.99, false],
-    [6000, true],
+    [6000, false],
     [6001, true],
   ] as const) {
     expect(ownerGoalMet(minutes)).toBe(expected);
     const snapshot = progressSnapshot({ status: "active", startedOn, reportedMinutes: minutes });
     expect(snapshot.state === "target_reached").toBe(expected);
-    expect(snapshot.hoursToGoal === 0).toBe(expected);
+    // Pace now runs to the 120-hour recommendation, so hours remain at 100.
+    expect(snapshot.hoursToGoal > 0).toBe(true);
   }
   expect(hoursFromMinutes(5999.99)).toBe(100);
 });
@@ -141,7 +142,7 @@ it("does not satisfy the goal with missing or non-finite minute totals", () => {
 retired("uses corrected distinct-entry minutes consistently for the aggregate and closeout checklist", async () => {
   for (const [minutes, expected] of [
     [5999, false],
-    [6000, true],
+    [6000, false],
     [6001, true],
   ] as const) {
     const agg = await loadProgramAggregate(fixture(minutes) as never, "program");
@@ -173,7 +174,7 @@ retired("awards the 100-hour badge and celebration at the same unrounded counted
   for (const [minutes, expected] of [
     [5999, false],
     [5999.99, false],
-    [6000, true],
+    [6000, false],
     [6001, true],
   ] as const) {
     const agg = await loadProgramAggregate(fixture(minutes) as never, "program");
@@ -188,7 +189,7 @@ retired("keeps staff analytics aligned after corrections even when displayed hou
   for (const [minutes, expected] of [
     [5999, false],
     [5999.99, false],
-    [6000, true],
+    [6000, false],
     [6001, true],
   ] as const) {
     const analytics = await loadOwnerAnalytics(fixture(minutes) as never);

@@ -23,8 +23,8 @@ describe("homeowner reopens her hours (Nov 18)", () => {
     expect(hoursChangeProblem(edit({ activity: "Called the agent and the HOA" }), original, TODAY)).toBeNull();
   });
   it("keeps the hours limits: 1 to 1440 minutes, no future date", () => {
-    expect(hoursChangeProblem(edit({ minutes: 0 }), original, TODAY)).toBe("Enter the time you spent, up to 24 hours.");
-    expect(hoursChangeProblem(edit({ minutes: 1441 }), original, TODAY)).toBe("Enter the time you spent, up to 24 hours.");
+    expect(hoursChangeProblem(edit({ minutes: 0 }), original, TODAY)).toBe("Minutes spent must be a whole number from 1 to 1,440.");
+    expect(hoursChangeProblem(edit({ minutes: 1441 }), original, TODAY)).toBe("Minutes spent must be a whole number from 1 to 1,440.");
     expect(hoursChangeProblem(edit({ entryDate: "2026-11-19" }), original, TODAY)).toBe("Choose a date no later than today.");
   });
   it("Add more needs a note or a file", () => {

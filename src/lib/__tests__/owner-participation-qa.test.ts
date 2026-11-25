@@ -30,15 +30,15 @@ describe("program window: closing date through December 31", () => {
 });
 
 describe("benchmark pace", () => {
-  it("paces evenly to the 100-hour goal", () => {
-    expect(benchmarkHours(50, 100)).toBe(50);
-    expect(benchmarkHours(100, 100)).toBe(OWNER_GOAL_HOURS);
+  it("paces evenly to the 120-hour recommendation (Nov 25)", () => {
+    expect(benchmarkHours(50, 100)).toBe(60);
+    expect(benchmarkHours(100, 100)).toBe(120);
     expect(benchmarkHours(0, 100)).toBe(0);
   });
 
   it("names the next hour milestone", () => {
-    expect(nextMilestone(1, 100)).toEqual({ day: 25, hours: 25 });
-    expect(nextMilestone(100, 100)).toEqual({ day: 100, hours: 100 });
+    expect(nextMilestone(1, 100)).toEqual({ day: 25, hours: 30 });
+    expect(nextMilestone(100, 100)).toEqual({ day: 100, hours: 120 });
   });
 });
 
@@ -64,14 +64,14 @@ describe("progress state", () => {
     expect(snap(35, 40).state).toBe("significantly_behind");
   });
 
-  it("accepts exactly 100 hours and rejects one minute below the goal", () => {
+  it("goal met means more than 100 hours: exactly 100 is not met (Nov 25)", () => {
     expect(snap(85, OWNER_GOAL_HOURS - 1 / 60).state).not.toBe("target_reached");
-    expect(snap(85, OWNER_GOAL_HOURS).state).toBe("target_reached");
+    expect(snap(85, OWNER_GOAL_HOURS).state).not.toBe("target_reached");
     expect(snap(85, OWNER_GOAL_HOURS + 0.5).state).toBe("target_reached");
   });
 
   it("computes remaining hours to the goal and never goes negative", () => {
-    expect(Math.round(snap(50, 60).hoursToGoal * 10) / 10).toBe(40);
+    expect(Math.round(snap(50, 60).hoursToGoal * 10) / 10).toBe(60);
     expect(snap(50, 130).hoursToGoal).toBe(0);
   });
 

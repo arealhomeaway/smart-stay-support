@@ -228,6 +228,7 @@ export function OnboardingActions({
             ticketId: p.ticketId,
             propertyIds: p.propertyIds,
             ownerUpdateRevision: null,
+            title: v.action.title,
           },
           activity: `Reviewed and responded to "${v.action.title}".`,
           title: v.action.title,

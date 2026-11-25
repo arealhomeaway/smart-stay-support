@@ -21,6 +21,7 @@ import { ShiftHandoffDialog, type WalkTicket } from '@/components/home/ShiftHand
 import { NeedsYouNowPanel, type NeedsPanelItem } from '@/components/home/NeedsYouNowPanel';
 import { myDirectBookings, startDirectBooking } from '@/lib/direct-bookings.functions';
 import { myOwnerFollowUps } from '@/lib/owner-followups.functions';
+import { myOwnerAnswers } from '@/lib/owner-answers.functions';
 import { homeBookingLine, followUpDueAt } from '@/lib/direct-bookings';
 import { COORDINATOR_HOME_LIMIT, coordinatorDueSort, coordinatorTakeTickets, coordinatorTicketWork } from '@/lib/coordinator-home';
 import { type HomeTicket } from '@/lib/home-work';
@@ -72,6 +73,7 @@ export function CoordinatorHome({ rows, userId, team, walkRows, originSearch }: 
   const fetchBookings = useServerFn(myDirectBookings);
   const startBooking = useServerFn(startDirectBooking);
   const fetchOwnerWork = useServerFn(myOwnerFollowUps);
+  const fetchOwnerAnswers = useServerFn(myOwnerAnswers);
   // Reuse the current Team Queue read and key, with no new scope or backend rule.
   const queue = useQuery({ queryKey: ['team-queue', demoMode], enabled: demoReady, refetchInterval: 60_000,
     queryFn: async () => {
@@ -84,6 +86,8 @@ export function CoordinatorHome({ rows, userId, team, walkRows, originSearch }: 
   const bookings = useQuery({ queryKey: ['my-direct-bookings', demoMode], enabled: role.can('direct_bookings_work'),
     queryFn: () => fetchBookings({ data: { demo: demoMode } }), refetchInterval: 15_000 });
   const ownerWork = useQuery({ queryKey: ['owner-followups'], queryFn: () => fetchOwnerWork() });
+  // Nov 25: homeowner card answers routed to me (Project Manager in onboarding, Active Owner follow-up after handoff).
+  const ownerAnswers = useQuery({ queryKey: ['my-owner-answers', demoMode], enabled: demoReady, staleTime: 60_000, queryFn: () => fetchOwnerAnswers({ data: { demo: demoMode } }) });
   const approvals = useQuery({ queryKey: ['home-my-approvals', demoMode, userId], staleTime: 30_000,
     queryFn: async () => {
       const r = await supabase.from('approvals').select('id, title, entity_type, entity_id, created_at')
@@ -131,6 +135,16 @@ export function CoordinatorHome({ rows, userId, team, walkRows, originSearch }: 
   }
   for (const r of ownerWork.data?.rows ?? []) my.push({ id: `owner:${r.id}`, title: r.title, property: '', due: null,
     content: <Button asChild variant="ghost" className={ROW_CLASS}><a href={r.link_path}><span>{lineContent(r.title, '', null)}</span></a></Button> });
+  for (const a of ownerAnswers.data ?? []) {
+    const title = `Homeowner answered: ${a.title}`;
+    const answer = a.answer.length > 300 ? `${a.answer.slice(0, 299).trimEnd()}...` : a.answer;
+    my.push({ id: `answer:${a.id}`, title, property: a.home, due: null,
+      content: <Button asChild variant="ghost" className={ROW_CLASS}><Link to="/property/$propertyId" params={{ propertyId: a.propertyId }} search={{ tab: 'owner' } as never} data-testid="home-owner-answer"><span>
+        <span className="block text-sm text-muted-foreground">{a.home}</span>
+        <span className="block break-words font-medium">{title}</span>
+        {answer ? <span className="block break-words text-sm">{answer}</span> : null}
+        <ArrowRight className="ml-2 inline size-4 text-muted-foreground" aria-hidden="true" /></span></Link></Button> });
+  }
   for (const a of approvals.data ?? []) my.push({ id: `approval:${a.id}`, title: a.title ?? 'Approval', property: '', due: null,
     content: <Button variant="ghost" className={ROW_CLASS} onClick={() => setPanel({ kind: 'approval', id: `approval:${a.id}`, title: a.title ?? 'Approval', detail: 'Waiting for your approval', approvalId: a.id, ticketId: a.entity_type === 'ticket' ? a.entity_id : null })}><span>{lineContent(a.title ?? 'Approval', '', null)}</span></Button> });
   my.sort(coordinatorDueSort);
@@ -145,7 +159,7 @@ export function CoordinatorHome({ rows, userId, team, walkRows, originSearch }: 
   const ownTeam = team === 'guest_experience' ? 'a' : team === 'property_operations' ? 'b' : undefined;
   const seeAll = (mine: boolean) => <Button asChild variant="link" className="min-h-11 px-0"><Link to="/team-queue" search={mine ? { lens: 'mine' } : { ...(ownTeam ? { team: ownTeam } : {}) }}>See all <ArrowRight aria-hidden="true" /></Link></Button>;
   return <div className="space-y-6" data-testid="coordinator-home">
-    {(queue.isError || reviews.isError || bookings.isError || ownerWork.isError || approvals.isError) && <p role="alert" className="text-sm text-danger">Some work could not be loaded. Try again.</p>}
+    {(queue.isError || reviews.isError || bookings.isError || ownerWork.isError || ownerAnswers.isError || approvals.isError) && <p role="alert" className="text-sm text-danger">Some work could not be loaded. Try again.</p>}
     <HomeSection title="My work" empty="Nothing assigned to you." rows={my} seeAll={seeAll(true)} busy={busy} onTake={() => {}} />
     <HomeSection title="Take one" empty="Nothing waiting for an owner." rows={take} seeAll={seeAll(false)} busy={busy} readOnly={role.readOnly} onTake={r => void onTake(r)} />
     <section aria-label="Hand off" className="space-y-3 border-t border-border pt-5"><h2 className="text-lg font-semibold">Hand off</h2>

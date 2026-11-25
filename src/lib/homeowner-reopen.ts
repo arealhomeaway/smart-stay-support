@@ -10,7 +10,6 @@ export const REOPEN_COPY = {
   addMoreTitle: "Add more or update",
   notOn: "This is not switched on yet. Your words are still here; try again later.",
   keepNote: "What you sent before stays on file. Your team sees the change.",
-  waitingAgain: "A change to reviewed hours goes back to Waiting for review.",
 } as const;
 
 /** The line the team sees for one homeowner change. */
@@ -46,9 +45,10 @@ export function hoursChangeProblem(
     if (c.note.trim().length > 1000) return "Keep your note under 1,000 characters.";
     return null;
   }
-  if (!Number.isFinite(c.minutes) || c.minutes < 1 || c.minutes > 1440) return "Enter the time you spent, up to 24 hours.";
+  if (!Number.isFinite(c.minutes) || c.minutes < 1 || c.minutes > 1440) return "Minutes spent must be a whole number from 1 to 1,440.";
   const act = c.activity.trim();
-  if (act.length < 3 || act.length > 500) return "Describe what you did in 3 to 500 characters.";
+  if (act.length < 3) return "What did you do? needs at least 3 characters.";
+  if (act.length > 2000) return "What did you do? can be up to 2,000 characters.";
   if (!/^\d{4}-\d{2}-\d{2}$/.test(c.entryDate)) return "Choose the date you did the work.";
   if (c.entryDate > today) return "Choose a date no later than today.";
   if (c.note.trim().length > 1000) return "Keep your note under 1,000 characters.";
