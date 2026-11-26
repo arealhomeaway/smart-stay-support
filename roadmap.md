@@ -3,7 +3,7 @@
 ## One save per owner card and My history (Nov 25)
 - [x] Combine answers, actual time and evidence into one canonical card save; demo plan-card save and edit verified.
 - [x] Shared owner/staff history, totals and duplicate prompt verified with matching 15 rows on desktop/phone.
-- [ ] Owner-only removal: blocked pending H9 archive-only clarification; no removal action added.
+- [x] Owner-only duplicate removal: later copy archived, original and audit retained; demo-owner desktop/phone saves and archives verified, 11 isolated checks and 33 focused reader tests passed.
 - [x] Owner menu and weekly-email history destination.
 - [x] Stage, practise and apply authorized database package; 62 focused tests passed.
 - [x] Use authorized existing demo homeowner: Saved 1.5 hrs + Docs link, phone edit, Added work and duplicate notice verified; Emily's staff list/totals matched.

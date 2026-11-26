@@ -132,7 +132,8 @@ export async function loadOwnerAnalytics(
       .select(
         "id, program_id, minutes, review_status, amends_entry_id, flagged, created_at, entry_date",
       )
-      .in("program_id", ids),
+      .in("program_id", ids)
+      .is("archived_at", null),
     supabase
       .from("owner_program_properties")
       .select("program_id, inclusion_status, closing_date, closing_confirmed")

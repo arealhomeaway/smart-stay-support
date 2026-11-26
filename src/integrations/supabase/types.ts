@@ -12879,6 +12879,9 @@ export type Database = {
           activity: string
           activity_category: string | null
           amends_entry_id: string | null
+          archive_reason: string | null
+          archived_at: string | null
+          archived_by: string | null
           attachment_path: string | null
           attachment_paths: Json
           attested: boolean
@@ -12910,6 +12913,9 @@ export type Database = {
           activity: string
           activity_category?: string | null
           amends_entry_id?: string | null
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           attachment_path?: string | null
           attachment_paths?: Json
           attested?: boolean
@@ -12941,6 +12947,9 @@ export type Database = {
           activity?: string
           activity_category?: string | null
           amends_entry_id?: string | null
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           attachment_path?: string | null
           attachment_paths?: Json
           attested?: boolean
@@ -20349,6 +20358,10 @@ export type Database = {
       }
       archive_my_tasks_view: { Args: { _id: string }; Returns: Json }
       archive_onboarding_home_view: { Args: { _id: string }; Returns: Json }
+      archive_owner_duplicate_time_entry: {
+        Args: { _entry_id: string }
+        Returns: Json
+      }
       archive_qa_work_order_fixture: {
         Args: { _actor?: string }
         Returns: undefined

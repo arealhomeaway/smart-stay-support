@@ -5,20 +5,40 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { OwnerWorkForm, SavedWorkFile } from '@/components/owner/OwnerWorkForm';
 import { LinkedText } from '@/components/owner/LinkedText';
-import { readOwnerWorkHistory } from '@/lib/owner-work-history.functions';
-import { duplicateHistoryIds, historyTotals, type WorkHistoryRow } from '@/lib/owner-work-history';
+import { archiveOwnerDuplicateTimeEntry, readOwnerWorkHistory } from '@/lib/owner-work-history.functions';
+import { duplicateHistoryIds, duplicateRemovalIds, historyTotals, type WorkHistoryRow } from '@/lib/owner-work-history';
 import { shortDate } from '@/lib/owner-opportunity-board';
 import { linkCount, linkCountLabel } from '@/lib/owner-links';
 import { participationEvidenceUrlFn } from '@/lib/owner-evidence.functions';
 import { toast } from 'sonner';
+
 export function OwnerWorkHistory({programId,propertyId=null,userId=null,readOnly=true}:{programId:string;propertyId?:string|null;userId?:string|null;readOnly?:boolean}) {
  const read=useServerFn(readOwnerWorkHistory);
+ const archive=useServerFn(archiveOwnerDuplicateTimeEntry);
  const q=useQuery({queryKey:['owner-work-history',programId],queryFn:()=>read({data:{programId}})});
- const all=q.data??[];
- const rows=all;
- const totals=historyTotals(all); const duplicates=duplicateHistoryIds(all);
- const [editing,setEditing]=useState<WorkHistoryRow|null>(null); const [adding,setAdding]=useState(false);
+ const rows=q.data??[];
+ const totals=historyTotals(rows);
+ const duplicates=duplicateHistoryIds(rows);
+ const removable=duplicateRemovalIds(rows);
+ const [editing,setEditing]=useState<WorkHistoryRow|null>(null);
+ const [adding,setAdding]=useState(false);
  const [kept,setKept]=useState<Set<string>>(new Set());
+ const [archiveCandidate,setArchiveCandidate]=useState<WorkHistoryRow|null>(null);
+ const [archiving,setArchiving]=useState(false);
+
+ const removeDuplicate=async()=>{
+  if(!archiveCandidate?.entryId)return;
+  setArchiving(true);
+  try{
+   await archive({data:{entryId:archiveCandidate.entryId}});
+   await q.refetch();
+   setArchiveCandidate(null);
+   toast.success('Duplicate removed. The first entry is still saved.');
+  }catch{
+   toast.error('This duplicate could not be removed. Please try again, and if it happens again, message your ARHA contact.');
+  }finally{setArchiving(false);}
+ };
+
  return <section className="space-y-4" aria-label="My history">
   <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-display text-2xl">My history</h2>{!readOnly?<Button className="min-h-11" onClick={()=>setAdding(true)}>Add work</Button>:null}</div>
   <div className="grid grid-cols-3 gap-3 border-y py-4">{[['Hours logged',totals.hours],['To pass 100',totals.to100],['To reach 120',totals.to120]].map(([label,n])=><div key={String(label)}><p className="text-sm text-muted-foreground">{label}</p><p className="numeric text-xl font-semibold">{Number(n).toFixed(1)}</p></div>)}</div>
@@ -28,9 +48,25 @@ export function OwnerWorkHistory({programId,propertyId=null,userId=null,readOnly
    <LinkedText text={r.activity} className="whitespace-pre-wrap break-words text-sm"/>
    {r.files.map(f=><SavedWorkFile key={f.document_id} file={f}/>)}{r.paths.map((_,i)=><HistoryEvidence key={i} entryId={r.entryId??r.id} index={i}/>)}
    {!readOnly&&r.actorId===userId&&!r.superseded?<Button variant="outline" className="min-h-11" onClick={()=>setEditing(r)}>Edit</Button>:null}
-   {duplicates.has(r.id)&&!kept.has(r.id)?<div className="space-y-2 border-l-2 border-warning pl-3"><p className="text-sm">This looks like a duplicate. Keep both or remove one?</p>{!readOnly&&r.actorId===userId?<Button variant="outline" className="min-h-11" onClick={()=>setKept(new Set([...kept,r.id]))}>Keep both</Button>:null}</div>:null}
+   {duplicates.has(r.id)&&!kept.has(r.id)?<div className="space-y-2 border-l-2 border-warning pl-3">
+    <p className="text-sm">This looks like a duplicate. Keep both or remove one?</p>
+    {!readOnly?<div className="flex flex-wrap gap-2">
+     <Button variant="outline" className="min-h-11" onClick={()=>setKept(new Set([...kept,r.id]))}>Keep both</Button>
+     {removable.has(r.id)?<Button variant="outline" className="min-h-11" onClick={()=>setArchiveCandidate(r)}>Remove duplicate</Button>:null}
+    </div>:null}
+   </div>:null}
   </li>)}</ul>
   {(adding||editing)&&!readOnly?<Dialog open onOpenChange={v=>{if(!v){setAdding(false);setEditing(null);}}}><DialogContent className="max-h-[90dvh] overflow-y-auto"><DialogHeader><DialogTitle>{editing?'Edit':'Add work'}</DialogTitle></DialogHeader><OwnerWorkForm programId={programId} propertyId={editing?.propertyIds[0]??propertyId} source={editing?.source??'work'} cardId={editing?.cardId??null} title={editing?.title??'Added work'} initial={editing} onSaved={()=>{setAdding(false);setEditing(null);}}/></DialogContent></Dialog>:null}
+  <Dialog open={Boolean(archiveCandidate)} onOpenChange={open=>{if(!open&&!archiving)setArchiveCandidate(null);}}>
+   <DialogContent>
+    <DialogHeader><DialogTitle>Remove duplicate?</DialogTitle></DialogHeader>
+    <p className="text-sm text-muted-foreground">This archives the later copy. The first entry stays in your history, and the audit record is kept.</p>
+    <div className="flex flex-wrap justify-end gap-2">
+     <Button variant="outline" className="min-h-11" disabled={archiving} onClick={()=>setArchiveCandidate(null)}>Cancel</Button>
+     <Button variant="destructive" className="min-h-11" disabled={archiving} onClick={()=>void removeDuplicate()}>{archiving?'Removing...':'Remove duplicate'}</Button>
+    </div>
+   </DialogContent>
+  </Dialog>
  </section>;
 }
 function HistoryEvidence({entryId,index}:{entryId:string;index:number}) {

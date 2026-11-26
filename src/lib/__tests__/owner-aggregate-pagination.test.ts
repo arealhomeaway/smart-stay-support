@@ -75,7 +75,7 @@ it("includes late corrections and all program-scoped property links in aggregate
           return query;
         },
         is: (key: string, value: unknown) => {
-          expect(table).toBe("owner_reviews");
+          expect(["owner_reviews", "owner_time_entries"]).toContain(table);
           expect([key, value]).toEqual(["archived_at", null]);
           return query;
         },

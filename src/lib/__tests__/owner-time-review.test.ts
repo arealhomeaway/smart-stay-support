@@ -203,6 +203,11 @@ describe("versioned participation review", () => {
             return query;
           },
           eq: () => query,
+          is: (key: string, value: unknown) => {
+            expect(table).toBe("owner_time_entries");
+            expect([key, value]).toEqual(["archived_at", null]);
+            return query;
+          },
           order: () => query,
           in: () => query,
           limit: () => query,

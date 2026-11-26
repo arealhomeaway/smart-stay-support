@@ -21,3 +21,10 @@ export const saveOwnerCardWork = createServerFn({ method: 'POST' }).middleware([
   if (r.error) throw new Error(r.error.message);
   return r.data as string;
  });
+export const archiveOwnerDuplicateTimeEntry = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+ .inputValidator((data: { entryId: string }) => data)
+ .handler(async ({data,context}) => {
+  const r = await context.supabase.rpc('archive_owner_duplicate_time_entry', { _entry_id: data.entryId });
+  if (r.error) throw new Error(r.error.message);
+  return r.data as { archivedEntryId: string; originalEntryId: string };
+ });

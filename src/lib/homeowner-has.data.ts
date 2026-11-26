@@ -160,7 +160,7 @@ export async function loadHomeownerHas(input: { programId: string; propertyIds: 
       "Owner items",
     ),
     rows<{ id: string; minutes: number; activity: string | null; review_id: string | null; amends_entry_id: string | null; entry_date: string | null; reviewed_at: string | null }>(
-      db.from("owner_time_entries").select("id, minutes, activity, review_id, amends_entry_id, entry_date, reviewed_at").eq("program_id", programId),
+      db.from("owner_time_entries").select("id, minutes, activity, review_id, amends_entry_id, entry_date, reviewed_at").eq("program_id", programId).is("archived_at", null),
       "Hours",
     ),
     chunked<{

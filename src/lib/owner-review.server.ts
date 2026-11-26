@@ -23,6 +23,7 @@ export async function loadTimeReviewQueue(supabase: Client, includeAll = false) 
       "id, program_id, entry_date, minutes, phase, activity, activity_category, output, review_status, review_note, reviewed_at, review_version, flagged, created_at",
     )
     .eq("is_demo", false)
+    .is("archived_at", null)
     .order("entry_date", { ascending: false })
     .limit(400);
   if (entries.error) throw entries.error;
