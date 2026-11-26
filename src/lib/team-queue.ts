@@ -124,6 +124,8 @@ export type TeamQueueTicket = {
   response_due_at?: string | null;
   action_due_at?: string | null;
   next_action_due_at?: string | null;
+  due_on?: string | null;
+  source_channel?: string | null;
   due_at?: string | null;
   vendor_name?: string | null;
   vendor_status?: string | null;

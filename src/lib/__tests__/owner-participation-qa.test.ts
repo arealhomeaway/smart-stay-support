@@ -1,7 +1,10 @@
 /**
  * Active Owner QA: closing-to-year-end window, pace, milestones and goal state.
  */
-import { describe, expect, it } from "bun:test";
+import * as bunTest from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+
+const setSystemTime = (bunTest as unknown as { setSystemTime: (date?: Date) => void }).setSystemTime;
 import {
   OWNER_GOAL_HOURS,
   programLengthDays,
@@ -43,6 +46,8 @@ describe("benchmark pace", () => {
 });
 
 describe("progress state", () => {
+  beforeEach(() => setSystemTime(new Date("2026-11-25T18:00:00Z")));
+  afterEach(() => setSystemTime());
   const snap = (day: number, hours: number, status = "active") =>
     progressSnapshot({
       status: status as never,
@@ -51,9 +56,18 @@ describe("progress state", () => {
     });
 
   it("early program on pace", () => {
-    const s = snap(7, 13);
+    const s = snap(7, 20);
     expect(s.day).toBe(7);
+    expect(s.totalDays).toBe(43);
+    expect(s.benchmark).toBe(19.53);
     expect(s.state).toBe("on_track");
+  });
+
+  it("13 hours on day 7 is behind the 120-hour year-end recommendation", () => {
+    const s = snap(7, 13);
+    expect(s.benchmark).toBe(19.53);
+    expect(s.variance).toBe(-6.53);
+    expect(s.state).toBe("action_needed");
   });
 
   // Retired V2 rule (90-day window / returned hours).

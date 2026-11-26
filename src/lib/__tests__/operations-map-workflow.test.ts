@@ -37,10 +37,19 @@ describe("Operations map access and population", () => {
       ticket({ id: "match", assigned_to: "pc-1", vendor_name: "A", priority: "p1" }),
       ticket({ id: "other-vendor", assigned_to: "pc-1", vendor_name: "B", priority: "p1" }),
       ticket({ id: "other-owner", assigned_to: "pc-2", vendor_name: "A", priority: "p1" }),
-      ticket({ id: "scheduled", assigned_to: "pc-1", vendor_name: "A", priority: "p1", action_due_at: "2026-09-20" }),
+      ticket({ id: "scheduled", assigned_to: "pc-1", vendor_name: "A", priority: "p1", due_on: "2026-09-20" }),
     ];
     const filters = { ...DEFAULT_TEAM_QUEUE_FILTERS, due: "unscheduled", vendor: "A", assignee: "pc-1", priority: "p1" };
     expect(applyTeamQueueFilters(rows, filters, () => null).map((row) => row.id)).toEqual(["match"]);
+  });
+
+  it("uses the due date for non-guests and ignores their old reply and start clocks", () => {
+    const rows = [
+      ticket({ id: "no-date", source_channel: "breezeway", response_due_at: "2026-09-19", action_due_at: "2026-09-20" }),
+      ticket({ id: "dated", source_channel: "breezeway", due_on: "2026-09-20" }),
+      ticket({ id: "guest", source_channel: "guest_message", response_due_at: "2026-09-19T12:00:00Z" }),
+    ];
+    expect(applyTeamQueueFilters(rows, { ...DEFAULT_TEAM_QUEUE_FILTERS, due: "unscheduled" }, () => null).map((row) => row.id)).toEqual(["no-date"]);
   });
 
   it("uses the highest active Ticket or canonical Work Order priority in every filter", () => {

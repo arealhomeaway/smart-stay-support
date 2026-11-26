@@ -77,11 +77,12 @@ describe('assignment scope', () => {
   });
 });
 
-it('one-time spread uses updated load, skips Notion/held/finished/demo/old/owned, audits and removes its job', async () => {
+it('one-time spread uses updated load, skips linked arrival checks/Notion/held/finished/demo/old/owned, audits and removes its job', async () => {
   const db = await fixture();
   try {
     await db.exec(`ALTER TABLE tickets ADD created_at timestamptz DEFAULT '2026-11-20',
       ADD archived_at timestamptz, ADD is_demo boolean DEFAULT false, ADD import_hold text;
+      CREATE TABLE arrival_checks(ticket_id uuid, issue_ticket_id uuid);
       CREATE TABLE audit_log(actor_label text,action text,entity_type text,entity_label text,reason text,after_value jsonb);
       CREATE SCHEMA cron;
       CREATE TABLE cron.calls(name text);
@@ -95,6 +96,10 @@ it('one-time spread uses updated load, skips Notion/held/finished/demo/old/owned
           ('00000000-0000-0000-0000-000000000002'::uuid)) candidate(uid)
         ORDER BY (SELECT count(*) FROM tickets t WHERE t.current_action_owner=candidate.uid),candidate.uid LIMIT 1 $$;
       INSERT INTO tickets(external_source) VALUES ('email'),('breezeway'),('ownerrez'),('arrival_check');
+      INSERT INTO arrival_checks(ticket_id)
+        SELECT id FROM tickets WHERE external_source='arrival_check';
+      WITH issue AS (INSERT INTO tickets(external_source) VALUES ('ownerrez') RETURNING id)
+        INSERT INTO arrival_checks(issue_ticket_id) SELECT id FROM issue;
       INSERT INTO tickets(external_source) VALUES ('notion');
       INSERT INTO tickets(import_hold) VALUES ('backlog_review');
       INSERT INTO tickets(status) VALUES ('closed');
@@ -113,11 +118,19 @@ it('one-time spread uses updated load, skips Notion/held/finished/demo/old/owned
       `SELECT current_action_owner,count(*)::int n FROM tickets
        WHERE current_action_owner IS NOT NULL AND current_action_owner <> '00000000-0000-0000-0000-000000000099'
        GROUP BY 1 ORDER BY 1`);
-    expect(load.rows.map(x => x.n)).toEqual([2,2]);
+    expect(load.rows.map(x => x.n)).toEqual([2,1]);
     const receipt = await db.query<{ n: number }>("SELECT jsonb_array_length(after_value->'assigned')::int n FROM audit_log");
-    expect(receipt.rows[0]?.n).toBe(4);
+    expect(receipt.rows[0]?.n).toBe(3);
+    const linked = await db.query<{ n: number }>(`SELECT count(*)::int n FROM tickets t
+      JOIN arrival_checks a ON a.ticket_id=t.id OR a.issue_ticket_id=t.id
+      WHERE t.assigned_to IS NULL AND t.current_action_owner IS NULL`);
+    expect(linked.rows[0]?.n).toBe(2);
+    const assignedArrival = await db.query<{ n: number }>(`SELECT count(*)::int n FROM tickets t
+      JOIN arrival_checks a ON a.ticket_id=t.id OR a.issue_ticket_id=t.id
+      WHERE t.assigned_to IS NOT NULL OR t.current_action_owner IS NOT NULL`);
+    expect(assignedArrival.rows[0]?.n).toBe(0);
     const untouched = await db.query<{ n: number }>("SELECT count(*)::int n FROM tickets WHERE assigned_to IS NULL");
-    expect(untouched.rows[0]?.n).toBe(6);
+    expect(untouched.rows[0]?.n).toBe(8);
     await db.exec(frozen);
     const audits = await db.query<{ n: number }>('SELECT count(*)::int n FROM audit_log');
     expect(audits.rows[0]?.n).toBe(1);

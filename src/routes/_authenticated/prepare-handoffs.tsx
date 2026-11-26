@@ -20,6 +20,7 @@ import { displayName, useCurrentUserId, useStaffDirectory } from "@/hooks/useTea
 import { useMyShift } from "@/components/home/MyShift";
 import { useMyDueToday } from "@/components/home/ShiftEndBanner";
 import { defaultDue, defaultReceiver, handoffAt, myTeamToday, type HandoffDefault, type HandoffTicket } from "@/lib/my-shift";
+import { priorityMeta } from "@/lib/tickets";
 
 export const Route = createFileRoute("/_authenticated/prepare-handoffs")({
   head: () => ({
@@ -111,7 +112,7 @@ function PrepareHandoffs() {
               return (
                 <li key={t.id} className="space-y-2 py-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded bg-muted px-2 py-0.5 text-xs">{String(t.priority).toUpperCase()}</span>
+                    <span className="rounded bg-muted px-2 py-0.5 text-xs">{priorityMeta(t.priority).short}</span>
                     <Link to="/tickets/$ticketId" params={{ ticketId: t.id }} className="font-medium hover:underline">{t.ref ? `#${t.ref} ` : ""}{t.title ?? "Ticket"}</Link>
                   </div>
                   <div className="grid gap-2 md:grid-cols-[1fr_1fr_auto]">

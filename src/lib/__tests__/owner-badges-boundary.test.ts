@@ -69,7 +69,9 @@ it("uses exact counted minutes and distinct entries at every hour boundary", () 
   for (const [minutes, met] of [
     [5999, false],
     [5999.99, false],
-    [6000, true],
+    [6000, false],
+    [6000.01, true],
+    [6001, true],
   ] as const) {
     const e = entry("shared", "2020-01-02", minutes);
     expect(earnedBadges(aggregate([e, e])).some((b) => b.code === "hundred_plus")).toBe(met);

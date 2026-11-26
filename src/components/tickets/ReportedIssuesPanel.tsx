@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BreezewayRepairLink } from "@/components/workorders/BreezewayRepairLink";
 import { TicketDueLabel } from "./TicketDueLabel";
 import { useRole } from "@/hooks/useRole";
+import { priorityMeta } from "@/lib/tickets";
 
 const Workspace = lazy(() => import("@/routes/_authenticated/tickets.$ticketId").then((m) => ({ default: m.TicketWorkspace })));
 
@@ -30,7 +31,7 @@ export function ReportedIssuesPanel({ ticketIds, onClose }: { ticketIds: string[
       {q.data.map((t) => <div key={t.id} className="border-b border-border py-2">
         <Button variant={selected === t.id ? "secondary" : "ghost"} className="min-h-11 h-auto w-full justify-start whitespace-normal text-left" onClick={() => setSelected(t.id)}>#{t.ref} {t.title}</Button>
         <p className="break-words text-sm text-muted-foreground">{t.description}</p>
-        <div className="flex flex-wrap items-center gap-2 text-xs"><span>{t.priority.toUpperCase()}</span><span>{t.status.replace(/_/g, " ")}</span><TicketDueLabel dueOn={t.due_on} locked={t.due_locked} /></div>
+        <div className="flex flex-wrap items-center gap-2 text-xs"><span>{priorityMeta(t.priority).short}</span><span>{t.status.replace(/_/g, " ")}</span><TicketDueLabel dueOn={t.due_on} locked={t.due_locked} /></div>
       </div>)}
     </section>
     {ticketIds[0] ? <BreezewayRepairLink ticketId={ticketIds[0]} ticketIds={ticketIds} hasHome={Boolean(q.data[0]?.property_id)} readOnly={role.readOnly || !role.can("work_orders_internal")} /> : null}

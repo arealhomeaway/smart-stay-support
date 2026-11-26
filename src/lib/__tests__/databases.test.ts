@@ -227,12 +227,18 @@ describe("menu", () => {
     canOpen: (p) => canOpenPath(p, { roles }),
     flagEnabled: (k) => flags.includes(k),
   });
-  it("Databases sits right after Direct Bookings in My day (Vendors left the menu, Nov 9), and Guest Claims & Refunds is gone from the menu", () => {
+  it("Databases follows Direct Bookings; Claims stays in My day under Emily's Nov 25 instruction", () => {
     for (const roles of [["tech"], ["manager"], ["admin"]] as AppRole[][]) {
-      const myDay = operationsMenu(access(roles)).find((g) => g.label === "My day")!.items.map((i) => i.label);
+      const group = operationsMenu(access(roles)).find((g) => g.label === "My day");
+      expect(Boolean(group)).toBe(true);
+      const myDay = group?.items.map((i) => i.label) ?? [];
       expect(myDay.indexOf("Databases")).toBe(myDay.indexOf("Direct Bookings") + 1);
       expect(myDay).not.toContain("Vendors");
-      expect(myDay).not.toContain("Guest Claims & Refunds");
+      expect(myDay).toContain("Guest Claims & Refunds");
+      expect(myDay.at(-1)).toBe("Guest Claims & Refunds");
+      if (myDay.includes("Oversight")) {
+        expect(myDay.indexOf("Guest Claims & Refunds")).toBe(myDay.indexOf("Oversight") + 1);
+      }
     }
     expect(canOpenPath("/claims", { roles: ["tech"] })).toBe(true);
   });

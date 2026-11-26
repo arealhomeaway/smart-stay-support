@@ -1,7 +1,9 @@
 # Roadmap
 
 ## Full suite and publish readiness (Emily, Nov 26)
-- [ ] Run the complete Bun test suite and check every publishing gate; publish only if all pass.
+- [x] Diagnose and correct the six failures against approved rules; rerun affected tests without changing live data or publishing.
+- [x] Complete Bun test suite passes in memory-safe batches; no live data changed.
+- [ ] Publish waits for Emily's separate go-ahead after the fixes.
 
 ## One save per owner card and My history (Nov 25)
 - [x] Combine answers, actual time and evidence into one canonical card save; demo plan-card save and edit verified.

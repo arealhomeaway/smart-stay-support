@@ -39,8 +39,9 @@ describe("Team Queue Due column: the last case uses the Due date", () => {
   it("no due date: No due date", () => {
     expect(dueCell({ ...STARTED, due_on: null }, NOW)).toMatchObject({ line1: "No due date", line2: null, overdue: false });
   });
-  it("the reply, start and check back cases still come first", () => {
-    expect(dueCell({ status: "open", response_due_at: "2026-11-18T19:00:00Z", due_on: "2026-11-01" }, NOW).line1).toBe("Reply now");
+  it("only guest messages keep the reply clock first; check back still comes first", () => {
+    expect(dueCell({ status: "open", source_channel: "guest_message", response_due_at: "2026-11-18T19:00:00Z", due_on: "2026-11-01" }, NOW).line1).toBe("Reply now");
+    expect(dueCell({ status: "open", source_channel: "breezeway", response_due_at: "2026-11-18T19:00:00Z", due_on: "2026-11-01" }, NOW).line1).toBe("Nov 1");
     expect(dueCell({ status: "waiting", due_on: "2026-11-01" }, NOW).line1).toBe("No check back date");
   });
   it("an overdue due date counts in the group header and sorts first; sooner due dates sort ahead", () => {

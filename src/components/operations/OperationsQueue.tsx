@@ -18,6 +18,7 @@ import { RoutineDrawer,type RoutineRow } from '@/components/routines/RoutineDraw
 import { DepartureReviewSheet } from '@/components/departure/DepartureReviewQueue';
 import { formatPropertyLabel } from '@/lib/property-label';
 import { currentOwnerId } from '@/lib/matters';
+import { priorityMeta } from '@/lib/tickets';
 import { defaultOpsTeam,isOldBacklog,TEAM_A_SUBJECTS,TEAM_A_LABELS,teamASubject } from '@/lib/ops-simplification';
 import { TEAM_B_TABS,TEAM_B_TAB_LABELS,TEAM_B_DUE,TEAM_B_DUE_LABELS,inDueFilter,teamBTab,isLawnReview,hiddenOnboarding,rollUpReported,type TeamBDue } from '@/lib/team-b-view';
 import { usDate } from '@/lib/dates';
@@ -58,7 +59,7 @@ export function OperationsQueue({embedded=false}:{embedded?:boolean}) {
   if(res.error){toast.error(res.error.message);return;}toast.success('You have it.');void qc.invalidateQueries({queryKey:['ops-live-queue']});
  }
  const columns:TicketTableColumn<QueueRow>[]=[
-  {key:'priority',header:'Priority',track:'70px',cell:r=><Badge variant='outline'>{r.priority.toUpperCase()}</Badge>},
+  {key:'priority',header:'Priority',track:'70px',cell:r=><Badge variant='outline'>{priorityMeta(r.priority).short}</Badge>},
   {key:'title',header:'Description',track:'minmax(230px,2fr)',cell:r=><TwoLine top={r.title} sub={r.typeName}/>},
   {key:'property',header:'Property',track:'minmax(190px,1.5fr)',cell:r=>r.property},
   {key:'owner',header:'Owner',track:'150px',cell:r=>r.owner?displayName(staff?.find(s=>s.id===r.owner)):'Unassigned'},
