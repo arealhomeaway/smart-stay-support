@@ -1,5 +1,8 @@
 # Roadmap
 
+## Full suite and publish readiness (Emily, Nov 26)
+- [ ] Run the complete Bun test suite and check every publishing gate; publish only if all pass.
+
 ## One save per owner card and My history (Nov 25)
 - [x] Combine answers, actual time and evidence into one canonical card save; demo plan-card save and edit verified.
 - [x] Shared owner/staff history, totals and duplicate prompt verified with matching 15 rows on desktop/phone.
